@@ -1,0 +1,6 @@
+[package]
+name = "exocore-index"
+version = "0.1.0"
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+
+[dependencies]

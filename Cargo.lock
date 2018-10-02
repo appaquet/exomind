@@ -1,0 +1,21 @@
+[[package]]
+name = "exocore"
+version = "0.1.0"
+dependencies = [
+ "exocore-common 0.1.0",
+ "exocore-data 0.1.0",
+ "exocore-index 0.1.0",
+]
+
+[[package]]
+name = "exocore-common"
+version = "0.1.0"
+
+[[package]]
+name = "exocore-data"
+version = "0.1.0"
+
+[[package]]
+name = "exocore-index"
+version = "0.1.0"
+

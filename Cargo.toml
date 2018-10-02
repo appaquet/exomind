@@ -1,0 +1,17 @@
+[package]
+name = "exocore"
+version = "0.1.0"
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+
+
+[dependencies]
+exocore-common = { path = "./common" }
+exocore-data = { path = "./data" }
+exocore-index = { path = "./index" }
+
+[workspace]
+members = [
+  "index",
+  "data",
+  "common"
+]
