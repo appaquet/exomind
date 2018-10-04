@@ -5,13 +5,15 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 
 
 [dependencies]
-exocore-common = { path = "./common" }
-exocore-data = { path = "./data" }
+exocore-server = { path = "./server" }
 exocore-index = { path = "./index" }
+exocore-data = { path = "./data" }
+exocore-common = { path = "./common" }
 
 [workspace]
 members = [
+  "server",
   "index",
   "data",
-  "common"
+  "common",
 ]

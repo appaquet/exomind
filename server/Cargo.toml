@@ -1,9 +1,10 @@
 [package]
-name = "exocore-index"
+name = "exocore-server"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 
 [dependencies]
 exocore-data = { path = "../data" }
+exocore-index = { path = "../index" }
 exocore-common = { path = "../common" }
 
