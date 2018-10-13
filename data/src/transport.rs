@@ -2,7 +2,7 @@
 use tokio::prelude::*;
 use exocore_common::node::Node;
 
-struct TransportContext {
+pub struct TransportContext {
     // TODO: Other nodes ? It's also in engine ...
 }
 
@@ -11,16 +11,16 @@ pub trait Transport: Stream<Item = MessageType, Error = Error> + Sink<SinkItem =
     fn send_message(message: MessageType);
 }
 
-struct OutMessage {
+pub struct OutMessage {
     message_type: MessageType,
 }
 
-struct InMessage {
+pub struct InMessage {
     from: Node,
     message_type: MessageType,
 }
 
-enum MessageType {
+pub enum MessageType {
     PendingSyncEntries,
     ChainProposeBlock,
     ChainAcceptBlock,
@@ -29,7 +29,7 @@ enum MessageType {
     ChainGetBlock,
 }
 
-enum Error  {
+pub enum Error  {
 
 }
 

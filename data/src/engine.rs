@@ -13,7 +13,7 @@ struct Engine<T: transport::Transport, P: chain::ChainPersistence> {
     transport: T,
     nodes: Vec<exocore_common::node::Node>,
     chain: chain::Chain<P>,
-    pending: pending::PendingStore,
+    pending: pending::PendingsStore,
 }
 
 impl<T: transport::Transport, P: chain::ChainPersistence> Engine<T, P> {
