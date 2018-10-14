@@ -1,7 +1,8 @@
-
 use exocore_common::security::signature::Signature;
 use std::sync::Arc;
 
+use flatbuffers;
+mod chain_schema_generated;
 mod disk_persistence;
 
 // TODO: Serialization using flatbuffers
@@ -12,9 +13,7 @@ pub struct Chain<P: ChainPersistence> {
 
 impl<P: ChainPersistence> Chain<P> {
     pub fn new(persistence: P) -> Chain<P> {
-        Chain {
-            persistence
-        }
+        Chain { persistence }
     }
 
     pub fn segments(&self) {}
@@ -63,8 +62,9 @@ pub enum EntryType {
 }
 
 pub struct EntryData {
-    // TODO: Not yet loaded from disk ???
-    // TODO: mmaped ?
+    // TODO: Should aim for zero-copy
+// TODO: Not yet loaded from disk ???
+// TODO: mmaped ?
 }
 
 #[cfg(test)]

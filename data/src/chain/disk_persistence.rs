@@ -1,4 +1,3 @@
-
 use super::*;
 
 use std::path::PathBuf;
@@ -6,8 +5,7 @@ use std::path::PathBuf;
 // TODO: mmaped files ?
 // TODO: Segments
 
-struct DiskPersistence {
-}
+struct DiskPersistence {}
 
 impl DiskPersistence {
     fn create(directory: PathBuf) -> DiskPersistence {
@@ -20,5 +18,4 @@ impl DiskPersistence {
     }
 }
 
-impl ChainPersistence for DiskPersistence {
-}
+impl ChainPersistence for DiskPersistence {}

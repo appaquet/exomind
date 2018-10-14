@@ -1,4 +1,3 @@
-
 use chain;
 use pending;
 use transport;
@@ -8,7 +7,7 @@ use exocore_common;
 use tokio;
 use tokio::prelude::*;
 
-struct Engine<T: transport::Transport, P: chain::ChainPersistence> {
+pub struct Engine<T: transport::Transport, P: chain::ChainPersistence> {
     runtime: tokio::runtime::Runtime, // TODO: Should it have its own Runtime? Or just just be a future itself
     transport: T,
     nodes: Vec<exocore_common::node::Node>,
@@ -17,12 +16,13 @@ struct Engine<T: transport::Transport, P: chain::ChainPersistence> {
 }
 
 impl<T: transport::Transport, P: chain::ChainPersistence> Engine<T, P> {
-    fn new() -> Engine<T, P> {
+    pub fn new() -> Engine<T, P> {
         // TODO: Exec Transport on runtime
         unimplemented!()
     }
 
-    fn get_events_stream() { // -> futures::Stream<Item = Event, Error = EventError> {
+    fn get_events_stream() {
+        // -> futures::Stream<Item = Event, Error = EventError> {
         unimplemented!()
     }
 
@@ -39,8 +39,7 @@ enum Event {
     FrozenBlock, // TODO: x depth
 }
 
-enum EventError {
-}
+enum EventError {}
 
 struct WrappedEntry {
     status: EntryStatus,

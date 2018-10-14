@@ -1,13 +1,14 @@
-
-use tokio::prelude::*;
 use exocore_common::node::Node;
+use tokio::prelude::*;
 
 pub struct TransportContext {
     // TODO: Other nodes ? It's also in engine ...
 }
 
 // TODO: A-la-tokio Framed
-pub trait Transport: Stream<Item = MessageType, Error = Error> + Sink<SinkItem = MessageType, SinkError = Error> {
+pub trait Transport:
+    Stream<Item = MessageType, Error = Error> + Sink<SinkItem = MessageType, SinkError = Error>
+{
     fn send_message(message: MessageType);
 }
 
@@ -29,10 +30,7 @@ pub enum MessageType {
     ChainGetBlock,
 }
 
-pub enum Error  {
-
-}
-
+pub enum Error {}
 
 #[cfg(test)]
 mod test {

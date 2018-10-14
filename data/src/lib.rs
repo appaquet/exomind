@@ -1,6 +1,7 @@
 extern crate exocore_common;
-extern crate multihash;
+extern crate flatbuffers;
 extern crate futures;
+extern crate multihash;
 extern crate tokio;
 extern crate tokio_io;
 
@@ -11,4 +12,4 @@ pub mod simulator;
 pub mod transport;
 pub mod wal;
 
-
+pub use engine::Engine;
