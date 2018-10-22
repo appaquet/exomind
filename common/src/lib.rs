@@ -1,13 +1,15 @@
-extern crate multiaddr;
-
-pub mod node;
-pub mod security;
-pub mod simplestore;
+#[macro_use]
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate log;
 
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+extern crate tempdir;
+
+pub mod cell;
+pub mod node;
+pub mod security;
+pub mod simple_store;

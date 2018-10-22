@@ -7,7 +7,7 @@ use exocore_common;
 use tokio;
 use tokio::prelude::*;
 
-pub struct Engine<T: transport::Transport, P: chain::ChainPersistence> {
+pub struct Engine<T: transport::Transport, P: chain::Persistence> {
     runtime: tokio::runtime::Runtime, // TODO: Should it have its own Runtime? Or just just be a future itself
     transport: T,
     nodes: Vec<exocore_common::node::Node>,
@@ -15,7 +15,7 @@ pub struct Engine<T: transport::Transport, P: chain::ChainPersistence> {
     pending: pending::PendingsStore,
 }
 
-impl<T: transport::Transport, P: chain::ChainPersistence> Engine<T, P> {
+impl<T: transport::Transport, P: chain::Persistence> Engine<T, P> {
     pub fn new() -> Engine<T, P> {
         // TODO: Exec Transport on runtime
         unimplemented!()
@@ -64,6 +64,11 @@ struct SyncRequest {
 // TODO: from, to, entries, heads, hash
 // TODO: entries could be full or just header too (so we don't send data)
 // TODO: should send full if an object has been modified by us recently and we never sent to remote
+}
+
+struct SyncRequestPayload {
+    store: SyncStore,
+    hash: String,
 }
 
 enum SyncStore {

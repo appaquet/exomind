@@ -3,45 +3,71 @@ use std::sync::Arc;
 
 use flatbuffers;
 mod chain_schema_generated;
-mod disk_persistence;
+
+pub mod persistence;
+pub use self::persistence::Persistence;
+
+type BlockOffset = u64;
+type EntryOffset = u64;
 
 // TODO: Serialization using flatbuffers
-pub struct Chain<P: ChainPersistence> {
+pub struct Chain<P: Persistence> {
     persistence: P,
+    next_block_offset: BlockOffset,
     // TODO: Link to segments
 }
 
-impl<P: ChainPersistence> Chain<P> {
+impl<P: Persistence> Chain<P> {
     pub fn new(persistence: P) -> Chain<P> {
-        Chain { persistence }
+        // TODO: Load segments
+        // TODO: Get next block offset
+
+        Chain {
+            persistence,
+            next_block_offset: 0,
+        }
     }
 
     pub fn segments(&self) {}
 
-    pub fn get_block(&self, offset: u64) {
-        // TODO: Find segment in which it is
-        // TODO: Find block
+    pub fn blocks_iter(
+        &self,
+        from_offset: Option<BlockOffset>,
+        to_offset: Option<BlockOffset>,
+    ) -> &dyn Iterator<Item = Block> {
+        unimplemented!()
     }
 
-    pub fn get_block_entries(&self, block: Block, with_data: bool) -> &dyn Iterator<Item = Entry> {
+    pub fn get_block(&self, offset: BlockOffset) -> &Block {
+        // TODO: Find segment in which it is
+        // TODO: Find block
+        unimplemented!()
+    }
+
+    pub fn block_entries_iter(
+        &self,
+        block: &Block,
+        with_data: bool,
+    ) -> &dyn Iterator<Item = Entry> {
+        unimplemented!()
+    }
+
+    pub fn entry(&self, entry: EntryOffset, with_data: bool) -> Entry {
         unimplemented!()
     }
 }
 
-pub trait ChainPersistence {
-    // TODO: Should use Async IO
-}
-
 pub struct Segment {
-    from_offset: u64,
-    to_offset: u64,
+    offset: BlockOffset,
+    previous_block: Option<BlockOffset>,
+    to_offset: BlockOffset,
     frozen: bool,
 }
 
 pub struct Block {
-    offset: u64, // abs segment
-    size: u64,
-    previous_block_offset: u64,
+    offset: BlockOffset, // abs segment
+    size: u32,
+    previous_block_offset: BlockOffset,
     previous_block_hash: String,
     hash: String,
     signatures: Vec<Signature>,
@@ -49,9 +75,14 @@ pub struct Block {
 }
 
 pub struct Entry {
-    offset: u64,
+    offset: EntryOffset,
     entry_type: EntryType,
     data: Option<Arc<EntryData>>,
+}
+
+pub struct NewEntry {
+    entry_type: EntryType,
+    data: EntryData,
 }
 
 pub enum EntryType {

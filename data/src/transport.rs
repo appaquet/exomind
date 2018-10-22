@@ -9,7 +9,7 @@ pub struct TransportContext {
 pub trait Transport:
     Stream<Item = MessageType, Error = Error> + Sink<SinkItem = MessageType, SinkError = Error>
 {
-    fn send_message(message: MessageType);
+    fn send_message(node: &Node, message: MessageType);
 }
 
 pub struct OutMessage {

@@ -7,7 +7,6 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 exocore-common = { path = "../common" }
 futures = "0.1"
 tempfile = "3.0"
-multihash = "0.8.0"
 tokio = "0.1"
 tokio-io = "0.1"
 flatbuffers = "0.5.0"

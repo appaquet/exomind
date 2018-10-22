@@ -1,7 +1,6 @@
 extern crate exocore_common;
 extern crate flatbuffers;
 extern crate futures;
-extern crate multihash;
 extern crate tokio;
 extern crate tokio_io;
 
