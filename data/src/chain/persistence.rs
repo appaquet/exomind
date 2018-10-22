@@ -12,23 +12,29 @@ pub trait Persistence {
     // TODO: Should use Async IO
 }
 
-struct DiskPersistence {
+struct DirectoryPersistence {
     directory: PathBuf,
     opened_file: Vec<SegmentFile>,
 }
 
-impl DiskPersistence {
-    fn create(directory: PathBuf) -> DiskPersistence {
+impl DirectoryPersistence {
+    fn create(directory: PathBuf) -> DirectoryPersistence {
         unimplemented!()
     }
 
-    fn open(directory: PathBuf) -> DiskPersistence {
+    fn open(directory: PathBuf) -> DirectoryPersistence {
         // TODO: Check if exists
+        unimplemented!()
+    }
+
+    fn write_block(&self, block: NewBlock) -> usize {
         unimplemented!()
     }
 }
 
-impl Persistence for DiskPersistence {}
+impl Persistence for DirectoryPersistence {
+    // TODO:
+}
 
 struct SegmentFile {
     block_offset: BlockOffset,
@@ -36,4 +42,7 @@ struct SegmentFile {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+
+}

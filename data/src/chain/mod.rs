@@ -1,3 +1,4 @@
+use exocore_common::security::hash::Hash;
 use exocore_common::security::signature::Signature;
 use std::sync::Arc;
 
@@ -26,6 +27,15 @@ impl<P: Persistence> Chain<P> {
             persistence,
             next_block_offset: 0,
         }
+    }
+
+    pub fn write_entry_try(&mut self, entry: NewEntry) -> Result<TriedNewEntry, Error> {
+        unimplemented!()
+    }
+
+    pub fn write_entry_commit(&mut self, entry: TriedNewEntry) -> Result<(), Error> {
+        // TODO: Make sure we didn't have any other entry meanwhile...
+        unimplemented!()
     }
 
     pub fn segments(&self) {}
@@ -57,6 +67,10 @@ impl<P: Persistence> Chain<P> {
     }
 }
 
+pub enum Error {
+    ConcurrentWrite,
+}
+
 pub struct Segment {
     offset: BlockOffset,
     previous_block: Option<BlockOffset>,
@@ -65,13 +79,21 @@ pub struct Segment {
 }
 
 pub struct Block {
-    offset: BlockOffset, // abs segment
+    offset: BlockOffset, // abs position segment
     size: u32,
     previous_block_offset: BlockOffset,
-    previous_block_hash: String,
-    hash: String,
+    previous_block_hash: Hash,
+    hash: Hash,
     signatures: Vec<Signature>,
     // TODO: Link to entries (with_data=bool)
+}
+
+pub struct NewBlock {
+    entries: Vec<NewEntry>,
+}
+
+pub struct TriedNewEntry {
+    // TODO: Entry that hasn't been written yet
 }
 
 pub struct Entry {
@@ -92,10 +114,11 @@ pub enum EntryType {
     Data,
 }
 
-pub struct EntryData {
-    // TODO: Should aim for zero-copy
+// TODO: Should aim for zero-copy
 // TODO: Not yet loaded from disk ???
 // TODO: mmaped ?
+pub struct EntryData {
+    data: Vec<u8>,
 }
 
 #[cfg(test)]
