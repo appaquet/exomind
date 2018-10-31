@@ -4,10 +4,10 @@ extern crate tokio;
 extern crate tokio_io;
 extern crate flatbuffers;
 extern crate memmap;
-extern crate tempdir;
-
 #[macro_use]
 extern crate log;
+#[cfg(test)]
+extern crate tempdir;
 
 pub mod chain;
 pub mod engine;
