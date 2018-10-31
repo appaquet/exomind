@@ -1,8 +1,13 @@
 extern crate exocore_common;
-extern crate flatbuffers;
 extern crate futures;
 extern crate tokio;
 extern crate tokio_io;
+extern crate flatbuffers;
+extern crate memmap;
+extern crate tempdir;
+
+#[macro_use]
+extern crate log;
 
 pub mod chain;
 pub mod engine;

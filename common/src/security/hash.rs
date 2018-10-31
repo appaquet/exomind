@@ -12,4 +12,5 @@ trait Digest {
     fn result(&mut self) -> HashType;
 }
 
+// TODO:
 struct Sha256Digest {}

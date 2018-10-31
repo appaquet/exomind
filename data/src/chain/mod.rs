@@ -9,9 +9,11 @@ pub mod persistence;
 pub use self::persistence::Persistence;
 
 type BlockOffset = u64;
+type BlockSize = u32;
 type EntryOffset = u64;
+type SegmentID = BlockOffset;
+type SegmentSize = u64;
 
-// TODO: Serialization using flatbuffers
 pub struct Chain<P: Persistence> {
     persistence: P,
     next_block_offset: BlockOffset,
@@ -29,16 +31,20 @@ impl<P: Persistence> Chain<P> {
         }
     }
 
-    pub fn write_entry_try(&mut self, entry: NewEntry) -> Result<TriedNewEntry, Error> {
+    pub fn write_block_try(&mut self, entries: &[NewEntry]) -> Result<NewBlockAttempt, Error> {
+        // TODO: Get latest offset
+        // TODO: Serialize to get size + next offset
+        // TODO: Hash
         unimplemented!()
     }
 
-    pub fn write_entry_commit(&mut self, entry: TriedNewEntry) -> Result<(), Error> {
+    pub fn write_block_commit(&mut self, entry: NewBlockAttempt) -> Result<(), Error> {
         // TODO: Make sure we didn't have any other entry meanwhile...
         unimplemented!()
     }
 
-    pub fn segments(&self) {}
+    pub fn segments(&self) {
+    }
 
     pub fn blocks_iter(
         &self,
@@ -79,21 +85,21 @@ pub struct Segment {
 }
 
 pub struct Block {
-    offset: BlockOffset, // abs position segment
-    size: u32,
-    previous_block_offset: BlockOffset,
-    previous_block_hash: Hash,
+    offset: BlockOffset,
+    size: BlockSize,
+    previous_block_offset: BlockOffset, // TODO: Conveniance?
     hash: Hash,
     signatures: Vec<Signature>,
     // TODO: Link to entries (with_data=bool)
 }
 
-pub struct NewBlock {
-    entries: Vec<NewEntry>,
+pub struct NewBlockAttempt {
+    // TODO: Entry that hasn't been written yet
 }
 
-pub struct TriedNewEntry {
-    // TODO: Entry that hasn't been written yet
+pub struct NewBlock {
+    entries: Vec<NewEntry>,
+    signatures: Vec<Signature>,
 }
 
 pub struct Entry {
@@ -105,6 +111,7 @@ pub struct Entry {
 pub struct NewEntry {
     entry_type: EntryType,
     data: EntryData,
+    // TODO: How do we handle hash?
 }
 
 pub enum EntryType {
@@ -116,7 +123,6 @@ pub enum EntryType {
 
 // TODO: Should aim for zero-copy
 // TODO: Not yet loaded from disk ???
-// TODO: mmaped ?
 pub struct EntryData {
     data: Vec<u8>,
 }

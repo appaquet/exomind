@@ -1,5 +1,6 @@
 // example IDL file
 
+/*
 namespace MyGame;
 
 attribute "priority";
@@ -32,3 +33,23 @@ table Pickup {
 }
 
 root_type Monster;
+*/
+
+namespace Chain;
+
+table SegmentHeader {
+    offset:ulong;
+}
+
+table Block {
+    offset:ulong;
+    size:ulong;
+    entries:[BlockEntry];
+}
+
+table BlockEntry {
+    offset:ulong;
+    data:[byte];
+}
+
+root_type BlockEntry;

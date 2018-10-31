@@ -6,4 +6,5 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 [dependencies]
 exocore-data = { path = "../data" }
 exocore-common = { path = "../common" }
+log = "0.4"
 

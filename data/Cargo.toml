@@ -5,8 +5,13 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 
 [dependencies]
 exocore-common = { path = "../common" }
+log = "0.4"
 futures = "0.1"
 tempfile = "3.0"
 tokio = "0.1"
 tokio-io = "0.1"
+memmap = "0.7.0"
 flatbuffers = "0.5.0"
+
+[dev-dependencies]
+tempdir = "0.3.7"

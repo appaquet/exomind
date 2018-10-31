@@ -2,10 +2,12 @@
 pub struct Cell {
     // TODO: PublicKey (RSA + secp256k1)
 // TODO: NodeID = hash(publickey)
+
+// TODO: Nodes, with their capability
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Node {
-    // TODO: PublicKey (RSA)
-// TODO: NodeID = hash(publickey)
+
+pub struct NodeCellCapability {
+    // TODO: Can it decrypt ?
 }
+

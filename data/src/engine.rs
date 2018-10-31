@@ -7,6 +7,8 @@ use exocore_common;
 use tokio;
 use tokio::prelude::*;
 
+use std::time::Instant;
+
 pub struct Engine<T: transport::Transport, P: chain::Persistence> {
     runtime: tokio::runtime::Runtime, // TODO: Should it have its own Runtime? Or just just be a future itself
     transport: T,
@@ -21,7 +23,7 @@ impl<T: transport::Transport, P: chain::Persistence> Engine<T, P> {
         unimplemented!()
     }
 
-    fn get_events_stream() {
+    fn get_events_stream(from_time: Instant) {
         // -> futures::Stream<Item = Event, Error = EventError> {
         unimplemented!()
     }
@@ -30,6 +32,11 @@ impl<T: transport::Transport, P: chain::Persistence> Engine<T, P> {
 
     // TODO: Sync at interval to check we didn't miss anything
     // TODO: Wait for messages from others
+}
+
+struct CommitController {
+    // TODO: If node has access to data, it needs ot check its integrity  by the upper layer
+    // TODO: If not, a node needs to wait for a majority of nodes that has data
 }
 
 // TODO: Stream of events ?
