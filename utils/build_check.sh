@@ -3,7 +3,7 @@ set -e
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$CUR_DIR/../"
 
-cargo test
+cargo test --all
 
 # TODO: Proper message for missing ndk
 export PATH="$PATH:/Users/appaquet/Work/ampme/ampme-ampplayer/NDK/arm/bin/"

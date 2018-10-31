@@ -1,10 +1,8 @@
 extern crate log4rs;
 
-use self::log4rs::append::Append;
+use log::LevelFilter;
 use self::log4rs::append::console::ConsoleAppender;
 use self::log4rs::config::{Appender, Config, Logger, Root};
-
-use log::LevelFilter;
 
 pub fn setup() {
     let appender = Box::new(ConsoleAppender::builder().build());

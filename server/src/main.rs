@@ -2,7 +2,7 @@ extern crate exocore_common;
 extern crate exocore_data;
 extern crate exocore_index;
 
-#[macro_use]
+extern crate log;
 extern crate structopt;
 
 #[cfg(test)]

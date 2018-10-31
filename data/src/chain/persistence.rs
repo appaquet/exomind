@@ -77,12 +77,13 @@ mod tests {
     use exocore_common;
     use std;
     use flatbuffers;
+    use env_logger;
 
     use self::chain_schema_generated::chain;
 
     #[test]
     fn test_segment_create() {
-        exocore_common::logging::setup();
+        env_logger::init();
 
         let dir = tempdir::TempDir::new("test").unwrap();
         let path = dir.path().join("test.data");
