@@ -7,4 +7,7 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 exocore-data = { path = "../data" }
 exocore-index = { path = "../index" }
 exocore-common = { path = "../common" }
+
+log = "0.4"
 structopt = "0.2"
+log4rs = "0.8"

@@ -7,10 +7,8 @@ extern crate serde_derive;
 extern crate log;
 #[cfg(test)]
 extern crate tempdir;
-extern crate log4rs;
 
 pub mod cell;
 pub mod node;
 pub mod security;
 pub mod simple_store;
-pub mod logging;

@@ -5,6 +5,7 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 
 [dependencies]
 exocore-common = { path = "../common" }
+
 log = "0.4"
 futures = "0.1"
 tempfile = "3.0"
@@ -14,4 +15,5 @@ memmap = "0.7.0"
 flatbuffers = "0.5.0"
 
 [dev-dependencies]
-tempdir = "0.3.7"
+tempdir = "0.3"
+env_logger = "0.5"

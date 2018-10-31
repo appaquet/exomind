@@ -5,6 +5,9 @@ extern crate exocore_index;
 #[macro_use]
 extern crate structopt;
 
+#[cfg(test)]
+pub mod logging;
+
 use structopt::StructOpt;
 
 /// A basic example
