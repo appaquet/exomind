@@ -2,6 +2,8 @@
 ## Dependencies
 * [flatbuffers v1.10+](https://github.com/google/flatbuffers)
     * On MacOS: `brew install flatbuffers` 
+* [Cap'n Proto](https://capnproto.org/install.html)
+    * On MacOS: `brew install capnp` 
 
 ## Rust
 * Install targets:

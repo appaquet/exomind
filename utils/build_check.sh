@@ -7,9 +7,9 @@ cargo test --all
 
 # TODO: Proper message for missing ndk
 export PATH="$PATH:/Users/appaquet/Work/ampme/ampme-ampplayer/NDK/arm/bin/"
-cargo build --target "armv7-linux-androideabi"
+cargo check --target "armv7-linux-androideabi"
 
-cargo build --target "aarch64-apple-ios"
+cargo check --target "aarch64-apple-ios"
 
 cd "$CUR_DIR/../common/"
-cargo build --target "wasm32-unknown-unknown"
+cargo check --target "wasm32-unknown-unknown"

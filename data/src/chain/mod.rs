@@ -93,6 +93,13 @@ pub struct Block {
     // TODO: Link to entries (with_data=bool)
 }
 
+impl Block {
+    pub fn get_estimated_size() -> usize {
+        // TODO: Required since we have to pre-allocate mmap
+        0
+    }
+}
+
 pub struct NewBlockAttempt {
     // TODO: Entry that hasn't been written yet
 }
