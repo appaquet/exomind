@@ -2,5 +2,6 @@ image: "rust:latest"
 
 test:cargo:
   script:
+  - apt update && apt install -y capnproto
   - rustc --version && cargo --version
   - cargo test --all --verbose
