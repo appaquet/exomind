@@ -2,9 +2,6 @@ use exocore_common::security::hash::Hash;
 use exocore_common::security::signature::Signature;
 use std::sync::Arc;
 
-use flatbuffers;
-mod chain_schema_generated;
-
 pub mod persistence;
 pub use self::persistence::Persistence;
 
@@ -43,8 +40,7 @@ impl<P: Persistence> Chain<P> {
         unimplemented!()
     }
 
-    pub fn segments(&self) {
-    }
+    pub fn segments(&self) {}
 
     pub fn blocks_iter(
         &self,
@@ -73,8 +69,10 @@ impl<P: Persistence> Chain<P> {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
     ConcurrentWrite,
+    Persistence,
 }
 
 pub struct Segment {

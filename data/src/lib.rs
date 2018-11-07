@@ -1,5 +1,4 @@
 extern crate exocore_common;
-extern crate flatbuffers;
 extern crate futures;
 #[macro_use]
 extern crate log;
@@ -24,6 +23,6 @@ pub mod wal;
 pub mod utils;
 
 
-pub mod test_capnp {
-    include!(concat!(env!("OUT_DIR"), "/fbs/test_capnp.rs"));
+pub mod chain_block_capnp {
+    include!(concat!(env!("OUT_DIR"), "/proto/chain_block_capnp.rs"));
 }

@@ -2,7 +2,7 @@ extern crate capnpc;
 
 fn main() {
     ::capnpc::CompilerCommand::new()
-        .file("fbs/test.capnp")
+        .file("proto/chain_block.capnp")
         .run()
         .expect("compiling schema");
 }

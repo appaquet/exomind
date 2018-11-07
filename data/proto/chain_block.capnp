@@ -29,3 +29,15 @@ struct Person {
 struct AddressBook {
   people @0 :List(Person);
 }
+
+struct Block {
+  offset @0: UInt64;
+  size @1: UInt32;
+  hash @2: Text;
+  entries @3: List(BlockEntry);
+}
+
+struct BlockEntry {
+  hash @0: Text;
+  data @1: Data;
+}
