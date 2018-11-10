@@ -6,8 +6,6 @@ pub struct Cell {
 // TODO: Nodes, with their capability
 }
 
-
 pub struct NodeCellCapability {
     // TODO: Can it decrypt ?
 }
-

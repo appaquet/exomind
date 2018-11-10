@@ -36,7 +36,7 @@ impl<T: transport::Transport, P: chain::Persistence> Engine<T, P> {
 
 struct CommitController {
     // TODO: If node has access to data, it needs ot check its integrity  by the upper layer
-    // TODO: If not, a node needs to wait for a majority of nodes that has data
+// TODO: If not, a node needs to wait for a majority of nodes that has data
 }
 
 // TODO: Stream of events ?

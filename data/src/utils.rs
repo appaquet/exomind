@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 pub fn setup_logging() {
     use stderrlog;
