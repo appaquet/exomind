@@ -9,7 +9,7 @@ pub struct Signature {
 }
 
 impl Signature {
-    fn validate(&self, message: Message, keys: Signature) -> bool {
+    fn validate(&self, message: &Message) -> bool {
         unimplemented!()
     }
 }

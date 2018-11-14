@@ -35,7 +35,7 @@ impl<P: Persistence> Chain<P> {
         unimplemented!()
     }
 
-    pub fn write_block_commit(&mut self, entry: NewBlockAttempt) -> Result<(), Error> {
+    pub fn write_block_commit(&mut self, entry: &NewBlockAttempt) -> Result<(), Error> {
         // TODO: Make sure we didn't have any other entry meanwhile...
         unimplemented!()
     }

@@ -17,6 +17,7 @@ pub use engine::Engine;
 pub mod chain;
 pub mod engine;
 pub mod pending;
+pub mod serialization;
 pub mod simulator;
 pub mod transport;
 pub mod utils;

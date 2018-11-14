@@ -1,7 +1,7 @@
 struct WAL {}
 
 impl WAL {
-    pub fn new() {}
+    pub fn new() -> WAL { unimplemented!() }
 
     pub fn write() {
         // TODO: Sync?

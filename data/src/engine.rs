@@ -5,7 +5,6 @@ use transport;
 use exocore_common;
 
 use tokio;
-use tokio::prelude::*;
 
 use std::time::Instant;
 

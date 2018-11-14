@@ -11,8 +11,9 @@ pub struct PendingsStore {
 }
 
 impl PendingsStore {
-    pub fn new() {
+    pub fn new() -> PendingsStore {
         // TODO: Path of wal
+        unimplemented!()
     }
 }
 
