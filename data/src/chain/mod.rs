@@ -5,11 +5,40 @@ use std::sync::Arc;
 pub mod persistence;
 pub use self::persistence::Persistence;
 
+const BLOCK_MSG_TYPE: u16 = 0;
+const BLOCK_ENTRY_MSG_TYPE: u16 = 1;
+const BLOCK_SIGNATURES_MSG_TYPE: u16 = 2;
+const BLOCK_SIGNATURE_MSG_TYPE: u16 = 3;
+
 type BlockOffset = u64;
 type BlockSize = u32;
 type EntryOffset = u64;
 type SegmentID = BlockOffset;
 type SegmentSize = u64;
+
+impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block::Owned {
+    fn message_type() -> u16 {
+        1
+    }
+}
+
+impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block_entry::Owned {
+    fn message_type() -> u16 {
+        2
+    }
+}
+
+impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block_signatures::Owned {
+    fn message_type() -> u16 {
+        3
+    }
+}
+
+impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block_signature::Owned {
+    fn message_type() -> u16 {
+        4
+    }
+}
 
 pub struct Chain<P: Persistence> {
     persistence: P,
