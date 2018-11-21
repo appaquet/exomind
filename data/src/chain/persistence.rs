@@ -1,5 +1,3 @@
-use super::*;
-
 use std;
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
@@ -8,14 +6,17 @@ use chain_block_capnp::{block, block_signatures};
 use serialize;
 use serialize::{FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType};
 
-// TODO: Segments
+use super::*;
+
 // TODO: AVOID COPIES
 // TODO: Directory segment + mmap + write header
 // TODO: Opening segments could be faster to open by passing last known offset
 // TODO: Switch to usize since we should never reach more than 4gb segment to fit on 32bit machines
 
-const SEGMENT_OVER_ALLOCATE_SIZE: u64 = 300 * 1024 * 1024; // 300mb
-const SEGMENT_MIN_FREE_SIZE: u64 = 10 * 1024 * 1024; // 10mb
+const SEGMENT_OVER_ALLOCATE_SIZE: u64 = 300 * 1024 * 1024;
+// 300mb
+const SEGMENT_MIN_FREE_SIZE: u64 = 10 * 1024 * 1024;
+// 10mb
 const SEGMENT_MAX_SIZE: u64 = 4 * 1024 * 1024 * 1024; // 4gb
 
 pub trait Persistence {}
@@ -83,7 +84,11 @@ impl DirectoryPersistence {
         unimplemented!()
     }
 
-    fn block_iterator(&mut self) {
+    fn block_iterator(&self) {
+        unimplemented!()
+    }
+
+    fn get_block(&self, offset: BlockOffset) {
         unimplemented!()
     }
 
@@ -99,7 +104,7 @@ impl Persistence for DirectoryPersistence {
 struct DirectorySegment {
     first_block_offset: BlockOffset,
     segment_path: PathBuf,
-    segment_file: Option<SegmentFile>,
+    segment_file: SegmentFile,
     last_block_offset: BlockOffset,
     next_file_offset: usize,
 }
@@ -130,7 +135,7 @@ impl DirectorySegment {
         Ok(DirectorySegment {
             first_block_offset,
             segment_path,
-            segment_file: Some(segment_file),
+            segment_file,
             last_block_offset,
             next_file_offset: block.data_size() + block_sigs.data_size(),
         })
@@ -193,7 +198,7 @@ impl DirectorySegment {
         Ok(DirectorySegment {
             first_block_offset,
             segment_path,
-            segment_file: Some(segment_file),
+            segment_file: segment_file,
             last_block_offset,
             next_file_offset,
         })
@@ -203,26 +208,19 @@ impl DirectorySegment {
         directory.join(format!("seg_{}", first_offset))
     }
 
-    fn ensure_file_open(&mut self) -> Result<&mut SegmentFile, Error> {
-        if self.segment_file.is_none() {
-            self.segment_file = Some(SegmentFile::open(&self.segment_path, 0)?); // TODO: Ensure proper size
-        }
-        Ok(self.segment_file.as_mut().unwrap())
-    }
-
-    fn ensure_file_open_for_size(&mut self, write_size: usize) -> Result<&mut SegmentFile, Error> {
+    fn ensure_file_size(&mut self, write_size: usize) -> Result<(), Error> {
         let next_file_offset = self.next_file_offset;
 
-        let segment_file = self.ensure_file_open()?;
-        if segment_file.current_size < (next_file_offset + write_size) as u64 {
+        if self.segment_file.current_size < (next_file_offset + write_size) as u64 {
             let target_size = (next_file_offset + write_size) as u64 + SEGMENT_OVER_ALLOCATE_SIZE;
             if target_size > SEGMENT_MAX_SIZE {
                 return Err(Error::SegmentFull);
             }
 
-            segment_file.set_len(target_size)?;
+            self.segment_file.set_len(target_size)?;
         }
-        Ok(segment_file)
+
+        Ok(())
     }
 
     fn write_block<B, S>(&mut self, block: &B, block_sigs: &S) -> Result<(), Error>
@@ -242,9 +240,9 @@ impl DirectorySegment {
         }
 
         {
-            let segment_file = self.ensure_file_open_for_size(block_size + sigs_size)?;
-            block.copy_into(&mut segment_file.mmap[next_file_offset..]);
-            block_sigs.copy_into(&mut segment_file.mmap[next_file_offset + block_size..]);
+            self.ensure_file_size(block_size + sigs_size)?;
+            block.copy_into(&mut self.segment_file.mmap[next_file_offset..]);
+            block_sigs.copy_into(&mut self.segment_file.mmap[next_file_offset + block_size..]);
         }
 
         self.next_file_offset += block_size + sigs_size;
@@ -253,7 +251,7 @@ impl DirectorySegment {
     }
 
     fn get_block(
-        &mut self,
+        &self,
         offset: BlockOffset,
     ) -> Result<
         (
@@ -263,7 +261,6 @@ impl DirectorySegment {
         Error,
     > {
         let first_block_offset = self.first_block_offset;
-        let segment_file = self.ensure_file_open()?;
 
         if offset < first_block_offset {
             error!(
@@ -275,23 +272,19 @@ impl DirectorySegment {
 
         let block_file_offset = (offset - first_block_offset) as usize;
         let block =
-            serialize::FramedSliceTypedMessage::new(&segment_file.mmap[block_file_offset..])?;
+            serialize::FramedSliceTypedMessage::new(&self.segment_file.mmap[block_file_offset..])?;
 
         let block_sigs_file_offset = block_file_offset + block.data_size();
-        let block_sigs =
-            serialize::FramedSliceTypedMessage::new(&segment_file.mmap[block_sigs_file_offset..])?;
+        let block_sigs = serialize::FramedSliceTypedMessage::new(
+            &self.segment_file.mmap[block_sigs_file_offset..],
+        )?;
 
         Ok((block, block_sigs))
     }
 
     fn truncate_extra(&mut self) -> Result<(), Error> {
         let next_file_offset = self.next_file_offset as u64;
-        let file_segment = self.ensure_file_open()?;
-        file_segment.set_len(next_file_offset)
-    }
-
-    fn close(&mut self) {
-        self.segment_file = None;
+        self.segment_file.set_len(next_file_offset)
     }
 }
 
@@ -363,9 +356,11 @@ impl SegmentFile {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use serialize::{FramedOwnedTypedMessage, FramedTypedMessage};
     use tempdir;
+
+    use serialize::{FramedOwnedTypedMessage, FramedTypedMessage};
+
+    use super::*;
 
     #[test]
     fn test_segment_file_create() {
