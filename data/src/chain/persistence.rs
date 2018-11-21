@@ -10,11 +10,8 @@ use serialize::{FramedMessage, FramedMessageIterator, FramedTypedMessage, Messag
 
 // TODO: Segments
 // TODO: AVOID COPIES
-// TODO: Since we pre-allocate mmap, we need to know if an incoming block will fit
-// TODO: We will have to pre-allocate size in big chunks (10MB ? 50MB ?)
-// TODO: directory segment + mmap + write header
+// TODO: Directory segment + mmap + write header
 // TODO: Opening segments could be faster to open by passing last known offset
-
 // TODO: Switch to usize since we should never reach more than 4gb segment to fit on 32bit machines
 
 const SEGMENT_OVER_ALLOCATE_SIZE: u64 = 300 * 1024 * 1024; // 300mb
@@ -23,32 +20,13 @@ const SEGMENT_MAX_SIZE: u64 = 4 * 1024 * 1024 * 1024; // 4gb
 
 pub trait Persistence {}
 
-struct PersistedSegment {
-    id: SegmentID,
-    first_offset: BlockOffset,
-    last_offset: BlockOffset,
-    size: SegmentSize,
-    frozen: bool, // if frozen, means that we have an last offset
-}
-
-struct PersistedBlock {
-    offset: BlockOffset,
-    hash: Hash,
-    entries: Vec<PersistedEntry>,
-}
-
-struct PersistedEntry {
-    hash: Hash,
-    data: Vec<u8>,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 enum Error {
     UnexpectedState,
     Serialization(serialize::Error),
     Integrity,
-    Data,
     SegmentFull,
+    NotFound,
     EOF,
     IO,
 }
@@ -91,13 +69,7 @@ impl DirectoryPersistence {
         unimplemented!()
     }
 
-    fn write_block<B, S>(
-        &mut self,
-        segment_id: SegmentID,
-        block_offset: BlockOffset,
-        block: B,
-        block_signatures: S,
-    ) -> (BlockOffset, BlockSize)
+    fn write_block<B, S>(&mut self, block: B, block_signatures: S) -> (BlockOffset, BlockSize)
     where
         B: serialize::FramedTypedMessage<block::Owned>,
         S: serialize::FramedTypedMessage<block_signatures::Owned>,
@@ -125,22 +97,15 @@ impl Persistence for DirectoryPersistence {
 }
 
 struct DirectorySegment {
-    //meta: PersistedSegment,
-    id: SegmentID,
+    first_block_offset: BlockOffset,
     segment_path: PathBuf,
     segment_file: Option<SegmentFile>,
-    first_block_offset: BlockOffset,
     last_block_offset: BlockOffset,
     next_file_offset: usize,
 }
 
 impl DirectorySegment {
-    fn create<B, S>(
-        directory: &Path,
-        id: SegmentID,
-        block: &B,
-        block_sigs: &S,
-    ) -> Result<DirectorySegment, Error>
+    fn create<B, S>(directory: &Path, block: &B, block_sigs: &S) -> Result<DirectorySegment, Error>
     where
         B: serialize::FramedTypedMessage<block::Owned>,
         S: serialize::FramedTypedMessage<block_signatures::Owned>,
@@ -149,32 +114,30 @@ impl DirectorySegment {
         let first_block_offset = block_reader.get_offset();
         let last_block_offset = first_block_offset;
 
-        if first_block_offset != id {
+        let segment_path = Self::segment_path(directory, first_block_offset);
+        if segment_path.exists() {
             error!(
-                "First block offset != segment id ({} != {})",
-                first_block_offset, id
+                "Tried to create a new segment at path {:?}, but already existed",
+                segment_path
             );
             return Err(Error::UnexpectedState);
         }
 
-        let segment_path = Self::segment_path(directory, id);
-        let mut segment_file = SegmentFile::open(&segment_path, SEGMENT_OVER_ALLOCATE_SIZE)?; // TODO: Proper first size
-
+        let mut segment_file = SegmentFile::open(&segment_path, SEGMENT_OVER_ALLOCATE_SIZE)?;
         block.copy_into(&mut segment_file.mmap);
         block_sigs.copy_into(&mut segment_file.mmap[block.data_size()..]);
 
         Ok(DirectorySegment {
-            id,
+            first_block_offset,
             segment_path,
             segment_file: Some(segment_file),
-            first_block_offset,
             last_block_offset,
             next_file_offset: block.data_size() + block_sigs.data_size(),
         })
     }
 
-    fn open(directory: &Path, id: SegmentID) -> Result<DirectorySegment, Error> {
-        let segment_path = Self::segment_path(directory, id);
+    fn open(directory: &Path, first_offset: BlockOffset) -> Result<DirectorySegment, Error> {
+        let segment_path = Self::segment_path(directory, first_offset);
         let segment_file = SegmentFile::open(&segment_path, 0)?;
 
         let first_block_offset = {
@@ -190,12 +153,12 @@ impl DirectorySegment {
             first_block.get_offset()
         };
 
-        if first_block_offset != id {
+        if first_block_offset != first_offset {
             error!(
-                "First block offset != segment id ({} != {})",
-                first_block_offset, id
+                "First block offset != segment first_offset ({} != {})",
+                first_block_offset, first_offset
             );
-            return Err(Error::UnexpectedState);
+            return Err(Error::Integrity);
         }
 
         let (last_block_offset, next_file_offset) = {
@@ -222,23 +185,22 @@ impl DirectorySegment {
                 }
                 _ => {
                     error!("Couldn't find last block of segment: no blocks returned by iterator");
-                    return Err(Error::UnexpectedState);
+                    return Err(Error::Integrity);
                 }
             }
         };
 
         Ok(DirectorySegment {
-            id,
+            first_block_offset,
             segment_path,
             segment_file: Some(segment_file),
-            first_block_offset,
             last_block_offset,
             next_file_offset,
         })
     }
 
-    fn segment_path(directory: &Path, id: SegmentID) -> PathBuf {
-        directory.join(format!("seg_{}", id))
+    fn segment_path(directory: &Path, first_offset: BlockOffset) -> PathBuf {
+        directory.join(format!("seg_{}", first_offset))
     }
 
     fn ensure_file_open(&mut self) -> Result<&mut SegmentFile, Error> {
@@ -258,7 +220,7 @@ impl DirectorySegment {
                 return Err(Error::SegmentFull);
             }
 
-            segment_file.set_len(target_size);
+            segment_file.set_len(target_size)?;
         }
         Ok(segment_file)
     }
@@ -272,27 +234,54 @@ impl DirectorySegment {
         let block_size = block.data_size();
         let sigs_size = block_sigs.data_size();
 
+        let block_reader = block.get()?;
+        let block_offset = block_reader.get_offset();
+        if next_file_offset as u64 != block_offset {
+            error!("Trying to write a block at an offset that wasn't next offset: next_file_offset={} block_offset={}", next_file_offset, block_offset);
+            return Err(Error::Integrity);
+        }
+
         {
             let segment_file = self.ensure_file_open_for_size(block_size + sigs_size)?;
-
-            {
-                // TODO: Make sure that block.previous_block == previous_block
-                let previous_sig_block = serialize::FramedSliceTypedMessage::<
-                    block_signatures::Owned,
-                >::new_from_next_offset(
-                    &segment_file.mmap, next_file_offset
-                )?;
-                let previous_block_end_offset = next_file_offset - previous_sig_block.data_size();
-                let previous_block = serialize::FramedSliceTypedMessage::<block_signatures::Owned>::new_from_next_offset(&segment_file.mmap, previous_block_end_offset)?;
-            }
-
             block.copy_into(&mut segment_file.mmap[next_file_offset..]);
             block_sigs.copy_into(&mut segment_file.mmap[next_file_offset + block_size..]);
         }
 
         self.next_file_offset += block_size + sigs_size;
 
-        unimplemented!()
+        Ok(())
+    }
+
+    fn get_block(
+        &mut self,
+        offset: BlockOffset,
+    ) -> Result<
+        (
+            serialize::FramedSliceTypedMessage<block::Owned>,
+            serialize::FramedSliceTypedMessage<block_signatures::Owned>,
+        ),
+        Error,
+    > {
+        let first_block_offset = self.first_block_offset;
+        let segment_file = self.ensure_file_open()?;
+
+        if offset < first_block_offset {
+            error!(
+                "Tried to read block at {}, but first offset was at {}",
+                offset, first_block_offset
+            );
+            return Err(Error::NotFound);
+        }
+
+        let block_file_offset = (offset - first_block_offset) as usize;
+        let block =
+            serialize::FramedSliceTypedMessage::new(&segment_file.mmap[block_file_offset..])?;
+
+        let block_sigs_file_offset = block_file_offset + block.data_size();
+        let block_sigs =
+            serialize::FramedSliceTypedMessage::new(&segment_file.mmap[block_sigs_file_offset..])?;
+
+        Ok((block, block_sigs))
     }
 
     fn truncate_extra(&mut self) -> Result<(), Error> {
@@ -304,11 +293,6 @@ impl DirectorySegment {
     fn close(&mut self) {
         self.segment_file = None;
     }
-}
-
-fn field_read_to_error<E: std::fmt::Debug>(err: E, field_name: &str) -> Error {
-    error!("Error reading field {}: {:?}", field_name, err);
-    Error::Data
 }
 
 struct SegmentFile {
@@ -380,7 +364,7 @@ impl SegmentFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serialize::FramedTypedMessage;
+    use serialize::{FramedOwnedTypedMessage, FramedTypedMessage};
     use tempdir;
 
     #[test]
@@ -400,28 +384,15 @@ mod tests {
     }
 
     #[test]
-    fn test_directory_segment_write_block() {
+    fn test_directory_segment_create_and_open() {
         let dir = tempdir::TempDir::new("test").unwrap();
 
-        let mut block_msg_builder = serialize::TypedMessageBuilder::<block::Owned>::new();
-        {
-            let mut block_builder = block_msg_builder.init_root();
-            block_builder.set_hash("block_hash");
-            block_builder.set_offset(1234);
-        }
-        let block_msg = block_msg_builder.into_framed().unwrap();
-
-        let mut sig_msg_builder = serialize::TypedMessageBuilder::<block_signatures::Owned>::new();
-        {
-            let mut sig_builder = sig_msg_builder.init_root();
-            sig_builder.set_offset(0);
-        }
-        let sig_msg = sig_msg_builder.into_framed().unwrap();
-
         let segment_id = 1234;
+        let block_msg = create_block(1234);
+        let sig_msg = create_block_sigs();
+
         {
-            let segment =
-                DirectorySegment::create(dir.path(), segment_id, &block_msg, &sig_msg).unwrap();
+            let segment = DirectorySegment::create(dir.path(), &block_msg, &sig_msg).unwrap();
             assert_eq!(segment.first_block_offset, 1234);
             assert_eq!(segment.last_block_offset, 1234);
             assert_eq!(
@@ -439,5 +410,82 @@ mod tests {
                 block_msg.data_size() + sig_msg.data_size()
             );
         }
+    }
+
+    #[test]
+    fn test_directory_segment_create_already_exist() {
+        let dir = tempdir::TempDir::new("test").unwrap();
+
+        {
+            let block_msg = create_block(1234);
+            let sig_msg = create_block_sigs();
+            let segment = DirectorySegment::create(dir.path(), &block_msg, &sig_msg).unwrap();
+        }
+
+        {
+            let block_msg = create_block(1234);
+            let sig_msg = create_block_sigs();
+            assert!(DirectorySegment::create(dir.path(), &block_msg, &sig_msg).is_err());
+        }
+    }
+
+    #[test]
+    fn test_directory_segment_append_block() {
+        let dir = tempdir::TempDir::new("test").unwrap();
+
+        let offset1 = 0;
+        let block = create_block(offset1);
+        let block_sigs = create_block_sigs();
+        let mut segment = DirectorySegment::create(dir.path(), &block, &block_sigs).unwrap();
+        {
+            let (read_block, read_block_sigs) = segment.get_block(offset1).unwrap();
+            let (read_block, read_block_sigs) =
+                (read_block.get().unwrap(), read_block_sigs.get().unwrap());
+            assert_eq!(read_block.get_offset(), offset1);
+        }
+
+        let offset2 = offset1 + (block.data_size() + block_sigs.data_size()) as u64;
+        let block = create_block(offset2);
+        let block_sigs = create_block_sigs();
+        segment.write_block(&block, &block_sigs).unwrap();
+        {
+            let (read_block, read_block_sigs) = segment.get_block(offset2).unwrap();
+            let (read_block, read_block_sigs) =
+                (read_block.get().unwrap(), read_block_sigs.get().unwrap());
+            assert_eq!(read_block.get_offset(), offset2);
+        }
+
+        let offset3 = offset2 + (block.data_size() + block_sigs.data_size()) as u64;
+        let block = create_block(offset3);
+        let block_sigs = create_block_sigs();
+        segment.write_block(&block, &block_sigs).unwrap();
+        {
+            let (read_block, read_block_sigs) = segment.get_block(offset3).unwrap();
+            let (read_block, read_block_sigs) =
+                (read_block.get().unwrap(), read_block_sigs.get().unwrap());
+            assert_eq!(read_block.get_offset(), offset3);
+        }
+
+        assert!(segment.get_block(10).is_err());
+        assert!(segment.get_block(offset3 + 10).is_err());
+    }
+
+    fn create_block(offset: u64) -> FramedOwnedTypedMessage<block::Owned> {
+        let mut block_msg_builder = serialize::TypedMessageBuilder::<block::Owned>::new();
+        {
+            let mut block_builder = block_msg_builder.init_root();
+            block_builder.set_hash("block_hash");
+            block_builder.set_offset(offset);
+        }
+        block_msg_builder.into_framed().unwrap()
+    }
+
+    fn create_block_sigs() -> FramedOwnedTypedMessage<block_signatures::Owned> {
+        let mut block_msg_builder =
+            serialize::TypedMessageBuilder::<block_signatures::Owned>::new();
+        {
+            let mut block_builder = block_msg_builder.init_root();
+        }
+        block_msg_builder.into_framed().unwrap()
     }
 }

@@ -13,7 +13,6 @@ const BLOCK_SIGNATURE_MSG_TYPE: u16 = 3;
 type BlockOffset = u64;
 type BlockSize = u32;
 type EntryOffset = u64;
-type SegmentID = BlockOffset;
 type SegmentSize = u64;
 
 impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block::Owned {

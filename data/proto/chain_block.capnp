@@ -13,8 +13,7 @@ struct BlockEntry {
 }
 
 struct BlockSignatures {
-  offset @0: UInt64;
-  signatures @1: List(BlockSignature);
+  signatures @0: List(BlockSignature);
 }
 
 struct BlockSignature {
