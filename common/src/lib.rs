@@ -10,5 +10,6 @@ extern crate tempdir;
 
 pub mod cell;
 pub mod node;
+pub mod range;
 pub mod security;
 pub mod simple_store;

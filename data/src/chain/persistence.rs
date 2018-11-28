@@ -100,7 +100,12 @@ impl DirectoryPersistence {
 
             let segment = DirectorySegment::open(config, &path.path())?;
 
-            info!("Path entry: {:?} first_offset={} last_offset={}", path.file_name(), segment.first_block_offset, segment.last_block_offset);
+            info!(
+                "Path entry: {:?} first_offset={} last_offset={}",
+                path.file_name(),
+                segment.first_block_offset,
+                segment.last_block_offset
+            );
         }
 
         // TODO: List segments
@@ -161,6 +166,7 @@ impl DirectoryPersistence {
     }
 
     fn get_block(&self, offset: BlockOffset) {
+        // TODO: Should return block + sig
         unimplemented!()
     }
 
@@ -489,22 +495,24 @@ mod tests {
 
     #[test]
     fn test_directory_persistence_create_and_open() {
-        use utils;
-        utils::setup_logging();
-
         let dir = tempdir::TempDir::new("test").unwrap();
         let config: DirectoryPersistenceConfig = Default::default();
 
         {
-            let mut directory_persistence = DirectoryPersistence::create(config, dir.path()).unwrap();
+            let mut directory_persistence =
+                DirectoryPersistence::create(config, dir.path()).unwrap();
 
             let block_msg = create_block(0);
             let sig_msg = create_block_sigs();
-            let next_offset = directory_persistence.write_block(&block_msg, &sig_msg).unwrap();
+            let next_offset = directory_persistence
+                .write_block(&block_msg, &sig_msg)
+                .unwrap();
 
             let block_msg = create_block(next_offset);
             let sig_msg = create_block_sigs();
-            directory_persistence.write_block(&block_msg, &sig_msg).unwrap();
+            directory_persistence
+                .write_block(&block_msg, &sig_msg)
+                .unwrap();
         }
 
         {
@@ -514,7 +522,6 @@ mod tests {
 
         {
             let mut directory_persistence = DirectoryPersistence::open(config, dir.path()).unwrap();
-
         }
     }
 
@@ -543,8 +550,11 @@ mod tests {
         }
 
         {
-            let segment =
-                DirectorySegment::open_with_first_offset(Default::default(), dir.path(), segment_id).unwrap();
+            let segment = DirectorySegment::open_with_first_offset(
+                Default::default(),
+                dir.path(),
+                segment_id,
+            ).unwrap();
             assert_eq!(segment.first_block_offset, 1234);
             assert_eq!(segment.last_block_offset, 1234);
             assert_eq!(
@@ -691,7 +701,8 @@ mod tests {
         }
 
         {
-            let segment = DirectorySegment::open_with_first_offset(config, dir.path(), segment_id).unwrap();
+            let segment =
+                DirectorySegment::open_with_first_offset(config, dir.path(), segment_id).unwrap();
             assert!(segment.get_block(0).is_err());
             assert!(segment.get_block(1234).is_ok());
 
