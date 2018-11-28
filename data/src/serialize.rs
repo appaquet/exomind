@@ -576,11 +576,6 @@ impl OwnedFramedMessageWriter {
 
         let data_size = message_size + FRAMING_HEADER_SIZE + FRAMING_FOOTER_SIZE;
         let buf_size = self.buffer.len();
-        info!(
-            "size={} data_size={} buf_size={} buffer={:?}",
-            message_size, data_size, buf_size, self.buffer
-        );
-
         Ok((self.buffer, message_size, data_size))
     }
 
@@ -617,8 +612,11 @@ fn write_framed_builder_into_buffer<A: capnp::message::Allocator>(
 }
 
 fn read_framed_message_meta(buffer: &[u8]) -> Result<(u16, usize, usize), Error> {
-    let msg_type = unpack_u16(&buffer[0..FRAMING_TYPE_SIZE]);
+    if buffer.len() < FRAMING_HEADER_SIZE + FRAMING_FOOTER_SIZE {
+        return Err(Error::EOF);
+    }
 
+    let msg_type = unpack_u16(&buffer[0..FRAMING_TYPE_SIZE]);
     let msg_size_begin =
         unpack_u32(&buffer[FRAMING_TYPE_SIZE..(FRAMING_TYPE_SIZE + FRAMING_DATA_SIZE)]) as usize;
     let data_size = msg_size_begin + FRAMING_HEADER_SIZE + FRAMING_FOOTER_SIZE;
