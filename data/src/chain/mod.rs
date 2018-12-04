@@ -38,16 +38,31 @@ impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block_signature::
     }
 }
 
-pub struct Chain<P: Persistence> {
+pub struct Chain<P>
+where
+    P: for<'pers> Persistence<'pers>,
+{
     persistence: P,
     next_block_offset: BlockOffset,
     // TODO: Link to segments
 }
 
-impl<P: Persistence> Chain<P> {
+impl<P> Chain<P>
+where
+    P: for<'pers> Persistence<'pers>,
+{
     pub fn new(persistence: P) -> Chain<P> {
         // TODO: Load segments
         // TODO: Get next block offset
+
+        //        // TODO: List segments
+        //        // TODO: Check continuity of segments. If we are missing offsets, we should unfreeze? should it be up higher ?
+        //        let segments_range:Vec<range::Range<BlockOffset>> = segments
+        //            .iter()
+        //            .map(|segment| segment.offset_range())
+        //            .collect();
+        //        let continuous = range::are_continuous(segments_range.iter());
+        //
 
         Chain {
             persistence,

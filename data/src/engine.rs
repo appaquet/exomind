@@ -8,7 +8,10 @@ use tokio;
 
 use std::time::Instant;
 
-pub struct Engine<T: transport::Transport, P: chain::Persistence> {
+pub struct Engine<T: transport::Transport, P>
+where
+    P: for<'pers> chain::Persistence<'pers>,
+{
     runtime: tokio::runtime::Runtime, // TODO: Should it have its own Runtime? Or just just be a future itself
     transport: T,
     nodes: Vec<exocore_common::node::Node>,
@@ -16,7 +19,10 @@ pub struct Engine<T: transport::Transport, P: chain::Persistence> {
     pending: pending::PendingsStore,
 }
 
-impl<T: transport::Transport, P: chain::Persistence> Engine<T, P> {
+impl<T: transport::Transport, P> Engine<T, P>
+where
+    P: for<'pers> chain::Persistence<'pers>,
+{
     pub fn new() -> Engine<T, P> {
         // TODO: Exec Transport on runtime
         unimplemented!()

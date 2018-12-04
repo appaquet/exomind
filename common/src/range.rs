@@ -2,12 +2,12 @@ use std;
 use std::cmp::Ordering;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Range<T: Ord + Copy> {
-    from: T,
-    to: T,
+pub struct Range<T: Ord + Copy + Eq> {
+    pub from: T,
+    pub to: T,
 }
 
-impl<T: Ord + Copy> Range<T> {
+impl<T: Ord + Copy + Eq> Range<T> {
     pub fn new(from: T, to: T) -> Range<T> {
         Range { from, to }
     }
@@ -47,7 +47,7 @@ impl<T: Ord + Copy> Range<T> {
     }
 }
 
-impl<T: Ord + Copy> PartialOrd for Range<T> {
+impl<T: Ord + Copy + Eq> PartialOrd for Range<T> {
     fn partial_cmp(&self, other: &Range<T>) -> Option<Ordering> {
         if self.from == other.from && self.to == other.to {
             Some(Ordering::Equal)
@@ -73,18 +73,30 @@ impl<T: Ord + Copy + Eq> Ord for Range<T> {
     }
 }
 
-pub fn are_continuous<I, T: Ord + Copy + Eq>(iter: &I) -> bool
+pub fn are_continuous<'a, I, T: Ord + Copy + Eq + 'a>(iter: I) -> bool
 where
-    I: Iterator<Item = T>,
+    I: Iterator<Item = &'a Range<T>>,
 {
     get_gaps(iter).is_empty()
 }
 
-pub fn get_gaps<I, T: Ord + Copy + Eq>(iter: &I) -> Vec<Range<T>>
-    where
-        I: Iterator<Item = T>,
+pub fn get_gaps<'a, I, T: Ord + Copy + Eq + 'a>(iter: I) -> Vec<Range<T>>
+where
+    I: Iterator<Item = &'a Range<T>>,
 {
-    unimplemented!()
+    let mut sorted: Vec<&Range<T>> = iter.collect();
+    sorted.sort();
+
+    let mut gaps = Vec::new();
+    for i in 1..sorted.len() {
+        let left = sorted[i - 1];
+        let right = sorted[i];
+        if left.to != right.from {
+            gaps.push(Range::new(left.to, right.from));
+        }
+    }
+
+    gaps
 }
 
 #[cfg(test)]
@@ -147,6 +159,17 @@ mod test {
 
     #[test]
     fn test_find_gaps() {
-        // TODO:
+        let a = Range::new(10, 20);
+        let b = Range::new(30, 40);
+        let c = Range::new(40, 50);
+        let d = Range::new(80, 100);
+
+        let ranges = vec![b, a, d, c];
+        let gaps = get_gaps(ranges.iter());
+        assert_eq!(gaps, vec![Range::new(20, 30), Range::new(50, 80)]);
+        assert!(!are_continuous(ranges.iter()));
+
+        let ranges = vec![b, c];
+        assert!(are_continuous(ranges.iter()));
     }
 }

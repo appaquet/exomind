@@ -1,10 +1,13 @@
 use std;
+use std::cmp::Ordering;
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 
 use chain_block_capnp::{block, block_signatures};
 use serialize;
 use serialize::{FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType};
+
+use exocore_common::range;
 
 use super::*;
 
@@ -17,7 +20,42 @@ use super::*;
 
 // TODO: Segments hash & sign hashes using in-memory key ==> Makes sure that nobody changed the file while we were offline
 
-pub trait Persistence {}
+pub trait Persistence<'pers> {
+    type BlockIter: Iterator<Item = IteratedBlock<'pers>>;
+
+    fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
+    where
+        B: serialize::FramedTypedMessage<block::Owned>,
+        S: serialize::FramedTypedMessage<block_signatures::Owned>;
+
+    fn available_segments(&self) -> Vec<range::Range<BlockOffset>>;
+
+    fn block_iterator(&'pers self, from_offset: BlockOffset) -> Self::BlockIter;
+
+    fn get_block(&self, offset: BlockOffset);
+
+    fn truncate_from_offset(&mut self, block_offset: BlockOffset);
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Error {
+    UnexpectedState,
+    Serialization(serialize::Error),
+    Integrity,
+    SegmentFull,
+    NotFound,
+    EOF,
+    IO,
+}
+
+pub struct IteratedBlock<'a> {
+    block: serialize::FramedSliceTypedMessage<'a, block::Owned>,
+    signature: serialize::FramedSliceTypedMessage<'a, block_signatures::Owned>,
+}
+
+///
+/// Directory persistence
+///
 
 #[derive(Copy, Clone, Debug)]
 struct DirectoryPersistenceConfig {
@@ -39,7 +77,7 @@ impl Default for DirectoryPersistenceConfig {
 struct DirectoryPersistence {
     config: DirectoryPersistenceConfig,
     directory: PathBuf,
-    current_segments: Vec<DirectorySegment>,
+    segments: Vec<DirectorySegment>,
 }
 
 impl DirectoryPersistence {
@@ -71,7 +109,7 @@ impl DirectoryPersistence {
         Ok(DirectoryPersistence {
             config,
             directory: directory_path.to_path_buf(),
-            current_segments: Vec::new(),
+            segments: Vec::new(),
         })
     }
 
@@ -87,7 +125,7 @@ impl DirectoryPersistence {
             return Err(Error::UnexpectedState);
         }
 
-        let mut current_segments = Vec::new();
+        let mut segments = Vec::new();
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
             error!("Error listing directory {:?}", directory_path);
             Error::IO
@@ -99,24 +137,36 @@ impl DirectoryPersistence {
             })?;
 
             let segment = DirectorySegment::open(config, &path.path())?;
-
-            info!(
-                "Path entry: {:?} first_offset={} last_offset={}",
-                path.file_name(),
-                segment.first_block_offset,
-                segment.last_block_offset
-            );
+            segments.push(segment);
         }
-
-        // TODO: List segments
-        // TODO: Check continuity of segments. If we are missing offsets, we should unfreeze? should it be up higher ?
+        segments.sort_by(|a, b| a.first_block_offset.cmp(&b.first_block_offset));
 
         Ok(DirectoryPersistence {
             config,
             directory: directory_path.to_path_buf(),
-            current_segments,
+            segments,
         })
     }
+
+    fn get_segment_for_block_offset(&self, block_offset: BlockOffset) -> Option<&DirectorySegment> {
+        let segment_position = self
+            .segments
+            .binary_search_by(|seg| {
+                if block_offset >= seg.first_block_offset && block_offset < seg.next_block_offset {
+                    Ordering::Equal
+                } else if block_offset < seg.first_block_offset {
+                    Ordering::Greater
+                } else {
+                    Ordering::Less
+                }
+            }).ok()?;
+
+        self.segments.get(segment_position)
+    }
+}
+
+impl<'pers> Persistence<'pers> for DirectoryPersistence {
+    type BlockIter = DirectoryBlockIterator<'pers>;
 
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
@@ -134,7 +184,7 @@ impl DirectoryPersistence {
 
         let (block_segment, written_in_segment) = {
             let need_new_segment = {
-                let last_segment = self.current_segments.last();
+                let last_segment = self.segments.last();
                 last_segment.is_none()
                     || last_segment.as_ref().unwrap().next_file_offset
                         > self.config.segment_max_size as usize
@@ -147,10 +197,10 @@ impl DirectoryPersistence {
                     block,
                     block_signatures,
                 )?;
-                self.current_segments.push(segment);
+                self.segments.push(segment);
             }
 
-            (self.current_segments.last_mut().unwrap(), need_new_segment)
+            (self.segments.last_mut().unwrap(), need_new_segment)
         };
 
         // when creating new segment, blocks get written right away
@@ -161,8 +211,20 @@ impl DirectoryPersistence {
         Ok(block_segment.next_block_offset)
     }
 
-    fn block_iterator(&self) {
-        unimplemented!()
+    fn available_segments(&self) -> Vec<range::Range<BlockOffset>> {
+        self.segments
+            .iter()
+            .map(|segment| segment.offset_range())
+            .collect()
+    }
+
+    fn block_iterator(&'pers self, from_offset: BlockOffset) -> DirectoryBlockIterator<'pers> {
+        DirectoryBlockIterator {
+            directory: self,
+            current_offset: from_offset,
+            current_segment: None,
+            last_error: None,
+        }
     }
 
     fn get_block(&self, offset: BlockOffset) {
@@ -177,8 +239,51 @@ impl DirectoryPersistence {
     }
 }
 
-impl Persistence for DirectoryPersistence {
-    // TODO:
+struct DirectoryBlockIterator<'pers> {
+    directory: &'pers DirectoryPersistence,
+    current_offset: BlockOffset,
+    current_segment: Option<&'pers DirectorySegment>,
+    last_error: Option<Error>,
+}
+
+impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
+    type Item = IteratedBlock<'pers>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_segment.is_none() {
+            self.current_segment = self
+                .directory
+                .get_segment_for_block_offset(self.current_offset);
+        }
+
+        let (item, data_size, end_of_segment) = match self.current_segment {
+            Some(segment) => {
+                let (block, signature) = segment
+                    .get_block(self.current_offset)
+                    .map_err(|err| {
+                        error!("Got an error getting block in iterator: {:?}", err);
+                        self.last_error = Some(err);
+                    }).ok()?;
+
+                let data_size = block.data_size() + signature.data_size();
+                let end_of_segment =
+                    (self.current_offset + data_size as BlockOffset) >= segment.next_block_offset;
+
+                let item = IteratedBlock { block, signature };
+                (item, data_size, end_of_segment)
+            }
+            None => {
+                return None;
+            }
+        };
+
+        if end_of_segment {
+            self.current_segment = None;
+        }
+
+        self.current_offset += data_size as BlockOffset;
+        Some(item)
+    }
 }
 
 struct DirectorySegment {
@@ -258,6 +363,8 @@ impl DirectorySegment {
         config: DirectoryPersistenceConfig,
         segment_path: &Path,
     ) -> Result<DirectorySegment, Error> {
+        info!("Opening segment at {:?}", segment_path);
+
         let segment_file = SegmentFile::open(&segment_path, 0)?;
 
         // read first block to validate it has the same offset as segment
@@ -319,6 +426,10 @@ impl DirectorySegment {
 
     fn segment_path(directory: &Path, first_offset: BlockOffset) -> PathBuf {
         directory.join(format!("seg_{}", first_offset))
+    }
+
+    fn offset_range(&self) -> range::Range<BlockOffset> {
+        range::Range::new(self.first_block_offset, self.next_block_offset)
     }
 
     fn ensure_file_size(&mut self, write_size: usize) -> Result<(), Error> {
@@ -470,17 +581,6 @@ impl SegmentFile {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-enum Error {
-    UnexpectedState,
-    Serialization(serialize::Error),
-    Integrity,
-    SegmentFull,
-    NotFound,
-    EOF,
-    IO,
-}
-
 impl From<serialize::Error> for Error {
     fn from(err: serialize::Error) -> Self {
         Error::Serialization(err)
@@ -498,7 +598,7 @@ mod tests {
         let dir = tempdir::TempDir::new("test").unwrap();
         let config: DirectoryPersistenceConfig = Default::default();
 
-        {
+        let init_segments = {
             let mut directory_persistence =
                 DirectoryPersistence::create(config, dir.path()).unwrap();
 
@@ -513,7 +613,12 @@ mod tests {
             directory_persistence
                 .write_block(&block_msg, &sig_msg)
                 .unwrap();
-        }
+
+            let segments = directory_persistence.available_segments();
+            let data_size = ((block_msg.data_size() + sig_msg.data_size()) * 2) as BlockOffset;
+            assert_eq!(segments, vec![range::Range::new(0, data_size)]);
+            segments
+        };
 
         {
             // already exists
@@ -522,6 +627,56 @@ mod tests {
 
         {
             let mut directory_persistence = DirectoryPersistence::open(config, dir.path()).unwrap();
+            assert_eq!(directory_persistence.available_segments(), init_segments);
+        }
+    }
+
+    #[test]
+    fn test_directory_persistence_write_until_second_segment() {
+        let dir = tempdir::TempDir::new("test").unwrap();
+        let mut config: DirectoryPersistenceConfig = Default::default();
+        config.segment_max_size = 100_000;
+
+        let init_segments = {
+            let mut directory_persistence =
+                DirectoryPersistence::create(config, dir.path()).unwrap();
+
+            let mut next_offset = 0;
+            for i in 0..1000 {
+                let block_msg = create_block(next_offset);
+                let sig_msg = create_block_sigs();
+                next_offset = directory_persistence
+                    .write_block(&block_msg, &sig_msg)
+                    .unwrap();
+            }
+
+            let segments = directory_persistence.available_segments();
+            assert_eq!(segments.len(), 2);
+
+            {
+                let segment = directory_persistence
+                    .get_segment_for_block_offset(0)
+                    .unwrap();
+                assert_eq!(segment.first_block_offset, 0);
+
+                let segment = directory_persistence
+                    .get_segment_for_block_offset(segments[0].to)
+                    .unwrap();
+                assert_eq!(segment.first_block_offset, segments[0].to);
+            }
+
+            let mut iterator = directory_persistence.block_iterator(0);
+            assert_eq!(iterator.count(), 1000);
+
+            segments
+        };
+
+        {
+            let mut directory_persistence = DirectoryPersistence::open(config, dir.path()).unwrap();
+            assert_eq!(directory_persistence.available_segments(), init_segments);
+
+            let mut iterator = directory_persistence.block_iterator(0);
+            assert_eq!(iterator.count(), 1000);
         }
     }
 
