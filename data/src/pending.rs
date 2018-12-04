@@ -11,7 +11,7 @@ pub struct PendingsStore {
 }
 
 impl PendingsStore {
-    pub fn new() -> PendingsStore {
+    pub fn new(_bla: usize) -> PendingsStore {
         // TODO: Path of wal
         unimplemented!()
     }

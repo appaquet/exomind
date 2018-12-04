@@ -1,7 +1,5 @@
 const MAX_SIGNATURE_SIZE: usize = 1024;
 
-use super::keys;
-
 pub struct Message {}
 
 pub struct Signature {

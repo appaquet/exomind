@@ -23,7 +23,7 @@ impl<T: transport::Transport, P> Engine<T, P>
 where
     P: for<'pers> chain::Persistence<'pers>,
 {
-    pub fn new() -> Engine<T, P> {
+    pub fn new(_bla: usize) -> Engine<T, P> {
         // TODO: Exec Transport on runtime
         unimplemented!()
     }

@@ -94,7 +94,7 @@ impl DirectoryPersistence {
         }
 
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
-            error!("Error listing directory {:?}", directory_path);
+            error!("Error listing directory {:?}: {:?}", directory_path, err);
             Error::IO
         })?;
 
@@ -127,7 +127,7 @@ impl DirectoryPersistence {
 
         let mut segments = Vec::new();
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
-            error!("Error listing directory {:?}", directory_path);
+            error!("Error listing directory {:?}: {:?}", directory_path, err);
             Error::IO
         })?;
         for path in paths {
@@ -173,15 +173,6 @@ impl<'pers> Persistence<'pers> for DirectoryPersistence {
         B: serialize::FramedTypedMessage<block::Owned>,
         S: serialize::FramedTypedMessage<block_signatures::Owned>,
     {
-        let (block_offset, total_size) = {
-            let block_msg = block.get()?;
-            let block_signatures_msg = block_signatures.get()?;
-            (
-                block_msg.get_offset(),
-                block.data_size() + block_signatures.data_size(),
-            )
-        };
-
         let (block_segment, written_in_segment) = {
             let need_new_segment = {
                 let last_segment = self.segments.last();

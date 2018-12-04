@@ -469,6 +469,15 @@ where
     }
 }
 
+impl<T> Default for TypedMessageBuilder<T>
+where
+    T: for<'a> MessageType<'a>,
+{
+    fn default() -> Self {
+        TypedMessageBuilder::new()
+    }
+}
+
 pub struct FramedMessageWriter<'a> {
     message_type: u16,
     buffer: &'a mut [u8],

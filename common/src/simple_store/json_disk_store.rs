@@ -1,5 +1,5 @@
 use std;
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
@@ -50,7 +50,7 @@ impl<T: Serialize + DeserializeOwned> SimpleStore<T> for JsonDiskStore<T> {
 
     fn write(&self, value: &T) -> Result<()> {
         let tmp_file = self.path.with_extension("tmp");
-        let mut file = OpenOptions::new()
+        let file = OpenOptions::new()
             .read(false)
             .write(true)
             .create(true)
