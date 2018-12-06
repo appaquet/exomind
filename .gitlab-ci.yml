@@ -1,5 +1,9 @@
 image: "rust:latest"
 
+before_script:
+  - git submodule sync --recursive
+  - git submodule update --init --recursive
+
 test:cargo:
   script:
   - apt update && apt install -y capnproto
