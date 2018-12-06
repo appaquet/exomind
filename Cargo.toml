@@ -9,6 +9,8 @@ exocore-server = { path = "./server" }
 exocore-index = { path = "./index" }
 exocore-data = { path = "./data" }
 exocore-common = { path = "./common" }
+extsort = { path = "./3rd/extsort" }
+
 
 [workspace]
 members = [

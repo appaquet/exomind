@@ -201,6 +201,7 @@ dependencies = [
  "exocore-data 0.1.0",
  "exocore-index 0.1.0",
  "exocore-server 0.1.0",
+ "extsort 0.1.2",
 ]
 
 [[package]]
@@ -252,6 +253,14 @@ dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "log4rs 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "extsort"
+version = "0.1.2"
+dependencies = [
+ "byteorder 1.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tempdir 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

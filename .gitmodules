@@ -1,0 +1,3 @@
+[submodule "3rd/extsort"]
+	path = 3rd/extsort
+	url = git@github.com:appaquet/extsort-rs.git
