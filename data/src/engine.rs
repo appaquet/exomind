@@ -8,6 +8,9 @@ use tokio;
 
 use std::time::Instant;
 
+
+// TODO: Should have a "EngineState" so that we can easily test the states transition / actions
+
 pub struct Engine<T: transport::Transport, P>
 where
     P: chain::Persistence,
