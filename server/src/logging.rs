@@ -14,7 +14,8 @@ pub fn setup() {
             Root::builder()
                 .appender("default_output")
                 .build(LevelFilter::Info),
-        ).expect("Couldn't configure logger");
+        )
+        .expect("Couldn't configure logger");
 
     log4rs::init_config(config).expect("Couldn't initialize log4rs");
 }

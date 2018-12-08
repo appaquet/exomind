@@ -1,6 +1,7 @@
 @0xf51296176d1e327e;
 
 struct Block {
+  # TODO: Add previous block offset + hash
   offset @0: UInt64;
   hash @1: Text;
   entries @2: List(BlockEntry);

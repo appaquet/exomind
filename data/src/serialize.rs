@@ -20,7 +20,7 @@ const FRAMING_TYPE_SIZE: usize = 2;
 const FRAMING_HEADER_SIZE: usize = FRAMING_TYPE_SIZE + FRAMING_DATA_SIZE;
 const FRAMING_FOOTER_SIZE: usize = FRAMING_DATA_SIZE;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Error {
     InvalidData,
     InvalidSize,
@@ -173,7 +173,8 @@ impl<'a> FramedSliceMessage<'a> {
             self.message_size,
             self.data_size,
             &self.data,
-        ).unwrap()
+        )
+        .unwrap()
     }
 
     pub fn into_typed<T>(self) -> FramedSliceTypedMessage<'a, T>
@@ -763,7 +764,8 @@ pub mod tests {
             &mut data[2 * write_data_size..],
             789,
             &message_builder,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(FramedSliceMessage::new_from_next_offset(&data[0..], 0).is_err());
         assert!(FramedSliceMessage::new_from_next_offset(&data[0..], 100).is_err());

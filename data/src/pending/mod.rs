@@ -1,9 +1,11 @@
 // TODO: WAL stored on disk, rotated
 // TODO: Or in memory, with spilling to disk?
 
+use std::path::PathBuf;
+
 use exocore_common::security::signature::Signature;
 
-use std::path::PathBuf;
+mod persistence;
 
 pub struct PendingsStore {
     directory: PathBuf,

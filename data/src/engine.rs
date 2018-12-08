@@ -10,7 +10,7 @@ use std::time::Instant;
 
 pub struct Engine<T: transport::Transport, P>
 where
-    P: for<'pers> chain::Persistence<'pers>,
+    P: chain::Persistence,
 {
     runtime: tokio::runtime::Runtime, // TODO: Should it have its own Runtime? Or just just be a future itself
     transport: T,
@@ -21,7 +21,7 @@ where
 
 impl<T: transport::Transport, P> Engine<T, P>
 where
-    P: for<'pers> chain::Persistence<'pers>,
+    P: chain::Persistence,
 {
     pub fn new(_bla: usize) -> Engine<T, P> {
         // TODO: Exec Transport on runtime
@@ -65,10 +65,10 @@ enum EntryStatus {
 
 struct EntryCondition {
     //time_condition
-    //block_condition
-    //offset_condition
+//block_condition
+//offset_condition
 
-    // TODO: only if it's meant to be in block X at offset Y
+// TODO: only if it's meant to be in block X at offset Y
 }
 
 struct SyncRequest {

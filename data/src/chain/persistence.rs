@@ -4,10 +4,9 @@ use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 
 use chain_block_capnp::{block, block_signatures};
+use exocore_common::range;
 use serialize;
 use serialize::{FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType};
-
-use exocore_common::range;
 
 use super::*;
 
@@ -20,9 +19,7 @@ use super::*;
 
 // TODO: Segments hash & sign hashes using in-memory key ==> Makes sure that nobody changed the file while we were offline
 
-pub trait Persistence<'pers> {
-    type BlockIter: Iterator<Item = IteratedBlock<'pers>>;
-
+pub trait Persistence {
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
         B: serialize::FramedTypedMessage<block::Owned>,
@@ -30,14 +27,14 @@ pub trait Persistence<'pers> {
 
     fn available_segments(&self) -> Vec<range::Range<BlockOffset>>;
 
-    fn block_iterator(&'pers self, from_offset: BlockOffset) -> Self::BlockIter;
+    fn block_iter(&self, from_offset: BlockOffset) -> BlockIterator;
 
-    fn get_block(&self, offset: BlockOffset);
+    fn get_block(&self, offset: BlockOffset) -> Result<BlockData, Error>;
 
     fn truncate_from_offset(&mut self, block_offset: BlockOffset);
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Error {
     UnexpectedState,
     Serialization(serialize::Error),
@@ -46,11 +43,6 @@ pub enum Error {
     NotFound,
     EOF,
     IO,
-}
-
-pub struct IteratedBlock<'a> {
-    block: serialize::FramedSliceTypedMessage<'a, block::Owned>,
-    signature: serialize::FramedSliceTypedMessage<'a, block_signatures::Owned>,
 }
 
 ///
@@ -159,15 +151,14 @@ impl DirectoryPersistence {
                 } else {
                     Ordering::Less
                 }
-            }).ok()?;
+            })
+            .ok()?;
 
         self.segments.get(segment_position)
     }
 }
 
-impl<'pers> Persistence<'pers> for DirectoryPersistence {
-    type BlockIter = DirectoryBlockIterator<'pers>;
-
+impl Persistence for DirectoryPersistence {
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
         B: serialize::FramedTypedMessage<block::Owned>,
@@ -209,16 +200,16 @@ impl<'pers> Persistence<'pers> for DirectoryPersistence {
             .collect()
     }
 
-    fn block_iterator(&'pers self, from_offset: BlockOffset) -> DirectoryBlockIterator<'pers> {
-        DirectoryBlockIterator {
+    fn block_iter(&self, from_offset: BlockOffset) -> BlockIterator {
+        Box::new(DirectoryBlockIterator {
             directory: self,
             current_offset: from_offset,
             current_segment: None,
             last_error: None,
-        }
+        })
     }
 
-    fn get_block(&self, offset: BlockOffset) {
+    fn get_block(&self, offset: BlockOffset) -> Result<BlockData, Error> {
         // TODO: Should return block + sig
         unimplemented!()
     }
@@ -238,7 +229,7 @@ struct DirectoryBlockIterator<'pers> {
 }
 
 impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
-    type Item = IteratedBlock<'pers>;
+    type Item = BlockData<'pers>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_segment.is_none() {
@@ -254,13 +245,17 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
                     .map_err(|err| {
                         error!("Got an error getting block in iterator: {:?}", err);
                         self.last_error = Some(err);
-                    }).ok()?;
+                    })
+                    .ok()?;
 
                 let data_size = block.data_size() + signature.data_size();
                 let end_of_segment =
                     (self.current_offset + data_size as BlockOffset) >= segment.next_block_offset;
 
-                let item = IteratedBlock { block, signature };
+                let item = BlockData {
+                    block,
+                    signatures: signature,
+                };
                 (item, data_size, end_of_segment)
             }
             None => {
@@ -580,9 +575,11 @@ impl From<serialize::Error> for Error {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use serialize::{FramedOwnedTypedMessage, FramedTypedMessage};
     use tempdir;
+
+    use serialize::{FramedOwnedTypedMessage, FramedTypedMessage};
+
+    use super::*;
 
     #[test]
     fn test_directory_persistence_create_and_open() {
@@ -656,7 +653,7 @@ mod tests {
                 assert_eq!(segment.first_block_offset, segments[0].to);
             }
 
-            let mut iterator = directory_persistence.block_iterator(0);
+            let mut iterator = directory_persistence.block_iter(0);
             assert_eq!(iterator.count(), 1000);
 
             segments
@@ -666,7 +663,7 @@ mod tests {
             let mut directory_persistence = DirectoryPersistence::open(config, dir.path()).unwrap();
             assert_eq!(directory_persistence.available_segments(), init_segments);
 
-            let mut iterator = directory_persistence.block_iterator(0);
+            let mut iterator = directory_persistence.block_iter(0);
             assert_eq!(iterator.count(), 1000);
         }
     }
@@ -700,7 +697,8 @@ mod tests {
                 Default::default(),
                 dir.path(),
                 segment_id,
-            ).unwrap();
+            )
+            .unwrap();
             assert_eq!(segment.first_block_offset, 1234);
             assert_eq!(segment.last_block_offset, 1234);
             assert_eq!(

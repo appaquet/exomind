@@ -1,9 +1,11 @@
-use exocore_common::security::hash::Hash;
-use exocore_common::security::signature::Signature;
-use std::sync::Arc;
+use chain_block_capnp::{block, block_signatures};
+use exocore_common::range;
+use serialize;
+use serialize::FramedTypedMessage;
+
+pub use self::persistence::Persistence;
 
 pub mod persistence;
-pub use self::persistence::Persistence;
 
 const BLOCK_MSG_TYPE: u16 = 0;
 const BLOCK_ENTRY_MSG_TYPE: u16 = 1;
@@ -12,7 +14,122 @@ const BLOCK_SIGNATURE_MSG_TYPE: u16 = 3;
 
 type BlockOffset = u64;
 type BlockSize = u32;
-type EntryOffset = u64;
+
+pub struct Chain<P>
+where
+    P: Persistence,
+{
+    persistence: P,
+    last_block_offset: BlockOffset,
+    next_block_offset: BlockOffset,
+    // TODO: Link to segments
+}
+
+impl<P> Chain<P>
+where
+    P: Persistence,
+{
+    pub fn new(persistence: P) -> Chain<P> {
+        // TODO: Load segments
+        // TODO: Get next block offset
+
+        //        // TODO: List segments
+        //        // TODO: Check continuity of segments. If we are missing offsets, we should unfreeze? should it be up higher ?
+        //        let segments_range:Vec<range::Range<BlockOffset>> = segments
+        //            .iter()
+        //            .map(|segment| segment.offset_range())
+        //            .collect();
+        //        let continuous = range::are_continuous(segments_range.iter());
+        //
+
+        let available_segments = persistence.available_segments();
+        let segments_gaps = range::get_gaps(available_segments.iter());
+        if !segments_gaps.is_empty() {
+            warn!("The chain contains gaps at: {:?}", segments_gaps);
+        }
+
+        Chain {
+            persistence,
+            last_block_offset: 0,
+            next_block_offset: 0,
+        }
+    }
+
+    pub fn write_block<B, S>(&mut self, block: B, signatures: S) -> Result<(), Error>
+    where
+        B: serialize::FramedTypedMessage<block::Owned>,
+        S: serialize::FramedTypedMessage<block_signatures::Owned>,
+    {
+        unimplemented!()
+    }
+
+    pub fn blocks_iter(&self, from_offset: Option<BlockOffset>) -> BlockIterator {
+        self.persistence.block_iter(from_offset.unwrap_or(0))
+    }
+
+    pub fn blocks_iter_reverse(&self, from_offset: Option<BlockOffset>) -> BlockIterator {
+        unimplemented!()
+    }
+
+    pub fn get_block(&self, offset: BlockOffset) -> Result<BlockData, Error> {
+        // TODO: Find segment in which it is
+        // TODO: Find block
+        let block = self.persistence.get_block(offset)?;
+
+        unimplemented!()
+    }
+
+    pub fn get_last_block(&self) -> Result<(), Error> {
+        // TODO: Get next offset
+        // TODO: Get last block's hash
+
+        unimplemented!()
+    }
+
+    pub fn verify(&mut self) -> Result<(), Error> {
+        unimplemented!()
+    }
+}
+
+pub struct BlockData<'a> {
+    block: serialize::FramedSliceTypedMessage<'a, block::Owned>,
+    signatures: serialize::FramedSliceTypedMessage<'a, block_signatures::Owned>,
+}
+
+impl<'a> BlockData<'a> {
+    pub fn total_size(&self) -> usize {
+        self.block.data_size() + self.signatures.data_size()
+    }
+
+    pub fn next_offset(&self) -> BlockOffset {
+        let block_reader = self.block.get().unwrap();
+        let offset = block_reader.get_offset();
+        offset + (self.block.data_size() + self.signatures.data_size()) as BlockOffset
+    }
+}
+
+type BlockIterator<'pers> = Box<dyn Iterator<Item = BlockData<'pers>> + 'pers>;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Error {
+    Persistence(persistence::Error),
+}
+
+impl From<persistence::Error> for Error {
+    fn from(err: persistence::Error) -> Self {
+        Error::Persistence(err)
+    }
+}
+
+pub enum EntryType {
+    Data,
+    Truncate,
+    Duplicate,
+}
+
+pub struct EntryData {
+    data: Vec<u8>,
+}
 
 impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block::Owned {
     fn message_type() -> u16 {
@@ -36,146 +153,4 @@ impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block_signature::
     fn message_type() -> u16 {
         4
     }
-}
-
-pub struct Chain<P>
-where
-    P: for<'pers> Persistence<'pers>,
-{
-    persistence: P,
-    next_block_offset: BlockOffset,
-    // TODO: Link to segments
-}
-
-impl<P> Chain<P>
-where
-    P: for<'pers> Persistence<'pers>,
-{
-    pub fn new(persistence: P) -> Chain<P> {
-        // TODO: Load segments
-        // TODO: Get next block offset
-
-        //        // TODO: List segments
-        //        // TODO: Check continuity of segments. If we are missing offsets, we should unfreeze? should it be up higher ?
-        //        let segments_range:Vec<range::Range<BlockOffset>> = segments
-        //            .iter()
-        //            .map(|segment| segment.offset_range())
-        //            .collect();
-        //        let continuous = range::are_continuous(segments_range.iter());
-        //
-
-        Chain {
-            persistence,
-            next_block_offset: 0,
-        }
-    }
-
-    pub fn write_block_try(&mut self, entries: &[NewEntry]) -> Result<NewBlockAttempt, Error> {
-        // TODO: Get latest offset
-        // TODO: Serialize to get size + next offset
-        // TODO: Hash
-        unimplemented!()
-    }
-
-    pub fn write_block_commit(&mut self, entry: &NewBlockAttempt) -> Result<(), Error> {
-        // TODO: Make sure we didn't have any other entry meanwhile...
-        unimplemented!()
-    }
-
-    pub fn segments(&self) {}
-
-    pub fn blocks_iter(
-        &self,
-        from_offset: Option<BlockOffset>,
-        to_offset: Option<BlockOffset>,
-    ) -> &dyn Iterator<Item = Block> {
-        unimplemented!()
-    }
-
-    pub fn get_block(&self, offset: BlockOffset) -> &Block {
-        // TODO: Find segment in which it is
-        // TODO: Find block
-        unimplemented!()
-    }
-
-    pub fn block_entries_iter(
-        &self,
-        block: &Block,
-        with_data: bool,
-    ) -> &dyn Iterator<Item = Entry> {
-        unimplemented!()
-    }
-
-    pub fn entry(&self, entry: EntryOffset, with_data: bool) -> Entry {
-        unimplemented!()
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Error {
-    ConcurrentWrite,
-    Persistence,
-}
-
-pub struct Segment {
-    offset: BlockOffset,
-    previous_block: Option<BlockOffset>,
-    to_offset: BlockOffset,
-    frozen: bool,
-}
-
-pub struct Block {
-    offset: BlockOffset,
-    size: BlockSize,
-    previous_block_offset: BlockOffset, // TODO: Conveniance?
-    hash: Hash,
-    signatures: Vec<Signature>,
-    // TODO: Link to entries (with_data=bool)
-}
-
-impl Block {
-    pub fn get_estimated_size() -> usize {
-        // TODO: Required since we have to pre-allocate mmap
-        0
-    }
-}
-
-pub struct NewBlockAttempt {
-    // TODO: Entry that hasn't been written yet
-}
-
-pub struct NewBlock {
-    entries: Vec<NewEntry>,
-    signatures: Vec<Signature>,
-}
-
-pub struct Entry {
-    offset: EntryOffset,
-    entry_type: EntryType,
-    data: Option<Arc<EntryData>>,
-}
-
-pub struct NewEntry {
-    entry_type: EntryType,
-    data: EntryData,
-    // TODO: How do we handle hash?
-}
-
-pub enum EntryType {
-    OpNewSegment,
-    OpCopy,
-    OpTruncate, // All nodes agrees to start chain from new section
-    Data,
-}
-
-// TODO: Should aim for zero-copy
-// TODO: Not yet loaded from disk ???
-pub struct EntryData {
-    data: Vec<u8>,
-}
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn test_chain() {}
 }

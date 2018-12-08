@@ -1,9 +1,9 @@
+extern crate byteorder;
+extern crate capnp;
 extern crate exocore_common;
 extern crate futures;
 #[macro_use]
 extern crate log;
-extern crate byteorder;
-extern crate capnp;
 extern crate memmap;
 #[cfg(test)]
 extern crate stderrlog;
