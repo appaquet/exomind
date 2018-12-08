@@ -2,6 +2,7 @@
 name = "exocore-data"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 exocore-common = { path = "../common" }

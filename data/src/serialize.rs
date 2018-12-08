@@ -211,7 +211,7 @@ impl<'a> FramedMessage<SliceSegments<'a>> for FramedSliceMessage<'a> {
 
     fn get_root<'b, T: FromPointerReader<'b>>(&'b self) -> Result<T, Error> {
         let reader = self.get_reader();
-        reader.get_root().map_err(|err| Error::InvalidData)
+        reader.get_root().map_err(|_err| Error::InvalidData)
     }
 }
 
@@ -287,7 +287,7 @@ where
 
     fn get(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error> {
         let reader = self.message.get_reader();
-        reader.get_root().map_err(|err| {
+        reader.get_root().map_err(|_err| {
             error!("Couldn't get root from owned reader");
             Error::InvalidData
         })
@@ -382,7 +382,7 @@ impl FramedMessage<OwnedSegments> for FramedOwnedMessage {
 
     fn get_root<'b, T: FromPointerReader<'b>>(&'b self) -> Result<T, Error> {
         let reader = self.get_reader();
-        reader.get_root().map_err(|err| Error::InvalidData)
+        reader.get_root().map_err(|_err| Error::InvalidData)
     }
 }
 
@@ -416,7 +416,7 @@ where
 
     fn get(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error> {
         let reader = self.message.get_reader();
-        reader.get_root().map_err(|err| {
+        reader.get_root().map_err(|_err| {
             error!("Couldn't get root from owned reader");
             Error::InvalidData
         })
@@ -451,14 +451,14 @@ where
     }
 
     pub fn get_root_builder(&mut self) -> Result<<T as capnp::traits::Owned>::Builder, Error> {
-        self.builder.get_root().map_err(|err| {
+        self.builder.get_root().map_err(|_err| {
             error!("Couldn't get root builder from framed message builder. init_root() wasn't called first?");
             Error::InvalidData
         })
     }
 
     pub fn get_root_reader(&mut self) -> Result<<T as capnp::traits::Owned>::Builder, Error> {
-        self.builder.get_root().map_err(|err| {
+        self.builder.get_root().map_err(|_err| {
             error!("Couldn't get root builder from framed message builder. init_root() wasn't called first?");
             Error::InvalidData
         })
@@ -585,12 +585,12 @@ impl OwnedFramedMessageWriter {
         );
 
         let data_size = message_size + FRAMING_HEADER_SIZE + FRAMING_FOOTER_SIZE;
-        let buf_size = self.buffer.len();
+        let _buf_size = self.buffer.len();
         Ok((self.buffer, message_size, data_size))
     }
 
     fn push_empty_bytes(buffer: &mut Vec<u8>, count: usize) {
-        for i in 0..count {
+        for _i in 0..count {
             buffer.push(0);
         }
     }
@@ -683,7 +683,7 @@ fn unpack_u16(from: &[u8]) -> u16 {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use chain_block_capnp::block;
+    use crate::chain_block_capnp::block;
     use std;
     use tempdir;
 
@@ -753,14 +753,14 @@ pub mod tests {
 
         let mut message_builder = capnp::message::Builder::new_default();
         build_test_block(&mut message_builder);
-        let (write_msg_size, write_data_size) =
+        let (_write_msg_size, write_data_size) =
             write_framed_builder_into_buffer(&mut data, 123, &message_builder).unwrap();
 
-        let (write_msg_size, write_data_size) =
+        let (_write_msg_size, write_data_size) =
             write_framed_builder_into_buffer(&mut data[write_data_size..], 456, &message_builder)
                 .unwrap();
 
-        let (write_msg_size, write_data_size) = write_framed_builder_into_buffer(
+        let (_write_msg_size, write_data_size) = write_framed_builder_into_buffer(
             &mut data[2 * write_data_size..],
             789,
             &message_builder,
@@ -796,10 +796,10 @@ pub mod tests {
 
         let begin = std::time::Instant::now();
         let mut next_offset = 0;
-        for i in 0..nb_blocks {
+        for _i in 0..nb_blocks {
             let mut message_builder = capnp::message::Builder::new_default();
             build_test_block(&mut message_builder);
-            let (written_size, data_size) =
+            let (_written_size, data_size) =
                 write_framed_builder_into_buffer(&mut mmap[next_offset..], 123, &message_builder)
                     .unwrap();
             next_offset += data_size;
@@ -808,7 +808,7 @@ pub mod tests {
 
         let begin = std::time::Instant::now();
         let mut next_offset = 0;
-        for i in 0..nb_blocks {
+        for _i in 0..nb_blocks {
             let framed_message = FramedSliceMessage::new(&mmap[next_offset..]).unwrap();
             let block_reader = framed_message.reader.get_root::<block::Reader>().unwrap();
             let _ = block_reader.get_hash();
@@ -832,7 +832,7 @@ pub mod tests {
         let (_tempdir, _file, mut mmap) = create_test_file(1024 * 1024 * 1024);
 
         let mut next_offset = 0;
-        for i in 0..1000 {
+        for _i in 0..1000 {
             let mut message_builder = capnp::message::Builder::new_default();
             build_test_block(&mut message_builder);
             let (_msg_size, data_size) =

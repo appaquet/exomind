@@ -12,7 +12,7 @@ extern crate tempdir;
 extern crate tokio;
 extern crate tokio_io;
 
-pub use engine::Engine;
+pub use crate::engine::Engine;
 
 pub mod chain;
 pub mod engine;

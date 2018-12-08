@@ -3,10 +3,10 @@ use std::cmp::Ordering;
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 
-use chain_block_capnp::{block, block_signatures};
+use crate::chain_block_capnp::{block, block_signatures};
+use crate::serialize;
+use crate::serialize::{FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType};
 use exocore_common::range;
-use serialize;
-use serialize::{FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType};
 
 use super::*;
 
@@ -209,12 +209,12 @@ impl Persistence for DirectoryPersistence {
         })
     }
 
-    fn get_block(&self, offset: BlockOffset) -> Result<BlockData, Error> {
+    fn get_block(&self, _offset: BlockOffset) -> Result<BlockData, Error> {
         // TODO: Should return block + sig
         unimplemented!()
     }
 
-    fn truncate_from_offset(&mut self, block_offset: BlockOffset) {
+    fn truncate_from_offset(&mut self, _block_offset: BlockOffset) {
         // TODO: Find the segment corresponding to block offset (first that is >=)
         // TODO: Any segments after should be deleted
         unimplemented!()
@@ -577,7 +577,7 @@ impl From<serialize::Error> for Error {
 mod tests {
     use tempdir;
 
-    use serialize::{FramedOwnedTypedMessage, FramedTypedMessage};
+    use crate::serialize::{FramedOwnedTypedMessage, FramedTypedMessage};
 
     use super::*;
 
@@ -614,7 +614,7 @@ mod tests {
         }
 
         {
-            let mut directory_persistence = DirectoryPersistence::open(config, dir.path()).unwrap();
+            let directory_persistence = DirectoryPersistence::open(config, dir.path()).unwrap();
             assert_eq!(directory_persistence.available_segments(), init_segments);
         }
     }
@@ -630,7 +630,7 @@ mod tests {
                 DirectoryPersistence::create(config, dir.path()).unwrap();
 
             let mut next_offset = 0;
-            for i in 0..1000 {
+            for _i in 0..1000 {
                 let block_msg = create_block(next_offset);
                 let sig_msg = create_block_sigs();
                 next_offset = directory_persistence
@@ -660,10 +660,10 @@ mod tests {
         };
 
         {
-            let mut directory_persistence = DirectoryPersistence::open(config, dir.path()).unwrap();
+            let directory_persistence = DirectoryPersistence::open(config, dir.path()).unwrap();
             assert_eq!(directory_persistence.available_segments(), init_segments);
 
-            let mut iterator = directory_persistence.block_iter(0);
+            let iterator = directory_persistence.block_iter(0);
             assert_eq!(iterator.count(), 1000);
         }
     }
@@ -719,7 +719,7 @@ mod tests {
         {
             let block_msg = create_block(1234);
             let sig_msg = create_block_sigs();
-            let segment =
+            let _segment =
                 DirectorySegment::create(Default::default(), dir.path(), &block_msg, &sig_msg)
                     .unwrap();
         }
@@ -745,7 +745,7 @@ mod tests {
             DirectorySegment::create(Default::default(), dir.path(), &block, &block_sigs).unwrap();
         {
             let (read_block, read_block_sigs) = segment.get_block(offset1).unwrap();
-            let (read_block, read_block_sigs) =
+            let (read_block, _read_block_sigs) =
                 (read_block.get().unwrap(), read_block_sigs.get().unwrap());
             assert_eq!(read_block.get_offset(), offset1);
         }
@@ -757,7 +757,7 @@ mod tests {
         segment.write_block(&block, &block_sigs).unwrap();
         {
             let (read_block, read_block_sigs) = segment.get_block(offset2).unwrap();
-            let (read_block, read_block_sigs) =
+            let (read_block, _read_block_sigs) =
                 (read_block.get().unwrap(), read_block_sigs.get().unwrap());
             assert_eq!(read_block.get_offset(), offset2);
         }
@@ -769,7 +769,7 @@ mod tests {
         segment.write_block(&block, &block_sigs).unwrap();
         {
             let (read_block, read_block_sigs) = segment.get_block(offset3).unwrap();
-            let (read_block, read_block_sigs) =
+            let (read_block, _read_block_sigs) =
                 (read_block.get().unwrap(), read_block_sigs.get().unwrap());
             assert_eq!(read_block.get_offset(), offset3);
         }
@@ -794,7 +794,7 @@ mod tests {
 
         let init_segment_size = segment.segment_file.current_size;
 
-        for i in 0..1000 {
+        for _i in 0..1000 {
             assert_eq!(next_offset, segment.next_block_offset);
 
             let block = create_block(next_offset);
@@ -803,7 +803,7 @@ mod tests {
 
             {
                 let (read_block, read_block_sigs) = segment.get_block(next_offset).unwrap();
-                let (read_block, read_block_sigs) =
+                let (read_block, _read_block_sigs) =
                     (read_block.get().unwrap(), read_block_sigs.get().unwrap());
                 assert_eq!(read_block.get_offset(), next_offset);
             }
@@ -837,7 +837,7 @@ mod tests {
             let mut segment =
                 DirectorySegment::create(config, dir.path(), &block_msg, &sig_msg).unwrap();
 
-            for i in 0..1000 {
+            for _i in 0..1000 {
                 let block = create_block(segment.next_block_offset);
                 let block_sigs = create_block_sigs();
                 segment.write_block(&block, &block_sigs).unwrap();
@@ -885,7 +885,7 @@ mod tests {
         let mut block_msg_builder =
             serialize::TypedMessageBuilder::<block_signatures::Owned>::new();
         {
-            let block_builder = block_msg_builder.init_root();
+            let _block_builder = block_msg_builder.init_root();
         }
         block_msg_builder.into_framed().unwrap()
     }

@@ -2,6 +2,7 @@
 name = "exocore-common"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+edition = "2018"
 
 [features]
 default = ["hash_compute"]

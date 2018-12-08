@@ -1,13 +1,12 @@
-use chain;
-use pending;
-use transport;
+use crate::chain;
+use crate::pending;
+use crate::transport;
 
 use exocore_common;
 
 use tokio;
 
 use std::time::Instant;
-
 
 // TODO: Should have a "EngineState" so that we can easily test the states transition / actions
 
@@ -31,7 +30,7 @@ where
         unimplemented!()
     }
 
-    fn get_events_stream(from_time: Instant) {
+    fn get_events_stream(_from_time: Instant) {
         // -> futures::Stream<Item = Event, Error = EventError> {
         unimplemented!()
     }

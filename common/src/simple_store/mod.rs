@@ -11,7 +11,9 @@ pub trait SimpleStore<T: Serialize + DeserializeOwned> {
     fn write(&self, value: &T) -> Result<()>;
 }
 
-pub fn get_disk_store<T: Serialize + DeserializeOwned>(path: &Path) -> Result<Box<SimpleStore<T>>> {
+pub fn get_disk_store<T: Serialize + DeserializeOwned>(
+    _path: &Path,
+) -> Result<Box<SimpleStore<T>>> {
     // TODO: If WASM, then get data from somewhere
     unimplemented!()
 }

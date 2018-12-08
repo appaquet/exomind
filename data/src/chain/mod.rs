@@ -1,7 +1,7 @@
-use chain_block_capnp::{block, block_signatures};
+use crate::chain_block_capnp::{block, block_signatures};
+use crate::serialize;
+use crate::serialize::FramedTypedMessage;
 use exocore_common::range;
-use serialize;
-use serialize::FramedTypedMessage;
 
 pub use self::persistence::Persistence;
 
@@ -55,7 +55,7 @@ where
         }
     }
 
-    pub fn write_block<B, S>(&mut self, block: B, signatures: S) -> Result<(), Error>
+    pub fn write_block<B, S>(&mut self, _block: &B, _signatures: &S) -> Result<(), Error>
     where
         B: serialize::FramedTypedMessage<block::Owned>,
         S: serialize::FramedTypedMessage<block_signatures::Owned>,
@@ -67,14 +67,14 @@ where
         self.persistence.block_iter(from_offset.unwrap_or(0))
     }
 
-    pub fn blocks_iter_reverse(&self, from_offset: Option<BlockOffset>) -> BlockIterator {
+    pub fn blocks_iter_reverse(&self, _from_offset: Option<BlockOffset>) -> BlockIterator {
         unimplemented!()
     }
 
     pub fn get_block(&self, offset: BlockOffset) -> Result<BlockData, Error> {
         // TODO: Find segment in which it is
         // TODO: Find block
-        let block = self.persistence.get_block(offset)?;
+        let _block = self.persistence.get_block(offset)?;
 
         unimplemented!()
     }
@@ -131,25 +131,25 @@ pub struct EntryData {
     data: Vec<u8>,
 }
 
-impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block::Owned {
+impl<'a> crate::serialize::MessageType<'a> for crate::chain_block_capnp::block::Owned {
     fn message_type() -> u16 {
         1
     }
 }
 
-impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block_entry::Owned {
+impl<'a> crate::serialize::MessageType<'a> for crate::chain_block_capnp::block_entry::Owned {
     fn message_type() -> u16 {
         2
     }
 }
 
-impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block_signatures::Owned {
+impl<'a> crate::serialize::MessageType<'a> for crate::chain_block_capnp::block_signatures::Owned {
     fn message_type() -> u16 {
         3
     }
 }
 
-impl<'a> ::serialize::MessageType<'a> for ::chain_block_capnp::block_signature::Owned {
+impl<'a> crate::serialize::MessageType<'a> for crate::chain_block_capnp::block_signature::Owned {
     fn message_type() -> u16 {
         4
     }

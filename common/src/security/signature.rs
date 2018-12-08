@@ -7,7 +7,7 @@ pub struct Signature {
 }
 
 impl Signature {
-    fn validate(&self, message: &Message) -> bool {
+    fn validate(&self, _message: &Message) -> bool {
         unimplemented!()
     }
 }
