@@ -33,15 +33,6 @@ where
         // TODO: Load segments
         // TODO: Get next block offset
 
-        //        // TODO: List segments
-        //        // TODO: Check continuity of segments. If we are missing offsets, we should unfreeze? should it be up higher ?
-        //        let segments_range:Vec<range::Range<BlockOffset>> = segments
-        //            .iter()
-        //            .map(|segment| segment.offset_range())
-        //            .collect();
-        //        let continuous = range::are_continuous(segments_range.iter());
-        //
-
         let available_segments = persistence.available_segments();
         let segments_gaps = range::get_gaps(available_segments.iter());
         if !segments_gaps.is_empty() {
@@ -63,15 +54,16 @@ where
         unimplemented!()
     }
 
-    pub fn blocks_iter(&self, from_offset: Option<BlockOffset>) -> BlockIterator {
-        self.persistence.block_iter(from_offset.unwrap_or(0))
-    }
-
-    pub fn blocks_iter_reverse(&self, _from_offset: Option<BlockOffset>) -> BlockIterator {
+    pub fn blocks_iter(&self, from_offset: Option<BlockOffset>) -> StoredBlockIterator {
+        //        self.persistence.block_iter(from_offset.unwrap_or(0))
         unimplemented!()
     }
 
-    pub fn get_block(&self, offset: BlockOffset) -> Result<BlockData, Error> {
+    pub fn blocks_iter_reverse(&self, _from_offset: Option<BlockOffset>) -> StoredBlockIterator {
+        unimplemented!()
+    }
+
+    pub fn get_block(&self, offset: BlockOffset) -> Result<StoredBlock, Error> {
         // TODO: Find segment in which it is
         // TODO: Find block
         let _block = self.persistence.get_block(offset)?;
@@ -91,12 +83,12 @@ where
     }
 }
 
-pub struct BlockData<'a> {
+pub struct StoredBlock<'a> {
     block: serialize::FramedSliceTypedMessage<'a, block::Owned>,
     signatures: serialize::FramedSliceTypedMessage<'a, block_signatures::Owned>,
 }
 
-impl<'a> BlockData<'a> {
+impl<'a> StoredBlock<'a> {
     pub fn total_size(&self) -> usize {
         self.block.data_size() + self.signatures.data_size()
     }
@@ -108,7 +100,7 @@ impl<'a> BlockData<'a> {
     }
 }
 
-type BlockIterator<'pers> = Box<dyn Iterator<Item = BlockData<'pers>> + 'pers>;
+type StoredBlockIterator<'pers> = Box<dyn Iterator<Item = StoredBlock<'pers>> + 'pers>;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
