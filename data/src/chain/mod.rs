@@ -89,14 +89,22 @@ pub struct StoredBlock<'a> {
 }
 
 impl<'a> StoredBlock<'a> {
+    #[inline]
     pub fn total_size(&self) -> usize {
         self.block.data_size() + self.signatures.data_size()
     }
 
-    pub fn next_offset(&self) -> BlockOffset {
-        let block_reader = self.block.get().unwrap();
+    #[inline]
+    pub fn get_offset(&self) -> Result<BlockOffset, serialize::Error> {
+        let block_reader = self.block.get()?;
+        Ok(block_reader.get_offset())
+    }
+
+    #[inline]
+    pub fn next_offset(&self) -> Result<BlockOffset, serialize::Error> {
+        let block_reader = self.block.get()?;
         let offset = block_reader.get_offset();
-        offset + (self.block.data_size() + self.signatures.data_size()) as BlockOffset
+        Ok(offset + (self.block.data_size() + self.signatures.data_size()) as BlockOffset)
     }
 }
 
