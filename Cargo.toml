@@ -10,6 +10,7 @@ exocore-index = { path = "./index" }
 exocore-data = { path = "./data" }
 exocore-common = { path = "./common" }
 extsort = { path = "./3rd/extsort" }
+extindex = { path = "./3rd/extindex" }
 
 
 [workspace]
@@ -18,4 +19,9 @@ members = [
   "index",
   "data",
   "common",
+  "3rd/extsort"
 ]
+
+[patch.crates-io]
+extsort = { path = "./3rd/extsort" }
+extindex = { path = "./3rd/extindex" }

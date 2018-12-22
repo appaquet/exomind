@@ -10,9 +10,6 @@ use exocore_common::range;
 
 use super::*;
 
-// TODO TONIGHT
-//   * Get block from next offset
-
 // TODO: Opening segments could be faster to open by passing last known offset
 // TODO: Caching of segments metadata
 // TODO: Segments hash & sign hashes using in-memory key ==> Makes sure that nobody changed the file while we were offline
@@ -453,7 +450,7 @@ impl DirectorySegment {
             first_block.get_offset()
         };
 
-        // iterate through the segment and find the last block and its offset
+        // iterate through segments and find the last block and its offset
         let (last_block_offset, next_block_offset, next_file_offset) = {
             let mut last_block_file_offset = None;
             let block_iter = FramedMessageIterator::new(&segment_file.mmap)
@@ -834,16 +831,16 @@ mod tests {
     #[test]
     fn test_directory_persistence_truncate() {
         let mut config: DirectoryPersistenceConfig = Default::default();
-        config.segment_max_size = 3000;
+        config.segment_max_size = 1000;
 
         // we cutoff the directory at different position to make sure of its integrity
-        for cutoff in 1..100 {
+        for cutoff in 1..50 {
             let dir = tempdir::TempDir::new("test").unwrap();
 
             let (segments_before, block_n_offset, block_n_plus_offset) = {
                 let mut directory_persistence =
                     DirectoryPersistence::create(config, dir.path()).unwrap();
-                append_blocks_to_directory(&mut directory_persistence, 100, 0);
+                append_blocks_to_directory(&mut directory_persistence, 50, 0);
                 let segments_before = directory_persistence.available_segments();
 
                 let block_n = directory_persistence
