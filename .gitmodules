@@ -3,4 +3,4 @@
 	url = https://github.com/appaquet/extsort-rs.git
 [submodule "3rd/extindex"]
 	path = 3rd/extindex
-	url = git@github.com:appaquet/extindex-rs.GIT
+	url = https://github.com/appaquet/extindex-rs.GIT
