@@ -1,7 +1,8 @@
+use exocore_common::range;
+
 use crate::chain_block_capnp::{block, block_signatures};
 use crate::serialize;
 use crate::serialize::FramedTypedMessage;
-use exocore_common::range;
 
 pub use self::persistence::Persistence;
 
@@ -22,7 +23,6 @@ where
     persistence: P,
     last_block_offset: BlockOffset,
     next_block_offset: BlockOffset,
-    // TODO: Link to segments
 }
 
 impl<P> Chain<P>
@@ -42,7 +42,7 @@ where
         Chain {
             persistence,
             last_block_offset: 0,
-            next_block_offset: 0,
+            next_block_offset: 0, // TODO: !
         }
     }
 

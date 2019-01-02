@@ -6,16 +6,20 @@ use exocore_data;
         https://doc.rust-lang.org/std/macro.thread_local.html
 */
 
-struct Store<T: exocore_data::transport::Transport, P>
+struct Store<T, CP, PP>
 where
-    P: exocore_data::chain::Persistence,
+    T: exocore_data::transport::Transport,
+    CP: exocore_data::chain::Persistence,
+    PP: exocore_data::pending::Persistence,
 {
-    data_engine: exocore_data::Engine<T, P>,
+    data_engine: exocore_data::Engine<T, CP, PP>,
 }
 
-impl<T: exocore_data::transport::Transport, P> Store<T, P>
+impl<T, CP, PP> Store<T, CP, PP>
 where
-    P: exocore_data::chain::Persistence,
+    T: exocore_data::transport::Transport,
+    CP: exocore_data::chain::Persistence,
+    PP: exocore_data::pending::Persistence,
 {
     pub fn new() {}
 }

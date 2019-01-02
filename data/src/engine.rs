@@ -10,22 +10,26 @@ use std::time::Instant;
 
 // TODO: Should have a "EngineState" so that we can easily test the states transition / actions
 
-pub struct Engine<T: transport::Transport, P>
+pub struct Engine<T, CP, PP>
 where
-    P: chain::Persistence,
+    T: transport::Transport,
+    CP: chain::Persistence,
+    PP: pending::Persistence,
 {
     runtime: tokio::runtime::Runtime, // TODO: Should it have its own Runtime? Or just just be a future itself
     transport: T,
     nodes: Vec<exocore_common::node::Node>,
-    chain: chain::Chain<P>,
-    pending: pending::PendingsStore,
+    chain: chain::Chain<CP>,
+    pending: pending::PendingStore<PP>,
 }
 
-impl<T: transport::Transport, P> Engine<T, P>
+impl<T, CP, PP> Engine<T, CP, PP>
 where
-    P: chain::Persistence,
+    T: transport::Transport,
+    CP: chain::Persistence,
+    PP: pending::Persistence,
 {
-    pub fn new(_bla: usize) -> Engine<T, P> {
+    pub fn new(_bla: usize) -> Engine<T, CP, PP> {
         // TODO: Exec Transport on runtime
         unimplemented!()
     }
@@ -35,7 +39,9 @@ where
         unimplemented!()
     }
 
-    fn write_entry() {}
+    fn write_entry() {
+        // TODO: Send to pending store
+    }
 
     // TODO: Sync at interval to check we didn't miss anything
     // TODO: Wait for messages from others

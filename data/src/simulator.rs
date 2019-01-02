@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod test {
+mod tests {
 
     // TODO: Only in tests
     // TODO: Keep state at every step + Log and be able to restart from any point
