@@ -1,17 +1,12 @@
 use exocore_common::range;
 
-use crate::chain_block_capnp::{block, block_signatures};
-use crate::serialize;
-use crate::serialize::FramedTypedMessage;
+use exocore_common::chain_block_capnp::{block, block_signatures};
+use exocore_common::serialization::msg;
+use exocore_common::serialization::msg::FramedTypedMessage;
 
 pub use self::persistence::Persistence;
 
 pub mod persistence;
-
-const BLOCK_MSG_TYPE: u16 = 0;
-const BLOCK_ENTRY_MSG_TYPE: u16 = 1;
-const BLOCK_SIGNATURES_MSG_TYPE: u16 = 2;
-const BLOCK_SIGNATURE_MSG_TYPE: u16 = 3;
 
 type BlockOffset = u64;
 type BlockSize = u32;
@@ -48,8 +43,8 @@ where
 
     pub fn write_block<B, S>(&mut self, _block: &B, _signatures: &S) -> Result<(), Error>
     where
-        B: serialize::FramedTypedMessage<block::Owned>,
-        S: serialize::FramedTypedMessage<block_signatures::Owned>,
+        B: msg::FramedTypedMessage<block::Owned>,
+        S: msg::FramedTypedMessage<block_signatures::Owned>,
     {
         unimplemented!()
     }
@@ -84,8 +79,8 @@ where
 }
 
 pub struct StoredBlock<'a> {
-    block: serialize::FramedSliceTypedMessage<'a, block::Owned>,
-    signatures: serialize::FramedSliceTypedMessage<'a, block_signatures::Owned>,
+    block: msg::FramedSliceTypedMessage<'a, block::Owned>,
+    signatures: msg::FramedSliceTypedMessage<'a, block_signatures::Owned>,
 }
 
 impl<'a> StoredBlock<'a> {
@@ -95,13 +90,13 @@ impl<'a> StoredBlock<'a> {
     }
 
     #[inline]
-    pub fn get_offset(&self) -> Result<BlockOffset, serialize::Error> {
+    pub fn get_offset(&self) -> Result<BlockOffset, msg::Error> {
         let block_reader = self.block.get()?;
         Ok(block_reader.get_offset())
     }
 
     #[inline]
-    pub fn next_offset(&self) -> Result<BlockOffset, serialize::Error> {
+    pub fn next_offset(&self) -> Result<BlockOffset, msg::Error> {
         let block_reader = self.block.get()?;
         let offset = block_reader.get_offset();
         Ok(offset + (self.block.data_size() + self.signatures.data_size()) as BlockOffset)
@@ -129,28 +124,4 @@ pub enum EntryType {
 
 pub struct EntryData {
     data: Vec<u8>,
-}
-
-impl<'a> crate::serialize::MessageType<'a> for crate::chain_block_capnp::block::Owned {
-    fn message_type() -> u16 {
-        1
-    }
-}
-
-impl<'a> crate::serialize::MessageType<'a> for crate::chain_block_capnp::block_entry::Owned {
-    fn message_type() -> u16 {
-        2
-    }
-}
-
-impl<'a> crate::serialize::MessageType<'a> for crate::chain_block_capnp::block_signatures::Owned {
-    fn message_type() -> u16 {
-        3
-    }
-}
-
-impl<'a> crate::serialize::MessageType<'a> for crate::chain_block_capnp::block_signature::Owned {
-    fn message_type() -> u16 {
-        4
-    }
 }

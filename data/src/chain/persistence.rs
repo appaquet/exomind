@@ -3,10 +3,12 @@ use std::cmp::Ordering;
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 
-use crate::chain_block_capnp::{block, block_signatures};
-use crate::serialize;
-use crate::serialize::{FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType};
+use exocore_common::chain_block_capnp::{block, block_signatures};
 use exocore_common::range;
+use exocore_common::serialization::msg;
+use exocore_common::serialization::msg::{
+    FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType,
+};
 
 use super::*;
 
@@ -17,8 +19,8 @@ use super::*;
 pub trait Persistence {
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
-        B: serialize::FramedTypedMessage<block::Owned>,
-        S: serialize::FramedTypedMessage<block_signatures::Owned>;
+        B: msg::FramedTypedMessage<block::Owned>,
+        S: msg::FramedTypedMessage<block_signatures::Owned>;
 
     fn available_segments(&self) -> Vec<range::Range<BlockOffset>>;
 
@@ -39,7 +41,7 @@ pub trait Persistence {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Error {
     UnexpectedState,
-    Serialization(serialize::Error),
+    Serialization(msg::Error),
     Integrity,
     SegmentFull,
     OutOfBound,
@@ -174,8 +176,8 @@ impl DirectoryPersistence {
 impl Persistence for DirectoryPersistence {
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
-        B: serialize::FramedTypedMessage<block::Owned>,
-        S: serialize::FramedTypedMessage<block_signatures::Owned>,
+        B: msg::FramedTypedMessage<block::Owned>,
+        S: msg::FramedTypedMessage<block_signatures::Owned>,
     {
         let (block_segment, written_in_segment) = {
             let need_new_segment = {
@@ -276,7 +278,7 @@ impl Persistence for DirectoryPersistence {
         };
 
         if truncate_to < self.segments.len() {
-            let mut removed_segments = self.segments.split_off(truncate_to);
+            let removed_segments = self.segments.split_off(truncate_to);
             for segment in removed_segments {
                 segment.delete()?;
             }
@@ -373,8 +375,8 @@ impl DirectorySegment {
         block_sigs: &S,
     ) -> Result<DirectorySegment, Error>
     where
-        B: serialize::FramedTypedMessage<block::Owned>,
-        S: serialize::FramedTypedMessage<block_signatures::Owned>,
+        B: msg::FramedTypedMessage<block::Owned>,
+        S: msg::FramedTypedMessage<block_signatures::Owned>,
     {
         let block_reader = block.get().unwrap();
         let first_block_offset = block_reader.get_offset();
@@ -439,7 +441,7 @@ impl DirectorySegment {
         // read first block to validate it has the same offset as segment
         let first_block_offset = {
             let framed_message =
-                serialize::FramedSliceMessage::new(&segment_file.mmap).map_err(|err| {
+                msg::FramedSliceMessage::new(&segment_file.mmap).map_err(|err| {
                     error!(
                         "Couldn't read first block from segment file {:?}: {:?}",
                         segment_path, err
@@ -462,11 +464,11 @@ impl DirectorySegment {
             match last_block_file_offset {
                 Some(file_offset) => {
                     let block_message =
-                        serialize::FramedSliceMessage::new(&segment_file.mmap[file_offset..])?;
+                        msg::FramedSliceMessage::new(&segment_file.mmap[file_offset..])?;
                     let block_reader = block_message.get_root::<block::Reader>()?;
                     let sigs_offset = file_offset + block_message.data_size();
                     let sigs_message =
-                        serialize::FramedSliceMessage::new(&segment_file.mmap[sigs_offset..])?;
+                        msg::FramedSliceMessage::new(&segment_file.mmap[sigs_offset..])?;
 
                     let written_data_size = block_message.data_size() + sigs_message.data_size();
                     (
@@ -519,8 +521,8 @@ impl DirectorySegment {
 
     fn write_block<B, S>(&mut self, block: &B, block_sigs: &S) -> Result<(), Error>
     where
-        B: serialize::FramedTypedMessage<block::Owned>,
-        S: serialize::FramedTypedMessage<block_signatures::Owned>,
+        B: msg::FramedTypedMessage<block::Owned>,
+        S: msg::FramedTypedMessage<block_signatures::Owned>,
     {
         let next_file_offset = self.next_file_offset;
         let next_block_offset = self.next_block_offset;
@@ -566,12 +568,11 @@ impl DirectorySegment {
 
         let block_file_offset = (offset - first_block_offset) as usize;
         let block =
-            serialize::FramedSliceTypedMessage::new(&self.segment_file.mmap[block_file_offset..])?;
+            msg::FramedSliceTypedMessage::new(&self.segment_file.mmap[block_file_offset..])?;
 
         let signatures_file_offset = block_file_offset + block.data_size();
-        let signatures = serialize::FramedSliceTypedMessage::new(
-            &self.segment_file.mmap[signatures_file_offset..],
-        )?;
+        let signatures =
+            msg::FramedSliceTypedMessage::new(&self.segment_file.mmap[signatures_file_offset..])?;
 
         Ok(StoredBlock { block, signatures })
     }
@@ -595,13 +596,13 @@ impl DirectorySegment {
         }
 
         let next_file_offset = (next_offset - first_block_offset) as usize;
-        let signatures = serialize::FramedSliceTypedMessage::new_from_next_offset(
+        let signatures = msg::FramedSliceTypedMessage::new_from_next_offset(
             &self.segment_file.mmap[0..],
             next_file_offset,
         )?;
         let signatures_offset = next_file_offset - signatures.data_size();
 
-        let block = serialize::FramedSliceTypedMessage::new_from_next_offset(
+        let block = msg::FramedSliceTypedMessage::new_from_next_offset(
             &self.segment_file.mmap[0..],
             signatures_offset,
         )?;
@@ -700,8 +701,8 @@ impl SegmentFile {
     }
 }
 
-impl From<serialize::Error> for Error {
-    fn from(err: serialize::Error) -> Self {
+impl From<msg::Error> for Error {
+    fn from(err: msg::Error) -> Self {
         Error::Serialization(err)
     }
 }
@@ -711,7 +712,7 @@ mod tests {
     use tempdir;
 
     use super::*;
-    use crate::serialize::{FramedOwnedTypedMessage, FramedTypedMessage};
+    use exocore_common::serialization::msg::{FramedOwnedTypedMessage, FramedTypedMessage};
 
     #[test]
     fn test_directory_persistence_create_and_open() {
@@ -1060,7 +1061,7 @@ mod tests {
                 .get_block_from_next_offset(segment.next_block_offset)
                 .is_ok());
 
-            let iter = serialize::FramedMessageIterator::new(&segment.segment_file.mmap[0..]);
+            let iter = msg::FramedMessageIterator::new(&segment.segment_file.mmap[0..]);
             assert_eq!(iter.count(), 2000); // blocks + sigs
         }
     }
@@ -1091,7 +1092,7 @@ mod tests {
         let truncated_segment_size = segment.segment_file.current_size;
         assert!(truncated_segment_size < 200_000);
 
-        let iter = serialize::FramedMessageIterator::new(&segment.segment_file.mmap[0..]);
+        let iter = msg::FramedMessageIterator::new(&segment.segment_file.mmap[0..]);
         assert_eq!(iter.count(), 2000); // blocks + sigs
     }
 
@@ -1112,7 +1113,7 @@ mod tests {
     }
 
     fn create_block(offset: u64) -> FramedOwnedTypedMessage<block::Owned> {
-        let mut block_msg_builder = serialize::TypedMessageBuilder::<block::Owned>::new();
+        let mut block_msg_builder = msg::TypedMessageBuilder::<block::Owned>::new();
         {
             let mut block_builder = block_msg_builder.init_root();
             block_builder.set_hash("block_hash");
@@ -1122,8 +1123,7 @@ mod tests {
     }
 
     fn create_block_sigs() -> FramedOwnedTypedMessage<block_signatures::Owned> {
-        let mut block_msg_builder =
-            serialize::TypedMessageBuilder::<block_signatures::Owned>::new();
+        let mut block_msg_builder = msg::TypedMessageBuilder::<block_signatures::Owned>::new();
         {
             let _block_builder = block_msg_builder.init_root();
         }

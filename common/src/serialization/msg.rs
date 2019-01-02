@@ -1,5 +1,3 @@
-use super::*;
-
 use std;
 
 use byteorder;
@@ -19,13 +17,6 @@ const FRAMING_DATA_SIZE: usize = 4;
 const FRAMING_TYPE_SIZE: usize = 2;
 const FRAMING_HEADER_SIZE: usize = FRAMING_TYPE_SIZE + FRAMING_DATA_SIZE;
 const FRAMING_FOOTER_SIZE: usize = FRAMING_DATA_SIZE;
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Error {
-    InvalidData,
-    InvalidSize,
-    EOF,
-}
 
 pub trait MessageType<'a>: capnp::traits::Owned<'a> {
     fn message_type() -> u16;
@@ -53,7 +44,7 @@ impl<'a> Iterator for FramedMessageIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let offset = self.current_offset;
         let slice = &self.buffer[offset..];
-        match serialize::FramedSliceMessage::new(slice) {
+        match FramedSliceMessage::new(slice) {
             Ok(framed_message) => {
                 self.current_offset += framed_message.data_size;
                 Some(IteratedFramedSliceMessage {
@@ -610,6 +601,14 @@ impl<'a> std::io::Write for OwnedFramedMessageWriter {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Error {
+    InvalidData,
+    InvalidSize,
+    EOF,
+}
+
+#[cfg(test)]
 fn write_framed_builder_into_buffer<A: capnp::message::Allocator>(
     buffer: &mut [u8],
     message_type: u16,
