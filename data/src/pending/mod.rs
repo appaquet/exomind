@@ -8,18 +8,18 @@ use exocore_common::security::signature::Signature;
 mod persistence;
 pub use self::persistence::Persistence;
 
-pub struct PendingStore<P: Persistence> {
+pub struct Store<P: Persistence> {
     persistence: P,
 }
 
-impl<P: Persistence> PendingStore<P> {
-    pub fn new(_bla: usize) -> PendingStore<P> {
+impl<P: Persistence> Store<P> {
+    pub fn new(_bla: usize) -> Store<P> {
         // TODO: Path of wal
         unimplemented!()
     }
 }
 
-struct PendingEntry {
+struct Entry {
     signatures: Vec<Signature>,
 }
 

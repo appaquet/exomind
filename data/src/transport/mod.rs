@@ -1,4 +1,5 @@
 use exocore_common::node::Node;
+use exocore_common::serialization::msg::FramedOwnedMessage;
 use tokio::prelude::*;
 
 pub struct TransportContext {
@@ -13,7 +14,9 @@ pub trait Transport:
 }
 
 pub struct OutMessage {
+    to: Vec<Node>,
     message_type: MessageType,
+    data: FramedOwnedMessage,
 }
 
 pub struct InMessage {

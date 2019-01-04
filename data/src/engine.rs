@@ -9,6 +9,8 @@ use tokio;
 use std::time::Instant;
 
 // TODO: Should have a "EngineState" so that we can easily test the states transition / actions
+// TODO: If node has access to data, it needs ot check its integrity by the upper layer
+// TODO: If not, a node needs to wait for a majority of nodes that has data
 
 pub struct Engine<T, CP, PP>
 where
@@ -20,7 +22,7 @@ where
     transport: T,
     nodes: Vec<exocore_common::node::Node>,
     chain: chain::Chain<CP>,
-    pending: pending::PendingStore<PP>,
+    pending: pending::Store<PP>,
 }
 
 impl<T, CP, PP> Engine<T, CP, PP>
@@ -29,7 +31,7 @@ where
     CP: chain::Persistence,
     PP: pending::Persistence,
 {
-    pub fn new(_bla: usize) -> Engine<T, CP, PP> {
+    pub fn new(transport: T, nodes: Vec<exocore_common::node::Node>) -> Engine<T, CP, PP> {
         // TODO: Exec Transport on runtime
         unimplemented!()
     }
@@ -47,10 +49,7 @@ where
     // TODO: Wait for messages from others
 }
 
-struct CommitController {
-    // TODO: If node has access to data, it needs ot check its integrity  by the upper layer
-// TODO: If not, a node needs to wait for a majority of nodes that has data
-}
+struct CommitController {}
 
 // TODO: Stream of events ?
 enum Event {
