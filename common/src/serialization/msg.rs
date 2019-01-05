@@ -7,6 +7,7 @@ pub use capnp::message::ReaderSegments;
 use capnp::message::{Allocator, Builder, HeapAllocator, Reader, ReaderOptions};
 use capnp::serialize::{OwnedSegments, SliceSegments};
 use capnp::traits::FromPointerReader;
+use owning_ref::OwningHandle;
 
 // TODO: Use ScratchSpace to reuse memory buffer for writes
 // TODO: usize is not compatible with 32bit
@@ -175,7 +176,7 @@ impl<'a> FramedSliceMessage<'a> {
     }
 
     pub fn to_owned(&self) -> FramedOwnedMessage {
-        FramedOwnedMessage::new(self.message_type, self.message_size, self.data.to_vec()).unwrap()
+        FramedOwnedMessage::new(self.data.to_vec()).unwrap()
     }
 
     pub fn into_typed<T>(self) -> FramedSliceTypedMessage<'a, T>
@@ -348,36 +349,26 @@ pub struct IteratedFramedSliceMessage<'a> {
 }
 
 /// A standalone framed message.
-/// Warning: The implementation is inefficient, so it should be avoided.
+///
+/// Uses a OwningHandle in order to prevent having data twice in memory and use a FramedSliceMessage
+/// that references data that is stored in struct itself.
+///
+/// See https://stackoverflow.com/questions/32300132/why-cant-i-store-a-value-and-a-reference-to-that-value-in-the-same-struct
+/// As noted here: https://github.com/Kimundi/owning-ref-rs/issues/27
+/// We should never expose the 'static lifetime through the API because it may lead into unsafe
+/// behaviour.
 pub struct FramedOwnedMessage {
-    message_type: u16,
-    message_size: usize,
-    data_size: usize,
-    data: Vec<u8>,
-    reader: Reader<OwnedSegments>,
+    owned_slice_message: OwningHandle<Vec<u8>, Box<FramedSliceMessage<'static>>>,
 }
 
 impl FramedOwnedMessage {
-    pub fn new(
-        message_type: u16,
-        message_size: usize,
-        data: Vec<u8>,
-    ) -> Result<FramedOwnedMessage, Error> {
-        // TODO: This is inefficient... We have twice the data in memory
-        let opts = ReaderOptions::new();
-        let reader = {
-            let from_offset = FRAMING_HEADER_SIZE;
-            let to_offset = data.len() - FRAMING_FOOTER_SIZE;
-            let mut cursor = std::io::Cursor::new(&data[from_offset..to_offset]);
-            capnp::serialize::read_message(&mut cursor, opts).unwrap()
-        };
+    pub fn new(data: Vec<u8>) -> Result<FramedOwnedMessage, Error> {
+        let owned_slice_message = OwningHandle::try_new(data, |data| unsafe {
+            FramedSliceMessage::new(data.as_ref().unwrap()).map(Box::new)
+        })?;
 
         Ok(FramedOwnedMessage {
-            message_type,
-            message_size,
-            data_size: data.len(),
-            data,
-            reader,
+            owned_slice_message,
         })
     }
 
@@ -390,7 +381,7 @@ impl FramedOwnedMessage {
         let (buffer, message_size, _data_size) = writer.finish();
 
         // TODO: not efficient... it re-reads
-        FramedOwnedMessage::new(message_type, message_size, buffer)
+        FramedOwnedMessage::new(buffer)
     }
 
     pub fn into_typed<T>(self) -> FramedOwnedTypedMessage<T>
@@ -406,26 +397,25 @@ impl FramedOwnedMessage {
 
 impl FramedMessage for FramedOwnedMessage {
     fn message_type(&self) -> u16 {
-        self.message_type
+        self.owned_slice_message.message_type
     }
 
     fn message_size(&self) -> usize {
-        self.message_size
+        self.owned_slice_message.message_size
     }
 
     fn data_size(&self) -> usize {
-        self.data_size
+        self.owned_slice_message.data_size
     }
 
     fn get_typed_reader<'b, T: MessageType<'b>>(
         &'b self,
     ) -> Result<<T as capnp::traits::Owned>::Reader, Error> {
-        let reader = &self.reader;
-        reader.get_root().map_err(|_err| Error::InvalidData)
+        self.owned_slice_message.get_typed_reader::<T>()
     }
 
     fn copy_into(&self, buf: &mut [u8]) {
-        buf[0..self.data.len()].copy_from_slice(&self.data);
+        self.owned_slice_message.copy_into(buf)
     }
 }
 
@@ -455,11 +445,7 @@ where
     }
 
     fn get_typed_reader(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error> {
-        let reader = &self.message.reader;
-        reader.get_root().map_err(|_err| {
-            error!("Couldn't get root from owned reader");
-            Error::InvalidData
-        })
+        self.message.get_typed_reader::<T>()
     }
 
     fn copy_into(&self, buf: &mut [u8]) {
@@ -632,10 +618,10 @@ fn read_framed_message_meta(buffer: &[u8]) -> Result<(u16, usize, usize), Error>
         let footer_offset = FRAMING_HEADER_SIZE + msg_size_begin;
         let msg_size_end =
             unpack_u32(&buffer[footer_offset..(footer_offset + FRAMING_DATA_SIZE)]) as usize;
-        if msg_size_begin == 0 {
-            Err(Error::EOF)
-        } else if msg_size_begin == msg_size_end && msg_size_begin != 0 {
+        if msg_size_begin != 0 && msg_size_begin == msg_size_end {
             Ok((msg_type, msg_size_begin, data_size))
+        } else if msg_size_begin == 0 {
+            Err(Error::EOF)
         } else {
             warn!(
                 "Invalid frame size information: begin {} != end {}",
