@@ -91,13 +91,13 @@ impl<'a> StoredBlock<'a> {
 
     #[inline]
     pub fn get_offset(&self) -> Result<BlockOffset, msg::Error> {
-        let block_reader = self.block.get()?;
+        let block_reader = self.block.get_typed_reader()?;
         Ok(block_reader.get_offset())
     }
 
     #[inline]
     pub fn next_offset(&self) -> Result<BlockOffset, msg::Error> {
-        let block_reader = self.block.get()?;
+        let block_reader = self.block.get_typed_reader()?;
         let offset = block_reader.get_offset();
         Ok(offset + (self.block.data_size() + self.signatures.data_size()) as BlockOffset)
     }

@@ -378,7 +378,7 @@ impl DirectorySegment {
         B: msg::FramedTypedMessage<block::Owned>,
         S: msg::FramedTypedMessage<block_signatures::Owned>,
     {
-        let block_reader = block.get().unwrap();
+        let block_reader = block.get_typed_reader().unwrap();
         let first_block_offset = block_reader.get_offset();
         let last_block_offset = first_block_offset;
 
@@ -448,7 +448,7 @@ impl DirectorySegment {
                     );
                     err
                 })?;
-            let first_block = framed_message.get_root::<block::Reader>()?;
+            let first_block = framed_message.get_typed_reader::<block::Owned>()?;
             first_block.get_offset()
         };
 
@@ -465,7 +465,7 @@ impl DirectorySegment {
                 Some(file_offset) => {
                     let block_message =
                         msg::FramedSliceMessage::new(&segment_file.mmap[file_offset..])?;
-                    let block_reader = block_message.get_root::<block::Reader>()?;
+                    let block_reader = block_message.get_typed_reader::<block::Owned>()?;
                     let sigs_offset = file_offset + block_message.data_size();
                     let sigs_message =
                         msg::FramedSliceMessage::new(&segment_file.mmap[sigs_offset..])?;
@@ -529,7 +529,7 @@ impl DirectorySegment {
         let block_size = block.data_size();
         let sigs_size = block_sigs.data_size();
 
-        let block_reader = block.get()?;
+        let block_reader = block.get_typed_reader()?;
         let block_offset = block_reader.get_offset();
         if next_block_offset != block_offset {
             error!("Trying to write a block at an offset that wasn't next offset: next_block_offset={} block_offset={}", next_block_offset, block_offset);
@@ -1113,21 +1113,18 @@ mod tests {
     }
 
     fn create_block(offset: u64) -> FramedOwnedTypedMessage<block::Owned> {
-        let mut block_msg_builder = msg::TypedMessageBuilder::<block::Owned>::new();
+        let mut block_msg_builder = msg::MessageBuilder::<block::Owned>::new();
         {
-            let mut block_builder = block_msg_builder.init_root();
+            let mut block_builder = block_msg_builder.get_builder_typed();
             block_builder.set_hash("block_hash");
             block_builder.set_offset(offset);
         }
-        block_msg_builder.into_framed().unwrap()
+        block_msg_builder.into_owned_framed().unwrap()
     }
 
     fn create_block_sigs() -> FramedOwnedTypedMessage<block_signatures::Owned> {
-        let mut block_msg_builder = msg::TypedMessageBuilder::<block_signatures::Owned>::new();
-        {
-            let _block_builder = block_msg_builder.init_root();
-        }
-        block_msg_builder.into_framed().unwrap()
+        let mut block_msg_builder = msg::MessageBuilder::<block_signatures::Owned>::new();
+        block_msg_builder.into_owned_framed().unwrap()
     }
 
     fn append_blocks_to_directory(
@@ -1159,7 +1156,7 @@ mod tests {
         for stored_block in iter {
             count += 1;
 
-            let block_reader = stored_block.block.get().unwrap();
+            let block_reader = stored_block.block.get_typed_reader().unwrap();
             let current_block_offset = block_reader.get_offset();
             if first_block_offset.is_none() {
                 first_block_offset = Some(current_block_offset);
