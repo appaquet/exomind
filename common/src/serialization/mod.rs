@@ -1,6 +1,7 @@
 use std::io::{Read, Result, Write};
 
 pub mod msg;
+pub mod protos;
 
 pub trait Serializable<T> {
     fn serialize(&self, writer: &Write) -> Result<usize>;

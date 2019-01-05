@@ -684,7 +684,7 @@ pub mod tests {
 
     use tempdir;
 
-    use crate::chain_block_capnp::block;
+    use crate::data_chain_capnp::block;
 
     use super::*;
 

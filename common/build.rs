@@ -1,9 +1,13 @@
 extern crate capnpc;
 
 fn main() {
-    ::capnpc::CompilerCommand::new()
-        .file("proto/chain_block.capnp")
-        .edition(capnpc::RustEdition::Rust2018)
-        .run()
-        .expect("compiling schema");
+    let protos_file = vec!["proto/data_chain.capnp", "proto/data_transport.capnp"];
+
+    for proto_file in protos_file {
+        ::capnpc::CompilerCommand::new()
+            .file(proto_file)
+            .edition(capnpc::RustEdition::Rust2018)
+            .run()
+            .expect(&format!("compiling {} schema", proto_file));
+    }
 }

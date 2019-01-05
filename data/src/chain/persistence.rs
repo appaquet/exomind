@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 
-use exocore_common::chain_block_capnp::{block, block_signatures};
+use exocore_common::data_chain_capnp::{block, block_signatures};
 use exocore_common::range;
 use exocore_common::serialization::msg;
 use exocore_common::serialization::msg::{

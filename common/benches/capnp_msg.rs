@@ -5,7 +5,7 @@ use test::Bencher;
 
 use tempdir;
 
-use exocore_common::chain_block_capnp::block;
+use exocore_common::data_chain_capnp::block;
 use exocore_common::serialization::msg::{FramedMessage, FramedSliceMessage, MessageBuilder};
 
 #[bench]
