@@ -9,7 +9,10 @@ pub struct TransportContext {
 
 // TODO: A-la-tokio Framed
 pub trait Transport:
-    Stream<Item = MessageType, Error = Error> + Sink<SinkItem = MessageType, SinkError = Error>
+    Stream<Item = MessageType, Error = Error>
+    + Sink<SinkItem = MessageType, SinkError = Error>
+    + Send
+    + 'static
 {
     fn send_message(node: &Node, message: MessageType);
 }
@@ -27,12 +30,15 @@ pub struct InMessage {
 }
 
 pub enum MessageType {
-    PendingSyncEntries,
-    ChainSyncMeta, // from, to
-    ChainSyncData, // from, to
+    PendingSyncEntries, // from, to
+    ChainSyncMeta,      // from, to
+    ChainSyncData,      // from, to
 }
 
-pub enum Error {}
+#[derive(Debug)]
+pub enum Error {
+    Unknown,
+}
 
 #[cfg(test)]
 mod test {

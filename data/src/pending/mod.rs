@@ -13,9 +13,9 @@ pub struct Store<P: Persistence> {
 }
 
 impl<P: Persistence> Store<P> {
-    pub fn new(_bla: usize) -> Store<P> {
+    pub fn new(persistence: P) -> Store<P> {
         // TODO: Path of wal
-        unimplemented!()
+        Store { persistence }
     }
 }
 

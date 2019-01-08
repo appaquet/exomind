@@ -4,9 +4,8 @@ use byteorder;
 use byteorder::ByteOrder;
 use capnp;
 pub use capnp::message::ReaderSegments;
-use capnp::message::{Allocator, Builder, HeapAllocator, Reader, ReaderOptions};
-use capnp::serialize::{OwnedSegments, SliceSegments};
-use capnp::traits::FromPointerReader;
+use capnp::message::{Allocator, Builder, HeapAllocator, Reader};
+use capnp::serialize::SliceSegments;
 use owning_ref::OwningHandle;
 
 // TODO: Use ScratchSpace to reuse memory buffer for writes
@@ -378,7 +377,7 @@ impl FramedOwnedMessage {
     ) -> Result<FramedOwnedMessage, Error> {
         let mut writer = OwnedFramedMessageWriter::new(message_type);
         capnp::serialize::write_message(&mut writer, &builder).unwrap();
-        let (buffer, message_size, _data_size) = writer.finish();
+        let (buffer, _message_size, _data_size) = writer.finish();
 
         // TODO: not efficient... it re-reads
         FramedOwnedMessage::new(buffer)

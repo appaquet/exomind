@@ -4,9 +4,13 @@ use crate::transport;
 
 use exocore_common;
 
+use futures::sync::mpsc;
 use tokio;
+use tokio::prelude::*;
+use tokio::timer::Interval;
 
-use std::time::Instant;
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
 
 // TODO: Should have a "EngineState" so that we can easily test the states transition / actions
 // TODO: If node has access to data, it needs ot check its integrity by the upper layer
@@ -18,11 +22,20 @@ where
     CP: chain::Persistence,
     PP: pending::Persistence,
 {
-    runtime: tokio::runtime::Runtime, // TODO: Should it have its own Runtime? Or just just be a future itself
-    transport: T,
+    started: bool,
+    transport: Option<T>,
+    inner: Arc<RwLock<Inner<CP, PP>>>,
+}
+
+struct Inner<CP, PP>
+where
+    CP: chain::Persistence,
+    PP: pending::Persistence,
+{
     nodes: Vec<exocore_common::node::Node>,
-    chain: chain::Chain<CP>,
     pending: pending::Store<PP>,
+    chain: chain::Chain<CP>,
+    last_error: Option<Error>,
 }
 
 impl<T, CP, PP> Engine<T, CP, PP>
@@ -31,24 +44,127 @@ where
     CP: chain::Persistence,
     PP: pending::Persistence,
 {
-    pub fn new(transport: T, nodes: Vec<exocore_common::node::Node>) -> Engine<T, CP, PP> {
-        // TODO: Exec Transport on runtime
+    pub fn new(
+        transport: T,
+        chain_persistence: CP,
+        pending_persistence: PP,
+        nodes: Vec<exocore_common::node::Node>,
+    ) -> Engine<T, CP, PP> {
+        let pending = pending::Store::new(pending_persistence);
+        let context = Arc::new(RwLock::new(Inner {
+            nodes,
+            pending,
+            chain: chain::Chain::new(chain_persistence),
+            last_error: None,
+        }));
+
+        Engine {
+            started: false,
+            inner: context,
+            transport: Some(transport),
+        }
+    }
+
+    pub fn get_handle(&mut self) -> Handle {
+        // TODO:
         unimplemented!()
     }
 
-    fn get_events_stream(_from_time: Instant) {
-        // -> futures::Stream<Item = Event, Error = EventError> {
+    // TODO: Wait for messages from others
+
+    fn start(&mut self) -> Result<(), Error> {
+        let (transport_out_sink, transport_in_stream) =
+            self.transport.take().ok_or(Error::Unknown)?.split();
+
+        // handle messages going to transport
+        let (transport_send, transport_receiver) = mpsc::unbounded();
+        tokio::spawn(
+            transport_receiver
+                .map_err(|err| transport::Error::Unknown)
+                .forward(transport_out_sink)
+                .map(|_| ())
+                .map_err(|err| {
+                    // TODO: Mark engine failed
+                    error!("Error forwarding to transport sink: {:?}", err);
+                }),
+        );
+
+        // handle transport's incoming messages
+        tokio::spawn(
+            transport_in_stream
+                .for_each(|msg| {
+                    info!("Got incoming message");
+
+                    Ok(())
+                })
+                .map_err(|err| {
+                    // TODO: Mark engine failed
+                    error!("Error handling incoming message from transport: {:?}", err);
+                }),
+        );
+
+        let interval = Duration::from_secs(1);
+        tokio::spawn({
+            Interval::new_interval(interval)
+                .for_each(|_| {
+                    // TODO: Sync at interval to check we didn't miss anything
+
+                    Ok(())
+                })
+                .map_err(|err| {
+                    // TODO: Mark engine failed
+                    error!("Error in management timer: {:?}", err);
+                })
+        });
+
+        self.started = true;
+
+        Ok(())
+    }
+}
+
+impl<T, CP, PP> Future for Engine<T, CP, PP>
+where
+    T: transport::Transport,
+    CP: chain::Persistence,
+    PP: pending::Persistence,
+{
+    type Item = ();
+    type Error = Error;
+
+    fn poll(&mut self) -> Result<Async<<Self as Future>::Item>, <Self as Future>::Error> {
+        if !self.started {
+            self.start();
+        }
+
+        // TODO: Check if failed
+
         unimplemented!()
     }
+}
 
-    fn write_entry() {
+#[derive(Debug)]
+pub enum Error {
+    Unknown,
+}
+
+pub struct Handle {}
+
+impl Handle {
+    pub fn write_entry(&self) {
         // TODO: Send to pending store
     }
 
-    // TODO: Sync at interval to check we didn't miss anything
-    // TODO: Wait for messages from others
+    pub fn get_events_stream(&self, _from_time: Instant)
+    /*-> impl futures::Stream<Item = Event, Error = Error>*/
+    {
+        unimplemented!()
+    }
 }
 
+///
+///
+///
 struct CommitController {}
 
 // TODO: Stream of events ?

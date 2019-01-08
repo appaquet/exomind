@@ -19,5 +19,10 @@ struct Opt {
 }
 
 fn main() {
+    // TODO: Create tokio runtime
+
+    // TODO: Create engine
+    // TODO: Take engine handle for each user
+
     println!("Hello world");
 }
