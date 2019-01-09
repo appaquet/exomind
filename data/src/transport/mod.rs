@@ -7,7 +7,6 @@ pub struct TransportContext {
     // TODO: Other nodes ? It's also in engine ...
 }
 
-// TODO: A-la-tokio Framed
 pub trait Transport:
     Stream<Item = MessageType, Error = Error>
     + Sink<SinkItem = MessageType, SinkError = Error>
@@ -29,6 +28,10 @@ pub struct InMessage {
     data: FramedOwnedMessage,
 }
 
+// TODO: A-la-ampme
+// TODO: from, to, entries, heads, hash
+// TODO: entries could be full or just header too (so we don't send data)
+// TODO: should send full if an object has been modified by us recently and we never sent to remote
 pub enum MessageType {
     PendingSyncEntries, // from, to
     ChainSyncMeta,      // from, to

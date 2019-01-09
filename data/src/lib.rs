@@ -18,4 +18,3 @@ pub mod engine;
 pub mod pending;
 pub mod transport;
 pub mod utils;
-pub mod wal;

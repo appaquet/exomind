@@ -167,14 +167,11 @@ impl Handle {
 ///
 struct CommitController {}
 
-// TODO: Stream of events ?
 enum Event {
     NewPendingTransaction,
     CommitedBlock,
     FrozenBlock, // TODO: x depth
 }
-
-enum EventError {}
 
 struct WrappedEntry {
     status: EntryStatus,
@@ -192,21 +189,4 @@ struct EntryCondition {
 //offset_condition
 
 // TODO: only if it's meant to be in block X at offset Y
-}
-
-struct SyncRequest {
-    // TODO: A-la-ampme
-// TODO: from, to, entries, heads, hash
-// TODO: entries could be full or just header too (so we don't send data)
-// TODO: should send full if an object has been modified by us recently and we never sent to remote
-}
-
-struct SyncRequestPayload {
-    store: SyncStore,
-    hash: String,
-}
-
-enum SyncStore {
-    Pending,
-    Chain,
 }
