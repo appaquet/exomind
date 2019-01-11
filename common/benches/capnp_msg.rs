@@ -22,7 +22,7 @@ fn bench_build_message(b: &mut Bencher) {
 }
 
 #[bench]
-fn bench_read_message_from_slice(b: &mut Bencher) {
+fn bench_read_message_from_slice_with_parsing(b: &mut Bencher) {
     let mut builder = MessageBuilder::<block::Owned>::new();
     build_test_block(&mut builder);
     let data = builder.into_framed_vec().unwrap();
@@ -35,7 +35,19 @@ fn bench_read_message_from_slice(b: &mut Bencher) {
 }
 
 #[bench]
-fn bench_read_message_from_owned(b: &mut Bencher) {
+fn bench_read_message_from_slice_no_parsing(b: &mut Bencher) {
+    let mut builder = MessageBuilder::<block::Owned>::new();
+    build_test_block(&mut builder);
+    let data = builder.into_framed_vec().unwrap();
+
+    b.iter(|| {
+        let message = FramedSliceMessage::new(&data).unwrap();
+        let _ = test::black_box(message);
+    });
+}
+
+#[bench]
+fn bench_read_message_from_owned_with_parsing(b: &mut Bencher) {
     let mut builder = MessageBuilder::<block::Owned>::new();
     build_test_block(&mut builder);
     let data = builder.into_framed_vec().unwrap();
@@ -44,6 +56,18 @@ fn bench_read_message_from_owned(b: &mut Bencher) {
         let message = FramedOwnedMessage::new(data.clone()).unwrap();
         let block_reader = message.get_typed_reader::<block::Owned>().unwrap();
         let _ = test::black_box(block_reader.get_hash());
+    });
+}
+
+#[bench]
+fn bench_read_message_from_owned_no_parsing(b: &mut Bencher) {
+    let mut builder = MessageBuilder::<block::Owned>::new();
+    build_test_block(&mut builder);
+    let data = builder.into_framed_vec().unwrap();
+
+    b.iter(|| {
+        let message = FramedOwnedMessage::new(data.clone()).unwrap();
+        let _ = test::black_box(message);
     });
 }
 

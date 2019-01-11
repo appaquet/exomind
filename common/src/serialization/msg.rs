@@ -6,6 +6,7 @@ use capnp;
 pub use capnp::message::ReaderSegments;
 use capnp::message::{Allocator, Builder, HeapAllocator, Reader};
 use capnp::serialize::SliceSegments;
+use lazycell::LazyCell;
 use owning_ref::OwningHandle;
 
 // TODO: Use ScratchSpace to reuse memory buffer for writes
@@ -115,28 +116,26 @@ where
 }
 
 /// Framed message coming from a slice of bytes. No copy was involved to create this message, as it uses the underlying bytes slice.
+///
+/// Message parsing into an actual capnp message is lazily done when `get_typed_reader()` is called.
 pub struct FramedSliceMessage<'a> {
     message_type: u16,
     message_size: usize,
     data_size: usize,
     data: &'a [u8],
-    reader: Reader<SliceSegments<'a>>,
+    lazy_reader: LazyCell<Reader<SliceSegments<'a>>>,
 }
 
 impl<'a> FramedSliceMessage<'a> {
     pub fn new(data: &[u8]) -> Result<FramedSliceMessage, Error> {
         let (message_type, message_size, data_size) = read_framed_message_meta(data)?;
 
-        let offset_from = FRAMING_HEADER_SIZE;
-        let offset_to = offset_from + message_size;
-        let reader = Self::read_capn_message(&data[offset_from..offset_to])?;
-
         Ok(FramedSliceMessage {
             message_type,
             message_size,
             data_size,
             data,
-            reader,
+            lazy_reader: LazyCell::new(),
         })
     }
 
@@ -209,7 +208,12 @@ impl<'a> FramedMessage for FramedSliceMessage<'a> {
     fn get_typed_reader<'b, T: MessageType<'b>>(
         &'b self,
     ) -> Result<<T as capnp::traits::Owned>::Reader, Error> {
-        let reader = &self.reader;
+        let reader = self.lazy_reader.try_borrow_with(|| {
+            let offset_from = FRAMING_HEADER_SIZE;
+            let offset_to = offset_from + self.message_size;
+            Self::read_capn_message(&self.data[offset_from..offset_to])
+        })?;
+
         reader.get_root().map_err(|_err| Error::InvalidData)
     }
 
@@ -286,11 +290,7 @@ where
     }
 
     fn get_typed_reader(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error> {
-        let reader = &self.message.reader;
-        reader.get_root().map_err(|_err| {
-            error!("Couldn't get root from owned reader");
-            Error::InvalidData
-        })
+        self.message.get_typed_reader::<T>()
     }
 
     fn copy_into(&self, buf: &mut [u8]) {
@@ -379,7 +379,6 @@ impl FramedOwnedMessage {
         capnp::serialize::write_message(&mut writer, &builder).unwrap();
         let (buffer, _message_size, _data_size) = writer.finish();
 
-        // TODO: not efficient... it re-reads
         FramedOwnedMessage::new(buffer)
     }
 
