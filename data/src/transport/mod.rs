@@ -1,6 +1,6 @@
-use exocore_common::data_chain_capnp::block;
+use exocore_common::data_transport_capnp::envelope;
 use exocore_common::node::Node;
-use exocore_common::serialization::msg::{FramedOwnedMessage, MessageBuilder};
+use exocore_common::serialization::msg::{FramedOwnedTypedMessage, MessageBuilder};
 use tokio::prelude::*;
 
 pub struct TransportContext {
@@ -8,34 +8,22 @@ pub struct TransportContext {
 }
 
 pub trait Transport:
-    Stream<Item = MessageType, Error = Error>
-    + Sink<SinkItem = MessageType, SinkError = Error>
+    Stream<Item = InMessage, Error = Error>
+    + Sink<SinkItem = OutMessage, SinkError = Error>
     + Send
     + 'static
 {
-    fn send_message(node: &Node, message: MessageType);
+    fn send_message(node: &Node, message: MessageBuilder<envelope::Owned>);
 }
 
 pub struct OutMessage {
     to: Vec<Node>,
-    message_type: MessageType,
-    data: MessageBuilder<block::Owned>,
+    data: MessageBuilder<envelope::Owned>,
 }
 
 pub struct InMessage {
     from: Node,
-    message_type: MessageType,
-    data: FramedOwnedMessage,
-}
-
-// TODO: A-la-ampme
-// TODO: from, to, entries, heads, hash
-// TODO: entries could be full or just header too (so we don't send data)
-// TODO: should send full if an object has been modified by us recently and we never sent to remote
-pub enum MessageType {
-    PendingSyncEntries, // from, to
-    ChainSyncMeta,      // from, to
-    ChainSyncData,      // from, to
+    data: FramedOwnedTypedMessage<envelope::Owned>,
 }
 
 #[derive(Debug)]

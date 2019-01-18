@@ -19,10 +19,6 @@ impl<P: Persistence> Store<P> {
     }
 }
 
-struct Entry {
-    signatures: Vec<Signature>,
-}
-
 #[cfg(test)]
 mod test {
     #[test]

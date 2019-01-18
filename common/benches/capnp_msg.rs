@@ -5,7 +5,7 @@ use test::Bencher;
 
 use tempdir;
 
-use exocore_common::data_chain_capnp::block;
+use exocore_common::data_chain_capnp::{block, entry_header};
 use exocore_common::serialization::msg::{
     FramedMessage, FramedOwnedMessage, FramedSliceMessage, MessageBuilder,
 };
@@ -71,12 +71,18 @@ fn bench_read_message_from_owned_no_parsing(b: &mut Bencher) {
     });
 }
 
-fn build_test_block(builder: &mut MessageBuilder<block::Owned>) {
-    let mut block = builder.get_builder_typed();
-    block.set_hash("block_hash");
-    let mut entries = block.init_entries(1);
+fn build_test_block(block_msg_builder: &mut MessageBuilder<block::Owned>) {
+    let mut block_builder = block_msg_builder.get_builder_typed();
+    block_builder.set_hash("block_hash");
+
+    let mut entries = block_builder.init_entries(1);
     {
         let mut entry = entries.reborrow().get(0);
-        entry.set_hash("entry_hash");
+
+        let mut entry_header_msg_builder = MessageBuilder::<entry_header::Owned>::new();
+        let mut header_builder = entry_header_msg_builder.get_builder_typed();
+        header_builder.set_hash("entry_hash");
+
+        entry.set_header(header_builder.into_reader()).unwrap();
     }
 }

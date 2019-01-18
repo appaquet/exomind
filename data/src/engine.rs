@@ -15,6 +15,9 @@ use std::time::{Duration, Instant};
 // TODO: Should have a "EngineState" so that we can easily test the states transition / actions
 // TODO: If node has access to data, it needs ot check its integrity by the upper layer
 // TODO: If not, a node needs to wait for a majority of nodes that has data
+// TODO: should send full if an object has been modified by us recently and we never sent to remote
+
+const ENGINE_MANAGE_TIMER_INTERVAL: Duration = Duration::from_secs(1);
 
 pub struct Engine<T, CP, PP>
 where
@@ -70,8 +73,6 @@ where
         unimplemented!()
     }
 
-    // TODO: Wait for messages from others
-
     fn start(&mut self) -> Result<(), Error> {
         let (transport_out_sink, transport_in_stream) =
             self.transport.take().ok_or(Error::Unknown)?.split();
@@ -103,11 +104,11 @@ where
                 }),
         );
 
-        let interval = Duration::from_secs(1);
         tokio::spawn({
-            Interval::new_interval(interval)
+            Interval::new_interval(ENGINE_MANAGE_TIMER_INTERVAL)
                 .for_each(|_| {
                     // TODO: Sync at interval to check we didn't miss anything
+                    // TODO: Maybe propose a new block
 
                     Ok(())
                 })
@@ -134,7 +135,7 @@ where
 
     fn poll(&mut self) -> Result<Async<<Self as Future>::Item>, <Self as Future>::Error> {
         if !self.started {
-            self.start();
+            self.start()?;
         }
 
         // TODO: Check if failed

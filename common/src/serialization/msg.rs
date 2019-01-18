@@ -664,13 +664,8 @@ fn unpack_u16(from: &[u8]) -> u16 {
 
 #[cfg(test)]
 pub mod tests {
-    use std;
-
-    use tempdir;
-
-    use crate::data_chain_capnp::block;
-
     use super::*;
+    use crate::data_chain_capnp::{block, entry_header};
 
     #[test]
     fn test_pack_unpack_u32() {
@@ -692,7 +687,7 @@ pub mod tests {
 
         let message_data = test_block_builder.into_framed_vec().unwrap();
         let slice_message = FramedSliceMessage::new(&message_data).unwrap();
-        assert_eq!(slice_message.message_type(), 1);
+        assert_eq!(slice_message.message_type(), 102);
 
         let typed_message = slice_message.into_typed::<block::Owned>();
         let reader = typed_message.get_typed_reader().unwrap();
@@ -706,7 +701,7 @@ pub mod tests {
         let test_block_builder = build_test_block();
 
         let block_owned_message = test_block_builder.into_owned_framed().unwrap();
-        assert_eq!(block_owned_message.message_type(), 1);
+        assert_eq!(block_owned_message.message_type(), 102);
 
         {
             let message_reader = block_owned_message.get_typed_reader().unwrap();
@@ -841,18 +836,22 @@ pub mod tests {
     }
 
     fn build_test_block() -> MessageBuilder<block::Owned> {
-        let mut message_builder = MessageBuilder::<block::Owned>::new();
+        let mut block_msg_builder = MessageBuilder::<block::Owned>::new();
 
+        let mut block_builder = block_msg_builder.get_builder_typed();
+        block_builder.set_hash("block_hash");
+
+        let mut entries = block_builder.init_entries(1);
         {
-            let mut block_builder = message_builder.get_builder_typed();
-            block_builder.set_hash("block_hash");
-            let mut entries = block_builder.init_entries(1);
-            {
-                let mut entry = entries.reborrow().get(0);
-                entry.set_hash("entry_hash");
-            }
+            let mut entry = entries.reborrow().get(0);
+
+            let mut entry_header_msg_builder = MessageBuilder::<entry_header::Owned>::new();
+            let mut header_builder = entry_header_msg_builder.get_builder_typed();
+            header_builder.set_hash("entry_hash");
+
+            entry.set_header(header_builder.into_reader()).unwrap();
         }
 
-        message_builder
+        block_msg_builder
     }
 }
