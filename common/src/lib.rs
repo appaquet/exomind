@@ -16,4 +16,6 @@ pub mod serialization;
 pub mod simple_store;
 pub mod time;
 
+pub mod tests_utils;
+
 pub use self::serialization::protos::*;

@@ -21,5 +21,4 @@ where
     CP: exocore_data::chain::Persistence,
     PP: exocore_data::pending::Persistence,
 {
-    pub fn new() {}
 }

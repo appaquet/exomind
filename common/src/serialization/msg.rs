@@ -79,8 +79,8 @@ where
         self.builder.get_root().unwrap()
     }
 
-    pub fn into_owned_framed(self) -> Result<FramedOwnedTypedMessage<T>, Error> {
-        let msg = FramedOwnedMessage::from_builder(self.message_type, self.builder)?;
+    pub fn as_owned_framed(&self) -> Result<FramedOwnedTypedMessage<T>, Error> {
+        let msg = FramedOwnedMessage::from_builder(self.message_type, &self.builder)?;
         Ok(msg.into_typed())
     }
 
@@ -373,10 +373,10 @@ impl FramedOwnedMessage {
 
     pub fn from_builder<A: Allocator>(
         message_type: u16,
-        builder: Builder<A>,
+        builder: &Builder<A>,
     ) -> Result<FramedOwnedMessage, Error> {
         let mut writer = OwnedFramedMessageWriter::new(message_type);
-        capnp::serialize::write_message(&mut writer, &builder).unwrap();
+        capnp::serialize::write_message(&mut writer, builder).unwrap();
         let (buffer, _message_size, _data_size) = writer.finish();
 
         FramedOwnedMessage::new(buffer)
@@ -390,6 +390,12 @@ impl FramedOwnedMessage {
             message: self,
             phantom: std::marker::PhantomData,
         }
+    }
+}
+
+impl Clone for FramedOwnedMessage {
+    fn clone(&self) -> Self {
+        FramedOwnedMessage::new(self.owned_slice_message.data.to_vec()).unwrap()
     }
 }
 
@@ -418,6 +424,7 @@ impl FramedMessage for FramedOwnedMessage {
 }
 
 /// A standalone framed typed message that wraps a `FramedOwnedMessage` with annotated type.
+#[derive(Clone)]
 pub struct FramedOwnedTypedMessage<T>
 where
     T: for<'a> MessageType<'a>,
@@ -700,7 +707,7 @@ pub mod tests {
     fn test_message_builder_into_owned() {
         let test_block_builder = build_test_block();
 
-        let block_owned_message = test_block_builder.into_owned_framed().unwrap();
+        let block_owned_message = test_block_builder.as_owned_framed().unwrap();
         assert_eq!(block_owned_message.message_type(), 102);
 
         {

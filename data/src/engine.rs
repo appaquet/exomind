@@ -26,7 +26,7 @@ where
     PP: pending::Persistence,
 {
     started: bool,
-    transport: Option<T>,
+    transport: T,
     inner: Arc<RwLock<Inner<CP, PP>>>,
 }
 
@@ -64,7 +64,7 @@ where
         Engine {
             started: false,
             inner: context,
-            transport: Some(transport),
+            transport,
         }
     }
 
@@ -74,8 +74,8 @@ where
     }
 
     fn start(&mut self) -> Result<(), Error> {
-        let (transport_out_sink, transport_in_stream) =
-            self.transport.take().ok_or(Error::Unknown)?.split();
+        let transport_in_stream = self.transport.get_stream();
+        let transport_out_sink = self.transport.get_sink();
 
         // handle messages going to transport
         let (transport_send, transport_receiver) = mpsc::unbounded();
@@ -109,6 +109,7 @@ where
                 .for_each(|_| {
                     // TODO: Sync at interval to check we didn't miss anything
                     // TODO: Maybe propose a new block
+                    // TODO: Check if transport is complete
 
                     Ok(())
                 })

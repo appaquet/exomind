@@ -7,6 +7,7 @@ edition = "2018"
 [features]
 default = ["hash_compute"]
 hash_compute = ["sha2"]
+tests_utils = []
 
 [dependencies]
 log = "0.4"
@@ -18,6 +19,7 @@ capnp = "0.9"
 byteorder = "1.2"
 owning_ref = "0.4.0"
 lazycell = "1.2.1"
+futures = "0.1.25"
 
 [build-dependencies]
 capnpc = "0.9"

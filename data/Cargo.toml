@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 exocore-common = { path = "../common" }
-
 log = "0.4"
 futures = "0.1"
 tempfile = "3.0"
@@ -18,3 +17,4 @@ byteorder = "1.2"
 [dev-dependencies]
 tempdir = "0.3"
 stderrlog = "0.4.1"
+

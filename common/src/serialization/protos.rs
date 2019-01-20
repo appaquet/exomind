@@ -1,7 +1,7 @@
 pub mod common_capnp {
     const MSG_TYPE_BASE: u16 = 0;
 
-    use crate::serialization::msg::MessageType;
+    //    use crate::serialization::msg::MessageType;
 
     include!(concat!(env!("OUT_DIR"), "/proto/common_capnp.rs"));
 
@@ -16,7 +16,7 @@ pub mod data_chain_capnp {
 
     impl<'a> MessageType<'a> for self::entry::Owned {
         fn message_type() -> u16 {
-            MSG_TYPE_BASE + 0
+            MSG_TYPE_BASE //+ 0
         }
     }
 
@@ -54,7 +54,7 @@ pub mod data_transport_capnp {
 
     impl<'a> MessageType<'a> for self::envelope::Owned {
         fn message_type() -> u16 {
-            MSG_TYPE_BASE + 0
+            MSG_TYPE_BASE //+ 0
         }
     }
 }
