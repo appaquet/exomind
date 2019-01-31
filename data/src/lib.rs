@@ -1,8 +1,12 @@
 extern crate byteorder;
 extern crate exocore_common;
+#[macro_use]
+extern crate failure;
 extern crate futures;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate error_chain;
 extern crate memmap;
 #[cfg(test)]
 extern crate stderrlog;

@@ -1,13 +1,14 @@
 @0xf51296176d1e327e;
 
 struct PendingOperation {
-    uid @0: UInt64;
-    time @1: UInt64;
+    time @0: UInt64;
+    entryUid @1: UInt64;
+    operationUid @2: UInt64;
 
     operation :union {
-        newEntry @2: OperationNewEntry;
-        blockProposal @3: OperationBlockProposal;
-        blockSignature @4: OperationBlockSignature;
+        newEntry @3: OperationNewEntry;
+        blockProposal @4: OperationBlockProposal;
+        blockSignature @5: OperationBlockSignature;
     }
 }
 
@@ -24,7 +25,6 @@ struct OperationBlockSignature {
 }
 
 
-
 struct Entry {
     header @0: EntryHeader;
     data @1: Data;
@@ -36,7 +36,6 @@ struct EntryHeader {
     sourceApp @2: Text;
     hash @3: Text;
 }
-
 
 struct Block {
     offset @0: UInt64;

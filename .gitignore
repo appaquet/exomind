@@ -23,3 +23,5 @@ cmake-build-debug
 # Build
 build
 fastlane/report.xml
+
+#common/src/serialization/protos/*_capnp.rs

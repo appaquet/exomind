@@ -7,6 +7,8 @@ extern crate serde_derive;
 extern crate serde_json;
 #[cfg(test)]
 extern crate tempdir;
+#[macro_use]
+extern crate failure;
 
 pub mod cell;
 pub mod node;

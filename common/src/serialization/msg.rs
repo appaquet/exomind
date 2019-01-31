@@ -32,6 +32,7 @@ pub trait FramedMessage {
         &'b self,
     ) -> Result<<T as capnp::traits::Owned>::Reader, Error>;
     fn copy_into(&self, buf: &mut [u8]);
+    fn to_owned(&self) -> FramedOwnedMessage;
 }
 
 /// A Framed Typed Message is a FramedMessage that is guaranteed to be implementing the annotated type.
@@ -44,6 +45,7 @@ where
     fn data_size(&self) -> usize;
     fn get_typed_reader(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error>;
     fn copy_into(&self, buf: &mut [u8]);
+    fn to_owned(&self) -> FramedOwnedTypedMessage<T>;
 }
 
 /// Message builder
@@ -220,6 +222,11 @@ impl<'a> FramedMessage for FramedSliceMessage<'a> {
     fn copy_into(&self, buf: &mut [u8]) {
         buf[0..self.data_size].copy_from_slice(self.data);
     }
+
+    fn to_owned(&self) -> FramedOwnedMessage {
+        FramedOwnedMessage::new(self.data.to_vec())
+            .expect("Couldn't create owned message from slice, which shouldn't be possible")
+    }
 }
 
 /// A framed typed message coming from a slice of bytes that wraps a `FramedSliceMessage` with annotated type.
@@ -295,6 +302,11 @@ where
 
     fn copy_into(&self, buf: &mut [u8]) {
         self.message.copy_into(buf);
+    }
+
+    fn to_owned(&self) -> FramedOwnedTypedMessage<T> {
+        let owned_message = self.message.to_owned();
+        owned_message.into_typed()
     }
 }
 
@@ -421,6 +433,10 @@ impl FramedMessage for FramedOwnedMessage {
     fn copy_into(&self, buf: &mut [u8]) {
         self.owned_slice_message.copy_into(buf)
     }
+
+    fn to_owned(&self) -> FramedOwnedMessage {
+        FramedOwnedMessage::new(self.owned_slice_message.data.to_vec()).unwrap()
+    }
 }
 
 /// A standalone framed typed message that wraps a `FramedOwnedMessage` with annotated type.
@@ -455,6 +471,11 @@ where
 
     fn copy_into(&self, buf: &mut [u8]) {
         self.message.copy_into(buf);
+    }
+
+    fn to_owned(&self) -> FramedOwnedTypedMessage<T> {
+        let owned_message = self.message.clone();
+        owned_message.into_typed()
     }
 }
 
@@ -603,10 +624,14 @@ impl<'a> std::io::Write for OwnedFramedMessageWriter {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Fail, Debug, Clone, Copy, PartialEq)]
+#[fail(display = "A message serialization error occurred")]
 pub enum Error {
+    #[fail(display = "Couldn't deserialization data")]
     InvalidData,
+    #[fail(display = "Invalid message size")]
     InvalidSize,
+    #[fail(display = "Reached end of message / stream")]
     EOF,
 }
 
@@ -694,7 +719,10 @@ pub mod tests {
 
         let message_data = test_block_builder.into_framed_vec().unwrap();
         let slice_message = FramedSliceMessage::new(&message_data).unwrap();
-        assert_eq!(slice_message.message_type(), 102);
+        assert_eq!(
+            slice_message.message_type(),
+            <block::Owned as MessageType>::message_type()
+        );
 
         let typed_message = slice_message.into_typed::<block::Owned>();
         let reader = typed_message.get_typed_reader().unwrap();
@@ -708,7 +736,10 @@ pub mod tests {
         let test_block_builder = build_test_block();
 
         let block_owned_message = test_block_builder.as_owned_framed().unwrap();
-        assert_eq!(block_owned_message.message_type(), 102);
+        assert_eq!(
+            block_owned_message.message_type(),
+            <block::Owned as MessageType>::message_type()
+        );
 
         {
             let message_reader = block_owned_message.get_typed_reader().unwrap();
@@ -850,7 +881,7 @@ pub mod tests {
 
         let mut entries = block_builder.init_entries(1);
         {
-            let mut entry = entries.reborrow().get(0);
+            let mut entry = entries.get(0);
 
             let mut entry_header_msg_builder = MessageBuilder::<entry_header::Owned>::new();
             let mut header_builder = entry_header_msg_builder.get_builder_typed();

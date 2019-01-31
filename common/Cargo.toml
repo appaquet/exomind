@@ -19,6 +19,7 @@ capnp = "0.9"
 byteorder = "1.2"
 owning_ref = "0.4.0"
 lazycell = "1.2.1"
+failure = "0.1.5"
 futures = "0.1.25"
 
 [build-dependencies]

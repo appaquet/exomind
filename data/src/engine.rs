@@ -12,6 +12,8 @@ use tokio::timer::Interval;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
+// TODO: Should be able to run without the chain.
+
 // TODO: Should have a "EngineState" so that we can easily test the states transition / actions
 // TODO: If node has access to data, it needs ot check its integrity by the upper layer
 // TODO: If not, a node needs to wait for a majority of nodes that has data
@@ -19,45 +21,44 @@ use std::time::{Duration, Instant};
 
 const ENGINE_MANAGE_TIMER_INTERVAL: Duration = Duration::from_secs(1);
 
-pub struct Engine<T, CP, PP>
+pub struct Engine<T, CS, PS>
 where
     T: transport::Transport,
-    CP: chain::Persistence,
-    PP: pending::Persistence,
+    CS: chain::Store,
+    PS: pending::Store,
 {
     started: bool,
     transport: T,
-    inner: Arc<RwLock<Inner<CP, PP>>>,
+    inner: Arc<RwLock<Inner<CS, PS>>>,
 }
 
-struct Inner<CP, PP>
+struct Inner<CS, PS>
 where
-    CP: chain::Persistence,
-    PP: pending::Persistence,
+    CS: chain::Store,
+    PS: pending::Store,
 {
     nodes: Vec<exocore_common::node::Node>,
-    pending: pending::Store<PP>,
-    chain: chain::Chain<CP>,
+    pending_store: PS,
+    chain_store: CS,
     last_error: Option<Error>,
 }
 
-impl<T, CP, PP> Engine<T, CP, PP>
+impl<T, CS, PS> Engine<T, CS, PS>
 where
     T: transport::Transport,
-    CP: chain::Persistence,
-    PP: pending::Persistence,
+    CS: chain::Store,
+    PS: pending::Store,
 {
     pub fn new(
         transport: T,
-        chain_persistence: CP,
-        pending_persistence: PP,
+        chain_store: CS,
+        pending_store: PS,
         nodes: Vec<exocore_common::node::Node>,
-    ) -> Engine<T, CP, PP> {
-        let pending = pending::Store::new(pending_persistence);
+    ) -> Engine<T, CS, PS> {
         let context = Arc::new(RwLock::new(Inner {
             nodes,
-            pending,
-            chain: chain::Chain::new(chain_persistence),
+            pending_store,
+            chain_store,
             last_error: None,
         }));
 
@@ -81,7 +82,10 @@ where
         let (transport_send, transport_receiver) = mpsc::unbounded();
         tokio::spawn(
             transport_receiver
-                .map_err(|err| transport::Error::Unknown)
+                .map_err(|err| {
+                    error!("Error from transport: {:?}", err);
+                    transport::Error::Unknown
+                })
                 .forward(transport_out_sink)
                 .map(|_| ())
                 .map_err(|err| {
@@ -125,11 +129,11 @@ where
     }
 }
 
-impl<T, CP, PP> Future for Engine<T, CP, PP>
+impl<T, CS, PS> Future for Engine<T, CS, PS>
 where
     T: transport::Transport,
-    CP: chain::Persistence,
-    PP: pending::Persistence,
+    CS: chain::Store,
+    PS: pending::Store,
 {
     type Item = ();
     type Error = Error;

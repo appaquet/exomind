@@ -4,78 +4,42 @@ use exocore_common::data_chain_capnp::{block, block_signatures};
 use exocore_common::serialization::msg;
 use exocore_common::serialization::msg::FramedTypedMessage;
 
-pub use self::persistence::Persistence;
-
-pub mod persistence;
-
+// TODO: Move to common
 type BlockOffset = u64;
 type BlockSize = u32;
 
-pub struct Chain<P>
-where
-    P: Persistence,
-{
-    persistence: P,
-    last_block_offset: BlockOffset,
-    next_block_offset: BlockOffset,
-}
+pub mod directory;
 
-impl<P> Chain<P>
-where
-    P: Persistence,
-{
-    pub fn new(persistence: P) -> Chain<P> {
-        // TODO: Load segments
-        // TODO: Get next block offset
-
-        let available_segments = persistence.available_segments();
-        let segments_gaps = range::get_gaps(available_segments.iter());
-        if !segments_gaps.is_empty() {
-            warn!("The chain contains gaps at: {:?}", segments_gaps);
-        }
-
-        Chain {
-            persistence,
-            last_block_offset: 0,
-            next_block_offset: 0, // TODO: !
-        }
-    }
-
-    pub fn write_block<B, S>(&mut self, _block: &B, _signatures: &S) -> Result<(), Error>
+pub trait Store {
+    fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
         B: msg::FramedTypedMessage<block::Owned>,
-        S: msg::FramedTypedMessage<block_signatures::Owned>,
-    {
-        unimplemented!()
-    }
+        S: msg::FramedTypedMessage<block_signatures::Owned>;
 
-    pub fn blocks_iter(&self, from_offset: Option<BlockOffset>) -> StoredBlockIterator {
-        //        self.persistence.block_iter(from_offset.unwrap_or(0))
-        unimplemented!()
-    }
+    fn available_segments(&self) -> Vec<range::Range<BlockOffset>>;
 
-    pub fn blocks_iter_reverse(&self, _from_offset: Option<BlockOffset>) -> StoredBlockIterator {
-        unimplemented!()
-    }
+    fn block_iter(&self, from_offset: BlockOffset) -> Result<StoredBlockIterator, Error>;
 
-    pub fn get_block(&self, offset: BlockOffset) -> Result<StoredBlock, Error> {
-        // TODO: Find segment in which it is
-        // TODO: Find block
-        let _block = self.persistence.get_block(offset)?;
+    fn block_iter_reverse(
+        &self,
+        from_next_offset: BlockOffset,
+    ) -> Result<StoredBlockIterator, Error>;
 
-        unimplemented!()
-    }
+    fn get_block(&self, offset: BlockOffset) -> Result<StoredBlock, Error>;
 
-    pub fn get_last_block(&self) -> Result<(), Error> {
-        // TODO: Get next offset
-        // TODO: Get last block's hash
+    fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<StoredBlock, Error>;
 
-        unimplemented!()
-    }
+    fn truncate_from_offset(&mut self, block_offset: BlockOffset) -> Result<(), Error>;
+}
 
-    pub fn verify(&mut self) -> Result<(), Error> {
-        unimplemented!()
-    }
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Error {
+    UnexpectedState,
+    Serialization(msg::Error),
+    Integrity,
+    SegmentFull,
+    OutOfBound,
+    IO,
 }
 
 pub struct StoredBlock<'a> {
@@ -104,17 +68,6 @@ impl<'a> StoredBlock<'a> {
 }
 
 type StoredBlockIterator<'pers> = Box<dyn Iterator<Item = StoredBlock<'pers>> + 'pers>;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Error {
-    Persistence(persistence::Error),
-}
-
-impl From<persistence::Error> for Error {
-    fn from(err: persistence::Error) -> Self {
-        Error::Persistence(err)
-    }
-}
 
 pub enum EntryType {
     Data,
