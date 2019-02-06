@@ -19,9 +19,10 @@ members = [
   "index",
   "data",
   "common",
-  "3rd/extsort"
+  "3rd/extsort",
+  "3rd/extindex",
 ]
 
-[patch.crates-io]
-extsort = { path = "./3rd/extsort" }
-extindex = { path = "./3rd/extindex" }
+#[patch.crates-io]
+#extsort = { path = "./3rd/extsort" }
+#extindex = { path = "./3rd/extindex" }
