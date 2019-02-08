@@ -8,5 +8,4 @@ edition = "2018"
 exocore-data = { path = "../data" }
 exocore-common = { path = "../common" }
 log = "0.4"
-tantivy = "0.8.1"
 

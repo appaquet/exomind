@@ -144,10 +144,10 @@ impl Store for DirectoryStore {
     {
         let (block_segment, written_in_segment) = {
             let need_new_segment = {
-                let last_segment = self.segments.last();
-                last_segment.is_none()
-                    || last_segment.as_ref().unwrap().next_file_offset
-                        > self.config.segment_max_size as usize
+                match self.segments.last() {
+                    None => true,
+                    Some(s) => s.next_file_offset as u64 > self.config.segment_max_size,
+                }
             };
 
             if need_new_segment {

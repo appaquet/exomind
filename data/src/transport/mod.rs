@@ -29,8 +29,8 @@ impl OutMessage {
 
 #[derive(Clone)]
 pub struct InMessage {
-    from: Node,
-    data: FramedOwnedTypedMessage<envelope::Owned>,
+    pub from: Node,
+    pub data: FramedOwnedTypedMessage<envelope::Owned>,
 }
 
 #[derive(Debug)]

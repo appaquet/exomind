@@ -3,8 +3,6 @@ use std::ops::RangeBounds;
 use std::sync::Arc;
 use std::vec::Vec;
 
-use failure::ResultExt;
-
 use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::serialization::msg;
 use exocore_common::serialization::msg::FramedTypedMessage;
@@ -92,7 +90,11 @@ impl Store for MemoryStore {
         entry_id: EntryID,
     ) -> Result<Option<StoredEntryOperations>, Error> {
         let operations = self.operations.get(&entry_id).map(|entry_ops| {
-            let operations = entry_ops.operations.values().map(|op| Arc::clone(op)).collect();
+            let operations = entry_ops
+                .operations
+                .values()
+                .map(|op| Arc::clone(op))
+                .collect();
 
             StoredEntryOperations {
                 entry_id,

@@ -3,11 +3,11 @@ const MAX_SIGNATURE_SIZE: usize = 1024;
 pub struct Message {}
 
 pub struct Signature {
-    sig: [u8; MAX_SIGNATURE_SIZE],
+    _sig: [u8; MAX_SIGNATURE_SIZE],
 }
 
 impl Signature {
-    fn validate(&self, _message: &Message) -> bool {
+    pub fn validate(&self, _message: &Message) -> bool {
         unimplemented!()
     }
 }
