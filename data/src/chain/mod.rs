@@ -1,8 +1,8 @@
 use exocore_common::range;
 
 use exocore_common::data_chain_capnp::{block, block_signatures};
-use exocore_common::serialization::msg;
-use exocore_common::serialization::msg::FramedTypedMessage;
+use exocore_common::serialization::framed;
+use exocore_common::serialization::framed::TypedFrame;
 
 // TODO: Move to common
 type BlockOffset = u64;
@@ -13,8 +13,8 @@ pub mod directory;
 pub trait Store {
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
-        B: msg::FramedTypedMessage<block::Owned>,
-        S: msg::FramedTypedMessage<block_signatures::Owned>;
+        B: framed::TypedFrame<block::Owned>,
+        S: framed::TypedFrame<block_signatures::Owned>;
 
     fn available_segments(&self) -> Vec<range::Range<BlockOffset>>;
 
@@ -35,7 +35,7 @@ pub trait Store {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Error {
     UnexpectedState,
-    Serialization(msg::Error),
+    Serialization(framed::Error),
     Integrity,
     SegmentFull,
     OutOfBound,
@@ -43,8 +43,8 @@ pub enum Error {
 }
 
 pub struct StoredBlock<'a> {
-    block: msg::FramedSliceTypedMessage<'a, block::Owned>,
-    signatures: msg::FramedSliceTypedMessage<'a, block_signatures::Owned>,
+    block: framed::TypedSliceFrame<'a, block::Owned>,
+    signatures: framed::TypedSliceFrame<'a, block_signatures::Owned>,
 }
 
 impl<'a> StoredBlock<'a> {
@@ -54,13 +54,13 @@ impl<'a> StoredBlock<'a> {
     }
 
     #[inline]
-    pub fn get_offset(&self) -> Result<BlockOffset, msg::Error> {
+    pub fn get_offset(&self) -> Result<BlockOffset, framed::Error> {
         let block_reader = self.block.get_typed_reader()?;
         Ok(block_reader.get_offset())
     }
 
     #[inline]
-    pub fn next_offset(&self) -> Result<BlockOffset, msg::Error> {
+    pub fn next_offset(&self) -> Result<BlockOffset, framed::Error> {
         let block_reader = self.block.get_typed_reader()?;
         let offset = block_reader.get_offset();
         Ok(offset + (self.block.frame_size() + self.signatures.frame_size()) as BlockOffset)

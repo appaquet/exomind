@@ -3,7 +3,7 @@ use crate::pending;
 use crate::transport;
 
 use exocore_common;
-use exocore_common::serialization::msg::FramedTypedMessage;
+use exocore_common::serialization::framed::TypedFrame;
 
 use futures::sync::mpsc;
 use tokio;

@@ -5,10 +5,8 @@ use std::path::{Path, PathBuf};
 
 use exocore_common::data_chain_capnp::{block, block_signatures};
 use exocore_common::range;
-use exocore_common::serialization::msg;
-use exocore_common::serialization::msg::{
-    FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType,
-};
+use exocore_common::serialization::framed;
+use exocore_common::serialization::framed::{Frame, FramesIterator, MessageType, TypedFrame};
 
 use super::*;
 
@@ -139,8 +137,8 @@ impl DirectoryStore {
 impl Store for DirectoryStore {
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
-        B: msg::FramedTypedMessage<block::Owned>,
-        S: msg::FramedTypedMessage<block_signatures::Owned>,
+        B: framed::TypedFrame<block::Owned>,
+        S: framed::TypedFrame<block_signatures::Owned>,
     {
         let (block_segment, written_in_segment) = {
             let need_new_segment = {
@@ -338,8 +336,8 @@ impl DirectorySegment {
         block_sigs: &S,
     ) -> Result<DirectorySegment, Error>
     where
-        B: msg::FramedTypedMessage<block::Owned>,
-        S: msg::FramedTypedMessage<block_signatures::Owned>,
+        B: framed::TypedFrame<block::Owned>,
+        S: framed::TypedFrame<block_signatures::Owned>,
     {
         let block_reader = block.get_typed_reader().unwrap();
         let first_block_offset = block_reader.get_offset();
@@ -400,14 +398,13 @@ impl DirectorySegment {
 
         // read first block to validate it has the same offset as segment
         let first_block_offset = {
-            let framed_message =
-                msg::FramedSliceMessage::new(&segment_file.mmap).map_err(|err| {
-                    error!(
-                        "Couldn't read first block from segment file {:?}: {:?}",
-                        segment_path, err
-                    );
-                    err
-                })?;
+            let framed_message = framed::SliceFrame::new(&segment_file.mmap).map_err(|err| {
+                error!(
+                    "Couldn't read first block from segment file {:?}: {:?}",
+                    segment_path, err
+                );
+                err
+            })?;
             let first_block = framed_message.get_typed_reader::<block::Owned>()?;
             first_block.get_offset()
         };
@@ -415,7 +412,7 @@ impl DirectorySegment {
         // iterate through segments and find the last block and its offset
         let (last_block_offset, next_block_offset, next_file_offset) = {
             let mut last_block_file_offset = None;
-            let block_iter = FramedMessageIterator::new(&segment_file.mmap)
+            let block_iter = FramesIterator::new(&segment_file.mmap)
                 .filter(|msg| msg.framed_message.message_type() == block::Owned::message_type());
             for message in block_iter {
                 last_block_file_offset = Some(message.offset);
@@ -423,12 +420,10 @@ impl DirectorySegment {
 
             match last_block_file_offset {
                 Some(file_offset) => {
-                    let block_message =
-                        msg::FramedSliceMessage::new(&segment_file.mmap[file_offset..])?;
+                    let block_message = framed::SliceFrame::new(&segment_file.mmap[file_offset..])?;
                     let block_reader = block_message.get_typed_reader::<block::Owned>()?;
                     let sigs_offset = file_offset + block_message.frame_size();
-                    let sigs_message =
-                        msg::FramedSliceMessage::new(&segment_file.mmap[sigs_offset..])?;
+                    let sigs_message = framed::SliceFrame::new(&segment_file.mmap[sigs_offset..])?;
 
                     let written_data_size = block_message.frame_size() + sigs_message.frame_size();
                     (
@@ -481,8 +476,8 @@ impl DirectorySegment {
 
     fn write_block<B, S>(&mut self, block: &B, block_sigs: &S) -> Result<(), Error>
     where
-        B: msg::FramedTypedMessage<block::Owned>,
-        S: msg::FramedTypedMessage<block_signatures::Owned>,
+        B: framed::TypedFrame<block::Owned>,
+        S: framed::TypedFrame<block_signatures::Owned>,
     {
         let next_file_offset = self.next_file_offset;
         let next_block_offset = self.next_block_offset;
@@ -527,12 +522,11 @@ impl DirectorySegment {
         }
 
         let block_file_offset = (offset - first_block_offset) as usize;
-        let block =
-            msg::FramedSliceTypedMessage::new(&self.segment_file.mmap[block_file_offset..])?;
+        let block = framed::TypedSliceFrame::new(&self.segment_file.mmap[block_file_offset..])?;
 
         let signatures_file_offset = block_file_offset + block.frame_size();
         let signatures =
-            msg::FramedSliceTypedMessage::new(&self.segment_file.mmap[signatures_file_offset..])?;
+            framed::TypedSliceFrame::new(&self.segment_file.mmap[signatures_file_offset..])?;
 
         Ok(StoredBlock { block, signatures })
     }
@@ -556,13 +550,13 @@ impl DirectorySegment {
         }
 
         let next_file_offset = (next_offset - first_block_offset) as usize;
-        let signatures = msg::FramedSliceTypedMessage::new_from_next_offset(
+        let signatures = framed::TypedSliceFrame::new_from_next_offset(
             &self.segment_file.mmap[..],
             next_file_offset,
         )?;
         let signatures_offset = next_file_offset - signatures.frame_size();
 
-        let block = msg::FramedSliceTypedMessage::new_from_next_offset(
+        let block = framed::TypedSliceFrame::new_from_next_offset(
             &self.segment_file.mmap[..],
             signatures_offset,
         )?;
@@ -661,8 +655,8 @@ impl SegmentFile {
     }
 }
 
-impl From<msg::Error> for Error {
-    fn from(err: msg::Error) -> Self {
+impl From<framed::Error> for Error {
+    fn from(err: framed::Error) -> Self {
         Error::Serialization(err)
     }
 }
@@ -672,7 +666,7 @@ mod tests {
     use tempdir;
 
     use super::*;
-    use exocore_common::serialization::msg::{FramedOwnedTypedMessage, FramedTypedMessage};
+    use exocore_common::serialization::framed::{OwnedTypedFrame, TypedFrame};
 
     #[test]
     fn directory_chain_create_and_open() {
@@ -1012,7 +1006,7 @@ mod tests {
                 .get_block_from_next_offset(segment.next_block_offset)
                 .is_ok());
 
-            let iter = msg::FramedMessageIterator::new(&segment.segment_file.mmap[0..]);
+            let iter = framed::FramesIterator::new(&segment.segment_file.mmap[0..]);
             assert_eq!(iter.count(), 2000); // blocks + sigs
         }
     }
@@ -1043,7 +1037,7 @@ mod tests {
         let truncated_segment_size = segment.segment_file.current_size;
         assert!(truncated_segment_size < 200_000);
 
-        let iter = msg::FramedMessageIterator::new(&segment.segment_file.mmap[0..]);
+        let iter = framed::FramesIterator::new(&segment.segment_file.mmap[0..]);
         assert_eq!(iter.count(), 2000); // blocks + sigs
     }
 
@@ -1063,8 +1057,8 @@ mod tests {
         assert_eq!(segment_file.current_size, 2000);
     }
 
-    fn create_block(offset: u64) -> FramedOwnedTypedMessage<block::Owned> {
-        let mut block_msg_builder = msg::MessageBuilder::<block::Owned>::new();
+    fn create_block(offset: u64) -> OwnedTypedFrame<block::Owned> {
+        let mut block_msg_builder = framed::FrameBuilder::<block::Owned>::new();
         {
             let mut block_builder = block_msg_builder.get_builder_typed();
             block_builder.set_hash("block_hash");
@@ -1073,8 +1067,8 @@ mod tests {
         block_msg_builder.as_owned_framed().unwrap()
     }
 
-    fn create_block_sigs() -> FramedOwnedTypedMessage<block_signatures::Owned> {
-        let mut block_msg_builder = msg::MessageBuilder::<block_signatures::Owned>::new();
+    fn create_block_sigs() -> OwnedTypedFrame<block_signatures::Owned> {
+        let mut block_msg_builder = framed::FrameBuilder::<block_signatures::Owned>::new();
         block_msg_builder.as_owned_framed().unwrap()
     }
 

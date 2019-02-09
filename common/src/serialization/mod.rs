@@ -1,6 +1,6 @@
 use std::io::{Read, Result, Write};
 
-pub mod msg;
+pub mod framed;
 pub mod protos;
 
 pub trait Serializable<T> {

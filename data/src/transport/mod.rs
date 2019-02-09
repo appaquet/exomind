@@ -2,7 +2,7 @@ use tokio::prelude::*;
 
 use exocore_common::data_transport_capnp::envelope;
 use exocore_common::node::Node;
-use exocore_common::serialization::msg::{FramedOwnedTypedMessage, MessageBuilder};
+use exocore_common::serialization::framed::{FrameBuilder, OwnedTypedFrame};
 
 pub mod mock;
 
@@ -16,7 +16,7 @@ pub trait Transport: Future<Item = (), Error = Error> + Send {
 
 pub struct OutMessage {
     to: Vec<Node>,
-    data: MessageBuilder<envelope::Owned>,
+    data: FrameBuilder<envelope::Owned>,
 }
 impl OutMessage {
     fn to_in_message(&self, from_node: Node) -> InMessage {
@@ -30,7 +30,7 @@ impl OutMessage {
 #[derive(Clone)]
 pub struct InMessage {
     pub from: Node,
-    pub data: FramedOwnedTypedMessage<envelope::Owned>,
+    pub data: OwnedTypedFrame<envelope::Owned>,
 }
 
 #[derive(Debug)]

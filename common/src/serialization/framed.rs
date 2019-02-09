@@ -1,7 +1,21 @@
+//!
+//! This module defines a framing structure for Capn Proto messages, allowing us to encode
+//! message type, message size, message data and a signature of the actual message data.
+//!
+//! A frame is structured like this:
+//! ---------------------------------------------------------
+//! | Metadata | Message           | Signature    | Metadata|
+//! ---------------------------------------------------------
+//!
+//! Metadata at the head and tail of the frame are the same, are repeated to support
+//! forward and backward iterations.
+//!
+
 use std;
 
 use byteorder;
 use byteorder::ByteOrder;
+use byteorder::LittleEndian;
 use capnp;
 pub use capnp::message::ReaderSegments;
 use capnp::message::{Allocator, Builder, HeapAllocator, Reader};
@@ -9,14 +23,18 @@ use capnp::serialize::SliceSegments;
 use lazycell::LazyCell;
 use owning_ref::OwningHandle;
 
+///
 /// Trait that needs to have an impl for each capnp generated message struct.
 /// Used to identify a unique type id for each message and annotate each framed message.
+///
 pub trait MessageType<'a>: capnp::traits::Owned<'a> {
     fn message_type() -> u16;
 }
 
+///
 /// A Framed Message is a capnp message with an extra header identifying the message type and message size.
-pub trait FramedMessage {
+///
+pub trait Frame {
     fn message_type(&self) -> u16;
     fn message_size(&self) -> usize;
     fn frame_size(&self) -> usize;
@@ -24,11 +42,13 @@ pub trait FramedMessage {
         &'b self,
     ) -> Result<<T as capnp::traits::Owned>::Reader, Error>;
     fn copy_into(&self, buf: &mut [u8]);
-    fn to_owned(&self) -> FramedOwnedMessage;
+    fn to_owned(&self) -> OwnedFrame;
 }
 
+///
 /// A Framed Typed Message is a FramedMessage that is guaranteed to be implementing the annotated type.
-pub trait FramedTypedMessage<T>
+///
+pub trait TypedFrame<T>
 where
     T: for<'a> MessageType<'a>,
 {
@@ -37,11 +57,13 @@ where
     fn frame_size(&self) -> usize;
     fn get_typed_reader(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error>;
     fn copy_into(&self, buf: &mut [u8]);
-    fn to_owned(&self) -> FramedOwnedTypedMessage<T>;
+    fn to_owned(&self) -> OwnedTypedFrame<T>;
 }
 
-/// Message builder
-pub struct MessageBuilder<T>
+///
+/// Framed message builder
+///
+pub struct FrameBuilder<T>
 where
     T: for<'a> MessageType<'a>,
 {
@@ -50,15 +72,15 @@ where
     phantom: std::marker::PhantomData<T>,
 }
 
-impl<T> MessageBuilder<T>
+impl<T> FrameBuilder<T>
 where
     T: for<'a> MessageType<'a>,
 {
-    pub fn new() -> MessageBuilder<T> {
+    pub fn new() -> FrameBuilder<T> {
         let message_type = <T as MessageType>::message_type();
         let mut builder = Builder::new_default();
         builder.init_root::<<T as capnp::traits::Owned>::Builder>();
-        MessageBuilder {
+        FrameBuilder {
             message_type,
             builder,
             phantom: std::marker::PhantomData,
@@ -73,49 +95,45 @@ where
         self.builder.get_root().unwrap()
     }
 
-    pub fn as_owned_framed(&self) -> Result<FramedOwnedTypedMessage<T>, Error> {
-        let msg = FramedOwnedMessage::from_builder(self.message_type, &self.builder)?;
+    pub fn as_owned_framed(&self) -> Result<OwnedTypedFrame<T>, Error> {
+        let msg = OwnedFrame::from_builder(self.message_type, &self.builder)?;
         Ok(msg.into_typed())
     }
 
     pub fn into_framed_vec(self) -> Result<Vec<u8>, Error> {
-        let mut writer = OwnedFramedMessageWriter::new(self.message_type);
-        capnp::serialize::write_message(&mut writer, &self.builder).map_err(|err| {
-            error!("Couldn't serialize builder into framed vector: {:?}", err);
-            Error::InvalidData
-        })?;
+        let mut writer = OwnedFrameWriter::new(self.message_type);
+        capnp::serialize::write_message(&mut writer, &self.builder)?;
         let (buffer, _metadata) = writer.finish()?;
         Ok(buffer)
     }
 
     pub fn write_into(&self, data: &mut [u8]) -> Result<FrameMetadata, Error> {
-        write_framed_builder_into_buffer(data, self.message_type, &self.builder).map_err(|err| {
-            error!("Couldn't write builder into buffer: {:?}", err);
-            Error::InvalidSize
-        })
+        write_framed_builder_into_buffer(data, self.message_type, &self.builder)
     }
 }
 
-impl<T> Default for MessageBuilder<T>
+impl<T> Default for FrameBuilder<T>
 where
     T: for<'a> MessageType<'a>,
 {
     fn default() -> Self {
-        MessageBuilder::new()
+        FrameBuilder::new()
     }
 }
 
+///
 /// Framed message coming from a slice of bytes. No copy was involved to create this message, as it uses the underlying bytes slice.
 ///
 /// Message parsing into an actual capnp message is lazily done when `get_typed_reader()` is called.
-pub struct FramedSliceMessage<'a> {
+///
+pub struct SliceFrame<'a> {
     metadata: FrameMetadata,
     data: &'a [u8],
     lazy_reader: LazyCell<Reader<SliceSegments<'a>>>,
 }
 
-impl<'a> FramedSliceMessage<'a> {
-    pub fn new(data: &[u8]) -> Result<FramedSliceMessage, Error> {
+impl<'a> SliceFrame<'a> {
+    pub fn new(data: &[u8]) -> Result<SliceFrame, Error> {
         let header_metadata = FrameMetadata::from_slice(data)?;
 
         if header_metadata.message_size == 0 {
@@ -141,17 +159,14 @@ impl<'a> FramedSliceMessage<'a> {
             return Err(Error::InvalidData);
         }
 
-        Ok(FramedSliceMessage {
+        Ok(SliceFrame {
             metadata: header_metadata,
             data,
             lazy_reader: LazyCell::new(),
         })
     }
 
-    pub fn new_from_next_offset(
-        data: &[u8],
-        next_offset: usize,
-    ) -> Result<FramedSliceMessage, Error> {
+    pub fn new_from_next_offset(data: &[u8], next_offset: usize) -> Result<SliceFrame, Error> {
         if data.len() < next_offset || next_offset < FrameMetadata::SIZE {
             error!(
                 "Tried to read from next offset {} in buffer of len {}",
@@ -182,7 +197,7 @@ impl<'a> FramedSliceMessage<'a> {
             return Err(Error::InvalidData);
         }
 
-        Ok(FramedSliceMessage {
+        Ok(SliceFrame {
             metadata: header_metadata,
             data: &data[frame_begin..frame_begin + footer_metadata.frame_size()],
             lazy_reader: LazyCell::new(),
@@ -198,22 +213,22 @@ impl<'a> FramedSliceMessage<'a> {
         })
     }
 
-    pub fn to_owned(&self) -> FramedOwnedMessage {
-        FramedOwnedMessage::new(self.data.to_vec()).unwrap()
+    pub fn to_owned(&self) -> OwnedFrame {
+        OwnedFrame::new(self.data.to_vec()).unwrap()
     }
 
-    pub fn into_typed<T>(self) -> FramedSliceTypedMessage<'a, T>
+    pub fn into_typed<T>(self) -> TypedSliceFrame<'a, T>
     where
         T: MessageType<'a>,
     {
-        FramedSliceTypedMessage {
+        TypedSliceFrame {
             message: self,
             phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<'a> FramedMessage for FramedSliceMessage<'a> {
+impl<'a> Frame for SliceFrame<'a> {
     fn message_type(&self) -> u16 {
         self.metadata.message_type
     }
@@ -241,28 +256,30 @@ impl<'a> FramedMessage for FramedSliceMessage<'a> {
         buf[0..self.metadata.frame_size()].copy_from_slice(self.data);
     }
 
-    fn to_owned(&self) -> FramedOwnedMessage {
-        FramedOwnedMessage::new(self.data.to_vec())
+    fn to_owned(&self) -> OwnedFrame {
+        OwnedFrame::new(self.data.to_vec())
             .expect("Couldn't create owned message from slice, which shouldn't be possible")
     }
 }
 
-/// A framed typed message coming from a slice of bytes that wraps a `FramedSliceMessage` with annotated type.
-pub struct FramedSliceTypedMessage<'a, T>
+///
+/// A framed typed message coming from a slice of bytes that wraps a `SliceFrame` with annotated type.
+///
+pub struct TypedSliceFrame<'a, T>
 where
     T: MessageType<'a>,
 {
-    message: FramedSliceMessage<'a>,
+    message: SliceFrame<'a>,
     phantom: std::marker::PhantomData<T>,
 }
 
-impl<'a, T> FramedSliceTypedMessage<'a, T>
+impl<'a, T> TypedSliceFrame<'a, T>
 where
     T: MessageType<'a>,
 {
-    pub fn new(data: &'a [u8]) -> Result<FramedSliceTypedMessage<'a, T>, Error> {
+    pub fn new(data: &'a [u8]) -> Result<TypedSliceFrame<'a, T>, Error> {
         let expected_type = <T as MessageType>::message_type();
-        let message = FramedSliceMessage::new(data)?;
+        let message = SliceFrame::new(data)?;
         if message.message_type() != expected_type {
             error!(
                 "Trying to read a message of type {}, but got type {} in buffer",
@@ -272,7 +289,7 @@ where
             return Err(Error::InvalidData);
         }
 
-        Ok(FramedSliceTypedMessage {
+        Ok(TypedSliceFrame {
             message,
             phantom: std::marker::PhantomData,
         })
@@ -281,9 +298,9 @@ where
     pub fn new_from_next_offset(
         data: &'a [u8],
         next_offset: usize,
-    ) -> Result<FramedSliceTypedMessage<'a, T>, Error> {
+    ) -> Result<TypedSliceFrame<'a, T>, Error> {
         let expected_type = <T as MessageType>::message_type();
-        let message = FramedSliceMessage::new_from_next_offset(data, next_offset)?;
+        let message = SliceFrame::new_from_next_offset(data, next_offset)?;
         if message.message_type() != expected_type {
             error!(
                 "Trying to read a message of type {}, but got type {} in buffer",
@@ -293,14 +310,14 @@ where
             return Err(Error::InvalidData);
         }
 
-        Ok(FramedSliceTypedMessage {
+        Ok(TypedSliceFrame {
             message,
             phantom: std::marker::PhantomData,
         })
     }
 }
 
-impl<'a, T> FramedTypedMessage<T> for FramedSliceTypedMessage<'a, T>
+impl<'a, T> TypedFrame<T> for TypedSliceFrame<'a, T>
 where
     T: for<'b> MessageType<'b>,
 {
@@ -324,23 +341,25 @@ where
         self.message.copy_into(buf);
     }
 
-    fn to_owned(&self) -> FramedOwnedTypedMessage<T> {
+    fn to_owned(&self) -> OwnedTypedFrame<T> {
         let owned_message = self.message.to_owned();
         owned_message.into_typed()
     }
 }
 
+///
 /// Iterator on a stream of untyped framed messages.
 /// Will return None on error, and the `last_error` field will identify the error, if any.
-pub struct FramedMessageIterator<'a> {
+///
+pub struct FramesIterator<'a> {
     buffer: &'a [u8],
     current_offset: usize,
     pub last_error: Option<Error>,
 }
 
-impl<'a> FramedMessageIterator<'a> {
-    pub fn new(buffer: &'a [u8]) -> FramedMessageIterator<'a> {
-        FramedMessageIterator {
+impl<'a> FramesIterator<'a> {
+    pub fn new(buffer: &'a [u8]) -> FramesIterator<'a> {
+        FramesIterator {
             buffer,
             current_offset: 0,
             last_error: None,
@@ -348,16 +367,16 @@ impl<'a> FramedMessageIterator<'a> {
     }
 }
 
-impl<'a> Iterator for FramedMessageIterator<'a> {
-    type Item = IteratedFramedSliceMessage<'a>;
+impl<'a> Iterator for FramesIterator<'a> {
+    type Item = IteratedFrame<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let offset = self.current_offset;
         let slice = &self.buffer[offset..];
-        match FramedSliceMessage::new(slice) {
+        match SliceFrame::new(slice) {
             Ok(framed_message) => {
                 self.current_offset += framed_message.frame_size();
-                Some(IteratedFramedSliceMessage {
+                Some(IteratedFrame {
                     offset,
                     framed_message,
                 })
@@ -374,11 +393,12 @@ impl<'a> Iterator for FramedMessageIterator<'a> {
     }
 }
 
-pub struct IteratedFramedSliceMessage<'a> {
+pub struct IteratedFrame<'a> {
     pub offset: usize,
-    pub framed_message: FramedSliceMessage<'a>,
+    pub framed_message: SliceFrame<'a>,
 }
 
+///
 /// A standalone framed message.
 ///
 /// Uses a OwningHandle in order to prevent having data twice in memory and use a FramedSliceMessage
@@ -388,17 +408,18 @@ pub struct IteratedFramedSliceMessage<'a> {
 /// As noted here: https://github.com/Kimundi/owning-ref-rs/issues/27
 /// We should never expose the 'static lifetime through the API because it may lead into unsafe
 /// behaviour.
-pub struct FramedOwnedMessage {
-    owned_slice_message: OwningHandle<Vec<u8>, Box<FramedSliceMessage<'static>>>,
+///
+pub struct OwnedFrame {
+    owned_slice_message: OwningHandle<Vec<u8>, Box<SliceFrame<'static>>>,
 }
 
-impl FramedOwnedMessage {
-    pub fn new(data: Vec<u8>) -> Result<FramedOwnedMessage, Error> {
+impl OwnedFrame {
+    pub fn new(data: Vec<u8>) -> Result<OwnedFrame, Error> {
         let owned_slice_message = OwningHandle::try_new(data, |data| unsafe {
-            FramedSliceMessage::new(data.as_ref().unwrap()).map(Box::new)
+            SliceFrame::new(data.as_ref().unwrap()).map(Box::new)
         })?;
 
-        Ok(FramedOwnedMessage {
+        Ok(OwnedFrame {
             owned_slice_message,
         })
     }
@@ -406,32 +427,32 @@ impl FramedOwnedMessage {
     pub fn from_builder<A: Allocator>(
         message_type: u16,
         builder: &Builder<A>,
-    ) -> Result<FramedOwnedMessage, Error> {
-        let mut writer = OwnedFramedMessageWriter::new(message_type);
+    ) -> Result<OwnedFrame, Error> {
+        let mut writer = OwnedFrameWriter::new(message_type);
         capnp::serialize::write_message(&mut writer, builder).unwrap();
         let (buffer, _metadata) = writer.finish()?;
 
-        FramedOwnedMessage::new(buffer)
+        OwnedFrame::new(buffer)
     }
 
-    pub fn into_typed<T>(self) -> FramedOwnedTypedMessage<T>
+    pub fn into_typed<T>(self) -> OwnedTypedFrame<T>
     where
         T: for<'a> MessageType<'a>,
     {
-        FramedOwnedTypedMessage {
+        OwnedTypedFrame {
             message: self,
             phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl Clone for FramedOwnedMessage {
+impl Clone for OwnedFrame {
     fn clone(&self) -> Self {
-        FramedOwnedMessage::new(self.owned_slice_message.data.to_vec()).unwrap()
+        OwnedFrame::new(self.owned_slice_message.data.to_vec()).unwrap()
     }
 }
 
-impl FramedMessage for FramedOwnedMessage {
+impl Frame for OwnedFrame {
     fn message_type(&self) -> u16 {
         self.owned_slice_message.message_type()
     }
@@ -454,22 +475,24 @@ impl FramedMessage for FramedOwnedMessage {
         self.owned_slice_message.copy_into(buf)
     }
 
-    fn to_owned(&self) -> FramedOwnedMessage {
-        FramedOwnedMessage::new(self.owned_slice_message.data.to_vec()).unwrap()
+    fn to_owned(&self) -> OwnedFrame {
+        OwnedFrame::new(self.owned_slice_message.data.to_vec()).unwrap()
     }
 }
 
-/// A standalone framed typed message that wraps a `FramedOwnedMessage` with annotated type.
+///
+/// A standalone framed typed message that wraps a `OwnedFrame` with annotated type.
+///
 #[derive(Clone)]
-pub struct FramedOwnedTypedMessage<T>
+pub struct OwnedTypedFrame<T>
 where
     T: for<'a> MessageType<'a>,
 {
-    message: FramedOwnedMessage,
+    message: OwnedFrame,
     phantom: std::marker::PhantomData<T>,
 }
 
-impl<T> FramedTypedMessage<T> for FramedOwnedTypedMessage<T>
+impl<T> TypedFrame<T> for OwnedTypedFrame<T>
 where
     T: for<'a> MessageType<'a>,
 {
@@ -493,23 +516,25 @@ where
         self.message.copy_into(buf);
     }
 
-    fn to_owned(&self) -> FramedOwnedTypedMessage<T> {
+    fn to_owned(&self) -> OwnedTypedFrame<T> {
         let owned_message = self.message.clone();
         owned_message.into_typed()
     }
 }
 
+///
 /// Framed message writer that wraps a slice, that should have enough capacity, and exposes a Write implementation used by capnp
-struct FramedMessageWriter<'a> {
+///
+struct SliceFrameWriter<'a> {
     message_type: u16,
     buffer: &'a mut [u8],
     count: usize,
     finished: bool,
 }
 
-impl<'a> FramedMessageWriter<'a> {
-    fn new(message_type: u16, buffer: &'a mut [u8]) -> FramedMessageWriter<'a> {
-        FramedMessageWriter {
+impl<'a> SliceFrameWriter<'a> {
+    fn new(message_type: u16, buffer: &'a mut [u8]) -> SliceFrameWriter<'a> {
+        SliceFrameWriter {
             message_type,
             buffer,
             count: FrameMetadata::SIZE,
@@ -534,7 +559,7 @@ impl<'a> FramedMessageWriter<'a> {
     }
 }
 
-impl<'a> Drop for FramedMessageWriter<'a> {
+impl<'a> Drop for SliceFrameWriter<'a> {
     fn drop(&mut self) {
         if !self.finished {
             let _ = self.finish();
@@ -542,7 +567,7 @@ impl<'a> Drop for FramedMessageWriter<'a> {
     }
 }
 
-impl<'a> std::io::Write for FramedMessageWriter<'a> {
+impl<'a> std::io::Write for SliceFrameWriter<'a> {
     fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
         let offset_from = self.count;
         let len = buf.len();
@@ -570,29 +595,33 @@ impl<'a> std::io::Write for FramedMessageWriter<'a> {
     }
 }
 
+///
 /// Helper method that writes a single message into a buffer. Uses a `FramedMessageWriter`
+///
 pub fn write_framed_builder_into_buffer<A: capnp::message::Allocator>(
     buffer: &mut [u8],
     message_type: u16,
     message_builder: &capnp::message::Builder<A>,
 ) -> Result<FrameMetadata, Error> {
-    let mut framed_writer = FramedMessageWriter::new(message_type, buffer);
+    let mut framed_writer = SliceFrameWriter::new(message_type, buffer);
     capnp::serialize::write_message(&mut framed_writer, &message_builder)?;
     framed_writer.finish()
 }
 
+///
 /// Framed message writer that writes into an owned Vector (and resizes itself), and exposes a Write implementation used by capnp
-pub struct OwnedFramedMessageWriter {
+///
+pub struct OwnedFrameWriter {
     message_type: u16,
     buffer: Vec<u8>,
     count: usize,
 }
 
-impl OwnedFramedMessageWriter {
-    pub fn new(message_type: u16) -> OwnedFramedMessageWriter {
+impl OwnedFrameWriter {
+    pub fn new(message_type: u16) -> OwnedFrameWriter {
         let mut buffer = Vec::new();
         Self::push_empty_bytes(&mut buffer, FrameMetadata::SIZE);
-        OwnedFramedMessageWriter {
+        OwnedFrameWriter {
             message_type,
             buffer,
             count: FrameMetadata::SIZE,
@@ -624,7 +653,7 @@ impl OwnedFramedMessageWriter {
     }
 }
 
-impl<'a> std::io::Write for OwnedFramedMessageWriter {
+impl<'a> std::io::Write for OwnedFrameWriter {
     fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
         for elem in buf {
             self.buffer.push(*elem);
@@ -638,35 +667,9 @@ impl<'a> std::io::Write for OwnedFramedMessageWriter {
     }
 }
 
-#[derive(Fail, Debug, Clone, PartialEq)]
-#[fail(display = "A message serialization error occurred")]
-pub enum Error {
-    #[fail(display = "Couldn't deserialization data")]
-    InvalidData,
-    #[fail(display = "Invalid message size")]
-    InvalidSize,
-    #[fail(display = "Destination size is too small")]
-    DestinationSize,
-    #[fail(display = "Capnp serialization error")]
-    CapnpSerialization(capnp::ErrorKind),
-    #[fail(display = "IO error")]
-    IO(std::io::ErrorKind),
-    #[fail(display = "Reached end of message / stream")]
-    EOF,
-}
-
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::CapnpSerialization(err.kind)
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::IO(err.kind())
-    }
-}
-
+///
+/// Metadata written at beginning and at the end of a frame.
+///
 #[derive(Debug, PartialEq)]
 pub struct FrameMetadata {
     pub message_type: u16,
@@ -685,9 +688,10 @@ impl FrameMetadata {
             return Err(Error::EOF);
         }
 
-        let message_type = unpack_u16(&buffer[0..Self::TYPE_FIELD_SIZE]);
-        let message_size = unpack_u32(&buffer[2..2 + Self::DATA_FIELD_SIZE]) as usize;
-        let signature_size = usize::from(unpack_u16(&buffer[6..6 + Self::SIG_FIELD_SIZE]));
+        let message_type = LittleEndian::read_u16(&buffer[0..Self::TYPE_FIELD_SIZE]);
+        let message_size = LittleEndian::read_u32(&buffer[2..2 + Self::DATA_FIELD_SIZE]) as usize;
+        let signature_size =
+            usize::from(LittleEndian::read_u16(&buffer[6..6 + Self::SIG_FIELD_SIZE]));
 
         Ok(FrameMetadata {
             message_type,
@@ -701,14 +705,14 @@ impl FrameMetadata {
             return Err(Error::DestinationSize);
         }
 
-        pack_u16(self.message_type, &mut buffer[0..Self::TYPE_FIELD_SIZE]);
-        pack_u32(
-            self.message_size as u32,
+        LittleEndian::write_u16(&mut buffer[0..Self::TYPE_FIELD_SIZE], self.message_type);
+        LittleEndian::write_u32(
             &mut buffer[2..2 + Self::DATA_FIELD_SIZE],
+            self.message_size as u32,
         );
-        pack_u16(
-            self.signature_size as u16,
+        LittleEndian::write_u16(
             &mut buffer[6..6 + Self::SIG_FIELD_SIZE],
+            self.signature_size as u16,
         );
 
         Ok(())
@@ -753,28 +757,36 @@ impl FrameMetadata {
     }
 }
 
-#[inline]
-fn pack_u32(value: u32, into: &mut [u8]) {
-    debug_assert!(into.len() >= 4);
-    byteorder::LittleEndian::write_u32(into, value);
+///
+/// Framing error
+///
+#[derive(Fail, Debug, Clone, PartialEq)]
+#[fail(display = "A message serialization error occurred")]
+pub enum Error {
+    #[fail(display = "Couldn't deserialization data")]
+    InvalidData,
+    #[fail(display = "Invalid message size")]
+    InvalidSize,
+    #[fail(display = "Destination size is too small")]
+    DestinationSize,
+    #[fail(display = "Capnp serialization error")]
+    CapnpSerialization(capnp::ErrorKind),
+    #[fail(display = "IO error")]
+    IO(std::io::ErrorKind),
+    #[fail(display = "Reached end of message / stream")]
+    EOF,
 }
 
-#[inline]
-fn unpack_u32(from: &[u8]) -> u32 {
-    debug_assert!(from.len() >= 4);
-    byteorder::LittleEndian::read_u32(from)
+impl From<capnp::Error> for Error {
+    fn from(err: capnp::Error) -> Self {
+        Error::CapnpSerialization(err.kind)
+    }
 }
 
-#[inline]
-fn pack_u16(value: u16, into: &mut [u8]) {
-    debug_assert!(into.len() >= 2);
-    byteorder::LittleEndian::write_u16(into, value);
-}
-
-#[inline]
-fn unpack_u16(from: &[u8]) -> u16 {
-    debug_assert!(from.len() >= 2);
-    byteorder::LittleEndian::read_u16(from)
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Error::IO(err.kind())
+    }
 }
 
 #[cfg(test)]
@@ -782,20 +794,6 @@ pub mod tests {
     use crate::data_chain_capnp::{block, entry_header};
 
     use super::*;
-
-    #[test]
-    fn pack_unpack_u32() {
-        let mut buf = vec![0, 0, 0, 0, 0, 0];
-        pack_u32(44323213, &mut buf);
-        assert_eq!(44323213, unpack_u32(&buf));
-    }
-
-    #[test]
-    fn pack_unpack_u16() {
-        let mut buf = vec![0, 0, 0];
-        pack_u16(1613, &mut buf);
-        assert_eq!(1613, unpack_u16(&buf));
-    }
 
     #[test]
     fn write_and_read_frame_metadata() {
@@ -813,11 +811,11 @@ pub mod tests {
     }
 
     #[test]
-    fn message_builder_into_data() {
+    fn frame_builder_into_vec() {
         let test_block_builder = build_test_block("block_hash");
 
         let message_data = test_block_builder.into_framed_vec().unwrap();
-        let slice_message = FramedSliceMessage::new(&message_data).unwrap();
+        let slice_message = SliceFrame::new(&message_data).unwrap();
         assert_eq!(
             slice_message.message_type(),
             <block::Owned as MessageType>::message_type()
@@ -830,7 +828,7 @@ pub mod tests {
     }
 
     #[test]
-    fn message_builder_into_owned() {
+    fn frame_builder_into_owned_frame() {
         let test_block_builder = build_test_block("block_hash");
 
         let block_owned_message = test_block_builder.as_owned_framed().unwrap();
@@ -844,7 +842,7 @@ pub mod tests {
     }
 
     #[test]
-    fn message_builder_write_into_buffer() {
+    fn frame_builder_write_into_buffer() {
         let test_block_builder = build_test_block("block_hash");
 
         let mut data = [0u8; 1000];
@@ -855,24 +853,26 @@ pub mod tests {
     }
 
     #[test]
-    fn framed_slice_message_invalid_message() {
+    fn slice_frame_from_invalid_data() {
         // no data found
         let data = [0u8; 1000];
-        assert_eq!(FramedSliceMessage::new(&data).err(), Some(Error::EOF));
+        assert_eq!(SliceFrame::new(&data).err(), Some(Error::EOF));
 
         // invalid size
         let mut data = [0u8; 1000];
-        pack_u32(10, &mut data);
-        assert!(FramedSliceMessage::new(&data).is_err());
+        LittleEndian::write_u16(&mut data, 10);
+        LittleEndian::write_u32(&mut data, 10);
+        assert!(SliceFrame::new(&data).is_err());
 
         // overflow size
         let mut data = [0u8; 1000];
-        pack_u32(10000, &mut data);
-        assert!(FramedSliceMessage::new(&data).is_err());
+        LittleEndian::write_u16(&mut data, 10);
+        LittleEndian::write_u32(&mut data, 10000);
+        assert!(SliceFrame::new(&data).is_err());
     }
 
     #[test]
-    fn framed_slice_message_from_next_offset() -> Result<(), Error> {
+    fn slice_frame_from_next_offset() -> Result<(), Error> {
         let mut data = [0u8; 1000];
 
         let mut block1_builder = build_test_block("block1_hash");
@@ -896,21 +896,20 @@ pub mod tests {
         )?;
 
         // wrong offset tests
-        assert!(FramedSliceMessage::new_from_next_offset(&data[0..], 0).is_err());
-        assert!(FramedSliceMessage::new_from_next_offset(&data[0..], 100).is_err());
+        assert!(SliceFrame::new_from_next_offset(&data[0..], 0).is_err());
+        assert!(SliceFrame::new_from_next_offset(&data[0..], 100).is_err());
 
-        let frame =
-            FramedSliceMessage::new_from_next_offset(&data[0..], block1_metadata.frame_size())?;
+        let frame = SliceFrame::new_from_next_offset(&data[0..], block1_metadata.frame_size())?;
         assert_eq!(frame.message_type(), 123);
         let block_reader = frame.get_typed_reader::<block::Owned>()?;
         assert_eq!(block_reader.get_hash()?, "block1_hash");
 
-        let frame = FramedSliceMessage::new_from_next_offset(&data[0..], block3_offset)?;
+        let frame = SliceFrame::new_from_next_offset(&data[0..], block3_offset)?;
         assert_eq!(frame.message_type(), 456);
         let block_reader = frame.get_typed_reader::<block::Owned>()?;
         assert_eq!(block_reader.get_hash()?, "block2_hash");
 
-        let frame = FramedSliceMessage::new_from_next_offset(
+        let frame = SliceFrame::new_from_next_offset(
             &data[0..],
             block3_offset + block3_metadata.frame_size(),
         )?;
@@ -922,7 +921,7 @@ pub mod tests {
     }
 
     #[test]
-    fn write_framed_builder_fail_not_enough_space() {
+    fn frame_write_fail_if_not_enough_space() {
         let mut block_builder = build_test_block("block_hash");
 
         let mut data = [0u8; 10];
@@ -932,7 +931,7 @@ pub mod tests {
     }
 
     #[test]
-    fn framed_message_iterator() {
+    fn frames_iterator() {
         let mut data = [0u8; 500_000];
 
         let mut next_offset = 0;
@@ -949,7 +948,7 @@ pub mod tests {
         }
 
         // simple forward iteration
-        let mut iterator = FramedMessageIterator::new(&data);
+        let mut iterator = FramesIterator::new(&data);
         let mut last_offset = 0;
         for message in iterator.by_ref() {
             assert!(last_offset == 0 || message.offset > last_offset);
@@ -958,14 +957,14 @@ pub mod tests {
         assert_eq!(iterator.last_error, None);
 
         // make sure we can deserialize
-        let message = FramedMessageIterator::new(&data).take(1).last().unwrap();
+        let message = FramesIterator::new(&data).take(1).last().unwrap();
         assert_eq!(message.offset, 0);
         let typed_reader = message.framed_message.into_typed::<block::Owned>();
         let block_reader = typed_reader.get_typed_reader().unwrap();
         assert_eq!(block_reader.get_hash().unwrap(), "block0");
 
         // iterator typing
-        let message = FramedMessageIterator::new(&data).take(10);
+        let message = FramesIterator::new(&data).take(10);
         let hashes: Vec<String> = message
             .filter(|m| m.framed_message.message_type() == 123)
             .map(|m| m.framed_message.into_typed::<block::Owned>())
@@ -987,18 +986,18 @@ pub mod tests {
     }
 
     #[test]
-    fn framed_message_iterator_error() {
+    fn frames_iterator_error_handling() {
         // invalid data should have an error
         let mut data = [0u8; 1000];
-        pack_u16(10, &mut data);
-        pack_u32(42, &mut data[2..]);
-        let mut iterator = FramedMessageIterator::new(&data);
+        LittleEndian::write_u16(&mut data, 10);
+        LittleEndian::write_u32(&mut data[2..], 42);
+        let mut iterator = FramesIterator::new(&data);
         assert_eq!(iterator.by_ref().count(), 0);
         assert!(iterator.last_error.is_some());
     }
 
-    fn build_test_block(hash: &str) -> MessageBuilder<block::Owned> {
-        let mut block_msg_builder = MessageBuilder::<block::Owned>::new();
+    fn build_test_block(hash: &str) -> FrameBuilder<block::Owned> {
+        let mut block_msg_builder = FrameBuilder::<block::Owned>::new();
 
         let mut block_builder = block_msg_builder.get_builder_typed();
         block_builder.set_hash(hash);
@@ -1007,7 +1006,7 @@ pub mod tests {
         {
             let mut entry = entries.get(0);
 
-            let mut entry_header_msg_builder = MessageBuilder::<entry_header::Owned>::new();
+            let mut entry_header_msg_builder = FrameBuilder::<entry_header::Owned>::new();
             let mut header_builder = entry_header_msg_builder.get_builder_typed();
             header_builder.set_hash(hash);
 

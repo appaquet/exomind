@@ -11,7 +11,7 @@
 //    include!(concat!(env!("OUT_DIR"), "/proto/data_transport_capnp.rs"));
 //}
 
-use crate::serialization::msg::MessageType;
+use crate::serialization::framed::MessageType;
 
 pub mod common_capnp;
 pub mod data_chain_capnp;

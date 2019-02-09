@@ -4,14 +4,14 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 use exocore_common::data_chain_capnp::pending_operation;
-use exocore_common::serialization::msg;
-use exocore_common::serialization::msg::FramedTypedMessage;
+use exocore_common::serialization::framed;
+use exocore_common::serialization::framed::TypedFrame;
 use exocore_common::serialization::protos::{EntryID, OperationID};
 
 pub trait Store {
     fn put_operation(
         &mut self,
-        operation: msg::FramedOwnedTypedMessage<pending_operation::Owned>,
+        operation: framed::OwnedTypedFrame<pending_operation::Owned>,
     ) -> Result<(), Error>;
 
     fn get_entry_operations(
@@ -36,7 +36,7 @@ pub struct StoredOperation {
 
 pub struct StoredEntryOperations {
     pub entry_id: EntryID,
-    pub operations: Vec<Arc<msg::FramedOwnedTypedMessage<pending_operation::Owned>>>,
+    pub operations: Vec<Arc<framed::OwnedTypedFrame<pending_operation::Owned>>>,
 }
 
 ///
@@ -65,7 +65,7 @@ impl Default for MemoryStore {
 impl Store for MemoryStore {
     fn put_operation(
         &mut self,
-        operation: msg::FramedOwnedTypedMessage<pending_operation::Owned>,
+        operation: framed::OwnedTypedFrame<pending_operation::Owned>,
     ) -> Result<(), Error> {
         let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
 
@@ -128,7 +128,7 @@ impl Store for MemoryStore {
 }
 
 struct EntryOperations {
-    operations: BTreeMap<OperationID, Arc<msg::FramedOwnedTypedMessage<pending_operation::Owned>>>,
+    operations: BTreeMap<OperationID, Arc<framed::OwnedTypedFrame<pending_operation::Owned>>>,
 }
 
 impl EntryOperations {
@@ -145,11 +145,11 @@ impl EntryOperations {
 #[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "Error in message serialization")]
-    Serialization(#[fail(cause)] msg::Error),
+    Serialization(#[fail(cause)] framed::Error),
 }
 
-impl From<msg::Error> for Error {
-    fn from(err: msg::Error) -> Self {
+impl From<framed::Error> for Error {
+    fn from(err: framed::Error) -> Self {
         Error::Serialization(err)
     }
 }
@@ -158,7 +158,7 @@ impl From<msg::Error> for Error {
 mod test {
     use failure::Fail;
 
-    use exocore_common::serialization::msg::MessageBuilder;
+    use exocore_common::serialization::framed::FrameBuilder;
 
     use super::*;
 
@@ -195,8 +195,8 @@ mod test {
     fn create_new_entry_op(
         operation_id: OperationID,
         entry_id: EntryID,
-    ) -> msg::FramedOwnedTypedMessage<pending_operation::Owned> {
-        let mut msg_builder = MessageBuilder::<pending_operation::Owned>::new();
+    ) -> framed::OwnedTypedFrame<pending_operation::Owned> {
+        let mut msg_builder = FrameBuilder::<pending_operation::Owned>::new();
         {
             let mut op_builder: pending_operation::Builder = msg_builder.get_builder_typed();
             op_builder.set_id(operation_id);
