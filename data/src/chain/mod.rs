@@ -32,7 +32,7 @@ pub trait Store {
     fn truncate_from_offset(&mut self, block_offset: BlockOffset) -> Result<(), Error>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Error {
     UnexpectedState,
     Serialization(msg::Error),
@@ -50,7 +50,7 @@ pub struct StoredBlock<'a> {
 impl<'a> StoredBlock<'a> {
     #[inline]
     pub fn total_size(&self) -> usize {
-        self.block.data_size() + self.signatures.data_size()
+        self.block.frame_size() + self.signatures.frame_size()
     }
 
     #[inline]
@@ -63,7 +63,7 @@ impl<'a> StoredBlock<'a> {
     pub fn next_offset(&self) -> Result<BlockOffset, msg::Error> {
         let block_reader = self.block.get_typed_reader()?;
         let offset = block_reader.get_offset();
-        Ok(offset + (self.block.data_size() + self.signatures.data_size()) as BlockOffset)
+        Ok(offset + (self.block.frame_size() + self.signatures.frame_size()) as BlockOffset)
     }
 }
 

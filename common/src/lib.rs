@@ -17,6 +17,7 @@ pub mod security;
 pub mod serialization;
 pub mod simple_store;
 pub mod time;
+pub mod utils;
 
 pub mod tests_utils;
 
