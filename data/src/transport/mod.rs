@@ -22,7 +22,7 @@ impl OutMessage {
     fn to_in_message(&self, from_node: Node) -> InMessage {
         InMessage {
             from: from_node,
-            data: self.data.as_owned_framed().unwrap(),
+            data: self.data.as_owned_unsigned_framed().unwrap(),
         }
     }
 }

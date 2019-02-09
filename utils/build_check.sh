@@ -7,9 +7,13 @@ cargo clean
 
 cargo test --all
 
-# TODO: Proper message for missing ndk
-export PATH="$PATH:/Users/appaquet/Work/ampme/ampme-ampplayer/NDK/arm/bin/"
-cargo check --target "armv7-linux-androideabi"
+if [[ "$ANDROID_NDK" != "" ]]; then
+    export PATH="$PATH:$ANDROID_NDK/arm/bin/"
+    cargo check --target "armv7-linux-androideabi"
+else
+    echo "The ANDROID_NDK path is not set. Not testing Android build"
+    sleep 5
+fi
 
 cargo check --target "aarch64-apple-ios"
 

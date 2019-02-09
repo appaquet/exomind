@@ -15,7 +15,7 @@ fn bench_build_message(b: &mut Bencher) {
     b.iter(|| {
         let mut builder = FrameBuilder::<block::Owned>::new();
         build_test_block(&mut builder);
-        let _ = builder.write_into(&mut data);
+        let _ = builder.write_into_unsigned(&mut data);
     });
 }
 

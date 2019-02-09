@@ -1064,12 +1064,12 @@ mod tests {
             block_builder.set_hash("block_hash");
             block_builder.set_offset(offset);
         }
-        block_msg_builder.as_owned_framed().unwrap()
+        block_msg_builder.as_owned_unsigned_framed().unwrap()
     }
 
     fn create_block_sigs() -> OwnedTypedFrame<block_signatures::Owned> {
         let mut block_msg_builder = framed::FrameBuilder::<block_signatures::Owned>::new();
-        block_msg_builder.as_owned_framed().unwrap()
+        block_msg_builder.as_owned_unsigned_framed().unwrap()
     }
 
     fn append_blocks_to_directory(

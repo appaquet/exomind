@@ -46,7 +46,7 @@ pub trait Frame {
 }
 
 ///
-/// A Framed Typed Message is a FramedMessage that is guaranteed to be implementing the annotated type.
+/// A Framed Typed Message wraps a FramedMessage annotated type.
 ///
 pub trait TypedFrame<T>
 where
@@ -95,20 +95,36 @@ where
         self.builder.get_root().unwrap()
     }
 
-    pub fn as_owned_framed(&self) -> Result<OwnedTypedFrame<T>, Error> {
-        let msg = OwnedFrame::from_builder(self.message_type, &self.builder)?;
+    pub fn as_owned_framed<S: FrameSigner>(&self, signer: S) -> Result<OwnedTypedFrame<T>, Error> {
+        let msg = OwnedFrame::from_builder(self.message_type, &self.builder, signer)?;
         Ok(msg.into_typed())
     }
 
-    pub fn into_framed_vec(self) -> Result<Vec<u8>, Error> {
-        let mut writer = OwnedFrameWriter::new(self.message_type);
+    pub fn as_owned_unsigned_framed(&self) -> Result<OwnedTypedFrame<T>, Error> {
+        self.as_owned_framed(NullFrameSigner)
+    }
+
+    pub fn into_framed_vec<S: FrameSigner>(self, signer: S) -> Result<Vec<u8>, Error> {
+        let mut writer = OwnedFrameWriter::new(self.message_type, signer);
         capnp::serialize::write_message(&mut writer, &self.builder)?;
         let (buffer, _metadata) = writer.finish()?;
         Ok(buffer)
     }
 
-    pub fn write_into(&self, data: &mut [u8]) -> Result<FrameMetadata, Error> {
-        write_framed_builder_into_buffer(data, self.message_type, &self.builder)
+    pub fn into_unsigned_framed_bytes(self) -> Result<Vec<u8>, Error> {
+        self.into_framed_vec(NullFrameSigner)
+    }
+
+    pub fn write_into<S: FrameSigner>(
+        &self,
+        data: &mut [u8],
+        signer: S,
+    ) -> Result<FrameMetadata, Error> {
+        write_framed_builder_into_buffer(data, self.message_type, &self.builder, signer)
+    }
+
+    pub fn write_into_unsigned(&self, data: &mut [u8]) -> Result<FrameMetadata, Error> {
+        write_framed_builder_into_buffer(data, self.message_type, &self.builder, NullFrameSigner)
     }
 }
 
@@ -424,11 +440,12 @@ impl OwnedFrame {
         })
     }
 
-    pub fn from_builder<A: Allocator>(
+    pub fn from_builder<A: Allocator, S: FrameSigner>(
         message_type: u16,
         builder: &Builder<A>,
+        signer: S,
     ) -> Result<OwnedFrame, Error> {
-        let mut writer = OwnedFrameWriter::new(message_type);
+        let mut writer = OwnedFrameWriter::new(message_type, signer);
         capnp::serialize::write_message(&mut writer, builder).unwrap();
         let (buffer, _metadata) = writer.finish()?;
 
@@ -525,59 +542,65 @@ where
 ///
 /// Framed message writer that wraps a slice, that should have enough capacity, and exposes a Write implementation used by capnp
 ///
-struct SliceFrameWriter<'a> {
+struct SliceFrameWriter<'a, S: FrameSigner> {
     message_type: u16,
     buffer: &'a mut [u8],
     count: usize,
-    finished: bool,
+    signer: S,
 }
 
-impl<'a> SliceFrameWriter<'a> {
-    fn new(message_type: u16, buffer: &'a mut [u8]) -> SliceFrameWriter<'a> {
+impl<'a, S: FrameSigner> SliceFrameWriter<'a, S> {
+    fn new(message_type: u16, buffer: &'a mut [u8], signer: S) -> SliceFrameWriter<'a, S> {
         SliceFrameWriter {
             message_type,
             buffer,
             count: FrameMetadata::SIZE,
-            finished: false,
+            signer,
         }
     }
 
-    fn finish(&mut self) -> Result<FrameMetadata, Error> {
-        let message_size = self.count - FrameMetadata::SIZE;
+    fn finish(self) -> Result<FrameMetadata, Error> {
+        let SliceFrameWriter {
+            message_type,
+            mut buffer,
+            count,
+            signer,
+        } = self;
 
-        let metadata = FrameMetadata {
-            message_type: self.message_type,
-            message_size,
-            signature_size: 0,
+        let message_size = count - FrameMetadata::SIZE;
+
+        // write signature
+        let signature_size = match signer.finish() {
+            Some(signature) => Self::checked_copy_to_buffer(count, &mut buffer, &signature)?,
+            None => 0,
         };
 
-        metadata.copy_into_slice(&mut self.buffer[0..])?;
-        metadata.copy_into_slice(&mut self.buffer[metadata.footer_offset()..])?;
-        self.finished = true;
+        // write metadata at beginning and end of the buffer
+        let metadata = FrameMetadata {
+            message_type,
+            message_size,
+            signature_size,
+        };
+        metadata.copy_into_slice(&mut buffer[0..])?;
+        metadata.copy_into_slice(&mut buffer[metadata.footer_offset()..])?;
 
         Ok(metadata)
     }
-}
 
-impl<'a> Drop for SliceFrameWriter<'a> {
-    fn drop(&mut self) {
-        if !self.finished {
-            let _ = self.finish();
-        }
-    }
-}
-
-impl<'a> std::io::Write for SliceFrameWriter<'a> {
-    fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
-        let offset_from = self.count;
-        let len = buf.len();
+    fn checked_copy_to_buffer(
+        offset: usize,
+        buffer: &mut [u8],
+        data: &[u8],
+    ) -> Result<usize, std::io::Error> {
+        let offset_from = offset;
+        let len = data.len();
         let offset_to = offset_from + len;
 
-        if offset_to > self.buffer.len() {
+        if offset_to > buffer.len() {
             error!(
                 "Tried to write a message that exceeded size of buffer: offset_to={} buffer_len={}",
                 offset_to,
-                self.buffer.len()
+                buffer.len()
             );
             return Err(std::io::Error::new(
                 std::io::ErrorKind::UnexpectedEof,
@@ -585,9 +608,18 @@ impl<'a> std::io::Write for SliceFrameWriter<'a> {
             ));
         }
 
-        self.buffer[offset_from..offset_to].copy_from_slice(buf);
-        self.count += len;
-        Ok(buf.len())
+        buffer[offset_from..offset_to].copy_from_slice(data);
+
+        Ok(data.len())
+    }
+}
+
+impl<'a, S: FrameSigner> std::io::Write for SliceFrameWriter<'a, S> {
+    fn write(&mut self, data: &[u8]) -> Result<usize, std::io::Error> {
+        let written = Self::checked_copy_to_buffer(self.count, &mut self.buffer, data)?;
+        self.count += written;
+        self.signer.consume(data);
+        Ok(written)
     }
 
     fn flush(&mut self) -> Result<(), std::io::Error> {
@@ -598,12 +630,13 @@ impl<'a> std::io::Write for SliceFrameWriter<'a> {
 ///
 /// Helper method that writes a single message into a buffer. Uses a `FramedMessageWriter`
 ///
-pub fn write_framed_builder_into_buffer<A: capnp::message::Allocator>(
+pub fn write_framed_builder_into_buffer<A: capnp::message::Allocator, S: FrameSigner>(
     buffer: &mut [u8],
     message_type: u16,
     message_builder: &capnp::message::Builder<A>,
+    signer: S,
 ) -> Result<FrameMetadata, Error> {
-    let mut framed_writer = SliceFrameWriter::new(message_type, buffer);
+    let mut framed_writer = SliceFrameWriter::new(message_type, buffer, signer);
     capnp::serialize::write_message(&mut framed_writer, &message_builder)?;
     framed_writer.finish()
 }
@@ -611,35 +644,48 @@ pub fn write_framed_builder_into_buffer<A: capnp::message::Allocator>(
 ///
 /// Framed message writer that writes into an owned Vector (and resizes itself), and exposes a Write implementation used by capnp
 ///
-pub struct OwnedFrameWriter {
+pub struct OwnedFrameWriter<S: FrameSigner> {
     message_type: u16,
     buffer: Vec<u8>,
-    count: usize,
+    signer: S,
 }
 
-impl OwnedFrameWriter {
-    pub fn new(message_type: u16) -> OwnedFrameWriter {
+impl<S: FrameSigner> OwnedFrameWriter<S> {
+    pub fn new(message_type: u16, signer: S) -> OwnedFrameWriter<S> {
         let mut buffer = Vec::new();
         Self::push_empty_bytes(&mut buffer, FrameMetadata::SIZE);
         OwnedFrameWriter {
             message_type,
             buffer,
-            count: FrameMetadata::SIZE,
+            signer,
         }
     }
 
     pub fn finish(mut self) -> Result<(Vec<u8>, FrameMetadata), Error> {
-        let message_size = self.count - FrameMetadata::SIZE;
+        let message_size = self.buffer.len() - FrameMetadata::SIZE;
+
+        // write signature
+        let signature_size = match self.signer.finish() {
+            Some(signature) => {
+                let sig_size = signature.len();
+                for elem in signature {
+                    self.buffer.push(elem);
+                }
+                sig_size
+            }
+            None => 0,
+        };
 
         let metadata = FrameMetadata {
             message_type: self.message_type,
             message_size,
-            signature_size: 0,
+            signature_size,
         };
 
+        // copy metadata at beginning
         metadata.copy_into_slice(&mut self.buffer[0..])?;
 
-        // push empty bytes for footer meta & write it
+        // copy metadata at end
         Self::push_empty_bytes(&mut self.buffer, FrameMetadata::SIZE);
         metadata.copy_into_slice(&mut self.buffer[metadata.footer_offset()..])?;
 
@@ -653,12 +699,12 @@ impl OwnedFrameWriter {
     }
 }
 
-impl<'a> std::io::Write for OwnedFrameWriter {
+impl<'a, S: FrameSigner> std::io::Write for OwnedFrameWriter<S> {
     fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
         for elem in buf {
             self.buffer.push(*elem);
         }
-        self.count += buf.len();
+        self.signer.consume(buf);
         Ok(buf.len())
     }
 
@@ -758,6 +804,65 @@ impl FrameMetadata {
 }
 
 ///
+/// Trait representing a way to sign a frame
+///
+pub trait FrameSigner {
+    fn consume(&mut self, data: &[u8]);
+    fn finish(self) -> Option<Vec<u8>>;
+}
+
+pub struct NullFrameSigner;
+
+impl FrameSigner for NullFrameSigner {
+    fn consume(&mut self, _data: &[u8]) {}
+
+    fn finish(self) -> Option<Vec<u8>> {
+        None
+    }
+}
+
+pub struct MultihashFrameSigner<H>
+where
+    H: crate::security::hash::StreamHasher,
+{
+    hasher: H,
+}
+
+impl<H> MultihashFrameSigner<H>
+where
+    H: crate::security::hash::StreamHasher,
+{
+    pub fn new(hasher: H) -> MultihashFrameSigner<H> {
+        MultihashFrameSigner { hasher }
+    }
+
+    pub fn new_sha3256() -> MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
+        MultihashFrameSigner {
+            hasher: crate::security::hash::Sha3Hasher::new_256(),
+        }
+    }
+
+    pub fn new_sha3512() -> MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
+        MultihashFrameSigner {
+            hasher: crate::security::hash::Sha3Hasher::new_512(),
+        }
+    }
+}
+
+impl<H> FrameSigner for MultihashFrameSigner<H>
+where
+    H: crate::security::hash::StreamHasher,
+{
+    fn consume(&mut self, data: &[u8]) {
+        self.hasher.consume(data);
+    }
+
+    fn finish(self) -> Option<Vec<u8>> {
+        Some(self.hasher.into_mulithash_bytes())
+    }
+}
+
+///
 /// Framing error
 ///
 #[derive(Fail, Debug, Clone, PartialEq)]
@@ -811,10 +916,10 @@ pub mod tests {
     }
 
     #[test]
-    fn frame_builder_into_vec() {
+    fn frame_builder_into_bytes() {
         let test_block_builder = build_test_block("block_hash");
 
-        let message_data = test_block_builder.into_framed_vec().unwrap();
+        let message_data = test_block_builder.into_unsigned_framed_bytes().unwrap();
         let slice_message = SliceFrame::new(&message_data).unwrap();
         assert_eq!(
             slice_message.message_type(),
@@ -831,7 +936,7 @@ pub mod tests {
     fn frame_builder_into_owned_frame() {
         let test_block_builder = build_test_block("block_hash");
 
-        let block_owned_message = test_block_builder.as_owned_framed().unwrap();
+        let block_owned_message = test_block_builder.as_owned_unsigned_framed().unwrap();
         assert_eq!(
             block_owned_message.message_type(),
             <block::Owned as MessageType>::message_type()
@@ -846,9 +951,9 @@ pub mod tests {
         let test_block_builder = build_test_block("block_hash");
 
         let mut data = [0u8; 1000];
-        let metadata = test_block_builder.write_into(&mut data).unwrap();
+        let metadata = test_block_builder.write_into_unsigned(&mut data).unwrap();
 
-        let framed_data = test_block_builder.into_framed_vec().unwrap();
+        let framed_data = test_block_builder.into_unsigned_framed_bytes().unwrap();
         assert_eq!(&framed_data[..], &data[..metadata.frame_size()]);
     }
 
@@ -876,8 +981,12 @@ pub mod tests {
         let mut data = [0u8; 1000];
 
         let mut block1_builder = build_test_block("block1_hash");
-        let block1_metadata =
-            write_framed_builder_into_buffer(&mut data[0..], 123, &block1_builder.get_builder())?;
+        let block1_metadata = write_framed_builder_into_buffer(
+            &mut data[0..],
+            123,
+            &block1_builder.get_builder(),
+            NullFrameSigner,
+        )?;
 
         let block2_offset = block1_metadata.frame_size();
         let mut block2_builder = build_test_block("block2_hash");
@@ -885,6 +994,7 @@ pub mod tests {
             &mut data[block2_offset..],
             456,
             &block2_builder.get_builder(),
+            NullFrameSigner,
         )?;
 
         let block3_offset = block2_offset + block2_metadata.frame_size();
@@ -893,6 +1003,7 @@ pub mod tests {
             &mut data[block3_offset..],
             789,
             &block3_builder.get_builder(),
+            NullFrameSigner,
         )?;
 
         // wrong offset tests
@@ -925,9 +1036,13 @@ pub mod tests {
         let mut block_builder = build_test_block("block_hash");
 
         let mut data = [0u8; 10];
-        assert!(
-            write_framed_builder_into_buffer(&mut data, 123, block_builder.get_builder()).is_err()
-        );
+        assert!(write_framed_builder_into_buffer(
+            &mut data,
+            123,
+            block_builder.get_builder(),
+            NullFrameSigner,
+        )
+        .is_err());
     }
 
     #[test]
@@ -942,6 +1057,7 @@ pub mod tests {
                 &mut data[next_offset..],
                 123,
                 block_builder.get_builder(),
+                NullFrameSigner,
             )
             .unwrap();
             next_offset += metadata.frame_size();
@@ -1002,7 +1118,7 @@ pub mod tests {
         let mut block_builder = block_msg_builder.get_builder_typed();
         block_builder.set_hash(hash);
 
-        let mut entries = block_builder.init_entries(1);
+        let entries = block_builder.init_entries(1);
         {
             let mut entry = entries.get(0);
 

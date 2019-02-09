@@ -208,6 +208,6 @@ mod test {
             let mut entry_header_builder = entry_builder.init_header();
             entry_header_builder.set_id(entry_id);
         }
-        msg_builder.as_owned_framed().unwrap()
+        msg_builder.as_owned_unsigned_framed().unwrap()
     }
 }
