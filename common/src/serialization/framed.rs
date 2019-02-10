@@ -895,7 +895,7 @@ impl MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
         }
     }
 
-    pub fn validate(frame: &dyn SignedFrame) -> Result<Multihash, Error> {
+    pub fn validate<S: SignedFrame>(frame: &S) -> Result<Multihash, Error> {
         frame
             .signature_data()
             .ok_or(Error::InvalidSignature)
@@ -975,9 +975,8 @@ impl From<std::io::Error> for Error {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::data_chain_capnp::{block, entry_header};
-
     use super::*;
+    use crate::data_chain_capnp::{block, entry_header};
 
     #[test]
     fn write_and_read_frame_metadata() {
@@ -996,72 +995,44 @@ pub mod tests {
 
     #[test]
     fn frame_builder_into_bytes() {
-        let test_block_builder = build_test_block("block_hash");
+        let block_builder = build_test_block("block_hash");
 
-        let message_data = test_block_builder.into_unsigned_framed_bytes().unwrap();
-        let slice_message = SliceFrame::new(&message_data).unwrap();
+        let frame_data = block_builder.into_unsigned_framed_bytes().unwrap();
+        let frame_slice = SliceFrame::new(&frame_data).unwrap();
         assert_eq!(
-            slice_message.message_type(),
+            frame_slice.message_type(),
             <block::Owned as MessageType>::message_type()
         );
 
-        let typed_message = slice_message.into_typed::<block::Owned>();
-        let reader = typed_message.get_typed_reader().unwrap();
-        assert_eq!(reader.get_hash().unwrap(), "block_hash");
-        assert_eq!(typed_message.frame_size(), message_data.len());
+        let typed_frame = frame_slice.into_typed::<block::Owned>();
+        let block_reader = typed_frame.get_typed_reader().unwrap();
+        assert_eq!(block_reader.get_hash().unwrap(), "block_hash");
+        assert_eq!(typed_frame.frame_size(), frame_data.len());
     }
 
     #[test]
     fn frame_builder_into_owned_frame() {
-        let test_block_builder = build_test_block("block_hash");
+        let block_builder = build_test_block("block_hash");
 
-        let block_owned_message = test_block_builder.as_owned_unsigned_framed().unwrap();
+        let owned_frame = block_builder.as_owned_unsigned_framed().unwrap();
         assert_eq!(
-            block_owned_message.message_type(),
+            owned_frame.message_type(),
             <block::Owned as MessageType>::message_type()
         );
 
-        let message_reader = block_owned_message.get_typed_reader().unwrap();
-        assert_eq!(message_reader.get_hash().unwrap(), "block_hash");
+        let block_reader = owned_frame.get_typed_reader().unwrap();
+        assert_eq!(block_reader.get_hash().unwrap(), "block_hash");
     }
 
     #[test]
     fn frame_builder_write_into_buffer() {
-        let test_block_builder = build_test_block("block_hash");
+        let block_builder = build_test_block("block_hash");
 
         let mut data = [0u8; 1000];
-        let metadata = test_block_builder.write_into_unsigned(&mut data).unwrap();
+        let frame_metadata = block_builder.write_into_unsigned(&mut data).unwrap();
 
-        let framed_data = test_block_builder.into_unsigned_framed_bytes().unwrap();
-        assert_eq!(&framed_data[..], &data[..metadata.frame_size()]);
-    }
-
-    #[test]
-    fn frame_sign_and_validate() {
-        let test_block_builder = build_test_block("block_hash");
-
-        let signer = MultihashFrameSigner::new_sha3256();
-        let frame: OwnedTypedFrame<block::Owned> =
-            test_block_builder.as_owned_framed(signer).unwrap();
-        assert_eq!(frame.signature_data().unwrap().len(), 2 + 32);
-        assert!(MultihashFrameSigner::validate(&frame).is_ok());
-
-        let signer = MultihashFrameSigner::new_sha3512();
-        let frame = test_block_builder.as_owned_framed(signer).unwrap();
-        assert_eq!(frame.signature_data().unwrap().len(), 2 + 64);
-        assert!(MultihashFrameSigner::validate(&frame).is_ok());
-
-        let mut data = test_block_builder
-            .into_framed_vec(MultihashFrameSigner::new_sha3512())
-            .unwrap();
-        let frame = SliceFrame::new(&data).unwrap();
-        assert!(MultihashFrameSigner::validate(&frame).is_ok());
-
-        // modify message should invalidate signature
-        data[10] = 40;
-        data[11] = 12;
-        let frame = SliceFrame::new(&data).unwrap();
-        assert!(MultihashFrameSigner::validate(&frame).is_err());
+        let framed_data = block_builder.into_unsigned_framed_bytes().unwrap();
+        assert_eq!(&framed_data[..], &data[..frame_metadata.frame_size()]);
     }
 
     #[test]
@@ -1173,22 +1144,23 @@ pub mod tests {
         // simple forward iteration
         let mut iterator = FramesIterator::new(&data);
         let mut last_offset = 0;
-        for message in iterator.by_ref() {
-            assert!(last_offset == 0 || message.offset > last_offset);
-            last_offset = message.offset;
+        for frame in iterator.by_ref() {
+            assert!(last_offset == 0 || frame.offset > last_offset);
+            last_offset = frame.offset;
         }
         assert_eq!(iterator.last_error, None);
 
         // make sure we can deserialize
-        let message = FramesIterator::new(&data).take(1).last().unwrap();
-        assert_eq!(message.offset, 0);
-        let typed_reader = message.framed_message.into_typed::<block::Owned>();
-        let block_reader = typed_reader.get_typed_reader().unwrap();
+        let last_iter_frame = FramesIterator::new(&data).take(1).last().unwrap();
+        assert_eq!(last_iter_frame.offset, 0);
+
+        let typed_frame = last_iter_frame.framed_message.into_typed::<block::Owned>();
+        let block_reader = typed_frame.get_typed_reader().unwrap();
         assert_eq!(block_reader.get_hash().unwrap(), "block0");
 
         // iterator typing
-        let message = FramesIterator::new(&data).take(10);
-        let hashes: Vec<String> = message
+        let frames_iter = FramesIterator::new(&data).take(10);
+        let hashes: Vec<String> = frames_iter
             .filter(|m| m.framed_message.message_type() == 123)
             .map(|m| m.framed_message.into_typed::<block::Owned>())
             .map(|b| {
@@ -1214,9 +1186,37 @@ pub mod tests {
         let mut data = [0u8; 1000];
         LittleEndian::write_u16(&mut data, 10);
         LittleEndian::write_u32(&mut data[2..], 42);
+
         let mut iterator = FramesIterator::new(&data);
         assert_eq!(iterator.by_ref().count(), 0);
         assert!(iterator.last_error.is_some());
+    }
+
+    #[test]
+    fn frame_sign_and_validate() {
+        let block_builder = build_test_block("block_hash");
+
+        let signer = MultihashFrameSigner::new_sha3256();
+        let frame: OwnedTypedFrame<block::Owned> = block_builder.as_owned_framed(signer).unwrap();
+        assert_eq!(frame.signature_data().unwrap().len(), 2 + 32);
+        assert!(MultihashFrameSigner::validate(&frame).is_ok());
+
+        let signer = MultihashFrameSigner::new_sha3512();
+        let frame = block_builder.as_owned_framed(signer).unwrap();
+        assert_eq!(frame.signature_data().unwrap().len(), 2 + 64);
+        assert!(MultihashFrameSigner::validate(&frame).is_ok());
+
+        let mut data = block_builder
+            .into_framed_vec(MultihashFrameSigner::new_sha3512())
+            .unwrap();
+        let frame = SliceFrame::new(&data).unwrap();
+        assert!(MultihashFrameSigner::validate(&frame).is_ok());
+
+        // modify message should invalidate signature
+        data[10] = 40;
+        data[11] = 12;
+        let frame = SliceFrame::new(&data).unwrap();
+        assert!(MultihashFrameSigner::validate(&frame).is_err());
     }
 
     fn build_test_block(hash: &str) -> FrameBuilder<block::Owned> {
