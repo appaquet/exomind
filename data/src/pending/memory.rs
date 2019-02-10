@@ -104,7 +104,6 @@ impl Store for MemoryStore {
         let mut count = 0;
 
         for (operation_id, entry_id) in self.operations_timeline.range(range) {
-            dbg!((entry_id, operation_id));
             if let Some(maybe_operation) = self
                 .operations
                 .get(entry_id)
