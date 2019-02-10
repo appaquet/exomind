@@ -13,6 +13,7 @@
 
 use std;
 
+use crate::security::hash::Multihash;
 use byteorder;
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
@@ -34,7 +35,7 @@ pub trait MessageType<'a>: capnp::traits::Owned<'a> {
 ///
 /// A Framed Message is a capnp message with an extra header identifying the message type and message size.
 ///
-pub trait Frame {
+pub trait Frame: SignedFrame {
     fn message_type(&self) -> u16;
     fn message_size(&self) -> usize;
     fn frame_size(&self) -> usize;
@@ -48,7 +49,7 @@ pub trait Frame {
 ///
 /// A Framed Typed Message wraps a FramedMessage annotated type.
 ///
-pub trait TypedFrame<T>
+pub trait TypedFrame<T>: SignedFrame
 where
     T: for<'a> MessageType<'a>,
 {
@@ -58,6 +59,14 @@ where
     fn get_typed_reader(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error>;
     fn copy_into(&self, buf: &mut [u8]);
     fn to_owned(&self) -> OwnedTypedFrame<T>;
+}
+
+///
+///
+///
+pub trait SignedFrame {
+    fn message_data(&self) -> &[u8];
+    fn signature_data(&self) -> Option<&[u8]>;
 }
 
 ///
@@ -278,6 +287,16 @@ impl<'a> Frame for SliceFrame<'a> {
     }
 }
 
+impl<'a> SignedFrame for SliceFrame<'a> {
+    fn message_data(&self) -> &[u8] {
+        &self.data[self.metadata.message_range()]
+    }
+
+    fn signature_data(&self) -> Option<&[u8]> {
+        self.metadata.signature_range().map(|r| &self.data[r])
+    }
+}
+
 ///
 /// A framed typed message coming from a slice of bytes that wraps a `SliceFrame` with annotated type.
 ///
@@ -360,6 +379,19 @@ where
     fn to_owned(&self) -> OwnedTypedFrame<T> {
         let owned_message = self.message.to_owned();
         owned_message.into_typed()
+    }
+}
+
+impl<'a, T> SignedFrame for TypedSliceFrame<'a, T>
+where
+    T: for<'b> MessageType<'b>,
+{
+    fn message_data(&self) -> &[u8] {
+        self.message.message_data()
+    }
+
+    fn signature_data(&self) -> Option<&[u8]> {
+        self.message.signature_data()
     }
 }
 
@@ -497,6 +529,16 @@ impl Frame for OwnedFrame {
     }
 }
 
+impl SignedFrame for OwnedFrame {
+    fn message_data(&self) -> &[u8] {
+        self.owned_slice_message.message_data()
+    }
+
+    fn signature_data(&self) -> Option<&[u8]> {
+        self.owned_slice_message.signature_data()
+    }
+}
+
 ///
 /// A standalone framed typed message that wraps a `OwnedFrame` with annotated type.
 ///
@@ -536,6 +578,19 @@ where
     fn to_owned(&self) -> OwnedTypedFrame<T> {
         let owned_message = self.message.clone();
         owned_message.into_typed()
+    }
+}
+
+impl<T> SignedFrame for OwnedTypedFrame<T>
+where
+    T: for<'b> MessageType<'b>,
+{
+    fn message_data(&self) -> &[u8] {
+        self.message.message_data()
+    }
+
+    fn signature_data(&self) -> Option<&[u8]> {
+        self.message.signature_data()
     }
 }
 
@@ -785,7 +840,6 @@ impl FrameMetadata {
         message_offset..message_offset + self.message_size
     }
 
-    #[allow(dead_code)]
     #[inline]
     fn has_signature(&self) -> bool {
         self.signature_size > 0
@@ -828,14 +882,7 @@ where
     hasher: H,
 }
 
-impl<H> MultihashFrameSigner<H>
-where
-    H: crate::security::hash::StreamHasher,
-{
-    pub fn new(hasher: H) -> MultihashFrameSigner<H> {
-        MultihashFrameSigner { hasher }
-    }
-
+impl MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
     pub fn new_sha3256() -> MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
         MultihashFrameSigner {
             hasher: crate::security::hash::Sha3Hasher::new_256(),
@@ -846,6 +893,36 @@ where
         MultihashFrameSigner {
             hasher: crate::security::hash::Sha3Hasher::new_512(),
         }
+    }
+
+    pub fn validate(frame: &dyn SignedFrame) -> Result<Multihash, Error> {
+        frame
+            .signature_data()
+            .ok_or(Error::InvalidSignature)
+            .and_then(|data| {
+                let hash_msg =
+                    Multihash::from_bytes(data.to_vec()).map_err(|_err| Error::InvalidSignature)?;
+                let hash_data = crate::security::hash::multihash::encode(
+                    hash_msg.algorithm(),
+                    frame.message_data(),
+                )
+                .map_err(|_err| Error::InvalidSignature)?;
+
+                if hash_data != hash_msg {
+                    return Err(Error::InvalidSignature);
+                }
+
+                Ok(hash_data)
+            })
+    }
+}
+
+impl<H> MultihashFrameSigner<H>
+where
+    H: crate::security::hash::StreamHasher,
+{
+    pub fn new(hasher: H) -> MultihashFrameSigner<H> {
+        MultihashFrameSigner { hasher }
     }
 }
 
@@ -874,6 +951,8 @@ pub enum Error {
     InvalidSize,
     #[fail(display = "Destination size is too small")]
     DestinationSize,
+    #[fail(display = "Signature validation error")]
+    InvalidSignature,
     #[fail(display = "Capnp serialization error")]
     CapnpSerialization(capnp::ErrorKind),
     #[fail(display = "IO error")]
@@ -955,6 +1034,34 @@ pub mod tests {
 
         let framed_data = test_block_builder.into_unsigned_framed_bytes().unwrap();
         assert_eq!(&framed_data[..], &data[..metadata.frame_size()]);
+    }
+
+    #[test]
+    fn frame_sign_and_validate() {
+        let test_block_builder = build_test_block("block_hash");
+
+        let signer = MultihashFrameSigner::new_sha3256();
+        let frame: OwnedTypedFrame<block::Owned> =
+            test_block_builder.as_owned_framed(signer).unwrap();
+        assert_eq!(frame.signature_data().unwrap().len(), 2 + 32);
+        assert!(MultihashFrameSigner::validate(&frame).is_ok());
+
+        let signer = MultihashFrameSigner::new_sha3512();
+        let frame = test_block_builder.as_owned_framed(signer).unwrap();
+        assert_eq!(frame.signature_data().unwrap().len(), 2 + 64);
+        assert!(MultihashFrameSigner::validate(&frame).is_ok());
+
+        let mut data = test_block_builder
+            .into_framed_vec(MultihashFrameSigner::new_sha3512())
+            .unwrap();
+        let frame = SliceFrame::new(&data).unwrap();
+        assert!(MultihashFrameSigner::validate(&frame).is_ok());
+
+        // modify message should invalidate signature
+        data[10] = 40;
+        data[11] = 12;
+        let frame = SliceFrame::new(&data).unwrap();
+        assert!(MultihashFrameSigner::validate(&frame).is_err());
     }
 
     #[test]
