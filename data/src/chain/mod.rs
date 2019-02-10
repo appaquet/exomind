@@ -4,9 +4,7 @@ use exocore_common::data_chain_capnp::{block, block_signatures};
 use exocore_common::serialization::framed;
 use exocore_common::serialization::framed::TypedFrame;
 
-// TODO: Move to common
 type BlockOffset = u64;
-type BlockSize = u32;
 
 pub mod directory;
 

@@ -80,7 +80,7 @@ where
         let transport_out_sink = self.transport.get_sink();
 
         // handle messages going to transport
-        let (transport_send, transport_receiver) = mpsc::unbounded();
+        let (_transport_send, transport_receiver) = mpsc::unbounded();
         tokio::spawn(
             transport_receiver
                 .map_err(|err| {
