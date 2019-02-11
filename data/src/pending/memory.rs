@@ -86,11 +86,9 @@ impl Store for MemoryStore {
         let iter = self
             .operations_timeline
             .range(range)
-            .flat_map(|(operation_id, entry_id)| {
-                Some(StoredOperation {
-                    entry_id: *entry_id,
-                    operation_id: *operation_id,
-                })
+            .map(|(operation_id, entry_id)| StoredOperation {
+                entry_id: *entry_id,
+                operation_id: *operation_id,
             });
 
         Ok(Box::new(iter))
