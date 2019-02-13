@@ -3,6 +3,7 @@ use crate::pending;
 use crate::transport;
 
 use exocore_common;
+use exocore_common::serialization::framed::TypedFrame;
 
 use futures::sync::mpsc;
 use tokio;
@@ -79,7 +80,7 @@ where
         let transport_out_sink = self.transport.get_sink();
 
         // handle messages going to transport
-        let (transport_send, transport_receiver) = mpsc::unbounded();
+        let (_transport_send, transport_receiver) = mpsc::unbounded();
         tokio::spawn(
             transport_receiver
                 .map_err(|err| {
@@ -97,8 +98,8 @@ where
         // handle transport's incoming messages
         tokio::spawn(
             transport_in_stream
-                .for_each(|msg| {
-                    info!("Got incoming message");
+                .for_each(|msg: transport::InMessage| {
+                    info!("Got incoming message of type: {}", msg.data.message_type());
 
                     Ok(())
                 })

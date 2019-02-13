@@ -7,9 +7,14 @@ cargo clean
 
 cargo test --all
 
-# TODO: Proper message for missing ndk
-export PATH="$PATH:/Users/appaquet/Work/ampme/ampme-ampplayer/NDK/arm/bin/"
-cargo check --target "armv7-linux-androideabi"
+if [[ "$ANDROID_NDK_STANDALONE=" != "" ]]; then
+    export PATH="$PATH:$ANDROID_NDK_STANDALONE/arm/bin/"
+    cargo check --target "armv7-linux-androideabi"
+else
+    echo "The ANDROID_NDK_STANDALONE path is not set. You can create a standalone NDK using script from: https://github.com/kennytm/rust-ios-android"
+    echo "Not testing Android build."
+    sleep 5
+fi
 
 cargo check --target "aarch64-apple-ios"
 

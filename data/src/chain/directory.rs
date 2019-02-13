@@ -5,10 +5,8 @@ use std::path::{Path, PathBuf};
 
 use exocore_common::data_chain_capnp::{block, block_signatures};
 use exocore_common::range;
-use exocore_common::serialization::msg;
-use exocore_common::serialization::msg::{
-    FramedMessage, FramedMessageIterator, FramedTypedMessage, MessageType,
-};
+use exocore_common::serialization::framed;
+use exocore_common::serialization::framed::{Frame, FramesIterator, MessageType, TypedFrame};
 
 use super::*;
 
@@ -139,15 +137,15 @@ impl DirectoryStore {
 impl Store for DirectoryStore {
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
-        B: msg::FramedTypedMessage<block::Owned>,
-        S: msg::FramedTypedMessage<block_signatures::Owned>,
+        B: framed::TypedFrame<block::Owned>,
+        S: framed::TypedFrame<block_signatures::Owned>,
     {
         let (block_segment, written_in_segment) = {
             let need_new_segment = {
-                let last_segment = self.segments.last();
-                last_segment.is_none()
-                    || last_segment.as_ref().unwrap().next_file_offset
-                        > self.config.segment_max_size as usize
+                match self.segments.last() {
+                    None => true,
+                    Some(s) => s.next_file_offset as u64 > self.config.segment_max_size,
+                }
             };
 
             if need_new_segment {
@@ -338,8 +336,8 @@ impl DirectorySegment {
         block_sigs: &S,
     ) -> Result<DirectorySegment, Error>
     where
-        B: msg::FramedTypedMessage<block::Owned>,
-        S: msg::FramedTypedMessage<block_signatures::Owned>,
+        B: framed::TypedFrame<block::Owned>,
+        S: framed::TypedFrame<block_signatures::Owned>,
     {
         let block_reader = block.get_typed_reader().unwrap();
         let first_block_offset = block_reader.get_offset();
@@ -360,8 +358,8 @@ impl DirectorySegment {
         );
         let mut segment_file = SegmentFile::open(&segment_path, config.segment_over_allocate_size)?;
         block.copy_into(&mut segment_file.mmap);
-        block_sigs.copy_into(&mut segment_file.mmap[block.data_size()..]);
-        let written_data_size = block.data_size() + block_sigs.data_size();
+        block_sigs.copy_into(&mut segment_file.mmap[block.frame_size()..]);
+        let written_data_size = block.frame_size() + block_sigs.frame_size();
 
         Ok(DirectorySegment {
             config,
@@ -400,14 +398,13 @@ impl DirectorySegment {
 
         // read first block to validate it has the same offset as segment
         let first_block_offset = {
-            let framed_message =
-                msg::FramedSliceMessage::new(&segment_file.mmap).map_err(|err| {
-                    error!(
-                        "Couldn't read first block from segment file {:?}: {:?}",
-                        segment_path, err
-                    );
-                    err
-                })?;
+            let framed_message = framed::SliceFrame::new(&segment_file.mmap).map_err(|err| {
+                error!(
+                    "Couldn't read first block from segment file {:?}: {:?}",
+                    segment_path, err
+                );
+                err
+            })?;
             let first_block = framed_message.get_typed_reader::<block::Owned>()?;
             first_block.get_offset()
         };
@@ -415,7 +412,7 @@ impl DirectorySegment {
         // iterate through segments and find the last block and its offset
         let (last_block_offset, next_block_offset, next_file_offset) = {
             let mut last_block_file_offset = None;
-            let block_iter = FramedMessageIterator::new(&segment_file.mmap)
+            let block_iter = FramesIterator::new(&segment_file.mmap)
                 .filter(|msg| msg.framed_message.message_type() == block::Owned::message_type());
             for message in block_iter {
                 last_block_file_offset = Some(message.offset);
@@ -423,14 +420,12 @@ impl DirectorySegment {
 
             match last_block_file_offset {
                 Some(file_offset) => {
-                    let block_message =
-                        msg::FramedSliceMessage::new(&segment_file.mmap[file_offset..])?;
+                    let block_message = framed::SliceFrame::new(&segment_file.mmap[file_offset..])?;
                     let block_reader = block_message.get_typed_reader::<block::Owned>()?;
-                    let sigs_offset = file_offset + block_message.data_size();
-                    let sigs_message =
-                        msg::FramedSliceMessage::new(&segment_file.mmap[sigs_offset..])?;
+                    let sigs_offset = file_offset + block_message.frame_size();
+                    let sigs_message = framed::SliceFrame::new(&segment_file.mmap[sigs_offset..])?;
 
-                    let written_data_size = block_message.data_size() + sigs_message.data_size();
+                    let written_data_size = block_message.frame_size() + sigs_message.frame_size();
                     (
                         block_reader.get_offset(),
                         block_reader.get_offset() + written_data_size as BlockOffset,
@@ -481,13 +476,13 @@ impl DirectorySegment {
 
     fn write_block<B, S>(&mut self, block: &B, block_sigs: &S) -> Result<(), Error>
     where
-        B: msg::FramedTypedMessage<block::Owned>,
-        S: msg::FramedTypedMessage<block_signatures::Owned>,
+        B: framed::TypedFrame<block::Owned>,
+        S: framed::TypedFrame<block_signatures::Owned>,
     {
         let next_file_offset = self.next_file_offset;
         let next_block_offset = self.next_block_offset;
-        let block_size = block.data_size();
-        let sigs_size = block_sigs.data_size();
+        let block_size = block.frame_size();
+        let sigs_size = block_sigs.frame_size();
 
         let block_reader = block.get_typed_reader()?;
         let block_offset = block_reader.get_offset();
@@ -527,12 +522,11 @@ impl DirectorySegment {
         }
 
         let block_file_offset = (offset - first_block_offset) as usize;
-        let block =
-            msg::FramedSliceTypedMessage::new(&self.segment_file.mmap[block_file_offset..])?;
+        let block = framed::TypedSliceFrame::new(&self.segment_file.mmap[block_file_offset..])?;
 
-        let signatures_file_offset = block_file_offset + block.data_size();
+        let signatures_file_offset = block_file_offset + block.frame_size();
         let signatures =
-            msg::FramedSliceTypedMessage::new(&self.segment_file.mmap[signatures_file_offset..])?;
+            framed::TypedSliceFrame::new(&self.segment_file.mmap[signatures_file_offset..])?;
 
         Ok(StoredBlock { block, signatures })
     }
@@ -556,14 +550,14 @@ impl DirectorySegment {
         }
 
         let next_file_offset = (next_offset - first_block_offset) as usize;
-        let signatures = msg::FramedSliceTypedMessage::new_from_next_offset(
-            &self.segment_file.mmap[0..],
+        let signatures = framed::TypedSliceFrame::new_from_next_offset(
+            &self.segment_file.mmap[..],
             next_file_offset,
         )?;
-        let signatures_offset = next_file_offset - signatures.data_size();
+        let signatures_offset = next_file_offset - signatures.frame_size();
 
-        let block = msg::FramedSliceTypedMessage::new_from_next_offset(
-            &self.segment_file.mmap[0..],
+        let block = framed::TypedSliceFrame::new_from_next_offset(
+            &self.segment_file.mmap[..],
             signatures_offset,
         )?;
 
@@ -661,8 +655,8 @@ impl SegmentFile {
     }
 }
 
-impl From<msg::Error> for Error {
-    fn from(err: msg::Error) -> Self {
+impl From<framed::Error> for Error {
+    fn from(err: framed::Error) -> Self {
         Error::Serialization(err)
     }
 }
@@ -672,10 +666,10 @@ mod tests {
     use tempdir;
 
     use super::*;
-    use exocore_common::serialization::msg::{FramedOwnedTypedMessage, FramedTypedMessage};
+    use exocore_common::serialization::framed::{OwnedTypedFrame, TypedFrame};
 
     #[test]
-    fn test_directory_chain_create_and_open() {
+    fn directory_chain_create_and_open() {
         let dir = tempdir::TempDir::new("test").unwrap();
         let config: DirectoryConfig = Default::default();
 
@@ -704,7 +698,7 @@ mod tests {
             assert_eq!(block.get_offset().unwrap(), second_offset);
 
             let segments = directory_chain.available_segments();
-            let data_size = ((block_msg.data_size() + sig_msg.data_size()) * 2) as BlockOffset;
+            let data_size = ((block_msg.frame_size() + sig_msg.frame_size()) * 2) as BlockOffset;
             assert_eq!(segments, vec![range::Range::new(0, data_size)]);
             segments
         };
@@ -721,7 +715,7 @@ mod tests {
     }
 
     #[test]
-    fn test_directory_chain_write_until_second_segment() {
+    fn directory_chain_write_until_second_segment() {
         let dir = tempdir::TempDir::new("test").unwrap();
         let mut config: DirectoryConfig = Default::default();
         config.segment_max_size = 100_000;
@@ -784,7 +778,7 @@ mod tests {
     }
 
     #[test]
-    fn test_directory_chain_truncate() {
+    fn directory_chain_truncate() {
         let mut config: DirectoryConfig = Default::default();
         config.segment_max_size = 1000;
 
@@ -844,7 +838,7 @@ mod tests {
     }
 
     #[test]
-    fn test_directory_chain_truncate_all() {
+    fn directory_chain_truncate_all() {
         let mut config: DirectoryConfig = Default::default();
         config.segment_max_size = 3000;
         let dir = tempdir::TempDir::new("test").unwrap();
@@ -867,7 +861,7 @@ mod tests {
     }
 
     #[test]
-    fn test_directory_segment_create_and_open() {
+    fn directory_segment_create_and_open() {
         let dir = tempdir::TempDir::new("test").unwrap();
 
         let segment_id = 1234;
@@ -882,11 +876,11 @@ mod tests {
             assert_eq!(segment.last_block_offset, 1234);
             assert_eq!(
                 segment.next_file_offset,
-                block_msg.data_size() + sig_msg.data_size()
+                block_msg.frame_size() + sig_msg.frame_size()
             );
             assert_eq!(
                 segment.next_block_offset,
-                1234 + (block_msg.data_size() + sig_msg.data_size()) as BlockOffset
+                1234 + (block_msg.frame_size() + sig_msg.frame_size()) as BlockOffset
             );
         }
 
@@ -901,17 +895,17 @@ mod tests {
             assert_eq!(segment.last_block_offset, 1234);
             assert_eq!(
                 segment.next_file_offset,
-                block_msg.data_size() + sig_msg.data_size()
+                block_msg.frame_size() + sig_msg.frame_size()
             );
             assert_eq!(
                 segment.next_block_offset,
-                1234 + (block_msg.data_size() + sig_msg.data_size()) as BlockOffset
+                1234 + (block_msg.frame_size() + sig_msg.frame_size()) as BlockOffset
             );
         }
     }
 
     #[test]
-    fn test_directory_segment_create_already_exist() {
+    fn directory_segment_create_already_exist() {
         let dir = tempdir::TempDir::new("test").unwrap();
 
         {
@@ -933,7 +927,7 @@ mod tests {
     }
 
     #[test]
-    fn test_directory_segment_append_block() {
+    fn directory_segment_append_block() {
         let dir = tempdir::TempDir::new("test").unwrap();
 
         let offset1 = 0;
@@ -946,7 +940,7 @@ mod tests {
             assert_eq!(block.get_offset().unwrap(), offset1);
         }
 
-        let offset2 = offset1 + (block.data_size() + block_sigs.data_size()) as u64;
+        let offset2 = offset1 + (block.frame_size() + block_sigs.frame_size()) as u64;
         assert_eq!(segment.next_block_offset, offset2);
         let block = create_block(offset2);
         let block_sigs = create_block_sigs();
@@ -956,7 +950,7 @@ mod tests {
             assert_eq!(block.get_offset().unwrap(), offset2);
         }
 
-        let offset3 = offset2 + (block.data_size() + block_sigs.data_size()) as u64;
+        let offset3 = offset2 + (block.frame_size() + block_sigs.frame_size()) as u64;
         assert_eq!(segment.next_block_offset, offset3);
         let block = create_block(offset3);
         let block_sigs = create_block_sigs();
@@ -978,7 +972,7 @@ mod tests {
     }
 
     #[test]
-    fn test_directory_segment_non_zero_offset_write() {
+    fn directory_segment_non_zero_offset_write() {
         let dir = tempdir::TempDir::new("test").unwrap();
         let config = Default::default();
         let segment_first_block_offset = 1234;
@@ -993,7 +987,7 @@ mod tests {
             assert_eq!(
                 next_block_offset,
                 segment_first_block_offset
-                    + (first_block.data_size() + first_block_sigs.data_size()) as BlockOffset
+                    + (first_block.frame_size() + first_block_sigs.frame_size()) as BlockOffset
             );
             append_blocks_to_segment(&mut segment, next_block_offset, 999);
         }
@@ -1012,13 +1006,13 @@ mod tests {
                 .get_block_from_next_offset(segment.next_block_offset)
                 .is_ok());
 
-            let iter = msg::FramedMessageIterator::new(&segment.segment_file.mmap[0..]);
+            let iter = framed::FramesIterator::new(&segment.segment_file.mmap[0..]);
             assert_eq!(iter.count(), 2000); // blocks + sigs
         }
     }
 
     #[test]
-    fn test_directory_segment_grow_and_truncate() {
+    fn directory_segment_grow_and_truncate() {
         let mut config: DirectoryConfig = Default::default();
         config.segment_over_allocate_size = 100_000;
 
@@ -1029,7 +1023,7 @@ mod tests {
         let block_sigs = create_block_sigs();
         let mut segment =
             DirectorySegment::create(config, dir.path(), &block, &block_sigs).unwrap();
-        next_offset += (block.data_size() + block_sigs.data_size()) as u64;
+        next_offset += (block.frame_size() + block_sigs.frame_size()) as u64;
 
         let init_segment_size = segment.segment_file.current_size;
         append_blocks_to_segment(&mut segment, next_offset, 999);
@@ -1043,12 +1037,12 @@ mod tests {
         let truncated_segment_size = segment.segment_file.current_size;
         assert!(truncated_segment_size < 200_000);
 
-        let iter = msg::FramedMessageIterator::new(&segment.segment_file.mmap[0..]);
+        let iter = framed::FramesIterator::new(&segment.segment_file.mmap[0..]);
         assert_eq!(iter.count(), 2000); // blocks + sigs
     }
 
     #[test]
-    fn test_segment_file_create() {
+    fn segment_file_create() {
         let dir = tempdir::TempDir::new("test").unwrap();
         let segment_path = dir.path().join("segment_0.seg");
 
@@ -1063,19 +1057,19 @@ mod tests {
         assert_eq!(segment_file.current_size, 2000);
     }
 
-    fn create_block(offset: u64) -> FramedOwnedTypedMessage<block::Owned> {
-        let mut block_msg_builder = msg::MessageBuilder::<block::Owned>::new();
+    fn create_block(offset: u64) -> OwnedTypedFrame<block::Owned> {
+        let mut block_msg_builder = framed::FrameBuilder::<block::Owned>::new();
         {
             let mut block_builder = block_msg_builder.get_builder_typed();
             block_builder.set_hash("block_hash");
             block_builder.set_offset(offset);
         }
-        block_msg_builder.as_owned_framed().unwrap()
+        block_msg_builder.as_owned_unsigned_framed().unwrap()
     }
 
-    fn create_block_sigs() -> FramedOwnedTypedMessage<block_signatures::Owned> {
-        let mut block_msg_builder = msg::MessageBuilder::<block_signatures::Owned>::new();
-        block_msg_builder.as_owned_framed().unwrap()
+    fn create_block_sigs() -> OwnedTypedFrame<block_signatures::Owned> {
+        let mut block_msg_builder = framed::FrameBuilder::<block_signatures::Owned>::new();
+        block_msg_builder.as_owned_unsigned_framed().unwrap()
     }
 
     fn append_blocks_to_directory(
@@ -1138,7 +1132,7 @@ mod tests {
             let block = create_block(next_offset);
             let block_sigs = create_block_sigs();
             segment.write_block(&block, &block_sigs).unwrap();
-            next_offset += (block.data_size() + block_sigs.data_size()) as u64;
+            next_offset += (block.frame_size() + block_sigs.frame_size()) as u64;
         }
     }
 }

@@ -216,7 +216,7 @@ mod test {
     use tokio::runtime::Runtime;
 
     use exocore_common::node::Nodes;
-    use exocore_common::serialization::msg::FramedTypedMessage;
+    use exocore_common::serialization::framed::TypedFrame;
     use exocore_common::tests_utils::*;
 
     use super::*;
@@ -279,7 +279,7 @@ mod test {
     }
 
     fn send_message(rt: &mut Runtime, sink: MockTransportSink, to: Vec<Node>, type_id: u8) {
-        let mut message = MessageBuilder::<envelope::Owned>::new();
+        let mut message = FrameBuilder::<envelope::Owned>::new();
         let mut builder = message.get_builder_typed();
         builder.set_type(type_id);
 

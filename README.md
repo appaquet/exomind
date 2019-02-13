@@ -5,11 +5,18 @@
     * On MacOS: `brew install capnp` 
     * On Ubuntu: `apt install capnproto` 
 
-## Rust
-* Install components:
+## Setup
+* Install components & default targets:
   * `rustup component add clippy rustfmt`
-  
-* Install targets:
-  * `rustup target add armv7-linux-androideabi`
-  * `rustup target add aarch64-apple-ios`
   * `rustup target add wasm32-unknown-unknown`
+
+* iOS build (optional):
+  * On MacOS: `rustup target add aarch64-apple-ios`
+
+* Android build (optional)
+  * Follow instructions [here](https://github.com/kennytm/rust-ios-android) to setup Rust with Android targets & expose the Standalone NDF folder to `ANDROID_NDK_STANDALONE` environment variable.
+  * Install Android target: `rustup target add armv7-linux-androideabi`
+
+## Development
+* Ideally, use [CLion](https://www.jetbrains.com/clion/) with the [Rust plugin](https://github.com/intellij-rust/intellij-rust). 
+  You can also use IntelliJ, only CLion has debugger support.

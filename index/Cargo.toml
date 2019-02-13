@@ -7,6 +7,5 @@ edition = "2018"
 [dependencies]
 exocore-data = { path = "../data" }
 exocore-common = { path = "../common" }
-
 log = "0.4"
 
