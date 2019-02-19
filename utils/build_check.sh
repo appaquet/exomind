@@ -7,7 +7,7 @@ cargo clean
 
 cargo test --all
 
-if [[ "$ANDROID_NDK_STANDALONE=" != "" ]]; then
+if [[ "$ANDROID_NDK_STANDALONE" != "" ]]; then
     export PATH="$PATH:$ANDROID_NDK_STANDALONE/arm/bin/"
     cargo check --target "armv7-linux-androideabi"
 else

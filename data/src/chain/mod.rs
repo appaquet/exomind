@@ -1,4 +1,4 @@
-use exocore_common::range;
+use std::ops::Range;
 
 use exocore_common::data_chain_capnp::{block, block_signatures};
 use exocore_common::serialization::framed;
@@ -14,7 +14,7 @@ pub trait Store {
         B: framed::TypedFrame<block::Owned>,
         S: framed::TypedFrame<block_signatures::Owned>;
 
-    fn available_segments(&self) -> Vec<range::Range<BlockOffset>>;
+    fn available_segments(&self) -> Vec<Range<BlockOffset>>;
 
     fn block_iter(&self, from_offset: BlockOffset) -> Result<StoredBlockIterator, Error>;
 

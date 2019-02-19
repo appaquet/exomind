@@ -1,6 +1,7 @@
 use std;
 use std::cmp::Ordering;
 use std::fs::{File, OpenOptions};
+use std::ops::Range;
 use std::path::{Path, PathBuf};
 
 use exocore_common::data_chain_capnp::{block, block_signatures};
@@ -169,7 +170,7 @@ impl Store for DirectoryStore {
         Ok(block_segment.next_block_offset)
     }
 
-    fn available_segments(&self) -> Vec<range::Range<BlockOffset>> {
+    fn available_segments(&self) -> Vec<Range<BlockOffset>> {
         self.segments
             .iter()
             .map(|segment| segment.offset_range())
@@ -454,8 +455,8 @@ impl DirectorySegment {
         directory.join(format!("seg_{}", first_offset))
     }
 
-    fn offset_range(&self) -> range::Range<BlockOffset> {
-        range::Range::new(self.first_block_offset, self.next_block_offset)
+    fn offset_range(&self) -> Range<BlockOffset> {
+        self.first_block_offset..self.next_block_offset
     }
 
     fn ensure_file_size(&mut self, write_size: usize) -> Result<(), Error> {
@@ -699,7 +700,7 @@ mod tests {
 
             let segments = directory_chain.available_segments();
             let data_size = ((block_msg.frame_size() + sig_msg.frame_size()) * 2) as BlockOffset;
-            assert_eq!(segments, vec![range::Range::new(0, data_size)]);
+            assert_eq!(segments, vec![0..data_size]);
             segments
         };
 
@@ -728,32 +729,32 @@ mod tests {
             let block = directory_chain.get_block(0).unwrap();
             assert_eq!(block.get_offset().unwrap(), 0);
 
-            let block = directory_chain.get_block(segments[0].to).unwrap();
-            assert_eq!(block.get_offset().unwrap(), segments[0].to);
+            let block = directory_chain.get_block(segments[0].end).unwrap();
+            assert_eq!(block.get_offset().unwrap(), segments[0].end);
 
             let block = directory_chain
-                .get_block_from_next_offset(segments[0].to)
+                .get_block_from_next_offset(segments[0].end)
                 .unwrap();
-            assert_eq!(block.next_offset().unwrap(), segments[0].to);
+            assert_eq!(block.next_offset().unwrap(), segments[0].end);
 
             let block = directory_chain
-                .get_block_from_next_offset(segments[0].to)
+                .get_block_from_next_offset(segments[0].end)
                 .unwrap();
-            assert_eq!(block.next_offset().unwrap(), segments[0].to);
+            assert_eq!(block.next_offset().unwrap(), segments[0].end);
 
             let last_block = directory_chain
-                .get_block_from_next_offset(segments[1].to)
+                .get_block_from_next_offset(segments[1].end)
                 .unwrap();
 
             let last_block_offset = last_block.get_offset().unwrap();
             let next_block_offset = last_block.next_offset().unwrap();
-            assert_eq!(next_block_offset, segments[1].to);
+            assert_eq!(next_block_offset, segments[1].end);
 
             // validate data using forward and reverse iterators
             let mut iterator = directory_chain.block_iter(0).unwrap();
             validate_iterator(iterator, 1000, 0, last_block_offset, false);
 
-            let next_block_offset = segments.last().unwrap().to;
+            let next_block_offset = segments.last().unwrap().end;
             let mut reverse_iterator = directory_chain
                 .block_iter_reverse(next_block_offset)
                 .unwrap();
@@ -806,7 +807,7 @@ mod tests {
 
                 let segments_after = directory_chain.available_segments();
                 assert_ne!(segments_before, segments_after);
-                assert_eq!(segments_after.last().unwrap().to, block_n_plus_offset);
+                assert_eq!(segments_after.last().unwrap().end, block_n_plus_offset);
 
                 let mut iter = directory_chain.block_iter(0).unwrap();
                 validate_iterator(iter, cutoff, 0, block_n_offset, false);
@@ -824,7 +825,7 @@ mod tests {
 
                 let segments_after = directory_chain.available_segments();
                 assert_ne!(segments_before, segments_after);
-                assert_eq!(segments_after.last().unwrap().to, block_n_plus_offset);
+                assert_eq!(segments_after.last().unwrap().end, block_n_plus_offset);
 
                 let mut iter = directory_chain.block_iter(0).unwrap();
                 validate_iterator(iter, cutoff, 0, block_n_offset, false);
