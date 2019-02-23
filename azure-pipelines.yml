@@ -13,8 +13,8 @@ steps:
 
   - script: |
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
-      apt update && apt install -y capnproto
       rustc --version && cargo --version
+      sudo apt update && apt install -y capnproto
     displayName: 'Install dependencies'
     
   - script: |
