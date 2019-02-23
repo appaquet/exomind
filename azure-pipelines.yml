@@ -10,6 +10,10 @@ pool:
   vmImage: 'Ubuntu-16.04'
 
 steps:
+  - script: |
+      git submodule sync --recursive
+      git submodule update --init --recursive
+    displayName: 'Sync submodules'
   - script: curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
     displayName: 'Install rustc'
   - script: |
