@@ -1,3 +1,5 @@
+# Exocore
+[![Build Status](https://dev.azure.com/appaquet/exocore/_apis/build/status/appaquet.exocore?branchName=master)](https://dev.azure.com/appaquet/exocore/_build/latest?definitionId=1&branchName=master)
 
 ## Dependencies
 * [Rust](https://www.rust-lang.org/learn/get-started)
