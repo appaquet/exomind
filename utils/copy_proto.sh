@@ -5,4 +5,15 @@ CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 cargo clean
 cargo build -p exocore-common
-cp $CUR_DIR/../target/debug/build/exocore-common-*/out/proto/*_capnp.rs $CUR_DIR/../common/src/serialization/protos
+
+for proto_path in `ls $CUR_DIR/../target/debug/build/exocore-common-*/out/proto/*_capnp.rs`; do
+  proto_file="$(basename -- $proto_path)"
+  dest_path="$CUR_DIR/../common/src/serialization/protos/$proto_file"
+  echo "#![allow(unknown_lints)]" > $dest_path
+  echo "#![allow(clippy::all)]" >> $dest_path
+  echo "" >> $dest_path
+  cat $proto_path >> $dest_path
+done
+
+cargo fmt --all
+cargo test --all

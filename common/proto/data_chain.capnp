@@ -1,48 +1,88 @@
 @0xf51296176d1e327e;
 
+#
+# Pending store
+#
 struct PendingOperation {
-    id @0: UInt64;
-    entryId @1: UInt64;
+    pendingId              @0: UInt64;
+    operationId            @1: UInt64;
 
     operation :union {
-        newEntry @2: OperationNewEntry;
-        blockProposal @3: OperationBlockProposal;
-        blockSignature @4: OperationBlockSignature;
+        entryNew           @2: OperationEntryNew;
+        blockPropose       @3: OperationBlockPropose;
+        blockSign          @4: OperationBlockSign;
+        blockRefuse        @5: OperationBlockRefuse;
     }
 }
 
-struct OperationNewEntry {
-    entry @0: Entry;
+struct OperationEntryNew {
+    entryHeader     @0: EntryHeader;
+    entryData       @1: Data;
 }
 
-struct OperationBlockProposal {
-    entries @0: List(EntryHeader);
+struct OperationBlockPropose {
+    offset           @0: UInt64;
+    previousOffset   @1: UInt64;
+    previousHash     @2: Data;
+    entries          @3: List(EntryHeader);
 }
 
-struct OperationBlockSignature {
-    blockOffset @0: UInt64;
+struct OperationBlockSign {
+    blockHeader    @0: BlockHeader;
+    signatureData  @1: Data;
 }
 
+struct OperationBlockRefuse {
+    blockHeader   @0: BlockHeader;
+}
+
+
+#
+# Chain
+#
 struct Entry {
-    header @0: EntryHeader;
-    data @1: Data;
+    id        @0: UInt64;
+    time      @1: UInt64;
+    sourceApp @2: Text;
+    type      @3: EntryType;
+
+    data      @4: Data;
 }
 
 struct EntryHeader {
-    id @0: UInt64;
-    time @1: UInt64;
+    id        @0: UInt64;
+    time      @1: UInt64;
     sourceApp @2: Text;
-    hash @3: Text;
+    type      @3: EntryType;
+}
+
+enum EntryType {
+    cellData      @0;
+    cellMeta      @1;
+    entryCopy     @2;
+    chainTruncate @3;
 }
 
 struct Block {
-    offset @0: UInt64;
-    hash @1: Text;
-    previousBlockOffset @2: UInt64;
-    previousBlockHash @3: Text;
+    offset         @0: UInt64;
+    depth          @1: UInt64;
+    previousOffset @2: UInt64;
+    previousHash   @3: Data;
+    signatureSize  @4: UInt16;
 
-    entries @4: List(Entry);
-    signatureSize @5: UInt16;
+    sourceNodeId   @5: Text;
+
+    entries        @6: List(Entry);
+}
+
+struct BlockHeader {
+    offset         @0: UInt64;
+    depth          @1: UInt64;
+    previousOffset @2: UInt64;
+    previousHash   @3: Data;
+    signatureSize  @4: UInt16;
+
+    sourceNodeId   @5: Text;
 }
 
 struct BlockSignatures {
@@ -50,6 +90,6 @@ struct BlockSignatures {
 }
 
 struct BlockSignature {
-    nodeId @0: Text;
-    offset @1: Text;
+    nodeId         @0: Text;
+    nodeSignature  @1: Data;
 }

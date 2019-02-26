@@ -2,7 +2,9 @@ use tokio::prelude::*;
 
 use exocore_common::data_transport_capnp::envelope;
 use exocore_common::node::Node;
-use exocore_common::serialization::framed::{FrameBuilder, OwnedTypedFrame};
+use exocore_common::serialization::framed::{
+    FrameBuilder, OwnedTypedFrame, TypedFrame, TypedSliceFrame,
+};
 
 pub mod mock;
 
@@ -33,7 +35,8 @@ pub struct InMessage {
     pub data: OwnedTypedFrame<envelope::Owned>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Fail)]
 pub enum Error {
-    Unknown,
+    #[fail(display = "An error occurred: {}", _0)]
+    Other(String),
 }

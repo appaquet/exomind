@@ -17,7 +17,7 @@ pub mod common_capnp;
 pub mod data_chain_capnp;
 pub mod data_transport_capnp;
 
-pub type EntryID = u64;
+pub type PendingID = u64;
 pub type OperationID = u64;
 
 impl<'a> MessageType<'a> for self::data_chain_capnp::pending_operation::Owned {

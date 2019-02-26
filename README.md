@@ -22,3 +22,6 @@
 ## Development
 * Ideally, use [CLion](https://www.jetbrains.com/clion/) with the [Rust plugin](https://github.com/intellij-rust/intellij-rust). 
   You can also use IntelliJ, only CLion has debugger support.
+
+## Documentation
+* [Replication](data/replication.md)

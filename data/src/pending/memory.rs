@@ -6,7 +6,7 @@ use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::security::hash::{Sha3Hasher, StreamHasher};
 use exocore_common::serialization::framed;
 use exocore_common::serialization::framed::{SignedFrame, TypedFrame};
-use exocore_common::serialization::protos::{EntryID, OperationID};
+use exocore_common::serialization::protos::{OperationID, PendingID};
 
 use super::*;
 
@@ -14,15 +14,15 @@ use super::*;
 /// In memory pending store
 ///
 pub struct MemoryStore {
-    operations_timeline: BTreeMap<OperationID, EntryID>,
-    operations: HashMap<EntryID, EntryOperations>,
+    operations_timeline: BTreeMap<OperationID, PendingID>,
+    entries_operations: HashMap<PendingID, EntryOperations>,
 }
 
 impl MemoryStore {
     pub fn new() -> MemoryStore {
         MemoryStore {
             operations_timeline: BTreeMap::new(),
-            operations: HashMap::new(),
+            entries_operations: HashMap::new(),
         }
     }
 }
@@ -40,27 +40,27 @@ impl Store for MemoryStore {
     ) -> Result<(), Error> {
         let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
 
-        let entry_id = operation_reader.get_entry_id();
-        let entry_operations = self
-            .operations
-            .entry(entry_id)
+        let pending_id = operation_reader.get_pending_id();
+        let pending_entry_operations = self
+            .entries_operations
+            .entry(pending_id)
             .or_insert_with(EntryOperations::new);
 
-        let operation_id = operation_reader.get_id();
-        entry_operations
+        let operation_id = operation_reader.get_operation_id();
+        pending_entry_operations
             .operations
             .insert(operation_id, Arc::new(operation));
 
-        self.operations_timeline.insert(operation_id, entry_id);
+        self.operations_timeline.insert(operation_id, pending_id);
 
         Ok(())
     }
 
     fn get_entry_operations(
         &self,
-        entry_id: EntryID,
+        entry_id: PendingID,
     ) -> Result<Option<StoredEntryOperations>, Error> {
-        let operations = self.operations.get(&entry_id).map(|entry_ops| {
+        let operations = self.entries_operations.get(&entry_id).map(|entry_ops| {
             let operations = entry_ops
                 .operations
                 .values()
@@ -79,7 +79,7 @@ impl Store for MemoryStore {
     fn operations_iter<'store, R>(
         &'store self,
         range: R,
-    ) -> Result<Box<Iterator<Item = StoredOperation> + 'store>, Error>
+    ) -> Result<Box<dyn Iterator<Item = StoredOperation> + 'store>, Error>
     where
         R: RangeBounds<OperationID>,
     {
@@ -103,7 +103,7 @@ impl Store for MemoryStore {
 
         for (operation_id, entry_id) in self.operations_timeline.range(range) {
             if let Some(maybe_operation) = self
-                .operations
+                .entries_operations
                 .get(entry_id)
                 .and_then(|entry_ops| entry_ops.operations.get(operation_id))
             {
@@ -147,8 +147,6 @@ impl EntryOperations {
 
 #[cfg(test)]
 mod test {
-    use failure::Fail;
-
     use exocore_common::serialization::framed::{FrameBuilder, MultihashFrameSigner};
 
     use super::*;
@@ -161,7 +159,7 @@ mod test {
         store.put_operation(create_new_entry_op(100, 200)).unwrap();
         store.put_operation(create_new_entry_op(102, 201)).unwrap();
 
-        let timeline: Vec<(OperationID, EntryID)> = store
+        let timeline: Vec<(OperationID, PendingID)> = store
             .operations_iter(..)
             .unwrap()
             .map(|op| (op.operation_id, op.entry_id))
@@ -176,7 +174,7 @@ mod test {
             .iter()
             .map(|op| {
                 let reader = op.get_typed_reader().unwrap();
-                reader.get_id()
+                reader.get_operation_id()
             })
             .collect();
 
@@ -217,20 +215,19 @@ mod test {
 
     fn create_new_entry_op(
         operation_id: OperationID,
-        entry_id: EntryID,
+        pending_id: PendingID,
     ) -> framed::OwnedTypedFrame<pending_operation::Owned> {
         let mut msg_builder = FrameBuilder::<pending_operation::Owned>::new();
 
         {
             let mut op_builder: pending_operation::Builder = msg_builder.get_builder_typed();
-            op_builder.set_id(operation_id);
-            op_builder.set_entry_id(entry_id);
-            let mut inner_op_builder = op_builder.init_operation();
+            op_builder.set_pending_id(pending_id);
+            op_builder.set_operation_id(operation_id);
+            let inner_op_builder = op_builder.init_operation();
 
-            let mut new_entry_op_builder = inner_op_builder.init_new_entry();
-            let mut entry_builder = new_entry_op_builder.init_entry();
-            let mut entry_header_builder = entry_builder.init_header();
-            entry_header_builder.set_id(entry_id);
+            let new_entry_op_builder = inner_op_builder.init_entry_new();
+            let mut entry_header_builder = new_entry_op_builder.init_entry_header();
+            entry_header_builder.set_id(pending_id);
         }
 
         let frame_signer = MultihashFrameSigner::new_sha3256();

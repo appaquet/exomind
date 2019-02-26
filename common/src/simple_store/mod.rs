@@ -13,7 +13,7 @@ pub trait SimpleStore<T: Serialize + DeserializeOwned> {
 
 pub fn get_disk_store<T: Serialize + DeserializeOwned>(
     _path: &Path,
-) -> Result<Box<SimpleStore<T>>> {
+) -> Result<Box<dyn SimpleStore<T>>> {
     // TODO: If WASM, then get data from somewhere
     unimplemented!()
 }

@@ -1,7 +1,10 @@
+#![deny(bare_trait_objects)]
+
 extern crate byteorder;
 extern crate exocore_common;
 #[macro_use]
 extern crate failure;
+#[macro_use]
 extern crate futures;
 #[macro_use]
 extern crate log;

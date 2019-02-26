@@ -94,12 +94,15 @@ impl Future for MockTransport {
                     error!(
                         "Couldn't upgrade nodes sink, which means hub got dropped. Stopping here."
                     );
-                    completion_handle.complete(Err(Error::Unknown));
+                    completion_handle
+                        .complete(Err(Error::Other("Couldn't upgrade nodes sink".to_string())));
                 })?;
 
                 let nodes_sink = nodes_sink.lock().map_err(|_| {
                     error!("Couldn't get a lock on nodes sink. Stopping here.");
-                    completion_handle.complete(Err(Error::Unknown));
+                    completion_handle.complete(Err(Error::Other(
+                        "Couldn't get a lock on ndoes sink".to_string(),
+                    )));
                 })?;
 
                 let in_message = message.to_in_message(node.clone());
@@ -133,7 +136,7 @@ impl Stream for MockTransportStream {
                 "Error receiving from incoming stream in MockTransportStream: {:?}",
                 err
             );
-            Error::Unknown
+            Error::Other(format!("Error receiving from incoming stream: {:?}", err))
         })
     }
 }
@@ -148,23 +151,26 @@ impl Sink for MockTransportSink {
 
     fn start_send(&mut self, item: OutMessage) -> StartSend<OutMessage, Error> {
         self.in_channel.start_send(item).map_err(|err| {
-            error!("Error calling 'start_send' to in_channel: {:?}", err);
-            Error::Unknown
+            Error::Other(format!(
+                "Error calling 'start_send' to in_channel: {:?}",
+                err
+            ))
         })
     }
 
     fn poll_complete(&mut self) -> Poll<(), Error> {
         self.in_channel.poll_complete().map_err(|err| {
-            error!("Error calling 'poll_complete' to in_channel: {:?}", err);
-            Error::Unknown
+            Error::Other(format!(
+                "Error calling 'poll_complete' to in_channel: {:?}",
+                err
+            ))
         })
     }
 
     fn close(&mut self) -> Poll<(), Error> {
-        self.in_channel.close().map_err(|err| {
-            error!("Error calling 'close' to in_channel: {:?}", err);
-            Error::Unknown
-        })
+        self.in_channel
+            .close()
+            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {:?}", err)))
     }
 }
 
@@ -204,10 +210,10 @@ impl Future for CompletionFuture {
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        self.0.poll().map(|asnc| asnc.map(|_| ())).map_err(|err| {
-            error!("Error polling completion receiver: {:?}", err);
-            Error::Unknown
-        })
+        self.0
+            .poll()
+            .map(|asnc| asnc.map(|_| ()))
+            .map_err(|err| Error::Other(format!("Polling completion receiver failed: {:?}", err)))
     }
 }
 

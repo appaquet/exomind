@@ -12,7 +12,7 @@ impl FutureWatch {
     pub fn new<F, I, E>(
         fut: F,
     ) -> (
-        Box<Future<Item = I, Error = E> + 'static + Send>,
+        Box<dyn Future<Item = I, Error = E> + 'static + Send>,
         FutureWatch,
     )
     where

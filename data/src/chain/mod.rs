@@ -8,7 +8,7 @@ type BlockOffset = u64;
 
 pub mod directory;
 
-pub trait Store {
+pub trait Store: Send + 'static {
     fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
     where
         B: framed::TypedFrame<block::Owned>,
@@ -30,13 +30,19 @@ pub trait Store {
     fn truncate_from_offset(&mut self, block_offset: BlockOffset) -> Result<(), Error>;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Fail)]
 pub enum Error {
+    #[fail(display = "The store is in an unexpected state")]
     UnexpectedState,
+    #[fail(display = "Error from the framing serialization: {:?}", _0)]
     Serialization(framed::Error),
+    #[fail(display = "The store has an integrity problem")]
     Integrity,
+    #[fail(display = "A segment has reached its full capacity")]
     SegmentFull,
+    #[fail(display = "An offset is out of the chain data")]
     OutOfBound,
+    #[fail(display = "IO error")]
     IO,
 }
 

@@ -1,6 +1,0 @@
-[submodule "3rd/extsort"]
-	path = 3rd/extsort
-	url = https://github.com/appaquet/extsort-rs.git
-[submodule "3rd/extindex"]
-	path = 3rd/extindex
-	url = https://github.com/appaquet/extindex-rs.git

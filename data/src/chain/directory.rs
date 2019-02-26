@@ -1062,7 +1062,6 @@ mod tests {
         let mut block_msg_builder = framed::FrameBuilder::<block::Owned>::new();
         {
             let mut block_builder = block_msg_builder.get_builder_typed();
-            block_builder.set_hash("block_hash");
             block_builder.set_offset(offset);
         }
         block_msg_builder.as_owned_unsigned_framed().unwrap()
