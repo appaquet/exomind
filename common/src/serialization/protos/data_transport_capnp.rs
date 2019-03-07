@@ -280,7 +280,7 @@ pub mod envelope {
     }
 }
 
-pub mod sync_message {
+pub mod engine_message {
     #[derive(Copy, Clone)]
     pub struct Owned;
     impl<'a> ::capnp::traits::Owned<'a> for Owned {
@@ -344,7 +344,9 @@ pub mod sync_message {
             self.reader.total_size()
         }
         #[inline]
-        pub fn get_message(self) -> crate::data_transport_capnp::sync_message::message::Reader<'a> {
+        pub fn get_message(
+            self,
+        ) -> crate::data_transport_capnp::engine_message::message::Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.reader)
         }
     }
@@ -424,13 +426,13 @@ pub mod sync_message {
         #[inline]
         pub fn get_message(
             self,
-        ) -> crate::data_transport_capnp::sync_message::message::Builder<'a> {
+        ) -> crate::data_transport_capnp::engine_message::message::Builder<'a> {
             ::capnp::traits::FromStructBuilder::new(self.builder)
         }
         #[inline]
         pub fn init_message(
             self,
-        ) -> crate::data_transport_capnp::sync_message::message::Builder<'a> {
+        ) -> crate::data_transport_capnp::engine_message::message::Builder<'a> {
             self.builder.set_data_field::<u16>(0, 0);
             self.builder.get_pointer_field(0).clear();
             ::capnp::traits::FromStructBuilder::new(self.builder)
@@ -448,7 +450,9 @@ pub mod sync_message {
         }
     }
     impl Pipeline {
-        pub fn get_message(&self) -> crate::data_transport_capnp::sync_message::message::Pipeline {
+        pub fn get_message(
+            &self,
+        ) -> crate::data_transport_capnp::engine_message::message::Pipeline {
             ::capnp::capability::FromTypelessPipeline::new(self._typeless.noop())
         }
     }
@@ -458,7 +462,7 @@ pub mod sync_message {
             data: 1,
             pointers: 1,
         };
-        pub const TYPE_ID: u64 = 0xda87_8cfd_7f5b_7787;
+        pub const TYPE_ID: u64 = 0xd316_fcf9_0feb_edc1;
     }
 
     pub mod message {
@@ -763,7 +767,7 @@ pub mod sync_message {
                 data: 1,
                 pointers: 1,
             };
-            pub const TYPE_ID: u64 = 0xa339_5beb_50db_cdef;
+            pub const TYPE_ID: u64 = 0xe650_55af_7051_3c4a;
         }
         pub enum Which<A0, A1, A2> {
             PendingSyncRequest(A0),

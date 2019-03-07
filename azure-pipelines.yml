@@ -5,19 +5,28 @@ trigger:
 pool:
   vmImage: 'Ubuntu-16.04'
 
+variables:
+- group: master_builds
+
 steps:
-  - script: |
-      git submodule sync --recursive
-      git submodule update --init --recursive
-    displayName: 'Sync submodules'
+  - checkout: self
+    submodules: true
 
   - script: |
+      docker --version
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+
+      export PATH=$PATH:$HOME/.cargo/bin
       rustc --version && cargo --version
-      sudo apt update && sudo apt install -y capnproto
     displayName: 'Install dependencies'
     
   - script: |
       export PATH=$PATH:$HOME/.cargo/bin
       cargo test --all --verbose -- --test-threads=1
     displayName: 'Test all'
+
+  - script: |
+      docker run --security-opt seccomp=unconfined -v "$PWD:/volume" xd009642/tarpaulin cargo tarpaulin --exclude-files=3rd --exclude-files="*_capnp.rs" --all --out Xml -v  -- --test-threads=1
+      bash <(curl -s https://codecov.io/bash)
+    displayName: 'Code coverage'
+

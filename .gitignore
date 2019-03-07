@@ -23,5 +23,5 @@ cmake-build-debug
 
 # Build
 build
-fastlane/report.xml
 tarpaulin*
+cobertura*
