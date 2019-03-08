@@ -117,7 +117,12 @@ where
 
     pub fn into_framed_vec<S: FrameSigner>(self, signer: S) -> Result<Vec<u8>, Error> {
         let mut writer = OwnedFrameWriter::new(self.message_type, signer);
-        capnp::serialize::write_message(&mut writer, &self.builder)?;
+        capnp::serialize::write_message(&mut writer, &self.builder).map_err(|err| {
+            Error::IO(
+                err.kind(),
+                format!("Couldn't write frame to write: {:?}", err),
+            )
+        })?;
         let (buffer, _metadata) = writer.finish()?;
         Ok(buffer)
     }
@@ -165,26 +170,23 @@ impl<'a> SliceFrame<'a> {
         let header_metadata = FrameMetadata::from_slice(data)?;
 
         if header_metadata.message_size == 0 {
-            error!("Message from slice had an size of 0");
-            return Err(Error::EOF);
+            return Err(Error::EOF("Message from slice had a size of 0".to_string()));
         }
 
         if data.len() < header_metadata.frame_size() {
-            error!(
+            return Err(Error::InvalidSize(format!(
                 "Slice size is smaller than expected frame size. Slice size {} < Expected size {}",
                 data.len(),
                 header_metadata.frame_size()
-            );
-            return Err(Error::InvalidSize);
+            )));
         }
 
         let footer_metadata = FrameMetadata::from_slice(&data[header_metadata.footer_offset()..])?;
         if header_metadata != footer_metadata {
-            error!(
+            return Err(Error::InvalidData(format!(
                 "Frame's header metadata is not the same as the footer's metadata: {:?} != {:?}",
                 header_metadata, footer_metadata
-            );
-            return Err(Error::InvalidData);
+            )));
         }
 
         Ok(SliceFrame {
@@ -197,38 +199,36 @@ impl<'a> SliceFrame<'a> {
 
     pub fn new_from_next_offset(data: &[u8], next_offset: usize) -> Result<SliceFrame, Error> {
         if data.len() < next_offset || next_offset < FrameMetadata::SIZE {
-            error!(
+            return Err(Error::InvalidSize(format!(
                 "Tried to read from next offset {} in buffer of len {}",
                 next_offset,
                 data.len()
-            );
-            return Err(Error::InvalidSize);
+            )));
         }
 
         let footer_metadata_offset = next_offset - FrameMetadata::SIZE;
         let footer_metadata = FrameMetadata::from_slice(&data[footer_metadata_offset..])?;
         if footer_metadata.frame_size() > next_offset {
-            error!(
+            return Err(Error::InvalidSize(format!(
                 "End frame size would exceed buffer 0th position (frame_size={} > next_offset={})",
                 footer_metadata.frame_size(),
                 next_offset
-            );
-            return Err(Error::InvalidSize);
+            )));
         }
 
         let frame_begin = next_offset - footer_metadata.frame_size();
         let header_metadata = FrameMetadata::from_slice(&data[frame_begin..])?;
         if header_metadata != footer_metadata {
-            error!(
+            return Err(Error::InvalidData(format!(
                 "Frame's header metadata is not the same as the footer's metadata: {:?} != {:?}",
                 header_metadata, footer_metadata
-            );
-            return Err(Error::InvalidData);
+            )));
         }
 
         if header_metadata.message_size == 0 {
-            error!("Message from slice had an size of 0");
-            return Err(Error::EOF);
+            return Err(Error::EOF(
+                "Message from slice had an size of 0".to_string(),
+            ));
         }
 
         Ok(SliceFrame {
@@ -243,8 +243,7 @@ impl<'a> SliceFrame<'a> {
         let words = unsafe { capnp::Word::bytes_to_words(buffer) };
         let opts = capnp::message::ReaderOptions::new();
         capnp::serialize::read_message_from_words(&words, opts).map_err(|err| {
-            warn!("Couldn't deserialize message reader: {:?}", err);
-            Error::InvalidData
+            Error::InvalidData(format!("Couldn't deserialize message reader: {:?}", err))
         })
     }
 
@@ -302,7 +301,9 @@ impl<'a> Frame for SliceFrame<'a> {
             err.clone()
         })?;
 
-        reader.get_root().map_err(|_err| Error::InvalidData)
+        reader.get_root().map_err(|err| {
+            Error::InvalidData(format!("Couldn't get root from frame data: {:?}", err))
+        })
     }
 
     fn copy_into(&self, buf: &mut [u8]) {
@@ -344,12 +345,11 @@ where
         let expected_type = <T as MessageType>::message_type();
         let message = SliceFrame::new(data)?;
         if message.message_type() != expected_type {
-            error!(
+            return Err(Error::InvalidData(format!(
                 "Trying to read a message of type {}, but got type {} in buffer",
                 expected_type,
                 message.message_type()
-            );
-            return Err(Error::InvalidData);
+            )));
         }
 
         Ok(TypedSliceFrame {
@@ -365,12 +365,11 @@ where
         let expected_type = <T as MessageType>::message_type();
         let message = SliceFrame::new_from_next_offset(data, next_offset)?;
         if message.message_type() != expected_type {
-            error!(
+            return Err(Error::InvalidData(format!(
                 "Trying to read a message of type {}, but got type {} in buffer",
                 expected_type,
                 message.message_type()
-            );
-            return Err(Error::InvalidData);
+            )));
         }
 
         Ok(TypedSliceFrame {
@@ -457,10 +456,7 @@ impl<'a> Iterator for FramesIterator<'a> {
                     framed_message,
                 })
             }
-            Err(Error::EOF) => {
-                trace!("Reached EOF");
-                None
-            }
+            Err(Error::EOF(_)) => None,
             Err(err) => {
                 self.last_error = Some(err);
                 None
@@ -654,7 +650,13 @@ impl<'a, S: FrameSigner> SliceFrameWriter<'a, S> {
 
         // write signature
         let signature_size = match signer.finish() {
-            Some(signature) => Self::checked_copy_to_buffer(count, &mut buffer, &signature)?,
+            Some(signature) => Self::checked_copy_to_buffer(count, &mut buffer, &signature)
+                .map_err(|err| {
+                    Error::IO(
+                        err.kind(),
+                        format!("Couldn't write signature to buffer: {:?}", err),
+                    )
+                })?,
             None => 0,
         };
 
@@ -720,7 +722,12 @@ pub fn write_framed_builder_into_buffer<A: capnp::message::Allocator, S: FrameSi
     signer: S,
 ) -> Result<FrameMetadata, Error> {
     let mut framed_writer = SliceFrameWriter::new(message_type, buffer, signer);
-    capnp::serialize::write_message(&mut framed_writer, &message_builder)?;
+    capnp::serialize::write_message(&mut framed_writer, &message_builder).map_err(|err| {
+        Error::IO(
+            err.kind(),
+            format!("Couldn't write message to SliceFrameWriter: {:?}", err),
+        )
+    })?;
     framed_writer.finish()
 }
 
@@ -814,7 +821,11 @@ impl FrameMetadata {
 
     fn from_slice(buffer: &[u8]) -> Result<FrameMetadata, Error> {
         if buffer.len() < Self::SIZE {
-            return Err(Error::EOF);
+            return Err(Error::EOF(format!(
+                "Buffer smaller than expect metadata: {} < {}",
+                buffer.len(),
+                Self::SIZE
+            )));
         }
 
         let message_type = LittleEndian::read_u16(&buffer[0..Self::TYPE_FIELD_SIZE]);
@@ -831,7 +842,11 @@ impl FrameMetadata {
 
     fn copy_into_slice(&self, buffer: &mut [u8]) -> Result<(), Error> {
         if buffer.len() < Self::SIZE {
-            return Err(Error::DestinationSize);
+            return Err(Error::DestinationSize(format!(
+                "Metadata size {} doesn't fit in buffer size {}",
+                Self::SIZE,
+                buffer.len()
+            )));
         }
 
         LittleEndian::write_u16(&mut buffer[0..Self::TYPE_FIELD_SIZE], self.message_type);
@@ -926,18 +941,28 @@ impl MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
     pub fn validate<S: SignedFrame>(frame: &S) -> Result<Multihash, Error> {
         frame
             .signature_data()
-            .ok_or(Error::InvalidSignature)
+            .ok_or(Error::InvalidSignature(
+                "Frame doesn't contain signature data".to_string(),
+            ))
             .and_then(|data| {
-                let hash_msg =
-                    Multihash::from_bytes(data.to_vec()).map_err(|_err| Error::InvalidSignature)?;
+                let hash_msg = Multihash::from_bytes(data.to_vec()).map_err(|err| {
+                    Error::InvalidSignature(format!(
+                        "Error creating multihash from bytes: {:?}",
+                        err
+                    ))
+                })?;
                 let hash_data = crate::security::hash::multihash::encode(
                     hash_msg.algorithm(),
                     frame.message_data(),
                 )
-                .map_err(|_err| Error::InvalidSignature)?;
+                .map_err(|err| {
+                    Error::InvalidSignature(format!("Couldn't encode to multihash: {:?}", err))
+                })?;
 
                 if hash_data != hash_msg {
-                    return Err(Error::InvalidSignature);
+                    return Err(Error::InvalidSignature(
+                        "Signatures don't match".to_string(),
+                    ));
                 }
 
                 Ok(hash_data)
@@ -973,31 +998,25 @@ where
 #[derive(Fail, Debug, Clone, PartialEq)]
 #[fail(display = "A message serialization error occurred")]
 pub enum Error {
-    #[fail(display = "Couldn't deserialization data")]
-    InvalidData,
-    #[fail(display = "Invalid message size")]
-    InvalidSize,
-    #[fail(display = "Destination size is too small")]
-    DestinationSize,
-    #[fail(display = "Signature validation error")]
-    InvalidSignature,
-    #[fail(display = "Capnp serialization error")]
-    CapnpSerialization(capnp::ErrorKind),
-    #[fail(display = "IO error")]
-    IO(std::io::ErrorKind),
-    #[fail(display = "Reached end of message / stream")]
-    EOF,
+    #[fail(display = "Couldn't deserialization data: {}", _0)]
+    InvalidData(String),
+    #[fail(display = "Invalid message size: {}", _0)]
+    InvalidSize(String),
+    #[fail(display = "Destination size is too small: {}", _0)]
+    DestinationSize(String),
+    #[fail(display = "Signature validation error: {}", _0)]
+    InvalidSignature(String),
+    #[fail(display = "Capnp serialization error of kind {:?}: {}", _0, _1)]
+    CapnpSerialization(capnp::ErrorKind, String),
+    #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
+    IO(std::io::ErrorKind, String),
+    #[fail(display = "Reached end of message / stream: {}", _0)]
+    EOF(String),
 }
 
 impl From<capnp::Error> for Error {
     fn from(err: capnp::Error) -> Self {
-        Error::CapnpSerialization(err.kind)
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::IO(err.kind())
+        Error::CapnpSerialization(err.kind, err.description)
     }
 }
 
@@ -1068,7 +1087,10 @@ pub mod tests {
     fn slice_frame_from_invalid_data() {
         // no data found
         let data = [0u8; 1000];
-        assert_eq!(SliceFrame::new(&data).err(), Some(Error::EOF));
+        assert_eq!(
+            SliceFrame::new(&data).err(),
+            Some(Error::EOF("Message from slice had a size of 0".to_string()))
+        );
 
         // invalid size
         let mut data = [0u8; 1000];

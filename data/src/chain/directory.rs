@@ -11,11 +11,6 @@ use exocore_common::serialization::framed::{Frame, FramesIterator, MessageType, 
 
 use super::*;
 
-// TODO: Snappy compression? Is it even worth it since the data is encrypted?
-// TODO: Opening segments could be faster to open by passing last known offset
-// TODO: Caching of segments metadata
-// TODO: Segments hash & sign hashes using in-memory key ==> Makes sure that nobody changed the file while we were offline
-
 ///
 /// Directory persistence
 ///
@@ -45,24 +40,24 @@ struct DirectoryStore {
 impl DirectoryStore {
     fn create(config: DirectoryConfig, directory_path: &Path) -> Result<DirectoryStore, Error> {
         if !directory_path.exists() {
-            error!(
+            return Err(Error::UnexpectedState(format!(
                 "Tried to create directory at {:?}, but it didn't exist",
                 directory_path
-            );
-            return Err(Error::UnexpectedState);
+            )));
         }
 
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
-            error!("Error listing directory {:?}: {:?}", directory_path, err);
-            Error::IO
+            Error::IO(
+                err.kind(),
+                format!("Error listing directory {:?}: {:?}", directory_path, err),
+            )
         })?;
 
         if paths.count() > 0 {
-            error!(
+            return Err(Error::UnexpectedState(format!(
                 "Tried to create directory at {:?}, but it's not empty",
                 directory_path
-            );
-            return Err(Error::UnexpectedState);
+            )));
         }
 
         Ok(DirectoryStore {
@@ -74,22 +69,25 @@ impl DirectoryStore {
 
     fn open(config: DirectoryConfig, directory_path: &Path) -> Result<DirectoryStore, Error> {
         if !directory_path.exists() {
-            error!(
+            return Err(Error::UnexpectedState(format!(
                 "Tried to open directory at {:?}, but it didn't exist",
                 directory_path
-            );
-            return Err(Error::UnexpectedState);
+            )));
         }
 
         let mut segments = Vec::new();
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
-            error!("Error listing directory {:?}: {:?}", directory_path, err);
-            Error::IO
+            Error::IO(
+                err.kind(),
+                format!("Error listing directory {:?}: {:?}", directory_path, err),
+            )
         })?;
         for path in paths {
             let path = path.map_err(|err| {
-                error!("Error getting directory entry {:?}", err);
-                Error::IO
+                Error::IO(
+                    err.kind(),
+                    format!("Error getting directory entry {:?}", err),
+                )
             })?;
 
             let segment = DirectorySegment::open(config, &path.path())?;
@@ -194,7 +192,9 @@ impl Store for DirectoryStore {
     ) -> Result<StoredBlockIterator, Error> {
         let segment = self
             .get_segment_for_next_block_offset(from_next_offset)
-            .ok_or(Error::OutOfBound)?;
+            .ok_or_else(|| {
+                Error::OutOfBound(format!("No segment with next offset {}", from_next_offset))
+            })?;
 
         let last_block = segment.get_block_from_next_offset(from_next_offset)?;
 
@@ -209,9 +209,9 @@ impl Store for DirectoryStore {
     }
 
     fn get_block(&self, offset: BlockOffset) -> Result<StoredBlock, Error> {
-        let segment = self
-            .get_segment_for_block_offset(offset)
-            .ok_or(Error::OutOfBound)?;
+        let segment = self.get_segment_for_block_offset(offset).ok_or_else(|| {
+            Error::OutOfBound(format!("No segment has block with offset {}", offset))
+        })?;
 
         segment.get_block(offset)
     }
@@ -219,20 +219,25 @@ impl Store for DirectoryStore {
     fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<StoredBlock, Error> {
         let segment = self
             .get_segment_for_next_block_offset(next_offset)
-            .ok_or(Error::OutOfBound)?;
+            .ok_or_else(|| {
+                Error::OutOfBound(format!(
+                    "No segment has block with next offset {}",
+                    next_offset
+                ))
+            })?;
 
         segment.get_block_from_next_offset(next_offset)
     }
 
-    fn truncate_from_offset(&mut self, block_offset: BlockOffset) -> Result<(), Error> {
+    fn truncate_from_offset(&mut self, offset: BlockOffset) -> Result<(), Error> {
         let segment_index = self
-            .get_segment_index_for_block_offset(block_offset)
-            .ok_or(Error::OutOfBound)?;
+            .get_segment_index_for_block_offset(offset)
+            .ok_or_else(|| Error::OutOfBound(format!("No segment has offset {}", offset)))?;
 
         let truncate_to = {
             let segment = &mut self.segments[segment_index];
-            if block_offset > segment.first_block_offset {
-                segment.truncate_from_block_offset(block_offset)?;
+            if offset > segment.first_block_offset {
+                segment.truncate_from_block_offset(offset)?;
                 segment_index + 1
             } else {
                 segment_index
@@ -346,11 +351,10 @@ impl DirectorySegment {
 
         let segment_path = Self::segment_path(directory, first_block_offset);
         if segment_path.exists() {
-            error!(
+            return Err(Error::UnexpectedState(format!(
                 "Tried to create a new segment at path {:?}, but already existed",
                 segment_path
-            );
-            return Err(Error::UnexpectedState);
+            )));
         }
 
         info!(
@@ -382,11 +386,10 @@ impl DirectorySegment {
         let segment = Self::open(config, &segment_path)?;
 
         if segment.first_block_offset != first_offset {
-            error!(
+            return Err(Error::Integrity(format!(
                 "First block offset != segment first_offset ({} != {})",
                 segment.first_block_offset, first_offset
-            );
-            return Err(Error::Integrity);
+            )));
         }
 
         Ok(segment)
@@ -434,8 +437,9 @@ impl DirectorySegment {
                     )
                 }
                 _ => {
-                    error!("Couldn't find last block of segment: no blocks returned by iterator");
-                    return Err(Error::Integrity);
+                    return Err(Error::Integrity(format!(
+                        "Couldn't find last block of segment: no blocks returned by iterator"
+                    )));
                 }
             }
         };
@@ -488,8 +492,7 @@ impl DirectorySegment {
         let block_reader = block.get_typed_reader()?;
         let block_offset = block_reader.get_offset();
         if next_block_offset != block_offset {
-            error!("Trying to write a block at an offset that wasn't next offset: next_block_offset={} block_offset={}", next_block_offset, block_offset);
-            return Err(Error::Integrity);
+            return Err(Error::Integrity(format!("Trying to write a block at an offset that wasn't next offset: next_block_offset={} block_offset={}", next_block_offset, block_offset)));
         }
 
         {
@@ -507,19 +510,17 @@ impl DirectorySegment {
     fn get_block(&self, offset: BlockOffset) -> Result<StoredBlock, Error> {
         let first_block_offset = self.first_block_offset;
         if offset < first_block_offset {
-            error!(
+            return Err(Error::OutOfBound(format!(
                 "Tried to read block at {}, but first offset was at {}",
                 offset, first_block_offset
-            );
-            return Err(Error::OutOfBound);
+            )));
         }
 
         if offset >= self.next_block_offset {
-            error!(
+            return Err(Error::OutOfBound(format!(
                 "Tried to read block at {}, but next offset was at {}",
                 offset, self.next_block_offset
-            );
-            return Err(Error::OutOfBound);
+            )));
         }
 
         let block_file_offset = (offset - first_block_offset) as usize;
@@ -535,19 +536,17 @@ impl DirectorySegment {
     fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<StoredBlock, Error> {
         let first_block_offset = self.first_block_offset;
         if next_offset < first_block_offset {
-            error!(
+            return Err(Error::OutOfBound(format!(
                 "Tried to read block from next offset {}, but first offset was at {}",
                 next_offset, first_block_offset
-            );
-            return Err(Error::OutOfBound);
+            )));
         }
 
         if next_offset > self.next_block_offset {
-            error!(
+            return Err(Error::OutOfBound(format!(
                 "Tried to read block from next offset {}, but next offset was at {}",
                 next_offset, self.next_block_offset
-            );
-            return Err(Error::OutOfBound);
+            )));
         }
 
         let next_file_offset = (next_offset - first_block_offset) as usize;
@@ -572,7 +571,10 @@ impl DirectorySegment {
 
     fn truncate_from_block_offset(&mut self, block_offset: BlockOffset) -> Result<(), Error> {
         if block_offset < self.first_block_offset {
-            return Err(Error::OutOfBound);
+            return Err(Error::OutOfBound(format!(
+                "Offset {} is before first block offset of segment {}",
+                block_offset, self.first_block_offset
+            )));
         }
         self.next_block_offset = block_offset;
         let keep_len = block_offset - self.first_block_offset;
@@ -583,8 +585,10 @@ impl DirectorySegment {
         let segment_path = self.segment_path.clone();
         drop(self);
         std::fs::remove_file(&segment_path).map_err(|err| {
-            error!("Couldn't delete segment file {:?}: {:?}", segment_path, err);
-            Error::IO
+            Error::IO(
+                err.kind(),
+                format!("Couldn't delete segment file {:?}: {:?}", segment_path, err),
+            )
         })?;
         Ok(())
     }
@@ -605,23 +609,29 @@ impl SegmentFile {
             .create(true)
             .open(path)
             .map_err(|err| {
-                error!("Error opening/creating segment file {:?}: {:?}", path, err);
-                Error::IO
+                Error::IO(
+                    err.kind(),
+                    format!("Error opening/creating segment file {:?}: {:?}", path, err),
+                )
             })?;
 
         let mut current_size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
         if current_size < minimum_size {
             current_size = minimum_size;
             file.set_len(minimum_size).map_err(|err| {
-                error!("Error setting len of segment file {:?}: {:?}", path, err);
-                Error::IO
+                Error::IO(
+                    err.kind(),
+                    format!("Error setting len of segment file {:?}: {:?}", path, err),
+                )
             })?;
         }
 
         let mmap = unsafe {
             memmap::MmapOptions::new().map_mut(&file).map_err(|err| {
-                error!("Error mmaping segment file {:?}: {:?}", path, err);
-                Error::IO
+                Error::IO(
+                    err.kind(),
+                    format!("Error mmaping segment file {:?}: {:?}", path, err),
+                )
             })?
         };
 
@@ -635,19 +645,23 @@ impl SegmentFile {
 
     fn set_len(&mut self, new_size: u64) -> Result<(), Error> {
         self.file.set_len(new_size).map_err(|err| {
-            error!(
-                "Error setting len of segment file {:?}: {:?}",
-                self.path, err
-            );
-            Error::IO
+            Error::IO(
+                err.kind(),
+                format!(
+                    "Error setting len of segment file {:?}: {:?}",
+                    self.path, err
+                ),
+            )
         })?;
 
         self.mmap = unsafe {
             memmap::MmapOptions::new()
                 .map_mut(&self.file)
                 .map_err(|err| {
-                    error!("Error mmaping segment file {:?}: {:?}", self.path, err);
-                    Error::IO
+                    Error::IO(
+                        err.kind(),
+                        format!("Error mmaping segment file {:?}: {:?}", self.path, err),
+                    )
                 })?
         };
 
@@ -658,7 +672,7 @@ impl SegmentFile {
 
 impl From<framed::Error> for Error {
     fn from(err: framed::Error) -> Self {
-        Error::Serialization(err)
+        Error::Framing(err)
     }
 }
 
@@ -668,6 +682,8 @@ mod tests {
 
     use super::*;
     use exocore_common::serialization::framed::{OwnedTypedFrame, TypedFrame};
+
+    use super::*;
 
     #[test]
     fn directory_chain_create_and_open() {

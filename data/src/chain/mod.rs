@@ -27,23 +27,23 @@ pub trait Store: Send + 'static {
 
     fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<StoredBlock, Error>;
 
-    fn truncate_from_offset(&mut self, block_offset: BlockOffset) -> Result<(), Error>;
+    fn truncate_from_offset(&mut self, offset: BlockOffset) -> Result<(), Error>;
 }
 
 #[derive(Debug, Clone, PartialEq, Fail)]
 pub enum Error {
-    #[fail(display = "The store is in an unexpected state")]
-    UnexpectedState,
+    #[fail(display = "The store is in an unexpected state: {}", _0)]
+    UnexpectedState(String),
     #[fail(display = "Error from the framing serialization: {:?}", _0)]
-    Serialization(framed::Error),
-    #[fail(display = "The store has an integrity problem")]
-    Integrity,
+    Framing(#[fail(cause)] framed::Error),
+    #[fail(display = "The store has an integrity problem: {}", _0)]
+    Integrity(String),
     #[fail(display = "A segment has reached its full capacity")]
     SegmentFull,
-    #[fail(display = "An offset is out of the chain data")]
-    OutOfBound,
-    #[fail(display = "IO error")]
-    IO,
+    #[fail(display = "An offset is out of the chain data: {}", _0)]
+    OutOfBound(String),
+    #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
+    IO(std::io::ErrorKind, String),
 }
 
 pub struct StoredBlock<'a> {
