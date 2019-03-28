@@ -1,3 +1,5 @@
+pub use capnp;
+
 use std::io::{Read, Result, Write};
 
 pub mod framed;

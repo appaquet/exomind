@@ -8,7 +8,7 @@ extern crate failure;
 extern crate futures;
 #[macro_use]
 extern crate log;
-extern crate error_chain;
+extern crate itertools;
 extern crate memmap;
 #[cfg(test)]
 extern crate stderrlog;

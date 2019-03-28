@@ -5,7 +5,6 @@ use std::ops::Range;
 use std::path::{Path, PathBuf};
 
 use exocore_common::data_chain_capnp::{block, block_signatures};
-use exocore_common::range;
 use exocore_common::serialization::framed;
 use exocore_common::serialization::framed::{Frame, FramesIterator, MessageType, TypedFrame};
 
@@ -681,6 +680,7 @@ mod tests {
     use tempdir;
 
     use super::*;
+    use exocore_common::range;
     use exocore_common::serialization::framed::{OwnedTypedFrame, TypedFrame};
 
     use super::*;

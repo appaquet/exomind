@@ -1,14 +1,11 @@
-#![feature(test)]
-extern crate test;
+#[macro_use]
+extern crate criterion_bencher_compat;
 
-use test::Bencher;
+use criterion_bencher_compat::{black_box, Bencher};
 
-use tempdir;
-
-use exocore_common::data_chain_capnp::{block, entry, entry_header};
+use exocore_common::data_chain_capnp::{block, entry};
 use exocore_common::serialization::framed::{Frame, FrameBuilder, OwnedFrame, SliceFrame};
 
-#[bench]
 fn bench_build_message(b: &mut Bencher) {
     let mut data = vec![0; 1000];
 
@@ -19,7 +16,6 @@ fn bench_build_message(b: &mut Bencher) {
     });
 }
 
-#[bench]
 fn bench_read_message_from_slice_with_parsing(b: &mut Bencher) {
     let mut builder = FrameBuilder::<block::Owned>::new();
     build_test_block(&mut builder);
@@ -28,11 +24,10 @@ fn bench_read_message_from_slice_with_parsing(b: &mut Bencher) {
     b.iter(|| {
         let message = SliceFrame::new(&data).unwrap();
         let block_reader: block::Reader = message.get_typed_reader::<block::Owned>().unwrap();
-        let _ = test::black_box(block_reader.get_previous_hash());
+        let _ = black_box(block_reader.get_previous_hash());
     });
 }
 
-#[bench]
 fn bench_read_message_from_slice_no_parsing(b: &mut Bencher) {
     let mut builder = FrameBuilder::<block::Owned>::new();
     build_test_block(&mut builder);
@@ -40,11 +35,10 @@ fn bench_read_message_from_slice_no_parsing(b: &mut Bencher) {
 
     b.iter(|| {
         let message = SliceFrame::new(&data).unwrap();
-        let _ = test::black_box(message);
+        let _ = black_box(message);
     });
 }
 
-#[bench]
 fn bench_read_message_from_owned_with_parsing(b: &mut Bencher) {
     let mut builder = FrameBuilder::<block::Owned>::new();
     build_test_block(&mut builder);
@@ -53,11 +47,10 @@ fn bench_read_message_from_owned_with_parsing(b: &mut Bencher) {
     b.iter(|| {
         let message = OwnedFrame::new(data.clone()).unwrap();
         let block_reader = message.get_typed_reader::<block::Owned>().unwrap();
-        let _ = test::black_box(block_reader.get_previous_hash());
+        let _ = black_box(block_reader.get_previous_hash());
     });
 }
 
-#[bench]
 fn bench_read_message_from_owned_no_parsing(b: &mut Bencher) {
     let mut builder = FrameBuilder::<block::Owned>::new();
     build_test_block(&mut builder);
@@ -65,7 +58,7 @@ fn bench_read_message_from_owned_no_parsing(b: &mut Bencher) {
 
     b.iter(|| {
         let message = OwnedFrame::new(data.clone()).unwrap();
-        let _ = test::black_box(message);
+        let _ = black_box(message);
     });
 }
 
@@ -77,3 +70,13 @@ fn build_test_block(block_msg_builder: &mut FrameBuilder<block::Owned>) {
     let mut entry: entry::Builder = entries.reborrow().get(0);
     entry.set_source_app("source_app");
 }
+
+benchmark_group!(
+    benches,
+    bench_build_message,
+    bench_read_message_from_slice_with_parsing,
+    bench_read_message_from_slice_no_parsing,
+    bench_read_message_from_owned_with_parsing,
+    bench_read_message_from_owned_no_parsing,
+);
+benchmark_main!(benches);

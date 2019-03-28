@@ -25,3 +25,8 @@ capnpc = "0.9"
 tempdir = "0.3.7"
 memmap = "0.7"
 stderrlog = "0.4.1"
+criterion_bencher_compat = "0.2.5"
+
+[[bench]]
+name = "capnp_msg"
+harness = false

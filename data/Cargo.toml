@@ -13,8 +13,8 @@ tokio = "0.1"
 tokio-io = "0.1"
 memmap = "0.7"
 byteorder = "1.2"
-error-chain = "0.12.0"
 failure = "0.1.5"
+itertools = "0.8.0"
 
 [dev-dependencies]
 tempdir = "0.3"

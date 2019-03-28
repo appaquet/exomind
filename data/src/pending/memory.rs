@@ -6,7 +6,6 @@ use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::security::hash::{Sha3Hasher, StreamHasher};
 use exocore_common::serialization::framed;
 use exocore_common::serialization::framed::{SignedFrame, TypedFrame};
-use exocore_common::serialization::protos::{OperationID, PendingID};
 
 use super::*;
 
@@ -14,15 +13,15 @@ use super::*;
 /// In memory pending store
 ///
 pub struct MemoryStore {
-    operations_timeline: BTreeMap<OperationID, PendingID>,
-    entries_operations: HashMap<PendingID, EntryOperations>,
+    operations_timeline: BTreeMap<OperationID, GroupID>,
+    groups_operations: HashMap<GroupID, GroupOperations>,
 }
 
 impl MemoryStore {
     pub fn new() -> MemoryStore {
         MemoryStore {
             operations_timeline: BTreeMap::new(),
-            entries_operations: HashMap::new(),
+            groups_operations: HashMap::new(),
         }
     }
 }
@@ -40,35 +39,35 @@ impl Store for MemoryStore {
     ) -> Result<(), Error> {
         let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
 
-        let pending_id = operation_reader.get_pending_id();
-        let pending_entry_operations = self
-            .entries_operations
-            .entry(pending_id)
-            .or_insert_with(EntryOperations::new);
+        let group_id = operation_reader.get_group_id();
+        let group_operations = self
+            .groups_operations
+            .entry(group_id)
+            .or_insert_with(GroupOperations::new);
 
         let operation_id = operation_reader.get_operation_id();
-        pending_entry_operations
+        group_operations
             .operations
             .insert(operation_id, Arc::new(operation));
 
-        self.operations_timeline.insert(operation_id, pending_id);
+        self.operations_timeline.insert(operation_id, group_id);
 
         Ok(())
     }
 
-    fn get_entry_operations(
+    fn get_group_operations(
         &self,
-        entry_id: PendingID,
-    ) -> Result<Option<StoredEntryOperations>, Error> {
-        let operations = self.entries_operations.get(&entry_id).map(|entry_ops| {
-            let operations = entry_ops
+        group_id: GroupID,
+    ) -> Result<Option<StoredGroupOperations>, Error> {
+        let operations = self.groups_operations.get(&group_id).map(|group_ops| {
+            let operations = group_ops
                 .operations
                 .values()
                 .map(|op| Arc::clone(op))
                 .collect();
 
-            StoredEntryOperations {
-                entry_id,
+            StoredGroupOperations {
+                group_id,
                 operations,
             }
         });
@@ -76,22 +75,19 @@ impl Store for MemoryStore {
         Ok(operations)
     }
 
-    fn operations_iter<'store, R>(
-        &'store self,
-        range: R,
-    ) -> Result<Box<dyn Iterator<Item = StoredOperation> + 'store>, Error>
+    fn operations_iter<R>(&self, range: R) -> Result<TimelineIterator, Error>
     where
         R: RangeBounds<OperationID>,
     {
-        let iter = self
+        let ids_iterator = self
             .operations_timeline
             .range(range)
-            .map(|(operation_id, entry_id)| StoredOperation {
-                entry_id: *entry_id,
-                operation_id: *operation_id,
-            });
+            .map(|(op_id, group_id)| (*op_id, *group_id));
 
-        Ok(Box::new(iter))
+        Ok(Box::new(OperationsIterator {
+            store: self,
+            ids_iterator: Box::new(ids_iterator),
+        }))
     }
 
     fn operations_range_summary<R>(&self, range: R) -> Result<StoredRangeSummary, Error>
@@ -101,27 +97,23 @@ impl Store for MemoryStore {
         let mut hasher = Sha3Hasher::new_256();
         let mut count = 0;
 
-        for (operation_id, entry_id) in self.operations_timeline.range(range) {
-            if let Some(maybe_operation) = self
-                .entries_operations
-                .get(entry_id)
-                .and_then(|entry_ops| entry_ops.operations.get(operation_id))
-            {
+        for (operation_id, pending_id) in self.operations_timeline.range(range) {
+            if let Some(maybe_operation) = self.get_group_operation(pending_id, operation_id) {
                 count += 1;
 
                 match maybe_operation.signature_data() {
                     Some(sig_data) => hasher.consume(sig_data),
                     None => {
                         warn!(
-                            "One pending operation didn't have any signature: entry_id={} op_id={}",
-                            entry_id, operation_id
+                            "One pending operation didn't have any signature: pending_id={} op_id={}",
+                            pending_id, operation_id
                         );
                     }
                 }
             } else {
                 warn!(
-                    "Couldn't find one of the operation from timeline: entry_id={} op_id={}",
-                    entry_id, operation_id
+                    "Couldn't find one of the operation from timeline: pending_id={} op_id={}",
+                    pending_id, operation_id
                 );
             }
         }
@@ -133,23 +125,61 @@ impl Store for MemoryStore {
     }
 }
 
-struct EntryOperations {
+impl MemoryStore {
+    fn get_group_operation(
+        &self,
+        group_id: &GroupID,
+        operation_id: &OperationID,
+    ) -> Option<&Arc<framed::OwnedTypedFrame<pending_operation::Owned>>> {
+        self.groups_operations
+            .get(group_id)
+            .and_then(|group_ops| group_ops.operations.get(operation_id))
+    }
+}
+
+///
+///
+///
+struct GroupOperations {
     operations: BTreeMap<OperationID, Arc<framed::OwnedTypedFrame<pending_operation::Owned>>>,
 }
 
-impl EntryOperations {
-    fn new() -> EntryOperations {
-        EntryOperations {
+impl GroupOperations {
+    fn new() -> GroupOperations {
+        GroupOperations {
             operations: BTreeMap::new(),
         }
     }
 }
 
+///
+///
+///
+struct OperationsIterator<'store> {
+    store: &'store MemoryStore,
+    ids_iterator: Box<dyn Iterator<Item = (OperationID, GroupID)> + 'store>,
+}
+
+impl<'store> Iterator for OperationsIterator<'store> {
+    type Item = StoredOperation;
+
+    fn next(&mut self) -> Option<StoredOperation> {
+        let (operation_id, group_id) = self.ids_iterator.next()?;
+        let operation = self.store.get_group_operation(&group_id, &operation_id)?;
+
+        Some(StoredOperation {
+            group_id,
+            operation_id,
+            operation: Arc::clone(operation),
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use exocore_common::serialization::framed::{FrameBuilder, MultihashFrameSigner};
-
     use super::*;
+
+    use crate::pending::tests::create_new_entry_op;
 
     #[test]
     fn put_and_retrieve_operation() {
@@ -159,17 +189,17 @@ mod test {
         store.put_operation(create_new_entry_op(100, 200)).unwrap();
         store.put_operation(create_new_entry_op(102, 201)).unwrap();
 
-        let timeline: Vec<(OperationID, PendingID)> = store
+        let timeline: Vec<(OperationID, GroupID)> = store
             .operations_iter(..)
             .unwrap()
-            .map(|op| (op.operation_id, op.entry_id))
+            .map(|op| (op.operation_id, op.group_id))
             .collect();
         assert_eq!(timeline, vec![(100, 200), (102, 201), (105, 200),]);
 
-        let entry_operations = store.get_entry_operations(200).unwrap().unwrap();
-        assert_eq!(entry_operations.entry_id, 200);
+        let group_operations = store.get_group_operations(200).unwrap().unwrap();
+        assert_eq!(group_operations.group_id, 200);
 
-        let op_ids: Vec<OperationID> = entry_operations
+        let op_ids: Vec<OperationID> = group_operations
             .operations
             .iter()
             .map(|op| {
@@ -211,26 +241,5 @@ mod test {
         assert_eq!(range2_summary.count, 3);
 
         assert_ne!(range1_summary.hash, range2_summary.hash);
-    }
-
-    fn create_new_entry_op(
-        operation_id: OperationID,
-        pending_id: PendingID,
-    ) -> framed::OwnedTypedFrame<pending_operation::Owned> {
-        let mut msg_builder = FrameBuilder::<pending_operation::Owned>::new();
-
-        {
-            let mut op_builder: pending_operation::Builder = msg_builder.get_builder_typed();
-            op_builder.set_pending_id(pending_id);
-            op_builder.set_operation_id(operation_id);
-            let inner_op_builder = op_builder.init_operation();
-
-            let new_entry_op_builder = inner_op_builder.init_entry_new();
-            let mut entry_header_builder = new_entry_op_builder.init_entry_header();
-            entry_header_builder.set_id(pending_id);
-        }
-
-        let frame_signer = MultihashFrameSigner::new_sha3256();
-        msg_builder.as_owned_framed(frame_signer).unwrap()
     }
 }

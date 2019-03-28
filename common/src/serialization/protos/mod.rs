@@ -17,47 +17,97 @@ pub mod common_capnp;
 pub mod data_chain_capnp;
 pub mod data_transport_capnp;
 
-pub type PendingID = u64;
+pub type GroupID = u64;
 pub type OperationID = u64;
 
 impl<'a> MessageType<'a> for self::data_chain_capnp::pending_operation::Owned {
     fn message_type() -> u16 {
-        0
+        100
+    }
+}
+
+impl<'a> MessageType<'a> for self::data_chain_capnp::pending_operation_header::Owned {
+    fn message_type() -> u16 {
+        101
+    }
+}
+
+impl<'a> MessageType<'a> for self::data_chain_capnp::operation_entry_new::Owned {
+    fn message_type() -> u16 {
+        110
+    }
+}
+
+impl<'a> MessageType<'a> for self::data_chain_capnp::operation_block_propose::Owned {
+    fn message_type() -> u16 {
+        112
+    }
+}
+
+impl<'a> MessageType<'a> for self::data_chain_capnp::operation_block_sign::Owned {
+    fn message_type() -> u16 {
+        113
+    }
+}
+
+impl<'a> MessageType<'a> for self::data_chain_capnp::operation_block_refuse::Owned {
+    fn message_type() -> u16 {
+        114
     }
 }
 
 impl<'a> MessageType<'a> for self::data_chain_capnp::entry::Owned {
     fn message_type() -> u16 {
-        1
+        120
     }
 }
 
 impl<'a> MessageType<'a> for self::data_chain_capnp::entry_header::Owned {
     fn message_type() -> u16 {
-        2
+        121
     }
 }
 
 impl<'a> MessageType<'a> for self::data_chain_capnp::block::Owned {
     fn message_type() -> u16 {
-        3
+        122
     }
 }
 
 impl<'a> MessageType<'a> for self::data_chain_capnp::block_signatures::Owned {
     fn message_type() -> u16 {
-        4
+        123
     }
 }
 
 impl<'a> MessageType<'a> for self::data_chain_capnp::block_signature::Owned {
     fn message_type() -> u16 {
-        5
+        124
     }
 }
 
+///
+///
 impl<'a> MessageType<'a> for self::data_transport_capnp::envelope::Owned {
     fn message_type() -> u16 {
-        6
+        200
+    }
+}
+
+impl<'a> MessageType<'a> for self::data_transport_capnp::engine_message::Owned {
+    fn message_type() -> u16 {
+        201
+    }
+}
+
+impl<'a> MessageType<'a> for self::data_transport_capnp::pending_sync_request::Owned {
+    fn message_type() -> u16 {
+        202
+    }
+}
+
+impl<'a> MessageType<'a> for self::data_transport_capnp::pending_sync_range::Owned {
+    fn message_type() -> u16 {
+        203
     }
 }

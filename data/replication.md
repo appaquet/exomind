@@ -1,42 +1,66 @@
 
-
 # Replication
-
-We have 2 data structures to replicate:
-* Chain: immutable collection of blocks, with entries (cell data, meta, chain maintenance).
-* Pending store: transient store in which latest operations are aggregated, to eventually be added to the chain.
-
+The replication is handled by [`Engine`](src/engine/mod.rs).
+ 
+There are 2 data structures to replicate:
+* **Chain**: immutable collection of blocks that contain entries. Entries can be arbitrary data stored for the index layer,
+         or metadata entries related to the chain.
+         
+* **Pending store**: transient store in which latest operations are aggregated, to eventually be added to the chain.
 
 ## Pending store replication
+Pending store's replication is handled by the [`Pending Store Synchronizer`](src/engine/pending_sync.rs).
 
 ### Messages
+* `PendingSyncRequest(List<PendingSyncRange>)`
+    * Each `PendingSyncRange` contains:
+      * The bounds of the range of operations to compare. Bounds can be omitted to represent no boundaries (represented by value 0)
+      * The metadata information of that range in the local store (hash + count)
+      * Operations data that need to be applied before comparing the local store information
+      * Operations headers that are given to compare the local store's operations, resulting in the stores to request or send
+        missing operations to the other nodes.
 
-* PendingSyncRequest(PendingSyncRange)
-* PendingSyncResponse(PendingSyncRange)
+#### Example:
+```
+   A                               B
+ 0,5,10                          0,5,12
+   |                               |
+   |----meta(-∞..5)+meta(6..∞)---->| (meta is count+hash)
+   |                               |
+   |<---meta(-∞..5)+head(6..∞)-----| (head are all headers of operations)
+   |                               |
+   |----meta(-∞..5)+data(10)------>| (sends data of 10 + headers of rest of range)
+   |                               |
+   |<---meta(-∞..5)+data(12)-------| (sends data of 12 + headers of rest of range)
+   |                               |
+   X                               | (stops, because ranges have same hash+count)
+```
 
-#### Operation
-* Entries related (pending entry id = entry id)
+#### Operations
+Each operation contains an unique operation ID, which is globally unique and monotonically increasing.
+Each operation has a group ID, which is used to combined related operations.
+Per example, operations related to a single block have the same group ID, which is the Operation ID of the block proposal.
+
+Operations in pending store can be:
+
+* Entries related (group id = entry id)
     * OperationEntryNew
-* Block related (pending entry id = block id)
-    * Block propose
-    * Block proposal sign
-    * Block proposal refuse (can happen after sign if node detects anomaly or accepts a better block)
-
-
-### Block proposal
-* One node propose a block into pending store. 
-
+* Block related (group id = block id)
+    * BlockPropose
+    * BlockProposalSign
+    * BlockProposalRefuse (can happen after sign if node detects anomaly or accepts a better block)
+* Maintenance related
+    * Pending store cleanup mark (TODO)
 
 ### Cleanup
-* We should only cleanup if stuff were committed to the chain OR we got a refusal quorum (everybody refused something)
-
-
+* We should only cleanup if stuff were committed to the chain OR we got a refusal quorum (everybody refused something).
+* If a node was offline and received data before cleanup point, it will eventually get deleted if it had been put in chain already.
 
 ## Chain replication
+TODO
 
 ### Messages
 * ChainSyncRequest
-
 
 ### Cleanup
 * A node that has access to unencrypted data can decide to cleanup the chain by truncating it, after moving entries around.

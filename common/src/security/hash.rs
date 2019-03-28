@@ -8,7 +8,7 @@ pub trait StreamHasher: std::marker::Sized {
     fn consume(&mut self, data: &[u8]);
     fn digest_into(self, buf: &mut [u8]);
 
-    fn into_mulithash_bytes(self) -> Vec<u8> {
+    fn into_multihash_bytes(self) -> Vec<u8> {
         let hash = self.hash();
         let hash_code = hash.code();
         assert!(hash_code < 128, "varint hash type not supported");
@@ -25,7 +25,7 @@ pub trait StreamHasher: std::marker::Sized {
     }
 
     fn into_multihash(self) -> Multihash {
-        Multihash::from_bytes(self.into_mulithash_bytes())
+        Multihash::from_bytes(self.into_multihash_bytes())
             .expect("Couldn't create Multihash struct from just-created multihash bytes")
     }
 }

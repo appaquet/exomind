@@ -4,7 +4,7 @@
 # Pending store
 #
 struct PendingOperation {
-    pendingId              @0: UInt64;
+    groupId                @0: UInt64;
     operationId            @1: UInt64;
 
     operation :union {
@@ -13,6 +13,12 @@ struct PendingOperation {
         blockSign          @4: OperationBlockSign;
         blockRefuse        @5: OperationBlockRefuse;
     }
+}
+
+struct PendingOperationHeader {
+    groupId                @0: UInt64;
+    operationId            @1: UInt64;
+    operationSignature     @2: Data;
 }
 
 struct OperationEntryNew {

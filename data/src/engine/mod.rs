@@ -1,5 +1,5 @@
 use std;
-use std::sync::{Arc, Mutex, RwLock, Weak};
+use std::sync::{Arc, RwLock, Weak};
 use std::time::{Duration, Instant};
 
 use futures::prelude::*;
@@ -15,12 +15,7 @@ use crate::chain;
 use crate::pending;
 use crate::transport;
 
-// TODO: Should be able to run without the chain.
-
-// TODO: Should have a "EngineState" so that we can easily test the states transition / actions
-// TODO: If node has access to data, it needs ot check its integrity by the upper layer
-// TODO: If not, a node needs to wait for a majority of nodes that has data
-// TODO: should send full if an object has been modified by us recently and we never sent to remote
+mod pending_sync;
 
 const ENGINE_MANAGE_TIMER_INTERVAL: Duration = Duration::from_secs(1);
 
@@ -55,8 +50,9 @@ where
 
         let context = Arc::new(RwLock::new(Inner {
             nodes,
-            pending_store: Mutex::new(pending_store),
-            chain_store: Mutex::new(chain_store),
+            pending_store,
+            pending_syncer: pending_sync::Synchronizer::new(),
+            chain_store,
             transport_sender: None,
             completion_sender: Some(completion_sender),
         }));
@@ -151,7 +147,7 @@ where
         unimplemented!()
     }
 
-    fn handle_management_timer_tick(inner: &Weak<RwLock<Inner<CS, PS>>>) -> Result<(), Error> {
+    fn handle_management_timer_tick(_inner: &Weak<RwLock<Inner<CS, PS>>>) -> Result<(), Error> {
         // TODO: Sync at interval to check we didn't miss anything
         // TODO: Maybe propose a new block
 
@@ -217,8 +213,9 @@ where
     PS: pending::Store,
 {
     nodes: Vec<Node>,
-    pending_store: Mutex<PS>,
-    chain_store: Mutex<CS>,
+    pending_store: PS,
+    pending_syncer: pending_sync::Synchronizer<PS>,
+    chain_store: CS,
     transport_sender: Option<mpsc::UnboundedSender<transport::OutMessage>>,
     completion_sender: Option<oneshot::Sender<Result<(), Error>>>,
 }
@@ -232,27 +229,6 @@ where
         if let Some(sender) = self.completion_sender.take() {
             let _ = sender.send(result);
         }
-    }
-}
-
-///
-///
-///
-#[derive(Debug, Fail)]
-pub enum Error {
-    #[fail(display = "Try to lock a mutex that was poisoned")]
-    Poisoned,
-    #[fail(display = "Error in transport: {:?}", _0)]
-    Transport(transport::Error),
-    #[fail(display = "Inner was dropped or couldn't get locked")]
-    InnerUpgrade,
-    #[fail(display = "An error occurred: {}", _0)]
-    Other(String),
-}
-
-impl<T> From<std::sync::PoisonError<T>> for Error {
-    fn from(_err: std::sync::PoisonError<T>) -> Self {
-        Error::Poisoned
     }
 }
 
@@ -285,6 +261,27 @@ where
         _from_time: Instant,
     ) -> Box<dyn futures::Stream<Item = Event, Error = Error>> {
         unimplemented!()
+    }
+}
+
+///
+///
+///
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "Try to lock a mutex that was poisoned")]
+    Poisoned,
+    #[fail(display = "Error in transport: {:?}", _0)]
+    Transport(transport::Error),
+    #[fail(display = "Inner was dropped or couldn't get locked")]
+    InnerUpgrade,
+    #[fail(display = "An error occurred: {}", _0)]
+    Other(String),
+}
+
+impl<T> From<std::sync::PoisonError<T>> for Error {
+    fn from(_err: std::sync::PoisonError<T>) -> Self {
+        Error::Poisoned
     }
 }
 

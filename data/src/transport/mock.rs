@@ -221,7 +221,6 @@ impl Future for CompletionFuture {
 mod test {
     use tokio::runtime::Runtime;
 
-    use exocore_common::node::Nodes;
     use exocore_common::serialization::framed::TypedFrame;
     use exocore_common::tests_utils::*;
 
