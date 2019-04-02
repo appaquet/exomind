@@ -25,3 +25,5 @@ cmake-build-debug
 build
 tarpaulin*
 cobertura*
+flamegraph*
+perf.*

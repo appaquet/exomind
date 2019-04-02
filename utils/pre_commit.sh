@@ -8,3 +8,4 @@ cd "$CUR_DIR"
 ./clippy.sh
 
 cargo test --all
+cargo build --release

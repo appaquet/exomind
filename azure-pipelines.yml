@@ -18,15 +18,26 @@ steps:
 
       export PATH=$PATH:$HOME/.cargo/bin
       rustc --version && cargo --version
+      rustup component add rustfmt
+      rustup component add clippy
     displayName: 'Install dependencies'
-    
+
   - script: |
+      set -e
       export PATH=$PATH:$HOME/.cargo/bin
+
+      cargo fmt --all -- --check
+      cargo check --all
+
+      cargo clean -p exocore-common
+      cargo clippy --all
+
       cargo test --all --verbose -- --test-threads=1
     displayName: 'Test all'
 
   - script: |
-      docker run --security-opt seccomp=unconfined -v "$PWD:/volume" xd009642/tarpaulin cargo tarpaulin --exclude-files=3rd --exclude-files="*_capnp.rs" --all --out Xml -v  -- --test-threads=1
+      # Limit to 1 core until https://github.com/xd009642/tarpaulin/issues/190 is fixed
+      docker run --security-opt seccomp=unconfined --cpuset-cpus="0" -v "$PWD:/volume" xd009642/tarpaulin cargo tarpaulin --exclude-files=3rd --exclude-files="*_capnp.rs" --all --out Xml -v  -- --test-threads=1
       bash <(curl -s https://codecov.io/bash)
     displayName: 'Code coverage'
 
