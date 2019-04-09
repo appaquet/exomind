@@ -110,7 +110,9 @@ where
     }
 
     pub fn get_builder_typed(&mut self) -> <T as capnp::traits::Owned>::Builder {
-        self.builder.get_root().unwrap()
+        self.builder
+            .get_root()
+            .expect("Couldn't get root of builder, but should have been initialized in constructor")
     }
 
     pub fn as_owned_framed<S: FrameSigner>(&self, signer: S) -> Result<OwnedTypedFrame<T>, Error> {
@@ -255,7 +257,8 @@ impl<'a> SliceFrame<'a> {
     }
 
     pub fn to_owned(&self) -> OwnedFrame {
-        OwnedFrame::new(self.data.to_vec()).unwrap()
+        OwnedFrame::new(self.data.to_vec())
+            .expect("Couldn't convert SliceFrame to OwnedFramed, while its the same data")
     }
 
     pub fn into_typed<T>(self) -> TypedSliceFrame<'a, T>
@@ -318,8 +321,7 @@ impl<'a> Frame for SliceFrame<'a> {
     }
 
     fn to_owned(&self) -> OwnedFrame {
-        OwnedFrame::new(self.data.to_vec())
-            .expect("Couldn't create owned message from slice, which shouldn't be possible")
+        OwnedFrame::new(self.data.to_vec()).expect("Couldn't create new frame from own data")
     }
 }
 
@@ -509,7 +511,12 @@ impl OwnedFrame {
         signer: S,
     ) -> Result<OwnedFrame, Error> {
         let mut writer = OwnedFrameWriter::new(message_type, signer);
-        capnp::serialize::write_message(&mut writer, builder).unwrap();
+        capnp::serialize::write_message(&mut writer, builder).map_err(|err| {
+            Error::IO(
+                err.kind(),
+                format!("Couldn't write frame to writer: {:?}", err),
+            )
+        })?;
         let (buffer, _metadata) = writer.finish()?;
 
         OwnedFrame::new(buffer)
@@ -528,7 +535,8 @@ impl OwnedFrame {
 
 impl Clone for OwnedFrame {
     fn clone(&self) -> Self {
-        OwnedFrame::new(self.owned_slice_message.data.to_vec()).unwrap()
+        OwnedFrame::new(self.owned_slice_message.data.to_vec())
+            .expect("Couldn't create new frame from own data")
     }
 }
 
@@ -556,7 +564,8 @@ impl Frame for OwnedFrame {
     }
 
     fn to_owned(&self) -> OwnedFrame {
-        OwnedFrame::new(self.owned_slice_message.data.to_vec()).unwrap()
+        OwnedFrame::new(self.owned_slice_message.data.to_vec())
+            .expect("Couldn't create new frame from own data")
     }
 }
 
@@ -1034,7 +1043,7 @@ pub mod tests {
     use super::*;
 
     #[test]
-    fn write_and_read_frame_metadata() {
+    fn write_and_read_frame_metadata() -> Result<(), Error> {
         let mut buf = vec![0; 10];
 
         let meta1 = FrameMetadata {
@@ -1042,56 +1051,63 @@ pub mod tests {
             message_size: 5,
             signature_size: 7,
         };
-        meta1.copy_into_slice(&mut buf).unwrap();
+        meta1.copy_into_slice(&mut buf)?;
 
-        let meta2 = FrameMetadata::from_slice(&buf).unwrap();
+        let meta2 = FrameMetadata::from_slice(&buf)?;
         assert_eq!(meta1, meta2);
+
+        Ok(())
     }
 
     #[test]
-    fn frame_builder_into_bytes() {
+    fn frame_builder_into_bytes() -> Result<(), Error> {
         let block_builder = build_test_block(123, 321);
 
-        let frame_data = block_builder.into_unsigned_framed_bytes().unwrap();
-        let frame_slice = SliceFrame::new(&frame_data).unwrap();
+        let frame_data = block_builder.into_unsigned_framed_bytes()?;
+        let frame_slice = SliceFrame::new(&frame_data)?;
         assert_eq!(
             frame_slice.message_type(),
             <block::Owned as MessageType>::message_type()
         );
 
         let typed_frame = frame_slice.into_typed::<block::Owned>();
-        let block_reader = typed_frame.get_typed_reader().unwrap();
+        let block_reader = typed_frame.get_typed_reader()?;
         assert_eq!(block_reader.get_offset(), 123);
         assert_eq!(typed_frame.frame_size(), frame_data.len());
+
+        Ok(())
     }
 
     #[test]
-    fn frame_builder_into_owned_frame() {
+    fn frame_builder_into_owned_frame() -> Result<(), Error> {
         let block_builder = build_test_block(123, 10000);
 
-        let owned_frame = block_builder.as_owned_unsigned_framed().unwrap();
+        let owned_frame = block_builder.as_owned_unsigned_framed()?;
         assert_eq!(
             owned_frame.message_type(),
             <block::Owned as MessageType>::message_type()
         );
 
-        let block_reader = owned_frame.get_typed_reader().unwrap();
+        let block_reader = owned_frame.get_typed_reader()?;
         assert_eq!(block_reader.get_offset(), 123);
+
+        Ok(())
     }
 
     #[test]
-    fn frame_builder_write_into_buffer() {
+    fn frame_builder_write_into_buffer() -> Result<(), Error> {
         let block_builder = build_test_block(0, 10000);
 
         let mut data = [0u8; 1000];
-        let frame_metadata = block_builder.write_into_unsigned(&mut data).unwrap();
+        let frame_metadata = block_builder.write_into_unsigned(&mut data)?;
 
-        let framed_data = block_builder.into_unsigned_framed_bytes().unwrap();
+        let framed_data = block_builder.into_unsigned_framed_bytes()?;
         assert_eq!(&framed_data[..], &data[..frame_metadata.frame_size()]);
+        Ok(())
     }
 
     #[test]
-    fn slice_frame_from_invalid_data() {
+    fn slice_frame_from_invalid_data() -> Result<(), Error> {
         // no data found
         let data = [0u8; 1000];
         assert_eq!(
@@ -1110,6 +1126,8 @@ pub mod tests {
         LittleEndian::write_u16(&mut data, 10);
         LittleEndian::write_u32(&mut data, 10000);
         assert!(SliceFrame::new(&data).is_err());
+
+        Ok(())
     }
 
     #[test]
@@ -1184,7 +1202,7 @@ pub mod tests {
     }
 
     #[test]
-    fn frames_iterator() {
+    fn frames_iterator() -> Result<(), Error> {
         let mut data = [0u8; 500_000];
 
         let mut next_offset = 0;
@@ -1196,8 +1214,7 @@ pub mod tests {
                 123,
                 block_builder.get_builder(),
                 NullFrameSigner,
-            )
-            .unwrap();
+            )?;
             next_offset += metadata.frame_size();
         }
 
@@ -1215,7 +1232,7 @@ pub mod tests {
         assert_eq!(last_iter_frame.offset, 0);
 
         let typed_frame = last_iter_frame.framed_message.into_typed::<block::Owned>();
-        let block_reader = typed_frame.get_typed_reader().unwrap();
+        let block_reader = typed_frame.get_typed_reader()?;
         assert_eq!(block_reader.get_offset(), 0);
 
         // iterator typing
@@ -1226,6 +1243,8 @@ pub mod tests {
             .map(|b| b.get_typed_reader().unwrap().get_offset())
             .collect();
         assert_eq!(hashes, vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+        Ok(())
     }
 
     #[test]
@@ -1241,30 +1260,30 @@ pub mod tests {
     }
 
     #[test]
-    fn frame_sign_and_validate() {
+    fn frame_sign_and_validate() -> Result<(), Error> {
         let block_builder = build_test_block(0, 10000);
 
         let signer = MultihashFrameSigner::new_sha3256();
-        let frame: OwnedTypedFrame<block::Owned> = block_builder.as_owned_framed(signer).unwrap();
+        let frame: OwnedTypedFrame<block::Owned> = block_builder.as_owned_framed(signer)?;
         assert_eq!(frame.signature_data().unwrap().len(), 2 + 32);
         assert!(MultihashFrameSigner::validate(&frame).is_ok());
 
         let signer = MultihashFrameSigner::new_sha3512();
-        let frame = block_builder.as_owned_framed(signer).unwrap();
+        let frame = block_builder.as_owned_framed(signer)?;
         assert_eq!(frame.signature_data().unwrap().len(), 2 + 64);
         assert!(MultihashFrameSigner::validate(&frame).is_ok());
 
-        let mut data = block_builder
-            .into_framed_vec(MultihashFrameSigner::new_sha3512())
-            .unwrap();
-        let frame = SliceFrame::new(&data).unwrap();
+        let mut data = block_builder.into_framed_vec(MultihashFrameSigner::new_sha3512())?;
+        let frame = SliceFrame::new(&data)?;
         assert!(MultihashFrameSigner::validate(&frame).is_ok());
 
         // modify message should invalidate signature
         data[10] = 40;
         data[11] = 12;
-        let frame = SliceFrame::new(&data).unwrap();
+        let frame = SliceFrame::new(&data)?;
         assert!(MultihashFrameSigner::validate(&frame).is_err());
+
+        Ok(())
     }
 
     fn build_test_block(block_offset: u64, entry_id: u64) -> FrameBuilder<block::Owned> {
