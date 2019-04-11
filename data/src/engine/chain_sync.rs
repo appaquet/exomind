@@ -12,7 +12,7 @@ use exocore_common::serialization::protos::data_transport_capnp::{
 
 use crate::chain;
 use crate::chain::{Block, BlockOffset, BlockRef, ChainStore};
-use crate::engine::request_tracker;
+use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
 
 ///
@@ -87,7 +87,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // check if we need to gather data from a leader node
         if self.status != Status::Synchronized && majority_nodes_metadata_sync {
             if self.leader.is_none() {
-                self.find_leader_node(&nodes, store)?;
+                self.find_leader_node(store)?;
             }
 
             let im_leader = self
@@ -113,7 +113,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     }
 
                     if leader_node_info.request_tracker.can_send_request() {
-                        let leader_node = nodes.get(&node_id).ok_or_else(|| {
+                        let leader_node = nodes.get(&leader).ok_or_else(|| {
                             ChainSyncError::Other(format!(
                                 "Couldn't find leader node {} in nodes list",
                                 node_id
@@ -499,6 +499,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 // make sure the block was expected in our chain, then add it
                 let next_local_offset = last_local_block.as_ref().map_or(0, |b| b.next_offset());
                 if block.offset() == next_local_offset {
+                    sync_context.push_event(Event::ChainBlockNew(block.offset()));
                     store.write_block(&block)?;
                     let new_block_header = BlockHeader::from_stored_block(block)?;
                     last_local_block = Some(new_block_header);
@@ -562,9 +563,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         (nodes_metadata_sync, nodes_total)
     }
 
-    fn find_leader_node(&mut self, nodes: &Nodes, store: &CS) -> Result<(), Error> {
-        let nb_nodes = nodes.len();
-
+    fn find_leader_node(&mut self, store: &CS) -> Result<(), Error> {
         let maybe_leader = self
             .nodes_info
             .values()
@@ -587,7 +586,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 // there are other nodes, but i have the longest chain
                 Some(self.node_id.clone())
             }
-            (None, Some(_last_local_block)) if nb_nodes == 1 => {
+            (None, Some(_last_local_block)) => {
                 // i have at least the genesis block, i'm alone, so i'm the leader
                 Some(self.node_id.clone())
             }
@@ -1026,8 +1025,8 @@ mod tests {
             );
         }
 
-        // unknown, as quorum is not met
-        assert_eq!(cluster.chains_synchronizer[0].status, Status::Unknown);
+        // node1 is full, it has quorum (1 out of 2 nodes >= 50%)
+        assert_eq!(cluster.chains_synchronizer[0].status, Status::Synchronized);
 
         Ok(())
     }
@@ -1176,7 +1175,8 @@ mod tests {
             return Ok((count_1_to_2, count_2_to_1));
         }
 
-        let (_to_node, message) = extract_request_frame_sync_context(&sync_context);
+        let (to_node, message) = extract_request_frame_sync_context(&sync_context);
+        assert_eq!(&to_node, node2.id());
         let mut request = Some(message);
         loop {
             count_1_to_2 += 1;
@@ -1192,7 +1192,8 @@ mod tests {
             }
 
             count_2_to_1 += 1;
-            let (_to_node, response) = extract_response_frame_sync_context(&sync_context);
+            let (to_node, response) = extract_response_frame_sync_context(&sync_context);
+            assert_eq!(&to_node, node1.id());
             let mut sync_context = SyncContext::new();
             cluster.chains_synchronizer[node_id_a].handle_sync_response(
                 &mut sync_context,
@@ -1203,7 +1204,8 @@ mod tests {
             if sync_context.messages.is_empty() {
                 break;
             }
-            let (_to_node, message) = extract_request_frame_sync_context(&sync_context);
+            let (to_node, message) = extract_request_frame_sync_context(&sync_context);
+            assert_eq!(&to_node, node2.id());
             request = Some(message);
         }
 

@@ -5,7 +5,7 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-tests_utils = ["stderrlog"]
+tests_utils = ["log4rs"]
 
 [dependencies]
 log = "0.4"
@@ -20,7 +20,7 @@ owning_ref = "0.4.0"
 lazycell = "1.2.1"
 failure = "0.1.5"
 futures = "0.1.25"
-stderrlog = { version = "0.4.1", optional = true }
+log4rs = { version = "0.8.3", optional = true }
 
 [build-dependencies]
 capnpc = "0.9"

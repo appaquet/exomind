@@ -35,7 +35,7 @@ impl PendingStore for MemoryPendingStore {
     fn put_operation(
         &mut self,
         operation: framed::OwnedTypedFrame<pending_operation::Owned>,
-    ) -> Result<(), Error> {
+    ) -> Result<bool, Error> {
         let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
         let operation_type = match operation_reader.get_operation().which()? {
             pending_operation::operation::Which::BlockSign(_) => OperationType::BlockSign,
@@ -61,9 +61,11 @@ impl PendingStore for MemoryPendingStore {
             },
         );
 
-        self.operations_timeline.insert(operation_id, group_id);
-
-        Ok(())
+        let existed = self
+            .operations_timeline
+            .insert(operation_id, group_id)
+            .is_some();
+        Ok(existed)
     }
 
     fn get_operation(&self, operation_id: OperationID) -> Result<Option<StoredOperation>, Error> {

@@ -21,7 +21,7 @@ use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
 use exocore_common::serialization::protos::data_transport_capnp::{
     chain_sync_request, chain_sync_response, envelope, pending_sync_request,
 };
-use exocore_common::serialization::protos::{GroupID, OperationID};
+use exocore_common::serialization::protos::OperationID;
 use exocore_common::serialization::{framed, framed::TypedFrame};
 
 use crate::chain;
@@ -153,7 +153,9 @@ where
 
         let channel_size = self.config.handles_events_stream_size;
         let (events_sender, events_receiver) = mpsc::channel(channel_size);
-        unlocked_inner.handles_sender.push((id, events_sender));
+        unlocked_inner
+            .handles_sender
+            .push((id, false, events_sender));
 
         Handle {
             id,
@@ -246,8 +248,12 @@ where
             });
         }
 
-        self.started = true;
+        {
+            let mut unlocked_inner = self.inner.write()?;
+            unlocked_inner.notify_handles(&Event::Started);
+        }
 
+        self.started = true;
         info!("Engine started!");
         Ok(())
     }
@@ -261,7 +267,8 @@ where
 
         let envelope_reader: envelope::Reader = message.envelope.get_typed_reader()?;
         debug!(
-            "Got message of type {} from node {}",
+            "{}: Got message of type {} from node {}",
+            inner.node_id,
             envelope_reader.get_type(),
             envelope_reader.get_from_node()?
         );
@@ -372,7 +379,7 @@ where
     chain_store: CS,
     chain_synchronizer: chain_sync::ChainSynchronizer<CS>,
     commit_manager: commit_manager::CommitManager<PS, CS>,
-    handles_sender: Vec<(usize, mpsc::Sender<Event>)>,
+    handles_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
     transport_sender: Option<mpsc::UnboundedSender<transport::OutMessage>>,
     completion_sender: Option<oneshot::Sender<Result<(), Error>>>,
 }
@@ -386,9 +393,8 @@ where
         &mut self,
         operation_frame: OwnedTypedFrame<pending_operation::Owned>,
     ) -> Result<(), Error> {
-        let my_node = self.nodes.get(&self.node_id).ok_or(Error::MyNodeNotFound)?;
-
         let mut sync_context = SyncContext::new();
+        // TODO: Make sure chain_synchronizer is Synchronized first: https://github.com/appaquet/exocore/issues/44
         self.pending_synchronizer.handle_new_operation(
             &mut sync_context,
             &self.nodes,
@@ -396,13 +402,8 @@ where
             operation_frame,
         )?;
 
-        for message in sync_context.messages {
-            let out_message = message.into_out_message(my_node, &self.nodes)?;
-            let transport_sender = self.transport_sender.as_ref().expect(
-                "Transport sender was none, which mean that the transport was never started",
-            );
-            transport_sender.unbounded_send(out_message)?;
-        }
+        self.send_messages_from_sync_context(&mut sync_context)?;
+        self.notify_handles_from_sync_context(&sync_context);
 
         Ok(())
     }
@@ -473,10 +474,11 @@ where
     fn tick_synchronizers(&mut self) -> Result<(), Error> {
         let mut sync_context = SyncContext::new();
 
+        // TODO: We should only do commit manager & pending synchronizer once chain is synced: https://github.com/appaquet/exocore/issues/44
+
         self.chain_synchronizer
             .tick(&mut sync_context, &self.chain_store, &self.nodes)?;
-        self.pending_synchronizer
-            .tick(&mut sync_context, &self.pending_store, &self.nodes)?;
+
         self.commit_manager.tick(
             &mut sync_context,
             &mut self.pending_synchronizer,
@@ -485,6 +487,9 @@ where
             &mut self.chain_store,
             &self.nodes,
         )?;
+
+        self.pending_synchronizer
+            .tick(&mut sync_context, &self.pending_store, &self.nodes)?;
 
         self.send_messages_from_sync_context(&mut sync_context)?;
         self.notify_handles_from_sync_context(&sync_context);
@@ -527,12 +532,30 @@ where
     }
 
     fn notify_handles(&mut self, event: &Event) {
-        for (_id, handle_sender) in self.handles_sender.iter_mut() {
-            if let Err(err) = handle_sender.try_send(event.clone()) {
-                error!(
-                    "Couldn't send event to handler. Probably because its queue is full: {:}",
-                    err
-                );
+        for (id, discontinued, handle_sender) in self.handles_sender.iter_mut() {
+            // if we hit a full buffer at last send, the stream got a discontinuity and we need to advise consumer.
+            // we try to emit a discontinuity event, and if we succeed (buffer has space), we try to send the next event
+            if *discontinued {
+                if let Ok(()) = handle_sender.try_send(Event::StreamDiscontinuity) {
+                    *discontinued = false;
+                } else {
+                    continue;
+                }
+            }
+
+            match handle_sender.try_send(event.clone()) {
+                Ok(()) => {}
+                Err(ref err) if err.is_full() => {
+                    error!("Couldn't send event to handle {} because channel buffer is full. Marking as discontinued", id);
+                    *discontinued = true;
+                }
+                Err(err) => {
+                    error!(
+                        "Couldn't send event to handle {} for a reason other than channel buffer full: {:}",
+                        id,
+                        err
+                    );
+                }
             }
         }
     }
@@ -541,7 +564,7 @@ where
         let found_index = self
             .handles_sender
             .iter()
-            .find_position(|(some_id, _sender)| *some_id == id);
+            .find_position(|(some_id, _discontinued, _sender)| *some_id == id);
 
         if let Some((index, _item)) = found_index {
             self.handles_sender.remove(index);
@@ -598,7 +621,7 @@ where
 
         Ok(ChainOperation {
             operation_id,
-            status: EntryStatus::Committed,
+            status: OperationStatus::Committed,
             operation_frame: operation.to_owned(),
         })
     }
@@ -807,7 +830,6 @@ impl From<capnp::NotInSchema> for Error {
 /// Synchronization context used by `chain_sync`, `pending_sync` and `commit_manager` to dispatch
 /// messages to other nodes, and dispatch events to be sent to engine handles.
 ///
-/// TODO: Events completion in https://github.com/appaquet/exocore/issues/45
 struct SyncContext {
     events: Vec<Event>,
     messages: Vec<SyncContextMessage>,
@@ -852,6 +874,10 @@ impl SyncContext {
             node_id,
             response_builder,
         ));
+    }
+
+    fn push_event(&mut self, event: Event) {
+        self.events.push(event);
     }
 }
 
@@ -906,35 +932,52 @@ impl SyncContextMessage {
 ///
 /// Events dispatched to handles to notify changes in the different stores.
 ///
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Event {
-    PendingNew(OperationID),
-    PendingRemove(OperationID),
-    PendingGroupRemove(GroupID),
-    ChainNewBlock(BlockOffset),
-    ChainFrozenBlock(BlockOffset),
+    ///
+    /// The engine is now started
+    ///
+    Started,
+
+    ///
+    /// The stream of events hit the maximum buffer size, and some events got discarded.
+    /// Consumer state should be rebuilt from scratch to prevent having inconsistencies.
+    ///
+    StreamDiscontinuity,
+
+    ///
+    /// An operation added to the pending store.
+    ///
+    PendingOperationNew(OperationID),
+
+    ///
+    /// An operation that was previously added got deleted, hence will never end up in a block.
+    /// This happens if an operation was invalid or found in the chain later on.
+    ///
+    PendingEntryDelete(OperationID),
+
+    ///
+    /// A new block got added to the chain.
+    ///
+    ChainBlockNew(BlockOffset),
+
+    ///
+    /// The chain has diverged from given offset, which mean it will get re-written with new blocks.
+    /// Operations after this offset should ignored.
+    ///
+    ChainDiverged(BlockOffset),
 }
 
+///
+/// TODO: Should implement "Operation" trait, and should be named EngineOperation
+///       https://github.com/appaquet/exocore/issues/50
 pub struct ChainOperation {
     pub operation_id: OperationID,
-    pub status: EntryStatus,
+    pub status: OperationStatus,
     pub operation_frame: OwnedTypedFrame<pending_operation::Owned>,
 }
 
-pub enum EntryStatus {
+pub enum OperationStatus {
     Committed,
     Pending,
-}
-
-#[cfg(test)]
-mod tests {
-    use tokio::runtime::Runtime;
-
-    #[test]
-    fn engine_get_handle() {
-        let _rt = Runtime::new().unwrap();
-    }
-
-    #[test]
-    fn engine_completion_on_error() {}
 }

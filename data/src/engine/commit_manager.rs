@@ -15,7 +15,7 @@ use exocore_common::time::Clock;
 use crate::chain;
 use crate::chain::BlockOffset;
 use crate::chain::{Block, BlockDepth};
-use crate::engine::{chain_sync, pending_sync, SyncContext};
+use crate::engine::{chain_sync, pending_sync, Event, SyncContext};
 use crate::pending;
 use crate::pending::OperationType;
 
@@ -112,7 +112,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 .filter(|sig| next_block.validate_signature(nodes, sig));
             if next_block.has_my_signature && nodes.is_quorum(valid_signatures.count()) {
                 debug!("Block has enough signatures, we should commit");
-                self.commit_block(next_block, pending_store, chain_store, nodes)?;
+                self.commit_block(sync_context, next_block, pending_store, chain_store, nodes)?;
             }
         } else if self.should_propose_block(nodes, chain_store, &pending_blocks)? {
             debug!("No current block, and we can propose one");
@@ -357,6 +357,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
     fn commit_block(
         &self,
+        sync_context: &mut SyncContext,
         next_block: &PendingBlock,
         pending_store: &mut PS,
         chain_store: &mut CS,
@@ -410,6 +411,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         debug!("Writing with offset={} to chain", block.offset());
         chain_store.write_block(&block)?;
+        sync_context.push_event(Event::ChainBlockNew(next_block.proposal.offset));
 
         Ok(())
     }

@@ -93,7 +93,6 @@ impl Future for MockTransport {
             let nodes_sink_weak = Weak::clone(&self.nodes_sink);
             let completion_handle = self.completion_sender.clone();
             tokio::spawn(outgoing_stream.for_each(move |message| {
-                //  -> Box<Future<Item = (), Error = ()> + Send>
                 let nodes_sink = nodes_sink_weak.upgrade().ok_or_else(|| {
                     error!(
                         "Couldn't upgrade nodes sink, which means hub got dropped. Stopping here."

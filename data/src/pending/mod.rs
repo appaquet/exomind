@@ -16,10 +16,14 @@ pub mod memory;
 /// aren't committed to the chain yet.
 ///
 pub trait PendingStore: Send + Sync + 'static {
+    ///
+    /// Add or replace the given operation into the store.
+    /// Returns true if the operation already exists and got overwritten.
+    ///
     fn put_operation(
         &mut self,
         operation: framed::OwnedTypedFrame<pending_operation::Owned>,
-    ) -> Result<(), Error>;
+    ) -> Result<bool, Error>;
 
     fn get_operation(&self, operation_id: OperationID) -> Result<Option<StoredOperation>, Error>;
 

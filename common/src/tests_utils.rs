@@ -1,6 +1,7 @@
 // TODO: move to new project for tests only
 
 use futures::prelude::*;
+use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -79,4 +80,30 @@ where
         timeout,
         start_time.elapsed()
     );
+}
+
+pub fn expect_result<F, R, E: Debug>(cb: F) -> R
+where
+    F: Fn() -> Result<R, E>,
+{
+    expect_result_within(cb, Duration::from_secs(5))
+}
+
+pub fn expect_result_within<F, R, E: Debug>(cb: F, time: Duration) -> R
+where
+    F: Fn() -> Result<R, E>,
+{
+    let begin = Instant::now();
+    loop {
+        match cb() {
+            Ok(res) => return res,
+            Err(err) => {
+                if begin.elapsed() >= time {
+                    panic!("Couldn't get a result within time. Last error: {:?}", err);
+                } else {
+                    std::thread::sleep(Duration::from_millis(100));
+                }
+            }
+        }
+    }
 }

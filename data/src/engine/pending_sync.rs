@@ -18,7 +18,7 @@ use exocore_common::serialization::protos::data_transport_capnp::{
 };
 use exocore_common::serialization::protos::OperationID;
 
-use crate::engine::request_tracker;
+use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
 use crate::pending::{PendingStore, StoredOperation};
 
@@ -61,6 +61,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         store: &PS,
         nodes: &Nodes,
     ) -> Result<(), Error> {
+        debug!("Sync tick begins");
+
         let my_node_id = self.node_id.clone();
         for node in nodes.nodes_except(&my_node_id) {
             let sync_info = self.get_or_create_node_info_mut(node.id());
@@ -72,6 +74,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             }
         }
 
+        debug!("Sync tick ended");
         Ok(())
     }
 
@@ -89,6 +92,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
         let operation_id = operation_reader.get_operation_id();
         store.put_operation(operation)?;
+        sync_context.push_event(Event::PendingOperationNew(operation_id));
 
         // create a sync request for which we send full detail for new op, but none for other ops
         let my_node_id = self.node_id.clone();
@@ -119,10 +123,14 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     where
         R: TypedFrame<pending_sync_request::Owned>,
     {
+        debug!("Got sync request from {}", from_node.id());
+
         let in_reader: pending_sync_request::Reader = request.get_typed_reader()?;
         let in_ranges = in_reader.get_ranges()?;
 
-        if let Some(out_ranges) = self.handle_incoming_sync_ranges(store, in_ranges.iter())? {
+        if let Some(out_ranges) =
+            self.handle_incoming_sync_ranges(sync_context, store, in_ranges.iter())?
+        {
             let mut sync_request_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
             let mut sync_request_builder = sync_request_frame_builder.get_builder_typed();
 
@@ -155,6 +163,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     ///
     fn handle_incoming_sync_ranges<'a, I>(
         &mut self,
+        sync_context: &mut SyncContext,
         store: &mut PS,
         sync_range_iterator: I,
     ) -> Result<Option<SyncRangesBuilder>, Error>
@@ -188,7 +197,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                     let operation_id = operation_frame_reader.get_operation_id();
                     included_operations.insert(operation_id);
 
-                    store.put_operation(operation_frame)?;
+                    let existed = store.put_operation(operation_frame)?;
+                    if !existed {
+                        sync_context.push_event(Event::PendingOperationNew(operation_id));
+                    }
                 }
             }
 
@@ -334,6 +346,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
                         // Remote is missing it, send full operation
                         out_ranges.push_operation(local_op, OperationDetails::Full);
+                    } else {
+                        // Else, it was included in operations, so we tell remote that we have it now
+                        out_ranges.push_operation(local_op, OperationDetails::Header);
                     }
                 }
                 EitherOrBoth::Both(_remote_op, local_op) => {
@@ -703,7 +718,7 @@ mod tests {
             &cluster.pending_stores[0],
             &cluster.nodes,
         )?;
-        let sync_request_frame = extract_request_from_result(&sync_context);
+        let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
         let sync_request_reader = sync_request_frame.get_typed_reader()?;
 
         let ranges = sync_request_reader.get_ranges()?;
@@ -736,7 +751,7 @@ mod tests {
             &mut cluster.pending_stores[0],
             new_operation,
         )?;
-        let request = extract_request_from_result(&sync_context);
+        let (_to_node, request) = extract_request_from_result(&sync_context);
 
         // should send the new operation directly, without requiring further requests
         let (count_a_to_b, count_b_to_a) = sync_nodes_with_request(&mut cluster, 0, 1, request)?;
@@ -776,7 +791,7 @@ mod tests {
             &mut cluster.pending_stores[0],
             new_operation,
         )?;
-        let request = extract_request_from_result(&sync_context);
+        let (_to_node, request) = extract_request_from_result(&sync_context);
 
         // should send the new operation directly, without requiring further requests
         let (count_a_to_b, count_b_to_a) = sync_nodes_with_request(&mut cluster, 0, 1, request)?;
@@ -859,6 +874,26 @@ mod tests {
             let reader = operation.get_typed_reader()?;
             if reader.get_operation_id() % 2 == 0 {
                 cluster.pending_stores[0].put_operation(operation)?;
+            }
+        }
+
+        let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
+        assert_eq!(count_a_to_b, 2);
+        assert_eq!(count_b_to_a, 2);
+
+        Ok(())
+    }
+
+    #[test]
+    fn handle_sync_different_some_to_different_some() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+
+        for operation in pending_ops_generator(10) {
+            let reader = operation.get_typed_reader()?;
+            if reader.get_operation_id() % 2 == 0 {
+                cluster.pending_stores[0].put_operation(operation)?;
+            } else if reader.get_operation_id() % 3 == 0 {
+                cluster.pending_stores[1].put_operation(operation)?;
             }
         }
 
@@ -970,7 +1005,7 @@ mod tests {
             &cluster.pending_stores[node_id_a],
             &cluster.nodes,
         )?;
-        let initial_request = extract_request_from_result(&sync_context);
+        let (_to_node, initial_request) = extract_request_from_result(&sync_context);
 
         sync_nodes_with_request(cluster, node_id_a, node_id_b, initial_request)
     }
@@ -992,6 +1027,13 @@ mod tests {
         print_sync_request(&next_request);
 
         loop {
+            if count_a_to_b > 100 {
+                panic!(
+                    "Seem to be stucked in an infinite sync loop (a_to_b={} b_to_a={})",
+                    count_a_to_b, count_b_to_a
+                );
+            }
+
             count_a_to_b += 1;
             let mut sync_context = SyncContext::new();
             cluster.pending_stores_synchronizer[node_id_b].handle_incoming_sync_request(
@@ -1006,7 +1048,8 @@ mod tests {
             }
 
             count_b_to_a += 1;
-            let request = extract_request_from_result(&sync_context);
+            let (to_node, request) = extract_request_from_result(&sync_context);
+            assert_eq!(&to_node, node_a.id());
             debug!("Request from b={} to a={}", node_id_b, node_id_a);
             print_sync_request(&request);
 
@@ -1021,8 +1064,10 @@ mod tests {
                 debug!("No request from a={} to b={}", node_id_a, node_id_b);
                 break;
             }
-            next_request = extract_request_from_result(&sync_context);
+            let (to_node, request) = extract_request_from_result(&sync_context);
+            assert_eq!(&to_node, node_b.id());
             debug!("Request from a={} to b={}", node_id_a, node_id_b);
+            next_request = request;
             print_sync_request(&next_request);
         }
 
@@ -1053,10 +1098,10 @@ mod tests {
 
     fn extract_request_from_result(
         sync_context: &SyncContext,
-    ) -> OwnedTypedFrame<pending_sync_request::Owned> {
+    ) -> (NodeID, OwnedTypedFrame<pending_sync_request::Owned>) {
         match sync_context.messages.last().unwrap() {
-            SyncContextMessage::PendingSyncRequest(_node_id, req) => {
-                req.as_owned_unsigned_framed().unwrap()
+            SyncContextMessage::PendingSyncRequest(node_id, req) => {
+                (node_id.clone(), req.as_owned_unsigned_framed().unwrap())
             }
             _other => panic!("Expected a pending sync request, got another type of message"),
         }

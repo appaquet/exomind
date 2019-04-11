@@ -86,15 +86,13 @@ Chain's replication is handled by the [`Chain Synchronizer`](src/engine/chain_sy
 
 ## Exceptions
 * A node has signature of other nodes on a block, and is about to send his signature, but then get partitioned.
-  He's the only one with quorum, and adds to the block.
+  It's the only one who had enough signatures for quorum, and commits to the block locally.
 
   Solutions:
-  * He'll never be able to make progress since all other nodes will eventually timeout and commit another block.
-    He'll have to truncate its chain once he's sync back.
-    Cons: We may be losing? Not supposed, since they will still be in other node's pending
-
-  * Two stage commit where nobody adds to the chain unless everybody has agreed that they have signatures.
-    Cons: This adds latency and communication for nothing... And it's an never ending story.
+  * It will never be able to make progress since all other nodes will eventually timeout and commit another block.
+    It will have to truncate its chain once he syncs back with the rest of the nodes.
+    Data won't be lost since operations are kept in pending store until they are in a block with certain depth.
+    If the node had operations that only itself had, they will be sent back since they will still be in its pending store.
 
 * A node local chain changes after we synced against it.
 

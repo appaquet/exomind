@@ -38,6 +38,7 @@ impl Node {
     }
 }
 
+#[derive(Clone)]
 pub struct Nodes {
     nodes: HashMap<NodeID, Node>,
 }
