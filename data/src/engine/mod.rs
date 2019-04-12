@@ -673,7 +673,6 @@ where
     /// This stream is bounded and consumptions should be non-blocking to prevent losing events.
     /// Calling the engine on every call should be throttled in the case of a big read amplification.
     pub fn take_events_stream(&mut self) -> impl futures::Stream<Item = Event, Error = Error> {
-        // TODO: To be completed in https://github.com/appaquet/exocore/issues/45
         self.events_receiver
             .take()
             .expect("Get events stream was already called.")

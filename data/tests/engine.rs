@@ -34,10 +34,8 @@ fn test_engine_integration_single_node() -> Result<(), failure::Error> {
     cluster.start_engine(0);
 
     // wait for engine to start
-    let (events_received, events_receiver) = cluster.extract_events_stream(0);
-    events_receiver
-        .recv_timeout(Duration::from_secs(5))
-        .unwrap();
+    cluster.collect_events_stream(0);
+    cluster.wait_started(0);
 
     let op1 = cluster.get_handle(0).write_entry(b"i love jello 1")?;
     let op2 = cluster.get_handle(0).write_entry(b"i love jello 2")?;
@@ -46,8 +44,7 @@ fn test_engine_integration_single_node() -> Result<(), failure::Error> {
 
     // check if we got all operations in stream
     expect_result::<_, _, failure::Error>(|| {
-        let events = events_received.lock().unwrap();
-
+        let events = cluster.get_received_events(0);
         let found_ops = extract_ops_events(&events);
         let expected_ops = vec![op1, op2, op3, op4];
 
@@ -62,7 +59,7 @@ fn test_engine_integration_single_node() -> Result<(), failure::Error> {
     });
 
     let block_offsets = expect_result::<_, _, failure::Error>(|| {
-        let events = events_received.lock().unwrap();
+        let events = cluster.get_received_events(0);
         let offsets = extract_blocks_events(&events);
 
         if !offsets.is_empty() {
@@ -98,17 +95,10 @@ fn test_engine_integration_replicate_genesis() -> Result<(), failure::Error> {
 
     cluster.start_engine(0);
     cluster.start_engine(1);
-
-    // wait for engines to start
-    let (_events_received0, events_receiver0) = cluster.extract_events_stream(0);
-    events_receiver0
-        .recv_timeout(Duration::from_secs(5))
-        .unwrap();
-
-    let (_events_received1, events_receiver1) = cluster.extract_events_stream(1);
-    events_receiver1
-        .recv_timeout(Duration::from_secs(5))
-        .unwrap();
+    cluster.collect_events_stream(0);
+    cluster.collect_events_stream(1);
+    cluster.wait_started(0);
+    cluster.wait_started(1);
 
     // TODO: Make sure that block was added to second node
     // TODO: Disable transport first
@@ -140,28 +130,6 @@ fn test_engine_integration_replicate_genesis() -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn extract_ops_events(events: &[Event]) -> Vec<OperationID> {
-    events
-        .iter()
-        .flat_map(|event| match event {
-            Event::PendingOperationNew(op) => Some(*op),
-            _ => None,
-        })
-        .sorted()
-        .collect()
-}
-
-fn extract_blocks_events(events: &[Event]) -> Vec<BlockOffset> {
-    events
-        .iter()
-        .flat_map(|event| match event {
-            Event::ChainBlockNew(offset) => Some(*offset),
-            _ => None,
-        })
-        .sorted()
-        .collect()
-}
-
 ///
 ///
 ///
@@ -175,6 +143,9 @@ struct TestCluster {
     chain_stores: Vec<Option<DirectoryChainStore>>,
     pending_stores: Vec<Option<MemoryPendingStore>>,
     handles: Vec<Option<Handle<DirectoryChainStore, MemoryPendingStore>>>,
+
+    events_receiver: Vec<Option<mpsc::Receiver<Event>>>,
+    events_received: Vec<Option<Arc<Mutex<Vec<Event>>>>>,
 }
 
 impl TestCluster {
@@ -191,6 +162,9 @@ impl TestCluster {
         let mut chain_stores = Vec::new();
         let mut pending_stores = Vec::new();
 
+        let mut events_receiver = Vec::new();
+        let mut events_received = Vec::new();
+
         for node_id in 0..count {
             let node = Node::new(format!("node{}", node_id));
             nodes.add(node.clone());
@@ -206,6 +180,8 @@ impl TestCluster {
             pending_stores.push(Some(pending_store));
 
             handles.push(None);
+            events_receiver.push(None);
+            events_received.push(None);
         }
 
         Ok(TestCluster {
@@ -217,6 +193,9 @@ impl TestCluster {
             chain_stores,
             pending_stores,
             handles,
+
+            events_receiver,
+            events_received,
         })
     }
 
@@ -261,10 +240,11 @@ impl TestCluster {
             .spawn(engine.map_err(|err| error!("Got an error in engine: {:?}", err)));
     }
 
-    fn extract_events_stream(
-        &mut self,
-        node_idx: usize,
-    ) -> (Arc<Mutex<Vec<Event>>>, mpsc::Receiver<Event>) {
+    fn wait_started(&self, node_idx: usize) {
+        self.wait_any_event(node_idx);
+    }
+
+    fn collect_events_stream(&mut self, node_idx: usize) {
         let (events_sender, events_receiver) = mpsc::channel();
         let received_events = Arc::new(Mutex::new(Vec::new()));
 
@@ -285,7 +265,8 @@ impl TestCluster {
             );
         }
 
-        (received_events, events_receiver)
+        self.events_received[node_idx] = Some(received_events);
+        self.events_receiver[node_idx] = Some(events_receiver);
     }
 
     fn get_node(&self, node_idx: usize) -> Node {
@@ -295,10 +276,59 @@ impl TestCluster {
             .clone()
     }
 
+    fn get_received_events(&self, node_idx: usize) -> Vec<Event> {
+        let events_locked = self.events_received[node_idx].as_ref().unwrap();
+        let events = events_locked.lock().unwrap();
+        events.clone()
+    }
+
     fn get_handle(
         &mut self,
         node_idx: usize,
     ) -> &mut Handle<DirectoryChainStore, MemoryPendingStore> {
         self.handles[node_idx].as_mut().unwrap()
     }
+
+    fn wait_any_event(&self, node_idx: usize) -> Event {
+        self.wait_for_event(node_idx, |_| true)
+    }
+
+    fn wait_for_event<F>(&self, node_idx: usize, predicate: F) -> Event
+    where
+        F: Fn(&Event) -> bool,
+    {
+        loop {
+            let event = self.events_receiver[node_idx]
+                .as_ref()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(5))
+                .unwrap();
+
+            if predicate(&event) {
+                return event;
+            }
+        }
+    }
+}
+
+fn extract_ops_events(events: &[Event]) -> Vec<OperationID> {
+    events
+        .iter()
+        .flat_map(|event| match event {
+            Event::PendingOperationNew(op) => Some(*op),
+            _ => None,
+        })
+        .sorted()
+        .collect()
+}
+
+fn extract_blocks_events(events: &[Event]) -> Vec<BlockOffset> {
+    events
+        .iter()
+        .flat_map(|event| match event {
+            Event::ChainBlockNew(offset) => Some(*offset),
+            _ => None,
+        })
+        .sorted()
+        .collect()
 }

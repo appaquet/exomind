@@ -78,7 +78,13 @@ impl Nodes {
     }
 
     pub fn is_quorum(&self, count: usize) -> bool {
-        count >= (self.len() / 2).max(1)
+        if self.is_empty() {
+            false
+        } else if self.len() == 1 {
+            count == 1
+        } else {
+            count > self.len() / 2
+        }
     }
 }
 
@@ -105,6 +111,24 @@ mod tests {
 
         assert!(nodes.get("node1").is_some());
         assert!(nodes.get("blabla").is_none());
+    }
+
+    #[test]
+    fn nodes_quorum() {
+        let mut nodes = Nodes::new();
+        assert!(!nodes.is_quorum(10));
+
+        nodes.add(Node::new("node1".to_string()));
+        assert!(!nodes.is_quorum(0));
+        assert!(nodes.is_quorum(1));
+
+        nodes.add(Node::new("node2".to_string()));
+        assert!(!nodes.is_quorum(1));
+        assert!(nodes.is_quorum(2));
+
+        nodes.add(Node::new("node3".to_string()));
+        assert!(!nodes.is_quorum(1));
+        assert!(nodes.is_quorum(2));
     }
 
 }

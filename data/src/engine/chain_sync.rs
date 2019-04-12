@@ -78,7 +78,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // TODO: Should check if sync status changed. Ticket: https://github.com/appaquet/exocore/issues/44
 
         let (nb_nodes_metadata_sync, nb_nodes) = self.count_nodes_status(nodes);
-        let majority_nodes_metadata_sync = nb_nodes_metadata_sync >= nb_nodes / 2;
+        let majority_nodes_metadata_sync = nodes.is_quorum(usize::from(nb_nodes_metadata_sync));
         debug!(
             "Sync tick begins. current_status={:?} nb_nodes={} nb_nodes_metadata_sync={}",
             self.status, nb_nodes, nb_nodes_metadata_sync
@@ -497,7 +497,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 let block = BlockRef::new(data)?;
 
                 // make sure the block was expected in our chain, then add it
-                let next_local_offset = last_local_block.as_ref().map_or(0, |b| b.next_offset());
+                let next_local_offset = last_local_block
+                    .as_ref()
+                    .map_or(0, BlockHeader::next_offset);
                 if block.offset() == next_local_offset {
                     sync_context.push_event(Event::ChainBlockNew(block.offset()));
                     store.write_block(&block)?;
@@ -550,6 +552,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             nodes_total += 1;
 
             if node.id() == &self.node_id {
+                nodes_metadata_sync += 1;
                 continue;
             }
 

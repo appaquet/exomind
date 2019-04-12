@@ -426,7 +426,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .map(|operation| {
                 pending_store
                     .get_operation(*operation)
-                    .map_err(|err| err.into())
+                    .map_err(Into::into)
                     .and_then(|op| {
                         op.ok_or_else(|| CommitManagerError::MissingOperation(*operation).into())
                     })
