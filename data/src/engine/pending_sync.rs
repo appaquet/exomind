@@ -55,6 +55,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         }
     }
 
+    ///
+    /// Called at interval by the engine to make progress on synchronizing with other nodes. In theory, all changes are propagated
+    /// in real-time when operations get added, but this periodic synchronization makes sure that we didn't lose anything.
+    ///
     pub fn tick(
         &mut self,
         sync_context: &mut SyncContext,
@@ -95,8 +99,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         sync_context.push_event(Event::PendingOperationNew(operation_id));
 
         // create a sync request for which we send full detail for new op, but none for other ops
-        let my_node_id = self.node_id.clone();
-        for node in nodes.nodes_except(&my_node_id) {
+        for node in nodes.nodes_except(&self.node_id) {
             let request = self.create_sync_request_for_range(store, operation_id.., |op| {
                 if op.operation_id == operation_id {
                     OperationDetails::Full
@@ -111,7 +114,11 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Handles a sync request coming from a remote node.
+    /// Handles a sync request coming from a remote node. A request contains ranges of operation ids that need to be merged and/or
+    /// compared to our local store. See `handle_incoming_sync_ranges` for more details on the merge / comparison.
+    ///
+    /// If we have any differences with remote node data, we send a request back with more data that will allow converging in the
+    /// same stored data.
     ///
     pub fn handle_incoming_sync_request<R>(
         &mut self,
@@ -184,7 +191,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 .into());
             }
 
-            // first, apply all operations
+            // first, we store operations for which we have data directly in the payload
             let mut included_operations = HashSet::<OperationID>::new();
             if sync_range_reader.has_operations() {
                 for operation_frame_res in sync_range_reader.get_operations()?.iter() {
@@ -204,12 +211,12 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 }
             }
 
-            // then check local store's range hash and count
+            // then check local store's range hash and count. if our local store data is the same as the one described in the
+            // payload, we stop here since everything is synchronized
             let (local_hash, local_count) =
                 Self::local_store_range_info(store, (bounds_from, bounds_to))?;
             let remote_hash = sync_range_reader.get_operations_hash()?;
             let remote_count = sync_range_reader.get_operations_count();
-
             if remote_hash == &local_hash[..] && local_count == remote_count as usize {
                 // we are equal to remote, nothing to do
                 out_ranges.push_range(SyncRangeBuilder::new_hashed(
@@ -218,29 +225,27 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                     local_hash,
                     local_count as u32,
                 ));
-            } else if remote_count == 0 {
+                continue;
+            }
+
+            // if we're here, remote's data is different from local data. we check what we need to do
+            out_ranges_contains_changes = true;
+            out_ranges.push_new_range(bounds_from);
+
+            if remote_count == 0 {
                 // remote has no data, we sent everything
-                out_ranges_contains_changes = true;
-                out_ranges.create_new_range(bounds_from);
                 for operation in store.operations_iter((bounds_from, bounds_to))? {
                     out_ranges.push_operation(operation, OperationDetails::Full);
                 }
-                out_ranges.set_last_range_to_bound(bounds_to);
             } else if !sync_range_reader.has_operations_headers()
                 && !sync_range_reader.has_operations()
             {
                 // remote has only sent us hash, we reply with headers
-                out_ranges_contains_changes = true;
-                out_ranges.create_new_range(bounds_from);
                 for operation in store.operations_iter((bounds_from, bounds_to))? {
                     out_ranges.push_operation(operation, OperationDetails::Header);
                 }
-                out_ranges.set_last_range_to_bound(bounds_to);
             } else {
                 // remote and local has differences. We do a diff
-                out_ranges_contains_changes = true;
-                out_ranges.create_new_range(bounds_from);
-
                 let remote_iter = sync_range_reader.get_operations_headers()?.iter();
                 let local_iter = store.operations_iter((bounds_from, bounds_to))?;
                 Self::diff_local_remote_range(
@@ -249,9 +254,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                     remote_iter,
                     local_iter,
                 )?;
-
-                out_ranges.set_last_range_to_bound(bounds_to);
             }
+
+            out_ranges.set_last_range_to_bound(bounds_to);
         }
 
         if out_ranges_contains_changes {
@@ -261,6 +266,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         }
     }
 
+    ///
+    /// Creates a sync request with the given details for the given range of operation IDs
+    ///
     fn create_sync_request_for_range<R, F>(
         &self,
         store: &PS,
@@ -275,9 +283,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
         // create first range with proper starting bound
         match range.start_bound() {
-            Bound::Unbounded => sync_ranges.create_new_range(Bound::Unbounded),
-            Bound::Excluded(op_id) => sync_ranges.create_new_range(Bound::Excluded(*op_id)),
-            Bound::Included(op_id) => sync_ranges.create_new_range(Bound::Included(*op_id)),
+            Bound::Unbounded => sync_ranges.push_new_range(Bound::Unbounded),
+            Bound::Excluded(op_id) => sync_ranges.push_new_range(Bound::Excluded(*op_id)),
+            Bound::Included(op_id) => sync_ranges.push_new_range(Bound::Included(*op_id)),
         }
 
         for operation in store.operations_iter(range.clone())? {
@@ -303,6 +311,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok(sync_request_frame_builder)
     }
 
+    ///
+    /// Hashes the operations of the store for the given range. This will be used to compare with the
+    /// incoming sync request.
+    ///
     fn local_store_range_info<R>(store: &PS, range: R) -> Result<(Vec<u8>, usize), Error>
     where
         R: RangeBounds<OperationID>,
@@ -317,6 +329,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok((frame_hasher.into_multihash_bytes(), count))
     }
 
+    ///
+    /// Do a diff of the local and remote data based on the headers in the sync request payload.
+    ///
     fn diff_local_remote_range<'a, 'b, RI, LI>(
         out_ranges: &mut SyncRangesBuilder,
         included_operations: &mut HashSet<u64>,
@@ -364,6 +379,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     fn get_or_create_node_info_mut(&mut self, node_id: &str) -> &mut NodeSyncInfo {
+        // early exit here to prevent cloning the node_id for .entry()
         if self.nodes_info.contains_key(node_id) {
             return self.nodes_info.get_mut(node_id).unwrap();
         }
@@ -454,9 +470,12 @@ impl SyncRangesBuilder {
         SyncRangesBuilder { ranges: Vec::new() }
     }
 
+    ///
+    /// Pushes the given operation to the latest range, or to a new range if the latest is full.
+    ///
     fn push_operation(&mut self, operation: StoredOperation, details: OperationDetails) {
         if self.ranges.is_empty() {
-            self.create_new_range(Bound::Unbounded);
+            self.push_new_range(Bound::Unbounded);
         } else {
             let last_range_size = self.ranges.last().map_or(0, |r| r.operations_count);
             if last_range_size > MAX_OPERATIONS_PER_RANGE {
@@ -464,7 +483,7 @@ impl SyncRangesBuilder {
 
                 // converted included into excluded for starting bound of next range since the item is in current range, not next one
                 if let Bound::Included(to) = last_range_to {
-                    self.create_new_range(Bound::Excluded(to));
+                    self.push_new_range(Bound::Excluded(to));
                 } else {
                     panic!("Expected current range end bound to be included");
                 }
@@ -478,7 +497,7 @@ impl SyncRangesBuilder {
         last_range.push_operation(operation, details);
     }
 
-    fn create_new_range(&mut self, from_bound: Bound<OperationID>) {
+    fn push_new_range(&mut self, from_bound: Bound<OperationID>) {
         self.ranges
             .push(SyncRangeBuilder::new(from_bound, Bound::Unbounded));
     }
@@ -676,11 +695,11 @@ mod tests {
     };
 
     use crate::engine::testing::create_dummy_new_entry_op;
-
-    use super::*;
     use crate::engine::testing::*;
     use crate::engine::SyncContextMessage;
     use crate::pending::OperationType;
+
+    use super::*;
 
     #[test]
     fn tick_send_to_other_nodes() -> Result<(), failure::Error> {
