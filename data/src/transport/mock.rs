@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
@@ -8,7 +10,7 @@ use exocore_common::node::{Node, NodeID};
 
 use super::*;
 
-struct MockTransportHub {
+pub struct MockTransportHub {
     nodes_sink: Arc<Mutex<HashMap<NodeID, mpsc::UnboundedSender<InMessage>>>>,
 }
 
@@ -26,7 +28,7 @@ impl MockTransportHub {
 
         // create channel incoming message for this node will be sent to
         let (incoming_sender, incoming_receiver) = mpsc::unbounded();
-        nodes_sink.insert(node.get_id().clone(), incoming_sender);
+        nodes_sink.insert(node.id().clone(), incoming_sender);
 
         // completion handler
         let (completion_sender, completion_future) = CompletionSender::new();
@@ -43,7 +45,7 @@ impl MockTransportHub {
     }
 }
 
-struct MockTransport {
+pub struct MockTransport {
     node: Node,
     started: bool,
     nodes_sink: Weak<Mutex<HashMap<NodeID, mpsc::UnboundedSender<InMessage>>>>,
@@ -80,6 +82,8 @@ impl Future for MockTransport {
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
         if !self.started {
+            info!("Transport started");
+
             let outgoing_stream = self
                 .outgoing_stream
                 .take()
@@ -107,7 +111,7 @@ impl Future for MockTransport {
 
                 let in_message = message.to_in_message(node.clone());
                 for dest_node in &message.to {
-                    if let Some(sink) = nodes_sink.get(dest_node.get_id()) {
+                    if let Some(sink) = nodes_sink.get(dest_node.id()) {
                         let _ = sink.unbounded_send(in_message.clone());
                     }
                 }
@@ -122,7 +126,7 @@ impl Future for MockTransport {
     }
 }
 
-struct MockTransportStream {
+pub struct MockTransportStream {
     incoming_stream: mpsc::UnboundedReceiver<InMessage>,
 }
 
@@ -141,7 +145,7 @@ impl Stream for MockTransportStream {
     }
 }
 
-struct MockTransportSink {
+pub struct MockTransportSink {
     in_channel: mpsc::UnboundedSender<OutMessage>,
 }
 
@@ -241,21 +245,21 @@ mod test {
 
         let mut transport1 = hub.get_transport(node1.clone());
         let transport1_sink = transport1.get_sink();
-        let mut transport1_stream = transport1.get_stream();
+        let transport1_stream = transport1.get_stream();
         rt.spawn(transport1.map_err(|_| ()));
 
         send_message(&mut rt, transport0_sink, vec![node1], 100);
 
-        let (message, transport1_stream) = receive_message(&mut rt, transport1_stream);
-        let message_reader = message.data.get_typed_reader().unwrap();
-        assert_eq!(message.from.get_id(), "0");
+        let (message, _transport1_stream) = receive_message(&mut rt, transport1_stream);
+        let message_reader = message.envelope.get_typed_reader().unwrap();
+        assert_eq!(message.from.id(), "0");
         assert_eq!(message_reader.get_type(), 100);
 
         send_message(&mut rt, transport1_sink, vec![node0], 101);
 
-        let (message, transport1_stream) = receive_message(&mut rt, transport0_stream);
-        let message_reader = message.data.get_typed_reader().unwrap();
-        assert_eq!(message.from.get_id(), "1");
+        let (message, _transport1_stream) = receive_message(&mut rt, transport0_stream);
+        let message_reader = message.envelope.get_typed_reader().unwrap();
+        assert_eq!(message.from.id(), "1");
         assert_eq!(message_reader.get_type(), 101);
     }
 
@@ -283,12 +287,15 @@ mod test {
         expect_eventually(|| transport_future_watch.get_status() == FutureStatus::Ok);
     }
 
-    fn send_message(rt: &mut Runtime, sink: MockTransportSink, to: Vec<Node>, type_id: u8) {
+    fn send_message(rt: &mut Runtime, sink: MockTransportSink, to: Vec<Node>, type_id: u16) {
         let mut message = FrameBuilder::<envelope::Owned>::new();
         let mut builder = message.get_builder_typed();
         builder.set_type(type_id);
 
-        let out_message = OutMessage { to, data: message };
+        let out_message = OutMessage {
+            to,
+            envelope: message,
+        };
 
         rt.block_on(sink.send(out_message)).unwrap();
     }

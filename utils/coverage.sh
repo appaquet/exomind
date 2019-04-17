@@ -9,5 +9,6 @@ TARPAULIN_VERSION=$(cargo tarpaulin --version)
 if [[ $? -ne 0 || $FORCE_DOCKER ]]; then
     sudo docker run -it --rm --security-opt seccomp=unconfined -v "$PWD:/volume" xd009642/tarpaulin:develop ./utils/coverage.sh
 else
+    cargo tarpaulin --exclude-files=3rd --verbose --exclude-files="*_capnp.rs" --all --out Html
     taskset -c 0 cargo tarpaulin --exclude-files=3rd --verbose --exclude-files="*_capnp.rs" --all --out Html
 fi

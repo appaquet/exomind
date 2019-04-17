@@ -3,8 +3,9 @@ use std::fs::OpenOptions;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
-use super::*;
 use serde_json;
+
+use super::*;
 
 pub struct JsonDiskStore<T: Serialize + DeserializeOwned> {
     path: PathBuf,
@@ -63,8 +64,10 @@ impl<T: Serialize + DeserializeOwned> SimpleStore<T> for JsonDiskStore<T> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use serde_derive::{Deserialize, Serialize};
     use tempdir;
+
+    use super::*;
 
     #[test]
     fn test_not_dir() {

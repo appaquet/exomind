@@ -3,7 +3,7 @@ extern crate criterion_bencher_compat;
 
 use criterion_bencher_compat::{black_box, Bencher};
 
-use exocore_common::data_chain_capnp::{block, entry};
+use exocore_common::data_chain_capnp::block;
 use exocore_common::serialization::framed::{Frame, FrameBuilder, OwnedFrame, SliceFrame};
 
 fn bench_build_message(b: &mut Bencher) {
@@ -65,10 +65,6 @@ fn bench_read_message_from_owned_no_parsing(b: &mut Bencher) {
 fn build_test_block(block_msg_builder: &mut FrameBuilder<block::Owned>) {
     let mut block_builder: block::Builder = block_msg_builder.get_builder_typed();
     block_builder.set_previous_hash(b"prev hash");
-
-    let mut entries = block_builder.init_entries(1);
-    let mut entry: entry::Builder = entries.reborrow().get(0);
-    entry.set_source_app("source_app");
 }
 
 benchmark_group!(

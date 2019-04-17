@@ -30,7 +30,7 @@ use crate::security::hash::Multihash;
 /// Used to identify a unique type id for each message and annotate each framed message.
 ///
 pub trait MessageType<'a>: capnp::traits::Owned<'a> {
-    fn message_type() -> u16;
+    const MESSAGE_TYPE: u16;
 }
 
 ///
@@ -95,7 +95,7 @@ where
     T: for<'a> MessageType<'a>,
 {
     pub fn new() -> FrameBuilder<T> {
-        let message_type = <T as MessageType>::message_type();
+        let message_type = <T as MessageType>::MESSAGE_TYPE;
         let mut builder = Builder::new_default();
         builder.init_root::<<T as capnp::traits::Owned>::Builder>();
         FrameBuilder {
@@ -273,20 +273,24 @@ impl<'a> SliceFrame<'a> {
 }
 
 impl<'a> Frame for SliceFrame<'a> {
+    #[inline]
     fn message_type(&self) -> u16 {
         self.metadata.message_type
     }
 
+    #[inline]
     fn message_size(&self) -> usize {
         self.metadata.message_size
     }
 
+    #[inline]
     fn frame_size(&self) -> usize {
         self.metadata.frame_size()
     }
 
+    #[inline]
     fn frame_data(&self) -> &[u8] {
-        self.data
+        &self.data[0..self.metadata.frame_size()]
     }
 
     fn get_typed_reader<'b, T: MessageType<'b>>(
@@ -326,10 +330,12 @@ impl<'a> Frame for SliceFrame<'a> {
 }
 
 impl<'a> SignedFrame for SliceFrame<'a> {
+    #[inline]
     fn message_data(&self) -> &[u8] {
         &self.data[self.metadata.message_range()]
     }
 
+    #[inline]
     fn signature_data(&self) -> Option<&[u8]> {
         self.metadata.signature_range().map(|r| &self.data[r])
     }
@@ -351,7 +357,7 @@ where
     T: MessageType<'a>,
 {
     pub fn new(data: &'a [u8]) -> Result<TypedSliceFrame<'a, T>, Error> {
-        let expected_type = <T as MessageType>::message_type();
+        let expected_type = <T as MessageType>::MESSAGE_TYPE;
         let message = SliceFrame::new(data)?;
         if message.message_type() != expected_type {
             return Err(Error::InvalidData(format!(
@@ -371,7 +377,7 @@ where
         data: &'a [u8],
         next_offset: usize,
     ) -> Result<TypedSliceFrame<'a, T>, Error> {
-        let expected_type = <T as MessageType>::message_type();
+        let expected_type = <T as MessageType>::MESSAGE_TYPE;
         let message = SliceFrame::new_from_next_offset(data, next_offset)?;
         if message.message_type() != expected_type {
             return Err(Error::InvalidData(format!(
@@ -392,20 +398,24 @@ impl<'a, T> TypedFrame<T> for TypedSliceFrame<'a, T>
 where
     T: for<'b> MessageType<'b>,
 {
+    #[inline]
     fn message_type(&self) -> u16 {
         self.message.message_type()
     }
 
+    #[inline]
     fn message_size(&self) -> usize {
         self.message.message_size()
     }
 
+    #[inline]
     fn frame_size(&self) -> usize {
         self.message.frame_size()
     }
 
+    #[inline]
     fn frame_data(&self) -> &[u8] {
-        self.message.data
+        self.message.frame_data()
     }
 
     fn get_typed_reader(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error> {
@@ -422,10 +432,12 @@ impl<'a, T> SignedFrame for TypedSliceFrame<'a, T>
 where
     T: for<'b> MessageType<'b>,
 {
+    #[inline]
     fn message_data(&self) -> &[u8] {
         self.message.message_data()
     }
 
+    #[inline]
     fn signature_data(&self) -> Option<&[u8]> {
         self.message.signature_data()
     }
@@ -541,18 +553,22 @@ impl Clone for OwnedFrame {
 }
 
 impl Frame for OwnedFrame {
+    #[inline]
     fn message_type(&self) -> u16 {
         self.owned_slice_message.message_type()
     }
 
+    #[inline]
     fn message_size(&self) -> usize {
         self.owned_slice_message.message_size()
     }
 
+    #[inline]
     fn frame_size(&self) -> usize {
         self.owned_slice_message.frame_size()
     }
 
+    #[inline]
     fn frame_data(&self) -> &[u8] {
         self.owned_slice_message.frame_data()
     }
@@ -570,10 +586,12 @@ impl Frame for OwnedFrame {
 }
 
 impl SignedFrame for OwnedFrame {
+    #[inline]
     fn message_data(&self) -> &[u8] {
         self.owned_slice_message.message_data()
     }
 
+    #[inline]
     fn signature_data(&self) -> Option<&[u8]> {
         self.owned_slice_message.signature_data()
     }
@@ -595,18 +613,22 @@ impl<T> TypedFrame<T> for OwnedTypedFrame<T>
 where
     T: for<'a> MessageType<'a>,
 {
+    #[inline]
     fn message_type(&self) -> u16 {
         self.message.message_type()
     }
 
+    #[inline]
     fn message_size(&self) -> usize {
         self.message.message_size()
     }
 
+    #[inline]
     fn frame_size(&self) -> usize {
         self.message.frame_size()
     }
 
+    #[inline]
     fn frame_data(&self) -> &[u8] {
         self.message.frame_data()
     }
@@ -625,12 +647,58 @@ impl<T> SignedFrame for OwnedTypedFrame<T>
 where
     T: for<'b> MessageType<'b>,
 {
+    #[inline]
     fn message_data(&self) -> &[u8] {
         self.message.message_data()
     }
 
+    #[inline]
     fn signature_data(&self) -> Option<&[u8]> {
         self.message.signature_data()
+    }
+}
+
+impl<T> TypedFrame<T> for std::sync::Arc<OwnedTypedFrame<T>>
+where
+    T: for<'a> MessageType<'a>,
+{
+    fn message_type(&self) -> u16 {
+        <OwnedTypedFrame<T>>::message_type(self)
+    }
+
+    fn message_size(&self) -> usize {
+        <OwnedTypedFrame<T>>::message_size(self)
+    }
+
+    fn frame_size(&self) -> usize {
+        <OwnedTypedFrame<T>>::frame_size(self)
+    }
+
+    fn frame_data(&self) -> &[u8] {
+        <OwnedTypedFrame<T>>::frame_data(self)
+    }
+
+    fn get_typed_reader(&self) -> Result<<T as capnp::traits::Owned>::Reader, Error> {
+        <OwnedTypedFrame<T>>::get_typed_reader(self)
+    }
+
+    fn to_owned(&self) -> OwnedTypedFrame<T> {
+        <OwnedTypedFrame<T>>::to_owned(self)
+    }
+}
+
+impl<T> SignedFrame for std::sync::Arc<OwnedTypedFrame<T>>
+where
+    T: for<'b> MessageType<'b>,
+{
+    #[inline]
+    fn message_data(&self) -> &[u8] {
+        <OwnedTypedFrame<T>>::message_data(self)
+    }
+
+    #[inline]
+    fn signature_data(&self) -> Option<&[u8]> {
+        <OwnedTypedFrame<T>>::signature_data(self)
     }
 }
 
@@ -957,9 +1025,9 @@ impl MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
     pub fn validate<S: SignedFrame>(frame: &S) -> Result<Multihash, Error> {
         frame
             .signature_data()
-            .ok_or(Error::InvalidSignature(
-                "Frame doesn't contain signature data".to_string(),
-            ))
+            .ok_or_else(|| {
+                Error::InvalidSignature("Frame doesn't contain signature data".to_string())
+            })
             .and_then(|data| {
                 let hash_msg = Multihash::from_bytes(data.to_vec()).map_err(|err| {
                     Error::InvalidSignature(format!(
@@ -1067,7 +1135,7 @@ pub mod tests {
         let frame_slice = SliceFrame::new(&frame_data)?;
         assert_eq!(
             frame_slice.message_type(),
-            <block::Owned as MessageType>::message_type()
+            <block::Owned as MessageType>::MESSAGE_TYPE
         );
 
         let typed_frame = frame_slice.into_typed::<block::Owned>();
@@ -1085,7 +1153,7 @@ pub mod tests {
         let owned_frame = block_builder.as_owned_unsigned_framed()?;
         assert_eq!(
             owned_frame.message_type(),
-            <block::Owned as MessageType>::message_type()
+            <block::Owned as MessageType>::MESSAGE_TYPE
         );
 
         let block_reader = owned_frame.get_typed_reader()?;
@@ -1131,6 +1199,31 @@ pub mod tests {
     }
 
     #[test]
+    fn slice_frame_from_slice() -> Result<(), Error> {
+        let mut data = [0u8; 1000];
+
+        // we write block at offset 321
+        let mut block1_builder = build_test_block(3, 10000);
+        let block1_metadata = write_framed_builder_into_buffer(
+            &mut data[321..],
+            123,
+            &block1_builder.get_builder(),
+            NullFrameSigner,
+        )?;
+
+        let frame = SliceFrame::new(&data[321..])?;
+        assert_eq!(frame.message_type(), 123);
+        assert_eq!(
+            frame.frame_data(),
+            &data[321..321 + block1_metadata.frame_size()]
+        );
+        let block_reader = frame.get_typed_reader::<block::Owned>()?;
+        assert_eq!(block_reader.get_offset(), 3);
+
+        Ok(())
+    }
+
+    #[test]
     fn slice_frame_from_next_offset() -> Result<(), Error> {
         let mut data = [0u8; 1000];
 
@@ -1164,15 +1257,17 @@ pub mod tests {
 
         // wrong offset tests
         assert!(SliceFrame::new_from_next_offset(&data[0..], 0).is_err());
-        assert!(SliceFrame::new_from_next_offset(&data[0..], 112).is_err());
+        assert!(SliceFrame::new_from_next_offset(&data[0..], 105).is_err());
 
         let frame = SliceFrame::new_from_next_offset(&data[0..], block1_metadata.frame_size())?;
         assert_eq!(frame.message_type(), 123);
+        assert_eq!(frame.frame_data(), &data[0..block2_offset]);
         let block_reader = frame.get_typed_reader::<block::Owned>()?;
         assert_eq!(block_reader.get_offset(), 0);
 
         let frame = SliceFrame::new_from_next_offset(&data[0..], block3_offset)?;
         assert_eq!(frame.message_type(), 456);
+        assert_eq!(frame.frame_data(), &data[block2_offset..block3_offset]);
         let block_reader = frame.get_typed_reader::<block::Owned>()?;
         assert_eq!(block_reader.get_offset(), 1);
 
@@ -1286,17 +1381,12 @@ pub mod tests {
         Ok(())
     }
 
-    fn build_test_block(block_offset: u64, entry_id: u64) -> FrameBuilder<block::Owned> {
+    fn build_test_block(block_offset: u64, operation_id: u64) -> FrameBuilder<block::Owned> {
         let mut block_msg_builder = FrameBuilder::<block::Owned>::new();
 
-        let mut block_builder = block_msg_builder.get_builder_typed();
+        let mut block_builder: block::Builder = block_msg_builder.get_builder_typed();
         block_builder.set_offset(block_offset);
-
-        let entries = block_builder.init_entries(1);
-        {
-            let mut entry = entries.get(0);
-            entry.set_id(entry_id);
-        }
+        block_builder.set_proposed_operation_id(operation_id);
 
         block_msg_builder
     }

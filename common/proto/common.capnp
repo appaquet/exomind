@@ -1,12 +1,12 @@
 @0x8ee58f74f0999479;
 
 struct Node {
-    id @0: Text;
-    publicKey @1: Text;
+    id          @0: Text;
+    publicKey   @1: Text;
 
-    address @2: List(NodeAddress);
+    address     @2: List(NodeAddress);
 }
 
 struct NodeAddress {
-    data @0: Text;
+    data        @0: Text;
 }

@@ -3,8 +3,8 @@ set -e
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$CUR_DIR/../"
 
-cargo clean
 cargo check --all
+cargo check --tests --all
 cargo check --benches --all
 
 if [[ "$ANDROID_NDK_STANDALONE" != "" ]]; then

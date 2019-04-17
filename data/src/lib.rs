@@ -6,21 +6,27 @@ extern crate exocore_common;
 extern crate failure;
 #[macro_use]
 extern crate futures;
+extern crate itertools;
 #[macro_use]
 extern crate log;
-extern crate itertools;
 extern crate memmap;
-#[cfg(test)]
-extern crate stderrlog;
 #[cfg(test)]
 extern crate tempdir;
 extern crate tokio;
 extern crate tokio_io;
 
-pub use crate::engine::Engine;
+///
+/// Re-exports
+///
+pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
+pub use crate::engine::{Config as EngineConfig, Engine, EntryStatus};
+pub use crate::pending::memory::MemoryPendingStore;
+pub use crate::transport::mock::{MockTransport, MockTransportHub};
 
+///
+/// Modules
+///
 pub mod chain;
 pub mod engine;
 pub mod pending;
 pub mod transport;
-pub mod utils;

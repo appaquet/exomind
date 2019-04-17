@@ -1,3 +1,4 @@
+use crate::serialization::framed::SignedFrame;
 pub use parity_multihash as multihash;
 pub use parity_multihash::{Hash, Multihash};
 use tiny_keccak;
@@ -7,6 +8,13 @@ pub trait StreamHasher: std::marker::Sized {
     fn hash(&self) -> Hash;
     fn consume(&mut self, data: &[u8]);
     fn digest_into(self, buf: &mut [u8]);
+
+    fn consume_signed_frame<F: SignedFrame>(&mut self, frame: &F) {
+        let signature_data = frame
+            .signature_data()
+            .expect("The frame didn't have a signature");
+        self.consume(signature_data);
+    }
 
     fn into_multihash_bytes(self) -> Vec<u8> {
         let hash = self.hash();

@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 
-use std::collections::HashSet;
-use std::ops::Bound;
-use std::ops::RangeBounds;
+use std::collections::{HashMap, HashSet};
+use std::ops::{Bound, RangeBounds};
+use std::time::Instant;
 
 use itertools::{EitherOrBoth, Itertools};
 
+use exocore_common::node::{Node, NodeID, Nodes};
 use exocore_common::security::hash::{Sha3Hasher, StreamHasher};
-use exocore_common::serialization::capnp;
 use exocore_common::serialization::framed;
 use exocore_common::serialization::framed::*;
 use exocore_common::serialization::protos::data_chain_capnp::{
@@ -18,8 +18,9 @@ use exocore_common::serialization::protos::data_transport_capnp::{
 };
 use exocore_common::serialization::protos::OperationID;
 
-use crate::pending;
-use crate::pending::{Store, StoredOperation};
+use crate::engine::request_tracker;
+use crate::engine::{Error, SyncContext};
+use crate::pending::{PendingStore, StoredOperation};
 
 const MAX_OPERATIONS_PER_RANGE: u32 = 30;
 
@@ -37,52 +38,87 @@ const MAX_OPERATIONS_PER_RANGE: u32 = 30;
 /// tries to limit the number of operations by range. If a single range is not equal, only this range will be compared via
 /// headers exchange and full operations exchange.
 ///
-pub struct Synchronizer<PS: Store> {
+pub(super) struct PendingSynchronizer<PS: PendingStore> {
+    node_id: NodeID,
+    config: PendingSyncConfig,
+    nodes_info: HashMap<NodeID, NodeSyncInfo>,
     phantom: std::marker::PhantomData<PS>,
 }
 
-impl<PS: Store> Synchronizer<PS> {
-    pub fn new() -> Synchronizer<PS> {
-        Synchronizer {
+impl<PS: PendingStore> PendingSynchronizer<PS> {
+    pub fn new(node_id: NodeID, config: PendingSyncConfig) -> PendingSynchronizer<PS> {
+        PendingSynchronizer {
+            node_id,
+            config,
+            nodes_info: HashMap::new(),
             phantom: std::marker::PhantomData,
         }
     }
 
-    pub fn create_sync_request(
-        &self,
+    pub fn tick(
+        &mut self,
+        sync_context: &mut SyncContext,
         store: &PS,
-    ) -> Result<FrameBuilder<pending_sync_request::Owned>, Error> {
-        let mut sync_ranges = SyncRangesBuilder::new();
-        for operation in store.operations_iter(..)? {
-            sync_ranges.push_operation(operation, OperationDetails::None);
+        nodes: &Nodes,
+    ) -> Result<(), Error> {
+        let my_node_id = self.node_id.clone();
+        for node in nodes.nodes_except(&my_node_id) {
+            let sync_info = self.get_or_create_node_info_mut(node.id());
+            if sync_info.request_tracker.can_send_request() {
+                sync_info.request_tracker.set_last_send(Instant::now());
+                let request =
+                    self.create_sync_request_for_range(store, .., |_op| OperationDetails::None)?;
+                sync_context.push_pending_sync_request(node.id().clone(), request);
+            }
         }
 
-        // make sure we have at least one range
-        if sync_ranges.ranges.is_empty() {
-            sync_ranges.create_new_range(0);
-        }
-
-        // make sure last range has an infinite upper bound
-        sync_ranges.set_last_range_to(0);
-
-        let mut sync_request_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
-        let mut sync_request_builder = sync_request_frame_builder.get_builder_typed();
-        let mut ranges_builder = sync_request_builder
-            .reborrow()
-            .init_ranges(sync_ranges.ranges.len() as u32);
-        for (i, range) in sync_ranges.ranges.into_iter().enumerate() {
-            let mut builder = ranges_builder.reborrow().get(i as u32);
-            range.write_into_sync_range_builder(&mut builder)?;
-        }
-
-        Ok(sync_request_frame_builder)
+        Ok(())
     }
 
-    pub fn handle_incoming_sync_request(
+    ///
+    /// Handles a new operation coming from our own node, to be added to the pending store.
+    /// This will add it to local pending store, and create a request message to be sent to other nodes.
+    ///
+    pub fn handle_new_operation(
         &mut self,
+        sync_context: &mut SyncContext,
+        nodes: &Nodes,
         store: &mut PS,
-        request: OwnedTypedFrame<pending_sync_request::Owned>,
-    ) -> Result<Option<FrameBuilder<pending_sync_request::Owned>>, Error> {
+        operation: framed::OwnedTypedFrame<pending_operation::Owned>,
+    ) -> Result<(), Error> {
+        let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
+        let operation_id = operation_reader.get_operation_id();
+        store.put_operation(operation)?;
+
+        // create a sync request for which we send full detail for new op, but none for other ops
+        let my_node_id = self.node_id.clone();
+        for node in nodes.nodes_except(&my_node_id) {
+            let request = self.create_sync_request_for_range(store, operation_id.., |op| {
+                if op.operation_id == operation_id {
+                    OperationDetails::Full
+                } else {
+                    OperationDetails::None
+                }
+            })?;
+            sync_context.push_pending_sync_request(node.id().clone(), request);
+        }
+
+        Ok(())
+    }
+
+    ///
+    /// Handles a sync request coming from a remote node.
+    ///
+    pub fn handle_incoming_sync_request<R>(
+        &mut self,
+        from_node: &Node,
+        sync_context: &mut SyncContext,
+        store: &mut PS,
+        request: R,
+    ) -> Result<(), Error>
+    where
+        R: TypedFrame<pending_sync_request::Owned>,
+    {
         let in_reader: pending_sync_request::Reader = request.get_typed_reader()?;
         let in_ranges = in_reader.get_ranges()?;
 
@@ -98,12 +134,25 @@ impl<PS: Store> Synchronizer<PS> {
                 range.write_into_sync_range_builder(&mut builder)?;
             }
 
-            Ok(Some(sync_request_frame_builder))
-        } else {
-            Ok(None)
+            sync_context
+                .push_pending_sync_request(from_node.id().clone(), sync_request_frame_builder);
         }
+
+        Ok(())
     }
 
+    ///
+    /// Handles the ranges coming from a sync request. For each range, we check if we have
+    /// the same information locally, and take actions based on it.
+    ///
+    /// For each range, actions include:
+    ///   * Doing nothing if both remote and local are equals
+    ///   * Sending full operations if remote is empty while we have operations locally
+    ///   * Sending headers operations if we differences without any headers to compared with
+    ///   * Diffing our headers vs remote headers if headers are included.
+    ///
+    /// In any case, if the range includes operations, we always apply them first.
+    ///
     fn handle_incoming_sync_ranges<'a, I>(
         &mut self,
         store: &mut PS,
@@ -116,12 +165,14 @@ impl<PS: Store> Synchronizer<PS> {
         let mut out_ranges = SyncRangesBuilder::new();
 
         for sync_range_reader in sync_range_iterator {
-            let (bounds, bounds_from, bounds_to) = Self::extract_sync_2ounds(&sync_range_reader)?;
-            if bounds_to < bounds_from && bounds_to != 0 {
-                return Err(Error::InvalidSyncRequest(format!(
+            let ((bounds_from, bounds_to), from_numeric, to_numeric) =
+                extract_sync_bounds(&sync_range_reader)?;
+            if to_numeric != 0 && to_numeric < from_numeric {
+                return Err(PendingSyncError::InvalidSyncRequest(format!(
                     "Request from={} > to={}",
-                    bounds_from, bounds_to
-                )));
+                    from_numeric, to_numeric
+                ))
+                .into());
             }
 
             // first, apply all operations
@@ -142,7 +193,8 @@ impl<PS: Store> Synchronizer<PS> {
             }
 
             // then check local store's range hash and count
-            let (local_hash, local_count) = Self::local_store_range_info(store, bounds)?;
+            let (local_hash, local_count) =
+                Self::local_store_range_info(store, (bounds_from, bounds_to))?;
             let remote_hash = sync_range_reader.get_operations_hash()?;
             let remote_count = sync_range_reader.get_operations_count();
 
@@ -158,27 +210,27 @@ impl<PS: Store> Synchronizer<PS> {
                 // remote has no data, we sent everything
                 out_ranges_contains_changes = true;
                 out_ranges.create_new_range(bounds_from);
-                for operation in store.operations_iter(bounds)? {
+                for operation in store.operations_iter((bounds_from, bounds_to))? {
                     out_ranges.push_operation(operation, OperationDetails::Full);
                 }
-                out_ranges.set_last_range_to(bounds_to);
+                out_ranges.set_last_range_to_bound(bounds_to);
             } else if !sync_range_reader.has_operations_headers()
                 && !sync_range_reader.has_operations()
             {
                 // remote has only sent us hash, we reply with headers
                 out_ranges_contains_changes = true;
                 out_ranges.create_new_range(bounds_from);
-                for operation in store.operations_iter(bounds)? {
+                for operation in store.operations_iter((bounds_from, bounds_to))? {
                     out_ranges.push_operation(operation, OperationDetails::Header);
                 }
-                out_ranges.set_last_range_to(bounds_to);
+                out_ranges.set_last_range_to_bound(bounds_to);
             } else {
                 // remote and local has differences. We do a diff
                 out_ranges_contains_changes = true;
                 out_ranges.create_new_range(bounds_from);
 
                 let remote_iter = sync_range_reader.get_operations_headers()?.iter();
-                let local_iter = store.operations_iter(bounds)?;
+                let local_iter = store.operations_iter((bounds_from, bounds_to))?;
                 Self::diff_local_remote_range(
                     &mut out_ranges,
                     &mut included_operations,
@@ -186,7 +238,7 @@ impl<PS: Store> Synchronizer<PS> {
                     local_iter,
                 )?;
 
-                out_ranges.set_last_range_to(bounds_to);
+                out_ranges.set_last_range_to_bound(bounds_to);
             }
         }
 
@@ -197,46 +249,60 @@ impl<PS: Store> Synchronizer<PS> {
         }
     }
 
+    fn create_sync_request_for_range<R, F>(
+        &self,
+        store: &PS,
+        range: R,
+        operation_details: F,
+    ) -> Result<FrameBuilder<pending_sync_request::Owned>, Error>
+    where
+        R: RangeBounds<OperationID> + Clone,
+        F: Fn(&StoredOperation) -> OperationDetails,
+    {
+        let mut sync_ranges = SyncRangesBuilder::new();
+
+        // create first range with proper starting bound
+        match range.start_bound() {
+            Bound::Unbounded => sync_ranges.create_new_range(Bound::Unbounded),
+            Bound::Excluded(op_id) => sync_ranges.create_new_range(Bound::Excluded(*op_id)),
+            Bound::Included(op_id) => sync_ranges.create_new_range(Bound::Included(*op_id)),
+        }
+
+        for operation in store.operations_iter(range.clone())? {
+            let details = operation_details(&operation);
+            sync_ranges.push_operation(operation, details);
+        }
+
+        // make sure last range has an infinite upper bound
+        if let Bound::Unbounded = range.end_bound() {
+            sync_ranges.set_last_range_to_bound(Bound::Unbounded);
+        }
+
+        let mut sync_request_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
+        let mut sync_request_builder = sync_request_frame_builder.get_builder_typed();
+        let mut ranges_builder = sync_request_builder
+            .reborrow()
+            .init_ranges(sync_ranges.ranges.len() as u32);
+        for (i, range) in sync_ranges.ranges.into_iter().enumerate() {
+            let mut builder = ranges_builder.reborrow().get(i as u32);
+            range.write_into_sync_range_builder(&mut builder)?;
+        }
+
+        Ok(sync_request_frame_builder)
+    }
+
     fn local_store_range_info<R>(store: &PS, range: R) -> Result<(Vec<u8>, usize), Error>
     where
         R: RangeBounds<OperationID>,
     {
-        let mut frame_hasher = FramesHasher::new();
+        let mut frame_hasher = Sha3Hasher::new_256();
         let mut count = 0;
         for operation in store.operations_iter(range)? {
-            frame_hasher.consume_frame(operation.operation.as_ref());
+            frame_hasher.consume_signed_frame(operation.frame.as_ref());
             count += 1;
         }
 
         Ok((frame_hasher.into_multihash_bytes(), count))
-    }
-
-    fn extract_sync_2ounds(
-        sync_range_reader: &pending_sync_range::Reader,
-    ) -> Result<
-        (
-            (Bound<OperationID>, Bound<OperationID>),
-            OperationID,
-            OperationID,
-        ),
-        Error,
-    > {
-        let (from, to) = (
-            sync_range_reader.get_from_operation(),
-            sync_range_reader.get_to_operation(),
-        );
-
-        let bounds = match (
-            sync_range_reader.get_from_operation(),
-            sync_range_reader.get_to_operation(),
-        ) {
-            (0, 0) => (Bound::Unbounded, Bound::Unbounded),
-            (0, up) => (Bound::Unbounded, Bound::Included(up)),
-            (low, 0) => (Bound::Excluded(low), Bound::Unbounded),
-            (low, up) => (Bound::Excluded(low), Bound::Included(up)),
-        };
-
-        Ok((bounds, from, to))
     }
 
     fn diff_local_remote_range<'a, 'b, RI, LI>(
@@ -276,12 +342,90 @@ impl<PS: Store> Synchronizer<PS> {
             }
         }
         if !diff_has_difference {
-            return Err(Error::InvalidSyncState("Got into diff branch, but didn't result in any changes, which shouldn't have happened".to_string()));
+            return Err(PendingSyncError::InvalidSyncState("Got into diff branch, but didn't result in any changes, which shouldn't have happened".to_string()).into());
         }
 
         Ok(())
     }
+
+    fn get_or_create_node_info_mut(&mut self, node_id: &str) -> &mut NodeSyncInfo {
+        if self.nodes_info.contains_key(node_id) {
+            return self.nodes_info.get_mut(node_id).unwrap();
+        }
+
+        let node_id = node_id.to_string();
+        let config = self.config;
+        self.nodes_info
+            .entry(node_id.clone())
+            .or_insert_with(move || NodeSyncInfo::new(node_id.clone(), &config))
+    }
 }
+
+///
+/// Synchronizer's configuration
+///
+#[derive(Copy, Clone, Debug)]
+pub struct PendingSyncConfig {
+    pub request_tracker_config: request_tracker::RequestTrackerConfig,
+}
+
+impl Default for PendingSyncConfig {
+    fn default() -> Self {
+        PendingSyncConfig {
+            request_tracker_config: request_tracker::RequestTrackerConfig::default(),
+        }
+    }
+}
+
+///
+/// Synchronization information about a remote node
+///
+struct NodeSyncInfo {
+    node_id: NodeID,
+    request_tracker: request_tracker::RequestTracker,
+}
+
+impl NodeSyncInfo {
+    fn new(node_id: NodeID, config: &PendingSyncConfig) -> NodeSyncInfo {
+        NodeSyncInfo {
+            node_id,
+            request_tracker: request_tracker::RequestTracker::new(config.request_tracker_config),
+        }
+    }
+}
+
+///
+/// Converts bounds from sync_request range to SyncBounds
+///
+fn extract_sync_bounds(
+    sync_range_reader: &pending_sync_range::Reader,
+) -> Result<SyncBounds, Error> {
+    let (from, from_included, to, to_included) = (
+        sync_range_reader.get_from_operation(),
+        sync_range_reader.get_from_included(),
+        sync_range_reader.get_to_operation(),
+        sync_range_reader.get_to_included(),
+    );
+
+    let from_bound = match (from, from_included) {
+        (0, false) => Bound::Unbounded,
+        (bound, true) => Bound::Included(bound),
+        (bound, false) => Bound::Excluded(bound),
+    };
+    let to_bound = match (to, to_included) {
+        (0, false) => Bound::Unbounded,
+        (bound, true) => Bound::Included(bound),
+        (bound, false) => Bound::Excluded(bound),
+    };
+
+    Ok(((from_bound, to_bound), from, to))
+}
+
+type SyncBounds = (
+    (Bound<OperationID>, Bound<OperationID>),
+    OperationID,
+    OperationID,
+);
 
 ///
 /// Collection of SyncRangeBuilder, taking into account maximum operations we want per range.
@@ -297,12 +441,18 @@ impl SyncRangesBuilder {
 
     fn push_operation(&mut self, operation: StoredOperation, details: OperationDetails) {
         if self.ranges.is_empty() {
-            self.create_new_range(0);
+            self.create_new_range(Bound::Unbounded);
         } else {
-            let last_range_size = self.ranges.last().map(|r| r.operations_count).unwrap_or(0);
+            let last_range_size = self.ranges.last().map_or(0, |r| r.operations_count);
             if last_range_size > MAX_OPERATIONS_PER_RANGE {
-                let last_range_to = self.last_range_to().expect("Should had a last range");
-                self.create_new_range(last_range_to);
+                let last_range_to = self.last_range_to_bound().expect("Should had a last range");
+
+                // converted included into excluded for starting bound of next range since the item is in current range, not next one
+                if let Bound::Included(to) = last_range_to {
+                    self.create_new_range(Bound::Excluded(to));
+                } else {
+                    panic!("Expected current range end bound to be included");
+                }
             }
         }
 
@@ -313,22 +463,22 @@ impl SyncRangesBuilder {
         last_range.push_operation(operation, details);
     }
 
-    fn create_new_range(&mut self, from_operation_id: OperationID) {
+    fn create_new_range(&mut self, from_bound: Bound<OperationID>) {
         self.ranges
-            .push(SyncRangeBuilder::new(from_operation_id, 0));
+            .push(SyncRangeBuilder::new(from_bound, Bound::Unbounded));
     }
 
     fn push_range(&mut self, sync_range: SyncRangeBuilder) {
         self.ranges.push(sync_range);
     }
 
-    fn last_range_to(&self) -> Option<OperationID> {
+    fn last_range_to_bound(&self) -> Option<Bound<OperationID>> {
         self.ranges.last().map(|r| r.to_operation)
     }
 
-    fn set_last_range_to(&mut self, operation_id: OperationID) {
+    fn set_last_range_to_bound(&mut self, to_bound: Bound<OperationID>) {
         if let Some(range) = self.ranges.last_mut() {
-            range.to_operation = operation_id;
+            range.to_operation = to_bound;
         }
     }
 }
@@ -343,14 +493,14 @@ impl SyncRangesBuilder {
 ///  * Operations full data
 ///
 struct SyncRangeBuilder {
-    from_operation: OperationID,
-    to_operation: OperationID,
+    from_operation: Bound<OperationID>,
+    to_operation: Bound<OperationID>,
 
     operations: Vec<StoredOperation>,
     operations_headers: Vec<StoredOperation>,
     operations_count: u32,
 
-    hasher: Option<FramesHasher>,
+    hasher: Option<Sha3Hasher>,
     hash: Option<Vec<u8>>,
 }
 
@@ -362,21 +512,24 @@ enum OperationDetails {
 }
 
 impl SyncRangeBuilder {
-    fn new(from_operation: OperationID, to_operation: OperationID) -> SyncRangeBuilder {
+    fn new(
+        from_operation: Bound<OperationID>,
+        to_operation: Bound<OperationID>,
+    ) -> SyncRangeBuilder {
         SyncRangeBuilder {
             from_operation,
             to_operation,
             operations: Vec::new(),
             operations_headers: Vec::new(),
             operations_count: 0,
-            hasher: Some(FramesHasher::new()),
+            hasher: Some(Sha3Hasher::new_256()),
             hash: None,
         }
     }
 
     fn new_hashed(
-        from_operation: OperationID,
-        to_operation: OperationID,
+        from_operation: Bound<OperationID>,
+        to_operation: Bound<OperationID>,
         operations_hash: Vec<u8>,
         operations_count: u32,
     ) -> SyncRangeBuilder {
@@ -392,11 +545,11 @@ impl SyncRangeBuilder {
     }
 
     fn push_operation(&mut self, operation: StoredOperation, details: OperationDetails) {
-        self.to_operation = operation.operation_id;
+        self.to_operation = Bound::Included(operation.operation_id);
         self.operations_count += 1;
 
         if let Some(hasher) = self.hasher.as_mut() {
-            hasher.consume_frame(operation.operation.as_ref())
+            hasher.consume_signed_frame(operation.frame.as_ref())
         }
 
         match details {
@@ -416,8 +569,36 @@ impl SyncRangeBuilder {
         self,
         range_msg_builder: &mut pending_sync_range::Builder,
     ) -> Result<(), Error> {
-        range_msg_builder.set_from_operation(self.from_operation);
-        range_msg_builder.set_to_operation(self.to_operation);
+        match self.from_operation {
+            Bound::Included(bound) => {
+                range_msg_builder.set_from_included(true);
+                range_msg_builder.set_from_operation(bound);
+            }
+            Bound::Excluded(bound) => {
+                range_msg_builder.set_from_included(false);
+                range_msg_builder.set_from_operation(bound);
+            }
+            Bound::Unbounded => {
+                range_msg_builder.set_from_included(false);
+                range_msg_builder.set_from_operation(0);
+            }
+        }
+
+        match self.to_operation {
+            Bound::Included(bound) => {
+                range_msg_builder.set_to_included(true);
+                range_msg_builder.set_to_operation(bound);
+            }
+            Bound::Excluded(bound) => {
+                range_msg_builder.set_to_included(false);
+                range_msg_builder.set_to_operation(bound);
+            }
+            Bound::Unbounded => {
+                range_msg_builder.set_to_included(false);
+                range_msg_builder.set_to_operation(0);
+            }
+        }
+
         range_msg_builder.set_operations_count(self.operations_count);
 
         if !self.operations_headers.is_empty() {
@@ -430,7 +611,7 @@ impl SyncRangeBuilder {
                 op_header_builder.set_operation_id(operation.operation_id);
 
                 let signature_data = operation
-                    .operation
+                    .frame
                     .signature_data()
                     .expect("The frame didn't have a signature");
                 op_header_builder.set_operation_signature(&signature_data);
@@ -442,7 +623,7 @@ impl SyncRangeBuilder {
                 .reborrow()
                 .init_operations(self.operations.len() as u32);
             for (i, operation) in self.operations.iter().enumerate() {
-                operations_builder.set(i as u32, operation.operation.frame_data());
+                operations_builder.set(i as u32, operation.frame.frame_data());
             }
         }
 
@@ -464,69 +645,11 @@ impl SyncRangeBuilder {
 /// Pending Synchronization Error
 ///
 #[derive(Debug, Fail)]
-pub enum Error {
-    #[fail(display = "Error in pending store: {:?}", _0)]
-    Store(#[fail(cause)] pending::Error),
-    #[fail(display = "Error in framing serialization: {:?}", _0)]
-    Framing(#[fail(cause)] framed::Error),
-    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
-    Serialization(capnp::ErrorKind, String),
-    #[fail(display = "Field is not in capnp schema: code={}", _0)]
-    SerializationNotInSchema(u16),
+pub enum PendingSyncError {
     #[fail(display = "Got into an invalid synchronization state: {}", _0)]
     InvalidSyncState(String),
     #[fail(display = "Got an invalid sync request: {}", _0)]
     InvalidSyncRequest(String),
-}
-
-impl From<pending::Error> for Error {
-    fn from(err: pending::Error) -> Self {
-        Error::Store(err)
-    }
-}
-
-impl From<framed::Error> for Error {
-    fn from(err: framed::Error) -> Self {
-        Error::Framing(err)
-    }
-}
-
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::Serialization(err.kind, err.description)
-    }
-}
-
-impl From<capnp::NotInSchema> for Error {
-    fn from(err: capnp::NotInSchema) -> Self {
-        Error::SerializationNotInSchema(err.0)
-    }
-}
-
-///
-///
-///
-struct FramesHasher {
-    hasher: Sha3Hasher,
-}
-
-impl FramesHasher {
-    fn new() -> FramesHasher {
-        FramesHasher {
-            hasher: Sha3Hasher::new_256(),
-        }
-    }
-
-    fn consume_frame<F: SignedFrame>(&mut self, frame: &F) {
-        let signature_data = frame
-            .signature_data()
-            .expect("The frame didn't have a signature");
-        self.hasher.consume(signature_data);
-    }
-
-    fn into_multihash_bytes(self) -> Vec<u8> {
-        self.hasher.into_multihash_bytes()
-    }
 }
 
 #[cfg(test)]
@@ -537,138 +660,213 @@ mod tests {
         pending_operation, pending_operation_header,
     };
 
-    use crate::pending::tests::create_new_entry_op;
+    use crate::engine::testing::create_dummy_new_entry_op;
 
     use super::*;
+    use crate::engine::testing::*;
+    use crate::engine::SyncContextMessage;
+    use crate::pending::OperationType;
 
     #[test]
-    fn create_sync_range_request() {
-        let mut store = crate::pending::memory::MemoryStore::new();
-        for operation in pending_ops_generator(100) {
-            store.put_operation(operation).unwrap();
-        }
+    fn tick_send_to_other_nodes() -> Result<(), failure::Error> {
+        // only one node, shouldn't send to ourself
+        let mut cluster = TestCluster::new(1);
+        let mut sync_context = SyncContext::new();
+        cluster.pending_stores_synchronizer[0].tick(
+            &mut sync_context,
+            &cluster.pending_stores[0],
+            &cluster.nodes,
+        )?;
+        assert_eq!(sync_context.messages.len(), 0);
 
-        let synchronizer = Synchronizer::new();
-        let sync_request = synchronizer.create_sync_request(&store).unwrap();
+        // two nodes should send to other node
+        let mut cluster = TestCluster::new(2);
+        let mut sync_context = SyncContext::new();
+        cluster.pending_stores_synchronizer[0].tick(
+            &mut sync_context,
+            &cluster.pending_stores[0],
+            &cluster.nodes,
+        )?;
+        assert_eq!(sync_context.messages.len(), 1);
 
-        let sync_request_frame = sync_request.as_owned_framed(NullFrameSigner).unwrap();
-        let sync_request_reader: pending_sync_request::Reader =
-            sync_request_frame.get_typed_reader().unwrap();
+        Ok(())
+    }
 
-        let ranges = sync_request_reader.get_ranges().unwrap();
+    #[test]
+    fn create_sync_range_request() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.pending_generate_dummy(0, 100);
+
+        let mut sync_context = SyncContext::new();
+        cluster.pending_stores_synchronizer[0].tick(
+            &mut sync_context,
+            &cluster.pending_stores[0],
+            &cluster.nodes,
+        )?;
+        let sync_request_frame = extract_request_from_result(&sync_context);
+        let sync_request_reader = sync_request_frame.get_typed_reader()?;
+
+        let ranges = sync_request_reader.get_ranges()?;
         assert_eq!(ranges.len(), 4);
 
-        let range0: pending_sync_range::Reader = ranges.get(0);
+        let range0 = ranges.get(0);
         assert_eq!(range0.get_from_operation(), 0);
 
-        let range1: pending_sync_range::Reader = ranges.get(1);
+        let range1 = ranges.get(1);
         assert_eq!(range0.get_to_operation(), range1.get_from_operation());
 
-        let range3: pending_sync_range::Reader = ranges.get(3);
+        let range3 = ranges.get(3);
         assert_eq!(range3.get_to_operation(), 0);
+
+        Ok(())
     }
 
     #[test]
-    fn handle_sync_equals() {
-        let mut store_1 = crate::pending::memory::MemoryStore::new();
-        let mut store_2 = crate::pending::memory::MemoryStore::new();
-        for operation in pending_ops_generator(100) {
-            store_1.put_operation(operation.clone()).unwrap();
-            store_2.put_operation(operation).unwrap();
-        }
+    fn new_operation_after_last_operation() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.pending_generate_dummy(0, 50);
+        cluster.pending_generate_dummy(1, 50);
 
-        let mut sync_1 = Synchronizer::new();
-        let mut sync_2 = Synchronizer::new();
+        // create operation after last operation id
+        let new_operation = create_dummy_new_entry_op(52, 52);
+        let mut sync_context = SyncContext::new();
+        cluster.pending_stores_synchronizer[0].handle_new_operation(
+            &mut sync_context,
+            &cluster.nodes,
+            &mut cluster.pending_stores[0],
+            new_operation,
+        )?;
+        let request = extract_request_from_result(&sync_context);
 
-        let (count_a_to_b, count_b_to_a) =
-            test_sync_stores(&mut store_1, &mut sync_1, &mut store_2, &mut sync_2);
-
+        // should send the new operation directly, without requiring further requests
+        let (count_a_to_b, count_b_to_a) = sync_nodes_with_request(&mut cluster, 0, 1, request)?;
         assert_eq!(count_a_to_b, 1);
         assert_eq!(count_b_to_a, 0);
+
+        // op should now be in each store
+        let ops = cluster.pending_stores[0].get_group_operations(52)?.unwrap();
+        assert_eq!(ops.operations.len(), 1);
+        let ops = cluster.pending_stores[1].get_group_operations(52)?.unwrap();
+        assert_eq!(ops.operations.len(), 1);
+
+        Ok(())
     }
 
     #[test]
-    fn handle_sync_empty_to_many() {
-        let mut store_1 = crate::pending::memory::MemoryStore::new();
-        let mut sync_1 = Synchronizer::new();
-        for operation in pending_ops_generator(100) {
-            store_1.put_operation(operation).unwrap();
+    fn new_operation_among_current_operations() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+
+        // generate operations with even operation id
+        let ops_generator = (0..=50).map(|i| {
+            let (group_id, operation_id) = (((i * 2) % 10 + 1) as u64, i * 2 as u64);
+            create_dummy_new_entry_op(operation_id, group_id)
+        });
+
+        for operation in ops_generator {
+            cluster.pending_stores[0].put_operation(operation.clone())?;
+            cluster.pending_stores[1].put_operation(operation)?;
         }
 
-        let mut store_2 = crate::pending::memory::MemoryStore::new();
-        let mut sync_2 = Synchronizer::new();
+        // create operation in middle of current ranges, with odd operation id
+        let mut sync_context = SyncContext::new();
+        let new_operation = create_dummy_new_entry_op(51, 51);
+        cluster.pending_stores_synchronizer[0].handle_new_operation(
+            &mut sync_context,
+            &cluster.nodes,
+            &mut cluster.pending_stores[0],
+            new_operation,
+        )?;
+        let request = extract_request_from_result(&sync_context);
 
-        let (count_a_to_b, count_b_to_a) =
-            test_sync_stores(&mut store_1, &mut sync_1, &mut store_2, &mut sync_2);
+        // should send the new operation directly, without requiring further requests
+        let (count_a_to_b, count_b_to_a) = sync_nodes_with_request(&mut cluster, 0, 1, request)?;
+        assert_eq!(count_a_to_b, 1);
+        assert_eq!(count_b_to_a, 0);
 
+        // op should now be in each store
+        let ops = cluster.pending_stores[0].get_group_operations(51)?.unwrap();
+        assert_eq!(ops.operations.len(), 1);
+        let ops = cluster.pending_stores[1].get_group_operations(51)?.unwrap();
+        assert_eq!(ops.operations.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn handle_sync_equals() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.pending_generate_dummy(0, 100);
+        cluster.pending_generate_dummy(1, 100);
+
+        let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
+        assert_eq!(count_a_to_b, 1);
+        assert_eq!(count_b_to_a, 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn handle_sync_empty_to_many() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.pending_generate_dummy(0, 100);
+
+        let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(count_a_to_b, 2);
         assert_eq!(count_b_to_a, 1);
+
+        Ok(())
     }
 
     #[test]
-    fn handle_sync_many_to_empty() {
-        let mut store_1 = crate::pending::memory::MemoryStore::new();
-        let mut sync_1 = Synchronizer::new();
+    fn handle_sync_many_to_empty() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.pending_generate_dummy(1, 100);
 
-        let mut store_2 = crate::pending::memory::MemoryStore::new();
-        let mut sync_2 = Synchronizer::new();
-        for operation in pending_ops_generator(100) {
-            store_2.put_operation(operation).unwrap();
-        }
-
-        let (count_a_to_b, count_b_to_a) =
-            test_sync_stores(&mut store_1, &mut sync_1, &mut store_2, &mut sync_2);
-
+        let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(count_a_to_b, 1);
         assert_eq!(count_b_to_a, 1);
+
+        Ok(())
     }
 
     #[test]
-    fn handle_sync_1ll_to_some() {
-        let mut store_1 = crate::pending::memory::MemoryStore::new();
-        let mut sync_1 = Synchronizer::new();
-        for operation in pending_ops_generator(100) {
-            store_1.put_operation(operation).unwrap();
-        }
+    fn handle_sync_full_to_some() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.pending_generate_dummy(0, 100);
 
-        let mut store_2 = crate::pending::memory::MemoryStore::new();
-        let mut sync_2 = Synchronizer::new();
+        // insert 1/2 operations in second node
         for operation in pending_ops_generator(100) {
-            let reader = operation.get_typed_reader().unwrap();
+            let reader = operation.get_typed_reader()?;
             if reader.get_operation_id() % 2 == 0 {
-                store_2.put_operation(operation).unwrap();
+                cluster.pending_stores[1].put_operation(operation)?;
             }
         }
 
-        let (count_a_to_b, count_b_to_a) =
-            test_sync_stores(&mut store_1, &mut sync_1, &mut store_2, &mut sync_2);
-
+        let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(count_a_to_b, 2);
         assert_eq!(count_b_to_a, 1);
+
+        Ok(())
     }
 
     #[test]
-    fn handle_sync_some_to_all() {
-        let mut store_1 = crate::pending::memory::MemoryStore::new();
-        let mut sync_1 = Synchronizer::new();
+    fn handle_sync_some_to_all() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.pending_generate_dummy(1, 100);
+
+        // insert 1/2 operations in first node
         for operation in pending_ops_generator(100) {
-            let reader = operation.get_typed_reader().unwrap();
+            let reader = operation.get_typed_reader()?;
             if reader.get_operation_id() % 2 == 0 {
-                store_1.put_operation(operation).unwrap();
+                cluster.pending_stores[0].put_operation(operation)?;
             }
         }
 
-        let mut store_2 = crate::pending::memory::MemoryStore::new();
-        let mut sync_2 = Synchronizer::new();
-        for operation in pending_ops_generator(100) {
-            store_2.put_operation(operation).unwrap();
-        }
-
-        let (count_a_to_b, count_b_to_a) =
-            test_sync_stores(&mut store_1, &mut sync_1, &mut store_2, &mut sync_2);
-
+        let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(count_a_to_b, 2);
         assert_eq!(count_b_to_a, 2);
+
+        Ok(())
     }
 
     #[test]
@@ -681,115 +879,154 @@ mod tests {
         assert_eq!(sync_ranges.ranges.len(), 3);
         assert_eq!(
             sync_ranges.ranges.first().map(|r| r.from_operation),
-            Some(0)
+            Some(Bound::Unbounded)
         );
 
         // check continuity of ranges
-        let mut last_range_to: Option<OperationID> = None;
+        let mut last_range_to: Option<Bound<OperationID>> = None;
         for range in sync_ranges.ranges.iter() {
-            assert_eq!(range.from_operation, last_range_to.unwrap_or(0));
+            match (last_range_to, range.from_operation) {
+                (None, _) => assert_eq!(range.from_operation, Bound::Unbounded),
+                (Some(Bound::Included(last_to)), Bound::Excluded(current_from)) => {
+                    assert_eq!(last_to, current_from)
+                }
+                other => panic!("Unexpected last bound: {:?}", other),
+            }
+
             last_range_to = Some(range.to_operation);
         }
 
-        assert_eq!(last_range_to, Some(90));
+        assert_eq!(last_range_to, Some(Bound::Included(90)));
     }
 
     #[test]
-    fn sync_range_to_frame_builder_with_hash() {
+    fn sync_range_to_frame_builder_with_hash() -> Result<(), failure::Error> {
         let frames_builder = build_sync_ranges_frames(90, OperationDetails::None);
         assert_eq!(frames_builder.len(), 3);
 
-        let frame0 = frames_builder[0].as_owned_unsigned_framed().unwrap();
-        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader().unwrap();
+        let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
+        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader()?;
         let frame0_hash = frame0_reader.reborrow().get_operations_hash().unwrap();
         assert_eq!(frame0_reader.has_operations(), false);
         assert_eq!(frame0_reader.has_operations_headers(), false);
 
-        let frame1 = frames_builder[1].as_owned_unsigned_framed().unwrap();
-        let frame1_reader: pending_sync_range::Reader = frame1.get_typed_reader().unwrap();
-        let frame1_hash = frame1_reader.reborrow().get_operations_hash().unwrap();
+        let frame1 = frames_builder[1].as_owned_unsigned_framed()?;
+        let frame1_reader: pending_sync_range::Reader = frame1.get_typed_reader()?;
+        let frame1_hash = frame1_reader.reborrow().get_operations_hash()?;
         assert_eq!(frame1_reader.has_operations(), false);
         assert_eq!(frame1_reader.has_operations_headers(), false);
 
         assert_ne!(frame0_hash, frame1_hash);
+
+        Ok(())
     }
 
     #[test]
-    fn sync_range_to_frame_builder_with_headers() {
+    fn sync_range_to_frame_builder_with_headers() -> Result<(), failure::Error> {
         let frames_builder = build_sync_ranges_frames(90, OperationDetails::Header);
 
-        let frame0 = frames_builder[0].as_owned_unsigned_framed().unwrap();
-        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader().unwrap();
+        let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
+        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader()?;
         assert_eq!(frame0_reader.has_operations(), false);
         assert_eq!(frame0_reader.has_operations_headers(), true);
 
-        let operations = frame0_reader.get_operations_headers().unwrap();
+        let operations = frame0_reader.get_operations_headers()?;
         let operation0_header: pending_operation_header::Reader = operations.get(0);
         assert_eq!(operation0_header.get_group_id(), 2);
+
+        Ok(())
     }
 
     #[test]
-    fn sync_range_to_frame_builder_with_data() {
+    fn sync_range_to_frame_builder_with_data() -> Result<(), failure::Error> {
         let frames_builder = build_sync_ranges_frames(90, OperationDetails::Full);
 
-        let frame0 = frames_builder[0].as_owned_unsigned_framed().unwrap();
-        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader().unwrap();
+        let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
+        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader()?;
         assert_eq!(frame0_reader.has_operations(), true);
         assert_eq!(frame0_reader.has_operations_headers(), false);
 
-        let operations = frame0_reader.get_operations().unwrap();
-        let operation0_data = operations.get(0).unwrap();
-        let operation0_frame =
-            TypedSliceFrame::<pending_operation::Owned>::new(operation0_data).unwrap();
+        let operations = frame0_reader.get_operations()?;
+        let operation0_data = operations.get(0)?;
+        let operation0_frame = TypedSliceFrame::<pending_operation::Owned>::new(operation0_data)?;
 
-        let operation0_reader: pending_operation::Reader =
-            operation0_frame.get_typed_reader().unwrap();
+        let operation0_reader: pending_operation::Reader = operation0_frame.get_typed_reader()?;
         let operation0_inner_reader = operation0_reader.get_operation();
-        assert!(operation0_inner_reader.has_entry_new());
+        assert!(operation0_inner_reader.has_entry());
+
+        Ok(())
     }
 
-    fn test_sync_stores<PS>(
-        store_1: &mut PS,
-        sync_1: &mut Synchronizer<PS>,
-        store_2: &mut PS,
-        sync_2: &mut Synchronizer<PS>,
-    ) -> (usize, usize)
-    where
-        PS: Store,
-    {
-        let mut count_1_to_2 = 0;
-        let mut count_2_to_1 = 0;
+    fn sync_nodes(
+        cluster: &mut TestCluster,
+        node_id_a: usize,
+        node_id_b: usize,
+    ) -> Result<(usize, usize), failure::Error> {
+        let mut sync_context = SyncContext::new();
 
-        let mut next_request = sync_1
-            .create_sync_request(&store_1)
-            .unwrap()
-            .as_owned_unsigned_framed()
-            .unwrap();
+        // tick the first node, which will generate a sync request
+        cluster.pending_stores_synchronizer[node_id_a].tick(
+            &mut sync_context,
+            &cluster.pending_stores[node_id_a],
+            &cluster.nodes,
+        )?;
+        let initial_request = extract_request_from_result(&sync_context);
+
+        sync_nodes_with_request(cluster, node_id_a, node_id_b, initial_request)
+    }
+
+    fn sync_nodes_with_request(
+        cluster: &mut TestCluster,
+        node_id_a: usize,
+        node_id_b: usize,
+        initial_request: OwnedTypedFrame<pending_sync_request::Owned>,
+    ) -> Result<(usize, usize), failure::Error> {
+        let node_a = cluster.get_node(node_id_a);
+        let node_b = cluster.get_node(node_id_b);
+
+        let mut count_a_to_b = 0;
+        let mut count_b_to_a = 0;
+
+        let mut next_request = initial_request;
+        debug!("Request from a={} to b={}", node_id_a, node_id_b);
         print_sync_request(&next_request);
 
         loop {
-            count_1_to_2 += 1;
-            let resp = sync_2
-                .handle_incoming_sync_request(store_2, next_request)
-                .unwrap();
-            if resp.is_none() {
+            count_a_to_b += 1;
+            let mut sync_context = SyncContext::new();
+            cluster.pending_stores_synchronizer[node_id_b].handle_incoming_sync_request(
+                &node_a,
+                &mut sync_context,
+                &mut cluster.pending_stores[node_id_b],
+                next_request,
+            )?;
+            if sync_context.messages.is_empty() {
+                debug!("No request from b={} to a={}", node_id_b, node_id_a);
                 break;
             }
 
-            count_2_to_1 += 1;
-            let request = resp.unwrap().as_owned_unsigned_framed().unwrap();
+            count_b_to_a += 1;
+            let request = extract_request_from_result(&sync_context);
+            debug!("Request from b={} to a={}", node_id_b, node_id_a);
             print_sync_request(&request);
-            let resp = sync_1
-                .handle_incoming_sync_request(store_1, request)
-                .unwrap();
-            match resp {
-                Some(resp) => next_request = resp.as_owned_unsigned_framed().unwrap(),
-                None => break,
+
+            let mut sync_context = SyncContext::new();
+            cluster.pending_stores_synchronizer[node_id_a].handle_incoming_sync_request(
+                &node_b,
+                &mut sync_context,
+                &mut cluster.pending_stores[node_id_a],
+                request,
+            )?;
+            if sync_context.messages.is_empty() {
+                debug!("No request from a={} to b={}", node_id_a, node_id_b);
+                break;
             }
+            next_request = extract_request_from_result(&sync_context);
+            debug!("Request from a={} to b={}", node_id_a, node_id_b);
             print_sync_request(&next_request);
         }
 
-        (count_1_to_2, count_2_to_1)
+        Ok((count_a_to_b, count_b_to_a))
     }
 
     fn build_sync_ranges_frames(
@@ -814,24 +1051,36 @@ mod tests {
             .collect()
     }
 
+    fn extract_request_from_result(
+        sync_context: &SyncContext,
+    ) -> OwnedTypedFrame<pending_sync_request::Owned> {
+        match sync_context.messages.last().unwrap() {
+            SyncContextMessage::PendingSyncRequest(_node_id, req) => {
+                req.as_owned_unsigned_framed().unwrap()
+            }
+            _other => panic!("Expected a pending sync request, got another type of message"),
+        }
+    }
+
     fn pending_ops_generator(
         count: usize,
     ) -> impl Iterator<Item = OwnedTypedFrame<pending_operation::Owned>> {
         (1..=count).map(|i| {
             let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
-            create_new_entry_op(operation_id, group_id)
+            create_dummy_new_entry_op(operation_id, group_id)
         })
     }
 
     fn stored_ops_generator(count: usize) -> impl Iterator<Item = StoredOperation> {
         (1..=count).map(|i| {
             let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
-            let operation = Arc::new(create_new_entry_op(operation_id, group_id));
+            let operation = Arc::new(create_dummy_new_entry_op(operation_id, group_id));
 
             StoredOperation {
                 group_id,
+                operation_type: OperationType::Entry,
                 operation_id,
-                operation,
+                frame: operation,
             }
         })
     }
@@ -840,32 +1089,26 @@ mod tests {
         let reader: pending_sync_request::Reader = request.get_typed_reader().unwrap();
         let ranges = reader.get_ranges().unwrap();
 
-        debug!("Request ------------");
         for range in ranges.iter() {
-            debug!(
-                " Range {} to {}",
-                range.get_from_operation(),
-                range.get_to_operation()
-            );
-            debug!("   Hash={:?}", range.get_operations_hash().unwrap());
-            debug!("   Count={}", range.get_operations_count());
+            let ((bound_from, bound_to), _from, _to) = extract_sync_bounds(&range).unwrap();
+            debug!("  Range {:?} to {:?}", bound_from, bound_to,);
+            debug!("    Hash={:?}", range.get_operations_hash().unwrap());
+            debug!("    Count={}", range.get_operations_count());
 
             if range.has_operations_headers() {
                 debug!(
-                    "   Headers={}",
+                    "    Headers={}",
                     range.get_operations_headers().unwrap().len()
                 );
             } else {
-                debug!("   Headers=None");
+                debug!("    Headers=None");
             }
 
             if range.has_operations() {
-                debug!("   Operations={}", range.get_operations().unwrap().len());
+                debug!("    Operations={}", range.get_operations().unwrap().len());
             } else {
-                debug!("   Operations=None");
+                debug!("    Operations=None");
             }
         }
-
-        debug!("-------------------");
     }
 }

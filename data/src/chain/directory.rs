@@ -4,40 +4,27 @@ use std::fs::{File, OpenOptions};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 
-use exocore_common::data_chain_capnp::{block, block_signatures};
+use exocore_common::data_chain_capnp::block_signatures;
 use exocore_common::serialization::framed;
-use exocore_common::serialization::framed::{Frame, FramesIterator, MessageType, TypedFrame};
+use exocore_common::serialization::framed::TypedFrame;
 
 use super::*;
 
 ///
-/// Directory persistence
+/// Directory based chain persistence. The chain is split in segments with configurable maximum size.
+/// This maximum size allows using mmap on 32bit systems by preventing segments from growing over 4gb.
 ///
-#[derive(Copy, Clone, Debug)]
-struct DirectoryConfig {
-    segment_over_allocate_size: u64,
-    segment_min_free_size: u64,
-    segment_max_size: u64,
-}
-
-impl Default for DirectoryConfig {
-    fn default() -> Self {
-        DirectoryConfig {
-            segment_over_allocate_size: 300 * 1024 * 1024, // 300mb
-            segment_min_free_size: 10 * 1024 * 1024,       // 10mb
-            segment_max_size: 4 * 1024 * 1024 * 1024,      // 4gb
-        }
-    }
-}
-
-struct DirectoryStore {
-    config: DirectoryConfig,
+pub struct DirectoryChainStore {
+    config: DirectoryChainStoreConfig,
     directory: PathBuf,
     segments: Vec<DirectorySegment>,
 }
 
-impl DirectoryStore {
-    fn create(config: DirectoryConfig, directory_path: &Path) -> Result<DirectoryStore, Error> {
+impl DirectoryChainStore {
+    pub fn create(
+        config: DirectoryChainStoreConfig,
+        directory_path: &Path,
+    ) -> Result<DirectoryChainStore, Error> {
         if !directory_path.exists() {
             return Err(Error::UnexpectedState(format!(
                 "Tried to create directory at {:?}, but it didn't exist",
@@ -59,14 +46,17 @@ impl DirectoryStore {
             )));
         }
 
-        Ok(DirectoryStore {
+        Ok(DirectoryChainStore {
             config,
             directory: directory_path.to_path_buf(),
             segments: Vec::new(),
         })
     }
 
-    fn open(config: DirectoryConfig, directory_path: &Path) -> Result<DirectoryStore, Error> {
+    pub fn open(
+        config: DirectoryChainStoreConfig,
+        directory_path: &Path,
+    ) -> Result<DirectoryChainStore, Error> {
         if !directory_path.exists() {
             return Err(Error::UnexpectedState(format!(
                 "Tried to open directory at {:?}, but it didn't exist",
@@ -94,7 +84,7 @@ impl DirectoryStore {
         }
         segments.sort_by(|a, b| a.first_block_offset.cmp(&b.first_block_offset));
 
-        Ok(DirectoryStore {
+        Ok(DirectoryChainStore {
             config,
             directory: directory_path.to_path_buf(),
             segments,
@@ -132,12 +122,17 @@ impl DirectoryStore {
     }
 }
 
-impl Store for DirectoryStore {
-    fn write_block<B, S>(&mut self, block: &B, block_signatures: &S) -> Result<BlockOffset, Error>
-    where
-        B: framed::TypedFrame<block::Owned>,
-        S: framed::TypedFrame<block_signatures::Owned>,
-    {
+impl ChainStore for DirectoryChainStore {
+    fn segments(&self) -> Vec<Segment> {
+        self.segments
+            .iter()
+            .map(|segment| Segment {
+                range: segment.offset_range(),
+            })
+            .collect()
+    }
+
+    fn write_block<B: Block>(&mut self, block: &B) -> Result<BlockOffset, Error> {
         let (block_segment, written_in_segment) = {
             let need_new_segment = {
                 match self.segments.last() {
@@ -147,12 +142,7 @@ impl Store for DirectoryStore {
             };
 
             if need_new_segment {
-                let segment = DirectorySegment::create(
-                    self.config,
-                    &self.directory,
-                    block,
-                    block_signatures,
-                )?;
+                let segment = DirectorySegment::create(self.config, &self.directory, block)?;
                 self.segments.push(segment);
             }
 
@@ -161,20 +151,13 @@ impl Store for DirectoryStore {
 
         // when creating new segment, blocks get written right away
         if !written_in_segment {
-            block_segment.write_block(block, block_signatures)?;
+            block_segment.write_block(block)?;
         }
 
         Ok(block_segment.next_block_offset)
     }
 
-    fn available_segments(&self) -> Vec<Range<BlockOffset>> {
-        self.segments
-            .iter()
-            .map(|segment| segment.offset_range())
-            .collect()
-    }
-
-    fn block_iter(&self, from_offset: BlockOffset) -> Result<StoredBlockIterator, Error> {
+    fn blocks_iter(&self, from_offset: BlockOffset) -> Result<StoredBlockIterator, Error> {
         Ok(Box::new(DirectoryBlockIterator {
             directory: self,
             current_offset: from_offset,
@@ -185,7 +168,7 @@ impl Store for DirectoryStore {
         }))
     }
 
-    fn block_iter_reverse(
+    fn blocks_iter_reverse(
         &self,
         from_next_offset: BlockOffset,
     ) -> Result<StoredBlockIterator, Error> {
@@ -199,7 +182,7 @@ impl Store for DirectoryStore {
 
         Ok(Box::new(DirectoryBlockIterator {
             directory: self,
-            current_offset: last_block.get_offset()?,
+            current_offset: last_block.offset,
             current_segment: None,
             last_error: None,
             reverse: true,
@@ -207,7 +190,7 @@ impl Store for DirectoryStore {
         }))
     }
 
-    fn get_block(&self, offset: BlockOffset) -> Result<StoredBlock, Error> {
+    fn get_block(&self, offset: BlockOffset) -> Result<BlockRef, Error> {
         let segment = self.get_segment_for_block_offset(offset).ok_or_else(|| {
             Error::OutOfBound(format!("No segment has block with offset {}", offset))
         })?;
@@ -215,7 +198,7 @@ impl Store for DirectoryStore {
         segment.get_block(offset)
     }
 
-    fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<StoredBlock, Error> {
+    fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<BlockRef, Error> {
         let segment = self
             .get_segment_for_next_block_offset(next_offset)
             .ok_or_else(|| {
@@ -226,6 +209,25 @@ impl Store for DirectoryStore {
             })?;
 
         segment.get_block_from_next_offset(next_offset)
+    }
+
+    fn get_last_block(&self) -> Result<Option<BlockRef>, Error> {
+        let last_segment = if let Some(last_segment) = self.segments.last() {
+            last_segment
+        } else {
+            return Ok(None);
+        };
+
+        let last_block = last_segment.get_block_from_next_offset(last_segment.next_block_offset)?;
+        Ok(Some(last_block))
+    }
+
+    fn get_block_by_operation_id(
+        &self,
+        _operation_id: OperationID,
+    ) -> Result<Option<BlockRef>, Error> {
+        // TODO: Implement index by operation id: https://github.com/appaquet/exocore/issues/43
+        Ok(None)
     }
 
     fn truncate_from_offset(&mut self, offset: BlockOffset) -> Result<(), Error> {
@@ -254,8 +256,31 @@ impl Store for DirectoryStore {
     }
 }
 
+///
+/// Configuration for directory based chain persistence.
+///
+#[derive(Copy, Clone, Debug)]
+pub struct DirectoryChainStoreConfig {
+    pub segment_over_allocate_size: u64,
+    pub segment_min_free_size: u64,
+    pub segment_max_size: u64,
+}
+
+impl Default for DirectoryChainStoreConfig {
+    fn default() -> Self {
+        DirectoryChainStoreConfig {
+            segment_over_allocate_size: 300 * 1024 * 1024, // 300mb
+            segment_min_free_size: 10 * 1024 * 1024,       // 10mb
+            segment_max_size: 4 * 1024 * 1024 * 1024,      // 4gb
+        }
+    }
+}
+
+///
+/// Iterator over blocks stored in this directory based chain persistence.
+///
 struct DirectoryBlockIterator<'pers> {
-    directory: &'pers DirectoryStore,
+    directory: &'pers DirectoryChainStore,
     current_offset: BlockOffset,
     current_segment: Option<&'pers DirectorySegment>,
     last_error: Option<Error>,
@@ -264,7 +289,7 @@ struct DirectoryBlockIterator<'pers> {
 }
 
 impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
-    type Item = StoredBlock<'pers>;
+    type Item = BlockRef<'pers>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.done {
@@ -323,30 +348,30 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
     }
 }
 
+///
+/// A segment of the chain, stored in its own file (`segment_file`) and that should not exceed a size
+/// specified by configuration.
+///
+/// As mmap can only accessed allocated space in the file, we need to pre-allocate space in the file.
+/// When a block would exceed this pre-allocated space, we re-size and re-open the file.
+///
 struct DirectorySegment {
-    config: DirectoryConfig,
+    config: DirectoryChainStoreConfig,
     first_block_offset: BlockOffset,
     segment_path: PathBuf,
     segment_file: SegmentFile,
-    last_block_offset: BlockOffset,
     next_block_offset: BlockOffset,
     next_file_offset: usize,
 }
 
 impl DirectorySegment {
-    fn create<B, S>(
-        config: DirectoryConfig,
+    fn create<B: Block>(
+        config: DirectoryChainStoreConfig,
         directory: &Path,
         block: &B,
-        block_sigs: &S,
-    ) -> Result<DirectorySegment, Error>
-    where
-        B: framed::TypedFrame<block::Owned>,
-        S: framed::TypedFrame<block_signatures::Owned>,
-    {
-        let block_reader = block.get_typed_reader().unwrap();
+    ) -> Result<DirectorySegment, Error> {
+        let block_reader = block.block().get_typed_reader().unwrap();
         let first_block_offset = block_reader.get_offset();
-        let last_block_offset = first_block_offset;
 
         let segment_path = Self::segment_path(directory, first_block_offset);
         if segment_path.exists() {
@@ -361,23 +386,22 @@ impl DirectorySegment {
             directory, first_block_offset
         );
         let mut segment_file = SegmentFile::open(&segment_path, config.segment_over_allocate_size)?;
-        block.copy_into(&mut segment_file.mmap);
-        block_sigs.copy_into(&mut segment_file.mmap[block.frame_size()..]);
-        let written_data_size = block.frame_size() + block_sigs.frame_size();
+        block.copy_data_into(&mut segment_file.mmap[0..]);
+        let written_data_size = block.total_size();
 
         Ok(DirectorySegment {
             config,
             first_block_offset,
             segment_path,
             segment_file,
-            last_block_offset,
             next_block_offset: first_block_offset + written_data_size as BlockOffset,
             next_file_offset: written_data_size,
         })
     }
 
+    #[cfg(test)]
     fn open_with_first_offset(
-        config: DirectoryConfig,
+        config: DirectoryChainStoreConfig,
         directory: &Path,
         first_offset: BlockOffset,
     ) -> Result<DirectorySegment, Error> {
@@ -394,61 +418,39 @@ impl DirectorySegment {
         Ok(segment)
     }
 
-    fn open(config: DirectoryConfig, segment_path: &Path) -> Result<DirectorySegment, Error> {
+    fn open(
+        config: DirectoryChainStoreConfig,
+        segment_path: &Path,
+    ) -> Result<DirectorySegment, Error> {
         info!("Opening segment at {:?}", segment_path);
 
         let segment_file = SegmentFile::open(&segment_path, 0)?;
 
         // read first block to validate it has the same offset as segment
-        let first_block_offset = {
-            let framed_message = framed::SliceFrame::new(&segment_file.mmap).map_err(|err| {
-                error!(
-                    "Couldn't read first block from segment file {:?}: {:?}",
-                    segment_path, err
-                );
-                err
-            })?;
-            let first_block = framed_message.get_typed_reader::<block::Owned>()?;
-            first_block.get_offset()
-        };
+        let first_block = BlockRef::new(&segment_file.mmap[..]).map_err(|err| {
+            error!(
+                "Couldn't read first block from segment file {:?}: {:?}",
+                segment_path, err
+            );
+            err
+        })?;
 
         // iterate through segments and find the last block and its offset
-        let (last_block_offset, next_block_offset, next_file_offset) = {
-            let mut last_block_file_offset = None;
-            let block_iter = FramesIterator::new(&segment_file.mmap)
-                .filter(|msg| msg.framed_message.message_type() == block::Owned::message_type());
-            for message in block_iter {
-                last_block_file_offset = Some(message.offset);
-            }
+        let blocks_iterator = ChainBlockIterator::new(&segment_file.mmap[..]);
+        let last_block = blocks_iterator.last().ok_or_else(|| {
+            Error::Integrity(
+                "Couldn't find last block of segment: no blocks returned by iterator".to_string(),
+            )
+        })?;
 
-            match last_block_file_offset {
-                Some(file_offset) => {
-                    let block_message = framed::SliceFrame::new(&segment_file.mmap[file_offset..])?;
-                    let block_reader = block_message.get_typed_reader::<block::Owned>()?;
-                    let sigs_offset = file_offset + block_message.frame_size();
-                    let sigs_message = framed::SliceFrame::new(&segment_file.mmap[sigs_offset..])?;
-
-                    let written_data_size = block_message.frame_size() + sigs_message.frame_size();
-                    (
-                        block_reader.get_offset(),
-                        block_reader.get_offset() + written_data_size as BlockOffset,
-                        file_offset + written_data_size,
-                    )
-                }
-                _ => {
-                    return Err(Error::Integrity(format!(
-                        "Couldn't find last block of segment: no blocks returned by iterator"
-                    )));
-                }
-            }
-        };
+        let next_block_offset = last_block.offset + last_block.total_size() as BlockOffset;
+        let next_file_offset = (next_block_offset - first_block.offset) as usize;
 
         Ok(DirectorySegment {
             config,
-            first_block_offset,
+            first_block_offset: first_block.offset,
             segment_path: segment_path.to_path_buf(),
             segment_file,
-            last_block_offset,
             next_block_offset,
             next_file_offset,
         })
@@ -478,35 +480,28 @@ impl DirectorySegment {
         Ok(())
     }
 
-    fn write_block<B, S>(&mut self, block: &B, block_sigs: &S) -> Result<(), Error>
-    where
-        B: framed::TypedFrame<block::Owned>,
-        S: framed::TypedFrame<block_signatures::Owned>,
-    {
+    fn write_block<B: Block>(&mut self, block: &B) -> Result<(), Error> {
         let next_file_offset = self.next_file_offset;
         let next_block_offset = self.next_block_offset;
-        let block_size = block.frame_size();
-        let sigs_size = block_sigs.frame_size();
+        let block_size = block.total_size();
 
-        let block_reader = block.get_typed_reader()?;
-        let block_offset = block_reader.get_offset();
+        let block_offset = block.offset();
         if next_block_offset != block_offset {
             return Err(Error::Integrity(format!("Trying to write a block at an offset that wasn't next offset: next_block_offset={} block_offset={}", next_block_offset, block_offset)));
         }
 
         {
-            self.ensure_file_size(block_size + sigs_size)?;
-            block.copy_into(&mut self.segment_file.mmap[next_file_offset..]);
-            block_sigs.copy_into(&mut self.segment_file.mmap[next_file_offset + block_size..]);
+            self.ensure_file_size(block_size)?;
+            block.copy_data_into(&mut self.segment_file.mmap[next_file_offset..]);
         }
 
-        self.next_file_offset += block_size + sigs_size;
-        self.next_block_offset += (block_size + sigs_size) as BlockOffset;
+        self.next_file_offset += block_size;
+        self.next_block_offset += block_size as BlockOffset;
 
         Ok(())
     }
 
-    fn get_block(&self, offset: BlockOffset) -> Result<StoredBlock, Error> {
+    fn get_block(&self, offset: BlockOffset) -> Result<BlockRef, Error> {
         let first_block_offset = self.first_block_offset;
         if offset < first_block_offset {
             return Err(Error::OutOfBound(format!(
@@ -523,16 +518,10 @@ impl DirectorySegment {
         }
 
         let block_file_offset = (offset - first_block_offset) as usize;
-        let block = framed::TypedSliceFrame::new(&self.segment_file.mmap[block_file_offset..])?;
-
-        let signatures_file_offset = block_file_offset + block.frame_size();
-        let signatures =
-            framed::TypedSliceFrame::new(&self.segment_file.mmap[signatures_file_offset..])?;
-
-        Ok(StoredBlock { block, signatures })
+        BlockRef::new(&self.segment_file.mmap[block_file_offset..])
     }
 
-    fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<StoredBlock, Error> {
+    fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<BlockRef, Error> {
         let first_block_offset = self.first_block_offset;
         if next_offset < first_block_offset {
             return Err(Error::OutOfBound(format!(
@@ -553,16 +542,38 @@ impl DirectorySegment {
             &self.segment_file.mmap[..],
             next_file_offset,
         )?;
+        let signatures_reader: block_signatures::Reader = signatures.get_typed_reader()?;
         let signatures_offset = next_file_offset - signatures.frame_size();
+
+        let operations_size = signatures_reader.get_operations_size() as usize;
+        if operations_size > signatures_offset {
+            return Err(Error::OutOfBound(format!(
+                "Tried to read block from next offset {}, but its operations size would exceed beginning of file (operations_size={} signatures_offset={})",
+                next_offset, operations_size, signatures_offset,
+            )));
+        }
+
+        let operations_offset = signatures_offset - operations_size;
+        let operations_data =
+            &self.segment_file.mmap[operations_offset..operations_offset + operations_size];
 
         let block = framed::TypedSliceFrame::new_from_next_offset(
             &self.segment_file.mmap[..],
-            signatures_offset,
+            operations_offset,
         )?;
 
-        Ok(StoredBlock { block, signatures })
+        let offset = first_block_offset + (signatures_offset as BlockOffset)
+            - (block.frame_size() as BlockOffset)
+            - (operations_size as BlockOffset);
+        Ok(BlockRef {
+            offset,
+            operations_data,
+            block,
+            signatures,
+        })
     }
 
+    #[cfg(test)]
     fn truncate_extra(&mut self) -> Result<(), Error> {
         let next_file_offset = self.next_file_offset as u64;
         self.segment_file.set_len(next_file_offset)
@@ -593,6 +604,11 @@ impl DirectorySegment {
     }
 }
 
+///
+/// Wraps a mmap'ed file stored on disk. As mmap cannot access content that is beyond the file size,
+/// the segment is over-allocated so that we can write via mmap. If writing would exceed the size,
+/// we re-allocate the file and re-open the mmap.
+///
 struct SegmentFile {
     path: PathBuf,
     file: File,
@@ -669,9 +685,45 @@ impl SegmentFile {
     }
 }
 
-impl From<framed::Error> for Error {
-    fn from(err: framed::Error) -> Self {
-        Error::Framing(err)
+///
+/// Block iterator over a slice of data.
+///
+struct ChainBlockIterator<'a> {
+    current_offset: usize,
+    data: &'a [u8],
+    last_error: Option<Error>,
+}
+
+impl<'a> ChainBlockIterator<'a> {
+    fn new(data: &'a [u8]) -> ChainBlockIterator<'a> {
+        ChainBlockIterator {
+            current_offset: 0,
+            data,
+            last_error: None,
+        }
+    }
+}
+
+impl<'a> Iterator for ChainBlockIterator<'a> {
+    type Item = BlockRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_offset >= self.data.len() {
+            return None;
+        }
+
+        let block_res = BlockRef::new(&self.data[self.current_offset..]);
+        match block_res {
+            Ok(block) => {
+                self.current_offset += block.total_size();
+                Some(block)
+            }
+            Err(Error::Framing(framed::Error::EOF(_))) => None,
+            Err(other) => {
+                self.last_error = Some(other);
+                None
+            }
+        }
     }
 }
 
@@ -681,223 +733,234 @@ mod tests {
 
     use super::*;
     use exocore_common::range;
-    use exocore_common::serialization::framed::{OwnedTypedFrame, TypedFrame};
-
-    use super::*;
+    use exocore_common::serialization::framed::TypedFrame;
+    use itertools::Itertools;
 
     #[test]
-    fn directory_chain_create_and_open() {
-        let dir = tempdir::TempDir::new("test").unwrap();
-        let config: DirectoryConfig = Default::default();
+    fn directory_chain_create_and_open() -> Result<(), failure::Error> {
+        let dir = tempdir::TempDir::new("test")?;
+        let config: DirectoryChainStoreConfig = Default::default();
 
         let init_segments = {
-            let mut directory_chain = DirectoryStore::create(config, dir.path()).unwrap();
+            let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
 
-            let block_msg = create_block(0);
-            let sig_msg = create_block_sigs();
-            let second_offset = directory_chain.write_block(&block_msg, &sig_msg).unwrap();
+            let block = create_block(0);
+            let second_offset = directory_chain.write_block(&block)?;
 
-            let block = directory_chain.get_block(0).unwrap();
-            assert_eq!(block.get_offset().unwrap(), 0);
-            let block = directory_chain
-                .get_block_from_next_offset(second_offset)
-                .unwrap();
-            assert_eq!(block.get_offset().unwrap(), 0);
+            let block = directory_chain.get_block(0)?;
+            assert_eq!(block.offset, 0);
+            let block = directory_chain.get_block_from_next_offset(second_offset)?;
+            assert_eq!(block.offset, 0);
 
-            let block_msg = create_block(second_offset);
-            let sig_msg = create_block_sigs();
-            let third_offset = directory_chain.write_block(&block_msg, &sig_msg).unwrap();
-            let block = directory_chain.get_block(second_offset).unwrap();
-            assert_eq!(block.get_offset().unwrap(), second_offset);
-            let block = directory_chain
-                .get_block_from_next_offset(third_offset)
-                .unwrap();
-            assert_eq!(block.get_offset().unwrap(), second_offset);
+            let block = create_block(second_offset);
+            let third_offset = directory_chain.write_block(&block)?;
+            let block = directory_chain.get_block(second_offset)?;
+            assert_eq!(block.offset, second_offset);
+            let block = directory_chain.get_block_from_next_offset(third_offset)?;
+            assert_eq!(block.offset, second_offset);
 
-            let segments = directory_chain.available_segments();
-            let data_size = ((block_msg.frame_size() + sig_msg.frame_size()) * 2) as BlockOffset;
-            assert_eq!(segments, vec![0..data_size]);
+            let segments = directory_chain.segments();
+            let data_size = (block.total_size() * 2) as BlockOffset;
+            assert_eq!(
+                segments,
+                vec![Segment {
+                    range: 0..data_size
+                }]
+            );
             segments
         };
 
         {
             // already exists
-            assert!(DirectoryStore::create(config, dir.path()).is_err());
+            assert!(DirectoryChainStore::create(config, dir.path()).is_err());
         }
 
         {
-            let directory_chain = DirectoryStore::open(config, dir.path()).unwrap();
-            assert_eq!(directory_chain.available_segments(), init_segments);
+            let directory_chain = DirectoryChainStore::open(config, dir.path())?;
+            assert_eq!(directory_chain.segments(), init_segments);
         }
+
+        Ok(())
     }
 
     #[test]
-    fn directory_chain_write_until_second_segment() {
-        let dir = tempdir::TempDir::new("test").unwrap();
-        let mut config: DirectoryConfig = Default::default();
-        config.segment_max_size = 100_000;
+    fn directory_chain_write_until_second_segment() -> Result<(), failure::Error> {
+        let dir = tempdir::TempDir::new("test")?;
+        let mut config: DirectoryChainStoreConfig = Default::default();
+        config.segment_max_size = 300_000;
 
-        fn validate_directory(directory_chain: &DirectoryStore) {
-            let segments = directory_chain.available_segments();
+        fn validate_directory(directory_chain: &DirectoryChainStore) -> Result<(), failure::Error> {
+            let segments = directory_chain
+                .segments()
+                .iter()
+                .map(|seg| seg.range.clone())
+                .collect_vec();
             assert!(range::are_continuous(segments.iter()));
             assert_eq!(segments.len(), 2);
 
-            let block = directory_chain.get_block(0).unwrap();
-            assert_eq!(block.get_offset().unwrap(), 0);
+            let block = directory_chain.get_block(0)?;
+            assert_eq!(block.offset, 0);
 
-            let block = directory_chain.get_block(segments[0].end).unwrap();
-            assert_eq!(block.get_offset().unwrap(), segments[0].end);
+            let block = directory_chain.get_block(segments[0].end)?;
+            assert_eq!(block.offset, segments[0].end);
 
-            let block = directory_chain
-                .get_block_from_next_offset(segments[0].end)
-                .unwrap();
-            assert_eq!(block.next_offset().unwrap(), segments[0].end);
+            let block = directory_chain.get_block_from_next_offset(segments[0].end)?;
+            assert_eq!(block.next_offset(), segments[0].end);
 
-            let block = directory_chain
-                .get_block_from_next_offset(segments[0].end)
-                .unwrap();
-            assert_eq!(block.next_offset().unwrap(), segments[0].end);
+            let block = directory_chain.get_block_from_next_offset(segments[0].end)?;
+            assert_eq!(block.next_offset(), segments[0].end);
 
-            let last_block = directory_chain
-                .get_block_from_next_offset(segments[1].end)
-                .unwrap();
+            let last_block = directory_chain.get_block_from_next_offset(segments[1].end)?;
 
-            let last_block_offset = last_block.get_offset().unwrap();
-            let next_block_offset = last_block.next_offset().unwrap();
+            let last_block_offset = last_block.offset;
+            let next_block_offset = last_block.next_offset();
             assert_eq!(next_block_offset, segments[1].end);
 
             // validate data using forward and reverse iterators
-            let mut iterator = directory_chain.block_iter(0).unwrap();
+            let iterator = directory_chain.blocks_iter(0)?;
             validate_iterator(iterator, 1000, 0, last_block_offset, false);
 
             let next_block_offset = segments.last().unwrap().end;
-            let mut reverse_iterator = directory_chain
-                .block_iter_reverse(next_block_offset)
-                .unwrap();
+            let reverse_iterator = directory_chain.blocks_iter_reverse(next_block_offset)?;
             validate_iterator(reverse_iterator, 1000, last_block_offset, 0, true);
+
+            Ok(())
         }
 
         let init_segments = {
-            let mut directory_chain = DirectoryStore::create(config, dir.path()).unwrap();
+            let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
 
             append_blocks_to_directory(&mut directory_chain, 1000, 0);
-            validate_directory(&directory_chain);
+            validate_directory(&directory_chain)?;
 
-            directory_chain.available_segments()
+            directory_chain.segments()
         };
 
         {
-            let directory_chain = DirectoryStore::open(config, dir.path()).unwrap();
-            assert_eq!(directory_chain.available_segments(), init_segments);
+            let directory_chain = DirectoryChainStore::open(config, dir.path())?;
+            assert_eq!(directory_chain.segments(), init_segments);
 
-            validate_directory(&directory_chain);
+            validate_directory(&directory_chain)?;
         }
+
+        Ok(())
     }
 
     #[test]
-    fn directory_chain_truncate() {
-        let mut config: DirectoryConfig = Default::default();
+    fn directory_chain_truncate() -> Result<(), failure::Error> {
+        let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 1000;
+        config.segment_over_allocate_size = 1500;
 
         // we cutoff the directory at different position to make sure of its integrity
         for cutoff in 1..50 {
-            let dir = tempdir::TempDir::new("test").unwrap();
+            let dir = tempdir::TempDir::new("test")?;
 
             let (segments_before, block_n_offset, block_n_plus_offset) = {
-                let mut directory_chain = DirectoryStore::create(config, dir.path()).unwrap();
+                let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
                 append_blocks_to_directory(&mut directory_chain, 50, 0);
-                let segments_before = directory_chain.available_segments();
+                let segments_before = directory_chain
+                    .segments()
+                    .iter()
+                    .map(|seg| seg.range.clone())
+                    .collect_vec();
 
-                let block_n = directory_chain
-                    .block_iter(0)
-                    .unwrap()
-                    .skip(cutoff - 1)
-                    .next()
-                    .unwrap();
-                let block_n_offset = block_n.get_offset().unwrap();
-                let block_n_plus_offset = block_n.next_offset().unwrap();
+                let block_n = directory_chain.blocks_iter(0)?.nth(cutoff - 1).unwrap();
+                let block_n_offset = block_n.offset;
+                let block_n_plus_offset = block_n.next_offset();
 
-                directory_chain
-                    .truncate_from_offset(block_n_plus_offset)
-                    .unwrap();
+                directory_chain.truncate_from_offset(block_n_plus_offset)?;
 
-                let segments_after = directory_chain.available_segments();
+                let segments_after = directory_chain
+                    .segments()
+                    .iter()
+                    .map(|seg| seg.range.clone())
+                    .collect_vec();
                 assert_ne!(segments_before, segments_after);
                 assert_eq!(segments_after.last().unwrap().end, block_n_plus_offset);
+                assert_eq!(
+                    directory_chain.get_last_block()?.unwrap().offset,
+                    block_n_offset
+                );
 
-                let mut iter = directory_chain.block_iter(0).unwrap();
+                let iter = directory_chain.blocks_iter(0)?;
                 validate_iterator(iter, cutoff, 0, block_n_offset, false);
 
-                let mut iter_reverse = directory_chain
-                    .block_iter_reverse(block_n_plus_offset)
-                    .unwrap();
+                let iter_reverse = directory_chain.blocks_iter_reverse(block_n_plus_offset)?;
                 validate_iterator(iter_reverse, cutoff, block_n_offset, 0, true);
 
                 (segments_before, block_n_offset, block_n_plus_offset)
             };
 
             {
-                let mut directory_chain = DirectoryStore::open(config, dir.path()).unwrap();
+                let directory_chain = DirectoryChainStore::open(config, dir.path())?;
+                let segments_after = directory_chain
+                    .segments()
+                    .iter()
+                    .map(|seg| seg.range.clone())
+                    .collect_vec();
 
-                let segments_after = directory_chain.available_segments();
                 assert_ne!(segments_before, segments_after);
                 assert_eq!(segments_after.last().unwrap().end, block_n_plus_offset);
 
-                let mut iter = directory_chain.block_iter(0).unwrap();
+                let iter = directory_chain.blocks_iter(0)?;
                 validate_iterator(iter, cutoff, 0, block_n_offset, false);
 
-                let mut iter_reverse = directory_chain
-                    .block_iter_reverse(block_n_plus_offset)
-                    .unwrap();
+                let iter_reverse = directory_chain.blocks_iter_reverse(block_n_plus_offset)?;
                 validate_iterator(iter_reverse, cutoff, block_n_offset, 0, true);
+
+                assert_eq!(
+                    directory_chain.get_last_block()?.unwrap().offset,
+                    block_n_offset
+                );
             }
         }
+
+        Ok(())
     }
 
     #[test]
-    fn directory_chain_truncate_all() {
-        let mut config: DirectoryConfig = Default::default();
+    fn directory_chain_truncate_all() -> Result<(), failure::Error> {
+        let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 3000;
-        let dir = tempdir::TempDir::new("test").unwrap();
+        config.segment_over_allocate_size = 3500;
+        let dir = tempdir::TempDir::new("test")?;
 
         {
-            let mut directory_chain = DirectoryStore::create(config, dir.path()).unwrap();
+            let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
             append_blocks_to_directory(&mut directory_chain, 100, 0);
 
-            directory_chain.truncate_from_offset(0).unwrap();
+            directory_chain.truncate_from_offset(0)?;
 
-            let segments_after = directory_chain.available_segments();
+            let segments_after = directory_chain.segments();
             assert!(segments_after.is_empty());
+            assert!(directory_chain.get_last_block()?.is_none());
         }
 
         {
-            let mut directory_chain = DirectoryStore::open(config, dir.path()).unwrap();
-            let segments = directory_chain.available_segments();
+            let directory_chain = DirectoryChainStore::open(config, dir.path())?;
+            let segments = directory_chain.segments();
             assert!(segments.is_empty());
+            assert!(directory_chain.get_last_block()?.is_none());
         }
+
+        Ok(())
     }
 
     #[test]
-    fn directory_segment_create_and_open() {
-        let dir = tempdir::TempDir::new("test").unwrap();
+    fn directory_segment_create_and_open() -> Result<(), failure::Error> {
+        let dir = tempdir::TempDir::new("test")?;
 
         let segment_id = 1234;
-        let block_msg = create_block(1234);
-        let sig_msg = create_block_sigs();
+        let block = create_block(1234);
 
         {
-            let segment =
-                DirectorySegment::create(Default::default(), dir.path(), &block_msg, &sig_msg)
-                    .unwrap();
+            let segment = DirectorySegment::create(Default::default(), dir.path(), &block)?;
             assert_eq!(segment.first_block_offset, 1234);
-            assert_eq!(segment.last_block_offset, 1234);
+            assert_eq!(segment.next_file_offset as usize, block.total_size());
             assert_eq!(
-                segment.next_file_offset,
-                block_msg.frame_size() + sig_msg.frame_size()
-            );
-            assert_eq!(
-                segment.next_block_offset,
-                1234 + (block_msg.frame_size() + sig_msg.frame_size()) as BlockOffset
+                segment.next_block_offset as usize,
+                1234 + block.total_size()
             );
         }
 
@@ -906,105 +969,89 @@ mod tests {
                 Default::default(),
                 dir.path(),
                 segment_id,
-            )
-            .unwrap();
+            )?;
             assert_eq!(segment.first_block_offset, 1234);
-            assert_eq!(segment.last_block_offset, 1234);
+            assert_eq!(segment.next_file_offset as usize, block.total_size());
             assert_eq!(
-                segment.next_file_offset,
-                block_msg.frame_size() + sig_msg.frame_size()
-            );
-            assert_eq!(
-                segment.next_block_offset,
-                1234 + (block_msg.frame_size() + sig_msg.frame_size()) as BlockOffset
+                segment.next_block_offset as usize,
+                1234 + block.total_size()
             );
         }
+
+        Ok(())
     }
 
     #[test]
-    fn directory_segment_create_already_exist() {
-        let dir = tempdir::TempDir::new("test").unwrap();
+    fn directory_segment_create_already_exist() -> Result<(), failure::Error> {
+        let dir = tempdir::TempDir::new("test")?;
 
         {
-            let block_msg = create_block(1234);
-            let sig_msg = create_block_sigs();
-            let _segment =
-                DirectorySegment::create(Default::default(), dir.path(), &block_msg, &sig_msg)
-                    .unwrap();
+            let block = create_block(1234);
+            let _segment = DirectorySegment::create(Default::default(), dir.path(), &block)?;
         }
 
         {
-            let block_msg = create_block(1234);
-            let sig_msg = create_block_sigs();
-            assert!(
-                DirectorySegment::create(Default::default(), dir.path(), &block_msg, &sig_msg)
-                    .is_err()
-            );
+            let block = create_block(1234);
+            assert!(DirectorySegment::create(Default::default(), dir.path(), &block).is_err());
         }
+
+        Ok(())
     }
 
     #[test]
-    fn directory_segment_append_block() {
-        let dir = tempdir::TempDir::new("test").unwrap();
+    fn directory_segment_append_block() -> Result<(), failure::Error> {
+        let dir = tempdir::TempDir::new("test")?;
 
         let offset1 = 0;
         let block = create_block(offset1);
-        let block_sigs = create_block_sigs();
-        let mut segment =
-            DirectorySegment::create(Default::default(), dir.path(), &block, &block_sigs).unwrap();
+        let mut segment = DirectorySegment::create(Default::default(), dir.path(), &block)?;
         {
-            let block = segment.get_block(offset1).unwrap();
-            assert_eq!(block.get_offset().unwrap(), offset1);
+            let block = segment.get_block(offset1)?;
+            assert_eq!(block.offset, offset1);
         }
 
-        let offset2 = offset1 + (block.frame_size() + block_sigs.frame_size()) as u64;
+        let offset2 = offset1 + block.total_size() as BlockOffset;
         assert_eq!(segment.next_block_offset, offset2);
         let block = create_block(offset2);
-        let block_sigs = create_block_sigs();
-        segment.write_block(&block, &block_sigs).unwrap();
+        segment.write_block(&block)?;
         {
-            let block = segment.get_block(offset2).unwrap();
-            assert_eq!(block.get_offset().unwrap(), offset2);
+            let block = segment.get_block(offset2)?;
+            assert_eq!(block.offset, offset2);
         }
 
-        let offset3 = offset2 + (block.frame_size() + block_sigs.frame_size()) as u64;
+        let offset3 = offset2 + block.total_size() as BlockOffset;
         assert_eq!(segment.next_block_offset, offset3);
         let block = create_block(offset3);
-        let block_sigs = create_block_sigs();
-        segment.write_block(&block, &block_sigs).unwrap();
+        segment.write_block(&block)?;
         {
-            let block = segment.get_block(offset3).unwrap();
-            assert_eq!(block.get_offset().unwrap(), offset3);
+            let block = segment.get_block(offset3)?;
+            assert_eq!(block.offset, offset3);
         }
 
         assert!(segment.get_block(10).is_err());
         assert!(segment.get_block(offset3 + 10).is_err());
 
         {
-            let last_block = segment
-                .get_block_from_next_offset(segment.next_block_offset)
-                .unwrap();
-            assert_eq!(last_block.get_offset().unwrap(), offset3);
+            let last_block = segment.get_block_from_next_offset(segment.next_block_offset)?;
+            assert_eq!(last_block.offset, offset3);
         }
+
+        Ok(())
     }
 
     #[test]
-    fn directory_segment_non_zero_offset_write() {
-        let dir = tempdir::TempDir::new("test").unwrap();
+    fn directory_segment_non_zero_offset_write() -> Result<(), failure::Error> {
+        let dir = tempdir::TempDir::new("test")?;
         let config = Default::default();
         let segment_first_block_offset = 1234;
 
         {
             let first_block = create_block(segment_first_block_offset);
-            let first_block_sigs = create_block_sigs();
-            let mut segment =
-                DirectorySegment::create(config, dir.path(), &first_block, &first_block_sigs)
-                    .unwrap();
+            let mut segment = DirectorySegment::create(config, dir.path(), &first_block)?;
             let next_block_offset = segment.next_block_offset;
             assert_eq!(
                 next_block_offset,
-                segment_first_block_offset
-                    + (first_block.frame_size() + first_block_sigs.frame_size()) as BlockOffset
+                segment_first_block_offset + first_block.total_size() as BlockOffset
             );
             append_blocks_to_segment(&mut segment, next_block_offset, 999);
         }
@@ -1014,8 +1061,7 @@ mod tests {
                 config,
                 dir.path(),
                 segment_first_block_offset,
-            )
-            .unwrap();
+            )?;
             assert!(segment.get_block(0).is_err());
             assert!(segment.get_block(1234).is_ok());
             assert!(segment.get_block(segment.next_block_offset).is_err());
@@ -1023,81 +1069,92 @@ mod tests {
                 .get_block_from_next_offset(segment.next_block_offset)
                 .is_ok());
 
-            let iter = framed::FramesIterator::new(&segment.segment_file.mmap[0..]);
-            assert_eq!(iter.count(), 2000); // blocks + sigs
+            let iter = ChainBlockIterator::new(&segment.segment_file.mmap[0..]);
+            assert_eq!(iter.count(), 1000);
         }
+
+        Ok(())
     }
 
     #[test]
-    fn directory_segment_grow_and_truncate() {
-        let mut config: DirectoryConfig = Default::default();
+    fn directory_segment_grow_and_truncate() -> Result<(), failure::Error> {
+        let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_over_allocate_size = 100_000;
 
-        let dir = tempdir::TempDir::new("test").unwrap();
+        let dir = tempdir::TempDir::new("test")?;
         let mut next_offset = 0;
 
         let block = create_block(next_offset);
-        let block_sigs = create_block_sigs();
-        let mut segment =
-            DirectorySegment::create(config, dir.path(), &block, &block_sigs).unwrap();
-        next_offset += (block.frame_size() + block_sigs.frame_size()) as u64;
+        let mut segment = DirectorySegment::create(config, dir.path(), &block)?;
+        next_offset += block.total_size() as u64;
+        assert_eq!(segment.next_block_offset, next_offset);
+        assert_eq!(segment.next_file_offset, block.total_size());
 
         let init_segment_size = segment.segment_file.current_size;
         append_blocks_to_segment(&mut segment, next_offset, 999);
         let end_segment_size = segment.segment_file.current_size;
+        let next_file_offset = segment.next_file_offset;
 
         assert_eq!(init_segment_size, 100_000);
         assert!(end_segment_size >= 200_000);
 
-        segment.truncate_extra().unwrap();
+        segment.truncate_extra()?;
 
         let truncated_segment_size = segment.segment_file.current_size;
-        assert!(truncated_segment_size < 200_000);
+        assert_eq!(truncated_segment_size, next_file_offset as u64);
 
-        let iter = framed::FramesIterator::new(&segment.segment_file.mmap[0..]);
-        assert_eq!(iter.count(), 2000); // blocks + sigs
+        let iter = ChainBlockIterator::new(&segment.segment_file.mmap[0..]);
+        assert_eq!(iter.count(), 1000);
+
+        Ok(())
     }
 
     #[test]
-    fn segment_file_create() {
-        let dir = tempdir::TempDir::new("test").unwrap();
+    fn segment_file_create() -> Result<(), failure::Error> {
+        let dir = tempdir::TempDir::new("test")?;
         let segment_path = dir.path().join("segment_0.seg");
 
-        let segment_file = SegmentFile::open(&segment_path, 1000).unwrap();
+        let segment_file = SegmentFile::open(&segment_path, 1000)?;
         assert_eq!(segment_file.current_size, 1000);
         drop(segment_file);
 
-        let mut segment_file = SegmentFile::open(&segment_path, 10).unwrap();
+        let mut segment_file = SegmentFile::open(&segment_path, 10)?;
         assert_eq!(segment_file.current_size, 1000);
 
-        segment_file.set_len(2000).unwrap();
+        segment_file.set_len(2000)?;
         assert_eq!(segment_file.current_size, 2000);
+
+        Ok(())
     }
 
-    fn create_block(offset: u64) -> OwnedTypedFrame<block::Owned> {
-        let mut block_msg_builder = framed::FrameBuilder::<block::Owned>::new();
-        {
-            let mut block_builder = block_msg_builder.get_builder_typed();
-            block_builder.set_offset(offset);
-        }
-        block_msg_builder.as_owned_unsigned_framed().unwrap()
-    }
+    fn create_block(offset: BlockOffset) -> BlockOwned {
+        let mut nodes = Nodes::new();
+        let node1 = Node::new("node1".to_string());
+        nodes.add(node1.clone());
 
-    fn create_block_sigs() -> OwnedTypedFrame<block_signatures::Owned> {
-        let mut block_msg_builder = framed::FrameBuilder::<block_signatures::Owned>::new();
-        block_msg_builder.as_owned_unsigned_framed().unwrap()
+        // only true for tests
+        let operation_id = offset as u64;
+        let operations =
+            vec![
+                crate::pending::PendingOperation::new_entry(operation_id, "node1", b"some_data")
+                    .as_owned_framed(node1.frame_signer())
+                    .unwrap(),
+            ];
+
+        let block_operations = BlockOperations::from_operations(operations.into_iter()).unwrap();
+        BlockOwned::new_with_prev_info(&nodes, &node1, offset, 0, 0, &[], 0, block_operations)
+            .unwrap()
     }
 
     fn append_blocks_to_directory(
-        directory_chain: &mut DirectoryStore,
+        directory_chain: &mut DirectoryChainStore,
         nb_blocks: usize,
         from_offset: BlockOffset,
     ) {
         let mut next_offset = from_offset;
         for _i in 0..nb_blocks {
-            let block_msg = create_block(next_offset);
-            let sig_msg = create_block_sigs();
-            next_offset = directory_chain.write_block(&block_msg, &sig_msg).unwrap();
+            let block = create_block(next_offset);
+            next_offset = directory_chain.write_block(&block).unwrap();
         }
     }
 
@@ -1117,6 +1174,8 @@ mod tests {
 
             let block_reader = stored_block.block.get_typed_reader().unwrap();
             let current_block_offset = block_reader.get_offset();
+            assert_eq!(stored_block.offset, current_block_offset);
+
             if first_block_offset.is_none() {
                 first_block_offset = Some(current_block_offset);
             }
@@ -1146,9 +1205,8 @@ mod tests {
         for _i in 0..nb_blocks {
             assert_eq!(next_offset, segment.next_block_offset);
             let block = create_block(next_offset);
-            let block_sigs = create_block_sigs();
-            segment.write_block(&block, &block_sigs).unwrap();
-            next_offset += (block.frame_size() + block_sigs.frame_size()) as u64;
+            segment.write_block(&block).unwrap();
+            next_offset += block.total_size() as u64;
         }
     }
 }
