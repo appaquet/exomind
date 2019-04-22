@@ -108,8 +108,11 @@ where
             node_id.clone(),
             config.pending_synchronizer_config,
         );
-        let chain_synchronizer =
-            chain_sync::ChainSynchronizer::new(node_id.clone(), config.chain_synchronizer_config, clock.clone());
+        let chain_synchronizer = chain_sync::ChainSynchronizer::new(
+            node_id.clone(),
+            config.chain_synchronizer_config,
+            clock.clone(),
+        );
         let commit_manager = commit_manager::CommitManager::new(
             node_id.clone(),
             config.commit_manager_config,

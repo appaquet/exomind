@@ -10,7 +10,7 @@ use exocore_common::serialization::protos::data_chain_capnp::{
 
 use crate::chain;
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
-use crate::chain::{Block, BlockOffset, BlockOwned, ChainStore, BlockDepth};
+use crate::chain::{Block, BlockDepth, BlockOffset, BlockOwned, ChainStore};
 use crate::engine::commit_manager::CommitManager;
 use crate::engine::pending_sync;
 use crate::engine::{chain_sync, SyncContext};
@@ -116,15 +116,16 @@ impl TestCluster {
     }
 
     pub fn chain_append_dummy(&mut self, node_idx: usize, count: usize, seed: u64) {
-        let (next_offset, next_depth) = self.chains[node_idx]
-            .get_last_block()
-            .unwrap()
-            .map_or((0, 0), |block| {
-                let block_reader =block.block().get_typed_reader().unwrap();
-                let block_depth = block_reader.get_depth();
+        let (next_offset, next_depth) =
+            self.chains[node_idx]
+                .get_last_block()
+                .unwrap()
+                .map_or((0, 0), |block| {
+                    let block_reader = block.block().get_typed_reader().unwrap();
+                    let block_depth = block_reader.get_depth();
 
-                (block.next_offset(), block_depth + 1)
-            });
+                    (block.next_offset(), block_depth + 1)
+                });
 
         self.chain_generate_dummy_from_offset(node_idx, next_offset, next_depth, count, seed);
     }
