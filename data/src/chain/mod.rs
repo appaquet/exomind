@@ -634,7 +634,7 @@ impl BlockSignature {
 ///
 /// Chain related errors
 ///
-#[derive(Debug, Clone, PartialEq, Fail)]
+#[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "The store is in an unexpected state: {}", _0)]
     UnexpectedState(String),
@@ -652,6 +652,10 @@ pub enum Error {
     SerializationNotInSchema(u16),
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
+    #[fail(display = "Error in directory chain store: {:?}", _0)]
+    DirectoryError(#[fail(cause)] directory::DirectoryError),
+    #[fail(display = "Try to lock a mutex that was poisoned")]
+    Poisoned,
     #[fail(display = "An error occurred: {}", _0)]
     Other(String),
 }
@@ -680,6 +684,18 @@ impl From<capnp::NotInSchema> for Error {
 impl From<capnp::Error> for Error {
     fn from(err: capnp::Error) -> Self {
         Error::Serialization(err.kind, err.description)
+    }
+}
+
+impl<T> From<std::sync::PoisonError<T>> for Error {
+    fn from(_err: std::sync::PoisonError<T>) -> Self {
+        Error::Poisoned
+    }
+}
+
+impl From<directory::DirectoryError> for Error {
+    fn from(err: directory::DirectoryError) -> Self {
+        Error::DirectoryError(err)
     }
 }
 

@@ -2,11 +2,15 @@ use std;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 
-use crate::chain::{Block, BlockOffset, BlockRef, ChainStore, Error, Segment, StoredBlockIterator};
 use exocore_common::serialization::protos::OperationID;
 use segment::DirectorySegment;
 
+use crate::chain::{Block, BlockOffset, BlockRef, ChainStore, Error, Segment, StoredBlockIterator};
+
+mod operations_index;
 mod segment;
+
+use operations_index::OperationsIndex;
 
 ///
 /// Directory based chain persistence. The chain is split in segments with configurable maximum size.
@@ -16,6 +20,7 @@ pub struct DirectoryChainStore {
     config: DirectoryChainStoreConfig,
     directory: PathBuf,
     segments: Vec<DirectorySegment>,
+    operations_index: Option<OperationsIndex>,
 }
 
 impl DirectoryChainStore {
@@ -44,10 +49,13 @@ impl DirectoryChainStore {
             )));
         }
 
+        let operations_index = OperationsIndex::create(config, directory_path)?;
+
         Ok(DirectoryChainStore {
             config,
             directory: directory_path.to_path_buf(),
             segments: Vec::new(),
+            operations_index: Some(operations_index),
         })
     }
 
@@ -82,11 +90,23 @@ impl DirectoryChainStore {
         }
         segments.sort_by(|a, b| a.first_block_offset().cmp(&b.first_block_offset()));
 
-        Ok(DirectoryChainStore {
+        let mut store = DirectoryChainStore {
             config,
             directory: directory_path.to_path_buf(),
             segments,
-        })
+            operations_index: None,
+        };
+
+        let operations_index = {
+            let mut operations_index = OperationsIndex::open(config, directory_path)?;
+            let last_index_offset = operations_index.last_indexed_block_offset();
+            let blocks_to_index = store.blocks_iter(last_index_offset)?;
+            operations_index.index_blocks(blocks_to_index)?;
+            operations_index
+        };
+        store.operations_index = Some(operations_index);
+
+        Ok(store)
     }
 
     fn get_segment_index_for_block_offset(&self, block_offset: BlockOffset) -> Option<usize> {
@@ -153,6 +173,12 @@ impl ChainStore for DirectoryChainStore {
         if !written_in_segment {
             block_segment.write_block(block)?;
         }
+
+        let operations_index = self
+            .operations_index
+            .as_mut()
+            .expect("Operations index was none, which shouldn't be possible");
+        operations_index.index_block(block)?;
 
         Ok(block_segment.next_block_offset())
     }
@@ -225,10 +251,19 @@ impl ChainStore for DirectoryChainStore {
 
     fn get_block_by_operation_id(
         &self,
-        _operation_id: OperationID,
+        operation_id: OperationID,
     ) -> Result<Option<BlockRef>, Error> {
-        // TODO: Implement index by operation id: https://github.com/appaquet/exocore/issues/43
-        Ok(None)
+        let operations_index = self
+            .operations_index
+            .as_ref()
+            .expect("Operations index was none, which shouldn't be possible");
+
+        if let Some(block_offset) = operations_index.get_operation_block(operation_id)? {
+            let block = self.get_block(block_offset)?;
+            Ok(Some(block))
+        } else {
+            Ok(None)
+        }
     }
 
     fn truncate_from_offset(&mut self, offset: BlockOffset) -> Result<(), Error> {
@@ -253,6 +288,8 @@ impl ChainStore for DirectoryChainStore {
             }
         }
 
+        // TODO: Need to truncate operations_index
+
         Ok(())
     }
 }
@@ -265,6 +302,7 @@ pub struct DirectoryChainStoreConfig {
     pub segment_over_allocate_size: u64,
     pub segment_min_free_size: u64,
     pub segment_max_size: u64,
+    pub operations_index_max_memory_items: usize,
 }
 
 impl Default for DirectoryChainStoreConfig {
@@ -273,6 +311,7 @@ impl Default for DirectoryChainStoreConfig {
             segment_over_allocate_size: 300 * 1024 * 1024, // 300mb
             segment_min_free_size: 10 * 1024 * 1024,       // 10mb
             segment_max_size: 4 * 1024 * 1024 * 1024,      // 4gb
+            operations_index_max_memory_items: 10000,
         }
     }
 }
@@ -349,17 +388,27 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
     }
 }
 
+///
+/// Directory chain store specific errors
+///
+#[derive(Debug, Fail)]
+pub enum DirectoryError {
+    #[fail(display = "Error reading operations index: {:?}", _0)]
+    OperationsIndexRead(extindex::ReaderError),
+}
+
 #[cfg(test)]
 pub mod tests {
     use itertools::Itertools;
     use tempdir;
 
+    use exocore_common::node::{Node, Nodes};
     use exocore_common::range;
     use exocore_common::serialization::framed::TypedFrame;
 
-    use super::*;
     use crate::chain::{Block, BlockOperations, BlockOwned};
-    use exocore_common::node::{Node, Nodes};
+
+    use super::*;
 
     #[test]
     fn directory_chain_create_and_open() -> Result<(), failure::Error> {
@@ -628,7 +677,7 @@ pub mod tests {
         nodes.add(node1.clone());
 
         // only true for tests
-        let operation_id = offset as u64;
+        let operation_id = offset as u64 + 1;
         let operations =
             vec![
                 crate::pending::PendingOperation::new_entry(operation_id, "node1", b"some_data")
@@ -636,8 +685,18 @@ pub mod tests {
                     .unwrap(),
             ];
 
+        let proposed_operation_id = offset as u64;
         let block_operations = BlockOperations::from_operations(operations.into_iter()).unwrap();
-        BlockOwned::new_with_prev_info(&nodes, &node1, offset, 0, 0, &[], 0, block_operations)
-            .unwrap()
+        BlockOwned::new_with_prev_info(
+            &nodes,
+            &node1,
+            offset,
+            0,
+            0,
+            &[],
+            proposed_operation_id,
+            block_operations,
+        )
+        .unwrap()
     }
 }
