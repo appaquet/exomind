@@ -20,6 +20,9 @@ pub struct DirectoryChainStore {
     config: DirectoryChainStoreConfig,
     directory: PathBuf,
     segments: Vec<DirectorySegment>,
+
+    // TODO: Optional because index needs the Store to be initialized to iterate
+    // TODO: To be solved in https://github.com/appaquet/exocore/issues/34
     operations_index: Option<OperationsIndex>,
 }
 
@@ -85,8 +88,10 @@ impl DirectoryChainStore {
                 )
             })?;
 
-            let segment = DirectorySegment::open(config, &path.path())?;
-            segments.push(segment);
+            if DirectorySegment::is_segment_file(&path.path()) {
+                let segment = DirectorySegment::open(config, &path.path())?;
+                segments.push(segment);
+            }
         }
         segments.sort_by(|a, b| a.first_block_offset().cmp(&b.first_block_offset()));
 
@@ -99,8 +104,8 @@ impl DirectoryChainStore {
 
         let operations_index = {
             let mut operations_index = OperationsIndex::open(config, directory_path)?;
-            let last_index_offset = operations_index.last_indexed_block_offset();
-            let blocks_to_index = store.blocks_iter(last_index_offset)?;
+            let next_index_offset = operations_index.next_expected_block_offset();
+            let blocks_to_index = store.blocks_iter(next_index_offset)?;
             operations_index.index_blocks(blocks_to_index)?;
             operations_index
         };
@@ -288,7 +293,17 @@ impl ChainStore for DirectoryChainStore {
             }
         }
 
-        // TODO: Need to truncate operations_index
+        // we need to take out the index because it needs a block iterator that depends on the store itself
+        // TODO: To be solved in https://github.com/appaquet/exocore/issues/34
+        let mut index = self
+            .operations_index
+            .take()
+            .expect("Operations index was none, which shouldn't be possible");
+        index.truncate_from_offset(offset)?;
+        let next_index_offset = index.next_expected_block_offset();
+        let blocks_to_index = self.blocks_iter(next_index_offset)?;
+        index.index_blocks(blocks_to_index)?;
+        self.operations_index = Some(index);
 
         Ok(())
     }
@@ -393,6 +408,8 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
 ///
 #[derive(Debug, Fail)]
 pub enum DirectoryError {
+    #[fail(display = "Error building operations index: {:?}", _0)]
+    OperationsIndexBuild(extindex::BuilderError),
     #[fail(display = "Error reading operations index: {:?}", _0)]
     OperationsIndexRead(extindex::ReaderError),
 }

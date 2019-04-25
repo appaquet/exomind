@@ -9,6 +9,7 @@ use exocore_common::serialization::protos::data_chain_capnp::block_signatures;
 use crate::chain::{Block, BlockOffset, BlockRef, ChainBlockIterator, Error};
 
 use super::DirectoryChainStoreConfig;
+use std::ffi::OsStr;
 
 ///
 /// A segment of the chain, stored in its own file (`segment_file`) and that should not exceed a size
@@ -254,14 +255,14 @@ impl DirectorySegment {
         Ok(())
     }
 
-    #[cfg(test)]
-    fn truncate_extra(&mut self) -> Result<(), Error> {
-        let next_file_offset = self.next_file_offset as u64;
-        self.segment_file.set_len(next_file_offset)
+    pub fn is_segment_file(path: &Path) -> bool {
+        path.file_name()
+            .and_then(OsStr::to_str)
+            .map_or(false, |filename| filename.starts_with("seg_"))
     }
 
     fn segment_path(directory: &Path, first_offset: BlockOffset) -> PathBuf {
-        directory.join(format!("seg_{}", first_offset))
+        directory.join(format!("seg_{}.bin", first_offset))
     }
 
     fn ensure_file_size(&mut self, write_size: usize) -> Result<(), Error> {
@@ -278,6 +279,12 @@ impl DirectorySegment {
         }
 
         Ok(())
+    }
+
+    #[cfg(test)]
+    fn truncate_extra(&mut self) -> Result<(), Error> {
+        let next_file_offset = self.next_file_offset as u64;
+        self.segment_file.set_len(next_file_offset)
     }
 }
 
