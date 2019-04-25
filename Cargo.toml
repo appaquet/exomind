@@ -18,6 +18,6 @@ members = [
 ]
 
 #[patch.crates-io]
-#extindex = { path = "./3rd/extindex" }
 #capnp = { path = "./3rd/capnproto-rust/capnp" }
 #extsort = { path = "./3rd/extsort" }
+#extindex = { path = "./3rd/extindex" }

@@ -475,6 +475,28 @@ pub mod tests {
     }
 
     #[test]
+    fn directory_chain_invalid_path() -> Result<(), failure::Error> {
+        let config: DirectoryChainStoreConfig = Default::default();
+
+        {
+            assert!(DirectoryChainStore::create(config, &PathBuf::from("/invalid/path")).is_err());
+        }
+
+        {
+            assert!(DirectoryChainStore::open(config, &PathBuf::from("/invalid/path")).is_err());
+        }
+
+        {
+            // directory should be empty
+            let dir = tempdir::TempDir::new("test")?;
+            std::fs::write(dir.path().join("some_file"), "hello")?;
+            assert!(DirectoryChainStore::create(config, dir.path()).is_err());
+        }
+
+        Ok(())
+    }
+
+    #[test]
     fn directory_chain_write_until_second_segment() -> Result<(), failure::Error> {
         let dir = tempdir::TempDir::new("test")?;
         let mut config: DirectoryChainStoreConfig = Default::default();
@@ -523,6 +545,7 @@ pub mod tests {
 
             append_blocks(&mut directory_chain, 1000, 0);
             validate_directory(&directory_chain)?;
+            validate_directory_operations_index(&directory_chain)?;
 
             directory_chain.segments()
         };
@@ -532,6 +555,7 @@ pub mod tests {
             assert_eq!(directory_chain.segments(), init_segments);
 
             validate_directory(&directory_chain)?;
+            validate_directory_operations_index(&directory_chain)?;
         }
 
         Ok(())
@@ -580,6 +604,8 @@ pub mod tests {
                 let iter_reverse = directory_chain.blocks_iter_reverse(block_n_plus_offset)?;
                 validate_iterator(iter_reverse, cutoff, block_n_offset, 0, true);
 
+                validate_directory_operations_index(&directory_chain)?;
+
                 (segments_before, block_n_offset, block_n_plus_offset)
             };
 
@@ -599,6 +625,8 @@ pub mod tests {
 
                 let iter_reverse = directory_chain.blocks_iter_reverse(block_n_plus_offset)?;
                 validate_iterator(iter_reverse, cutoff, block_n_offset, 0, true);
+
+                validate_directory_operations_index(&directory_chain)?;
 
                 assert_eq!(
                     directory_chain.get_last_block()?.unwrap().offset,
@@ -686,6 +714,30 @@ pub mod tests {
         assert_eq!(count, expect_count);
         assert_eq!(first_block_offset.unwrap(), expect_first_offset);
         assert_eq!(last_block_offset.unwrap(), expect_last_offset);
+    }
+
+    fn validate_directory_operations_index(
+        store: &DirectoryChainStore,
+    ) -> Result<(), failure::Error> {
+        let all_blocks_offsets = store
+            .blocks_iter(0)?
+            .map(|block| block.offset)
+            .collect_vec();
+
+        for block_offset in all_blocks_offsets {
+            // `create_block` use the block offset for proposal operation id
+            let block = store.get_block_by_operation_id(block_offset)?.unwrap();
+            assert_eq!(block_offset, block.offset);
+
+            // `create_block` creates 1 operation in the block with offset +1 as operation id
+            let block = store.get_block_by_operation_id(block_offset + 1)?.unwrap();
+            assert_eq!(block_offset, block.offset);
+
+            // invalid operation id
+            assert!(store.get_block_by_operation_id(block_offset + 2)?.is_none());
+        }
+
+        Ok(())
     }
 
     pub fn create_block(offset: BlockOffset) -> BlockOwned {

@@ -20,10 +20,15 @@ use crate::chain::{Block, BlockOffset, Error};
 use super::{DirectoryChainStoreConfig, DirectoryError};
 
 ///
-/// Operation ID to Block offset index. This is used to retrieve the block in which a given
-/// operation has been stored.
+/// Operation ID to Block offset index. This is used to retrieve the block offset in which a given
+/// operation ID has been stored.
 ///
 /// This index has a in-memory buffer, and is flushed to disk into `extindex` immutable index files.
+///
+/// The in-memory portion of it may be lost if it hadn't been flush. The chain directory make sure
+/// that the chain is properly indexed when its initializing using the `next_expected_offset` value.
+///
+/// The index maintains the list of persisted index in a "Metadata" file.
 ///
 pub struct OperationsIndex {
     config: DirectoryChainStoreConfig,
@@ -123,6 +128,7 @@ impl OperationsIndex {
             });
         }
 
+        // the next expected offset is the upper bound (excluded) of the last segment we indexed
         let next_expected_offset = stored_indices.last().map_or(0, |index| index.range.end);
 
         // we have nothing in memory, so memory index is from next expected offset
@@ -144,15 +150,15 @@ impl OperationsIndex {
 
     ///
     /// Returns the offset that we expect the next block to have. This can be used to know which
-    /// operations are missing and needs to be re-indexed.
+    /// operations are missing and need to be re-indexed.
     ///
     pub fn next_expected_block_offset(&self) -> BlockOffset {
         self.next_expected_offset
     }
 
     ///
-    /// Indexes an iterator of blocks. There is no guarantee that they will be actually stored if
-    /// they fit in the in-memory buffer.
+    /// Indexes an iterator of blocks. There is no guarantee that they will be actually stored to disk if
+    /// they can still fit in the in-memory index.
     ///
     pub fn index_blocks<I: Iterator<Item = B>, B: Block>(
         &mut self,
@@ -168,12 +174,12 @@ impl OperationsIndex {
     }
 
     ///
-    /// Indexes a block. There is no guarantee that it will be actually stored if it fits in the
-    /// in-memory buffer.
+    /// Indexes a block. There is no guarantee that it will be actually stored if it can still fit in the
+    /// in-memory index.
     ///
     pub fn index_block<B: Block>(&mut self, block: &B) -> Result<(), Error> {
-        if self.next_expected_offset > block.offset() {
-            return Err(Error::Integrity(format!("Tried to index operations from a block that has an offset smaller than last indexed block: block={} > last={}", block.offset(), self.next_expected_offset)));
+        if self.next_expected_offset != block.offset() {
+            return Err(Error::Integrity(format!("Tried to index operations from a block with unexpected offset: block={} != expected={}", block.offset(), self.next_expected_offset)));
         }
 
         let block_reader: block::Reader = block.block().get_typed_reader()?;
@@ -190,13 +196,13 @@ impl OperationsIndex {
 
         self.next_expected_offset = block.next_offset();
 
-        self.maybe_store_to_disk()?;
+        self.maybe_flush_to_disk()?;
 
         Ok(())
     }
 
     ///
-    /// Retrieve the block offset in which a given operation was stored.
+    /// Retrieves the block offset in which a given operation was stored.
     ///
     pub fn get_operation_block(
         &self,
@@ -225,8 +231,8 @@ impl OperationsIndex {
     /// Truncates the index from the given offset. Because of the nature of the immutable underlying
     /// indices, we cannot delete from the exact offset.
     ///
-    /// Therefor, we expect `index_blocks` to be called after to index any missing blocks that we
-    /// mis-truncated. The `next_expected_block_offset` method can be used to know from which offset
+    /// Therefor, we expect `index_blocks` to be called right after to index any missing blocks that we
+    /// over-truncated. The `next_expected_block_offset` method can be used to know from which offset
     /// we need to re-index from.
     ///
     pub fn truncate_from_offset(&mut self, from_offset: BlockOffset) -> Result<(), Error> {
@@ -234,10 +240,10 @@ impl OperationsIndex {
             self.memory_index.clear();
             self.next_expected_offset = self.memory_offset_from;
         } else {
-            let mut current_indices = Vec::new();
-            std::mem::swap(&mut self.stored_indices, &mut current_indices);
+            let mut previous_indices = Vec::new();
+            std::mem::swap(&mut self.stored_indices, &mut previous_indices);
 
-            for index in current_indices {
+            for index in previous_indices {
                 if index.range.end >= from_offset {
                     self.next_expected_offset = self.next_expected_offset.min(index.range.start);
 
@@ -268,9 +274,9 @@ impl OperationsIndex {
     }
 
     ///
-    /// Checks the size of the in-memory index and store it to disk if it exceeds configured maximum
+    /// Checks the size of the in-memory index and flush it to disk if it exceeds configured maximum.
     ///
-    fn maybe_store_to_disk(&mut self) -> Result<(), Error> {
+    fn maybe_flush_to_disk(&mut self) -> Result<(), Error> {
         if self.memory_index.len() > self.config.operations_index_max_memory_items {
             debug!(
                 "Storing in-memory index of operations to disk ({} items)",
@@ -282,6 +288,7 @@ impl OperationsIndex {
             let range = from_offset..to_offset;
             let index_file = StoredIndex::file_path(&self.directory, &range);
 
+            // build the index from in-memory index, which is already sorted because it's in a tree
             let ops_count = self.memory_index.len() as u64;
             let ops_iter = self.memory_index.iter().map(|(operation_id, offset)| {
                 let key = StoredIndexKey {
@@ -291,15 +298,13 @@ impl OperationsIndex {
 
                 extindex::Entry::new(key, value)
             });
-
-            // build the index from in-memory index, which is already sorted because it's in a tree
             let index_builder =
                 Builder::<StoredIndexKey, StoredIndexValue>::new(index_file.clone());
             index_builder
                 .build_from_sorted(ops_iter, ops_count)
                 .map_err(DirectoryError::OperationsIndexBuild)?;
 
-            // open the index
+            // open the index we just created
             let index_reader =
                 Reader::open(index_file).map_err(DirectoryError::OperationsIndexRead)?;
             let stored_index = StoredIndex {
@@ -346,7 +351,7 @@ impl OperationsIndex {
 }
 
 ///
-/// Represents an immutable on-disk index for a given range of offsets
+/// Represents an immutable on-disk index for a given range of offsets.
 ///
 struct StoredIndex {
     range: Range<BlockOffset>,

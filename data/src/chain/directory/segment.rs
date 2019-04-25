@@ -428,6 +428,30 @@ mod tests {
     }
 
     #[test]
+    fn directory_segment_open_invalid() -> Result<(), failure::Error> {
+        let dir = tempdir::TempDir::new("test")?;
+
+        {
+            let segment_path = dir.path().join("some_file");
+            std::fs::write(&segment_path, "hello")?;
+            assert!(DirectorySegment::open(Default::default(), &segment_path).is_err());
+        }
+
+        {
+            let segment_path = dir.path().join("some_file");
+            std::fs::write(&segment_path, "hello")?;
+            assert!(DirectorySegment::open_with_first_offset(
+                Default::default(),
+                &segment_path,
+                100
+            )
+            .is_err());
+        }
+
+        Ok(())
+    }
+
+    #[test]
     fn directory_segment_append_block() -> Result<(), failure::Error> {
         let dir = tempdir::TempDir::new("test")?;
 
@@ -460,10 +484,12 @@ mod tests {
         assert!(segment.get_block(10).is_err());
         assert!(segment.get_block(offset3 + 10).is_err());
 
-        {
-            let last_block = segment.get_block_from_next_offset(segment.next_block_offset)?;
-            assert_eq!(last_block.offset, offset3);
-        }
+        let last_block = segment.get_block_from_next_offset(segment.next_block_offset)?;
+        assert_eq!(last_block.offset, offset3);
+
+        assert!(segment
+            .get_block_from_next_offset(segment.next_block_offset + 42)
+            .is_err());
 
         Ok(())
     }
@@ -534,6 +560,37 @@ mod tests {
 
         let iter = ChainBlockIterator::new(&segment.segment_file.mmap[0..]);
         assert_eq!(iter.count(), 1000);
+
+        Ok(())
+    }
+
+    #[test]
+    fn directory_segment_truncate_from_segment() -> Result<(), failure::Error> {
+        let mut config: DirectoryChainStoreConfig = Default::default();
+        config.segment_over_allocate_size = 100_000;
+
+        let dir = tempdir::TempDir::new("test")?;
+        let mut next_offset = 1000;
+
+        let block = create_block(next_offset);
+        let mut segment = DirectorySegment::create(config, dir.path(), &block)?;
+        next_offset += block.total_size() as u64;
+        append_blocks_to_segment(&mut segment, next_offset, 999);
+
+        // should not remove any blocks, only remove over allocated space
+        segment.truncate_from_block_offset(segment.next_block_offset)?;
+        let iter = ChainBlockIterator::new(&segment.segment_file.mmap[0..]);
+        assert_eq!(iter.count(), 1000);
+
+        // truncating before beginning of file is impossible
+        assert!(segment.truncate_from_block_offset(900).is_err());
+
+        // truncating at 10th should result in only 10 blocks left
+        let mut iter = ChainBlockIterator::new(&segment.segment_file.mmap[0..]);
+        let nth_offset = iter.nth(10).unwrap().offset;
+        segment.truncate_from_block_offset(nth_offset)?;
+        let iter = ChainBlockIterator::new(&segment.segment_file.mmap[0..]);
+        assert_eq!(iter.count(), 10);
 
         Ok(())
     }
