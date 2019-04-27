@@ -397,7 +397,6 @@ where
         operation_frame: OwnedTypedFrame<pending_operation::Owned>,
     ) -> Result<(), Error> {
         let mut sync_context = SyncContext::new();
-        // TODO: Make sure chain_synchronizer is Synchronized first: https://github.com/appaquet/exocore/issues/54
         self.pending_synchronizer.handle_new_operation(
             &mut sync_context,
             &self.nodes,
@@ -405,7 +404,12 @@ where
             operation_frame,
         )?;
 
-        self.send_messages_from_sync_context(&mut sync_context)?;
+        // to prevent sending pending operations that may have already been committed, we don't propagate
+        // pending store changes unless the chain is synchronized
+        if self.chain_is_synchronized() {
+            self.send_messages_from_sync_context(&mut sync_context)?;
+        }
+
         self.notify_handles_from_sync_context(&sync_context);
 
         Ok(())
@@ -419,6 +423,12 @@ where
     where
         R: TypedFrame<pending_sync_request::Owned>,
     {
+        // to prevent sending pending operations that may have already been committed, we don't accept
+        // any pending sync requests until the chain is synchronized
+        if !self.chain_is_synchronized() {
+            return Ok(());
+        }
+
         let mut sync_context = SyncContext::new();
         self.pending_synchronizer.handle_incoming_sync_request(
             &message.from,
@@ -477,22 +487,25 @@ where
     fn tick_synchronizers(&mut self) -> Result<(), Error> {
         let mut sync_context = SyncContext::new();
 
-        // TODO: We should only do commit manager & pending synchronizer once chain is synced: https://github.com/appaquet/exocore/issues/54
-
         self.chain_synchronizer
             .tick(&mut sync_context, &self.chain_store, &self.nodes)?;
 
-        self.commit_manager.tick(
-            &mut sync_context,
-            &mut self.pending_synchronizer,
-            &mut self.pending_store,
-            &mut self.chain_synchronizer,
-            &mut self.chain_store,
-            &self.nodes,
-        )?;
+        // to prevent synchronizing pending operations that may have added to the chain, we should only
+        // start doing commit management & pending synchronization once the chain is synchronized
+        if self.chain_is_synchronized() {
+            // commit manager should always be ticked before pending synchronizer so that it may
+            // remove operations that don't need to be synchronized anymore (ex: been committed)
+            self.commit_manager.tick(
+                &mut sync_context,
+                &mut self.pending_synchronizer,
+                &mut self.pending_store,
+                &mut self.chain_store,
+                &self.nodes,
+            )?;
 
-        self.pending_synchronizer
-            .tick(&mut sync_context, &self.pending_store, &self.nodes)?;
+            self.pending_synchronizer
+                .tick(&mut sync_context, &self.pending_store, &self.nodes)?;
+        }
 
         self.send_messages_from_sync_context(&mut sync_context)?;
         self.notify_handles_from_sync_context(&sync_context);
@@ -561,6 +574,11 @@ where
                 }
             }
         }
+    }
+
+    fn chain_is_synchronized(&self) -> bool {
+        let chain_sync_status = self.chain_synchronizer.status();
+        chain_sync_status == chain_sync::Status::Synchronized
     }
 
     fn unregister_handle(&mut self, id: usize) {
