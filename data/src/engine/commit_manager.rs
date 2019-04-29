@@ -16,8 +16,8 @@ use crate::chain;
 use crate::chain::BlockOffset;
 use crate::chain::{Block, BlockDepth};
 use crate::engine::{pending_sync, Event, SyncContext};
+use crate::operation::Type;
 use crate::pending;
-use crate::pending::OperationType;
 
 use super::Error;
 
@@ -282,7 +282,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .filter(|operation| {
                 // only include new entries or pending ignore entries
                 match operation.operation_type {
-                    OperationType::Entry | OperationType::PendingIgnore => true,
+                    Type::Entry | Type::PendingIgnore => true,
                     _ => false,
                 }
             })
@@ -487,7 +487,7 @@ impl PendingBlocks {
         // first pass to fetch all groups proposal
         let mut groups_id = Vec::new();
         for pending_op in pending_store.operations_iter(..)? {
-            if pending_op.operation_type == pending::OperationType::BlockPropose {
+            if pending_op.operation_type == Type::BlockPropose {
                 groups_id.push(pending_op.operation_id);
             }
         }

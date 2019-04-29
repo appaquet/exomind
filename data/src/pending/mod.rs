@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 use crate::chain;
+use crate::operation::Type;
 use exocore_common::data_chain_capnp::{block, block_signature, pending_operation};
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{FrameBuilder, TypedFrame};
@@ -46,22 +47,13 @@ pub type TimelineIterator<'store> = Box<dyn Iterator<Item = StoredOperation> + '
 pub struct StoredOperation {
     pub group_id: GroupID,
     pub operation_id: OperationID,
-    pub operation_type: OperationType,
+    pub operation_type: Type,
     pub frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
 }
 
 pub struct StoredOperationsGroup {
     pub group_id: GroupID,
     pub operations: Vec<StoredOperation>,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum OperationType {
-    Entry,
-    BlockPropose,
-    BlockSign,
-    BlockRefuse,
-    PendingIgnore,
 }
 
 ///
@@ -166,7 +158,9 @@ impl PendingOperation {
 #[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "Error in message serialization")]
-    Serialization(#[fail(cause)] framed::Error),
+    Framing(#[fail(cause)] framed::Error),
+    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
+    Serialization(capnp::ErrorKind, String),
     #[fail(display = "Field is not in capnp schema: code={}", _0)]
     SerializationNotInSchema(u16),
     #[fail(display = "Got an error: {}", _0)]
@@ -181,7 +175,13 @@ impl Error {
 
 impl From<framed::Error> for Error {
     fn from(err: framed::Error) -> Self {
-        Error::Serialization(err)
+        Error::Framing(err)
+    }
+}
+
+impl From<capnp::Error> for Error {
+    fn from(err: capnp::Error) -> Self {
+        Error::Serialization(err.kind, err.description)
     }
 }
 

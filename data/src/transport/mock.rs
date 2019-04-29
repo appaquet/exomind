@@ -10,6 +10,9 @@ use exocore_common::node::{Node, NodeID};
 
 use super::*;
 
+///
+/// Dispatches messages between nodes' `MockTransport`
+///
 pub struct MockTransportHub {
     nodes_sink: Arc<Mutex<HashMap<NodeID, mpsc::UnboundedSender<InMessage>>>>,
 }
@@ -45,6 +48,9 @@ impl MockTransportHub {
     }
 }
 
+///
+/// Transport taken by the engine to receive and send message for a given node
+///
 pub struct MockTransport {
     node: Node,
     started: bool,
@@ -112,6 +118,11 @@ impl Future for MockTransport {
                 for dest_node in &message.to {
                     if let Some(sink) = nodes_sink.get(dest_node.id()) {
                         let _ = sink.unbounded_send(in_message.clone());
+                    } else {
+                        warn!(
+                            "Couldn't send message to node {} since it's not in the hub anymore",
+                            dest_node.id()
+                        );
                     }
                 }
 
@@ -125,6 +136,23 @@ impl Future for MockTransport {
     }
 }
 
+impl Drop for MockTransport {
+    fn drop(&mut self) {
+        if let Some(node_sinks) = self.nodes_sink.upgrade() {
+            if let Ok(mut node_sinks) = node_sinks.lock() {
+                debug!(
+                    "Removing node {} from transport hub because it's been dropped",
+                    self.node.id()
+                );
+                node_sinks.remove(self.node.id());
+            }
+        }
+    }
+}
+
+///
+/// Streams used by the engine to receive messages from other nodes
+///
 pub struct MockTransportStream {
     incoming_stream: mpsc::UnboundedReceiver<InMessage>,
 }
@@ -144,6 +172,9 @@ impl Stream for MockTransportStream {
     }
 }
 
+///
+/// Sinks used by the engine to send messages to other nodes
+///
 pub struct MockTransportSink {
     in_channel: mpsc::UnboundedSender<OutMessage>,
 }
@@ -177,12 +208,15 @@ impl Sink for MockTransportSink {
     }
 }
 
-type CompletionChannelSender = oneshot::Sender<Result<(), Error>>;
-
+///
+/// Use to send signal to all transports that the hub has completed and they should be done.
+///
 #[derive(Clone)]
 struct CompletionSender {
     sender: Arc<Mutex<Option<CompletionChannelSender>>>,
 }
+
+type CompletionChannelSender = oneshot::Sender<Result<(), Error>>;
 
 impl CompletionSender {
     fn new() -> (CompletionSender, CompletionFuture) {

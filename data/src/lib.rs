@@ -28,5 +28,6 @@ pub use crate::transport::mock::{MockTransport, MockTransportHub};
 ///
 pub mod chain;
 pub mod engine;
+pub mod operation;
 pub mod pending;
 pub mod transport;

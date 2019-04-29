@@ -1,97 +1,136 @@
 #[macro_use]
 extern crate log;
 
-use futures::prelude::*;
-use tempdir;
-use tokio::runtime::Runtime;
-
-use exocore_common::node::{Node, Nodes};
-use exocore_common::serialization::framed::TypedFrame;
-use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
-use exocore_common::serialization::protos::OperationID;
-use exocore_common::tests_utils::expect_result;
-use exocore_common::time::Clock;
-use exocore_data::chain::{BlockOffset, BlockOwned, ChainStore};
-use exocore_data::engine::{Event, Handle};
-use exocore_data::{
-    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, MemoryPendingStore,
-    MockTransportHub,
-};
-use failure::err_msg;
-use itertools::Itertools;
+use std::path::PathBuf;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use failure::err_msg;
+use futures::prelude::*;
+use itertools::Itertools;
+use tempdir;
+use tokio::runtime::Runtime;
+
+use exocore_common::node::{Node, Nodes};
+use exocore_common::serialization::protos::OperationID;
+use exocore_common::tests_utils::expect_result;
+use exocore_common::time::Clock;
+
+use exocore_data::chain::{BlockOffset, BlockOwned, ChainStore};
+use exocore_data::engine::{Event, Handle};
+use exocore_data::operation::Operation;
+use exocore_data::{
+    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, MemoryPendingStore,
+    MockTransportHub, OperationStatus,
+};
+
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
 
 #[test]
-fn test_engine_integration_single_node() -> Result<(), failure::Error> {
-    //exocore_common::utils::setup_logging();
-
+fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
     let mut cluster = TestCluster::new(1)?;
-    cluster.chain_add_genesis_block(0);
+    cluster.create_node(0)?;
+    cluster.create_chain_genesis_block(0);
     cluster.start_engine(0);
 
     // wait for engine to start
     cluster.collect_events_stream(0);
     cluster.wait_started(0);
 
-    let op1 = cluster.get_handle(0).write_entry(b"i love jello 1")?;
-    let op2 = cluster.get_handle(0).write_entry(b"i love jello 2")?;
-    let op3 = cluster.get_handle(0).write_entry(b"i love jello 3")?;
-    let op4 = cluster.get_handle(0).write_entry(b"i love jello 4")?;
+    let op1 = cluster
+        .get_handle_mut(0)
+        .write_entry_operation(b"i love rust 1")?;
+    let entry_operation = cluster.get_handle(0).get_operation(op1)?.unwrap();
+    assert_eq!(b"i love rust 1", entry_operation.as_entry_data()?);
+    assert_eq!(OperationStatus::Pending, entry_operation.status);
 
-    // check if we got all operations in stream
-    expect_result::<_, _, failure::Error>(|| {
-        let events = cluster.get_received_events(0);
-        let found_ops = extract_ops_events(&events);
-        let expected_ops = vec![op1, op2, op3, op4];
+    let op2 = cluster
+        .get_handle_mut(0)
+        .write_entry_operation(b"i love rust 2")?;
+    let entry_operation = cluster.get_handle(0).get_operation(op2)?.unwrap();
+    assert_eq!(b"i love rust 2", entry_operation.as_entry_data()?);
+    assert_eq!(OperationStatus::Pending, entry_operation.status);
 
-        if expected_ops.iter().all(|op| found_ops.contains(op)) {
-            Ok(found_ops)
-        } else {
-            Err(failure::err_msg(format!(
-                "Not all ops found: found={:?} expected={:?}",
-                found_ops, expected_ops
-            )))
-        }
-    });
-
-    let block_offsets = expect_result::<_, _, failure::Error>(|| {
-        let events = cluster.get_received_events(0);
-        let offsets = extract_blocks_events(&events);
-
-        if !offsets.is_empty() {
-            Ok(offsets)
-        } else {
-            Err(failure::err_msg("No block found".to_string()))
-        }
-    });
-
+    // wait for all operations to be emitted on stream
+    expect_operations_emitted(&cluster, &[op1, op2]);
+    let block_offsets = expect_block_committed(&cluster);
     let first_block_offset = block_offsets.first().unwrap();
 
-    let pending_operations = cluster.get_handle(0).get_pending_operations(..)?;
-    let segments = cluster.get_handle(0).get_chain_segments()?;
-    let entry = cluster
+    // get operation from chain
+    let entry_operation = cluster
         .get_handle(0)
-        .get_chain_entry(*first_block_offset, op1)?;
-    info!("Got {} pending op", pending_operations.len());
-    info!("Available segments: {:?}", segments);
-    info!(
-        "Chain op: {:?}",
-        String::from_utf8_lossy(entry.operation_frame.frame_data())
-    );
+        .get_chain_operation(*first_block_offset, op1)?
+        .unwrap();
+    assert_eq!(b"i love rust 1", entry_operation.as_entry_data()?);
+    assert_eq!(OperationStatus::Committed, entry_operation.status);
+
+    // get operation from anywhere, should not be committed
+    let entry_operation = cluster.get_handle(0).get_operation(op1)?.unwrap();
+    assert_eq!(b"i love rust 1", entry_operation.as_entry_data()?);
+    assert_eq!(OperationStatus::Committed, entry_operation.status);
+
+    let entry_operation = cluster.get_handle(0).get_operation(op2)?.unwrap();
+    assert_eq!(b"i love rust 2", entry_operation.as_entry_data()?);
+    assert_eq!(OperationStatus::Committed, entry_operation.status);
+
+    // test pending operations range
+    let operations = cluster.get_handle(0).get_pending_operations(..)?;
+    let ops_id = operations
+        .iter()
+        .map(|op| op.operation_id)
+        .sorted()
+        .collect_vec();
+    assert!(ops_id.contains(&op1));
+    assert!(ops_id.contains(&op2));
 
     Ok(())
 }
 
 #[test]
-fn test_engine_integration_replicate_genesis() -> Result<(), failure::Error> {
-    //exocore_common::utils::setup_logging();
+fn single_node_restart() -> Result<(), failure::Error> {
+    let mut cluster = TestCluster::new(1)?;
+    cluster.create_node(0)?;
+    cluster.create_chain_genesis_block(0);
+    cluster.start_engine(0);
 
+    cluster.collect_events_stream(0);
+    cluster.wait_started(0);
+
+    // wait for all operations to be emitted on stream
+    let op1 = cluster
+        .get_handle_mut(0)
+        .write_entry_operation(b"i love rust 1")?;
+    expect_operations_emitted(&cluster, &[op1]);
+
+    // wait for operations to be committed
+    expect_block_committed(&cluster);
+
+    // make sure operation is in chain
+    let entry_before = cluster.get_handle(0).get_operation(op1)?.unwrap();
+    assert_eq!(OperationStatus::Committed, entry_before.status);
+
+    // stop and restart node
+    cluster.stop_node(0);
+    cluster.create_node(0)?;
+    cluster.start_engine(0);
+    cluster.collect_events_stream(0);
+    cluster.wait_started(0);
+
+    // data should still exist
+    let entry_before = cluster.get_handle(0).get_operation(op1)?.unwrap();
+    assert_eq!(OperationStatus::Committed, entry_before.status);
+
+    Ok(())
+}
+
+#[test]
+fn two_nodes_simple_replication() -> Result<(), failure::Error> {
     let mut cluster = TestCluster::new(2)?;
-    cluster.chain_add_genesis_block(0);
+    cluster.create_node(0)?;
+    cluster.create_node(1)?;
+
+    cluster.create_chain_genesis_block(0);
 
     cluster.start_engine(0);
     cluster.start_engine(1);
@@ -100,41 +139,60 @@ fn test_engine_integration_replicate_genesis() -> Result<(), failure::Error> {
     cluster.wait_started(0);
     cluster.wait_started(1);
 
-    // TODO: Make sure that block was added to second node
-    // TODO: Disable transport first
-
     // add operation on each nodes
-    let op1 = cluster.get_handle(0).write_entry(b"i love jello 0")?;
-    let _op2 = cluster.get_handle(1).write_entry(b"i love jello 1")?;
+    let op1 = cluster
+        .get_handle_mut(0)
+        .write_entry_operation(b"i love rust 0")?;
+    let op2 = cluster
+        .get_handle_mut(1)
+        .write_entry_operation(b"i love rust 1")?;
 
-    // expect operation to appear on node 1
-    let handle = cluster.get_handle(1);
-    let op = expect_result::<_, _, failure::Error>(|| {
-        let ops = handle.get_pending_operations(op1..=op1)?;
-        let first_op = ops.first();
+    // wait for both nodes to have the operation committed locally
+    expect_result::<_, _, failure::Error>(|| {
+        // op 1 should now be on node 2
+        cluster
+            .get_handle(1)
+            .get_operation(op1)?
+            .filter(|op| op.status == OperationStatus::Committed)
+            .ok_or_else(|| err_msg("Operation not on node"))?;
 
-        first_op
-            .ok_or_else(|| err_msg("Operation not found"))
-            .map(|op| op.frame.clone())
+        // op 0 should now be on node 1
+        cluster
+            .get_handle(0)
+            .get_operation(op2)?
+            .filter(|op| op.status == OperationStatus::Committed)
+            .ok_or_else(|| err_msg("Operation not on node"))?;
+
+        Ok(())
     });
 
-    let op_reader: pending_operation::Reader = op.get_typed_reader()?;
-    match op_reader.get_operation().which()? {
-        pending_operation::operation::Entry(entry) => {
-            let reader = entry?;
-            println!("DATA: {:?}", String::from_utf8_lossy(reader.get_data()?));
-        }
-        _ => panic!(""),
-    }
+    // chain should be the same on both node with operations committed
+    let segments_0 = cluster.get_handle(0).get_chain_segments()?;
+    let segments_1 = cluster.get_handle(1).get_chain_segments()?;
+    assert_eq!(segments_0, segments_1);
 
     Ok(())
+}
+
+#[test]
+fn dont_replicate_operations_until_chain_sync() {
+    // TODO:
+}
+
+#[test]
+fn dont_replicate_committed_operations() {
+    // TODO: Make node accept operation
+    // TODO: Make node go offline
+    // TODO: Wait for rest of node commit
+    // TODO: Make node come back online
+    // TODO: Don't expect nodes to get operations back in their pending store
 }
 
 ///
 ///
 ///
 struct TestCluster {
-    _tempdir: tempdir::TempDir,
+    tempdir: tempdir::TempDir,
     runtime: Runtime,
     nodes: Nodes,
     transport_hub: MockTransportHub,
@@ -169,27 +227,20 @@ impl TestCluster {
             let node = Node::new(format!("node{}", node_id));
             nodes.add(node.clone());
 
-            let node_data_dir = tempdir.path().join(format!("{}", node_id));
-            std::fs::create_dir(&node_data_dir)?;
-
-            let chain_config = DirectoryChainStoreConfig::default();
-            let chain = DirectoryChainStore::create(chain_config, &node_data_dir)?;
-            chain_stores.push(Some(chain));
-
-            let pending_store = MemoryPendingStore::new();
-            pending_stores.push(Some(pending_store));
-
+            chain_stores.push(None);
+            pending_stores.push(None);
             handles.push(None);
             events_receiver.push(None);
             events_received.push(None);
         }
 
         Ok(TestCluster {
-            _tempdir: tempdir,
+            tempdir,
             runtime,
             nodes,
             transport_hub,
             clock,
+
             chain_stores,
             pending_stores,
             handles,
@@ -199,7 +250,34 @@ impl TestCluster {
         })
     }
 
-    fn chain_add_genesis_block(&mut self, node_idx: usize) {
+    fn node_data_dir(&self, node_idx: usize) -> PathBuf {
+        let node = self.get_node(node_idx);
+        self.tempdir.path().join(node.id().to_string())
+    }
+
+    fn create_node(&mut self, node_idx: usize) -> Result<(), failure::Error> {
+        let data_dir = self.node_data_dir(node_idx);
+        let data_exists = std::fs::metadata(&data_dir).is_ok();
+
+        if !data_exists {
+            std::fs::create_dir(&data_dir)?;
+        }
+
+        let chain_config = DirectoryChainStoreConfig::default();
+        let chain = if !data_exists {
+            DirectoryChainStore::create(chain_config, &data_dir)?
+        } else {
+            DirectoryChainStore::open(chain_config, &data_dir)?
+        };
+        self.chain_stores[node_idx] = Some(chain);
+
+        let pending_store = MemoryPendingStore::new();
+        self.pending_stores[node_idx] = Some(pending_store);
+
+        Ok(())
+    }
+
+    fn create_chain_genesis_block(&mut self, node_idx: usize) {
         let my_node = self.get_node(node_idx);
         let block = BlockOwned::new_genesis(&self.nodes, &my_node).unwrap();
         self.chain_stores[node_idx]
@@ -282,7 +360,11 @@ impl TestCluster {
         events.clone()
     }
 
-    fn get_handle(
+    fn get_handle(&self, node_idx: usize) -> &Handle<DirectoryChainStore, MemoryPendingStore> {
+        self.handles[node_idx].as_ref().unwrap()
+    }
+
+    fn get_handle_mut(
         &mut self,
         node_idx: usize,
     ) -> &mut Handle<DirectoryChainStore, MemoryPendingStore> {
@@ -309,6 +391,15 @@ impl TestCluster {
             }
         }
     }
+
+    fn stop_node(&mut self, node_idx: usize) {
+        self.chain_stores[node_idx] = None;
+        self.pending_stores[node_idx] = None;
+        self.handles[node_idx] = None;
+
+        self.events_received[node_idx] = None;
+        self.events_receiver[node_idx] = None;
+    }
 }
 
 fn extract_ops_events(events: &[Event]) -> Vec<OperationID> {
@@ -331,4 +422,33 @@ fn extract_blocks_events(events: &[Event]) -> Vec<BlockOffset> {
         })
         .sorted()
         .collect()
+}
+
+fn expect_operations_emitted(cluster: &TestCluster, expected_ops: &[u64]) {
+    expect_result::<_, _, failure::Error>(|| {
+        let events = cluster.get_received_events(0);
+        let found_ops = extract_ops_events(&events);
+
+        if (&expected_ops).iter().all(|op| found_ops.contains(op)) {
+            Ok(found_ops)
+        } else {
+            Err(failure::err_msg(format!(
+                "Not all ops found: found={:?} expected={:?}",
+                found_ops, &expected_ops
+            )))
+        }
+    });
+}
+
+fn expect_block_committed(cluster: &TestCluster) -> Vec<BlockOffset> {
+    expect_result::<_, _, failure::Error>(|| {
+        let events = cluster.get_received_events(0);
+        let offsets = extract_blocks_events(&events);
+
+        if !offsets.is_empty() {
+            Ok(offsets)
+        } else {
+            Err(failure::err_msg("No block found".to_string()))
+        }
+    })
 }

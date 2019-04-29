@@ -696,7 +696,7 @@ mod tests {
     use crate::engine::testing::create_dummy_new_entry_op;
     use crate::engine::testing::*;
     use crate::engine::SyncContextMessage;
-    use crate::pending::OperationType;
+    use crate::operation::Type;
 
     use super::*;
 
@@ -1141,7 +1141,7 @@ mod tests {
 
             StoredOperation {
                 group_id,
-                operation_type: OperationType::Entry,
+                operation_type: Type::Entry,
                 operation_id,
                 frame: operation,
             }

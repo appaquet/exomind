@@ -9,13 +9,13 @@ use exocore_common::serialization::protos::data_chain_capnp::{block, block_heade
 use exocore_common::serialization::protos::data_transport_capnp::{
     chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
 };
+use exocore_common::time::Clock;
 
 use crate::chain;
 use crate::chain::{Block, BlockDepth, BlockOffset, BlockRef, ChainStore};
 use crate::engine::request_tracker::RequestTracker;
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
-use exocore_common::time::Clock;
 
 ///
 /// Synchronizes the local chain against remote nodes' chain.
@@ -1030,14 +1030,15 @@ fn chain_sample_block_headers<CS: chain::ChainStore>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::time::Instant;
 
     use chain::directory::DirectoryChainStore;
     use exocore_common::serialization::framed::OwnedTypedFrame;
 
     use crate::engine::testing::*;
     use crate::engine::SyncContextMessage;
-    use std::time::Instant;
+
+    use super::*;
 
     #[test]
     fn test_handle_sync_response_blocks() -> Result<(), failure::Error> {

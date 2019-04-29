@@ -38,11 +38,11 @@ impl PendingStore for MemoryPendingStore {
     ) -> Result<bool, Error> {
         let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
         let operation_type = match operation_reader.get_operation().which()? {
-            pending_operation::operation::Which::BlockSign(_) => OperationType::BlockSign,
-            pending_operation::operation::Which::BlockPropose(_) => OperationType::BlockPropose,
-            pending_operation::operation::Which::BlockRefuse(_) => OperationType::BlockRefuse,
-            pending_operation::operation::Which::PendingIgnore(_) => OperationType::PendingIgnore,
-            pending_operation::operation::Which::Entry(_) => OperationType::Entry,
+            pending_operation::operation::Which::BlockSign(_) => Type::BlockSign,
+            pending_operation::operation::Which::BlockPropose(_) => Type::BlockPropose,
+            pending_operation::operation::Which::BlockRefuse(_) => Type::BlockRefuse,
+            pending_operation::operation::Which::PendingIgnore(_) => Type::PendingIgnore,
+            pending_operation::operation::Which::Entry(_) => Type::Entry,
         };
 
         let group_id = operation_reader.get_group_id();
@@ -162,7 +162,7 @@ impl GroupOperations {
 
 struct GroupOperation {
     operation_id: OperationID,
-    operation_type: OperationType,
+    operation_type: Type,
     frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
 }
 
