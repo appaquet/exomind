@@ -16,7 +16,8 @@ use crate::chain;
 use crate::chain::BlockOffset;
 use crate::chain::{Block, BlockDepth};
 use crate::engine::{pending_sync, Event, SyncContext};
-use crate::operation::Type;
+use crate::operation;
+use crate::operation::{Operation, OperationType};
 use crate::pending;
 
 use super::Error;
@@ -192,17 +193,17 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let my_node = nodes.get(&self.node_id).ok_or(Error::MyNodeNotFound)?;
 
         let operation_id = self.clock.consistent_time(&my_node);
-        let signature_frame_builder = pending::PendingOperation::new_signature_for_block(
+        let signature_frame_builder = operation::OperationBuilder::new_signature_for_block(
             next_block.group_id,
             operation_id,
             &self.node_id,
             &next_block.proposal.get_block()?,
         )?;
 
-        let signature_frame = signature_frame_builder.as_owned_framed(my_node.frame_signer())?;
-        let signature_reader = signature_frame.get_typed_reader()?;
-        let pending_signature = PendingBlockSignature::from_pending_operation(signature_reader)?;
+        let signature_operation = signature_frame_builder.sign_and_build(my_node.frame_signer())?;
 
+        let signature_reader = signature_operation.get_operation_reader()?;
+        let pending_signature = PendingBlockSignature::from_pending_operation(signature_reader)?;
         debug!("Signing block {}", next_block.group_id);
         next_block.add_my_signature(pending_signature);
 
@@ -210,7 +211,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             sync_context,
             nodes,
             pending_store,
-            signature_frame,
+            signature_operation,
         )?;
 
         Ok(())
@@ -227,13 +228,15 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let my_node = nodes.get(&self.node_id).ok_or(Error::MyNodeNotFound)?;
 
         let operation_id = self.clock.consistent_time(&my_node);
-        let refusal_frame_builder = pending::PendingOperation::new_refusal(
+
+        let refusal_builder = operation::OperationBuilder::new_refusal(
             next_block.group_id,
             operation_id,
             &self.node_id,
         )?;
-        let refusal_frame = refusal_frame_builder.as_owned_framed(my_node.frame_signer())?;
-        let refusal_reader = refusal_frame.get_typed_reader()?;
+        let refusal_operation = refusal_builder.sign_and_build(my_node.frame_signer())?;
+
+        let refusal_reader = refusal_operation.get_operation_reader()?;
         let pending_refusal = PendingBlockRefusal::from_pending_operation(refusal_reader)?;
 
         next_block.add_my_refusal(pending_refusal);
@@ -242,7 +245,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             sync_context,
             nodes,
             pending_store,
-            refusal_frame,
+            refusal_operation,
         )?;
 
         Ok(())
@@ -282,7 +285,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .filter(|operation| {
                 // only include new entries or pending ignore entries
                 match operation.operation_type {
-                    Type::Entry | Type::PendingIgnore => true,
+                    OperationType::Entry | OperationType::PendingIgnore => true,
                     _ => false,
                 }
             })
@@ -326,13 +329,13 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             return Ok(());
         }
 
-        let block_proposal_frame_builder = pending::PendingOperation::new_block_proposal(
+        let block_proposal_frame_builder = operation::OperationBuilder::new_block_proposal(
             block_operation_id,
             &self.node_id,
             &block,
         )?;
-        let block_proposal_frame =
-            block_proposal_frame_builder.as_owned_framed(my_node.frame_signer())?;
+        let block_proposal_operation =
+            block_proposal_frame_builder.sign_and_build(my_node.frame_signer())?;
 
         debug!(
             "Proposed block with operation_id {} for offset {}",
@@ -343,7 +346,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             sync_context,
             nodes,
             pending_store,
-            block_proposal_frame,
+            block_proposal_operation,
         )?;
 
         Ok(())
@@ -487,7 +490,7 @@ impl PendingBlocks {
         // first pass to fetch all groups proposal
         let mut groups_id = Vec::new();
         for pending_op in pending_store.operations_iter(..)? {
-            if pending_op.operation_type == Type::BlockPropose {
+            if pending_op.operation_type == OperationType::BlockPropose {
                 groups_id.push(pending_op.operation_id);
             }
         }
@@ -839,7 +842,7 @@ pub enum CommitManagerError {
 mod tests {
     use crate::chain::ChainStore;
     use crate::engine::testing::*;
-    use crate::pending::PendingOperation;
+    use crate::operation::OperationBuilder;
     use crate::pending::PendingStore;
 
     use super::*;
@@ -950,9 +953,10 @@ mod tests {
         let node = cluster.get_node(0);
 
         let op_id = cluster.consistent_clock(0) - 1;
-        let op_builder = PendingOperation::new_entry(op_id, node.id(), data);
-        let op_frame = op_builder.as_owned_framed(node.frame_signer())?;
-        cluster.pending_stores[0].put_operation(op_frame)?;
+        let op_builder = OperationBuilder::new_entry(op_id, node.id(), data);
+        let operation = op_builder.sign_and_build(node.frame_signer())?;
+
+        cluster.pending_stores[0].put_operation(operation)?;
 
         Ok(op_id)
     }
@@ -981,10 +985,10 @@ mod tests {
             block_operations,
         )?;
         let block_proposal_frame_builder =
-            pending::PendingOperation::new_block_proposal(block_operation_id, node.id(), &block)?;
-        let block_proposal_frame =
-            block_proposal_frame_builder.as_owned_framed(node.frame_signer())?;
-        cluster.pending_stores[0].put_operation(block_proposal_frame)?;
+            operation::OperationBuilder::new_block_proposal(block_operation_id, node.id(), &block)?;
+        let operation = block_proposal_frame_builder.sign_and_build(node.frame_signer())?;
+
+        cluster.pending_stores[0].put_operation(operation)?;
 
         Ok(block_operation_id)
     }

@@ -4,9 +4,7 @@ use exocore_common::node::{Node, Nodes};
 use exocore_common::serialization::framed::{
     FrameBuilder, MultihashFrameSigner, OwnedTypedFrame, TypedFrame,
 };
-use exocore_common::serialization::protos::data_chain_capnp::{
-    block, block_signatures, pending_operation,
-};
+use exocore_common::serialization::protos::data_chain_capnp::{block, block_signatures};
 
 use crate::chain;
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
@@ -14,6 +12,7 @@ use crate::chain::{Block, BlockDepth, BlockOffset, BlockOwned, ChainStore};
 use crate::engine::commit_manager::CommitManager;
 use crate::engine::pending_sync;
 use crate::engine::{chain_sync, SyncContext};
+use crate::operation::{NewOperation, OperationBuilder};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
 use exocore_common::serialization::protos::{GroupID, OperationID};
@@ -255,33 +254,18 @@ pub fn create_dummy_block_sigs(operations_size: u32) -> OwnedTypedFrame<block_si
     msg_builder.as_owned_framed(signer).unwrap()
 }
 
-pub fn dummy_pending_ops_generator(
-    count: usize,
-) -> impl Iterator<Item = OwnedTypedFrame<pending_operation::Owned>> {
+pub fn dummy_pending_ops_generator(count: usize) -> impl Iterator<Item = NewOperation> {
     (1..=count).map(|i| {
         let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
         create_dummy_new_entry_op(operation_id, group_id)
     })
 }
 
-pub fn create_dummy_new_entry_op(
-    operation_id: OperationID,
-    group_id: GroupID,
-) -> OwnedTypedFrame<pending_operation::Owned> {
-    let mut msg_builder = FrameBuilder::<pending_operation::Owned>::new();
-
-    {
-        let mut op_builder: pending_operation::Builder = msg_builder.get_builder_typed();
-        op_builder.set_group_id(group_id);
-        op_builder.set_operation_id(operation_id);
-        op_builder.set_node_id("node_id");
-
-        let inner_op_builder = op_builder.init_operation();
-        let mut new_entry_builder = inner_op_builder.init_entry();
-
-        new_entry_builder.set_data(b"bob");
-    }
+pub fn create_dummy_new_entry_op(operation_id: OperationID, group_id: GroupID) -> NewOperation {
+    let mut builder = OperationBuilder::new_entry(operation_id, "node_id", b"bob");
+    let mut frame_builder = builder.frame_builder.get_builder_typed();
+    frame_builder.set_group_id(group_id);
 
     let frame_signer = MultihashFrameSigner::new_sha3256();
-    msg_builder.as_owned_framed(frame_signer).unwrap()
+    builder.sign_and_build(frame_signer).unwrap()
 }

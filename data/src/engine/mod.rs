@@ -26,8 +26,9 @@ use exocore_common::serialization::{framed, framed::TypedFrame};
 
 use crate::chain;
 use crate::chain::{Block, BlockOffset};
+use crate::operation;
+use crate::operation::{NewOperation, OperationBuilder};
 use crate::pending;
-use crate::pending::PendingOperation;
 use crate::transport;
 use crate::transport::OutMessage;
 use exocore_common::time::Clock;
@@ -392,16 +393,13 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    fn handle_add_pending_operation(
-        &mut self,
-        operation_frame: OwnedTypedFrame<pending_operation::Owned>,
-    ) -> Result<(), Error> {
+    fn handle_add_pending_operation(&mut self, operation: NewOperation) -> Result<(), Error> {
         let mut sync_context = SyncContext::new();
         self.pending_synchronizer.handle_new_operation(
             &mut sync_context,
             &self.nodes,
             &mut self.pending_store,
-            operation_frame,
+            operation,
         )?;
 
         // to prevent sending pending operations that may have already been committed, we don't propagate
@@ -626,12 +624,14 @@ where
             .nodes
             .get(&unlocked_inner.node_id)
             .ok_or(Error::MyNodeNotFound)?;
-        let operation_id = unlocked_inner.clock.consistent_time(my_node);
-        let entry_operation =
-            PendingOperation::new_entry(operation_id, &unlocked_inner.node_id, data);
-        let entry_frame = entry_operation.as_owned_framed(my_node.frame_signer())?;
 
-        unlocked_inner.handle_add_pending_operation(entry_frame)?;
+        let operation_id = unlocked_inner.clock.consistent_time(my_node);
+
+        let operation_builder =
+            OperationBuilder::new_entry(operation_id, &unlocked_inner.node_id, data);
+        let operation = operation_builder.sign_and_build(my_node.frame_signer())?;
+
+        unlocked_inner.handle_add_pending_operation(operation)?;
 
         Ok(operation_id)
     }
@@ -779,6 +779,8 @@ pub enum Error {
     ChainSync(#[fail(cause)] chain_sync::ChainSyncError),
     #[fail(display = "Error in commit manager: {:?}", _0)]
     CommitManager(commit_manager::CommitManagerError),
+    #[fail(display = "Got an operation error: {:?}", _0)]
+    Operation(#[fail(cause)] operation::Error),
     #[fail(display = "Error in framing serialization: {:?}", _0)]
     Framing(#[fail(cause)] framed::Error),
     #[fail(display = "Chain is not initialized")]
@@ -860,6 +862,12 @@ impl From<chain_sync::ChainSyncError> for Error {
 impl From<commit_manager::CommitManagerError> for Error {
     fn from(err: commit_manager::CommitManagerError) -> Self {
         Error::CommitManager(err)
+    }
+}
+
+impl From<operation::Error> for Error {
+    fn from(err: operation::Error) -> Self {
+        Error::Operation(err)
     }
 }
 

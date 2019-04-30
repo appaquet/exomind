@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::serialization::framed;
-use exocore_common::serialization::framed::TypedFrame;
 
 use super::*;
+use crate::operation::Operation;
 
 ///
 /// In memory pending store
@@ -32,18 +32,9 @@ impl Default for MemoryPendingStore {
 }
 
 impl PendingStore for MemoryPendingStore {
-    fn put_operation(
-        &mut self,
-        operation: framed::OwnedTypedFrame<pending_operation::Owned>,
-    ) -> Result<bool, Error> {
-        let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
-        let operation_type = match operation_reader.get_operation().which()? {
-            pending_operation::operation::Which::BlockSign(_) => Type::BlockSign,
-            pending_operation::operation::Which::BlockPropose(_) => Type::BlockPropose,
-            pending_operation::operation::Which::BlockRefuse(_) => Type::BlockRefuse,
-            pending_operation::operation::Which::PendingIgnore(_) => Type::PendingIgnore,
-            pending_operation::operation::Which::Entry(_) => Type::Entry,
-        };
+    fn put_operation(&mut self, operation: operation::NewOperation) -> Result<bool, Error> {
+        let operation_reader = operation.get_operation_reader()?;
+        let operation_type = operation.get_type()?;
 
         let group_id = operation_reader.get_group_id();
         let group_operations = self
@@ -57,7 +48,7 @@ impl PendingStore for MemoryPendingStore {
             GroupOperation {
                 operation_id,
                 operation_type,
-                frame: Arc::new(operation),
+                frame: Arc::new(operation.frame),
             },
         );
 
@@ -162,7 +153,7 @@ impl GroupOperations {
 
 struct GroupOperation {
     operation_id: OperationID,
-    operation_type: Type,
+    operation_type: operation::OperationType,
     frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
 }
 
@@ -218,11 +209,8 @@ mod test {
         let op_ids = group_operations
             .operations
             .iter()
-            .map(|op| {
-                let reader = op.frame.get_typed_reader()?;
-                Ok(reader.get_operation_id())
-            })
-            .collect::<Result<Vec<OperationID>, failure::Error>>()?;
+            .map(|op| op.operation_id)
+            .collect::<Vec<OperationID>>();
 
         assert_eq!(op_ids, vec![100, 105]);
 

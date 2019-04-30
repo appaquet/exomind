@@ -702,7 +702,7 @@ impl From<directory::DirectoryError> for Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pending::PendingOperation;
+    use crate::operation::OperationBuilder;
 
     #[test]
     fn test_block_create_and_read() -> Result<(), failure::Error> {
@@ -712,8 +712,11 @@ mod tests {
 
         let first_block = BlockOwned::new_genesis(&nodes, &node1)?;
 
-        let operations = vec![PendingOperation::new_entry(123, "node1", b"some_data")
-            .as_owned_framed(node1.frame_signer())?];
+        let operations = vec![
+            OperationBuilder::new_entry(123, "node1", b"some_data")
+                .sign_and_build(node1.frame_signer())?
+                .frame,
+        ];
         let operations = BlockOperations::from_operations(operations.into_iter())?;
 
         let second_block =
@@ -775,9 +778,10 @@ mod tests {
         // 5 operations
         let operations = (0..5)
             .map(|i| {
-                PendingOperation::new_entry(i, "node1", b"op1")
-                    .as_owned_framed(node1.frame_signer())
+                OperationBuilder::new_entry(i, "node1", b"op1")
+                    .sign_and_build(node1.frame_signer())
                     .unwrap()
+                    .frame
             })
             .collect::<Vec<_>>();
 

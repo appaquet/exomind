@@ -174,20 +174,6 @@ fn two_nodes_simple_replication() -> Result<(), failure::Error> {
     Ok(())
 }
 
-#[test]
-fn dont_replicate_operations_until_chain_sync() {
-    // TODO:
-}
-
-#[test]
-fn dont_replicate_committed_operations() {
-    // TODO: Make node accept operation
-    // TODO: Make node go offline
-    // TODO: Wait for rest of node commit
-    // TODO: Make node come back online
-    // TODO: Don't expect nodes to get operations back in their pending store
-}
-
 ///
 ///
 ///

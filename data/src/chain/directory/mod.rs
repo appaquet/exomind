@@ -747,12 +747,12 @@ pub mod tests {
 
         // only true for tests
         let operation_id = offset as u64 + 1;
-        let operations =
-            vec![
-                crate::pending::PendingOperation::new_entry(operation_id, "node1", b"some_data")
-                    .as_owned_framed(node1.frame_signer())
-                    .unwrap(),
-            ];
+        let operations = vec![
+            crate::operation::OperationBuilder::new_entry(operation_id, "node1", b"some_data")
+                .sign_and_build(node1.frame_signer())
+                .unwrap()
+                .frame,
+        ];
 
         let proposed_operation_id = offset as u64;
         let block_operations = BlockOperations::from_operations(operations.into_iter()).unwrap();
