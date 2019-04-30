@@ -811,7 +811,6 @@ pub enum Error {
 impl Error {
     pub fn is_fatal(&self) -> bool {
         match self {
-            Error::PendingStore(inner) => inner.is_fatal(),
             Error::ChainStore(inner) => inner.is_fatal(),
             Error::ChainSync(inner) => inner.is_fatal(),
             Error::MyNodeNotFound
@@ -1062,8 +1061,8 @@ pub struct EngineOperation {
 }
 
 impl crate::operation::Operation for EngineOperation {
-    fn get_operation_reader(&self) -> Result<pending_operation::Reader, framed::Error> {
-        self.operation_frame.get_typed_reader()
+    fn get_operation_reader(&self) -> Result<pending_operation::Reader, operation::Error> {
+        Ok(self.operation_frame.get_typed_reader()?)
     }
 }
 

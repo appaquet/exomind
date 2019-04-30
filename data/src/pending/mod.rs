@@ -3,8 +3,8 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 use exocore_common::data_chain_capnp::pending_operation;
+use exocore_common::serialization::framed;
 use exocore_common::serialization::protos::{GroupID, OperationID};
-use exocore_common::serialization::{capnp, framed};
 
 use crate::operation;
 
@@ -60,30 +60,8 @@ pub struct StoredOperationsGroup {
 ///
 #[derive(Debug, Fail)]
 pub enum Error {
-    #[fail(display = "Error in message serialization")]
-    Framing(#[fail(cause)] framed::Error),
-    #[fail(display = "Field is not in capnp schema: code={}", _0)]
-    SerializationNotInSchema(u16),
     #[fail(display = "Operation related error: {:?}", _0)]
     Operation(#[fail(source)] operation::Error),
-}
-
-impl Error {
-    pub fn is_fatal(&self) -> bool {
-        false
-    }
-}
-
-impl From<framed::Error> for Error {
-    fn from(err: framed::Error) -> Self {
-        Error::Framing(err)
-    }
-}
-
-impl From<capnp::NotInSchema> for Error {
-    fn from(err: capnp::NotInSchema) -> Self {
-        Error::SerializationNotInSchema(err.0)
-    }
 }
 
 impl From<operation::Error> for Error {

@@ -11,7 +11,7 @@ use exocore_common::OperationID;
 /// the chain.
 ///
 pub trait Operation {
-    fn get_operation_reader(&self) -> Result<pending_operation::Reader, framed::Error>;
+    fn get_operation_reader(&self) -> Result<pending_operation::Reader, Error>;
 
     fn as_entry_data(&self) -> Result<&[u8], Error> {
         let frame_reader = self.get_operation_reader()?;
@@ -166,8 +166,8 @@ impl NewOperation {
 }
 
 impl crate::operation::Operation for NewOperation {
-    fn get_operation_reader(&self) -> Result<pending_operation::Reader, framed::Error> {
-        self.frame.get_typed_reader()
+    fn get_operation_reader(&self) -> Result<pending_operation::Reader, Error> {
+        Ok(self.frame.get_typed_reader()?)
     }
 }
 

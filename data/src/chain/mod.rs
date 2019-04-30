@@ -2,8 +2,8 @@ use std::ops::Range;
 
 use crate::block;
 use crate::block::{Block, BlockOffset, BlockRef};
+use exocore_common::serialization::framed;
 use exocore_common::serialization::protos::OperationID;
-use exocore_common::serialization::{capnp, framed};
 
 pub mod directory;
 
@@ -71,10 +71,6 @@ pub enum Error {
     OutOfBound(String),
     #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
     IO(std::io::ErrorKind, String),
-    #[fail(display = "Field is not in capnp schema: code={}", _0)]
-    SerializationNotInSchema(u16),
-    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
-    Serialization(capnp::ErrorKind, String),
     #[fail(display = "Error in directory chain store: {:?}", _0)]
     DirectoryError(#[fail(cause)] directory::DirectoryError),
     #[fail(display = "Try to lock a mutex that was poisoned")]
@@ -101,18 +97,6 @@ impl From<block::Error> for Error {
 impl From<framed::Error> for Error {
     fn from(err: framed::Error) -> Self {
         Error::Framing(err)
-    }
-}
-
-impl From<capnp::NotInSchema> for Error {
-    fn from(err: capnp::NotInSchema) -> Self {
-        Error::SerializationNotInSchema(err.0)
-    }
-}
-
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::Serialization(err.kind, err.description)
     }
 }
 
