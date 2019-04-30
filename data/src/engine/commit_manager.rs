@@ -3,13 +3,13 @@ use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 
+use crate::operation::OperationID;
 use exocore_common::node::{NodeID, Nodes};
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{SignedFrame, TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{
     block, block_signature, operation_block_propose, operation_block_sign, pending_operation,
 };
-use exocore_common::serialization::protos::OperationID;
 use exocore_common::time::Clock;
 
 use crate::block::{

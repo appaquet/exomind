@@ -4,7 +4,9 @@ use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{FrameBuilder, FrameSigner, TypedFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{block, block_signature};
 use exocore_common::serialization::{capnp, framed};
-use exocore_common::OperationID;
+
+pub type GroupID = u64;
+pub type OperationID = u64;
 
 ///
 /// Wraps an operation that is stored either in the pending store, or in the

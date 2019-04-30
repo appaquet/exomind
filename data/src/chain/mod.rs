@@ -2,8 +2,8 @@ use std::ops::Range;
 
 use crate::block;
 use crate::block::{Block, BlockOffset, BlockRef};
+use crate::operation::OperationID;
 use exocore_common::serialization::framed;
-use exocore_common::serialization::protos::OperationID;
 
 pub mod directory;
 

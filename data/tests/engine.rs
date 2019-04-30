@@ -13,17 +13,16 @@ use tempdir;
 use tokio::runtime::Runtime;
 
 use exocore_common::node::{Node, Nodes};
-use exocore_common::serialization::protos::OperationID;
 use exocore_common::tests_utils::expect_result;
 use exocore_common::time::Clock;
 
 use exocore_data::block::{BlockOffset, BlockOwned};
 use exocore_data::chain::ChainStore;
 use exocore_data::engine::{Event, Handle};
-use exocore_data::operation::Operation;
+use exocore_data::operation::{Operation, OperationID};
 use exocore_data::{
-    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, MemoryPendingStore,
-    MockTransportHub, OperationStatus,
+    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineOperationStatus,
+    MemoryPendingStore, MockTransportHub,
 };
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
@@ -44,14 +43,14 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
         .write_entry_operation(b"i love rust 1")?;
     let entry_operation = cluster.get_handle(0).get_operation(op1)?.unwrap();
     assert_eq!(b"i love rust 1", entry_operation.as_entry_data()?);
-    assert_eq!(OperationStatus::Pending, entry_operation.status);
+    assert_eq!(EngineOperationStatus::Pending, entry_operation.status);
 
     let op2 = cluster
         .get_handle_mut(0)
         .write_entry_operation(b"i love rust 2")?;
     let entry_operation = cluster.get_handle(0).get_operation(op2)?.unwrap();
     assert_eq!(b"i love rust 2", entry_operation.as_entry_data()?);
-    assert_eq!(OperationStatus::Pending, entry_operation.status);
+    assert_eq!(EngineOperationStatus::Pending, entry_operation.status);
 
     // wait for all operations to be emitted on stream
     expect_operations_emitted(&cluster, &[op1, op2]);
@@ -64,16 +63,16 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
         .get_chain_operation(*first_block_offset, op1)?
         .unwrap();
     assert_eq!(b"i love rust 1", entry_operation.as_entry_data()?);
-    assert_eq!(OperationStatus::Committed, entry_operation.status);
+    assert_eq!(EngineOperationStatus::Committed, entry_operation.status);
 
     // get operation from anywhere, should not be committed
     let entry_operation = cluster.get_handle(0).get_operation(op1)?.unwrap();
     assert_eq!(b"i love rust 1", entry_operation.as_entry_data()?);
-    assert_eq!(OperationStatus::Committed, entry_operation.status);
+    assert_eq!(EngineOperationStatus::Committed, entry_operation.status);
 
     let entry_operation = cluster.get_handle(0).get_operation(op2)?.unwrap();
     assert_eq!(b"i love rust 2", entry_operation.as_entry_data()?);
-    assert_eq!(OperationStatus::Committed, entry_operation.status);
+    assert_eq!(EngineOperationStatus::Committed, entry_operation.status);
 
     // test pending operations range
     let operations = cluster.get_handle(0).get_pending_operations(..)?;
@@ -109,7 +108,7 @@ fn single_node_restart() -> Result<(), failure::Error> {
 
     // make sure operation is in chain
     let entry_before = cluster.get_handle(0).get_operation(op1)?.unwrap();
-    assert_eq!(OperationStatus::Committed, entry_before.status);
+    assert_eq!(EngineOperationStatus::Committed, entry_before.status);
 
     // stop and restart node
     cluster.stop_node(0);
@@ -120,7 +119,7 @@ fn single_node_restart() -> Result<(), failure::Error> {
 
     // data should still exist
     let entry_before = cluster.get_handle(0).get_operation(op1)?.unwrap();
-    assert_eq!(OperationStatus::Committed, entry_before.status);
+    assert_eq!(EngineOperationStatus::Committed, entry_before.status);
 
     Ok(())
 }
@@ -154,14 +153,14 @@ fn two_nodes_simple_replication() -> Result<(), failure::Error> {
         cluster
             .get_handle(1)
             .get_operation(op1)?
-            .filter(|op| op.status == OperationStatus::Committed)
+            .filter(|op| op.status == EngineOperationStatus::Committed)
             .ok_or_else(|| err_msg("Operation not on node"))?;
 
         // op 0 should now be on node 1
         cluster
             .get_handle(0)
             .get_operation(op2)?
-            .filter(|op| op.status == OperationStatus::Committed)
+            .filter(|op| op.status == EngineOperationStatus::Committed)
             .ok_or_else(|| err_msg("Operation not on node"))?;
 
         Ok(())

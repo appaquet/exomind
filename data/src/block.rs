@@ -1,3 +1,4 @@
+use crate::operation::OperationID;
 use exocore_common::data_chain_capnp::{
     block, block_operation_header, block_signature, block_signatures,
 };
@@ -8,7 +9,6 @@ use exocore_common::serialization::framed::{
     FrameBuilder, OwnedFrame, OwnedTypedFrame, SignedFrame, TypedFrame, TypedSliceFrame,
 };
 use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
-use exocore_common::serialization::protos::OperationID;
 use exocore_common::serialization::{capnp, framed};
 
 pub type BlockOffset = u64;

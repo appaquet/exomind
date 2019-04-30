@@ -5,6 +5,7 @@ use std::ops::{Bound, RangeBounds};
 
 use itertools::{EitherOrBoth, Itertools};
 
+use crate::operation::OperationID;
 use exocore_common::node::{Node, NodeID, Nodes};
 use exocore_common::security::hash::{Sha3Hasher, StreamHasher};
 use exocore_common::serialization::framed::*;
@@ -14,7 +15,6 @@ use exocore_common::serialization::protos::data_chain_capnp::{
 use exocore_common::serialization::protos::data_transport_capnp::{
     pending_sync_range, pending_sync_request,
 };
-use exocore_common::serialization::protos::OperationID;
 
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};

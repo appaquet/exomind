@@ -9,9 +9,9 @@ use extindex::{Builder, Encodable, Reader};
 use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 
+use crate::operation::OperationID;
 use exocore_common::serialization::framed::TypedFrame;
 use exocore_common::serialization::protos::data_chain_capnp::{block, pending_operation};
-use exocore_common::serialization::protos::OperationID;
 use exocore_common::simple_store::json_disk_store::JsonDiskStore;
 use exocore_common::simple_store::SimpleStore;
 

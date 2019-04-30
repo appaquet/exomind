@@ -11,6 +11,7 @@ use futures::sync::oneshot;
 use tokio;
 use tokio::timer::Interval;
 
+use crate::operation::OperationID;
 use exocore_common;
 use exocore_common::node::{Node, NodeID, Nodes};
 use exocore_common::serialization::capnp;
@@ -21,7 +22,6 @@ use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
 use exocore_common::serialization::protos::data_transport_capnp::{
     chain_sync_request, chain_sync_response, envelope, pending_sync_request,
 };
-use exocore_common::serialization::protos::OperationID;
 use exocore_common::serialization::{framed, framed::TypedFrame};
 
 use crate::block;
@@ -655,7 +655,7 @@ where
         if let Some(operation) = block.get_operation(operation_id)? {
             Ok(Some(EngineOperation {
                 operation_id,
-                status: OperationStatus::Committed,
+                status: EngineOperationStatus::Committed,
                 operation_frame: Arc::new(operation.to_owned()),
             }))
         } else {
@@ -682,9 +682,9 @@ where
                     .and_then(|block| block)
                     .is_none();
                 let status = if in_chain {
-                    OperationStatus::Committed
+                    EngineOperationStatus::Committed
                 } else {
-                    OperationStatus::Pending
+                    EngineOperationStatus::Pending
                 };
 
                 EngineOperation {
@@ -715,7 +715,7 @@ where
             if let Some(operation) = block_ref.get_operation(operation_id)? {
                 return Ok(Some(EngineOperation {
                     operation_id,
-                    status: OperationStatus::Committed,
+                    status: EngineOperationStatus::Committed,
                     operation_frame: Arc::new(operation.to_owned()),
                 }));
             }
@@ -727,7 +727,7 @@ where
             .get_operation(operation_id)?
             .map(|stored_operation| EngineOperation {
                 operation_id: stored_operation.operation_id,
-                status: OperationStatus::Pending,
+                status: EngineOperationStatus::Pending,
                 operation_frame: stored_operation.frame,
             }))
     }
@@ -1017,46 +1017,34 @@ impl SyncContextMessage {
 ///
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
-    ///
     /// The engine is now started
-    ///
     Started,
 
-    ///
     /// The stream of events hit the maximum buffer size, and some events got discarded.
     /// Consumer state should be rebuilt from scratch to prevent having inconsistencies.
-    ///
     StreamDiscontinuity,
 
-    ///
     /// An operation added to the pending store.
-    ///
     PendingOperationNew(OperationID),
 
-    ///
     /// An operation that was previously added got deleted, hence will never end up in a block.
     /// This happens if an operation was invalid or found in the chain later on.
-    ///
     PendingEntryDelete(OperationID),
 
-    ///
     /// A new block got added to the chain.
-    ///
     ChainBlockNew(BlockOffset),
 
-    ///
     /// The chain has diverged from given offset, which mean it will get re-written with new blocks.
     /// Operations after this offset should ignored.
-    ///
     ChainDiverged(BlockOffset),
 }
 
 ///
-/// TODO: Should implement "Operation" trait, and should be named EngineOperation
-///       https://github.com/appaquet/exocore/issues/50
+/// Operation that comes either from the chain or from the pending store
+///
 pub struct EngineOperation {
     pub operation_id: OperationID,
-    pub status: OperationStatus,
+    pub status: EngineOperationStatus,
     pub operation_frame: Arc<OwnedTypedFrame<pending_operation::Owned>>,
 }
 
@@ -1067,7 +1055,7 @@ impl crate::operation::Operation for EngineOperation {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum OperationStatus {
+pub enum EngineOperationStatus {
     Committed,
     Pending,
 }

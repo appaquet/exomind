@@ -12,10 +12,9 @@ use crate::chain::ChainStore;
 use crate::engine::commit_manager::CommitManager;
 use crate::engine::pending_sync;
 use crate::engine::{chain_sync, SyncContext};
-use crate::operation::{NewOperation, OperationBuilder};
+use crate::operation::{GroupID, NewOperation, OperationBuilder, OperationID};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
-use exocore_common::serialization::protos::{GroupID, OperationID};
 use exocore_common::time::Clock;
 use std::collections::HashMap;
 

@@ -2,7 +2,7 @@ use std;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 
-use exocore_common::serialization::protos::OperationID;
+use crate::operation::OperationID;
 use segment::DirectorySegment;
 
 use crate::chain::{Block, BlockOffset, BlockRef, ChainStore, Error, Segment, StoredBlockIterator};
