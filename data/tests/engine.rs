@@ -17,7 +17,8 @@ use exocore_common::serialization::protos::OperationID;
 use exocore_common::tests_utils::expect_result;
 use exocore_common::time::Clock;
 
-use exocore_data::chain::{BlockOffset, BlockOwned, ChainStore};
+use exocore_data::block::{BlockOffset, BlockOwned};
+use exocore_data::chain::ChainStore;
 use exocore_data::engine::{Event, Handle};
 use exocore_data::operation::Operation;
 use exocore_data::{

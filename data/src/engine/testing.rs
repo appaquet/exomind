@@ -6,9 +6,9 @@ use exocore_common::serialization::framed::{
 };
 use exocore_common::serialization::protos::data_chain_capnp::{block, block_signatures};
 
-use crate::chain;
+use crate::block::{Block, BlockDepth, BlockOffset, BlockOwned};
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
-use crate::chain::{Block, BlockDepth, BlockOffset, BlockOwned, ChainStore};
+use crate::chain::ChainStore;
 use crate::engine::commit_manager::CommitManager;
 use crate::engine::pending_sync;
 use crate::engine::{chain_sync, SyncContext};
@@ -176,7 +176,7 @@ impl TestCluster {
 
     pub fn chain_add_genesis_block(&mut self, node_idx: usize) {
         let my_node = self.get_node(node_idx);
-        let block = chain::BlockOwned::new_genesis(&self.nodes, &my_node).unwrap();
+        let block = BlockOwned::new_genesis(&self.nodes, &my_node).unwrap();
         self.chains[node_idx].write_block(&block).unwrap();
     }
 

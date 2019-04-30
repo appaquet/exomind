@@ -24,8 +24,9 @@ use exocore_common::serialization::protos::data_transport_capnp::{
 use exocore_common::serialization::protos::OperationID;
 use exocore_common::serialization::{framed, framed::TypedFrame};
 
+use crate::block;
+use crate::block::{Block, BlockOffset};
 use crate::chain;
-use crate::chain::{Block, BlockOffset};
 use crate::operation;
 use crate::operation::{NewOperation, OperationBuilder};
 use crate::pending;
@@ -644,7 +645,7 @@ where
 
     pub fn get_chain_operation(
         &self,
-        block_offset: chain::BlockOffset,
+        block_offset: BlockOffset,
         operation_id: OperationID,
     ) -> Result<Option<EngineOperation>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
@@ -779,7 +780,9 @@ pub enum Error {
     ChainSync(#[fail(cause)] chain_sync::ChainSyncError),
     #[fail(display = "Error in commit manager: {:?}", _0)]
     CommitManager(commit_manager::CommitManagerError),
-    #[fail(display = "Got an operation error: {:?}", _0)]
+    #[fail(display = "Got a block related error: {:?}", _0)]
+    Block(#[fail(cause)] block::Error),
+    #[fail(display = "Got an operation related error: {:?}", _0)]
     Operation(#[fail(cause)] operation::Error),
     #[fail(display = "Error in framing serialization: {:?}", _0)]
     Framing(#[fail(cause)] framed::Error),
@@ -862,6 +865,12 @@ impl From<chain_sync::ChainSyncError> for Error {
 impl From<commit_manager::CommitManagerError> for Error {
     fn from(err: commit_manager::CommitManagerError) -> Self {
         Error::CommitManager(err)
+    }
+}
+
+impl From<block::Error> for Error {
+    fn from(err: block::Error) -> Self {
+        Error::Block(err)
     }
 }
 

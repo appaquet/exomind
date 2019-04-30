@@ -1,4 +1,4 @@
-use crate::chain;
+use crate::block::Block;
 use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{FrameBuilder, FrameSigner, TypedFrame};
@@ -79,7 +79,7 @@ impl OperationBuilder {
         OperationBuilder { frame_builder }
     }
 
-    pub fn new_block_proposal<B: chain::Block>(
+    pub fn new_block_proposal<B: Block>(
         operation_id: OperationID,
         node_id: &str,
         block: &B,
@@ -172,7 +172,7 @@ impl crate::operation::Operation for NewOperation {
 }
 
 ///
-/// Error related to operations
+/// Operations related error
 ///
 #[derive(Debug, Fail)]
 pub enum Error {

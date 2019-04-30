@@ -12,9 +12,10 @@ use exocore_common::serialization::protos::data_chain_capnp::{
 use exocore_common::serialization::protos::OperationID;
 use exocore_common::time::Clock;
 
+use crate::block::{
+    Block, BlockDepth, BlockOffset, BlockOperations, BlockOwned, BlockSignature, BlockSignatures,
+};
 use crate::chain;
-use crate::chain::BlockOffset;
-use crate::chain::{Block, BlockDepth};
 use crate::engine::{pending_sync, Event, SyncContext};
 use crate::operation;
 use crate::operation::{Operation, OperationType};
@@ -169,7 +170,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         // validate hash of operations of block
         let block_operations = Self::get_block_operations(block, pending_store)?.map(|op| op.frame);
-        let operations_hash = chain::BlockOperations::hash_operations(block_operations)?;
+        let operations_hash = BlockOperations::hash_operations(block_operations)?;
         let block_reader = block_frame.get_typed_reader()?;
         if operations_hash.as_bytes() != block_reader.get_operations_hash()? {
             debug!(
@@ -315,9 +316,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .sorted_by_key(|operation| operation.operation_id)
             .map(|operation| operation.frame);
 
-        let block_operations = chain::BlockOperations::from_operations(block_operations)?;
+        let block_operations = BlockOperations::from_operations(block_operations)?;
         let block_operation_id = self.clock.consistent_time(&my_node);
-        let block = chain::BlockOwned::new_with_prev_block(
+        let block = BlockOwned::new_with_prev_block(
             nodes,
             my_node,
             &previous_block,
@@ -371,7 +372,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         // make sure that the hash of operations is same as defined by the block
         // this should never happen since we wouldn't have signed the block if hash didn't match
-        let block_operations = chain::BlockOperations::from_operations(block_operations)?;
+        let block_operations = BlockOperations::from_operations(block_operations)?;
         if block_operations.multihash_bytes() != block_reader.get_operations_hash()? {
             return Err(Error::Fatal(
                 "Block hash for local entries didn't match block hash, but was previously signed"
@@ -385,7 +386,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .iter()
             .filter_map(|pending_signature| {
                 if next_block.validate_signature(nodes, pending_signature) {
-                    Some(chain::BlockSignature::new(
+                    Some(BlockSignature::new(
                         pending_signature.node_id.clone(),
                         pending_signature.signature.clone(),
                     ))
@@ -394,12 +395,12 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 }
             })
             .collect::<Vec<_>>();
-        let block_signatures = chain::BlockSignatures::new_from_signatures(signatures);
+        let block_signatures = BlockSignatures::new_from_signatures(signatures);
         let signatures_frame =
             block_signatures.to_frame_for_existing_block(my_node, &block_reader)?;
 
         // finally build the frame
-        let block = chain::BlockOwned::new(
+        let block = BlockOwned::new(
             next_block.proposal.offset,
             block_frame.to_owned(),
             block_operations.data().to_vec(),
@@ -975,9 +976,9 @@ mod tests {
                 .unwrap()
                 .frame
         });
-        let block_operations = chain::BlockOperations::from_operations(block_operations)?;
+        let block_operations = BlockOperations::from_operations(block_operations)?;
         let block_operation_id = cluster.clocks[0].consistent_time(&node);
-        let block = chain::BlockOwned::new_with_prev_block(
+        let block = BlockOwned::new_with_prev_block(
             &cluster.nodes,
             &node,
             &previous_block,

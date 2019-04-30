@@ -11,8 +11,9 @@ use exocore_common::serialization::protos::data_transport_capnp::{
 };
 use exocore_common::time::Clock;
 
+use crate::block::{Block, BlockDepth, BlockOffset, BlockRef, BlockSignaturesSize};
 use crate::chain;
-use crate::chain::{Block, BlockDepth, BlockOffset, BlockRef, ChainStore};
+use crate::chain::ChainStore;
 use crate::engine::request_tracker::RequestTracker;
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
@@ -416,8 +417,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     /// Creates a response to a request for headers from a remote node.
     ///
     fn create_sync_response_for_headers(
-        from_offset: chain::BlockOffset,
-        to_offset: chain::BlockOffset,
+        from_offset: BlockOffset,
+        to_offset: BlockOffset,
         headers: Vec<BlockHeader>,
     ) -> Result<FrameBuilder<chain_sync_response::Owned>, Error> {
         let mut frame_builder = FrameBuilder::new();
@@ -446,8 +447,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     ///
     fn create_sync_response_for_blocks<'s, I: Iterator<Item = BlockRef<'s>>>(
         config: &ChainSyncConfig,
-        from_offset: chain::BlockOffset,
-        to_offset: chain::BlockOffset,
+        from_offset: BlockOffset,
+        to_offset: BlockOffset,
         blocks_iter: I,
     ) -> Result<FrameBuilder<chain_sync_response::Owned>, Error> {
         let mut frame_builder = FrameBuilder::new();
@@ -508,7 +509,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
         let headers_reader = response_reader.get_headers()?;
         let mut has_new_common_block = false;
-        let mut first_non_common_block: Option<chain::BlockOffset> = None;
+        let mut first_non_common_block: Option<BlockOffset> = None;
         let mut last_header_depth = None;
         let mut all_contiguous = true;
 
@@ -738,9 +739,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 pub struct ChainSyncConfig {
     pub request_tracker: request_tracker::RequestTrackerConfig,
     pub meta_sync_timeout: Duration,
-    pub headers_sync_begin_count: chain::BlockOffset,
-    pub headers_sync_end_count: chain::BlockOffset,
-    pub headers_sync_sampled_count: chain::BlockOffset,
+    pub headers_sync_begin_count: BlockOffset,
+    pub headers_sync_end_count: BlockOffset,
+    pub headers_sync_sampled_count: BlockOffset,
     pub blocks_max_send_size: usize,
     pub max_leader_common_block_delta: BlockDepth,
 }
@@ -860,15 +861,15 @@ enum NodeMetadataStatus {
 ///
 #[derive(Debug)]
 struct BlockHeader {
-    offset: chain::BlockOffset,
-    depth: chain::BlockDepth,
+    offset: BlockOffset,
+    depth: BlockDepth,
     hash: Vec<u8>,
-    previous_offset: chain::BlockOffset,
+    previous_offset: BlockOffset,
     previous_hash: Vec<u8>,
 
     block_size: u32,
     operations_size: u32,
-    signatures_size: chain::BlockSignaturesSize,
+    signatures_size: BlockSignaturesSize,
 }
 
 impl BlockHeader {
@@ -888,7 +889,7 @@ impl BlockHeader {
 
             block_size: stored_block.block().frame_size() as u32,
             operations_size: stored_block.operations_data().len() as u32,
-            signatures_size: stored_block.signatures().frame_size() as chain::BlockSignaturesSize,
+            signatures_size: stored_block.signatures().frame_size() as BlockSignaturesSize,
         })
     }
 
@@ -908,11 +909,11 @@ impl BlockHeader {
     }
 
     #[inline]
-    fn next_offset(&self) -> chain::BlockOffset {
+    fn next_offset(&self) -> BlockOffset {
         self.offset
-            + chain::BlockOffset::from(self.block_size)
-            + chain::BlockOffset::from(self.operations_size)
-            + chain::BlockOffset::from(self.signatures_size)
+            + BlockOffset::from(self.block_size)
+            + BlockOffset::from(self.operations_size)
+            + BlockOffset::from(self.signatures_size)
     }
 
     fn copy_into_builder(&self, builder: &mut block_header::Builder) {
@@ -960,11 +961,11 @@ impl ChainSyncError {
 ///
 fn chain_sample_block_headers<CS: chain::ChainStore>(
     store: &CS,
-    from_offset: chain::BlockOffset,
-    to_offset: Option<chain::BlockOffset>,
-    begin_count: chain::BlockOffset,
-    end_count: chain::BlockOffset,
-    sampled_count: chain::BlockOffset,
+    from_offset: BlockOffset,
+    to_offset: Option<BlockOffset>,
+    begin_count: BlockOffset,
+    end_count: BlockOffset,
+    sampled_count: BlockOffset,
 ) -> Result<Vec<BlockHeader>, Error> {
     let mut headers = Vec::new();
 
@@ -1015,7 +1016,7 @@ fn chain_sample_block_headers<CS: chain::ChainStore>(
     {
         // we always include headers if the block is within the first `begin_count` or in the last `end_count`
         // otherwise, we include if it falls within sampling condition
-        let blocks_count = blocks_count as chain::BlockOffset;
+        let blocks_count = blocks_count as BlockOffset;
         if blocks_count < begin_count
             || blocks_count > range_blocks_lasts
             || blocks_count % range_blocks_skip == 0
@@ -1108,7 +1109,7 @@ mod tests {
         let mut cluster = TestCluster::new(1);
         cluster.chain_generate_dummy(0, 100, 3424);
 
-        let offsets: Vec<chain::BlockOffset> = cluster.chains[0]
+        let offsets: Vec<BlockOffset> = cluster.chains[0]
             .blocks_iter(0)?
             .map(|b| b.offset)
             .collect();

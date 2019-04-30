@@ -423,7 +423,7 @@ pub mod tests {
     use exocore_common::range;
     use exocore_common::serialization::framed::TypedFrame;
 
-    use crate::chain::{Block, BlockOperations, BlockOwned};
+    use crate::block::{Block, BlockOperations, BlockOwned};
 
     use super::*;
 
