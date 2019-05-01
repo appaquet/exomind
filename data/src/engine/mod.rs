@@ -706,6 +706,7 @@ where
         let unlocked_inner = inner.write()?;
 
         // TODO: Should always check pending first, but until we don't keep any committed flag, we need to check chain first
+        // TODO: https://github.com/appaquet/exocore/issues/41
 
         // first check if it's in the chain
         if let Some(block_ref) = unlocked_inner
@@ -721,7 +722,7 @@ where
             }
         }
 
-        // otherwise, check if it's inpending store
+        // otherwise, check if it's in pending store
         Ok(unlocked_inner
             .pending_store
             .get_operation(operation_id)?

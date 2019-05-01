@@ -43,7 +43,7 @@ impl RequestTracker {
         self.nb_response_failure = 0;
     }
 
-    pub fn last_response_receive(&self) -> Option<Duration> {
+    pub fn last_response_elapsed_duration(&self) -> Option<Duration> {
         self.last_response_receive.map(|i| self.clock.instant() - i)
     }
 
