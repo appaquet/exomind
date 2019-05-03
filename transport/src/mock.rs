@@ -8,7 +8,7 @@ use futures::sync::{mpsc, oneshot};
 
 use exocore_common::node::{Node, NodeID};
 
-use super::*;
+use crate::{Error, InMessage, OutMessage, Transport};
 
 ///
 /// Dispatches messages between nodes' `MockTransport`
@@ -258,10 +258,11 @@ impl Future for CompletionFuture {
 mod test {
     use tokio::runtime::Runtime;
 
-    use exocore_common::serialization::framed::TypedFrame;
+    use exocore_common::serialization::framed::{FrameBuilder, TypedFrame};
     use exocore_common::tests_utils::*;
 
     use super::*;
+    use exocore_common::serialization::protos::data_transport_capnp::envelope;
 
     #[test]
     fn send_and_receive() {

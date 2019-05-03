@@ -1,26 +1,16 @@
-use tokio::prelude::*;
-
 use exocore_common::data_transport_capnp::envelope;
 use exocore_common::node::Node;
 use exocore_common::serialization::framed::{
     FrameBuilder, MessageType, OwnedTypedFrame, TypedFrame,
 };
-use exocore_common::transport::TransportLayer;
 
-pub mod mock;
-
-pub trait Transport: Future<Item = (), Error = Error> + Send + 'static {
-    type Sink: Sink<SinkItem = OutMessage, SinkError = Error> + Send + 'static;
-    type Stream: Stream<Item = InMessage, Error = Error> + Send + 'static;
-
-    fn get_sink(&mut self) -> Self::Sink;
-    fn get_stream(&mut self) -> Self::Stream;
-}
+use crate::{Error, TransportLayer};
 
 pub struct OutMessage {
-    to: Vec<Node>,
-    envelope: FrameBuilder<envelope::Owned>,
+    pub to: Vec<Node>,
+    pub envelope: FrameBuilder<envelope::Owned>,
 }
+
 impl OutMessage {
     pub fn from_framed_message<'n, R, T>(
         local_node: &'n Node,
@@ -46,7 +36,7 @@ impl OutMessage {
         })
     }
 
-    fn to_in_message(&self, from_node: Node) -> InMessage {
+    pub fn to_in_message(&self, from_node: Node) -> InMessage {
         InMessage {
             from: from_node,
             envelope: self.envelope.as_owned_unsigned_framed().unwrap(),
@@ -58,10 +48,4 @@ impl OutMessage {
 pub struct InMessage {
     pub from: Node,
     pub envelope: OwnedTypedFrame<envelope::Owned>,
-}
-
-#[derive(Debug, Fail)]
-pub enum Error {
-    #[fail(display = "An error occurred: {}", _0)]
-    Other(String),
 }

@@ -20,5 +20,4 @@ pub mod serialization;
 pub mod simple_store;
 pub mod tests_utils;
 pub mod time;
-pub mod transport;
 pub mod utils;

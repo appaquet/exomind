@@ -22,8 +22,9 @@ use exocore_data::engine::{Event, Handle};
 use exocore_data::operation::{Operation, OperationID};
 use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineOperationStatus,
-    MemoryPendingStore, MockTransportHub,
+    MemoryPendingStore,
 };
+use exocore_transport::mock::MockTransportHub;
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
 
