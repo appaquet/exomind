@@ -31,7 +31,7 @@ use crate::operation;
 use crate::operation::{NewOperation, OperationBuilder};
 use crate::pending;
 use exocore_common::time::Clock;
-use exocore_transport::{Error as TransportError, InMessage, OutMessage, Transport};
+use exocore_transport::{Error as TransportError, InMessage, LayerStreams, OutMessage};
 use itertools::Itertools;
 
 mod chain_sync;
@@ -75,7 +75,7 @@ impl Default for Config {
 ///
 pub struct Engine<T, CS, PS>
 where
-    T: Transport,
+    T: LayerStreams,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -90,7 +90,7 @@ where
 
 impl<T, CS, PS> Engine<T, CS, PS>
 where
-    T: Transport,
+    T: LayerStreams,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -274,7 +274,7 @@ where
             "{}: Got message of type {} from node {}",
             inner.node_id,
             envelope_reader.get_type(),
-            envelope_reader.get_from_node()?
+            envelope_reader.get_from_node_id()?
         );
 
         match envelope_reader.get_type() {
@@ -342,7 +342,7 @@ where
 
 impl<T, CS, PS> Future for Engine<T, CS, PS>
 where
-    T: Transport,
+    T: LayerStreams,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {

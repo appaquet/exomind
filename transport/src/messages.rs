@@ -4,7 +4,8 @@ use exocore_common::serialization::framed::{
     FrameBuilder, MessageType, OwnedTypedFrame, TypedFrame,
 };
 
-use crate::{Error, TransportLayer};
+use crate::{layer::Layer, Error};
+use exocore_common::cell::Cell;
 
 pub struct OutMessage {
     pub to: Vec<Node>,
@@ -12,6 +13,7 @@ pub struct OutMessage {
 }
 
 impl OutMessage {
+    #[deprecated]
     pub fn from_framed_message<'n, R, T>(
         local_node: &'n Node,
         to_nodes: Vec<Node>,
@@ -25,9 +27,34 @@ impl OutMessage {
         let mut envelope_message_builder: envelope::Builder =
             envelope_frame_builder.get_builder_typed();
 
-        envelope_message_builder.set_layer(TransportLayer::Data.into());
+        envelope_message_builder.set_layer(Layer::Data.into());
         envelope_message_builder.set_type(frame.message_type());
-        envelope_message_builder.set_from_node(&local_node.id());
+        envelope_message_builder.set_from_node_id(&local_node.id());
+        envelope_message_builder.set_data(frame.frame_data());
+
+        Ok(OutMessage {
+            to: to_nodes,
+            envelope: envelope_frame_builder,
+        })
+    }
+
+    pub fn from_framed_message_cell<R, T>(
+        cell: &Cell,
+        to_nodes: Vec<Node>,
+        frame: R,
+    ) -> Result<OutMessage, Error>
+    where
+        R: TypedFrame<T>,
+        T: for<'a> MessageType<'a>,
+    {
+        let mut envelope_frame_builder = FrameBuilder::new();
+        let mut envelope_message_builder: envelope::Builder =
+            envelope_frame_builder.get_builder_typed();
+
+        envelope_message_builder.set_layer(Layer::Data.into());
+        envelope_message_builder.set_type(frame.message_type());
+        envelope_message_builder.set_cell_id(cell.id().as_bytes());
+        envelope_message_builder.set_from_node_id(&cell.nodes().local_node().id());
         envelope_message_builder.set_data(frame.frame_data());
 
         Ok(OutMessage {

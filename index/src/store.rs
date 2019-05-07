@@ -8,7 +8,7 @@ use exocore_data;
 
 pub struct Store<T, CP, PP>
 where
-    T: exocore_transport::Transport,
+    T: exocore_transport::LayerStreams,
     CP: exocore_data::chain::ChainStore,
     PP: exocore_data::pending::PendingStore,
 {
@@ -17,7 +17,7 @@ where
 
 impl<T, CP, PP> Store<T, CP, PP>
 where
-    T: exocore_transport::Transport,
+    T: exocore_transport::LayerStreams,
     CP: exocore_data::chain::ChainStore,
     PP: exocore_data::pending::PendingStore,
 {

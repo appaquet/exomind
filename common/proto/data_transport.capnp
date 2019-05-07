@@ -4,11 +4,12 @@ using Chain = import "data_chain.capnp";
 using Common = import "common.capnp";
 
 struct Envelope {
-    layer              @0: UInt8;
-    type               @1: UInt16;
-    fromNode           @2: Text;
+    cellId             @0: Text;
+    layer              @1: UInt8;
+    type               @2: UInt16;
+    fromNodeId         @3: Text;
 
-    data               @3: Data;
+    data               @4: Data;
 }
 
 #

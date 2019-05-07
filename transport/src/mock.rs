@@ -8,7 +8,8 @@ use futures::sync::{mpsc, oneshot};
 
 use exocore_common::node::{Node, NodeID};
 
-use crate::{Error, InMessage, OutMessage, Transport};
+use crate::completion::{CompletionFuture, CompletionSender};
+use crate::{Error, InMessage, LayerStreams, OutMessage};
 
 ///
 /// Dispatches messages between nodes' `MockTransport`
@@ -61,7 +62,7 @@ pub struct MockTransport {
     completion_future: CompletionFuture,
 }
 
-impl Transport for MockTransport {
+impl LayerStreams for MockTransport {
     type Sink = MockTransportSink;
     type Stream = MockTransportStream;
 
@@ -205,52 +206,6 @@ impl Sink for MockTransportSink {
         self.in_channel
             .close()
             .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {:?}", err)))
-    }
-}
-
-///
-/// Use to send signal to all transports that the hub has completed and they should be done.
-///
-#[derive(Clone)]
-struct CompletionSender {
-    sender: Arc<Mutex<Option<CompletionChannelSender>>>,
-}
-
-type CompletionChannelSender = oneshot::Sender<Result<(), Error>>;
-
-impl CompletionSender {
-    fn new() -> (CompletionSender, CompletionFuture) {
-        let (sender, receiver) = oneshot::channel();
-
-        let sender = CompletionSender {
-            sender: Arc::new(Mutex::new(Some(sender))),
-        };
-        let future = CompletionFuture(receiver);
-        (sender, future)
-    }
-}
-
-impl CompletionSender {
-    fn complete(&self, result: Result<(), Error>) {
-        if let Ok(mut unlocked) = self.sender.lock() {
-            if let Some(sender) = unlocked.take() {
-                let _ = sender.send(result);
-            }
-        }
-    }
-}
-
-struct CompletionFuture(oneshot::Receiver<Result<(), Error>>);
-
-impl Future for CompletionFuture {
-    type Item = ();
-    type Error = Error;
-
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        self.0
-            .poll()
-            .map(|asnc| asnc.map(|_| ()))
-            .map_err(|err| Error::Other(format!("Polling completion receiver failed: {:?}", err)))
     }
 }
 

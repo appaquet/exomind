@@ -1,28 +1,51 @@
 use crate::security::signature::Signature;
 use crate::serialization::framed::{FrameSigner, MultihashFrameSigner};
+use libp2p_core::identity::{Keypair, PublicKey};
+use libp2p_core::nodes::Peer;
+use libp2p_core::{Multiaddr, PeerId};
 use std::collections::HashMap;
+use std::ops::Deref;
 
+// TODO: Replace by struct
 pub type NodeID = String;
 
 // TODO: To be put back in cell when we'll implement it here: https://github.com/appaquet/exocore/issues/37
-// TODO: NodeID = hash(publickey)
 // TODO: ACLs
 
+///
+///
+///
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Node {
-    id: NodeID,
+    node_id: NodeID,
+    peer_id: PeerId,
+    public_key: PublicKey,
+    addresses: Vec<Multiaddr>,
     //    address: String,
     //    is_me: bool,
 }
 
 impl Node {
-    pub fn new(id: String) -> Node {
-        Node { id }
+    pub fn new(node_id: String) -> Node {
+        // TODO: Fixme
+        let keypair = Keypair::generate_ed25519();
+        let peer_id = PeerId::from_public_key(keypair.public());
+
+        Node {
+            node_id,
+            peer_id,
+            public_key: keypair.public(),
+            addresses: vec![],
+        }
     }
 
     #[inline]
     pub fn id(&self) -> &NodeID {
-        &self.id
+        &self.node_id
+    }
+
+    pub fn peer_id(&self) -> &PeerId {
+        &self.peer_id
     }
 
     pub fn frame_signer(&self) -> impl FrameSigner {
@@ -38,16 +61,78 @@ impl Node {
     }
 }
 
+///
+///
+///
+#[derive(Clone)]
+pub struct LocalNode {
+    node: Node,
+    keypair: Keypair,
+}
+
+impl LocalNode {
+    pub fn generate() -> LocalNode {
+        // TODO: Fixme
+        let keypair = Keypair::generate_ed25519();
+        let peer_id = PeerId::from_public_key(keypair.public());
+        let node_id = peer_id.to_string();
+
+        LocalNode {
+            node: Node {
+                node_id,
+                peer_id,
+                public_key: keypair.public(),
+                addresses: vec![],
+            },
+            keypair,
+        }
+    }
+
+    pub fn keypair(&self) -> &Keypair {
+        &self.keypair
+    }
+}
+
+impl Deref for LocalNode {
+    type Target = Node;
+
+    fn deref(&self) -> &Self::Target {
+        &self.node
+    }
+}
+
+///
+///
+///
 #[derive(Clone)]
 pub struct Nodes {
+    local_node: LocalNode,
     nodes: HashMap<NodeID, Node>,
 }
 
 impl Nodes {
+    #[deprecated]
     pub fn new() -> Nodes {
+        // TODO: Fix me
+        let mut nodes = HashMap::new();
+        let local_node = LocalNode::generate();
         Nodes {
-            nodes: HashMap::new(),
+            local_node,
+            nodes,
         }
+    }
+
+    fn new_with_local(local_node: LocalNode) -> Nodes {
+        let mut nodes = HashMap::new();
+        nodes.insert(local_node.node_id.clone(), local_node.node.clone());
+        Nodes {
+            local_node,
+            nodes,
+        }
+    }
+
+    pub fn local_node(&self) -> &LocalNode {
+        &self.local_node
     }
 
     pub fn add(&mut self, node: Node) {
