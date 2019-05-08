@@ -1,33 +1,55 @@
 use crate::security::signature::Signature;
 use crate::serialization::framed::{FrameSigner, MultihashFrameSigner};
 use libp2p_core::identity::{Keypair, PublicKey};
-use libp2p_core::nodes::Peer;
 use libp2p_core::{Multiaddr, PeerId};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
+use std::sync::{Arc, RwLock};
 
-// TODO: Replace by struct
+//
+// TODO: To be cleaned up in https://github.com/appaquet/exocore/issues/37
+// TODO: Encryption/signature ticket: https://github.com/appaquet/exocore/issues/46
+//
+
+/// Unique identifier of a node, which is built by hashing the public key of the node.
+/// It has a one to one correspondence with libp2p's PeerId
 pub type NodeID = String;
 
-// TODO: To be put back in cell when we'll implement it here: https://github.com/appaquet/exocore/issues/37
-// TODO: ACLs
+#[deprecated]
+pub fn node_id_from_peer_id(peer_id: &PeerId) -> NodeID {
+    peer_id.to_string()
+}
 
-///
-///
-///
-#[derive(PartialEq, Eq, Clone, Debug)]
+/// Represents a machine / process on which Exocore runs. A node can host multiple `Cell`.
+#[derive(Clone)]
 pub struct Node {
     node_id: NodeID,
     peer_id: PeerId,
     public_key: PublicKey,
-    addresses: Vec<Multiaddr>,
-    //    address: String,
-    //    is_me: bool,
+    inner: Arc<RwLock<SharedInner>>,
+}
+
+struct SharedInner {
+    addresses: HashSet<Multiaddr>,
 }
 
 impl Node {
+    pub fn new_from_public_key(public_key: PublicKey) -> Node {
+        let peer_id = PeerId::from_public_key(public_key.clone());
+        let node_id = peer_id.to_string();
+
+        Node {
+            node_id,
+            peer_id,
+            public_key,
+            inner: Arc::new(RwLock::new(SharedInner {
+                addresses: HashSet::new(),
+            })),
+        }
+    }
+
+    #[deprecated]
     pub fn new(node_id: String) -> Node {
-        // TODO: Fixme
         let keypair = Keypair::generate_ed25519();
         let peer_id = PeerId::from_public_key(keypair.public());
 
@@ -35,7 +57,9 @@ impl Node {
             node_id,
             peer_id,
             public_key: keypair.public(),
-            addresses: vec![],
+            inner: Arc::new(RwLock::new(SharedInner {
+                addresses: HashSet::new(),
+            })),
         }
     }
 
@@ -48,6 +72,17 @@ impl Node {
         &self.peer_id
     }
 
+    pub fn addresses(&self) -> Vec<Multiaddr> {
+        let inner = self.inner.read().expect("Couldn't get inner lock");
+        inner.addresses.iter().cloned().collect()
+    }
+
+    pub fn add_address(&self, address: Multiaddr) {
+        let mut inner = self.inner.write().expect("Couldn't get inner lock");
+        inner.addresses.insert(address);
+    }
+
+    #[deprecated]
     pub fn frame_signer(&self) -> impl FrameSigner {
         // TODO: Signature ticket: https://github.com/appaquet/exocore/issues/46
         //       Include signature, not just hash.
@@ -61,9 +96,8 @@ impl Node {
     }
 }
 
-///
-///
-///
+/// Represents the local `Node` being run in the current process. Contrarily to other nodes,
+/// we have a full private+public keypair that we can sign messages with.
 #[derive(Clone)]
 pub struct LocalNode {
     node: Node,
@@ -71,21 +105,19 @@ pub struct LocalNode {
 }
 
 impl LocalNode {
-    pub fn generate() -> LocalNode {
-        // TODO: Fixme
-        let keypair = Keypair::generate_ed25519();
-        let peer_id = PeerId::from_public_key(keypair.public());
-        let node_id = peer_id.to_string();
-
+    pub fn new_from_keypair(keypair: Keypair) -> LocalNode {
         LocalNode {
-            node: Node {
-                node_id,
-                peer_id,
-                public_key: keypair.public(),
-                addresses: vec![],
-            },
+            node: Node::new_from_public_key(keypair.public()),
             keypair,
         }
+    }
+
+    pub fn generate() -> LocalNode {
+        LocalNode::new_from_keypair(Keypair::generate_ed25519())
+    }
+
+    pub fn node(&self) -> &Node {
+        &self.node
     }
 
     pub fn keypair(&self) -> &Keypair {
@@ -101,9 +133,7 @@ impl Deref for LocalNode {
     }
 }
 
-///
-///
-///
+/// Collection of nodes of a `Cell`
 #[derive(Clone)]
 pub struct Nodes {
     local_node: LocalNode,
@@ -113,22 +143,15 @@ pub struct Nodes {
 impl Nodes {
     #[deprecated]
     pub fn new() -> Nodes {
-        // TODO: Fix me
-        let mut nodes = HashMap::new();
+        let nodes = HashMap::new();
         let local_node = LocalNode::generate();
-        Nodes {
-            local_node,
-            nodes,
-        }
+        Nodes { local_node, nodes }
     }
 
-    fn new_with_local(local_node: LocalNode) -> Nodes {
+    pub fn new_with_local(local_node: LocalNode) -> Nodes {
         let mut nodes = HashMap::new();
         nodes.insert(local_node.node_id.clone(), local_node.node.clone());
-        Nodes {
-            local_node,
-            nodes,
-        }
+        Nodes { local_node, nodes }
     }
 
     pub fn local_node(&self) -> &LocalNode {

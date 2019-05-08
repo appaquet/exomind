@@ -24,7 +24,7 @@ use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineOperationStatus,
     MemoryPendingStore,
 };
-use exocore_transport::mock::MockTransportHub;
+use exocore_transport::mock::MockTransport;
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
 
@@ -182,7 +182,7 @@ struct TestCluster {
     tempdir: tempdir::TempDir,
     runtime: Runtime,
     nodes: Nodes,
-    transport_hub: MockTransportHub,
+    transport_hub: MockTransport,
     clock: Clock,
 
     chain_stores: Vec<Option<DirectoryChainStore>>,
@@ -200,7 +200,7 @@ impl TestCluster {
         let runtime = Runtime::new()?;
         let mut nodes = Nodes::new();
 
-        let transport_hub = MockTransportHub::default();
+        let transport_hub = MockTransport::default();
         let clock = Clock::new();
 
         let mut handles = Vec::new();

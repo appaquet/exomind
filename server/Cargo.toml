@@ -13,4 +13,5 @@ log = "0.4"
 structopt = "0.2"
 log4rs = "0.8"
 failure = { version ="0.1.5", features = ["backtrace"] }
+futures = "0.1"
 tokio = "0.1"

@@ -8,26 +8,24 @@ use futures::sync::{mpsc, oneshot};
 
 use exocore_common::node::{Node, NodeID};
 
-use crate::completion::{CompletionFuture, CompletionSender};
-use crate::{Error, InMessage, LayerStreams, OutMessage};
+use crate::{Error, InMessage, OutMessage, TransportHandle};
 
-///
-/// Dispatches messages between nodes' `MockTransport`
-///
-pub struct MockTransportHub {
+/// In memory transport used by all layers of Exocore through handles. There is one handle
+/// per cell per layer.
+pub struct MockTransport {
     nodes_sink: Arc<Mutex<HashMap<NodeID, mpsc::UnboundedSender<InMessage>>>>,
 }
 
-impl Default for MockTransportHub {
-    fn default() -> MockTransportHub {
-        MockTransportHub {
+impl Default for MockTransport {
+    fn default() -> MockTransport {
+        MockTransport {
             nodes_sink: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
 
-impl MockTransportHub {
-    pub fn get_transport(&self, node: Node) -> MockTransport {
+impl MockTransport {
+    pub fn get_transport(&self, node: Node) -> MockTransportHandle {
         let mut nodes_sink = self.nodes_sink.lock().unwrap();
 
         // create channel incoming message for this node will be sent to
@@ -37,7 +35,7 @@ impl MockTransportHub {
         // completion handler
         let (completion_sender, completion_future) = CompletionSender::new();
 
-        MockTransport {
+        MockTransportHandle {
             node,
             started: false,
             nodes_sink: Arc::downgrade(&self.nodes_sink),
@@ -49,10 +47,8 @@ impl MockTransportHub {
     }
 }
 
-///
-/// Transport taken by the engine to receive and send message for a given node
-///
-pub struct MockTransport {
+/// Handle taken by a Cell layer to receive and send message for a given node
+pub struct MockTransportHandle {
     node: Node,
     started: bool,
     nodes_sink: Weak<Mutex<HashMap<NodeID, mpsc::UnboundedSender<InMessage>>>>,
@@ -62,7 +58,7 @@ pub struct MockTransport {
     completion_future: CompletionFuture,
 }
 
-impl LayerStreams for MockTransport {
+impl TransportHandle for MockTransportHandle {
     type Sink = MockTransportSink;
     type Stream = MockTransportStream;
 
@@ -83,7 +79,7 @@ impl LayerStreams for MockTransport {
     }
 }
 
-impl Future for MockTransport {
+impl Future for MockTransportHandle {
     type Item = ();
     type Error = Error;
 
@@ -137,7 +133,7 @@ impl Future for MockTransport {
     }
 }
 
-impl Drop for MockTransport {
+impl Drop for MockTransportHandle {
     fn drop(&mut self) {
         if let Some(node_sinks) = self.nodes_sink.upgrade() {
             if let Ok(mut node_sinks) = node_sinks.lock() {
@@ -151,9 +147,7 @@ impl Drop for MockTransport {
     }
 }
 
-///
-/// Streams used by the engine to receive messages from other nodes
-///
+/// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
 pub struct MockTransportStream {
     incoming_stream: mpsc::UnboundedReceiver<InMessage>,
 }
@@ -173,9 +167,7 @@ impl Stream for MockTransportStream {
     }
 }
 
-///
-/// Sinks used by the engine to send messages to other nodes
-///
+/// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
 pub struct MockTransportSink {
     in_channel: mpsc::UnboundedSender<OutMessage>,
 }
@@ -209,6 +201,53 @@ impl Sink for MockTransportSink {
     }
 }
 
+///
+/// Exposes a barrier like structure that will resolve future once the `CompletionSender` got
+/// completed.
+///
+#[derive(Clone)]
+pub struct CompletionSender {
+    sender: Arc<Mutex<Option<CompletionChannelSender>>>,
+}
+
+type CompletionChannelSender = oneshot::Sender<Result<(), Error>>;
+
+impl CompletionSender {
+    pub fn new() -> (CompletionSender, CompletionFuture) {
+        let (sender, receiver) = oneshot::channel();
+
+        let sender = CompletionSender {
+            sender: Arc::new(Mutex::new(Some(sender))),
+        };
+        let future = CompletionFuture(receiver);
+        (sender, future)
+    }
+}
+
+impl CompletionSender {
+    pub fn complete(&self, result: Result<(), Error>) {
+        if let Ok(mut unlocked) = self.sender.lock() {
+            if let Some(sender) = unlocked.take() {
+                let _ = sender.send(result);
+            }
+        }
+    }
+}
+
+pub struct CompletionFuture(oneshot::Receiver<Result<(), Error>>);
+
+impl Future for CompletionFuture {
+    type Item = ();
+    type Error = Error;
+
+    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
+        self.0
+            .poll()
+            .map(|asnc| asnc.map(|_| ()))
+            .map_err(|err| Error::Other(format!("Polling completion receiver failed: {:?}", err)))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use tokio::runtime::Runtime;
@@ -222,7 +261,7 @@ mod test {
     #[test]
     fn send_and_receive() {
         let mut rt = Runtime::new().unwrap();
-        let hub = MockTransportHub::default();
+        let hub = MockTransport::default();
 
         let node0 = Node::new("0".to_string());
         let node1 = Node::new("1".to_string());
@@ -255,7 +294,7 @@ mod test {
     #[test]
     fn completion_future() {
         let mut rt = Runtime::new().unwrap();
-        let hub = MockTransportHub::default();
+        let hub = MockTransport::default();
 
         let node0 = Node::new("0".to_string());
 

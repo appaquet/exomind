@@ -7,10 +7,8 @@ use tokio::prelude::{AsyncRead, AsyncWrite};
 
 static PACKET_MAX_SIZE: usize = 1024 * 1024; // 1MB
 
-///
 /// Exocore protocol configuration. This exposes the information about protocol, and how
 /// message are serialized / deserialized.
-///
 #[derive(Clone, Default)]
 pub struct ExocoreProtoConfig;
 
@@ -47,9 +45,7 @@ where
     }
 }
 
-///
 /// Message transmitted over the wire.
-///
 pub struct WireMessage {
     pub(crate) data: Vec<u8>,
 }
@@ -78,9 +74,7 @@ where
     }
 }
 
-///
-/// Error related to serialization / deserialization of wire message
-///
+/// Error related to serialization / deserialization of wire message.
 #[derive(Debug)]
 pub enum WireMessageError {
     ReadError(upgrade::ReadOneError),

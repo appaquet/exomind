@@ -4,9 +4,10 @@ use exocore_common::serialization::framed::{
     FrameBuilder, MessageType, OwnedTypedFrame, TypedFrame,
 };
 
-use crate::{layer::Layer, Error};
+use crate::{layer::TransportLayer, Error};
 use exocore_common::cell::Cell;
 
+/// Message to be sent to a another node
 pub struct OutMessage {
     pub to: Vec<Node>,
     pub envelope: FrameBuilder<envelope::Owned>,
@@ -27,7 +28,7 @@ impl OutMessage {
         let mut envelope_message_builder: envelope::Builder =
             envelope_frame_builder.get_builder_typed();
 
-        envelope_message_builder.set_layer(Layer::Data.into());
+        envelope_message_builder.set_layer(TransportLayer::Data.into());
         envelope_message_builder.set_type(frame.message_type());
         envelope_message_builder.set_from_node_id(&local_node.id());
         envelope_message_builder.set_data(frame.frame_data());
@@ -51,7 +52,7 @@ impl OutMessage {
         let mut envelope_message_builder: envelope::Builder =
             envelope_frame_builder.get_builder_typed();
 
-        envelope_message_builder.set_layer(Layer::Data.into());
+        envelope_message_builder.set_layer(TransportLayer::Data.into());
         envelope_message_builder.set_type(frame.message_type());
         envelope_message_builder.set_cell_id(cell.id().as_bytes());
         envelope_message_builder.set_from_node_id(&cell.nodes().local_node().id());
@@ -71,6 +72,7 @@ impl OutMessage {
     }
 }
 
+/// Message receive from another node
 #[derive(Clone)]
 pub struct InMessage {
     pub from: Node,

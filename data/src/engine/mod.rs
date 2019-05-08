@@ -31,7 +31,7 @@ use crate::operation;
 use crate::operation::{NewOperation, OperationBuilder};
 use crate::pending;
 use exocore_common::time::Clock;
-use exocore_transport::{Error as TransportError, InMessage, LayerStreams, OutMessage};
+use exocore_transport::{Error as TransportError, InMessage, OutMessage, TransportHandle};
 use itertools::Itertools;
 
 mod chain_sync;
@@ -45,7 +45,7 @@ pub(crate) mod testing;
 ///
 /// Data engine's configuration
 ///
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Config {
     pub chain_synchronizer_config: chain_sync::ChainSyncConfig,
     pub pending_synchronizer_config: pending_sync::PendingSyncConfig,
@@ -75,7 +75,7 @@ impl Default for Config {
 ///
 pub struct Engine<T, CS, PS>
 where
-    T: LayerStreams,
+    T: TransportHandle,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -90,7 +90,7 @@ where
 
 impl<T, CS, PS> Engine<T, CS, PS>
 where
-    T: LayerStreams,
+    T: TransportHandle,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -342,7 +342,7 @@ where
 
 impl<T, CS, PS> Future for Engine<T, CS, PS>
 where
-    T: LayerStreams,
+    T: TransportHandle,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {

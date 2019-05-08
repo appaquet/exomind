@@ -11,7 +11,7 @@ use super::protocol::{ExocoreProtoConfig, WireMessage};
 
 ///
 /// Libp2p's behaviour for Exocore. The behaviour defines a protocol that is exposed to
-/// libp2p, peers that we want to talk to and acts as a stream / sink of messages exchanged
+/// lp2p, peers that we want to talk to and acts as a stream / sink of messages exchanged
 /// between nodes.
 ///
 pub struct ExocoreBehaviour<TSubstream>
@@ -38,7 +38,7 @@ where
     }
 
     pub fn send_message(&mut self, peer_id: PeerId, data: Vec<u8>) {
-        // TODO: Check if node is connected. Otherwise, we may want to queue
+        // TODO: If node is not online, we should queue https://github.com/appaquet/exocore/issues/60
         self.events.push_back(NetworkBehaviourAction::SendEvent {
             peer_id: peer_id.clone(),
             event: WireMessage { data },
@@ -46,10 +46,13 @@ where
     }
 
     pub fn add_peer(&mut self, peer_id: PeerId, addresses: Vec<Multiaddr>) {
-        self.peers.insert(peer_id.clone(), addresses);
-        self.events.push_back(NetworkBehaviourAction::DialPeer {
-            peer_id: peer_id.clone(),
-        });
+        let current_addresses = self.peers.get(&peer_id);
+        if current_addresses.is_none() || current_addresses != Some(&addresses) {
+            self.peers.insert(peer_id.clone(), addresses);
+            self.events.push_back(NetworkBehaviourAction::DialPeer {
+                peer_id: peer_id.clone(),
+            });
+        }
     }
 }
 
@@ -76,13 +79,11 @@ where
     }
 
     fn addresses_of_peer(&mut self, peer_id: &PeerId) -> Vec<Multiaddr> {
-        // TODO: ideally, addresses should be ordered so that best address is first
         self.peers.get(peer_id).cloned().unwrap_or_else(Vec::new)
     }
 
     fn inject_connected(&mut self, peer_id: PeerId, _endpoint: ConnectedPoint) {
         debug!("{}: Connected to {}", self.local_node, peer_id,);
-        // TODO: If any queued message for this node, add them to events
     }
 
     fn inject_disconnected(&mut self, peer_id: &PeerId, _endpoint: ConnectedPoint) {
@@ -94,12 +95,7 @@ where
 
     fn inject_node_event(&mut self, peer_id: PeerId, event: OneshotEvent) {
         if let OneshotEvent::Received(msg) = event {
-            debug!(
-                "{}: Received message from {}: {}",
-                self.local_node,
-                peer_id,
-                String::from_utf8_lossy(&msg.data)
-            );
+            trace!("{}: Received message from {}", self.local_node, peer_id);
 
             self.events.push_back(NetworkBehaviourAction::GenerateEvent(
                 ExocoreBehaviourEvent::Message(ExocoreBehaviourMessage {
@@ -108,7 +104,7 @@ where
                 }),
             ));
         } else {
-            debug!("{}: Our message got sent", self.local_node,);
+            trace!("{}: Our message got sent", self.local_node);
         }
     }
 
@@ -135,7 +131,6 @@ where
 #[derive(Debug)]
 pub enum ExocoreBehaviourEvent {
     Message(ExocoreBehaviourMessage),
-    // TODO: Connected, Disconnected
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -181,14 +176,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_behaviour() {
-        //setup_logging();
-
+    fn behaviour_integration() {
         let mut rt = Runtime::new().unwrap();
 
         let key1 = identity::Keypair::generate_ed25519();
         let peer1 = PeerId::from(key1.public());
-        debug!("Peer 1 {}", peer1);
         let transport1 = libp2p::build_development_transport(key1);
         let addr1: Multiaddr = "/ip4/127.0.0.1/tcp/3301".parse().unwrap();
 
@@ -198,7 +190,6 @@ mod tests {
 
         let key2 = identity::Keypair::generate_ed25519();
         let peer2 = PeerId::from(key2.public());
-        debug!("Peer 2 {}", peer2);
         let transport2 = libp2p::build_development_transport(key2);
         let addr2: Multiaddr = "/ip4/127.0.0.1/tcp/3302".parse().unwrap();
 
@@ -222,11 +213,7 @@ mod tests {
                 match swarm1.poll().expect("Error while polling swarm") {
                     Async::Ready(Some(data)) => match data {
                         ExocoreBehaviourEvent::Message(msg) => {
-                            debug!(
-                                "Got message from {}: {}",
-                                msg.source,
-                                String::from_utf8_lossy(&msg.data)
-                            );
+                            trace!("Got message from {}", msg.source,);
                         }
                     },
                     Async::Ready(None) | Async::NotReady => {
@@ -257,11 +244,7 @@ mod tests {
                 match swarm2.poll().expect("Error while polling swarm") {
                     Async::Ready(Some(data)) => match data {
                         ExocoreBehaviourEvent::Message(msg) => {
-                            debug!(
-                                "Got message from {}: {}",
-                                msg.source,
-                                String::from_utf8_lossy(&msg.data)
-                            );
+                            trace!("Got message from {}", msg.source,);
                         }
                     },
                     Async::Ready(None) | Async::NotReady => {
@@ -282,10 +265,10 @@ mod tests {
         for i in 0..10 {
             std::thread::sleep(Duration::from_millis(200));
             sender1
-                .unbounded_send((peer2.clone(), format!("Data for yo #{}", i).into_bytes()))
+                .unbounded_send((peer2.clone(), format!("Data #{}", i).into_bytes()))
                 .unwrap();
             sender2
-                .unbounded_send((peer1.clone(), format!("Data for yo #{}", i).into_bytes()))
+                .unbounded_send((peer1.clone(), format!("Data #{}", i).into_bytes()))
                 .unwrap();
         }
 

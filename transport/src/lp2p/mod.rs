@@ -1,76 +1,110 @@
 pub mod behaviour;
 pub mod protocol;
 
-use crate::layer::{Layer, LayerStreams};
+use crate::layer::{TransportHandle, TransportLayer};
 use crate::messages::{InMessage, OutMessage};
-use crate::{Error};
+use crate::Error;
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
-use exocore_common::cell::{CellID, Cell};
-use exocore_common::node::{LocalNode, Node};
+use exocore_common::cell::{Cell, CellID};
+use exocore_common::node::LocalNode;
 use exocore_common::serialization::framed::{TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_transport_capnp::envelope;
 use futures::prelude::*;
-use futures::sink::SinkMapErr;
-use futures::sync::{mpsc, oneshot};
-use libp2p::core::swarm::{
-    ExpandedSwarm, NetworkBehaviour, NetworkBehaviourAction, PollParameters,
-};
-use libp2p::identity::Keypair;
-use libp2p::{identity, Multiaddr, PeerId, Swarm, Transport};
-use std::collections::HashMap;
+use futures::sync::mpsc;
+use libp2p::{Multiaddr, PeerId, Swarm};
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock, Weak};
-use tokio::prelude::*;
+use std::time::Duration;
+use tokio::timer::Interval;
 
-///
-/// Transport
-///
-pub struct NodeTransport {
+/// libp2p transport configuration
+#[derive(Clone)]
+pub struct Config {
+    pub listen_address: Option<Multiaddr>,
+    pub handle_in_channel_size: usize,
+    pub handle_out_channel_size: usize,
+    pub handles_to_behaviour_channel_size: usize,
+    pub swarm_nodes_update_interval: Duration,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            listen_address: None,
+            handle_in_channel_size: 1000,
+            handle_out_channel_size: 1000,
+            handles_to_behaviour_channel_size: 5000,
+            swarm_nodes_update_interval: Duration::from_secs(1),
+        }
+    }
+}
+
+/// libp2p transport used by all layers of Exocore through handles. There is one handle
+/// per cell per layer.
+pub struct Libp2pTransport {
     local_node: LocalNode,
     config: Config,
     inner: Arc<RwLock<Inner>>,
-    started: bool,
 }
 
 struct Inner {
-    layers: HashMap<(CellID, Layer), InnerLayer>,
+    handles: HashMap<(CellID, TransportLayer), InnerHandle>,
 }
 
-struct InnerLayer {
+impl Inner {
+    fn all_peers(&self) -> HashSet<(PeerId, Vec<Multiaddr>)> {
+        let mut peers = HashSet::new();
+        for inner_layer in self.handles.values() {
+            for node in inner_layer.cell.nodes().nodes() {
+                peers.insert((node.peer_id().clone(), node.addresses()));
+            }
+        }
+        peers
+    }
+}
+
+struct InnerHandle {
+    cell: Cell,
     in_sender: mpsc::Sender<InMessage>,
     out_receiver: Option<mpsc::Receiver<OutMessage>>,
 }
 
-impl NodeTransport {
-    pub fn new(cell: Cell, config: Config) -> NodeTransport {
+impl Libp2pTransport {
+    /// Creates a new transport for given node and config. The node is important here
+    /// since all messages are authenticated using the node's private key thanks to secio
+    pub fn new(local_node: LocalNode, config: Config) -> Libp2pTransport {
         let inner = Inner {
-            layers: HashMap::new(),
+            handles: HashMap::new(),
         };
 
-        NodeTransport {
-            local_node: cell.nodes().local_node().clone(), // TODO: fixme
+        Libp2pTransport {
+            local_node,
             config,
             inner: Arc::new(RwLock::new(inner)),
-            started: false,
         }
     }
 
-    pub fn get_cell_layer_transport(
+    /// Creates sink and streams that can be used for a given Cell and Layer
+    pub fn get_handle(
         &mut self,
-        cell_id: CellID,
-        layer: Layer,
-    ) -> Result<CellLayerTransport, Error> {
-        let (in_sender, in_receiver) = mpsc::channel(self.config.layer_stream_in_channel_size);
-        let (out_sender, out_receiver) = mpsc::channel(self.config.layer_stream_out_channel_size);
+        cell: Cell,
+        layer: TransportLayer,
+    ) -> Result<Libp2pTransportHandle, Error> {
+        let (in_sender, in_receiver) = mpsc::channel(self.config.handle_in_channel_size);
+        let (out_sender, out_receiver) = mpsc::channel(self.config.handle_out_channel_size);
 
         let mut inner = self.inner.write()?;
-        let inner_layer = InnerLayer {
+        let inner_layer = InnerHandle {
+            cell: cell.clone(),
             in_sender,
             out_receiver: Some(out_receiver),
         };
-        inner.layers.insert((cell_id.clone(), layer), inner_layer);
+        inner
+            .handles
+            .insert((cell.id().clone(), layer), inner_layer);
 
-        Ok(CellLayerTransport {
-            cell_id,
+        Ok(Libp2pTransportHandle {
+            cell_id: cell.id().clone(),
             layer,
             inner: Arc::downgrade(&self.inner),
             sink: Some(out_sender),
@@ -78,29 +112,63 @@ impl NodeTransport {
         })
     }
 
+    /// Starts the engine by spawning different tasks onto the current Runtime
     fn start(&mut self) -> Result<(), Error> {
-        self.started = true;
-
         let local_keypair = self.local_node.keypair().clone();
         let transport = libp2p::build_development_transport(local_keypair);
 
         let behaviour = ExocoreBehaviour::new();
         let mut swarm =
             libp2p::core::Swarm::new(transport, behaviour, self.local_node.peer_id().clone());
-        Swarm::listen_on(&mut swarm, self.config.listen_address.clone())?;
+
+        let listen_address = self
+            .config
+            .listen_address
+            .as_ref()
+            .cloned()
+            .or_else(|| self.local_node.addresses().first().cloned())
+            .ok_or_else(|| {
+                Error::Other("Local node has no addresses, and no listen address were specified in transport config".to_string())
+            })?;
+        Swarm::listen_on(&mut swarm, listen_address)?;
 
         // Spawn the swarm & receive message from a channel through which outgoing messages will go
         let (out_sender, mut out_receiver) =
-            mpsc::channel::<OutMessage>(self.config.layers_to_behaviour_channel_size);
-        let local_node = self.local_node.clone();
-        let inner = Arc::clone(&self.inner); // TODO: Should be weak, but performance issue... Hashmap could be just moved here, and we always try to send even if dropped
+            mpsc::channel::<OutMessage>(self.config.handles_to_behaviour_channel_size);
+
+        // Add initial nodes to swarm
+        {
+            let inner = self.inner.read()?;
+            for (peer_id, addresses) in inner.all_peers() {
+                swarm.add_peer(peer_id, addresses);
+            }
+        }
+
+        // Spawn the main Future which will take care of the swarm
+        let inner = Arc::clone(&self.inner);
+        let mut nodes_update_interval =
+            Interval::new_interval(self.config.swarm_nodes_update_interval);
+
         tokio::spawn(futures::future::poll_fn(move || -> Result<_, ()> {
+            // at interval, we update peers that we should be connected to
+            if let Async::Ready(_) = nodes_update_interval
+                .poll()
+                .expect("Couldn't poll nodes update interval")
+            {
+                if let Ok(inner) = inner.read() {
+                    for (peer_id, addresses) in inner.all_peers() {
+                        swarm.add_peer(peer_id, addresses);
+                    }
+                }
+            }
+
+            // we drain all messages that need to be sent
             while let Async::Ready(Some(msg)) = out_receiver
                 .poll()
-                .expect("Error polling layer to behaviour channel")
+                .expect("Couldn't poll behaviour channel")
             {
-                // TODO: Is it really worth it to sign ? We are already going through a secio that authenticate messages with peer's signature
-                match msg.envelope.as_owned_framed(local_node.frame_signer()) {
+                // we don't need to sign the message since it's going through a authenticated channel (secio)
+                match msg.envelope.as_owned_unsigned_framed() {
                     Ok(frame) => {
                         let frame_data = frame.frame_data().to_vec();
 
@@ -120,18 +188,15 @@ impl NodeTransport {
                 }
             }
 
-            while let Async::Ready(Some(data)) = swarm.poll().expect("Error while polling swarm") {
+            // we poll the behaviour for incoming messages
+            while let Async::Ready(Some(data)) = swarm.poll().expect("Couldn't poll swarm") {
                 match data {
                     ExocoreBehaviourEvent::Message(msg) => {
                         if let Err(err) = Self::dispatch_message(&inner, &msg) {
-                            error!("Couldn't dispatch message from {}: {:?}", msg.source, err);
+                            warn!("Couldn't dispatch message from {}: {:?}", msg.source, err);
                         }
 
-                        debug!(
-                            "Got message from {}: {}",
-                            msg.source,
-                            String::from_utf8_lossy(&msg.data)
-                        );
+                        trace!("Got message from {}", msg.source,);
                     }
                 }
             }
@@ -139,122 +204,103 @@ impl NodeTransport {
             Ok(Async::NotReady)
         }));
 
-        // sends each layer's outgoing messages to the behaviour's input channel
-        let mut inner = self.inner.write()?;
-        for inner_layer in inner.layers.values_mut() {
-            let out_receiver = inner_layer
-                .out_receiver
-                .take()
-                .expect("Out receiver of one layer was already consummed");
+        // Sends each layer's outgoing messages to the behaviour's input channel
+        {
+            let mut inner = self.inner.write()?;
+            for inner_layer in inner.handles.values_mut() {
+                let out_receiver = inner_layer
+                    .out_receiver
+                    .take()
+                    .expect("Out receiver of one layer was already consummed");
 
-            tokio::spawn(
-                out_receiver
-                    .forward(out_sender.clone().sink_map_err(|_| ()))
-                    .map(|_| ()),
-            );
-        }
-
-        Ok(())
-    }
-
-    fn dispatch_message(
-        inner: &RwLock<Inner>,
-        message: &ExocoreBehaviourMessage,
-    ) -> Result<(), Error> {
-        let frame = TypedSliceFrame::<envelope::Owned>::new(&message.data).map_err(|err| {
-            // TODO:
-            Error::Other("Couldn't parse message".to_string())
-        })?;
-        let frame_reader: envelope::Reader = frame.get_typed_reader().map_err(|err| {
-            // TODO:
-            Error::Other("Couldn't parse message".to_string())
-        })?;
-
-        let mut inner = inner.write()?;
-
-        let cell_id_bytes = frame_reader.get_cell_id().map_err(|err| {
-            // TODO:
-            Error::Other("Couldn't parse message".to_string())
-        })?;
-
-        let cell_id = CellID::from_bytes(&cell_id_bytes);
-        let layer = Layer::from_code(frame_reader.get_layer()).ok_or_else(|| {
-            Error::Other(format!(
-                "Got message with invalid layer: {}",
-                frame_reader.get_layer()
-            ))
-        })?;
-
-        if let Some(layer_stream) = inner.layers.get_mut(&(cell_id, layer)) {
-            // TODO: fix me
-            let node = Node::new("".to_string());
-            let msg = InMessage {
-                from: node,
-                envelope: frame.to_owned(),
-            };
-
-            if let Err(err) = layer_stream.in_sender.try_send(msg) {
-                warn!("Couldn't send message to layer stream: {:?}", err);
+                tokio::spawn(
+                    out_receiver
+                        .forward(out_sender.clone().sink_map_err(|_| ()))
+                        .map(|_| ()),
+                );
             }
         }
 
         Ok(())
     }
+
+    /// Dispatches a received message from libp2p to corresponding handle
+    fn dispatch_message(
+        inner: &RwLock<Inner>,
+        message: &ExocoreBehaviourMessage,
+    ) -> Result<(), Error> {
+        let frame = TypedSliceFrame::<envelope::Owned>::new(&message.data)?;
+        let frame_reader: envelope::Reader = frame.get_typed_reader()?;
+        let cell_id_bytes = frame_reader.get_cell_id()?;
+
+        let mut inner = inner.write()?;
+
+        let cell_id = CellID::from_bytes(&cell_id_bytes);
+        let layer = TransportLayer::from_code(frame_reader.get_layer()).ok_or_else(|| {
+            Error::Other(format!(
+                "Message has invalid layer {}",
+                frame_reader.get_layer()
+            ))
+        })?;
+
+        let key = (cell_id, layer);
+        let layer_stream = if let Some(layer_stream) = inner.handles.get_mut(&key) {
+            layer_stream
+        } else {
+            return Err(Error::Other(format!(
+                "Couldn't find transport for {:?}",
+                key
+            )));
+        };
+
+        let node_id = exocore_common::node::node_id_from_peer_id(&message.source);
+        let source_node = if let Some(source_node) = layer_stream.cell.nodes().get(&node_id) {
+            source_node
+        } else {
+            return Err(Error::Other(format!(
+                "Couldn't find node with id {} in local nodes",
+                node_id
+            )));
+        };
+
+        let msg = InMessage {
+            from: source_node.clone(),
+            envelope: frame.to_owned(),
+        };
+
+        layer_stream
+            .in_sender
+            .try_send(msg)
+            .map_err(|err| Error::Other(format!("Couldn't send message to cell layer: {:?}", err)))
+    }
 }
 
-impl Future for NodeTransport {
+impl Future for Libp2pTransport {
     type Item = ();
     type Error = ();
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        if !self.started {
-            self.start().map_err(|err| {
-                error!("Error starting transport: {:?}", err);
-                ()
-            })?;
-        }
-
-        // TODO: Check it it has been dropped
+        // we are only polled once, and we return ready right away
+        self.start().map_err(|err| {
+            error!("Error starting transport: {:?}", err);
+            ()
+        })?;
 
         Ok(Async::Ready(()))
     }
 }
 
-///
-///
-///
-#[derive(Clone)]
-pub struct Config {
-    pub listen_address: Multiaddr,
-    pub layer_stream_in_channel_size: usize,
-    pub layer_stream_out_channel_size: usize,
-    pub layers_to_behaviour_channel_size: usize,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            listen_address: "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
-            layer_stream_in_channel_size: 1000,
-            layer_stream_out_channel_size: 1000,
-            layers_to_behaviour_channel_size: 5000,
-        }
-    }
-}
-
-///
-///
-///
-pub struct CellLayerTransport {
+/// Handle taken by a Cell layer to receive and send message for a given node & cell.
+pub struct Libp2pTransportHandle {
     cell_id: CellID,
-    layer: Layer,
+    layer: TransportLayer,
     inner: Weak<RwLock<Inner>>,
 
     sink: Option<mpsc::Sender<OutMessage>>,
     stream: Option<mpsc::Receiver<InMessage>>,
 }
 
-impl LayerStreams for CellLayerTransport {
+impl TransportHandle for Libp2pTransportHandle {
     type Sink = MpscLayerSink;
     type Stream = MpscLayerStream;
 
@@ -271,24 +317,27 @@ impl LayerStreams for CellLayerTransport {
     }
 }
 
-impl Future for CellLayerTransport {
+impl Future for Libp2pTransportHandle {
     type Item = ();
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        unimplemented!()
+        Ok(Async::Ready(()))
     }
 }
 
-impl Drop for CellLayerTransport {
+impl Drop for Libp2pTransportHandle {
     fn drop(&mut self) {
-        // TODO: unregister ourself
+        // we have been dropped, we remove ourself from layers to communicate with
+        if let Some(inner) = self.inner.upgrade() {
+            if let Ok(mut inner) = inner.write() {
+                inner.handles.remove(&(self.cell_id.clone(), self.layer));
+            }
+        }
     }
 }
 
-///
-///
-///
+/// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
 pub struct MpscLayerStream {
     receiver: mpsc::Receiver<InMessage>,
 }
@@ -308,9 +357,7 @@ impl Stream for MpscLayerStream {
     }
 }
 
-///
-///
-///
+/// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
 pub struct MpscLayerSink {
     sender: mpsc::Sender<OutMessage>,
 }
@@ -342,4 +389,109 @@ impl Sink for MpscLayerSink {
             .close()
             .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {:?}", err)))
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use exocore_common::cell::Cell;
+    use exocore_common::serialization::framed::FrameBuilder;
+    use exocore_common::serialization::protos::data_chain_capnp::block_operation_header;
+    use exocore_common::tests_utils::expect_eventually;
+    use std::sync::Mutex;
+    use std::time::Duration;
+    use tokio::runtime::Runtime;
+
+    #[test]
+    fn test_integration() -> Result<(), failure::Error> {
+        let mut rt = Runtime::new()?;
+
+        let node1 = LocalNode::generate();
+        node1.add_address("/ip4/127.0.0.1/tcp/3303".parse().unwrap());
+        let mut cell1 = Cell::new(node1.clone(), CellID::from_string("cell"));
+        let node2 = LocalNode::generate();
+        node2.add_address("/ip4/127.0.0.1/tcp/3304".parse().unwrap());
+        let mut cell2 = Cell::new(node2.clone(), CellID::from_string("cell"));
+
+        cell1.nodes_mut().add(node2.node().clone());
+        cell2.nodes_mut().add(node1.node().clone());
+
+        let mut transport1 = Libp2pTransport::new(node1.clone(), Config::default());
+        let layer1 = transport1.get_handle(cell1.clone(), TransportLayer::Data)?;
+        let layer1_tester = LayerTransportTester::new(&mut rt, layer1);
+        rt.spawn(transport1);
+
+        let mut transport2 = Libp2pTransport::new(node2.clone(), Config::default());
+        let layer2 = transport2.get_handle(cell2.clone(), TransportLayer::Data)?;
+        let layer2_tester = LayerTransportTester::new(&mut rt, layer2);
+        rt.spawn(transport2);
+
+        std::thread::sleep(Duration::from_secs(1));
+
+        // create dummy frame
+        let frame_builder = FrameBuilder::<block_operation_header::Owned>::new();
+        let frame = frame_builder.as_owned_unsigned_framed()?;
+
+        // send 1 to 2
+        let to_nodes = vec![node2.node().clone()];
+        let msg = OutMessage::from_framed_message_cell(&cell1, to_nodes, frame.clone())?;
+        layer1_tester.send(msg);
+        expect_eventually(|| layer2_tester.received().len() == 1);
+
+        // send 2 to twice 1 to test multiple nodes
+        let to_nodes = vec![node1.node().clone(), node1.node().clone()];
+        let msg = OutMessage::from_framed_message_cell(&cell1, to_nodes, frame)?;
+        layer2_tester.send(msg);
+        expect_eventually(|| layer1_tester.received().len() == 2);
+
+        Ok(())
+    }
+
+    struct LayerTransportTester {
+        _transport: Libp2pTransportHandle,
+        sender: mpsc::UnboundedSender<OutMessage>,
+        received: Arc<Mutex<Vec<InMessage>>>,
+    }
+
+    impl LayerTransportTester {
+        fn new(rt: &mut Runtime, mut transport: Libp2pTransportHandle) -> LayerTransportTester {
+            let (sender, receiver) = mpsc::unbounded();
+            rt.spawn(
+                receiver
+                    .forward(transport.get_sink().sink_map_err(|_| ()))
+                    .map(|_| ())
+                    .map_err(|_| ()),
+            );
+
+            let received = Arc::new(Mutex::new(Vec::new()));
+            let received_weak = Arc::downgrade(&received);
+            rt.spawn(
+                transport
+                    .get_stream()
+                    .for_each(move |msg| {
+                        let received = received_weak.upgrade().unwrap();
+                        let mut received = received.lock().unwrap();
+                        received.push(msg);
+                        Ok(())
+                    })
+                    .map_err(|_| ()),
+            );
+
+            LayerTransportTester {
+                _transport: transport,
+                sender,
+                received,
+            }
+        }
+
+        fn send(&self, message: OutMessage) {
+            self.sender.unbounded_send(message).unwrap();
+        }
+
+        fn received(&self) -> Vec<InMessage> {
+            let received = self.received.lock().unwrap();
+            received.clone()
+        }
+    }
+
 }

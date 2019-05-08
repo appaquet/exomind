@@ -1,11 +1,12 @@
-// TODO: Main ticket for completion of cell: https://github.com/appaquet/exocore/issues/37
+//
+// TODO: To be cleaned up in https://github.com/appaquet/exocore/issues/37
 // TODO: Encryption/signature ticket: https://github.com/appaquet/exocore/issues/46
+//
 
-use crate::node::Nodes;
+use crate::node::{LocalNode, Nodes};
 
-// TODO: PublicKey (RSA + secp256k1)
-// TODO: NodeID = hash(publickey)
-// TODO: Nodes, with their capability
+/// A Cell represents a private enclosure in which the data and applications of a user
+/// are hosted. A Cell resides on multiple nodes.
 #[derive(Clone)]
 pub struct Cell {
     cell_id: CellID,
@@ -13,10 +14,10 @@ pub struct Cell {
 }
 
 impl Cell {
-    pub fn new(cell_id: CellID) -> Cell {
+    pub fn new(local_node: LocalNode, cell_id: CellID) -> Cell {
         Cell {
             cell_id,
-            nodes: Nodes::new(),
+            nodes: Nodes::new_with_local(local_node),
         }
     }
 
@@ -29,8 +30,14 @@ impl Cell {
     pub fn nodes(&self) -> &Nodes {
         &self.nodes
     }
+
+    #[deprecated]
+    pub fn nodes_mut(&mut self) -> &mut Nodes {
+        &mut self.nodes
+    }
 }
 
+/// Unique identifier of a cell, which is built by hashing the public key
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct CellID {
     id: String,
@@ -53,7 +60,3 @@ impl CellID {
         self.id.as_bytes()
     }
 }
-
-// TODO: bitflags ?
-// TODO: Can it decrypt ?
-pub struct NodeCellCapability {}
