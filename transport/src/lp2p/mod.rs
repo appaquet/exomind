@@ -27,6 +27,19 @@ pub struct Config {
     pub swarm_nodes_update_interval: Duration,
 }
 
+impl Config {
+    fn listen_address(&self, local_node: &LocalNode) -> Result<Multiaddr, Error> {
+        self
+            .listen_address
+            .as_ref()
+            .cloned()
+            .or_else(|| local_node.addresses().first().cloned())
+             .ok_or_else(|| {
+                 Error::Other("Local node has no addresses, and no listen address were specified in transport config".to_string())
+             })
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -121,15 +134,7 @@ impl Libp2pTransport {
         let mut swarm =
             libp2p::core::Swarm::new(transport, behaviour, self.local_node.peer_id().clone());
 
-        let listen_address = self
-            .config
-            .listen_address
-            .as_ref()
-            .cloned()
-            .or_else(|| self.local_node.addresses().first().cloned())
-            .ok_or_else(|| {
-                Error::Other("Local node has no addresses, and no listen address were specified in transport config".to_string())
-            })?;
+        let listen_address = self.config.listen_address(&self.local_node)?;
         Swarm::listen_on(&mut swarm, listen_address)?;
 
         // Spawn the swarm & receive message from a channel through which outgoing messages will go
@@ -443,6 +448,34 @@ mod tests {
         let msg = OutMessage::from_framed_message_cell(&cell1, to_nodes, frame)?;
         layer2_tester.send(msg);
         expect_eventually(|| layer1_tester.received().len() == 2);
+
+        Ok(())
+    }
+
+    #[test]
+    fn listen_address_override() -> Result<(), failure::Error> {
+        let addr1: Multiaddr = "/ip4/127.0.0.1/tcp/1000".parse()?;
+        let addr2: Multiaddr = "/ip4/127.0.0.1/tcp/1001".parse()?;
+
+        // config always take precedence
+        let node1 = LocalNode::generate();
+        node1.add_address(addr1.clone());
+        let config = Config {
+            listen_address: Some(addr2.clone()),
+            ..Config::default()
+        };
+        assert_eq!(addr2.clone(), config.listen_address(&node1)?);
+
+        // fallback to node if not specified in config
+        let node1 = LocalNode::generate();
+        node1.add_address(addr1.clone());
+        let config = Config::default();
+        assert_eq!(addr1.clone(), config.listen_address(&node1)?);
+
+        // error if no addresses found
+        let node1 = LocalNode::generate();
+        let config = Config::default();
+        assert!(config.listen_address(&node1).is_err());
 
         Ok(())
     }

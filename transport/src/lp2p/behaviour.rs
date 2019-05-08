@@ -201,7 +201,6 @@ mod tests {
         swarm1.add_peer(peer2.clone(), vec![addr2.clone()]);
 
         let (sender1, mut receiver) = mpsc::unbounded::<(PeerId, Vec<u8>)>();
-        let mut listening = true;
         rt.spawn(futures::future::poll_fn(move || -> Result<_, ()> {
             while let Async::Ready(Some((peer, data))) =
                 receiver.poll().expect("Error polling channel")
@@ -209,21 +208,10 @@ mod tests {
                 swarm1.send_message(peer, data);
             }
 
-            loop {
-                match swarm1.poll().expect("Error while polling swarm") {
-                    Async::Ready(Some(data)) => match data {
-                        ExocoreBehaviourEvent::Message(msg) => {
-                            trace!("Got message from {}", msg.source,);
-                        }
-                    },
-                    Async::Ready(None) | Async::NotReady => {
-                        if !listening {
-                            if let Some(a) = Swarm::listeners(&swarm1).next() {
-                                debug!("Listening on {:?}", a);
-                                listening = true;
-                            }
-                        }
-                        break;
+            while let Async::Ready(Some(data)) = swarm1.poll().expect("Error while polling swarm") {
+                match data {
+                    ExocoreBehaviourEvent::Message(msg) => {
+                        trace!("Got message from {}", msg.source,);
                     }
                 }
             }
@@ -232,7 +220,6 @@ mod tests {
         }));
 
         let (sender2, mut receiver) = mpsc::unbounded::<(PeerId, Vec<u8>)>();
-        let mut listening = true;
         rt.spawn(futures::future::poll_fn(move || -> Result<_, ()> {
             while let Async::Ready(Some((peer, data))) =
                 receiver.poll().expect("Error polling channel")
@@ -240,21 +227,10 @@ mod tests {
                 swarm2.send_message(peer, data);
             }
 
-            loop {
-                match swarm2.poll().expect("Error while polling swarm") {
-                    Async::Ready(Some(data)) => match data {
-                        ExocoreBehaviourEvent::Message(msg) => {
-                            trace!("Got message from {}", msg.source,);
-                        }
-                    },
-                    Async::Ready(None) | Async::NotReady => {
-                        if !listening {
-                            if let Some(a) = Swarm::listeners(&swarm2).next() {
-                                debug!("Listening on {:?}", a);
-                                listening = true;
-                            }
-                        }
-                        break;
+            while let Async::Ready(Some(data)) = swarm2.poll().expect("Error while polling swarm") {
+                match data {
+                    ExocoreBehaviourEvent::Message(msg) => {
+                        trace!("Got message from {}", msg.source,);
                     }
                 }
             }
