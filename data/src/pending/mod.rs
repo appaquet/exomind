@@ -31,6 +31,8 @@ pub trait PendingStore: Send + Sync + 'static {
     fn operations_iter<R>(&self, range: R) -> Result<TimelineIterator, Error>
     where
         R: RangeBounds<OperationID>;
+
+    fn operations_count(&self) -> usize;
 }
 
 pub type TimelineIterator<'store> = Box<dyn Iterator<Item = StoredOperation> + 'store>;

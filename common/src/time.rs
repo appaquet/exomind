@@ -1,7 +1,6 @@
 use crate::node::Node;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-#[cfg(any(test, feature = "tests_utils"))]
 use std::time::Duration;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
@@ -75,10 +74,26 @@ impl Clock {
             }
         };
 
-        let elaps = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let unix_elapsed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        match &self.source {
+            Source::System => duration_to_consistent_u64(unix_elapsed, counter as u64),
+            #[cfg(any(test, feature = "tests_utils"))]
+            Source::Mocked(time) => {
+                let mocked_instant = time.read().expect("Couldn't acquire read lock");
+                let unix_elapsed_offset = if let Some(instant) = *mocked_instant {
+                    let now = Instant::now();
+                    if now > instant {
+                        unix_elapsed - (now - instant)
+                    } else {
+                        unix_elapsed + (instant - now)
+                    }
+                } else {
+                    unix_elapsed
+                };
 
-        // we shift by 1000 for milliseconds and then 100 for the counter
-        elaps.as_secs() * 1_000 * 100 + u64::from(elaps.subsec_millis()) * 100 + counter as u64
+                duration_to_consistent_u64(unix_elapsed_offset, counter as u64)
+            }
+        }
     }
 
     #[cfg(any(test, feature = "tests_utils"))]
@@ -127,6 +142,11 @@ enum Source {
     Mocked(std::sync::Arc<std::sync::RwLock<Option<Instant>>>),
 }
 
+pub fn duration_to_consistent_u64(duration: Duration, counter: u64) -> u64 {
+    // we shift by 1000 for milliseconds and then 100 for the counter
+    duration.as_secs() * 1_000 * 100 + u64::from(duration.subsec_millis()) * 100 + counter
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -134,6 +154,7 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
+    use crate::node::LocalNode;
 
     #[test]
     fn test_non_mocked_clock() {
@@ -160,6 +181,44 @@ mod tests {
         let dur_2secs = Duration::from_secs(2);
         mocked_clock.add_fixed_instant_duration(dur_2secs);
         assert_eq!(mocked_clock.instant(), new_instant + dur_2secs);
+    }
+
+    #[test]
+    fn test_fixed_consistent_time() {
+        let mocked_clock = Clock::new_fixed_mocked(Instant::now());
+        let local_node = LocalNode::generate();
+
+        let time1 = mocked_clock.consistent_time(local_node.node());
+        std::thread::sleep(Duration::from_millis(10));
+        let time2 = mocked_clock.consistent_time(local_node.node());
+        assert_eq!(time1 + 1, time2); // time2 is +1 because of counter
+
+        mocked_clock.reset_fixed_instant();
+        let time3 = mocked_clock.consistent_time(local_node.node());
+        std::thread::sleep(Duration::from_millis(10));
+        let time4 = mocked_clock.consistent_time(local_node.node());
+
+        let elaps = duration_to_consistent_u64(Duration::from_millis(10), 0);
+        assert!(time4 - time3 > elaps);
+    }
+
+    #[test]
+    fn test_fixed_future_consistent_time() {
+        let mocked_clock = Clock::new_fixed_mocked(Instant::now() + Duration::from_secs(10));
+        let local_node = LocalNode::generate();
+
+        let time1 = mocked_clock.consistent_time(local_node.node());
+        std::thread::sleep(Duration::from_millis(10));
+        let time2 = mocked_clock.consistent_time(local_node.node());
+        assert_eq!(time1 + 1, time2); // time2 is +1 because of counter
+
+        mocked_clock.reset_fixed_instant();
+        let time3 = mocked_clock.consistent_time(local_node.node());
+        std::thread::sleep(Duration::from_millis(10));
+        let time4 = mocked_clock.consistent_time(local_node.node());
+
+        let elaps = duration_to_consistent_u64(Duration::from_millis(10), 0);
+        assert!(time4 - time3 > elaps);
     }
 
     #[test]

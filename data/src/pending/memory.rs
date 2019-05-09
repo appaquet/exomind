@@ -122,6 +122,10 @@ impl PendingStore for MemoryPendingStore {
             ids_iterator: Box::new(ids_iterator),
         }))
     }
+
+    fn operations_count(&self) -> usize {
+        self.operations_timeline.len()
+    }
 }
 
 impl MemoryPendingStore {

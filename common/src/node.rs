@@ -68,8 +68,15 @@ impl Node {
         &self.node_id
     }
 
+    #[inline]
     pub fn peer_id(&self) -> &PeerId {
         &self.peer_id
+    }
+
+    pub fn has_full_access(&self) -> bool {
+        // TODO: This should return if the node has access to the cell's private key
+        //        Probably in https://github.com/appaquet/exocore/issues/46
+        true
     }
 
     pub fn addresses(&self) -> Vec<Multiaddr> {

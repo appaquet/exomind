@@ -39,6 +39,10 @@ mod commit_manager;
 mod pending_sync;
 mod request_tracker;
 
+pub use chain_sync::ChainSyncConfig;
+pub use commit_manager::CommitManagerConfig;
+pub use pending_sync::PendingSyncConfig;
+
 #[cfg(any(test, feature = "tests_utils"))]
 pub(crate) mod testing;
 
@@ -47,9 +51,9 @@ pub(crate) mod testing;
 ///
 #[derive(Copy, Clone)]
 pub struct Config {
-    pub chain_synchronizer_config: chain_sync::ChainSyncConfig,
-    pub pending_synchronizer_config: pending_sync::PendingSyncConfig,
-    pub commit_manager_config: commit_manager::CommitManagerConfig,
+    pub chain_synchronizer_config: ChainSyncConfig,
+    pub pending_synchronizer_config: PendingSyncConfig,
+    pub commit_manager_config: CommitManagerConfig,
     pub manager_timer_interval: Duration,
     pub handles_events_stream_size: usize,
 }
@@ -57,9 +61,9 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            chain_synchronizer_config: chain_sync::ChainSyncConfig::default(),
-            pending_synchronizer_config: pending_sync::PendingSyncConfig::default(),
-            commit_manager_config: commit_manager::CommitManagerConfig::default(),
+            chain_synchronizer_config: ChainSyncConfig::default(),
+            pending_synchronizer_config: PendingSyncConfig::default(),
+            commit_manager_config: CommitManagerConfig::default(),
             manager_timer_interval: Duration::from_secs(1),
             handles_events_stream_size: 1000,
         }
