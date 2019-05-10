@@ -1,12 +1,10 @@
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
 use futures::prelude::*;
 use futures::sync::{mpsc, oneshot};
 
-use exocore_common::node::{Node, NodeID};
+use exocore_common::node::{LocalNode, Node, NodeID};
 
 use crate::{Error, InMessage, OutMessage, TransportHandle};
 
@@ -25,7 +23,7 @@ impl Default for MockTransport {
 }
 
 impl MockTransport {
-    pub fn get_transport(&self, node: Node) -> MockTransportHandle {
+    pub fn get_transport(&self, node: LocalNode) -> MockTransportHandle {
         let mut nodes_sink = self.nodes_sink.lock().unwrap();
 
         // create channel incoming message for this node will be sent to
@@ -36,7 +34,7 @@ impl MockTransport {
         let (completion_sender, completion_future) = CompletionSender::new();
 
         MockTransportHandle {
-            node,
+            node: node.node().clone(),
             started: false,
             nodes_sink: Arc::downgrade(&self.nodes_sink),
             incoming_stream: Some(incoming_receiver),
@@ -49,6 +47,7 @@ impl MockTransport {
 
 /// Handle taken by a Cell layer to receive and send message for a given node
 pub struct MockTransportHandle {
+    // TODO: fixme
     node: Node,
     started: bool,
     nodes_sink: Weak<Mutex<HashMap<NodeID, mpsc::UnboundedSender<InMessage>>>>,
@@ -256,6 +255,7 @@ mod test {
     use exocore_common::tests_utils::*;
 
     use super::*;
+    use exocore_common::node::LocalNode;
     use exocore_common::serialization::protos::data_transport_capnp::envelope;
 
     #[test]
@@ -263,8 +263,8 @@ mod test {
         let mut rt = Runtime::new().unwrap();
         let hub = MockTransport::default();
 
-        let node0 = Node::new("0".to_string());
-        let node1 = Node::new("1".to_string());
+        let node0 = LocalNode::generate();
+        let node1 = LocalNode::generate();
 
         let mut transport0 = hub.get_transport(node0.clone());
         let transport0_sink = transport0.get_sink();
@@ -276,18 +276,18 @@ mod test {
         let transport1_stream = transport1.get_stream();
         rt.spawn(transport1.map_err(|_| ()));
 
-        send_message(&mut rt, transport0_sink, vec![node1], 100);
+        send_message(&mut rt, transport0_sink, vec![node1.node().clone()], 100);
 
         let (message, _transport1_stream) = receive_message(&mut rt, transport1_stream);
         let message_reader = message.envelope.get_typed_reader().unwrap();
-        assert_eq!(message.from.id(), "0");
+        assert_eq!(message.from.id(), node0.id());
         assert_eq!(message_reader.get_type(), 100);
 
-        send_message(&mut rt, transport1_sink, vec![node0], 101);
+        send_message(&mut rt, transport1_sink, vec![node0.node().clone()], 101);
 
         let (message, _transport1_stream) = receive_message(&mut rt, transport0_stream);
         let message_reader = message.envelope.get_typed_reader().unwrap();
-        assert_eq!(message.from.id(), "1");
+        assert_eq!(message.from.id(), node1.id());
         assert_eq!(message_reader.get_type(), 101);
     }
 
@@ -296,7 +296,7 @@ mod test {
         let mut rt = Runtime::new().unwrap();
         let hub = MockTransport::default();
 
-        let node0 = Node::new("0".to_string());
+        let node0 = LocalNode::generate();
 
         let mut transport = hub.get_transport(node0.clone());
         let _transport_sink = transport.get_sink();

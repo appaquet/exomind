@@ -12,10 +12,11 @@ use itertools::Itertools;
 use tempdir;
 use tokio::runtime::Runtime;
 
-use exocore_common::node::{Node, Nodes};
+use exocore_common::node::LocalNode;
 use exocore_common::tests_utils::expect_result;
 use exocore_common::time::Clock;
 
+use exocore_common::cell::FullCell;
 use exocore_data::block::{BlockOffset, BlockOwned};
 use exocore_data::chain::ChainStore;
 use exocore_data::engine::{Event, Handle};
@@ -178,10 +179,11 @@ fn two_nodes_simple_replication() -> Result<(), failure::Error> {
 struct TestCluster {
     tempdir: tempdir::TempDir,
     runtime: Runtime,
-    nodes: Nodes,
     transport_hub: MockTransport,
     clock: Clock,
 
+    nodes: Vec<LocalNode>,
+    cells: Vec<FullCell>,
     chain_stores: Vec<Option<DirectoryChainStore>>,
     pending_stores: Vec<Option<MemoryPendingStore>>,
     handles: Vec<Option<Handle<DirectoryChainStore, MemoryPendingStore>>>,
@@ -195,11 +197,12 @@ impl TestCluster {
         let tempdir = tempdir::TempDir::new("engine_tests")?;
 
         let runtime = Runtime::new()?;
-        let mut nodes = Nodes::new();
 
         let transport_hub = MockTransport::default();
         let clock = Clock::new();
 
+        let mut nodes = Vec::new();
+        let mut cells = Vec::new();
         let mut handles = Vec::new();
         let mut chain_stores = Vec::new();
         let mut pending_stores = Vec::new();
@@ -207,15 +210,27 @@ impl TestCluster {
         let mut events_receiver = Vec::new();
         let mut events_received = Vec::new();
 
-        for node_id in 0..count {
-            let node = Node::new(format!("node{}", node_id));
-            nodes.add(node.clone());
+        for _node_idx in 0..count {
+            let local_node = LocalNode::generate();
+            let cell = FullCell::generate(local_node.clone());
+            nodes.push(local_node);
+            cells.push(cell);
 
             chain_stores.push(None);
             pending_stores.push(None);
             handles.push(None);
             events_receiver.push(None);
             events_received.push(None);
+        }
+
+        // add each node to all other nodes' cell
+        for cell in &cells {
+            for other_node in &nodes {
+                if cell.local_node().id() != other_node.id() {
+                    let mut cell_nodes = cell.nodes_mut();
+                    cell_nodes.add(other_node.node().clone());
+                }
+            }
         }
 
         Ok(TestCluster {
@@ -225,6 +240,7 @@ impl TestCluster {
             transport_hub,
             clock,
 
+            cells,
             chain_stores,
             pending_stores,
             handles,
@@ -235,8 +251,9 @@ impl TestCluster {
     }
 
     fn node_data_dir(&self, node_idx: usize) -> PathBuf {
-        let node = self.get_node(node_idx);
-        self.tempdir.path().join(node.id().to_string())
+        self.tempdir
+            .path()
+            .join(self.nodes[node_idx].id().to_string())
     }
 
     fn create_node(&mut self, node_idx: usize) -> Result<(), failure::Error> {
@@ -262,8 +279,7 @@ impl TestCluster {
     }
 
     fn create_chain_genesis_block(&mut self, node_idx: usize) {
-        let my_node = self.get_node(node_idx);
-        let block = BlockOwned::new_genesis(&self.nodes, &my_node).unwrap();
+        let block = BlockOwned::new_genesis(&self.cells[node_idx]).unwrap();
         self.chain_stores[node_idx]
             .as_mut()
             .unwrap()
@@ -285,18 +301,17 @@ impl TestCluster {
     }
 
     fn start_engine_with_config(&mut self, node_idx: usize, engine_config: EngineConfig) {
-        let node = self.get_node(node_idx);
-
-        let transport = self.transport_hub.get_transport(node.clone());
+        let transport = self
+            .transport_hub
+            .get_transport(self.nodes[node_idx].clone());
 
         let mut engine = Engine::new(
             engine_config,
-            node.id().to_string(),
             self.clock.clone(),
             transport,
             self.chain_stores[node_idx].take().unwrap(),
             self.pending_stores[node_idx].take().unwrap(),
-            self.nodes.clone(),
+            self.cells[node_idx].cell().clone(),
         );
 
         let engine_handle = engine.get_handle();
@@ -333,13 +348,6 @@ impl TestCluster {
 
         self.events_received[node_idx] = Some(received_events);
         self.events_receiver[node_idx] = Some(events_receiver);
-    }
-
-    fn get_node(&self, node_idx: usize) -> Node {
-        self.nodes
-            .get(&format!("node{}", node_idx))
-            .unwrap()
-            .clone()
     }
 
     fn get_received_events(&self, node_idx: usize) -> Vec<Event> {

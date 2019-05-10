@@ -5,7 +5,7 @@ use crate::layer::{TransportHandle, TransportLayer};
 use crate::messages::{InMessage, OutMessage};
 use crate::Error;
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
-use exocore_common::cell::{Cell, CellID};
+use exocore_common::cell::{Cell, CellID, CellNodes};
 use exocore_common::node::LocalNode;
 use exocore_common::serialization::framed::{TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_transport_capnp::envelope;
@@ -68,7 +68,7 @@ impl Inner {
     fn all_peers(&self) -> HashSet<(PeerId, Vec<Multiaddr>)> {
         let mut peers = HashSet::new();
         for inner_layer in self.handles.values() {
-            for node in inner_layer.cell.nodes().nodes() {
+            for node in inner_layer.cell.nodes().iter().all() {
                 peers.insert((node.peer_id().clone(), node.addresses()));
             }
         }
@@ -259,7 +259,8 @@ impl Libp2pTransport {
         };
 
         let node_id = exocore_common::node::node_id_from_peer_id(&message.source);
-        let source_node = if let Some(source_node) = layer_stream.cell.nodes().get(&node_id) {
+        let cell_nodes = layer_stream.cell.nodes();
+        let source_node = if let Some(source_node) = cell_nodes.get(&node_id) {
             source_node
         } else {
             return Err(Error::Other(format!(
@@ -398,7 +399,7 @@ impl Sink for MpscLayerSink {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use exocore_common::cell::Cell;
+    use exocore_common::cell::FullCell;
     use exocore_common::serialization::framed::FrameBuilder;
     use exocore_common::serialization::protos::data_chain_capnp::block_operation_header;
     use exocore_common::tests_utils::expect_eventually;
@@ -412,21 +413,22 @@ mod tests {
 
         let node1 = LocalNode::generate();
         node1.add_address("/ip4/127.0.0.1/tcp/3303".parse().unwrap());
-        let mut cell1 = Cell::new(node1.clone(), CellID::from_string("cell"));
+        let node1_cell = FullCell::generate(node1.clone());
+
         let node2 = LocalNode::generate();
         node2.add_address("/ip4/127.0.0.1/tcp/3304".parse().unwrap());
-        let mut cell2 = Cell::new(node2.clone(), CellID::from_string("cell"));
+        let node2_cell = node1_cell.clone_for_local_node(node2.clone());
 
-        cell1.nodes_mut().add(node2.node().clone());
-        cell2.nodes_mut().add(node1.node().clone());
+        node1_cell.nodes_mut().add(node2.node().clone());
+        node2_cell.nodes_mut().add(node1.node().clone());
 
         let mut transport1 = Libp2pTransport::new(node1.clone(), Config::default());
-        let layer1 = transport1.get_handle(cell1.clone(), TransportLayer::Data)?;
+        let layer1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
         let layer1_tester = LayerTransportTester::new(&mut rt, layer1);
         rt.spawn(transport1);
 
         let mut transport2 = Libp2pTransport::new(node2.clone(), Config::default());
-        let layer2 = transport2.get_handle(cell2.clone(), TransportLayer::Data)?;
+        let layer2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
         let layer2_tester = LayerTransportTester::new(&mut rt, layer2);
         rt.spawn(transport2);
 
@@ -438,13 +440,13 @@ mod tests {
 
         // send 1 to 2
         let to_nodes = vec![node2.node().clone()];
-        let msg = OutMessage::from_framed_message_cell(&cell1, to_nodes, frame.clone())?;
+        let msg = OutMessage::from_framed_message(&node1_cell, to_nodes, frame.clone())?;
         layer1_tester.send(msg);
         expect_eventually(|| layer2_tester.received().len() == 1);
 
         // send 2 to twice 1 to test multiple nodes
         let to_nodes = vec![node1.node().clone(), node1.node().clone()];
-        let msg = OutMessage::from_framed_message_cell(&cell1, to_nodes, frame)?;
+        let msg = OutMessage::from_framed_message(&node2_cell, to_nodes, frame)?;
         layer2_tester.send(msg);
         expect_eventually(|| layer1_tester.received().len() == 2);
 

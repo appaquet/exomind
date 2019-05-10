@@ -1,12 +1,10 @@
-#![allow(dead_code)]
-
 use std::collections::{HashMap, HashSet};
 use std::ops::{Bound, RangeBounds};
 
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::operation::OperationID;
-use exocore_common::node::{Node, NodeID, Nodes};
+use exocore_common::node::{Node, NodeID};
 use exocore_common::security::hash::{Sha3Hasher, StreamHasher};
 use exocore_common::serialization::framed::*;
 use exocore_common::serialization::protos::data_chain_capnp::{
@@ -20,6 +18,7 @@ use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
 use crate::operation::{NewOperation, Operation};
 use crate::pending::{PendingStore, StoredOperation};
+use exocore_common::cell::{Cell, CellNodes};
 
 const MAX_OPERATIONS_PER_RANGE: u32 = 30;
 
@@ -38,17 +37,17 @@ const MAX_OPERATIONS_PER_RANGE: u32 = 30;
 /// headers exchange and full operations exchange.
 ///
 pub(super) struct PendingSynchronizer<PS: PendingStore> {
-    node_id: NodeID,
     config: PendingSyncConfig,
+    cell: Cell,
     nodes_info: HashMap<NodeID, NodeSyncInfo>,
     phantom: std::marker::PhantomData<PS>,
 }
 
 impl<PS: PendingStore> PendingSynchronizer<PS> {
-    pub fn new(node_id: NodeID, config: PendingSyncConfig) -> PendingSynchronizer<PS> {
+    pub fn new(config: PendingSyncConfig, cell: Cell) -> PendingSynchronizer<PS> {
         PendingSynchronizer {
-            node_id,
             config,
+            cell,
             nodes_info: HashMap::new(),
             phantom: std::marker::PhantomData,
         }
@@ -58,16 +57,11 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     /// Called at interval by the engine to make progress on synchronizing with other nodes. In theory, all changes are propagated
     /// in real-time when operations get added, but this periodic synchronization makes sure that we didn't lose anything.
     ///
-    pub fn tick(
-        &mut self,
-        sync_context: &mut SyncContext,
-        store: &PS,
-        nodes: &Nodes,
-    ) -> Result<(), Error> {
+    pub fn tick(&mut self, sync_context: &mut SyncContext, store: &PS) -> Result<(), Error> {
         debug!("Sync tick begins");
 
-        let my_node_id = self.node_id.clone();
-        for node in nodes.nodes_except(&my_node_id) {
+        let nodes = self.cell.nodes().to_owned();
+        for node in nodes.iter().all_except_local() {
             let sync_info = self.get_or_create_node_info_mut(node.id());
             if sync_info.request_tracker.can_send_request() {
                 sync_info.request_tracker.set_last_send_now();
@@ -88,7 +82,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     pub fn handle_new_operation(
         &mut self,
         sync_context: &mut SyncContext,
-        nodes: &Nodes,
         store: &mut PS,
         operation: NewOperation,
     ) -> Result<(), Error> {
@@ -97,7 +90,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         sync_context.push_event(Event::PendingOperationNew(operation_id));
 
         // create a sync request for which we send full detail for new op, but none for other ops
-        for node in nodes.nodes_except(&self.node_id) {
+        let nodes = self.cell.nodes();
+        for node in nodes.iter().all_except_local() {
             let request = self.create_sync_request_for_range(store, operation_id.., |op| {
                 if op.operation_id == operation_id {
                     OperationDetails::Full
@@ -383,11 +377,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             return self.nodes_info.get_mut(node_id).unwrap();
         }
 
-        let node_id = node_id.to_string();
         let config = self.config;
         self.nodes_info
-            .entry(node_id.clone())
-            .or_insert_with(move || NodeSyncInfo::new(node_id.clone(), &config))
+            .entry(node_id.to_string())
+            .or_insert_with(move || NodeSyncInfo::new(&config))
     }
 }
 
@@ -411,14 +404,12 @@ impl Default for PendingSyncConfig {
 /// Synchronization information about a remote node
 ///
 struct NodeSyncInfo {
-    node_id: NodeID,
     request_tracker: request_tracker::RequestTracker,
 }
 
 impl NodeSyncInfo {
-    fn new(node_id: NodeID, config: &PendingSyncConfig) -> NodeSyncInfo {
+    fn new(config: &PendingSyncConfig) -> NodeSyncInfo {
         NodeSyncInfo {
-            node_id,
             request_tracker: request_tracker::RequestTracker::new(config.request_tracker_config),
         }
     }
@@ -705,21 +696,15 @@ mod tests {
         // only one node, shouldn't send to ourself
         let mut cluster = TestCluster::new(1);
         let mut sync_context = SyncContext::new();
-        cluster.pending_stores_synchronizer[0].tick(
-            &mut sync_context,
-            &cluster.pending_stores[0],
-            &cluster.nodes,
-        )?;
+        cluster.pending_stores_synchronizer[0]
+            .tick(&mut sync_context, &cluster.pending_stores[0])?;
         assert_eq!(sync_context.messages.len(), 0);
 
         // two nodes should send to other node
         let mut cluster = TestCluster::new(2);
         let mut sync_context = SyncContext::new();
-        cluster.pending_stores_synchronizer[0].tick(
-            &mut sync_context,
-            &cluster.pending_stores[0],
-            &cluster.nodes,
-        )?;
+        cluster.pending_stores_synchronizer[0]
+            .tick(&mut sync_context, &cluster.pending_stores[0])?;
         assert_eq!(sync_context.messages.len(), 1);
 
         Ok(())
@@ -731,11 +716,8 @@ mod tests {
         cluster.pending_generate_dummy(0, 100);
 
         let mut sync_context = SyncContext::new();
-        cluster.pending_stores_synchronizer[0].tick(
-            &mut sync_context,
-            &cluster.pending_stores[0],
-            &cluster.nodes,
-        )?;
+        cluster.pending_stores_synchronizer[0]
+            .tick(&mut sync_context, &cluster.pending_stores[0])?;
         let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
         let sync_request_reader = sync_request_frame.get_typed_reader()?;
 
@@ -765,7 +747,6 @@ mod tests {
         let mut sync_context = SyncContext::new();
         cluster.pending_stores_synchronizer[0].handle_new_operation(
             &mut sync_context,
-            &cluster.nodes,
             &mut cluster.pending_stores[0],
             new_operation,
         )?;
@@ -805,7 +786,6 @@ mod tests {
         let new_operation = create_dummy_new_entry_op(51, 51);
         cluster.pending_stores_synchronizer[0].handle_new_operation(
             &mut sync_context,
-            &cluster.nodes,
             &mut cluster.pending_stores[0],
             new_operation,
         )?;
@@ -1015,11 +995,8 @@ mod tests {
         let mut sync_context = SyncContext::new();
 
         // tick the first node, which will generate a sync request
-        cluster.pending_stores_synchronizer[node_id_a].tick(
-            &mut sync_context,
-            &cluster.pending_stores[node_id_a],
-            &cluster.nodes,
-        )?;
+        cluster.pending_stores_synchronizer[node_id_a]
+            .tick(&mut sync_context, &cluster.pending_stores[node_id_a])?;
         let (_to_node, initial_request) = extract_request_from_result(&sync_context);
 
         sync_nodes_with_request(cluster, node_id_a, node_id_b, initial_request)

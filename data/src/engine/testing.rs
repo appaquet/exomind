@@ -1,6 +1,6 @@
 use tempdir::TempDir;
 
-use exocore_common::node::{Node, Nodes};
+use exocore_common::node::{LocalNode, Node};
 use exocore_common::serialization::framed::{
     FrameBuilder, MultihashFrameSigner, OwnedTypedFrame, TypedFrame,
 };
@@ -15,11 +15,14 @@ use crate::engine::{chain_sync, SyncContext};
 use crate::operation::{GroupID, NewOperation, OperationBuilder, OperationID};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
+use exocore_common::cell::FullCell;
 use exocore_common::time::Clock;
 use std::collections::HashMap;
 
 pub(super) struct TestCluster {
-    pub nodes: Nodes,
+    pub cells: Vec<FullCell>,
+
+    pub nodes: Vec<LocalNode>,
     pub nodes_index: HashMap<String, usize>,
 
     pub temp_dirs: Vec<TempDir>,
@@ -36,7 +39,9 @@ pub(super) struct TestCluster {
 
 impl TestCluster {
     pub fn new(count: usize) -> TestCluster {
-        let mut nodes = Nodes::new();
+        let mut cells = Vec::new();
+
+        let mut nodes = Vec::new();
         let mut nodes_index = HashMap::new();
 
         let mut temp_dirs = Vec::new();
@@ -48,9 +53,13 @@ impl TestCluster {
         let mut commit_managers = Vec::new();
 
         for i in 0..count {
-            let node_id = format!("node{}", i);
-            nodes_index.insert(node_id.clone(), i);
-            nodes.add(Node::new(node_id.clone()));
+            let local_node = LocalNode::generate();
+
+            let cell = FullCell::generate(local_node.clone());
+            cells.push(cell.clone());
+
+            nodes_index.insert(local_node.id().clone(), i);
+            nodes.push(local_node.clone());
 
             let tempdir = TempDir::new("test_cluster").unwrap();
 
@@ -64,27 +73,38 @@ impl TestCluster {
             };
             chains.push(DirectoryChainStore::create(chain_config, tempdir.as_ref()).unwrap());
             chains_synchronizer.push(chain_sync::ChainSynchronizer::new(
-                node_id.clone(),
                 chain_sync::ChainSyncConfig::default(),
+                cell.cell().clone(),
                 clock.clone(),
             ));
 
             pending_stores.push(MemoryPendingStore::new());
             pending_stores_synchronizer.push(pending_sync::PendingSynchronizer::new(
-                node_id.clone(),
                 pending_sync::PendingSyncConfig::default(),
+                cell.cell().clone(),
             ));
 
             commit_managers.push(CommitManager::new(
-                node_id.clone(),
                 crate::engine::commit_manager::CommitManagerConfig::default(),
+                cell.cell().clone(),
                 clock.clone(),
             ));
 
             temp_dirs.push(tempdir);
         }
 
+        // add each node to all other nodes' cell
+        for cell in &cells {
+            for other_node in &nodes {
+                if cell.local_node().id() != other_node.id() {
+                    let mut cell_nodes = cell.nodes_mut();
+                    cell_nodes.add(other_node.node().clone());
+                }
+            }
+        }
+
         TestCluster {
+            cells,
             nodes,
             nodes_index,
 
@@ -99,10 +119,7 @@ impl TestCluster {
     }
 
     pub fn get_node(&self, node_idx: usize) -> Node {
-        self.nodes
-            .get(&format!("node{}", node_idx))
-            .unwrap()
-            .clone()
+        self.nodes[node_idx].node().clone()
     }
 
     pub fn get_node_index(&self, node_id: &str) -> usize {
@@ -174,8 +191,7 @@ impl TestCluster {
     }
 
     pub fn chain_add_genesis_block(&mut self, node_idx: usize) {
-        let my_node = self.get_node(node_idx);
-        let block = BlockOwned::new_genesis(&self.nodes, &my_node).unwrap();
+        let block = BlockOwned::new_genesis(&self.cells[node_idx]).unwrap();
         self.chains[node_idx].write_block(&block).unwrap();
     }
 
@@ -185,11 +201,7 @@ impl TestCluster {
     ) -> Result<SyncContext, crate::engine::Error> {
         let mut sync_context = SyncContext::new();
 
-        self.chains_synchronizer[node_idx].tick(
-            &mut sync_context,
-            &self.chains[node_idx],
-            &self.nodes,
-        )?;
+        self.chains_synchronizer[node_idx].tick(&mut sync_context, &self.chains[node_idx])?;
         Ok(sync_context)
     }
 
@@ -204,14 +216,13 @@ impl TestCluster {
             &mut self.pending_stores_synchronizer[node_idx],
             &mut self.pending_stores[node_idx],
             &mut self.chains[node_idx],
-            &self.nodes,
         )?;
 
         Ok(sync_context)
     }
 
     pub fn consistent_clock(&self, node_idx: usize) -> u64 {
-        self.clocks[node_idx].consistent_time(&self.get_node(node_idx))
+        self.clocks[node_idx].consistent_time(&self.nodes[node_idx])
     }
 }
 

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std;
 use std::ops::RangeBounds;
 use std::sync::{Arc, RwLock, Weak};
@@ -13,7 +11,7 @@ use tokio::timer::Interval;
 
 use crate::operation::OperationID;
 use exocore_common;
-use exocore_common::node::{Node, NodeID, Nodes};
+use exocore_common::node::NodeID;
 use exocore_common::serialization::capnp;
 use exocore_common::serialization::framed::{
     FrameBuilder, MessageType, OwnedTypedFrame, TypedSliceFrame,
@@ -41,6 +39,7 @@ mod request_tracker;
 
 pub use chain_sync::ChainSyncConfig;
 pub use commit_manager::CommitManagerConfig;
+use exocore_common::cell::{Cell, CellNodes};
 pub use pending_sync::PendingSyncConfig;
 
 #[cfg(any(test, feature = "tests_utils"))]
@@ -85,7 +84,6 @@ where
 {
     config: Config,
     started: bool,
-    clock: Clock,
     transport: Option<T>,
     inner: Arc<RwLock<Inner<CS, PS>>>,
     handles_count: usize,
@@ -100,34 +98,31 @@ where
 {
     pub fn new(
         config: Config,
-        node_id: NodeID,
         clock: Clock,
         transport: T,
         chain_store: CS,
         pending_store: PS,
-        nodes: Nodes,
+        cell: Cell,
     ) -> Engine<T, CS, PS> {
         let (completion_sender, completion_receiver) = oneshot::channel();
 
         let pending_synchronizer = pending_sync::PendingSynchronizer::new(
-            node_id.clone(),
             config.pending_synchronizer_config,
+            cell.clone(),
         );
         let chain_synchronizer = chain_sync::ChainSynchronizer::new(
-            node_id.clone(),
             config.chain_synchronizer_config,
+            cell.clone(),
             clock.clone(),
         );
         let commit_manager = commit_manager::CommitManager::new(
-            node_id.clone(),
             config.commit_manager_config,
+            cell.clone(),
             clock.clone(),
         );
 
         let inner = Arc::new(RwLock::new(Inner {
-            config,
-            node_id,
-            nodes,
+            cell,
             clock: clock.clone(),
             pending_store,
             pending_synchronizer,
@@ -142,7 +137,6 @@ where
         Engine {
             config,
             started: false,
-            clock,
             inner,
             handles_count: 0,
             transport: Some(transport),
@@ -276,7 +270,7 @@ where
         let envelope_reader: envelope::Reader = message.envelope.get_typed_reader()?;
         debug!(
             "{}: Got message of type {} from node {}",
-            inner.node_id,
+            inner.cell.local_node().id(),
             envelope_reader.get_type(),
             envelope_reader.get_from_node_id()?
         );
@@ -378,9 +372,7 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    config: Config,
-    node_id: NodeID,
-    nodes: Nodes,
+    cell: Cell,
     clock: Clock,
     pending_store: PS,
     pending_synchronizer: pending_sync::PendingSynchronizer<PS>,
@@ -401,7 +393,6 @@ where
         let mut sync_context = SyncContext::new();
         self.pending_synchronizer.handle_new_operation(
             &mut sync_context,
-            &self.nodes,
             &mut self.pending_store,
             operation,
         )?;
@@ -490,7 +481,7 @@ where
         let mut sync_context = SyncContext::new();
 
         self.chain_synchronizer
-            .tick(&mut sync_context, &self.chain_store, &self.nodes)?;
+            .tick(&mut sync_context, &self.chain_store)?;
 
         // to prevent synchronizing pending operations that may have added to the chain, we should only
         // start doing commit management & pending synchronization once the chain is synchronized
@@ -502,11 +493,10 @@ where
                 &mut self.pending_synchronizer,
                 &mut self.pending_store,
                 &mut self.chain_store,
-                &self.nodes,
             )?;
 
             self.pending_synchronizer
-                .tick(&mut sync_context, &self.pending_store, &self.nodes)?;
+                .tick(&mut sync_context, &self.pending_store)?;
         }
 
         self.send_messages_from_sync_context(&mut sync_context)?;
@@ -520,19 +510,12 @@ where
         sync_context: &mut SyncContext,
     ) -> Result<(), Error> {
         if !sync_context.messages.is_empty() {
-            let local_node = self.nodes.get(&self.node_id).ok_or_else(|| {
-                Error::Other(format!(
-                    "Couldn't find local node {} in nodes list",
-                    self.node_id
-                ))
-            })?;
-
             // swap out messages from the sync_context struct to consume them
             let mut messages = Vec::new();
             std::mem::swap(&mut sync_context.messages, &mut messages);
 
             for message in messages {
-                let out_message = message.into_out_message(local_node, &self.nodes)?;
+                let out_message = message.into_out_message(&self.cell)?;
                 let transport_sender = self.transport_sender.as_ref().expect(
                     "Transport sender was none, which mean that the transport was never started",
                 );
@@ -624,15 +607,10 @@ where
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
 
-        let my_node = unlocked_inner
-            .nodes
-            .get(&unlocked_inner.node_id)
-            .ok_or(Error::MyNodeNotFound)?;
-
+        let my_node = unlocked_inner.cell.local_node();
         let operation_id = unlocked_inner.clock.consistent_time(my_node);
 
-        let operation_builder =
-            OperationBuilder::new_entry(operation_id, &unlocked_inner.node_id, data);
+        let operation_builder = OperationBuilder::new_entry(operation_id, my_node.id(), data);
         let operation = operation_builder.sign_and_build(my_node.frame_signer())?;
 
         unlocked_inner.handle_add_pending_operation(operation)?;
@@ -975,32 +953,27 @@ enum SyncContextMessage {
 }
 
 impl SyncContextMessage {
-    fn into_out_message<'n>(
-        self,
-        local_node: &'n Node,
-        nodes: &'n Nodes,
-    ) -> Result<OutMessage, Error> {
-        let signer = local_node.frame_signer();
+    fn into_out_message(self, cell: &Cell) -> Result<OutMessage, Error> {
+        let cell_nodes = cell.nodes();
+        let to_nodes = if let Some(node) = cell_nodes.get(self.to_node()) {
+            vec![node.clone()]
+        } else {
+            vec![]
+        };
 
-        let to_node = self.to_node();
-        let to_nodes = nodes
-            .nodes()
-            .filter(|n| n.id() == to_node)
-            .cloned()
-            .collect();
-
+        let signer = cell.local_node().frame_signer();
         let message = match self {
             SyncContextMessage::PendingSyncRequest(_, request_builder) => {
                 let frame = request_builder.as_owned_framed(signer)?;
-                OutMessage::from_framed_message(local_node, to_nodes, frame)?
+                OutMessage::from_framed_message(cell, to_nodes, frame)?
             }
             SyncContextMessage::ChainSyncRequest(_, request_builder) => {
                 let frame = request_builder.as_owned_framed(signer)?;
-                OutMessage::from_framed_message(local_node, to_nodes, frame)?
+                OutMessage::from_framed_message(cell, to_nodes, frame)?
             }
             SyncContextMessage::ChainSyncResponse(_, response_builder) => {
                 let frame = response_builder.as_owned_framed(signer)?;
-                OutMessage::from_framed_message(local_node, to_nodes, frame)?
+                OutMessage::from_framed_message(cell, to_nodes, frame)?
             }
         };
 

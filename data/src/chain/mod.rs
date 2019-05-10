@@ -117,26 +117,24 @@ mod tests {
     use super::*;
     use crate::block::{BlockOperations, BlockOwned};
     use crate::operation::OperationBuilder;
-    use exocore_common::node::{Node, Nodes};
+    use exocore_common::cell::FullCell;
+    use exocore_common::node::LocalNode;
     use exocore_common::serialization::framed::TypedFrame;
 
     #[test]
     fn test_block_create_and_read() -> Result<(), failure::Error> {
-        let mut nodes = Nodes::new();
-        let node1 = Node::new("node1".to_string());
-        nodes.add(node1.clone());
-
-        let first_block = BlockOwned::new_genesis(&nodes, &node1)?;
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
+        let genesis = BlockOwned::new_genesis(&cell)?;
 
         let operations = vec![
             OperationBuilder::new_entry(123, "node1", b"some_data")
-                .sign_and_build(node1.frame_signer())?
+                .sign_and_build(local_node.frame_signer())?
                 .frame,
         ];
         let operations = BlockOperations::from_operations(operations.into_iter())?;
 
-        let second_block =
-            BlockOwned::new_with_prev_block(&nodes, &node1, &first_block, 0, operations)?;
+        let second_block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, operations)?;
 
         let mut data = [0u8; 5000];
         second_block.copy_data_into(&mut data);
@@ -156,7 +154,7 @@ mod tests {
         );
 
         let block_reader = second_block.block.get_typed_reader()?;
-        assert_eq!(block_reader.get_offset(), first_block.next_offset());
+        assert_eq!(block_reader.get_offset(), genesis.next_offset());
         assert_eq!(
             block_reader.get_signatures_size(),
             second_block.signatures.frame_size() as u16
@@ -180,28 +178,26 @@ mod tests {
 
     #[test]
     fn test_block_operations() -> Result<(), failure::Error> {
-        let mut nodes = Nodes::new();
-        let node1 = Node::new("node1".to_string());
-        nodes.add(node1.clone());
-        let genesis = BlockOwned::new_genesis(&nodes, &node1)?;
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
+        let genesis = BlockOwned::new_genesis(&cell)?;
 
         // 0 operations
-        let block =
-            BlockOwned::new_with_prev_block(&nodes, &node1, &genesis, 0, BlockOperations::empty())?;
+        let block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, BlockOperations::empty())?;
         assert_eq!(block.operations_iter()?.count(), 0);
 
         // 5 operations
         let operations = (0..5)
             .map(|i| {
                 OperationBuilder::new_entry(i, "node1", b"op1")
-                    .sign_and_build(node1.frame_signer())
+                    .sign_and_build(local_node.frame_signer())
                     .unwrap()
                     .frame
             })
             .collect::<Vec<_>>();
 
         let block_operations = BlockOperations::from_operations(operations.into_iter())?;
-        let block = BlockOwned::new_with_prev_block(&nodes, &node1, &genesis, 0, block_operations)?;
+        let block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, block_operations)?;
         assert_eq!(block.operations_iter()?.count(), 5);
 
         Ok(())
