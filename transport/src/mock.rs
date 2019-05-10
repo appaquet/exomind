@@ -4,14 +4,14 @@ use std::sync::{Arc, Mutex, Weak};
 use futures::prelude::*;
 use futures::sync::{mpsc, oneshot};
 
-use exocore_common::node::{LocalNode, Node, NodeID};
+use exocore_common::node::{LocalNode, Node, NodeId};
 
 use crate::{Error, InMessage, OutMessage, TransportHandle};
 
 /// In memory transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
 pub struct MockTransport {
-    nodes_sink: Arc<Mutex<HashMap<NodeID, mpsc::UnboundedSender<InMessage>>>>,
+    nodes_sink: Arc<Mutex<HashMap<NodeId, mpsc::UnboundedSender<InMessage>>>>,
 }
 
 impl Default for MockTransport {
@@ -50,7 +50,7 @@ pub struct MockTransportHandle {
     // TODO: fixme
     node: Node,
     started: bool,
-    nodes_sink: Weak<Mutex<HashMap<NodeID, mpsc::UnboundedSender<InMessage>>>>,
+    nodes_sink: Weak<Mutex<HashMap<NodeId, mpsc::UnboundedSender<InMessage>>>>,
     incoming_stream: Option<mpsc::UnboundedReceiver<InMessage>>,
     outgoing_stream: Option<mpsc::UnboundedReceiver<OutMessage>>,
     completion_sender: CompletionSender,

@@ -2,7 +2,7 @@
 // TODO: Encryption/signature ticket: https://github.com/appaquet/exocore/issues/46
 //
 
-use crate::node::{LocalNode, Node, NodeID};
+use crate::node::{LocalNode, Node, NodeId};
 use libp2p_core::identity::{Keypair, PublicKey};
 use libp2p_core::PeerId;
 use std::collections::HashMap;
@@ -60,17 +60,17 @@ impl Deref for FullCell {
 #[derive(Clone)]
 pub struct Cell {
     public_key: PublicKey,
-    cell_id: CellID,
+    cell_id: CellId,
     local_node: LocalNode,
-    nodes: Arc<RwLock<HashMap<NodeID, Node>>>,
+    nodes: Arc<RwLock<HashMap<NodeId, Node>>>,
 }
 
 impl Cell {
     pub fn new(public_key: PublicKey, local_node: LocalNode) -> Cell {
         let dummy_peer_id = PeerId::from_public_key(public_key.clone());
-        let cell_id = CellID::from_string(&dummy_peer_id.to_string());
+        let cell_id = CellId::from_string(dummy_peer_id.to_string());
 
-        let mut nodes_map: HashMap<NodeID, Node> = HashMap::new();
+        let mut nodes_map: HashMap<NodeId, Node> = HashMap::new();
         nodes_map.insert(local_node.id().clone(), local_node.node().clone());
 
         Cell {
@@ -82,7 +82,7 @@ impl Cell {
     }
 
     #[inline]
-    pub fn id(&self) -> &CellID {
+    pub fn id(&self) -> &CellId {
         &self.cell_id
     }
 
@@ -117,33 +117,35 @@ impl Cell {
 /// Unique identifier of a cell, which is built by hashing the public key
 ///
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
-pub struct CellID {
-    id: String,
-}
+pub struct CellId(String);
 
-impl CellID {
-    pub fn from_public_key(public_key: &PublicKey) -> CellID {
-        // TODO: Use our own method?
-        let dummy_peer_id = PeerId::from_public_key(public_key.clone());
-        CellID {
-            id: dummy_peer_id.to_string(),
-        }
+impl CellId {
+    pub fn from_string(id: String) -> CellId {
+        CellId(id)
     }
 
-    pub fn from_string(id: &str) -> CellID {
-        CellID { id: id.to_string() }
-    }
-
-    pub fn from_bytes(id: &[u8]) -> CellID {
-        // TODO: fix
-        CellID {
-            id: String::from_utf8_lossy(id).to_string(),
-        }
+    pub fn from_bytes(id: &[u8]) -> CellId {
+        CellId(String::from_utf8_lossy(id).to_string())
     }
 
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        self.id.as_bytes()
+        self.0.as_bytes()
+    }
+}
+
+impl std::fmt::Display for CellId {
+    #[inline]
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl std::str::FromStr for CellId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(CellId(s.to_string()))
     }
 }
 
@@ -152,7 +154,7 @@ impl CellID {
 ///
 pub trait CellNodes {
     fn cell(&self) -> &Cell;
-    fn nodes_map(&self) -> &HashMap<NodeID, Node>;
+    fn nodes_map(&self) -> &HashMap<NodeId, Node>;
 
     fn local_node(&self) -> &LocalNode {
         &self.cell().local_node
@@ -169,7 +171,7 @@ pub trait CellNodes {
     }
 
     #[inline]
-    fn get(&self, node_id: &str) -> Option<&Node> {
+    fn get(&self, node_id: &NodeId) -> Option<&Node> {
         self.nodes_map().get(node_id)
     }
 
@@ -204,7 +206,7 @@ impl<'cn, N: CellNodes> CellNodesIter<'cn, N> {
         self.nodes.nodes_map().values()
     }
 
-    pub fn all_except<'a>(&'a self, node_id: &'a str) -> impl Iterator<Item = &'a Node> + 'a {
+    pub fn all_except<'a>(&'a self, node_id: &'a NodeId) -> impl Iterator<Item = &'a Node> + 'a {
         self.nodes
             .nodes_map()
             .values()
@@ -222,7 +224,7 @@ impl<'cn, N: CellNodes> CellNodesIter<'cn, N> {
 ///
 pub struct CellNodesRead<'cell> {
     cell: &'cell Cell,
-    nodes: RwLockReadGuard<'cell, HashMap<NodeID, Node>>,
+    nodes: RwLockReadGuard<'cell, HashMap<NodeId, Node>>,
 }
 
 impl<'cell> CellNodesRead<'cell> {
@@ -236,7 +238,7 @@ impl<'cell> CellNodes for CellNodesRead<'cell> {
         &self.cell
     }
 
-    fn nodes_map(&self) -> &HashMap<String, Node> {
+    fn nodes_map(&self) -> &HashMap<NodeId, Node> {
         &self.nodes
     }
 }
@@ -246,7 +248,7 @@ impl<'cell> CellNodes for CellNodesRead<'cell> {
 ///
 pub struct CellNodesWrite<'cell> {
     cell: &'cell Cell,
-    nodes: RwLockWriteGuard<'cell, HashMap<NodeID, Node>>,
+    nodes: RwLockWriteGuard<'cell, HashMap<NodeId, Node>>,
 }
 
 impl<'cell> CellNodesWrite<'cell> {
@@ -264,7 +266,7 @@ impl<'cell> CellNodes for CellNodesWrite<'cell> {
         &self.cell
     }
 
-    fn nodes_map(&self) -> &HashMap<String, Node> {
+    fn nodes_map(&self) -> &HashMap<NodeId, Node> {
         &self.nodes
     }
 }
@@ -274,7 +276,7 @@ impl<'cell> CellNodes for CellNodesWrite<'cell> {
 ///
 pub struct CellNodesOwned {
     cell: Cell,
-    nodes: HashMap<NodeID, Node>,
+    nodes: HashMap<NodeId, Node>,
 }
 
 impl CellNodesOwned {
@@ -288,7 +290,7 @@ impl CellNodes for CellNodesOwned {
         &self.cell
     }
 
-    fn nodes_map(&self) -> &HashMap<String, Node> {
+    fn nodes_map(&self) -> &HashMap<NodeId, Node> {
         &self.nodes
     }
 }
@@ -311,6 +313,8 @@ mod tests {
         {
             let mut nodes = cell.nodes_mut();
             nodes.add(Node::generate_for_tests());
+            assert_eq!(nodes.len(), 2);
+            assert_eq!(nodes.iter().all().count(), 2);
         }
 
         {
@@ -324,7 +328,9 @@ mod tests {
             );
 
             assert!(nodes.get(local_node.id()).is_some());
-            assert!(nodes.get("blabla").is_none());
+
+            let other_node = Node::generate_for_tests();
+            assert!(nodes.get(other_node.id()).is_none());
         }
     }
 

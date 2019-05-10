@@ -30,7 +30,7 @@ impl OutMessage {
         envelope_message_builder.set_layer(TransportLayer::Data.into());
         envelope_message_builder.set_type(frame.message_type());
         envelope_message_builder.set_cell_id(cell.id().as_bytes());
-        envelope_message_builder.set_from_node_id(&cell.local_node().id());
+        envelope_message_builder.set_from_node_id(&cell.local_node().id().to_str());
         envelope_message_builder.set_data(frame.frame_data());
 
         Ok(OutMessage {

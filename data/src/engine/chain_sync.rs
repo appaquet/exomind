@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use capnp::traits::ToU16;
-use exocore_common::node::{Node, NodeID};
+use exocore_common::node::{Node, NodeId};
 use exocore_common::serialization::capnp;
 use exocore_common::serialization::framed::{FrameBuilder, SignedFrame, TypedFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{block, block_header};
@@ -41,9 +41,9 @@ use exocore_common::cell::{Cell, CellNodes, CellNodesOwned};
 pub(super) struct ChainSynchronizer<CS: ChainStore> {
     config: ChainSyncConfig,
     cell: Cell,
-    nodes_info: HashMap<NodeID, NodeSyncInfo>,
+    nodes_info: HashMap<NodeId, NodeSyncInfo>,
     status: Status,
-    leader: Option<NodeID>,
+    leader: Option<NodeId>,
     clock: Clock,
     phantom: std::marker::PhantomData<CS>,
 }
@@ -268,7 +268,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         self.is_leader(self.cell.local_node().id())
     }
 
-    pub fn is_leader(&self, node_id: &str) -> bool {
+    pub fn is_leader(&self, node_id: &NodeId) -> bool {
         self.leader
             .as_ref()
             .map_or(false, |leader| leader == node_id)
@@ -340,7 +340,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     "Leader node has no common block with us. Our last block is at offset {}",
                     last_block.offset
                 );
-                return Err(ChainSyncError::Diverged(leader_node_id).into());
+                return Err(ChainSyncError::Diverged(format!(
+                    "Diverged from leader {}",
+                    leader_node_id
+                ))
+                .into());
             }
         }
 
@@ -663,7 +667,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    fn get_or_create_node_info_mut(&mut self, node_id: &str) -> &mut NodeSyncInfo {
+    fn get_or_create_node_info_mut(&mut self, node_id: &NodeId) -> &mut NodeSyncInfo {
         if self.nodes_info.contains_key(node_id) {
             return self.nodes_info.get_mut(node_id).unwrap();
         }
@@ -671,8 +675,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let config = self.config;
         let clock = self.clock.clone();
         self.nodes_info
-            .entry(node_id.to_string())
-            .or_insert_with(move || NodeSyncInfo::new(node_id.to_string(), config, clock))
+            .entry(node_id.clone())
+            .or_insert_with(move || NodeSyncInfo::new(node_id.clone(), config, clock))
     }
 
     fn count_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
@@ -767,7 +771,7 @@ impl Default for ChainSyncConfig {
 ///
 struct NodeSyncInfo {
     config: ChainSyncConfig,
-    node_id: NodeID,
+    node_id: NodeId,
 
     last_common_block: Option<BlockHeader>,
     last_common_is_known: bool,
@@ -777,7 +781,7 @@ struct NodeSyncInfo {
 }
 
 impl NodeSyncInfo {
-    fn new(node_id: NodeID, config: ChainSyncConfig, clock: Clock) -> NodeSyncInfo {
+    fn new(node_id: NodeId, config: ChainSyncConfig, clock: Clock) -> NodeSyncInfo {
         NodeSyncInfo {
             config,
             node_id,
@@ -1514,12 +1518,12 @@ mod tests {
 
     fn extract_request_frame_sync_context(
         sync_context: &SyncContext,
-        to_node: &str,
+        to_node: &NodeId,
     ) -> OwnedTypedFrame<chain_sync_request::Owned> {
         for sync_message in &sync_context.messages {
             match sync_message {
                 SyncContextMessage::ChainSyncRequest(msg_to_node, req)
-                    if msg_to_node.as_str() == to_node =>
+                    if msg_to_node == to_node =>
                 {
                     return req.as_owned_unsigned_framed().unwrap();
                 }
@@ -1532,7 +1536,7 @@ mod tests {
 
     fn extract_response_frame_sync_context(
         sync_context: &SyncContext,
-    ) -> (NodeID, OwnedTypedFrame<chain_sync_response::Owned>) {
+    ) -> (NodeId, OwnedTypedFrame<chain_sync_response::Owned>) {
         match sync_context.messages.last().unwrap() {
             SyncContextMessage::ChainSyncResponse(to_node, req) => {
                 (to_node.clone(), req.as_owned_unsigned_framed().unwrap())

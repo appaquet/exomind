@@ -5,8 +5,8 @@ use crate::layer::{TransportHandle, TransportLayer};
 use crate::messages::{InMessage, OutMessage};
 use crate::Error;
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
-use exocore_common::cell::{Cell, CellID, CellNodes};
-use exocore_common::node::LocalNode;
+use exocore_common::cell::{Cell, CellId, CellNodes};
+use exocore_common::node::{LocalNode, NodeId};
 use exocore_common::serialization::framed::{TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_transport_capnp::envelope;
 use futures::prelude::*;
@@ -61,7 +61,7 @@ pub struct Libp2pTransport {
 }
 
 struct Inner {
-    handles: HashMap<(CellID, TransportLayer), InnerHandle>,
+    handles: HashMap<(CellId, TransportLayer), InnerHandle>,
 }
 
 impl Inner {
@@ -240,7 +240,7 @@ impl Libp2pTransport {
 
         let mut inner = inner.write()?;
 
-        let cell_id = CellID::from_bytes(&cell_id_bytes);
+        let cell_id = CellId::from_bytes(&cell_id_bytes);
         let layer = TransportLayer::from_code(frame_reader.get_layer()).ok_or_else(|| {
             Error::Other(format!(
                 "Message has invalid layer {}",
@@ -258,7 +258,7 @@ impl Libp2pTransport {
             )));
         };
 
-        let node_id = exocore_common::node::node_id_from_peer_id(&message.source);
+        let node_id = NodeId::from_peer_id(&message.source);
         let cell_nodes = layer_stream.cell.nodes();
         let source_node = if let Some(source_node) = cell_nodes.get(&node_id) {
             source_node
@@ -297,7 +297,7 @@ impl Future for Libp2pTransport {
 
 /// Handle taken by a Cell layer to receive and send message for a given node & cell.
 pub struct Libp2pTransportHandle {
-    cell_id: CellID,
+    cell_id: CellId,
     layer: TransportLayer,
     inner: Weak<RwLock<Inner>>,
 

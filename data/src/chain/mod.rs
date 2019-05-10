@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use crate::block;
 use crate::block::{Block, BlockOffset, BlockRef};
-use crate::operation::OperationID;
+use crate::operation::OperationId;
 use exocore_common::serialization::framed;
 
 pub mod directory;
@@ -30,7 +30,7 @@ pub trait ChainStore: Send + Sync + 'static {
 
     fn get_block_by_operation_id(
         &self,
-        operation_id: OperationID,
+        operation_id: OperationId,
     ) -> Result<Option<BlockRef>, Error>;
 
     fn truncate_from_offset(&mut self, offset: BlockOffset) -> Result<(), Error>;
@@ -128,7 +128,7 @@ mod tests {
         let genesis = BlockOwned::new_genesis(&cell)?;
 
         let operations = vec![
-            OperationBuilder::new_entry(123, "node1", b"some_data")
+            OperationBuilder::new_entry(123, local_node.id(), b"some_data")
                 .sign_and_build(local_node.frame_signer())?
                 .frame,
         ];
@@ -189,7 +189,7 @@ mod tests {
         // 5 operations
         let operations = (0..5)
             .map(|i| {
-                OperationBuilder::new_entry(i, "node1", b"op1")
+                OperationBuilder::new_entry(i, local_node.id(), b"op1")
                     .sign_and_build(local_node.frame_signer())
                     .unwrap()
                     .frame

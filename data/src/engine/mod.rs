@@ -9,9 +9,9 @@ use futures::sync::oneshot;
 use tokio;
 use tokio::timer::Interval;
 
-use crate::operation::OperationID;
+use crate::operation::OperationId;
 use exocore_common;
-use exocore_common::node::NodeID;
+use exocore_common::node::NodeId;
 use exocore_common::serialization::capnp;
 use exocore_common::serialization::framed::{
     FrameBuilder, MessageType, OwnedTypedFrame, TypedSliceFrame,
@@ -603,7 +603,7 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationID, Error> {
+    pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationId, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
 
@@ -627,7 +627,7 @@ where
     pub fn get_chain_operation(
         &self,
         block_offset: BlockOffset,
-        operation_id: OperationID,
+        operation_id: OperationId,
     ) -> Result<Option<EngineOperation>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
@@ -644,7 +644,7 @@ where
         }
     }
 
-    pub fn get_pending_operations<R: RangeBounds<OperationID>>(
+    pub fn get_pending_operations<R: RangeBounds<OperationId>>(
         &self,
         operations_range: R,
     ) -> Result<Vec<EngineOperation>, Error> {
@@ -681,7 +681,7 @@ where
 
     pub fn get_operation(
         &self,
-        operation_id: OperationID,
+        operation_id: OperationId,
     ) -> Result<Option<EngineOperation>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let unlocked_inner = inner.write()?;
@@ -910,7 +910,7 @@ impl SyncContext {
 
     fn push_pending_sync_request(
         &mut self,
-        node_id: NodeID,
+        node_id: NodeId,
         request_builder: FrameBuilder<pending_sync_request::Owned>,
     ) {
         self.messages.push(SyncContextMessage::PendingSyncRequest(
@@ -921,7 +921,7 @@ impl SyncContext {
 
     fn push_chain_sync_request(
         &mut self,
-        node_id: NodeID,
+        node_id: NodeId,
         request_builder: FrameBuilder<chain_sync_request::Owned>,
     ) {
         self.messages.push(SyncContextMessage::ChainSyncRequest(
@@ -932,7 +932,7 @@ impl SyncContext {
 
     fn push_chain_sync_response(
         &mut self,
-        node_id: NodeID,
+        node_id: NodeId,
         response_builder: FrameBuilder<chain_sync_response::Owned>,
     ) {
         self.messages.push(SyncContextMessage::ChainSyncResponse(
@@ -947,9 +947,9 @@ impl SyncContext {
 }
 
 enum SyncContextMessage {
-    PendingSyncRequest(NodeID, FrameBuilder<pending_sync_request::Owned>),
-    ChainSyncRequest(NodeID, FrameBuilder<chain_sync_request::Owned>),
-    ChainSyncResponse(NodeID, FrameBuilder<chain_sync_response::Owned>),
+    PendingSyncRequest(NodeId, FrameBuilder<pending_sync_request::Owned>),
+    ChainSyncRequest(NodeId, FrameBuilder<chain_sync_request::Owned>),
+    ChainSyncResponse(NodeId, FrameBuilder<chain_sync_response::Owned>),
 }
 
 impl SyncContextMessage {
@@ -980,11 +980,11 @@ impl SyncContextMessage {
         Ok(message)
     }
 
-    fn to_node(&self) -> &str {
+    fn to_node(&self) -> &NodeId {
         match self {
-            SyncContextMessage::PendingSyncRequest(to_node, _) => &to_node,
-            SyncContextMessage::ChainSyncRequest(to_node, _) => &to_node,
-            SyncContextMessage::ChainSyncResponse(to_node, _) => &to_node,
+            SyncContextMessage::PendingSyncRequest(to_node, _) => to_node,
+            SyncContextMessage::ChainSyncRequest(to_node, _) => to_node,
+            SyncContextMessage::ChainSyncResponse(to_node, _) => to_node,
         }
     }
 }
@@ -1002,11 +1002,11 @@ pub enum Event {
     StreamDiscontinuity,
 
     /// An operation added to the pending store.
-    PendingOperationNew(OperationID),
+    PendingOperationNew(OperationId),
 
     /// An operation that was previously added got deleted, hence will never end up in a block.
     /// This happens if an operation was invalid or found in the chain later on.
-    PendingEntryDelete(OperationID),
+    PendingEntryDelete(OperationId),
 
     /// A new block got added to the chain.
     ChainBlockNew(BlockOffset),
@@ -1020,7 +1020,7 @@ pub enum Event {
 /// Operation that comes either from the chain or from the pending store
 ///
 pub struct EngineOperation {
-    pub operation_id: OperationID,
+    pub operation_id: OperationId,
     pub status: EngineOperationStatus,
     pub operation_frame: Arc<OwnedTypedFrame<pending_operation::Owned>>,
 }

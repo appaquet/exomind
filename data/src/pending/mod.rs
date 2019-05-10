@@ -6,7 +6,7 @@ use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::serialization::framed;
 
 use crate::operation;
-use crate::operation::{GroupID, OperationID};
+use crate::operation::{GroupId, OperationId};
 
 pub mod memory;
 
@@ -21,16 +21,16 @@ pub trait PendingStore: Send + Sync + 'static {
     ///
     fn put_operation(&mut self, operation: operation::NewOperation) -> Result<bool, Error>;
 
-    fn get_operation(&self, operation_id: OperationID) -> Result<Option<StoredOperation>, Error>;
+    fn get_operation(&self, operation_id: OperationId) -> Result<Option<StoredOperation>, Error>;
 
     fn get_group_operations(
         &self,
-        group_id: GroupID,
+        group_id: GroupId,
     ) -> Result<Option<StoredOperationsGroup>, Error>;
 
     fn operations_iter<R>(&self, range: R) -> Result<TimelineIterator, Error>
     where
-        R: RangeBounds<OperationID>;
+        R: RangeBounds<OperationId>;
 
     fn operations_count(&self) -> usize;
 }
@@ -42,8 +42,8 @@ pub type TimelineIterator<'store> = Box<dyn Iterator<Item = StoredOperation> + '
 ///
 #[derive(Clone)]
 pub struct StoredOperation {
-    pub group_id: GroupID,
-    pub operation_id: OperationID,
+    pub group_id: GroupId,
+    pub operation_id: OperationId,
     pub operation_type: operation::OperationType,
     pub frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
 }
@@ -53,7 +53,7 @@ pub struct StoredOperation {
 /// Example: all operations related to a block proposal, approval and refusal
 ///
 pub struct StoredOperationsGroup {
-    pub group_id: GroupID,
+    pub group_id: GroupId,
     pub operations: Vec<StoredOperation>,
 }
 

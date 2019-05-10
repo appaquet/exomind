@@ -2,7 +2,7 @@ use std;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 
-use crate::operation::OperationID;
+use crate::operation::OperationId;
 use segment::DirectorySegment;
 
 use crate::chain::{Block, BlockOffset, BlockRef, ChainStore, Error, Segment, StoredBlockIterator};
@@ -256,7 +256,7 @@ impl ChainStore for DirectoryChainStore {
 
     fn get_block_by_operation_id(
         &self,
-        operation_id: OperationID,
+        operation_id: OperationId,
     ) -> Result<Option<BlockRef>, Error> {
         let operations_index = self
             .operations_index
@@ -748,10 +748,14 @@ pub mod tests {
         // only true for tests
         let operation_id = offset as u64 + 1;
         let operations = vec![
-            crate::operation::OperationBuilder::new_entry(operation_id, "node1", b"some_data")
-                .sign_and_build(local_node.frame_signer())
-                .unwrap()
-                .frame,
+            crate::operation::OperationBuilder::new_entry(
+                operation_id,
+                local_node.id(),
+                b"some_data",
+            )
+            .sign_and_build(local_node.frame_signer())
+            .unwrap()
+            .frame,
         ];
 
         let proposed_operation_id = offset as u64;

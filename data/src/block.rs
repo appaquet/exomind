@@ -1,9 +1,9 @@
-use crate::operation::OperationID;
+use crate::operation::OperationId;
 use exocore_common::cell::{Cell, FullCell};
 use exocore_common::data_chain_capnp::{
     block, block_operation_header, block_signature, block_signatures,
 };
-use exocore_common::node::{LocalNode, NodeID};
+use exocore_common::node::{LocalNode, NodeId};
 use exocore_common::security::hash::{Multihash, Sha3Hasher, StreamHasher};
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{
@@ -74,7 +74,7 @@ pub trait Block {
         Ok(reader.get_depth())
     }
 
-    fn get_proposed_operation_id(&self) -> Result<OperationID, Error> {
+    fn get_proposed_operation_id(&self) -> Result<OperationId, Error> {
         let reader = self.block().get_typed_reader()?;
         Ok(reader.get_proposed_operation_id())
     }
@@ -97,7 +97,7 @@ pub trait Block {
 
     fn get_operation(
         &self,
-        operation_id: OperationID,
+        operation_id: OperationId,
     ) -> Result<Option<TypedSliceFrame<pending_operation::Owned>>, Error> {
         // TODO: Implement binary search in operations, since they are sorted: https://github.com/appaquet/exocore/issues/43
         let operation = self.operations_iter()?.find(|operation| {
@@ -236,7 +236,7 @@ impl BlockOwned {
         block_builder.set_previous_offset(previous_offset);
         block_builder.set_previous_hash(previous_hash);
         block_builder.set_proposed_operation_id(proposed_operation_id);
-        block_builder.set_proposed_node_id(local_node.id());
+        block_builder.set_proposed_node_id(local_node.id().to_str());
         block_builder.set_operations_size(operations_data_size);
         block_builder.set_operations_hash(&operations.multihash_bytes);
 
@@ -571,17 +571,17 @@ impl BlockSignatures {
 /// Represents a signature of the block by one node, using its own key to sign the block's hash.
 ///
 pub struct BlockSignature {
-    pub node_id: NodeID,
+    pub node_id: NodeId,
     pub signature: Signature,
 }
 
 impl BlockSignature {
-    pub fn new(node_id: NodeID, signature: Signature) -> BlockSignature {
+    pub fn new(node_id: NodeId, signature: Signature) -> BlockSignature {
         BlockSignature { node_id, signature }
     }
 
     pub fn copy_into_builder(&self, builder: &mut block_signature::Builder) {
-        builder.set_node_id(&self.node_id);
+        builder.set_node_id(self.node_id.to_str());
         builder.set_node_signature(self.signature.get_bytes());
     }
 }

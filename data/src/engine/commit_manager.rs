@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 
-use crate::operation::OperationID;
-use exocore_common::node::NodeID;
+use crate::operation::OperationId;
+use exocore_common::node::NodeId;
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{SignedFrame, TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{
@@ -20,6 +20,7 @@ use crate::engine::{pending_sync, Event, SyncContext};
 use crate::operation;
 use crate::operation::{Operation, OperationType};
 use crate::pending;
+use std::str::FromStr;
 
 use super::Error;
 use exocore_common::cell::{Cell, CellNodes, CellNodesRead};
@@ -129,7 +130,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     /// the block with local version of the operations.
     fn check_should_sign_block(
         &self,
-        block_id: OperationID,
+        block_id: OperationId,
         pending_blocks: &PendingBlocks,
         chain_store: &CS,
         pending_store: &PS,
@@ -476,14 +477,14 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 /// it is based on current time.
 fn is_node_commit_turn(
     nodes: &CellNodesRead,
-    my_node_id: &str,
+    my_node_id: &NodeId,
     now: u64,
     config: &CommitManagerConfig,
 ) -> Result<bool, Error> {
     let nodes_iter = nodes.iter();
     let sorted_nodes = nodes_iter
         .all()
-        .sorted_by_key(|node| node.id())
+        .sorted_by_key(|node| node.id().to_str())
         .collect_vec();
     let my_node_position = sorted_nodes
         .iter()
@@ -521,9 +522,9 @@ impl Default for CommitManagerConfig {
 /// Structure that contains information on the pending store and blocks in it.
 /// It is used by the commit manager to know if it needs to propose, sign, commit blocks
 struct PendingBlocks {
-    blocks: HashMap<OperationID, PendingBlock>, // group_id -> block
-    blocks_status: HashMap<OperationID, BlockStatus>, // group_id -> block_status
-    operations_blocks: HashMap<OperationID, HashSet<OperationID>>, // operation_id -> set(group_id)
+    blocks: HashMap<OperationId, PendingBlock>, // group_id -> block
+    blocks_status: HashMap<OperationId, BlockStatus>, // group_id -> block_status
+    operations_blocks: HashMap<OperationId, HashSet<OperationId>>, // operation_id -> set(group_id)
     entries_operations_count: usize,
 }
 
@@ -556,7 +557,7 @@ impl PendingBlocks {
         }
 
         // then we get all operations for each block proposal
-        let mut blocks = HashMap::<OperationID, PendingBlock>::new();
+        let mut blocks = HashMap::<OperationId, PendingBlock>::new();
         for group_id in groups_id.iter_mut() {
             let group_operations = if let Some(group_operations) =
                 pending_store.get_group_operations(*group_id)?
@@ -663,22 +664,22 @@ impl PendingBlocks {
         })
     }
 
-    fn get_block(&self, block_op_id: &OperationID) -> &PendingBlock {
+    fn get_block(&self, block_op_id: &OperationId) -> &PendingBlock {
         self.blocks
             .get(block_op_id)
             .expect("Couldn't find block in map")
     }
 
-    fn get_block_mut(&mut self, block_op_id: &OperationID) -> &mut PendingBlock {
+    fn get_block_mut(&mut self, block_op_id: &OperationId) -> &mut PendingBlock {
         self.blocks
             .get_mut(block_op_id)
             .expect("Couldn't find block in map")
     }
 
     fn map_operations_blocks(
-        pending_blocks: &HashMap<OperationID, PendingBlock>,
-    ) -> HashMap<OperationID, HashSet<OperationID>> {
-        let mut operations_blocks: HashMap<OperationID, HashSet<OperationID>> = HashMap::new();
+        pending_blocks: &HashMap<OperationId, PendingBlock>,
+    ) -> HashMap<OperationId, HashSet<OperationId>> {
+        let mut operations_blocks: HashMap<OperationId, HashSet<OperationId>> = HashMap::new();
         for block in pending_blocks.values() {
             for operation_id in &block.operations {
                 let operation = operations_blocks
@@ -691,8 +692,8 @@ impl PendingBlocks {
     }
 
     fn map_blocks_status(
-        pending_blocks: &HashMap<OperationID, PendingBlock>,
-    ) -> HashMap<OperationID, BlockStatus> {
+        pending_blocks: &HashMap<OperationId, PendingBlock>,
+    ) -> HashMap<OperationId, BlockStatus> {
         let mut blocks_status = HashMap::new();
         for (block_group_id, block) in pending_blocks {
             blocks_status.insert(*block_group_id, block.status);
@@ -715,7 +716,7 @@ impl PendingBlocks {
 /// This block could be a past block (committed to chain or refused), which will eventually be cleaned up,
 /// or could be a next potential or refused block.
 struct PendingBlock {
-    group_id: OperationID,
+    group_id: OperationId,
     status: BlockStatus,
 
     proposal: PendingBlockProposal,
@@ -724,7 +725,7 @@ struct PendingBlock {
     has_my_refusal: bool,
     has_my_signature: bool,
 
-    operations: Vec<OperationID>,
+    operations: Vec<OperationId>,
 }
 
 impl PendingBlock {
@@ -813,7 +814,7 @@ impl PendingBlockProposal {
 
 /// Block refusal wrapper
 struct PendingBlockRefusal {
-    node_id: NodeID,
+    node_id: NodeId,
 }
 
 impl PendingBlockRefusal {
@@ -824,7 +825,10 @@ impl PendingBlockRefusal {
             operation_reader.get_operation();
         match inner_operation.which()? {
             pending_operation::operation::Which::BlockRefuse(_sig) => {
-                let node_id = operation_reader.get_node_id()?.to_string();
+                let node_id_str = operation_reader.get_node_id()?;
+                let node_id = NodeId::from_str(node_id_str).map_err(|_| {
+                    Error::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
+                })?;
                 Ok(PendingBlockRefusal { node_id })
             }
             _ => Err(Error::Other(
@@ -837,7 +841,7 @@ impl PendingBlockRefusal {
 
 /// Block signature wrapper
 struct PendingBlockSignature {
-    node_id: NodeID,
+    node_id: NodeId,
     signature: Signature,
 }
 
@@ -853,7 +857,10 @@ impl PendingBlockSignature {
                 let signature_reader: block_signature::Reader =
                     op_signature_reader.get_signature()?;
 
-                let node_id = signature_reader.get_node_id()?.to_string();
+                let node_id_str = operation_reader.get_node_id()?;
+                let node_id = NodeId::from_str(node_id_str).map_err(|_| {
+                    Error::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
+                })?;
                 let signature = Signature::from_bytes(signature_reader.get_node_signature()?);
 
                 Ok(PendingBlockSignature { node_id, signature })
@@ -872,7 +879,7 @@ pub enum CommitManagerError {
     #[fail(display = "Invalid signature in commit manager: {}", _0)]
     InvalidSignature(String),
     #[fail(display = "A referenced operation is missing from local store: {}", _0)]
-    MissingOperation(OperationID),
+    MissingOperation(OperationId),
 }
 
 #[cfg(test)]
@@ -1096,7 +1103,7 @@ mod tests {
         let node2 = cluster.get_node(1);
 
         // we use node id to sort nodes
-        let (first_node, sec_node) = if node1.id() < node2.id() {
+        let (first_node, sec_node) = if node1.id().to_str() < node2.id().to_str() {
             (&node1, &node2)
         } else {
             (&node2, &node1)
@@ -1127,7 +1134,7 @@ mod tests {
         Ok(())
     }
 
-    fn append_new_operation(cluster: &mut TestCluster, data: &[u8]) -> Result<OperationID, Error> {
+    fn append_new_operation(cluster: &mut TestCluster, data: &[u8]) -> Result<OperationId, Error> {
         let op_id = cluster.consistent_clock(0);
 
         for node in cluster.nodes.iter() {
@@ -1142,8 +1149,8 @@ mod tests {
 
     fn append_block_proposal_from_operations(
         cluster: &mut TestCluster,
-        op_ids: Vec<OperationID>,
-    ) -> Result<OperationID, Error> {
+        op_ids: Vec<OperationId>,
+    ) -> Result<OperationId, Error> {
         let node = &cluster.nodes[0];
 
         let previous_block = cluster.chains[0].get_last_block()?.unwrap();

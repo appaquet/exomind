@@ -1,6 +1,6 @@
 use tempdir::TempDir;
 
-use exocore_common::node::{LocalNode, Node};
+use exocore_common::node::{LocalNode, Node, NodeId};
 use exocore_common::serialization::framed::{
     FrameBuilder, MultihashFrameSigner, OwnedTypedFrame, TypedFrame,
 };
@@ -12,7 +12,7 @@ use crate::chain::ChainStore;
 use crate::engine::commit_manager::CommitManager;
 use crate::engine::pending_sync;
 use crate::engine::{chain_sync, SyncContext};
-use crate::operation::{GroupID, NewOperation, OperationBuilder, OperationID};
+use crate::operation::{GroupId, NewOperation, OperationBuilder, OperationId};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
 use exocore_common::cell::FullCell;
@@ -23,7 +23,7 @@ pub(super) struct TestCluster {
     pub cells: Vec<FullCell>,
 
     pub nodes: Vec<LocalNode>,
-    pub nodes_index: HashMap<String, usize>,
+    pub nodes_index: HashMap<NodeId, usize>,
 
     pub temp_dirs: Vec<TempDir>,
 
@@ -122,7 +122,7 @@ impl TestCluster {
         self.nodes[node_idx].node().clone()
     }
 
-    pub fn get_node_index(&self, node_id: &str) -> usize {
+    pub fn get_node_index(&self, node_id: &NodeId) -> usize {
         self.nodes_index[node_id]
     }
 
@@ -182,8 +182,14 @@ impl TestCluster {
         }
     }
 
-    pub fn pending_generate_dummy(&mut self, node_idx: usize, count: usize) {
-        for operation in dummy_pending_ops_generator(count) {
+    pub fn pending_generate_dummy(
+        &mut self,
+        node_idx: usize,
+        generator_node_idx: usize,
+        count: usize,
+    ) {
+        let generator_node = &self.nodes[generator_node_idx];
+        for operation in dummy_pending_ops_generator(generator_node, count) {
             self.pending_stores[node_idx]
                 .put_operation(operation)
                 .unwrap();
@@ -264,15 +270,23 @@ pub fn create_dummy_block_sigs(operations_size: u32) -> OwnedTypedFrame<block_si
     msg_builder.as_owned_framed(signer).unwrap()
 }
 
-pub fn dummy_pending_ops_generator(count: usize) -> impl Iterator<Item = NewOperation> {
-    (1..=count).map(|i| {
+pub fn dummy_pending_ops_generator(
+    local_node: &LocalNode,
+    count: usize,
+) -> impl Iterator<Item = NewOperation> {
+    let local_node = local_node.clone();
+    (1..=count).map(move |i| {
         let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
-        create_dummy_new_entry_op(operation_id, group_id)
+        create_dummy_new_entry_op(&local_node, operation_id, group_id)
     })
 }
 
-pub fn create_dummy_new_entry_op(operation_id: OperationID, group_id: GroupID) -> NewOperation {
-    let mut builder = OperationBuilder::new_entry(operation_id, "node_id", b"bob");
+pub fn create_dummy_new_entry_op(
+    local_node: &LocalNode,
+    operation_id: OperationId,
+    group_id: GroupId,
+) -> NewOperation {
+    let mut builder = OperationBuilder::new_entry(operation_id, local_node.id(), b"bob");
     let mut frame_builder = builder.frame_builder.get_builder_typed();
     frame_builder.set_group_id(group_id);
 

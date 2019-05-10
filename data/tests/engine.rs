@@ -20,7 +20,7 @@ use exocore_common::cell::FullCell;
 use exocore_data::block::{BlockOffset, BlockOwned};
 use exocore_data::chain::ChainStore;
 use exocore_data::engine::{Event, Handle};
-use exocore_data::operation::{Operation, OperationID};
+use exocore_data::operation::{Operation, OperationId};
 use exocore_data::*;
 use exocore_transport::mock::MockTransport;
 
@@ -251,9 +251,7 @@ impl TestCluster {
     }
 
     fn node_data_dir(&self, node_idx: usize) -> PathBuf {
-        self.tempdir
-            .path()
-            .join(self.nodes[node_idx].id().to_string())
+        self.tempdir.path().join(self.nodes[node_idx].id().to_str())
     }
 
     fn create_node(&mut self, node_idx: usize) -> Result<(), failure::Error> {
@@ -398,7 +396,7 @@ impl TestCluster {
     }
 }
 
-fn extract_ops_events(events: &[Event]) -> Vec<OperationID> {
+fn extract_ops_events(events: &[Event]) -> Vec<OperationId> {
     events
         .iter()
         .flat_map(|event| match event {

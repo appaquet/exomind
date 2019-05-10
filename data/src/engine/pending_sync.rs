@@ -3,8 +3,8 @@ use std::ops::{Bound, RangeBounds};
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::operation::OperationID;
-use exocore_common::node::{Node, NodeID};
+use crate::operation::OperationId;
+use exocore_common::node::{Node, NodeId};
 use exocore_common::security::hash::{Sha3Hasher, StreamHasher};
 use exocore_common::serialization::framed::*;
 use exocore_common::serialization::protos::data_chain_capnp::{
@@ -39,7 +39,7 @@ const MAX_OPERATIONS_PER_RANGE: u32 = 30;
 pub(super) struct PendingSynchronizer<PS: PendingStore> {
     config: PendingSyncConfig,
     cell: Cell,
-    nodes_info: HashMap<NodeID, NodeSyncInfo>,
+    nodes_info: HashMap<NodeId, NodeSyncInfo>,
     phantom: std::marker::PhantomData<PS>,
 }
 
@@ -184,7 +184,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             }
 
             // first, we store operations for which we have data directly in the payload
-            let mut included_operations = HashSet::<OperationID>::new();
+            let mut included_operations = HashSet::<OperationId>::new();
             if sync_range_reader.has_operations() {
                 for operation_frame_res in sync_range_reader.get_operations()?.iter() {
                     let operation_frame_data = operation_frame_res?;
@@ -269,7 +269,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         operation_details: F,
     ) -> Result<FrameBuilder<pending_sync_request::Owned>, Error>
     where
-        R: RangeBounds<OperationID> + Clone,
+        R: RangeBounds<OperationId> + Clone,
         F: Fn(&StoredOperation) -> OperationDetails,
     {
         let mut sync_ranges = SyncRangesBuilder::new();
@@ -310,7 +310,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     ///
     fn local_store_range_info<R>(store: &PS, range: R) -> Result<(Vec<u8>, usize), Error>
     where
-        R: RangeBounds<OperationID>,
+        R: RangeBounds<OperationId>,
     {
         let mut frame_hasher = Sha3Hasher::new_256();
         let mut count = 0;
@@ -371,7 +371,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok(())
     }
 
-    fn get_or_create_node_info_mut(&mut self, node_id: &str) -> &mut NodeSyncInfo {
+    fn get_or_create_node_info_mut(&mut self, node_id: &NodeId) -> &mut NodeSyncInfo {
         // early exit here to prevent cloning the node_id for .entry()
         if self.nodes_info.contains_key(node_id) {
             return self.nodes_info.get_mut(node_id).unwrap();
@@ -379,7 +379,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
         let config = self.config;
         self.nodes_info
-            .entry(node_id.to_string())
+            .entry(node_id.clone())
             .or_insert_with(move || NodeSyncInfo::new(&config))
     }
 }
@@ -443,9 +443,9 @@ fn extract_sync_bounds(
 }
 
 type SyncBounds = (
-    (Bound<OperationID>, Bound<OperationID>),
-    OperationID,
-    OperationID,
+    (Bound<OperationId>, Bound<OperationId>),
+    OperationId,
+    OperationId,
 );
 
 ///
@@ -487,7 +487,7 @@ impl SyncRangesBuilder {
         last_range.push_operation(operation, details);
     }
 
-    fn push_new_range(&mut self, from_bound: Bound<OperationID>) {
+    fn push_new_range(&mut self, from_bound: Bound<OperationId>) {
         self.ranges
             .push(SyncRangeBuilder::new(from_bound, Bound::Unbounded));
     }
@@ -496,11 +496,11 @@ impl SyncRangesBuilder {
         self.ranges.push(sync_range);
     }
 
-    fn last_range_to_bound(&self) -> Option<Bound<OperationID>> {
+    fn last_range_to_bound(&self) -> Option<Bound<OperationId>> {
         self.ranges.last().map(|r| r.to_operation)
     }
 
-    fn set_last_range_to_bound(&mut self, to_bound: Bound<OperationID>) {
+    fn set_last_range_to_bound(&mut self, to_bound: Bound<OperationId>) {
         if let Some(range) = self.ranges.last_mut() {
             range.to_operation = to_bound;
         }
@@ -517,8 +517,8 @@ impl SyncRangesBuilder {
 ///  * Operations full data
 ///
 struct SyncRangeBuilder {
-    from_operation: Bound<OperationID>,
-    to_operation: Bound<OperationID>,
+    from_operation: Bound<OperationId>,
+    to_operation: Bound<OperationId>,
 
     operations: Vec<StoredOperation>,
     operations_headers: Vec<StoredOperation>,
@@ -537,8 +537,8 @@ enum OperationDetails {
 
 impl SyncRangeBuilder {
     fn new(
-        from_operation: Bound<OperationID>,
-        to_operation: Bound<OperationID>,
+        from_operation: Bound<OperationId>,
+        to_operation: Bound<OperationId>,
     ) -> SyncRangeBuilder {
         SyncRangeBuilder {
             from_operation,
@@ -552,8 +552,8 @@ impl SyncRangeBuilder {
     }
 
     fn new_hashed(
-        from_operation: Bound<OperationID>,
-        to_operation: Bound<OperationID>,
+        from_operation: Bound<OperationId>,
+        to_operation: Bound<OperationId>,
         operations_hash: Vec<u8>,
         operations_count: u32,
     ) -> SyncRangeBuilder {
@@ -690,6 +690,7 @@ mod tests {
     use crate::operation::{NewOperation, OperationType};
 
     use super::*;
+    use exocore_common::node::LocalNode;
 
     #[test]
     fn tick_send_to_other_nodes() -> Result<(), failure::Error> {
@@ -713,7 +714,7 @@ mod tests {
     #[test]
     fn create_sync_range_request() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
-        cluster.pending_generate_dummy(0, 100);
+        cluster.pending_generate_dummy(0, 0, 100);
 
         let mut sync_context = SyncContext::new();
         cluster.pending_stores_synchronizer[0]
@@ -739,11 +740,12 @@ mod tests {
     #[test]
     fn new_operation_after_last_operation() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
-        cluster.pending_generate_dummy(0, 50);
-        cluster.pending_generate_dummy(1, 50);
+        cluster.pending_generate_dummy(0, 0, 50);
+        cluster.pending_generate_dummy(1, 0, 50);
 
         // create operation after last operation id
-        let new_operation = create_dummy_new_entry_op(52, 52);
+        let generator_node = &cluster.nodes[0];
+        let new_operation = create_dummy_new_entry_op(generator_node, 52, 52);
         let mut sync_context = SyncContext::new();
         cluster.pending_stores_synchronizer[0].handle_new_operation(
             &mut sync_context,
@@ -771,9 +773,10 @@ mod tests {
         let mut cluster = TestCluster::new(2);
 
         // generate operations with even operation id
+        let generator_node = &cluster.nodes[0];
         let ops_generator = (0..=50).map(|i| {
             let (group_id, operation_id) = (((i * 2) % 10 + 1) as u64, i * 2 as u64);
-            create_dummy_new_entry_op(operation_id, group_id)
+            create_dummy_new_entry_op(generator_node, operation_id, group_id)
         });
 
         for operation in ops_generator {
@@ -783,7 +786,7 @@ mod tests {
 
         // create operation in middle of current ranges, with odd operation id
         let mut sync_context = SyncContext::new();
-        let new_operation = create_dummy_new_entry_op(51, 51);
+        let new_operation = create_dummy_new_entry_op(generator_node, 51, 51);
         cluster.pending_stores_synchronizer[0].handle_new_operation(
             &mut sync_context,
             &mut cluster.pending_stores[0],
@@ -808,8 +811,8 @@ mod tests {
     #[test]
     fn handle_sync_equals() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
-        cluster.pending_generate_dummy(0, 100);
-        cluster.pending_generate_dummy(1, 100);
+        cluster.pending_generate_dummy(0, 0, 100);
+        cluster.pending_generate_dummy(1, 0, 100);
 
         let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(count_a_to_b, 1);
@@ -821,7 +824,7 @@ mod tests {
     #[test]
     fn handle_sync_empty_to_many() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
-        cluster.pending_generate_dummy(0, 100);
+        cluster.pending_generate_dummy(0, 0, 100);
 
         let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(count_a_to_b, 2);
@@ -833,7 +836,7 @@ mod tests {
     #[test]
     fn handle_sync_many_to_empty() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
-        cluster.pending_generate_dummy(1, 100);
+        cluster.pending_generate_dummy(1, 1, 100);
 
         let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(count_a_to_b, 1);
@@ -845,10 +848,11 @@ mod tests {
     #[test]
     fn handle_sync_full_to_some() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
-        cluster.pending_generate_dummy(0, 100);
+        cluster.pending_generate_dummy(0, 0, 100);
 
         // insert 1/2 operations in second node
-        for operation in pending_ops_generator(100) {
+        let generator_node = &cluster.nodes[0];
+        for operation in pending_ops_generator(generator_node, 100) {
             if operation.get_id()? % 2 == 0 {
                 cluster.pending_stores[1].put_operation(operation)?;
             }
@@ -864,10 +868,11 @@ mod tests {
     #[test]
     fn handle_sync_some_to_all() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
-        cluster.pending_generate_dummy(1, 100);
+        cluster.pending_generate_dummy(1, 1, 100);
 
         // insert 1/2 operations in first node
-        for operation in pending_ops_generator(100) {
+        let generator_node = &cluster.nodes[1];
+        for operation in pending_ops_generator(generator_node, 100) {
             if operation.get_id()? % 2 == 0 {
                 cluster.pending_stores[0].put_operation(operation)?;
             }
@@ -884,7 +889,8 @@ mod tests {
     fn handle_sync_different_some_to_different_some() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
 
-        for operation in pending_ops_generator(10) {
+        let generator_node = &cluster.nodes[0];
+        for operation in pending_ops_generator(generator_node, 10) {
             if operation.get_id()? % 2 == 0 {
                 cluster.pending_stores[0].put_operation(operation)?;
             } else if operation.get_id()? % 3 == 0 {
@@ -901,8 +907,9 @@ mod tests {
 
     #[test]
     fn sync_ranges_push_operation() {
+        let local_node = LocalNode::generate();
         let mut sync_ranges = SyncRangesBuilder::new();
-        for operation in stored_ops_generator(90) {
+        for operation in stored_ops_generator(&local_node, 90) {
             sync_ranges.push_operation(operation, OperationDetails::None);
         }
 
@@ -913,7 +920,7 @@ mod tests {
         );
 
         // check continuity of ranges
-        let mut last_range_to: Option<Bound<OperationID>> = None;
+        let mut last_range_to: Option<Bound<OperationId>> = None;
         for range in sync_ranges.ranges.iter() {
             match (last_range_to, range.from_operation) {
                 (None, _) => assert_eq!(range.from_operation, Bound::Unbounded),
@@ -931,7 +938,8 @@ mod tests {
 
     #[test]
     fn sync_range_to_frame_builder_with_hash() -> Result<(), failure::Error> {
-        let frames_builder = build_sync_ranges_frames(90, OperationDetails::None);
+        let local_node = LocalNode::generate();
+        let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetails::None);
         assert_eq!(frames_builder.len(), 3);
 
         let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
@@ -953,7 +961,8 @@ mod tests {
 
     #[test]
     fn sync_range_to_frame_builder_with_headers() -> Result<(), failure::Error> {
-        let frames_builder = build_sync_ranges_frames(90, OperationDetails::Header);
+        let local_node = LocalNode::generate();
+        let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetails::Header);
 
         let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
         let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader()?;
@@ -969,7 +978,8 @@ mod tests {
 
     #[test]
     fn sync_range_to_frame_builder_with_data() -> Result<(), failure::Error> {
-        let frames_builder = build_sync_ranges_frames(90, OperationDetails::Full);
+        let local_node = LocalNode::generate();
+        let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetails::Full);
 
         let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
         let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader()?;
@@ -1067,11 +1077,12 @@ mod tests {
     }
 
     fn build_sync_ranges_frames(
+        local_node: &LocalNode,
         count: usize,
         details: OperationDetails,
     ) -> Vec<FrameBuilder<pending_sync_range::Owned>> {
         let mut sync_ranges = SyncRangesBuilder::new();
-        for operation in stored_ops_generator(count) {
+        for operation in stored_ops_generator(local_node, count) {
             sync_ranges.push_operation(operation, details);
         }
         sync_ranges
@@ -1090,7 +1101,7 @@ mod tests {
 
     fn extract_request_from_result(
         sync_context: &SyncContext,
-    ) -> (NodeID, OwnedTypedFrame<pending_sync_request::Owned>) {
+    ) -> (NodeId, OwnedTypedFrame<pending_sync_request::Owned>) {
         match sync_context.messages.last().unwrap() {
             SyncContextMessage::PendingSyncRequest(node_id, req) => {
                 (node_id.clone(), req.as_owned_unsigned_framed().unwrap())
@@ -1099,17 +1110,25 @@ mod tests {
         }
     }
 
-    fn pending_ops_generator(count: usize) -> impl Iterator<Item = NewOperation> {
-        (1..=count).map(|i| {
+    fn pending_ops_generator(
+        local_node: &LocalNode,
+        count: usize,
+    ) -> impl Iterator<Item = NewOperation> {
+        let local_node = local_node.clone();
+        (1..=count).map(move |i| {
             let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
-            create_dummy_new_entry_op(operation_id, group_id)
+            create_dummy_new_entry_op(&local_node, operation_id, group_id)
         })
     }
 
-    fn stored_ops_generator(count: usize) -> impl Iterator<Item = StoredOperation> {
-        (1..=count).map(|i| {
+    fn stored_ops_generator(
+        local_node: &LocalNode,
+        count: usize,
+    ) -> impl Iterator<Item = StoredOperation> {
+        let local_node = local_node.clone();
+        (1..=count).map(move |i| {
             let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
-            let new_operation = create_dummy_new_entry_op(operation_id, group_id);
+            let new_operation = create_dummy_new_entry_op(&local_node, operation_id, group_id);
             let frame = Arc::new(new_operation.frame);
 
             StoredOperation {

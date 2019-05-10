@@ -1,12 +1,13 @@
 use crate::block::Block;
 use exocore_common::data_chain_capnp::pending_operation;
+use exocore_common::node::NodeId;
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{FrameBuilder, FrameSigner, TypedFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{block, block_signature};
 use exocore_common::serialization::{capnp, framed};
 
-pub type GroupID = u64;
-pub type OperationID = u64;
+pub type GroupId = u64;
+pub type OperationId = u64;
 
 ///
 /// Wraps an operation that is stored either in the pending store, or in the
@@ -34,12 +35,12 @@ pub trait Operation {
         })
     }
 
-    fn get_id(&self) -> Result<OperationID, Error> {
+    fn get_id(&self) -> Result<OperationId, Error> {
         let operation_reader = self.get_operation_reader()?;
         Ok(operation_reader.get_operation_id())
     }
 
-    fn get_group_id(&self) -> Result<OperationID, Error> {
+    fn get_group_id(&self) -> Result<OperationId, Error> {
         let operation_reader = self.get_operation_reader()?;
         Ok(operation_reader.get_group_id())
     }
@@ -65,13 +66,13 @@ pub struct OperationBuilder {
 }
 
 impl OperationBuilder {
-    pub fn new_entry(operation_id: OperationID, node_id: &str, data: &[u8]) -> OperationBuilder {
+    pub fn new_entry(operation_id: OperationId, node_id: &NodeId, data: &[u8]) -> OperationBuilder {
         let mut frame_builder = FrameBuilder::new();
 
         let mut operation_builder: pending_operation::Builder = frame_builder.get_builder_typed();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(operation_id);
-        operation_builder.set_node_id(node_id);
+        operation_builder.set_node_id(node_id.to_str());
 
         let inner_operation_builder = operation_builder.init_operation();
 
@@ -82,8 +83,8 @@ impl OperationBuilder {
     }
 
     pub fn new_block_proposal<B: Block>(
-        operation_id: OperationID,
-        node_id: &str,
+        operation_id: OperationId,
+        node_id: &NodeId,
         block: &B,
     ) -> Result<OperationBuilder, Error> {
         let mut frame_builder = FrameBuilder::new();
@@ -91,7 +92,7 @@ impl OperationBuilder {
         let mut operation_builder: pending_operation::Builder = frame_builder.get_builder_typed();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(operation_id);
-        operation_builder.set_node_id(node_id);
+        operation_builder.set_node_id(node_id.to_str());
 
         let inner_operation_builder = operation_builder.init_operation();
         let mut new_block_builder = inner_operation_builder.init_block_propose();
@@ -101,9 +102,9 @@ impl OperationBuilder {
     }
 
     pub fn new_signature_for_block<B: TypedFrame<block::Owned>>(
-        group_id: OperationID,
-        operation_id: OperationID,
-        node_id: &str,
+        group_id: OperationId,
+        operation_id: OperationId,
+        node_id: &NodeId,
         block: &B,
     ) -> Result<OperationBuilder, Error> {
         let mut frame_builder = FrameBuilder::new();
@@ -111,7 +112,7 @@ impl OperationBuilder {
         let mut operation_builder: pending_operation::Builder = frame_builder.get_builder_typed();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(group_id);
-        operation_builder.set_node_id(node_id);
+        operation_builder.set_node_id(node_id.to_str());
 
         let inner_operation_builder = operation_builder.init_operation();
         let new_sig_builder = inner_operation_builder.init_block_sign();
@@ -123,23 +124,23 @@ impl OperationBuilder {
         })?;
 
         let mut sig_builder: block_signature::Builder = new_sig_builder.init_signature();
-        sig_builder.set_node_id(node_id);
+        sig_builder.set_node_id(node_id.to_str());
         sig_builder.set_node_signature(signature.get_bytes());
 
         Ok(OperationBuilder { frame_builder })
     }
 
     pub fn new_refusal(
-        group_id: OperationID,
-        operation_id: OperationID,
-        node_id: &str,
+        group_id: OperationId,
+        operation_id: OperationId,
+        node_id: &NodeId,
     ) -> Result<OperationBuilder, Error> {
         let mut frame_builder = FrameBuilder::new();
 
         let mut operation_builder: pending_operation::Builder = frame_builder.get_builder_typed();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(group_id);
-        operation_builder.set_node_id(node_id);
+        operation_builder.set_node_id(node_id.to_str());
 
         let inner_operation_builder = operation_builder.init_operation();
         let _new_refuse_builder = inner_operation_builder.init_block_refuse();
