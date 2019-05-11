@@ -108,7 +108,7 @@ impl Cell {
         let nodes = self
             .nodes
             .write()
-            .expect("Couldn't acquire read lock on nodes");
+            .expect("Couldn't acquire write lock on nodes");
         CellNodesWrite { cell: self, nodes }
     }
 }
@@ -156,6 +156,7 @@ pub trait CellNodes {
     fn cell(&self) -> &Cell;
     fn nodes_map(&self) -> &HashMap<NodeId, Node>;
 
+    #[inline]
     fn local_node(&self) -> &LocalNode {
         &self.cell().local_node
     }
@@ -234,10 +235,12 @@ impl<'cell> CellNodesRead<'cell> {
 }
 
 impl<'cell> CellNodes for CellNodesRead<'cell> {
+    #[inline]
     fn cell(&self) -> &Cell {
         &self.cell
     }
 
+    #[inline]
     fn nodes_map(&self) -> &HashMap<NodeId, Node> {
         &self.nodes
     }
@@ -262,10 +265,12 @@ impl<'cell> CellNodesWrite<'cell> {
 }
 
 impl<'cell> CellNodes for CellNodesWrite<'cell> {
+    #[inline]
     fn cell(&self) -> &Cell {
         &self.cell
     }
 
+    #[inline]
     fn nodes_map(&self) -> &HashMap<NodeId, Node> {
         &self.nodes
     }
@@ -286,10 +291,12 @@ impl CellNodesOwned {
 }
 
 impl CellNodes for CellNodesOwned {
+    #[inline]
     fn cell(&self) -> &Cell {
         &self.cell
     }
 
+    #[inline]
     fn nodes_map(&self) -> &HashMap<NodeId, Node> {
         &self.nodes
     }
