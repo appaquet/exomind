@@ -997,6 +997,13 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn should_not_include_cleaned_up_operations() -> Result<(), failure::Error> {
+        // TODO:
+
+        Ok(())
+    }
+
     fn sync_nodes(
         cluster: &mut TestCluster,
         node_id_a: usize,

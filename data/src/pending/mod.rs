@@ -16,23 +16,45 @@ pub mod memory;
 ///
 pub trait PendingStore: Send + Sync + 'static {
     ///
-    /// Add or replace the given operation into the store.
+    /// Adds or replaces the given operation into the store.
     /// Returns true if the operation already exists and got overwritten.
     ///
     fn put_operation(&mut self, operation: operation::NewOperation) -> Result<bool, Error>;
 
+    ///
+    /// Returns the operation with given id.
+    ///
     fn get_operation(&self, operation_id: OperationId) -> Result<Option<StoredOperation>, Error>;
 
+    ///
+    /// Returns all operations grouped under the given group id / operation id. An example
+    /// of operation group is a block with its signatures / refusals operations. Entry
+    /// operations are NOT stored in the block's group since they could get added into
+    /// different blocks (but only one will be committed).
+    ///
     fn get_group_operations(
         &self,
         group_id: GroupId,
     ) -> Result<Option<StoredOperationsGroup>, Error>;
 
+    ///
+    /// Iterates through all operations in the store within the given range.
+    /// The iterator returns operations sorted by operation ids.
+    ///
     fn operations_iter<R>(&self, range: R) -> Result<TimelineIterator, Error>
     where
         R: RangeBounds<OperationId>;
 
+    ///
+    /// Returns the number of operations in the store.
+    ///
     fn operations_count(&self) -> usize;
+
+    ///
+    /// Deletes the operation with given id, or all operations grouped by this operation id
+    /// if the operation was a group (ex: block with its signatures)
+    ///
+    fn delete_operation(&mut self, operation_id: OperationId) -> Result<(), Error>;
 }
 
 pub type TimelineIterator<'store> = Box<dyn Iterator<Item = StoredOperation> + 'store>;

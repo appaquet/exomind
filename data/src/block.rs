@@ -232,7 +232,7 @@ impl BlockOwned {
         let mut block_frame_builder = FrameBuilder::<block::Owned>::new();
         let mut block_builder: block::Builder = block_frame_builder.get_builder_typed();
         block_builder.set_offset(offset);
-        block_builder.set_depth(depth);
+        block_builder.set_depth(depth + 1);
         block_builder.set_previous_offset(previous_offset);
         block_builder.set_previous_hash(previous_hash);
         block_builder.set_proposed_operation_id(proposed_operation_id);

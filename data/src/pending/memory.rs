@@ -23,6 +23,12 @@ impl MemoryPendingStore {
             groups_operations: HashMap::new(),
         }
     }
+
+    #[cfg(test)]
+    pub fn clear(&mut self) {
+        self.operations_timeline.clear();
+        self.groups_operations.clear();
+    }
 }
 
 impl Default for MemoryPendingStore {
@@ -125,6 +131,31 @@ impl PendingStore for MemoryPendingStore {
 
     fn operations_count(&self) -> usize {
         self.operations_timeline.len()
+    }
+
+    fn delete_operation(&mut self, operation_id: OperationId) -> Result<(), Error> {
+        if let Some(group_operations_id) = self
+            .groups_operations
+            .get(&operation_id)
+            .map(|group| group.operations.keys().clone())
+        {
+            // the operation is a group, we delete all its operations
+            for operation_id in group_operations_id {
+                self.operations_timeline.remove(&operation_id);
+            }
+            self.operations_timeline.remove(&operation_id);
+            self.groups_operations.remove(&operation_id);
+        } else {
+            // operation is part of a group, we delete the operation from it
+            if let Some(group_id) = self.operations_timeline.get(&operation_id) {
+                if let Some(group) = self.groups_operations.get_mut(&group_id) {
+                    group.operations.remove(&operation_id);
+                }
+            }
+            self.operations_timeline.remove(&operation_id);
+        }
+
+        Ok(())
     }
 }
 
@@ -245,6 +276,35 @@ mod test {
             .unwrap();
 
         assert_eq!(store.operations_iter(..)?.count(), 5);
+
+        Ok(())
+    }
+
+    #[test]
+    fn operations_delete() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let mut store = MemoryPendingStore::new();
+
+        store.put_operation(create_dummy_new_entry_op(&local_node, 101, 200))?;
+        store.put_operation(create_dummy_new_entry_op(&local_node, 102, 200))?;
+        store.put_operation(create_dummy_new_entry_op(&local_node, 103, 200))?;
+        store.put_operation(create_dummy_new_entry_op(&local_node, 104, 200))?;
+
+        // delete a single operation within a group
+        store.delete_operation(103)?;
+        assert!(store.get_operation(103)?.is_none());
+
+        let operations = store.get_group_operations(200)?.unwrap();
+        assert!(operations
+            .operations
+            .iter()
+            .find(|op| op.operation_id == 103)
+            .is_none());
+
+        // delete a group operation
+        store.delete_operation(200)?;
+        assert!(store.get_operation(200)?.is_none());
+        assert!(store.get_group_operations(200)?.is_none());
 
         Ok(())
     }

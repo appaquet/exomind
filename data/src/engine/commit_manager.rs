@@ -3,13 +3,11 @@ use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 
-use crate::operation::OperationId;
+use crate::operation::{GroupId, OperationId};
 use exocore_common::node::NodeId;
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{SignedFrame, TypedFrame, TypedSliceFrame};
-use exocore_common::serialization::protos::data_chain_capnp::{
-    block, block_signature, operation_block_propose, operation_block_sign, pending_operation,
-};
+use exocore_common::serialization::protos::data_chain_capnp::{block, pending_operation};
 use exocore_common::time::{duration_to_consistent_u64, Clock};
 
 use crate::block::{
@@ -26,11 +24,13 @@ use super::Error;
 use exocore_common::cell::{Cell, CellNodes, CellNodesRead};
 use std::time::Duration;
 
+///
 /// Manages commit of pending store's operations to the chain. It does that by monitoring the pending store for incoming
 /// block proposal, signing/refusing them or proposing new blocks.
 ///
 /// It also manages cleanup of the pending store, by deleting old operations that were committed to the chain and that are
 /// in block with sufficient depth.
+///
 pub(super) struct CommitManager<PS: pending::PendingStore, CS: chain::ChainStore> {
     config: CommitManagerConfig,
     cell: Cell,
@@ -48,9 +48,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         }
     }
 
+    ///
     /// Tick is called by the Engine at interval to make progress on proposing blocks, signing / refusing
     /// proposed blocks, and committing them to the chain. We also cleanup the pending store once operations
     /// have passed a certain depth in the chain, which guarantees their persistence.
+    ///
     pub fn tick(
         &mut self,
         sync_context: &mut SyncContext,
@@ -120,14 +122,16 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             )?;
         }
 
-        self.maybe_cleanup_pending_store(&pending_blocks, pending_store)?;
+        self.maybe_cleanup_pending_store(&pending_blocks, pending_store, chain_store)?;
 
         Ok(())
     }
 
-    /// Check if we should sign a block that was previously proposed. We need to make sure
+    ///
+    /// Checks if we should sign a block that was previously proposed. We need to make sure
     /// all operations are valid and not already in the chain and then validate the hash of
     /// the block with local version of the operations.
+    ///
     fn check_should_sign_block(
         &self,
         block_id: OperationId,
@@ -177,7 +181,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(true)
     }
 
-    /// Add our signature to a given block proposal.
+    ///
+    /// Adds our signature to a given block proposal.
+    ///
     fn sign_block(
         &self,
         sync_context: &mut SyncContext,
@@ -212,7 +218,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    /// Add our refusal to a given block proposal (ex: it's not valid)
+    ///
+    /// Adds our refusal to a given block proposal (ex: it's not valid)
+    ///
     fn refuse_block(
         &self,
         sync_context: &mut SyncContext,
@@ -245,8 +253,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    /// Check if we need to propose a new block, based on when the last block was created and
+    ///
+    /// Checks if we need to propose a new block, based on when the last block was created and
     /// how many operations are in the store.
+    ///
     fn should_propose_block(
         &self,
         chain_store: &CS,
@@ -284,7 +294,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(false)
     }
 
-    /// Create a new block proposal with operations currently in the store.
+    ///
+    /// Creates a new block proposal with operations currently in the store.
+    ///
     fn propose_block(
         &self,
         sync_context: &mut SyncContext,
@@ -300,13 +312,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         let block_operations = pending_store
             .operations_iter(..)?
-            .filter(|operation| {
-                // only include new entries or pending ignore entries
-                match operation.operation_type {
-                    OperationType::Entry | OperationType::PendingIgnore => true,
-                    _ => false,
-                }
-            })
+            .filter(|operation| operation.operation_type == OperationType::Entry)
             .filter(|operation| {
                 // check if operation was committed to any previous block
                 let operation_is_committed = pending_blocks
@@ -368,7 +374,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    /// Commit (write) the given block to the chain.
+    ///
+    /// Commits (write) the given block to the chain.
+    ///
     fn commit_block(
         &self,
         sync_context: &mut SyncContext,
@@ -379,7 +387,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let local_node = self.cell.local_node();
 
         let block_frame = next_block.proposal.get_block()?;
-        let block_reader: block::Reader = block_frame.get_typed_reader()?;
+        let block_reader = block_frame.get_typed_reader()?;
 
         // fetch block's operations from the pending store
         let block_operations =
@@ -429,7 +437,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    /// Retrieve from the pending store all operations that are in the given block
+    ///
+    /// Retrieves from the pending store all operations that are in the given block
+    ///
     fn get_block_operations(
         next_block: &PendingBlock,
         pending_store: &PS,
@@ -452,29 +462,95 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(operations)
     }
 
-    /// Cleanup all operations that have been committed to the chain and that are deep enough
+    ///
+    /// Cleanups all operations that have been committed to the chain and that are deep enough
     /// to be considered impossible to be removed (i.e. there are no plausible fork)
+    ///
     fn maybe_cleanup_pending_store(
         &self,
-        _pending_blocks: &PendingBlocks,
-        _pending_store: &PS,
+        pending_blocks: &PendingBlocks,
+        pending_store: &mut PS,
+        chain_store: &CS,
     ) -> Result<(), Error> {
-        // TODO: Implement cleanup: https://github.com/appaquet/exocore/issues/41
-        //       Check if we can advance the last block mark in pending store
-        //       Emit "PendingIgnore" for
-        //        - Operations that are now in the chain
-        //        - Blocks that got refused after more than X
-        //       Cleanup committed stuff OR ignored stuff
+        let last_stored_block = chain_store
+            .get_last_block()?
+            .ok_or(Error::UninitializedChain)?;
+        let last_stored_block_depth = last_stored_block.get_depth()?;
+
+        // cleanup all blocks and their operations that are committed or refused with enough depth
+        for (group_id, block) in &pending_blocks.blocks {
+            if block.status == BlockStatus::PastCommitted
+                || block.status == BlockStatus::PastRefused
+            {
+                let block_frame = block.proposal.get_block()?;
+                let block_reader = block_frame.get_typed_reader()?;
+                let block_depth = block_reader.get_depth();
+
+                let depth_diff = last_stored_block_depth - block_depth;
+                if depth_diff >= self.config.operations_cleanup_after_block_depth {
+                    debug!("Block at offset={} depth={} can be cleaned up (last_stored_block_depth={})", block_reader.get_offset(), block_depth, last_stored_block_depth);
+
+                    // delete the block & related operations (sigs, refusals, etc.)
+                    pending_store.delete_operation(*group_id)?;
+
+                    // delete operations of the block
+                    for operation_id in &block.operations {
+                        pending_store.delete_operation(*operation_id)?;
+                    }
+                }
+            }
+        }
+
+        // get approx number of operations that are not associated with block
+        let approx_non_committed_operations = pending_blocks
+            .entries_operations_count
+            .checked_sub(pending_blocks.operations_blocks.len())
+            .unwrap_or(0);
+
+        // check for dangling operations, which are operations that are already in the chain but not in
+        // any blocks that are in pending store. They probably got re-added to the pending store by a node
+        // that was out of sync
+        if approx_non_committed_operations > 0 {
+            let mut operations_to_delete = Vec::new();
+            for operation in pending_store.operations_iter(..)? {
+                let is_in_block = pending_blocks
+                    .operations_blocks
+                    .contains_key(&operation.operation_id);
+                if !is_in_block {
+                    if let Some(block) =
+                        chain_store.get_block_by_operation_id(operation.operation_id)?
+                    {
+                        let block_depth = block.get_depth()?;
+                        let depth_diff = last_stored_block_depth - block_depth;
+                        if depth_diff >= self.config.operations_cleanup_after_block_depth {
+                            operations_to_delete.push(operation.operation_id);
+                        }
+                    }
+                }
+            }
+
+            if !operations_to_delete.is_empty() {
+                debug!(
+                    "Deleting {} dangling operations from pending store",
+                    operations_to_delete.len()
+                );
+                for operation_id in operations_to_delete {
+                    pending_store.delete_operation(operation_id)?;
+                }
+            }
+        }
 
         Ok(())
     }
 }
 
+///
 /// In order to prevent nodes to commit new blocks all the same time resulting in splitting
 /// the vote, we make nodes propose blocks in turns.
 ///
 /// Turns are calculated by sorting nodes by their node ids, and then finding out who's turn
 /// it is based on current time.
+///
 fn is_node_commit_turn(
     nodes: &CellNodesRead,
     my_node_id: &NodeId,
@@ -496,7 +572,9 @@ fn is_node_commit_turn(
     Ok(node_turn == my_node_position)
 }
 
+///
 /// CommitManager's configuration
+///
 #[derive(Copy, Clone, Debug)]
 pub struct CommitManagerConfig {
     pub operations_cleanup_after_block_depth: BlockDepth,
@@ -519,12 +597,14 @@ impl Default for CommitManagerConfig {
     }
 }
 
+///
 /// Structure that contains information on the pending store and blocks in it.
 /// It is used by the commit manager to know if it needs to propose, sign, commit blocks
+///
 struct PendingBlocks {
-    blocks: HashMap<OperationId, PendingBlock>, // group_id -> block
-    blocks_status: HashMap<OperationId, BlockStatus>, // group_id -> block_status
-    operations_blocks: HashMap<OperationId, HashSet<OperationId>>, // operation_id -> set(group_id)
+    blocks: HashMap<GroupId, PendingBlock>,
+    blocks_status: HashMap<GroupId, BlockStatus>,
+    operations_blocks: HashMap<OperationId, HashSet<GroupId>>,
     entries_operations_count: usize,
 }
 
@@ -600,8 +680,7 @@ impl PendingBlocks {
                             operation_reader,
                         )?);
                     }
-                    pending_operation::operation::Which::PendingIgnore(_)
-                    | pending_operation::operation::Which::Entry(_) => {
+                    pending_operation::operation::Which::Entry(_) => {
                         warn!("Found a non-block related operation in block group, which shouldn't be possible (group_id={})", group_id);
                     }
                 };
@@ -711,10 +790,12 @@ impl PendingBlocks {
     }
 }
 
+///
 /// Information about a block in the pending store.
 ///
 /// This block could be a past block (committed to chain or refused), which will eventually be cleaned up,
 /// or could be a next potential or refused block.
+///
 struct PendingBlock {
     group_id: OperationId,
     status: BlockStatus,
@@ -786,7 +867,9 @@ enum BlockStatus {
     NextRefused,
 }
 
+///
 /// Block proposal wrapper
+///
 struct PendingBlockProposal {
     offset: BlockOffset,
     operation: pending::StoredOperation,
@@ -794,15 +877,11 @@ struct PendingBlockProposal {
 
 impl PendingBlockProposal {
     fn get_block(&self) -> Result<TypedSliceFrame<block::Owned>, Error> {
-        let operation_reader: pending_operation::Reader =
-            self.operation.frame.get_typed_reader()?;
-        let inner_operation: pending_operation::operation::Reader =
-            operation_reader.get_operation();
+        let operation_reader = self.operation.frame.get_typed_reader()?;
+        let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
             pending_operation::operation::Which::BlockPropose(block_prop) => {
-                let block_prop_reader: operation_block_propose::Reader = block_prop?;
-                let frame = TypedSliceFrame::new(block_prop_reader.get_block()?)?;
-                Ok(frame)
+                Ok(TypedSliceFrame::new(block_prop?.get_block()?)?)
             }
             _ => Err(Error::Other(
                 "Expected block sign pending op to create block signature, but got something else"
@@ -812,7 +891,9 @@ impl PendingBlockProposal {
     }
 }
 
+///
 /// Block refusal wrapper
+///
 struct PendingBlockRefusal {
     node_id: NodeId,
 }
@@ -821,8 +902,7 @@ impl PendingBlockRefusal {
     fn from_pending_operation(
         operation_reader: pending_operation::Reader,
     ) -> Result<PendingBlockRefusal, Error> {
-        let inner_operation: pending_operation::operation::Reader =
-            operation_reader.get_operation();
+        let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
             pending_operation::operation::Which::BlockRefuse(_sig) => {
                 let node_id_str = operation_reader.get_node_id()?;
@@ -839,7 +919,9 @@ impl PendingBlockRefusal {
     }
 }
 
+///
 /// Block signature wrapper
+///
 struct PendingBlockSignature {
     node_id: NodeId,
     signature: Signature,
@@ -849,13 +931,11 @@ impl PendingBlockSignature {
     fn from_pending_operation(
         operation_reader: pending_operation::Reader,
     ) -> Result<PendingBlockSignature, Error> {
-        let inner_operation: pending_operation::operation::Reader =
-            operation_reader.get_operation();
+        let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
             pending_operation::operation::Which::BlockSign(sig) => {
-                let op_signature_reader: operation_block_sign::Reader = sig?;
-                let signature_reader: block_signature::Reader =
-                    op_signature_reader.get_signature()?;
+                let op_signature_reader = sig?;
+                let signature_reader = op_signature_reader.get_signature()?;
 
                 let node_id_str = operation_reader.get_node_id()?;
                 let node_id = NodeId::from_str(node_id_str).map_err(|_| {
@@ -873,7 +953,9 @@ impl PendingBlockSignature {
     }
 }
 
+///
 /// CommitManager related error
+///
 #[derive(Debug, Fail)]
 pub enum CommitManagerError {
     #[fail(display = "Invalid signature in commit manager: {}", _0)]
@@ -886,7 +968,7 @@ pub enum CommitManagerError {
 mod tests {
     use crate::chain::ChainStore;
     use crate::engine::testing::*;
-    use crate::operation::OperationBuilder;
+    use crate::operation::{NewOperation, OperationBuilder};
     use crate::pending::PendingStore;
 
     use super::*;
@@ -1130,6 +1212,113 @@ mod tests {
         let now = duration_to_consistent_u64(Duration::from_millis(3999), 0);
         assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
+
+        Ok(())
+    }
+
+    #[test]
+    fn cleanup_past_committed_operations() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(1);
+        cluster.clocks[0].set_fixed_instant(Instant::now());
+
+        let assert_not_in_pending = |cluster: &TestCluster, operation_id: u64| {
+            assert!(&cluster.pending_stores[0]
+                .get_operation(operation_id)
+                .unwrap()
+                .is_none());
+        };
+
+        cluster.chain_add_genesis_block(0);
+        cluster.tick_chain_synchronizer(0)?;
+
+        let config = cluster.commit_managers[0].config;
+
+        let mut operations_id = Vec::new();
+        for _i in 0..=config.operations_cleanup_after_block_depth {
+            // advance clock so that we make sure it commits
+            cluster.clocks[0].add_fixed_instant_duration(config.commit_maximum_interval);
+
+            let op_id = append_new_operation(&mut cluster, b"hello world")?;
+            operations_id.push(op_id);
+
+            // should create proposal, sign it and commit it
+            cluster.tick_commit_manager(0)?;
+            cluster.tick_commit_manager(0)?;
+
+            // make sure it's committed to chain
+            assert!(cluster.chains[0]
+                .get_block_by_operation_id(op_id)?
+                .is_some());
+        }
+
+        // this should trigger cleanup
+        cluster.tick_commit_manager(0)?;
+
+        // the first op should have been removed from pending store
+        let first_op_id = *operations_id.first().unwrap();
+        assert_not_in_pending(&cluster, first_op_id);
+
+        // check if the block, signatures are still in pending
+        let block: crate::block::BlockRef = cluster.chains[0]
+            .get_block_by_operation_id(first_op_id)?
+            .unwrap();
+        let block_frame = block.block.get_typed_reader()?;
+        let block_group_id = block_frame.get_proposed_operation_id();
+        assert_not_in_pending(&cluster, block_group_id);
+
+        // check if individual operations are still in pending
+        for operation in block.operations_iter()? {
+            let operation_reader = operation.get_typed_reader()?;
+            assert_not_in_pending(&cluster, operation_reader.get_operation_id());
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn cleanup_dangling_operations() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(1);
+        cluster.clocks[0].set_fixed_instant(Instant::now());
+
+        cluster.chain_add_genesis_block(0);
+        cluster.tick_chain_synchronizer(0)?;
+
+        let config = cluster.commit_managers[0].config;
+
+        let mut operations_id = Vec::new();
+        for _i in 0..=config.operations_cleanup_after_block_depth {
+            // advance clock so that we make sure it commits
+            cluster.clocks[0].add_fixed_instant_duration(config.commit_maximum_interval);
+
+            let op_id = append_new_operation(&mut cluster, b"hello world")?;
+            operations_id.push(op_id);
+
+            // should create proposal, sign it and commit it
+            cluster.tick_commit_manager(0)?;
+            cluster.tick_commit_manager(0)?;
+
+            // make sure it's committed to chain
+            assert!(cluster.chains[0]
+                .get_block_by_operation_id(op_id)?
+                .is_some());
+        }
+
+        // clear pending store
+        cluster.pending_stores[0].clear();
+
+        // revive old operation
+        let first_op_id = *operations_id.first().unwrap();
+        let block: crate::block::BlockRef = cluster.chains[0]
+            .get_block_by_operation_id(first_op_id)?
+            .unwrap();
+        let operation = block.get_operation(first_op_id)?.unwrap();
+        cluster.pending_stores[0].put_operation(NewOperation::from_frame(operation.to_owned()))?;
+        assert_eq!(1, cluster.pending_stores[0].operations_count());
+
+        // this should trigger cleanup of dandling operation
+        cluster.tick_commit_manager(0)?;
+
+        assert_eq!(0, cluster.pending_stores[0].operations_count());
 
         Ok(())
     }

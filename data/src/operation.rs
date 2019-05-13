@@ -30,7 +30,6 @@ pub trait Operation {
             pending_operation::operation::Which::BlockSign(_) => OperationType::BlockSign,
             pending_operation::operation::Which::BlockPropose(_) => OperationType::BlockPropose,
             pending_operation::operation::Which::BlockRefuse(_) => OperationType::BlockRefuse,
-            pending_operation::operation::Which::PendingIgnore(_) => OperationType::PendingIgnore,
             pending_operation::operation::Which::Entry(_) => OperationType::Entry,
         })
     }
@@ -55,7 +54,6 @@ pub enum OperationType {
     BlockPropose,
     BlockSign,
     BlockRefuse,
-    PendingIgnore,
 }
 
 ///
