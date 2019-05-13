@@ -5,6 +5,7 @@ use std::vec::Vec;
 use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::serialization::framed;
 
+use crate::block;
 use crate::operation;
 use crate::operation::{GroupId, OperationId};
 
@@ -20,6 +21,19 @@ pub trait PendingStore: Send + Sync + 'static {
     /// Returns true if the operation already exists and got overwritten.
     ///
     fn put_operation(&mut self, operation: operation::NewOperation) -> Result<bool, Error>;
+
+    ///
+    /// Updates the commit status of an operation. This information is not replicated, and
+    /// is populated by the `CommitManager` so that the `PendingSynchronizer` and `Engine` can
+    /// get the chain status of an operation without hitting the chain every time.
+    ///
+    /// Returns `Error::NotFound` if operation doesn't exist.
+    ///
+    fn update_operation_commit_status(
+        &mut self,
+        operation_id: OperationId,
+        status: CommitStatus,
+    ) -> Result<(), Error>;
 
     ///
     /// Returns the operation with given id.
@@ -67,6 +81,7 @@ pub struct StoredOperation {
     pub group_id: GroupId,
     pub operation_id: OperationId,
     pub operation_type: operation::OperationType,
+    pub commit_status: CommitStatus,
     pub frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
 }
 
@@ -80,12 +95,25 @@ pub struct StoredOperationsGroup {
 }
 
 ///
+/// Chain status of an operation in the pending store, indicating if it's in the chain
+/// or not, and at what depth.
+///
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommitStatus {
+    Unknown,
+    NotCommitted,
+    Committed(block::BlockOffset, block::BlockDepth),
+}
+
+///
 /// Error related to the pending store
 ///
 #[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "Operation related error: {:?}", _0)]
     Operation(#[fail(source)] operation::Error),
+    #[fail(display = "Operation cannot be found")]
+    NotFound,
 }
 
 impl From<operation::Error> for Error {

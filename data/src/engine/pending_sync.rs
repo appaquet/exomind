@@ -690,6 +690,7 @@ mod tests {
     use crate::operation::{NewOperation, OperationType};
 
     use super::*;
+    use crate::pending::CommitStatus;
     use exocore_common::node::LocalNode;
 
     #[test]
@@ -1142,6 +1143,7 @@ mod tests {
                 group_id,
                 operation_type: OperationType::Entry,
                 operation_id,
+                commit_status: CommitStatus::Unknown,
                 frame,
             }
         })

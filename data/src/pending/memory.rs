@@ -54,6 +54,7 @@ impl PendingStore for MemoryPendingStore {
             GroupOperation {
                 operation_id,
                 operation_type,
+                commit_status: CommitStatus::Unknown,
                 frame: Arc::new(operation.frame),
             },
         );
@@ -63,6 +64,29 @@ impl PendingStore for MemoryPendingStore {
             .insert(operation_id, group_id)
             .is_some();
         Ok(existed)
+    }
+
+    fn update_operation_commit_status(
+        &mut self,
+        operation_id: u64,
+        status: CommitStatus,
+    ) -> Result<(), Error> {
+        let group_id = self
+            .operations_timeline
+            .get(&operation_id)
+            .ok_or(Error::NotFound)?;
+        let group = self
+            .groups_operations
+            .get_mut(group_id)
+            .ok_or(Error::NotFound)?;
+        let group_operation: &mut GroupOperation = group
+            .operations
+            .get_mut(&operation_id)
+            .ok_or(Error::NotFound)?;
+
+        group_operation.commit_status = status;
+
+        Ok(())
     }
 
     fn get_operation(&self, operation_id: OperationId) -> Result<Option<StoredOperation>, Error> {
@@ -83,6 +107,7 @@ impl PendingStore for MemoryPendingStore {
                 group_id,
                 operation_id: op.operation_id,
                 operation_type: op.operation_type,
+                commit_status: op.commit_status,
                 frame: Arc::clone(&op.frame),
             });
 
@@ -101,6 +126,7 @@ impl PendingStore for MemoryPendingStore {
                     group_id,
                     operation_id: op.operation_id,
                     operation_type: op.operation_type,
+                    commit_status: op.commit_status,
                     frame: Arc::clone(&op.frame),
                 })
                 .collect();
@@ -189,6 +215,7 @@ impl GroupOperations {
 struct GroupOperation {
     operation_id: OperationId,
     operation_type: operation::OperationType,
+    commit_status: CommitStatus,
     frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
 }
 
@@ -211,6 +238,7 @@ impl<'store> Iterator for OperationsIterator<'store> {
             group_id,
             operation_id,
             operation_type: group_operation.operation_type,
+            commit_status: group_operation.commit_status,
             frame: Arc::clone(&group_operation.frame),
         })
     }
@@ -305,6 +333,27 @@ mod test {
         store.delete_operation(200)?;
         assert!(store.get_operation(200)?.is_none());
         assert!(store.get_group_operations(200)?.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn operation_commit_status() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let mut store = MemoryPendingStore::new();
+
+        store.put_operation(create_dummy_new_entry_op(&local_node, 101, 200))?;
+
+        let operation = store.get_operation(101)?.unwrap();
+        assert_eq!(CommitStatus::Unknown, operation.commit_status);
+
+        store.update_operation_commit_status(101, CommitStatus::NotCommitted)?;
+        let operation = store.get_operation(101)?.unwrap();
+        assert_eq!(CommitStatus::NotCommitted, operation.commit_status);
+
+        assert!(store
+            .update_operation_commit_status(666, CommitStatus::NotCommitted)
+            .is_err());
 
         Ok(())
     }
