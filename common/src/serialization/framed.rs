@@ -23,7 +23,7 @@ use capnp::serialize::SliceSegments;
 use lazycell::AtomicLazyCell;
 use owning_ref::OwningHandle;
 
-use crate::security::hash::Multihash;
+use crate::security::hash::{Digest, Multihash, MultihashDigest};
 
 ///
 /// Trait that needs to have an impl for each capnp generated message struct.
@@ -787,7 +787,7 @@ impl<'a, S: FrameSigner> std::io::Write for SliceFrameWriter<'a, S> {
     fn write(&mut self, data: &[u8]) -> Result<usize, std::io::Error> {
         let written = Self::checked_copy_to_buffer(self.count, &mut self.buffer, data)?;
         self.count += written;
-        self.signer.consume(data);
+        self.signer.input(data);
         Ok(written)
     }
 
@@ -878,7 +878,7 @@ impl<'a, S: FrameSigner> std::io::Write for OwnedFrameWriter<S> {
         for elem in buf {
             self.buffer.push(*elem);
         }
-        self.signer.consume(buf);
+        self.signer.input(buf);
         Ok(buf.len())
     }
 
@@ -988,37 +988,28 @@ impl FrameMetadata {
 /// Trait representing a way to sign a frame
 ///
 pub trait FrameSigner {
-    fn consume(&mut self, data: &[u8]);
+    fn input(&mut self, data: &[u8]);
     fn finish(self) -> Option<Vec<u8>>;
 }
 
 pub struct NullFrameSigner;
 
 impl FrameSigner for NullFrameSigner {
-    fn consume(&mut self, _data: &[u8]) {}
+    fn input(&mut self, _data: &[u8]) {}
 
     fn finish(self) -> Option<Vec<u8>> {
         None
     }
 }
 
-pub struct MultihashFrameSigner<H>
-where
-    H: crate::security::hash::StreamHasher,
-{
+pub struct MultihashFrameSigner<H: MultihashDigest> {
     hasher: H,
 }
 
-impl MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
-    pub fn new_sha3256() -> MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
+impl MultihashFrameSigner<crate::security::hash::Sha3_256> {
+    pub fn new_sha3256() -> MultihashFrameSigner<crate::security::hash::Sha3_256> {
         MultihashFrameSigner {
-            hasher: crate::security::hash::Sha3Hasher::new_256(),
-        }
-    }
-
-    pub fn new_sha3512() -> MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
-        MultihashFrameSigner {
-            hasher: crate::security::hash::Sha3Hasher::new_512(),
+            hasher: crate::security::hash::Sha3_256::new(),
         }
     }
 
@@ -1054,21 +1045,15 @@ impl MultihashFrameSigner<crate::security::hash::Sha3Hasher> {
     }
 }
 
-impl<H> MultihashFrameSigner<H>
-where
-    H: crate::security::hash::StreamHasher,
-{
+impl<H: MultihashDigest> MultihashFrameSigner<H> {
     pub fn new(hasher: H) -> MultihashFrameSigner<H> {
         MultihashFrameSigner { hasher }
     }
 }
 
-impl<H> FrameSigner for MultihashFrameSigner<H>
-where
-    H: crate::security::hash::StreamHasher,
-{
-    fn consume(&mut self, data: &[u8]) {
-        self.hasher.consume(data);
+impl<H: MultihashDigest> FrameSigner for MultihashFrameSigner<H> {
+    fn input(&mut self, data: &[u8]) {
+        self.hasher.input(data);
     }
 
     fn finish(self) -> Option<Vec<u8>> {
@@ -1363,12 +1348,7 @@ pub mod tests {
         assert_eq!(frame.signature_data().unwrap().len(), 2 + 32);
         assert!(MultihashFrameSigner::validate(&frame).is_ok());
 
-        let signer = MultihashFrameSigner::new_sha3512();
-        let frame = block_builder.as_owned_framed(signer)?;
-        assert_eq!(frame.signature_data().unwrap().len(), 2 + 64);
-        assert!(MultihashFrameSigner::validate(&frame).is_ok());
-
-        let mut data = block_builder.into_framed_vec(MultihashFrameSigner::new_sha3512())?;
+        let mut data = block_builder.into_framed_vec(MultihashFrameSigner::new_sha3256())?;
         let frame = SliceFrame::new(&data)?;
         assert!(MultihashFrameSigner::validate(&frame).is_ok());
 

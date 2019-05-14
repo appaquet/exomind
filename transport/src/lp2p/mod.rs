@@ -11,11 +11,11 @@ use exocore_common::serialization::framed::{TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_transport_capnp::envelope;
 use futures::prelude::*;
 use futures::sync::mpsc;
-use libp2p::{Multiaddr, PeerId, Swarm};
+use libp2p::core::{Multiaddr, PeerId, Swarm};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
-use tokio::timer::Interval;
+use tokio_timer::Interval;
 
 /// libp2p transport configuration
 #[derive(Clone)]
@@ -128,11 +128,10 @@ impl Libp2pTransport {
     /// Starts the engine by spawning different tasks onto the current Runtime
     fn start(&mut self) -> Result<(), Error> {
         let local_keypair = self.local_node.keypair().clone();
-        let transport = libp2p::build_development_transport(local_keypair);
+        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair);
 
         let behaviour = ExocoreBehaviour::new();
-        let mut swarm =
-            libp2p::core::Swarm::new(transport, behaviour, self.local_node.peer_id().clone());
+        let mut swarm = Swarm::new(transport, behaviour, self.local_node.peer_id().clone());
 
         let listen_address = self.config.listen_address(&self.local_node)?;
         Swarm::listen_on(&mut swarm, listen_address)?;
@@ -154,7 +153,7 @@ impl Libp2pTransport {
         let mut nodes_update_interval =
             Interval::new_interval(self.config.swarm_nodes_update_interval);
 
-        tokio::spawn(futures::future::poll_fn(move || -> Result<_, ()> {
+        tokio_executor::spawn(futures::future::poll_fn(move || -> Result<_, ()> {
             // at interval, we update peers that we should be connected to
             if let Async::Ready(_) = nodes_update_interval
                 .poll()
@@ -218,7 +217,7 @@ impl Libp2pTransport {
                     .take()
                     .expect("Out receiver of one layer was already consummed");
 
-                tokio::spawn(
+                tokio_executor::spawn(
                     out_receiver
                         .forward(out_sender.clone().sink_map_err(|_| ()))
                         .map(|_| ()),
