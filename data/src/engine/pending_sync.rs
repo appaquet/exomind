@@ -458,9 +458,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 sync_context
                     .sync_state
                     .pending_last_cleanup_block
-                    .map(|(_offset, depth)| {
-                        depth + self.config.operations_depth_offset_after_cleanup
-                    })
+                    .map(|(_offset, depth)| depth + self.config.operations_depth_after_cleanup)
             })
     }
 }
@@ -476,7 +474,7 @@ pub struct PendingSyncConfig {
 
     ///
     /// Related to `CommitManagerConfig`.`operations_cleanup_after_block_depth`.
-    /// This indicates how many block after the last cleaned up block we should include by
+    /// This indicates how many blocks after the last cleaned up block we should include by
     /// default when doing sync requests, so that we don't request for operations that may
     /// have been cleaned up on other nodes.
     ///
@@ -487,7 +485,7 @@ pub struct PendingSyncConfig {
     /// This value is added to the `SyncState` last cleanup block depth to make sure we don't
     /// ask or include operations that got cleaned up.
     ///
-    pub operations_depth_offset_after_cleanup: BlockDepth,
+    pub operations_depth_after_cleanup: BlockDepth,
 }
 
 impl Default for PendingSyncConfig {
@@ -495,7 +493,7 @@ impl Default for PendingSyncConfig {
         PendingSyncConfig {
             max_operations_per_range: 30,
             request_tracker_config: request_tracker::RequestTrackerConfig::default(),
-            operations_depth_offset_after_cleanup: 2,
+            operations_depth_after_cleanup: 2,
         }
     }
 }
@@ -853,7 +851,7 @@ mod tests {
 
         let config_depth_offset = cluster.pending_stores_synchronizer[0]
             .config
-            .operations_depth_offset_after_cleanup;
+            .operations_depth_after_cleanup;
 
         // we update operations status as if they were all committed at depth 10
         let operations_id = cluster.pending_generate_dummy(0, 0, 100);
@@ -1322,7 +1320,7 @@ mod tests {
             // B to A
             //
             count_a_to_b += 1;
-            let mut sync_context = SyncContext::new(cluster.sync_states[node_id_b].clone());
+            let mut sync_context = SyncContext::new(cluster.sync_states[node_id_b]);
             cluster.pending_stores_synchronizer[node_id_b].handle_incoming_sync_request(
                 &node_a,
                 &mut sync_context,
@@ -1344,7 +1342,7 @@ mod tests {
             //
             // A to B
             //
-            let mut sync_context = SyncContext::new(cluster.sync_states[node_id_a].clone());
+            let mut sync_context = SyncContext::new(cluster.sync_states[node_id_a]);
             cluster.pending_stores_synchronizer[node_id_a].handle_incoming_sync_request(
                 &node_b,
                 &mut sync_context,

@@ -23,7 +23,7 @@ use exocore_common::serialization::protos::data_transport_capnp::{
 use exocore_common::serialization::{framed, framed::TypedFrame};
 
 use crate::block;
-use crate::block::{Block, BlockOffset};
+use crate::block::{Block, BlockOffset, BlockRef};
 use crate::chain;
 use crate::operation;
 use crate::operation::{NewOperation, OperationBuilder};
@@ -37,6 +37,7 @@ mod commit_manager;
 mod pending_sync;
 mod request_tracker;
 
+use crate::pending::CommitStatus;
 pub use chain_sync::ChainSyncConfig;
 pub use commit_manager::CommitManagerConfig;
 use exocore_common::cell::{Cell, CellNodes};
@@ -645,15 +646,22 @@ where
         let unlocked_inner = inner.read()?;
 
         let block = unlocked_inner.chain_store.get_block(block_offset)?;
-        if let Some(operation) = block.get_operation(operation_id)? {
-            Ok(Some(EngineOperation {
-                operation_id,
-                status: EngineOperationStatus::Committed,
-                operation_frame: Arc::new(operation.to_owned()),
-            }))
-        } else {
-            Ok(None)
-        }
+        EngineOperation::from_chain_block(block, operation_id)
+    }
+
+    pub fn get_pending_operation(
+        &self,
+        operation_id: OperationId,
+    ) -> Result<Option<EngineOperation>, Error> {
+        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+        let unlocked_inner = inner.read()?;
+
+        let operation = unlocked_inner
+            .pending_store
+            .get_operation(operation_id)?
+            .map(EngineOperation::from_pending_operation);
+
+        Ok(operation)
     }
 
     pub fn get_pending_operations<R: RangeBounds<OperationId>>(
@@ -661,33 +669,13 @@ where
         operations_range: R,
     ) -> Result<Vec<EngineOperation>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.write()?;
+        let unlocked_inner = inner.read()?;
 
         let operations = unlocked_inner
             .pending_store
             .operations_iter(operations_range)?
-            .map(|stored_operation| {
-                // TODO: This is slow AF. Store in pending store if committed...
-                let in_chain = unlocked_inner
-                    .chain_store
-                    .get_block_by_operation_id(stored_operation.operation_id)
-                    .ok()
-                    .and_then(|block| block)
-                    .is_none();
-                let status = if in_chain {
-                    EngineOperationStatus::Committed
-                } else {
-                    EngineOperationStatus::Pending
-                };
-
-                EngineOperation {
-                    operation_id: stored_operation.operation_id,
-                    status,
-                    operation_frame: stored_operation.frame,
-                }
-            })
+            .map(EngineOperation::from_pending_operation)
             .collect::<Vec<_>>();
-
         Ok(operations)
     }
 
@@ -696,34 +684,35 @@ where
         operation_id: OperationId,
     ) -> Result<Option<EngineOperation>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.write()?;
+        let unlocked_inner = inner.read()?;
 
-        // TODO: Should always check pending first, but until we don't keep any committed flag, we need to check chain first
-        // TODO: https://github.com/appaquet/exocore/issues/41
+        // first check if it's in pending store with a clear commit status
+        let pending_operation = unlocked_inner.pending_store.get_operation(operation_id)?;
+        let pending_operation = if let Some(pending_operation) = pending_operation {
+            if pending_operation.commit_status != CommitStatus::Unknown {
+                return Ok(Some(EngineOperation::from_pending_operation(
+                    pending_operation,
+                )));
+            }
 
-        // first check if it's in the chain
-        if let Some(block_ref) = unlocked_inner
+            Some(pending_operation)
+        } else {
+            None
+        };
+
+        // if it's not found in pending store, or that it didn't have a clear status, we check in chain
+        if let Some(block) = unlocked_inner
             .chain_store
             .get_block_by_operation_id(operation_id)?
         {
-            if let Some(operation) = block_ref.get_operation(operation_id)? {
-                return Ok(Some(EngineOperation {
-                    operation_id,
-                    status: EngineOperationStatus::Committed,
-                    operation_frame: Arc::new(operation.to_owned()),
-                }));
+            if let Some(chain_operation) = EngineOperation::from_chain_block(block, operation_id)? {
+                return Ok(Some(chain_operation));
             }
         }
 
-        // otherwise, check if it's in pending store
-        Ok(unlocked_inner
-            .pending_store
-            .get_operation(operation_id)?
-            .map(|stored_operation| EngineOperation {
-                operation_id: stored_operation.operation_id,
-                status: EngineOperationStatus::Pending,
-                operation_frame: stored_operation.frame,
-            }))
+        // if we're here, the operation was either absent, or just had a unknown status in pending store
+        // we return the pending store operation (if any)
+        Ok(pending_operation.map(EngineOperation::from_pending_operation))
     }
 
     ///
@@ -1061,6 +1050,38 @@ pub struct EngineOperation {
     pub operation_frame: Arc<OwnedTypedFrame<pending_operation::Owned>>,
 }
 
+impl EngineOperation {
+    fn from_pending_operation(operation: pending::StoredOperation) -> EngineOperation {
+        let status = match operation.commit_status {
+            pending::CommitStatus::Committed(offset, _depth) => {
+                EngineOperationStatus::Committed(offset)
+            }
+            _ => EngineOperationStatus::Pending,
+        };
+
+        EngineOperation {
+            operation_id: operation.operation_id,
+            status,
+            operation_frame: operation.frame,
+        }
+    }
+
+    fn from_chain_block(
+        block: BlockRef,
+        operation_id: OperationId,
+    ) -> Result<Option<EngineOperation>, Error> {
+        if let Some(operation) = block.get_operation(operation_id)? {
+            return Ok(Some(EngineOperation {
+                operation_id,
+                status: EngineOperationStatus::Committed(block.offset),
+                operation_frame: Arc::new(operation.to_owned()),
+            }));
+        }
+
+        Ok(None)
+    }
+}
+
 impl crate::operation::Operation for EngineOperation {
     fn get_operation_reader(&self) -> Result<pending_operation::Reader, operation::Error> {
         Ok(self.operation_frame.get_typed_reader()?)
@@ -1069,6 +1090,15 @@ impl crate::operation::Operation for EngineOperation {
 
 #[derive(Debug, PartialEq)]
 pub enum EngineOperationStatus {
-    Committed,
+    Committed(BlockOffset),
     Pending,
+}
+
+impl EngineOperationStatus {
+    pub fn is_committed(&self) -> bool {
+        match self {
+            EngineOperationStatus::Committed(_offset) => true,
+            _ => false,
+        }
+    }
 }

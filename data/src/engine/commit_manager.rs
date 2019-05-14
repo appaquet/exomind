@@ -281,7 +281,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 .checked_sub(pending_blocks.operations_blocks.len())
                 .unwrap_or(0);
 
-            if approx_non_committed_operations > self.config.commit_maximum_pending_count {
+            if approx_non_committed_operations >= self.config.commit_maximum_pending_count {
                 return Ok(true);
             } else {
                 let previous_block = chain_store
