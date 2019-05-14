@@ -4,8 +4,8 @@ use std::ops::{Bound, RangeBounds};
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::operation::OperationId;
+use exocore_common::crypto::hash::{Digest, MultihashDigest, Sha3_256};
 use exocore_common::node::{Node, NodeId};
-use exocore_common::security::hash::{Digest, MultihashDigest, Sha3_256};
 use exocore_common::serialization::framed::*;
 use exocore_common::serialization::protos::data_chain_capnp::{
     pending_operation, pending_operation_header,

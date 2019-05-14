@@ -1,4 +1,4 @@
-use crate::security::signature::Signature;
+use crate::crypto::signature::Signature;
 use crate::serialization::framed::{FrameSigner, MultihashFrameSigner};
 use libp2p_core::identity::{Keypair, PublicKey};
 use libp2p_core::{Multiaddr, PeerId};

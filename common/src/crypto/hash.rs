@@ -19,7 +19,7 @@ pub trait MultihashDigest: Digest + Sized {
         let hash_code = hash_type.code();
         assert!(hash_code < 128, "varint hash type not supported");
 
-        // TODO: Same code as in multihash::encode(), waiting for https://github.com/multiformats/rust-multihash/pull/30
+        // See `parity_multihash::encode`
         let size = hash_type.size();
         let mut output: Vec<u8> = Vec::new();
         output.resize(2 + size as usize, 0);

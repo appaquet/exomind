@@ -23,7 +23,7 @@ use capnp::serialize::SliceSegments;
 use lazycell::AtomicLazyCell;
 use owning_ref::OwningHandle;
 
-use crate::security::hash::{Digest, Multihash, MultihashDigest};
+use crate::crypto::hash::{Digest, Multihash, MultihashDigest};
 
 ///
 /// Trait that needs to have an impl for each capnp generated message struct.
@@ -1006,10 +1006,10 @@ pub struct MultihashFrameSigner<H: MultihashDigest> {
     hasher: H,
 }
 
-impl MultihashFrameSigner<crate::security::hash::Sha3_256> {
-    pub fn new_sha3256() -> MultihashFrameSigner<crate::security::hash::Sha3_256> {
+impl MultihashFrameSigner<crate::crypto::hash::Sha3_256> {
+    pub fn new_sha3256() -> MultihashFrameSigner<crate::crypto::hash::Sha3_256> {
         MultihashFrameSigner {
-            hasher: crate::security::hash::Sha3_256::new(),
+            hasher: crate::crypto::hash::Sha3_256::new(),
         }
     }
 
@@ -1026,7 +1026,7 @@ impl MultihashFrameSigner<crate::security::hash::Sha3_256> {
                         err
                     ))
                 })?;
-                let hash_data = crate::security::hash::multihash::encode(
+                let hash_data = crate::crypto::hash::multihash::encode(
                     hash_msg.algorithm(),
                     frame.message_data(),
                 )

@@ -1,11 +1,11 @@
 use crate::operation::OperationId;
 use exocore_common::cell::{Cell, FullCell};
+use exocore_common::crypto::hash::{Digest, Multihash, MultihashDigest, Sha3_256};
+use exocore_common::crypto::signature::Signature;
 use exocore_common::data_chain_capnp::{
     block, block_operation_header, block_signature, block_signatures,
 };
 use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::security::hash::{Digest, Multihash, MultihashDigest, Sha3_256};
-use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{
     FrameBuilder, OwnedFrame, OwnedTypedFrame, SignedFrame, TypedFrame, TypedSliceFrame,
 };
