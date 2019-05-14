@@ -17,6 +17,7 @@ struct Envelope {
 #
 struct PendingSyncRequest {
     ranges             @0: List(PendingSyncRange);
+    fromBlockDepth     @1: UInt64;
 }
 
 struct PendingSyncRange {

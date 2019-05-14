@@ -122,7 +122,12 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             )?;
         }
 
-        self.maybe_cleanup_pending_store(&pending_blocks, pending_store, chain_store)?;
+        self.maybe_cleanup_pending_store(
+            sync_context,
+            &pending_blocks,
+            pending_store,
+            chain_store,
+        )?;
 
         Ok(())
     }
@@ -468,6 +473,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     ///
     fn maybe_cleanup_pending_store(
         &self,
+        sync_context: &mut SyncContext,
         pending_blocks: &PendingBlocks,
         pending_store: &mut PS,
         chain_store: &CS,
@@ -484,11 +490,13 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             {
                 let block_frame = block.proposal.get_block()?;
                 let block_reader = block_frame.get_typed_reader()?;
+
+                let block_offset = block_reader.get_offset();
                 let block_depth = block_reader.get_depth();
 
                 let depth_diff = last_stored_block_depth - block_depth;
                 if depth_diff >= self.config.operations_cleanup_after_block_depth {
-                    debug!("Block at offset={} depth={} can be cleaned up (last_stored_block_depth={})", block_reader.get_offset(), block_depth, last_stored_block_depth);
+                    debug!("Block at offset={} depth={} can be cleaned up (last_stored_block_depth={})", block_offset, block_depth, last_stored_block_depth);
 
                     // delete the block & related operations (sigs, refusals, etc.)
                     pending_store.delete_operation(*group_id)?;
@@ -497,6 +505,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     for operation_id in &block.operations {
                         pending_store.delete_operation(*operation_id)?;
                     }
+
+                    // update the sync state so that the `PendingSynchronizer` knows what was last block to get cleaned
+                    sync_context.sync_state.pending_last_cleanup_block =
+                        Some((block_offset, block_depth));
                 }
             }
         }
@@ -590,7 +602,7 @@ pub struct CommitManagerConfig {
 impl Default for CommitManagerConfig {
     fn default() -> Self {
         CommitManagerConfig {
-            operations_cleanup_after_block_depth: 3,
+            operations_cleanup_after_block_depth: 6,
             commit_maximum_pending_count: 50,
             commit_maximum_interval: Duration::from_secs(5),
         }
@@ -1251,7 +1263,7 @@ mod tests {
                 .is_some());
         }
 
-        // this should trigger cleanup
+        // this will cleanup
         cluster.tick_commit_manager(0)?;
 
         // the first op should have been removed from pending store
@@ -1265,6 +1277,12 @@ mod tests {
         let block_frame = block.block.get_typed_reader()?;
         let block_group_id = block_frame.get_proposed_operation_id();
         assert_not_in_pending(&cluster, block_group_id);
+
+        // check that SyncState was updated correctly
+        let (cleanup_offset, cleanup_depth) =
+            cluster.sync_states[0].pending_last_cleanup_block.unwrap();
+        assert_eq!(cleanup_depth, block.get_depth()?);
+        assert_eq!(cleanup_offset, block.offset());
 
         // check if individual operations are still in pending
         for operation in block.operations_iter()? {

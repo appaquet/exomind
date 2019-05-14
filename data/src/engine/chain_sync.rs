@@ -1043,7 +1043,7 @@ mod tests {
     use exocore_common::serialization::framed::OwnedTypedFrame;
 
     use crate::engine::testing::*;
-    use crate::engine::SyncContextMessage;
+    use crate::engine::{SyncContextMessage, SyncState};
 
     use super::*;
 
@@ -1070,7 +1070,7 @@ mod tests {
             blocks_iter,
         )?;
         let response_frame = response.as_owned_unsigned_framed()?;
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(SyncState::default());
         let result = cluster.chains_synchronizer[0].handle_sync_response(
             &mut sync_context,
             &node0,
@@ -1089,7 +1089,7 @@ mod tests {
             blocks_iter,
         )?;
         let response_frame = response.as_owned_unsigned_framed()?;
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(SyncState::default());
         let result = cluster.chains_synchronizer[0].handle_sync_response(
             &mut sync_context,
             &node1,
@@ -1107,7 +1107,7 @@ mod tests {
             blocks_iter,
         )?;
         let response_frame = response.as_owned_unsigned_framed().unwrap();
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(SyncState::default());
         cluster.chains_synchronizer[0].handle_sync_response(
             &mut sync_context,
             &node1,
@@ -1589,7 +1589,7 @@ mod tests {
         let mut request = Some(first_request);
         loop {
             count_1_to_2 += 1;
-            let mut sync_context = SyncContext::new();
+            let mut sync_context = SyncContext::new(SyncState::default());
             cluster.chains_synchronizer[node_id_b].handle_sync_request(
                 &mut sync_context,
                 &node1,
@@ -1603,7 +1603,7 @@ mod tests {
             count_2_to_1 += 1;
             let (to_node, response) = extract_response_frame_sync_context(&sync_context);
             assert_eq!(&to_node, node1.id());
-            let mut sync_context = SyncContext::new();
+            let mut sync_context = SyncContext::new(SyncState::default());
             cluster.chains_synchronizer[node_id_a].handle_sync_response(
                 &mut sync_context,
                 &node2,

@@ -109,6 +109,7 @@ where
         let pending_synchronizer = pending_sync::PendingSynchronizer::new(
             config.pending_synchronizer_config,
             cell.clone(),
+            clock.clone(),
         );
         let chain_synchronizer = chain_sync::ChainSynchronizer::new(
             config.chain_synchronizer_config,
@@ -132,6 +133,7 @@ where
             handles_sender: Vec::new(),
             transport_sender: None,
             completion_sender: Some(completion_sender),
+            sync_state: SyncState::default(),
         }));
 
         Engine {
@@ -382,6 +384,7 @@ where
     handles_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
     transport_sender: Option<mpsc::UnboundedSender<OutMessage>>,
     completion_sender: Option<oneshot::Sender<Result<(), Error>>>,
+    sync_state: SyncState,
 }
 
 impl<CS, PS> Inner<CS, PS>
@@ -390,12 +393,13 @@ where
     PS: pending::PendingStore,
 {
     fn handle_add_pending_operation(&mut self, operation: NewOperation) -> Result<(), Error> {
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(self.sync_state);
         self.pending_synchronizer.handle_new_operation(
             &mut sync_context,
             &mut self.pending_store,
             operation,
         )?;
+        self.sync_state = sync_context.sync_state;
 
         // to prevent sending pending operations that may have already been committed, we don't propagate
         // pending store changes unless the chain is synchronized
@@ -422,13 +426,15 @@ where
             return Ok(());
         }
 
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(self.sync_state);
         self.pending_synchronizer.handle_incoming_sync_request(
             &message.from,
             &mut sync_context,
             &mut self.pending_store,
             request,
         )?;
+        self.sync_state = sync_context.sync_state;
+
         self.send_messages_from_sync_context(&mut sync_context)?;
         self.notify_handles_from_sync_context(&sync_context);
 
@@ -443,13 +449,15 @@ where
     where
         R: TypedFrame<chain_sync_request::Owned>,
     {
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(self.sync_state);
         self.chain_synchronizer.handle_sync_request(
             &mut sync_context,
             &message.from,
             &mut self.chain_store,
             request,
         )?;
+        self.sync_state = sync_context.sync_state;
+
         self.send_messages_from_sync_context(&mut sync_context)?;
         self.notify_handles_from_sync_context(&sync_context);
 
@@ -464,13 +472,15 @@ where
     where
         R: TypedFrame<chain_sync_response::Owned>,
     {
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(self.sync_state);
         self.chain_synchronizer.handle_sync_response(
             &mut sync_context,
             &message.from,
             &mut self.chain_store,
             response,
         )?;
+        self.sync_state = sync_context.sync_state;
+
         self.send_messages_from_sync_context(&mut sync_context)?;
         self.notify_handles_from_sync_context(&sync_context);
 
@@ -478,7 +488,7 @@ where
     }
 
     fn tick_synchronizers(&mut self) -> Result<(), Error> {
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(self.sync_state);
 
         self.chain_synchronizer
             .tick(&mut sync_context, &self.chain_store)?;
@@ -498,6 +508,8 @@ where
             self.pending_synchronizer
                 .tick(&mut sync_context, &self.pending_store)?;
         }
+
+        self.sync_state = sync_context.sync_state;
 
         self.send_messages_from_sync_context(&mut sync_context)?;
         self.notify_handles_from_sync_context(&sync_context);
@@ -898,13 +910,15 @@ impl From<capnp::NotInSchema> for Error {
 struct SyncContext {
     events: Vec<Event>,
     messages: Vec<SyncContextMessage>,
+    sync_state: SyncState,
 }
 
 impl SyncContext {
-    fn new() -> SyncContext {
+    fn new(sync_state: SyncState) -> SyncContext {
         SyncContext {
             events: Vec::new(),
             messages: Vec::new(),
+            sync_state,
         }
     }
 
@@ -985,6 +999,28 @@ impl SyncContextMessage {
             SyncContextMessage::PendingSyncRequest(to_node, _) => to_node,
             SyncContextMessage::ChainSyncRequest(to_node, _) => to_node,
             SyncContextMessage::ChainSyncResponse(to_node, _) => to_node,
+        }
+    }
+}
+
+///
+/// State of the synchronization, used to communicate information between the `ChainSynchronizer`,
+/// `CommitManager` and `PendingSynchronizer`.
+///
+#[derive(Clone, Copy)]
+struct SyncState {
+    ///
+    /// Indicates what is the last block that got cleaned up from pending store, and that
+    /// is now only available from the chain. This is used by the `PendingSynchronizer` to
+    /// know which operations it should not include anymore in its requests.
+    ///
+    pending_last_cleanup_block: Option<(block::BlockOffset, block::BlockDepth)>,
+}
+
+impl Default for SyncState {
+    fn default() -> Self {
+        SyncState {
+            pending_last_cleanup_block: None,
         }
     }
 }

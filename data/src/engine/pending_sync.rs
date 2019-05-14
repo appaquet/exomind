@@ -14,13 +14,13 @@ use exocore_common::serialization::protos::data_transport_capnp::{
     pending_sync_range, pending_sync_request,
 };
 
+use crate::block::BlockDepth;
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
 use crate::operation::{NewOperation, Operation};
-use crate::pending::{PendingStore, StoredOperation};
+use crate::pending::{CommitStatus, PendingStore, StoredOperation};
 use exocore_common::cell::{Cell, CellNodes};
-
-const MAX_OPERATIONS_PER_RANGE: u32 = 30;
+use exocore_common::time::Clock;
 
 ///
 /// Synchronizes local pending store against remote nodes' pending stores. It does that by exchanging
@@ -39,15 +39,17 @@ const MAX_OPERATIONS_PER_RANGE: u32 = 30;
 pub(super) struct PendingSynchronizer<PS: PendingStore> {
     config: PendingSyncConfig,
     cell: Cell,
+    clock: Clock,
     nodes_info: HashMap<NodeId, NodeSyncInfo>,
     phantom: std::marker::PhantomData<PS>,
 }
 
 impl<PS: PendingStore> PendingSynchronizer<PS> {
-    pub fn new(config: PendingSyncConfig, cell: Cell) -> PendingSynchronizer<PS> {
+    pub fn new(config: PendingSyncConfig, cell: Cell, clock: Clock) -> PendingSynchronizer<PS> {
         PendingSynchronizer {
             config,
             cell,
+            clock,
             nodes_info: HashMap::new(),
             phantom: std::marker::PhantomData,
         }
@@ -66,7 +68,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             if sync_info.request_tracker.can_send_request() {
                 sync_info.request_tracker.set_last_send_now();
                 let request =
-                    self.create_sync_request_for_range(store, .., |_op| OperationDetails::None)?;
+                    self.create_sync_request_for_range(sync_context, store, .., |_op| {
+                        OperationDetails::None
+                    })?;
                 sync_context.push_pending_sync_request(node.id().clone(), request);
             }
         }
@@ -92,13 +96,14 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         // create a sync request for which we send full detail for new op, but none for other ops
         let nodes = self.cell.nodes();
         for node in nodes.iter().all_except_local() {
-            let request = self.create_sync_request_for_range(store, operation_id.., |op| {
-                if op.operation_id == operation_id {
-                    OperationDetails::Full
-                } else {
-                    OperationDetails::None
-                }
-            })?;
+            let request =
+                self.create_sync_request_for_range(sync_context, store, operation_id.., |op| {
+                    if op.operation_id == operation_id {
+                        OperationDetails::Full
+                    } else {
+                        OperationDetails::None
+                    }
+                })?;
             sync_context.push_pending_sync_request(node.id().clone(), request);
         }
 
@@ -125,13 +130,18 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         debug!("Got sync request from {}", from_node.id());
 
         let in_reader: pending_sync_request::Reader = request.get_typed_reader()?;
+        let operations_from_depth = self.get_from_block_depth(sync_context, Some(in_reader));
         let in_ranges = in_reader.get_ranges()?;
 
-        if let Some(out_ranges) =
-            self.handle_incoming_sync_ranges(sync_context, store, in_ranges.iter())?
-        {
+        if let Some(out_ranges) = self.handle_incoming_sync_ranges(
+            sync_context,
+            store,
+            in_ranges.iter(),
+            operations_from_depth,
+        )? {
             let mut sync_request_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
             let mut sync_request_builder = sync_request_frame_builder.get_builder_typed();
+            sync_request_builder.set_from_block_depth(operations_from_depth.unwrap_or(0));
 
             let mut ranges_builder = sync_request_builder
                 .reborrow()
@@ -165,16 +175,18 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         sync_context: &mut SyncContext,
         store: &mut PS,
         sync_range_iterator: I,
+        operations_from_depth: Option<BlockDepth>,
     ) -> Result<Option<SyncRangesBuilder>, Error>
     where
         I: Iterator<Item = pending_sync_range::Reader<'a>>,
     {
         let mut out_ranges_contains_changes = false;
-        let mut out_ranges = SyncRangesBuilder::new();
+        let mut out_ranges = SyncRangesBuilder::new(self.config);
 
         for sync_range_reader in sync_range_iterator {
             let ((bounds_from, bounds_to), from_numeric, to_numeric) =
                 extract_sync_bounds(&sync_range_reader)?;
+            let bounds_range = (bounds_from, bounds_to);
             if to_numeric != 0 && to_numeric < from_numeric {
                 return Err(PendingSyncError::InvalidSyncRequest(format!(
                     "Request from={} > to={}",
@@ -207,14 +219,13 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             // then check local store's range hash and count. if our local store data is the same as the one described in the
             // payload, we stop here since everything is synchronized
             let (local_hash, local_count) =
-                Self::local_store_range_info(store, (bounds_from, bounds_to))?;
+                self.local_store_range_info(store, bounds_range, operations_from_depth)?;
             let remote_hash = sync_range_reader.get_operations_hash()?;
             let remote_count = sync_range_reader.get_operations_count();
             if remote_hash == &local_hash[..] && local_count == remote_count as usize {
                 // we are equal to remote, nothing to do
                 out_ranges.push_range(SyncRangeBuilder::new_hashed(
-                    bounds_from,
-                    bounds_to,
+                    bounds_range,
                     local_hash,
                     local_count as u32,
                 ));
@@ -225,27 +236,28 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             out_ranges_contains_changes = true;
             out_ranges.push_new_range(bounds_from);
 
+            let operations_iter =
+                self.operations_iter_from_depth(store, bounds_range, operations_from_depth)?;
             if remote_count == 0 {
                 // remote has no data, we sent everything
-                for operation in store.operations_iter((bounds_from, bounds_to))? {
+                for operation in operations_iter {
                     out_ranges.push_operation(operation, OperationDetails::Full);
                 }
             } else if !sync_range_reader.has_operations_headers()
                 && !sync_range_reader.has_operations()
             {
                 // remote has only sent us hash, we reply with headers
-                for operation in store.operations_iter((bounds_from, bounds_to))? {
+                for operation in operations_iter {
                     out_ranges.push_operation(operation, OperationDetails::Header);
                 }
             } else {
                 // remote and local has differences. We do a diff
                 let remote_iter = sync_range_reader.get_operations_headers()?.iter();
-                let local_iter = store.operations_iter((bounds_from, bounds_to))?;
                 Self::diff_local_remote_range(
                     &mut out_ranges,
                     &mut included_operations,
                     remote_iter,
-                    local_iter,
+                    operations_iter,
                 )?;
             }
 
@@ -264,6 +276,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     ///
     fn create_sync_request_for_range<R, F>(
         &self,
+        sync_context: &SyncContext,
         store: &PS,
         range: R,
         operation_details: F,
@@ -272,7 +285,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         R: RangeBounds<OperationId> + Clone,
         F: Fn(&StoredOperation) -> OperationDetails,
     {
-        let mut sync_ranges = SyncRangesBuilder::new();
+        let mut sync_ranges = SyncRangesBuilder::new(self.config);
 
         // create first range with proper starting bound
         match range.start_bound() {
@@ -281,7 +294,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             Bound::Included(op_id) => sync_ranges.push_new_range(Bound::Included(*op_id)),
         }
 
-        for operation in store.operations_iter(range.clone())? {
+        let operations_from_depth = self.get_from_block_depth(sync_context, None);
+        let operations_iter =
+            self.operations_iter_from_depth(store, range.clone(), operations_from_depth)?;
+        for operation in operations_iter {
             let details = operation_details(&operation);
             sync_ranges.push_operation(operation, details);
         }
@@ -293,6 +309,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
         let mut sync_request_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
         let mut sync_request_builder = sync_request_frame_builder.get_builder_typed();
+        sync_request_builder.set_from_block_depth(operations_from_depth.unwrap_or(0));
         let mut ranges_builder = sync_request_builder
             .reborrow()
             .init_ranges(sync_ranges.ranges.len() as u32);
@@ -308,13 +325,21 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     /// Hashes the operations of the store for the given range. This will be used to compare with the
     /// incoming sync request.
     ///
-    fn local_store_range_info<R>(store: &PS, range: R) -> Result<(Vec<u8>, usize), Error>
+    fn local_store_range_info<R>(
+        &self,
+        store: &PS,
+        range: R,
+        operations_from_depth: Option<BlockDepth>,
+    ) -> Result<(Vec<u8>, usize), Error>
     where
         R: RangeBounds<OperationId>,
     {
         let mut frame_hasher = Sha3Hasher::new_256();
         let mut count = 0;
-        for operation in store.operations_iter(range)? {
+
+        let operations_iter =
+            self.operations_iter_from_depth(store, range, operations_from_depth)?;
+        for operation in operations_iter {
             frame_hasher.consume_signed_frame(operation.frame.as_ref());
             count += 1;
         }
@@ -378,9 +403,65 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         }
 
         let config = self.config;
+        let clock = self.clock.clone();
         self.nodes_info
             .entry(node_id.clone())
-            .or_insert_with(move || NodeSyncInfo::new(&config))
+            .or_insert_with(move || NodeSyncInfo::new(&config, clock))
+    }
+
+    ///
+    /// Returns operations from the pending store, but only if they are not committed, or
+    /// committed after the given depth.
+    ///
+    fn operations_iter_from_depth<'store, R>(
+        &self,
+        store: &'store PS,
+        range: R,
+        from_block_depth: Option<BlockDepth>,
+    ) -> Result<impl Iterator<Item = StoredOperation> + 'store, Error>
+    where
+        R: RangeBounds<OperationId>,
+    {
+        let iter = store.operations_iter(range)?.filter(move |op| {
+            match (op.commit_status, from_block_depth) {
+                (_, None) => true,
+                (CommitStatus::Unknown, _) => true,
+                (CommitStatus::NotCommitted, _) => true,
+                (CommitStatus::Committed(_offset, op_depth), Some(from_depth)) => {
+                    op_depth >= from_depth
+                }
+            }
+        });
+
+        Ok(iter)
+    }
+
+    ///
+    /// Returns the block depth at which we filter operations from pending store with. See `PendingSyncConfig`.`operations_included_depth`.
+    /// The depth from the request has priority, and then we fallback to the one in the sync_state.
+    ///
+    fn get_from_block_depth(
+        &self,
+        sync_context: &SyncContext,
+        incoming_request_reader: Option<pending_sync_request::Reader>,
+    ) -> Option<BlockDepth> {
+        incoming_request_reader
+            .and_then(|request_reader| {
+                let block_depth = request_reader.get_from_block_depth();
+                if block_depth != 0 {
+                    Some(block_depth)
+                } else {
+                    None
+                }
+            })
+            .or_else(|| {
+                sync_context
+                    .sync_state
+                    .pending_last_cleanup_block
+                    .map(|(_offset, depth)| {
+                        depth + self.config.operations_depth_offset_after_cleanup
+                    })
+            })
     }
 }
 
@@ -389,13 +470,32 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 ///
 #[derive(Copy, Clone, Debug)]
 pub struct PendingSyncConfig {
+    pub max_operations_per_range: u32,
+
     pub request_tracker_config: request_tracker::RequestTrackerConfig,
+
+    ///
+    /// Related to `CommitManagerConfig`.`operations_cleanup_after_block_depth`.
+    /// This indicates how many block after the last cleaned up block we should include by
+    /// default when doing sync requests, so that we don't request for operations that may
+    /// have been cleaned up on other nodes.
+    ///
+    /// The `CommitManager` does cleanup at interval, and sets the last block that got cleaned
+    /// in the `SyncState` up from the `PendingStore` because it was committed for more than
+    /// `CommitManagerConfig`.`operations_cleanup_after_block_depth` of depth.
+    ///
+    /// This value is added to the `SyncState` last cleanup block depth to make sure we don't
+    /// ask or include operations that got cleaned up.
+    ///
+    pub operations_depth_offset_after_cleanup: BlockDepth,
 }
 
 impl Default for PendingSyncConfig {
     fn default() -> Self {
         PendingSyncConfig {
+            max_operations_per_range: 30,
             request_tracker_config: request_tracker::RequestTrackerConfig::default(),
+            operations_depth_offset_after_cleanup: 2,
         }
     }
 }
@@ -408,9 +508,12 @@ struct NodeSyncInfo {
 }
 
 impl NodeSyncInfo {
-    fn new(config: &PendingSyncConfig) -> NodeSyncInfo {
+    fn new(config: &PendingSyncConfig, clock: Clock) -> NodeSyncInfo {
         NodeSyncInfo {
-            request_tracker: request_tracker::RequestTracker::new(config.request_tracker_config),
+            request_tracker: request_tracker::RequestTracker::new_with_clock(
+                clock,
+                config.request_tracker_config,
+            ),
         }
     }
 }
@@ -452,12 +555,16 @@ type SyncBounds = (
 /// Collection of SyncRangeBuilder, taking into account maximum operations we want per range.
 ///
 struct SyncRangesBuilder {
+    config: PendingSyncConfig,
     ranges: Vec<SyncRangeBuilder>,
 }
 
 impl SyncRangesBuilder {
-    fn new() -> SyncRangesBuilder {
-        SyncRangesBuilder { ranges: Vec::new() }
+    fn new(config: PendingSyncConfig) -> SyncRangesBuilder {
+        SyncRangesBuilder {
+            config,
+            ranges: Vec::new(),
+        }
     }
 
     ///
@@ -468,7 +575,7 @@ impl SyncRangesBuilder {
             self.push_new_range(Bound::Unbounded);
         } else {
             let last_range_size = self.ranges.last().map_or(0, |r| r.operations_count);
-            if last_range_size > MAX_OPERATIONS_PER_RANGE {
+            if last_range_size > self.config.max_operations_per_range {
                 let last_range_to = self.last_range_to_bound().expect("Should had a last range");
 
                 // converted included into excluded for starting bound of next range since the item is in current range, not next one
@@ -552,14 +659,13 @@ impl SyncRangeBuilder {
     }
 
     fn new_hashed(
-        from_operation: Bound<OperationId>,
-        to_operation: Bound<OperationId>,
+        operations_range: (Bound<OperationId>, Bound<OperationId>),
         operations_hash: Vec<u8>,
         operations_count: u32,
     ) -> SyncRangeBuilder {
         SyncRangeBuilder {
-            from_operation,
-            to_operation,
+            from_operation: operations_range.0,
+            to_operation: operations_range.1,
             operations: Vec::new(),
             operations_headers: Vec::new(),
             operations_count,
@@ -686,25 +792,27 @@ mod tests {
 
     use crate::engine::testing::create_dummy_new_entry_op;
     use crate::engine::testing::*;
-    use crate::engine::SyncContextMessage;
+    use crate::engine::{SyncContextMessage, SyncState};
     use crate::operation::{NewOperation, OperationType};
 
     use super::*;
     use crate::pending::CommitStatus;
+    use crate::MemoryPendingStore;
     use exocore_common::node::LocalNode;
+    use std::time::{Duration, Instant};
 
     #[test]
     fn tick_send_to_other_nodes() -> Result<(), failure::Error> {
         // only one node, shouldn't send to ourself
         let mut cluster = TestCluster::new(1);
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(SyncState::default());
         cluster.pending_stores_synchronizer[0]
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
         assert_eq!(sync_context.messages.len(), 0);
 
         // two nodes should send to other node
         let mut cluster = TestCluster::new(2);
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(SyncState::default());
         cluster.pending_stores_synchronizer[0]
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
         assert_eq!(sync_context.messages.len(), 1);
@@ -717,7 +825,7 @@ mod tests {
         let mut cluster = TestCluster::new(2);
         cluster.pending_generate_dummy(0, 0, 100);
 
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(SyncState::default());
         cluster.pending_stores_synchronizer[0]
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
         let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
@@ -739,6 +847,53 @@ mod tests {
     }
 
     #[test]
+    fn create_sync_range_request_with_depth() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.clocks[0].set_fixed_instant(Instant::now());
+
+        let config_depth_offset = cluster.pending_stores_synchronizer[0]
+            .config
+            .operations_depth_offset_after_cleanup;
+
+        // we update operations status as if they were all committed at depth 10
+        let operations_id = cluster.pending_generate_dummy(0, 0, 100);
+        for operation_id in operations_id {
+            let status = CommitStatus::Committed(10, 10);
+            cluster.pending_stores[0].update_operation_commit_status(operation_id, status)?;
+        }
+
+        // no filter should generate multiple ranges
+        let mut sync_context = SyncContext::new(SyncState::default());
+        cluster.pending_stores_synchronizer[0]
+            .tick(&mut sync_context, &cluster.pending_stores[0])?;
+        let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
+        let sync_request_reader: pending_sync_request::Reader =
+            sync_request_frame.get_typed_reader()?;
+        assert_eq!(0, sync_request_reader.get_from_block_depth());
+        let ranges = sync_request_reader.get_ranges()?;
+        assert!(ranges.len() > 1);
+
+        // filter with depth of 1000 should generate only 1 empty range since it matches no operations
+        cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
+        let mut sync_context = SyncContext::new(SyncState::default());
+        sync_context.sync_state.pending_last_cleanup_block = Some((0, 1000));
+        cluster.pending_stores_synchronizer[0]
+            .tick(&mut sync_context, &cluster.pending_stores[0])?;
+        let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
+        let sync_request_reader: pending_sync_request::Reader =
+            sync_request_frame.get_typed_reader()?;
+        assert_eq!(
+            1000 + config_depth_offset,
+            sync_request_reader.get_from_block_depth()
+        );
+        let ranges = sync_request_reader.get_ranges()?;
+        assert!(ranges.len() == 1);
+        assert_eq!(0, ranges.get(0).get_operations_count());
+
+        Ok(())
+    }
+
+    #[test]
     fn new_operation_after_last_operation() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
         cluster.pending_generate_dummy(0, 0, 50);
@@ -747,7 +902,7 @@ mod tests {
         // create operation after last operation id
         let generator_node = &cluster.nodes[0];
         let new_operation = create_dummy_new_entry_op(generator_node, 52, 52);
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(SyncState::default());
         cluster.pending_stores_synchronizer[0].handle_new_operation(
             &mut sync_context,
             &mut cluster.pending_stores[0],
@@ -756,7 +911,8 @@ mod tests {
         let (_to_node, request) = extract_request_from_result(&sync_context);
 
         // should send the new operation directly, without requiring further requests
-        let (count_a_to_b, count_b_to_a) = sync_nodes_with_request(&mut cluster, 0, 1, request)?;
+        let (count_a_to_b, count_b_to_a) =
+            sync_nodes_with_initial_request(&mut cluster, 0, 1, request)?;
         assert_eq!(count_a_to_b, 1);
         assert_eq!(count_b_to_a, 0);
 
@@ -786,7 +942,7 @@ mod tests {
         }
 
         // create operation in middle of current ranges, with odd operation id
-        let mut sync_context = SyncContext::new();
+        let mut sync_context = SyncContext::new(SyncState::default());
         let new_operation = create_dummy_new_entry_op(generator_node, 51, 51);
         cluster.pending_stores_synchronizer[0].handle_new_operation(
             &mut sync_context,
@@ -796,7 +952,8 @@ mod tests {
         let (_to_node, request) = extract_request_from_result(&sync_context);
 
         // should send the new operation directly, without requiring further requests
-        let (count_a_to_b, count_b_to_a) = sync_nodes_with_request(&mut cluster, 0, 1, request)?;
+        let (count_a_to_b, count_b_to_a) =
+            sync_nodes_with_initial_request(&mut cluster, 0, 1, request)?;
         assert_eq!(count_a_to_b, 1);
         assert_eq!(count_b_to_a, 0);
 
@@ -907,9 +1064,136 @@ mod tests {
     }
 
     #[test]
+    fn handle_sync_cleaned_up_depth() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(2);
+        cluster.clocks[0].set_fixed_instant(Instant::now());
+
+        // we generate operations on node 0 spread in 10 blocks
+        let operations_id = cluster.pending_generate_dummy(0, 0, 100);
+        for operation_id in operations_id {
+            let depth = operation_id / 10;
+            let status = CommitStatus::Committed(depth, depth);
+
+            cluster.pending_stores[0].update_operation_commit_status(operation_id, status)?;
+        }
+
+        // syncing 0 to 1 without depth filter should sync all operations
+        cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
+        sync_nodes(&mut cluster, 0, 1)?;
+        assert_eq!(100, cluster.pending_stores[1].operations_count());
+
+        // clear node 1 operations
+        cluster.pending_stores[1].clear();
+
+        // we mark node 0 as cleaned up up to block with depth 3
+        // syncing should not sync non-matching operations to node 1
+        cluster.sync_states[0].pending_last_cleanup_block = Some((3, 3));
+        cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
+        sync_nodes(&mut cluster, 0, 1)?;
+        assert_eq!(51, cluster.pending_stores[1].operations_count());
+
+        // syncing 1 to 0 without depth should not revive cleaned up operations
+        cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
+        sync_nodes(&mut cluster, 1, 0)?;
+        assert_eq!(51, cluster.pending_stores[1].operations_count());
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_extract_from_block_offset() -> Result<(), failure::Error> {
+        let cluster = TestCluster::new(1);
+
+        let pending_store = &cluster.pending_stores_synchronizer[0];
+
+        let mut req_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
+        {
+            let mut req_builder: pending_sync_request::Builder =
+                req_frame_builder.get_builder_typed();
+            req_builder.set_from_block_depth(0);
+        }
+
+        // 0 in sync request means none
+        let sync_context = SyncContext::new(SyncState::default());
+        let frame = req_frame_builder.as_owned_unsigned_framed()?;
+        let frame_reader = frame.get_typed_reader()?;
+        let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
+        assert_eq!(None, depth);
+
+        // in sync state
+        let mut sync_context = SyncContext::new(SyncState::default());
+        sync_context.sync_state.pending_last_cleanup_block = Some((0, 10));
+        let frame = req_frame_builder.as_owned_unsigned_framed()?;
+        let frame_reader = frame.get_typed_reader()?;
+        let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
+        assert_eq!(Some(12), depth); // 10 + 2
+
+        // request has priority
+        let mut sync_context = SyncContext::new(SyncState::default());
+        sync_context.sync_state.pending_last_cleanup_block = Some((0, 10));
+        {
+            let mut req_builder: pending_sync_request::Builder =
+                req_frame_builder.get_builder_typed();
+            req_builder.set_from_block_depth(20);
+        }
+        let frame = req_frame_builder.as_owned_unsigned_framed()?;
+        let frame_reader = frame.get_typed_reader()?;
+        let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
+        assert_eq!(Some(20), depth);
+
+        Ok(())
+    }
+
+    #[test]
+    fn operations_iter_filtered_depth() -> Result<(), failure::Error> {
+        let cluster = TestCluster::new(1);
+
+        let local_node = &cluster.nodes[0];
+        let pending_store = &cluster.pending_stores_synchronizer[0];
+
+        let mut store = MemoryPendingStore::new();
+        store.put_operation(create_dummy_new_entry_op(&local_node, 100, 100))?;
+        store.put_operation(create_dummy_new_entry_op(&local_node, 101, 101))?;
+        store.put_operation(create_dummy_new_entry_op(&local_node, 102, 102))?;
+
+        let res = pending_store
+            .operations_iter_from_depth(&store, .., None)?
+            .collect_vec();
+        assert_eq!(3, res.len());
+
+        // should return everything since they are all `Unknown` status
+        let res = pending_store
+            .operations_iter_from_depth(&store, .., Some(2))?
+            .collect_vec();
+        assert_eq!(3, res.len());
+
+        // should return not committed
+        store.update_operation_commit_status(100, CommitStatus::NotCommitted)?;
+        let res = pending_store
+            .operations_iter_from_depth(&store, .., Some(2))?
+            .collect_vec();
+        assert_eq!(3, res.len());
+
+        // should return equal depth
+        store.update_operation_commit_status(101, CommitStatus::Committed(0, 2))?;
+        let res = pending_store
+            .operations_iter_from_depth(&store, .., Some(2))?
+            .collect_vec();
+        assert_eq!(3, res.len());
+
+        // should not return smaller depth
+        let res = pending_store
+            .operations_iter_from_depth(&store, .., Some(3))?
+            .collect_vec();
+        assert_eq!(2, res.len());
+
+        Ok(())
+    }
+
+    #[test]
     fn sync_ranges_push_operation() {
         let local_node = LocalNode::generate();
-        let mut sync_ranges = SyncRangesBuilder::new();
+        let mut sync_ranges = SyncRangesBuilder::new(PendingSyncConfig::default());
         for operation in stored_ops_generator(&local_node, 90) {
             sync_ranges.push_operation(operation, OperationDetails::None);
         }
@@ -998,29 +1282,19 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn should_not_include_cleaned_up_operations() -> Result<(), failure::Error> {
-        // TODO:
-
-        Ok(())
-    }
-
     fn sync_nodes(
         cluster: &mut TestCluster,
         node_id_a: usize,
         node_id_b: usize,
     ) -> Result<(usize, usize), failure::Error> {
-        let mut sync_context = SyncContext::new();
-
         // tick the first node, which will generate a sync request
-        cluster.pending_stores_synchronizer[node_id_a]
-            .tick(&mut sync_context, &cluster.pending_stores[node_id_a])?;
+        let sync_context = cluster.tick_pending_synchronizer(node_id_a)?;
         let (_to_node, initial_request) = extract_request_from_result(&sync_context);
 
-        sync_nodes_with_request(cluster, node_id_a, node_id_b, initial_request)
+        sync_nodes_with_initial_request(cluster, node_id_a, node_id_b, initial_request)
     }
 
-    fn sync_nodes_with_request(
+    fn sync_nodes_with_initial_request(
         cluster: &mut TestCluster,
         node_id_a: usize,
         node_id_b: usize,
@@ -1044,8 +1318,11 @@ mod tests {
                 );
             }
 
+            //
+            // B to A
+            //
             count_a_to_b += 1;
-            let mut sync_context = SyncContext::new();
+            let mut sync_context = SyncContext::new(cluster.sync_states[node_id_b].clone());
             cluster.pending_stores_synchronizer[node_id_b].handle_incoming_sync_request(
                 &node_a,
                 &mut sync_context,
@@ -1056,6 +1333,7 @@ mod tests {
                 debug!("No request from b={} to a={}", node_id_b, node_id_a);
                 break;
             }
+            cluster.sync_states[node_id_b] = sync_context.sync_state;
 
             count_b_to_a += 1;
             let (to_node, request) = extract_request_from_result(&sync_context);
@@ -1063,7 +1341,10 @@ mod tests {
             debug!("Request from b={} to a={}", node_id_b, node_id_a);
             print_sync_request(&request);
 
-            let mut sync_context = SyncContext::new();
+            //
+            // A to B
+            //
+            let mut sync_context = SyncContext::new(cluster.sync_states[node_id_a].clone());
             cluster.pending_stores_synchronizer[node_id_a].handle_incoming_sync_request(
                 &node_b,
                 &mut sync_context,
@@ -1074,6 +1355,8 @@ mod tests {
                 debug!("No request from a={} to b={}", node_id_a, node_id_b);
                 break;
             }
+            cluster.sync_states[node_id_a] = sync_context.sync_state;
+
             let (to_node, request) = extract_request_from_result(&sync_context);
             assert_eq!(&to_node, node_b.id());
             debug!("Request from a={} to b={}", node_id_a, node_id_b);
@@ -1089,7 +1372,7 @@ mod tests {
         count: usize,
         details: OperationDetails,
     ) -> Vec<FrameBuilder<pending_sync_range::Owned>> {
-        let mut sync_ranges = SyncRangesBuilder::new();
+        let mut sync_ranges = SyncRangesBuilder::new(PendingSyncConfig::default());
         for operation in stored_ops_generator(local_node, count) {
             sync_ranges.push_operation(operation, details);
         }

@@ -10,9 +10,9 @@ use crate::block::{Block, BlockDepth, BlockOffset, BlockOwned};
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
 use crate::chain::ChainStore;
 use crate::engine::commit_manager::CommitManager;
-use crate::engine::pending_sync;
 use crate::engine::{chain_sync, SyncContext};
-use crate::operation::{GroupId, NewOperation, OperationBuilder, OperationId};
+use crate::engine::{pending_sync, SyncState};
+use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, OperationId};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
 use exocore_common::cell::FullCell;
@@ -35,6 +35,8 @@ pub(super) struct TestCluster {
     pub pending_stores_synchronizer: Vec<pending_sync::PendingSynchronizer<MemoryPendingStore>>,
 
     pub commit_managers: Vec<CommitManager<MemoryPendingStore, DirectoryChainStore>>,
+
+    pub sync_states: Vec<SyncState>,
 }
 
 impl TestCluster {
@@ -51,6 +53,7 @@ impl TestCluster {
         let mut pending_stores = Vec::new();
         let mut pending_stores_synchronizer = Vec::new();
         let mut commit_managers = Vec::new();
+        let mut sync_states = Vec::new();
 
         for i in 0..count {
             let local_node = LocalNode::generate();
@@ -82,6 +85,7 @@ impl TestCluster {
             pending_stores_synchronizer.push(pending_sync::PendingSynchronizer::new(
                 pending_sync::PendingSyncConfig::default(),
                 cell.cell().clone(),
+                clock.clone(),
             ));
 
             commit_managers.push(CommitManager::new(
@@ -89,6 +93,8 @@ impl TestCluster {
                 cell.cell().clone(),
                 clock.clone(),
             ));
+
+            sync_states.push(SyncState::default());
 
             temp_dirs.push(tempdir);
         }
@@ -115,6 +121,8 @@ impl TestCluster {
             pending_stores,
             pending_stores_synchronizer,
             commit_managers,
+
+            sync_states,
         }
     }
 
@@ -187,13 +195,16 @@ impl TestCluster {
         node_idx: usize,
         generator_node_idx: usize,
         count: usize,
-    ) {
+    ) -> Vec<OperationId> {
         let generator_node = &self.nodes[generator_node_idx];
+        let mut operations_id = Vec::new();
         for operation in dummy_pending_ops_generator(generator_node, count) {
+            operations_id.push(operation.get_id().unwrap());
             self.pending_stores[node_idx]
                 .put_operation(operation)
                 .unwrap();
         }
+        operations_id
     }
 
     pub fn chain_add_genesis_block(&mut self, node_idx: usize) {
@@ -201,13 +212,26 @@ impl TestCluster {
         self.chains[node_idx].write_block(&block).unwrap();
     }
 
+    pub fn tick_pending_synchronizer(
+        &mut self,
+        node_idx: usize,
+    ) -> Result<SyncContext, crate::engine::Error> {
+        let mut sync_context = SyncContext::new(self.sync_states[node_idx]);
+        self.pending_stores_synchronizer[node_idx]
+            .tick(&mut sync_context, &self.pending_stores[node_idx])?;
+        self.sync_states[node_idx] = sync_context.sync_state;
+
+        Ok(sync_context)
+    }
+
     pub fn tick_chain_synchronizer(
         &mut self,
         node_idx: usize,
     ) -> Result<SyncContext, crate::engine::Error> {
-        let mut sync_context = SyncContext::new();
-
+        let mut sync_context = SyncContext::new(self.sync_states[node_idx]);
         self.chains_synchronizer[node_idx].tick(&mut sync_context, &self.chains[node_idx])?;
+        self.sync_states[node_idx] = sync_context.sync_state;
+
         Ok(sync_context)
     }
 
@@ -215,14 +239,14 @@ impl TestCluster {
         &mut self,
         node_idx: usize,
     ) -> Result<SyncContext, crate::engine::Error> {
-        let mut sync_context = SyncContext::new();
-
+        let mut sync_context = SyncContext::new(self.sync_states[node_idx]);
         self.commit_managers[node_idx].tick(
             &mut sync_context,
             &mut self.pending_stores_synchronizer[node_idx],
             &mut self.pending_stores[node_idx],
             &mut self.chains[node_idx],
         )?;
+        self.sync_states[node_idx] = sync_context.sync_state;
 
         Ok(sync_context)
     }

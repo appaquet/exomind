@@ -347,6 +347,10 @@ pub mod pending_sync_request {
         pub fn has_ranges(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
+        #[inline]
+        pub fn get_from_block_depth(self) -> u64 {
+            self.reader.get_data_field::<u64>(0)
+        }
     }
 
     pub struct Builder<'a> {
@@ -463,6 +467,14 @@ pub mod pending_sync_request {
         pub fn has_ranges(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
+        #[inline]
+        pub fn get_from_block_depth(self) -> u64 {
+            self.builder.get_data_field::<u64>(0)
+        }
+        #[inline]
+        pub fn set_from_block_depth(&mut self, value: u64) {
+            self.builder.set_data_field::<u64>(0, value);
+        }
     }
 
     pub struct Pipeline {
@@ -479,7 +491,7 @@ pub mod pending_sync_request {
     mod _private {
         use capnp::private::layout;
         pub const STRUCT_SIZE: layout::StructSize = layout::StructSize {
-            data: 0,
+            data: 1,
             pointers: 1,
         };
         pub const TYPE_ID: u64 = 0xf23b_fe58_29c7_1a4b;
