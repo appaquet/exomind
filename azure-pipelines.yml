@@ -16,7 +16,7 @@ steps:
       docker --version
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
 
-      export PATH=$PATH:$HOME/.cargo/bin
+      export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
       rustc --version && cargo --version
       rustup component add rustfmt
       rustup component add clippy
@@ -24,7 +24,7 @@ steps:
 
   - script: |
       set -e
-      export PATH=$PATH:$HOME/.cargo/bin
+      export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
 
       cargo fmt --all -- --check
       cargo check --all
@@ -38,7 +38,7 @@ steps:
 # Disabled until https://github.com/xd009642/tarpaulin/issues/190 is fixed for real...
 #  - script: |
 #      # Limit to 1 core until https://github.com/xd009642/tarpaulin/issues/190 is fixed
-#      docker run --crypto-opt seccomp=unconfined --cpuset-cpus="0" -v "$PWD:/volume" xd009642/tarpaulin cargo tarpaulin --exclude-files=3rd --exclude-files="*_capnp.rs" --all --out Xml -v  -- --test-threads=1
+#      docker run --security-opt seccomp=unconfined --cpuset-cpus="0" -v "$PWD:/volume" xd009642/tarpaulin cargo tarpaulin --exclude-files=3rd --exclude-files="*_capnp.rs" --all --out Xml -v  -- --test-threads=1
 #      bash <(curl -s https://codecov.io/bash)
 #    displayName: 'Code coverage'
 
