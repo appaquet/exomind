@@ -128,7 +128,7 @@ impl Libp2pTransport {
     /// Starts the engine by spawning different tasks onto the current Runtime
     fn start(&mut self) -> Result<(), Error> {
         let local_keypair = self.local_node.keypair().clone();
-        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair);
+        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone());
 
         let behaviour = ExocoreBehaviour::new();
         let mut swarm = Swarm::new(transport, behaviour, self.local_node.peer_id().clone());

@@ -2,8 +2,8 @@
 // TODO: Encryption/signature ticket: https://github.com/appaquet/exocore/issues/46
 //
 
+use crate::crypto::keys::{Keypair, PublicKey};
 use crate::node::{LocalNode, Node, NodeId};
-use libp2p_core::identity::{Keypair, PublicKey};
 use libp2p_core::PeerId;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -67,8 +67,7 @@ pub struct Cell {
 
 impl Cell {
     pub fn new(public_key: PublicKey, local_node: LocalNode) -> Cell {
-        let dummy_peer_id = PeerId::from_public_key(public_key.clone());
-        let cell_id = CellId::from_string(dummy_peer_id.to_string());
+        let cell_id = CellId::from_public_key(&public_key);
 
         let mut nodes_map: HashMap<NodeId, Node> = HashMap::new();
         nodes_map.insert(local_node.id().clone(), local_node.node().clone());
@@ -120,6 +119,14 @@ impl Cell {
 pub struct CellId(String);
 
 impl CellId {
+    ///
+    /// Create a Cell ID from a public key by using libp2p method to support compatibility
+    ///
+    pub fn from_public_key(public_key: &PublicKey) -> CellId {
+        let peer_id = PeerId::from_public_key(public_key.to_libp2p().clone());
+        CellId(peer_id.to_string())
+    }
+
     pub fn from_string(id: String) -> CellId {
         CellId(id)
     }

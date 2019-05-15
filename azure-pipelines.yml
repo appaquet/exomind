@@ -28,9 +28,8 @@ steps:
 
       cargo fmt --all -- --check
       cargo check --all
-
       cargo clean -p exocore-common
-      cargo clippy --all
+      cargo clippy --all -- -D clippy::all
 
       cargo test --all --verbose -- --test-threads=1
     displayName: 'Test all'
