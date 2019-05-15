@@ -120,7 +120,7 @@ pub struct CellId(String);
 
 impl CellId {
     ///
-    /// Create a Cell ID from a public key by using libp2p method to support compatibility
+    /// Create a Cell ID from a public key by using libp2p method to be compatible with it
     ///
     pub fn from_public_key(public_key: &PublicKey) -> CellId {
         let peer_id = PeerId::from_public_key(public_key.to_libp2p().clone());

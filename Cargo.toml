@@ -8,11 +8,3 @@ members = [
   "transport",
   "clients/wasm",
 ]
-
-[patch.crates-io]
-#libp2p = { path = "./3rd/rust-libp2p" }
-#libp2p-core = { path = "./3rd/rust-libp2p/core" }
-libp2p = { git = "https://github.com/appaquet/rust-libp2p", branch = "ed25519-signature" }
-libp2p-core = { git = "https://github.com/appaquet/rust-libp2p", path ="./core", branch = "ed25519-signature" }
-#extsort = { path = "./3rd/extsort" }
-#extindex = { path = "./3rd/extindex" }
