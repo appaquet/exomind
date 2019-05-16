@@ -3,6 +3,9 @@
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
 
 ## Dependencies
+* Build essentials
+    * On MacOS: Install Xcode and command lines tools
+    * On Ubuntu: `apt install build-essential pkg-config libssl-dev`
 * [Rust](https://www.rust-lang.org/learn/get-started)
 * [Cap'n Proto](https://capnproto.org/install.html)
     * On MacOS: `brew install capnp` 

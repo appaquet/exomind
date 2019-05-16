@@ -14,5 +14,9 @@ else
     cargo tarpaulin --exclude-files=3rd --verbose --all --out Html
 
     # Then execute single core
-    taskset -c 0 cargo tarpaulin --exclude-files=3rd --verbose --exclude-files="*_capnp.rs" --exclude-files="**/main.rs" --all --out Html
+    taskset -c 0 cargo tarpaulin --verbose --all --out Html \
+                        --exclude-files=3rd \
+                        --exclude-files="*_capnp.rs" \
+                        --exclude-files="**/main.rs" \
+                        --exclude=exocore-cli
 fi

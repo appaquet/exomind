@@ -9,6 +9,7 @@ cargo check --tests --all
 cargo check --benches --all
 
 if [[ "$ANDROID_NDK_STANDALONE" != "" ]]; then
+    echo "Checking Android compilation..."
     export PATH="$PATH:$ANDROID_NDK_STANDALONE/arm/bin/"
     cargo check --target "armv7-linux-androideabi"
 else
@@ -17,6 +18,7 @@ else
 fi
 
 if [[ `uname -s` == "Darwin" ]]; then
+    echo "Checking iOS compilation..."
     cargo check --target "aarch64-apple-ios"
 else
     echo "Not currently on MacOS. Not testing iOS build."

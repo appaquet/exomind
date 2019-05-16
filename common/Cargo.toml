@@ -9,30 +9,30 @@ tests_utils = ["log4rs"]
 
 [dependencies]
 log = "0.4"
-serde = "1.0.80"
-serde_json = "1.0.32"
-serde_derive = "1.0.80"
-parity-multihash = "0.1.0"
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+parity-multihash = "0.1"
 sha3 = "0.8"
-bs58 = "0.2.2"
+bs58 = "0.2"
 capnp = { git = "https://github.com/appaquet/capnproto-rust.git", branch = "thread-safe-arena-readlimiter" }
 byteorder = "1.2"
-owning_ref = "0.4.0"
-lazycell = "1.2.1"
-failure = "0.1.5"
-futures = "0.1.25"
-libp2p-core = "0.8.0"
+owning_ref = "0.4"
+lazycell = "1.2"
+failure = "0.1"
+futures = "0.1"
+libp2p-core = "0.8"
 
 [target."cfg(not(any(target_os = \"emscripten\", target_os = \"unknown\")))".dependencies]
-log4rs = { version = "0.8.3", optional = true }
+log4rs = { version = "0.8", optional = true }
 
 [build-dependencies]
 capnpc = "0.9"
 
 [dev-dependencies]
-tempdir = "0.3.7"
-log4rs = "0.8.3"
-criterion_bencher_compat = "0.2.5"
+tempdir = "0.3"
+log4rs = "0.8"
+criterion_bencher_compat = "0.2"
 
 [[bench]]
 name = "capnp_msg"

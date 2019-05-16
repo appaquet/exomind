@@ -8,8 +8,10 @@ use exocore_common::node::{LocalNode, Node, NodeId};
 
 use crate::{Error, InMessage, OutMessage, TransportHandle};
 
+///
 /// In memory transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
+///
 pub struct MockTransport {
     nodes_sink: Arc<Mutex<HashMap<NodeId, mpsc::UnboundedSender<InMessage>>>>,
 }
@@ -45,9 +47,10 @@ impl MockTransport {
     }
 }
 
+///
 /// Handle taken by a Cell layer to receive and send message for a given node
+///
 pub struct MockTransportHandle {
-    // TODO: fixme
     node: Node,
     started: bool,
     nodes_sink: Weak<Mutex<HashMap<NodeId, mpsc::UnboundedSender<InMessage>>>>,
@@ -146,7 +149,9 @@ impl Drop for MockTransportHandle {
     }
 }
 
+///
 /// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
+///
 pub struct MockTransportStream {
     incoming_stream: mpsc::UnboundedReceiver<InMessage>,
 }
@@ -166,7 +171,9 @@ impl Stream for MockTransportStream {
     }
 }
 
+///
 /// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
+///
 pub struct MockTransportSink {
     in_channel: mpsc::UnboundedSender<OutMessage>,
 }

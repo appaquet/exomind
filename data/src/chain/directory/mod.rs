@@ -27,6 +27,24 @@ pub struct DirectoryChainStore {
 }
 
 impl DirectoryChainStore {
+    pub fn create_or_open(
+        config: DirectoryChainStoreConfig,
+        directory_path: &Path,
+    ) -> Result<DirectoryChainStore, Error> {
+        let paths = std::fs::read_dir(directory_path).map_err(|err| {
+            Error::IO(
+                err.kind(),
+                format!("Error listing directory {:?}: {:?}", directory_path, err),
+            )
+        })?;
+
+        if paths.count() == 0 {
+            Self::create(config, directory_path)
+        } else {
+            Self::open(config, directory_path)
+        }
+    }
+
     pub fn create(
         config: DirectoryChainStoreConfig,
         directory_path: &Path,

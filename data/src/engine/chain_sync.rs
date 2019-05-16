@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::time::Duration;
 
 use capnp::traits::ToU16;
 use exocore_common::node::{Node, NodeId};
@@ -74,9 +73,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     /// data from the lead node.
     ///
     pub fn tick(&mut self, sync_context: &mut SyncContext, store: &CS) -> Result<(), Error> {
+        let status_start = self.status;
         let nodes = self.cell.nodes().to_owned();
 
-        let (nb_nodes_metadata_sync, nb_nodes) = self.count_nodes_status(&nodes);
+        let (nb_nodes_metadata_sync, nb_nodes) = self.check_nodes_status(&nodes);
         let majority_nodes_metadata_sync = nodes.is_quorum(usize::from(nb_nodes_metadata_sync));
         debug!(
             "Sync tick begins. current_status={:?} nb_nodes={} nb_nodes_metadata_sync={}",
@@ -85,7 +85,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
         // make sure we still have majority of nodes metadata
         if self.status == Status::Synchronized && !majority_nodes_metadata_sync {
-            debug!("Lost majority of nodes being synchronized. Changing status to unknown");
+            info!("Lost majority of nodes being synchronized. Changing status to unknown");
             self.status = Status::Unknown;
             self.leader = None;
         }
@@ -95,16 +95,16 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             if let Some(leader_node_id) = self.leader.clone() {
                 let leader_node_info = self.get_or_create_node_info_mut(&leader_node_id);
                 let common_block_delta = leader_node_info.common_blocks_depth_delta().unwrap_or(0);
-                let sync_status = leader_node_info.chain_metadata_status();
+                let sync_status = leader_node_info.status();
 
-                let lost_leadership = if sync_status != NodeMetadataStatus::Synchronized {
-                    debug!(
+                let lost_leadership = if sync_status != NodeStatus::Synchronized {
+                    info!(
                         "Node {} lost leadership status because it isn't sync anymore",
                         leader_node_id
                     );
                     true
-                } else if common_block_delta > self.config.max_leader_common_block_delta {
-                    debug!("Node {} lost leadership status because of common block depth delta is too high (depth {} > depth {})", leader_node_id, common_block_delta, self.config.max_leader_common_block_delta);
+                } else if common_block_delta > self.config.max_leader_common_block_difference {
+                    info!("Node {} lost leadership status because of common block depth delta is too high (depth {} > depth {})", leader_node_id, common_block_delta, self.config.max_leader_common_block_difference);
                     true
                 } else {
                     false
@@ -114,6 +114,14 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     self.leader = None;
                     self.status = Status::Unknown;
                 }
+            }
+        }
+
+        // if we lost synchronization, we reset request trackers to allow quicker resynchronization by
+        // not waiting for request interval
+        if status_start == Status::Synchronized && self.status != Status::Synchronized {
+            for node in self.nodes_info.values_mut() {
+                node.request_tracker.reset();
             }
         }
 
@@ -148,7 +156,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // synchronize chain state with nodes
         self.synchronize_nodes_metadata(sync_context, &nodes)?;
 
-        debug!("Sync tick ended. current_status={:?}", self.status);
+        debug!(
+            "Sync tick ended. start_start={:?} status_end={:?}",
+            status_start, self.status
+        );
         Ok(())
     }
 
@@ -312,7 +323,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
         // check if we're leader, and return right away if we are
         if self.im_leader() {
-            debug!("I'm the leader. Switching status to synchronized");
+            info!("I'm the leader. Switching status to synchronized");
             self.status = Status::Synchronized;
             return Ok(());
         }
@@ -320,16 +331,16 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let leader_node_id = if let Some(leader_node_id) = self.leader.clone() {
             leader_node_id
         } else {
-            error!("Couldn't find any leader node");
+            warn!("Couldn't find any leader node");
             return Ok(());
         };
 
         // leader is another node, we check if we're already synced with it, or initiate downloading with it
-        debug!("Leader node is {}", leader_node_id);
+        info!("Our leader node is {}", leader_node_id);
         let leader_node_info = self.get_or_create_node_info_mut(&leader_node_id);
 
         if leader_node_info.chain_fully_downloaded() {
-            info!("Changing status to synchronized, as chain is full synchronized with leader");
+            info!("Changing status to synchronized, as chain is fully synchronized with leader");
             self.status = Status::Synchronized;
             return Ok(());
         }
@@ -577,7 +588,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             let request =
                 Self::create_sync_request(from_node_info, RequestedDetails::Headers, to_offset)?;
             sync_context.push_chain_sync_request(from_node_info.node_id.clone(), request);
-        } else {
+        } else if !from_node_info.last_common_is_known {
             debug!(
                 "Finished fetching metadata of node {}. last_known_block={:?}, last_common_ancestor={:?}",
                 from_node_info.node_id,
@@ -679,7 +690,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             .or_insert_with(move || NodeSyncInfo::new(node_id.clone(), config, clock))
     }
 
-    fn count_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
+    ///
+    /// Iterates through all nodes we sync against and check if their status has changed
+    ///
+    fn check_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
         let mut nodes_total = 0;
         let mut nodes_metadata_sync = 0;
         for node in nodes.iter().all() {
@@ -691,7 +705,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             }
 
             let node_info = self.get_or_create_node_info_mut(node.id());
-            if node_info.chain_metadata_status() == NodeMetadataStatus::Synchronized {
+            if node_info.check_status() == NodeStatus::Synchronized {
                 nodes_metadata_sync += 1;
             }
         }
@@ -706,8 +720,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             .values()
             .filter_map(|info| {
                 if let Some(last_known_block) = &info.last_known_block {
-                    let sync_status = info.chain_metadata_status();
-                    if sync_status == NodeMetadataStatus::Synchronized {
+                    let sync_status = info.status();
+                    if sync_status == NodeStatus::Synchronized {
                         Some((info, last_known_block.depth))
                     } else {
                         None
@@ -743,25 +757,41 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 ///
 #[derive(Copy, Clone, Debug)]
 pub struct ChainSyncConfig {
+    /// Config for requests timing tracker
     pub request_tracker: request_tracker::RequestTrackerConfig,
-    pub meta_sync_timeout: Duration,
+
+    /// Maximum number of synchronization failures before considering a node offsync
+    pub meta_sync_max_failures: usize,
+
+    /// Number of headers to always include at beginning of a headers sync request
     pub headers_sync_begin_count: BlockOffset,
+
+    /// Number of headers to always include at end of a headers sync request
     pub headers_sync_end_count: BlockOffset,
+
+    /// Number of sampled headers to include between begin and end headers of a headers sync request
     pub headers_sync_sampled_count: BlockOffset,
+
+    /// Maximum number of bytes worth of blocks to send in a response
+    /// This should be lower than transport maximum packet size
     pub blocks_max_send_size: usize,
-    pub max_leader_common_block_delta: BlockDepth,
+
+    /// Maximum depth in blocks that we can tolerate between our common ancestor block
+    /// and its latest block. If it gets higher than this value, this means that we may
+    /// have diverged and we need to re-synchronize.
+    pub max_leader_common_block_difference: BlockDepth,
 }
 
 impl Default for ChainSyncConfig {
     fn default() -> Self {
         ChainSyncConfig {
             request_tracker: request_tracker::RequestTrackerConfig::default(),
-            meta_sync_timeout: Duration::from_secs(60),
+            meta_sync_max_failures: 2,
             headers_sync_begin_count: 5,
             headers_sync_end_count: 5,
             headers_sync_sampled_count: 10,
             blocks_max_send_size: 50 * 1024,
-            max_leader_common_block_delta: 5,
+            max_leader_common_block_difference: 5,
         }
     }
 }
@@ -794,18 +824,27 @@ impl NodeSyncInfo {
         }
     }
 
-    fn chain_metadata_status(&self) -> NodeMetadataStatus {
-        let is_synced = self
-            .request_tracker
-            .last_response_elapsed_duration()
-            .map_or(false, |last_response| {
-                last_response < self.config.meta_sync_timeout
-            });
+    fn check_status(&mut self) -> NodeStatus {
+        let response_failures_count = self.request_tracker.response_failure_count();
+        let is_failed = response_failures_count >= self.config.meta_sync_max_failures;
 
-        if self.last_common_is_known && is_synced {
-            NodeMetadataStatus::Synchronized
+        if self.last_common_is_known && !is_failed {
+            NodeStatus::Synchronized
         } else {
-            NodeMetadataStatus::Unknown
+            if self.last_common_is_known {
+                debug!("Lost node {} synchronization status", self.node_id);
+                self.last_common_is_known = false;
+            }
+
+            NodeStatus::Unknown
+        }
+    }
+
+    fn status(&self) -> NodeStatus {
+        if self.last_common_is_known {
+            NodeStatus::Synchronized
+        } else {
+            NodeStatus::Unknown
         }
     }
 
@@ -857,7 +896,7 @@ impl NodeSyncInfo {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-enum NodeMetadataStatus {
+enum NodeStatus {
     Unknown,
     Synchronized,
 }
@@ -1037,7 +1076,7 @@ fn chain_sample_block_headers<CS: chain::ChainStore>(
 
 #[cfg(test)]
 mod tests {
-    use std::time::Instant;
+    use std::time::{Duration, Instant};
 
     use chain::directory::DirectoryChainStore;
     use exocore_common::serialization::framed::OwnedTypedFrame;
@@ -1048,7 +1087,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_handle_sync_response_blocks() -> Result<(), failure::Error> {
+    fn handle_sync_response_blocks() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
         cluster.chain_generate_dummy(0, 10, 1234);
         cluster.chain_generate_dummy(1, 100, 1234);
@@ -1172,10 +1211,7 @@ mod tests {
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         {
             let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
-            assert_eq!(
-                NodeMetadataStatus::Synchronized,
-                node1_node2_info.chain_metadata_status(),
-            );
+            assert_eq!(NodeStatus::Synchronized, node1_node2_info.status(),);
             assert_eq!(
                 None,
                 node1_node2_info.last_common_block.as_ref().map(|b| b.depth),
@@ -1196,7 +1232,7 @@ mod tests {
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         assert_eq!(Status::Synchronized, cluster.chains_synchronizer[0].status);
 
-        test_nodes_expect_chain_equals(&cluster.chains[0], &cluster.chains[1]);
+        nodes_expect_chain_equals(&cluster.chains[0], &cluster.chains[1]);
 
         Ok(())
     }
@@ -1212,10 +1248,7 @@ mod tests {
         for _i in 0..2 {
             run_sync_1_to_1(&mut cluster, 0, 1)?;
             let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
-            assert_eq!(
-                node1_node2_info.chain_metadata_status(),
-                NodeMetadataStatus::Synchronized
-            );
+            assert_eq!(node1_node2_info.status(), NodeStatus::Synchronized);
             assert_eq!(
                 node1_node2_info.last_common_block.as_ref().map(|b| b.depth),
                 None
@@ -1245,10 +1278,7 @@ mod tests {
         for _i in 0..2 {
             run_sync_1_to_1(&mut cluster, 0, 1)?;
             let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
-            assert_eq!(
-                node1_node2_info.chain_metadata_status(),
-                NodeMetadataStatus::Synchronized
-            );
+            assert_eq!(node1_node2_info.status(), NodeStatus::Synchronized);
             assert_eq!(
                 node1_node2_info.last_common_block.as_ref().map(|b| b.depth),
                 Some(49)
@@ -1277,10 +1307,7 @@ mod tests {
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         {
             let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
-            assert_eq!(
-                node1_node2_info.chain_metadata_status(),
-                NodeMetadataStatus::Synchronized
-            );
+            assert_eq!(node1_node2_info.status(), NodeStatus::Synchronized);
             assert_eq!(
                 node1_node2_info.last_common_block.as_ref().map(|b| b.depth),
                 Some(49)
@@ -1298,7 +1325,7 @@ mod tests {
         assert!(cluster.chains_synchronizer[0].is_leader(node1.id()));
         assert_eq!(cluster.chains_synchronizer[0].status, Status::Synchronized);
 
-        test_nodes_expect_chain_equals(&cluster.chains[0], &cluster.chains[1]);
+        nodes_expect_chain_equals(&cluster.chains[0], &cluster.chains[1]);
 
         Ok(())
     }
@@ -1314,10 +1341,7 @@ mod tests {
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         {
             let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
-            assert_eq!(
-                node1_node2_info.chain_metadata_status(),
-                NodeMetadataStatus::Synchronized
-            );
+            assert_eq!(node1_node2_info.status(), NodeStatus::Synchronized);
             assert_eq!(
                 node1_node2_info.last_common_block.as_ref().map(|b| b.depth),
                 None,
@@ -1371,10 +1395,7 @@ mod tests {
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         {
             let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
-            assert_eq!(
-                node1_node2_info.chain_metadata_status(),
-                NodeMetadataStatus::Synchronized
-            );
+            assert_eq!(node1_node2_info.status(), NodeStatus::Synchronized);
             assert_eq!(
                 node1_node2_info.last_common_block.as_ref().map(|b| b.depth),
                 Some(49),
@@ -1417,7 +1438,7 @@ mod tests {
     }
 
     #[test]
-    fn test_leader_lost_metadata_out_of_date() -> Result<(), failure::Error> {
+    fn leader_lost_metadata_out_of_date() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(4);
         cluster.chain_generate_dummy(0, 50, 3434);
         cluster.chain_generate_dummy(1, 100, 3434);
@@ -1435,16 +1456,10 @@ mod tests {
         {
             // we remove sync metadata from leader
             let node_info = cluster.chains_synchronizer[0].get_or_create_node_info_mut(node1.id());
-            assert_eq!(
-                node_info.chain_metadata_status(),
-                NodeMetadataStatus::Synchronized
-            );
+            assert_eq!(node_info.status(), NodeStatus::Synchronized);
             node_info.last_common_is_known = false;
             node_info.last_known_block = None;
-            assert_eq!(
-                node_info.chain_metadata_status(),
-                NodeMetadataStatus::Unknown
-            );
+            assert_eq!(node_info.status(), NodeStatus::Unknown);
         }
 
         // node 1 is not leader anymore
@@ -1455,7 +1470,7 @@ mod tests {
     }
 
     #[test]
-    fn test_leader_lost_chain_too_far() -> Result<(), failure::Error> {
+    fn leader_lost_chain_too_far() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(2);
         cluster.chain_generate_dummy(0, 50, 3434);
         cluster.chain_generate_dummy(1, 100, 3434);
@@ -1473,8 +1488,8 @@ mod tests {
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(10));
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         assert_eq!(
+            Status::Synchronized,
             cluster.chains_synchronizer[0].status(),
-            Status::Synchronized
         );
 
         // make leader add 10 blocks, which should now be considered as too far ahead
@@ -1484,13 +1499,13 @@ mod tests {
 
         // now, a simple tick should reset status to downloading since we need to catch up with master
         cluster.tick_chain_synchronizer(0)?;
-        assert_eq!(cluster.chains_synchronizer[0].status(), Status::Downloading);
+        assert_eq!(Status::Downloading, cluster.chains_synchronizer[0].status(),);
 
         Ok(())
     }
 
     #[test]
-    fn test_quorum_lost() -> Result<(), failure::Error> {
+    fn quorum_lost_and_regain() -> Result<(), failure::Error> {
         let mut cluster = TestCluster::new(3);
         cluster.chain_generate_dummy(0, 50, 3434);
         cluster.chain_generate_dummy(1, 100, 3434);
@@ -1499,19 +1514,34 @@ mod tests {
         run_sync_1_to_n(&mut cluster, 0)?;
         run_sync_1_to_n(&mut cluster, 0)?;
 
-        assert_eq!(cluster.chains_synchronizer[0].status, Status::Synchronized);
+        assert_eq!(Status::Synchronized, cluster.chains_synchronizer[0].status);
 
         // wipe metadata for node 1 and 2
         for node_idx in 1..=2 {
             let node = cluster.get_node(node_idx);
             let node_info = cluster.chains_synchronizer[0].get_or_create_node_info_mut(node.id());
-            node_info.last_common_is_known = false;
-            node_info.last_known_block = None;
+            assert_eq!(NodeStatus::Synchronized, node_info.check_status());
+            node_info.request_tracker.set_response_failure_count(100);
+            assert_eq!(NodeStatus::Unknown, node_info.check_status());
         }
 
-        // we lost quorum, we should now be synchronized anymore
+        // we lost quorum, we should now be synchronized anymore, no matter how many ticks we do
         cluster.tick_chain_synchronizer(0)?;
-        assert_eq!(cluster.chains_synchronizer[0].status, Status::Unknown);
+        cluster.tick_chain_synchronizer(0)?;
+        cluster.tick_chain_synchronizer(0)?;
+        assert_eq!(Status::Unknown, cluster.chains_synchronizer[0].status);
+
+        // reset request tracker to prevent waiting for last request timeout
+        for node_idx in 1..=2 {
+            let node = cluster.get_node(node_idx);
+            let node_info = cluster.chains_synchronizer[0].get_or_create_node_info_mut(node.id());
+            node_info.request_tracker.reset();
+        }
+
+        // now we do full sync between nodes, it will put back status
+        run_sync_1_to_n(&mut cluster, 0)?;
+        run_sync_1_to_n(&mut cluster, 0)?;
+        assert_eq!(Status::Synchronized, cluster.chains_synchronizer[0].status);
 
         Ok(())
     }
@@ -1620,7 +1650,7 @@ mod tests {
         Ok((count_1_to_2, count_2_to_1))
     }
 
-    fn test_nodes_expect_chain_equals(
+    fn nodes_expect_chain_equals(
         chain1: &chain::directory::DirectoryChainStore,
         chain2: &chain::directory::DirectoryChainStore,
     ) {

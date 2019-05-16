@@ -320,7 +320,7 @@ where
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         error: Error,
     ) {
-        error!("Got an error in future {}: {:?}", future_name, error);
+        error!("Got an error in future {}: {}", future_name, error);
 
         let locked_inner = if let Some(locked_inner) = weak_inner.upgrade() {
             locked_inner
@@ -733,12 +733,15 @@ where
     PS: pending::PendingStore,
 {
     fn drop(&mut self) {
+        debug!("Engine handle got dropped.");
+
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut unlocked_inner) = inner.write() {
                 unlocked_inner.unregister_handle(self.id);
 
                 // if it was last handle, we kill the engine
                 if unlocked_inner.handles_sender.is_empty() {
+                    debug!("Last engine handle got dropped, killing the engine.");
                     unlocked_inner.try_complete_engine(Ok(()));
                 }
             }
