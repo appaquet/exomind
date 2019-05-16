@@ -10,7 +10,7 @@ use structopt::StructOpt;
 /// Main cli options
 ///
 #[derive(StructOpt)]
-#[structopt(name = "cli", about = "Exocore CLI")]
+#[structopt(name = "exocore-cli", about = "Exocore Command Line Interface")]
 pub struct Options {
     #[structopt(long, short, default_value = "info")]
     /// Logging level (off, error, warn, info, debug, trace)
@@ -32,7 +32,7 @@ pub struct ServerOptions {
     pub data_node: bool,
     #[structopt(long, short = "i")]
     pub index_node: bool,
-    #[structopt(short = "c")]
+    #[structopt(short = "c", default_value = "config.yaml")]
     pub config: PathBuf,
     #[structopt(subcommand)]
     pub command: ServerCommand,
@@ -81,7 +81,7 @@ impl FromStr for KeyAlgorithm {
 ///
 #[derive(StructOpt)]
 pub struct CellOptions {
-    #[structopt(long, short)]
+    #[structopt(long, short, default_value = "config.yaml")]
     pub config: PathBuf,
     #[structopt(long, short)]
     /// Public key of the cell we want to make an action on

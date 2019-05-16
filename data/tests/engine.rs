@@ -371,7 +371,7 @@ impl TestCluster {
         self.handles[node_idx] = Some(engine_handle);
 
         self.runtime
-            .spawn(engine.map_err(|err| error!("Got an error in engine: {:?}", err)));
+            .spawn(engine.map_err(|err| error!("Got an error in engine: {}", err)));
     }
 
     fn wait_started(&self, node_idx: usize) {

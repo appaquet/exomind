@@ -34,7 +34,11 @@ impl DirectoryChainStore {
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
             Error::IO(
                 err.kind(),
-                format!("Error listing directory {:?}: {:?}", directory_path, err),
+                format!(
+                    "Error listing directory {}: {}",
+                    directory_path.to_string_lossy(),
+                    err
+                ),
             )
         })?;
 
@@ -59,7 +63,11 @@ impl DirectoryChainStore {
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
             Error::IO(
                 err.kind(),
-                format!("Error listing directory {:?}: {:?}", directory_path, err),
+                format!(
+                    "Error listing directory {}: {}",
+                    directory_path.to_string_lossy(),
+                    err
+                ),
             )
         })?;
 
@@ -95,15 +103,16 @@ impl DirectoryChainStore {
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
             Error::IO(
                 err.kind(),
-                format!("Error listing directory {:?}: {:?}", directory_path, err),
+                format!(
+                    "Error listing directory {}: {}",
+                    directory_path.to_string_lossy(),
+                    err
+                ),
             )
         })?;
         for path in paths {
             let path = path.map_err(|err| {
-                Error::IO(
-                    err.kind(),
-                    format!("Error getting directory entry {:?}", err),
-                )
+                Error::IO(err.kind(), format!("Error getting directory entry {}", err))
             })?;
 
             if DirectorySegment::is_segment_file(&path.path()) {
@@ -380,7 +389,7 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
                 let block = segment
                     .get_block(self.current_offset)
                     .map_err(|err| {
-                        error!("Got an error getting block in iterator: {:?}", err);
+                        error!("Got an error getting block in iterator: {}", err);
                         self.last_error = Some(err);
                     })
                     .ok()?;

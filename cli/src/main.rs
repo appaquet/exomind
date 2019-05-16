@@ -23,16 +23,21 @@ fn main() -> Result<(), failure::Error> {
     logging::setup(Some(LevelFilter::from_str(&opt.logging_level)?));
 
     use options::{CellCommand, KeysCommand, ServerCommand, SubCommand};
-    match &opt.subcommand {
+    let result = match &opt.subcommand {
         SubCommand::server(server_opts) => match server_opts.command {
-            ServerCommand::start => server_start(&opt, server_opts)?,
+            ServerCommand::start => server_start(&opt, server_opts),
         },
         SubCommand::keys(keys_opts) => match keys_opts.command {
-            KeysCommand::generate => keys_generate(&opt, keys_opts)?,
+            KeysCommand::generate => keys_generate(&opt, keys_opts),
         },
         SubCommand::cell(cell_opts) => match cell_opts.command {
-            CellCommand::create_genesis_block => cell_genesis_block(&opt, cell_opts)?,
+            CellCommand::create_genesis_block => cell_genesis_block(&opt, cell_opts),
         },
+    };
+
+    if let Err(err) = result {
+        println!("Error: {}", err);
+        println!("Backtrace: {}", err.backtrace());
     }
 
     Ok(())

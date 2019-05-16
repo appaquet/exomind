@@ -1,0 +1,22 @@
+
+node_keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
+node_public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+
+listen_addresses:
+  - /ip4/0.0.0.0/tcp/3330
+
+cells:
+   - public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
+     keypair: ae55Nfv11ppyFVxCDaYovcxTcaTDaSzSFjiVoiC3VwGARfEuaqGcgoJUdVpqfwKQVDN4rvGKUvt4yqQc6w7it7PCpG
+     data_directory: path/to/data
+     nodes:
+       - public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+         addresses:
+           - /ip4/127.0.0.1/tcp/3330
+       - public_key: pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb
+         addresses:
+           - /ip4/127.0.0.1/tcp/3331
+       - public_key: peDEpWCwRyMA6QVtz1wBdfKWx8xTYC8CVerF7pSTUsxfxc
+         addresses:
+           - /ip4/138.197.165.47/tcp/3332
+

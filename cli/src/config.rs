@@ -22,10 +22,22 @@ impl NodeConfig {
             .read(true)
             .write(false)
             .create(false)
-            .open(path.as_ref())?;
+            .open(path.as_ref())
+            .map_err(|err| {
+                err_msg(format!(
+                    "Couldn't open config file {:?}: {}",
+                    path.as_ref(),
+                    err
+                ))
+            })?;
 
-        let config = serde_yaml::from_reader(file)
-            .map_err(|err| err_msg(format!("Couldn't read yaml file: {:?}", err)))?;
+        let config = serde_yaml::from_reader(file).map_err(|err| {
+            err_msg(format!(
+                "Couldn't read yaml file {:?}: {}",
+                path.as_ref(),
+                err
+            ))
+        })?;
 
         Ok(config)
     }

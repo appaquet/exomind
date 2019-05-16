@@ -232,7 +232,7 @@ where
             let weak_inner2 = Arc::downgrade(&self.inner);
             tokio::spawn({
                 Interval::new_interval(self.config.manager_timer_interval)
-                    .map_err(|err| Error::Other(format!("Interval error: {:?}", err)))
+                    .map_err(|err| Error::Other(format!("Interval error: {}", err)))
                     .for_each(move |_| {
                         Self::handle_management_timer_tick(&weak_inner1)
                             .or_else(Error::recover_non_fatal_error)

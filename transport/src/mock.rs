@@ -161,12 +161,9 @@ impl Stream for MockTransportStream {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.incoming_stream.poll().map_err(|err| {
-            error!(
-                "Error receiving from incoming stream in MockTransportStream: {:?}",
-                err
-            );
-            Error::Other(format!("Error receiving from incoming stream: {:?}", err))
+        self.incoming_stream.poll().map_err(|_err| {
+            error!("Error receiving from incoming stream in MockTransportStream",);
+            Error::Other("Error receiving from incoming stream".to_string())
         })
     }
 }
@@ -184,17 +181,14 @@ impl Sink for MockTransportSink {
 
     fn start_send(&mut self, item: OutMessage) -> StartSend<OutMessage, Error> {
         self.in_channel.start_send(item).map_err(|err| {
-            Error::Other(format!(
-                "Error calling 'start_send' to in_channel: {:?}",
-                err
-            ))
+            Error::Other(format!("Error calling 'start_send' to in_channel: {}", err))
         })
     }
 
     fn poll_complete(&mut self) -> Poll<(), Error> {
         self.in_channel.poll_complete().map_err(|err| {
             Error::Other(format!(
-                "Error calling 'poll_complete' to in_channel: {:?}",
+                "Error calling 'poll_complete' to in_channel: {}",
                 err
             ))
         })
@@ -203,7 +197,7 @@ impl Sink for MockTransportSink {
     fn close(&mut self) -> Poll<(), Error> {
         self.in_channel
             .close()
-            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {:?}", err)))
+            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {}", err)))
     }
 }
 
@@ -250,7 +244,7 @@ impl Future for CompletionFuture {
         self.0
             .poll()
             .map(|asnc| asnc.map(|_| ()))
-            .map_err(|err| Error::Other(format!("Polling completion receiver failed: {:?}", err)))
+            .map_err(|err| Error::Other(format!("Polling completion receiver failed: {}", err)))
     }
 }
 

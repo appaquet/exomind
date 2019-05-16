@@ -211,7 +211,7 @@ impl Libp2pTransport {
                         }
                     }
                     Err(err) => {
-                        error!("Couldn't serialize frame to data: {:?}", err);
+                        error!("Couldn't serialize frame to data: {}", err);
                     }
                 }
             }
@@ -221,7 +221,7 @@ impl Libp2pTransport {
                 match data {
                     ExocoreBehaviourEvent::Message(msg) => {
                         if let Err(err) = Self::dispatch_message(&inner, &msg) {
-                            warn!("Couldn't dispatch message from {}: {:?}", msg.source, err);
+                            warn!("Couldn't dispatch message from {}: {}", msg.source, err);
                         }
 
                         trace!("Got message from {}", msg.source,);
@@ -300,7 +300,7 @@ impl Libp2pTransport {
         layer_stream
             .in_sender
             .try_send(msg)
-            .map_err(|err| Error::Other(format!("Couldn't send message to cell layer: {:?}", err)))
+            .map_err(|err| Error::Other(format!("Couldn't send message to cell layer: {}", err)))
     }
 }
 
@@ -378,12 +378,9 @@ impl Stream for MpscLayerStream {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.receiver.poll().map_err(|err| {
-            error!(
-                "Error receiving from incoming stream in MockTransportStream: {:?}",
-                err
-            );
-            Error::Other(format!("Error receiving from incoming stream: {:?}", err))
+        self.receiver.poll().map_err(|_err| {
+            error!("Error receiving from incoming stream in MockTransportStream",);
+            Error::Other("Error receiving from incoming stream".to_string())
         })
     }
 }
@@ -399,17 +396,14 @@ impl Sink for MpscLayerSink {
 
     fn start_send(&mut self, item: OutMessage) -> StartSend<OutMessage, Error> {
         self.sender.start_send(item).map_err(|err| {
-            Error::Other(format!(
-                "Error calling 'start_send' to in_channel: {:?}",
-                err
-            ))
+            Error::Other(format!("Error calling 'start_send' to in_channel: {}", err))
         })
     }
 
     fn poll_complete(&mut self) -> Poll<(), Error> {
         self.sender.poll_complete().map_err(|err| {
             Error::Other(format!(
-                "Error calling 'poll_complete' to in_channel: {:?}",
+                "Error calling 'poll_complete' to in_channel: {}",
                 err
             ))
         })
@@ -418,7 +412,7 @@ impl Sink for MpscLayerSink {
     fn close(&mut self) -> Poll<(), Error> {
         self.sender
             .close()
-            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {:?}", err)))
+            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {}", err)))
     }
 }
 

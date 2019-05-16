@@ -44,7 +44,7 @@ impl<T: Serialize + DeserializeOwned> SimpleStore<T> for JsonDiskStore<T> {
             .open(&self.path)?;
 
         serde_json::from_reader(file).map_err(|err| {
-            error!("Couldn't decode stored JSON file: {:?}", err);
+            error!("Couldn't decode stored JSON file: {}", err);
             Error::new(ErrorKind::InvalidData, "Invalid json data")
         })
     }
