@@ -1,9 +1,10 @@
 pub mod behaviour;
 pub mod protocol;
 
-use crate::layer::{TransportHandle, TransportLayer};
 use crate::messages::{InMessage, OutMessage};
+use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::Error;
+use crate::{TransportHandle, TransportLayer};
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_common::cell::{Cell, CellId, CellNodes};
 use exocore_common::node::{LocalNode, NodeId};
@@ -17,7 +18,9 @@ use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
 use tokio_timer::Interval;
 
+///
 /// libp2p transport configuration
+///
 #[derive(Clone)]
 pub struct Config {
     pub listen_address: Option<Multiaddr>,
@@ -60,14 +63,14 @@ impl Default for Config {
 pub struct Libp2pTransport {
     local_node: LocalNode,
     config: Config,
-    inner: Arc<RwLock<Inner>>,
+    inner: Arc<RwLock<InnerTransport>>,
 }
 
-struct Inner {
+struct InnerTransport {
     handles: HashMap<(CellId, TransportLayer), InnerHandle>,
 }
 
-impl Inner {
+impl InnerTransport {
     fn all_peers(&self) -> HashSet<(PeerId, Vec<Multiaddr>)> {
         let mut peers = HashSet::new();
         for inner_layer in self.handles.values() {
@@ -91,7 +94,7 @@ impl Libp2pTransport {
     /// since all messages are authenticated using the node's private key thanks to secio
     ///
     pub fn new(local_node: LocalNode, config: Config) -> Libp2pTransport {
-        let inner = Inner {
+        let inner = InnerTransport {
             handles: HashMap::new(),
         };
 
@@ -252,9 +255,11 @@ impl Libp2pTransport {
         Ok(())
     }
 
+    ///
     /// Dispatches a received message from libp2p to corresponding handle
+    ///
     fn dispatch_message(
-        inner: &RwLock<Inner>,
+        inner: &RwLock<InnerTransport>,
         message: &ExocoreBehaviourMessage,
     ) -> Result<(), Error> {
         let frame = TypedSliceFrame::<envelope::Owned>::new(&message.data)?;
@@ -316,30 +321,28 @@ impl Future for Libp2pTransport {
     }
 }
 
+///
 /// Handle taken by a Cell layer to receive and send message for a given node & cell.
+///
 pub struct Libp2pTransportHandle {
     cell_id: CellId,
     layer: TransportLayer,
-    inner: Weak<RwLock<Inner>>,
+    inner: Weak<RwLock<InnerTransport>>,
 
     sink: Option<mpsc::Sender<OutMessage>>,
     stream: Option<mpsc::Receiver<InMessage>>,
 }
 
 impl TransportHandle for Libp2pTransportHandle {
-    type Sink = MpscLayerSink;
-    type Stream = MpscLayerStream;
+    type Sink = MpscHandleSink;
+    type Stream = MpscHandleStream;
 
     fn get_sink(&mut self) -> Self::Sink {
-        MpscLayerSink {
-            sender: self.sink.take().expect("Sink was already consumed"),
-        }
+        MpscHandleSink::new(self.sink.take().expect("Sink was already consumed"))
     }
 
     fn get_stream(&mut self) -> Self::Stream {
-        MpscLayerStream {
-            receiver: self.stream.take().expect("Stream was already consumed"),
-        }
+        MpscHandleStream::new(self.stream.take().expect("Stream was already consumed"))
     }
 }
 
@@ -348,7 +351,7 @@ impl Future for Libp2pTransportHandle {
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        Ok(Async::Ready(()))
+        Ok(Async::NotReady)
     }
 }
 
@@ -365,54 +368,6 @@ impl Drop for Libp2pTransportHandle {
                 inner.handles.remove(&(self.cell_id.clone(), self.layer));
             }
         }
-    }
-}
-
-/// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
-pub struct MpscLayerStream {
-    receiver: mpsc::Receiver<InMessage>,
-}
-
-impl Stream for MpscLayerStream {
-    type Item = InMessage;
-    type Error = Error;
-
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.receiver.poll().map_err(|_err| {
-            error!("Error receiving from incoming stream in MockTransportStream",);
-            Error::Other("Error receiving from incoming stream".to_string())
-        })
-    }
-}
-
-/// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
-pub struct MpscLayerSink {
-    sender: mpsc::Sender<OutMessage>,
-}
-
-impl Sink for MpscLayerSink {
-    type SinkItem = OutMessage;
-    type SinkError = Error;
-
-    fn start_send(&mut self, item: OutMessage) -> StartSend<OutMessage, Error> {
-        self.sender.start_send(item).map_err(|err| {
-            Error::Other(format!("Error calling 'start_send' to in_channel: {}", err))
-        })
-    }
-
-    fn poll_complete(&mut self) -> Poll<(), Error> {
-        self.sender.poll_complete().map_err(|err| {
-            Error::Other(format!(
-                "Error calling 'poll_complete' to in_channel: {}",
-                err
-            ))
-        })
-    }
-
-    fn close(&mut self) -> Poll<(), Error> {
-        self.sender
-            .close()
-            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {}", err)))
     }
 }
 

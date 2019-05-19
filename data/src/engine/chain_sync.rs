@@ -472,8 +472,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let mut data_size = 0;
         let blocks = blocks_iter
             .take_while(|block| {
+                // check if we reached max at first so that we send at least 1 block even if it max out
+                let is_full = data_size < config.blocks_max_send_size;
                 data_size += block.total_size();
-                data_size < config.blocks_max_send_size
+                is_full
             })
             .collect::<Vec<_>>();
         let blocks_len = blocks.len() as u32;
@@ -1359,6 +1361,13 @@ mod tests {
 
         // still unknown since we don't have a clear leader, as we've diverged from it
         assert_eq!(cluster.chains_synchronizer[0].status, Status::Unknown);
+
+        Ok(())
+    }
+
+    #[test]
+    fn sync_single_block_even_if_max_out_size() -> Result<(), failure::Error> {
+        // TODO:
 
         Ok(())
     }

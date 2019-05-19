@@ -224,6 +224,12 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
     Ok(())
 }
 
+#[test]
+fn test_lot_of_pending_second_node_crash() -> Result<(), failure::Error> {
+    // TODO:
+    Ok(())
+}
+
 ///
 /// Cluster testing utility
 ///

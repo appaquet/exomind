@@ -11,7 +11,14 @@
     * On MacOS: `brew install capnp` 
     * On Ubuntu: `apt install capnproto` 
 * Clang (for WASM compilation)
-    * On MacOS: should already be installed with Xcode
+    * On MacOS: 
+        * Unfortunately, clang installed by Xcode isn't recent enough to compile to WASM. Follow instructions on 
+          [this page](https://00f.net/2019/04/07/compiling-to-webassembly-with-llvm-and-clang/)
+          to instal LLVM 8 from HomeBrew.
+        * `brew install llvm`
+        * Use LLVM from HomeBrew:
+            * Bash `export PATH=/usr/local/opt/llvm/bin:$PATH`
+            * Fish `set -g fish_user_paths "/usr/local/opt/llvm/bin" $fish_user_paths`
     * On Ubuntu: `apt install clang`
 
 ## Setup
@@ -30,6 +37,9 @@
 * Ideally, use [CLion](https://www.jetbrains.com/clion/) with the [Rust plugin](https://github.com/intellij-rust/intellij-rust). 
   You can also use IntelliJ, only CLion has debugger support.
 * For CLion's profile, see [install profiler](https://www.jetbrains.com/help/clion/cpu-profiler.html)
+
+## WASM
+* Install [`wasm-pack`](https://github.com/rustwasm/wasm-pack)
 
 ## Documentation
 * [Replication](data/replication.md)

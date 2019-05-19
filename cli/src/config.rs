@@ -5,6 +5,7 @@ use failure::err_msg;
 use serde_derive::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
+use std::net::SocketAddr;
 
 ///
 /// Root of the configuration, representing configuration for the node
@@ -14,6 +15,7 @@ pub struct NodeConfig {
     pub node_keypair: String,
     pub cells: Vec<CellConfig>,
     pub listen_addresses: Vec<String>,
+    pub websocket_listen_address: Option<SocketAddr>,
 }
 
 impl NodeConfig {
