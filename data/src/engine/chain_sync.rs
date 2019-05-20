@@ -978,7 +978,7 @@ impl BlockHeader {
 ///
 /// Chain synchronizer specific error
 ///
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 pub enum ChainSyncError {
     #[fail(display = "Got an invalid sync request: {}", _0)]
     InvalidSyncRequest(String),

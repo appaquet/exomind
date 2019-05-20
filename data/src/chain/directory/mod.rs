@@ -11,6 +11,7 @@ mod operations_index;
 mod segment;
 
 use operations_index::OperationsIndex;
+use std::sync::Arc;
 
 ///
 /// Directory based chain persistence. The chain is split in segments with configurable maximum size.
@@ -433,12 +434,12 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
 ///
 /// Directory chain store specific errors
 ///
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 pub enum DirectoryError {
     #[fail(display = "Error building operations index: {:?}", _0)]
-    OperationsIndexBuild(extindex::BuilderError),
+    OperationsIndexBuild(Arc<extindex::BuilderError>),
     #[fail(display = "Error reading operations index: {:?}", _0)]
-    OperationsIndexRead(extindex::ReaderError),
+    OperationsIndexRead(Arc<extindex::ReaderError>),
 }
 
 #[cfg(test)]

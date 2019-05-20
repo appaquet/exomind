@@ -40,9 +40,11 @@ impl Into<u8> for TransportLayer {
 /// other nodes for a given cell.
 ///
 pub trait TransportHandle: Future<Item = (), Error = Error> + Send + 'static {
+    type StartFuture: Future<Item = (), Error = Error>;
     type Sink: Sink<SinkItem = OutMessage, SinkError = Error> + Send + 'static;
     type Stream: Stream<Item = InMessage, Error = Error> + Send + 'static;
 
+    fn on_start(&self) -> Self::StartFuture;
     fn get_sink(&mut self) -> Self::Sink;
     fn get_stream(&mut self) -> Self::Stream;
 }
@@ -56,9 +58,7 @@ pub struct MpscHandleStream {
 
 impl MpscHandleStream {
     pub fn new(receiver: mpsc::Receiver<InMessage>) -> MpscHandleStream {
-        MpscHandleStream {
-            receiver
-        }
+        MpscHandleStream { receiver }
     }
 }
 
@@ -83,9 +83,7 @@ pub struct MpscHandleSink {
 
 impl MpscHandleSink {
     pub fn new(sender: mpsc::Sender<OutMessage>) -> MpscHandleSink {
-        MpscHandleSink {
-            sender
-        }
+        MpscHandleSink { sender }
     }
 }
 
@@ -114,4 +112,3 @@ impl Sink for MpscHandleSink {
             .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {}", err)))
     }
 }
-

@@ -31,7 +31,7 @@ impl ExocoreClient {
     pub fn new() -> Result<ExocoreClient, JsValue> {
         stdweb::initialize();
 
-        let mut ws = WebSocket::new_with_protocols("ws://127.0.0.1:3341", &["exocore_websocket"]).unwrap();
+        let ws = WebSocket::new_with_protocols("ws://127.0.0.1:3341", &["exocore_websocket"]).unwrap();
         ws.set_binary_type(SocketBinaryType::ArrayBuffer);
 
         // SEE: https://github.com/koute/stdweb/blob/dff1e06086124fe79e3393a99ae8e2d424f5b2f1/examples/echo/src/main.rs
@@ -42,7 +42,7 @@ impl ExocoreClient {
             log(&format!("Got message> {}", String::from_utf8_lossy(envelope_reader.get_data().unwrap())));
         });
 
-        ws.add_event_listener(move |event: SocketOpenEvent| {
+        ws.add_event_listener(move |_event: SocketOpenEvent| {
             log("Connected");
         });
 

@@ -1,13 +1,13 @@
 use crate::engine::{chain_sync, commit_manager, pending_sync};
 use crate::{block, chain, operation, pending};
 use exocore_common::serialization::{capnp, framed};
-use exocore_transport::{Error as TransportError};
+use exocore_transport::Error as TransportError;
 use futures::sync::mpsc;
 
 ///
 /// Engine errors
 ///
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 pub enum Error {
     #[fail(display = "Error in transport: {:?}", _0)]
     Transport(#[fail(cause)] TransportError),
@@ -20,7 +20,7 @@ pub enum Error {
     #[fail(display = "Error in chain synchronizer: {:?}", _0)]
     ChainSync(#[fail(cause)] chain_sync::ChainSyncError),
     #[fail(display = "Error in commit manager: {:?}", _0)]
-    CommitManager(commit_manager::CommitManagerError),
+    CommitManager(#[fail(cause)] commit_manager::CommitManagerError),
     #[fail(display = "Got a block related error: {:?}", _0)]
     Block(#[fail(cause)] block::Error),
     #[fail(display = "Got an operation related error: {:?}", _0)]

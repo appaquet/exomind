@@ -968,7 +968,7 @@ impl PendingBlockSignature {
 ///
 /// CommitManager related error
 ///
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 pub enum CommitManagerError {
     #[fail(display = "Invalid signature in commit manager: {}", _0)]
     InvalidSignature(String),

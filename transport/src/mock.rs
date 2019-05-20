@@ -2,12 +2,14 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
 use futures::prelude::*;
-use futures::sync::{mpsc, oneshot};
+use futures::sync::mpsc;
 
 use exocore_common::node::{LocalNode, Node, NodeId};
 
 use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::{Error, InMessage, OutMessage, TransportHandle};
+use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
+use futures::future::FutureResult;
 
 const CHANNELS_SIZE: usize = 1000;
 
@@ -36,7 +38,7 @@ impl MockTransport {
         nodes_sink.insert(node.id().clone(), incoming_sender);
 
         // completion handler
-        let (completion_sender, completion_future) = CompletionSender::new();
+        let (completion_notifier, completion_listener) = CompletionNotifier::new_with_listener();
 
         MockTransportHandle {
             node: node.node().clone(),
@@ -44,8 +46,8 @@ impl MockTransport {
             nodes_sink: Arc::downgrade(&self.nodes_sink),
             incoming_stream: Some(incoming_receiver),
             outgoing_stream: None,
-            completion_sender,
-            completion_future,
+            completion_notifier,
+            completion_listener,
         }
     }
 }
@@ -59,13 +61,18 @@ pub struct MockTransportHandle {
     nodes_sink: Weak<Mutex<HashMap<NodeId, mpsc::Sender<InMessage>>>>,
     incoming_stream: Option<mpsc::Receiver<InMessage>>,
     outgoing_stream: Option<mpsc::Receiver<OutMessage>>,
-    completion_sender: CompletionSender,
-    completion_future: CompletionFuture,
+    completion_notifier: CompletionNotifier<(), Error>,
+    completion_listener: CompletionListener<(), Error>,
 }
 
 impl TransportHandle for MockTransportHandle {
+    type StartFuture = FutureResult<(), Error>;
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
+
+    fn on_start(&self) -> Self::StartFuture {
+        futures::done(Ok(()))
+    }
 
     fn get_sink(&mut self) -> Self::Sink {
         let (sender, receiver) = mpsc::channel(CHANNELS_SIZE);
@@ -99,7 +106,7 @@ impl Future for MockTransportHandle {
 
             let node = self.node.clone();
             let nodes_sink_weak = Weak::clone(&self.nodes_sink);
-            let completion_handle = self.completion_sender.clone();
+            let completion_handle = self.completion_notifier.clone();
             tokio_executor::spawn(outgoing_stream.for_each(move |message| {
                 let nodes_sink = nodes_sink_weak.upgrade().ok_or_else(|| {
                     error!(
@@ -134,7 +141,9 @@ impl Future for MockTransportHandle {
             self.started = true;
         }
 
-        self.completion_future.poll()
+        self.completion_listener
+            .poll()
+            .map_err(|_err| Error::Other("Completion listener".to_string()))
     }
 }
 
@@ -149,53 +158,6 @@ impl Drop for MockTransportHandle {
                 node_sinks.remove(self.node.id());
             }
         }
-    }
-}
-
-///
-/// Exposes a barrier like structure that will resolve future once the `CompletionSender` got
-/// completed.
-///
-#[derive(Clone)]
-pub struct CompletionSender {
-    sender: Arc<Mutex<Option<CompletionChannelSender>>>,
-}
-
-type CompletionChannelSender = oneshot::Sender<Result<(), Error>>;
-
-impl CompletionSender {
-    pub fn new() -> (CompletionSender, CompletionFuture) {
-        let (sender, receiver) = oneshot::channel();
-
-        let sender = CompletionSender {
-            sender: Arc::new(Mutex::new(Some(sender))),
-        };
-        let future = CompletionFuture(receiver);
-        (sender, future)
-    }
-}
-
-impl CompletionSender {
-    pub fn complete(&self, result: Result<(), Error>) {
-        if let Ok(mut unlocked) = self.sender.lock() {
-            if let Some(sender) = unlocked.take() {
-                let _ = sender.send(result);
-            }
-        }
-    }
-}
-
-pub struct CompletionFuture(oneshot::Receiver<Result<(), Error>>);
-
-impl Future for CompletionFuture {
-    type Item = ();
-    type Error = Error;
-
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        self.0
-            .poll()
-            .map(|asnc| asnc.map(|_| ()))
-            .map_err(|err| Error::Other(format!("Polling completion receiver failed: {}", err)))
     }
 }
 
@@ -254,7 +216,7 @@ mod test {
         let _transport_sink = transport.get_sink();
         let _transport_stream = transport.get_stream();
 
-        let transport_completion_sender = transport.completion_sender.clone();
+        let transport_completion_sender = transport.completion_notifier.clone();
 
         let (transport_future, transport_future_watch) =
             FutureWatch::new(transport.map_err(|_| ()));

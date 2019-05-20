@@ -18,6 +18,7 @@ use exocore_common::simple_store::SimpleStore;
 use crate::chain::{Block, BlockOffset, Error};
 
 use super::{DirectoryChainStoreConfig, DirectoryError};
+use std::sync::Arc;
 
 ///
 /// Operation ID to Block offset index. This is used to retrieve the block offset in which a given
@@ -119,8 +120,8 @@ impl OperationsIndex {
         let mut stored_indices = Vec::new();
         for index_file_metadata in metadata.files.iter() {
             let index_file_path = directory_path.join(&index_file_metadata.file_name);
-            let index_reader =
-                Reader::open(index_file_path).map_err(DirectoryError::OperationsIndexRead)?;
+            let index_reader = Reader::open(index_file_path)
+                .map_err(|err| DirectoryError::OperationsIndexRead(Arc::new(err)))?;
 
             stored_indices.push(StoredIndex {
                 range: index_file_metadata.offset_from..index_file_metadata.offset_to,
@@ -217,7 +218,7 @@ impl OperationsIndex {
             let opt_entry = index
                 .index_reader
                 .find(&needle)
-                .map_err(DirectoryError::OperationsIndexRead)?;
+                .map_err(|err| DirectoryError::OperationsIndexRead(Arc::new(err)))?;
 
             if let Some(entry) = opt_entry {
                 return Ok(Some(entry.value().offset));
@@ -302,11 +303,11 @@ impl OperationsIndex {
                 Builder::<StoredIndexKey, StoredIndexValue>::new(index_file.clone());
             index_builder
                 .build_from_sorted(ops_iter, ops_count)
-                .map_err(DirectoryError::OperationsIndexBuild)?;
+                .map_err(|err| DirectoryError::OperationsIndexBuild(Arc::new(err)))?;
 
             // open the index we just created
-            let index_reader =
-                Reader::open(index_file).map_err(DirectoryError::OperationsIndexRead)?;
+            let index_reader = Reader::open(index_file)
+                .map_err(|err| DirectoryError::OperationsIndexRead(Arc::new(err)))?;
             let stored_index = StoredIndex {
                 range,
                 index_reader,

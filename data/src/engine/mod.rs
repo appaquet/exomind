@@ -5,14 +5,13 @@ use std::time::Duration;
 
 use futures::prelude::*;
 use futures::sync::mpsc;
-use futures::sync::oneshot;
 use tokio;
 use tokio::timer::Interval;
 
 use crate::operation::OperationId;
 use exocore_common;
 use exocore_common::node::NodeId;
-use exocore_common::serialization::capnp;
+use exocore_common::serialization::framed::TypedFrame;
 use exocore_common::serialization::framed::{
     FrameBuilder, MessageType, OwnedTypedFrame, TypedSliceFrame,
 };
@@ -20,7 +19,6 @@ use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
 use exocore_common::serialization::protos::data_transport_capnp::{
     chain_sync_request, chain_sync_response, envelope, pending_sync_request,
 };
-use exocore_common::serialization::{framed, framed::TypedFrame};
 
 use crate::block;
 use crate::block::{Block, BlockOffset, BlockRef};
@@ -43,6 +41,9 @@ pub use chain_sync::ChainSyncConfig;
 pub use commit_manager::CommitManagerConfig;
 pub use errors::Error;
 use exocore_common::cell::{Cell, CellNodes};
+use exocore_common::utils::completion_notifier::{
+    CompletionError, CompletionListener, CompletionNotifier,
+};
 pub use pending_sync::PendingSyncConfig;
 
 #[cfg(any(test, feature = "tests_utils"))]
@@ -85,12 +86,12 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
+    start_notifier: CompletionNotifier<(), Error>,
     config: Config,
-    started: bool,
     transport: Option<T>,
     inner: Arc<RwLock<Inner<CS, PS>>>,
     handles_count: usize,
-    completion_receiver: oneshot::Receiver<Result<(), Error>>,
+    stop_listener: CompletionListener<(), Error>,
 }
 
 impl<T, CS, PS> Engine<T, CS, PS>
@@ -107,7 +108,8 @@ where
         pending_store: PS,
         cell: Cell,
     ) -> Engine<T, CS, PS> {
-        let (completion_sender, completion_receiver) = oneshot::channel();
+        let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
+        let start_notifier = CompletionNotifier::new();
 
         let pending_synchronizer = pending_sync::PendingSynchronizer::new(
             config.pending_synchronizer_config,
@@ -135,17 +137,17 @@ where
             commit_manager,
             handles_sender: Vec::new(),
             transport_sender: None,
-            completion_sender: Some(completion_sender),
             sync_state: SyncState::default(),
+            stop_notifier,
         }));
 
         Engine {
+            start_notifier,
             config,
-            started: false,
             inner,
             handles_count: 0,
             transport: Some(transport),
-            completion_receiver,
+            stop_listener,
         }
     }
 
@@ -154,6 +156,16 @@ where
             .inner
             .write()
             .expect("Inner couldn't get locked, but engine isn't even started yet.");
+
+        let start_listener = self
+            .start_notifier
+            .get_listener()
+            .expect("Couldn't get start listener for handle");
+
+        let stop_listener = unlocked_inner
+            .stop_notifier
+            .get_listener()
+            .expect("Couldn't get stop listener for handle");
 
         let id = self.handles_count;
         self.handles_count += 1;
@@ -168,6 +180,8 @@ where
             id,
             inner: Arc::downgrade(&self.inner),
             events_receiver: Some(events_receiver),
+            start_listener,
+            stop_listener,
         }
     }
 
@@ -260,7 +274,6 @@ where
             unlocked_inner.notify_handles(&Event::Started);
         }
 
-        self.started = true;
         info!("Engine started!");
         Ok(())
     }
@@ -330,13 +343,13 @@ where
             return;
         };
 
-        let mut inner = if let Ok(inner) = locked_inner.write() {
+        let inner = if let Ok(inner) = locked_inner.read() {
             inner
         } else {
             return;
         };
 
-        inner.try_complete_engine(Err(Error::Other(format!(
+        inner.stop_notifier.complete(Err(Error::Other(format!(
             "Couldn't send to completion channel: {:?}",
             error
         ))));
@@ -353,17 +366,22 @@ where
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<()>, Error> {
-        if !self.started {
-            self.start()?;
+        // first, make sure transport is started
+        if let Some(transport_handle) = &self.transport {
+            try_ready!(transport_handle.on_start().poll());
         }
 
-        // check if engine was stopped or failed
-        let _ = try_ready!(self
-            .completion_receiver
-            .poll()
-            .map_err(|_cancel| Error::Other("Completion receiver has been cancelled".to_string())));
+        // start the engine if it's not started
+        if !self.start_notifier.is_complete() {
+            let start_res = self.start();
+            self.start_notifier.complete(start_res);
+        }
 
-        Ok(Async::Ready(()))
+        // check if engine got stopped
+        self.stop_listener.poll().map_err(|err| match err {
+            CompletionError::UserError(err) => err,
+            _ => Error::Other("Error in completion error".to_string()),
+        })
     }
 }
 
@@ -386,8 +404,8 @@ where
     commit_manager: commit_manager::CommitManager<PS, CS>,
     handles_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
     transport_sender: Option<mpsc::UnboundedSender<OutMessage>>,
-    completion_sender: Option<oneshot::Sender<Result<(), Error>>>,
     sync_state: SyncState,
+    stop_notifier: CompletionNotifier<(), Error>,
 }
 
 impl<CS, PS> Inner<CS, PS>
@@ -590,11 +608,11 @@ where
         if let Some((index, _item)) = found_index {
             self.handles_sender.remove(index);
         }
-    }
 
-    fn try_complete_engine(&mut self, result: Result<(), Error>) {
-        if let Some(sender) = self.completion_sender.take() {
-            let _ = sender.send(result);
+        // if it was last handle, we kill the engine
+        if self.handles_sender.is_empty() {
+            debug!("Last engine handle got dropped, killing the engine.");
+            self.stop_notifier.complete(Ok(()));
         }
     }
 }
@@ -611,6 +629,8 @@ where
     id: usize,
     inner: Weak<RwLock<Inner<CS, PS>>>,
     events_receiver: Option<mpsc::Receiver<Event>>,
+    start_listener: CompletionListener<(), Error>,
+    stop_listener: CompletionListener<(), Error>,
 }
 
 impl<CS, PS> Handle<CS, PS>
@@ -618,6 +638,28 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
+    pub fn on_start(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
+        Ok(self
+            .start_listener
+            .try_clone()
+            .map_err(|_err| Error::Other("Couldn't clone start listener in handle".to_string()))?
+            .map_err(|err| match err {
+                CompletionError::UserError(err) => err,
+                _ => Error::Other("Error in completion error".to_string()),
+            }))
+    }
+
+    pub fn on_stop(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
+        Ok(self
+            .stop_listener
+            .try_clone()
+            .map_err(|_err| Error::Other("Couldn't clone stop listener in handle".to_string()))?
+            .map_err(|err| match err {
+                CompletionError::UserError(err) => err,
+                _ => Error::Other("Error in completion error".to_string()),
+            }))
+    }
+
     pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationId, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
@@ -740,12 +782,6 @@ where
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut unlocked_inner) = inner.write() {
                 unlocked_inner.unregister_handle(self.id);
-
-                // if it was last handle, we kill the engine
-                if unlocked_inner.handles_sender.is_empty() {
-                    debug!("Last engine handle got dropped, killing the engine.");
-                    unlocked_inner.try_complete_engine(Ok(()));
-                }
             }
         }
     }

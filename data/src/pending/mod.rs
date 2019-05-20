@@ -108,7 +108,7 @@ pub enum CommitStatus {
 ///
 /// Error related to the pending store
 ///
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 pub enum Error {
     #[fail(display = "Operation related error: {:?}", _0)]
     Operation(#[fail(source)] operation::Error),

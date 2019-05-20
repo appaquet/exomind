@@ -772,7 +772,7 @@ impl SyncRangeBuilder {
 ///
 /// Pending Synchronization Error
 ///
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 pub enum PendingSyncError {
     #[fail(display = "Got into an invalid synchronization state: {}", _0)]
     InvalidSyncState(String),

@@ -8,18 +8,20 @@ use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::{Error, InMessage, OutMessage, TransportHandle};
 use exocore_common::cell::{Cell, CellId};
 use exocore_common::node::{Node, NodeId};
-use exocore_common::serialization::framed::{
-    FrameBuilder, OwnedTypedFrame, TypedFrame, TypedSliceFrame,
-};
+use exocore_common::serialization::framed::{OwnedTypedFrame, TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_transport_capnp::envelope;
+use exocore_common::utils::completion_notifier::{
+    CompletionError, CompletionListener, CompletionNotifier,
+};
 use futures::prelude::*;
 use futures::sync::mpsc;
+use futures::MapErr;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock, Weak};
 
 ///
-///
+/// Configuration for WebSocket transport
 ///
 #[derive(Clone, Copy)]
 pub struct Config {
@@ -39,36 +41,70 @@ impl Default for Config {
 }
 
 ///
+/// WebSocket based transport made for communication with external entities (ex: users).
 ///
+/// It's not a full transport, which means that it cannot allow sending messages to cluster
+/// nodes, but only to connected peers.
+///
+/// Each connection is assigned a temporary node that is used internally for communication.
 ///
 pub struct WebsocketTransport {
     config: Config,
     listen_address: SocketAddr,
+    start_notifier: CompletionNotifier<(), Error>,
     inner: Arc<RwLock<InnerTransport>>,
+    stop_listener: CompletionListener<(), Error>,
 }
 
 struct InnerTransport {
     config: Config,
     handles: HashMap<CellId, InnerHandle>,
     connections: HashMap<NodeId, Connection>,
+    stop_notifier: CompletionNotifier<(), Error>,
+}
+
+impl InnerTransport {
+    fn remove_handle(&mut self, cell_id: &CellId) {
+        self.handles.remove(cell_id);
+        if self.handles.is_empty() {
+            info!("No more handles, killing transport");
+            self.stop_notifier.complete(Ok(()));
+        }
+    }
 }
 
 impl WebsocketTransport {
     pub fn new(listen_address: SocketAddr, config: Config) -> WebsocketTransport {
+        let start_notifier = CompletionNotifier::new();
+        let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
+
         let inner = Arc::new(RwLock::new(InnerTransport {
             config,
             handles: HashMap::new(),
             connections: HashMap::new(),
+            stop_notifier,
         }));
 
         WebsocketTransport {
             config,
+            start_notifier,
             listen_address,
             inner,
+            stop_listener,
         }
     }
 
     pub fn get_handle(&mut self, cell: &Cell) -> Result<WebsocketTransportHandle, Error> {
+        let start_listener = self.start_notifier.get_listener().map_err(|err| {
+            Error::Other(format!(
+                "Couldn't get a listener on start notifier: {}",
+                err
+            ))
+        })?;
+        let stop_listener = self.stop_listener.try_clone().map_err(|err| {
+            Error::Other(format!("Couldn't clone listener on stop notifier: {}", err))
+        })?;
+
         let (out_sink, out_stream) = mpsc::channel(self.config.handle_in_channel_size);
         let (in_sink, in_stream) = mpsc::channel(self.config.handle_out_channel_size);
 
@@ -83,9 +119,12 @@ impl WebsocketTransport {
         }
 
         Ok(WebsocketTransportHandle {
+            cell_id: cell.id().clone(),
+            start_listener,
             inner_transport: Arc::downgrade(&self.inner),
             sink: Some(out_sink),
             stream: Some(in_stream),
+            stop_listener,
         })
     }
 
@@ -99,7 +138,7 @@ impl WebsocketTransport {
     fn schedule_handles_streams(&mut self) -> Result<(), Error> {
         let mut inner = self.inner.write()?;
 
-        for (_cell, handle) in &mut inner.handles {
+        for  handle in  inner.handles.values_mut() {
             let weak_inner = Arc::downgrade(&self.inner);
             let stream_future = handle
                 .out_stream
@@ -107,10 +146,10 @@ impl WebsocketTransport {
                 .expect("Out stream for handle was already taken out")
                 .for_each(move |out_message| {
                     WebsocketTransport::dispatch_outgoing_message(&weak_inner, &out_message)
-                        .map_err(|err| ())
-                })
-                .map_err(|_| {});
-
+                        .map_err(|err| {
+                            error!("Error dispatching message from handle: {}", err);
+                        })
+                });
             tokio_executor::spawn(stream_future);
         }
 
@@ -123,14 +162,15 @@ impl WebsocketTransport {
             .map_err(|err| Error::Other(format!("Cannot start websocket: {}", err)))?;
 
         // the server will own the strong ref on inner. if it get killed, the transport is killed
-        let inner = Arc::clone(&self.inner);
+        let inner1 = Arc::clone(&self.inner);
+        let inner2 = Arc::downgrade(&self.inner);
         let incoming_stream = server
             .incoming()
-            .map_err(|err| Error::Other("Invalid connection".to_string()))
+            .map_err(|err| Error::Other(format!("Invalid incoming connection: {}", err.error)))
             .for_each(move |(upgrade, addr)| {
                 {
                     // check if we should still be running
-                    let inner = inner.read()?;
+                    let inner = inner1.read()?;
                     if inner.handles.is_empty() {
                         info!("All handles have been dropped. Stopping transport.");
                         return Err(Error::Other("Stopped".to_string()));
@@ -145,11 +185,11 @@ impl WebsocketTransport {
 
                 // accept the request to be a ws connection if it does
                 debug!("Got a connection from: {}", addr);
-                let weak_inner = Arc::downgrade(&inner);
+                let weak_inner = Arc::downgrade(&inner1);
                 let client_connection = upgrade
                     .use_protocol("exocore_websocket")
                     .accept()
-                    .map_err(|err| Error::WebsocketTransport(err))
+                    .map_err(|err| Error::WebsocketTransport(Arc::new(err)))
                     .and_then(move |(connection, _)| {
                         Self::schedule_incoming_connection(weak_inner, connection)
                     })
@@ -161,9 +201,13 @@ impl WebsocketTransport {
 
                 Ok(())
             })
-            .map_err(|_| {
-                // TODO: Should kill inner
-                ()
+            .map_err(move |err| {
+                error!("Error in incoming connections stream: {}", err);
+                if let Some(inner) = inner2.upgrade() {
+                    if let Ok(inner) = inner.write() {
+                        inner.stop_notifier.complete(Err(err));
+                    }
+                }
             });
 
         tokio_executor::spawn(incoming_stream);
@@ -183,7 +227,7 @@ impl WebsocketTransport {
         let (connection_sender, connection_receiver) =
             mpsc::channel(inner.config.handle_out_to_websocket_channel_size);
         let connection = Connection {
-            temporary_node: temporary_node.clone(),
+            _temporary_node: temporary_node.clone(),
             out_sink: connection_sender,
         };
         inner
@@ -202,7 +246,7 @@ impl WebsocketTransport {
                 .map(|_| ())
                 .map_err(move |_| {
                     let _ = Self::close_errored_connection(&weak_inner, &temporary_node);
-                    Error::Other(format!("Error in sink forward to connection"))
+                    Error::Other("Error in sink forward to connection".to_string())
                 });
             tokio_executor::spawn(outgoing.map(|_| ()).map_err(|_| ()));
         }
@@ -271,7 +315,7 @@ impl WebsocketTransport {
             let mut inner = inner.write()?;
 
             let envelope_frame = TypedSliceFrame::<envelope::Owned>::new(data)?;
-            for (_cell_id, handle) in &mut inner.handles {
+            for handle in inner.handles.values_mut() {
                 let in_message = InMessage {
                     from: connection_node.clone(),
                     envelope: envelope_frame.to_owned(),
@@ -305,27 +349,36 @@ impl Future for WebsocketTransport {
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        self.start()?;
+        if !self.start_notifier.is_complete() {
+            let start_res = self.start();
+            self.start_notifier.complete(start_res);
+        }
 
-        Ok(Async::Ready(()))
+        self.stop_listener.poll().map_err(|err| match err {
+            CompletionError::UserError(err) => err,
+            _ => Error::Other("Error in completion error".to_string()),
+        })
     }
 }
 
 ///
-///
+/// Incoming WebSocket connection, with sink that can be used to send messages to it
 ///
 struct Connection {
-    temporary_node: Node,
+    _temporary_node: Node,
     out_sink: mpsc::Sender<OwnedTypedFrame<envelope::Owned>>,
 }
 
 ///
-///
+/// Handle used to send & receive messages from active connections for a given cell
 ///
 pub struct WebsocketTransportHandle {
+    cell_id: CellId,
+    start_listener: CompletionListener<(), Error>,
     inner_transport: Weak<RwLock<InnerTransport>>,
     sink: Option<mpsc::Sender<OutMessage>>,
     stream: Option<mpsc::Receiver<InMessage>>,
+    stop_listener: CompletionListener<(), Error>,
 }
 
 struct InnerHandle {
@@ -333,9 +386,22 @@ struct InnerHandle {
     in_sink: mpsc::Sender<InMessage>,
 }
 
+type StartFutureType = MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
+
 impl TransportHandle for WebsocketTransportHandle {
+    type StartFuture = StartFutureType;
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
+
+    fn on_start(&self) -> Self::StartFuture {
+        self.start_listener
+            .try_clone()
+            .expect("Couldn't clone start listener")
+            .map_err(|err| match err {
+                CompletionError::UserError(err) => err,
+                _ => Error::Other("Error in completion error".to_string()),
+            })
+    }
 
     fn get_sink(&mut self) -> Self::Sink {
         MpscHandleSink::new(self.sink.take().expect("Sink was already consumed"))
@@ -351,7 +417,20 @@ impl Future for WebsocketTransportHandle {
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        Ok(Async::Ready(()))
+        self.stop_listener.poll().map_err(|err| match err {
+            CompletionError::UserError(err) => err,
+            _ => Error::Other("Error in completion error".to_string()),
+        })
+    }
+}
+
+impl Drop for WebsocketTransportHandle {
+    fn drop(&mut self) {
+        if let Some(inner) = self.inner_transport.upgrade() {
+            if let Ok(mut inner) = inner.write() {
+                inner.remove_handle(&self.cell_id);
+            }
+        }
     }
 }
 
@@ -360,10 +439,13 @@ mod tests {
     use super::*;
     use exocore_common::cell::FullCell;
     use exocore_common::node::LocalNode;
-    use exocore_common::utils::setup_logging;
+    use exocore_common::serialization::framed::FrameBuilder;
+    use exocore_common::tests_utils::setup_logging;
     use std::time::Duration;
 
-    //#[ignore]
+    // TODO: Tests
+
+    #[ignore]
     #[test]
     fn test_server() -> Result<(), failure::Error> {
         setup_logging();
@@ -377,8 +459,9 @@ mod tests {
         let mut server = WebsocketTransport::new(listen_address, config);
         let mut handle = server.get_handle(&cell)?;
 
-        // start server
-        rt.block_on(server)?;
+        // start server & wait for it to be started
+        rt.spawn(server.map(|_| ()).map_err(|_| ()));
+        rt.block_on(handle.on_start())?;
 
         // then get connection
         let sink = handle.get_sink();
