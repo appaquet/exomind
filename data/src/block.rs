@@ -589,7 +589,7 @@ impl BlockSignature {
 ///
 /// Block related errors
 ///
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 pub enum Error {
     #[fail(display = "Block integrity error: {}", _0)]
     Integrity(String),

@@ -326,7 +326,7 @@ mod tests {
 
         {
             let mut nodes = cell.nodes_mut();
-            nodes.add(Node::generate_for_tests());
+            nodes.add(Node::generate_temporary());
             assert_eq!(nodes.len(), 2);
             assert_eq!(nodes.iter().all().count(), 2);
         }
@@ -343,7 +343,7 @@ mod tests {
 
             assert!(nodes.get(local_node.id()).is_some());
 
-            let other_node = Node::generate_for_tests();
+            let other_node = Node::generate_temporary();
             assert!(nodes.get(other_node.id()).is_none());
         }
     }
@@ -362,14 +362,14 @@ mod tests {
 
         {
             let mut nodes = cell.nodes_mut();
-            nodes.add(Node::generate_for_tests());
+            nodes.add(Node::generate_temporary());
             assert!(!nodes.is_quorum(1));
             assert!(nodes.is_quorum(2));
         }
 
         {
             let mut nodes = cell.nodes_mut();
-            nodes.add(Node::generate_for_tests());
+            nodes.add(Node::generate_temporary());
             assert!(!nodes.is_quorum(1));
             assert!(nodes.is_quorum(2));
         }

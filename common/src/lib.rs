@@ -18,6 +18,7 @@ pub mod node;
 pub mod range;
 pub mod serialization;
 pub mod simple_store;
+#[cfg(any(test, feature = "tests_utils"))]
 pub mod tests_utils;
 pub mod time;
 pub mod utils;

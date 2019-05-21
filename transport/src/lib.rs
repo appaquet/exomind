@@ -8,14 +8,17 @@ extern crate log;
 
 #[macro_use]
 pub mod lp2p;
-pub mod error;
-pub mod layer;
+pub mod errors;
 pub mod messages;
+pub mod transport;
+
+#[cfg(feature = "websocket_transport")]
+pub mod ws;
 
 #[cfg(any(test, feature = "tests_utils"))]
 pub mod mock;
 
-pub use error::Error;
-pub use layer::{TransportHandle, TransportLayer};
+pub use errors::Error;
 pub use lp2p::{Libp2pTransport, Libp2pTransportHandle};
 pub use messages::{InMessage, OutMessage};
+pub use transport::{TransportHandle, TransportLayer};

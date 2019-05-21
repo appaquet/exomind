@@ -44,8 +44,7 @@ impl Node {
         }
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
-    pub fn generate_for_tests() -> Node {
+    pub fn generate_temporary() -> Node {
         let keypair = Keypair::generate_ed25519();
         let node_id = NodeId::from_public_key(&keypair.public());
         let peer_id = node_id

@@ -55,7 +55,7 @@ type StoredBlockIterator<'pers> = Box<dyn Iterator<Item = BlockRef<'pers>> + 'pe
 ///
 /// Chain related errors
 ///
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 pub enum Error {
     #[fail(display = "Block related error: {}", _0)]
     Block(#[fail(cause)] block::Error),

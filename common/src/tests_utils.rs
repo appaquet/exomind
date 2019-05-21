@@ -5,16 +5,38 @@ use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-pub struct FutureWatch {
+extern crate log4rs;
+
+pub fn setup_logging() {
+    use log::LevelFilter;
+    use log4rs::append::console::ConsoleAppender;
+    use log4rs::config::{Appender, Config, Root};
+
+    let stdout = ConsoleAppender::builder().build();
+
+    // see https://docs.rs/log4rs/*/log4rs/
+    let config = Config::builder()
+        .appender(Appender::builder().build("stdout", Box::new(stdout)))
+        .build(Root::builder().appender("stdout").build(LevelFilter::Debug))
+        .unwrap();
+
+    log4rs::init_config(config).unwrap();
+}
+
+///
+/// Allows peeking into a future and watch its status, while exposing another future that
+/// makes the inner future progress.
+///
+pub struct FuturePeek {
     status: Arc<Mutex<FutureStatus>>,
 }
 
-impl FutureWatch {
+impl FuturePeek {
     pub fn new<F, I, E>(
         fut: F,
     ) -> (
         Box<dyn Future<Item = I, Error = E> + 'static + Send>,
-        FutureWatch,
+        FuturePeek,
     )
     where
         F: Future<Item = I, Error = E> + Send + 'static,
@@ -37,7 +59,7 @@ impl FutureWatch {
             res
         }));
 
-        (wrapped_future, FutureWatch { status })
+        (wrapped_future, FuturePeek { status })
     }
 
     pub fn get_status(&self) -> FutureStatus {
@@ -56,6 +78,9 @@ pub enum FutureStatus {
     Failed,
 }
 
+///
+/// Testing utils
+///
 pub fn expect_eventually<F>(cb: F)
 where
     F: Fn() -> bool,

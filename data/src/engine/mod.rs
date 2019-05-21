@@ -5,14 +5,13 @@ use std::time::Duration;
 
 use futures::prelude::*;
 use futures::sync::mpsc;
-use futures::sync::oneshot;
 use tokio;
 use tokio::timer::Interval;
 
 use crate::operation::OperationId;
 use exocore_common;
 use exocore_common::node::NodeId;
-use exocore_common::serialization::capnp;
+use exocore_common::serialization::framed::TypedFrame;
 use exocore_common::serialization::framed::{
     FrameBuilder, MessageType, OwnedTypedFrame, TypedSliceFrame,
 };
@@ -20,7 +19,6 @@ use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
 use exocore_common::serialization::protos::data_transport_capnp::{
     chain_sync_request, chain_sync_response, envelope, pending_sync_request,
 };
-use exocore_common::serialization::{framed, framed::TypedFrame};
 
 use crate::block;
 use crate::block::{Block, BlockOffset, BlockRef};
@@ -34,13 +32,18 @@ use itertools::Itertools;
 
 mod chain_sync;
 mod commit_manager;
+mod errors;
 mod pending_sync;
 mod request_tracker;
 
 use crate::pending::CommitStatus;
 pub use chain_sync::ChainSyncConfig;
 pub use commit_manager::CommitManagerConfig;
+pub use errors::Error;
 use exocore_common::cell::{Cell, CellNodes};
+use exocore_common::utils::completion_notifier::{
+    CompletionError, CompletionListener, CompletionNotifier,
+};
 pub use pending_sync::PendingSyncConfig;
 
 #[cfg(any(test, feature = "tests_utils"))]
@@ -56,6 +59,7 @@ pub struct Config {
     pub commit_manager_config: CommitManagerConfig,
     pub manager_timer_interval: Duration,
     pub handles_events_stream_size: usize,
+    pub to_transport_channel_size: usize,
 }
 
 impl Default for Config {
@@ -66,6 +70,7 @@ impl Default for Config {
             commit_manager_config: CommitManagerConfig::default(),
             manager_timer_interval: Duration::from_secs(1),
             handles_events_stream_size: 1000,
+            to_transport_channel_size: 3000,
         }
     }
 }
@@ -83,12 +88,12 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
+    start_notifier: CompletionNotifier<(), Error>,
     config: Config,
-    started: bool,
     transport: Option<T>,
     inner: Arc<RwLock<Inner<CS, PS>>>,
     handles_count: usize,
-    completion_receiver: oneshot::Receiver<Result<(), Error>>,
+    stop_listener: CompletionListener<(), Error>,
 }
 
 impl<T, CS, PS> Engine<T, CS, PS>
@@ -105,7 +110,8 @@ where
         pending_store: PS,
         cell: Cell,
     ) -> Engine<T, CS, PS> {
-        let (completion_sender, completion_receiver) = oneshot::channel();
+        let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
+        let start_notifier = CompletionNotifier::new();
 
         let pending_synchronizer = pending_sync::PendingSynchronizer::new(
             config.pending_synchronizer_config,
@@ -133,25 +139,35 @@ where
             commit_manager,
             handles_sender: Vec::new(),
             transport_sender: None,
-            completion_sender: Some(completion_sender),
             sync_state: SyncState::default(),
+            stop_notifier,
         }));
 
         Engine {
+            start_notifier,
             config,
-            started: false,
             inner,
             handles_count: 0,
             transport: Some(transport),
-            completion_receiver,
+            stop_listener,
         }
     }
 
-    pub fn get_handle(&mut self) -> Handle<CS, PS> {
+    pub fn get_handle(&mut self) -> EngineHandle<CS, PS> {
         let mut unlocked_inner = self
             .inner
             .write()
             .expect("Inner couldn't get locked, but engine isn't even started yet.");
+
+        let start_listener = self
+            .start_notifier
+            .get_listener()
+            .expect("Couldn't get start listener for handle");
+
+        let stop_listener = unlocked_inner
+            .stop_notifier
+            .get_listener()
+            .expect("Couldn't get stop listener for handle");
 
         let id = self.handles_count;
         self.handles_count += 1;
@@ -162,10 +178,12 @@ where
             .handles_sender
             .push((id, false, events_sender));
 
-        Handle {
+        EngineHandle {
             id,
             inner: Arc::downgrade(&self.inner),
             events_receiver: Some(events_receiver),
+            start_listener,
+            stop_listener,
         }
     }
 
@@ -181,7 +199,8 @@ where
         // create channel to send messages to transport's sink
         {
             let weak_inner = Arc::downgrade(&self.inner);
-            let (transport_out_channel_sender, transport_out_channel_receiver) = mpsc::unbounded();
+            let (transport_out_channel_sender, transport_out_channel_receiver) =
+                mpsc::channel(self.config.to_transport_channel_size);
             tokio::spawn(
                 transport_out_channel_receiver
                     .map_err(|err| {
@@ -258,7 +277,6 @@ where
             unlocked_inner.notify_handles(&Event::Started);
         }
 
-        self.started = true;
         info!("Engine started!");
         Ok(())
     }
@@ -328,13 +346,13 @@ where
             return;
         };
 
-        let mut inner = if let Ok(inner) = locked_inner.write() {
+        let inner = if let Ok(inner) = locked_inner.read() {
             inner
         } else {
             return;
         };
 
-        inner.try_complete_engine(Err(Error::Other(format!(
+        inner.stop_notifier.complete(Err(Error::Other(format!(
             "Couldn't send to completion channel: {:?}",
             error
         ))));
@@ -351,17 +369,22 @@ where
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<()>, Error> {
-        if !self.started {
-            self.start()?;
+        // first, make sure transport is started
+        if let Some(transport_handle) = &self.transport {
+            try_ready!(transport_handle.on_start().poll());
         }
 
-        // check if engine was stopped or failed
-        let _ = try_ready!(self
-            .completion_receiver
-            .poll()
-            .map_err(|_cancel| Error::Other("Completion receiver has been cancelled".to_string())));
+        // start the engine if it's not started
+        if !self.start_notifier.is_complete() {
+            let start_res = self.start();
+            self.start_notifier.complete(start_res);
+        }
 
-        Ok(Async::Ready(()))
+        // check if engine got stopped
+        self.stop_listener.poll().map_err(|err| match err {
+            CompletionError::UserError(err) => err,
+            _ => Error::Other("Error in completion error".to_string()),
+        })
     }
 }
 
@@ -383,9 +406,9 @@ where
     chain_synchronizer: chain_sync::ChainSynchronizer<CS>,
     commit_manager: commit_manager::CommitManager<PS, CS>,
     handles_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
-    transport_sender: Option<mpsc::UnboundedSender<OutMessage>>,
-    completion_sender: Option<oneshot::Sender<Result<(), Error>>>,
+    transport_sender: Option<mpsc::Sender<OutMessage>>,
     sync_state: SyncState,
+    stop_notifier: CompletionNotifier<(), Error>,
 }
 
 impl<CS, PS> Inner<CS, PS>
@@ -529,10 +552,15 @@ where
 
             for message in messages {
                 let out_message = message.into_out_message(&self.cell)?;
-                let transport_sender = self.transport_sender.as_ref().expect(
+                let transport_sender = self.transport_sender.as_mut().expect(
                     "Transport sender was none, which mean that the transport was never started",
                 );
-                transport_sender.unbounded_send(out_message)?;
+                if let Err(err) = transport_sender.try_send(out_message) {
+                    error!(
+                        "Error sending message from sync context to transport: {}",
+                        err
+                    );
+                }
             }
         }
 
@@ -588,11 +616,11 @@ where
         if let Some((index, _item)) = found_index {
             self.handles_sender.remove(index);
         }
-    }
 
-    fn try_complete_engine(&mut self, result: Result<(), Error>) {
-        if let Some(sender) = self.completion_sender.take() {
-            let _ = sender.send(result);
+        // if it was last handle, we kill the engine
+        if self.handles_sender.is_empty() {
+            debug!("Last engine handle got dropped, killing the engine.");
+            self.stop_notifier.complete(Ok(()));
         }
     }
 }
@@ -601,7 +629,7 @@ where
 /// Handle ot the Engine, allowing communication with the engine.
 /// The engine itself is owned by a future executor.
 ///
-pub struct Handle<CS, PS>
+pub struct EngineHandle<CS, PS>
 where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
@@ -609,13 +637,37 @@ where
     id: usize,
     inner: Weak<RwLock<Inner<CS, PS>>>,
     events_receiver: Option<mpsc::Receiver<Event>>,
+    start_listener: CompletionListener<(), Error>,
+    stop_listener: CompletionListener<(), Error>,
 }
 
-impl<CS, PS> Handle<CS, PS>
+impl<CS, PS> EngineHandle<CS, PS>
 where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
+    pub fn on_start(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
+        Ok(self
+            .start_listener
+            .try_clone()
+            .map_err(|_err| Error::Other("Couldn't clone start listener in handle".to_string()))?
+            .map_err(|err| match err {
+                CompletionError::UserError(err) => err,
+                _ => Error::Other("Error in completion error".to_string()),
+            }))
+    }
+
+    pub fn on_stop(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
+        Ok(self
+            .stop_listener
+            .try_clone()
+            .map_err(|_err| Error::Other("Couldn't clone stop listener in handle".to_string()))?
+            .map_err(|err| match err {
+                CompletionError::UserError(err) => err,
+                _ => Error::Other("Error in completion error".to_string()),
+            }))
+    }
+
     pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationId, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
@@ -727,7 +779,7 @@ where
     }
 }
 
-impl<CS, PS> Drop for Handle<CS, PS>
+impl<CS, PS> Drop for EngineHandle<CS, PS>
 where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
@@ -738,160 +790,8 @@ where
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut unlocked_inner) = inner.write() {
                 unlocked_inner.unregister_handle(self.id);
-
-                // if it was last handle, we kill the engine
-                if unlocked_inner.handles_sender.is_empty() {
-                    debug!("Last engine handle got dropped, killing the engine.");
-                    unlocked_inner.try_complete_engine(Ok(()));
-                }
             }
         }
-    }
-}
-
-///
-/// Engine errors
-///
-#[derive(Debug, Fail)]
-pub enum Error {
-    #[fail(display = "Error in transport: {:?}", _0)]
-    Transport(#[fail(cause)] TransportError),
-    #[fail(display = "Error in pending store: {:?}", _0)]
-    PendingStore(#[fail(cause)] pending::Error),
-    #[fail(display = "Error in chain store: {:?}", _0)]
-    ChainStore(#[fail(cause)] chain::Error),
-    #[fail(display = "Error in pending synchronizer: {:?}", _0)]
-    PendingSync(#[fail(cause)] pending_sync::PendingSyncError),
-    #[fail(display = "Error in chain synchronizer: {:?}", _0)]
-    ChainSync(#[fail(cause)] chain_sync::ChainSyncError),
-    #[fail(display = "Error in commit manager: {:?}", _0)]
-    CommitManager(commit_manager::CommitManagerError),
-    #[fail(display = "Got a block related error: {:?}", _0)]
-    Block(#[fail(cause)] block::Error),
-    #[fail(display = "Got an operation related error: {:?}", _0)]
-    Operation(#[fail(cause)] operation::Error),
-    #[fail(display = "Error in framing serialization: {:?}", _0)]
-    Framing(#[fail(cause)] framed::Error),
-    #[fail(display = "Chain is not initialized")]
-    UninitializedChain,
-    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
-    Serialization(capnp::ErrorKind, String),
-    #[fail(display = "Field is not in capnp schema: code={}", _0)]
-    SerializationNotInSchema(u16),
-    #[fail(display = "Item not found: {}", _0)]
-    NotFound(String),
-    #[fail(display = "Local node not found in nodes list")]
-    MyNodeNotFound,
-    #[fail(display = "Couldn't send message to a mpsc channel because its receiver was dropped")]
-    MpscSendDropped,
-    #[fail(display = "Inner was dropped or couldn't get locked")]
-    InnerUpgrade,
-    #[fail(display = "Try to lock a mutex that was poisoned")]
-    Poisoned,
-    #[fail(display = "A fatal error occurred: {}", _0)]
-    Fatal(String),
-    #[fail(display = "An error occurred: {}", _0)]
-    Other(String),
-}
-
-impl Error {
-    pub fn is_fatal(&self) -> bool {
-        match self {
-            Error::ChainStore(inner) => inner.is_fatal(),
-            Error::ChainSync(inner) => inner.is_fatal(),
-            Error::MyNodeNotFound
-            | Error::MpscSendDropped
-            | Error::InnerUpgrade
-            | Error::Poisoned
-            | Error::Fatal(_) => true,
-            _ => false,
-        }
-    }
-
-    fn recover_non_fatal_error(self) -> Result<(), Error> {
-        if !self.is_fatal() {
-            Ok(())
-        } else {
-            Err(self)
-        }
-    }
-}
-
-impl From<TransportError> for Error {
-    fn from(err: TransportError) -> Self {
-        Error::Transport(err)
-    }
-}
-
-impl From<pending::Error> for Error {
-    fn from(err: pending::Error) -> Self {
-        Error::PendingStore(err)
-    }
-}
-
-impl From<chain::Error> for Error {
-    fn from(err: chain::Error) -> Self {
-        Error::ChainStore(err)
-    }
-}
-
-impl From<pending_sync::PendingSyncError> for Error {
-    fn from(err: pending_sync::PendingSyncError) -> Self {
-        Error::PendingSync(err)
-    }
-}
-
-impl From<chain_sync::ChainSyncError> for Error {
-    fn from(err: chain_sync::ChainSyncError) -> Self {
-        Error::ChainSync(err)
-    }
-}
-
-impl From<commit_manager::CommitManagerError> for Error {
-    fn from(err: commit_manager::CommitManagerError) -> Self {
-        Error::CommitManager(err)
-    }
-}
-
-impl From<block::Error> for Error {
-    fn from(err: block::Error) -> Self {
-        Error::Block(err)
-    }
-}
-
-impl From<operation::Error> for Error {
-    fn from(err: operation::Error) -> Self {
-        Error::Operation(err)
-    }
-}
-
-impl From<framed::Error> for Error {
-    fn from(err: framed::Error) -> Self {
-        Error::Framing(err)
-    }
-}
-
-impl<T> From<mpsc::SendError<T>> for Error {
-    fn from(_err: mpsc::SendError<T>) -> Self {
-        Error::MpscSendDropped
-    }
-}
-
-impl<T> From<std::sync::PoisonError<T>> for Error {
-    fn from(_err: std::sync::PoisonError<T>) -> Self {
-        Error::Poisoned
-    }
-}
-
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::Serialization(err.kind, err.description)
-    }
-}
-
-impl From<capnp::NotInSchema> for Error {
-    fn from(err: capnp::NotInSchema) -> Self {
-        Error::SerializationNotInSchema(err.0)
     }
 }
 

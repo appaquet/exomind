@@ -18,5 +18,5 @@ else
                         --exclude-files=3rd \
                         --exclude-files="*_capnp.rs" \
                         --exclude-files="**/main.rs" \
-                        --exclude=exocore-cli
+                        --exclude-files="cli/**"
 fi

@@ -19,7 +19,7 @@ use exocore_common::time::Clock;
 use exocore_common::cell::FullCell;
 use exocore_data::block::{BlockOffset, BlockOwned};
 use exocore_data::chain::ChainStore;
-use exocore_data::engine::{EngineOperation, Event, Handle};
+use exocore_data::engine::{EngineHandle, EngineOperation, Event};
 use exocore_data::operation::{Operation, OperationId};
 use exocore_data::*;
 use exocore_transport::mock::MockTransport;
@@ -239,7 +239,7 @@ struct TestCluster {
     engines_config: Vec<EngineConfig>,
     chain_stores: Vec<Option<DirectoryChainStore>>,
     pending_stores: Vec<Option<MemoryPendingStore>>,
-    handles: Vec<Option<Handle<DirectoryChainStore, MemoryPendingStore>>>,
+    handles: Vec<Option<EngineHandle<DirectoryChainStore, MemoryPendingStore>>>,
 
     events_receiver: Vec<Option<mpsc::Receiver<Event>>>,
     events_received: Vec<Option<Arc<Mutex<Vec<Event>>>>>,
@@ -409,14 +409,17 @@ impl TestCluster {
         events.clone()
     }
 
-    fn get_handle(&self, node_idx: usize) -> &Handle<DirectoryChainStore, MemoryPendingStore> {
+    fn get_handle(
+        &self,
+        node_idx: usize,
+    ) -> &EngineHandle<DirectoryChainStore, MemoryPendingStore> {
         self.handles[node_idx].as_ref().unwrap()
     }
 
     fn get_handle_mut(
         &mut self,
         node_idx: usize,
-    ) -> &mut Handle<DirectoryChainStore, MemoryPendingStore> {
+    ) -> &mut EngineHandle<DirectoryChainStore, MemoryPendingStore> {
         self.handles[node_idx].as_mut().unwrap()
     }
 

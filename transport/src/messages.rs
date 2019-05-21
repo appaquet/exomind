@@ -4,7 +4,7 @@ use exocore_common::serialization::framed::{
     FrameBuilder, MessageType, OwnedTypedFrame, TypedFrame,
 };
 
-use crate::{layer::TransportLayer, Error};
+use crate::{Error, TransportLayer};
 use exocore_common::cell::Cell;
 
 /// Message to be sent to a another node

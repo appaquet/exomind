@@ -1,25 +1,32 @@
 pub mod behaviour;
 pub mod protocol;
 
-use crate::layer::{TransportHandle, TransportLayer};
 use crate::messages::{InMessage, OutMessage};
+use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::Error;
+use crate::{TransportHandle, TransportLayer};
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_common::cell::{Cell, CellId, CellNodes};
 use exocore_common::node::{LocalNode, NodeId};
 use exocore_common::serialization::framed::{TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_transport_capnp::envelope;
+use exocore_common::utils::completion_notifier::{
+    CompletionError, CompletionListener, CompletionNotifier,
+};
 use futures::prelude::*;
 use futures::sync::mpsc;
+use futures::MapErr;
 use libp2p::core::{Multiaddr, PeerId, Swarm};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
 use tokio_timer::Interval;
 
+///
 /// libp2p transport configuration
+///
 #[derive(Clone)]
-pub struct Config {
+pub struct Libp2pTransportConfig {
     pub listen_address: Option<Multiaddr>,
     pub handle_in_channel_size: usize,
     pub handle_out_channel_size: usize,
@@ -27,7 +34,7 @@ pub struct Config {
     pub swarm_nodes_update_interval: Duration,
 }
 
-impl Config {
+impl Libp2pTransportConfig {
     fn listen_address(&self, local_node: &LocalNode) -> Result<Multiaddr, Error> {
         self
             .listen_address
@@ -40,9 +47,9 @@ impl Config {
     }
 }
 
-impl Default for Config {
+impl Default for Libp2pTransportConfig {
     fn default() -> Self {
-        Config {
+        Libp2pTransportConfig {
             listen_address: None,
             handle_in_channel_size: 1000,
             handle_out_channel_size: 1000,
@@ -59,15 +66,18 @@ impl Default for Config {
 /// it's ready. Once all handles are dropped, all its scheduled tasks will be stopped too.
 pub struct Libp2pTransport {
     local_node: LocalNode,
-    config: Config,
-    inner: Arc<RwLock<Inner>>,
+    config: Libp2pTransportConfig,
+    start_notifier: CompletionNotifier<(), Error>,
+    stop_listener: CompletionListener<(), Error>,
+    inner: Arc<RwLock<InnerTransport>>,
 }
 
-struct Inner {
+struct InnerTransport {
+    stop_notifier: CompletionNotifier<(), Error>,
     handles: HashMap<(CellId, TransportLayer), InnerHandle>,
 }
 
-impl Inner {
+impl InnerTransport {
     fn all_peers(&self) -> HashSet<(PeerId, Vec<Multiaddr>)> {
         let mut peers = HashSet::new();
         for inner_layer in self.handles.values() {
@@ -76,6 +86,13 @@ impl Inner {
             }
         }
         peers
+    }
+
+    fn remove_handle(&mut self, cell_id: &CellId, layer: TransportLayer) {
+        self.handles.remove(&(cell_id.clone(), layer));
+        if self.handles.is_empty() {
+            self.stop_notifier.complete(Ok(()));
+        }
     }
 }
 
@@ -90,14 +107,19 @@ impl Libp2pTransport {
     /// Creates a new transport for given node and config. The node is important here
     /// since all messages are authenticated using the node's private key thanks to secio
     ///
-    pub fn new(local_node: LocalNode, config: Config) -> Libp2pTransport {
-        let inner = Inner {
+    pub fn new(local_node: LocalNode, config: Libp2pTransportConfig) -> Libp2pTransport {
+        let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
+
+        let inner = InnerTransport {
+            stop_notifier,
             handles: HashMap::new(),
         };
 
         Libp2pTransport {
             local_node,
             config,
+            start_notifier: CompletionNotifier::new(),
+            stop_listener,
             inner: Arc::new(RwLock::new(inner)),
         }
     }
@@ -114,6 +136,20 @@ impl Libp2pTransport {
         let (out_sender, out_receiver) = mpsc::channel(self.config.handle_out_channel_size);
 
         let mut inner = self.inner.write()?;
+        let start_listener = self.start_notifier.get_listener().map_err(|err| {
+            Error::Other(format!(
+                "Couldn't get listener on start notifier: {:?}",
+                err
+            ))
+        })?;
+
+        let stop_listener = inner.stop_notifier.get_listener().map_err(|err| {
+            Error::Other(format!(
+                "Couldn't get listener on start notifier: {:?}",
+                err
+            ))
+        })?;
+
         let inner_layer = InnerHandle {
             cell: cell.clone(),
             in_sender,
@@ -130,10 +166,12 @@ impl Libp2pTransport {
 
         Ok(Libp2pTransportHandle {
             cell_id: cell.id().clone(),
+            start_listener,
             layer,
             inner: Arc::downgrade(&self.inner),
             sink: Some(out_sender),
             stream: Some(in_receiver),
+            stop_listener,
         })
     }
 
@@ -252,9 +290,11 @@ impl Libp2pTransport {
         Ok(())
     }
 
+    ///
     /// Dispatches a received message from libp2p to corresponding handle
+    ///
     fn dispatch_message(
-        inner: &RwLock<Inner>,
+        inner: &RwLock<InnerTransport>,
         message: &ExocoreBehaviourMessage,
     ) -> Result<(), Error> {
         let frame = TypedSliceFrame::<envelope::Owned>::new(&message.data)?;
@@ -309,37 +349,54 @@ impl Future for Libp2pTransport {
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        // we are only polled once, and we return ready right away
-        self.start()?;
+        if !self.start_notifier.is_complete() {
+            let start_result = self.start();
+            self.start_notifier.complete(start_result);
+        }
 
-        Ok(Async::Ready(()))
+        self.stop_listener.poll().map_err(|err| match err {
+            CompletionError::UserError(err) => err,
+            _ => Error::Other("Error in completion error".to_string()),
+        })
     }
 }
 
+///
 /// Handle taken by a Cell layer to receive and send message for a given node & cell.
+///
 pub struct Libp2pTransportHandle {
     cell_id: CellId,
     layer: TransportLayer,
-    inner: Weak<RwLock<Inner>>,
-
+    start_listener: CompletionListener<(), Error>,
+    inner: Weak<RwLock<InnerTransport>>,
     sink: Option<mpsc::Sender<OutMessage>>,
     stream: Option<mpsc::Receiver<InMessage>>,
+    stop_listener: CompletionListener<(), Error>,
 }
 
+type StartFutureType = MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
+
 impl TransportHandle for Libp2pTransportHandle {
-    type Sink = MpscLayerSink;
-    type Stream = MpscLayerStream;
+    type StartFuture = StartFutureType;
+    type Sink = MpscHandleSink;
+    type Stream = MpscHandleStream;
+
+    fn on_start(&self) -> Self::StartFuture {
+        self.start_listener
+            .try_clone()
+            .expect("Couldn't clone start listener")
+            .map_err(|err| match err {
+                CompletionError::UserError(err) => err,
+                _ => Error::Other("Error in completion error".to_string()),
+            })
+    }
 
     fn get_sink(&mut self) -> Self::Sink {
-        MpscLayerSink {
-            sender: self.sink.take().expect("Sink was already consumed"),
-        }
+        MpscHandleSink::new(self.sink.take().expect("Sink was already consumed"))
     }
 
     fn get_stream(&mut self) -> Self::Stream {
-        MpscLayerStream {
-            receiver: self.stream.take().expect("Stream was already consumed"),
-        }
+        MpscHandleStream::new(self.stream.take().expect("Stream was already consumed"))
     }
 }
 
@@ -348,7 +405,10 @@ impl Future for Libp2pTransportHandle {
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        Ok(Async::Ready(()))
+        self.stop_listener.poll().map_err(|err| match err {
+            CompletionError::UserError(err) => err,
+            _ => Error::Other("Error in completion error".to_string()),
+        })
     }
 }
 
@@ -362,57 +422,9 @@ impl Drop for Libp2pTransportHandle {
         // we have been dropped, we remove ourself from layers to communicate with
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut inner) = inner.write() {
-                inner.handles.remove(&(self.cell_id.clone(), self.layer));
+                inner.remove_handle(&self.cell_id, self.layer);
             }
         }
-    }
-}
-
-/// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
-pub struct MpscLayerStream {
-    receiver: mpsc::Receiver<InMessage>,
-}
-
-impl Stream for MpscLayerStream {
-    type Item = InMessage;
-    type Error = Error;
-
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.receiver.poll().map_err(|_err| {
-            error!("Error receiving from incoming stream in MockTransportStream",);
-            Error::Other("Error receiving from incoming stream".to_string())
-        })
-    }
-}
-
-/// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
-pub struct MpscLayerSink {
-    sender: mpsc::Sender<OutMessage>,
-}
-
-impl Sink for MpscLayerSink {
-    type SinkItem = OutMessage;
-    type SinkError = Error;
-
-    fn start_send(&mut self, item: OutMessage) -> StartSend<OutMessage, Error> {
-        self.sender.start_send(item).map_err(|err| {
-            Error::Other(format!("Error calling 'start_send' to in_channel: {}", err))
-        })
-    }
-
-    fn poll_complete(&mut self) -> Poll<(), Error> {
-        self.sender.poll_complete().map_err(|err| {
-            Error::Other(format!(
-                "Error calling 'poll_complete' to in_channel: {}",
-                err
-            ))
-        })
-    }
-
-    fn close(&mut self) -> Poll<(), Error> {
-        self.sender
-            .close()
-            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {}", err)))
     }
 }
 
@@ -431,25 +443,27 @@ mod tests {
         let mut rt = Runtime::new()?;
 
         let node1 = LocalNode::generate();
-        node1.add_address("/ip4/127.0.0.1/tcp/3303".parse().unwrap());
+        node1.add_address("/ip4/127.0.0.1/tcp/3003".parse().unwrap());
         let node1_cell = FullCell::generate(node1.clone());
 
         let node2 = LocalNode::generate();
-        node2.add_address("/ip4/127.0.0.1/tcp/3304".parse().unwrap());
+        node2.add_address("/ip4/127.0.0.1/tcp/3004".parse().unwrap());
         let node2_cell = node1_cell.clone_for_local_node(node2.clone());
 
         node1_cell.nodes_mut().add(node2.node().clone());
         node2_cell.nodes_mut().add(node1.node().clone());
 
-        let mut transport1 = Libp2pTransport::new(node1.clone(), Config::default());
+        let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
         let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
         let handle1_tester = TransportHandlTester::new(&mut rt, handle1);
-        rt.block_on(transport1)?;
+        rt.spawn(transport1.map(|_| ()).map_err(|_| ()));
+        rt.block_on(handle1_tester.handle.on_start())?;
 
-        let mut transport2 = Libp2pTransport::new(node2.clone(), Config::default());
+        let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
         let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
         let handle2_tester = TransportHandlTester::new(&mut rt, handle2);
-        rt.block_on(transport2)?;
+        rt.spawn(transport2.map(|_| ()).map_err(|_| ()));
+        rt.block_on(handle2_tester.handle.on_start())?;
 
         // give time for nodes to connect to each others
         std::thread::sleep(Duration::from_secs(1));
@@ -481,21 +495,21 @@ mod tests {
         // config always take precedence
         let node1 = LocalNode::generate();
         node1.add_address(addr1.clone());
-        let config = Config {
+        let config = Libp2pTransportConfig {
             listen_address: Some(addr2.clone()),
-            ..Config::default()
+            ..Libp2pTransportConfig::default()
         };
         assert_eq!(addr2.clone(), config.listen_address(&node1)?);
 
         // fallback to node if not specified in config
         let node1 = LocalNode::generate();
         node1.add_address(addr1.clone());
-        let config = Config::default();
+        let config = Libp2pTransportConfig::default();
         assert_eq!(addr1.clone(), config.listen_address(&node1)?);
 
         // error if no addresses found
         let node1 = LocalNode::generate();
-        let config = Config::default();
+        let config = Libp2pTransportConfig::default();
         assert!(config.listen_address(&node1).is_err());
 
         Ok(())
@@ -513,7 +527,7 @@ mod tests {
         node2.add_address("/ip4/127.0.0.1/tcp/0".parse()?);
         let node2_cell = FullCell::generate(node2.clone());
 
-        let mut transport = Libp2pTransport::new(node1.clone(), Config::default());
+        let mut transport = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
         let inner_weak = Arc::downgrade(&transport.inner);
 
         // we create 2 handles
@@ -523,7 +537,8 @@ mod tests {
         let handle2 = transport.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
         let handle2_tester = TransportHandlTester::new(&mut rt, handle2);
 
-        rt.block_on(transport)?;
+        rt.spawn(transport.map(|_| ()).map_err(|_| ()));
+        rt.block_on(handle1_tester.handle.on_start())?;
 
         // we drop first handle, we expect inner to now contain its handle anymore
         {
@@ -541,17 +556,17 @@ mod tests {
     }
 
     struct TransportHandlTester {
-        _transport: Libp2pTransportHandle,
+        handle: Libp2pTransportHandle,
         sender: mpsc::UnboundedSender<OutMessage>,
         received: Arc<Mutex<Vec<InMessage>>>,
     }
 
     impl TransportHandlTester {
-        fn new(rt: &mut Runtime, mut transport: Libp2pTransportHandle) -> TransportHandlTester {
+        fn new(rt: &mut Runtime, mut handle: Libp2pTransportHandle) -> TransportHandlTester {
             let (sender, receiver) = mpsc::unbounded();
             rt.spawn(
                 receiver
-                    .forward(transport.get_sink().sink_map_err(|_| ()))
+                    .forward(handle.get_sink().sink_map_err(|_| ()))
                     .map(|_| ())
                     .map_err(|_| ()),
             );
@@ -559,7 +574,7 @@ mod tests {
             let received = Arc::new(Mutex::new(Vec::new()));
             let received_weak = Arc::downgrade(&received);
             rt.spawn(
-                transport
+                handle
                     .get_stream()
                     .for_each(move |msg| {
                         let received = received_weak.upgrade().unwrap();
@@ -571,7 +586,7 @@ mod tests {
             );
 
             TransportHandlTester {
-                _transport: transport,
+                handle,
                 sender,
                 received,
             }
