@@ -1,8 +1,8 @@
 use futures::prelude::*;
 use futures::sync::oneshot;
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock, Weak};
 use std::fmt::Debug;
+use std::sync::{Arc, RwLock, Weak};
 
 ///
 /// Allow notifying listeners on completion or drop of the completer.
@@ -68,6 +68,12 @@ impl<S: Clone, E: Clone + Debug + Send + Sync + 'static> CompletionNotifier<S, E
     }
 }
 
+impl<S: Clone, E: Clone + Debug + Send + Sync + 'static> Default for CompletionNotifier<S, E> {
+    fn default() -> Self {
+        CompletionNotifier::new()
+    }
+}
+
 struct Inner<S: Clone, E: Clone + Debug + Send + Sync + 'static> {
     result: Option<Result<S, CompletionError<E>>>,
     next: usize,
@@ -103,7 +109,7 @@ impl<S: Clone, E: Clone + Debug + Send + Sync + 'static> Drop for Inner<S, E> {
 }
 
 ///
-/// Exposes a future that will resolve when the completer has completed
+/// Exposes a future that will resolve when the notifier has completed or has been dropped.
 ///
 pub struct CompletionListener<S: Clone, E: Clone + Debug + Send + Sync + 'static> {
     id: usize,
@@ -183,7 +189,7 @@ pub enum CompletionError<E: Clone + Debug + Send + Sync + 'static> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests_utils::{expect_eventually, FutureStatus, FutureWatch};
+    use crate::tests_utils::{expect_eventually, FuturePeek, FutureStatus};
 
     #[test]
     fn clone_and_drop_listener() -> Result<(), failure::Error> {
@@ -223,7 +229,7 @@ mod tests {
 
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
 
-        let (wrapped_future, future_watcher) = FutureWatch::new(Box::new(listener));
+        let (wrapped_future, future_watcher) = FuturePeek::new(Box::new(listener));
         rt.spawn(wrapped_future.map(|_| ()).map_err(|_| ()));
 
         assert_eq!(FutureStatus::NotReady, future_watcher.get_status());
@@ -240,7 +246,7 @@ mod tests {
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
         completion.complete(Ok(true));
 
-        let (wrapped_future, future_watcher) = FutureWatch::new(Box::new(listener));
+        let (wrapped_future, future_watcher) = FuturePeek::new(Box::new(listener));
         rt.spawn(wrapped_future.map(|_| ()).map_err(|_| ()));
 
         assert_eq!(FutureStatus::NotReady, future_watcher.get_status());
@@ -256,7 +262,7 @@ mod tests {
 
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
         completion.complete(Ok(true));
-        assert_eq!(Some(true), listener.result().and_then(|r| r.ok()));
+        assert_eq!(Some(true), listener.result().and_then(Result::ok));
         assert_eq!(Some(true), rt.block_on(listener).ok());
 
         Ok(())

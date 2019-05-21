@@ -4,11 +4,11 @@ use exocore_common::node::{LocalNode, Node};
 use failure::err_msg;
 use serde_derive::{Deserialize, Serialize};
 use std::fs::OpenOptions;
-use std::path::{Path, PathBuf};
 use std::net::SocketAddr;
+use std::path::{Path, PathBuf};
 
 ///
-/// Root of the configuration, representing configuration for the node
+/// Root configuration of a Node running servers and Cells
 ///
 #[derive(Serialize, Deserialize)]
 pub struct NodeConfig {

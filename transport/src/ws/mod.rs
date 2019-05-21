@@ -20,19 +20,23 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock, Weak};
 
+static WEBSOCKET_PROTOCOL: &str = "exocore_websocket";
+
+// TODO: Handle Cell authentication: https://github.com/appaquet/exocore/issues/73
+
 ///
 /// Configuration for WebSocket transport
 ///
 #[derive(Clone, Copy)]
-pub struct Config {
+pub struct WebSocketTransportConfig {
     pub handle_in_channel_size: usize,
     pub handle_out_channel_size: usize,
     pub handle_out_to_websocket_channel_size: usize,
 }
 
-impl Default for Config {
+impl Default for WebSocketTransportConfig {
     fn default() -> Self {
-        Config {
+        WebSocketTransportConfig {
             handle_in_channel_size: 1000,
             handle_out_channel_size: 1000,
             handle_out_to_websocket_channel_size: 1000,
@@ -41,15 +45,15 @@ impl Default for Config {
 }
 
 ///
-/// WebSocket based transport made for communication with external entities (ex: users).
+/// WebSocket based transport made for communication from WASM / Web.
 ///
-/// It's not a full transport, which means that it cannot allow sending messages to cluster
-/// nodes, but only to connected peers.
+/// It's not a full transport since it cannot allow sending messages to cluster nodes, but
+/// only to inbound connections.
 ///
 /// Each connection is assigned a temporary node that is used internally for communication.
 ///
 pub struct WebsocketTransport {
-    config: Config,
+    config: WebSocketTransportConfig,
     listen_address: SocketAddr,
     start_notifier: CompletionNotifier<(), Error>,
     inner: Arc<RwLock<InnerTransport>>,
@@ -57,7 +61,7 @@ pub struct WebsocketTransport {
 }
 
 struct InnerTransport {
-    config: Config,
+    config: WebSocketTransportConfig,
     handles: HashMap<CellId, InnerHandle>,
     connections: HashMap<NodeId, Connection>,
     stop_notifier: CompletionNotifier<(), Error>,
@@ -74,7 +78,7 @@ impl InnerTransport {
 }
 
 impl WebsocketTransport {
-    pub fn new(listen_address: SocketAddr, config: Config) -> WebsocketTransport {
+    pub fn new(listen_address: SocketAddr, config: WebSocketTransportConfig) -> WebsocketTransport {
         let start_notifier = CompletionNotifier::new();
         let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
 
@@ -138,7 +142,7 @@ impl WebsocketTransport {
     fn schedule_handles_streams(&mut self) -> Result<(), Error> {
         let mut inner = self.inner.write()?;
 
-        for  handle in  inner.handles.values_mut() {
+        for handle in inner.handles.values_mut() {
             let weak_inner = Arc::downgrade(&self.inner);
             let stream_future = handle
                 .out_stream
@@ -161,23 +165,13 @@ impl WebsocketTransport {
         let server = websocket::r#async::Server::bind(self.listen_address, reactor_handle)
             .map_err(|err| Error::Other(format!("Cannot start websocket: {}", err)))?;
 
-        // the server will own the strong ref on inner. if it get killed, the transport is killed
-        let inner1 = Arc::clone(&self.inner);
+        let inner1 = Arc::downgrade(&self.inner);
         let inner2 = Arc::downgrade(&self.inner);
         let incoming_stream = server
             .incoming()
             .map_err(|err| Error::Other(format!("Invalid incoming connection: {}", err.error)))
             .for_each(move |(upgrade, addr)| {
-                {
-                    // check if we should still be running
-                    let inner = inner1.read()?;
-                    if inner.handles.is_empty() {
-                        info!("All handles have been dropped. Stopping transport.");
-                        return Err(Error::Other("Stopped".to_string()));
-                    }
-                }
-
-                if !upgrade.protocols().iter().any(|s| s == "exocore_websocket") {
+                if !upgrade.protocols().iter().any(|s| s == WEBSOCKET_PROTOCOL) {
                     debug!("Rejecting connection {} with wrong connection", addr);
                     tokio_executor::spawn(upgrade.reject().map(|_| ()).map_err(|_| ()));
                     return Ok(());
@@ -185,9 +179,9 @@ impl WebsocketTransport {
 
                 // accept the request to be a ws connection if it does
                 debug!("Got a connection from: {}", addr);
-                let weak_inner = Arc::downgrade(&inner1);
+                let weak_inner = inner1.clone();
                 let client_connection = upgrade
-                    .use_protocol("exocore_websocket")
+                    .use_protocol(WEBSOCKET_PROTOCOL)
                     .accept()
                     .map_err(|err| Error::WebsocketTransport(Arc::new(err)))
                     .and_then(move |(connection, _)| {
@@ -260,7 +254,7 @@ impl WebsocketTransport {
             let incoming = client_stream
                 .take_while(|m| Ok(!m.is_close()))
                 .for_each(move |message| {
-                    debug!("Message from client: {:?}", message);
+                    debug!("Message from connection: {:?}", message);
                     if let Err(err) =
                         Self::handle_incoming_message(&weak_inner1, &temporary_node1, message)
                     {
@@ -286,7 +280,6 @@ impl WebsocketTransport {
         let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
         let mut inner = inner.write()?;
 
-        // TODO: Should sign?
         let frame = out_message.envelope.as_owned_unsigned_framed()?;
         for node in &out_message.to {
             if let Some(connection) = inner.connections.get_mut(node.id()) {
@@ -296,7 +289,7 @@ impl WebsocketTransport {
                 }
             } else {
                 warn!(
-                    "Couldn't find a connection for node {}. Probably got closed.",
+                    "Could not find a connection for node {}. Probably got closed.",
                     node.id()
                 );
             }
@@ -436,62 +429,173 @@ impl Drop for WebsocketTransportHandle {
 
 #[cfg(test)]
 mod tests {
+    use super::websocket::ClientBuilder;
     use super::*;
     use exocore_common::cell::FullCell;
     use exocore_common::node::LocalNode;
     use exocore_common::serialization::framed::FrameBuilder;
-    use exocore_common::tests_utils::setup_logging;
-    use std::time::Duration;
+    use exocore_common::tests_utils::expect_eventually;
+    use std::sync::Mutex;
+    use tokio::runtime::Runtime;
 
-    // TODO: Tests
-
-    #[ignore]
     #[test]
-    fn test_server() -> Result<(), failure::Error> {
-        setup_logging();
-
+    fn client_send_receive() -> Result<(), failure::Error> {
         let node = LocalNode::generate();
         let cell = FullCell::generate(node);
         let mut rt = tokio::runtime::Runtime::new()?;
 
-        let listen_address = "127.0.0.1:3341".parse()?;
-        let config = Config::default();
+        let listen_address = "127.0.0.1:3100".parse()?;
+        let config = WebSocketTransportConfig::default();
         let mut server = WebsocketTransport::new(listen_address, config);
-        let mut handle = server.get_handle(&cell)?;
+        let handle = server.get_handle(&cell)?;
 
         // start server & wait for it to be started
         rt.spawn(server.map(|_| ()).map_err(|_| ()));
-        rt.block_on(handle.on_start())?;
+        let received_messages = schedule_server_handle(&mut rt, handle);
 
-        // then get connection
-        let sink = handle.get_sink();
+        let client = TestClient::new(&mut rt, "ws://127.0.0.1:3100");
+        client.send_str("hello world");
 
-        rt.spawn(
-            handle
-                .get_stream()
-                .and_then(|message| {
-                    let envelope_reader: envelope::Reader = message.envelope.get_typed_reader()?;
-                    let data = envelope_reader.get_data()?;
-                    info!("Got message: {}", String::from_utf8_lossy(data));
+        // server should have received message
+        expect_eventually(|| {
+            let received_messages = received_messages.lock().unwrap();
+            received_messages
+                .iter()
+                .any(|data| data.as_str() == "hello world")
+        });
 
-                    let mut frame_builder = FrameBuilder::<envelope::Owned>::new();
-                    {
-                        let mut builder: envelope::Builder = frame_builder.get_builder_typed();
-                        builder.set_data(data);
-                    }
-
-                    Ok(OutMessage {
-                        to: vec![message.from],
-                        envelope: frame_builder,
-                    })
-                })
-                .forward(sink)
-                .map(|_| ())
-                .map_err(|_| ()),
-        );
-
-        std::thread::sleep(Duration::from_secs(1000));
+        // client should have received replied message
+        expect_eventually(|| {
+            let received_messages = client.received_messages.lock().unwrap();
+            received_messages
+                .iter()
+                .any(|data| data.as_str() == "hello world")
+        });
 
         Ok(())
+    }
+
+    fn schedule_server_handle(
+        rt: &mut Runtime,
+        mut handle: WebsocketTransportHandle,
+    ) -> Arc<Mutex<Vec<String>>> {
+        rt.block_on(handle.on_start()).unwrap();
+
+        let received_messages = Arc::new(Mutex::new(Vec::new()));
+
+        {
+            let received_messages = received_messages.clone();
+            rt.spawn(
+                handle
+                    .get_stream()
+                    .and_then(move |message| {
+                        let message_reader = message.envelope.get_typed_reader().unwrap();
+                        let message_data = message_reader.get_data().unwrap();
+                        let mut received_messages = received_messages.lock().unwrap();
+                        received_messages.push(String::from_utf8_lossy(message_data).to_string());
+
+                        // forward the message back to client
+                        let mut frame_builder = FrameBuilder::<envelope::Owned>::new();
+                        {
+                            let mut message_builder = frame_builder.get_builder_typed();
+                            message_builder.set_data(message_data);
+                        }
+                        let out_message = OutMessage {
+                            to: vec![message.from.clone()],
+                            envelope: frame_builder,
+                        };
+                        Ok(out_message)
+                    })
+                    .forward(handle.get_sink())
+                    .map(|_| ())
+                    .map_err(|_| ()),
+            );
+        }
+
+        rt.spawn(handle.map(|_| ()).map_err(|_| ()));
+
+        received_messages
+    }
+
+    struct TestClient {
+        out_sender: mpsc::UnboundedSender<OwnedMessage>,
+        received_messages: Arc<Mutex<Vec<String>>>,
+    }
+
+    impl TestClient {
+        fn new(rt: &mut Runtime, url: &str) -> TestClient {
+            let (out_sender, out_receiver) = mpsc::unbounded();
+            let received_messages = Arc::new(Mutex::new(Vec::new()));
+
+            {
+                let received_messages = received_messages.clone();
+                let builder = ClientBuilder::new(url)
+                    .unwrap()
+                    .add_protocol(WEBSOCKET_PROTOCOL)
+                    .async_connect_insecure()
+                    .and_then(move |(duplex, _)| {
+                        let (sink, stream) = duplex.split();
+
+                        let sink_future = out_receiver
+                            .map_err(|_err| Error::Other("Error in out receiver".to_string()))
+                            .forward(sink.sink_map_err(|err| {
+                                Error::Other(format!("Error in sink: {}", err))
+                            }))
+                            .map(|_| ())
+                            .map_err(|_| ());
+                        tokio::spawn(sink_future);
+
+                        let stream_future = stream
+                            .for_each(move |msg| {
+                                match msg {
+                                    OwnedMessage::Binary(data) => {
+                                        let envelope_frame =
+                                            TypedSliceFrame::<envelope::Owned>::new(&data).unwrap();
+                                        let envelope_reader =
+                                            envelope_frame.get_typed_reader().unwrap();
+                                        let message_data = String::from_utf8_lossy(
+                                            envelope_reader.get_data().unwrap(),
+                                        )
+                                        .to_string();
+
+                                        let mut received_messages =
+                                            received_messages.lock().unwrap();
+                                        received_messages.push(message_data);
+                                    }
+                                    _ => panic!("Received unexpected message: {:?}", msg),
+                                }
+
+                                Ok(())
+                            })
+                            .map(|_| ())
+                            .map_err(|_| ());
+                        tokio::spawn(stream_future);
+
+                        Ok(())
+                    })
+                    .into_future()
+                    .map(|_| ())
+                    .map_err(|_| ());
+                rt.spawn(builder);
+            }
+
+            TestClient {
+                out_sender,
+                received_messages,
+            }
+        }
+
+        fn send_str(&self, data: &str) {
+            let mut frame_builder = FrameBuilder::<envelope::Owned>::new();
+            {
+                let mut message_builder: envelope::Builder = frame_builder.get_builder_typed();
+                message_builder.set_data(data.as_bytes());
+            }
+
+            let frame = frame_builder.as_owned_unsigned_framed().unwrap();
+            self.out_sender
+                .unbounded_send(OwnedMessage::Binary(frame.frame_data().to_vec()))
+                .unwrap();
+        }
     }
 }

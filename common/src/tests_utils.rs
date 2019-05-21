@@ -24,18 +24,19 @@ pub fn setup_logging() {
 }
 
 ///
+/// Allows peeking into a future and watch its status, while exposing another future that
+/// makes the inner future progress.
 ///
-///
-pub struct FutureWatch {
+pub struct FuturePeek {
     status: Arc<Mutex<FutureStatus>>,
 }
 
-impl FutureWatch {
+impl FuturePeek {
     pub fn new<F, I, E>(
         fut: F,
     ) -> (
         Box<dyn Future<Item = I, Error = E> + 'static + Send>,
-        FutureWatch,
+        FuturePeek,
     )
     where
         F: Future<Item = I, Error = E> + Send + 'static,
@@ -58,7 +59,7 @@ impl FutureWatch {
             res
         }));
 
-        (wrapped_future, FutureWatch { status })
+        (wrapped_future, FuturePeek { status })
     }
 
     pub fn get_status(&self) -> FutureStatus {
@@ -78,7 +79,7 @@ pub enum FutureStatus {
 }
 
 ///
-///
+/// Testing utils
 ///
 pub fn expect_eventually<F>(cb: F)
 where

@@ -218,8 +218,7 @@ mod test {
 
         let transport_completion_sender = transport.completion_notifier.clone();
 
-        let (transport_future, transport_future_watch) =
-            FutureWatch::new(transport.map_err(|_| ()));
+        let (transport_future, transport_future_watch) = FuturePeek::new(transport.map_err(|_| ()));
         rt.spawn(transport_future);
 
         assert_eq!(transport_future_watch.get_status(), FutureStatus::NotReady);

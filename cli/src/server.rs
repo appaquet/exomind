@@ -2,13 +2,21 @@ use crate::config::NodeConfig;
 use crate::options;
 use exocore_common::cell::Cell;
 use exocore_common::time::Clock;
-use exocore_data::{DirectoryChainStore, DirectoryChainStoreConfig, MemoryPendingStore};
+use exocore_data::engine::EngineHandle;
+use exocore_data::{
+    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, MemoryPendingStore,
+};
+use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::transport::TransportHandle;
-use exocore_transport::TransportLayer;
+use exocore_transport::ws::{WebSocketTransportConfig, WebsocketTransport};
+use exocore_transport::{Libp2pTransport, TransportLayer};
 use futures::prelude::*;
 use std::net::SocketAddr;
 use tokio::runtime::Runtime;
 
+///
+/// Starts servers based on given command line options
+///
 pub fn start(
     _opts: &options::Options,
     server_opts: &options::ServerOptions,
@@ -20,14 +28,12 @@ pub fn start(
     let mut engines_handle = Vec::new();
 
     // create transport
-    let transport_config = exocore_transport::lp2p::Config::default();
-    let mut transport =
-        exocore_transport::lp2p::Libp2pTransport::new(local_node.clone(), transport_config);
+    let transport_config = Libp2pTransportConfig::default();
+    let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);
 
     for cell_config in &config.cells {
         let (_full_cell, cell) = cell_config.create_cell(&local_node)?;
         let clock = Clock::new();
-
 
         // make sure data directory exists
         let mut chain_dir = cell_config.data_directory.clone();
@@ -35,14 +41,14 @@ pub fn start(
         std::fs::create_dir_all(&chain_dir)?;
 
         // create chain store
-        let chain_store =
-            DirectoryChainStore::create_or_open(DirectoryChainStoreConfig::default(), &chain_dir)?;
+        let chain_config = DirectoryChainStoreConfig::default();
+        let chain_store = DirectoryChainStore::create_or_open(chain_config, &chain_dir)?;
         let pending_store = MemoryPendingStore::new();
 
         // create the engine
         let data_transport = transport.get_handle(cell.clone(), TransportLayer::Data)?;
-        let engine_config = exocore_data::EngineConfig::default();
-        let mut engine = exocore_data::Engine::new(
+        let engine_config = EngineConfig::default();
+        let mut engine = Engine::new(
             engine_config,
             clock,
             data_transport,
@@ -84,19 +90,21 @@ pub fn start(
     Ok(())
 }
 
+///
+/// Starts WebSocket transport server
+///
 fn start_ws_server(
     rt: &mut Runtime,
     cell: &Cell,
     listen_address: SocketAddr,
-    engine_handle: exocore_data::engine::Handle<DirectoryChainStore, MemoryPendingStore>,
+    engine_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
 ) -> Result<(), failure::Error> {
-    let config = exocore_transport::ws::Config::default();
-
     // start transport
-    let mut ws_transport = exocore_transport::ws::WebsocketTransport::new(listen_address, config);
-    let mut ws_handle = ws_transport.get_handle(cell)?;
+    let config = WebSocketTransportConfig::default();
+    let mut transport = WebsocketTransport::new(listen_address, config);
+    let mut handle = transport.get_handle(cell)?;
     rt.spawn(
-        ws_transport
+        transport
             .map(|_| {
                 info!("WebSocket transport has stopped");
             })
@@ -106,9 +114,9 @@ fn start_ws_server(
     );
 
     // wait for ws transport to start, then schedule stream & handle
-    rt.block_on(ws_handle.on_start())?;
+    rt.block_on(handle.on_start())?;
     rt.spawn(
-        ws_handle
+        handle
             .get_stream()
             .for_each(move |_in_message| {
                 debug!("Got message in WebSocket transport");
@@ -117,7 +125,7 @@ fn start_ws_server(
             })
             .map_err(|err| error!("Error in stream from transport handle: {}", err)),
     );
-    rt.spawn(ws_handle.map(|_| {}).map_err(|_| ()));
+    rt.spawn(handle.map(|_| {}).map_err(|_| ()));
 
     Ok(())
 }

@@ -59,6 +59,7 @@ pub struct Config {
     pub commit_manager_config: CommitManagerConfig,
     pub manager_timer_interval: Duration,
     pub handles_events_stream_size: usize,
+    pub to_transport_channel_size: usize,
 }
 
 impl Default for Config {
@@ -69,6 +70,7 @@ impl Default for Config {
             commit_manager_config: CommitManagerConfig::default(),
             manager_timer_interval: Duration::from_secs(1),
             handles_events_stream_size: 1000,
+            to_transport_channel_size: 3000,
         }
     }
 }
@@ -151,7 +153,7 @@ where
         }
     }
 
-    pub fn get_handle(&mut self) -> Handle<CS, PS> {
+    pub fn get_handle(&mut self) -> EngineHandle<CS, PS> {
         let mut unlocked_inner = self
             .inner
             .write()
@@ -176,7 +178,7 @@ where
             .handles_sender
             .push((id, false, events_sender));
 
-        Handle {
+        EngineHandle {
             id,
             inner: Arc::downgrade(&self.inner),
             events_receiver: Some(events_receiver),
@@ -197,7 +199,8 @@ where
         // create channel to send messages to transport's sink
         {
             let weak_inner = Arc::downgrade(&self.inner);
-            let (transport_out_channel_sender, transport_out_channel_receiver) = mpsc::unbounded();
+            let (transport_out_channel_sender, transport_out_channel_receiver) =
+                mpsc::channel(self.config.to_transport_channel_size);
             tokio::spawn(
                 transport_out_channel_receiver
                     .map_err(|err| {
@@ -403,7 +406,7 @@ where
     chain_synchronizer: chain_sync::ChainSynchronizer<CS>,
     commit_manager: commit_manager::CommitManager<PS, CS>,
     handles_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
-    transport_sender: Option<mpsc::UnboundedSender<OutMessage>>,
+    transport_sender: Option<mpsc::Sender<OutMessage>>,
     sync_state: SyncState,
     stop_notifier: CompletionNotifier<(), Error>,
 }
@@ -549,10 +552,15 @@ where
 
             for message in messages {
                 let out_message = message.into_out_message(&self.cell)?;
-                let transport_sender = self.transport_sender.as_ref().expect(
+                let transport_sender = self.transport_sender.as_mut().expect(
                     "Transport sender was none, which mean that the transport was never started",
                 );
-                transport_sender.unbounded_send(out_message)?;
+                if let Err(err) = transport_sender.try_send(out_message) {
+                    error!(
+                        "Error sending message from sync context to transport: {}",
+                        err
+                    );
+                }
             }
         }
 
@@ -621,7 +629,7 @@ where
 /// Handle ot the Engine, allowing communication with the engine.
 /// The engine itself is owned by a future executor.
 ///
-pub struct Handle<CS, PS>
+pub struct EngineHandle<CS, PS>
 where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
@@ -633,7 +641,7 @@ where
     stop_listener: CompletionListener<(), Error>,
 }
 
-impl<CS, PS> Handle<CS, PS>
+impl<CS, PS> EngineHandle<CS, PS>
 where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
@@ -771,7 +779,7 @@ where
     }
 }
 
-impl<CS, PS> Drop for Handle<CS, PS>
+impl<CS, PS> Drop for EngineHandle<CS, PS>
 where
     CS: chain::ChainStore,
     PS: pending::PendingStore,

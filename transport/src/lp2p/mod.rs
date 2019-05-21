@@ -26,7 +26,7 @@ use tokio_timer::Interval;
 /// libp2p transport configuration
 ///
 #[derive(Clone)]
-pub struct Config {
+pub struct Libp2pTransportConfig {
     pub listen_address: Option<Multiaddr>,
     pub handle_in_channel_size: usize,
     pub handle_out_channel_size: usize,
@@ -34,7 +34,7 @@ pub struct Config {
     pub swarm_nodes_update_interval: Duration,
 }
 
-impl Config {
+impl Libp2pTransportConfig {
     fn listen_address(&self, local_node: &LocalNode) -> Result<Multiaddr, Error> {
         self
             .listen_address
@@ -47,9 +47,9 @@ impl Config {
     }
 }
 
-impl Default for Config {
+impl Default for Libp2pTransportConfig {
     fn default() -> Self {
-        Config {
+        Libp2pTransportConfig {
             listen_address: None,
             handle_in_channel_size: 1000,
             handle_out_channel_size: 1000,
@@ -66,7 +66,7 @@ impl Default for Config {
 /// it's ready. Once all handles are dropped, all its scheduled tasks will be stopped too.
 pub struct Libp2pTransport {
     local_node: LocalNode,
-    config: Config,
+    config: Libp2pTransportConfig,
     start_notifier: CompletionNotifier<(), Error>,
     stop_listener: CompletionListener<(), Error>,
     inner: Arc<RwLock<InnerTransport>>,
@@ -107,7 +107,7 @@ impl Libp2pTransport {
     /// Creates a new transport for given node and config. The node is important here
     /// since all messages are authenticated using the node's private key thanks to secio
     ///
-    pub fn new(local_node: LocalNode, config: Config) -> Libp2pTransport {
+    pub fn new(local_node: LocalNode, config: Libp2pTransportConfig) -> Libp2pTransport {
         let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
 
         let inner = InnerTransport {
@@ -443,23 +443,23 @@ mod tests {
         let mut rt = Runtime::new()?;
 
         let node1 = LocalNode::generate();
-        node1.add_address("/ip4/127.0.0.1/tcp/3303".parse().unwrap());
+        node1.add_address("/ip4/127.0.0.1/tcp/3003".parse().unwrap());
         let node1_cell = FullCell::generate(node1.clone());
 
         let node2 = LocalNode::generate();
-        node2.add_address("/ip4/127.0.0.1/tcp/3304".parse().unwrap());
+        node2.add_address("/ip4/127.0.0.1/tcp/3004".parse().unwrap());
         let node2_cell = node1_cell.clone_for_local_node(node2.clone());
 
         node1_cell.nodes_mut().add(node2.node().clone());
         node2_cell.nodes_mut().add(node1.node().clone());
 
-        let mut transport1 = Libp2pTransport::new(node1.clone(), Config::default());
+        let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
         let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
         let handle1_tester = TransportHandlTester::new(&mut rt, handle1);
         rt.spawn(transport1.map(|_| ()).map_err(|_| ()));
         rt.block_on(handle1_tester.handle.on_start())?;
 
-        let mut transport2 = Libp2pTransport::new(node2.clone(), Config::default());
+        let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
         let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
         let handle2_tester = TransportHandlTester::new(&mut rt, handle2);
         rt.spawn(transport2.map(|_| ()).map_err(|_| ()));
@@ -495,21 +495,21 @@ mod tests {
         // config always take precedence
         let node1 = LocalNode::generate();
         node1.add_address(addr1.clone());
-        let config = Config {
+        let config = Libp2pTransportConfig {
             listen_address: Some(addr2.clone()),
-            ..Config::default()
+            ..Libp2pTransportConfig::default()
         };
         assert_eq!(addr2.clone(), config.listen_address(&node1)?);
 
         // fallback to node if not specified in config
         let node1 = LocalNode::generate();
         node1.add_address(addr1.clone());
-        let config = Config::default();
+        let config = Libp2pTransportConfig::default();
         assert_eq!(addr1.clone(), config.listen_address(&node1)?);
 
         // error if no addresses found
         let node1 = LocalNode::generate();
-        let config = Config::default();
+        let config = Libp2pTransportConfig::default();
         assert!(config.listen_address(&node1).is_err());
 
         Ok(())
@@ -527,7 +527,7 @@ mod tests {
         node2.add_address("/ip4/127.0.0.1/tcp/0".parse()?);
         let node2_cell = FullCell::generate(node2.clone());
 
-        let mut transport = Libp2pTransport::new(node1.clone(), Config::default());
+        let mut transport = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
         let inner_weak = Arc::downgrade(&transport.inner);
 
         // we create 2 handles

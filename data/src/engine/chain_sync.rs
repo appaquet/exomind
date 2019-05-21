@@ -1087,6 +1087,8 @@ mod tests {
     use crate::engine::{SyncContextMessage, SyncState};
 
     use super::*;
+    use crate::operation::OperationBuilder;
+    use itertools::Itertools;
 
     #[test]
     fn handle_sync_response_blocks() -> Result<(), failure::Error> {
@@ -1367,7 +1369,44 @@ mod tests {
 
     #[test]
     fn sync_single_block_even_if_max_out_size() -> Result<(), failure::Error> {
-        // TODO:
+        let mut cluster = TestCluster::new(2);
+
+        let node_0 = cluster.get_local_node(0).clone();
+        cluster.chain_add_genesis_block(0);
+
+        // generate a block that exceeds maximum send size
+        let operation_size = cluster.chains_synchronizer[0].config.blocks_max_send_size / 9;
+        let operations = (0..10)
+            .map(|_i| {
+                let op_id = cluster.consistent_clock(0);
+                let frame_signer = node_0.frame_signer();
+                let data = vec![0u8; operation_size + 1];
+                OperationBuilder::new_entry(op_id, node_0.id(), &data)
+                    .sign_and_build(frame_signer)
+                    .unwrap()
+                    .frame
+            })
+            .collect_vec();
+        cluster.chain_add_block_with_operations(0, operations.into_iter())?;
+
+        let node0_last_block = cluster.chains[0].get_last_block()?.unwrap();
+        let node0_last_block_size = node0_last_block.operations_data().len();
+        assert!(node0_last_block_size > cluster.chains_synchronizer[0].config.blocks_max_send_size);
+
+        // node 1 is empty
+        cluster.chain_generate_dummy(1, 0, 1234);
+
+        // make node 1 fetch data from node 0
+        run_sync_1_to_1(&mut cluster, 1, 0)?;
+        run_sync_1_to_1(&mut cluster, 1, 0)?;
+
+        // node 1 should have the block even if it was bigger than maximum size, but it should
+        // have sent blocks 1 by 1 instead
+        let node1_last_block = cluster.chains[1].get_last_block()?.unwrap();
+        assert_eq!(
+            node0_last_block_size,
+            node1_last_block.operations_data().len()
+        );
 
         Ok(())
     }

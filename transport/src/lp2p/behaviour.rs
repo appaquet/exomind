@@ -180,7 +180,7 @@ mod tests {
         let key1 = identity::Keypair::generate_ed25519();
         let peer1 = PeerId::from(key1.public());
         let transport1 = libp2p::build_development_transport(key1);
-        let addr1: Multiaddr = "/ip4/127.0.0.1/tcp/3301".parse().unwrap();
+        let addr1: Multiaddr = "/ip4/127.0.0.1/tcp/3001".parse().unwrap();
 
         let behaviour1 = ExocoreBehaviour::new();
         let mut swarm1 = Swarm::new(transport1, behaviour1, peer1.clone());
@@ -189,7 +189,7 @@ mod tests {
         let key2 = identity::Keypair::generate_ed25519();
         let peer2 = PeerId::from(key2.public());
         let transport2 = libp2p::build_development_transport(key2);
-        let addr2: Multiaddr = "/ip4/127.0.0.1/tcp/3302".parse().unwrap();
+        let addr2: Multiaddr = "/ip4/127.0.0.1/tcp/3002".parse().unwrap();
 
         let behaviour2 = ExocoreBehaviour::new();
         let mut swarm2 = Swarm::new(transport2, behaviour2, peer2.clone());

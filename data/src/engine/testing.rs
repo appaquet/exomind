@@ -4,9 +4,11 @@ use exocore_common::node::{LocalNode, Node, NodeId};
 use exocore_common::serialization::framed::{
     FrameBuilder, MultihashFrameSigner, OwnedTypedFrame, TypedFrame,
 };
-use exocore_common::serialization::protos::data_chain_capnp::{block, block_signatures};
+use exocore_common::serialization::protos::data_chain_capnp::{
+    block, block_signatures, pending_operation,
+};
 
-use crate::block::{Block, BlockDepth, BlockOffset, BlockOwned};
+use crate::block::{Block, BlockDepth, BlockOffset, BlockOperations, BlockOwned};
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
 use crate::chain::ChainStore;
 use crate::engine::commit_manager::CommitManager;
@@ -130,6 +132,10 @@ impl TestCluster {
         self.nodes[node_idx].node().clone()
     }
 
+    pub fn get_local_node(&self, node_idx: usize) -> LocalNode {
+        self.nodes[node_idx].clone()
+    }
+
     pub fn get_node_index(&self, node_id: &NodeId) -> usize {
         self.nodes_index[node_id]
     }
@@ -210,6 +216,34 @@ impl TestCluster {
     pub fn chain_add_genesis_block(&mut self, node_idx: usize) {
         let block = BlockOwned::new_genesis(&self.cells[node_idx]).unwrap();
         self.chains[node_idx].write_block(&block).unwrap();
+    }
+
+    pub fn chain_add_block_with_operations<I, F>(
+        &mut self,
+        node_idx: usize,
+        operations: I,
+    ) -> Result<(), crate::engine::Error>
+    where
+        I: Iterator<Item = F>,
+        F: TypedFrame<pending_operation::Owned>,
+    {
+        if self.chains[node_idx].get_last_block()?.is_none() {
+            self.chain_add_genesis_block(node_idx);
+        }
+
+        let last_block = self.chains[node_idx].get_last_block()?.unwrap();
+
+        let block_operation_id = self.consistent_clock(node_idx);
+        let block_operations = BlockOperations::from_operations(operations)?;
+        let block = BlockOwned::new_with_prev_block(
+            &self.cells[node_idx],
+            &last_block,
+            block_operation_id,
+            block_operations,
+        )?;
+        self.chains[node_idx].write_block(&block)?;
+
+        Ok(())
     }
 
     pub fn tick_pending_synchronizer(

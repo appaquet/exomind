@@ -7,7 +7,7 @@ use std::str::FromStr;
 use structopt::StructOpt;
 
 ///
-/// Main cli options
+/// CLI options
 ///
 #[derive(StructOpt)]
 #[structopt(name = "exocore-cli", about = "Exocore Command Line Interface")]
@@ -32,7 +32,7 @@ pub struct ServerOptions {
     pub data_node: bool,
     #[structopt(long, short = "i")]
     pub index_node: bool,
-    #[structopt(short = "c", default_value = "config.yaml")]
+    #[structopt(long, short = "c", default_value = "config.yaml")]
     pub config: PathBuf,
     #[structopt(subcommand)]
     pub command: ServerCommand,
@@ -44,7 +44,7 @@ pub enum ServerCommand {
 }
 
 ///
-/// Keys related
+/// Keys related options
 ///
 #[derive(StructOpt)]
 pub struct KeysOptions {
@@ -77,11 +77,11 @@ impl FromStr for KeyAlgorithm {
 }
 
 ///
-/// Cell related
+/// Cell related options
 ///
 #[derive(StructOpt)]
 pub struct CellOptions {
-    #[structopt(long, short, default_value = "config.yaml")]
+    #[structopt(long, short = "c", default_value = "config.yaml")]
     pub config: PathBuf,
     #[structopt(long, short)]
     /// Public key of the cell we want to make an action on
