@@ -108,8 +108,11 @@ where
             node_id.clone(),
             config.pending_synchronizer_config,
         );
-        let chain_synchronizer =
-            chain_sync::ChainSynchronizer::new(node_id.clone(), config.chain_synchronizer_config);
+        let chain_synchronizer = chain_sync::ChainSynchronizer::new(
+            node_id.clone(),
+            config.chain_synchronizer_config,
+            clock.clone(),
+        );
         let commit_manager = commit_manager::CommitManager::new(
             node_id.clone(),
             config.commit_manager_config,
@@ -394,7 +397,7 @@ where
         operation_frame: OwnedTypedFrame<pending_operation::Owned>,
     ) -> Result<(), Error> {
         let mut sync_context = SyncContext::new();
-        // TODO: Make sure chain_synchronizer is Synchronized first: https://github.com/appaquet/exocore/issues/44
+        // TODO: Make sure chain_synchronizer is Synchronized first: https://github.com/appaquet/exocore/issues/54
         self.pending_synchronizer.handle_new_operation(
             &mut sync_context,
             &self.nodes,
@@ -474,7 +477,7 @@ where
     fn tick_synchronizers(&mut self) -> Result<(), Error> {
         let mut sync_context = SyncContext::new();
 
-        // TODO: We should only do commit manager & pending synchronizer once chain is synced: https://github.com/appaquet/exocore/issues/44
+        // TODO: We should only do commit manager & pending synchronizer once chain is synced: https://github.com/appaquet/exocore/issues/54
 
         self.chain_synchronizer
             .tick(&mut sync_context, &self.chain_store, &self.nodes)?;

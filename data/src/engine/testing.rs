@@ -10,7 +10,7 @@ use exocore_common::serialization::protos::data_chain_capnp::{
 
 use crate::chain;
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
-use crate::chain::{BlockOwned, ChainStore};
+use crate::chain::{Block, BlockDepth, BlockOffset, BlockOwned, ChainStore};
 use crate::engine::commit_manager::CommitManager;
 use crate::engine::pending_sync;
 use crate::engine::{chain_sync, SyncContext};
@@ -18,9 +18,12 @@ use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
 use exocore_common::serialization::protos::{GroupID, OperationID};
 use exocore_common::time::Clock;
+use std::collections::HashMap;
 
 pub(super) struct TestCluster {
     pub nodes: Nodes,
+    pub nodes_index: HashMap<String, usize>,
+
     pub temp_dirs: Vec<TempDir>,
 
     pub clocks: Vec<Clock>,
@@ -36,6 +39,8 @@ pub(super) struct TestCluster {
 impl TestCluster {
     pub fn new(count: usize) -> TestCluster {
         let mut nodes = Nodes::new();
+        let mut nodes_index = HashMap::new();
+
         let mut temp_dirs = Vec::new();
         let mut clocks = Vec::new();
         let mut chains = Vec::new();
@@ -46,6 +51,7 @@ impl TestCluster {
 
         for i in 0..count {
             let node_id = format!("node{}", i);
+            nodes_index.insert(node_id.clone(), i);
             nodes.add(Node::new(node_id.clone()));
 
             let tempdir = TempDir::new("test_cluster").unwrap();
@@ -62,6 +68,7 @@ impl TestCluster {
             chains_synchronizer.push(chain_sync::ChainSynchronizer::new(
                 node_id.clone(),
                 chain_sync::ChainSyncConfig::default(),
+                clock.clone(),
             ));
 
             pending_stores.push(MemoryPendingStore::new());
@@ -81,6 +88,8 @@ impl TestCluster {
 
         TestCluster {
             nodes,
+            nodes_index,
+
             temp_dirs,
             clocks,
             chains,
@@ -98,13 +107,40 @@ impl TestCluster {
             .clone()
     }
 
+    pub fn get_node_index(&self, node_id: &str) -> usize {
+        self.nodes_index[node_id]
+    }
+
     pub fn chain_generate_dummy(&mut self, node_idx: usize, count: usize, seed: u64) {
-        let mut offsets = Vec::new();
-        let mut next_offset = 0;
+        self.chain_generate_dummy_from_offset(node_idx, 0, 0, count, seed);
+    }
+
+    pub fn chain_append_dummy(&mut self, node_idx: usize, count: usize, seed: u64) {
+        let (next_offset, next_depth) =
+            self.chains[node_idx]
+                .get_last_block()
+                .unwrap()
+                .map_or((0, 0), |block| {
+                    let block_reader = block.block().get_typed_reader().unwrap();
+                    let block_depth = block_reader.get_depth();
+
+                    (block.next_offset(), block_depth + 1)
+                });
+
+        self.chain_generate_dummy_from_offset(node_idx, next_offset, next_depth, count, seed);
+    }
+
+    pub fn chain_generate_dummy_from_offset(
+        &mut self,
+        node_idx: usize,
+        from_offset: BlockOffset,
+        from_depth: BlockDepth,
+        count: usize,
+        seed: u64,
+    ) {
+        let mut next_offset = from_offset;
 
         for i in 0..count {
-            offsets.push(next_offset);
-
             let previous_block = if i != 0 {
                 Some(
                     self.chains[node_idx]
@@ -120,7 +156,7 @@ impl TestCluster {
             let signatures = create_dummy_block_sigs(operations_data.len() as u32);
             let block_frame = create_dummy_block(
                 next_offset,
-                i as u64,
+                from_depth + i as u64,
                 operations_data.len() as u32,
                 signatures.frame_size() as u16,
                 prev_block_msg,

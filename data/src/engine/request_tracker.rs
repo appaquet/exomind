@@ -34,13 +34,17 @@ impl RequestTracker {
         }
     }
 
-    pub fn set_last_send(&mut self, time: Instant) {
-        self.last_request_send = Some(time);
+    pub fn set_last_send_now(&mut self) {
+        self.last_request_send = Some(self.clock.instant());
     }
 
-    pub fn set_last_responded(&mut self, time: Instant) {
-        self.last_response_receive = Some(time);
+    pub fn set_last_responded_now(&mut self) {
+        self.last_response_receive = Some(self.clock.instant());
         self.nb_response_failure = 0;
+    }
+
+    pub fn last_response_receive(&self) -> Option<Duration> {
+        self.last_response_receive.map(|i| self.clock.instant() - i)
     }
 
     pub fn can_send_request(&mut self) -> bool {
@@ -115,7 +119,7 @@ mod tests {
         assert!(tracker.can_send_request());
 
         // if we have sent, we shouldn't be able to re-do a query until timeout
-        tracker.set_last_send(mock_clock.instant());
+        tracker.set_last_send_now();
         assert!(!tracker.can_send_request());
         assert!(!tracker.has_responded_last_request());
 
@@ -133,7 +137,7 @@ mod tests {
             RequestTracker::new_with_clock(mock_clock.clone(), RequestTrackerConfig::default());
 
         tracker.can_send_request();
-        tracker.set_last_send(mock_clock.instant());
+        tracker.set_last_send_now();
 
         assert!(!tracker.can_send_request());
         tracker.force_next_request();
@@ -147,12 +151,12 @@ mod tests {
             RequestTracker::new_with_clock(mock_clock.clone(), RequestTrackerConfig::default());
 
         tracker.can_send_request();
-        tracker.set_last_send(mock_clock.instant());
+        tracker.set_last_send_now();
         assert_eq!(tracker.next_request_interval(), Duration::from_secs(5));
 
         mock_clock.add_fixed_instant_duration(Duration::from_millis(5001));
         tracker.can_send_request();
-        tracker.set_last_send(mock_clock.instant());
+        tracker.set_last_send_now();
         assert_eq!(tracker.next_request_interval(), Duration::from_secs(10));
 
         for _i in 0..10 {
@@ -160,11 +164,10 @@ mod tests {
                 tracker.next_request_interval() + Duration::from_millis(1),
             );
             tracker.can_send_request();
-            tracker.set_last_send(mock_clock.instant());
+            tracker.set_last_send_now();
         }
 
         // should be capped to maximum
         assert_eq!(tracker.next_request_interval(), Duration::from_secs(30));
     }
-
 }

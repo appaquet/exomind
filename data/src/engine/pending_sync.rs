@@ -2,7 +2,6 @@
 
 use std::collections::{HashMap, HashSet};
 use std::ops::{Bound, RangeBounds};
-use std::time::Instant;
 
 use itertools::{EitherOrBoth, Itertools};
 
@@ -33,7 +32,7 @@ const MAX_OPERATIONS_PER_RANGE: u32 = 30;
 /// nodes reply with a request that represents the intent of the remote store. That intent could be to request missing data,
 /// or send missing data.
 ///
-/// The whole store could be compared as a while (no boundaries), but that would result in excessive data transmission, because
+/// The store could be compared as a whole (no boundaries), but that would result in excessive data transmission, because
 /// a single difference would require the whole store to be compared. In order to minimize this, when building ranges, a node
 /// tries to limit the number of operations by range. If a single range is not equal, only this range will be compared via
 /// headers exchange and full operations exchange.
@@ -71,7 +70,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         for node in nodes.nodes_except(&my_node_id) {
             let sync_info = self.get_or_create_node_info_mut(node.id());
             if sync_info.request_tracker.can_send_request() {
-                sync_info.request_tracker.set_last_send(Instant::now());
+                sync_info.request_tracker.set_last_send_now();
                 let request =
                     self.create_sync_request_for_range(store, .., |_op| OperationDetails::None)?;
                 sync_context.push_pending_sync_request(node.id().clone(), request);
