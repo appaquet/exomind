@@ -13,9 +13,9 @@ extern crate tempdir;
 pub use self::serialization::protos::*;
 
 pub mod cell;
+pub mod crypto;
 pub mod node;
 pub mod range;
-pub mod security;
 pub mod serialization;
 pub mod simple_store;
 pub mod tests_utils;

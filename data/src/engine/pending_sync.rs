@@ -4,8 +4,8 @@ use std::ops::{Bound, RangeBounds};
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::operation::OperationId;
+use exocore_common::crypto::hash::{Digest, MultihashDigest, Sha3_256};
 use exocore_common::node::{Node, NodeId};
-use exocore_common::security::hash::{Sha3Hasher, StreamHasher};
 use exocore_common::serialization::framed::*;
 use exocore_common::serialization::protos::data_chain_capnp::{
     pending_operation, pending_operation_header,
@@ -334,13 +334,13 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     where
         R: RangeBounds<OperationId>,
     {
-        let mut frame_hasher = Sha3Hasher::new_256();
+        let mut frame_hasher = Sha3_256::new();
         let mut count = 0;
 
         let operations_iter =
             self.operations_iter_from_depth(store, range, operations_from_depth)?;
         for operation in operations_iter {
-            frame_hasher.consume_signed_frame(operation.frame.as_ref());
+            frame_hasher.input_signed_frame(operation.frame.as_ref());
             count += 1;
         }
 
@@ -629,7 +629,7 @@ struct SyncRangeBuilder {
     operations_headers: Vec<StoredOperation>,
     operations_count: u32,
 
-    hasher: Option<Sha3Hasher>,
+    hasher: Option<Sha3_256>,
     hash: Option<Vec<u8>>,
 }
 
@@ -651,7 +651,7 @@ impl SyncRangeBuilder {
             operations: Vec::new(),
             operations_headers: Vec::new(),
             operations_count: 0,
-            hasher: Some(Sha3Hasher::new_256()),
+            hasher: Some(Sha3_256::new()),
             hash: None,
         }
     }
@@ -677,7 +677,7 @@ impl SyncRangeBuilder {
         self.operations_count += 1;
 
         if let Some(hasher) = self.hasher.as_mut() {
-            hasher.consume_signed_frame(operation.frame.as_ref())
+            hasher.input_signed_frame(operation.frame.as_ref())
         }
 
         match details {

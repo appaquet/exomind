@@ -1,4 +1,4 @@
-use tokio::prelude::*;
+use futures::prelude::*;
 
 use crate::{Error, InMessage, OutMessage};
 

@@ -1,7 +1,7 @@
 use crate::block::Block;
+use exocore_common::crypto::signature::Signature;
 use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::node::NodeId;
-use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{FrameBuilder, FrameSigner, TypedFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{block, block_signature};
 use exocore_common::serialization::{capnp, framed};

@@ -23,6 +23,5 @@ else
     sleep 2
 fi
 
-echo "Checking wasm compilation for common"
-cd "$CUR_DIR/../common/"
-cargo check --target "wasm32-unknown-unknown"
+echo "Checking wasm compilation for exocore-client-wasm"
+cargo check -p exocore-client-wasm --target "wasm32-unknown-unknown"

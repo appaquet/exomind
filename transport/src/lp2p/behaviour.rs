@@ -1,11 +1,10 @@
 use futures::prelude::*;
 use libp2p::core::nodes::raw_swarm::ConnectedPoint;
-use libp2p::core::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
-use libp2p::{Multiaddr, PeerId};
-
 use libp2p::core::protocols_handler::{OneShotHandler, ProtocolsHandler};
+use libp2p::core::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
+use libp2p::core::{Multiaddr, PeerId};
 use std::collections::{HashMap, VecDeque};
-use tokio::prelude::{AsyncRead, AsyncWrite};
+use tokio_io::{AsyncRead, AsyncWrite};
 
 use super::protocol::{ExocoreProtoConfig, WireMessage};
 
@@ -169,8 +168,7 @@ mod tests {
     use futures::prelude::*;
     use futures::sync::mpsc;
     use libp2p::core::identity;
-    use libp2p::Swarm;
-    use libp2p::{Multiaddr, PeerId};
+    use libp2p::core::{Multiaddr, PeerId, Swarm};
     use tokio::runtime::Runtime;
 
     use super::*;
@@ -185,7 +183,7 @@ mod tests {
         let addr1: Multiaddr = "/ip4/127.0.0.1/tcp/3301".parse().unwrap();
 
         let behaviour1 = ExocoreBehaviour::new();
-        let mut swarm1 = libp2p::core::Swarm::new(transport1, behaviour1, peer1.clone());
+        let mut swarm1 = Swarm::new(transport1, behaviour1, peer1.clone());
         Swarm::listen_on(&mut swarm1, addr1.clone()).unwrap();
 
         let key2 = identity::Keypair::generate_ed25519();
@@ -194,7 +192,7 @@ mod tests {
         let addr2: Multiaddr = "/ip4/127.0.0.1/tcp/3302".parse().unwrap();
 
         let behaviour2 = ExocoreBehaviour::new();
-        let mut swarm2 = libp2p::core::Swarm::new(transport2, behaviour2, peer2.clone());
+        let mut swarm2 = Swarm::new(transport2, behaviour2, peer2.clone());
         Swarm::listen_on(&mut swarm2, addr2.clone()).unwrap();
 
         swarm2.add_peer(peer1.clone(), vec![addr1.clone()]);

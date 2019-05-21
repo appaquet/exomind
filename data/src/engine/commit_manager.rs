@@ -4,8 +4,8 @@ use std::collections::{HashMap, HashSet};
 use itertools::Itertools;
 
 use crate::operation::{GroupId, OperationId};
+use exocore_common::crypto::signature::Signature;
 use exocore_common::node::NodeId;
-use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{SignedFrame, TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{block, pending_operation};
 use exocore_common::time::{duration_to_consistent_u64, Clock};

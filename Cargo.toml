@@ -1,14 +1,3 @@
-[package]
-name = "exocore"
-version = "0.1.0"
-authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
-
-[dependencies]
-exocore-server = { path = "./server" }
-exocore-index = { path = "./index" }
-exocore-data = { path = "./data" }
-exocore-common = { path = "./common" }
-exocore-transport = { path = "./transport" }
 
 [workspace]
 members = [
@@ -17,6 +6,7 @@ members = [
   "data",
   "common",
   "transport",
+  "clients/wasm",
 ]
 
 #[patch.crates-io]

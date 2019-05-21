@@ -1,11 +1,11 @@
 use crate::operation::OperationId;
 use exocore_common::cell::{Cell, FullCell};
+use exocore_common::crypto::hash::{Digest, Multihash, MultihashDigest, Sha3_256};
+use exocore_common::crypto::signature::Signature;
 use exocore_common::data_chain_capnp::{
     block, block_operation_header, block_signature, block_signatures,
 };
 use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::security::hash::{Multihash, Sha3Hasher, StreamHasher};
-use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{
     FrameBuilder, OwnedFrame, OwnedTypedFrame, SignedFrame, TypedFrame, TypedSliceFrame,
 };
@@ -422,7 +422,7 @@ impl BlockOperations {
         I: Iterator<Item = F>,
         F: TypedFrame<pending_operation::Owned>,
     {
-        let mut hasher = Sha3Hasher::new_256();
+        let mut hasher = Sha3_256::new();
         let mut headers = Vec::new();
         let mut data = Vec::new();
 
@@ -430,7 +430,7 @@ impl BlockOperations {
             let operation_reader = operation.get_typed_reader()?;
             let offset = data.len();
             let entry_data = operation.frame_data();
-            hasher.consume_signed_frame(&operation);
+            hasher.input_signed_frame(&operation);
             data.extend_from_slice(entry_data);
 
             headers.push(BlockOperationHeader {
@@ -452,9 +452,9 @@ impl BlockOperations {
         I: Iterator<Item = F>,
         F: TypedFrame<pending_operation::Owned>,
     {
-        let mut hasher = Sha3Hasher::new_256();
+        let mut hasher = Sha3_256::new();
         for operation in sorted_operations {
-            hasher.consume_signed_frame(&operation);
+            hasher.input_signed_frame(&operation);
         }
         Ok(hasher.into_multihash())
     }

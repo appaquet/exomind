@@ -16,7 +16,7 @@ steps:
       docker --version
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
 
-      export PATH=$PATH:$HOME/.cargo/bin
+      export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
       rustc --version && cargo --version
       rustup component add rustfmt
       rustup component add clippy
@@ -24,7 +24,7 @@ steps:
 
   - script: |
       set -e
-      export PATH=$PATH:$HOME/.cargo/bin
+      export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
 
       cargo fmt --all -- --check
       cargo check --all
