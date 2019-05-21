@@ -603,6 +603,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     ) -> Result<(), Error> {
         if !self.is_leader(from_node.id()) {
             warn!("Got data from a non-lead node {}", from_node.id());
+            return Err(Error::Other(format!(
+                "Got data from a non-lead node {}",
+                from_node.id()
+            )));
         }
 
         let from_node_info = self.get_or_create_node_info_mut(&from_node.id());
@@ -791,7 +795,7 @@ impl NodeSyncInfo {
     fn chain_metadata_status(&self) -> NodeMetadataStatus {
         let is_synced = self
             .request_tracker
-            .last_response_receive()
+            .last_response_elapsed_duration()
             .map_or(false, |last_response| {
                 last_response < self.config.meta_sync_timeout
             });
@@ -1054,16 +1058,23 @@ mod tests {
         assert_eq!(cluster.chains_synchronizer[0].status, Status::Downloading);
         assert!(cluster.chains_synchronizer[0].is_leader("node1"));
 
-        // response from non-leader should just not reply
-        let response = FrameBuilder::new();
+        // response from non-leader should result in an error
+        let blocks_iter = cluster.chains[1].blocks_iter(0)?;
+        let response = ChainSynchronizer::<DirectoryChainStore>::create_sync_response_for_blocks(
+            &cluster.chains_synchronizer[1].config,
+            10,
+            0,
+            blocks_iter,
+        )?;
         let response_frame = response.as_owned_unsigned_framed()?;
         let mut sync_context = SyncContext::new();
-        cluster.chains_synchronizer[0].handle_sync_response(
+        let result = cluster.chains_synchronizer[0].handle_sync_response(
             &mut sync_context,
             &node0,
             &mut cluster.chains[0],
             response_frame,
-        )?;
+        );
+        assert!(result.is_err());
         assert!(sync_context.messages.is_empty());
 
         // response from leader with blocks that aren't next should fail
@@ -1084,7 +1095,7 @@ mod tests {
         );
         assert!(result.is_err());
 
-        // response from leader with blocks at right position should suceed and append
+        // response from leader with blocks at right position should succeed and append
         let blocks_iter = cluster.chains[1].blocks_iter(0).unwrap().skip(10); // skip 10 will go to 10th block
         let response = ChainSynchronizer::<DirectoryChainStore>::create_sync_response_for_blocks(
             &cluster.chains_synchronizer[0].config,
