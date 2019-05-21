@@ -68,7 +68,7 @@ impl Clock {
             // means another thread swapped / increased the value, and we need to retry
             let before_swap =
                 self.consistent_counter
-                    .compare_and_swap(counter, 0, Ordering::SeqCst);
+                    .compare_and_swap(counter + 1, 0, Ordering::SeqCst);
             if before_swap == counter {
                 break 0;
             }
@@ -157,7 +157,7 @@ mod tests {
     use crate::node::LocalNode;
 
     #[test]
-    fn test_non_mocked_clock() {
+    fn non_mocked_clock() {
         let now = Instant::now();
 
         let clock = Clock::new();
@@ -169,7 +169,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fixed_mocked_clock() {
+    fn fixed_mocked_clock() {
         let mocked_clock = Clock::new_fixed_mocked(Instant::now());
         assert_eq!(mocked_clock.instant(), mocked_clock.instant());
 
@@ -184,7 +184,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fixed_consistent_time() {
+    fn fixed_consistent_time() {
         let mocked_clock = Clock::new_fixed_mocked(Instant::now());
         let local_node = LocalNode::generate();
 
@@ -203,7 +203,20 @@ mod tests {
     }
 
     #[test]
-    fn test_fixed_future_consistent_time() {
+    fn consistent_time_collision() {
+        let mocked_clock = Clock::new_fixed_mocked(Instant::now());
+        let local_node = LocalNode::generate();
+
+        let mut last_time = 0;
+        for _i in 0..100 {
+            let current_time = mocked_clock.consistent_time(local_node.node());
+            assert_ne!(last_time, current_time);
+            last_time = current_time;
+        }
+    }
+
+    #[test]
+    fn fixed_future_consistent_time() {
         let mocked_clock = Clock::new_fixed_mocked(Instant::now() + Duration::from_secs(10));
         let local_node = LocalNode::generate();
 
@@ -222,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unfixed_mocked_clock() {
+    fn unfixed_mocked_clock() {
         let mocked_clock = Clock::new_mocked();
         assert_ne!(mocked_clock.instant(), mocked_clock.instant());
 
@@ -236,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn test_thread_safety() {
+    fn thread_safety() {
         let now = Instant::now();
 
         let mocked_clock = Arc::new(Clock::new_mocked());

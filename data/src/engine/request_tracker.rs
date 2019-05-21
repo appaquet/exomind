@@ -10,7 +10,7 @@ pub struct RequestTracker {
 
     last_request_send: Option<Instant>,
     last_response_receive: Option<Instant>,
-    nb_response_failure: usize,
+    response_failure_count: usize,
 
     // next can_send_request() will return true
     force_next_request: Option<bool>,
@@ -24,7 +24,7 @@ impl RequestTracker {
 
             last_request_send: None,
             last_response_receive: None,
-            nb_response_failure: 0,
+            response_failure_count: 0,
 
             force_next_request: None,
         }
@@ -36,11 +36,7 @@ impl RequestTracker {
 
     pub fn set_last_responded_now(&mut self) {
         self.last_response_receive = Some(self.clock.instant());
-        self.nb_response_failure = 0;
-    }
-
-    pub fn last_response_elapsed_duration(&self) -> Option<Duration> {
-        self.last_response_receive.map(|i| self.clock.instant() - i)
+        self.response_failure_count = 0;
     }
 
     pub fn can_send_request(&mut self) -> bool {
@@ -55,7 +51,7 @@ impl RequestTracker {
 
         if should_send_request {
             if self.last_request_send.is_some() && !self.has_responded_last_request() {
-                self.nb_response_failure += 1;
+                self.response_failure_count += 1;
             }
 
             true
@@ -68,9 +64,16 @@ impl RequestTracker {
         self.force_next_request = Some(true);
     }
 
+    pub fn reset(&mut self) {
+        self.last_request_send = None;
+        self.last_response_receive = None;
+        self.response_failure_count = 0;
+        self.force_next_request = None;
+    }
+
     fn next_request_interval(&self) -> Duration {
-        let interval =
-            self.config.base_interval + self.config.base_interval * self.nb_response_failure as u32;
+        let interval = self.config.base_interval
+            + self.config.base_interval * self.response_failure_count as u32;
         interval.min(self.config.max_interval)
     }
 
@@ -80,6 +83,15 @@ impl RequestTracker {
             _ => false,
         }
     }
+
+    pub fn response_failure_count(&self) -> usize {
+        self.response_failure_count
+    }
+
+    #[cfg(test)]
+    pub fn set_response_failure_count(&mut self, count: usize) {
+        self.response_failure_count = count;
+    }
 }
 
 ///
@@ -87,8 +99,8 @@ impl RequestTracker {
 ///
 #[derive(Clone, Copy, Debug)]
 pub struct RequestTrackerConfig {
-    base_interval: Duration,
-    max_interval: Duration,
+    pub base_interval: Duration,
+    pub max_interval: Duration,
 }
 
 impl Default for RequestTrackerConfig {
@@ -123,7 +135,7 @@ mod tests {
         mock_clock.set_fixed_instant(Instant::now() + Duration::from_millis(5001));
         assert!(tracker.can_send_request());
         assert!(!tracker.has_responded_last_request());
-        assert_eq!(tracker.nb_response_failure, 1);
+        assert_eq!(tracker.response_failure_count, 1);
     }
 
     #[test]
@@ -137,6 +149,20 @@ mod tests {
 
         assert!(!tracker.can_send_request());
         tracker.force_next_request();
+        assert!(tracker.can_send_request());
+    }
+
+    #[test]
+    fn test_reset() {
+        let mock_clock = Clock::new_mocked();
+        let mut tracker =
+            RequestTracker::new_with_clock(mock_clock.clone(), RequestTrackerConfig::default());
+
+        tracker.can_send_request();
+        tracker.set_last_send_now();
+
+        assert!(!tracker.can_send_request());
+        tracker.reset();
         assert!(tracker.can_send_request());
     }
 

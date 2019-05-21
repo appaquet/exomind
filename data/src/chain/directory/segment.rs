@@ -93,7 +93,7 @@ impl DirectorySegment {
         // read first block to validate it has the same offset as segment
         let first_block = BlockRef::new(&segment_file.mmap[..]).map_err(|err| {
             error!(
-                "Couldn't read first block from segment file {:?}: {:?}",
+                "Couldn't read first block from segment file {:?}: {}",
                 segment_path, err
             );
             err
@@ -250,7 +250,7 @@ impl DirectorySegment {
         std::fs::remove_file(&segment_path).map_err(|err| {
             Error::IO(
                 err.kind(),
-                format!("Couldn't delete segment file {:?}: {:?}", segment_path, err),
+                format!("Couldn't delete segment file {:?}: {}", segment_path, err),
             )
         })?;
         Ok(())
@@ -311,7 +311,7 @@ impl SegmentFile {
             .map_err(|err| {
                 Error::IO(
                     err.kind(),
-                    format!("Error opening/creating segment file {:?}: {:?}", path, err),
+                    format!("Error opening/creating segment file {:?}: {}", path, err),
                 )
             })?;
 
@@ -321,7 +321,7 @@ impl SegmentFile {
             file.set_len(minimum_size).map_err(|err| {
                 Error::IO(
                     err.kind(),
-                    format!("Error setting len of segment file {:?}: {:?}", path, err),
+                    format!("Error setting len of segment file {:?}: {}", path, err),
                 )
             })?;
         }
@@ -330,7 +330,7 @@ impl SegmentFile {
             memmap::MmapOptions::new().map_mut(&file).map_err(|err| {
                 Error::IO(
                     err.kind(),
-                    format!("Error mmaping segment file {:?}: {:?}", path, err),
+                    format!("Error mmaping segment file {:?}: {}", path, err),
                 )
             })?
         };
@@ -347,10 +347,7 @@ impl SegmentFile {
         self.file.set_len(new_size).map_err(|err| {
             Error::IO(
                 err.kind(),
-                format!(
-                    "Error setting len of segment file {:?}: {:?}",
-                    self.path, err
-                ),
+                format!("Error setting len of segment file {:?}: {}", self.path, err),
             )
         })?;
 
@@ -360,7 +357,7 @@ impl SegmentFile {
                 .map_err(|err| {
                     Error::IO(
                         err.kind(),
-                        format!("Error mmaping segment file {:?}: {:?}", self.path, err),
+                        format!("Error mmaping segment file {:?}: {}", self.path, err),
                     )
                 })?
         };

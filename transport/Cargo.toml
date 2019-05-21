@@ -11,8 +11,8 @@ tests_utils = []
 exocore-common = { path = "../common" }
 futures = "0.1"
 log = "0.4"
-failure = { version ="0.1.5", features = ["backtrace"] }
-libp2p = "0.8.0"
+failure = "0.1"
+libp2p = "0.8"
 tokio-io = "0.1"
 tokio-timer = "0.2"
 tokio-executor = "0.1"

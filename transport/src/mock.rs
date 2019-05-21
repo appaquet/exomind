@@ -8,8 +8,10 @@ use exocore_common::node::{LocalNode, Node, NodeId};
 
 use crate::{Error, InMessage, OutMessage, TransportHandle};
 
+///
 /// In memory transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
+///
 pub struct MockTransport {
     nodes_sink: Arc<Mutex<HashMap<NodeId, mpsc::UnboundedSender<InMessage>>>>,
 }
@@ -45,9 +47,10 @@ impl MockTransport {
     }
 }
 
+///
 /// Handle taken by a Cell layer to receive and send message for a given node
+///
 pub struct MockTransportHandle {
-    // TODO: fixme
     node: Node,
     started: bool,
     nodes_sink: Weak<Mutex<HashMap<NodeId, mpsc::UnboundedSender<InMessage>>>>,
@@ -146,7 +149,9 @@ impl Drop for MockTransportHandle {
     }
 }
 
+///
 /// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
+///
 pub struct MockTransportStream {
     incoming_stream: mpsc::UnboundedReceiver<InMessage>,
 }
@@ -156,17 +161,16 @@ impl Stream for MockTransportStream {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.incoming_stream.poll().map_err(|err| {
-            error!(
-                "Error receiving from incoming stream in MockTransportStream: {:?}",
-                err
-            );
-            Error::Other(format!("Error receiving from incoming stream: {:?}", err))
+        self.incoming_stream.poll().map_err(|_err| {
+            error!("Error receiving from incoming stream in MockTransportStream",);
+            Error::Other("Error receiving from incoming stream".to_string())
         })
     }
 }
 
+///
 /// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
+///
 pub struct MockTransportSink {
     in_channel: mpsc::UnboundedSender<OutMessage>,
 }
@@ -177,17 +181,14 @@ impl Sink for MockTransportSink {
 
     fn start_send(&mut self, item: OutMessage) -> StartSend<OutMessage, Error> {
         self.in_channel.start_send(item).map_err(|err| {
-            Error::Other(format!(
-                "Error calling 'start_send' to in_channel: {:?}",
-                err
-            ))
+            Error::Other(format!("Error calling 'start_send' to in_channel: {}", err))
         })
     }
 
     fn poll_complete(&mut self) -> Poll<(), Error> {
         self.in_channel.poll_complete().map_err(|err| {
             Error::Other(format!(
-                "Error calling 'poll_complete' to in_channel: {:?}",
+                "Error calling 'poll_complete' to in_channel: {}",
                 err
             ))
         })
@@ -196,7 +197,7 @@ impl Sink for MockTransportSink {
     fn close(&mut self) -> Poll<(), Error> {
         self.in_channel
             .close()
-            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {:?}", err)))
+            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {}", err)))
     }
 }
 
@@ -243,7 +244,7 @@ impl Future for CompletionFuture {
         self.0
             .poll()
             .map(|asnc| asnc.map(|_| ()))
-            .map_err(|err| Error::Other(format!("Polling completion receiver failed: {:?}", err)))
+            .map_err(|err| Error::Other(format!("Polling completion receiver failed: {}", err)))
     }
 }
 

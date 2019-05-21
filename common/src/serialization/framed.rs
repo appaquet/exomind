@@ -129,7 +129,7 @@ where
         capnp::serialize::write_message(&mut writer, &self.builder).map_err(|err| {
             Error::IO(
                 err.kind(),
-                format!("Couldn't write frame to write: {:?}", err),
+                format!("Couldn't write frame to write: {}", err),
             )
         })?;
         let (buffer, _metadata) = writer.finish()?;
@@ -252,7 +252,7 @@ impl<'a> SliceFrame<'a> {
         let words = unsafe { capnp::Word::bytes_to_words(buffer) };
         let opts = capnp::message::ReaderOptions::new();
         capnp::serialize::read_message_from_words(&words, opts).map_err(|err| {
-            Error::InvalidData(format!("Couldn't deserialize message reader: {:?}", err))
+            Error::InvalidData(format!("Couldn't deserialize message reader: {}", err))
         })
     }
 
@@ -320,7 +320,7 @@ impl<'a> Frame for SliceFrame<'a> {
         })?;
 
         reader.get_root().map_err(|err| {
-            Error::InvalidData(format!("Couldn't get root from frame data: {:?}", err))
+            Error::InvalidData(format!("Couldn't get root from frame data: {}", err))
         })
     }
 
@@ -526,7 +526,7 @@ impl OwnedFrame {
         capnp::serialize::write_message(&mut writer, builder).map_err(|err| {
             Error::IO(
                 err.kind(),
-                format!("Couldn't write frame to writer: {:?}", err),
+                format!("Couldn't write frame to writer: {}", err),
             )
         })?;
         let (buffer, _metadata) = writer.finish()?;
@@ -738,7 +738,7 @@ impl<'a, S: FrameSigner> SliceFrameWriter<'a, S> {
                 .map_err(|err| {
                     Error::IO(
                         err.kind(),
-                        format!("Couldn't write signature to buffer: {:?}", err),
+                        format!("Couldn't write signature to buffer: {}", err),
                     )
                 })?,
             None => 0,
@@ -809,7 +809,7 @@ pub fn write_framed_builder_into_buffer<A: capnp::message::Allocator, S: FrameSi
     capnp::serialize::write_message(&mut framed_writer, &message_builder).map_err(|err| {
         Error::IO(
             err.kind(),
-            format!("Couldn't write message to SliceFrameWriter: {:?}", err),
+            format!("Couldn't write message to SliceFrameWriter: {}", err),
         )
     })?;
     framed_writer.finish()
@@ -1031,7 +1031,7 @@ impl MultihashFrameSigner<crate::crypto::hash::Sha3_256> {
                     frame.message_data(),
                 )
                 .map_err(|err| {
-                    Error::InvalidSignature(format!("Couldn't encode to multihash: {:?}", err))
+                    Error::InvalidSignature(format!("Couldn't encode to multihash: {}", err))
                 })?;
 
                 if hash_data != hash_msg {

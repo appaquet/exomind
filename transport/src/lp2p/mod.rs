@@ -52,8 +52,11 @@ impl Default for Config {
     }
 }
 
-/// libp2p transport used by all layers of Exocore through handles. There is one handle
+/// Libp2p transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
+///
+/// The transport itself is scheduled on an Executor, and its future will complete as soon
+/// it's ready. Once all handles are dropped, all its scheduled tasks will be stopped too.
 pub struct Libp2pTransport {
     local_node: LocalNode,
     config: Config,
@@ -83,8 +86,10 @@ struct InnerHandle {
 }
 
 impl Libp2pTransport {
+    ///
     /// Creates a new transport for given node and config. The node is important here
     /// since all messages are authenticated using the node's private key thanks to secio
+    ///
     pub fn new(local_node: LocalNode, config: Config) -> Libp2pTransport {
         let inner = Inner {
             handles: HashMap::new(),
@@ -97,7 +102,9 @@ impl Libp2pTransport {
         }
     }
 
+    ///
     /// Creates sink and streams that can be used for a given Cell and Layer
+    ///
     pub fn get_handle(
         &mut self,
         cell: Cell,
@@ -112,9 +119,14 @@ impl Libp2pTransport {
             in_sender,
             out_receiver: Some(out_receiver),
         };
-        inner
-            .handles
-            .insert((cell.id().clone(), layer), inner_layer);
+
+        info!(
+            "Registering transport for cell {} and layer {:?}",
+            cell.id(),
+            layer
+        );
+        let key = (cell.id().clone(), layer);
+        inner.handles.insert(key, inner_layer);
 
         Ok(Libp2pTransportHandle {
             cell_id: cell.id().clone(),
@@ -125,7 +137,9 @@ impl Libp2pTransport {
         })
     }
 
+    ///
     /// Starts the engine by spawning different tasks onto the current Runtime
+    ///
     fn start(&mut self) -> Result<(), Error> {
         let local_keypair = self.local_node.keypair().clone();
         let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone());
@@ -154,6 +168,16 @@ impl Libp2pTransport {
             Interval::new_interval(self.config.swarm_nodes_update_interval);
 
         tokio_executor::spawn(futures::future::poll_fn(move || -> Result<_, ()> {
+            {
+                // check if we should still be running
+                if let Ok(inner) = inner.read() {
+                    if inner.handles.is_empty() {
+                        info!("No more handles are running. Stopping transport");
+                        return Ok(Async::Ready(()));
+                    }
+                }
+            }
+
             // at interval, we update peers that we should be connected to
             if let Async::Ready(_) = nodes_update_interval
                 .poll()
@@ -166,7 +190,7 @@ impl Libp2pTransport {
                 }
             }
 
-            // we drain all messages that need to be sent
+            // we drain all messages coming from handles that need to be sent
             while let Async::Ready(Some(msg)) = out_receiver
                 .poll()
                 .expect("Couldn't poll behaviour channel")
@@ -187,17 +211,17 @@ impl Libp2pTransport {
                         }
                     }
                     Err(err) => {
-                        error!("Couldn't serialize frame to data: {:?}", err);
+                        error!("Couldn't serialize frame to data: {}", err);
                     }
                 }
             }
 
-            // we poll the behaviour for incoming messages
+            // we poll the behaviour for incoming messages to be dispatched to handles
             while let Async::Ready(Some(data)) = swarm.poll().expect("Couldn't poll swarm") {
                 match data {
                     ExocoreBehaviourEvent::Message(msg) => {
                         if let Err(err) = Self::dispatch_message(&inner, &msg) {
-                            warn!("Couldn't dispatch message from {}: {:?}", msg.source, err);
+                            warn!("Couldn't dispatch message from {}: {}", msg.source, err);
                         }
 
                         trace!("Got message from {}", msg.source,);
@@ -276,19 +300,17 @@ impl Libp2pTransport {
         layer_stream
             .in_sender
             .try_send(msg)
-            .map_err(|err| Error::Other(format!("Couldn't send message to cell layer: {:?}", err)))
+            .map_err(|err| Error::Other(format!("Couldn't send message to cell layer: {}", err)))
     }
 }
 
 impl Future for Libp2pTransport {
     type Item = ();
-    type Error = ();
+    type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
         // we are only polled once, and we return ready right away
-        self.start().map_err(|err| {
-            error!("Error starting transport: {:?}", err);
-        })?;
+        self.start()?;
 
         Ok(Async::Ready(()))
     }
@@ -332,6 +354,11 @@ impl Future for Libp2pTransportHandle {
 
 impl Drop for Libp2pTransportHandle {
     fn drop(&mut self) {
+        debug!(
+            "Transport handle for cell {} layer {:?} got dropped. Removing it from transport",
+            self.cell_id, self.layer
+        );
+
         // we have been dropped, we remove ourself from layers to communicate with
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut inner) = inner.write() {
@@ -351,12 +378,9 @@ impl Stream for MpscLayerStream {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.receiver.poll().map_err(|err| {
-            error!(
-                "Error receiving from incoming stream in MockTransportStream: {:?}",
-                err
-            );
-            Error::Other(format!("Error receiving from incoming stream: {:?}", err))
+        self.receiver.poll().map_err(|_err| {
+            error!("Error receiving from incoming stream in MockTransportStream",);
+            Error::Other("Error receiving from incoming stream".to_string())
         })
     }
 }
@@ -372,17 +396,14 @@ impl Sink for MpscLayerSink {
 
     fn start_send(&mut self, item: OutMessage) -> StartSend<OutMessage, Error> {
         self.sender.start_send(item).map_err(|err| {
-            Error::Other(format!(
-                "Error calling 'start_send' to in_channel: {:?}",
-                err
-            ))
+            Error::Other(format!("Error calling 'start_send' to in_channel: {}", err))
         })
     }
 
     fn poll_complete(&mut self) -> Poll<(), Error> {
         self.sender.poll_complete().map_err(|err| {
             Error::Other(format!(
-                "Error calling 'poll_complete' to in_channel: {:?}",
+                "Error calling 'poll_complete' to in_channel: {}",
                 err
             ))
         })
@@ -391,7 +412,7 @@ impl Sink for MpscLayerSink {
     fn close(&mut self) -> Poll<(), Error> {
         self.sender
             .close()
-            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {:?}", err)))
+            .map_err(|err| Error::Other(format!("Error calling 'close' to in_channel: {}", err)))
     }
 }
 
@@ -403,7 +424,6 @@ mod tests {
     use exocore_common::serialization::protos::data_chain_capnp::block_operation_header;
     use exocore_common::tests_utils::expect_eventually;
     use std::sync::Mutex;
-    use std::time::Duration;
     use tokio::runtime::Runtime;
 
     #[test]
@@ -422,15 +442,16 @@ mod tests {
         node2_cell.nodes_mut().add(node1.node().clone());
 
         let mut transport1 = Libp2pTransport::new(node1.clone(), Config::default());
-        let layer1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
-        let layer1_tester = LayerTransportTester::new(&mut rt, layer1);
-        rt.spawn(transport1);
+        let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
+        let handle1_tester = TransportHandlTester::new(&mut rt, handle1);
+        rt.block_on(transport1)?;
 
         let mut transport2 = Libp2pTransport::new(node2.clone(), Config::default());
-        let layer2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
-        let layer2_tester = LayerTransportTester::new(&mut rt, layer2);
-        rt.spawn(transport2);
+        let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
+        let handle2_tester = TransportHandlTester::new(&mut rt, handle2);
+        rt.block_on(transport2)?;
 
+        // give time for nodes to connect to each others
         std::thread::sleep(Duration::from_secs(1));
 
         // create dummy frame
@@ -440,14 +461,14 @@ mod tests {
         // send 1 to 2
         let to_nodes = vec![node2.node().clone()];
         let msg = OutMessage::from_framed_message(&node1_cell, to_nodes, frame.clone())?;
-        layer1_tester.send(msg);
-        expect_eventually(|| layer2_tester.received().len() == 1);
+        handle1_tester.send(msg);
+        expect_eventually(|| handle2_tester.received().len() == 1);
 
         // send 2 to twice 1 to test multiple nodes
         let to_nodes = vec![node1.node().clone(), node1.node().clone()];
         let msg = OutMessage::from_framed_message(&node2_cell, to_nodes, frame)?;
-        layer2_tester.send(msg);
-        expect_eventually(|| layer1_tester.received().len() == 2);
+        handle2_tester.send(msg);
+        expect_eventually(|| handle1_tester.received().len() == 2);
 
         Ok(())
     }
@@ -480,14 +501,53 @@ mod tests {
         Ok(())
     }
 
-    struct LayerTransportTester {
+    #[test]
+    fn handle_removal_and_transport_kill() -> Result<(), failure::Error> {
+        let mut rt = Runtime::new()?;
+
+        let node1 = LocalNode::generate();
+        node1.add_address("/ip4/127.0.0.1/tcp/0".parse()?);
+        let node1_cell = FullCell::generate(node1.clone());
+
+        let node2 = LocalNode::generate();
+        node2.add_address("/ip4/127.0.0.1/tcp/0".parse()?);
+        let node2_cell = FullCell::generate(node2.clone());
+
+        let mut transport = Libp2pTransport::new(node1.clone(), Config::default());
+        let inner_weak = Arc::downgrade(&transport.inner);
+
+        // we create 2 handles
+        let handle1 = transport.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
+        let handle1_tester = TransportHandlTester::new(&mut rt, handle1);
+
+        let handle2 = transport.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
+        let handle2_tester = TransportHandlTester::new(&mut rt, handle2);
+
+        rt.block_on(transport)?;
+
+        // we drop first handle, we expect inner to now contain its handle anymore
+        {
+            drop(handle1_tester);
+            let inner = inner_weak.upgrade().unwrap();
+            let inner = inner.read().unwrap();
+            assert_eq!(1, inner.handles.len());
+        }
+
+        // we drop second handle, we expect inner to be dropped and therefor transport killed
+        drop(handle2_tester);
+        expect_eventually(|| inner_weak.upgrade().is_none());
+
+        Ok(())
+    }
+
+    struct TransportHandlTester {
         _transport: Libp2pTransportHandle,
         sender: mpsc::UnboundedSender<OutMessage>,
         received: Arc<Mutex<Vec<InMessage>>>,
     }
 
-    impl LayerTransportTester {
-        fn new(rt: &mut Runtime, mut transport: Libp2pTransportHandle) -> LayerTransportTester {
+    impl TransportHandlTester {
+        fn new(rt: &mut Runtime, mut transport: Libp2pTransportHandle) -> TransportHandlTester {
             let (sender, receiver) = mpsc::unbounded();
             rt.spawn(
                 receiver
@@ -510,7 +570,7 @@ mod tests {
                     .map_err(|_| ()),
             );
 
-            LayerTransportTester {
+            TransportHandlTester {
                 _transport: transport,
                 sender,
                 received,

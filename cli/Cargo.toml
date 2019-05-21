@@ -1,5 +1,5 @@
 [package]
-name = "exocore-server"
+name = "exocore-cli"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
@@ -12,6 +12,9 @@ exocore-transport = { path = "../transport" }
 log = "0.4"
 structopt = "0.2"
 log4rs = "0.8"
-failure = { version ="0.1.5", features = ["backtrace"] }
+failure = "0.1"
 futures = "0.1"
 tokio = "0.1"
+serde = "1.0"
+serde_derive = "1.0"
+serde_yaml = "0.8"
