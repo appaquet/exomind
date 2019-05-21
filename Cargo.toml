@@ -7,4 +7,5 @@ members = [
   "common",
   "transport",
   "clients/wasm",
+  "clients/android",
 ]
