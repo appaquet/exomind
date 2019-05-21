@@ -1,10 +1,11 @@
+use crate::crypto::keys::{Keypair, PublicKey};
 use crate::crypto::signature::Signature;
 use crate::serialization::framed::{FrameSigner, MultihashFrameSigner};
-use libp2p_core::identity::{Keypair, PublicKey};
 use libp2p_core::{Multiaddr, PeerId};
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::ops::Deref;
+use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
 //
@@ -28,8 +29,10 @@ struct SharedInner {
 
 impl Node {
     pub fn new_from_public_key(public_key: PublicKey) -> Node {
-        let peer_id = PeerId::from_public_key(public_key.clone());
-        let node_id = NodeId::from_peer_id(&peer_id);
+        let node_id = NodeId::from_public_key(&public_key);
+        let peer_id = node_id
+            .to_peer_id()
+            .expect("Couldn't convert node_id to peer_id");
 
         Node {
             node_id,
@@ -44,8 +47,10 @@ impl Node {
     #[cfg(any(test, feature = "tests_utils"))]
     pub fn generate_for_tests() -> Node {
         let keypair = Keypair::generate_ed25519();
-        let peer_id = PeerId::from_public_key(keypair.public());
-        let node_id = NodeId::from_peer_id(&peer_id);
+        let node_id = NodeId::from_public_key(&keypair.public());
+        let peer_id = node_id
+            .to_peer_id()
+            .expect("Couldn't convert node_id to peer_id");
 
         Node {
             node_id,
@@ -174,12 +179,21 @@ impl Debug for LocalNode {
 /// Unique identifier of a node, which is built by hashing the public key of the node.
 ///
 /// For now, it has a one to one correspondence with libp2p's PeerId, which is a base58 encoded
-/// version of the public key of the node
+/// version of the public key of the node encoded in protobuf.
 ///
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct NodeId(String);
 
 impl NodeId {
+    ///
+    /// Create a Node ID from a public key by using libp2p method to support compatibility
+    /// with PeerId
+    ///
+    pub fn from_public_key(public_key: &PublicKey) -> NodeId {
+        let peer_id = PeerId::from_public_key(public_key.to_libp2p().clone());
+        NodeId::from_peer_id(&peer_id)
+    }
+
     pub fn from_string(string: String) -> NodeId {
         NodeId(string)
     }
@@ -188,8 +202,21 @@ impl NodeId {
         NodeId(peer_id.to_base58())
     }
 
+    pub fn from_bytes(id: &[u8]) -> NodeId {
+        NodeId(String::from_utf8_lossy(id).to_string())
+    }
+
+    pub fn to_peer_id(&self) -> Result<PeerId, ()> {
+        PeerId::from_str(&self.0).map_err(|_| ())
+    }
+
     pub fn to_str(&self) -> &str {
         &self.0
+    }
+
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        self.0.as_bytes()
     }
 }
 

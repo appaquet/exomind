@@ -8,8 +8,3 @@ members = [
   "transport",
   "clients/wasm",
 ]
-
-#[patch.crates-io]
-#capnp = { path = "./3rd/capnproto-rust/capnp" }
-#extsort = { path = "./3rd/extsort" }
-#extindex = { path = "./3rd/extindex" }

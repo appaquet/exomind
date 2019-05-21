@@ -7,6 +7,9 @@
 * [Cap'n Proto](https://capnproto.org/install.html)
     * On MacOS: `brew install capnp` 
     * On Ubuntu: `apt install capnproto` 
+* Clang (for WASM compilation)
+    * On MacOS: should already be installed with Xcode
+    * On Ubuntu: `apt install clang`
 
 ## Setup
 * Install components & default targets:

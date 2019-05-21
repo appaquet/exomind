@@ -207,14 +207,19 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
 
     // first operation should not be in pending store anymore as it got cleaned up
     let first_op = operations_id.first().unwrap();
-    assert!(cluster
-        .get_handle(0)
-        .get_pending_operation(*first_op)?
-        .is_none());
-    assert!(cluster
-        .get_handle(1)
-        .get_pending_operation(*first_op)?
-        .is_none());
+    expect_result::<_, _, failure::Error>(|| {
+        let node1_op = cluster.get_handle(0).get_pending_operation(*first_op)?;
+        if node1_op.is_some() {
+            return Err(err_msg("Was still on node 0"));
+        }
+
+        let node1_op = cluster.get_handle(1).get_pending_operation(*first_op)?;
+        if node1_op.is_some() {
+            return Err(err_msg("Was still on node 1"));
+        }
+
+        Ok(())
+    });
 
     Ok(())
 }

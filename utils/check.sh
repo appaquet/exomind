@@ -24,4 +24,4 @@ else
 fi
 
 echo "Checking wasm compilation for exocore-client-wasm"
-cargo check -p exocore-client-wasm --target "wasm32-unknown-unknown"
+cargo build -p exocore-client-wasm --target "wasm32-unknown-unknown"
