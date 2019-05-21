@@ -205,7 +205,6 @@ impl TestCluster {
             &mut sync_context,
             &mut self.pending_stores_synchronizer[node_idx],
             &mut self.pending_stores[node_idx],
-            &mut self.chains_synchronizer[node_idx],
             &mut self.chains[node_idx],
             &self.nodes,
         )?;

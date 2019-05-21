@@ -15,7 +15,7 @@ use exocore_common::time::Clock;
 use crate::chain;
 use crate::chain::BlockOffset;
 use crate::chain::{Block, BlockDepth};
-use crate::engine::{chain_sync, pending_sync, Event, SyncContext};
+use crate::engine::{pending_sync, Event, SyncContext};
 use crate::pending;
 use crate::pending::OperationType;
 
@@ -54,15 +54,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         sync_context: &mut SyncContext,
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
-        chain_synchronizer: &mut chain_sync::ChainSynchronizer<CS>,
         chain_store: &mut CS,
         nodes: &Nodes,
     ) -> Result<(), Error> {
-        if chain_synchronizer.status() != chain_sync::Status::Synchronized {
-            // we need to be synchronized in order to do any progress
-            return Ok(());
-        }
-
         // find all blocks (proposed, committed, refused, etc.) in pending store
         let mut pending_blocks = PendingBlocks::new(self, pending_store, chain_store, nodes)?;
 
@@ -849,29 +843,6 @@ mod tests {
     use crate::pending::PendingStore;
 
     use super::*;
-
-    #[test]
-    fn should_not_do_anything_until_chain_synchronized() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
-        cluster.chain_add_genesis_block(0);
-
-        append_new_operation(&mut cluster, b"hello world")?;
-
-        // if chain was synchronized, this would have proposed a block
-        cluster.tick_commit_manager(0)?;
-        let blocks = get_pending_blocks(&cluster)?;
-        assert!(blocks.blocks.is_empty());
-
-        // make the chain synchronized
-        cluster.tick_chain_synchronizer(0)?;
-
-        // we should have created a block now
-        cluster.tick_commit_manager(0)?;
-        let blocks = get_pending_blocks(&cluster)?;
-        assert!(!blocks.blocks.is_empty());
-
-        Ok(())
-    }
 
     #[test]
     fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
