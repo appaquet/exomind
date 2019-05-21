@@ -44,10 +44,6 @@ impl<'a> MessageType<'a> for self::data_chain_capnp::operation_block_refuse::Own
     const MESSAGE_TYPE: u16 = 114;
 }
 
-impl<'a> MessageType<'a> for self::data_chain_capnp::operation_pending_ignore::Owned {
-    const MESSAGE_TYPE: u16 = 115;
-}
-
 impl<'a> MessageType<'a> for self::data_chain_capnp::block::Owned {
     const MESSAGE_TYPE: u16 = 130;
 }

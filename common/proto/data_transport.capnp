@@ -4,7 +4,7 @@ using Chain = import "data_chain.capnp";
 using Common = import "common.capnp";
 
 struct Envelope {
-    cellId             @0: Text;
+    cellId             @0: Data;
     layer              @1: UInt8;
     type               @2: UInt16;
     fromNodeId         @3: Text;
@@ -17,6 +17,7 @@ struct Envelope {
 #
 struct PendingSyncRequest {
     ranges             @0: List(PendingSyncRange);
+    fromBlockDepth     @1: UInt64;
 }
 
 struct PendingSyncRange {

@@ -13,7 +13,6 @@ struct PendingOperation {
         blockPropose       @4: OperationBlockPropose;
         blockSign          @5: OperationBlockSign;
         blockRefuse        @6: OperationBlockRefuse;
-        pendingIgnore      @7: OperationPendingIgnore;
     }
 }
 
@@ -37,10 +36,6 @@ struct OperationBlockSign {
 }
 
 struct OperationBlockRefuse {
-}
-
-struct OperationPendingIgnore {
-    groupId                @0: UInt64;
 }
 
 #

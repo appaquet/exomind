@@ -17,10 +17,6 @@ pub struct RequestTracker {
 }
 
 impl RequestTracker {
-    pub fn new(config: RequestTrackerConfig) -> RequestTracker {
-        RequestTracker::new_with_clock(Clock::new(), config)
-    }
-
     pub fn new_with_clock(clock: Clock, config: RequestTrackerConfig) -> RequestTracker {
         RequestTracker {
             clock,
