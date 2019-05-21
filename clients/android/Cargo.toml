@@ -1,0 +1,17 @@
+[package]
+name = "exocore-client-android"
+version = "0.1.0"
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+exocore-common = { path = "../../common" }
+failure = "0.1"
+android_glue = "0.2.3"
+
+[package.metadata.android]
+label = "Exocore Android Client"
+build_targets = ["arm-linux-androideabi", "i686-linux-android"]
