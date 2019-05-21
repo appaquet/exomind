@@ -405,6 +405,48 @@ impl<'a> Block for BlockRef<'a> {
 }
 
 ///
+/// Block iterator over a slice of data.
+///
+struct ChainBlockIterator<'a> {
+    current_offset: usize,
+    data: &'a [u8],
+    last_error: Option<Error>,
+}
+
+impl<'a> ChainBlockIterator<'a> {
+    fn new(data: &'a [u8]) -> ChainBlockIterator<'a> {
+        ChainBlockIterator {
+            current_offset: 0,
+            data,
+            last_error: None,
+        }
+    }
+}
+
+impl<'a> Iterator for ChainBlockIterator<'a> {
+    type Item = BlockRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_offset >= self.data.len() {
+            return None;
+        }
+
+        let block_res = BlockRef::new(&self.data[self.current_offset..]);
+        match block_res {
+            Ok(block) => {
+                self.current_offset += block.total_size();
+                Some(block)
+            }
+            Err(Error::Framing(framed::Error::EOF(_))) => None,
+            Err(other) => {
+                self.last_error = Some(other);
+                None
+            }
+        }
+    }
+}
+
+///
 /// Wraps operations header stored in a block.
 ///
 pub struct BlockOperations {
@@ -592,7 +634,7 @@ impl BlockSignature {
 ///
 /// Chain related errors
 ///
-#[derive(Debug, Clone, PartialEq, Fail)]
+#[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "The store is in an unexpected state: {}", _0)]
     UnexpectedState(String),
@@ -610,6 +652,10 @@ pub enum Error {
     SerializationNotInSchema(u16),
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
+    #[fail(display = "Error in directory chain store: {:?}", _0)]
+    DirectoryError(#[fail(cause)] directory::DirectoryError),
+    #[fail(display = "Try to lock a mutex that was poisoned")]
+    Poisoned,
     #[fail(display = "An error occurred: {}", _0)]
     Other(String),
 }
@@ -638,6 +684,18 @@ impl From<capnp::NotInSchema> for Error {
 impl From<capnp::Error> for Error {
     fn from(err: capnp::Error) -> Self {
         Error::Serialization(err.kind, err.description)
+    }
+}
+
+impl<T> From<std::sync::PoisonError<T>> for Error {
+    fn from(_err: std::sync::PoisonError<T>) -> Self {
+        Error::Poisoned
+    }
+}
+
+impl From<directory::DirectoryError> for Error {
+    fn from(err: directory::DirectoryError) -> Self {
+        Error::DirectoryError(err)
     }
 }
 
