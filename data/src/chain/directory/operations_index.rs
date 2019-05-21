@@ -9,7 +9,7 @@ use extindex::{Builder, Encodable, Reader};
 use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::operation::OperationID;
+use crate::operation::OperationId;
 use exocore_common::serialization::framed::TypedFrame;
 use exocore_common::serialization::protos::data_chain_capnp::{block, pending_operation};
 use exocore_common::simple_store::json_disk_store::JsonDiskStore;
@@ -37,7 +37,7 @@ pub struct OperationsIndex {
     metadata_store: JsonDiskStore<Metadata>,
 
     memory_offset_from: BlockOffset,
-    memory_index: BTreeMap<OperationID, BlockOffset>,
+    memory_index: BTreeMap<OperationId, BlockOffset>,
 
     next_expected_offset: BlockOffset,
 
@@ -206,7 +206,7 @@ impl OperationsIndex {
     ///
     pub fn get_operation_block(
         &self,
-        operation_id: OperationID,
+        operation_id: OperationId,
     ) -> Result<Option<BlockOffset>, Error> {
         if let Some(block_offset) = self.memory_index.get(&operation_id) {
             return Ok(Some(*block_offset));
@@ -269,7 +269,7 @@ impl OperationsIndex {
     ///
     /// Inserts a single operation in the in-memory index
     ///
-    fn put_operation_block(&mut self, operation_id: OperationID, block_offset: BlockOffset) {
+    fn put_operation_block(&mut self, operation_id: OperationId, block_offset: BlockOffset) {
         self.memory_index.insert(operation_id, block_offset);
     }
 
@@ -395,7 +395,7 @@ struct MetadataIndexFile {
 ///
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 struct StoredIndexKey {
-    operation_id: OperationID,
+    operation_id: OperationId,
 }
 
 impl Encodable<StoredIndexKey> for StoredIndexKey {
@@ -564,7 +564,7 @@ mod tests {
         index: &mut OperationsIndex,
         from_offset: BlockOffset,
         count: usize,
-    ) -> Result<BTreeMap<OperationID, BlockOffset>, Error> {
+    ) -> Result<BTreeMap<OperationId, BlockOffset>, Error> {
         let mut generated_ops = BTreeMap::new();
 
         let mut next_offset = from_offset;

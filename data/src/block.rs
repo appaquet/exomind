@@ -1,8 +1,9 @@
-use crate::operation::OperationID;
+use crate::operation::OperationId;
+use exocore_common::cell::{Cell, FullCell};
 use exocore_common::data_chain_capnp::{
     block, block_operation_header, block_signature, block_signatures,
 };
-use exocore_common::node::{Node, NodeID, Nodes};
+use exocore_common::node::{LocalNode, NodeId};
 use exocore_common::security::hash::{Multihash, Sha3Hasher, StreamHasher};
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{
@@ -73,7 +74,7 @@ pub trait Block {
         Ok(reader.get_depth())
     }
 
-    fn get_proposed_operation_id(&self) -> Result<OperationID, Error> {
+    fn get_proposed_operation_id(&self) -> Result<OperationId, Error> {
         let reader = self.block().get_typed_reader()?;
         Ok(reader.get_proposed_operation_id())
     }
@@ -96,7 +97,7 @@ pub trait Block {
 
     fn get_operation(
         &self,
-        operation_id: OperationID,
+        operation_id: OperationId,
     ) -> Result<Option<TypedSliceFrame<pending_operation::Owned>>, Error> {
         // TODO: Implement binary search in operations, since they are sorted: https://github.com/appaquet/exocore/issues/43
         let operation = self.operations_iter()?.find(|operation| {
@@ -175,9 +176,9 @@ impl BlockOwned {
         }
     }
 
-    pub fn new_genesis(nodes: &Nodes, node: &Node) -> Result<BlockOwned, Error> {
+    pub fn new_genesis(cell: &FullCell) -> Result<BlockOwned, Error> {
         let operations = BlockOperations::empty();
-        let block = Self::new_with_prev_info(nodes, node, 0, 0, 0, &[], 0, operations)?;
+        let block = Self::new_with_prev_info(cell, 0, 0, 0, &[], 0, operations)?;
 
         // TODO: Add master signature after doing https://github.com/appaquet/exocore/issues/46
 
@@ -185,8 +186,7 @@ impl BlockOwned {
     }
 
     pub fn new_with_prev_block<B>(
-        nodes: &Nodes,
-        node: &Node,
+        cell: &Cell,
         previous_block: &B,
         proposed_operation_id: u64,
         operations: BlockOperations,
@@ -206,8 +206,7 @@ impl BlockOwned {
         let depth = previous_block_reader.get_depth();
 
         Self::new_with_prev_info(
-            nodes,
-            node,
+            cell,
             offset,
             depth,
             previous_offset,
@@ -217,11 +216,8 @@ impl BlockOwned {
         )
     }
 
-    // TODO: Should be fixed once we do https://github.com/appaquet/exocore/issues/37
-    #[allow(clippy::too_many_arguments)]
     pub fn new_with_prev_info(
-        nodes: &Nodes,
-        node: &Node,
+        cell: &Cell,
         offset: BlockOffset,
         depth: BlockDepth,
         previous_offset: BlockOffset,
@@ -229,6 +225,7 @@ impl BlockOwned {
         proposed_operation_id: u64,
         operations: BlockOperations,
     ) -> Result<BlockOwned, Error> {
+        let local_node = cell.local_node();
         let operations_data_size = operations.data.len() as u32;
 
         // initialize block
@@ -239,7 +236,7 @@ impl BlockOwned {
         block_builder.set_previous_offset(previous_offset);
         block_builder.set_previous_hash(previous_hash);
         block_builder.set_proposed_operation_id(proposed_operation_id);
-        block_builder.set_proposed_node_id(&node.id());
+        block_builder.set_proposed_node_id(local_node.id().to_str());
         block_builder.set_operations_size(operations_data_size);
         block_builder.set_operations_hash(&operations.multihash_bytes);
 
@@ -253,14 +250,14 @@ impl BlockOwned {
 
         // create an empty signature for each node as a placeholder to find the size required for signatures
         let mut signature_frame_builder =
-            BlockSignatures::empty_signatures_for_nodes(nodes).to_frame_builder();
+            BlockSignatures::empty_signatures_for_nodes(cell).to_frame_builder();
         let mut signature_builder = signature_frame_builder.get_builder_typed();
         signature_builder.set_operations_size(operations_data_size);
-        let signature_frame = signature_frame_builder.as_owned_framed(node.frame_signer())?;
+        let signature_frame = signature_frame_builder.as_owned_framed(local_node.frame_signer())?;
 
         // set required signatures size in block
         block_builder.set_signatures_size(signature_frame.frame_size() as u16);
-        let block_frame = block_frame_builder.as_owned_framed(node.frame_signer())?;
+        let block_frame = block_frame_builder.as_owned_framed(local_node.frame_signer())?;
 
         Ok(BlockOwned {
             offset,
@@ -510,9 +507,11 @@ impl BlockSignatures {
         BlockSignatures { signatures }
     }
 
-    pub fn empty_signatures_for_nodes(nodes: &Nodes) -> BlockSignatures {
+    pub fn empty_signatures_for_nodes(cell: &Cell) -> BlockSignatures {
+        let nodes = cell.nodes();
         let signatures = nodes
-            .nodes()
+            .iter()
+            .all()
             .map(|node| BlockSignature {
                 node_id: node.id().clone(),
                 signature: Signature::empty(),
@@ -537,7 +536,7 @@ impl BlockSignatures {
 
     pub fn to_frame_for_existing_block(
         &self,
-        node: &Node,
+        node: &LocalNode,
         block_reader: &block::Reader,
     ) -> Result<OwnedTypedFrame<block_signatures::Owned>, Error> {
         let expected_signatures_size = usize::from(block_reader.get_signatures_size());
@@ -572,17 +571,17 @@ impl BlockSignatures {
 /// Represents a signature of the block by one node, using its own key to sign the block's hash.
 ///
 pub struct BlockSignature {
-    pub node_id: NodeID,
+    pub node_id: NodeId,
     pub signature: Signature,
 }
 
 impl BlockSignature {
-    pub fn new(node_id: NodeID, signature: Signature) -> BlockSignature {
+    pub fn new(node_id: NodeId, signature: Signature) -> BlockSignature {
         BlockSignature { node_id, signature }
     }
 
     pub fn copy_into_builder(&self, builder: &mut block_signature::Builder) {
-        builder.set_node_id(&self.node_id);
+        builder.set_node_id(self.node_id.to_str());
         builder.set_node_signature(self.signature.get_bytes());
     }
 }

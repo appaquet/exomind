@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use capnp::traits::ToU16;
-use exocore_common::node::{Node, NodeID, Nodes};
+use exocore_common::node::{Node, NodeId};
 use exocore_common::serialization::capnp;
 use exocore_common::serialization::framed::{FrameBuilder, SignedFrame, TypedFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{block, block_header};
@@ -17,6 +17,7 @@ use crate::chain::ChainStore;
 use crate::engine::request_tracker::RequestTracker;
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
+use exocore_common::cell::{Cell, CellNodes, CellNodesOwned};
 
 ///
 /// Synchronizes the local chain against remote nodes' chain.
@@ -38,11 +39,11 @@ use crate::engine::{Error, SyncContext};
 ///    leadership hasn't changed.
 ///
 pub(super) struct ChainSynchronizer<CS: ChainStore> {
-    node_id: NodeID,
     config: ChainSyncConfig,
-    nodes_info: HashMap<NodeID, NodeSyncInfo>,
+    cell: Cell,
+    nodes_info: HashMap<NodeId, NodeSyncInfo>,
     status: Status,
-    leader: Option<NodeID>,
+    leader: Option<NodeId>,
     clock: Clock,
     phantom: std::marker::PhantomData<CS>,
 }
@@ -55,10 +56,10 @@ pub enum Status {
 }
 
 impl<CS: ChainStore> ChainSynchronizer<CS> {
-    pub fn new(node_id: NodeID, config: ChainSyncConfig, clock: Clock) -> ChainSynchronizer<CS> {
+    pub fn new(config: ChainSyncConfig, cell: Cell, clock: Clock) -> ChainSynchronizer<CS> {
         ChainSynchronizer {
-            node_id,
             config,
+            cell,
             status: Status::Unknown,
             nodes_info: HashMap::new(),
             leader: None,
@@ -72,13 +73,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     /// status, we could be asking for more details about remote nodes' chain, or could be asking for blocks
     /// data from the lead node.
     ///
-    pub fn tick<'n>(
-        &mut self,
-        sync_context: &mut SyncContext,
-        store: &CS,
-        nodes: &'n Nodes,
-    ) -> Result<(), Error> {
-        let (nb_nodes_metadata_sync, nb_nodes) = self.count_nodes_status(nodes);
+    pub fn tick(&mut self, sync_context: &mut SyncContext, store: &CS) -> Result<(), Error> {
+        let nodes = self.cell.nodes().to_owned();
+
+        let (nb_nodes_metadata_sync, nb_nodes) = self.count_nodes_status(&nodes);
         let majority_nodes_metadata_sync = nodes.is_quorum(usize::from(nb_nodes_metadata_sync));
         debug!(
             "Sync tick begins. current_status={:?} nb_nodes={} nb_nodes_metadata_sync={}",
@@ -121,9 +119,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
         // check if we can elect a leader and download the chain from it
         if self.status != Status::Synchronized && majority_nodes_metadata_sync {
-            let my_node_id = self.node_id.clone();
             let mut nb_non_divergent = 1;
-            for node in nodes.nodes_except(&my_node_id) {
+
+            for node in nodes.iter().all_except_local() {
                 let node_info = self.get_or_create_node_info_mut(node.id());
                 if !node_info.is_divergent(store)? {
                     nb_non_divergent += 1;
@@ -135,7 +133,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     self.find_leader_node(store)?;
                 }
 
-                self.start_leader_downloading(sync_context, store, nodes)?;
+                self.start_leader_downloading(sync_context, store, &nodes)?;
             } else {
                 return Err(ChainSyncError::Diverged(
                     format!(
@@ -148,7 +146,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         }
 
         // synchronize chain state with nodes
-        self.synchronize_nodes_metadata(sync_context, nodes)?;
+        self.synchronize_nodes_metadata(sync_context, &nodes)?;
 
         debug!("Sync tick ended. current_status={:?}", self.status);
         Ok(())
@@ -267,10 +265,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     pub fn im_leader(&self) -> bool {
-        self.is_leader(self.node_id.as_str())
+        self.is_leader(self.cell.local_node().id())
     }
 
-    pub fn is_leader(&self, node_id: &str) -> bool {
+    pub fn is_leader(&self, node_id: &NodeId) -> bool {
         self.leader
             .as_ref()
             .map_or(false, |leader| leader == node_id)
@@ -283,10 +281,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     fn synchronize_nodes_metadata(
         &mut self,
         sync_context: &mut SyncContext,
-        nodes: &Nodes,
+        nodes: &CellNodesOwned,
     ) -> Result<(), Error> {
-        let my_node_id = self.node_id.clone();
-        for node in nodes.nodes_except(&my_node_id) {
+        for node in nodes.iter().all_except_local() {
             let node_info = self.get_or_create_node_info_mut(node.id());
 
             if node_info.request_tracker.can_send_request() {
@@ -309,9 +306,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         &mut self,
         sync_context: &mut SyncContext,
         store: &CS,
-        nodes: &Nodes,
+        nodes: &CellNodesOwned,
     ) -> Result<(), Error> {
-        let node_id = self.node_id.clone();
+        let node_id = self.cell.local_node().id().clone();
 
         // check if we're leader, and return right away if we are
         if self.im_leader() {
@@ -343,7 +340,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     "Leader node has no common block with us. Our last block is at offset {}",
                     last_block.offset
                 );
-                return Err(ChainSyncError::Diverged(leader_node_id).into());
+                return Err(ChainSyncError::Diverged(format!(
+                    "Diverged from leader {}",
+                    leader_node_id
+                ))
+                .into());
             }
         }
 
@@ -666,7 +667,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    fn get_or_create_node_info_mut(&mut self, node_id: &str) -> &mut NodeSyncInfo {
+    fn get_or_create_node_info_mut(&mut self, node_id: &NodeId) -> &mut NodeSyncInfo {
         if self.nodes_info.contains_key(node_id) {
             return self.nodes_info.get_mut(node_id).unwrap();
         }
@@ -674,17 +675,17 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let config = self.config;
         let clock = self.clock.clone();
         self.nodes_info
-            .entry(node_id.to_string())
-            .or_insert_with(move || NodeSyncInfo::new(node_id.to_string(), config, clock))
+            .entry(node_id.clone())
+            .or_insert_with(move || NodeSyncInfo::new(node_id.clone(), config, clock))
     }
 
-    fn count_nodes_status(&mut self, nodes: &Nodes) -> (u16, u16) {
+    fn count_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
         let mut nodes_total = 0;
         let mut nodes_metadata_sync = 0;
-        for node in nodes.nodes() {
+        for node in nodes.iter().all() {
             nodes_total += 1;
 
-            if node.id() == &self.node_id {
+            if node.id() == self.cell.local_node().id() {
                 nodes_metadata_sync += 1;
                 continue;
             }
@@ -699,6 +700,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     fn find_leader_node(&mut self, store: &CS) -> Result<(), Error> {
+        let local_node_id = self.cell.local_node().id().clone();
         let maybe_leader = self
             .nodes_info
             .values()
@@ -722,11 +724,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 if last_local_block.get_depth()? > node_depth =>
             {
                 // there are other nodes, but i have the longest chain
-                Some(self.node_id.clone())
+                Some(local_node_id.clone())
             }
             (None, Some(_last_local_block)) => {
                 // i have at least the genesis block, i'm alone, so i'm the leader
-                Some(self.node_id.clone())
+                Some(local_node_id.clone())
             }
             (Some((node_info, _)), _) => Some(node_info.node_id.clone()),
             _ => None,
@@ -769,7 +771,7 @@ impl Default for ChainSyncConfig {
 ///
 struct NodeSyncInfo {
     config: ChainSyncConfig,
-    node_id: NodeID,
+    node_id: NodeId,
 
     last_common_block: Option<BlockHeader>,
     last_common_is_known: bool,
@@ -779,7 +781,7 @@ struct NodeSyncInfo {
 }
 
 impl NodeSyncInfo {
-    fn new(node_id: NodeID, config: ChainSyncConfig, clock: Clock) -> NodeSyncInfo {
+    fn new(node_id: NodeId, config: ChainSyncConfig, clock: Clock) -> NodeSyncInfo {
         NodeSyncInfo {
             config,
             node_id,
@@ -1050,13 +1052,14 @@ mod tests {
         let mut cluster = TestCluster::new(2);
         cluster.chain_generate_dummy(0, 10, 1234);
         cluster.chain_generate_dummy(1, 100, 1234);
+
         let node0 = cluster.get_node(0);
         let node1 = cluster.get_node(1);
 
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         cluster.tick_chain_synchronizer(0)?;
         assert_eq!(cluster.chains_synchronizer[0].status, Status::Downloading);
-        assert!(cluster.chains_synchronizer[0].is_leader("node1"));
+        assert!(cluster.chains_synchronizer[0].is_leader(node1.id()));
 
         // response from non-leader should result in an error
         let blocks_iter = cluster.chains[1].blocks_iter(0)?;
@@ -1164,9 +1167,11 @@ mod tests {
         let mut cluster = TestCluster::new(2);
         cluster.chain_generate_dummy(1, 100, 3434);
 
+        let node1 = cluster.get_node(1);
+
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         {
-            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info["node1"];
+            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
             assert_eq!(
                 NodeMetadataStatus::Synchronized,
                 node1_node2_info.chain_metadata_status(),
@@ -1184,14 +1189,14 @@ mod tests {
         // this will sync blocks & mark as synchronized
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         assert_eq!(Status::Synchronized, cluster.chains_synchronizer[0].status);
-        assert!(cluster.chains_synchronizer[0].is_leader("node1"));
+        assert!(cluster.chains_synchronizer[0].is_leader(node1.id()));
 
         // force status back to downloading to check if tick will turn back to synchronized
         cluster.chains_synchronizer[0].status = Status::Downloading;
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         assert_eq!(Status::Synchronized, cluster.chains_synchronizer[0].status);
 
-        test_nodes_expect_chain_equals_new(&cluster.chains[0], &cluster.chains[1]);
+        test_nodes_expect_chain_equals(&cluster.chains[0], &cluster.chains[1]);
 
         Ok(())
     }
@@ -1201,10 +1206,12 @@ mod tests {
         let mut cluster = TestCluster::new(2);
         cluster.chain_generate_dummy(0, 100, 3434);
 
+        let node1 = cluster.get_node(1);
+
         // running sync twice will yield to nothing as node2 is empty
         for _i in 0..2 {
             run_sync_1_to_1(&mut cluster, 0, 1)?;
-            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info["node1"];
+            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
             assert_eq!(
                 node1_node2_info.chain_metadata_status(),
                 NodeMetadataStatus::Synchronized
@@ -1231,10 +1238,13 @@ mod tests {
         cluster.chain_generate_dummy(0, 100, 3434);
         cluster.chain_generate_dummy(1, 50, 3434);
 
+        let node0 = cluster.get_node(0);
+        let node1 = cluster.get_node(1);
+
         // running sync twice will yield to nothing as node1 is leader
         for _i in 0..2 {
             run_sync_1_to_1(&mut cluster, 0, 1)?;
-            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info["node1"];
+            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
             assert_eq!(
                 node1_node2_info.chain_metadata_status(),
                 NodeMetadataStatus::Synchronized
@@ -1250,7 +1260,7 @@ mod tests {
         }
 
         // we're leader and synchronized because of it
-        assert!(cluster.chains_synchronizer[0].is_leader("node0"));
+        assert!(cluster.chains_synchronizer[0].is_leader(node0.id()));
         assert_eq!(cluster.chains_synchronizer[0].status, Status::Synchronized);
 
         Ok(())
@@ -1262,9 +1272,11 @@ mod tests {
         cluster.chain_generate_dummy(0, 50, 3434);
         cluster.chain_generate_dummy(1, 100, 3434);
 
+        let node1 = cluster.get_node(1);
+
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         {
-            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info["node1"];
+            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
             assert_eq!(
                 node1_node2_info.chain_metadata_status(),
                 NodeMetadataStatus::Synchronized
@@ -1283,10 +1295,10 @@ mod tests {
         run_sync_1_to_1(&mut cluster, 0, 1)?;
 
         // node2 is leader
-        assert!(cluster.chains_synchronizer[0].is_leader("node1"));
+        assert!(cluster.chains_synchronizer[0].is_leader(node1.id()));
         assert_eq!(cluster.chains_synchronizer[0].status, Status::Synchronized);
 
-        test_nodes_expect_chain_equals_new(&cluster.chains[0], &cluster.chains[1]);
+        test_nodes_expect_chain_equals(&cluster.chains[0], &cluster.chains[1]);
 
         Ok(())
     }
@@ -1297,9 +1309,11 @@ mod tests {
         cluster.chain_generate_dummy(0, 100, 1234);
         cluster.chain_generate_dummy(1, 100, 9876);
 
+        let node1 = cluster.get_node(1);
+
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         {
-            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info["node1"];
+            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
             assert_eq!(
                 node1_node2_info.chain_metadata_status(),
                 NodeMetadataStatus::Synchronized
@@ -1352,9 +1366,11 @@ mod tests {
         cluster.chain_generate_dummy(1, 50, 1234);
         cluster.chain_append_dummy(1, 50, 1234);
 
+        let node1 = cluster.get_node(1);
+
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         {
-            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info["node1"];
+            let node1_node2_info = &cluster.chains_synchronizer[0].nodes_info[node1.id()];
             assert_eq!(
                 node1_node2_info.chain_metadata_status(),
                 NodeMetadataStatus::Synchronized
@@ -1408,15 +1424,17 @@ mod tests {
         cluster.chain_generate_dummy(2, 90, 3434);
         cluster.chain_generate_dummy(3, 90, 3434);
 
+        let node1 = cluster.get_node(1);
+
         run_sync_1_to_n(&mut cluster, 0)?;
         run_sync_1_to_n(&mut cluster, 0)?;
 
         // node 1 is now leader
-        assert!(cluster.chains_synchronizer[0].is_leader("node1"));
+        assert!(cluster.chains_synchronizer[0].is_leader(node1.id()));
 
         {
             // we remove sync metadata from leader
-            let node_info = cluster.chains_synchronizer[0].get_or_create_node_info_mut("node1");
+            let node_info = cluster.chains_synchronizer[0].get_or_create_node_info_mut(node1.id());
             assert_eq!(
                 node_info.chain_metadata_status(),
                 NodeMetadataStatus::Synchronized
@@ -1431,7 +1449,7 @@ mod tests {
 
         // node 1 is not leader anymore
         cluster.tick_chain_synchronizer(0)?;
-        assert!(!cluster.chains_synchronizer[0].is_leader("node1"));
+        assert!(!cluster.chains_synchronizer[0].is_leader(node1.id()));
 
         Ok(())
     }
@@ -1443,10 +1461,12 @@ mod tests {
         cluster.chain_generate_dummy(1, 100, 3434);
         cluster.clocks[0].set_fixed_instant(Instant::now());
 
+        let node1 = cluster.get_node(1);
+
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         run_sync_1_to_1(&mut cluster, 0, 1)?;
 
-        assert!(cluster.chains_synchronizer[0].is_leader("node1"));
+        assert!(cluster.chains_synchronizer[0].is_leader(node1.id()));
 
         // make leader add 2 blocks, which shouldn't be considered as too far ahead
         cluster.chain_append_dummy(1, 2, 3434);
@@ -1483,8 +1503,8 @@ mod tests {
 
         // wipe metadata for node 1 and 2
         for node_idx in 1..=2 {
-            let node_info = cluster.chains_synchronizer[0]
-                .get_or_create_node_info_mut(&format!("node{}", node_idx));
+            let node = cluster.get_node(node_idx);
+            let node_info = cluster.chains_synchronizer[0].get_or_create_node_info_mut(node.id());
             node_info.last_common_is_known = false;
             node_info.last_known_block = None;
         }
@@ -1498,12 +1518,12 @@ mod tests {
 
     fn extract_request_frame_sync_context(
         sync_context: &SyncContext,
-        to_node: &str,
+        to_node: &NodeId,
     ) -> OwnedTypedFrame<chain_sync_request::Owned> {
         for sync_message in &sync_context.messages {
             match sync_message {
                 SyncContextMessage::ChainSyncRequest(msg_to_node, req)
-                    if msg_to_node.as_str() == to_node =>
+                    if msg_to_node == to_node =>
                 {
                     return req.as_owned_unsigned_framed().unwrap();
                 }
@@ -1516,7 +1536,7 @@ mod tests {
 
     fn extract_response_frame_sync_context(
         sync_context: &SyncContext,
-    ) -> (NodeID, OwnedTypedFrame<chain_sync_response::Owned>) {
+    ) -> (NodeId, OwnedTypedFrame<chain_sync_response::Owned>) {
         match sync_context.messages.last().unwrap() {
             SyncContextMessage::ChainSyncResponse(to_node, req) => {
                 (to_node.clone(), req.as_owned_unsigned_framed().unwrap())
@@ -1600,7 +1620,7 @@ mod tests {
         Ok((count_1_to_2, count_2_to_1))
     }
 
-    fn test_nodes_expect_chain_equals_new(
+    fn test_nodes_expect_chain_equals(
         chain1: &chain::directory::DirectoryChainStore,
         chain2: &chain::directory::DirectoryChainStore,
     ) {

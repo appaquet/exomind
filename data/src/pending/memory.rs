@@ -12,8 +12,8 @@ use crate::operation::Operation;
 /// In memory pending store
 ///
 pub struct MemoryPendingStore {
-    operations_timeline: BTreeMap<OperationID, GroupID>,
-    groups_operations: HashMap<GroupID, GroupOperations>,
+    operations_timeline: BTreeMap<OperationId, GroupId>,
+    groups_operations: HashMap<GroupId, GroupOperations>,
 }
 
 impl MemoryPendingStore {
@@ -59,7 +59,7 @@ impl PendingStore for MemoryPendingStore {
         Ok(existed)
     }
 
-    fn get_operation(&self, operation_id: OperationID) -> Result<Option<StoredOperation>, Error> {
+    fn get_operation(&self, operation_id: OperationId) -> Result<Option<StoredOperation>, Error> {
         let operation = self
             .operations_timeline
             .get(&operation_id)
@@ -85,7 +85,7 @@ impl PendingStore for MemoryPendingStore {
 
     fn get_group_operations(
         &self,
-        group_id: GroupID,
+        group_id: GroupId,
     ) -> Result<Option<StoredOperationsGroup>, Error> {
         let operations = self.groups_operations.get(&group_id).map(|group_ops| {
             let operations = group_ops
@@ -110,7 +110,7 @@ impl PendingStore for MemoryPendingStore {
 
     fn operations_iter<R>(&self, range: R) -> Result<TimelineIterator, Error>
     where
-        R: RangeBounds<OperationID>,
+        R: RangeBounds<OperationId>,
     {
         let ids_iterator = self
             .operations_timeline
@@ -131,8 +131,8 @@ impl PendingStore for MemoryPendingStore {
 impl MemoryPendingStore {
     fn get_group_operation(
         &self,
-        group_id: GroupID,
-        operation_id: OperationID,
+        group_id: GroupId,
+        operation_id: OperationId,
     ) -> Option<&GroupOperation> {
         self.groups_operations
             .get(&group_id)
@@ -144,7 +144,7 @@ impl MemoryPendingStore {
 ///
 ///
 struct GroupOperations {
-    operations: BTreeMap<OperationID, GroupOperation>,
+    operations: BTreeMap<OperationId, GroupOperation>,
 }
 
 impl GroupOperations {
@@ -156,7 +156,7 @@ impl GroupOperations {
 }
 
 struct GroupOperation {
-    operation_id: OperationID,
+    operation_id: OperationId,
     operation_type: operation::OperationType,
     frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
 }
@@ -166,7 +166,7 @@ struct GroupOperation {
 ///
 struct OperationsIterator<'store> {
     store: &'store MemoryPendingStore,
-    ids_iterator: Box<dyn Iterator<Item = (OperationID, GroupID)> + 'store>,
+    ids_iterator: Box<dyn Iterator<Item = (OperationId, GroupId)> + 'store>,
 }
 
 impl<'store> Iterator for OperationsIterator<'store> {
@@ -190,16 +190,18 @@ mod test {
     use crate::engine::testing::create_dummy_new_entry_op;
 
     use super::*;
+    use exocore_common::node::LocalNode;
 
     #[test]
     fn put_and_retrieve_operation() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
         let mut store = MemoryPendingStore::new();
 
-        store.put_operation(create_dummy_new_entry_op(105, 200))?;
-        store.put_operation(create_dummy_new_entry_op(100, 200))?;
-        store.put_operation(create_dummy_new_entry_op(102, 201))?;
+        store.put_operation(create_dummy_new_entry_op(&local_node, 105, 200))?;
+        store.put_operation(create_dummy_new_entry_op(&local_node, 100, 200))?;
+        store.put_operation(create_dummy_new_entry_op(&local_node, 102, 201))?;
 
-        let timeline: Vec<(OperationID, GroupID)> = store
+        let timeline: Vec<(OperationId, GroupId)> = store
             .operations_iter(..)?
             .map(|op| (op.operation_id, op.group_id))
             .collect();
@@ -214,7 +216,7 @@ mod test {
             .operations
             .iter()
             .map(|op| op.operation_id)
-            .collect::<Vec<OperationID>>();
+            .collect::<Vec<OperationId>>();
 
         assert_eq!(op_ids, vec![100, 105]);
 
@@ -223,22 +225,23 @@ mod test {
 
     #[test]
     fn operations_iteration() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
         let mut store = MemoryPendingStore::new();
 
         store
-            .put_operation(create_dummy_new_entry_op(105, 200))
+            .put_operation(create_dummy_new_entry_op(&local_node, 105, 200))
             .unwrap();
         store
-            .put_operation(create_dummy_new_entry_op(100, 200))
+            .put_operation(create_dummy_new_entry_op(&local_node, 100, 200))
             .unwrap();
         store
-            .put_operation(create_dummy_new_entry_op(102, 201))
+            .put_operation(create_dummy_new_entry_op(&local_node, 102, 201))
             .unwrap();
         store
-            .put_operation(create_dummy_new_entry_op(107, 202))
+            .put_operation(create_dummy_new_entry_op(&local_node, 107, 202))
             .unwrap();
         store
-            .put_operation(create_dummy_new_entry_op(110, 203))
+            .put_operation(create_dummy_new_entry_op(&local_node, 110, 203))
             .unwrap();
 
         assert_eq!(store.operations_iter(..)?.count(), 5);

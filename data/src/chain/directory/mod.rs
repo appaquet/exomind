@@ -2,7 +2,7 @@ use std;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 
-use crate::operation::OperationID;
+use crate::operation::OperationId;
 use segment::DirectorySegment;
 
 use crate::chain::{Block, BlockOffset, BlockRef, ChainStore, Error, Segment, StoredBlockIterator};
@@ -256,7 +256,7 @@ impl ChainStore for DirectoryChainStore {
 
     fn get_block_by_operation_id(
         &self,
-        operation_id: OperationID,
+        operation_id: OperationId,
     ) -> Result<Option<BlockRef>, Error> {
         let operations_index = self
             .operations_index
@@ -419,13 +419,14 @@ pub mod tests {
     use itertools::Itertools;
     use tempdir;
 
-    use exocore_common::node::{Node, Nodes};
+    use exocore_common::node::LocalNode;
     use exocore_common::range;
     use exocore_common::serialization::framed::TypedFrame;
 
     use crate::block::{Block, BlockOperations, BlockOwned};
 
     use super::*;
+    use exocore_common::cell::FullCell;
 
     #[test]
     fn directory_chain_create_and_open() -> Result<(), failure::Error> {
@@ -500,7 +501,7 @@ pub mod tests {
     fn directory_chain_write_until_second_segment() -> Result<(), failure::Error> {
         let dir = tempdir::TempDir::new("test")?;
         let mut config: DirectoryChainStoreConfig = Default::default();
-        config.segment_max_size = 300_000;
+        config.segment_max_size = 350_000;
 
         fn validate_directory(directory_chain: &DirectoryChainStore) -> Result<(), failure::Error> {
             let segments = directory_chain
@@ -509,7 +510,7 @@ pub mod tests {
                 .map(|seg| seg.range.clone())
                 .collect_vec();
             assert!(range::are_continuous(segments.iter()));
-            assert_eq!(segments.len(), 2);
+            assert_eq!(2, segments.len());
 
             let block = directory_chain.get_block(0)?;
             assert_eq!(block.offset, 0);
@@ -741,24 +742,26 @@ pub mod tests {
     }
 
     pub fn create_block(offset: BlockOffset) -> BlockOwned {
-        let mut nodes = Nodes::new();
-        let node1 = Node::new("node1".to_string());
-        nodes.add(node1.clone());
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
 
         // only true for tests
         let operation_id = offset as u64 + 1;
         let operations = vec![
-            crate::operation::OperationBuilder::new_entry(operation_id, "node1", b"some_data")
-                .sign_and_build(node1.frame_signer())
-                .unwrap()
-                .frame,
+            crate::operation::OperationBuilder::new_entry(
+                operation_id,
+                local_node.id(),
+                b"some_data",
+            )
+            .sign_and_build(local_node.frame_signer())
+            .unwrap()
+            .frame,
         ];
 
         let proposed_operation_id = offset as u64;
         let block_operations = BlockOperations::from_operations(operations.into_iter()).unwrap();
         BlockOwned::new_with_prev_info(
-            &nodes,
-            &node1,
+            &cell,
             offset,
             0,
             0,

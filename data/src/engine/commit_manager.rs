@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 
-use crate::operation::OperationID;
-use exocore_common::node::{NodeID, Nodes};
+use crate::operation::OperationId;
+use exocore_common::node::NodeId;
 use exocore_common::security::signature::Signature;
 use exocore_common::serialization::framed::{SignedFrame, TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{
@@ -20,8 +20,10 @@ use crate::engine::{pending_sync, Event, SyncContext};
 use crate::operation;
 use crate::operation::{Operation, OperationType};
 use crate::pending;
+use std::str::FromStr;
 
 use super::Error;
+use exocore_common::cell::{Cell, CellNodes, CellNodesRead};
 use std::time::Duration;
 
 /// Manages commit of pending store's operations to the chain. It does that by monitoring the pending store for incoming
@@ -30,21 +32,17 @@ use std::time::Duration;
 /// It also manages cleanup of the pending store, by deleting old operations that were committed to the chain and that are
 /// in block with sufficient depth.
 pub(super) struct CommitManager<PS: pending::PendingStore, CS: chain::ChainStore> {
-    node_id: NodeID,
     config: CommitManagerConfig,
+    cell: Cell,
     clock: Clock,
     phantom: std::marker::PhantomData<(PS, CS)>,
 }
 
 impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
-    pub fn new(
-        node_id: NodeID,
-        config: CommitManagerConfig,
-        clock: Clock,
-    ) -> CommitManager<PS, CS> {
+    pub fn new(config: CommitManagerConfig, cell: Cell, clock: Clock) -> CommitManager<PS, CS> {
         CommitManager {
-            node_id,
             config,
+            cell,
             clock,
             phantom: std::marker::PhantomData,
         }
@@ -59,10 +57,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
         chain_store: &mut CS,
-        nodes: &Nodes,
     ) -> Result<(), Error> {
         // find all blocks (proposed, committed, refused, etc.) in pending store
-        let mut pending_blocks = PendingBlocks::new(self, pending_store, chain_store, nodes)?;
+        let mut pending_blocks = PendingBlocks::new(&self.cell, pending_store, chain_store)?;
 
         // get all potential next blocks sorted by most probable to less probable, and select the best next block
         let potential_next_blocks = pending_blocks.potential_next_blocks();
@@ -88,7 +85,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                             sync_context,
                             pending_synchronizer,
                             pending_store,
-                            nodes,
                             mut_next_block,
                         )?;
                     } else {
@@ -96,7 +92,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                             sync_context,
                             pending_synchronizer,
                             pending_store,
-                            nodes,
                             mut_next_block,
                         )?;
                     }
@@ -107,12 +102,14 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             let valid_signatures = next_block
                 .signatures
                 .iter()
-                .filter(|sig| next_block.validate_signature(nodes, sig));
+                .filter(|sig| next_block.validate_signature(&self.cell, sig));
+
+            let nodes = self.cell.nodes();
             if next_block.has_my_signature && nodes.is_quorum(valid_signatures.count()) {
                 debug!("Block has enough signatures, we should commit");
-                self.commit_block(sync_context, next_block, pending_store, chain_store, nodes)?;
+                self.commit_block(sync_context, next_block, pending_store, chain_store)?;
             }
-        } else if self.should_propose_block(nodes, chain_store, &pending_blocks)? {
+        } else if self.should_propose_block(chain_store, &pending_blocks)? {
             debug!("No current block, and we can propose one");
             self.propose_block(
                 sync_context,
@@ -120,7 +117,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 pending_synchronizer,
                 pending_store,
                 chain_store,
-                nodes,
             )?;
         }
 
@@ -134,7 +130,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     /// the block with local version of the operations.
     fn check_should_sign_block(
         &self,
-        block_id: OperationID,
+        block_id: OperationId,
         pending_blocks: &PendingBlocks,
         chain_store: &CS,
         pending_store: &PS,
@@ -187,20 +183,20 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         sync_context: &mut SyncContext,
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
-        nodes: &Nodes,
         next_block: &mut PendingBlock,
     ) -> Result<(), Error> {
-        let my_node = nodes.get(&self.node_id).ok_or(Error::MyNodeNotFound)?;
+        let local_node = self.cell.local_node();
 
-        let operation_id = self.clock.consistent_time(&my_node);
+        let operation_id = self.clock.consistent_time(&local_node);
         let signature_frame_builder = operation::OperationBuilder::new_signature_for_block(
             next_block.group_id,
             operation_id,
-            &self.node_id,
+            local_node.id(),
             &next_block.proposal.get_block()?,
         )?;
 
-        let signature_operation = signature_frame_builder.sign_and_build(my_node.frame_signer())?;
+        let signature_operation =
+            signature_frame_builder.sign_and_build(local_node.frame_signer())?;
 
         let signature_reader = signature_operation.get_operation_reader()?;
         let pending_signature = PendingBlockSignature::from_pending_operation(signature_reader)?;
@@ -209,7 +205,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         pending_synchronizer.handle_new_operation(
             sync_context,
-            nodes,
             pending_store,
             signature_operation,
         )?;
@@ -223,19 +218,18 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         sync_context: &mut SyncContext,
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
-        nodes: &Nodes,
         next_block: &mut PendingBlock,
     ) -> Result<(), Error> {
-        let my_node = nodes.get(&self.node_id).ok_or(Error::MyNodeNotFound)?;
+        let local_node = self.cell.local_node();
 
-        let operation_id = self.clock.consistent_time(&my_node);
+        let operation_id = self.clock.consistent_time(&local_node);
 
         let refusal_builder = operation::OperationBuilder::new_refusal(
             next_block.group_id,
             operation_id,
-            &self.node_id,
+            local_node.id(),
         )?;
-        let refusal_operation = refusal_builder.sign_and_build(my_node.frame_signer())?;
+        let refusal_operation = refusal_builder.sign_and_build(local_node.frame_signer())?;
 
         let refusal_reader = refusal_operation.get_operation_reader()?;
         let pending_refusal = PendingBlockRefusal::from_pending_operation(refusal_reader)?;
@@ -244,7 +238,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         pending_synchronizer.handle_new_operation(
             sync_context,
-            nodes,
             pending_store,
             refusal_operation,
         )?;
@@ -256,17 +249,17 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     /// how many operations are in the store.
     fn should_propose_block(
         &self,
-        nodes: &Nodes,
         chain_store: &CS,
         pending_blocks: &PendingBlocks,
     ) -> Result<bool, Error> {
-        let my_node = nodes.get(&self.node_id).ok_or(Error::MyNodeNotFound)?;
-        if !my_node.has_full_access() {
+        let local_node = self.cell.local_node();
+        if !local_node.has_full_access() {
             return Ok(false);
         }
 
-        let now = self.clock.consistent_time(my_node);
-        if is_node_commit_turn(nodes, &self.node_id, now, &self.config)? {
+        let nodes = self.cell.nodes();
+        let now = self.clock.consistent_time(local_node);
+        if is_node_commit_turn(&nodes, local_node.id(), now, &self.config)? {
             // number of operations in store minus number of operations in blocks ~= non-committed
             let approx_non_committed_operations = pending_blocks
                 .entries_operations_count
@@ -299,9 +292,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
         chain_store: &mut CS,
-        nodes: &Nodes,
     ) -> Result<(), Error> {
-        let my_node = nodes.get(&self.node_id).ok_or(Error::MyNodeNotFound)?;
+        let local_node = self.cell.local_node();
         let previous_block = chain_store
             .get_last_block()?
             .ok_or(Error::UninitializedChain)?;
@@ -342,10 +334,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .map(|operation| operation.frame);
 
         let block_operations = BlockOperations::from_operations(block_operations)?;
-        let block_operation_id = self.clock.consistent_time(&my_node);
+        let block_operation_id = self.clock.consistent_time(&local_node);
         let block = BlockOwned::new_with_prev_block(
-            nodes,
-            my_node,
+            &self.cell,
             &previous_block,
             block_operation_id,
             block_operations,
@@ -357,11 +348,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         let block_proposal_frame_builder = operation::OperationBuilder::new_block_proposal(
             block_operation_id,
-            &self.node_id,
+            local_node.id(),
             &block,
         )?;
         let block_proposal_operation =
-            block_proposal_frame_builder.sign_and_build(my_node.frame_signer())?;
+            block_proposal_frame_builder.sign_and_build(local_node.frame_signer())?;
 
         debug!(
             "Proposed block with operation_id {} for offset {}",
@@ -370,7 +361,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         );
         pending_synchronizer.handle_new_operation(
             sync_context,
-            nodes,
             pending_store,
             block_proposal_operation,
         )?;
@@ -385,9 +375,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         next_block: &PendingBlock,
         pending_store: &mut PS,
         chain_store: &mut CS,
-        nodes: &Nodes,
     ) -> Result<(), Error> {
-        let my_node = nodes.get(&self.node_id).ok_or(Error::MyNodeNotFound)?;
+        let local_node = self.cell.local_node();
 
         let block_frame = next_block.proposal.get_block()?;
         let block_reader: block::Reader = block_frame.get_typed_reader()?;
@@ -411,7 +400,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .signatures
             .iter()
             .filter_map(|pending_signature| {
-                if next_block.validate_signature(nodes, pending_signature) {
+                if next_block.validate_signature(&self.cell, pending_signature) {
                     Some(BlockSignature::new(
                         pending_signature.node_id.clone(),
                         pending_signature.signature.clone(),
@@ -423,7 +412,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .collect::<Vec<_>>();
         let block_signatures = BlockSignatures::new_from_signatures(signatures);
         let signatures_frame =
-            block_signatures.to_frame_for_existing_block(my_node, &block_reader)?;
+            block_signatures.to_frame_for_existing_block(local_node, &block_reader)?;
 
         // finally build the frame
         let block = BlockOwned::new(
@@ -487,12 +476,16 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 /// Turns are calculated by sorting nodes by their node ids, and then finding out who's turn
 /// it is based on current time.
 fn is_node_commit_turn(
-    nodes: &Nodes,
-    my_node_id: &str,
+    nodes: &CellNodesRead,
+    my_node_id: &NodeId,
     now: u64,
     config: &CommitManagerConfig,
 ) -> Result<bool, Error> {
-    let sorted_nodes = nodes.nodes().sorted_by_key(|node| node.id()).collect_vec();
+    let nodes_iter = nodes.iter();
+    let sorted_nodes = nodes_iter
+        .all()
+        .sorted_by_key(|node| node.id().to_str())
+        .collect_vec();
     let my_node_position = sorted_nodes
         .iter()
         .position(|node| node.id() == my_node_id)
@@ -529,19 +522,20 @@ impl Default for CommitManagerConfig {
 /// Structure that contains information on the pending store and blocks in it.
 /// It is used by the commit manager to know if it needs to propose, sign, commit blocks
 struct PendingBlocks {
-    blocks: HashMap<OperationID, PendingBlock>, // group_id -> block
-    blocks_status: HashMap<OperationID, BlockStatus>, // group_id -> block_status
-    operations_blocks: HashMap<OperationID, HashSet<OperationID>>, // operation_id -> set(group_id)
+    blocks: HashMap<OperationId, PendingBlock>, // group_id -> block
+    blocks_status: HashMap<OperationId, BlockStatus>, // group_id -> block_status
+    operations_blocks: HashMap<OperationId, HashSet<OperationId>>, // operation_id -> set(group_id)
     entries_operations_count: usize,
 }
 
 impl PendingBlocks {
     fn new<PS: pending::PendingStore, CS: chain::ChainStore>(
-        commit_manager: &CommitManager<PS, CS>,
+        cell: &Cell,
         pending_store: &PS,
         chain_store: &CS,
-        nodes: &Nodes,
     ) -> Result<PendingBlocks, Error> {
+        let local_node = cell.local_node();
+
         let last_stored_block = chain_store
             .get_last_block()?
             .ok_or(Error::UninitializedChain)?;
@@ -563,7 +557,7 @@ impl PendingBlocks {
         }
 
         // then we get all operations for each block proposal
-        let mut blocks = HashMap::<OperationID, PendingBlock>::new();
+        let mut blocks = HashMap::<OperationId, PendingBlock>::new();
         for group_id in groups_id.iter_mut() {
             let group_operations = if let Some(group_operations) =
                 pending_store.get_group_operations(*group_id)?
@@ -580,23 +574,18 @@ impl PendingBlocks {
             let mut refusals = Vec::new();
 
             for operation in group_operations.operations {
-                let operation_reader: pending_operation::Reader =
-                    operation.frame.get_typed_reader()?;
-                let node_id = operation_reader.get_node_id()?;
+                let operation_reader = operation.frame.get_typed_reader()?;
 
                 match operation_reader.get_operation().which()? {
                     pending_operation::operation::Which::BlockPropose(reader) => {
-                        let reader: operation_block_propose::Reader = reader?;
                         let block_frame =
-                            TypedSliceFrame::<block::Owned>::new(reader.get_block()?)?;
-                        let block_reader: block::Reader = block_frame.get_typed_reader()?;
-
+                            TypedSliceFrame::<block::Owned>::new(reader?.get_block()?)?;
+                        let block_reader = block_frame.get_typed_reader()?;
                         for operation_header in block_reader.get_operations_header()? {
                             operations.push(operation_header.get_operation_id());
                         }
 
                         proposal = Some(PendingBlockProposal {
-                            node_id: node_id.to_string(),
                             offset: block_reader.get_offset(),
                             operation,
                         })
@@ -620,12 +609,8 @@ impl PendingBlocks {
 
             let proposal =
                 proposal.expect("Couldn't find proposal operation within a group of the proposal");
-            let has_my_refusal = refusals
-                .iter()
-                .any(|sig| sig.node_id == commit_manager.node_id);
-            let has_my_signature = signatures
-                .iter()
-                .any(|sig| sig.node_id == commit_manager.node_id);
+            let has_my_refusal = refusals.iter().any(|sig| sig.node_id == *local_node.id());
+            let has_my_signature = signatures.iter().any(|sig| sig.node_id == *local_node.id());
 
             let status = match chain_store.get_block(proposal.offset).ok() {
                 Some(block) => {
@@ -636,6 +621,7 @@ impl PendingBlocks {
                     }
                 }
                 None => {
+                    let nodes = cell.nodes();
                     if proposal.offset < next_offset {
                         // means it was a proposed block for a diverged chain
                         BlockStatus::PastRefused
@@ -678,22 +664,22 @@ impl PendingBlocks {
         })
     }
 
-    fn get_block(&self, block_op_id: &OperationID) -> &PendingBlock {
+    fn get_block(&self, block_op_id: &OperationId) -> &PendingBlock {
         self.blocks
             .get(block_op_id)
             .expect("Couldn't find block in map")
     }
 
-    fn get_block_mut(&mut self, block_op_id: &OperationID) -> &mut PendingBlock {
+    fn get_block_mut(&mut self, block_op_id: &OperationId) -> &mut PendingBlock {
         self.blocks
             .get_mut(block_op_id)
             .expect("Couldn't find block in map")
     }
 
     fn map_operations_blocks(
-        pending_blocks: &HashMap<OperationID, PendingBlock>,
-    ) -> HashMap<OperationID, HashSet<OperationID>> {
-        let mut operations_blocks: HashMap<OperationID, HashSet<OperationID>> = HashMap::new();
+        pending_blocks: &HashMap<OperationId, PendingBlock>,
+    ) -> HashMap<OperationId, HashSet<OperationId>> {
+        let mut operations_blocks: HashMap<OperationId, HashSet<OperationId>> = HashMap::new();
         for block in pending_blocks.values() {
             for operation_id in &block.operations {
                 let operation = operations_blocks
@@ -706,8 +692,8 @@ impl PendingBlocks {
     }
 
     fn map_blocks_status(
-        pending_blocks: &HashMap<OperationID, PendingBlock>,
-    ) -> HashMap<OperationID, BlockStatus> {
+        pending_blocks: &HashMap<OperationId, PendingBlock>,
+    ) -> HashMap<OperationId, BlockStatus> {
         let mut blocks_status = HashMap::new();
         for (block_group_id, block) in pending_blocks {
             blocks_status.insert(*block_group_id, block.status);
@@ -730,7 +716,7 @@ impl PendingBlocks {
 /// This block could be a past block (committed to chain or refused), which will eventually be cleaned up,
 /// or could be a next potential or refused block.
 struct PendingBlock {
-    group_id: OperationID,
+    group_id: OperationId,
     status: BlockStatus,
 
     proposal: PendingBlockProposal,
@@ -739,7 +725,7 @@ struct PendingBlock {
     has_my_refusal: bool,
     has_my_signature: bool,
 
-    operations: Vec<OperationID>,
+    operations: Vec<OperationId>,
 }
 
 impl PendingBlock {
@@ -753,7 +739,8 @@ impl PendingBlock {
         self.has_my_refusal = true;
     }
 
-    fn validate_signature(&self, nodes: &Nodes, signature: &PendingBlockSignature) -> bool {
+    fn validate_signature(&self, cell: &Cell, signature: &PendingBlockSignature) -> bool {
+        let nodes = cell.nodes();
         let node = if let Some(node) = nodes.get(&signature.node_id) {
             node
         } else {
@@ -801,7 +788,6 @@ enum BlockStatus {
 
 /// Block proposal wrapper
 struct PendingBlockProposal {
-    node_id: NodeID,
     offset: BlockOffset,
     operation: pending::StoredOperation,
 }
@@ -828,7 +814,7 @@ impl PendingBlockProposal {
 
 /// Block refusal wrapper
 struct PendingBlockRefusal {
-    node_id: NodeID,
+    node_id: NodeId,
 }
 
 impl PendingBlockRefusal {
@@ -839,7 +825,10 @@ impl PendingBlockRefusal {
             operation_reader.get_operation();
         match inner_operation.which()? {
             pending_operation::operation::Which::BlockRefuse(_sig) => {
-                let node_id = operation_reader.get_node_id()?.to_string();
+                let node_id_str = operation_reader.get_node_id()?;
+                let node_id = NodeId::from_str(node_id_str).map_err(|_| {
+                    Error::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
+                })?;
                 Ok(PendingBlockRefusal { node_id })
             }
             _ => Err(Error::Other(
@@ -852,7 +841,7 @@ impl PendingBlockRefusal {
 
 /// Block signature wrapper
 struct PendingBlockSignature {
-    node_id: NodeID,
+    node_id: NodeId,
     signature: Signature,
 }
 
@@ -868,7 +857,10 @@ impl PendingBlockSignature {
                 let signature_reader: block_signature::Reader =
                     op_signature_reader.get_signature()?;
 
-                let node_id = signature_reader.get_node_id()?.to_string();
+                let node_id_str = operation_reader.get_node_id()?;
+                let node_id = NodeId::from_str(node_id_str).map_err(|_| {
+                    Error::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
+                })?;
                 let signature = Signature::from_bytes(signature_reader.get_node_signature()?);
 
                 Ok(PendingBlockSignature { node_id, signature })
@@ -887,7 +879,7 @@ pub enum CommitManagerError {
     #[fail(display = "Invalid signature in commit manager: {}", _0)]
     InvalidSignature(String),
     #[fail(display = "A referenced operation is missing from local store: {}", _0)]
-    MissingOperation(OperationID),
+    MissingOperation(OperationId),
 }
 
 #[cfg(test)]
@@ -898,7 +890,6 @@ mod tests {
     use crate::pending::PendingStore;
 
     use super::*;
-    use exocore_common::node::LocalNode;
     use std::time::Instant;
 
     #[test]
@@ -1107,14 +1098,12 @@ mod tests {
 
     #[test]
     fn test_is_node_commit_turn() -> Result<(), failure::Error> {
-        let node1 = LocalNode::generate();
-        let node2 = LocalNode::generate();
-
-        let mut nodes = Nodes::new_with_local(node1.clone());
-        nodes.add(node2.node().clone());
+        let cluster = TestCluster::new(2);
+        let node1 = cluster.get_node(0);
+        let node2 = cluster.get_node(1);
 
         // we use node id to sort nodes
-        let (first_node, sec_node) = if node1.id() < node2.id() {
+        let (first_node, sec_node) = if node1.id().to_str() < node2.id().to_str() {
             (&node1, &node2)
         } else {
             (&node2, &node1)
@@ -1125,6 +1114,7 @@ mod tests {
             ..CommitManagerConfig::default()
         };
 
+        let nodes = cluster.cells[0].nodes();
         let now = duration_to_consistent_u64(Duration::from_millis(0), 0);
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
@@ -1144,10 +1134,10 @@ mod tests {
         Ok(())
     }
 
-    fn append_new_operation(cluster: &mut TestCluster, data: &[u8]) -> Result<OperationID, Error> {
+    fn append_new_operation(cluster: &mut TestCluster, data: &[u8]) -> Result<OperationId, Error> {
         let op_id = cluster.consistent_clock(0);
 
-        for node in cluster.nodes.nodes() {
+        for node in cluster.nodes.iter() {
             let idx = cluster.get_node_index(node.id());
             let op_builder = OperationBuilder::new_entry(op_id, node.id(), data);
             let operation = op_builder.sign_and_build(node.frame_signer())?;
@@ -1159,9 +1149,9 @@ mod tests {
 
     fn append_block_proposal_from_operations(
         cluster: &mut TestCluster,
-        op_ids: Vec<OperationID>,
-    ) -> Result<OperationID, Error> {
-        let node = cluster.get_node(0);
+        op_ids: Vec<OperationId>,
+    ) -> Result<OperationId, Error> {
+        let node = &cluster.nodes[0];
 
         let previous_block = cluster.chains[0].get_last_block()?.unwrap();
         let block_operations = op_ids.iter().map(|op_id| {
@@ -1174,8 +1164,7 @@ mod tests {
         let block_operations = BlockOperations::from_operations(block_operations)?;
         let block_operation_id = cluster.clocks[0].consistent_time(&node);
         let block = BlockOwned::new_with_prev_block(
-            &cluster.nodes,
-            &node,
+            &cluster.cells[0],
             &previous_block,
             block_operation_id,
             block_operations,
@@ -1191,10 +1180,9 @@ mod tests {
 
     fn get_pending_blocks(cluster: &TestCluster) -> Result<PendingBlocks, Error> {
         PendingBlocks::new(
-            &cluster.commit_managers[0],
+            &cluster.cells[0],
             &cluster.pending_stores[0],
             &cluster.chains[0],
-            &cluster.nodes,
         )
     }
 }

@@ -10,7 +10,7 @@ extern crate log;
 #[cfg(test)]
 pub mod logging;
 
-use exocore_common::cell::{Cell, CellID};
+use exocore_common::cell::FullCell;
 use exocore_common::node::LocalNode;
 use exocore_common::time::Clock;
 use exocore_data::{DirectoryChainStore, DirectoryChainStoreConfig, MemoryPendingStore};
@@ -38,14 +38,13 @@ fn main() -> Result<(), failure::Error> {
 
     let local_node = LocalNode::generate();
     local_node.add_address(format!("/ip4/127.0.0.1/tcp/{}", opt.port).parse().unwrap());
-    let cell_id = CellID::from_string("cell1");
-    let cell = Cell::new(local_node.clone(), cell_id);
+    let cell = FullCell::generate(local_node.clone());
 
     let transport_config = exocore_transport::lp2p::Config::default();
     let mut transport =
         exocore_transport::lp2p::Libp2pTransport::new(local_node.clone(), transport_config);
 
-    let data_transport = transport.get_handle(cell.clone(), TransportLayer::Data)?;
+    let data_transport = transport.get_handle(cell.cell().clone(), TransportLayer::Data)?;
     let clock = Clock::new();
 
     let mut chain_dir = std::env::current_dir()?;
@@ -57,12 +56,11 @@ fn main() -> Result<(), failure::Error> {
     let engine_config = exocore_data::EngineConfig::default();
     let mut engine = exocore_data::Engine::new(
         engine_config,
-        local_node.id().clone(),
         clock,
         data_transport,
         chain_store,
         pending_store,
-        cell.nodes().clone(),
+        cell.cell().clone(),
     );
 
     let _engine_handle = engine.get_handle();
