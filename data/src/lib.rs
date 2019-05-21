@@ -19,14 +19,16 @@ extern crate tokio_io;
 /// Re-exports
 ///
 pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
-pub use crate::engine::{Config as EngineConfig, Engine, OperationStatus};
+pub use crate::engine::{Config as EngineConfig, Engine, EngineOperationStatus};
 pub use crate::pending::memory::MemoryPendingStore;
 pub use crate::transport::mock::{MockTransport, MockTransportHub};
 
 ///
 /// Modules
 ///
+pub mod block;
 pub mod chain;
 pub mod engine;
+pub mod operation;
 pub mod pending;
 pub mod transport;

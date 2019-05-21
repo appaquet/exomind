@@ -8,6 +8,7 @@
 
 # OS Stuff
 *.DS_Store
+.psync_ignore
 
 # IDE
 .idea

@@ -11,6 +11,7 @@ use futures::sync::oneshot;
 use tokio;
 use tokio::timer::Interval;
 
+use crate::operation::OperationID;
 use exocore_common;
 use exocore_common::node::{Node, NodeID, Nodes};
 use exocore_common::serialization::capnp;
@@ -21,13 +22,14 @@ use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
 use exocore_common::serialization::protos::data_transport_capnp::{
     chain_sync_request, chain_sync_response, envelope, pending_sync_request,
 };
-use exocore_common::serialization::protos::OperationID;
 use exocore_common::serialization::{framed, framed::TypedFrame};
 
+use crate::block;
+use crate::block::{Block, BlockOffset};
 use crate::chain;
-use crate::chain::{Block, BlockOffset};
+use crate::operation;
+use crate::operation::{NewOperation, OperationBuilder};
 use crate::pending;
-use crate::pending::PendingOperation;
 use crate::transport;
 use crate::transport::OutMessage;
 use exocore_common::time::Clock;
@@ -392,16 +394,13 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    fn handle_add_pending_operation(
-        &mut self,
-        operation_frame: OwnedTypedFrame<pending_operation::Owned>,
-    ) -> Result<(), Error> {
+    fn handle_add_pending_operation(&mut self, operation: NewOperation) -> Result<(), Error> {
         let mut sync_context = SyncContext::new();
         self.pending_synchronizer.handle_new_operation(
             &mut sync_context,
             &self.nodes,
             &mut self.pending_store,
-            operation_frame,
+            operation,
         )?;
 
         // to prevent sending pending operations that may have already been committed, we don't propagate
@@ -618,36 +617,7 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    pub fn get_chain_segments(&self) -> Result<Vec<chain::Segment>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.read()?;
-        Ok(unlocked_inner.chain_store.segments())
-    }
-
-    pub fn get_chain_entry(
-        &self,
-        block_offset: chain::BlockOffset,
-        operation_id: OperationID,
-    ) -> Result<ChainOperation, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.read()?;
-
-        let block = unlocked_inner.chain_store.get_block(block_offset)?;
-        let operation = block.get_operation(operation_id)?.ok_or_else(|| {
-            Error::NotFound(format!(
-                "block_offset={} operation_id={}",
-                block_offset, operation_id
-            ))
-        })?;
-
-        Ok(ChainOperation {
-            operation_id,
-            status: OperationStatus::Committed,
-            operation_frame: operation.to_owned(),
-        })
-    }
-
-    pub fn write_entry(&self, data: &[u8]) -> Result<OperationID, Error> {
+    pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationID, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
 
@@ -655,38 +625,111 @@ where
             .nodes
             .get(&unlocked_inner.node_id)
             .ok_or(Error::MyNodeNotFound)?;
-        let operation_id = unlocked_inner.clock.consistent_time(my_node);
-        let entry_operation =
-            PendingOperation::new_entry(operation_id, &unlocked_inner.node_id, data);
-        let entry_frame = entry_operation.as_owned_framed(my_node.frame_signer())?;
 
-        unlocked_inner.handle_add_pending_operation(entry_frame)?;
+        let operation_id = unlocked_inner.clock.consistent_time(my_node);
+
+        let operation_builder =
+            OperationBuilder::new_entry(operation_id, &unlocked_inner.node_id, data);
+        let operation = operation_builder.sign_and_build(my_node.frame_signer())?;
+
+        unlocked_inner.handle_add_pending_operation(operation)?;
 
         Ok(operation_id)
+    }
+
+    pub fn get_chain_segments(&self) -> Result<Vec<chain::Segment>, Error> {
+        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+        let unlocked_inner = inner.read()?;
+        Ok(unlocked_inner.chain_store.segments())
+    }
+
+    pub fn get_chain_operation(
+        &self,
+        block_offset: BlockOffset,
+        operation_id: OperationID,
+    ) -> Result<Option<EngineOperation>, Error> {
+        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+        let unlocked_inner = inner.read()?;
+
+        let block = unlocked_inner.chain_store.get_block(block_offset)?;
+        if let Some(operation) = block.get_operation(operation_id)? {
+            Ok(Some(EngineOperation {
+                operation_id,
+                status: EngineOperationStatus::Committed,
+                operation_frame: Arc::new(operation.to_owned()),
+            }))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn get_pending_operations<R: RangeBounds<OperationID>>(
         &self,
         operations_range: R,
-    ) -> Result<Vec<pending::StoredOperation>, Error> {
+    ) -> Result<Vec<EngineOperation>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let unlocked_inner = inner.write()?;
 
         let operations = unlocked_inner
             .pending_store
             .operations_iter(operations_range)?
-            .filter(|pending_operation| {
-                // exclude operations that are in the chain
-                unlocked_inner
+            .map(|stored_operation| {
+                // TODO: This is slow AF. Store in pending store if committed...
+                let in_chain = unlocked_inner
                     .chain_store
-                    .get_block_by_operation_id(pending_operation.operation_id)
+                    .get_block_by_operation_id(stored_operation.operation_id)
                     .ok()
                     .and_then(|block| block)
-                    .is_none()
+                    .is_none();
+                let status = if in_chain {
+                    EngineOperationStatus::Committed
+                } else {
+                    EngineOperationStatus::Pending
+                };
+
+                EngineOperation {
+                    operation_id: stored_operation.operation_id,
+                    status,
+                    operation_frame: stored_operation.frame,
+                }
             })
             .collect::<Vec<_>>();
 
         Ok(operations)
+    }
+
+    pub fn get_operation(
+        &self,
+        operation_id: OperationID,
+    ) -> Result<Option<EngineOperation>, Error> {
+        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+        let unlocked_inner = inner.write()?;
+
+        // TODO: Should always check pending first, but until we don't keep any committed flag, we need to check chain first
+
+        // first check if it's in the chain
+        if let Some(block_ref) = unlocked_inner
+            .chain_store
+            .get_block_by_operation_id(operation_id)?
+        {
+            if let Some(operation) = block_ref.get_operation(operation_id)? {
+                return Ok(Some(EngineOperation {
+                    operation_id,
+                    status: EngineOperationStatus::Committed,
+                    operation_frame: Arc::new(operation.to_owned()),
+                }));
+            }
+        }
+
+        // otherwise, check if it's inpending store
+        Ok(unlocked_inner
+            .pending_store
+            .get_operation(operation_id)?
+            .map(|stored_operation| EngineOperation {
+                operation_id: stored_operation.operation_id,
+                status: EngineOperationStatus::Pending,
+                operation_frame: stored_operation.frame,
+            }))
     }
 
     ///
@@ -710,6 +753,11 @@ where
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut unlocked_inner) = inner.write() {
                 unlocked_inner.unregister_handle(self.id);
+
+                // if it was last handle, we kill the engine
+                if unlocked_inner.handles_sender.is_empty() {
+                    unlocked_inner.try_complete_engine(Ok(()));
+                }
             }
         }
     }
@@ -732,6 +780,10 @@ pub enum Error {
     ChainSync(#[fail(cause)] chain_sync::ChainSyncError),
     #[fail(display = "Error in commit manager: {:?}", _0)]
     CommitManager(commit_manager::CommitManagerError),
+    #[fail(display = "Got a block related error: {:?}", _0)]
+    Block(#[fail(cause)] block::Error),
+    #[fail(display = "Got an operation related error: {:?}", _0)]
+    Operation(#[fail(cause)] operation::Error),
     #[fail(display = "Error in framing serialization: {:?}", _0)]
     Framing(#[fail(cause)] framed::Error),
     #[fail(display = "Chain is not initialized")]
@@ -759,7 +811,6 @@ pub enum Error {
 impl Error {
     pub fn is_fatal(&self) -> bool {
         match self {
-            Error::PendingStore(inner) => inner.is_fatal(),
             Error::ChainStore(inner) => inner.is_fatal(),
             Error::ChainSync(inner) => inner.is_fatal(),
             Error::MyNodeNotFound
@@ -813,6 +864,18 @@ impl From<chain_sync::ChainSyncError> for Error {
 impl From<commit_manager::CommitManagerError> for Error {
     fn from(err: commit_manager::CommitManagerError) -> Self {
         Error::CommitManager(err)
+    }
+}
+
+impl From<block::Error> for Error {
+    fn from(err: block::Error) -> Self {
+        Error::Block(err)
+    }
+}
+
+impl From<operation::Error> for Error {
+    fn from(err: operation::Error) -> Self {
+        Error::Operation(err)
     }
 }
 
@@ -954,50 +1017,45 @@ impl SyncContextMessage {
 ///
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
-    ///
     /// The engine is now started
-    ///
     Started,
 
-    ///
     /// The stream of events hit the maximum buffer size, and some events got discarded.
     /// Consumer state should be rebuilt from scratch to prevent having inconsistencies.
-    ///
     StreamDiscontinuity,
 
-    ///
     /// An operation added to the pending store.
-    ///
     PendingOperationNew(OperationID),
 
-    ///
     /// An operation that was previously added got deleted, hence will never end up in a block.
     /// This happens if an operation was invalid or found in the chain later on.
-    ///
     PendingEntryDelete(OperationID),
 
-    ///
     /// A new block got added to the chain.
-    ///
     ChainBlockNew(BlockOffset),
 
-    ///
     /// The chain has diverged from given offset, which mean it will get re-written with new blocks.
     /// Operations after this offset should ignored.
-    ///
     ChainDiverged(BlockOffset),
 }
 
 ///
-/// TODO: Should implement "Operation" trait, and should be named EngineOperation
-///       https://github.com/appaquet/exocore/issues/50
-pub struct ChainOperation {
+/// Operation that comes either from the chain or from the pending store
+///
+pub struct EngineOperation {
     pub operation_id: OperationID,
-    pub status: OperationStatus,
-    pub operation_frame: OwnedTypedFrame<pending_operation::Owned>,
+    pub status: EngineOperationStatus,
+    pub operation_frame: Arc<OwnedTypedFrame<pending_operation::Owned>>,
 }
 
-pub enum OperationStatus {
+impl crate::operation::Operation for EngineOperation {
+    fn get_operation_reader(&self) -> Result<pending_operation::Reader, operation::Error> {
+        Ok(self.operation_frame.get_typed_reader()?)
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum EngineOperationStatus {
     Committed,
     Pending,
 }

@@ -6,7 +6,8 @@ use exocore_common::serialization::framed;
 use exocore_common::serialization::framed::TypedFrame;
 use exocore_common::serialization::protos::data_chain_capnp::block_signatures;
 
-use crate::chain::{Block, BlockOffset, BlockRef, ChainBlockIterator, Error};
+use super::Error;
+use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};
 
 use super::DirectoryChainStoreConfig;
 use std::ffi::OsStr;
@@ -176,7 +177,7 @@ impl DirectorySegment {
         }
 
         let block_file_offset = (offset - first_block_offset) as usize;
-        BlockRef::new(&self.segment_file.mmap[block_file_offset..])
+        Ok(BlockRef::new(&self.segment_file.mmap[block_file_offset..])?)
     }
 
     pub fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<BlockRef, Error> {

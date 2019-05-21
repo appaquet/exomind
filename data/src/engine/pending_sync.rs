@@ -5,9 +5,9 @@ use std::ops::{Bound, RangeBounds};
 
 use itertools::{EitherOrBoth, Itertools};
 
+use crate::operation::OperationID;
 use exocore_common::node::{Node, NodeID, Nodes};
 use exocore_common::security::hash::{Sha3Hasher, StreamHasher};
-use exocore_common::serialization::framed;
 use exocore_common::serialization::framed::*;
 use exocore_common::serialization::protos::data_chain_capnp::{
     pending_operation, pending_operation_header,
@@ -15,10 +15,10 @@ use exocore_common::serialization::protos::data_chain_capnp::{
 use exocore_common::serialization::protos::data_transport_capnp::{
     pending_sync_range, pending_sync_request,
 };
-use exocore_common::serialization::protos::OperationID;
 
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
+use crate::operation::{NewOperation, Operation};
 use crate::pending::{PendingStore, StoredOperation};
 
 const MAX_OPERATIONS_PER_RANGE: u32 = 30;
@@ -90,10 +90,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         sync_context: &mut SyncContext,
         nodes: &Nodes,
         store: &mut PS,
-        operation: framed::OwnedTypedFrame<pending_operation::Owned>,
+        operation: NewOperation,
     ) -> Result<(), Error> {
-        let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
-        let operation_id = operation_reader.get_operation_id();
+        let operation_id = operation.get_id()?;
         store.put_operation(operation)?;
         sync_context.push_event(Event::PendingOperationNew(operation_id));
 
@@ -203,7 +202,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                     let operation_id = operation_frame_reader.get_operation_id();
                     included_operations.insert(operation_id);
 
-                    let existed = store.put_operation(operation_frame)?;
+                    let new_operation = NewOperation::from_frame(operation_frame);
+                    let existed = store.put_operation(new_operation)?;
                     if !existed {
                         sync_context.push_event(Event::PendingOperationNew(operation_id));
                     }
@@ -696,7 +696,7 @@ mod tests {
     use crate::engine::testing::create_dummy_new_entry_op;
     use crate::engine::testing::*;
     use crate::engine::SyncContextMessage;
-    use crate::pending::OperationType;
+    use crate::operation::{NewOperation, OperationType};
 
     use super::*;
 
@@ -869,8 +869,7 @@ mod tests {
 
         // insert 1/2 operations in second node
         for operation in pending_ops_generator(100) {
-            let reader = operation.get_typed_reader()?;
-            if reader.get_operation_id() % 2 == 0 {
+            if operation.get_id()? % 2 == 0 {
                 cluster.pending_stores[1].put_operation(operation)?;
             }
         }
@@ -889,8 +888,7 @@ mod tests {
 
         // insert 1/2 operations in first node
         for operation in pending_ops_generator(100) {
-            let reader = operation.get_typed_reader()?;
-            if reader.get_operation_id() % 2 == 0 {
+            if operation.get_id()? % 2 == 0 {
                 cluster.pending_stores[0].put_operation(operation)?;
             }
         }
@@ -907,10 +905,9 @@ mod tests {
         let mut cluster = TestCluster::new(2);
 
         for operation in pending_ops_generator(10) {
-            let reader = operation.get_typed_reader()?;
-            if reader.get_operation_id() % 2 == 0 {
+            if operation.get_id()? % 2 == 0 {
                 cluster.pending_stores[0].put_operation(operation)?;
-            } else if reader.get_operation_id() % 3 == 0 {
+            } else if operation.get_id()? % 3 == 0 {
                 cluster.pending_stores[1].put_operation(operation)?;
             }
         }
@@ -1125,9 +1122,7 @@ mod tests {
         }
     }
 
-    fn pending_ops_generator(
-        count: usize,
-    ) -> impl Iterator<Item = OwnedTypedFrame<pending_operation::Owned>> {
+    fn pending_ops_generator(count: usize) -> impl Iterator<Item = NewOperation> {
         (1..=count).map(|i| {
             let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
             create_dummy_new_entry_op(operation_id, group_id)
@@ -1137,13 +1132,14 @@ mod tests {
     fn stored_ops_generator(count: usize) -> impl Iterator<Item = StoredOperation> {
         (1..=count).map(|i| {
             let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
-            let operation = Arc::new(create_dummy_new_entry_op(operation_id, group_id));
+            let new_operation = create_dummy_new_entry_op(operation_id, group_id);
+            let frame = Arc::new(new_operation.frame);
 
             StoredOperation {
                 group_id,
                 operation_type: OperationType::Entry,
                 operation_id,
-                frame: operation,
+                frame,
             }
         })
     }
