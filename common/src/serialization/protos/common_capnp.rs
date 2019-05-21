@@ -92,7 +92,10 @@ pub mod node {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Reader<'a, crate::common_capnp::node_address::Owned>,
         > {
-            ::capnp::traits::FromPointerReader::get_from_pointer(&self.reader.get_pointer_field(2))
+            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+                &self.reader.get_pointer_field(2),
+                ::std::ptr::null(),
+            )
         }
         pub fn has_address(&self) -> bool {
             !self.reader.get_pointer_field(2).is_null()
@@ -211,7 +214,10 @@ pub mod node {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Builder<'a, crate::common_capnp::node_address::Owned>,
         > {
-            ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(2))
+            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+                self.builder.get_pointer_field(2),
+                ::std::ptr::null(),
+            )
         }
         #[inline]
         pub fn set_address(

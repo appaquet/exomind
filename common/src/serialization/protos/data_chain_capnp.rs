@@ -339,29 +339,34 @@ pub mod pending_operation {
             pub fn which(self) -> ::std::result::Result<WhichReader<'a>, ::capnp::NotInSchema> {
                 match self.reader.get_data_field::<u16>(8) {
                     0 => ::std::result::Result::Ok(Entry(
-                        ::capnp::traits::FromPointerReader::get_from_pointer(
-                            &self.reader.get_pointer_field(1),
-                        ),
+                        self.reader
+                            .get_pointer_field(1)
+                            .get_struct(::std::ptr::null())
+                            .map(|sr| ::capnp::traits::FromStructReader::new(sr)),
                     )),
                     1 => ::std::result::Result::Ok(BlockPropose(
-                        ::capnp::traits::FromPointerReader::get_from_pointer(
-                            &self.reader.get_pointer_field(1),
-                        ),
+                        self.reader
+                            .get_pointer_field(1)
+                            .get_struct(::std::ptr::null())
+                            .map(|sr| ::capnp::traits::FromStructReader::new(sr)),
                     )),
                     2 => ::std::result::Result::Ok(BlockSign(
-                        ::capnp::traits::FromPointerReader::get_from_pointer(
-                            &self.reader.get_pointer_field(1),
-                        ),
+                        self.reader
+                            .get_pointer_field(1)
+                            .get_struct(::std::ptr::null())
+                            .map(|sr| ::capnp::traits::FromStructReader::new(sr)),
                     )),
                     3 => ::std::result::Result::Ok(BlockRefuse(
-                        ::capnp::traits::FromPointerReader::get_from_pointer(
-                            &self.reader.get_pointer_field(1),
-                        ),
+                        self.reader
+                            .get_pointer_field(1)
+                            .get_struct(::std::ptr::null())
+                            .map(|sr| ::capnp::traits::FromStructReader::new(sr)),
                     )),
                     4 => ::std::result::Result::Ok(PendingIgnore(
-                        ::capnp::traits::FromPointerReader::get_from_pointer(
-                            &self.reader.get_pointer_field(1),
-                        ),
+                        self.reader
+                            .get_pointer_field(1)
+                            .get_struct(::std::ptr::null())
+                            .map(|sr| ::capnp::traits::FromStructReader::new(sr)),
                     )),
                     x => ::std::result::Result::Err(::capnp::NotInSchema(x)),
                 }
@@ -581,33 +586,33 @@ pub mod pending_operation {
             #[inline]
             pub fn which(self) -> ::std::result::Result<WhichBuilder<'a>, ::capnp::NotInSchema> {
                 match self.builder.get_data_field::<u16>(8) {
-                    0 => ::std::result::Result::Ok(Entry(
-                        ::capnp::traits::FromPointerBuilder::get_from_pointer(
-                            self.builder.get_pointer_field(1),
-                        ),
-                    )),
-                    1 => ::std::result::Result::Ok(BlockPropose(
-                        ::capnp::traits::FromPointerBuilder::get_from_pointer(
-                            self.builder.get_pointer_field(1),
-                        ),
-                    )),
-                    2 => ::std::result::Result::Ok(BlockSign(
-                        ::capnp::traits::FromPointerBuilder::get_from_pointer(
-                            self.builder.get_pointer_field(1),
-                        ),
-                    )),
-                    3 => ::std::result::Result::Ok(BlockRefuse(
-                        ::capnp::traits::FromPointerBuilder::get_from_pointer(
-                            self.builder.get_pointer_field(1),
-                        ),
-                    )),
-                    4 => ::std::result::Result::Ok(PendingIgnore(
-                        ::capnp::traits::FromPointerBuilder::get_from_pointer(
-                            self.builder.get_pointer_field(1),
-                        ),
-                    )),
-                    x => ::std::result::Result::Err(::capnp::NotInSchema(x)),
-                }
+          0 => {
+            ::std::result::Result::Ok(Entry(
+              self.builder.get_pointer_field(1).get_struct(<crate::data_chain_capnp::operation_entry::Builder<'a> as ::capnp::traits::HasStructSize>::struct_size(),::std::ptr::null()).map(|sb| ::capnp::traits::FromStructBuilder::new(sb))
+            ))
+          }
+          1 => {
+            ::std::result::Result::Ok(BlockPropose(
+              self.builder.get_pointer_field(1).get_struct(<crate::data_chain_capnp::operation_block_propose::Builder<'a> as ::capnp::traits::HasStructSize>::struct_size(),::std::ptr::null()).map(|sb| ::capnp::traits::FromStructBuilder::new(sb))
+            ))
+          }
+          2 => {
+            ::std::result::Result::Ok(BlockSign(
+              self.builder.get_pointer_field(1).get_struct(<crate::data_chain_capnp::operation_block_sign::Builder<'a> as ::capnp::traits::HasStructSize>::struct_size(),::std::ptr::null()).map(|sb| ::capnp::traits::FromStructBuilder::new(sb))
+            ))
+          }
+          3 => {
+            ::std::result::Result::Ok(BlockRefuse(
+              self.builder.get_pointer_field(1).get_struct(<crate::data_chain_capnp::operation_block_refuse::Builder<'a> as ::capnp::traits::HasStructSize>::struct_size(),::std::ptr::null()).map(|sb| ::capnp::traits::FromStructBuilder::new(sb))
+            ))
+          }
+          4 => {
+            ::std::result::Result::Ok(PendingIgnore(
+              self.builder.get_pointer_field(1).get_struct(<crate::data_chain_capnp::operation_pending_ignore::Builder<'a> as ::capnp::traits::HasStructSize>::struct_size(),::std::ptr::null()).map(|sb| ::capnp::traits::FromStructBuilder::new(sb))
+            ))
+          }
+          x => ::std::result::Result::Err(::capnp::NotInSchema(x))
+        }
             }
         }
 
@@ -1303,7 +1308,10 @@ pub mod operation_block_sign {
         pub fn get_signature(
             self,
         ) -> ::capnp::Result<crate::data_chain_capnp::block_signature::Reader<'a>> {
-            ::capnp::traits::FromPointerReader::get_from_pointer(&self.reader.get_pointer_field(0))
+            self.reader
+                .get_pointer_field(0)
+                .get_struct(::std::ptr::null())
+                .map(|sr| ::capnp::traits::FromStructReader::new(sr))
         }
         pub fn has_signature(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
@@ -1386,7 +1394,7 @@ pub mod operation_block_sign {
         pub fn get_signature(
             self,
         ) -> ::capnp::Result<crate::data_chain_capnp::block_signature::Builder<'a>> {
-            ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(0))
+            self.builder.get_pointer_field(0).get_struct(<crate::data_chain_capnp::block_signature::Builder<'a> as ::capnp::traits::HasStructSize>::struct_size(),::std::ptr::null()).map(|sb| ::capnp::traits::FromStructBuilder::new(sb))
         }
         #[inline]
         pub fn set_signature<'b>(
@@ -1875,7 +1883,10 @@ pub mod block {
                 crate::data_chain_capnp::block_operation_header::Owned,
             >,
         > {
-            ::capnp::traits::FromPointerReader::get_from_pointer(&self.reader.get_pointer_field(2))
+            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+                &self.reader.get_pointer_field(2),
+                ::std::ptr::null(),
+            )
         }
         pub fn has_operations_header(&self) -> bool {
             !self.reader.get_pointer_field(2).is_null()
@@ -2050,7 +2061,10 @@ pub mod block {
                 crate::data_chain_capnp::block_operation_header::Owned,
             >,
         > {
-            ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(2))
+            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+                self.builder.get_pointer_field(2),
+                ::std::ptr::null(),
+            )
         }
         #[inline]
         pub fn set_operations_header(
@@ -2719,7 +2733,10 @@ pub mod block_signatures {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Reader<'a, crate::data_chain_capnp::block_signature::Owned>,
         > {
-            ::capnp::traits::FromPointerReader::get_from_pointer(&self.reader.get_pointer_field(0))
+            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+                &self.reader.get_pointer_field(0),
+                ::std::ptr::null(),
+            )
         }
         pub fn has_signatures(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
@@ -2812,7 +2829,10 @@ pub mod block_signatures {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Builder<'a, crate::data_chain_capnp::block_signature::Owned>,
         > {
-            ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(0))
+            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+                self.builder.get_pointer_field(0),
+                ::std::ptr::null(),
+            )
         }
         #[inline]
         pub fn set_signatures(

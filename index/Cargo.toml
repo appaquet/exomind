@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 exocore-data = { path = "../data" }
+exocore-transport = { path = "../transport" }
 exocore-common = { path = "../common" }
 log = "0.4"
 

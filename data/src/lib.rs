@@ -2,6 +2,7 @@
 
 extern crate byteorder;
 extern crate exocore_common;
+extern crate exocore_transport;
 #[macro_use]
 extern crate failure;
 #[macro_use]
@@ -21,7 +22,6 @@ extern crate tokio_io;
 pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
 pub use crate::engine::{Config as EngineConfig, Engine, EngineOperationStatus};
 pub use crate::pending::memory::MemoryPendingStore;
-pub use crate::transport::mock::{MockTransport, MockTransportHub};
 
 ///
 /// Modules
@@ -31,4 +31,3 @@ pub mod chain;
 pub mod engine;
 pub mod operation;
 pub mod pending;
-pub mod transport;

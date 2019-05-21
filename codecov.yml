@@ -1,0 +1,19 @@
+# See: https://docs.codecov.io/docs/codecov-yaml
+
+comment: false
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+
+    patch:
+      default:
+        target: 70%
+        threshold: 1%
+
+ignore:
+  - "**/main.rs"
+  - "**/bins/*.rs"

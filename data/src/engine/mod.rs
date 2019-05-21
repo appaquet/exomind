@@ -30,9 +30,8 @@ use crate::chain;
 use crate::operation;
 use crate::operation::{NewOperation, OperationBuilder};
 use crate::pending;
-use crate::transport;
-use crate::transport::OutMessage;
 use exocore_common::time::Clock;
+use exocore_transport::{Error as TransportError, InMessage, OutMessage, TransportHandle};
 use itertools::Itertools;
 
 mod chain_sync;
@@ -46,7 +45,7 @@ pub(crate) mod testing;
 ///
 /// Data engine's configuration
 ///
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Config {
     pub chain_synchronizer_config: chain_sync::ChainSyncConfig,
     pub pending_synchronizer_config: pending_sync::PendingSyncConfig,
@@ -76,7 +75,7 @@ impl Default for Config {
 ///
 pub struct Engine<T, CS, PS>
 where
-    T: transport::Transport,
+    T: TransportHandle,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -91,7 +90,7 @@ where
 
 impl<T, CS, PS> Engine<T, CS, PS>
 where
-    T: transport::Transport,
+    T: TransportHandle,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -185,7 +184,7 @@ where
             tokio::spawn(
                 transport_out_channel_receiver
                     .map_err(|err| {
-                        transport::Error::Other(format!(
+                        TransportError::Other(format!(
                             "Couldn't send to transport_out channel's receiver: {:?}",
                             err
                         ))
@@ -265,7 +264,7 @@ where
 
     fn handle_incoming_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        message: transport::InMessage,
+        message: InMessage,
     ) -> Result<(), Error> {
         let locked_inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut inner = locked_inner.write()?;
@@ -275,7 +274,7 @@ where
             "{}: Got message of type {} from node {}",
             inner.node_id,
             envelope_reader.get_type(),
-            envelope_reader.get_from_node()?
+            envelope_reader.get_from_node_id()?
         );
 
         match envelope_reader.get_type() {
@@ -343,7 +342,7 @@ where
 
 impl<T, CS, PS> Future for Engine<T, CS, PS>
 where
-    T: transport::Transport,
+    T: TransportHandle,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -385,7 +384,7 @@ where
     chain_synchronizer: chain_sync::ChainSynchronizer<CS>,
     commit_manager: commit_manager::CommitManager<PS, CS>,
     handles_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
-    transport_sender: Option<mpsc::UnboundedSender<transport::OutMessage>>,
+    transport_sender: Option<mpsc::UnboundedSender<OutMessage>>,
     completion_sender: Option<oneshot::Sender<Result<(), Error>>>,
 }
 
@@ -416,7 +415,7 @@ where
 
     fn handle_incoming_pending_sync_request<R>(
         &mut self,
-        message: &transport::InMessage,
+        message: &InMessage,
         request: R,
     ) -> Result<(), Error>
     where
@@ -443,7 +442,7 @@ where
 
     fn handle_incoming_chain_sync_request<R>(
         &mut self,
-        message: &transport::InMessage,
+        message: &InMessage,
         request: R,
     ) -> Result<(), Error>
     where
@@ -464,7 +463,7 @@ where
 
     fn handle_incoming_chain_sync_response<R>(
         &mut self,
-        message: &transport::InMessage,
+        message: &InMessage,
         response: R,
     ) -> Result<(), Error>
     where
@@ -770,7 +769,7 @@ where
 #[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "Error in transport: {:?}", _0)]
-    Transport(#[fail(cause)] transport::Error),
+    Transport(#[fail(cause)] TransportError),
     #[fail(display = "Error in pending store: {:?}", _0)]
     PendingStore(#[fail(cause)] pending::Error),
     #[fail(display = "Error in chain store: {:?}", _0)]
@@ -832,8 +831,8 @@ impl Error {
     }
 }
 
-impl From<transport::Error> for Error {
-    fn from(err: transport::Error) -> Self {
+impl From<TransportError> for Error {
+    fn from(err: TransportError) -> Self {
         Error::Transport(err)
     }
 }

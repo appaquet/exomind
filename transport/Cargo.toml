@@ -1,17 +1,20 @@
 [package]
-name = "exocore-server"
+name = "exocore-transport"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
+[features]
+tests_utils = []
+
 [dependencies]
-exocore-data = { path = "../data" }
-exocore-index = { path = "../index" }
 exocore-common = { path = "../common" }
-exocore-transport = { path = "../transport" }
-log = "0.4"
-structopt = "0.2"
-log4rs = "0.8"
-failure = { version ="0.1.5", features = ["backtrace"] }
 futures = "0.1"
+log = "0.4"
+failure = { version ="0.1.5", features = ["backtrace"] }
 tokio = "0.1"
+libp2p = "0.7.0"
+
+[dev-dependencies]
+exocore-common = { path = "../common", features = ["tests_utils"] }
+
