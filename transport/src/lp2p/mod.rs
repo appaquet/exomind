@@ -288,7 +288,6 @@ impl Future for Libp2pTransport {
         // we are only polled once, and we return ready right away
         self.start().map_err(|err| {
             error!("Error starting transport: {:?}", err);
-            ()
         })?;
 
         Ok(Async::Ready(()))

@@ -20,10 +20,7 @@ use exocore_data::block::{BlockOffset, BlockOwned};
 use exocore_data::chain::ChainStore;
 use exocore_data::engine::{Event, Handle};
 use exocore_data::operation::{Operation, OperationID};
-use exocore_data::{
-    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineOperationStatus,
-    MemoryPendingStore,
-};
+use exocore_data::*;
 use exocore_transport::mock::MockTransport;
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
@@ -277,6 +274,10 @@ impl TestCluster {
     fn start_engine(&mut self, node_idx: usize) {
         let engine_config = EngineConfig {
             manager_timer_interval: Duration::from_millis(100),
+            commit_manager_config: CommitManagerConfig {
+                commit_maximum_interval: Duration::from_millis(200),
+                ..CommitManagerConfig::default()
+            },
             ..EngineConfig::default()
         };
 

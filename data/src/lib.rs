@@ -20,6 +20,7 @@ extern crate tokio_io;
 /// Re-exports
 ///
 pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
+pub use crate::engine::{ChainSyncConfig, CommitManagerConfig, PendingSyncConfig};
 pub use crate::engine::{Config as EngineConfig, Engine, EngineOperationStatus};
 pub use crate::pending::memory::MemoryPendingStore;
 

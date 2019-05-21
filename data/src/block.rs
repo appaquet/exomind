@@ -73,6 +73,11 @@ pub trait Block {
         Ok(reader.get_depth())
     }
 
+    fn get_proposed_operation_id(&self) -> Result<OperationID, Error> {
+        let reader = self.block().get_typed_reader()?;
+        Ok(reader.get_proposed_operation_id())
+    }
+
     fn operations_iter(&self) -> Result<BlockOperationsIterator, Error> {
         let block_reader: block::Reader = self.block().get_typed_reader()?;
         let operations_header = block_reader
