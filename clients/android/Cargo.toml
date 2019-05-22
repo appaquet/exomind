@@ -9,9 +9,11 @@ crate-type = ["cdylib"]
 
 [dependencies]
 exocore-common = { path = "../../common" }
+exocore-transport = { path = "../../transport", features = ["libp2p_transport"] }
+exocore-index = { path = "../../index" }
 failure = "0.1"
 android_glue = "0.2.3"
 
 [package.metadata.android]
 label = "Exocore Android Client"
-build_targets = ["arm-linux-androideabi", "i686-linux-android"]
+build_targets = ["arm-linux-androideabi"]

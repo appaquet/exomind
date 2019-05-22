@@ -13,7 +13,7 @@ echo "Running clippy..."
 ./clippy.sh
 
 echo "Running tests..."
-cargo test --all
+cargo test --all --all-features
 
 echo "Validating release build..."
 cargo build --release

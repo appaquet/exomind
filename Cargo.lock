@@ -698,6 +698,8 @@ version = "0.1.0"
 dependencies = [
  "android_glue 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "exocore-common 0.1.0",
+ "exocore-index 0.1.0",
+ "exocore-transport 0.1.0",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

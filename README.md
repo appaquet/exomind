@@ -58,23 +58,19 @@ A cell consists of:
   * `rustup component add clippy rustfmt`
   * `rustup target add wasm32-unknown-unknown`
 
-* iOS build on MacOS (optional):
-  * `rustup target add aarch64-apple-ios`
-
 * Android build (optional):
   * Using Docker
-    * `docker run --rm -v "$pwd:/root/src" -w /root/src appaquet/cargo-apk cargo-apk build -p exocore-client-android --bin exocore-client-android`
-    
+      * Build with `docker run --rm -v "$PWD:/root/src" -w /root/src appaquet/cargo-apk ./clients/android/build.sh` 
+      
   * Using host machine
       * Install Rust targets:
         * `rustup target add i686-linux-android`
         * `rustup target add arm-linux-androideabi`
       * Follow instructions from [`android-rs-glue`](https://github.com/rust-windowing/android-rs-glue#setting-up-your-environment).
         * You need to install Android NDK 17 since GCC isn't packaged since NDK 17 (now clang). See this [issue](https://github.com/rust-windowing/android-rs-glue/issues/208).
-        * If installation of cargo-apk doesn't work, you can build locally using
-         [appaquet's repo](https://github.com/rust-windowing/android-rs-glue/tree/883c01df16710c98011fcbcc7659db89451877a8) 
-         and install cargo-apk by doing `cd cargo-apk && cargo install --path .`
-      * To build: `cargo-apk build -p exocore-client-android --bin exocore-client-android`
+        * If installation of cargo-apk doesn't work, use this patched version:
+          `cargo install --git https://github.com/appaquet/android-rs-glue.git --branch new-docker cargo-apk`
+      * Build with `./clients/android/build.sh`
 
 ## CLI
 * To run the CLI: 

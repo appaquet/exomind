@@ -5,22 +5,24 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-default = ["websocket_transport"]
+default = []
 tests_utils = ["exocore-common/tests_utils"]
 websocket_transport = ["websocket", "tokio-reactor"]
+libp2p_transport = ["libp2p", "tokio-reactor"]
 
 [dependencies]
 exocore-common = { path = "../common" }
 futures = "0.1"
 log = "0.4"
 failure = "0.1"
-libp2p = "0.8"
 tokio-io = "0.1"
 tokio-timer = "0.2"
 tokio-executor = "0.1"
 tokio-reactor = { version = "0.1", optional = true }
 websocket = { version = "0.22", optional = true }
+libp2p = { version = "0.8", optional = true }
 
 [dev-dependencies]
-tokio = { version = "0.1" }
+tokio = "0.1"
+libp2p = "0.8"
 exocore-common = { path = "../common", features = ["tests_utils"] }
