@@ -501,9 +501,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     // delete the block & related operations (sigs, refusals, etc.)
                     pending_store.delete_operation(*group_id)?;
 
-                    // delete operations of the block
-                    for operation_id in &block.operations {
-                        pending_store.delete_operation(*operation_id)?;
+                    // delete operations of the block if they were committed, but not refused
+                    if block.status == BlockStatus::PastCommitted {
+                        for operation_id in &block.operations {
+                            pending_store.delete_operation(*operation_id)?;
+                        }
                     }
 
                     // update the sync state so that the `PendingSynchronizer` knows what was last block to get cleaned
@@ -1288,6 +1290,76 @@ mod tests {
         for operation in block.operations_iter()? {
             let operation_reader = operation.get_typed_reader()?;
             assert_not_in_pending(&cluster, operation_reader.get_operation_id());
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn dont_cleanup_operations_from_commit_refused_blocks() -> Result<(), failure::Error> {
+        let mut cluster = TestCluster::new(1);
+        cluster.chain_generate_dummy(0, 10, 1234);
+        cluster.tick_chain_synchronizer(0)?;
+
+        let preceding_valid_block = cluster.chains[0]
+            .blocks_iter(0)?
+            .map(|b| b.to_owned())
+            .nth(2)
+            .unwrap();
+
+        // generate operations that won't be in a block yet
+        let mut operations_id = Vec::new();
+        let operations = (0..10).map(|i| {
+            let op_id = append_new_operation(&mut cluster, b"hello world").unwrap();
+            operations_id.push(op_id);
+            cluster.pending_stores[0]
+                .get_operation(operations_id[i])
+                .unwrap()
+                .unwrap()
+                .frame
+        });
+
+        // we generate a block that is after block #2 in the chain, but is invalid since there is already
+        // a block a this position
+        let block_operations = BlockOperations::from_operations(operations)?;
+        let invalid_block = BlockOwned::new_with_prev_block(
+            &cluster.cells[0],
+            &preceding_valid_block,
+            cluster.consistent_clock(0),
+            block_operations,
+        )?;
+        let invalid_block_op_id = cluster.consistent_clock(0);
+        let block_proposal = OperationBuilder::new_block_proposal(
+            invalid_block_op_id,
+            cluster.get_node(0).id(),
+            &invalid_block,
+        )?;
+        let frame_signer = cluster.get_local_node(0).frame_signer();
+        cluster.pending_stores[0].put_operation(block_proposal.sign_and_build(frame_signer)?)?;
+
+        // created blocks should all be invalid
+        let pending_blocks = get_pending_blocks(&cluster)?;
+        assert_eq!(
+            BlockStatus::PastRefused,
+            pending_blocks.blocks_status[&invalid_block_op_id]
+        );
+
+        // trigger cleanup
+        let mut sync_context = cluster.get_sync_context(0);
+        cluster.commit_managers[0].maybe_cleanup_pending_store(
+            &mut sync_context,
+            &pending_blocks,
+            &mut cluster.pending_stores[0],
+            &cluster.chains[0],
+        )?;
+
+        // all operations previously created should still be there since they aren't committed
+        // and were in a past refused block
+        for operation_id in &operations_id {
+            assert!(&cluster.pending_stores[0]
+                .get_operation(*operation_id)
+                .unwrap()
+                .is_some());
         }
 
         Ok(())

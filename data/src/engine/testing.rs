@@ -246,14 +246,22 @@ impl TestCluster {
         Ok(())
     }
 
+    pub fn get_sync_context(&self, node_idx: usize) -> SyncContext {
+        SyncContext::new(self.sync_states[node_idx])
+    }
+
+    pub fn apply_sync_state(&mut self, node_idx: usize, sync_context: &SyncContext) {
+        self.sync_states[node_idx] = sync_context.sync_state;
+    }
+
     pub fn tick_pending_synchronizer(
         &mut self,
         node_idx: usize,
     ) -> Result<SyncContext, crate::engine::Error> {
-        let mut sync_context = SyncContext::new(self.sync_states[node_idx]);
+        let mut sync_context = self.get_sync_context(node_idx);
         self.pending_stores_synchronizer[node_idx]
             .tick(&mut sync_context, &self.pending_stores[node_idx])?;
-        self.sync_states[node_idx] = sync_context.sync_state;
+        self.apply_sync_state(node_idx, &sync_context);
 
         Ok(sync_context)
     }
@@ -262,9 +270,9 @@ impl TestCluster {
         &mut self,
         node_idx: usize,
     ) -> Result<SyncContext, crate::engine::Error> {
-        let mut sync_context = SyncContext::new(self.sync_states[node_idx]);
+        let mut sync_context = self.get_sync_context(node_idx);
         self.chains_synchronizer[node_idx].tick(&mut sync_context, &self.chains[node_idx])?;
-        self.sync_states[node_idx] = sync_context.sync_state;
+        self.apply_sync_state(node_idx, &sync_context);
 
         Ok(sync_context)
     }
@@ -273,14 +281,14 @@ impl TestCluster {
         &mut self,
         node_idx: usize,
     ) -> Result<SyncContext, crate::engine::Error> {
-        let mut sync_context = SyncContext::new(self.sync_states[node_idx]);
+        let mut sync_context = self.get_sync_context(node_idx);
         self.commit_managers[node_idx].tick(
             &mut sync_context,
             &mut self.pending_stores_synchronizer[node_idx],
             &mut self.pending_stores[node_idx],
             &mut self.chains[node_idx],
         )?;
-        self.sync_states[node_idx] = sync_context.sync_state;
+        self.apply_sync_state(node_idx, &sync_context);
 
         Ok(sync_context)
     }

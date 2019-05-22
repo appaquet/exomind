@@ -69,6 +69,15 @@ pub trait Block {
         .concat()
     }
 
+    fn to_owned(&self) -> BlockOwned {
+        BlockOwned {
+            offset: self.offset(),
+            block: self.block().to_owned(),
+            operations_data: self.operations_data().to_vec(),
+            signatures: self.signatures().to_owned(),
+        }
+    }
+
     fn get_depth(&self) -> Result<BlockDepth, Error> {
         let reader = self.block().get_typed_reader()?;
         Ok(reader.get_depth())
