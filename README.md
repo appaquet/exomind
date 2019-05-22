@@ -2,6 +2,32 @@
 [![Build Status](https://dev.azure.com/appaquet/exocore/_apis/build/status/appaquet.exocore?branchName=master)](https://dev.azure.com/appaquet/exocore/_build/latest?definitionId=1&branchName=master)
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
 
+**Warning: Exocore is at a very early development stage, hence very unstable and probably totally unsafe. Use at your own risk.**
+
+Exocore is a distributed applications framework with private and encrypted data storage. 
+It runs applications and their data in an encrypted [blockchain](https://en.wikipedia.org/wiki/Blockchain) 
+which is unique per user and distributed on trusted or semi-trusted nodes. It is designed to be resilient to 
+failures, allow offline usage (ex: on mobile) and can be used as a backend for applications requiring user data 
+encryption. Exocore exposes SDKs for web/WebAssembly, mobile (Android/iOS) and Rust.
+
+The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data. 
+A cell consists of:
+* Data nodes managing replication and storage of the blockchain
+* Index nodes managing indexation, querying and mutation of the data (could be collocated with data node)
+* Applications nodes run applications written in WebAssembly (could be collocated with data and index nodes)
+* Clients (fat or thin) that can also act as index, data and applications nodes
+
+## Development status
+* **Data storage and replication**: Proof of concept
+* **Transport**: Proof of concept
+* **SDKs**: In development
+* **Security**: In development
+* **Index layer:** Not yet started
+* **Applications layer**: Not yet started
+* **Cell management layer**: Not yet started
+* **Nodes discovery**: Not yet started
+* **Blob storage (IPFS)**: Not yet started
+
 ## Dependencies
 ### General
 * Build dependencies
@@ -44,7 +70,7 @@
         * `rustup target add i686-linux-android`
         * `rustup target add arm-linux-androideabi`
       * Follow instructions from [`android-rs-glue`](https://github.com/rust-windowing/android-rs-glue#setting-up-your-environment).
-        * You need to install Android NDK 17 since GCC isn't packaged since NDK 19 (now clang). See this [issue](https://github.com/rust-windowing/android-rs-glue/issues/208).
+        * You need to install Android NDK 17 since GCC isn't packaged since NDK 17 (now clang). See this [issue](https://github.com/rust-windowing/android-rs-glue/issues/208).
         * If installation of cargo-apk doesn't work, you can build locally using
          [appaquet's repo](https://github.com/rust-windowing/android-rs-glue/tree/883c01df16710c98011fcbcc7659db89451877a8) 
          and install cargo-apk by doing `cd cargo-apk && cargo install --path .`

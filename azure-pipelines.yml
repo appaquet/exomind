@@ -13,9 +13,10 @@ steps:
     submodules: true
 
   - script: |
+      set -e
       docker --version
-      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
 
+      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
       export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
       rustc --version && cargo --version
       rustup component add rustfmt
@@ -34,10 +35,8 @@ steps:
       cargo test --all --verbose -- --test-threads=1
     displayName: 'Test all'
 
-# Disabled until https://github.com/xd009642/tarpaulin/issues/190 is fixed for real...
-#  - script: |
-#      # Limit to 1 core until https://github.com/xd009642/tarpaulin/issues/190 is fixed
-#      docker run --security-opt seccomp=unconfined --cpuset-cpus="0" -v "$PWD:/volume" xd009642/tarpaulin cargo tarpaulin --exclude-files=3rd --exclude-files="*_capnp.rs" --all --out Xml -v  -- --test-threads=1
-#      bash <(curl -s https://codecov.io/bash)
-#    displayName: 'Code coverage'
+  - script: |
+      ./utils/coverage.sh Xml
+      bash <(curl -s https://codecov.io/bash)
+    displayName: 'Code coverage'
 
