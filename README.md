@@ -2,7 +2,7 @@
 [![Build Status](https://dev.azure.com/appaquet/exocore/_apis/build/status/appaquet.exocore?branchName=master)](https://dev.azure.com/appaquet/exocore/_build/latest?definitionId=1&branchName=master)
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
 [![dependency status](https://deps.rs/repo/github/appaquet/exocore/status.svg)](https://deps.rs/repo/github/appaquet/exocore)
-
+[![Docker](https://img.shields.io/docker/automated/appaquet/exocore.svg)](https://hub.docker.com/r/appaquet/exocore/)
 
 **Warning: Exocore is at a very early development stage, hence very unstable and probably totally unsafe. Use at your own risk.**
 
@@ -20,11 +20,11 @@ A cell consists of:
 * Clients (fat or thin) that can also act as index, data and applications nodes
 
 ## Development status
-* **Data storage and replication**: Proof of concept
-* **Transport**: Proof of concept
-* **SDKs**: In development
+* **Data storage and replication layer**: Proof of concept
+* **Transport layer**: Proof of concept
+* **Index layer:** In development
 * **Security**: In development
-* **Index layer:** Not yet started
+* **SDKs**: In development
 * **Applications layer**: Not yet started
 * **Cell management layer**: Not yet started
 * **Nodes discovery**: Not yet started
@@ -36,12 +36,17 @@ A cell consists of:
     * On MacOS: Install Xcode and command lines tools
     * On Ubuntu: `apt install build-essential pkg-config libssl-dev`
 * [Rust](https://www.rust-lang.org/learn/get-started)
+  * Install using [rustup](https://www.rust-lang.org/learn/get-started)
+  * Clippy and Rustfmt: `rustup component add clippy rustfmt`
 * [Cap'n Proto](https://capnproto.org/install.html)
     * On MacOS: `brew install capnp` 
     * On Ubuntu: `apt install capnproto` 
 
-### WASM
+### WASM (optiona)
+* Rust's WASM target
+    * `rustup target add wasm32-unknown-unknown`
 * Clang
+    * On Ubuntu: `apt install clang`
     * On MacOS: 
         * Unfortunately, clang installed by Xcode isn't recent enough to compile to WASM. Follow instructions on 
           [this page](https://00f.net/2019/04/07/compiling-to-webassembly-with-llvm-and-clang/)
@@ -50,17 +55,11 @@ A cell consists of:
             * Use LLVM from HomeBrew:
                 * Bash `export PATH=/usr/local/opt/llvm/bin:$PATH`
                 * Fish `set -g fish_user_paths "/usr/local/opt/llvm/bin" $fish_user_paths`
-    * On Ubuntu: `apt install clang`
 * [Node & NPM](https://github.com/nodesource/distributions/blob/master/README.md#debinstall)
 * [`wasm-pack`](https://github.com/rustwasm/wasm-pack) to build and package WASM as NPM package
     * `cargo install wasm-pack`
 
-## Setup
-* Install components & default targets:
-  * `rustup component add clippy rustfmt`
-  * `rustup target add wasm32-unknown-unknown`
-
-* Android build (optional):
+### Android (optional)
   * Using Docker
       * Build with `docker run --rm -v "$PWD:/root/src" -w /root/src appaquet/cargo-apk ./clients/android/build.sh` 
       
@@ -74,10 +73,13 @@ A cell consists of:
           `cargo install --git https://github.com/appaquet/android-rs-glue.git --branch new-docker cargo-apk`
       * Build with `./clients/android/build.sh`
 
-## CLI
-* To run the CLI: 
-  * `cargo run --package exocore-cli -- <cli option>`
-    or `./utils/cli.sh <cli options>`
+## Usage & configuration
+* CLI:
+  * Using Cargo: `cargo run --package exocore-cli -- <cli option>`
+                 or `./utils/cli.sh <cli options>`
+  * Using the latest Docker image:
+    `docker run --rm -it -v "$PWD:/volume" appaquet/exocore exocore-cli <cli options>`
+
 * Configuration
     * Most command requires a `config.yaml` file, for which an example can be found in here: [`./examples/config.yaml`]
     * At minimum, the config requires 2 keypair: one for the node, one for the cell.
