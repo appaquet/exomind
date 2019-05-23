@@ -154,14 +154,14 @@ impl WebsocketTransport {
                             error!("Error dispatching message from handle: {}", err);
                         })
                 });
-            tokio_executor::spawn(stream_future);
+            tokio::spawn(stream_future);
         }
 
         Ok(())
     }
 
     fn start_websocket_server(&mut self) -> Result<(), Error> {
-        let reactor_handle = &tokio_reactor::Handle::default();
+        let reactor_handle = &tokio::reactor::Handle::default();
         let server = websocket::r#async::Server::bind(self.listen_address, reactor_handle)
             .map_err(|err| Error::Other(format!("Cannot start websocket: {}", err)))?;
 
@@ -173,7 +173,7 @@ impl WebsocketTransport {
             .for_each(move |(upgrade, addr)| {
                 if !upgrade.protocols().iter().any(|s| s == WEBSOCKET_PROTOCOL) {
                     debug!("Rejecting connection {} with wrong connection", addr);
-                    tokio_executor::spawn(upgrade.reject().map(|_| ()).map_err(|_| ()));
+                    tokio::spawn(upgrade.reject().map(|_| ()).map_err(|_| ()));
                     return Ok(());
                 }
 
@@ -191,7 +191,7 @@ impl WebsocketTransport {
                     .map_err(|err| {
                         error!("Error in incoming connection accept: {}", err);
                     });
-                tokio_executor::spawn(client_connection);
+                tokio::spawn(client_connection);
 
                 Ok(())
             })
@@ -204,7 +204,7 @@ impl WebsocketTransport {
                 }
             });
 
-        tokio_executor::spawn(incoming_stream);
+        tokio::spawn(incoming_stream);
 
         Ok(())
     }
@@ -242,7 +242,7 @@ impl WebsocketTransport {
                     let _ = Self::close_errored_connection(&weak_inner, &temporary_node);
                     Error::Other("Error in sink forward to connection".to_string())
                 });
-            tokio_executor::spawn(outgoing.map(|_| ()).map_err(|_| ()));
+            tokio::spawn(outgoing.map(|_| ()).map_err(|_| ()));
         }
 
         // handle incoming messages from connection
@@ -267,7 +267,7 @@ impl WebsocketTransport {
                     let _ = Self::close_errored_connection(&weak_inner2, &temporary_node2);
                     Error::Other(format!("Error in stream from connection: {}", err))
                 });
-            tokio_executor::spawn(incoming.map(|_| ()).map_err(|_| ()));
+            tokio::spawn(incoming.map(|_| ()).map_err(|_| ()));
         }
 
         Ok(())

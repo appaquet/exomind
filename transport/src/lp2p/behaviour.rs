@@ -1,10 +1,10 @@
 use futures::prelude::*;
-use libp2p::core::nodes::raw_swarm::ConnectedPoint;
-use libp2p::core::protocols_handler::{OneShotHandler, ProtocolsHandler};
-use libp2p::core::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
-use libp2p::core::{Multiaddr, PeerId};
+use libp2p_core::nodes::raw_swarm::ConnectedPoint;
+use libp2p_core::protocols_handler::{OneShotHandler, ProtocolsHandler};
+use libp2p_core::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
+use libp2p_core::{Multiaddr, PeerId};
 use std::collections::{HashMap, VecDeque};
-use tokio_io::{AsyncRead, AsyncWrite};
+use tokio::io::{AsyncRead, AsyncWrite};
 
 use super::protocol::{ExocoreProtoConfig, WireMessage};
 
@@ -167,8 +167,8 @@ mod tests {
 
     use futures::prelude::*;
     use futures::sync::mpsc;
-    use libp2p::core::identity;
-    use libp2p::core::{Multiaddr, PeerId, Swarm};
+    use libp2p_core::identity;
+    use libp2p_core::{Multiaddr, PeerId, Swarm};
     use tokio::runtime::Runtime;
 
     use super::*;
@@ -179,7 +179,7 @@ mod tests {
 
         let key1 = identity::Keypair::generate_ed25519();
         let peer1 = PeerId::from(key1.public());
-        let transport1 = libp2p::build_development_transport(key1);
+        let transport1 = crate::lp2p::common_transport::build_tcp_ws_secio_mplex_yamux(key1);
         let addr1: Multiaddr = "/ip4/127.0.0.1/tcp/3001".parse().unwrap();
 
         let behaviour1 = ExocoreBehaviour::new();
@@ -188,7 +188,7 @@ mod tests {
 
         let key2 = identity::Keypair::generate_ed25519();
         let peer2 = PeerId::from(key2.public());
-        let transport2 = libp2p::build_development_transport(key2);
+        let transport2 = crate::lp2p::common_transport::build_tcp_ws_secio_mplex_yamux(key2);
         let addr2: Multiaddr = "/ip4/127.0.0.1/tcp/3002".parse().unwrap();
 
         let behaviour2 = ExocoreBehaviour::new();

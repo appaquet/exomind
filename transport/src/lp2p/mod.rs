@@ -1,4 +1,5 @@
 pub mod behaviour;
+pub mod common_transport;
 pub mod protocol;
 
 use crate::messages::{InMessage, OutMessage};
@@ -16,11 +17,11 @@ use exocore_common::utils::completion_notifier::{
 use futures::prelude::*;
 use futures::sync::mpsc;
 use futures::MapErr;
-use libp2p::core::{Multiaddr, PeerId, Swarm};
+use libp2p_core::{Multiaddr, PeerId, Swarm};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
-use tokio_timer::Interval;
+use tokio::timer::Interval;
 
 ///
 /// libp2p transport configuration
@@ -180,7 +181,8 @@ impl Libp2pTransport {
     ///
     fn start(&mut self) -> Result<(), Error> {
         let local_keypair = self.local_node.keypair().clone();
-        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone());
+        let transport =
+            common_transport::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone());
 
         let behaviour = ExocoreBehaviour::new();
         let mut swarm = Swarm::new(transport, behaviour, self.local_node.peer_id().clone());
@@ -205,7 +207,7 @@ impl Libp2pTransport {
         let mut nodes_update_interval =
             Interval::new_interval(self.config.swarm_nodes_update_interval);
 
-        tokio_executor::spawn(futures::future::poll_fn(move || -> Result<_, ()> {
+        tokio::spawn(futures::future::poll_fn(move || -> Result<_, ()> {
             {
                 // check if we should still be running
                 if let Ok(inner) = inner.read() {
@@ -279,7 +281,7 @@ impl Libp2pTransport {
                     .take()
                     .expect("Out receiver of one layer was already consummed");
 
-                tokio_executor::spawn(
+                tokio::spawn(
                     out_receiver
                         .forward(out_sender.clone().sink_map_err(|_| ()))
                         .map(|_| ()),

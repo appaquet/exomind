@@ -34,11 +34,11 @@ pub enum Error {
 }
 
 #[cfg(feature = "libp2p_transport")]
-impl<Terr> From<libp2p::TransportError<Terr>> for Error
+impl<Terr> From<libp2p_core::transport::TransportError<Terr>> for Error
 where
     Terr: std::error::Error + Send + Sync + 'static,
 {
-    fn from(err: libp2p::TransportError<Terr>) -> Self {
+    fn from(err: libp2p_core::transport::TransportError<Terr>) -> Self {
         Error::Libp2pTransport(Arc::new(err))
     }
 }

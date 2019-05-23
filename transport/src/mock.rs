@@ -107,7 +107,7 @@ impl Future for MockTransportHandle {
             let node = self.node.clone();
             let nodes_sink_weak = Weak::clone(&self.nodes_sink);
             let completion_handle = self.completion_notifier.clone();
-            tokio_executor::spawn(outgoing_stream.for_each(move |message| {
+            tokio::spawn(outgoing_stream.for_each(move |message| {
                 let nodes_sink = nodes_sink_weak.upgrade().ok_or_else(|| {
                     error!(
                         "Couldn't upgrade nodes sink, which means hub got dropped. Stopping here."

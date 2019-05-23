@@ -1,9 +1,9 @@
-use libp2p::core::upgrade;
-use libp2p::core::{InboundUpgrade, OutboundUpgrade};
-use libp2p::core::{Negotiated, UpgradeInfo};
+use libp2p_core::upgrade;
+use libp2p_core::{InboundUpgrade, OutboundUpgrade};
+use libp2p_core::{Negotiated, UpgradeInfo};
 
 use std::{io, iter};
-use tokio_io::{AsyncRead, AsyncWrite};
+use tokio::io::{AsyncRead, AsyncWrite};
 
 static PACKET_MAX_SIZE: usize = 10 * 1024 * 1024; // 1MB
 

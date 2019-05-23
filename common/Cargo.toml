@@ -33,7 +33,7 @@ capnpc = "0.9"
 tempdir = "0.3"
 log4rs = "0.8"
 criterion_bencher_compat = "0.2"
-tokio = { version = "0.1" }
+tokio = { version = "0.1", features = ["rt-full"] }
 
 [[bench]]
 name = "capnp_msg"

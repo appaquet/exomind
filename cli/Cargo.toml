@@ -14,7 +14,7 @@ structopt = "0.2"
 log4rs = "0.8"
 failure = "0.1"
 futures = "0.1"
-tokio = "0.1"
+tokio = { version = "0.1", features = ["io"] }
 serde = "1.0"
 serde_derive = "1.0"
 serde_yaml = "0.8"
