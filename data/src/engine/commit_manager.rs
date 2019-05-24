@@ -389,8 +389,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_store: &mut PS,
         chain_store: &mut CS,
     ) -> Result<(), Error> {
-        let local_node = self.cell.local_node();
-
         let block_frame = next_block.proposal.get_block()?;
         let block_reader = block_frame.get_typed_reader()?;
 
@@ -424,8 +422,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             })
             .collect::<Vec<_>>();
         let block_signatures = BlockSignatures::new_from_signatures(signatures);
-        let signatures_frame =
-            block_signatures.to_frame_for_existing_block(local_node, &block_reader)?;
+        let signatures_frame = block_signatures.to_frame_for_existing_block(&block_reader)?;
 
         // finally build the frame
         let block = BlockOwned::new(

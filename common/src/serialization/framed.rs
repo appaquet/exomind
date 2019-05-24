@@ -15,8 +15,7 @@ use std;
 use std::sync::Once;
 
 use byteorder;
-use byteorder::ByteOrder;
-use byteorder::LittleEndian;
+use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use capnp;
 use capnp::message::{Allocator, Builder, HeapAllocator, Reader};
 use capnp::serialize::SliceSegments;
@@ -24,6 +23,7 @@ use lazycell::AtomicLazyCell;
 use owning_ref::OwningHandle;
 
 use crate::crypto::hash::{Digest, Multihash, MultihashDigest};
+use std::io::Cursor;
 
 ///
 /// Trait that needs to have an impl for each capnp generated message struct.
@@ -49,6 +49,29 @@ pub trait Frame: SignedFrame {
     fn copy_into(&self, buf: &mut [u8]) {
         buf[0..self.frame_size()].copy_from_slice(self.frame_data());
     }
+
+    /// Pad the frame with given size
+    /// TODO: Temporary until https://github.com/appaquet/exocore/issues/38
+    fn padded(&self, padding_size: u16) -> Result<OwnedFrame, Error> {
+        let meta_original = FrameMetadata::from_slice(self.frame_data())?;
+
+        let mut meta_new = meta_original.clone();
+        meta_new.padding_size = padding_size as usize;
+
+        let mut frame_buffer = vec![0u8; meta_new.frame_size()];
+        meta_new.copy_into_slice(&mut frame_buffer[0..])?;
+        meta_new.copy_into_slice(&mut frame_buffer[meta_new.footer_offset()..])?;
+
+        frame_buffer[meta_new.message_range()].copy_from_slice(self.message_data());
+
+        if let (Some(sig_range), Some(sig_data)) =
+            (meta_original.signature_range(), self.signature_data())
+        {
+            frame_buffer[sig_range].copy_from_slice(sig_data);
+        }
+
+        Ok(OwnedFrame::new(frame_buffer)?)
+    }
 }
 
 ///
@@ -68,6 +91,8 @@ where
     fn copy_into(&self, buf: &mut [u8]) {
         buf[0..self.frame_size()].copy_from_slice(self.frame_data());
     }
+
+    fn padded(&self, padding_size: u16) -> Result<OwnedTypedFrame<T>, Error>;
 }
 
 ///
@@ -426,6 +451,14 @@ where
         let owned_message = self.message.to_owned();
         owned_message.into_typed()
     }
+
+    fn padded(&self, padding_size: u16) -> Result<OwnedTypedFrame<T>, Error> {
+        let new_message = self.message.padded(padding_size)?;
+        Ok(OwnedTypedFrame {
+            message: new_message,
+            phantom: std::marker::PhantomData,
+        })
+    }
 }
 
 impl<'a, T> SignedFrame for TypedSliceFrame<'a, T>
@@ -641,6 +674,14 @@ where
         let owned_message = self.message.clone();
         owned_message.into_typed()
     }
+
+    fn padded(&self, padding_size: u16) -> Result<OwnedTypedFrame<T>, Error> {
+        let new_message = self.message.padded(padding_size)?;
+        Ok(OwnedTypedFrame {
+            message: new_message,
+            phantom: std::marker::PhantomData,
+        })
+    }
 }
 
 impl<T> SignedFrame for OwnedTypedFrame<T>
@@ -684,6 +725,14 @@ where
 
     fn to_owned(&self) -> OwnedTypedFrame<T> {
         <OwnedTypedFrame<T>>::to_owned(self)
+    }
+
+    fn padded(&self, padding_size: u16) -> Result<OwnedTypedFrame<T>, Error> {
+        let new_message = self.message.padded(padding_size)?;
+        Ok(OwnedTypedFrame {
+            message: new_message,
+            phantom: std::marker::PhantomData,
+        })
     }
 }
 
@@ -749,6 +798,7 @@ impl<'a, S: FrameSigner> SliceFrameWriter<'a, S> {
             message_type,
             message_size,
             signature_size,
+            padding_size: 0,
         };
         metadata.copy_into_slice(&mut buffer[0..])?;
         metadata.copy_into_slice(&mut buffer[metadata.footer_offset()..])?;
@@ -854,6 +904,7 @@ impl<S: FrameSigner> OwnedFrameWriter<S> {
             message_type: self.message_type,
             message_size,
             signature_size,
+            padding_size: 0,
         };
 
         // copy metadata at beginning
@@ -890,18 +941,25 @@ impl<'a, S: FrameSigner> std::io::Write for OwnedFrameWriter<S> {
 ///
 /// Metadata written at beginning and at the end of a frame.
 ///
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FrameMetadata {
     pub message_type: u16,
     pub message_size: usize,
     pub signature_size: usize,
+
+    /// TODO: Temporary until https://github.com/appaquet/exocore/issues/38
+    pub padding_size: usize,
 }
 
 impl FrameMetadata {
     const TYPE_FIELD_SIZE: usize = 2;
     const DATA_FIELD_SIZE: usize = 4;
     const SIG_FIELD_SIZE: usize = 2;
-    const SIZE: usize = Self::TYPE_FIELD_SIZE + Self::DATA_FIELD_SIZE + Self::SIG_FIELD_SIZE;
+    const PADDING_FIELD_SIZE: usize = 2;
+    const SIZE: usize = Self::TYPE_FIELD_SIZE
+        + Self::DATA_FIELD_SIZE
+        + Self::SIG_FIELD_SIZE
+        + Self::PADDING_FIELD_SIZE;
 
     fn from_slice(buffer: &[u8]) -> Result<FrameMetadata, Error> {
         if buffer.len() < Self::SIZE {
@@ -912,15 +970,27 @@ impl FrameMetadata {
             )));
         }
 
-        let message_type = LittleEndian::read_u16(&buffer[0..Self::TYPE_FIELD_SIZE]);
-        let message_size = LittleEndian::read_u32(&buffer[2..2 + Self::DATA_FIELD_SIZE]) as usize;
-        let signature_size =
-            usize::from(LittleEndian::read_u16(&buffer[6..6 + Self::SIG_FIELD_SIZE]));
+        let mut cursor = Cursor::new(buffer);
+        let message_type = cursor
+            .read_u16::<LittleEndian>()
+            .map_err(|err| Error::IO(err.kind(), format!("Couldn't read message type: {}", err)))?;
+        let message_size = cursor
+            .read_u32::<LittleEndian>()
+            .map_err(|err| Error::IO(err.kind(), format!("Couldn't read message size: {}", err)))?
+            as usize;
+        let signature_size = cursor.read_u16::<LittleEndian>().map_err(|err| {
+            Error::IO(err.kind(), format!("Couldn't read signature size: {}", err))
+        })? as usize;
+        let padding_size = cursor
+            .read_u16::<LittleEndian>()
+            .map_err(|err| Error::IO(err.kind(), format!("Couldn't read padding size: {}", err)))?
+            as usize;
 
         Ok(FrameMetadata {
             message_type,
             message_size,
             signature_size,
+            padding_size,
         })
     }
 
@@ -942,13 +1012,17 @@ impl FrameMetadata {
             &mut buffer[6..6 + Self::SIG_FIELD_SIZE],
             self.signature_size as u16,
         );
+        LittleEndian::write_u16(
+            &mut buffer[8..8 + Self::PADDING_FIELD_SIZE],
+            self.padding_size as u16,
+        );
 
         Ok(())
     }
 
     #[inline]
     fn frame_size(&self) -> usize {
-        Self::SIZE + Self::SIZE + self.message_size + self.signature_size
+        Self::SIZE + Self::SIZE + self.message_size + self.signature_size + self.padding_size
     }
 
     #[inline]
@@ -958,7 +1032,7 @@ impl FrameMetadata {
 
     #[inline]
     fn footer_offset(&self) -> usize {
-        Self::SIZE + self.message_size + self.signature_size
+        Self::SIZE + self.message_size + self.signature_size + self.padding_size
     }
 
     #[inline]
@@ -972,12 +1046,39 @@ impl FrameMetadata {
         self.signature_size > 0
     }
 
-    #[allow(dead_code)]
+    #[inline]
+    fn signature_offset(&self) -> usize {
+        Self::SIZE + self.message_size
+    }
+
     #[inline]
     fn signature_range(&self) -> Option<std::ops::Range<usize>> {
         if self.has_signature() {
-            let signature_offset = self.message_offset() + self.message_size;
+            let signature_offset = self.signature_offset();
             Some(signature_offset..signature_offset + self.signature_size)
+        } else {
+            None
+        }
+    }
+
+    #[allow(dead_code)]
+    #[inline]
+    fn has_padding(&self) -> bool {
+        self.padding_size > 0
+    }
+
+    #[allow(dead_code)]
+    #[inline]
+    fn padding_offset(&self) -> usize {
+        Self::SIZE + self.message_size + self.signature_size
+    }
+
+    #[allow(dead_code)]
+    #[inline]
+    fn padding_range(&self) -> Option<std::ops::Range<usize>> {
+        if self.has_padding() {
+            let padding_offset = self.padding_offset();
+            Some(padding_offset..padding_offset + self.padding_size)
         } else {
             None
         }
@@ -1097,15 +1198,26 @@ pub mod tests {
 
     #[test]
     fn write_and_read_frame_metadata() -> Result<(), Error> {
-        let mut buf = vec![0; 10];
+        let mut buf = vec![0; 30];
 
         let meta1 = FrameMetadata {
             message_type: 3,
             message_size: 5,
             signature_size: 7,
+            padding_size: 0,
         };
         meta1.copy_into_slice(&mut buf)?;
+        let meta2 = FrameMetadata::from_slice(&buf)?;
+        assert_eq!(meta1, meta2);
 
+        let mut buf = vec![0; 30];
+        let meta1 = FrameMetadata {
+            message_type: 3,
+            message_size: 5,
+            signature_size: 7,
+            padding_size: 10,
+        };
+        meta1.copy_into_slice(&mut buf)?;
         let meta2 = FrameMetadata::from_slice(&buf)?;
         assert_eq!(meta1, meta2);
 
@@ -1357,6 +1469,38 @@ pub mod tests {
         data[11] = 12;
         let frame = SliceFrame::new(&data)?;
         assert!(MultihashFrameSigner::validate(&frame).is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn frame_message_padding() -> Result<(), Error> {
+        let block_builder = build_test_block(1234, 5678);
+
+        let signer = MultihashFrameSigner::new_sha3256();
+        let init_frame_signed: OwnedTypedFrame<block::Owned> =
+            block_builder.as_owned_framed(signer)?;
+        let padded_frame = init_frame_signed.padded(100)?;
+        assert_eq!(
+            init_frame_signed.frame_size() + 100,
+            padded_frame.frame_size()
+        );
+
+        let padded_frame_reader = padded_frame.get_typed_reader()?;
+        assert_eq!(1234, padded_frame_reader.get_offset());
+        assert_eq!(5678, padded_frame_reader.get_proposed_operation_id());
+
+        let init_frame_unsigned: OwnedTypedFrame<block::Owned> =
+            block_builder.as_owned_unsigned_framed()?;
+        let padded_frame = init_frame_unsigned.padded(100)?;
+        assert_eq!(
+            init_frame_unsigned.frame_size() + 100,
+            padded_frame.frame_size()
+        );
+
+        let padded_frame_reader = padded_frame.get_typed_reader()?;
+        assert_eq!(1234, padded_frame_reader.get_offset());
+        assert_eq!(5678, padded_frame_reader.get_proposed_operation_id());
 
         Ok(())
     }

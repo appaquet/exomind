@@ -186,6 +186,8 @@ impl ChainStore for DirectoryChainStore {
     }
 
     fn write_block<B: Block>(&mut self, block: &B) -> Result<BlockOffset, Error> {
+        debug!("Writing block at offset {}", block.offset());
+
         let (block_segment, written_in_segment) = {
             let need_new_segment = {
                 match self.segments.last() {

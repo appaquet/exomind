@@ -5,15 +5,16 @@ use exocore_common::crypto::signature::Signature;
 use exocore_common::data_chain_capnp::{
     block, block_operation_header, block_signature, block_signatures,
 };
-use exocore_common::node::{LocalNode, NodeId};
+use exocore_common::node::NodeId;
 use exocore_common::serialization::framed::{
-    FrameBuilder, OwnedFrame, OwnedTypedFrame, SignedFrame, TypedFrame, TypedSliceFrame,
+    FrameBuilder, OwnedTypedFrame, SignedFrame, TypedFrame, TypedSliceFrame,
 };
 use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
 use exocore_common::serialization::{capnp, framed};
 
 pub type BlockOffset = u64;
 pub type BlockDepth = u64;
+pub type BlockOperationsSize = u32;
 pub type BlockSignaturesSize = u16;
 
 ///
@@ -118,6 +119,42 @@ pub trait Block {
         });
 
         Ok(operation)
+    }
+
+    fn validate(&self) -> Result<(), Error> {
+        let block_reader: block::Reader = self.block().get_typed_reader()?;
+
+        let sig_size_header = block_reader.get_signatures_size() as usize;
+        let sig_size_stored = self.signatures().frame_size();
+        if sig_size_header != sig_size_stored {
+            return Err(Error::Integrity(format!(
+                "Signatures size don't match: sig_size_header={}, sig_size_stored={}",
+                sig_size_header, sig_size_stored
+            )));
+        }
+
+        let ops_size_header = block_reader.get_operations_size() as usize;
+        let ops_size_stored = self.operations_data().len();
+        if ops_size_header != ops_size_stored {
+            return Err(Error::Integrity(format!(
+                "Operations size don't match: ops_size_header={}, ops_size_stored={}",
+                ops_size_header, ops_size_stored
+            )));
+        }
+
+        if ops_size_header > 0 {
+            let ops_hash_stored =
+                BlockOperations::hash_operations(self.operations_iter()?)?.into_bytes();
+            let ops_hash_header = block_reader.get_operations_hash()?;
+            if ops_hash_stored != ops_hash_header {
+                return Err(Error::Integrity(format!(
+                    "Operations hash don't match: ops_hash_header={:?}, ops_hash_stored={:?}",
+                    ops_hash_header, ops_hash_stored
+                )));
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -258,14 +295,11 @@ impl BlockOwned {
         }
 
         // create an empty signature for each node as a placeholder to find the size required for signatures
-        let mut signature_frame_builder =
-            BlockSignatures::empty_signatures_for_nodes(cell).to_frame_builder();
-        let mut signature_builder = signature_frame_builder.get_builder_typed();
-        signature_builder.set_operations_size(operations_data_size);
-        let signature_frame = signature_frame_builder.as_owned_framed(local_node.frame_signer())?;
+        let signature_frame = BlockSignatures::empty_signatures_for_nodes(cell)
+            .to_frame_for_new_block(operations_data_size)?;
 
         // set required signatures size in block
-        block_builder.set_signatures_size(signature_frame.frame_size() as u16);
+        block_builder.set_signatures_size(signature_frame.frame_size() as BlockSignaturesSize);
         let block_frame = block_frame_builder.as_owned_framed(local_node.frame_signer())?;
 
         Ok(BlockOwned {
@@ -281,22 +315,18 @@ impl Block for BlockOwned {
     type BlockType = framed::OwnedTypedFrame<block::Owned>;
     type SignaturesType = framed::OwnedTypedFrame<block_signatures::Owned>;
 
-    #[inline]
     fn offset(&self) -> u64 {
         self.offset
     }
 
-    #[inline]
     fn block(&self) -> &Self::BlockType {
         &self.block
     }
 
-    #[inline]
     fn operations_data(&self) -> &[u8] {
         &self.operations_data
     }
 
-    #[inline]
     fn signatures(&self) -> &Self::SignaturesType {
         &self.signatures
     }
@@ -345,22 +375,18 @@ impl<'a> Block for BlockRef<'a> {
     type BlockType = framed::TypedSliceFrame<'a, block::Owned>;
     type SignaturesType = framed::TypedSliceFrame<'a, block_signatures::Owned>;
 
-    #[inline]
     fn offset(&self) -> u64 {
         self.offset
     }
 
-    #[inline]
     fn block(&self) -> &Self::BlockType {
         &self.block
     }
 
-    #[inline]
     fn operations_data(&self) -> &[u8] {
         &self.operations_data
     }
 
-    #[inline]
     fn signatures(&self) -> &Self::SignaturesType {
         &self.signatures
     }
@@ -396,7 +422,7 @@ impl<'a> Iterator for ChainBlockIterator<'a> {
         let block_res = BlockRef::new(&self.data[self.current_offset..]);
         match block_res {
             Ok(block) => {
-                self.current_offset += block.total_size();
+                self.current_offset += block.total_size() as usize;
                 Some(block)
             }
             Err(Error::Framing(framed::Error::EOF(_))) => None,
@@ -516,6 +542,10 @@ impl BlockSignatures {
         BlockSignatures { signatures }
     }
 
+    ///
+    /// Create signatures with pre-allocated space for the number of nodes we have in
+    /// the cell
+    ///
     pub fn empty_signatures_for_nodes(cell: &Cell) -> BlockSignatures {
         let nodes = cell.nodes();
         let signatures = nodes
@@ -530,7 +560,7 @@ impl BlockSignatures {
         BlockSignatures { signatures }
     }
 
-    pub fn to_frame_builder(&self) -> FrameBuilder<block_signatures::Owned> {
+    fn to_frame_builder(&self) -> FrameBuilder<block_signatures::Owned> {
         let mut frame_builder = FrameBuilder::new();
 
         let signatures_builder: block_signatures::Builder = frame_builder.get_builder_typed();
@@ -543,9 +573,19 @@ impl BlockSignatures {
         frame_builder
     }
 
+    pub fn to_frame_for_new_block(
+        &self,
+        operations_size: BlockOperationsSize,
+    ) -> Result<OwnedTypedFrame<block_signatures::Owned>, Error> {
+        let mut signatures_frame_builder = self.to_frame_builder();
+        let mut signatures_builder = signatures_frame_builder.get_builder_typed();
+        signatures_builder.set_operations_size(operations_size);
+
+        Ok(signatures_frame_builder.as_owned_unsigned_framed()?)
+    }
+
     pub fn to_frame_for_existing_block(
         &self,
-        node: &LocalNode,
         block_reader: &block::Reader,
     ) -> Result<OwnedTypedFrame<block_signatures::Owned>, Error> {
         let expected_signatures_size = usize::from(block_reader.get_signatures_size());
@@ -554,7 +594,7 @@ impl BlockSignatures {
         let mut signatures_builder: block_signatures::Builder =
             signatures_frame_builder.get_builder_typed();
         signatures_builder.set_operations_size(block_reader.get_operations_size());
-        let signatures_frame = signatures_frame_builder.as_owned_framed(node.frame_signer())?;
+        let signatures_frame = signatures_frame_builder.as_owned_unsigned_framed()?;
 
         // make sure that the signatures frame size is not higher than pre-allocated space in block
         if signatures_frame.frame_size() > expected_signatures_size {
@@ -566,13 +606,12 @@ impl BlockSignatures {
         }
 
         // build a signatures frame that has the right amount of space as defined at the block
-        let mut signatures_data = signatures_frame.frame_data().to_vec();
-        while signatures_data.len() != expected_signatures_size {
-            signatures_data.push(0);
+        let required_padding = (expected_signatures_size - signatures_frame.frame_size()) as u16;
+        if required_padding > 0 {
+            Ok(signatures_frame.padded(required_padding)?)
+        } else {
+            Ok(signatures_frame)
         }
-        let signatures_frame_padded = OwnedFrame::new(signatures_data)?.into_typed();
-
-        Ok(signatures_frame_padded)
     }
 }
 
@@ -629,5 +668,56 @@ impl From<capnp::Error> for Error {
 impl From<capnp::NotInSchema> for Error {
     fn from(err: capnp::NotInSchema) -> Self {
         Error::SerializationNotInSchema(err.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use exocore_common::node::LocalNode;
+
+    #[test]
+    fn should_allocate_signatures_space_for_nodes() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let full_cell = FullCell::generate(local_node);
+        let cell = full_cell.cell();
+        let genesis_block = BlockOwned::new_genesis(&full_cell)?;
+
+        let block_ops = BlockOperations::empty();
+        let block1 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;
+        assert!(block1.signatures.frame_size() > 100);
+
+        let node2 = LocalNode::generate();
+        full_cell.nodes_mut().add(node2.node().clone());
+
+        let block_ops = BlockOperations::empty();
+        let block2 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;
+        assert!(block2.signatures.frame_size() > block1.signatures.frame_size());
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_pad_signatures_from_block_signature_size() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let full_cell = FullCell::generate(local_node);
+        let cell = full_cell.cell();
+        let genesis_block = BlockOwned::new_genesis(&full_cell)?;
+
+        let block_ops = BlockOperations::empty();
+        let block1 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;
+        let block1_reader: block::Reader = block1.block().get_typed_reader()?;
+
+        // generate new signatures for existing block
+        let block_signatures = BlockSignatures::new_from_signatures(Vec::new());
+        let signatures_frame = block_signatures.to_frame_for_existing_block(&block1_reader)?;
+
+        // new signatures frame should be the same size as the signatures specified in block
+        assert_eq!(
+            usize::from(block1_reader.get_signatures_size()),
+            signatures_frame.frame_size()
+        );
+
+        Ok(())
     }
 }

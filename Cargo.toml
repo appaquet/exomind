@@ -9,10 +9,3 @@ members = [
   "clients/wasm",
   "clients/android",
 ]
-default-members = [
-  "cli",
-  "index",
-  "data",
-  "common",
-  "transport",
-]

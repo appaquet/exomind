@@ -93,4 +93,5 @@ pub struct CellOptions {
 #[derive(StructOpt)]
 pub enum CellCommand {
     create_genesis_block,
+    check_chain,
 }

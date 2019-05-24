@@ -139,6 +139,14 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             if nodes.is_quorum(nb_non_divergent) {
                 if self.leader.is_none() {
                     self.find_leader_node(store)?;
+
+                    if self.im_leader() {
+                        info!("I'm the leader");
+                    } else if let Some(leader_node_id) = self.leader.clone() {
+                        info!("Our leader node is {}", leader_node_id);
+                    } else {
+                        warn!("Couldn't find any leader node");
+                    }
                 }
 
                 self.start_leader_downloading(sync_context, store, &nodes)?;
@@ -331,12 +339,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let leader_node_id = if let Some(leader_node_id) = self.leader.clone() {
             leader_node_id
         } else {
-            warn!("Couldn't find any leader node");
             return Ok(());
         };
 
         // leader is another node, we check if we're already synced with it, or initiate downloading with it
-        info!("Our leader node is {}", leader_node_id);
         let leader_node_info = self.get_or_create_node_info_mut(&leader_node_id);
 
         if leader_node_info.chain_fully_downloaded() {
@@ -367,7 +373,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 ))
             })?;
 
-            debug!("Initiating chain download with leader");
+            debug!("Initiating chain download with leader: last_common_block={:?} last_known_block={:?}", leader_node_info.last_common_block, leader_node_info.last_known_block);
             let to_offset = leader_node_info
                 .last_known_block
                 .as_ref()
@@ -935,8 +941,8 @@ impl BlockHeader {
             previous_hash: block_reader.get_previous_hash()?.to_vec(),
 
             block_size: stored_block.block().frame_size() as u32,
-            operations_size: stored_block.operations_data().len() as u32,
-            signatures_size: stored_block.signatures().frame_size() as BlockSignaturesSize,
+            operations_size: block_reader.get_operations_size(),
+            signatures_size: block_reader.get_signatures_size(),
         })
     }
 

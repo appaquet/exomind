@@ -233,6 +233,10 @@ where
                     .map_err(Error::Transport)
                     .for_each(move |msg| {
                         Self::handle_incoming_message(&weak_inner1, msg)
+                            .map_err(|err| {
+                                error!("Error handling incoming message: {}", err);
+                                err
+                            })
                             .or_else(Error::recover_non_fatal_error)
                     })
                     .map_err(move |err| {
@@ -254,6 +258,10 @@ where
                     .map_err(|err| Error::Other(format!("Interval error: {}", err)))
                     .for_each(move |_| {
                         Self::handle_management_timer_tick(&weak_inner1)
+                            .map_err(|err| {
+                                error!("Error in management timer tick: {}", err);
+                                err
+                            })
                             .or_else(Error::recover_non_fatal_error)
                     })
                     .map_err(move |err| {

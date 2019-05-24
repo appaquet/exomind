@@ -8,7 +8,9 @@ use exocore_common::serialization::protos::data_chain_capnp::{
     block, block_signatures, pending_operation,
 };
 
-use crate::block::{Block, BlockDepth, BlockOffset, BlockOperations, BlockOwned};
+use crate::block::{
+    Block, BlockDepth, BlockOffset, BlockOperations, BlockOwned, BlockSignaturesSize,
+};
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
 use crate::chain::ChainStore;
 use crate::engine::commit_manager::CommitManager;
@@ -183,11 +185,13 @@ impl TestCluster {
             let prev_block_msg = previous_block.map(|b| b.block);
             let operations_data = vec![0u8; 123];
             let signatures = create_dummy_block_sigs(operations_data.len() as u32);
+            let signatures_size = signatures.frame_size() as BlockSignaturesSize;
+
             let block_frame = create_dummy_block(
                 next_offset,
                 from_depth + i as u64,
                 operations_data.len() as u32,
-                signatures.frame_size() as u16,
+                signatures_size,
                 prev_block_msg,
                 seed,
             );
