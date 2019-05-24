@@ -60,18 +60,7 @@ A cell consists of:
     * `cargo install wasm-pack`
 
 ### Android (optional)
-  * Using Docker
-      * Build with `docker run --rm -v "$PWD:/root/src" -w /root/src appaquet/cargo-apk ./clients/android/build.sh` 
-      
-  * Using host machine
-      * Install Rust targets:
-        * `rustup target add i686-linux-android`
-        * `rustup target add arm-linux-androideabi`
-      * Follow instructions from [`android-rs-glue`](https://github.com/rust-windowing/android-rs-glue#setting-up-your-environment).
-        * You need to install Android NDK 17 since GCC isn't packaged since NDK 17 (now clang). See this [issue](https://github.com/rust-windowing/android-rs-glue/issues/208).
-        * If installation of cargo-apk doesn't work, use this patched version:
-          `cargo install --git https://github.com/appaquet/android-rs-glue.git --branch new-docker cargo-apk`
-      * Build with `./clients/android/build.sh`
+* See [Android client README](./clients/android/README.md)
 
 ## Usage & configuration
 * CLI:
