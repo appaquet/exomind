@@ -40,9 +40,10 @@ pub mod envelope {
     impl<'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Reader<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(::std::ptr::null())?,
+                reader.get_struct(default)?,
             ))
         }
     }
@@ -70,9 +71,10 @@ pub mod envelope {
         }
         #[inline]
         pub fn get_cell_id(self) -> ::capnp::Result<::capnp::data::Reader<'a>> {
-            self.reader
-                .get_pointer_field(0)
-                .get_data(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerReader::get_from_pointer(
+                &self.reader.get_pointer_field(0),
+                ::std::option::Option::None,
+            )
         }
         pub fn has_cell_id(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
@@ -87,18 +89,20 @@ pub mod envelope {
         }
         #[inline]
         pub fn get_from_node_id(self) -> ::capnp::Result<::capnp::text::Reader<'a>> {
-            self.reader
-                .get_pointer_field(1)
-                .get_text(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerReader::get_from_pointer(
+                &self.reader.get_pointer_field(1),
+                ::std::option::Option::None,
+            )
         }
         pub fn has_from_node_id(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
         #[inline]
         pub fn get_data(self) -> ::capnp::Result<::capnp::data::Reader<'a>> {
-            self.reader
-                .get_pointer_field(2)
-                .get_data(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerReader::get_from_pointer(
+                &self.reader.get_pointer_field(2),
+                ::std::option::Option::None,
+            )
         }
         pub fn has_data(&self) -> bool {
             !self.reader.get_pointer_field(2).is_null()
@@ -142,9 +146,10 @@ pub mod envelope {
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Builder<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null())?,
+                builder.get_struct(_private::STRUCT_SIZE, default)?,
             ))
         }
     }
@@ -160,10 +165,6 @@ pub mod envelope {
     }
 
     impl<'a> Builder<'a> {
-        #[deprecated(since = "0.9.2", note = "use into_reader()")]
-        pub fn as_reader(self) -> Reader<'a> {
-            self.into_reader()
-        }
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
@@ -179,9 +180,10 @@ pub mod envelope {
         }
         #[inline]
         pub fn get_cell_id(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
-            self.builder
-                .get_pointer_field(0)
-                .get_data(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
+                self.builder.get_pointer_field(0),
+                ::std::option::Option::None,
+            )
         }
         #[inline]
         pub fn set_cell_id(&mut self, value: ::capnp::data::Reader) {
@@ -212,9 +214,10 @@ pub mod envelope {
         }
         #[inline]
         pub fn get_from_node_id(self) -> ::capnp::Result<::capnp::text::Builder<'a>> {
-            self.builder
-                .get_pointer_field(1)
-                .get_text(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
+                self.builder.get_pointer_field(1),
+                ::std::option::Option::None,
+            )
         }
         #[inline]
         pub fn set_from_node_id(&mut self, value: ::capnp::text::Reader) {
@@ -229,9 +232,10 @@ pub mod envelope {
         }
         #[inline]
         pub fn get_data(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
-            self.builder
-                .get_pointer_field(2)
-                .get_data(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
+                self.builder.get_pointer_field(2),
+                ::std::option::Option::None,
+            )
         }
         #[inline]
         pub fn set_data(&mut self, value: ::capnp::data::Reader) {
@@ -302,9 +306,10 @@ pub mod pending_sync_request {
     impl<'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Reader<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(::std::ptr::null())?,
+                reader.get_struct(default)?,
             ))
         }
     }
@@ -339,9 +344,9 @@ pub mod pending_sync_request {
                 crate::data_transport_capnp::pending_sync_range::Owned,
             >,
         > {
-            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerReader::get_from_pointer(
                 &self.reader.get_pointer_field(0),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         pub fn has_ranges(&self) -> bool {
@@ -390,9 +395,10 @@ pub mod pending_sync_request {
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Builder<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null())?,
+                builder.get_struct(_private::STRUCT_SIZE, default)?,
             ))
         }
     }
@@ -408,10 +414,6 @@ pub mod pending_sync_request {
     }
 
     impl<'a> Builder<'a> {
-        #[deprecated(since = "0.9.2", note = "use into_reader()")]
-        pub fn as_reader(self) -> Reader<'a> {
-            self.into_reader()
-        }
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
@@ -434,9 +436,9 @@ pub mod pending_sync_request {
                 crate::data_transport_capnp::pending_sync_range::Owned,
             >,
         > {
-            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
                 self.builder.get_pointer_field(0),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         #[inline]
@@ -533,9 +535,10 @@ pub mod pending_sync_range {
     impl<'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Reader<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(::std::ptr::null())?,
+                reader.get_struct(default)?,
             ))
         }
     }
@@ -579,9 +582,10 @@ pub mod pending_sync_range {
         }
         #[inline]
         pub fn get_operations_hash(self) -> ::capnp::Result<::capnp::data::Reader<'a>> {
-            self.reader
-                .get_pointer_field(0)
-                .get_data(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerReader::get_from_pointer(
+                &self.reader.get_pointer_field(0),
+                ::std::option::Option::None,
+            )
         }
         pub fn has_operations_hash(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
@@ -592,9 +596,9 @@ pub mod pending_sync_range {
         }
         #[inline]
         pub fn get_operations(self) -> ::capnp::Result<::capnp::data_list::Reader<'a>> {
-            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerReader::get_from_pointer(
                 &self.reader.get_pointer_field(1),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         pub fn has_operations(&self) -> bool {
@@ -609,9 +613,9 @@ pub mod pending_sync_range {
                 crate::data_chain_capnp::pending_operation_header::Owned,
             >,
         > {
-            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerReader::get_from_pointer(
                 &self.reader.get_pointer_field(2),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         pub fn has_operations_headers(&self) -> bool {
@@ -656,9 +660,10 @@ pub mod pending_sync_range {
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Builder<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null())?,
+                builder.get_struct(_private::STRUCT_SIZE, default)?,
             ))
         }
     }
@@ -674,10 +679,6 @@ pub mod pending_sync_range {
     }
 
     impl<'a> Builder<'a> {
-        #[deprecated(since = "0.9.2", note = "use into_reader()")]
-        pub fn as_reader(self) -> Reader<'a> {
-            self.into_reader()
-        }
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
@@ -725,9 +726,10 @@ pub mod pending_sync_range {
         }
         #[inline]
         pub fn get_operations_hash(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
-            self.builder
-                .get_pointer_field(0)
-                .get_data(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
+                self.builder.get_pointer_field(0),
+                ::std::option::Option::None,
+            )
         }
         #[inline]
         pub fn set_operations_hash(&mut self, value: ::capnp::data::Reader) {
@@ -750,9 +752,9 @@ pub mod pending_sync_range {
         }
         #[inline]
         pub fn get_operations(self) -> ::capnp::Result<::capnp::data_list::Builder<'a>> {
-            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
                 self.builder.get_pointer_field(1),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         #[inline]
@@ -785,9 +787,9 @@ pub mod pending_sync_range {
                 crate::data_chain_capnp::pending_operation_header::Owned,
             >,
         > {
-            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
                 self.builder.get_pointer_field(2),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         #[inline]
@@ -878,9 +880,10 @@ pub mod chain_sync_request {
     impl<'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Reader<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(::std::ptr::null())?,
+                reader.get_struct(default)?,
             ))
         }
     }
@@ -962,9 +965,10 @@ pub mod chain_sync_request {
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Builder<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null())?,
+                builder.get_struct(_private::STRUCT_SIZE, default)?,
             ))
         }
     }
@@ -980,10 +984,6 @@ pub mod chain_sync_request {
     }
 
     impl<'a> Builder<'a> {
-        #[deprecated(since = "0.9.2", note = "use into_reader()")]
-        pub fn as_reader(self) -> Reader<'a> {
-            self.into_reader()
-        }
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
@@ -1116,9 +1116,10 @@ pub mod chain_sync_response {
     impl<'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Reader<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(::std::ptr::null())?,
+                reader.get_struct(default)?,
             ))
         }
     }
@@ -1158,9 +1159,9 @@ pub mod chain_sync_response {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Reader<'a, crate::data_chain_capnp::block_header::Owned>,
         > {
-            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerReader::get_from_pointer(
                 &self.reader.get_pointer_field(0),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         pub fn has_headers(&self) -> bool {
@@ -1168,9 +1169,9 @@ pub mod chain_sync_response {
         }
         #[inline]
         pub fn get_blocks(self) -> ::capnp::Result<::capnp::data_list::Reader<'a>> {
-            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerReader::get_from_pointer(
                 &self.reader.get_pointer_field(1),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         pub fn has_blocks(&self) -> bool {
@@ -1215,9 +1216,10 @@ pub mod chain_sync_response {
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Builder<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null())?,
+                builder.get_struct(_private::STRUCT_SIZE, default)?,
             ))
         }
     }
@@ -1233,10 +1235,6 @@ pub mod chain_sync_response {
     }
 
     impl<'a> Builder<'a> {
-        #[deprecated(since = "0.9.2", note = "use into_reader()")]
-        pub fn as_reader(self) -> Reader<'a> {
-            self.into_reader()
-        }
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
@@ -1272,9 +1270,9 @@ pub mod chain_sync_response {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Builder<'a, crate::data_chain_capnp::block_header::Owned>,
         > {
-            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
                 self.builder.get_pointer_field(0),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         #[inline]
@@ -1304,9 +1302,9 @@ pub mod chain_sync_response {
         }
         #[inline]
         pub fn get_blocks(self) -> ::capnp::Result<::capnp::data_list::Builder<'a>> {
-            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
                 self.builder.get_pointer_field(1),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         #[inline]

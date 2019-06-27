@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use capnp::traits::ToU16;
 use exocore_common::node::{Node, NodeId};
 use exocore_common::serialization::capnp;
-use exocore_common::serialization::framed::{FrameBuilder, SignedFrame, TypedFrame};
 use exocore_common::serialization::protos::data_chain_capnp::{block, block_header};
 use exocore_common::serialization::protos::data_transport_capnp::{
     chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
@@ -17,6 +16,7 @@ use crate::engine::request_tracker::RequestTracker;
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
 use exocore_common::cell::{Cell, CellNodes, CellNodesOwned};
+use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 
 ///
 /// Synchronizes the local chain against remote nodes' chain.
@@ -174,17 +174,14 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     ///
     /// Handles an incoming sync request. This request can be for headers, or could be for blocks.
     ///
-    pub fn handle_sync_request<R>(
+    pub fn handle_sync_request<F: FrameReader>(
         &mut self,
         sync_context: &mut SyncContext,
         from_node: &Node,
         store: &mut CS,
-        request: R,
-    ) -> Result<(), Error>
-    where
-        R: TypedFrame<chain_sync_request::Owned>,
-    {
-        let request_reader: chain_sync_request::Reader = request.get_typed_reader()?;
+        request: TypedCapnpFrame<F, chain_sync_request::Owned>,
+    ) -> Result<(), Error> {
+        let request_reader: chain_sync_request::Reader = request.get_reader()?;
         let (from_offset, to_offset) = (
             request_reader.get_from_offset(),
             request_reader.get_to_offset(),
@@ -247,17 +244,14 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     /// If it contains data, it means that it comes from the leader node and we need to append data
     /// to our local chain.
     ///
-    pub fn handle_sync_response<R>(
+    pub fn handle_sync_response<R: FrameReader>(
         &mut self,
         sync_context: &mut SyncContext,
         from_node: &Node,
         store: &mut CS,
-        response: R,
-    ) -> Result<(), Error>
-    where
-        R: TypedFrame<chain_sync_response::Owned>,
-    {
-        let response_reader: chain_sync_response::Reader = response.get_typed_reader()?;
+        response: TypedCapnpFrame<R, chain_sync_response::Owned>,
+    ) -> Result<(), Error> {
+        let response_reader: chain_sync_response::Reader = response.get_reader()?;
         if response_reader.has_blocks() {
             debug!("Got blocks response from node {}", from_node.id());
             self.handle_sync_response_blocks(sync_context, from_node, store, response_reader)?;
@@ -400,9 +394,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         node_info: &NodeSyncInfo,
         requested_details: RequestedDetails,
         to_offset: Option<BlockOffset>,
-    ) -> Result<FrameBuilder<chain_sync_request::Owned>, Error> {
-        let mut frame_builder = FrameBuilder::new();
-        let mut request_builder: chain_sync_request::Builder = frame_builder.get_builder_typed();
+    ) -> Result<CapnpFrameBuilder<chain_sync_request::Owned>, Error> {
+        let mut frame_builder = CapnpFrameBuilder::new();
+        let mut request_builder: chain_sync_request::Builder = frame_builder.get_builder();
 
         let from_offset = node_info.last_common_block.as_ref().map_or(0, |b| {
             // if we requesting blocks, we want data from next offset to prevent getting data
@@ -438,9 +432,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_offset: BlockOffset,
         to_offset: BlockOffset,
         headers: Vec<BlockHeader>,
-    ) -> Result<FrameBuilder<chain_sync_response::Owned>, Error> {
-        let mut frame_builder = FrameBuilder::new();
-        let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder_typed();
+    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, Error> {
+        let mut frame_builder = CapnpFrameBuilder::new();
+        let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder();
         response_builder.set_from_offset(from_offset);
         response_builder.set_to_offset(to_offset);
 
@@ -468,9 +462,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_offset: BlockOffset,
         to_offset: BlockOffset,
         blocks_iter: I,
-    ) -> Result<FrameBuilder<chain_sync_response::Owned>, Error> {
-        let mut frame_builder = FrameBuilder::new();
-        let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder_typed();
+    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, Error> {
+        let mut frame_builder = CapnpFrameBuilder::new();
+        let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder();
         response_builder.set_from_offset(from_offset);
         response_builder.set_to_offset(to_offset);
 
@@ -489,13 +483,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         if blocks_len > 0 {
             let mut blocks_builder = response_builder.init_blocks(blocks_len);
             for i in 0..blocks_len {
-                let block_and_signatures = vec![
-                    blocks[i as usize].block().frame_data(),
-                    blocks[i as usize].operations_data(),
-                    blocks[i as usize].signatures().frame_data(),
-                ]
-                .concat();
-
+                let block_and_signatures = blocks[i as usize].as_data_vec();
                 blocks_builder.reborrow().set(i, &block_and_signatures);
             }
 
@@ -551,10 +539,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             // the block locally, and update the last_common_block
             if first_non_common_block.is_none() {
                 if let Ok(local_block) = store.get_block(offset) {
-                    let local_block_signature = local_block
-                        .block
-                        .signature_data()
-                        .expect("A stored block didn't have a signature");
+                    let local_block_signature = local_block.block.inner().inner().multihash_bytes();
                     if header_reader.get_block_hash()? == local_block_signature {
                         let is_latest_common_offset = from_node_info
                             .last_common_block
@@ -927,11 +912,8 @@ struct BlockHeader {
 
 impl BlockHeader {
     fn from_stored_block<B: Block>(stored_block: B) -> Result<BlockHeader, Error> {
-        let block_reader: block::Reader = stored_block.block().get_typed_reader()?;
-        let block_signature = stored_block
-            .block()
-            .signature_data()
-            .expect("A stored block didn't signature data");
+        let block_reader: block::Reader = stored_block.block().get_reader()?;
+        let block_signature = stored_block.block().inner().inner().multihash_bytes();
 
         Ok(BlockHeader {
             offset: stored_block.offset(),
@@ -940,7 +922,7 @@ impl BlockHeader {
             previous_offset: block_reader.get_previous_offset(),
             previous_hash: block_reader.get_previous_hash()?.to_vec(),
 
-            block_size: stored_block.block().frame_size() as u32,
+            block_size: stored_block.block().whole_data_size() as u32,
             operations_size: block_reader.get_operations_size(),
             signatures_size: block_reader.get_signatures_size(),
         })
@@ -1041,7 +1023,7 @@ fn chain_sample_block_headers<CS: chain::ChainStore>(
         ChainSyncError::Other("Expected a last block since ranges were not empty".to_string())
     })?;
 
-    let last_block_reader: block::Reader = last_block.block.get_typed_reader()?;
+    let last_block_reader: block::Reader = last_block.block.get_reader()?;
     let last_block_depth = last_block_reader.get_depth();
 
     let mut blocks_iter = store
@@ -1052,7 +1034,7 @@ fn chain_sample_block_headers<CS: chain::ChainStore>(
     let first_block = blocks_iter.peek().ok_or_else(|| {
         ChainSyncError::Other("Expected a first block since ranges were not empty".to_string())
     })?;
-    let first_block_reader: block::Reader = first_block.block.get_typed_reader()?;
+    let first_block_reader: block::Reader = first_block.block.get_reader()?;
     let first_block_depth = first_block_reader.get_depth();
 
     let range_blocks_count = last_block_depth - first_block_depth;
@@ -1087,13 +1069,13 @@ mod tests {
     use std::time::{Duration, Instant};
 
     use chain::directory::DirectoryChainStore;
-    use exocore_common::serialization::framed::OwnedTypedFrame;
 
     use crate::engine::testing::*;
     use crate::engine::{SyncContextMessage, SyncState};
 
     use super::*;
     use crate::operation::OperationBuilder;
+    use exocore_common::framing::FrameBuilder;
     use itertools::Itertools;
 
     #[test]
@@ -1118,7 +1100,7 @@ mod tests {
             0,
             blocks_iter,
         )?;
-        let response_frame = response.as_owned_unsigned_framed()?;
+        let response_frame = response.as_owned_frame();
         let mut sync_context = SyncContext::new(SyncState::default());
         let result = cluster.chains_synchronizer[0].handle_sync_response(
             &mut sync_context,
@@ -1137,7 +1119,7 @@ mod tests {
             0,
             blocks_iter,
         )?;
-        let response_frame = response.as_owned_unsigned_framed()?;
+        let response_frame = response.as_owned_frame();
         let mut sync_context = SyncContext::new(SyncState::default());
         let result = cluster.chains_synchronizer[0].handle_sync_response(
             &mut sync_context,
@@ -1155,7 +1137,7 @@ mod tests {
             0,
             blocks_iter,
         )?;
-        let response_frame = response.as_owned_unsigned_framed().unwrap();
+        let response_frame = response.as_owned_frame();
         let mut sync_context = SyncContext::new(SyncState::default());
         cluster.chains_synchronizer[0].handle_sync_response(
             &mut sync_context,
@@ -1385,10 +1367,9 @@ mod tests {
         let operations = (0..10)
             .map(|_i| {
                 let op_id = cluster.consistent_clock(0);
-                let frame_signer = node_0.frame_signer();
                 let data = vec![0u8; operation_size + 1];
                 OperationBuilder::new_entry(op_id, node_0.id(), &data)
-                    .sign_and_build(frame_signer)
+                    .sign_and_build(&node_0)
                     .unwrap()
                     .frame
             })
@@ -1603,13 +1584,13 @@ mod tests {
     fn extract_request_frame_sync_context(
         sync_context: &SyncContext,
         to_node: &NodeId,
-    ) -> OwnedTypedFrame<chain_sync_request::Owned> {
+    ) -> TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned> {
         for sync_message in &sync_context.messages {
             match sync_message {
                 SyncContextMessage::ChainSyncRequest(msg_to_node, req)
                     if msg_to_node == to_node =>
                 {
-                    return req.as_owned_unsigned_framed().unwrap();
+                    return req.as_owned_frame();
                 }
                 _ => {}
             }
@@ -1620,10 +1601,10 @@ mod tests {
 
     fn extract_response_frame_sync_context(
         sync_context: &SyncContext,
-    ) -> (NodeId, OwnedTypedFrame<chain_sync_response::Owned>) {
+    ) -> (NodeId, TypedCapnpFrame<Vec<u8>, chain_sync_response::Owned>) {
         match sync_context.messages.last().unwrap() {
             SyncContextMessage::ChainSyncResponse(to_node, req) => {
-                (to_node.clone(), req.as_owned_unsigned_framed().unwrap())
+                (to_node.clone(), req.as_owned_frame())
             }
             _other => panic!("Expected a chain sync response, got another type of message"),
         }
@@ -1649,7 +1630,7 @@ mod tests {
         let sync_context = cluster.tick_chain_synchronizer(node_id_from)?;
         for sync_message in sync_context.messages {
             if let SyncContextMessage::ChainSyncRequest(to_node, req) = sync_message {
-                let request_frame = req.as_owned_unsigned_framed()?;
+                let request_frame = req.as_owned_frame();
                 let node_id_to = cluster.get_node_index(&to_node);
                 run_sync_1_to_1_with_request(cluster, node_id_from, node_id_to, request_frame)?;
             }
@@ -1662,7 +1643,7 @@ mod tests {
         cluster: &mut TestCluster,
         node_id_a: usize,
         node_id_b: usize,
-        first_request: OwnedTypedFrame<chain_sync_request::Owned>,
+        first_request: TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned>,
     ) -> Result<(usize, usize), Error> {
         let node1 = cluster.get_node(node_id_a).clone();
         let node2 = cluster.get_node(node_id_b).clone();
@@ -1718,12 +1699,12 @@ mod tests {
             .expect("Node 2 didn't have any data");
         assert_eq!(node1_last_block.offset, node2_last_block.offset);
         assert_eq!(
-            node1_last_block.block.frame_data(),
-            node2_last_block.block.frame_data()
+            node1_last_block.block.whole_data(),
+            node2_last_block.block.whole_data()
         );
         assert_eq!(
-            node1_last_block.signatures.frame_data(),
-            node2_last_block.signatures.frame_data()
+            node1_last_block.signatures.whole_data(),
+            node2_last_block.signatures.whole_data()
         );
     }
 }

@@ -40,9 +40,10 @@ pub mod node {
     impl<'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Reader<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(::std::ptr::null())?,
+                reader.get_struct(default)?,
             ))
         }
     }
@@ -70,18 +71,20 @@ pub mod node {
         }
         #[inline]
         pub fn get_id(self) -> ::capnp::Result<::capnp::text::Reader<'a>> {
-            self.reader
-                .get_pointer_field(0)
-                .get_text(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerReader::get_from_pointer(
+                &self.reader.get_pointer_field(0),
+                ::std::option::Option::None,
+            )
         }
         pub fn has_id(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
         #[inline]
         pub fn get_public_key(self) -> ::capnp::Result<::capnp::text::Reader<'a>> {
-            self.reader
-                .get_pointer_field(1)
-                .get_text(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerReader::get_from_pointer(
+                &self.reader.get_pointer_field(1),
+                ::std::option::Option::None,
+            )
         }
         pub fn has_public_key(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
@@ -92,9 +95,9 @@ pub mod node {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Reader<'a, crate::common_capnp::node_address::Owned>,
         > {
-            ::capnp::traits::FromPointerReaderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerReader::get_from_pointer(
                 &self.reader.get_pointer_field(2),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         pub fn has_address(&self) -> bool {
@@ -139,9 +142,10 @@ pub mod node {
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Builder<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null())?,
+                builder.get_struct(_private::STRUCT_SIZE, default)?,
             ))
         }
     }
@@ -157,10 +161,6 @@ pub mod node {
     }
 
     impl<'a> Builder<'a> {
-        #[deprecated(since = "0.9.2", note = "use into_reader()")]
-        pub fn as_reader(self) -> Reader<'a> {
-            self.into_reader()
-        }
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
@@ -176,9 +176,10 @@ pub mod node {
         }
         #[inline]
         pub fn get_id(self) -> ::capnp::Result<::capnp::text::Builder<'a>> {
-            self.builder
-                .get_pointer_field(0)
-                .get_text(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
+                self.builder.get_pointer_field(0),
+                ::std::option::Option::None,
+            )
         }
         #[inline]
         pub fn set_id(&mut self, value: ::capnp::text::Reader) {
@@ -193,9 +194,10 @@ pub mod node {
         }
         #[inline]
         pub fn get_public_key(self) -> ::capnp::Result<::capnp::text::Builder<'a>> {
-            self.builder
-                .get_pointer_field(1)
-                .get_text(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
+                self.builder.get_pointer_field(1),
+                ::std::option::Option::None,
+            )
         }
         #[inline]
         pub fn set_public_key(&mut self, value: ::capnp::text::Reader) {
@@ -214,9 +216,9 @@ pub mod node {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Builder<'a, crate::common_capnp::node_address::Owned>,
         > {
-            ::capnp::traits::FromPointerBuilderRefDefault::get_from_pointer(
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
                 self.builder.get_pointer_field(2),
-                ::std::ptr::null(),
+                ::std::option::Option::None,
             )
         }
         #[inline]
@@ -301,9 +303,10 @@ pub mod node_address {
     impl<'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Reader<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(::std::ptr::null())?,
+                reader.get_struct(default)?,
             ))
         }
     }
@@ -331,9 +334,10 @@ pub mod node_address {
         }
         #[inline]
         pub fn get_data(self) -> ::capnp::Result<::capnp::text::Reader<'a>> {
-            self.reader
-                .get_pointer_field(0)
-                .get_text(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerReader::get_from_pointer(
+                &self.reader.get_pointer_field(0),
+                ::std::option::Option::None,
+            )
         }
         pub fn has_data(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
@@ -377,9 +381,10 @@ pub mod node_address {
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
+            default: ::std::option::Option<&'a [::capnp::Word]>,
         ) -> ::capnp::Result<Builder<'a>> {
             ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null())?,
+                builder.get_struct(_private::STRUCT_SIZE, default)?,
             ))
         }
     }
@@ -395,10 +400,6 @@ pub mod node_address {
     }
 
     impl<'a> Builder<'a> {
-        #[deprecated(since = "0.9.2", note = "use into_reader()")]
-        pub fn as_reader(self) -> Reader<'a> {
-            self.into_reader()
-        }
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
@@ -414,9 +415,10 @@ pub mod node_address {
         }
         #[inline]
         pub fn get_data(self) -> ::capnp::Result<::capnp::text::Builder<'a>> {
-            self.builder
-                .get_pointer_field(0)
-                .get_text(::std::ptr::null(), 0)
+            ::capnp::traits::FromPointerBuilder::get_from_pointer(
+                self.builder.get_pointer_field(0),
+                ::std::option::Option::None,
+            )
         }
         #[inline]
         pub fn set_data(&mut self, value: ::capnp::text::Reader) {

@@ -1,6 +1,5 @@
 use crate::crypto::keys::{Keypair, PublicKey};
 use crate::crypto::signature::Signature;
-use crate::serialization::framed::{FrameSigner, MultihashFrameSigner};
 use libp2p_core::{Multiaddr, PeerId};
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -135,12 +134,6 @@ impl LocalNode {
 
     pub fn keypair(&self) -> &Keypair {
         &self.keypair
-    }
-
-    pub fn frame_signer(&self) -> impl FrameSigner {
-        // TODO: Signature ticket: https://github.com/appaquet/exocore/issues/46
-        //       Include signature, not just hash.
-        MultihashFrameSigner::new_sha3256()
     }
 
     pub fn sign_message(&self, _message: &[u8]) -> Signature {

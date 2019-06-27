@@ -2,9 +2,6 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::RangeBounds;
 use std::sync::Arc;
 
-use exocore_common::data_chain_capnp::pending_operation;
-use exocore_common::serialization::framed;
-
 use super::*;
 use crate::operation::Operation;
 
@@ -216,7 +213,7 @@ struct GroupOperation {
     operation_id: OperationId,
     operation_type: operation::OperationType,
     commit_status: CommitStatus,
-    frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
+    frame: Arc<crate::operation::OperationFrame<Vec<u8>>>,
 }
 
 ///

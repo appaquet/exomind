@@ -192,7 +192,11 @@ impl ChainStore for DirectoryChainStore {
             let need_new_segment = {
                 match self.segments.last() {
                     None => true,
-                    Some(s) => s.next_file_offset() as u64 > self.config.segment_max_size,
+                    Some(s) => {
+                        let new_block_end_offset =
+                            s.next_file_offset() as u64 + block.total_size() as u64;
+                        new_block_end_offset > self.config.segment_max_size
+                    }
                 }
             };
 
@@ -451,7 +455,6 @@ pub mod tests {
 
     use exocore_common::node::LocalNode;
     use exocore_common::range;
-    use exocore_common::serialization::framed::TypedFrame;
 
     use crate::block::{Block, BlockOperations, BlockOwned};
 
@@ -723,7 +726,7 @@ pub mod tests {
         for stored_block in iter {
             count += 1;
 
-            let block_reader = stored_block.block.get_typed_reader().unwrap();
+            let block_reader = stored_block.block.get_reader().unwrap();
             let current_block_offset = block_reader.get_offset();
             assert_eq!(stored_block.offset, current_block_offset);
 
@@ -783,7 +786,7 @@ pub mod tests {
                 local_node.id(),
                 b"some_data",
             )
-            .sign_and_build(local_node.frame_signer())
+            .sign_and_build(&local_node)
             .unwrap()
             .frame,
         ];

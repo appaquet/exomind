@@ -8,8 +8,8 @@ use crate::Error;
 use crate::{TransportHandle, TransportLayer};
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_common::cell::{Cell, CellId, CellNodes};
+use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::serialization::framed::{TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_transport_capnp::envelope;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
@@ -235,23 +235,15 @@ impl Libp2pTransport {
                 .poll()
                 .expect("Couldn't poll behaviour channel")
             {
-                // we don't need to sign the message since it's going through a authenticated channel (secio)
-                match msg.envelope.as_owned_unsigned_framed() {
-                    Ok(frame) => {
-                        let frame_data = frame.frame_data().to_vec();
+                let frame_data = msg.envelope_builder.as_bytes();
 
-                        // prevent cloning frame if we only send to 1 node
-                        if msg.to.len() == 1 {
-                            let to_node = msg.to.first().unwrap();
-                            swarm.send_message(to_node.peer_id().clone(), frame_data);
-                        } else {
-                            for to_node in msg.to {
-                                swarm.send_message(to_node.peer_id().clone(), frame_data.clone());
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        error!("Couldn't serialize frame to data: {}", err);
+                // prevent cloning frame if we only send to 1 node
+                if msg.to.len() == 1 {
+                    let to_node = msg.to.first().unwrap();
+                    swarm.send_message(to_node.peer_id().clone(), frame_data);
+                } else {
+                    for to_node in msg.to {
+                        swarm.send_message(to_node.peer_id().clone(), frame_data.clone());
                     }
                 }
             }
@@ -260,11 +252,11 @@ impl Libp2pTransport {
             while let Async::Ready(Some(data)) = swarm.poll().expect("Couldn't poll swarm") {
                 match data {
                     ExocoreBehaviourEvent::Message(msg) => {
-                        if let Err(err) = Self::dispatch_message(&inner, &msg) {
-                            warn!("Couldn't dispatch message from {}: {}", msg.source, err);
-                        }
+                        trace!("Got message from {}", msg.source);
 
-                        trace!("Got message from {}", msg.source,);
+                        if let Err(err) = Self::dispatch_message(&inner, msg) {
+                            warn!("Couldn't dispatch message: {}", err);
+                        }
                     }
                 }
             }
@@ -297,10 +289,10 @@ impl Libp2pTransport {
     ///
     fn dispatch_message(
         inner: &RwLock<InnerTransport>,
-        message: &ExocoreBehaviourMessage,
+        message: ExocoreBehaviourMessage,
     ) -> Result<(), Error> {
-        let frame = TypedSliceFrame::<envelope::Owned>::new(&message.data)?;
-        let frame_reader: envelope::Reader = frame.get_typed_reader()?;
+        let frame = TypedCapnpFrame::<_, envelope::Owned>::new(message.data)?;
+        let frame_reader: envelope::Reader = frame.get_reader()?;
         let cell_id_bytes = frame_reader.get_cell_id()?;
 
         let mut inner = inner.write()?;
@@ -434,7 +426,7 @@ impl Drop for Libp2pTransportHandle {
 mod tests {
     use super::*;
     use exocore_common::cell::FullCell;
-    use exocore_common::serialization::framed::FrameBuilder;
+    use exocore_common::framing::CapnpFrameBuilder;
     use exocore_common::serialization::protos::data_chain_capnp::block_operation_header;
     use exocore_common::tests_utils::expect_eventually;
     use std::sync::Mutex;
@@ -470,19 +462,19 @@ mod tests {
         // give time for nodes to connect to each others
         std::thread::sleep(Duration::from_secs(1));
 
-        // create dummy frame
-        let frame_builder = FrameBuilder::<block_operation_header::Owned>::new();
-        let frame = frame_builder.as_owned_unsigned_framed()?;
-
         // send 1 to 2
         let to_nodes = vec![node2.node().clone()];
-        let msg = OutMessage::from_framed_message(&node1_cell, to_nodes, frame.clone())?;
+        let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
+        let _builder = frame_builder.get_builder();
+        let msg = OutMessage::from_framed_message(&node1_cell, to_nodes, frame_builder)?;
         handle1_tester.send(msg);
         expect_eventually(|| handle2_tester.received().len() == 1);
 
         // send 2 to twice 1 to test multiple nodes
         let to_nodes = vec![node1.node().clone(), node1.node().clone()];
-        let msg = OutMessage::from_framed_message(&node2_cell, to_nodes, frame)?;
+        let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
+        let _builder = frame_builder.get_builder();
+        let msg = OutMessage::from_framed_message(&node2_cell, to_nodes, frame_builder)?;
         handle2_tester.send(msg);
         expect_eventually(|| handle1_tester.received().len() == 2);
 

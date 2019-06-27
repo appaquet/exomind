@@ -7,8 +7,8 @@ pub use self::websocket::WebSocketError;
 use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::{Error, InMessage, OutMessage, TransportHandle};
 use exocore_common::cell::{Cell, CellId};
+use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{Node, NodeId};
-use exocore_common::serialization::framed::{OwnedTypedFrame, TypedFrame, TypedSliceFrame};
 use exocore_common::serialization::protos::data_transport_capnp::envelope;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
@@ -235,7 +235,7 @@ impl WebsocketTransport {
             let weak_inner = weak_inner.clone();
             let temporary_node = temporary_node.clone();
             let outgoing = connection_receiver
-                .map(|out_msg| websocket::OwnedMessage::Binary(out_msg.frame_data().to_vec()))
+                .map(websocket::OwnedMessage::Binary)
                 .forward(client_sink.sink_map_err(|_| ()))
                 .map(|_| ())
                 .map_err(move |_| {
@@ -280,10 +280,10 @@ impl WebsocketTransport {
         let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
         let mut inner = inner.write()?;
 
-        let frame = out_message.envelope.as_owned_unsigned_framed()?;
+        let envelope_data = out_message.envelope_builder.as_bytes();
         for node in &out_message.to {
             if let Some(connection) = inner.connections.get_mut(node.id()) {
-                let send_result = connection.out_sink.try_send(frame.clone());
+                let send_result = connection.out_sink.try_send(envelope_data.clone());
                 if let Err(err) = send_result {
                     error!("Couldn't send message to node {}: {}", node.id(), err);
                 }
@@ -303,11 +303,11 @@ impl WebsocketTransport {
         connection_node: &Node,
         message: OwnedMessage,
     ) -> Result<(), Error> {
-        if let websocket::OwnedMessage::Binary(data) = &message {
+        if let websocket::OwnedMessage::Binary(data) = message {
             let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
             let mut inner = inner.write()?;
 
-            let envelope_frame = TypedSliceFrame::<envelope::Owned>::new(data)?;
+            let envelope_frame = TypedCapnpFrame::<_, envelope::Owned>::new(data)?;
             for handle in inner.handles.values_mut() {
                 let in_message = InMessage {
                     from: connection_node.clone(),
@@ -359,7 +359,7 @@ impl Future for WebsocketTransport {
 ///
 struct Connection {
     _temporary_node: Node,
-    out_sink: mpsc::Sender<OwnedTypedFrame<envelope::Owned>>,
+    out_sink: mpsc::Sender<Vec<u8>>,
 }
 
 ///
@@ -432,8 +432,8 @@ mod tests {
     use super::websocket::ClientBuilder;
     use super::*;
     use exocore_common::cell::FullCell;
+    use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
     use exocore_common::node::LocalNode;
-    use exocore_common::serialization::framed::FrameBuilder;
     use exocore_common::tests_utils::expect_eventually;
     use std::sync::Mutex;
     use tokio::runtime::Runtime;
@@ -489,20 +489,21 @@ mod tests {
                 handle
                     .get_stream()
                     .and_then(move |message| {
-                        let message_reader = message.envelope.get_typed_reader().unwrap();
+                        let message_reader = message.envelope.get_reader().unwrap();
                         let message_data = message_reader.get_data().unwrap();
                         let mut received_messages = received_messages.lock().unwrap();
                         received_messages.push(String::from_utf8_lossy(message_data).to_string());
 
                         // forward the message back to client
-                        let mut frame_builder = FrameBuilder::<envelope::Owned>::new();
+                        let mut frame_builder = CapnpFrameBuilder::<envelope::Owned>::new();
                         {
-                            let mut message_builder = frame_builder.get_builder_typed();
+                            let mut message_builder = frame_builder.get_builder();
                             message_builder.set_data(message_data);
                         }
+
                         let out_message = OutMessage {
                             to: vec![message.from.clone()],
-                            envelope: frame_builder,
+                            envelope_builder: frame_builder,
                         };
                         Ok(out_message)
                     })
@@ -550,9 +551,9 @@ mod tests {
                                 match msg {
                                     OwnedMessage::Binary(data) => {
                                         let envelope_frame =
-                                            TypedSliceFrame::<envelope::Owned>::new(&data).unwrap();
-                                        let envelope_reader =
-                                            envelope_frame.get_typed_reader().unwrap();
+                                            TypedCapnpFrame::<_, envelope::Owned>::new(data)
+                                                .unwrap();
+                                        let envelope_reader = envelope_frame.get_reader().unwrap();
                                         let message_data = String::from_utf8_lossy(
                                             envelope_reader.get_data().unwrap(),
                                         )
@@ -586,15 +587,15 @@ mod tests {
         }
 
         fn send_str(&self, data: &str) {
-            let mut frame_builder = FrameBuilder::<envelope::Owned>::new();
+            let mut frame_builder = CapnpFrameBuilder::<envelope::Owned>::new();
             {
-                let mut message_builder: envelope::Builder = frame_builder.get_builder_typed();
+                let mut message_builder: envelope::Builder = frame_builder.get_builder();
                 message_builder.set_data(data.as_bytes());
             }
 
-            let frame = frame_builder.as_owned_unsigned_framed().unwrap();
+            let frame_data = frame_builder.as_bytes();
             self.out_sender
-                .unbounded_send(OwnedMessage::Binary(frame.frame_data().to_vec()))
+                .unbounded_send(OwnedMessage::Binary(frame_data))
                 .unwrap();
         }
     }

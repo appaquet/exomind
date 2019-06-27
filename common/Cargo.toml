@@ -27,7 +27,7 @@ libp2p-core = "0.8"
 log4rs = { version = "0.8", optional = true }
 
 [build-dependencies]
-capnpc = "0.9"
+capnpc = "0.10"
 
 [dev-dependencies]
 tempdir = "0.3"
@@ -36,5 +36,5 @@ criterion_bencher_compat = "0.2"
 tokio = { version = "0.1", features = ["rt-full"] }
 
 [[bench]]
-name = "capnp_msg"
+name = "capnp_frame"
 harness = false

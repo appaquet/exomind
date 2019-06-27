@@ -1,15 +1,11 @@
 use tempdir::TempDir;
 
 use exocore_common::node::{LocalNode, Node, NodeId};
-use exocore_common::serialization::framed::{
-    FrameBuilder, MultihashFrameSigner, OwnedTypedFrame, TypedFrame,
-};
-use exocore_common::serialization::protos::data_chain_capnp::{
-    block, block_signatures, pending_operation,
-};
+use exocore_common::serialization::protos::data_chain_capnp::block;
 
 use crate::block::{
-    Block, BlockDepth, BlockOffset, BlockOperations, BlockOwned, BlockSignaturesSize,
+    Block, BlockDepth, BlockOffset, BlockOperations, BlockOwned, BlockSignatures,
+    BlockSignaturesSize, SignaturesFrame,
 };
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
 use crate::chain::ChainStore;
@@ -20,7 +16,12 @@ use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, Opera
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
 use exocore_common::cell::FullCell;
+use exocore_common::crypto::hash::Sha3_256;
+use exocore_common::framing::{
+    CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
+};
 use exocore_common::time::Clock;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 pub(super) struct TestCluster {
@@ -152,7 +153,7 @@ impl TestCluster {
                 .get_last_block()
                 .unwrap()
                 .map_or((0, 0), |block| {
-                    let block_reader = block.block().get_typed_reader().unwrap();
+                    let block_reader = block.block().get_reader().unwrap();
                     let block_depth = block_reader.get_depth();
 
                     (block.next_offset(), block_depth + 1)
@@ -185,7 +186,7 @@ impl TestCluster {
             let prev_block_msg = previous_block.map(|b| b.block);
             let operations_data = vec![0u8; 123];
             let signatures = create_dummy_block_sigs(operations_data.len() as u32);
-            let signatures_size = signatures.frame_size() as BlockSignaturesSize;
+            let signatures_size = signatures.whole_data_size() as BlockSignaturesSize;
 
             let block_frame = create_dummy_block(
                 next_offset,
@@ -222,14 +223,15 @@ impl TestCluster {
         self.chains[node_idx].write_block(&block).unwrap();
     }
 
-    pub fn chain_add_block_with_operations<I, F>(
+    pub fn chain_add_block_with_operations<I, M, F>(
         &mut self,
         node_idx: usize,
         operations: I,
     ) -> Result<(), crate::engine::Error>
     where
-        I: Iterator<Item = F>,
-        F: TypedFrame<pending_operation::Owned>,
+        I: Iterator<Item = M>,
+        M: Borrow<crate::operation::OperationFrame<F>>,
+        F: FrameReader,
     {
         if self.chains[node_idx].get_last_block()?.is_none() {
             self.chain_add_genesis_block(node_idx);
@@ -302,18 +304,18 @@ impl TestCluster {
     }
 }
 
-pub fn create_dummy_block<B: TypedFrame<block::Owned>>(
+pub fn create_dummy_block<I: FrameReader>(
     offset: u64,
     depth: u64,
     operations_size: u32,
     signatures_size: u16,
-    previous_block: Option<B>,
+    previous_block: Option<crate::block::BlockFrame<I>>,
     seed: u64,
-) -> OwnedTypedFrame<block::Owned> {
-    let mut msg_builder = FrameBuilder::<block::Owned>::new();
+) -> crate::block::BlockFrame<Vec<u8>> {
+    let mut msg_builder = CapnpFrameBuilder::<block::Owned>::new();
 
     {
-        let mut block_builder: block::Builder = msg_builder.get_builder_typed();
+        let mut block_builder: block::Builder = msg_builder.get_builder();
         block_builder.set_offset(offset);
         block_builder.set_depth(depth);
         block_builder.set_operations_size(operations_size);
@@ -321,23 +323,22 @@ pub fn create_dummy_block<B: TypedFrame<block::Owned>>(
         block_builder.set_proposed_node_id(&format!("seed={}", seed));
 
         if let Some(previous_block) = previous_block {
-            let previous_block_reader: block::Reader = previous_block.get_typed_reader().unwrap();
+            let previous_block_reader: block::Reader = previous_block.get_reader().unwrap();
             block_builder.set_previous_offset(previous_block_reader.get_offset());
-            block_builder.set_previous_hash(previous_block.signature_data().unwrap());
+            block_builder.set_previous_hash(previous_block.inner().inner().multihash_bytes());
         }
     }
 
-    let signer = MultihashFrameSigner::new_sha3256();
-    msg_builder.as_owned_framed(signer).unwrap()
+    let hash_frame = MultihashFrameBuilder::<Sha3_256, _>::new(msg_builder);
+    let block_frame_data = SizedFrameBuilder::new(hash_frame);
+    crate::block::read_block_frame(block_frame_data.as_bytes()).unwrap()
 }
 
-pub fn create_dummy_block_sigs(operations_size: u32) -> OwnedTypedFrame<block_signatures::Owned> {
-    let mut msg_builder = FrameBuilder::<block_signatures::Owned>::new();
-    let mut block_builder = msg_builder.get_builder_typed();
-    block_builder.set_operations_size(operations_size);
-
-    let signer = MultihashFrameSigner::new_sha3256();
-    msg_builder.as_owned_framed(signer).unwrap()
+pub fn create_dummy_block_sigs(operations_size: u32) -> SignaturesFrame<Vec<u8>> {
+    let block_signatures = BlockSignatures::new_from_signatures(vec![]);
+    block_signatures
+        .to_frame_for_new_block(operations_size)
+        .unwrap()
 }
 
 pub fn dummy_pending_ops_generator(
@@ -357,9 +358,8 @@ pub fn create_dummy_new_entry_op(
     group_id: GroupId,
 ) -> NewOperation {
     let mut builder = OperationBuilder::new_entry(operation_id, local_node.id(), b"bob");
-    let mut frame_builder = builder.frame_builder.get_builder_typed();
+    let mut frame_builder = builder.frame_builder.get_builder();
     frame_builder.set_group_id(group_id);
 
-    let frame_signer = MultihashFrameSigner::new_sha3256();
-    builder.sign_and_build(frame_signer).unwrap()
+    builder.sign_and_build(local_node).unwrap()
 }

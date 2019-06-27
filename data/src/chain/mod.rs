@@ -3,7 +3,7 @@ use std::ops::Range;
 use crate::block;
 use crate::block::{Block, BlockOffset, BlockRef};
 use crate::operation::OperationId;
-use exocore_common::serialization::framed;
+use exocore_common::serialization::capnp;
 
 pub mod directory;
 
@@ -61,12 +61,12 @@ pub enum Error {
     Block(#[fail(cause)] block::Error),
     #[fail(display = "The store is in an unexpected state: {}", _0)]
     UnexpectedState(String),
-    #[fail(display = "Error from the framing serialization: {:?}", _0)]
-    Framing(#[fail(cause)] framed::Error),
     #[fail(display = "The store has an integrity problem: {}", _0)]
     Integrity(String),
     #[fail(display = "A segment has reached its full capacity")]
     SegmentFull,
+    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
+    Serialization(capnp::ErrorKind, String),
     #[fail(display = "An offset is out of the chain data: {}", _0)]
     OutOfBound(String),
     #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
@@ -94,12 +94,6 @@ impl From<block::Error> for Error {
     }
 }
 
-impl From<framed::Error> for Error {
-    fn from(err: framed::Error) -> Self {
-        Error::Framing(err)
-    }
-}
-
 impl<T> From<std::sync::PoisonError<T>> for Error {
     fn from(_err: std::sync::PoisonError<T>) -> Self {
         Error::Poisoned
@@ -112,14 +106,20 @@ impl From<directory::DirectoryError> for Error {
     }
 }
 
+impl From<capnp::Error> for Error {
+    fn from(err: capnp::Error) -> Self {
+        Error::Serialization(err.kind, err.description)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::block::{BlockOperations, BlockOwned};
     use crate::operation::OperationBuilder;
     use exocore_common::cell::FullCell;
+    use exocore_common::framing::FrameReader;
     use exocore_common::node::LocalNode;
-    use exocore_common::serialization::framed::TypedFrame;
 
     #[test]
     fn test_block_create_and_read() -> Result<(), failure::Error> {
@@ -129,7 +129,7 @@ mod tests {
 
         let operations = vec![
             OperationBuilder::new_entry(123, local_node.id(), b"some_data")
-                .sign_and_build(local_node.frame_signer())?
+                .sign_and_build(&local_node)?
                 .frame,
         ];
         let operations = BlockOperations::from_operations(operations.into_iter())?;
@@ -141,30 +141,30 @@ mod tests {
 
         let read_second_block = BlockRef::new(&data[0..second_block.total_size()])?;
         assert_eq!(
-            second_block.block.frame_data(),
-            read_second_block.block.frame_data()
+            second_block.block.whole_data(),
+            read_second_block.block.whole_data()
         );
         assert_eq!(
             second_block.operations_data,
             read_second_block.operations_data
         );
         assert_eq!(
-            second_block.signatures.frame_data(),
-            read_second_block.signatures.frame_data()
+            second_block.signatures.whole_data(),
+            read_second_block.signatures.whole_data()
         );
 
-        let block_reader = second_block.block.get_typed_reader()?;
+        let block_reader = second_block.block.get_reader()?;
         assert_eq!(block_reader.get_offset(), genesis.next_offset());
         assert_eq!(
             block_reader.get_signatures_size(),
-            second_block.signatures.frame_size() as u16
+            second_block.signatures.whole_data_size() as u16
         );
         assert_eq!(
             block_reader.get_operations_size(),
             second_block.operations_data.len() as u32
         );
 
-        let signatures_reader = second_block.signatures.get_typed_reader()?;
+        let signatures_reader = second_block.signatures.get_reader()?;
         assert_eq!(
             signatures_reader.get_operations_size(),
             second_block.operations_data.len() as u32
@@ -190,7 +190,7 @@ mod tests {
         let operations = (0..5)
             .map(|i| {
                 OperationBuilder::new_entry(i, local_node.id(), b"op1")
-                    .sign_and_build(local_node.frame_signer())
+                    .sign_and_build(&local_node)
                     .unwrap()
                     .frame
             })

@@ -1,21 +1,25 @@
-use crate::serialization::framed::SignedFrame;
+use crate::framing;
 
 pub use parity_multihash as multihash;
 pub use parity_multihash::{Hash, Multihash};
 pub use sha3::{Digest, Sha3_256, Sha3_512};
 
 pub trait MultihashDigest: Digest + Sized {
-    fn hash_type(&self) -> Hash;
+    fn hash_type() -> Hash;
 
-    fn input_signed_frame<F: SignedFrame>(&mut self, frame: &F) {
-        let signature_data = frame
-            .signature_data()
-            .expect("The frame didn't have a signature");
-        self.input(signature_data);
+    fn multihash_output_size() -> usize {
+        2 + usize::from(Self::hash_type().size())
+    }
+
+    fn input_signed_frame<I: framing::FrameReader>(
+        &mut self,
+        frame: &framing::MultihashFrame<Self, I>,
+    ) {
+        self.input(frame.multihash_bytes());
     }
 
     fn into_multihash_bytes(self) -> Vec<u8> {
-        let hash_type = self.hash_type();
+        let hash_type = Self::hash_type();
         let hash_code = hash_type.code();
         assert!(hash_code < 128, "varint hash type not supported");
 
@@ -45,13 +49,13 @@ pub trait MultihashDigest: Digest + Sized {
 }
 
 impl MultihashDigest for Sha3_256 {
-    fn hash_type(&self) -> Hash {
+    fn hash_type() -> Hash {
         Hash::SHA3256
     }
 }
 
 impl MultihashDigest for Sha3_512 {
-    fn hash_type(&self) -> Hash {
+    fn hash_type() -> Hash {
         Hash::SHA3512
     }
 }

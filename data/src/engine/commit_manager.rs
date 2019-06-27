@@ -6,8 +6,7 @@ use itertools::Itertools;
 use crate::operation::{GroupId, OperationId};
 use exocore_common::crypto::signature::Signature;
 use exocore_common::node::NodeId;
-use exocore_common::serialization::framed::{SignedFrame, TypedFrame, TypedSliceFrame};
-use exocore_common::serialization::protos::data_chain_capnp::{block, pending_operation};
+use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
 use exocore_common::time::{duration_to_consistent_u64, Clock};
 
 use crate::block::{
@@ -174,7 +173,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // validate hash of operations of block
         let block_operations = Self::get_block_operations(block, pending_store)?.map(|op| op.frame);
         let operations_hash = BlockOperations::hash_operations(block_operations)?;
-        let block_reader = block_frame.get_typed_reader()?;
+        let block_reader = block_frame.get_reader()?;
         if operations_hash.as_bytes() != block_reader.get_operations_hash()? {
             debug!(
                 "Block entries hash didn't match our local hash for block id={} offset={}",
@@ -206,8 +205,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             &next_block.proposal.get_block()?,
         )?;
 
-        let signature_operation =
-            signature_frame_builder.sign_and_build(local_node.frame_signer())?;
+        let signature_operation = signature_frame_builder.sign_and_build(&local_node)?;
 
         let signature_reader = signature_operation.get_operation_reader()?;
         let pending_signature = PendingBlockSignature::from_pending_operation(signature_reader)?;
@@ -242,7 +240,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             operation_id,
             local_node.id(),
         )?;
-        let refusal_operation = refusal_builder.sign_and_build(local_node.frame_signer())?;
+        let refusal_operation = refusal_builder.sign_and_build(&local_node)?;
 
         let refusal_reader = refusal_operation.get_operation_reader()?;
         let pending_refusal = PendingBlockRefusal::from_pending_operation(refusal_reader)?;
@@ -362,8 +360,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             local_node.id(),
             &block,
         )?;
-        let block_proposal_operation =
-            block_proposal_frame_builder.sign_and_build(local_node.frame_signer())?;
+        let block_proposal_operation = block_proposal_frame_builder.sign_and_build(&local_node)?;
 
         debug!(
             "Proposed block with operation_id {} for offset {}",
@@ -390,7 +387,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         chain_store: &mut CS,
     ) -> Result<(), Error> {
         let block_frame = next_block.proposal.get_block()?;
-        let block_reader = block_frame.get_typed_reader()?;
+        let block_reader = block_frame.get_reader()?;
 
         // fetch block's operations from the pending store
         let block_operations =
@@ -486,7 +483,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 || block.status == BlockStatus::PastRefused
             {
                 let block_frame = block.proposal.get_block()?;
-                let block_reader = block_frame.get_typed_reader()?;
+                let block_reader = block_frame.get_reader()?;
 
                 let block_offset = block_reader.get_offset();
                 let block_depth = block_reader.get_depth();
@@ -665,13 +662,12 @@ impl PendingBlocks {
             let mut refusals = Vec::new();
 
             for operation in group_operations.operations {
-                let operation_reader = operation.frame.get_typed_reader()?;
+                let operation_reader = operation.frame.get_reader()?;
 
                 match operation_reader.get_operation().which()? {
                     pending_operation::operation::Which::BlockPropose(reader) => {
-                        let block_frame =
-                            TypedSliceFrame::<block::Owned>::new(reader?.get_block()?)?;
-                        let block_reader = block_frame.get_typed_reader()?;
+                        let block_frame = crate::block::read_block_frame(reader?.get_block()?)?;
+                        let block_reader = block_frame.get_reader()?;
                         for operation_header in block_reader.get_operations_header()? {
                             operations.push(operation_header.get_operation_id());
                         }
@@ -845,11 +841,8 @@ impl PendingBlock {
             return false;
         };
 
-        if let Some(signature_data) = block.signature_data() {
-            signature.signature.validate(node, signature_data)
-        } else {
-            return false;
-        }
+        let signature_data = block.inner().inner().multihash_bytes();
+        signature.signature.validate(node, signature_data)
     }
 
     fn compare_potential_next_block(a: &PendingBlock, b: &PendingBlock) -> Ordering {
@@ -887,12 +880,12 @@ struct PendingBlockProposal {
 }
 
 impl PendingBlockProposal {
-    fn get_block(&self) -> Result<TypedSliceFrame<block::Owned>, Error> {
-        let operation_reader = self.operation.frame.get_typed_reader()?;
+    fn get_block(&self) -> Result<crate::block::BlockFrame<&[u8]>, Error> {
+        let operation_reader = self.operation.frame.get_reader()?;
         let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
             pending_operation::operation::Which::BlockPropose(block_prop) => {
-                Ok(TypedSliceFrame::new(block_prop?.get_block()?)?)
+                Ok(crate::block::read_block_frame(block_prop?.get_block()?)?)
             }
             _ => Err(Error::Other(
                 "Expected block sign pending op to create block signature, but got something else"
@@ -1183,7 +1176,7 @@ mod tests {
         // should commit the good block, and ignore refused one
         cluster.tick_commit_manager(0)?;
         let last_block = cluster.chains[0].get_last_block()?.unwrap();
-        let last_block_reader = last_block.block.get_typed_reader()?;
+        let last_block_reader = last_block.block.get_reader()?;
         assert_eq!(last_block_reader.get_proposed_operation_id(), block_id_good);
 
         Ok(())
@@ -1273,7 +1266,7 @@ mod tests {
         let block: crate::block::BlockRef = cluster.chains[0]
             .get_block_by_operation_id(first_op_id)?
             .unwrap();
-        let block_frame = block.block.get_typed_reader()?;
+        let block_frame = block.block.get_reader()?;
         let block_group_id = block_frame.get_proposed_operation_id();
         assert_not_in_pending(&cluster, block_group_id);
 
@@ -1285,7 +1278,7 @@ mod tests {
 
         // check if individual operations are still in pending
         for operation in block.operations_iter()? {
-            let operation_reader = operation.get_typed_reader()?;
+            let operation_reader = operation.get_reader()?;
             assert_not_in_pending(&cluster, operation_reader.get_operation_id());
         }
 
@@ -1331,8 +1324,9 @@ mod tests {
             cluster.get_node(0).id(),
             &invalid_block,
         )?;
-        let frame_signer = cluster.get_local_node(0).frame_signer();
-        cluster.pending_stores[0].put_operation(block_proposal.sign_and_build(frame_signer)?)?;
+
+        let local_node = cluster.get_local_node(0);
+        cluster.pending_stores[0].put_operation(block_proposal.sign_and_build(&local_node)?)?;
 
         // created blocks should all be invalid
         let pending_blocks = get_pending_blocks(&cluster)?;
@@ -1416,7 +1410,7 @@ mod tests {
         for node in cluster.nodes.iter() {
             let idx = cluster.get_node_index(node.id());
             let op_builder = OperationBuilder::new_entry(op_id, node.id(), data);
-            let operation = op_builder.sign_and_build(node.frame_signer())?;
+            let operation = op_builder.sign_and_build(&node)?;
             cluster.pending_stores[idx].put_operation(operation)?;
         }
 
@@ -1447,7 +1441,7 @@ mod tests {
         )?;
         let block_proposal_frame_builder =
             operation::OperationBuilder::new_block_proposal(block_operation_id, node.id(), &block)?;
-        let operation = block_proposal_frame_builder.sign_and_build(node.frame_signer())?;
+        let operation = block_proposal_frame_builder.sign_and_build(node)?;
 
         cluster.pending_stores[0].put_operation(operation)?;
 

@@ -1,6 +1,5 @@
 use crate::config::NodeConfig;
 use crate::options;
-use exocore_common::serialization::framed::TypedFrame;
 use exocore_common::serialization::protos::data_chain_capnp::block;
 use exocore_data::block::Block;
 use exocore_data::chain::ChainStore;
@@ -58,7 +57,7 @@ pub fn check_chain(
 
     for block in chain_store.blocks_iter(0)? {
         if let Err(err) = block.validate() {
-            let block_reader = block.block().get_typed_reader();
+            let block_reader = block.block().get_reader();
             let block_depth = block_reader.map(block::Reader::get_depth).ok();
 
             error!(

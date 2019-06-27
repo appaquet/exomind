@@ -11,11 +11,19 @@
 //    include!(concat!(env!("OUT_DIR"), "/proto/data_transport_capnp.rs"));
 //}
 
-use crate::serialization::framed::MessageType;
-
 pub mod common_capnp;
 pub mod data_chain_capnp;
 pub mod data_transport_capnp;
+
+use capnp;
+
+///
+/// Trait that needs to have an impl for each capnp generated message struct.
+/// Used to identify a unique type id for each message and annotate each framed message.
+///
+pub trait MessageType<'a>: capnp::traits::Owned<'a> {
+    const MESSAGE_TYPE: u16;
+}
 
 ///
 /// Messages related to the chain / operations storage

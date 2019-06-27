@@ -2,10 +2,6 @@ use std::fs::{File, OpenOptions};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 
-use exocore_common::serialization::framed;
-use exocore_common::serialization::framed::TypedFrame;
-use exocore_common::serialization::protos::data_chain_capnp::block_signatures;
-
 use super::Error;
 use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};
 
@@ -34,7 +30,7 @@ impl DirectorySegment {
         directory: &Path,
         block: &B,
     ) -> Result<DirectorySegment, Error> {
-        let block_reader = block.block().get_typed_reader().unwrap();
+        let block_reader = block.block().get_reader().unwrap();
         let first_block_offset = block_reader.get_offset();
 
         let segment_path = Self::segment_path(directory, first_block_offset);
@@ -197,39 +193,9 @@ impl DirectorySegment {
         }
 
         let next_file_offset = (next_offset - first_block_offset) as usize;
-        let signatures = framed::TypedSliceFrame::new_from_next_offset(
-            &self.segment_file.mmap[..],
-            next_file_offset,
-        )?;
-        let signatures_reader: block_signatures::Reader = signatures.get_typed_reader()?;
-        let signatures_offset = next_file_offset - signatures.frame_size();
+        let block = BlockRef::new_from_next_offset(&self.segment_file.mmap[..], next_file_offset)?;
 
-        let operations_size = signatures_reader.get_operations_size() as usize;
-        if operations_size > signatures_offset {
-            return Err(Error::OutOfBound(format!(
-                "Tried to read block from next offset {}, but its operations size would exceed beginning of file (operations_size={} signatures_offset={})",
-                next_offset, operations_size, signatures_offset,
-            )));
-        }
-
-        let operations_offset = signatures_offset - operations_size;
-        let operations_data =
-            &self.segment_file.mmap[operations_offset..operations_offset + operations_size];
-
-        let block = framed::TypedSliceFrame::new_from_next_offset(
-            &self.segment_file.mmap[..],
-            operations_offset,
-        )?;
-
-        let offset = first_block_offset + (signatures_offset as BlockOffset)
-            - (block.frame_size() as BlockOffset)
-            - (operations_size as BlockOffset);
-        Ok(BlockRef {
-            offset,
-            operations_data,
-            block,
-            signatures,
-        })
+        Ok(block)
     }
 
     pub fn truncate_from_block_offset(&mut self, block_offset: BlockOffset) -> Result<(), Error> {

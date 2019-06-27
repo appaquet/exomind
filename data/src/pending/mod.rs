@@ -2,9 +2,6 @@ use std::ops::RangeBounds;
 use std::sync::Arc;
 use std::vec::Vec;
 
-use exocore_common::data_chain_capnp::pending_operation;
-use exocore_common::serialization::framed;
-
 use crate::block;
 use crate::operation;
 use crate::operation::{GroupId, OperationId};
@@ -82,7 +79,7 @@ pub struct StoredOperation {
     pub operation_id: OperationId,
     pub operation_type: operation::OperationType,
     pub commit_status: CommitStatus,
-    pub frame: Arc<framed::OwnedTypedFrame<pending_operation::Owned>>,
+    pub frame: Arc<operation::OperationFrame<Vec<u8>>>,
 }
 
 ///

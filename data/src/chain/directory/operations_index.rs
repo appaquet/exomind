@@ -10,8 +10,7 @@ use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::operation::OperationId;
-use exocore_common::serialization::framed::TypedFrame;
-use exocore_common::serialization::protos::data_chain_capnp::{block, pending_operation};
+use exocore_common::serialization::protos::data_chain_capnp::block;
 use exocore_common::simple_store::json_disk_store::JsonDiskStore;
 use exocore_common::simple_store::SimpleStore;
 
@@ -183,7 +182,10 @@ impl OperationsIndex {
             return Err(Error::Integrity(format!("Tried to index operations from a block with unexpected offset: block={} != expected={}", block.offset(), self.next_expected_offset)));
         }
 
-        let block_reader: block::Reader = block.block().get_typed_reader()?;
+        let block_reader: block::Reader = block
+            .block()
+            .get_reader()
+            .map_err(|err| Error::Block(err.into()))?;
 
         // we add the operation that lead to the block proposal
         let block_propose_op_id = block_reader.get_proposed_operation_id();
@@ -191,7 +193,7 @@ impl OperationsIndex {
 
         // we add all operations that are in the block
         for operation in block.operations_iter()? {
-            let operation_reader: pending_operation::Reader = operation.get_typed_reader()?;
+            let operation_reader = operation.get_reader()?;
             self.put_operation_block(operation_reader.get_operation_id(), block.offset());
         }
 

@@ -14,6 +14,7 @@ pub use self::serialization::protos::*;
 
 pub mod cell;
 pub mod crypto;
+pub mod framing;
 pub mod node;
 pub mod range;
 pub mod serialization;

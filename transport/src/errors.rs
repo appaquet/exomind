@@ -1,4 +1,4 @@
-use exocore_common::serialization::{capnp, framed};
+use exocore_common::serialization::capnp;
 
 #[cfg(any(feature = "libp2p_transport", feature = "websocket_transport"))]
 use std::sync::Arc;
@@ -14,14 +14,14 @@ pub enum Error {
     #[fail(display = "Websocket transport error: {:?}", _0)]
     WebsocketTransport(Arc<crate::ws::WebSocketError>),
 
-    #[fail(display = "Error in framing serialization: {:?}", _0)]
-    Framing(#[fail(cause)] framed::Error),
-
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
 
     #[fail(display = "Field is not in capnp schema: code={}", _0)]
     SerializationNotInSchema(u16),
+
+    #[fail(display = "IO error: {}", _0)]
+    IO(String),
 
     #[fail(display = "Could not upgrade a weak reference")]
     Upgrade,
@@ -50,12 +50,6 @@ impl From<crate::ws::WebSocketError> for Error {
     }
 }
 
-impl From<framed::Error> for Error {
-    fn from(err: framed::Error) -> Self {
-        Error::Framing(err)
-    }
-}
-
 impl From<capnp::Error> for Error {
     fn from(err: capnp::Error) -> Self {
         Error::Serialization(err.kind, err.description)
@@ -71,5 +65,11 @@ impl From<capnp::NotInSchema> for Error {
 impl<T> From<std::sync::PoisonError<T>> for Error {
     fn from(_err: std::sync::PoisonError<T>) -> Self {
         Error::Poisoned
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Error::IO(err.to_string())
     }
 }

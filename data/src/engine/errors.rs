@@ -1,6 +1,6 @@
 use crate::engine::{chain_sync, commit_manager, pending_sync};
 use crate::{block, chain, operation, pending};
-use exocore_common::serialization::{capnp, framed};
+use exocore_common::serialization::capnp;
 use exocore_transport::Error as TransportError;
 use futures::sync::mpsc;
 
@@ -25,8 +25,6 @@ pub enum Error {
     Block(#[fail(cause)] block::Error),
     #[fail(display = "Got an operation related error: {:?}", _0)]
     Operation(#[fail(cause)] operation::Error),
-    #[fail(display = "Error in framing serialization: {:?}", _0)]
-    Framing(#[fail(cause)] framed::Error),
     #[fail(display = "Chain is not initialized")]
     UninitializedChain,
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
@@ -117,12 +115,6 @@ impl From<block::Error> for Error {
 impl From<operation::Error> for Error {
     fn from(err: operation::Error) -> Self {
         Error::Operation(err)
-    }
-}
-
-impl From<framed::Error> for Error {
-    fn from(err: framed::Error) -> Self {
-        Error::Framing(err)
     }
 }
 

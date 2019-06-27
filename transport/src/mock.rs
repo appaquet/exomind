@@ -165,10 +165,10 @@ impl Drop for MockTransportHandle {
 mod test {
     use tokio::runtime::Runtime;
 
-    use exocore_common::serialization::framed::{FrameBuilder, TypedFrame};
     use exocore_common::tests_utils::*;
 
     use super::*;
+    use exocore_common::framing::CapnpFrameBuilder;
     use exocore_common::node::LocalNode;
     use exocore_common::serialization::protos::data_transport_capnp::envelope;
 
@@ -193,14 +193,14 @@ mod test {
         send_message(&mut rt, transport0_sink, vec![node1.node().clone()], 100);
 
         let (message, _transport1_stream) = receive_message(&mut rt, transport1_stream);
-        let message_reader = message.envelope.get_typed_reader().unwrap();
+        let message_reader = message.envelope.get_reader().unwrap();
         assert_eq!(message.from.id(), node0.id());
         assert_eq!(message_reader.get_type(), 100);
 
         send_message(&mut rt, transport1_sink, vec![node0.node().clone()], 101);
 
         let (message, _transport1_stream) = receive_message(&mut rt, transport0_stream);
-        let message_reader = message.envelope.get_typed_reader().unwrap();
+        let message_reader = message.envelope.get_reader().unwrap();
         assert_eq!(message.from.id(), node1.id());
         assert_eq!(message_reader.get_type(), 101);
     }
@@ -229,13 +229,13 @@ mod test {
     }
 
     fn send_message(rt: &mut Runtime, sink: MpscHandleSink, to: Vec<Node>, type_id: u16) {
-        let mut message = FrameBuilder::<envelope::Owned>::new();
-        let mut builder = message.get_builder_typed();
+        let mut envelope_builder = CapnpFrameBuilder::<envelope::Owned>::new();
+        let mut builder = envelope_builder.get_builder();
         builder.set_type(type_id);
 
         let out_message = OutMessage {
             to,
-            envelope: message,
+            envelope_builder,
         };
 
         rt.block_on(sink.send(out_message)).unwrap();

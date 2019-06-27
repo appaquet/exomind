@@ -6,10 +6,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::operation::OperationId;
 use exocore_common::crypto::hash::{Digest, MultihashDigest, Sha3_256};
 use exocore_common::node::{Node, NodeId};
-use exocore_common::serialization::framed::*;
-use exocore_common::serialization::protos::data_chain_capnp::{
-    pending_operation, pending_operation_header,
-};
+use exocore_common::serialization::protos::data_chain_capnp::pending_operation_header;
 use exocore_common::serialization::protos::data_transport_capnp::{
     pending_sync_range, pending_sync_request,
 };
@@ -20,6 +17,7 @@ use crate::engine::{Error, SyncContext};
 use crate::operation::{NewOperation, Operation};
 use crate::pending::{CommitStatus, PendingStore, StoredOperation};
 use exocore_common::cell::{Cell, CellNodes};
+use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::time::Clock;
 
 ///
@@ -117,19 +115,16 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     /// If we have any differences with remote node data, we send a request back with more data that will allow converging in the
     /// same stored data.
     ///
-    pub fn handle_incoming_sync_request<R>(
+    pub fn handle_incoming_sync_request<F: FrameReader>(
         &mut self,
         from_node: &Node,
         sync_context: &mut SyncContext,
         store: &mut PS,
-        request: R,
-    ) -> Result<(), Error>
-    where
-        R: TypedFrame<pending_sync_request::Owned>,
-    {
+        request: TypedCapnpFrame<F, pending_sync_request::Owned>,
+    ) -> Result<(), Error> {
         debug!("Got sync request from {}", from_node.id());
 
-        let in_reader: pending_sync_request::Reader = request.get_typed_reader()?;
+        let in_reader: pending_sync_request::Reader = request.get_reader()?;
         let operations_from_depth = self.get_from_block_depth(sync_context, Some(in_reader));
         let in_ranges = in_reader.get_ranges()?;
 
@@ -139,8 +134,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             in_ranges.iter(),
             operations_from_depth,
         )? {
-            let mut sync_request_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
-            let mut sync_request_builder = sync_request_frame_builder.get_builder_typed();
+            let mut sync_request_frame_builder =
+                CapnpFrameBuilder::<pending_sync_request::Owned>::new();
+            let mut sync_request_builder = sync_request_frame_builder.get_builder();
             sync_request_builder.set_from_block_depth(operations_from_depth.unwrap_or(0));
 
             let mut ranges_builder = sync_request_builder
@@ -201,10 +197,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 for operation_frame_res in sync_range_reader.get_operations()?.iter() {
                     let operation_frame_data = operation_frame_res?;
                     let operation_frame =
-                        TypedSliceFrame::<pending_operation::Owned>::new(operation_frame_data)?
-                            .to_owned();
+                        crate::operation::read_operation_frame(operation_frame_data)?.to_owned();
 
-                    let operation_frame_reader = operation_frame.get_typed_reader()?;
+                    let operation_frame_reader = operation_frame.get_reader()?;
                     let operation_id = operation_frame_reader.get_operation_id();
                     included_operations.insert(operation_id);
 
@@ -280,7 +275,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         store: &PS,
         range: R,
         operation_details: F,
-    ) -> Result<FrameBuilder<pending_sync_request::Owned>, Error>
+    ) -> Result<CapnpFrameBuilder<pending_sync_request::Owned>, Error>
     where
         R: RangeBounds<OperationId> + Clone,
         F: Fn(&StoredOperation) -> OperationDetails,
@@ -307,8 +302,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             sync_ranges.set_last_range_to_bound(Bound::Unbounded);
         }
 
-        let mut sync_request_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
-        let mut sync_request_builder = sync_request_frame_builder.get_builder_typed();
+        let mut sync_request_frame_builder =
+            CapnpFrameBuilder::<pending_sync_request::Owned>::new();
+        let mut sync_request_builder = sync_request_frame_builder.get_builder();
         sync_request_builder.set_from_block_depth(operations_from_depth.unwrap_or(0));
         let mut ranges_builder = sync_request_builder
             .reborrow()
@@ -340,7 +336,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         let operations_iter =
             self.operations_iter_from_depth(store, range, operations_from_depth)?;
         for operation in operations_iter {
-            frame_hasher.input_signed_frame(operation.frame.as_ref());
+            frame_hasher.input_signed_frame(operation.frame.inner().inner());
             count += 1;
         }
 
@@ -677,7 +673,7 @@ impl SyncRangeBuilder {
         self.operations_count += 1;
 
         if let Some(hasher) = self.hasher.as_mut() {
-            hasher.input_signed_frame(operation.frame.as_ref())
+            hasher.input_signed_frame(operation.frame.inner().inner())
         }
 
         match details {
@@ -738,10 +734,7 @@ impl SyncRangeBuilder {
                 op_header_builder.set_group_id(operation.group_id);
                 op_header_builder.set_operation_id(operation.operation_id);
 
-                let signature_data = operation
-                    .frame
-                    .signature_data()
-                    .expect("The frame didn't have a signature");
+                let signature_data = operation.frame.inner().inner().multihash_bytes();
                 op_header_builder.set_operation_signature(&signature_data);
             }
         }
@@ -751,7 +744,7 @@ impl SyncRangeBuilder {
                 .reborrow()
                 .init_operations(self.operations.len() as u32);
             for (i, operation) in self.operations.iter().enumerate() {
-                operations_builder.set(i as u32, operation.frame.frame_data());
+                operations_builder.set(i as u32, operation.frame.whole_data());
             }
         }
 
@@ -796,6 +789,7 @@ mod tests {
     use super::*;
     use crate::pending::CommitStatus;
     use crate::MemoryPendingStore;
+    use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
     use exocore_common::node::LocalNode;
     use std::time::{Duration, Instant};
 
@@ -827,7 +821,7 @@ mod tests {
         cluster.pending_stores_synchronizer[0]
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
         let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
-        let sync_request_reader = sync_request_frame.get_typed_reader()?;
+        let sync_request_reader = sync_request_frame.get_reader()?;
 
         let ranges = sync_request_reader.get_ranges()?;
         assert_eq!(ranges.len(), 4);
@@ -865,8 +859,7 @@ mod tests {
         cluster.pending_stores_synchronizer[0]
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
         let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
-        let sync_request_reader: pending_sync_request::Reader =
-            sync_request_frame.get_typed_reader()?;
+        let sync_request_reader: pending_sync_request::Reader = sync_request_frame.get_reader()?;
         assert_eq!(0, sync_request_reader.get_from_block_depth());
         let ranges = sync_request_reader.get_ranges()?;
         assert!(ranges.len() > 1);
@@ -878,14 +871,13 @@ mod tests {
         cluster.pending_stores_synchronizer[0]
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
         let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
-        let sync_request_reader: pending_sync_request::Reader =
-            sync_request_frame.get_typed_reader()?;
+        let sync_request_reader: pending_sync_request::Reader = sync_request_frame.get_reader()?;
         assert_eq!(
             1000 + config_depth_offset,
             sync_request_reader.get_from_block_depth()
         );
         let ranges = sync_request_reader.get_ranges()?;
-        assert!(ranges.len() == 1);
+        assert_eq!(ranges.len(), 1);
         assert_eq!(0, ranges.get(0).get_operations_count());
 
         Ok(())
@@ -1104,25 +1096,24 @@ mod tests {
 
         let pending_store = &cluster.pending_stores_synchronizer[0];
 
-        let mut req_frame_builder = FrameBuilder::<pending_sync_request::Owned>::new();
+        let mut req_frame_builder = CapnpFrameBuilder::<pending_sync_request::Owned>::new();
         {
-            let mut req_builder: pending_sync_request::Builder =
-                req_frame_builder.get_builder_typed();
+            let mut req_builder: pending_sync_request::Builder = req_frame_builder.get_builder();
             req_builder.set_from_block_depth(0);
         }
 
         // 0 in sync request means none
         let sync_context = SyncContext::new(SyncState::default());
-        let frame = req_frame_builder.as_owned_unsigned_framed()?;
-        let frame_reader = frame.get_typed_reader()?;
+        let frame = req_frame_builder.as_owned_frame();
+        let frame_reader = frame.get_reader()?;
         let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
         assert_eq!(None, depth);
 
         // in sync state
         let mut sync_context = SyncContext::new(SyncState::default());
         sync_context.sync_state.pending_last_cleanup_block = Some((0, 10));
-        let frame = req_frame_builder.as_owned_unsigned_framed()?;
-        let frame_reader = frame.get_typed_reader()?;
+        let frame = req_frame_builder.as_owned_frame();
+        let frame_reader = frame.get_reader()?;
         let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
         assert_eq!(Some(12), depth); // 10 + 2
 
@@ -1130,12 +1121,11 @@ mod tests {
         let mut sync_context = SyncContext::new(SyncState::default());
         sync_context.sync_state.pending_last_cleanup_block = Some((0, 10));
         {
-            let mut req_builder: pending_sync_request::Builder =
-                req_frame_builder.get_builder_typed();
+            let mut req_builder: pending_sync_request::Builder = req_frame_builder.get_builder();
             req_builder.set_from_block_depth(20);
         }
-        let frame = req_frame_builder.as_owned_unsigned_framed()?;
-        let frame_reader = frame.get_typed_reader()?;
+        let frame = req_frame_builder.as_owned_frame();
+        let frame_reader = frame.get_reader()?;
         let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
         assert_eq!(Some(20), depth);
 
@@ -1225,14 +1215,14 @@ mod tests {
         let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetails::None);
         assert_eq!(frames_builder.len(), 3);
 
-        let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
-        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader()?;
+        let frame0 = frames_builder[0].as_owned_frame();
+        let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
         let frame0_hash = frame0_reader.reborrow().get_operations_hash().unwrap();
         assert_eq!(frame0_reader.has_operations(), false);
         assert_eq!(frame0_reader.has_operations_headers(), false);
 
-        let frame1 = frames_builder[1].as_owned_unsigned_framed()?;
-        let frame1_reader: pending_sync_range::Reader = frame1.get_typed_reader()?;
+        let frame1 = frames_builder[1].as_owned_frame();
+        let frame1_reader: pending_sync_range::Reader = frame1.get_reader()?;
         let frame1_hash = frame1_reader.reborrow().get_operations_hash()?;
         assert_eq!(frame1_reader.has_operations(), false);
         assert_eq!(frame1_reader.has_operations_headers(), false);
@@ -1247,8 +1237,8 @@ mod tests {
         let local_node = LocalNode::generate();
         let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetails::Header);
 
-        let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
-        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader()?;
+        let frame0 = frames_builder[0].as_owned_frame();
+        let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
         assert_eq!(frame0_reader.has_operations(), false);
         assert_eq!(frame0_reader.has_operations_headers(), true);
 
@@ -1264,16 +1254,16 @@ mod tests {
         let local_node = LocalNode::generate();
         let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetails::Full);
 
-        let frame0 = frames_builder[0].as_owned_unsigned_framed()?;
-        let frame0_reader: pending_sync_range::Reader = frame0.get_typed_reader()?;
+        let frame0 = frames_builder[0].as_owned_frame();
+        let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
         assert_eq!(frame0_reader.has_operations(), true);
         assert_eq!(frame0_reader.has_operations_headers(), false);
 
         let operations = frame0_reader.get_operations()?;
         let operation0_data = operations.get(0)?;
-        let operation0_frame = TypedSliceFrame::<pending_operation::Owned>::new(operation0_data)?;
+        let operation0_frame = crate::operation::read_operation_frame(operation0_data)?;
 
-        let operation0_reader: pending_operation::Reader = operation0_frame.get_typed_reader()?;
+        let operation0_reader: pending_operation::Reader = operation0_frame.get_reader()?;
         let operation0_inner_reader = operation0_reader.get_operation();
         assert!(operation0_inner_reader.has_entry());
 
@@ -1296,7 +1286,7 @@ mod tests {
         cluster: &mut TestCluster,
         node_id_a: usize,
         node_id_b: usize,
-        initial_request: OwnedTypedFrame<pending_sync_request::Owned>,
+        initial_request: TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
     ) -> Result<(usize, usize), failure::Error> {
         let node_a = cluster.get_node(node_id_a);
         let node_b = cluster.get_node(node_id_b);
@@ -1369,7 +1359,7 @@ mod tests {
         local_node: &LocalNode,
         count: usize,
         details: OperationDetails,
-    ) -> Vec<FrameBuilder<pending_sync_range::Owned>> {
+    ) -> Vec<CapnpFrameBuilder<pending_sync_range::Owned>> {
         let mut sync_ranges = SyncRangesBuilder::new(PendingSyncConfig::default());
         for operation in stored_ops_generator(local_node, count) {
             sync_ranges.push_operation(operation, details);
@@ -1378,8 +1368,8 @@ mod tests {
             .ranges
             .into_iter()
             .map(|range| {
-                let mut range_frame_builder = FrameBuilder::<pending_sync_range::Owned>::new();
-                let mut range_msg_builder = range_frame_builder.get_builder_typed();
+                let mut range_frame_builder = CapnpFrameBuilder::<pending_sync_range::Owned>::new();
+                let mut range_msg_builder = range_frame_builder.get_builder();
                 range
                     .write_into_sync_range_builder(&mut range_msg_builder)
                     .unwrap();
@@ -1390,10 +1380,13 @@ mod tests {
 
     fn extract_request_from_result(
         sync_context: &SyncContext,
-    ) -> (NodeId, OwnedTypedFrame<pending_sync_request::Owned>) {
+    ) -> (
+        NodeId,
+        TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
+    ) {
         match sync_context.messages.last().unwrap() {
             SyncContextMessage::PendingSyncRequest(node_id, req) => {
-                (node_id.clone(), req.as_owned_unsigned_framed().unwrap())
+                (node_id.clone(), req.as_owned_frame())
             }
             _other => panic!("Expected a pending sync request, got another type of message"),
         }
@@ -1430,8 +1423,10 @@ mod tests {
         })
     }
 
-    fn print_sync_request(request: &OwnedTypedFrame<pending_sync_request::Owned>) {
-        let reader: pending_sync_request::Reader = request.get_typed_reader().unwrap();
+    fn print_sync_request<F: FrameReader>(
+        request: &TypedCapnpFrame<F, pending_sync_request::Owned>,
+    ) {
+        let reader: pending_sync_request::Reader = request.get_reader().unwrap();
         let ranges = reader.get_ranges().unwrap();
 
         for range in ranges.iter() {
