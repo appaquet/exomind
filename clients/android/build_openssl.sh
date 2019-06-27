@@ -48,6 +48,16 @@ if [[ ! -d "$PREFIX" ]]; then
     make -j12 install
 fi
 
+# Build for x86_64
+export PREFIX=$TARGET_DIR/x86_64
+if [[ ! -d "$PREFIX" ]]; then
+    export PATH=$NDK_HOME/toolchains/x86_64-4.9/prebuilt/$NDK_HOST/bin:$INITIAL_PATH
+    ./Configure android-x86_64 -D__ANDROID_API__=21 --prefix=$PREFIX
+    make -j12 clean
+    make -j12
+    make -j12 install
+fi
+
 # Build for ARM64
 export PREFIX=$TARGET_DIR/aarch64
 if [[ ! -d "$PREFIX" ]]; then

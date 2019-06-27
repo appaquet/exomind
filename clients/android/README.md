@@ -3,6 +3,7 @@
 * Install Rust targets
     ```
     rustup target add i686-linux-android
+    rustup target add x86_64-linux-android
     rustup target add arm-linux-androideabi
     rustup target add aarch64-linux-android
     ```
@@ -29,6 +30,7 @@
     $NDK_HOME/build/tools/make_standalone_toolchain.py --api 14 --arch arm --install-dir ~/Android/NDK/arm
     $NDK_HOME/build/tools/make_standalone_toolchain.py --api 14 --arch x86 --install-dir ~/Android/NDK/x86
     $NDK_HOME/build/tools/make_standalone_toolchain.py --api 21 --arch arm64 --install-dir ~/Android/NDK/arm64
+    $NDK_HOME/build/tools/make_standalone_toolchain.py --api 21 --arch x86_64 --install-dir ~/Android/NDK/x86_64
     ```
 
 * Configure your `~/.cargo/config` by adding:
@@ -48,6 +50,10 @@
     [target.i686-linux-android]
     ar = "<YOUR_HOME>/Android/NDK/x86/bin/i686-linux-android-ar"
     linker = "<YOUR_HOME>/Android/NDK/x86/bin/i686-linux-android-clang"
+    
+    [target.x86_64-linux-android]
+    ar = "<YOUR_HOME>/Android/NDK/x86_64/bin/x86_64-linux-androidi-ar"
+    linker = "<YOUR_HOME>/Android/NDK/x86_64/bin/x86_64-linux-android-clang"
     ```
     
 * Build OpenSSL
