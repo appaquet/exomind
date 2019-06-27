@@ -30,7 +30,7 @@ jobs:
           cargo clean -p exocore-common
           cargo clippy --all -- -D clippy::all
 
-          cargo test --all --verbose -- --test-threads=1
+          cargo test --all --verbose
         displayName: 'Test all'
 
   - job: Coverage

@@ -10,14 +10,6 @@ extern crate log;
 extern crate tempdir;
 
 ///
-/// Re-exports
-///
-pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
-pub use crate::engine::{ChainSyncConfig, CommitManagerConfig, PendingSyncConfig};
-pub use crate::engine::{Config as EngineConfig, Engine, EngineOperationStatus};
-pub use crate::pending::memory::MemoryPendingStore;
-
-///
 /// Modules
 ///
 pub mod block;
@@ -25,3 +17,13 @@ pub mod chain;
 pub mod engine;
 pub mod operation;
 pub mod pending;
+
+///
+/// Re-exports
+///
+pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
+pub use crate::engine::{
+    ChainSyncConfig, CommitManagerConfig, Config as EngineConfig, Engine, EngineOperationStatus,
+    PendingSyncConfig,
+};
+pub use crate::pending::memory::MemoryPendingStore;

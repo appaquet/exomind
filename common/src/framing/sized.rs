@@ -1,5 +1,6 @@
-use super::{check_into_size, FrameBuilder, FrameReader};
-use crate::framing::{check_from_size, check_offset_substract};
+use super::{
+    check_from_size, check_into_size, check_offset_substract, Error, FrameBuilder, FrameReader,
+};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io;
 
@@ -14,7 +15,7 @@ pub struct SizedFrame<I: FrameReader> {
 }
 
 impl<I: FrameReader> SizedFrame<I> {
-    pub fn new(inner: I) -> Result<SizedFrame<I>, io::Error> {
+    pub fn new(inner: I) -> Result<SizedFrame<I>, Error> {
         let mut inner_data = inner.exposed_data();
         check_from_size(4, inner_data)?;
 
@@ -33,7 +34,7 @@ impl SizedFrame<&[u8]> {
     pub fn new_from_next_offset(
         buffer: &[u8],
         next_offset: usize,
-    ) -> Result<SizedFrame<&[u8]>, io::Error> {
+    ) -> Result<SizedFrame<&[u8]>, Error> {
         check_offset_substract(next_offset, 4)?;
         check_from_size(next_offset - 4, buffer)?;
 
@@ -94,7 +95,7 @@ impl<I: FrameBuilder> SizedFrameBuilder<I> {
 impl<I: FrameBuilder> FrameBuilder for SizedFrameBuilder<I> {
     type OwnedFrameType = SizedFrame<Vec<u8>>;
 
-    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, io::Error> {
+    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         if let Some(inner_size) = self.inner.expected_size() {
             writer.write_u32::<LittleEndian>(inner_size as u32)?;
             let written_size = self.inner.write_to(writer)?;
@@ -114,7 +115,7 @@ impl<I: FrameBuilder> FrameBuilder for SizedFrameBuilder<I> {
         }
     }
 
-    fn write_into(&self, into: &mut [u8]) -> Result<usize, io::Error> {
+    fn write_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         check_into_size(8, into)?;
 
         let inner_size = self.inner.write_into(&mut into[4..])?;
@@ -142,7 +143,7 @@ impl<I: FrameBuilder> FrameBuilder for SizedFrameBuilder<I> {
 pub struct SizedFrameIterator<'a> {
     buffer: &'a [u8],
     current_offset: usize,
-    pub last_error: Option<io::Error>,
+    pub last_error: Option<Error>,
 }
 
 impl<'a> SizedFrameIterator<'a> {

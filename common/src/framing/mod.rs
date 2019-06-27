@@ -2,11 +2,13 @@ use std::io;
 
 pub mod capnp;
 pub mod compound;
+pub mod error;
 pub mod multihash;
 pub mod padded;
 pub mod sized;
 
 pub use self::capnp::{CapnpFrame, CapnpFrameBuilder, TypedCapnpFrame};
+pub use error::Error;
 pub use multihash::{MultihashFrame, MultihashFrameBuilder};
 pub use padded::{PaddedFrame, PaddedFrameBuilder};
 pub use sized::{IteratedSizedFrame, SizedFrame, SizedFrameBuilder, SizedFrameIterator};
@@ -43,12 +45,13 @@ pub trait FrameReader {
     fn to_owned_frame(&self) -> Self::OwnedType;
 
     /// Copy the frame into the given writer
-    fn copy_to<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
-        writer.write_all(self.whole_data())
+    fn copy_to<W: io::Write>(&self, writer: &mut W) -> Result<(), Error> {
+        writer.write_all(self.whole_data())?;
+        Ok(())
     }
 
     /// Copy the frame into the given slice
-    fn copy_into(&self, into: &mut [u8]) -> Result<usize, io::Error> {
+    fn copy_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         let whole_data = self.whole_data();
         check_into_size(whole_data.len(), into)?;
         into[0..whole_data.len()].copy_from_slice(&whole_data);
@@ -100,10 +103,10 @@ pub trait FrameBuilder {
     type OwnedFrameType;
 
     /// Write the frame to the given writer
-    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, io::Error>;
+    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error>;
 
     /// Write the frame into the given bytes slice
-    fn write_into(&self, into: &mut [u8]) -> Result<usize, io::Error>;
+    fn write_into(&self, into: &mut [u8]) -> Result<usize, Error>;
 
     /// Expected size of the frame (in bytes). Optional since some kind of frames
     /// have an unknown size until they are serialized (ex: capnp)
@@ -128,12 +131,12 @@ pub trait FrameBuilder {
 impl FrameBuilder for Vec<u8> {
     type OwnedFrameType = Vec<u8>;
 
-    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, io::Error> {
+    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         writer.write_all(&self)?;
         Ok(self.len())
     }
 
-    fn write_into(&self, into: &mut [u8]) -> Result<usize, io::Error> {
+    fn write_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         check_into_size(self.len(), into)?;
         into[0..self.len()].copy_from_slice(&self);
         Ok(self.len())
@@ -149,48 +152,27 @@ impl FrameBuilder for Vec<u8> {
 }
 
 /// Asserts that the destination array is big enough for the needed size
-fn check_into_size(needed: usize, into: &[u8]) -> Result<(), io::Error> {
+fn check_into_size(needed: usize, into: &[u8]) -> Result<(), Error> {
     if into.len() < needed {
-        Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!(
-                "Buffer not big enough to write {} bytes (buffer is {} bytes)",
-                needed,
-                into.len()
-            ),
-        ))
+        Err(Error::DestinationTooSmall(needed, into.len()))
     } else {
         Ok(())
     }
 }
 
 /// Asserts that the source array contains at least the needed size
-fn check_from_size(needed: usize, from: &[u8]) -> Result<(), io::Error> {
+fn check_from_size(needed: usize, from: &[u8]) -> Result<(), Error> {
     if from.len() < needed {
-        Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!(
-                "Buffer not big enough to read {} bytes (read is {} bytes)",
-                needed,
-                from.len()
-            ),
-        ))
+        Err(Error::SourceTooSmall(needed, from.len()))
     } else {
         Ok(())
     }
 }
 
 /// Asserts that the given offset can be subtracted from an offset
-fn check_offset_substract(offset: usize, sub_offset: usize) -> Result<(), io::Error> {
+fn check_offset_substract(offset: usize, sub_offset: usize) -> Result<(), Error> {
     if sub_offset > offset {
-        Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!(
-                "Tried to substract offset {} from offset {}, which would yield into negative offset",
-                sub_offset,
-                offset,
-            ),
-        ))
+        Err(Error::OffsetSubtract(offset, sub_offset))
     } else {
         Ok(())
     }

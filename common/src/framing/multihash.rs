@@ -1,4 +1,4 @@
-use super::{check_from_size, check_into_size, FrameBuilder, FrameReader};
+use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 use crate::crypto::hash::MultihashDigest;
 use std::io;
 
@@ -11,7 +11,7 @@ pub struct MultihashFrame<D: MultihashDigest, I: FrameReader> {
 }
 
 impl<D: MultihashDigest, I: FrameReader> MultihashFrame<D, I> {
-    pub fn new(inner: I) -> Result<MultihashFrame<D, I>, io::Error> {
+    pub fn new(inner: I) -> Result<MultihashFrame<D, I>, Error> {
         check_from_size(D::multihash_output_size(), inner.exposed_data())?;
         Ok(MultihashFrame {
             inner,
@@ -19,7 +19,7 @@ impl<D: MultihashDigest, I: FrameReader> MultihashFrame<D, I> {
         })
     }
 
-    pub fn verify(&self) -> Result<bool, io::Error> {
+    pub fn verify(&self) -> Result<bool, Error> {
         let mut digest = D::new();
         digest.input(self.exposed_data());
         let digest_output = digest.into_multihash_bytes();
@@ -93,7 +93,7 @@ impl<D: MultihashDigest, I: FrameBuilder> MultihashFrameBuilder<D, I> {
 impl<D: MultihashDigest, I: FrameBuilder> FrameBuilder for MultihashFrameBuilder<D, I> {
     type OwnedFrameType = MultihashFrame<D, Vec<u8>>;
 
-    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, io::Error> {
+    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         // TODO: optimize by creating a proxied writer that digests in streaming
         let mut buffer = Vec::new();
         self.inner.write_to(&mut buffer)?;
@@ -107,7 +107,7 @@ impl<D: MultihashDigest, I: FrameBuilder> FrameBuilder for MultihashFrameBuilder
         Ok(buffer.len() + multihash_bytes.len())
     }
 
-    fn write_into(&self, into: &mut [u8]) -> Result<usize, io::Error> {
+    fn write_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         let inner_size = self.inner.write_into(into)?;
 
         let mut digest = D::new();

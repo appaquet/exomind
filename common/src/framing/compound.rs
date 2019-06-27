@@ -1,5 +1,4 @@
-use super::{check_into_size, FrameBuilder, FrameReader};
-use crate::framing::check_from_size;
+use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io;
 
@@ -12,7 +11,7 @@ pub struct CompoundFrame<I: FrameReader> {
 }
 
 impl<I: FrameReader> CompoundFrame<I> {
-    pub fn new(inner: I) -> Result<CompoundFrame<I>, io::Error> {
+    pub fn new(inner: I) -> Result<CompoundFrame<I>, Error> {
         let exposed_data = inner.exposed_data();
         check_from_size(4, exposed_data)?;
 
@@ -86,7 +85,7 @@ impl<A: FrameBuilder, B: FrameBuilder> CompoundFrameBuilder<A, B> {
 impl<A: FrameBuilder, B: FrameBuilder> FrameBuilder for CompoundFrameBuilder<A, B> {
     type OwnedFrameType = CompoundFrame<Vec<u8>>;
 
-    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, io::Error> {
+    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         let left_size = self.left.write_to(writer)?;
         let right_size = self.right.write_to(writer)?;
         writer.write_u32::<LittleEndian>(left_size as u32)?;
@@ -94,7 +93,7 @@ impl<A: FrameBuilder, B: FrameBuilder> FrameBuilder for CompoundFrameBuilder<A, 
         Ok(left_size + right_size + 4)
     }
 
-    fn write_into(&self, into: &mut [u8]) -> Result<usize, io::Error> {
+    fn write_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         let left_size = self.left.write_into(into)?;
         let right_size = self.right.write_into(&mut into[left_size..])?;
 

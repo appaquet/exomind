@@ -1,6 +1,4 @@
-use super::{FrameBuilder, FrameReader};
-
-use crate::framing::check_into_size;
+use super::{check_into_size, Error, FrameBuilder, FrameReader};
 use crate::serialization::protos::MessageType;
 use capnp::message::{Builder, HeapAllocator, Reader, ReaderSegments};
 use capnp::traits::Owned;
@@ -212,14 +210,14 @@ where
 {
     type OwnedFrameType = TypedCapnpFrame<Vec<u8>, T>;
 
-    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, io::Error> {
+    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         let mut buffer = Vec::new();
         capnp::serialize::write_message(&mut buffer, &self.builder)?;
         writer.write_all(&buffer)?;
         Ok(buffer.len())
     }
 
-    fn write_into(&self, into: &mut [u8]) -> Result<usize, io::Error> {
+    fn write_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         let mut buffer = Vec::new();
         capnp::serialize::write_message(&mut buffer, &self.builder)?;
         check_into_size(buffer.len(), into)?;

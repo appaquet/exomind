@@ -1,51 +1,44 @@
-use std;
-use std::ops::RangeBounds;
-use std::sync::{Arc, RwLock, Weak};
-use std::time::Duration;
-
-use futures::prelude::*;
-use futures::sync::mpsc;
-use tokio;
-use tokio::timer::Interval;
-
-use crate::operation::OperationId;
+use crate::block::{BlockDepth, BlockOffset};
+use crate::chain;
+use crate::operation;
+use crate::operation::NewOperation;
+use crate::pending;
 use exocore_common;
+use exocore_common::cell::{Cell, CellNodes};
+use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::node::NodeId;
-use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
 use exocore_common::serialization::protos::data_transport_capnp::{
     chain_sync_request, chain_sync_response, envelope, pending_sync_request,
 };
 use exocore_common::serialization::protos::MessageType;
-
-use crate::block;
-use crate::block::{Block, BlockOffset, BlockRef};
-use crate::chain;
-use crate::operation;
-use crate::operation::{NewOperation, OperationBuilder};
-use crate::pending;
 use exocore_common::time::Clock;
-use exocore_transport::{Error as TransportError, InMessage, OutMessage, TransportHandle};
-use itertools::Itertools;
-
-mod chain_sync;
-mod commit_manager;
-mod errors;
-mod pending_sync;
-mod request_tracker;
-
-use crate::pending::CommitStatus;
-pub use chain_sync::ChainSyncConfig;
-pub use commit_manager::CommitManagerConfig;
-pub use errors::Error;
-use exocore_common::cell::{Cell, CellNodes};
-use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
-pub use pending_sync::PendingSyncConfig;
+use exocore_transport::{Error as TransportError, InMessage, OutMessage, TransportHandle};
+use futures::prelude::*;
+use futures::sync::mpsc;
+use itertools::Itertools;
+use std;
+use std::sync::{Arc, RwLock, Weak};
+use std::time::Duration;
+use tokio;
+use tokio::timer::Interval;
 
+mod chain_sync;
+mod commit_manager;
+mod error;
+mod handle;
+mod pending_sync;
+mod request_tracker;
 #[cfg(any(test, feature = "tests_utils"))]
 pub(crate) mod testing;
+
+pub use chain_sync::ChainSyncConfig;
+pub use commit_manager::CommitManagerConfig;
+pub use error::Error;
+pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
+pub use pending_sync::PendingSyncConfig;
 
 ///
 /// Data engine's configuration
@@ -176,13 +169,13 @@ where
             .handles_sender
             .push((id, false, events_sender));
 
-        EngineHandle {
+        EngineHandle::new(
             id,
-            inner: Arc::downgrade(&self.inner),
-            events_receiver: Some(events_receiver),
+            Arc::downgrade(&self.inner),
+            Some(events_receiver),
             start_listener,
             stop_listener,
-        }
+        )
     }
 
     fn start(&mut self) -> Result<(), Error> {
@@ -399,7 +392,7 @@ where
 /// reference to this Inner, while handles own weak references.
 ///
 ///
-struct Inner<CS, PS>
+pub(crate) struct Inner<CS, PS>
 where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
@@ -621,177 +614,6 @@ where
         }
     }
 }
-
-///
-/// Handle ot the Engine, allowing communication with the engine.
-/// The engine itself is owned by a future executor.
-///
-pub struct EngineHandle<CS, PS>
-where
-    CS: chain::ChainStore,
-    PS: pending::PendingStore,
-{
-    id: usize,
-    inner: Weak<RwLock<Inner<CS, PS>>>,
-    events_receiver: Option<mpsc::Receiver<Event>>,
-    start_listener: CompletionListener<(), Error>,
-    stop_listener: CompletionListener<(), Error>,
-}
-
-impl<CS, PS> EngineHandle<CS, PS>
-where
-    CS: chain::ChainStore,
-    PS: pending::PendingStore,
-{
-    pub fn on_start(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
-        Ok(self
-            .start_listener
-            .try_clone()
-            .map_err(|_err| Error::Other("Couldn't clone start listener in handle".to_string()))?
-            .map_err(|err| match err {
-                CompletionError::UserError(err) => err,
-                _ => Error::Other("Error in completion error".to_string()),
-            }))
-    }
-
-    pub fn on_stop(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
-        Ok(self
-            .stop_listener
-            .try_clone()
-            .map_err(|_err| Error::Other("Couldn't clone stop listener in handle".to_string()))?
-            .map_err(|err| match err {
-                CompletionError::UserError(err) => err,
-                _ => Error::Other("Error in completion error".to_string()),
-            }))
-    }
-
-    pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationId, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let mut unlocked_inner = inner.write()?;
-
-        let my_node = unlocked_inner.cell.local_node();
-        let operation_id = unlocked_inner.clock.consistent_time(my_node);
-
-        let operation_builder = OperationBuilder::new_entry(operation_id, my_node.id(), data);
-        let operation = operation_builder.sign_and_build(&my_node)?;
-
-        unlocked_inner.handle_add_pending_operation(operation)?;
-
-        Ok(operation_id)
-    }
-
-    pub fn get_chain_segments(&self) -> Result<Vec<chain::Segment>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.read()?;
-        Ok(unlocked_inner.chain_store.segments())
-    }
-
-    pub fn get_chain_operation(
-        &self,
-        block_offset: BlockOffset,
-        operation_id: OperationId,
-    ) -> Result<Option<EngineOperation>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.read()?;
-
-        let block = unlocked_inner.chain_store.get_block(block_offset)?;
-        EngineOperation::from_chain_block(block, operation_id)
-    }
-
-    pub fn get_pending_operation(
-        &self,
-        operation_id: OperationId,
-    ) -> Result<Option<EngineOperation>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.read()?;
-
-        let operation = unlocked_inner
-            .pending_store
-            .get_operation(operation_id)?
-            .map(EngineOperation::from_pending_operation);
-
-        Ok(operation)
-    }
-
-    pub fn get_pending_operations<R: RangeBounds<OperationId>>(
-        &self,
-        operations_range: R,
-    ) -> Result<Vec<EngineOperation>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.read()?;
-
-        let operations = unlocked_inner
-            .pending_store
-            .operations_iter(operations_range)?
-            .map(EngineOperation::from_pending_operation)
-            .collect::<Vec<_>>();
-        Ok(operations)
-    }
-
-    pub fn get_operation(
-        &self,
-        operation_id: OperationId,
-    ) -> Result<Option<EngineOperation>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let unlocked_inner = inner.read()?;
-
-        // first check if it's in pending store with a clear commit status
-        let pending_operation = unlocked_inner.pending_store.get_operation(operation_id)?;
-        let pending_operation = if let Some(pending_operation) = pending_operation {
-            if pending_operation.commit_status != CommitStatus::Unknown {
-                return Ok(Some(EngineOperation::from_pending_operation(
-                    pending_operation,
-                )));
-            }
-
-            Some(pending_operation)
-        } else {
-            None
-        };
-
-        // if it's not found in pending store, or that it didn't have a clear status, we check in chain
-        if let Some(block) = unlocked_inner
-            .chain_store
-            .get_block_by_operation_id(operation_id)?
-        {
-            if let Some(chain_operation) = EngineOperation::from_chain_block(block, operation_id)? {
-                return Ok(Some(chain_operation));
-            }
-        }
-
-        // if we're here, the operation was either absent, or just had a unknown status in pending store
-        // we return the pending store operation (if any)
-        Ok(pending_operation.map(EngineOperation::from_pending_operation))
-    }
-
-    ///
-    /// Take the events stream receiver out of this `Handle`.
-    /// This stream is bounded and consumptions should be non-blocking to prevent losing events.
-    /// Calling the engine on every call should be throttled in the case of a big read amplification.
-    pub fn take_events_stream(&mut self) -> impl futures::Stream<Item = Event, Error = Error> {
-        self.events_receiver
-            .take()
-            .expect("Get events stream was already called.")
-            .map_err(|_err| Error::Other("Error in incoming events stream".to_string()))
-    }
-}
-
-impl<CS, PS> Drop for EngineHandle<CS, PS>
-where
-    CS: chain::ChainStore,
-    PS: pending::PendingStore,
-{
-    fn drop(&mut self) {
-        debug!("Engine handle got dropped.");
-
-        if let Some(inner) = self.inner.upgrade() {
-            if let Ok(mut unlocked_inner) = inner.write() {
-                unlocked_inner.unregister_handle(self.id);
-            }
-        }
-    }
-}
-
 ///
 /// Synchronization context used by `chain_sync`, `pending_sync` and `commit_manager` to dispatch
 /// messages to other nodes, and dispatch events to be sent to engine handles.
@@ -899,102 +721,13 @@ struct SyncState {
     /// is now only available from the chain. This is used by the `PendingSynchronizer` to
     /// know which operations it should not include anymore in its requests.
     ///
-    pending_last_cleanup_block: Option<(block::BlockOffset, block::BlockDepth)>,
+    pending_last_cleanup_block: Option<(BlockOffset, BlockDepth)>,
 }
 
 impl Default for SyncState {
     fn default() -> Self {
         SyncState {
             pending_last_cleanup_block: None,
-        }
-    }
-}
-
-///
-/// Events dispatched to handles to notify changes in the different stores.
-///
-#[derive(Debug, Clone, PartialEq)]
-pub enum Event {
-    /// The engine is now started
-    Started,
-
-    /// The stream of events hit the maximum buffer size, and some events got discarded.
-    /// Consumer state should be rebuilt from scratch to prevent having inconsistencies.
-    StreamDiscontinuity,
-
-    /// An operation added to the pending store.
-    PendingOperationNew(OperationId),
-
-    /// An operation that was previously added got deleted, hence will never end up in a block.
-    /// This happens if an operation was invalid or found in the chain later on.
-    PendingEntryDelete(OperationId),
-
-    /// A new block got added to the chain.
-    ChainBlockNew(BlockOffset),
-
-    /// The chain has diverged from given offset, which mean it will get re-written with new blocks.
-    /// Operations after this offset should ignored.
-    ChainDiverged(BlockOffset),
-}
-
-///
-/// Operation that comes either from the chain or from the pending store
-///
-pub struct EngineOperation {
-    pub operation_id: OperationId,
-    pub status: EngineOperationStatus,
-    pub operation_frame: Arc<super::operation::OperationFrame<Vec<u8>>>,
-}
-
-impl EngineOperation {
-    fn from_pending_operation(operation: pending::StoredOperation) -> EngineOperation {
-        let status = match operation.commit_status {
-            pending::CommitStatus::Committed(offset, _depth) => {
-                EngineOperationStatus::Committed(offset)
-            }
-            _ => EngineOperationStatus::Pending,
-        };
-
-        EngineOperation {
-            operation_id: operation.operation_id,
-            status,
-            operation_frame: operation.frame,
-        }
-    }
-
-    fn from_chain_block(
-        block: BlockRef,
-        operation_id: OperationId,
-    ) -> Result<Option<EngineOperation>, Error> {
-        if let Some(operation) = block.get_operation(operation_id)? {
-            return Ok(Some(EngineOperation {
-                operation_id,
-                status: EngineOperationStatus::Committed(block.offset),
-                operation_frame: Arc::new(operation.to_owned()),
-            }));
-        }
-
-        Ok(None)
-    }
-}
-
-impl crate::operation::Operation for EngineOperation {
-    fn get_operation_reader(&self) -> Result<pending_operation::Reader, operation::Error> {
-        Ok(self.operation_frame.get_reader()?)
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum EngineOperationStatus {
-    Committed(BlockOffset),
-    Pending,
-}
-
-impl EngineOperationStatus {
-    pub fn is_committed(&self) -> bool {
-        match self {
-            EngineOperationStatus::Committed(_offset) => true,
-            _ => false,
         }
     }
 }

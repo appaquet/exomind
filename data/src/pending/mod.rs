@@ -6,7 +6,9 @@ use crate::block;
 use crate::operation;
 use crate::operation::{GroupId, OperationId};
 
+pub mod error;
 pub mod memory;
+pub use error::Error;
 
 ///
 /// Pending operations store. This store contains operations that have just been created and that
@@ -100,21 +102,4 @@ pub enum CommitStatus {
     Unknown,
     NotCommitted,
     Committed(block::BlockOffset, block::BlockDepth),
-}
-
-///
-/// Error related to the pending store
-///
-#[derive(Clone, Debug, Fail)]
-pub enum Error {
-    #[fail(display = "Operation related error: {:?}", _0)]
-    Operation(#[fail(source)] operation::Error),
-    #[fail(display = "Operation cannot be found")]
-    NotFound,
-}
-
-impl From<operation::Error> for Error {
-    fn from(err: operation::Error) -> Self {
-        Error::Operation(err)
-    }
 }

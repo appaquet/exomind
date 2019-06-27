@@ -6,7 +6,7 @@ extern crate failure;
 #[macro_use]
 extern crate log;
 
-pub mod errors;
+pub mod error;
 pub mod messages;
 pub mod transport;
 
@@ -23,6 +23,6 @@ pub mod ws;
 #[cfg(any(test, feature = "tests_utils"))]
 pub mod mock;
 
-pub use errors::Error;
+pub use error::Error;
 pub use messages::{InMessage, OutMessage};
 pub use transport::{TransportHandle, TransportLayer};

@@ -747,8 +747,8 @@ pub enum Error {
     OutOfBound(String),
     #[fail(display = "Operations related error: {}", _0)]
     Operation(#[fail(cause)] crate::operation::Error),
-    #[fail(display = "IO error: {}", _0)]
-    IO(String),
+    #[fail(display = "Framing error: {}", _0)]
+    Framing(#[fail(cause)] exocore_common::framing::Error),
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
     #[fail(display = "Field is not in capnp schema: code={}", _0)]
@@ -769,16 +769,102 @@ impl From<capnp::NotInSchema> for Error {
     }
 }
 
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::IO(err.to_string())
+impl From<exocore_common::framing::Error> for Error {
+    fn from(err: exocore_common::framing::Error) -> Self {
+        Error::Framing(err)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::block::{Block, BlockOperations, BlockOwned, BlockRef};
+    use crate::operation::OperationBuilder;
+    use exocore_common::cell::FullCell;
+    use exocore_common::framing::FrameReader;
     use exocore_common::node::LocalNode;
+
+    #[test]
+    fn block_create_and_read() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
+        let genesis = BlockOwned::new_genesis(&cell)?;
+
+        let operations = vec![
+            OperationBuilder::new_entry(123, local_node.id(), b"some_data")
+                .sign_and_build(&local_node)?
+                .frame,
+        ];
+        let operations = BlockOperations::from_operations(operations.into_iter())?;
+
+        let second_block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, operations)?;
+
+        let mut data = [0u8; 5000];
+        second_block.copy_data_into(&mut data);
+
+        let read_second_block = BlockRef::new(&data[0..second_block.total_size()])?;
+        assert_eq!(
+            second_block.block.whole_data(),
+            read_second_block.block.whole_data()
+        );
+        assert_eq!(
+            second_block.operations_data,
+            read_second_block.operations_data
+        );
+        assert_eq!(
+            second_block.signatures.whole_data(),
+            read_second_block.signatures.whole_data()
+        );
+
+        let block_reader = second_block.block.get_reader()?;
+        assert_eq!(block_reader.get_offset(), genesis.next_offset());
+        assert_eq!(
+            block_reader.get_signatures_size(),
+            second_block.signatures.whole_data_size() as u16
+        );
+        assert_eq!(
+            block_reader.get_operations_size(),
+            second_block.operations_data.len() as u32
+        );
+
+        let signatures_reader = second_block.signatures.get_reader()?;
+        assert_eq!(
+            signatures_reader.get_operations_size(),
+            second_block.operations_data.len() as u32
+        );
+
+        let signatures = signatures_reader.get_signatures()?;
+        assert_eq!(signatures.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn block_operations() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
+        let genesis = BlockOwned::new_genesis(&cell)?;
+
+        // 0 operations
+        let block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, BlockOperations::empty())?;
+        assert_eq!(block.operations_iter()?.count(), 0);
+
+        // 5 operations
+        let operations = (0..5)
+            .map(|i| {
+                OperationBuilder::new_entry(i, local_node.id(), b"op1")
+                    .sign_and_build(&local_node)
+                    .unwrap()
+                    .frame
+            })
+            .collect::<Vec<_>>();
+
+        let block_operations = BlockOperations::from_operations(operations.into_iter())?;
+        let block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, block_operations)?;
+        assert_eq!(block.operations_iter()?.count(), 5);
+
+        Ok(())
+    }
 
     #[test]
     fn should_allocate_signatures_space_for_nodes() -> Result<(), failure::Error> {

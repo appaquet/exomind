@@ -1,5 +1,4 @@
-use super::{check_into_size, FrameBuilder, FrameReader};
-use crate::framing::check_from_size;
+use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io;
 
@@ -12,7 +11,7 @@ pub struct PaddedFrame<I: FrameReader> {
 }
 
 impl<I: FrameReader> PaddedFrame<I> {
-    pub fn new(inner: I) -> Result<PaddedFrame<I>, io::Error> {
+    pub fn new(inner: I) -> Result<PaddedFrame<I>, Error> {
         let exposed_data = inner.exposed_data();
         check_from_size(4, exposed_data)?;
 
@@ -82,7 +81,7 @@ impl<I: FrameBuilder> PaddedFrameBuilder<I> {
 impl<I: FrameBuilder> FrameBuilder for PaddedFrameBuilder<I> {
     type OwnedFrameType = PaddedFrame<Vec<u8>>;
 
-    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, io::Error> {
+    fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         let inner_size = self.inner.write_to(writer)?;
 
         let padding_size = if inner_size < self.minimum_size {
@@ -99,7 +98,7 @@ impl<I: FrameBuilder> FrameBuilder for PaddedFrameBuilder<I> {
         Ok(inner_size + padding_size + 4)
     }
 
-    fn write_into(&self, into: &mut [u8]) -> Result<usize, io::Error> {
+    fn write_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         let inner_size = self.inner.write_into(into)?;
 
         let padding_size = if inner_size < self.minimum_size {
