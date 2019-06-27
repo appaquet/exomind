@@ -2,41 +2,52 @@
 trigger:
 - master
 
-pool:
-  vmImage: 'Ubuntu-16.04'
 
-variables:
-- group: master_builds
+jobs:
+  - job: Tests
+    pool:
+      vmImage: 'Ubuntu-16.04'
 
-steps:
-  - checkout: self
-    submodules: true
+    steps:
+      - checkout: self
+        submodules: true
 
-  - script: |
-      set -e
-      docker --version
+      - script: |
+          set -e
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+          rustc --version && cargo --version
+          rustup component add rustfmt
+          rustup component add clippy
+        displayName: 'Install dependencies'
 
-      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
-      export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
-      rustc --version && cargo --version
-      rustup component add rustfmt
-      rustup component add clippy
-    displayName: 'Install dependencies'
+      - script: |
+          set -e
+          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
 
-  - script: |
-      set -e
-      export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+          cargo fmt --all -- --check
+          cargo check --all
+          cargo clean -p exocore-common
+          cargo clippy --all -- -D clippy::all
 
-      cargo fmt --all -- --check
-      cargo check --all
-      cargo clean -p exocore-common
-      cargo clippy --all -- -D clippy::all
+          cargo test --all --verbose -- --test-threads=1
+        displayName: 'Test all'
 
-      cargo test --all --verbose -- --test-threads=1
-    displayName: 'Test all'
+  - job: Coverage
+    pool:
+      vmImage: 'Ubuntu-16.04'
 
-  - script: |
-      ./utils/coverage.sh Xml
-      bash <(curl -s https://codecov.io/bash)
-    displayName: 'Code coverage'
+    variables:
+      - group: master_builds
+
+    steps:
+      - checkout: self
+        submodules: true
+
+      - script: |
+          set -e
+          docker --version
+          ./utils/coverage.sh Xml
+          bash <(curl -s https://codecov.io/bash)
+        displayName: 'Code coverage'
 
