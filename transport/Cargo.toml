@@ -17,12 +17,12 @@ log = "0.4"
 failure = "0.1"
 tokio = { version = "0.1", features = ["io", "timer"] }
 websocket = { version = "0.22", optional = true }
-libp2p-core = { version = "0.8", optional = true }
-libp2p-tcp = { version = "0.8", optional = true }
-libp2p-dns = { version = "0.8", optional = true }
-libp2p-yamux = { version = "0.8", optional = true }
-libp2p-mplex = { version = "0.8", optional = true }
-libp2p-secio = { version = "0.8", optional = true }
+libp2p-core = { version = "0.10", optional = true }
+libp2p-tcp = { version = "0.10", optional = true }
+libp2p-dns = { version = "0.10", optional = true }
+libp2p-yamux = { version = "0.10", optional = true }
+libp2p-mplex = { version = "0.10", optional = true }
+libp2p-secio = { version = "0.10", optional = true }
 
 [dev-dependencies]
 tokio = { version = "0.1", features = ["rt-full"] }
