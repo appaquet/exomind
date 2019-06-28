@@ -104,6 +104,13 @@ where
         EngineOperation::from_chain_block(block, operation_id)
     }
 
+    pub fn get_chain_operations(
+        &self,
+        from_offset: Option<BlockOffset>,
+    ) -> ChainOperationsIterator<CS, PS> {
+        ChainOperationsIterator::new(self.inner.clone(), from_offset)
+    }
+
     pub fn get_pending_operation(
         &self,
         operation_id: OperationId,
@@ -284,5 +291,79 @@ impl EngineOperationStatus {
             EngineOperationStatus::Committed(_offset) => true,
             _ => false,
         }
+    }
+}
+
+///
+/// Iterator of operations in the chain
+///
+pub struct ChainOperationsIterator<CS, PS>
+where
+    CS: chain::ChainStore,
+    PS: pending::PendingStore,
+{
+    next_offset: BlockOffset,
+    current_operations: Vec<EngineOperation>,
+    inner: Weak<RwLock<Inner<CS, PS>>>,
+}
+
+impl<CS, PS> ChainOperationsIterator<CS, PS>
+where
+    CS: chain::ChainStore,
+    PS: pending::PendingStore,
+{
+    fn new(
+        inner: Weak<RwLock<Inner<CS, PS>>>,
+        from_offset: Option<BlockOffset>,
+    ) -> ChainOperationsIterator<CS, PS> {
+        ChainOperationsIterator {
+            next_offset: from_offset.unwrap_or(0),
+            current_operations: Vec::new(),
+            inner,
+        }
+    }
+
+    fn fetch_next_block(&mut self) -> Result<(), Error> {
+        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+        let inner = inner.read()?;
+
+        // since a block may not contain operations (ex: genesis), we need to loop until we find one
+        while self.current_operations.is_empty() {
+            let block = inner.chain_store.get_block(self.next_offset)?;
+            for operation in block.operations_iter()? {
+                let operation_reader = operation.get_reader()?;
+                let operation_id = operation_reader.get_operation_id();
+
+                self.current_operations.push(EngineOperation {
+                    operation_id,
+                    status: EngineOperationStatus::Committed(block.offset),
+                    operation_frame: Arc::new(operation.to_owned()),
+                });
+            }
+
+            // need to reverse as we will pop from end
+            self.current_operations.reverse();
+            self.next_offset = block.next_offset();
+        }
+
+        Ok(())
+    }
+}
+
+impl<CS, PS> Iterator for ChainOperationsIterator<CS, PS>
+where
+    CS: chain::ChainStore,
+    PS: pending::PendingStore,
+{
+    type Item = EngineOperation;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_operations.is_empty() {
+            if let Err(Error::ChainStore(chain::Error::OutOfBound(_))) = self.fetch_next_block() {
+                return None;
+            }
+        }
+
+        self.current_operations.pop()
     }
 }

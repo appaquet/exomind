@@ -32,22 +32,25 @@ jobs:
 
           cargo test --all --verbose
         displayName: 'Test all'
-
-  - job: Coverage
-    pool:
-      vmImage: 'Ubuntu-16.04'
-
-    variables:
-      - group: master_builds
-
-    steps:
-      - checkout: self
-        submodules: true
-
-      - script: |
-          set -e
-          docker --version
-          ./utils/coverage.sh Xml
-          bash <(curl -s https://codecov.io/bash)
-        displayName: 'Code coverage'
+#
+# Disabled until Tarpaulin fixes their bugs...
+# https://github.com/xd009642/tarpaulin/issues/190#issuecomment-491040656
+#
+#  - job: Coverage
+#    pool:
+#      vmImage: 'Ubuntu-16.04'
+#
+#    variables:
+#      - group: master_builds
+#
+#    steps:
+#      - checkout: self
+#        submodules: true
+#
+#      - script: |
+#          set -e
+#          docker --version
+#          ./utils/coverage.sh Xml no
+#          bash <(curl -s https://codecov.io/bash)
+#        displayName: 'Code coverage'
 

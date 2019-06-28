@@ -87,6 +87,41 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
 }
 
 #[test]
+fn single_node_chain_iteration() -> Result<(), failure::Error> {
+    let mut cluster = TestCluster::new(1)?;
+    cluster.create_node(0)?;
+    cluster.create_chain_genesis_block(0);
+    cluster.start_engine(0);
+
+    // wait for engine to start
+    cluster.collect_events_stream(0);
+    cluster.wait_started(0);
+
+    let chain_operations = cluster.get_handle(0).get_chain_operations(None);
+    assert_eq!(0, chain_operations.count());
+
+    let op1 = cluster
+        .get_handle_mut(0)
+        .write_entry_operation(b"i love rust 1")?;
+    let op2 = cluster
+        .get_handle_mut(0)
+        .write_entry_operation(b"i love rust 2")?;
+    wait_next_block_commit(&cluster);
+
+    let chain_operations = cluster
+        .get_handle(0)
+        .get_chain_operations(None)
+        .collect_vec();
+    assert_eq!(2, chain_operations.len());
+    let op_reader = chain_operations[0].operation_frame.get_reader()?;
+    assert_eq!(op1, op_reader.get_operation_id());
+    let op_reader = chain_operations[1].operation_frame.get_reader()?;
+    assert_eq!(op2, op_reader.get_operation_id());
+
+    Ok(())
+}
+
+#[test]
 fn single_node_restart() -> Result<(), failure::Error> {
     let mut cluster = TestCluster::new(1)?;
     cluster.create_node(0)?;
