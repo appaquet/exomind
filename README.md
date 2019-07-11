@@ -98,7 +98,7 @@ A cell consists of:
   * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
 * Or build manually: 
     * `cd ./clients/wasm && wasm-pack build`
-    * This will create a NPM module at [`./clients/wasm/pkg`](`./clients/wasm/pkg`)
+    * This will create a NPM module at ./clients/wasm/pkg
 
 ## Documentation
 * [Replication](data/replication.md)
