@@ -10,13 +10,13 @@ Exocore is a distributed applications framework with private and encrypted data 
 It runs applications and their data in an encrypted [blockchain](https://en.wikipedia.org/wiki/Blockchain) 
 which is unique per user and distributed on trusted or semi-trusted nodes. It is designed to be resilient to 
 failures, allow offline usage (ex: on mobile) and can be used as a backend for applications requiring user data 
-encryption. Exocore exposes SDKs for web/WebAssembly, mobile (Android/iOS) and Rust.
+encryption. Exocore exposes SDKs for web/webassembly, mobile (Android/iOS) and Rust.
 
 The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data. 
 A cell consists of:
 * Data nodes managing replication and storage of the blockchain
-* Index nodes managing indexation, querying and mutation of the data (could be collocated with data node)
-* Applications nodes run applications written in WebAssembly (could be collocated with data and index nodes)
+* Index nodes managing indexation, querying and mutation of the data (collocated with data node)
+* Applications nodes run applications written in WebAssembly (could be collocated with index  nodes)
 * Clients (fat or thin) that can also act as index, data and applications nodes
 
 ## Development status
@@ -42,7 +42,7 @@ A cell consists of:
     * On MacOS: `brew install capnp` 
     * On Ubuntu: `apt install capnproto` 
 
-### WASM (optiona)
+### WASM (optional)
 * Rust's WASM target
     * `rustup target add wasm32-unknown-unknown`
 * Clang
@@ -95,10 +95,10 @@ A cell consists of:
 * Run the [web example](./examples/web):
   * Start development server which will watch files and rebuild automatically:
     * `cd ./examples/web && npm run start`
-  * Open browser to [http://127.0.0.1:8080]
+  * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
 * Or build manually: 
     * `cd ./clients/wasm && wasm-pack build`
-    * This will create a NPM module at [`./clients/wasm/pkg`]
+    * This will create a NPM module at [`./clients/wasm/pkg`](`./clients/wasm/pkg`)
 
 ## Documentation
 * [Replication](data/replication.md)
