@@ -161,7 +161,7 @@ impl TraitsIndex {
         let searcher = self.index_reader.searcher();
 
         let query = AllQuery;
-        let top_collector = TopDocs::with_limit(1).order_by_field::<u64>(self.fields.block_offset);
+        let top_collector = TopDocs::with_limit(1).order_by_u64_field(self.fields.block_offset);
         let search_results = searcher.search(&query, &top_collector)?;
 
         Ok(search_results

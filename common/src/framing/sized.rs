@@ -185,7 +185,7 @@ pub struct IteratedSizedFrame<'a> {
 mod tests {
     use super::*;
     use crate::framing::{assert_builder_equals, CapnpFrameBuilder, TypedCapnpFrame};
-    use crate::serialization::protos::data_chain_capnp::block;
+    use crate::protos::data_chain_capnp::block_header;
     use std::io::Cursor;
 
     #[test]
@@ -217,7 +217,7 @@ mod tests {
     #[test]
     fn can_build_and_read_unsized_inner() -> Result<(), failure::Error> {
         // capnp builder cannot provide the size of the frame until it's serialized
-        let mut capnp_builder = CapnpFrameBuilder::<block::Owned>::new();
+        let mut capnp_builder = CapnpFrameBuilder::<block_header::Owned>::new();
         let mut msg_builder = capnp_builder.get_builder();
         msg_builder.set_offset(1234);
 
@@ -225,7 +225,7 @@ mod tests {
         assert_builder_equals(&builder)?;
         let frame_bytes = builder.as_bytes();
 
-        let frame = TypedCapnpFrame::<_, block::Owned>::new(SizedFrame::new(frame_bytes)?)?;
+        let frame = TypedCapnpFrame::<_, block_header::Owned>::new(SizedFrame::new(frame_bytes)?)?;
         let msg_reader = frame.get_reader()?;
         assert_eq!(1234, msg_reader.get_offset());
 

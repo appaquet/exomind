@@ -30,8 +30,8 @@ impl DirectorySegment {
         directory: &Path,
         block: &B,
     ) -> Result<DirectorySegment, Error> {
-        let block_reader = block.block().get_reader().unwrap();
-        let first_block_offset = block_reader.get_offset();
+        let block_header_reader = block.header().get_reader().unwrap();
+        let first_block_offset = block_header_reader.get_offset();
 
         let segment_path = Self::segment_path(directory, first_block_offset);
         if segment_path.exists() {

@@ -170,7 +170,7 @@ mod test {
     use super::*;
     use exocore_common::framing::CapnpFrameBuilder;
     use exocore_common::node::LocalNode;
-    use exocore_common::serialization::protos::data_transport_capnp::envelope;
+    use exocore_common::protos::data_transport_capnp::envelope;
 
     #[test]
     fn send_and_receive() {

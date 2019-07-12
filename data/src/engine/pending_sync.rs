@@ -6,12 +6,10 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::operation::OperationId;
 use exocore_common::crypto::hash::{Digest, MultihashDigest, Sha3_256};
 use exocore_common::node::{Node, NodeId};
-use exocore_common::serialization::protos::data_chain_capnp::pending_operation_header;
-use exocore_common::serialization::protos::data_transport_capnp::{
-    pending_sync_range, pending_sync_request,
-};
+use exocore_common::protos::data_chain_capnp::chain_operation_header;
+use exocore_common::protos::data_transport_capnp::{pending_sync_range, pending_sync_request};
 
-use crate::block::BlockDepth;
+use crate::block::BlockHeight;
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
 use crate::operation::{NewOperation, Operation};
@@ -89,7 +87,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     ) -> Result<(), Error> {
         let operation_id = operation.get_id()?;
         store.put_operation(operation)?;
-        sync_context.push_event(Event::PendingOperationNew(operation_id));
+        sync_context.push_event(Event::NewPendingOperation(operation_id));
 
         // create a sync request for which we send full detail for new op, but none for other ops
         let nodes = self.cell.nodes();
@@ -125,19 +123,19 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         debug!("Got sync request from {}", from_node.id());
 
         let in_reader: pending_sync_request::Reader = request.get_reader()?;
-        let operations_from_depth = self.get_from_block_depth(sync_context, Some(in_reader));
+        let operations_from_height = self.get_from_block_height(sync_context, Some(in_reader));
         let in_ranges = in_reader.get_ranges()?;
 
         if let Some(out_ranges) = self.handle_incoming_sync_ranges(
             sync_context,
             store,
             in_ranges.iter(),
-            operations_from_depth,
+            operations_from_height,
         )? {
             let mut sync_request_frame_builder =
                 CapnpFrameBuilder::<pending_sync_request::Owned>::new();
             let mut sync_request_builder = sync_request_frame_builder.get_builder();
-            sync_request_builder.set_from_block_depth(operations_from_depth.unwrap_or(0));
+            sync_request_builder.set_from_block_height(operations_from_height.unwrap_or(0));
 
             let mut ranges_builder = sync_request_builder
                 .reborrow()
@@ -171,7 +169,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         sync_context: &mut SyncContext,
         store: &mut PS,
         sync_range_iterator: I,
-        operations_from_depth: Option<BlockDepth>,
+        operations_from_height: Option<BlockHeight>,
     ) -> Result<Option<SyncRangesBuilder>, Error>
     where
         I: Iterator<Item = pending_sync_range::Reader<'a>>,
@@ -193,8 +191,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
             // first, we store operations for which we have data directly in the payload
             let mut included_operations = HashSet::<OperationId>::new();
-            if sync_range_reader.has_operations() {
-                for operation_frame_res in sync_range_reader.get_operations()?.iter() {
+            if sync_range_reader.has_operations_frames() {
+                for operation_frame_res in sync_range_reader.get_operations_frames()?.iter() {
                     let operation_frame_data = operation_frame_res?;
                     let operation_frame =
                         crate::operation::read_operation_frame(operation_frame_data)?.to_owned();
@@ -206,7 +204,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                     let new_operation = NewOperation::from_frame(operation_frame);
                     let existed = store.put_operation(new_operation)?;
                     if !existed {
-                        sync_context.push_event(Event::PendingOperationNew(operation_id));
+                        sync_context.push_event(Event::NewPendingOperation(operation_id));
                     }
                 }
             }
@@ -214,7 +212,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             // then check local store's range hash and count. if our local store data is the same as the one described in the
             // payload, we stop here since everything is synchronized
             let (local_hash, local_count) =
-                self.local_store_range_info(store, bounds_range, operations_from_depth)?;
+                self.local_store_range_info(store, bounds_range, operations_from_height)?;
             let remote_hash = sync_range_reader.get_operations_hash()?;
             let remote_count = sync_range_reader.get_operations_count();
             if remote_hash == &local_hash[..] && local_count == remote_count as usize {
@@ -232,14 +230,14 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             out_ranges.push_new_range(bounds_from);
 
             let operations_iter =
-                self.operations_iter_from_depth(store, bounds_range, operations_from_depth)?;
+                self.operations_iter_from_height(store, bounds_range, operations_from_height)?;
             if remote_count == 0 {
                 // remote has no data, we sent everything
                 for operation in operations_iter {
                     out_ranges.push_operation(operation, OperationDetails::Full);
                 }
             } else if !sync_range_reader.has_operations_headers()
-                && !sync_range_reader.has_operations()
+                && !sync_range_reader.has_operations_frames()
             {
                 // remote has only sent us hash, we reply with headers
                 for operation in operations_iter {
@@ -289,9 +287,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             Bound::Included(op_id) => sync_ranges.push_new_range(Bound::Included(*op_id)),
         }
 
-        let operations_from_depth = self.get_from_block_depth(sync_context, None);
+        let operations_from_height = self.get_from_block_height(sync_context, None);
         let operations_iter =
-            self.operations_iter_from_depth(store, range.clone(), operations_from_depth)?;
+            self.operations_iter_from_height(store, range.clone(), operations_from_height)?;
         for operation in operations_iter {
             let details = operation_details(&operation);
             sync_ranges.push_operation(operation, details);
@@ -305,7 +303,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         let mut sync_request_frame_builder =
             CapnpFrameBuilder::<pending_sync_request::Owned>::new();
         let mut sync_request_builder = sync_request_frame_builder.get_builder();
-        sync_request_builder.set_from_block_depth(operations_from_depth.unwrap_or(0));
+        sync_request_builder.set_from_block_height(operations_from_height.unwrap_or(0));
         let mut ranges_builder = sync_request_builder
             .reborrow()
             .init_ranges(sync_ranges.ranges.len() as u32);
@@ -325,7 +323,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         &self,
         store: &PS,
         range: R,
-        operations_from_depth: Option<BlockDepth>,
+        operations_from_height: Option<BlockHeight>,
     ) -> Result<(Vec<u8>, usize), Error>
     where
         R: RangeBounds<OperationId>,
@@ -334,7 +332,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         let mut count = 0;
 
         let operations_iter =
-            self.operations_iter_from_depth(store, range, operations_from_depth)?;
+            self.operations_iter_from_height(store, range, operations_from_height)?;
         for operation in operations_iter {
             frame_hasher.input_signed_frame(operation.frame.inner().inner());
             count += 1;
@@ -354,7 +352,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     ) -> Result<(), Error>
     where
         LI: Iterator<Item = StoredOperation> + 'b,
-        RI: Iterator<Item = pending_operation_header::Reader<'a>> + 'a,
+        RI: Iterator<Item = chain_operation_header::Reader<'a>> + 'a,
     {
         let merged_iter = remote_iter.merge_join_by(local_iter, |remote_op, local_op| {
             remote_op.get_operation_id().cmp(&local_op.operation_id)
@@ -407,23 +405,23 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
     ///
     /// Returns operations from the pending store, but only if they are not committed, or
-    /// committed after the given depth.
+    /// committed after the given height.
     ///
-    fn operations_iter_from_depth<'store, R>(
+    fn operations_iter_from_height<'store, R>(
         &self,
         store: &'store PS,
         range: R,
-        from_block_depth: Option<BlockDepth>,
+        from_block_height: Option<BlockHeight>,
     ) -> Result<impl Iterator<Item = StoredOperation> + 'store, Error>
     where
         R: RangeBounds<OperationId>,
     {
         let iter = store.operations_iter(range)?.filter(move |op| {
-            match (op.commit_status, from_block_depth) {
+            match (op.commit_status, from_block_height) {
                 (_, None) => true,
                 (CommitStatus::Unknown, _) => true,
-                (CommitStatus::Committed(_offset, op_depth), Some(from_depth)) => {
-                    op_depth >= from_depth
+                (CommitStatus::Committed(_offset, op_height), Some(from_height)) => {
+                    op_height >= from_height
                 }
             }
         });
@@ -432,19 +430,19 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Returns the block depth at which we filter operations from pending store with. See `PendingSyncConfig`.`operations_included_depth`.
-    /// The depth from the request has priority, and then we fallback to the one in the sync_state.
+    /// Returns the block height at which we filter operations from pending store with. See `PendingSyncConfig`.`operations_included_depth`.
+    /// The height from the request has priority, and then we fallback to the one in the sync_state.
     ///
-    fn get_from_block_depth(
+    fn get_from_block_height(
         &self,
         sync_context: &SyncContext,
         incoming_request_reader: Option<pending_sync_request::Reader>,
-    ) -> Option<BlockDepth> {
+    ) -> Option<BlockHeight> {
         incoming_request_reader
             .and_then(|request_reader| {
-                let block_depth = request_reader.get_from_block_depth();
-                if block_depth != 0 {
-                    Some(block_depth)
+                let block_height = request_reader.get_from_block_height();
+                if block_height != 0 {
+                    Some(block_height)
                 } else {
                     None
                 }
@@ -453,7 +451,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 sync_context
                     .sync_state
                     .pending_last_cleanup_block
-                    .map(|(_offset, depth)| depth + self.config.operations_depth_after_cleanup)
+                    .map(|(_offset, height)| height + self.config.operations_depth_after_cleanup)
             })
     }
 }
@@ -480,7 +478,7 @@ pub struct PendingSyncConfig {
     /// This value is added to the `SyncState` last cleanup block depth to make sure we don't
     /// ask or include operations that got cleaned up.
     ///
-    pub operations_depth_after_cleanup: BlockDepth,
+    pub operations_depth_after_cleanup: BlockHeight,
 }
 
 impl Default for PendingSyncConfig {
@@ -741,7 +739,7 @@ impl SyncRangeBuilder {
         if !self.operations.is_empty() {
             let mut operations_builder = range_msg_builder
                 .reborrow()
-                .init_operations(self.operations.len() as u32);
+                .init_operations_frames(self.operations.len() as u32);
             for (i, operation) in self.operations.iter().enumerate() {
                 operations_builder.set(i as u32, operation.frame.whole_data());
             }
@@ -776,9 +774,7 @@ pub enum PendingSyncError {
 mod tests {
     use std::sync::Arc;
 
-    use exocore_common::serialization::protos::data_chain_capnp::{
-        pending_operation, pending_operation_header,
-    };
+    use exocore_common::protos::data_chain_capnp::{chain_operation, chain_operation_header};
 
     use crate::engine::testing::create_dummy_new_entry_op;
     use crate::engine::testing::*;
@@ -838,15 +834,15 @@ mod tests {
     }
 
     #[test]
-    fn create_sync_range_request_with_depth() -> Result<(), failure::Error> {
+    fn create_sync_range_request_with_height() -> Result<(), failure::Error> {
         let mut cluster = EngineTestCluster::new(2);
         cluster.clocks[0].set_fixed_instant(Instant::now());
 
-        let config_depth_offset = cluster.pending_stores_synchronizer[0]
+        let config_height_offset = cluster.pending_stores_synchronizer[0]
             .config
             .operations_depth_after_cleanup;
 
-        // we update operations status as if they were all committed at depth 10
+        // we update operations status as if they were all committed at height 10
         let operations_id = cluster.pending_generate_dummy(0, 0, 100);
         for operation_id in operations_id {
             let status = CommitStatus::Committed(10, 10);
@@ -859,11 +855,11 @@ mod tests {
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
         let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
         let sync_request_reader: pending_sync_request::Reader = sync_request_frame.get_reader()?;
-        assert_eq!(0, sync_request_reader.get_from_block_depth());
+        assert_eq!(0, sync_request_reader.get_from_block_height());
         let ranges = sync_request_reader.get_ranges()?;
         assert!(ranges.len() > 1);
 
-        // filter with depth of 1000 should generate only 1 empty range since it matches no operations
+        // filter with height of 1000 should generate only 1 empty range since it matches no operations
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
         let mut sync_context = SyncContext::new(SyncState::default());
         sync_context.sync_state.pending_last_cleanup_block = Some((0, 1000));
@@ -872,8 +868,8 @@ mod tests {
         let (_to_node, sync_request_frame) = extract_request_from_result(&sync_context);
         let sync_request_reader: pending_sync_request::Reader = sync_request_frame.get_reader()?;
         assert_eq!(
-            1000 + config_depth_offset,
-            sync_request_reader.get_from_block_depth()
+            1000 + config_height_offset,
+            sync_request_reader.get_from_block_height()
         );
         let ranges = sync_request_reader.get_ranges()?;
         assert_eq!(ranges.len(), 1);
@@ -1060,13 +1056,13 @@ mod tests {
         // we generate operations on node 0 spread in 10 blocks
         let operations_id = cluster.pending_generate_dummy(0, 0, 100);
         for operation_id in operations_id {
-            let depth = operation_id / 10;
-            let status = CommitStatus::Committed(depth, depth);
+            let height = operation_id / 10;
+            let status = CommitStatus::Committed(height, height);
 
             cluster.pending_stores[0].update_operation_commit_status(operation_id, status)?;
         }
 
-        // syncing 0 to 1 without depth filter should sync all operations
+        // syncing 0 to 1 without height filter should sync all operations
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
         sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(100, cluster.pending_stores[1].operations_count());
@@ -1074,14 +1070,14 @@ mod tests {
         // clear node 1 operations
         cluster.pending_stores[1].clear();
 
-        // we mark node 0 as cleaned up up to block with depth 3
+        // we mark node 0 as cleaned up up to block with height 3
         // syncing should not sync non-matching operations to node 1
         cluster.sync_states[0].pending_last_cleanup_block = Some((3, 3));
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
         sync_nodes(&mut cluster, 0, 1)?;
         assert_eq!(51, cluster.pending_stores[1].operations_count());
 
-        // syncing 1 to 0 without depth should not revive cleaned up operations
+        // syncing 1 to 0 without height should not revive cleaned up operations
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
         sync_nodes(&mut cluster, 1, 0)?;
         assert_eq!(51, cluster.pending_stores[1].operations_count());
@@ -1098,41 +1094,41 @@ mod tests {
         let mut req_frame_builder = CapnpFrameBuilder::<pending_sync_request::Owned>::new();
         {
             let mut req_builder: pending_sync_request::Builder = req_frame_builder.get_builder();
-            req_builder.set_from_block_depth(0);
+            req_builder.set_from_block_height(0);
         }
 
         // 0 in sync request means none
         let sync_context = SyncContext::new(SyncState::default());
         let frame = req_frame_builder.as_owned_frame();
         let frame_reader = frame.get_reader()?;
-        let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
-        assert_eq!(None, depth);
+        let height = pending_store.get_from_block_height(&sync_context, Some(frame_reader));
+        assert_eq!(None, height);
 
         // in sync state
         let mut sync_context = SyncContext::new(SyncState::default());
         sync_context.sync_state.pending_last_cleanup_block = Some((0, 10));
         let frame = req_frame_builder.as_owned_frame();
         let frame_reader = frame.get_reader()?;
-        let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
-        assert_eq!(Some(12), depth); // 10 + 2
+        let height = pending_store.get_from_block_height(&sync_context, Some(frame_reader));
+        assert_eq!(Some(12), height); // 10 + 2
 
         // request has priority
         let mut sync_context = SyncContext::new(SyncState::default());
         sync_context.sync_state.pending_last_cleanup_block = Some((0, 10));
         {
             let mut req_builder: pending_sync_request::Builder = req_frame_builder.get_builder();
-            req_builder.set_from_block_depth(20);
+            req_builder.set_from_block_height(20);
         }
         let frame = req_frame_builder.as_owned_frame();
         let frame_reader = frame.get_reader()?;
-        let depth = pending_store.get_from_block_depth(&sync_context, Some(frame_reader));
-        assert_eq!(Some(20), depth);
+        let height = pending_store.get_from_block_height(&sync_context, Some(frame_reader));
+        assert_eq!(Some(20), height);
 
         Ok(())
     }
 
     #[test]
-    fn operations_iter_filtered_depth() -> Result<(), failure::Error> {
+    fn operations_iter_filtered_height() -> Result<(), failure::Error> {
         let cluster = EngineTestCluster::new(1);
 
         let local_node = &cluster.nodes[0];
@@ -1144,33 +1140,33 @@ mod tests {
         store.put_operation(create_dummy_new_entry_op(&local_node, 102, 102))?;
 
         let res = pending_store
-            .operations_iter_from_depth(&store, .., None)?
+            .operations_iter_from_height(&store, .., None)?
             .collect_vec();
         assert_eq!(3, res.len());
 
         // should return everything since they are all `Unknown` status
         let res = pending_store
-            .operations_iter_from_depth(&store, .., Some(2))?
+            .operations_iter_from_height(&store, .., Some(2))?
             .collect_vec();
         assert_eq!(3, res.len());
 
         // should return not committed
         store.update_operation_commit_status(100, CommitStatus::Unknown)?;
         let res = pending_store
-            .operations_iter_from_depth(&store, .., Some(2))?
+            .operations_iter_from_height(&store, .., Some(2))?
             .collect_vec();
         assert_eq!(3, res.len());
 
-        // should return equal depth
+        // should return equal height
         store.update_operation_commit_status(101, CommitStatus::Committed(0, 2))?;
         let res = pending_store
-            .operations_iter_from_depth(&store, .., Some(2))?
+            .operations_iter_from_height(&store, .., Some(2))?
             .collect_vec();
         assert_eq!(3, res.len());
 
-        // should not return smaller depth
+        // should not return smaller height
         let res = pending_store
-            .operations_iter_from_depth(&store, .., Some(3))?
+            .operations_iter_from_height(&store, .., Some(3))?
             .collect_vec();
         assert_eq!(2, res.len());
 
@@ -1217,13 +1213,13 @@ mod tests {
         let frame0 = frames_builder[0].as_owned_frame();
         let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
         let frame0_hash = frame0_reader.reborrow().get_operations_hash().unwrap();
-        assert_eq!(frame0_reader.has_operations(), false);
+        assert_eq!(frame0_reader.has_operations_frames(), false);
         assert_eq!(frame0_reader.has_operations_headers(), false);
 
         let frame1 = frames_builder[1].as_owned_frame();
         let frame1_reader: pending_sync_range::Reader = frame1.get_reader()?;
         let frame1_hash = frame1_reader.reborrow().get_operations_hash()?;
-        assert_eq!(frame1_reader.has_operations(), false);
+        assert_eq!(frame1_reader.has_operations_frames(), false);
         assert_eq!(frame1_reader.has_operations_headers(), false);
 
         assert_ne!(frame0_hash, frame1_hash);
@@ -1238,11 +1234,11 @@ mod tests {
 
         let frame0 = frames_builder[0].as_owned_frame();
         let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
-        assert_eq!(frame0_reader.has_operations(), false);
+        assert_eq!(frame0_reader.has_operations_frames(), false);
         assert_eq!(frame0_reader.has_operations_headers(), true);
 
         let operations = frame0_reader.get_operations_headers()?;
-        let operation0_header: pending_operation_header::Reader = operations.get(0);
+        let operation0_header: chain_operation_header::Reader = operations.get(0);
         assert_eq!(operation0_header.get_group_id(), 2);
 
         Ok(())
@@ -1255,14 +1251,14 @@ mod tests {
 
         let frame0 = frames_builder[0].as_owned_frame();
         let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
-        assert_eq!(frame0_reader.has_operations(), true);
+        assert_eq!(frame0_reader.has_operations_frames(), true);
         assert_eq!(frame0_reader.has_operations_headers(), false);
 
-        let operations = frame0_reader.get_operations()?;
+        let operations = frame0_reader.get_operations_frames()?;
         let operation0_data = operations.get(0)?;
         let operation0_frame = crate::operation::read_operation_frame(operation0_data)?;
 
-        let operation0_reader: pending_operation::Reader = operation0_frame.get_reader()?;
+        let operation0_reader: chain_operation::Reader = operation0_frame.get_reader()?;
         let operation0_inner_reader = operation0_reader.get_operation();
         assert!(operation0_inner_reader.has_entry());
 
@@ -1443,10 +1439,13 @@ mod tests {
                 debug!("    Headers=None");
             }
 
-            if range.has_operations() {
-                debug!("    Operations={}", range.get_operations().unwrap().len());
+            if range.has_operations_frames() {
+                debug!(
+                    "    Frames={}",
+                    range.get_operations_frames().unwrap().len()
+                );
             } else {
-                debug!("    Operations=None");
+                debug!("    Frames=None");
             }
         }
     }

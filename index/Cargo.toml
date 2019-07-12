@@ -18,7 +18,7 @@ serde_yaml = "0.8"
 maplit = "1"
 tokio = { version = "0.1", features = ["io"] }
 log = "0.4"
-tantivy = "0.9"
+tantivy = "0.10"
 
 [dev-dependencies]
 tempdir = "0.3"

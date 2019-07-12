@@ -313,7 +313,7 @@ pub fn extract_ops_events(events: &[Event]) -> Vec<OperationId> {
     events
         .iter()
         .flat_map(|event| match event {
-            Event::PendingOperationNew(op) => Some(*op),
+            Event::NewPendingOperation(op) => Some(*op),
             _ => None,
         })
         .sorted()
@@ -324,7 +324,7 @@ pub fn extract_blocks_events(events: &[Event]) -> Vec<BlockOffset> {
     events
         .iter()
         .flat_map(|event| match event {
-            Event::ChainBlockNew(offset) => Some(*offset),
+            Event::NewChainBlock(offset) => Some(*offset),
             _ => None,
         })
         .sorted()

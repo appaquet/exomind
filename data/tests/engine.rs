@@ -42,10 +42,10 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
     let first_block_offset = block_offsets.first().unwrap();
 
     // check if we really created a block
-    let (chain_last_offset, chain_last_depth) =
+    let (chain_last_offset, chain_last_height) =
         cluster.get_handle(0).get_chain_last_block()?.unwrap();
     assert!(chain_last_offset >= *first_block_offset);
-    assert!(chain_last_depth >= 1);
+    assert!(chain_last_height >= 1);
 
     // get operation from chain
     let entry_operation = cluster
@@ -155,7 +155,7 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
 
     cluster.engines_config[0]
         .commit_manager_config
-        .commit_maximum_pending_count = 1;
+        .commit_maximum_pending_store_count = 1;
 
     cluster.start_engine(0);
     cluster.start_engine(1);
@@ -201,7 +201,7 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
         .commit_manager_config
         .commit_maximum_interval = Duration::from_millis(500);
 
-    // both nodes will cleanup after 2 depth
+    // both nodes will cleanup after 2 height
     cluster.engines_config[0]
         .commit_manager_config
         .operations_cleanup_after_block_depth = 2;

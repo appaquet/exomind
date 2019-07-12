@@ -8,7 +8,7 @@ use crate::error::Error;
 use crate::mutation::Mutation;
 use crate::query::*;
 use crate::results::{EntitiesResults, EntityResult, EntityResultSource};
-use exocore_data::block::{BlockDepth, BlockOffset};
+use exocore_data::block::{BlockHeight, BlockOffset};
 use exocore_data::engine::{EngineOperation, Event};
 use exocore_data::operation::{Operation, OperationId};
 use exocore_data::{chain, pending};
@@ -25,7 +25,7 @@ use std::sync::Arc;
 pub struct EntitiesIndexConfig {
     /// When should we index a block in the chain so that odds that we aren't going to revert it are high enough.
     /// Related to `CommitManagerConfig`.`operations_cleanup_after_block_depth`
-    pub chain_index_min_depth: BlockDepth,
+    pub chain_index_min_depth: BlockHeight,
 
     /// Configuration for the in-memory traits index that are in the pending store
     pub pending_index_config: TraitsIndexConfig,
@@ -139,10 +139,10 @@ where
                 warn!("Got a stream discontinuity. Forcing re-indexation of pending...");
                 self.reindex_pending(data_handle)?;
             }
-            Event::PendingOperationNew(op_id) => {
-                self.handle_engine_event_pending_operation_new(data_handle, op_id)?;
+            Event::NewPendingOperation(op_id) => {
+                self.handle_engine_event_new_pending_operation(data_handle, op_id)?;
             }
-            Event::ChainBlockNew(block_offset) => {
+            Event::NewChainBlock(block_offset) => {
                 debug!(
                     "Got new block at offset {}, checking if we can index a new block",
                     block_offset
@@ -357,7 +357,7 @@ where
         // create an iterator over operations from chain (if any) and pending store
         let pending_iter = data_handle.get_pending_operations(..)?.into_iter();
         let pending_and_chain_iter: Box<dyn Iterator<Item = EngineOperation>> =
-            if let Some((last_indexed_offset, _last_indexed_depth)) =
+            if let Some((last_indexed_offset, _last_indexed_height)) =
                 self.last_chain_indexed_block(data_handle)?
             {
                 // filter pending to exclude operations that are now in the chain index
@@ -368,7 +368,7 @@ where
                 let chain_iter = data_handle
                     .get_chain_operations(Some(last_indexed_offset))
                     .filter(move |op| {
-                        if let EngineOperationStatus::Committed(offset, _depth) = op.status {
+                        if let EngineOperationStatus::Committed(offset, _height) = op.status {
                             offset > last_indexed_offset
                         } else {
                             false
@@ -382,7 +382,7 @@ where
 
         let schema = self.schema.clone();
         let mutations_iter = pending_and_chain_iter
-            .flat_map(|op| Self::pending_operation_to_index_mutation(schema.clone(), op));
+            .flat_map(|op| Self::chain_operation_to_index_mutation(schema.clone(), op));
         self.pending_index.apply_mutations(mutations_iter)?;
 
         Ok(())
@@ -443,29 +443,29 @@ where
 
         let mut pending_index_mutations = Vec::new();
 
-        let chain_index_min_depth = self.config.chain_index_min_depth;
+        let chain_index_min_height = self.config.chain_index_min_depth;
         let schema = self.schema.clone();
         let chain_index_mutations = operations
             .flat_map(|op| {
-                if let EngineOperationStatus::Committed(offset, depth) = op.status {
-                    Some((offset, depth, op))
+                if let EngineOperationStatus::Committed(offset, height) = op.status {
+                    Some((offset, height, op))
                 } else {
                     None
                 }
             })
-            .filter(|(offset, depth, _op)| {
+            .filter(|(offset, height, _op)| {
                 *offset > offset_from.unwrap_or(0)
-                    && last_chain_block_height - *depth >= chain_index_min_depth
+                    && last_chain_block_height - *height >= chain_index_min_height
             })
-            .flat_map(|(offset, depth, op)| {
+            .flat_map(|(offset, height, op)| {
                 if let Ok(data) = op.as_entry_data() {
                     let mutation = Mutation::from_json_slice(schema.clone(), data).ok()?;
-                    Some((offset, depth, op, mutation))
+                    Some((offset, height, op, mutation))
                 } else {
                     None
                 }
             })
-            .map(|(offset, _depth, op, mutation)| {
+            .map(|(offset, _height, op, mutation)| {
                 // for every mutation we index in the chain index, we delete it from the pending index
                 pending_index_mutations.push(IndexMutation::DeleteOperation(op.operation_id));
 
@@ -497,7 +497,7 @@ where
     fn last_chain_indexed_block(
         &self,
         data_handle: &EngineHandle<CS, PS>,
-    ) -> Result<Option<(BlockOffset, BlockDepth)>, Error> {
+    ) -> Result<Option<(BlockOffset, BlockHeight)>, Error> {
         let last_indexed_offset = self.chain_index.highest_indexed_block()?;
 
         Ok(last_indexed_offset
@@ -505,9 +505,9 @@ where
             .and_then(|opt| opt))
     }
 
-    /// Handle a new pending operation event from the data layer by indexing it
+    /// Handle a new pending store operation event from the data layer by indexing it
     /// into the pending index
-    fn handle_engine_event_pending_operation_new(
+    fn handle_engine_event_new_pending_operation(
         &mut self,
         data_handle: &EngineHandle<CS, PS>,
         operation_id: OperationId,
@@ -516,16 +516,16 @@ where
         let operation = data_handle
             .get_pending_operation(operation_id)?
             .expect("Couldn't find operation in data layer for an event we received");
-        if let Some(mutation) = Self::pending_operation_to_index_mutation(schema, operation) {
+        if let Some(mutation) = Self::chain_operation_to_index_mutation(schema, operation) {
             self.pending_index.apply_mutation(mutation)?;
         }
 
         Ok(())
     }
 
-    /// Converts a pending operation stored in the data layer (chain or pending) into
+    /// Converts a operations from the data layer (chain or pending) into
     /// the trait mutation
-    fn pending_operation_to_index_mutation(
+    fn chain_operation_to_index_mutation(
         schema: Arc<Schema>,
         operation: EngineOperation,
     ) -> Option<IndexMutation> {

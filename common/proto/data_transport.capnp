@@ -17,7 +17,7 @@ struct Envelope {
 #
 struct PendingSyncRequest {
     ranges             @0: List(PendingSyncRange);
-    fromBlockDepth     @1: UInt64;
+    fromBlockHeight    @1: UInt64;
 }
 
 struct PendingSyncRange {
@@ -29,8 +29,8 @@ struct PendingSyncRange {
     operationsHash     @4: Data;
     operationsCount    @5: UInt32;
 
-    operations         @6: List(Data); # Frames of Chain.PendingOperation
-    operationsHeaders  @7: List(Chain.PendingOperationHeader);
+    operationsFrames   @6: List(Data); # Frames of Chain.ChainOperation
+    operationsHeaders  @7: List(Chain.ChainOperationHeader);
 }
 
 #
@@ -52,6 +52,6 @@ struct ChainSyncResponse {
     fromOffset         @0: UInt64;
     toOffset           @1: UInt64;
 
-    headers            @2: List(Chain.BlockHeader);
-    blocks             @3: List(Data); # Block + entries data + signatures
+    headers            @2: List(Chain.BlockPartialHeader);
+    blocks             @3: List(Data); # BlockHeader + entries data + signatures
 }

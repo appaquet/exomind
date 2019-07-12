@@ -10,14 +10,15 @@ extern crate serde_json;
 #[cfg(test)]
 extern crate tempdir;
 
-pub use self::serialization::protos::*;
+pub extern crate capnp;
+pub mod protos;
+pub(crate) use self::protos::*; // generated protos expect protos to be at root of crate
 
 pub mod cell;
 pub mod crypto;
 pub mod framing;
 pub mod node;
 pub mod range;
-pub mod serialization;
 pub mod simple_store;
 #[cfg(any(test, feature = "tests_utils"))]
 pub mod tests_utils;

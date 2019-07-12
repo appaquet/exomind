@@ -353,7 +353,7 @@ pub mod pending_sync_request {
             !self.reader.get_pointer_field(0).is_null()
         }
         #[inline]
-        pub fn get_from_block_depth(self) -> u64 {
+        pub fn get_from_block_height(self) -> u64 {
             self.reader.get_data_field::<u64>(0)
         }
     }
@@ -470,11 +470,11 @@ pub mod pending_sync_request {
             !self.builder.get_pointer_field(0).is_null()
         }
         #[inline]
-        pub fn get_from_block_depth(self) -> u64 {
+        pub fn get_from_block_height(self) -> u64 {
             self.builder.get_data_field::<u64>(0)
         }
         #[inline]
-        pub fn set_from_block_depth(&mut self, value: u64) {
+        pub fn set_from_block_height(&mut self, value: u64) {
             self.builder.set_data_field::<u64>(0, value);
         }
     }
@@ -595,13 +595,13 @@ pub mod pending_sync_range {
             self.reader.get_data_field::<u32>(3)
         }
         #[inline]
-        pub fn get_operations(self) -> ::capnp::Result<::capnp::data_list::Reader<'a>> {
+        pub fn get_operations_frames(self) -> ::capnp::Result<::capnp::data_list::Reader<'a>> {
             ::capnp::traits::FromPointerReader::get_from_pointer(
                 &self.reader.get_pointer_field(1),
                 ::std::option::Option::None,
             )
         }
-        pub fn has_operations(&self) -> bool {
+        pub fn has_operations_frames(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
         #[inline]
@@ -610,7 +610,7 @@ pub mod pending_sync_range {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Reader<
                 'a,
-                crate::data_chain_capnp::pending_operation_header::Owned,
+                crate::data_chain_capnp::chain_operation_header::Owned,
             >,
         > {
             ::capnp::traits::FromPointerReader::get_from_pointer(
@@ -751,14 +751,14 @@ pub mod pending_sync_range {
             self.builder.set_data_field::<u32>(3, value);
         }
         #[inline]
-        pub fn get_operations(self) -> ::capnp::Result<::capnp::data_list::Builder<'a>> {
+        pub fn get_operations_frames(self) -> ::capnp::Result<::capnp::data_list::Builder<'a>> {
             ::capnp::traits::FromPointerBuilder::get_from_pointer(
                 self.builder.get_pointer_field(1),
                 ::std::option::Option::None,
             )
         }
         #[inline]
-        pub fn set_operations(
+        pub fn set_operations_frames(
             &mut self,
             value: ::capnp::data_list::Reader<'a>,
         ) -> ::capnp::Result<()> {
@@ -769,13 +769,13 @@ pub mod pending_sync_range {
             )
         }
         #[inline]
-        pub fn init_operations(self, size: u32) -> ::capnp::data_list::Builder<'a> {
+        pub fn init_operations_frames(self, size: u32) -> ::capnp::data_list::Builder<'a> {
             ::capnp::traits::FromPointerBuilder::init_pointer(
                 self.builder.get_pointer_field(1),
                 size,
             )
         }
-        pub fn has_operations(&self) -> bool {
+        pub fn has_operations_frames(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
         #[inline]
@@ -784,7 +784,7 @@ pub mod pending_sync_range {
         ) -> ::capnp::Result<
             ::capnp::struct_list::Builder<
                 'a,
-                crate::data_chain_capnp::pending_operation_header::Owned,
+                crate::data_chain_capnp::chain_operation_header::Owned,
             >,
         > {
             ::capnp::traits::FromPointerBuilder::get_from_pointer(
@@ -797,7 +797,7 @@ pub mod pending_sync_range {
             &mut self,
             value: ::capnp::struct_list::Reader<
                 'a,
-                crate::data_chain_capnp::pending_operation_header::Owned,
+                crate::data_chain_capnp::chain_operation_header::Owned,
             >,
         ) -> ::capnp::Result<()> {
             ::capnp::traits::SetPointerBuilder::set_pointer_builder(
@@ -810,10 +810,8 @@ pub mod pending_sync_range {
         pub fn init_operations_headers(
             self,
             size: u32,
-        ) -> ::capnp::struct_list::Builder<
-            'a,
-            crate::data_chain_capnp::pending_operation_header::Owned,
-        > {
+        ) -> ::capnp::struct_list::Builder<'a, crate::data_chain_capnp::chain_operation_header::Owned>
+        {
             ::capnp::traits::FromPointerBuilder::init_pointer(
                 self.builder.get_pointer_field(2),
                 size,
@@ -1157,7 +1155,7 @@ pub mod chain_sync_response {
         pub fn get_headers(
             self,
         ) -> ::capnp::Result<
-            ::capnp::struct_list::Reader<'a, crate::data_chain_capnp::block_header::Owned>,
+            ::capnp::struct_list::Reader<'a, crate::data_chain_capnp::block_partial_header::Owned>,
         > {
             ::capnp::traits::FromPointerReader::get_from_pointer(
                 &self.reader.get_pointer_field(0),
@@ -1268,7 +1266,7 @@ pub mod chain_sync_response {
         pub fn get_headers(
             self,
         ) -> ::capnp::Result<
-            ::capnp::struct_list::Builder<'a, crate::data_chain_capnp::block_header::Owned>,
+            ::capnp::struct_list::Builder<'a, crate::data_chain_capnp::block_partial_header::Owned>,
         > {
             ::capnp::traits::FromPointerBuilder::get_from_pointer(
                 self.builder.get_pointer_field(0),
@@ -1278,7 +1276,10 @@ pub mod chain_sync_response {
         #[inline]
         pub fn set_headers(
             &mut self,
-            value: ::capnp::struct_list::Reader<'a, crate::data_chain_capnp::block_header::Owned>,
+            value: ::capnp::struct_list::Reader<
+                'a,
+                crate::data_chain_capnp::block_partial_header::Owned,
+            >,
         ) -> ::capnp::Result<()> {
             ::capnp::traits::SetPointerBuilder::set_pointer_builder(
                 self.builder.get_pointer_field(0),
@@ -1290,7 +1291,7 @@ pub mod chain_sync_response {
         pub fn init_headers(
             self,
             size: u32,
-        ) -> ::capnp::struct_list::Builder<'a, crate::data_chain_capnp::block_header::Owned>
+        ) -> ::capnp::struct_list::Builder<'a, crate::data_chain_capnp::block_partial_header::Owned>
         {
             ::capnp::traits::FromPointerBuilder::init_pointer(
                 self.builder.get_pointer_field(0),

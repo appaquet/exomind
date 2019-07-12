@@ -10,7 +10,7 @@ use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage
 use exocore_common::cell::{Cell, CellId, CellNodes};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::serialization::protos::data_transport_capnp::envelope;
+use exocore_common::protos::data_transport_capnp::envelope;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
@@ -427,7 +427,7 @@ mod tests {
     use super::*;
     use exocore_common::cell::FullCell;
     use exocore_common::framing::CapnpFrameBuilder;
-    use exocore_common::serialization::protos::data_chain_capnp::block_operation_header;
+    use exocore_common::protos::data_chain_capnp::block_operation_header;
     use exocore_common::tests_utils::expect_eventually;
     use std::sync::Mutex;
     use tokio::runtime::Runtime;

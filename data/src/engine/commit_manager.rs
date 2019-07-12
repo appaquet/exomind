@@ -6,11 +6,11 @@ use itertools::Itertools;
 use crate::operation::{GroupId, OperationId};
 use exocore_common::crypto::signature::Signature;
 use exocore_common::node::NodeId;
-use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
+use exocore_common::protos::data_chain_capnp::chain_operation;
 use exocore_common::time::{duration_to_consistent_u64, Clock};
 
 use crate::block::{
-    Block, BlockDepth, BlockOffset, BlockOperations, BlockOwned, BlockSignature, BlockSignatures,
+    Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignature, BlockSignatures,
 };
 use crate::chain;
 use crate::engine::{pending_sync, Event, SyncContext};
@@ -29,7 +29,7 @@ use std::time::Duration;
 /// block proposal, signing/refusing them or proposing new blocks.
 ///
 /// It also manages cleanup of the pending store, by deleting old operations that were committed to the chain and that are
-/// in block with sufficient depth.
+/// in block with sufficient height.
 ///
 pub(super) struct CommitManager<PS: pending::PendingStore, CS: chain::ChainStore> {
     config: CommitManagerConfig,
@@ -174,8 +174,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // validate hash of operations of block
         let block_operations = Self::get_block_operations(block, pending_store)?.map(|op| op.frame);
         let operations_hash = BlockOperations::hash_operations(block_operations)?;
-        let block_reader = block_frame.get_reader()?;
-        if operations_hash.as_bytes() != block_reader.get_operations_hash()? {
+        let block_header_reader = block_frame.get_reader()?;
+        if operations_hash.as_bytes() != block_header_reader.get_operations_hash()? {
             debug!(
                 "Block entries hash didn't match our local hash for block id={} offset={}",
                 block.group_id, block.proposal.offset
@@ -209,7 +209,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let signature_operation = signature_frame_builder.sign_and_build(&local_node)?;
 
         let signature_reader = signature_operation.get_operation_reader()?;
-        let pending_signature = PendingBlockSignature::from_pending_operation(signature_reader)?;
+        let pending_signature = PendingBlockSignature::from_operation(signature_reader)?;
         debug!("Signing block {}", next_block.group_id);
         next_block.add_my_signature(pending_signature);
 
@@ -244,7 +244,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let refusal_operation = refusal_builder.sign_and_build(&local_node)?;
 
         let refusal_reader = refusal_operation.get_operation_reader()?;
-        let pending_refusal = PendingBlockRefusal::from_pending_operation(refusal_reader)?;
+        let pending_refusal = PendingBlockRefusal::from_operation(refusal_reader)?;
 
         next_block.add_my_refusal(pending_refusal);
 
@@ -280,7 +280,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 .checked_sub(pending_blocks.operations_blocks.len())
                 .unwrap_or(0);
 
-            if approx_non_committed_operations >= self.config.commit_maximum_pending_count {
+            if approx_non_committed_operations >= self.config.commit_maximum_pending_store_count {
                 return Ok(true);
             } else {
                 let previous_block = chain_store
@@ -388,10 +388,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         chain_store: &mut CS,
     ) -> Result<(), Error> {
         let block_frame = next_block.proposal.get_block()?;
-        let block_reader = block_frame.get_reader()?;
+        let block_header_reader = block_frame.get_reader()?;
 
         let block_offset = next_block.proposal.offset;
-        let block_height = block_reader.get_depth();
+        let block_height = block_header_reader.get_height();
 
         // fetch block's operations from the pending store
         let block_operations =
@@ -400,7 +400,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // make sure that the hash of operations is same as defined by the block
         // this should never happen since we wouldn't have signed the block if hash didn't match
         let block_operations = BlockOperations::from_operations(block_operations)?;
-        if block_operations.multihash_bytes() != block_reader.get_operations_hash()? {
+        if block_operations.multihash_bytes() != block_header_reader.get_operations_hash()? {
             return Err(Error::Fatal(
                 "Block hash for local entries didn't match block hash, but was previously signed"
                     .to_string(),
@@ -423,7 +423,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             })
             .collect::<Vec<_>>();
         let block_signatures = BlockSignatures::new_from_signatures(signatures);
-        let signatures_frame = block_signatures.to_frame_for_existing_block(&block_reader)?;
+        let signatures_frame =
+            block_signatures.to_frame_for_existing_block(&block_header_reader)?;
 
         // finally build the frame
         let block = BlockOwned::new(
@@ -445,7 +446,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 CommitStatus::Committed(block_offset, block_height),
             )?;
         }
-        sync_context.push_event(Event::ChainBlockNew(next_block.proposal.offset));
+        sync_context.push_event(Event::NewChainBlock(next_block.proposal.offset));
 
         Ok(())
     }
@@ -489,7 +490,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let last_stored_block = chain_store
             .get_last_block()?
             .ok_or(Error::UninitializedChain)?;
-        let last_stored_block_depth = last_stored_block.get_depth()?;
+        let last_stored_block_height = last_stored_block.get_height()?;
 
         // cleanup all blocks and their operations that are committed or refused with enough depth
         for (group_id, block) in &pending_blocks.blocks {
@@ -497,14 +498,14 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 || block.status == BlockStatus::PastRefused
             {
                 let block_frame = block.proposal.get_block()?;
-                let block_reader = block_frame.get_reader()?;
+                let block_header_reader = block_frame.get_reader()?;
 
-                let block_offset = block_reader.get_offset();
-                let block_depth = block_reader.get_depth();
+                let block_offset = block_header_reader.get_offset();
+                let block_height = block_header_reader.get_height();
 
-                let depth_diff = last_stored_block_depth - block_depth;
-                if depth_diff >= self.config.operations_cleanup_after_block_depth {
-                    debug!("Block at offset={} depth={} can be cleaned up (last_stored_block_depth={})", block_offset, block_depth, last_stored_block_depth);
+                let height_diff = last_stored_block_height - block_height;
+                if height_diff >= self.config.operations_cleanup_after_block_depth {
+                    debug!("Block at offset={} height={} can be cleaned up (last_stored_block_height={})", block_offset, block_height, last_stored_block_height);
 
                     // delete the block & related operations (sigs, refusals, etc.)
                     pending_store.delete_operation(*group_id)?;
@@ -518,7 +519,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
                     // update the sync state so that the `PendingSynchronizer` knows what was last block to get cleaned
                     sync_context.sync_state.pending_last_cleanup_block =
-                        Some((block_offset, block_depth));
+                        Some((block_offset, block_height));
                 }
             }
         }
@@ -542,9 +543,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     if let Some(block) =
                         chain_store.get_block_by_operation_id(operation.operation_id)?
                     {
-                        let block_depth = block.get_depth()?;
-                        let depth_diff = last_stored_block_depth - block_depth;
-                        if depth_diff >= self.config.operations_cleanup_after_block_depth {
+                        let block_height = block.get_height()?;
+                        let block_depth = last_stored_block_height - block_height;
+                        if block_depth >= self.config.operations_cleanup_after_block_depth {
                             operations_to_delete.push(operation.operation_id);
                         }
                     }
@@ -599,11 +600,12 @@ fn is_node_commit_turn(
 ///
 #[derive(Copy, Clone, Debug)]
 pub struct CommitManagerConfig {
-    pub operations_cleanup_after_block_depth: BlockDepth,
+    /// How deep a block need to be before we cleanup its operations from pending store
+    pub operations_cleanup_after_block_depth: BlockHeight,
 
-    /// After how many new pending operations do we force a commit, even if we aren't
+    /// After how many new operations in pending store do we force a commit, even if we aren't
     /// past the commit interval
-    pub commit_maximum_pending_count: usize,
+    pub commit_maximum_pending_store_count: usize,
 
     /// Interval at which commits are made, unless we hit `commit_maximum_pending_count`
     pub commit_maximum_interval: Duration,
@@ -613,7 +615,7 @@ impl Default for CommitManagerConfig {
     fn default() -> Self {
         CommitManagerConfig {
             operations_cleanup_after_block_depth: 6,
-            commit_maximum_pending_count: 50,
+            commit_maximum_pending_store_count: 50,
             commit_maximum_interval: Duration::from_secs(5),
         }
     }
@@ -679,29 +681,25 @@ impl PendingBlocks {
                 let operation_reader = operation.frame.get_reader()?;
 
                 match operation_reader.get_operation().which()? {
-                    pending_operation::operation::Which::BlockPropose(reader) => {
-                        let block_frame = crate::block::read_block_frame(reader?.get_block()?)?;
-                        let block_reader = block_frame.get_reader()?;
-                        for operation_header in block_reader.get_operations_header()? {
+                    chain_operation::operation::Which::BlockPropose(reader) => {
+                        let block_frame = crate::block::read_header_frame(reader?.get_block()?)?;
+                        let block_header_reader = block_frame.get_reader()?;
+                        for operation_header in block_header_reader.get_operations_header()? {
                             operations.push(operation_header.get_operation_id());
                         }
 
                         proposal = Some(PendingBlockProposal {
-                            offset: block_reader.get_offset(),
+                            offset: block_header_reader.get_offset(),
                             operation,
                         })
                     }
-                    pending_operation::operation::Which::BlockSign(_reader) => {
-                        signatures.push(PendingBlockSignature::from_pending_operation(
-                            operation_reader,
-                        )?);
+                    chain_operation::operation::Which::BlockSign(_reader) => {
+                        signatures.push(PendingBlockSignature::from_operation(operation_reader)?);
                     }
-                    pending_operation::operation::Which::BlockRefuse(_reader) => {
-                        refusals.push(PendingBlockRefusal::from_pending_operation(
-                            operation_reader,
-                        )?);
+                    chain_operation::operation::Which::BlockRefuse(_reader) => {
+                        refusals.push(PendingBlockRefusal::from_operation(operation_reader)?);
                     }
-                    pending_operation::operation::Which::Entry(_) => {
+                    chain_operation::operation::Which::Entry(_) => {
                         warn!("Found a non-block related operation in block group, which shouldn't be possible (group_id={})", group_id);
                     }
                 };
@@ -894,12 +892,12 @@ struct PendingBlockProposal {
 }
 
 impl PendingBlockProposal {
-    fn get_block(&self) -> Result<crate::block::BlockFrame<&[u8]>, Error> {
+    fn get_block(&self) -> Result<crate::block::BlockHeaderFrame<&[u8]>, Error> {
         let operation_reader = self.operation.frame.get_reader()?;
         let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
-            pending_operation::operation::Which::BlockPropose(block_prop) => {
-                Ok(crate::block::read_block_frame(block_prop?.get_block()?)?)
+            chain_operation::operation::Which::BlockPropose(block_prop) => {
+                Ok(crate::block::read_header_frame(block_prop?.get_block()?)?)
             }
             _ => Err(Error::Other(
                 "Expected block sign pending op to create block signature, but got something else"
@@ -917,12 +915,12 @@ struct PendingBlockRefusal {
 }
 
 impl PendingBlockRefusal {
-    fn from_pending_operation(
-        operation_reader: pending_operation::Reader,
+    fn from_operation(
+        operation_reader: chain_operation::Reader,
     ) -> Result<PendingBlockRefusal, Error> {
         let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
-            pending_operation::operation::Which::BlockRefuse(_sig) => {
+            chain_operation::operation::Which::BlockRefuse(_sig) => {
                 let node_id_str = operation_reader.get_node_id()?;
                 let node_id = NodeId::from_str(node_id_str).map_err(|_| {
                     Error::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
@@ -946,12 +944,12 @@ struct PendingBlockSignature {
 }
 
 impl PendingBlockSignature {
-    fn from_pending_operation(
-        operation_reader: pending_operation::Reader,
+    fn from_operation(
+        operation_reader: chain_operation::Reader,
     ) -> Result<PendingBlockSignature, Error> {
         let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
-            pending_operation::operation::Which::BlockSign(sig) => {
+            chain_operation::operation::Which::BlockSign(sig) => {
                 let op_signature_reader = sig?;
                 let signature_reader = op_signature_reader.get_signature()?;
 
@@ -1124,7 +1122,7 @@ mod tests {
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_millis(10));
         let max_ops = cluster.commit_managers[0]
             .config
-            .commit_maximum_pending_count;
+            .commit_maximum_pending_store_count;
         for _i in 0..=max_ops {
             append_new_operation(&mut cluster, b"hello world")?;
         }
@@ -1165,7 +1163,7 @@ mod tests {
                 .get_operation(op_id)?
                 .unwrap()
                 .commit_status,
-            CommitStatus::Committed(block.offset(), block.get_depth()?)
+            CommitStatus::Committed(block.offset(), block.get_height()?)
         );
 
         Ok(())
@@ -1223,8 +1221,11 @@ mod tests {
         // should commit the good block, and ignore refused one
         cluster.tick_commit_manager(0)?;
         let last_block = cluster.chains[0].get_last_block()?.unwrap();
-        let last_block_reader = last_block.block.get_reader()?;
-        assert_eq!(last_block_reader.get_proposed_operation_id(), block_id_good);
+        let last_block_header_reader = last_block.header.get_reader()?;
+        assert_eq!(
+            last_block_header_reader.get_proposed_operation_id(),
+            block_id_good
+        );
 
         Ok(())
     }
@@ -1313,14 +1314,14 @@ mod tests {
         let block: crate::block::BlockRef = cluster.chains[0]
             .get_block_by_operation_id(first_op_id)?
             .unwrap();
-        let block_frame = block.block.get_reader()?;
+        let block_frame = block.header.get_reader()?;
         let block_group_id = block_frame.get_proposed_operation_id();
         assert_not_in_pending(&cluster, block_group_id);
 
         // check that SyncState was updated correctly
-        let (cleanup_offset, cleanup_depth) =
+        let (cleanup_offset, cleanup_height) =
             cluster.sync_states[0].pending_last_cleanup_block.unwrap();
-        assert_eq!(cleanup_depth, block.get_depth()?);
+        assert_eq!(cleanup_height, block.get_height()?);
         assert_eq!(cleanup_offset, block.offset());
 
         // check if individual operations are still in pending

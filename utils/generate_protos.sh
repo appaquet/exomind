@@ -8,7 +8,7 @@ cargo build -p exocore-common
 
 for proto_path in `ls $CUR_DIR/../target/debug/build/exocore-common-*/out/proto/*_capnp.rs`; do
   proto_file="$(basename -- $proto_path)"
-  dest_path="$CUR_DIR/../common/src/serialization/protos/$proto_file"
+  dest_path="$CUR_DIR/../common/src/protos/$proto_file"
   echo "Copying $proto_file to $dest_path"
 
   echo "#![allow(unknown_lints)]" > $dest_path

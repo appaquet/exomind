@@ -28,11 +28,11 @@ pub trait MessageType<'a>: capnp::traits::Owned<'a> {
 ///
 /// Messages related to the chain / operations storage
 ///
-impl<'a> MessageType<'a> for self::data_chain_capnp::pending_operation::Owned {
+impl<'a> MessageType<'a> for self::data_chain_capnp::chain_operation::Owned {
     const MESSAGE_TYPE: u16 = 100;
 }
 
-impl<'a> MessageType<'a> for self::data_chain_capnp::pending_operation_header::Owned {
+impl<'a> MessageType<'a> for self::data_chain_capnp::chain_operation_header::Owned {
     const MESSAGE_TYPE: u16 = 101;
 }
 
@@ -52,7 +52,7 @@ impl<'a> MessageType<'a> for self::data_chain_capnp::operation_block_refuse::Own
     const MESSAGE_TYPE: u16 = 114;
 }
 
-impl<'a> MessageType<'a> for self::data_chain_capnp::block::Owned {
+impl<'a> MessageType<'a> for self::data_chain_capnp::block_header::Owned {
     const MESSAGE_TYPE: u16 = 130;
 }
 

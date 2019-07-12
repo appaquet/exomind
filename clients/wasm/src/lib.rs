@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::*;
 use stdweb;
 
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder, TypedCapnpFrame};
-use exocore_common::serialization::protos::data_transport_capnp::envelope;
+use exocore_common::protos::data_transport_capnp::envelope;
 use stdweb::traits::*;
 use stdweb::web::event::{SocketMessageEvent, SocketOpenEvent};
 use stdweb::web::{SocketBinaryType, WebSocket};

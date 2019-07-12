@@ -1,6 +1,6 @@
 use super::directory;
 use crate::block;
-use exocore_common::serialization::capnp;
+use exocore_common::capnp;
 
 #[derive(Clone, Debug, Fail)]
 pub enum Error {

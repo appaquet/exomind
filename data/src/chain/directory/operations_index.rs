@@ -10,7 +10,7 @@ use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::operation::OperationId;
-use exocore_common::serialization::protos::data_chain_capnp::block;
+use exocore_common::protos::data_chain_capnp::block_header;
 use exocore_common::simple_store::json_disk_store::JsonDiskStore;
 use exocore_common::simple_store::SimpleStore;
 
@@ -182,13 +182,13 @@ impl OperationsIndex {
             return Err(Error::Integrity(format!("Tried to index operations from a block with unexpected offset: block={} != expected={}", block.offset(), self.next_expected_offset)));
         }
 
-        let block_reader: block::Reader = block
-            .block()
+        let block_header_reader: block_header::Reader = block
+            .header()
             .get_reader()
             .map_err(|err| Error::Block(err.into()))?;
 
         // we add the operation that lead to the block proposal
-        let block_propose_op_id = block_reader.get_proposed_operation_id();
+        let block_propose_op_id = block_header_reader.get_proposed_operation_id();
         self.put_operation_block(block_propose_op_id, block.offset());
 
         // we add all operations that are in the block

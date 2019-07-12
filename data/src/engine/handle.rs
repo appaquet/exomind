@@ -1,11 +1,11 @@
 use super::{Error, Inner};
-use crate::block::{Block, BlockDepth, BlockOffset, BlockRef};
+use crate::block::{Block, BlockHeight, BlockOffset, BlockRef};
 use crate::operation::{OperationBuilder, OperationId};
 use crate::pending;
 use crate::pending::CommitStatus;
 use crate::{chain, operation};
 use exocore_common;
-use exocore_common::serialization::protos::data_chain_capnp::pending_operation;
+use exocore_common::protos::data_chain_capnp::chain_operation;
 use exocore_common::utils::completion_notifier::{CompletionError, CompletionListener};
 use futures::prelude::*;
 use futures::sync::mpsc;
@@ -81,7 +81,7 @@ where
         let operation_builder = OperationBuilder::new_entry(operation_id, my_node.id(), data);
         let operation = operation_builder.sign_and_build(&my_node)?;
 
-        unlocked_inner.handle_add_pending_operation(operation)?;
+        unlocked_inner.handle_new_operation(operation)?;
 
         Ok(operation_id)
     }
@@ -101,7 +101,7 @@ where
         let unlocked_inner = inner.read()?;
 
         let block = unlocked_inner.chain_store.get_block(block_offset)?;
-        EngineOperation::from_chain_block(block, operation_id)
+        EngineOperation::from_chain(block, operation_id)
     }
 
     pub fn get_chain_operations(
@@ -111,14 +111,14 @@ where
         ChainOperationsIterator::new(self.inner.clone(), from_offset)
     }
 
-    pub fn get_chain_last_block(&self) -> Result<Option<(BlockOffset, BlockDepth)>, Error> {
+    pub fn get_chain_last_block(&self) -> Result<Option<(BlockOffset, BlockHeight)>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
         let last_block = unlocked_inner.chain_store.get_last_block()?;
 
         if let Some(last_block) = last_block {
-            let depth = last_block.get_depth()?;
-            Ok(Some((last_block.offset, depth)))
+            let height = last_block.get_height()?;
+            Ok(Some((last_block.offset, height)))
         } else {
             Ok(None)
         }
@@ -127,14 +127,14 @@ where
     pub fn get_chain_block_info(
         &self,
         offset: BlockOffset,
-    ) -> Result<Option<(BlockOffset, BlockDepth)>, Error> {
+    ) -> Result<Option<(BlockOffset, BlockHeight)>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
         let block = unlocked_inner.chain_store.get_block(offset).ok();
 
         if let Some(block) = block {
-            let depth = block.get_depth()?;
-            Ok(Some((block.offset, depth)))
+            let height = block.get_height()?;
+            Ok(Some((block.offset, height)))
         } else {
             Ok(None)
         }
@@ -150,7 +150,7 @@ where
         let operation = unlocked_inner
             .pending_store
             .get_operation(operation_id)?
-            .map(EngineOperation::from_pending_operation);
+            .map(EngineOperation::from_pending);
 
         Ok(operation)
     }
@@ -165,7 +165,7 @@ where
         let operations = unlocked_inner
             .pending_store
             .operations_iter(operations_range)?
-            .map(EngineOperation::from_pending_operation)
+            .map(EngineOperation::from_pending)
             .collect::<Vec<_>>();
         Ok(operations)
     }
@@ -181,9 +181,7 @@ where
         let pending_operation = unlocked_inner.pending_store.get_operation(operation_id)?;
         let pending_operation = if let Some(pending_operation) = pending_operation {
             if pending_operation.commit_status != CommitStatus::Unknown {
-                return Ok(Some(EngineOperation::from_pending_operation(
-                    pending_operation,
-                )));
+                return Ok(Some(EngineOperation::from_pending(pending_operation)));
             }
 
             Some(pending_operation)
@@ -196,14 +194,14 @@ where
             .chain_store
             .get_block_by_operation_id(operation_id)?
         {
-            if let Some(chain_operation) = EngineOperation::from_chain_block(block, operation_id)? {
+            if let Some(chain_operation) = EngineOperation::from_chain(block, operation_id)? {
                 return Ok(Some(chain_operation));
             }
         }
 
         // if we're here, the operation was either absent, or just had a unknown status in pending store
         // we return the pending store operation (if any)
-        Ok(pending_operation.map(EngineOperation::from_pending_operation))
+        Ok(pending_operation.map(EngineOperation::from_pending))
     }
 
     ///
@@ -247,10 +245,10 @@ pub enum Event {
     StreamDiscontinuity,
 
     /// An operation added to the pending store.
-    PendingOperationNew(OperationId),
+    NewPendingOperation(OperationId),
 
     /// A new block got added to the chain.
-    ChainBlockNew(BlockOffset),
+    NewChainBlock(BlockOffset),
 
     /// The chain has diverged from given offset, which mean it will get re-written with new blocks.
     /// Operations after this offset should ignored.
@@ -267,10 +265,10 @@ pub struct EngineOperation {
 }
 
 impl EngineOperation {
-    fn from_pending_operation(operation: pending::StoredOperation) -> EngineOperation {
+    fn from_pending(operation: pending::StoredOperation) -> EngineOperation {
         let status = match operation.commit_status {
-            pending::CommitStatus::Committed(offset, depth) => {
-                EngineOperationStatus::Committed(offset, depth)
+            pending::CommitStatus::Committed(offset, height) => {
+                EngineOperationStatus::Committed(offset, height)
             }
             _ => EngineOperationStatus::Pending,
         };
@@ -282,15 +280,15 @@ impl EngineOperation {
         }
     }
 
-    fn from_chain_block(
+    fn from_chain(
         block: BlockRef,
         operation_id: OperationId,
     ) -> Result<Option<EngineOperation>, Error> {
         if let Some(operation) = block.get_operation(operation_id)? {
-            let depth = block.get_depth()?;
+            let height = block.get_height()?;
             return Ok(Some(EngineOperation {
                 operation_id,
-                status: EngineOperationStatus::Committed(block.offset, depth),
+                status: EngineOperationStatus::Committed(block.offset, height),
                 operation_frame: Arc::new(operation.to_owned()),
             }));
         }
@@ -300,21 +298,21 @@ impl EngineOperation {
 }
 
 impl crate::operation::Operation for EngineOperation {
-    fn get_operation_reader(&self) -> Result<pending_operation::Reader, operation::Error> {
+    fn get_operation_reader(&self) -> Result<chain_operation::Reader, operation::Error> {
         Ok(self.operation_frame.get_reader()?)
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub enum EngineOperationStatus {
-    Committed(BlockOffset, BlockDepth),
+    Committed(BlockOffset, BlockHeight),
     Pending,
 }
 
 impl EngineOperationStatus {
     pub fn is_committed(&self) -> bool {
         match self {
-            EngineOperationStatus::Committed(_offset, _depth) => true,
+            EngineOperationStatus::Committed(_offset, _height) => true,
             _ => false,
         }
     }
@@ -356,7 +354,7 @@ where
         // since a block may not contain operations (ex: genesis), we need to loop until we find one
         while self.current_operations.is_empty() {
             let block = inner.chain_store.get_block(self.next_offset)?;
-            let depth = block.get_depth()?;
+            let height = block.get_height()?;
 
             for operation in block.operations_iter()? {
                 let operation_reader = operation.get_reader()?;
@@ -364,7 +362,7 @@ where
 
                 self.current_operations.push(EngineOperation {
                     operation_id,
-                    status: EngineOperationStatus::Committed(block.offset, depth),
+                    status: EngineOperationStatus::Committed(block.offset, height),
                     operation_frame: Arc::new(operation.to_owned()),
                 });
             }

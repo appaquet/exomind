@@ -1,35 +1,35 @@
 use crate::block::Block;
+use exocore_common::capnp;
 use exocore_common::crypto::hash::Sha3_256;
 use exocore_common::crypto::signature::Signature;
-use exocore_common::data_chain_capnp::pending_operation;
 use exocore_common::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
     SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
 };
 use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::serialization::capnp;
-use exocore_common::serialization::protos::data_chain_capnp::block_signature;
+use exocore_common::protos::data_chain_capnp::block_signature;
+use exocore_common::protos::data_chain_capnp::chain_operation;
 
 pub type GroupId = u64;
 pub type OperationId = u64;
 
 pub type OperationFrame<I> =
-    TypedCapnpFrame<MultihashFrame<Sha3_256, SizedFrame<I>>, pending_operation::Owned>;
+    TypedCapnpFrame<MultihashFrame<Sha3_256, SizedFrame<I>>, chain_operation::Owned>;
 
 pub type OperationFrameBuilder =
-    SizedFrameBuilder<MultihashFrameBuilder<Sha3_256, CapnpFrameBuilder<pending_operation::Owned>>>;
+    SizedFrameBuilder<MultihashFrameBuilder<Sha3_256, CapnpFrameBuilder<chain_operation::Owned>>>;
 
 ///
 /// Wraps an operation that is stored either in the pending store, or in the
 /// the chain.
 ///
 pub trait Operation {
-    fn get_operation_reader(&self) -> Result<pending_operation::Reader, Error>;
+    fn get_operation_reader(&self) -> Result<chain_operation::Reader, Error>;
 
     fn as_entry_data(&self) -> Result<&[u8], Error> {
         let frame_reader = self.get_operation_reader()?;
         match frame_reader.get_operation().which()? {
-            pending_operation::operation::Entry(entry) => Ok(entry?.get_data()?),
+            chain_operation::operation::Entry(entry) => Ok(entry?.get_data()?),
             _ => Err(Error::NotAnEntry),
         }
     }
@@ -37,10 +37,10 @@ pub trait Operation {
     fn get_type(&self) -> Result<OperationType, Error> {
         let operation_reader = self.get_operation_reader()?;
         Ok(match operation_reader.get_operation().which()? {
-            pending_operation::operation::Which::BlockSign(_) => OperationType::BlockSign,
-            pending_operation::operation::Which::BlockPropose(_) => OperationType::BlockPropose,
-            pending_operation::operation::Which::BlockRefuse(_) => OperationType::BlockRefuse,
-            pending_operation::operation::Which::Entry(_) => OperationType::Entry,
+            chain_operation::operation::Which::BlockSign(_) => OperationType::BlockSign,
+            chain_operation::operation::Which::BlockPropose(_) => OperationType::BlockPropose,
+            chain_operation::operation::Which::BlockRefuse(_) => OperationType::BlockRefuse,
+            chain_operation::operation::Which::Entry(_) => OperationType::Entry,
         })
     }
 
@@ -67,17 +67,17 @@ pub enum OperationType {
 }
 
 ///
-/// Pending operation helper
+/// Chain operation frame building helper
 ///
 pub struct OperationBuilder {
-    pub frame_builder: CapnpFrameBuilder<pending_operation::Owned>,
+    pub frame_builder: CapnpFrameBuilder<chain_operation::Owned>,
 }
 
 impl OperationBuilder {
     pub fn new_entry(operation_id: OperationId, node_id: &NodeId, data: &[u8]) -> OperationBuilder {
         let mut frame_builder = CapnpFrameBuilder::new();
 
-        let mut operation_builder: pending_operation::Builder = frame_builder.get_builder();
+        let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(operation_id);
         operation_builder.set_node_id(node_id.to_str());
@@ -97,7 +97,7 @@ impl OperationBuilder {
     ) -> Result<OperationBuilder, Error> {
         let mut frame_builder = CapnpFrameBuilder::new();
 
-        let mut operation_builder: pending_operation::Builder = frame_builder.get_builder();
+        let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(operation_id);
         operation_builder.set_node_id(node_id.to_str());
@@ -113,11 +113,11 @@ impl OperationBuilder {
         group_id: OperationId,
         operation_id: OperationId,
         node_id: &NodeId,
-        _block: &crate::block::BlockFrame<I>,
+        _header: &crate::block::BlockHeaderFrame<I>,
     ) -> Result<OperationBuilder, Error> {
         let mut frame_builder = CapnpFrameBuilder::new();
 
-        let mut operation_builder: pending_operation::Builder = frame_builder.get_builder();
+        let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(group_id);
         operation_builder.set_node_id(node_id.to_str());
@@ -143,7 +143,7 @@ impl OperationBuilder {
     ) -> Result<OperationBuilder, Error> {
         let mut frame_builder = CapnpFrameBuilder::new();
 
-        let mut operation_builder: pending_operation::Builder = frame_builder.get_builder();
+        let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(group_id);
         operation_builder.set_node_id(node_id.to_str());
@@ -188,7 +188,7 @@ impl NewOperation {
 }
 
 impl crate::operation::Operation for NewOperation {
-    fn get_operation_reader(&self) -> Result<pending_operation::Reader, Error> {
+    fn get_operation_reader(&self) -> Result<chain_operation::Reader, Error> {
         Ok(self.frame.get_reader()?)
     }
 }

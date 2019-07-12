@@ -95,10 +95,10 @@ pub struct StoredOperationsGroup {
 
 ///
 /// Chain status of an operation in the pending store, indicating if it's in the chain
-/// or not, and at what depth.
+/// or not, and at what height.
 ///
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CommitStatus {
     Unknown,
-    Committed(block::BlockOffset, block::BlockDepth),
+    Committed(block::BlockOffset, block::BlockHeight),
 }

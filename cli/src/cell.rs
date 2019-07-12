@@ -1,6 +1,6 @@
 use crate::config::NodeConfig;
 use crate::options;
-use exocore_common::serialization::protos::data_chain_capnp::block;
+use exocore_common::protos::data_chain_capnp::block_header;
 use exocore_data::block::Block;
 use exocore_data::chain::ChainStore;
 use exocore_data::{DirectoryChainStore, DirectoryChainStoreConfig};
@@ -57,13 +57,15 @@ pub fn check_chain(
 
     for block in chain_store.blocks_iter(0)? {
         if let Err(err) = block.validate() {
-            let block_reader = block.block().get_reader();
-            let block_depth = block_reader.map(block::Reader::get_depth).ok();
+            let block_header_reader = block.header().get_reader();
+            let block_height = block_header_reader
+                .map(block_header::Reader::get_height)
+                .ok();
 
             error!(
-                "Block at offset={} depth={:?} is invalid: {}",
+                "Block at offset={} height={:?} is invalid: {}",
                 block.offset(),
-                block_depth,
+                block_height,
                 err
             );
             return Ok(());

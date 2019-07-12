@@ -726,8 +726,8 @@ pub mod tests {
         for stored_block in iter {
             count += 1;
 
-            let block_reader = stored_block.block.get_reader().unwrap();
-            let current_block_offset = block_reader.get_offset();
+            let block_header_reader = stored_block.header.get_reader().unwrap();
+            let current_block_offset = block_header_reader.get_offset();
             assert_eq!(stored_block.offset, current_block_offset);
 
             if first_block_offset.is_none() {
