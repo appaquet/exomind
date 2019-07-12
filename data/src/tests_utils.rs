@@ -186,6 +186,7 @@ impl DataTestCluster {
                     .as_mut()
                     .unwrap()
                     .take_events_stream()
+                    .unwrap()
                     .for_each(move |event| {
                         let mut events = events.lock().unwrap();
                         events.push(event.clone());

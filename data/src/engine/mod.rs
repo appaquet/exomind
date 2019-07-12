@@ -18,7 +18,6 @@ use exocore_common::utils::completion_notifier::{
 use exocore_transport::{Error as TransportError, InMessage, OutMessage, TransportHandle};
 use futures::prelude::*;
 use futures::sync::mpsc;
-use itertools::Itertools;
 use std;
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
@@ -49,7 +48,7 @@ pub struct Config {
     pub pending_synchronizer_config: PendingSyncConfig,
     pub commit_manager_config: CommitManagerConfig,
     pub manager_timer_interval: Duration,
-    pub handles_events_stream_size: usize,
+    pub events_stream_buffer_size: usize,
     pub to_transport_channel_size: usize,
 }
 
@@ -60,7 +59,7 @@ impl Default for Config {
             pending_synchronizer_config: PendingSyncConfig::default(),
             commit_manager_config: CommitManagerConfig::default(),
             manager_timer_interval: Duration::from_secs(1),
-            handles_events_stream_size: 1000,
+            events_stream_buffer_size: 1000,
             to_transport_channel_size: 3000,
         }
     }
@@ -83,7 +82,6 @@ where
     config: Config,
     transport: Option<T>,
     inner: Arc<RwLock<Inner<CS, PS>>>,
-    handles_count: usize,
     stop_listener: CompletionListener<(), Error>,
 }
 
@@ -121,6 +119,7 @@ where
         );
 
         let inner = Arc::new(RwLock::new(Inner {
+            config,
             cell,
             clock: clock.clone(),
             pending_store,
@@ -128,7 +127,9 @@ where
             chain_store,
             chain_synchronizer,
             commit_manager,
-            handles_sender: Vec::new(),
+            events_stream_sender: Vec::new(),
+            handles_next_id: 0,
+            handles_count: 0,
             transport_sender: None,
             sync_state: SyncState::default(),
             stop_notifier,
@@ -138,7 +139,6 @@ where
             start_notifier,
             config,
             inner,
-            handles_count: 0,
             transport: Some(transport),
             stop_listener,
         }
@@ -160,19 +160,10 @@ where
             .get_listener()
             .expect("Couldn't get stop listener for handle");
 
-        let id = self.handles_count;
-        self.handles_count += 1;
-
-        let channel_size = self.config.handles_events_stream_size;
-        let (events_sender, events_receiver) = mpsc::channel(channel_size);
-        unlocked_inner
-            .handles_sender
-            .push((id, false, events_sender));
-
+        let handle_id = unlocked_inner.get_new_handle_id();
         EngineHandle::new(
-            id,
+            handle_id,
             Arc::downgrade(&self.inner),
-            Some(events_receiver),
             start_listener,
             stop_listener,
         )
@@ -273,7 +264,7 @@ where
 
         {
             let mut unlocked_inner = self.inner.write()?;
-            unlocked_inner.notify_handles(&Event::Started);
+            unlocked_inner.dispatch_event(&Event::Started);
         }
 
         info!("Engine started!");
@@ -397,6 +388,7 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
+    config: Config,
     cell: Cell,
     clock: Clock,
     pending_store: PS,
@@ -404,7 +396,9 @@ where
     chain_store: CS,
     chain_synchronizer: chain_sync::ChainSynchronizer<CS>,
     commit_manager: commit_manager::CommitManager<PS, CS>,
-    handles_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
+    events_stream_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
+    handles_next_id: usize,
+    handles_count: usize,
     transport_sender: Option<mpsc::Sender<OutMessage>>,
     sync_state: SyncState,
     stop_notifier: CompletionNotifier<(), Error>,
@@ -430,7 +424,7 @@ where
             self.send_messages_from_sync_context(&mut sync_context)?;
         }
 
-        self.notify_handles_from_sync_context(&sync_context);
+        self.dispatch_events_from_sync_context(&sync_context);
 
         Ok(())
     }
@@ -456,7 +450,7 @@ where
         self.sync_state = sync_context.sync_state;
 
         self.send_messages_from_sync_context(&mut sync_context)?;
-        self.notify_handles_from_sync_context(&sync_context);
+        self.dispatch_events_from_sync_context(&sync_context);
 
         Ok(())
     }
@@ -476,7 +470,7 @@ where
         self.sync_state = sync_context.sync_state;
 
         self.send_messages_from_sync_context(&mut sync_context)?;
-        self.notify_handles_from_sync_context(&sync_context);
+        self.dispatch_events_from_sync_context(&sync_context);
 
         Ok(())
     }
@@ -496,7 +490,7 @@ where
         self.sync_state = sync_context.sync_state;
 
         self.send_messages_from_sync_context(&mut sync_context)?;
-        self.notify_handles_from_sync_context(&sync_context);
+        self.dispatch_events_from_sync_context(&sync_context);
 
         Ok(())
     }
@@ -526,7 +520,7 @@ where
         self.sync_state = sync_context.sync_state;
 
         self.send_messages_from_sync_context(&mut sync_context)?;
-        self.notify_handles_from_sync_context(&sync_context);
+        self.dispatch_events_from_sync_context(&sync_context);
 
         Ok(())
     }
@@ -535,56 +529,74 @@ where
         &mut self,
         sync_context: &mut SyncContext,
     ) -> Result<(), Error> {
-        if !sync_context.messages.is_empty() {
-            // swap out messages from the sync_context struct to consume them
-            let mut messages = Vec::new();
-            std::mem::swap(&mut sync_context.messages, &mut messages);
+        if sync_context.messages.is_empty() {
+            return Ok(());
+        }
 
-            for message in messages {
-                let out_message = message.into_out_message(&self.cell)?;
-                let transport_sender = self.transport_sender.as_mut().expect(
-                    "Transport sender was none, which mean that the transport was never started",
+        // swap out messages from the sync_context struct to consume them
+        let mut messages = Vec::new();
+        std::mem::swap(&mut sync_context.messages, &mut messages);
+
+        for message in messages {
+            let out_message = message.into_out_message(&self.cell)?;
+            let transport_sender = self.transport_sender.as_mut().expect(
+                "Transport sender was none, which mean that the transport was never started",
+            );
+            if let Err(err) = transport_sender.try_send(out_message) {
+                error!(
+                    "Error sending message from sync context to transport: {}",
+                    err
                 );
-                if let Err(err) = transport_sender.try_send(out_message) {
-                    error!(
-                        "Error sending message from sync context to transport: {}",
-                        err
-                    );
-                }
             }
         }
 
         Ok(())
     }
 
-    fn notify_handles_from_sync_context(&mut self, sync_context: &SyncContext) {
+    fn get_new_handle_id(&mut self) -> usize {
+        let id = self.handles_next_id;
+        self.handles_next_id += 1;
+        self.handles_count += 1;
+        id
+    }
+
+    fn get_new_events_stream(&mut self, handle_id: usize) -> mpsc::Receiver<Event> {
+        let channel_size = self.config.events_stream_buffer_size;
+        let (events_sender, events_receiver) = mpsc::channel(channel_size);
+        self.events_stream_sender
+            .push((handle_id, false, events_sender));
+
+        events_receiver
+    }
+
+    fn dispatch_events_from_sync_context(&mut self, sync_context: &SyncContext) {
         for event in sync_context.events.iter() {
-            self.notify_handles(&event)
+            self.dispatch_event(&event)
         }
     }
 
-    fn notify_handles(&mut self, event: &Event) {
-        for (id, discontinued, handle_sender) in self.handles_sender.iter_mut() {
+    fn dispatch_event(&mut self, event: &Event) {
+        for (handle_id, discontinued, stream_sender) in self.events_stream_sender.iter_mut() {
             // if we hit a full buffer at last send, the stream got a discontinuity and we need to advise consumer.
             // we try to emit a discontinuity event, and if we succeed (buffer has space), we try to send the next event
             if *discontinued {
-                if let Ok(()) = handle_sender.try_send(Event::StreamDiscontinuity) {
+                if let Ok(()) = stream_sender.try_send(Event::StreamDiscontinuity) {
                     *discontinued = false;
                 } else {
                     continue;
                 }
             }
 
-            match handle_sender.try_send(event.clone()) {
+            match stream_sender.try_send(event.clone()) {
                 Ok(()) => {}
                 Err(ref err) if err.is_full() => {
-                    error!("Couldn't send event to handle {} because channel buffer is full. Marking as discontinued", id);
+                    error!("Couldn't send event to handle {} because channel buffer is full. Marking as discontinued", handle_id);
                     *discontinued = true;
                 }
                 Err(err) => {
                     error!(
                         "Couldn't send event to handle {} for a reason other than channel buffer full: {:}",
-                        id,
+                        handle_id,
                         err
                     );
                 }
@@ -597,18 +609,20 @@ where
         chain_sync_status == chain_sync::Status::Synchronized
     }
 
-    fn unregister_handle(&mut self, id: usize) {
-        let found_index = self
-            .handles_sender
-            .iter()
-            .find_position(|(some_id, _discontinued, _sender)| *some_id == id);
-
-        if let Some((index, _item)) = found_index {
-            self.handles_sender.remove(index);
+    fn unregister_handle(&mut self, handle_id: usize) {
+        // remove all streams that this handle created
+        let mut previous_streams = Vec::new();
+        std::mem::swap(&mut self.events_stream_sender, &mut previous_streams);
+        for (one_handle_id, discontinued, sender) in previous_streams {
+            if one_handle_id != handle_id {
+                self.events_stream_sender
+                    .push((handle_id, discontinued, sender));
+            }
         }
 
         // if it was last handle, we kill the engine
-        if self.handles_sender.is_empty() {
+        self.handles_count -= 1;
+        if self.handles_count == 0 {
             debug!("Last engine handle got dropped, killing the engine.");
             self.stop_notifier.complete(Ok(()));
         }

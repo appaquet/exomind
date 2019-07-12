@@ -8,7 +8,6 @@ use exocore_common;
 use exocore_common::protos::data_chain_capnp::chain_operation;
 use exocore_common::utils::completion_notifier::{CompletionError, CompletionListener};
 use futures::prelude::*;
-use futures::sync::mpsc;
 use std::ops::RangeBounds;
 use std::sync::{Arc, RwLock, Weak};
 
@@ -23,7 +22,6 @@ where
 {
     id: usize,
     inner: Weak<RwLock<Inner<CS, PS>>>,
-    events_receiver: Option<mpsc::Receiver<Event>>,
     start_listener: CompletionListener<(), Error>,
     stop_listener: CompletionListener<(), Error>,
 }
@@ -36,14 +34,12 @@ where
     pub(crate) fn new(
         id: usize,
         inner: Weak<RwLock<Inner<CS, PS>>>,
-        events_receiver: Option<mpsc::Receiver<Event>>,
         start_listener: CompletionListener<(), Error>,
         stop_listener: CompletionListener<(), Error>,
     ) -> EngineHandle<CS, PS> {
         EngineHandle {
             id,
             inner,
-            events_receiver,
             start_listener,
             stop_listener,
         }
@@ -208,11 +204,43 @@ where
     /// Take the events stream receiver out of this `Handle`.
     /// This stream is bounded and consumptions should be non-blocking to prevent losing events.
     /// Calling the engine on every call should be throttled in the case of a big read amplification.
-    pub fn take_events_stream(&mut self) -> impl futures::Stream<Item = Event, Error = Error> {
-        self.events_receiver
-            .take()
-            .expect("Get events stream was already called.")
-            .map_err(|_err| Error::Other("Error in incoming events stream".to_string()))
+    pub fn take_events_stream(
+        &mut self,
+    ) -> Result<impl futures::Stream<Item = Event, Error = Error>, Error> {
+        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+        let mut unlocked_inner = inner.write()?;
+
+        let stream = unlocked_inner
+            .get_new_events_stream(self.id)
+            .map_err(|_err| Error::Other("Error in incoming events stream".to_string()));
+
+        Ok(stream)
+    }
+
+    pub fn try_clone(&self) -> Result<EngineHandle<CS, PS>, Error> {
+        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+        let mut unlocked_inner = inner.write()?;
+
+        let start_listener = self.start_listener.try_clone().map_err(|err| {
+            Error::Other(format!(
+                "Couldn't clone start_listener to clone handle: {}",
+                err
+            ))
+        })?;
+        let stop_listener = self.stop_listener.try_clone().map_err(|err| {
+            Error::Other(format!(
+                "Couldn't clone start_listener to clone handle: {}",
+                err
+            ))
+        })?;
+
+        let handle_id = unlocked_inner.get_new_handle_id();
+        Ok(EngineHandle::new(
+            handle_id,
+            self.inner.clone(),
+            start_listener,
+            stop_listener,
+        ))
     }
 }
 
