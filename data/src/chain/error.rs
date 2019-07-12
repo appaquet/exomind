@@ -18,7 +18,7 @@ pub enum Error {
     OutOfBound(String),
     #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
     IO(std::io::ErrorKind, String),
-    #[fail(display = "Error in directory chain store: {:?}", _0)]
+    #[fail(display = "Error in directory chain store: {}", _0)]
     DirectoryError(#[fail(cause)] directory::DirectoryError),
     #[fail(display = "Try to lock a mutex that was poisoned")]
     Poisoned,

@@ -344,12 +344,12 @@ mod test {
         let operation = store.get_operation(101)?.unwrap();
         assert_eq!(CommitStatus::Unknown, operation.commit_status);
 
-        store.update_operation_commit_status(101, CommitStatus::NotCommitted)?;
+        store.update_operation_commit_status(101, CommitStatus::Committed(1, 2))?;
         let operation = store.get_operation(101)?.unwrap();
-        assert_eq!(CommitStatus::NotCommitted, operation.commit_status);
+        assert_eq!(CommitStatus::Committed(1, 2), operation.commit_status);
 
         assert!(store
-            .update_operation_commit_status(666, CommitStatus::NotCommitted)
+            .update_operation_commit_status(666, CommitStatus::Committed(2, 3))
             .is_err());
 
         Ok(())

@@ -31,7 +31,7 @@ mod error;
 mod handle;
 mod pending_sync;
 mod request_tracker;
-#[cfg(any(test, feature = "tests_utils"))]
+#[cfg(test)]
 pub(crate) mod testing;
 
 pub use chain_sync::ChainSyncConfig;

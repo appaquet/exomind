@@ -100,6 +100,5 @@ pub struct StoredOperationsGroup {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CommitStatus {
     Unknown,
-    NotCommitted,
     Committed(block::BlockOffset, block::BlockDepth),
 }

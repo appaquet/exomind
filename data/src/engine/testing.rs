@@ -24,7 +24,7 @@ use exocore_common::time::Clock;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 
-pub(super) struct TestCluster {
+pub(super) struct EngineTestCluster {
     pub cells: Vec<FullCell>,
 
     pub nodes: Vec<LocalNode>,
@@ -44,8 +44,8 @@ pub(super) struct TestCluster {
     pub sync_states: Vec<SyncState>,
 }
 
-impl TestCluster {
-    pub fn new(count: usize) -> TestCluster {
+impl EngineTestCluster {
+    pub fn new(count: usize) -> EngineTestCluster {
         let mut cells = Vec::new();
 
         let mut nodes = Vec::new();
@@ -114,7 +114,7 @@ impl TestCluster {
             }
         }
 
-        TestCluster {
+        EngineTestCluster {
             cells,
             nodes,
             nodes_index,

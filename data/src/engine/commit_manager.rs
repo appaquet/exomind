@@ -20,6 +20,7 @@ use crate::pending;
 use std::str::FromStr;
 
 use super::Error;
+use crate::pending::CommitStatus;
 use exocore_common::cell::{Cell, CellNodes, CellNodesRead};
 use std::time::Duration;
 
@@ -389,6 +390,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let block_frame = next_block.proposal.get_block()?;
         let block_reader = block_frame.get_reader()?;
 
+        let block_offset = next_block.proposal.offset;
+        let block_height = block_reader.get_depth();
+
         // fetch block's operations from the pending store
         let block_operations =
             Self::get_block_operations(next_block, pending_store)?.map(|operation| operation.frame);
@@ -423,14 +427,24 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         // finally build the frame
         let block = BlockOwned::new(
-            next_block.proposal.offset,
+            block_offset,
             block_frame.to_owned(),
             block_operations.data().to_vec(),
             signatures_frame,
         );
 
-        debug!("Writing with offset={} to chain", block.offset());
+        info!(
+            "Writing new block to chain: offset={} operations_count={}",
+            block.offset(),
+            block_operations.operations_count()
+        );
         chain_store.write_block(&block)?;
+        for operation_id in block_operations.operations_id() {
+            pending_store.update_operation_commit_status(
+                operation_id,
+                CommitStatus::Committed(block_offset, block_height),
+            )?;
+        }
         sync_context.push_event(Event::ChainBlockNew(next_block.proposal.offset));
 
         Ok(())
@@ -980,7 +994,7 @@ mod tests {
 
     #[test]
     fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         cluster.chain_add_genesis_block(0);
         cluster.tick_chain_synchronizer(0)?;
 
@@ -1020,7 +1034,7 @@ mod tests {
 
     #[test]
     fn only_one_node_at_time_should_commit() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_add_genesis_block(0);
         cluster.chain_add_genesis_block(1);
         cluster.tick_chain_synchronizer(0)?;
@@ -1046,7 +1060,7 @@ mod tests {
 
     #[test]
     fn commit_block_at_interval() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         let commit_interval = cluster.commit_managers[0].config.commit_maximum_interval;
 
         cluster.clocks[0].set_fixed_instant(Instant::now());
@@ -1054,7 +1068,7 @@ mod tests {
         cluster.chain_add_genesis_block(0);
         cluster.tick_chain_synchronizer(0)?;
 
-        // first block should be committed right away since there is not previous
+        // first block should be committed right away since there is no previous
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_millis(10));
         append_new_operation(&mut cluster, b"hello world")?;
         cluster.tick_commit_manager(0)?;
@@ -1083,7 +1097,7 @@ mod tests {
 
     #[test]
     fn commit_block_after_maximum_operations() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         cluster.clocks[0].set_fixed_instant(Instant::now());
 
         cluster.chain_add_genesis_block(0);
@@ -1125,8 +1139,41 @@ mod tests {
     }
 
     #[test]
+    fn update_pending_status_for_committed_operations() -> Result<(), failure::Error> {
+        let mut cluster = EngineTestCluster::new(1);
+        cluster.clocks[0].set_fixed_instant(Instant::now());
+
+        cluster.chain_add_genesis_block(0);
+        cluster.tick_chain_synchronizer(0)?;
+
+        // first block should be committed right away since there is not previous
+        cluster.clocks[0].add_fixed_instant_duration(Duration::from_millis(10));
+        let op_id = append_new_operation(&mut cluster, b"hello world")?;
+        assert_eq!(
+            cluster.pending_stores[0]
+                .get_operation(op_id)?
+                .unwrap()
+                .commit_status,
+            CommitStatus::Unknown
+        );
+        cluster.tick_commit_manager(0)?;
+        cluster.tick_commit_manager(0)?;
+
+        let block = cluster.chains[0].get_last_block()?.unwrap();
+        assert_eq!(
+            cluster.pending_stores[0]
+                .get_operation(op_id)?
+                .unwrap()
+                .commit_status,
+            CommitStatus::Committed(block.offset(), block.get_depth()?)
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn should_sign_valid_proposed_block() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         cluster.chain_add_genesis_block(0);
         cluster.tick_chain_synchronizer(0)?;
 
@@ -1153,7 +1200,7 @@ mod tests {
 
     #[test]
     fn should_refuse_invalid_proposed_block() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         cluster.chain_add_genesis_block(0);
         cluster.tick_chain_synchronizer(0)?;
 
@@ -1184,7 +1231,7 @@ mod tests {
 
     #[test]
     fn test_is_node_commit_turn() -> Result<(), failure::Error> {
-        let cluster = TestCluster::new(2);
+        let cluster = EngineTestCluster::new(2);
         let node1 = cluster.get_node(0);
         let node2 = cluster.get_node(1);
 
@@ -1222,10 +1269,10 @@ mod tests {
 
     #[test]
     fn cleanup_past_committed_operations() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         cluster.clocks[0].set_fixed_instant(Instant::now());
 
-        let assert_not_in_pending = |cluster: &TestCluster, operation_id: u64| {
+        let assert_not_in_pending = |cluster: &EngineTestCluster, operation_id: u64| {
             assert!(&cluster.pending_stores[0]
                 .get_operation(operation_id)
                 .unwrap()
@@ -1287,7 +1334,7 @@ mod tests {
 
     #[test]
     fn dont_cleanup_operations_from_commit_refused_blocks() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         cluster.chain_generate_dummy(0, 10, 1234);
         cluster.tick_chain_synchronizer(0)?;
 
@@ -1358,7 +1405,7 @@ mod tests {
 
     #[test]
     fn cleanup_dangling_operations() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         cluster.clocks[0].set_fixed_instant(Instant::now());
 
         cluster.chain_add_genesis_block(0);
@@ -1404,7 +1451,10 @@ mod tests {
         Ok(())
     }
 
-    fn append_new_operation(cluster: &mut TestCluster, data: &[u8]) -> Result<OperationId, Error> {
+    fn append_new_operation(
+        cluster: &mut EngineTestCluster,
+        data: &[u8],
+    ) -> Result<OperationId, Error> {
         let op_id = cluster.consistent_clock(0);
 
         for node in cluster.nodes.iter() {
@@ -1418,7 +1468,7 @@ mod tests {
     }
 
     fn append_block_proposal_from_operations(
-        cluster: &mut TestCluster,
+        cluster: &mut EngineTestCluster,
         op_ids: Vec<OperationId>,
     ) -> Result<OperationId, Error> {
         let node = &cluster.nodes[0];
@@ -1448,7 +1498,7 @@ mod tests {
         Ok(block_operation_id)
     }
 
-    fn get_pending_blocks(cluster: &TestCluster) -> Result<PendingBlocks, Error> {
+    fn get_pending_blocks(cluster: &EngineTestCluster) -> Result<PendingBlocks, Error> {
         PendingBlocks::new(
             &cluster.cells[0],
             &cluster.pending_stores[0],

@@ -422,7 +422,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             match (op.commit_status, from_block_depth) {
                 (_, None) => true,
                 (CommitStatus::Unknown, _) => true,
-                (CommitStatus::NotCommitted, _) => true,
                 (CommitStatus::Committed(_offset, op_depth), Some(from_depth)) => {
                     op_depth >= from_depth
                 }
@@ -796,14 +795,14 @@ mod tests {
     #[test]
     fn tick_send_to_other_nodes() -> Result<(), failure::Error> {
         // only one node, shouldn't send to ourself
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         let mut sync_context = SyncContext::new(SyncState::default());
         cluster.pending_stores_synchronizer[0]
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
         assert_eq!(sync_context.messages.len(), 0);
 
         // two nodes should send to other node
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         let mut sync_context = SyncContext::new(SyncState::default());
         cluster.pending_stores_synchronizer[0]
             .tick(&mut sync_context, &cluster.pending_stores[0])?;
@@ -814,7 +813,7 @@ mod tests {
 
     #[test]
     fn create_sync_range_request() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.pending_generate_dummy(0, 0, 100);
 
         let mut sync_context = SyncContext::new(SyncState::default());
@@ -840,7 +839,7 @@ mod tests {
 
     #[test]
     fn create_sync_range_request_with_depth() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.clocks[0].set_fixed_instant(Instant::now());
 
         let config_depth_offset = cluster.pending_stores_synchronizer[0]
@@ -885,7 +884,7 @@ mod tests {
 
     #[test]
     fn new_operation_after_last_operation() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.pending_generate_dummy(0, 0, 50);
         cluster.pending_generate_dummy(1, 0, 50);
 
@@ -917,7 +916,7 @@ mod tests {
 
     #[test]
     fn new_operation_among_current_operations() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
 
         // generate operations with even operation id
         let generator_node = &cluster.nodes[0];
@@ -958,7 +957,7 @@ mod tests {
 
     #[test]
     fn handle_sync_equals() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.pending_generate_dummy(0, 0, 100);
         cluster.pending_generate_dummy(1, 0, 100);
 
@@ -971,7 +970,7 @@ mod tests {
 
     #[test]
     fn handle_sync_empty_to_many() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.pending_generate_dummy(0, 0, 100);
 
         let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
@@ -983,7 +982,7 @@ mod tests {
 
     #[test]
     fn handle_sync_many_to_empty() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.pending_generate_dummy(1, 1, 100);
 
         let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
@@ -995,7 +994,7 @@ mod tests {
 
     #[test]
     fn handle_sync_full_to_some() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.pending_generate_dummy(0, 0, 100);
 
         // insert 1/2 operations in second node
@@ -1015,7 +1014,7 @@ mod tests {
 
     #[test]
     fn handle_sync_some_to_all() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.pending_generate_dummy(1, 1, 100);
 
         // insert 1/2 operations in first node
@@ -1035,7 +1034,7 @@ mod tests {
 
     #[test]
     fn handle_sync_different_some_to_different_some() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
 
         let generator_node = &cluster.nodes[0];
         for operation in pending_ops_generator(generator_node, 10) {
@@ -1055,7 +1054,7 @@ mod tests {
 
     #[test]
     fn handle_sync_cleaned_up_depth() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.clocks[0].set_fixed_instant(Instant::now());
 
         // we generate operations on node 0 spread in 10 blocks
@@ -1092,7 +1091,7 @@ mod tests {
 
     #[test]
     fn should_extract_from_block_offset() -> Result<(), failure::Error> {
-        let cluster = TestCluster::new(1);
+        let cluster = EngineTestCluster::new(1);
 
         let pending_store = &cluster.pending_stores_synchronizer[0];
 
@@ -1134,7 +1133,7 @@ mod tests {
 
     #[test]
     fn operations_iter_filtered_depth() -> Result<(), failure::Error> {
-        let cluster = TestCluster::new(1);
+        let cluster = EngineTestCluster::new(1);
 
         let local_node = &cluster.nodes[0];
         let pending_store = &cluster.pending_stores_synchronizer[0];
@@ -1156,7 +1155,7 @@ mod tests {
         assert_eq!(3, res.len());
 
         // should return not committed
-        store.update_operation_commit_status(100, CommitStatus::NotCommitted)?;
+        store.update_operation_commit_status(100, CommitStatus::Unknown)?;
         let res = pending_store
             .operations_iter_from_depth(&store, .., Some(2))?
             .collect_vec();
@@ -1271,7 +1270,7 @@ mod tests {
     }
 
     fn sync_nodes(
-        cluster: &mut TestCluster,
+        cluster: &mut EngineTestCluster,
         node_id_a: usize,
         node_id_b: usize,
     ) -> Result<(usize, usize), failure::Error> {
@@ -1283,7 +1282,7 @@ mod tests {
     }
 
     fn sync_nodes_with_initial_request(
-        cluster: &mut TestCluster,
+        cluster: &mut EngineTestCluster,
         node_id_a: usize,
         node_id_b: usize,
         initial_request: TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,

@@ -1080,7 +1080,7 @@ mod tests {
 
     #[test]
     fn handle_sync_response_blocks() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_generate_dummy(0, 10, 1234);
         cluster.chain_generate_dummy(1, 100, 1234);
 
@@ -1151,7 +1151,7 @@ mod tests {
 
     #[test]
     fn test_chain_sample_block_headers() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(1);
+        let mut cluster = EngineTestCluster::new(1);
         cluster.chain_generate_dummy(0, 100, 3424);
 
         let offsets: Vec<BlockOffset> = cluster.chains[0]
@@ -1195,7 +1195,7 @@ mod tests {
 
     #[test]
     fn sync_empty_node1_to_full_node2() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_generate_dummy(1, 100, 3434);
 
         let node1 = cluster.get_node(1);
@@ -1231,7 +1231,7 @@ mod tests {
 
     #[test]
     fn sync_full_node1_to_empty_node2() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_generate_dummy(0, 100, 3434);
 
         let node1 = cluster.get_node(1);
@@ -1259,7 +1259,7 @@ mod tests {
 
     #[test]
     fn sync_full_node1_to_half_node2() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_generate_dummy(0, 100, 3434);
         cluster.chain_generate_dummy(1, 50, 3434);
 
@@ -1290,7 +1290,7 @@ mod tests {
 
     #[test]
     fn sync_half_node1_to_full_node2() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_generate_dummy(0, 50, 3434);
         cluster.chain_generate_dummy(1, 100, 3434);
 
@@ -1324,7 +1324,7 @@ mod tests {
 
     #[test]
     fn sync_fully_divergent_node1_to_full_node2() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_generate_dummy(0, 100, 1234);
         cluster.chain_generate_dummy(1, 100, 9876);
 
@@ -1357,7 +1357,7 @@ mod tests {
 
     #[test]
     fn sync_single_block_even_if_max_out_size() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
 
         let node_0 = cluster.get_local_node(0).clone();
         cluster.chain_add_genesis_block(0);
@@ -1400,7 +1400,7 @@ mod tests {
 
     #[test]
     fn cannot_sync_all_divergent() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(4);
+        let mut cluster = EngineTestCluster::new(4);
         cluster.chain_generate_dummy(0, 100, 1234);
         cluster.chain_generate_dummy(1, 100, 9876);
         cluster.chain_generate_dummy(2, 100, 9876);
@@ -1420,7 +1420,7 @@ mod tests {
 
     #[test]
     fn sync_half_divergent_node1_to_full_node2() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_generate_dummy(0, 100, 1234);
         cluster.chain_generate_dummy(1, 50, 1234);
         cluster.chain_append_dummy(1, 50, 1234);
@@ -1454,7 +1454,7 @@ mod tests {
 
     #[test]
     fn sync_empty_node1_to_big_chain_node2() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
 
         // this will force multiple back and forth for data
         cluster.chains_synchronizer[0].config.blocks_max_send_size = 1024;
@@ -1474,7 +1474,7 @@ mod tests {
 
     #[test]
     fn leader_lost_metadata_out_of_date() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(4);
+        let mut cluster = EngineTestCluster::new(4);
         cluster.chain_generate_dummy(0, 50, 3434);
         cluster.chain_generate_dummy(1, 100, 3434);
         cluster.chain_generate_dummy(2, 90, 3434);
@@ -1506,7 +1506,7 @@ mod tests {
 
     #[test]
     fn leader_lost_chain_too_far() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(2);
+        let mut cluster = EngineTestCluster::new(2);
         cluster.chain_generate_dummy(0, 50, 3434);
         cluster.chain_generate_dummy(1, 100, 3434);
         cluster.clocks[0].set_fixed_instant(Instant::now());
@@ -1541,7 +1541,7 @@ mod tests {
 
     #[test]
     fn quorum_lost_and_regain() -> Result<(), failure::Error> {
-        let mut cluster = TestCluster::new(3);
+        let mut cluster = EngineTestCluster::new(3);
         cluster.chain_generate_dummy(0, 50, 3434);
         cluster.chain_generate_dummy(1, 100, 3434);
         cluster.chain_generate_dummy(2, 100, 3434);
@@ -1611,7 +1611,7 @@ mod tests {
     }
 
     fn run_sync_1_to_1(
-        cluster: &mut TestCluster,
+        cluster: &mut EngineTestCluster,
         node_id_a: usize,
         node_id_b: usize,
     ) -> Result<(usize, usize), Error> {
@@ -1626,7 +1626,7 @@ mod tests {
         run_sync_1_to_1_with_request(cluster, node_id_a, node_id_b, message)
     }
 
-    fn run_sync_1_to_n(cluster: &mut TestCluster, node_id_from: usize) -> Result<(), Error> {
+    fn run_sync_1_to_n(cluster: &mut EngineTestCluster, node_id_from: usize) -> Result<(), Error> {
         let sync_context = cluster.tick_chain_synchronizer(node_id_from)?;
         for sync_message in sync_context.messages {
             if let SyncContextMessage::ChainSyncRequest(to_node, req) = sync_message {
@@ -1640,7 +1640,7 @@ mod tests {
     }
 
     fn run_sync_1_to_1_with_request(
-        cluster: &mut TestCluster,
+        cluster: &mut EngineTestCluster,
         node_id_a: usize,
         node_id_b: usize,
         first_request: TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned>,

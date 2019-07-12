@@ -562,6 +562,14 @@ impl BlockOperations {
         Ok(hasher.into_multihash())
     }
 
+    pub fn operations_count(&self) -> usize {
+        self.headers.len()
+    }
+
+    pub fn operations_id<'o>(&'o self) -> impl Iterator<Item = OperationId> + 'o {
+        self.headers.iter().map(|header| header.operation_id)
+    }
+
     pub fn multihash_bytes(&self) -> &[u8] {
         &self.multihash_bytes
     }
