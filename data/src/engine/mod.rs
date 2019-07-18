@@ -8,14 +8,16 @@ use exocore_common::cell::{Cell, CellNodes};
 use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::node::NodeId;
 use exocore_common::protos::data_transport_capnp::{
-    chain_sync_request, chain_sync_response, envelope, pending_sync_request,
+    chain_sync_request, chain_sync_response, pending_sync_request,
 };
 use exocore_common::protos::MessageType;
 use exocore_common::time::Clock;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
-use exocore_transport::{Error as TransportError, InMessage, OutMessage, TransportHandle};
+use exocore_transport::{
+    Error as TransportError, InMessage, OutMessage, TransportHandle, TransportLayer,
+};
 use futures::prelude::*;
 use futures::sync::mpsc;
 use std;
@@ -278,35 +280,30 @@ where
         let locked_inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut inner = locked_inner.write()?;
 
-        let envelope_reader: envelope::Reader = message.envelope.get_reader()?;
         debug!(
             "{}: Got message of type {} from node {}",
             inner.cell.local_node().id(),
-            envelope_reader.get_type(),
-            envelope_reader.get_from_node_id()?
+            message.message_type,
+            message.from.id(),
         );
 
-        match envelope_reader.get_type() {
+        match message.message_type {
             <pending_sync_request::Owned as MessageType>::MESSAGE_TYPE => {
-                let data = envelope_reader.get_data()?;
-                let sync_request = TypedCapnpFrame::new(data)?;
+                let sync_request = message.get_data_as_framed_message()?;
                 inner.handle_incoming_pending_sync_request(&message, sync_request)?;
             }
             <chain_sync_request::Owned as MessageType>::MESSAGE_TYPE => {
-                let data = envelope_reader.get_data()?;
-                let sync_request = TypedCapnpFrame::new(data)?;
+                let sync_request = message.get_data_as_framed_message()?;
                 inner.handle_incoming_chain_sync_request(&message, sync_request)?;
             }
             <chain_sync_response::Owned as MessageType>::MESSAGE_TYPE => {
-                let data = envelope_reader.get_data()?;
-                let sync_response = TypedCapnpFrame::new(data)?;
+                let sync_response = message.get_data_as_framed_message()?;
                 inner.handle_incoming_chain_sync_response(&message, sync_response)?;
             }
             msg_type => {
                 return Err(Error::Other(format!(
-                    "Got an unknown message type: message_type={} transport_layer={}",
-                    msg_type,
-                    envelope_reader.get_layer()
+                    "Got an unknown message type: message_type={} transport_layer={:?}",
+                    msg_type, message.layer,
                 )));
             }
         }
@@ -381,7 +378,6 @@ where
 ///
 /// Inner instance of the engine, since the engine is owned by the executor. The executor owns a strong
 /// reference to this Inner, while handles own weak references.
-///
 ///
 pub(crate) struct Inner<CS, PS>
 where
@@ -628,6 +624,7 @@ where
         }
     }
 }
+
 ///
 /// Synchronization context used by `chain_sync`, `pending_sync` and `commit_manager` to dispatch
 /// messages to other nodes, and dispatch events to be sent to engine handles.
@@ -702,13 +699,16 @@ impl SyncContextMessage {
 
         let message = match self {
             SyncContextMessage::PendingSyncRequest(_, request_builder) => {
-                OutMessage::from_framed_message(cell, to_nodes, request_builder)?
+                OutMessage::from_framed_message(cell, TransportLayer::Data, request_builder)?
+                    .with_to_nodes(to_nodes)
             }
             SyncContextMessage::ChainSyncRequest(_, request_builder) => {
-                OutMessage::from_framed_message(cell, to_nodes, request_builder)?
+                OutMessage::from_framed_message(cell, TransportLayer::Data, request_builder)?
+                    .with_to_nodes(to_nodes)
             }
             SyncContextMessage::ChainSyncResponse(_, response_builder) => {
-                OutMessage::from_framed_message(cell, to_nodes, response_builder)?
+                OutMessage::from_framed_message(cell, TransportLayer::Data, response_builder)?
+                    .with_to_nodes(to_nodes)
             }
         };
 

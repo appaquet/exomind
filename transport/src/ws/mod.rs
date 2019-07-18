@@ -9,7 +9,7 @@ use crate::{Error, InMessage, OutMessage, TransportHandle};
 use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{Node, NodeId};
-use exocore_common::protos::data_transport_capnp::envelope;
+use exocore_common::protos::common_capnp::envelope;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
@@ -309,11 +309,10 @@ impl WebsocketTransport {
 
             let envelope_frame = TypedCapnpFrame::<_, envelope::Owned>::new(data)?;
             for handle in inner.handles.values_mut() {
-                let in_message = InMessage {
-                    from: connection_node.clone(),
-                    envelope: envelope_frame.to_owned(),
-                };
-
+                let in_message = InMessage::from_node_and_frame(
+                    connection_node.clone(),
+                    envelope_frame.to_owned(),
+                )?;
                 if let Err(err) = handle.in_sink.try_send(in_message) {
                     error!("Error sending to handle: {}", err);
                 }
@@ -431,6 +430,7 @@ impl Drop for WebsocketTransportHandle {
 mod tests {
     use super::websocket::ClientBuilder;
     use super::*;
+    use crate::TransportLayer;
     use exocore_common::cell::FullCell;
     use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
     use exocore_common::node::LocalNode;
@@ -489,8 +489,7 @@ mod tests {
                 handle
                     .get_stream()
                     .and_then(move |message| {
-                        let message_reader = message.envelope.get_reader().unwrap();
-                        let message_data = message_reader.get_data().unwrap();
+                        let message_data = message.get_data().unwrap();
                         let mut received_messages = received_messages.lock().unwrap();
                         received_messages.push(String::from_utf8_lossy(message_data).to_string());
 
@@ -499,6 +498,7 @@ mod tests {
                         {
                             let mut message_builder = frame_builder.get_builder();
                             message_builder.set_data(message_data);
+                            message_builder.set_layer(TransportLayer::Meta.to_code());
                         }
 
                         let out_message = OutMessage {
@@ -591,6 +591,7 @@ mod tests {
             {
                 let mut message_builder: envelope::Builder = frame_builder.get_builder();
                 message_builder.set_data(data.as_bytes());
+                message_builder.set_layer(TransportLayer::Meta.to_code());
             }
 
             let frame_data = frame_builder.as_bytes();

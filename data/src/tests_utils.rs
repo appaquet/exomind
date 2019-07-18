@@ -20,6 +20,7 @@ use crate::operation::OperationId;
 use crate::*;
 use exocore_common::cell::FullCell;
 use exocore_transport::mock::MockTransport;
+use exocore_transport::TransportLayer;
 
 ///
 /// exocore-data testing utility
@@ -73,7 +74,7 @@ impl DataTestCluster {
             let engine_config = EngineConfig {
                 manager_timer_interval: Duration::from_millis(100),
                 commit_manager_config: CommitManagerConfig {
-                    commit_maximum_interval: Duration::from_millis(200),
+                    commit_maximum_interval: Duration::from_millis(500),
                     ..CommitManagerConfig::default()
                 },
                 ..EngineConfig::default()
@@ -115,6 +116,20 @@ impl DataTestCluster {
         })
     }
 
+    pub fn new_single_and_start() -> Result<DataTestCluster, failure::Error> {
+        let mut cluster = DataTestCluster::new(1)?;
+
+        cluster.create_node(0)?;
+        cluster.create_chain_genesis_block(0);
+        cluster.start_engine(0);
+
+        // wait for engine to start
+        cluster.collect_events_stream(0);
+        cluster.wait_started(0);
+
+        Ok(cluster)
+    }
+
     pub fn node_data_dir(&self, node_idx: usize) -> PathBuf {
         self.tempdir.path().join(self.nodes[node_idx].id().to_str())
     }
@@ -153,7 +168,7 @@ impl DataTestCluster {
     pub fn start_engine(&mut self, node_idx: usize) {
         let transport = self
             .transport_hub
-            .get_transport(self.nodes[node_idx].clone());
+            .get_transport(self.nodes[node_idx].clone(), TransportLayer::Data);
 
         let mut engine = Engine::new(
             self.engines_config[node_idx],
@@ -236,6 +251,17 @@ impl DataTestCluster {
         node_idx: usize,
     ) -> &mut EngineHandle<DirectoryChainStore, MemoryPendingStore> {
         self.handles[node_idx].as_mut().unwrap()
+    }
+
+    pub fn get_new_handle(
+        &self,
+        node_idx: usize,
+    ) -> EngineHandle<DirectoryChainStore, MemoryPendingStore> {
+        self.handles[node_idx]
+            .as_ref()
+            .unwrap()
+            .try_clone()
+            .unwrap()
     }
 
     pub fn wait_any_event(&self, node_idx: usize) -> Event {

@@ -4,9 +4,10 @@ use std::env;
 fn main() {
     if env::var("GENERATE_PROTOS").is_ok() {
         let protos_file = vec![
-            "proto/common.capnp",
-            "proto/data_chain.capnp",
-            "proto/data_transport.capnp",
+            "protos/common.capnp",
+            "protos/data_chain.capnp",
+            "protos/data_transport.capnp",
+            "protos/index_transport.capnp",
         ];
 
         for proto_file in protos_file {

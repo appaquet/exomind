@@ -5,18 +5,21 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-default = []
-tests_utils = ["exocore-common/tests_utils"]
+tests_utils = ["exocore-common/tests_utils", "tokio/rt-full"]
 websocket_transport = ["websocket", "tokio/reactor"]
-libp2p_transport = ["libp2p-core", "libp2p-tcp", "libp2p-dns", "libp2p-yamux", "libp2p-mplex", "libp2p-secio"]
+libp2p_transport = ["libp2p-core", "libp2p-tcp", "libp2p-dns", "libp2p-yamux", "libp2p-mplex", "libp2p-secio", "tokio/timer"]
 
 [dependencies]
 exocore-common = { path = "../common" }
 futures = "0.1"
 log = "0.4"
 failure = "0.1"
-tokio = { version = "0.1", features = ["io", "timer"] }
+tokio = { version = "0.1", features = ["io"], default-features = false }
+
+# Websocket transport
 websocket = { version = "0.22", optional = true }
+
+# libp2p transport
 libp2p-core = { version = "0.10", optional = true }
 libp2p-tcp = { version = "0.10", optional = true }
 libp2p-dns = { version = "0.10", optional = true }
@@ -25,5 +28,4 @@ libp2p-mplex = { version = "0.10", optional = true }
 libp2p-secio = { version = "0.10", optional = true }
 
 [dev-dependencies]
-tokio = { version = "0.1", features = ["rt-full"] }
 exocore-common = { path = "../common", features = ["tests_utils"] }

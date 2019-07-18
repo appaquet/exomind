@@ -1,4 +1,4 @@
-use super::traits::{
+use super::traits_index::{
     IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
 };
 use crate::domain::entity::{Entity, EntityId, EntityIdRef};
@@ -7,7 +7,6 @@ use crate::domain::schema::Schema;
 use crate::error::Error;
 use crate::mutation::Mutation;
 use crate::query::*;
-use crate::results::{EntitiesResults, EntityResult, EntityResultSource};
 use exocore_data::block::{BlockHeight, BlockOffset};
 use exocore_data::engine::{EngineOperation, Event};
 use exocore_data::operation::{Operation, OperationId};
@@ -107,23 +106,13 @@ where
         })
     }
 
-    /// Writes a trait mutation to the data layer. It's not indexed right away, since we
-    /// will wait for the event to bubble back up to preserve consistency.
-    pub fn write_mutation(&mut self, mutation: Mutation) -> Result<OperationId, Error> {
-        let json_mutation = mutation.to_json(self.schema.clone())?;
-        let op_id = self
-            .data_handle
-            .write_entry_operation(json_mutation.as_bytes())?;
-        Ok(op_id)
-    }
-
     /// Handle an event coming from the data layer. These events allow keeping the index
     /// consistent with the data layer, up to the consistency guarantees that the layer offers.
     ///
     /// Since the events stream is buffered, we may receive a discontinuity if the data layer
     /// couldn't send us an event. In that case, we re-index the pending index since we can't
     /// guarantee that we didn't lose an event.
-    pub fn handle_engine_event(&mut self, event: Event) -> Result<(), Error> {
+    pub fn handle_data_engine_event(&mut self, event: Event) -> Result<(), Error> {
         match event {
             Event::Started => {
                 info!("Data engine is ready, indexing pending store & chain");
@@ -180,7 +169,7 @@ where
     }
 
     /// Execute a search query on the indices, and returning all entities matching the query.
-    pub fn search(&self, query: &Query) -> Result<EntitiesResults, Error> {
+    pub fn search(&self, query: &Query) -> Result<QueryResult, Error> {
         // TODO: Implement paging, counting, sorting & limit https://github.com/appaquet/exocore/issues/105
 
         let chain_results = self
@@ -234,7 +223,7 @@ where
             .take(100)
             .collect();
 
-        Ok(EntitiesResults {
+        Ok(QueryResult {
             results,
             next_page: None,
             current_page: QueryPaging {
@@ -292,6 +281,9 @@ where
                 match mutation {
                     Mutation::PutTrait(trait_put) => Some(trait_put.trt),
                     Mutation::DeleteTrait(_) => None,
+
+                    #[cfg(test)]
+                    Mutation::TestFail(_) => None,
                 }
             })
             .collect();
@@ -450,20 +442,26 @@ where
                     None
                 }
             })
-            .map(|(offset, _height, op, mutation)| {
+            .flat_map(|(offset, _height, op, mutation)| {
                 // for every mutation we index in the chain index, we delete it from the pending index
                 pending_index_mutations.push(IndexMutation::DeleteOperation(op.operation_id));
 
                 match mutation {
-                    Mutation::PutTrait(trt_mut) => IndexMutation::PutTrait(PutTraitMutation {
-                        block_offset: Some(offset),
-                        operation_id: op.operation_id,
-                        entity_id: trt_mut.entity_id,
-                        trt: trt_mut.trt,
-                    }),
-                    Mutation::DeleteTrait(trt_del) => {
-                        IndexMutation::DeleteTrait(trt_del.entity_id, trt_del.trait_id)
+                    Mutation::PutTrait(trt_mut) => {
+                        Some(IndexMutation::PutTrait(PutTraitMutation {
+                            block_offset: Some(offset),
+                            operation_id: op.operation_id,
+                            entity_id: trt_mut.entity_id,
+                            trt: trt_mut.trt,
+                        }))
                     }
+                    Mutation::DeleteTrait(trt_del) => Some(IndexMutation::DeleteTrait(
+                        trt_del.entity_id,
+                        trt_del.trait_id,
+                    )),
+
+                    #[cfg(test)]
+                    Mutation::TestFail(_) => None,
                 }
             });
 
@@ -511,26 +509,38 @@ where
         schema: Arc<Schema>,
         operation: EngineOperation,
     ) -> Option<IndexMutation> {
-        if let Ok(data) = operation.as_entry_data() {
-            let mutation = Mutation::from_json_slice(schema, data).ok()?;
-            match mutation {
-                Mutation::PutTrait(mutation) => Some(IndexMutation::PutTrait(PutTraitMutation {
-                    block_offset: None,
-                    operation_id: operation.operation_id,
-                    entity_id: mutation.entity_id,
-                    trt: mutation.trt,
-                })),
-                Mutation::DeleteTrait(mutation) => {
-                    Some(IndexMutation::PutTraitTombstone(PutTraitTombstone {
-                        block_offset: None,
-                        operation_id: operation.operation_id,
-                        entity_id: mutation.entity_id,
-                        trait_id: mutation.trait_id,
-                    }))
+        match operation.as_entry_data() {
+            Ok(data) => {
+                let mutation = Mutation::from_json_slice(schema, data).ok()?;
+                match mutation {
+                    Mutation::PutTrait(mutation) => {
+                        Some(IndexMutation::PutTrait(PutTraitMutation {
+                            block_offset: None,
+                            operation_id: operation.operation_id,
+                            entity_id: mutation.entity_id,
+                            trt: mutation.trt,
+                        }))
+                    }
+                    Mutation::DeleteTrait(mutation) => {
+                        Some(IndexMutation::PutTraitTombstone(PutTraitTombstone {
+                            block_offset: None,
+                            operation_id: operation.operation_id,
+                            entity_id: mutation.entity_id,
+                            trait_id: mutation.trait_id,
+                        }))
+                    }
+
+                    #[cfg(test)]
+                    Mutation::TestFail(_mutation) => None,
                 }
             }
-        } else {
-            None
+            Err(err) => {
+                debug!(
+                    "Operation {} didn't have any data to index: {:?}",
+                    operation.operation_id, err
+                );
+                None
+            }
         }
     }
 }
@@ -538,40 +548,36 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use crate::domain::entity::{Record, Trait, TraitId};
     use crate::domain::schema::tests::create_test_schema;
     use crate::mutation::{DeleteTraitMutation, PutTraitMutation};
     use exocore_data::tests_utils::DataTestCluster;
     use exocore_data::{DirectoryChainStore, MemoryPendingStore};
+    use tempdir::TempDir;
 
     #[test]
     fn index_full_pending_to_chain() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
-        let mut cluster = create_test_cluster()?;
-
         let config = EntitiesIndexConfig {
             chain_index_min_depth: 1, // index when block is at depth 1 or more
-            ..create_test_config()
+            ..TestEntitiesIndex::create_test_config()
         };
-        let temp = tempdir::TempDir::new("entities_index")?;
-        let data_handle = cluster.get_handle(0).try_clone()?;
-        let mut index =
-            EntitiesIndex::open_or_create(temp.path(), config, schema.clone(), data_handle)?;
-        handle_engine_events(&mut cluster, &mut index)?;
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
+        test_index.handle_engine_events()?;
 
         // index a few traits, they should now be available from pending index
-        put_traits(&schema, &mut index, 0..=9)?;
-        handle_engine_events(&mut cluster, &mut index)?;
-        let res = index.search(&Query::with_trait("contact"))?;
+        test_index.put_contact_traits(0..=9)?;
+        test_index.handle_engine_events()?;
+        let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
         assert_eq!(pending_res, 10);
         assert_eq!(chain_res, 0);
 
         // index a few traits, wait for them to be in a block
-        put_traits(&schema, &mut index, 10..=19)?;
-        handle_engine_events(&mut cluster, &mut index)?;
-        let res = index.search(&Query::with_trait("contact"))?;
+        test_index.put_contact_traits(10..=19)?;
+        test_index.handle_engine_events()?;
+        let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
         assert_eq!(pending_res, 10);
@@ -582,66 +588,45 @@ mod tests {
 
     #[test]
     fn reopen_chain_index() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
-        let cluster = create_test_cluster()?;
-
         let config = EntitiesIndexConfig {
             chain_index_min_depth: 0, // index as soon as new block appear
-            ..create_test_config()
+            ..TestEntitiesIndex::create_test_config()
         };
-        let temp = tempdir::TempDir::new("entities_index")?;
 
-        {
-            // index a few traits & make sure it's in the chain index
-            let data_handle = cluster.get_handle(0).try_clone()?;
-            let mut index =
-                EntitiesIndex::open_or_create(temp.path(), config, schema.clone(), data_handle)?;
-            put_traits(&schema, &mut index, 0..=9)?;
-            cluster.wait_next_block_commit(0);
-            cluster.clear_received_events(0);
-            index.reindex_chain()?;
-        }
+        // index a few traits & make sure it's in the chain index
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
+        test_index.put_contact_traits(0..=9)?;
+        test_index.cluster.wait_next_block_commit(0);
+        test_index.cluster.clear_received_events(0);
+        test_index.index.reindex_chain()?;
 
-        {
-            // index a few traits & make sure it's in the chain index
-            let data_handle = cluster.get_handle(0).try_clone()?;
-            let mut index =
-                EntitiesIndex::open_or_create(temp.path(), config, schema.clone(), data_handle)?;
-
-            // we notify the index that the engine is ready
-            index.handle_engine_event(Event::Started)?;
-
-            // traits should still be indexed
-            let res = index.search(&Query::with_trait("contact"))?;
-            assert_eq!(res.results.len(), 10);
-        }
+        // reopen index, make sure data is still in there
+        let test_index = test_index.with_reopened_index()?;
+        // traits should still be indexed
+        let res = test_index.index.search(&Query::with_trait("contact"))?;
+        assert_eq!(res.results.len(), 10);
 
         Ok(())
     }
 
     #[test]
     fn reindex_pending_on_discontinuity() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
-        let cluster = create_test_cluster()?;
-
-        let config = create_test_config();
-        let temp = tempdir::TempDir::new("entities_index")?;
-        let data_handle = cluster.get_handle(0).try_clone()?;
-        let mut index =
-            EntitiesIndex::open_or_create(temp.path(), config, schema.clone(), data_handle)?;
+        let mut test_index = TestEntitiesIndex::new()?;
 
         // index traits without indexing them by clearing events
-        put_traits(&schema, &mut index, 0..=9)?;
-        cluster.clear_received_events(0);
+        test_index.put_contact_traits(0..=9)?;
+        test_index.cluster.clear_received_events(0);
 
-        let res = index.search(&Query::with_trait("contact"))?;
+        let res = test_index.index.search(&Query::with_trait("contact"))?;
         assert_eq!(res.results.len(), 0);
 
         // trigger discontinuity, which should force reindex
-        index.handle_engine_event(Event::StreamDiscontinuity)?;
+        test_index
+            .index
+            .handle_data_engine_event(Event::StreamDiscontinuity)?;
 
         // pending is indexed
-        let res = index.search(&Query::with_trait("contact"))?;
+        let res = test_index.index.search(&Query::with_trait("contact"))?;
         assert_eq!(res.results.len(), 10);
 
         Ok(())
@@ -649,40 +634,44 @@ mod tests {
 
     #[test]
     fn chain_divergence() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
-        let cluster = create_test_cluster()?;
-
         let config = EntitiesIndexConfig {
             chain_index_min_depth: 0, // index as soon as new block appear
-            ..create_test_config()
+            ..TestEntitiesIndex::create_test_config()
         };
-        let temp = tempdir::TempDir::new("entities_index")?;
-        let data_handle = cluster.get_handle(0).try_clone()?;
-        let mut index =
-            EntitiesIndex::open_or_create(temp.path(), config, schema.clone(), data_handle)?;
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
 
         // create 3 blocks worth of traits
-        put_traits(&schema, &mut index, 0..=4)?;
-        cluster.wait_next_block_commit(0);
-        put_traits(&schema, &mut index, 5..=9)?;
-        cluster.wait_next_block_commit(0);
-        put_traits(&schema, &mut index, 10..=14)?;
-        cluster.wait_next_block_commit(0);
-        cluster.clear_received_events(0);
+        test_index.put_contact_traits(0..=4)?;
+        test_index.cluster.wait_next_block_commit(0);
+        test_index.put_contact_traits(5..=9)?;
+        test_index.cluster.wait_next_block_commit(0);
+        test_index.put_contact_traits(10..=14)?;
+        test_index.cluster.wait_next_block_commit(0);
+        test_index.cluster.clear_received_events(0);
 
         // divergence without anything in index will trigger re-indexation
-        index.handle_engine_event(Event::ChainDiverged(0))?;
-        let res = index.search(&Query::with_trait("contact"))?;
+        test_index
+            .index
+            .handle_data_engine_event(Event::ChainDiverged(0))?;
+        let res = test_index.index.search(&Query::with_trait("contact"))?;
         assert_eq!(res.results.len(), 15);
 
         // divergence at an offset not indexed yet will just re-index pending
-        let (chain_last_offset, _) = cluster.get_handle(0).get_chain_last_block()?.unwrap();
-        index.handle_engine_event(Event::ChainDiverged(chain_last_offset))?;
-        let res = index.search(&Query::with_trait("contact"))?;
+        let (chain_last_offset, _) = test_index
+            .cluster
+            .get_handle(0)
+            .get_chain_last_block()?
+            .unwrap();
+        test_index
+            .index
+            .handle_data_engine_event(Event::ChainDiverged(chain_last_offset))?;
+        let res = test_index.index.search(&Query::with_trait("contact"))?;
         assert_eq!(res.results.len(), 15);
 
         // divergence at an offset indexed in chain index will fail
-        let res = index.handle_engine_event(Event::ChainDiverged(0));
+        let res = test_index
+            .index
+            .handle_data_engine_event(Event::ChainDiverged(0));
         assert!(res.is_err());
 
         Ok(())
@@ -690,51 +679,48 @@ mod tests {
 
     #[test]
     fn delete_entity_trait() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
-        let mut cluster = create_test_cluster()?;
-
         let config = EntitiesIndexConfig {
             chain_index_min_depth: 1, // index in chain as soon as another block is after
-            ..create_test_config()
+            ..TestEntitiesIndex::create_test_config()
         };
-        let temp = tempdir::TempDir::new("entities_index")?;
-        let data_handle = cluster.get_handle(0).try_clone()?;
-        let mut index =
-            EntitiesIndex::open_or_create(temp.path(), config, schema.clone(), data_handle)?;
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
 
-        put_trait(&schema, &mut index, "entity1", "trait1", "name1")?;
-        put_trait(&schema, &mut index, "entity1", "trait2", "name2")?;
-        cluster.wait_next_block_commit(0);
-        handle_engine_events(&mut cluster, &mut index)?;
+        test_index.put_contact_trait("entity1", "trait1", "name1")?;
+        test_index.put_contact_trait("entity1", "trait2", "name2")?;
+        test_index.cluster.wait_next_block_commit(0);
+        test_index.handle_engine_events()?;
 
-        let entity = index.fetch_entity("entity1")?;
+        let entity = test_index.index.fetch_entity("entity1")?;
         assert_eq!(entity.traits.len(), 2);
 
         // delete trait2, this should delete via a tombstone in pending
-        delete_trait(&mut index, "entity1", "trait2")?;
-        cluster.wait_next_block_commit(0);
-        handle_engine_events(&mut cluster, &mut index)?;
-        let entity = index.fetch_entity("entity1")?;
+        test_index.delete_trait("entity1", "trait2")?;
+        test_index.cluster.wait_next_block_commit(0);
+        test_index.handle_engine_events()?;
+        let entity = test_index.index.fetch_entity("entity1")?;
         assert_eq!(entity.traits.len(), 1);
 
-        let pending_res = index
+        let pending_res = test_index
+            .index
             .pending_index
             .search(&Query::with_entity_id("entity1"), 10)?;
         assert!(pending_res.iter().any(|r| r.tombstone));
 
         // now bury the deletion under 1 block, which should delete for real the trait
-        put_trait(&schema, &mut index, "entity2", "trait2", "name1")?;
-        cluster.wait_next_block_commit(0);
-        handle_engine_events(&mut cluster, &mut index)?;
+        test_index.put_contact_trait("entity2", "trait2", "name1")?;
+        test_index.cluster.wait_next_block_commit(0);
+        test_index.handle_engine_events()?;
 
         // tombstone should have been deleted, and only 1 trait left in chain index
-        let entity = index.fetch_entity("entity1")?;
+        let entity = test_index.index.fetch_entity("entity1")?;
         assert_eq!(entity.traits.len(), 1);
-        let pending_res = index
+        let pending_res = test_index
+            .index
             .pending_index
             .search(&Query::with_entity_id("entity1"), 10)?;
         assert!(pending_res.is_empty());
-        let chain_res = index
+        let chain_res = test_index
+            .index
             .chain_index
             .search(&Query::with_entity_id("entity1"), 10)?;
         assert_eq!(chain_res.len(), 1);
@@ -742,100 +728,154 @@ mod tests {
         Ok(())
     }
 
-    fn create_test_cluster() -> Result<DataTestCluster, failure::Error> {
-        let mut cluster = DataTestCluster::new(1)?;
-
-        cluster.create_node(0)?;
-        cluster.create_chain_genesis_block(0);
-        cluster.start_engine(0);
-
-        // wait for engine to start
-        cluster.collect_events_stream(0);
-        cluster.wait_started(0);
-
-        Ok(cluster)
-    }
-
-    fn create_test_config() -> EntitiesIndexConfig {
-        EntitiesIndexConfig {
-            pending_index_config: TraitsIndexConfig {
-                indexer_num_threads: Some(1),
-                ..TraitsIndexConfig::default()
-            },
-            chain_index_config: TraitsIndexConfig {
-                indexer_num_threads: Some(1),
-                ..TraitsIndexConfig::default()
-            },
-            ..EntitiesIndexConfig::default()
-        }
-    }
-
-    fn put_traits<R: Iterator<Item = i32>>(
-        schema: &Arc<Schema>,
-        index: &mut EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
-        range: R,
-    ) -> Result<(), failure::Error> {
-        for i in range {
-            put_trait(
-                schema,
-                index,
-                format!("entity{}", i),
-                format!("trt{}", i),
-                format!("name{}", i),
-            )?;
-        }
-        Ok(())
-    }
-
-    fn put_trait<E: Into<EntityId>, T: Into<TraitId>, N: Into<String>>(
-        schema: &Arc<Schema>,
-        index: &mut EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
-        entity_id: E,
-        trait_id: T,
-        name: N,
-    ) -> Result<(), failure::Error> {
-        let mutation = Mutation::PutTrait(PutTraitMutation {
-            entity_id: entity_id.into(),
-            trt: Trait::new(schema.clone(), "contact")
-                .with_id(trait_id.into())
-                .with_value_by_name("name", name.into()),
-        });
-        index.write_mutation(mutation)?;
-        Ok(())
-    }
-
-    fn delete_trait<E: Into<EntityId>, T: Into<TraitId>>(
-        index: &mut EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
-        entity_id: E,
-        trait_id: T,
-    ) -> Result<(), failure::Error> {
-        let mutation = Mutation::DeleteTrait(DeleteTraitMutation {
-            entity_id: entity_id.into(),
-            trait_id: trait_id.into(),
-        });
-        index.write_mutation(mutation)?;
-        Ok(())
-    }
-
-    fn handle_engine_events(
-        cluster: &mut DataTestCluster,
-        index: &mut EntitiesIndex<
-            chain::directory::DirectoryChainStore,
-            pending::memory::MemoryPendingStore,
-        >,
-    ) -> Result<(), Error> {
-        while let Some(event) = cluster.pop_received_event(0) {
-            index.handle_engine_event(event)?;
-        }
-
-        Ok(())
-    }
-
-    fn count_results_source(results: &EntitiesResults, source: EntityResultSource) -> usize {
+    fn count_results_source(results: &QueryResult, source: EntityResultSource) -> usize {
         results
             .results
             .iter()
             .filter(|r| r.source == source)
             .count()
     }
+
+    ///
+    /// Utility to test entities index
+    ///
+    pub struct TestEntitiesIndex {
+        schema: Arc<Schema>,
+        cluster: DataTestCluster,
+        config: EntitiesIndexConfig,
+        index: EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
+        temp_dir: TempDir,
+    }
+
+    impl TestEntitiesIndex {
+        fn new() -> Result<TestEntitiesIndex, failure::Error> {
+            Self::new_with_config(Self::create_test_config())
+        }
+
+        fn new_with_config(
+            config: EntitiesIndexConfig,
+        ) -> Result<TestEntitiesIndex, failure::Error> {
+            let schema = create_test_schema();
+            let cluster = DataTestCluster::new_single_and_start()?;
+
+            let temp_dir = tempdir::TempDir::new("entities_index")?;
+
+            let data_handle = cluster.get_handle(0).try_clone()?;
+            let index = EntitiesIndex::open_or_create(
+                temp_dir.path(),
+                config,
+                schema.clone(),
+                data_handle,
+            )?;
+
+            Ok(TestEntitiesIndex {
+                schema,
+                cluster,
+                config,
+                index,
+                temp_dir,
+            })
+        }
+
+        fn with_reopened_index(self) -> Result<TestEntitiesIndex, failure::Error> {
+            // deconstruct so that we can drop index and close the index properly before reopening
+            let TestEntitiesIndex {
+                schema,
+                cluster,
+                config,
+                index,
+                temp_dir,
+            } = self;
+            drop(index);
+
+            let index = EntitiesIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
+                temp_dir.path(),
+                config,
+                schema.clone(),
+                cluster.get_handle(0).try_clone()?,
+            )?;
+
+            Ok(TestEntitiesIndex {
+                schema,
+                cluster,
+                config,
+                index,
+                temp_dir,
+            })
+        }
+
+        fn create_test_config() -> EntitiesIndexConfig {
+            EntitiesIndexConfig {
+                pending_index_config: TraitsIndexConfig {
+                    indexer_num_threads: Some(1),
+                    ..TraitsIndexConfig::default()
+                },
+                chain_index_config: TraitsIndexConfig {
+                    indexer_num_threads: Some(1),
+                    ..TraitsIndexConfig::default()
+                },
+                ..EntitiesIndexConfig::default()
+            }
+        }
+
+        fn handle_engine_events(&mut self) -> Result<(), Error> {
+            while let Some(event) = self.cluster.pop_received_event(0) {
+                self.index.handle_data_engine_event(event)?;
+            }
+
+            Ok(())
+        }
+
+        fn put_contact_traits<R: Iterator<Item = i32>>(
+            &mut self,
+            range: R,
+        ) -> Result<(), failure::Error> {
+            for i in range {
+                self.put_contact_trait(
+                    format!("entity{}", i),
+                    format!("trt{}", i),
+                    format!("name{}", i),
+                )?;
+            }
+            Ok(())
+        }
+
+        fn put_contact_trait<E: Into<EntityId>, T: Into<TraitId>, N: Into<String>>(
+            &mut self,
+            entity_id: E,
+            trait_id: T,
+            name: N,
+        ) -> Result<OperationId, failure::Error> {
+            let mutation = Mutation::PutTrait(PutTraitMutation {
+                entity_id: entity_id.into(),
+                trt: Trait::new(self.schema.clone(), "contact")
+                    .with_id(trait_id.into())
+                    .with_value_by_name("name", name.into()),
+            });
+            let json_mutation = mutation.to_json(self.schema.clone())?;
+            let op_id = self
+                .cluster
+                .get_handle(0)
+                .write_entry_operation(json_mutation.as_bytes())?;
+            Ok(op_id)
+        }
+
+        fn delete_trait<E: Into<EntityId>, T: Into<TraitId>>(
+            &mut self,
+            entity_id: E,
+            trait_id: T,
+        ) -> Result<OperationId, failure::Error> {
+            let mutation = Mutation::DeleteTrait(DeleteTraitMutation {
+                entity_id: entity_id.into(),
+                trait_id: trait_id.into(),
+            });
+            let json_mutation = mutation.to_json(self.schema.clone())?;
+            let op_id = self
+                .cluster
+                .get_handle(0)
+                .write_entry_operation(json_mutation.as_bytes())?;
+            Ok(op_id)
+        }
+    }
+
 }

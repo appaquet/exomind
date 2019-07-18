@@ -18,6 +18,7 @@ use std::sync::{Arc, RwLock};
 pub struct Node {
     node_id: NodeId,
     peer_id: PeerId,
+    consistent_clock_id: u8,
     public_key: PublicKey,
     inner: Arc<RwLock<SharedInner>>,
 }
@@ -33,9 +34,13 @@ impl Node {
             .to_peer_id()
             .expect("Couldn't convert node_id to peer_id");
 
+        // TODO: used for consistent time and to be fixed for real in https://github.com/appaquet/exocore/issues/6
+        let consistent_clock_id = *node_id.0.as_bytes().last().unwrap();
+
         Node {
             node_id,
             peer_id,
+            consistent_clock_id,
             public_key,
             inner: Arc::new(RwLock::new(SharedInner {
                 addresses: HashSet::new(),
@@ -50,9 +55,13 @@ impl Node {
             .to_peer_id()
             .expect("Couldn't convert node_id to peer_id");
 
+        // TODO: used for consistent time and to be fixed for real in https://github.com/appaquet/exocore/issues/6
+        let consistent_clock_id = *node_id.0.as_bytes().last().unwrap();
+
         Node {
             node_id,
             peer_id,
+            consistent_clock_id,
             public_key: keypair.public(),
             inner: Arc::new(RwLock::new(SharedInner {
                 addresses: HashSet::new(),
@@ -68,6 +77,11 @@ impl Node {
     #[inline]
     pub fn peer_id(&self) -> &PeerId {
         &self.peer_id
+    }
+
+    #[inline]
+    pub fn consistent_clock_id(&self) -> u8 {
+        self.consistent_clock_id
     }
 
     pub fn has_full_access(&self) -> bool {

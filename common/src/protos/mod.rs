@@ -14,6 +14,7 @@
 pub mod common_capnp;
 pub mod data_chain_capnp;
 pub mod data_transport_capnp;
+pub mod index_transport_capnp;
 
 use capnp;
 
@@ -23,6 +24,13 @@ use capnp;
 ///
 pub trait MessageType<'a>: capnp::traits::Owned<'a> {
     const MESSAGE_TYPE: u16;
+}
+
+///
+/// Common messages
+///
+impl<'a> MessageType<'a> for self::common_capnp::envelope::Owned {
+    const MESSAGE_TYPE: u16 = 0;
 }
 
 ///
@@ -69,24 +77,39 @@ impl<'a> MessageType<'a> for self::data_chain_capnp::block_operation_header::Own
 }
 
 ///
-/// Messages related to transport / messaging between nodes
+/// Messages related to transport / messaging between nodes on data layer
 ///
-impl<'a> MessageType<'a> for self::data_transport_capnp::envelope::Owned {
+impl<'a> MessageType<'a> for self::data_transport_capnp::pending_sync_request::Owned {
     const MESSAGE_TYPE: u16 = 200;
 }
 
-impl<'a> MessageType<'a> for self::data_transport_capnp::pending_sync_request::Owned {
+impl<'a> MessageType<'a> for self::data_transport_capnp::pending_sync_range::Owned {
     const MESSAGE_TYPE: u16 = 201;
 }
 
-impl<'a> MessageType<'a> for self::data_transport_capnp::pending_sync_range::Owned {
+impl<'a> MessageType<'a> for self::data_transport_capnp::chain_sync_request::Owned {
     const MESSAGE_TYPE: u16 = 202;
 }
 
-impl<'a> MessageType<'a> for self::data_transport_capnp::chain_sync_request::Owned {
+impl<'a> MessageType<'a> for self::data_transport_capnp::chain_sync_response::Owned {
     const MESSAGE_TYPE: u16 = 203;
 }
 
-impl<'a> MessageType<'a> for self::data_transport_capnp::chain_sync_response::Owned {
-    const MESSAGE_TYPE: u16 = 204;
+///
+/// Messages related to transport / messaging between nodes on index layer
+///
+impl<'a> MessageType<'a> for self::index_transport_capnp::query_request::Owned {
+    const MESSAGE_TYPE: u16 = 300;
+}
+
+impl<'a> MessageType<'a> for self::index_transport_capnp::query_response::Owned {
+    const MESSAGE_TYPE: u16 = 301;
+}
+
+impl<'a> MessageType<'a> for self::index_transport_capnp::mutation_request::Owned {
+    const MESSAGE_TYPE: u16 = 302;
+}
+
+impl<'a> MessageType<'a> for self::index_transport_capnp::mutation_response::Owned {
+    const MESSAGE_TYPE: u16 = 303;
 }

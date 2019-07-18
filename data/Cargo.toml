@@ -5,21 +5,28 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-tests_utils = ["tempdir", "exocore-common/tests_utils", "exocore-transport/tests_utils"]
+tests_utils = ["engine", "tempdir", "directory_chain", "memory_pending", "exocore-common/tests_utils", "exocore-transport/tests_utils"]
+engine = []
+directory_chain = ["memmap", "extindex"]
+memory_pending = []
 
 [dependencies]
 exocore-common = { path = "../common" }
 exocore-transport = { path = "../transport" }
 log = "0.4"
 futures = "0.1"
-tokio = { version = "0.1", features = ["io"] }
-memmap = "0.7"
+tokio = { version = "0.1", features = ["io"], default-features = false }
 byteorder = "1.2"
 failure = "0.1"
 itertools = "0.8"
-extindex = "0.2"
 serde = "1.0"
 serde_derive = "1.0"
+
+# For directory chain
+memmap = { version = "0.7", optional = true }
+extindex = { version = "0.2", optional = true }
+
+# For tests
 tempdir = { version = "0.3", optional = true }
 
 [dev-dependencies]

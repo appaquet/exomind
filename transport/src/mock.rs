@@ -7,18 +7,21 @@ use futures::sync::mpsc;
 use exocore_common::node::{LocalNode, Node, NodeId};
 
 use crate::transport::{MpscHandleSink, MpscHandleStream};
-use crate::{Error, InMessage, OutMessage, TransportHandle};
+use crate::{Error, InMessage, OutMessage, TransportHandle, TransportLayer};
+use exocore_common::framing::FrameBuilder;
 use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
 use futures::future::FutureResult;
 
 const CHANNELS_SIZE: usize = 1000;
+
+type HandleKey = (NodeId, TransportLayer);
 
 ///
 /// In memory transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
 ///
 pub struct MockTransport {
-    nodes_sink: Arc<Mutex<HashMap<NodeId, mpsc::Sender<InMessage>>>>,
+    nodes_sink: Arc<Mutex<HashMap<HandleKey, mpsc::Sender<InMessage>>>>,
 }
 
 impl Default for MockTransport {
@@ -30,18 +33,19 @@ impl Default for MockTransport {
 }
 
 impl MockTransport {
-    pub fn get_transport(&self, node: LocalNode) -> MockTransportHandle {
+    pub fn get_transport(&self, node: LocalNode, layer: TransportLayer) -> MockTransportHandle {
         let mut nodes_sink = self.nodes_sink.lock().unwrap();
 
         // create channel incoming message for this node will be sent to
         let (incoming_sender, incoming_receiver) = mpsc::channel(CHANNELS_SIZE);
-        nodes_sink.insert(node.id().clone(), incoming_sender);
+        nodes_sink.insert((node.id().clone(), layer), incoming_sender);
 
         // completion handler
         let (completion_notifier, completion_listener) = CompletionNotifier::new_with_listener();
 
         MockTransportHandle {
             node: node.node().clone(),
+            layer,
             started: false,
             nodes_sink: Arc::downgrade(&self.nodes_sink),
             incoming_stream: Some(incoming_receiver),
@@ -57,8 +61,9 @@ impl MockTransport {
 ///
 pub struct MockTransportHandle {
     node: Node,
+    layer: TransportLayer,
     started: bool,
-    nodes_sink: Weak<Mutex<HashMap<NodeId, mpsc::Sender<InMessage>>>>,
+    nodes_sink: Weak<Mutex<HashMap<HandleKey, mpsc::Sender<InMessage>>>>,
     incoming_stream: Option<mpsc::Receiver<InMessage>>,
     outgoing_stream: Option<mpsc::Receiver<OutMessage>>,
     completion_notifier: CompletionNotifier<(), Error>,
@@ -105,6 +110,7 @@ impl Future for MockTransportHandle {
                 .expect("get_sink() didn't get called first");
 
             let node = self.node.clone();
+            let layer = self.layer;
             let nodes_sink_weak = Weak::clone(&self.nodes_sink);
             let completion_handle = self.completion_notifier.clone();
             tokio::spawn(outgoing_stream.for_each(move |message| {
@@ -123,9 +129,12 @@ impl Future for MockTransportHandle {
                     )));
                 })?;
 
-                let in_message = message.to_in_message(node.clone());
+                let envelope = message.envelope_builder.as_owned_frame();
+                let in_message = InMessage::from_node_and_frame(node.clone(), envelope)
+                    .expect("Couldn't InMessage from OutMessage");
                 for dest_node in &message.to {
-                    if let Some(sink) = nodes_sink.get_mut(dest_node.id()) {
+                    let key = (dest_node.id().clone(), layer);
+                    if let Some(sink) = nodes_sink.get_mut(&key) {
                         let _ = sink.try_send(in_message.clone());
                     } else {
                         warn!(
@@ -155,7 +164,9 @@ impl Drop for MockTransportHandle {
                     "Removing node {} from transport hub because it's been dropped",
                     self.node.id()
                 );
-                node_sinks.remove(self.node.id());
+
+                let key = (self.node.id().clone(), self.layer);
+                node_sinks.remove(&key);
             }
         }
     }
@@ -170,7 +181,7 @@ mod test {
     use super::*;
     use exocore_common::framing::CapnpFrameBuilder;
     use exocore_common::node::LocalNode;
-    use exocore_common::protos::data_transport_capnp::envelope;
+    use exocore_common::protos::common_capnp::envelope;
 
     #[test]
     fn send_and_receive() {
@@ -180,12 +191,12 @@ mod test {
         let node0 = LocalNode::generate();
         let node1 = LocalNode::generate();
 
-        let mut transport0 = hub.get_transport(node0.clone());
+        let mut transport0 = hub.get_transport(node0.clone(), TransportLayer::Data);
         let transport0_sink = transport0.get_sink();
         let transport0_stream = transport0.get_stream();
         rt.spawn(transport0.map_err(|_| ()));
 
-        let mut transport1 = hub.get_transport(node1.clone());
+        let mut transport1 = hub.get_transport(node1.clone(), TransportLayer::Data);
         let transport1_sink = transport1.get_sink();
         let transport1_stream = transport1.get_stream();
         rt.spawn(transport1.map_err(|_| ()));
@@ -212,7 +223,7 @@ mod test {
 
         let node0 = LocalNode::generate();
 
-        let mut transport = hub.get_transport(node0.clone());
+        let mut transport = hub.get_transport(node0.clone(), TransportLayer::Data);
         let _transport_sink = transport.get_sink();
         let _transport_stream = transport.get_stream();
 
@@ -232,6 +243,7 @@ mod test {
         let mut envelope_builder = CapnpFrameBuilder::<envelope::Owned>::new();
         let mut builder = envelope_builder.get_builder();
         builder.set_type(type_id);
+        builder.set_layer(TransportLayer::Data.to_code());
 
         let out_message = OutMessage {
             to,

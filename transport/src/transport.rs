@@ -12,6 +12,7 @@ pub enum TransportLayer {
     Meta = 1,
     Common = 2,
     Data = 3,
+    Index = 4,
 }
 
 impl TransportLayer {
@@ -20,18 +21,13 @@ impl TransportLayer {
             1 => Some(TransportLayer::Meta),
             2 => Some(TransportLayer::Common),
             3 => Some(TransportLayer::Data),
+            4 => Some(TransportLayer::Index),
             _ => None,
         }
     }
 
     pub fn to_code(self) -> u8 {
         self as u8
-    }
-}
-
-impl Into<u8> for TransportLayer {
-    fn into(self) -> u8 {
-        self.to_code()
     }
 }
 

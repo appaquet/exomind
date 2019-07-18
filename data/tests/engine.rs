@@ -1,5 +1,3 @@
-use std::time::{Duration, Instant};
-
 use failure::err_msg;
 use itertools::Itertools;
 
@@ -153,10 +151,6 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
 
     cluster.create_chain_genesis_block(0);
 
-    cluster.engines_config[0]
-        .commit_manager_config
-        .commit_maximum_pending_store_count = 1;
-
     cluster.start_engine(0);
     cluster.start_engine(1);
     cluster.collect_events_stream(0);
@@ -169,16 +163,13 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
         .get_handle_mut(0)
         .write_entry_operation(b"i love rust 0")?;
 
-    // TODO: We need to sleep because the 2 nodes may generate same operation id until https://github.com/appaquet/exocore/issues/6
-    std::thread::sleep(Duration::from_millis(10));
-
     let op2 = cluster
         .get_handle_mut(1)
         .write_entry_operation(b"i love rust 1")?;
 
     // wait for both nodes to have the operation committed locally
-    cluster.wait_operation_committed(0, op2);
-    cluster.wait_operation_committed(1, op1);
+    cluster.wait_operation_committed(0, op1);
+    cluster.wait_operation_committed(1, op2);
 
     // chain should be the same on both node with operations committed
     let segments_0 = cluster.get_handle(0).get_chain_segments()?;
@@ -196,11 +187,6 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
 
     cluster.create_chain_genesis_block(0);
 
-    // we let node 0 commit every second
-    cluster.engines_config[0]
-        .commit_manager_config
-        .commit_maximum_interval = Duration::from_millis(500);
-
     // both nodes will cleanup after 2 height
     cluster.engines_config[0]
         .commit_manager_config
@@ -216,16 +202,12 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
     cluster.wait_started(0);
     cluster.wait_started(1);
 
-    cluster.clocks[0].set_fixed_instant(Instant::now());
     let mut operations_id = Vec::new();
     for _i in 0..=2 {
         let op_id = cluster
             .get_handle(0)
             .write_entry_operation(b"i love rust")?;
         operations_id.push(op_id);
-
-        // advance clock by 2 secs, which should trigger node 0 to commit
-        cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(2));
 
         // wait for operation to be committed on node 1
         cluster.wait_operation_committed(1, op_id);

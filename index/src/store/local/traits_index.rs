@@ -1,4 +1,4 @@
-use crate::domain::entity::{EntityId, EntityIdRef, FieldValue, Record, Trait, TraitId};
+use crate::domain::entity::{EntityId, FieldValue, Record, Trait, TraitId};
 use crate::domain::schema;
 use crate::error::Error;
 use crate::query::*;
@@ -178,8 +178,13 @@ impl TraitsIndex {
                 self.search_with_trait(searcher, inner_query, limit)?
             }
             Query::Match(inner_query) => self.search_matches(searcher, inner_query, limit)?,
-            Query::IdEqual(entity_id) => self.search_entity_id(searcher, &entity_id, limit)?,
+            Query::IdEqual(inner_query) => self.search_entity_id(searcher, inner_query, limit)?,
             Query::Conjunction(_inner_query) => unimplemented!(),
+
+            #[cfg(test)]
+            Query::TestFail(_query) => {
+                return Err(Error::Other("Query failed for tests".to_string()))
+            }
         };
 
         Ok(res)
@@ -284,13 +289,13 @@ impl TraitsIndex {
     fn search_entity_id<S>(
         &self,
         searcher: S,
-        entity_id: &EntityIdRef,
+        query: &IdEqualQuery,
         limit: usize,
     ) -> Result<Vec<TraitResult>, Error>
     where
         S: Deref<Target = Searcher>,
     {
-        let term = Term::from_field_text(self.fields.entity_id, entity_id);
+        let term = Term::from_field_text(self.fields.entity_id, &query.entity_id);
         let query = TermQuery::new(term, IndexRecordOption::Basic);
         self.execute_tantivy_query(searcher, &query, limit)
     }

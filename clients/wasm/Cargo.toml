@@ -9,6 +9,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 exocore-common = { path = "../../common" }
+exocore-index = { path = "../../index" }
+tokio = { version = "0.1", features = ["io"], default-features = false }
 failure = "0.1"
 wasm-bindgen = "0.2"
 stdweb = "0.4"

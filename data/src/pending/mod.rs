@@ -7,8 +7,9 @@ use crate::operation;
 use crate::operation::{GroupId, OperationId};
 
 pub mod error;
-pub mod memory;
 pub use error::Error;
+#[cfg(feature = "memory_pending")]
+pub mod memory;
 
 ///
 /// Pending operations store. This store contains operations that have just been created and that

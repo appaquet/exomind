@@ -7,7 +7,7 @@ use crate::operation::{GroupId, OperationId};
 use exocore_common::crypto::signature::Signature;
 use exocore_common::node::NodeId;
 use exocore_common::protos::data_chain_capnp::chain_operation;
-use exocore_common::time::{duration_to_consistent_u64, Clock};
+use exocore_common::time::{consistent_u64_from_duration, Clock};
 
 use crate::block::{
     Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignature, BlockSignatures,
@@ -108,11 +108,17 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
             let nodes = self.cell.nodes();
             if next_block.has_my_signature && nodes.is_quorum(valid_signatures.count()) {
-                debug!("Block has enough signatures, we should commit");
+                debug!(
+                    "{}: Block has enough signatures, we should commit",
+                    self.cell.local_node().id(),
+                );
                 self.commit_block(sync_context, next_block, pending_store, chain_store)?;
             }
         } else if self.should_propose_block(chain_store, &pending_blocks)? {
-            debug!("No current block, and we can propose one");
+            debug!(
+                "{}: No current block, and we can propose one",
+                self.cell.local_node().id(),
+            );
             self.propose_block(
                 sync_context,
                 &pending_blocks,
@@ -147,6 +153,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let block = pending_blocks.get_block(&block_id);
         let block_frame = block.proposal.get_block()?;
 
+        let offset = block.proposal.offset;
+        let group_id = block.group_id;
+
         // make sure we don't have operations that are already committed
         for operation_id in &block.operations {
             for block_id in pending_blocks
@@ -159,6 +168,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .get(block_id)
                     .expect("Couldn't find block");
                 if *op_block == BlockStatus::PastCommitted {
+                    info!("{}: Refusing block (offset={} group_id={}) because there is already a committed block at this offset",
+                          self.cell.local_node().id(),
+                          offset, group_id);
                     return Ok(false);
                 }
 
@@ -166,6 +178,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .get_block_by_operation_id(*operation_id)?
                     .is_some();
                 if operation_in_chain {
+                    info!("{}: Refusing block (offset={} group_id={}) because it contains an operation already in chain",
+                          self.cell.local_node().id(),
+                          offset, group_id);
                     return Ok(false);
                 }
             }
@@ -176,9 +191,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let operations_hash = BlockOperations::hash_operations(block_operations)?;
         let block_header_reader = block_frame.get_reader()?;
         if operations_hash.as_bytes() != block_header_reader.get_operations_hash()? {
-            debug!(
-                "Block entries hash didn't match our local hash for block id={} offset={}",
-                block.group_id, block.proposal.offset
+            info!(
+                "{}: Refusing block (offset={} group_id={}) because entries hash didn't match our local hash for block",
+                self.cell.local_node().id(),
+                offset, group_id
             );
             return Ok(false);
         }
@@ -210,7 +226,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         let signature_reader = signature_operation.get_operation_reader()?;
         let pending_signature = PendingBlockSignature::from_operation(signature_reader)?;
-        debug!("Signing block {}", next_block.group_id);
+        debug!(
+            "{}: Signing block {}",
+            self.cell.local_node().id(),
+            next_block.group_id
+        );
         next_block.add_my_signature(pending_signature);
 
         pending_synchronizer.handle_new_operation(
@@ -281,6 +301,12 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 .unwrap_or(0);
 
             if approx_non_committed_operations >= self.config.commit_maximum_pending_store_count {
+                debug!(
+                    "{}: Enough operations ({} >= {}) to commit & it's my turn. Proposing one.",
+                    local_node.id(),
+                    approx_non_committed_operations,
+                    self.config.commit_maximum_pending_store_count
+                );
                 return Ok(true);
             } else {
                 let previous_block = chain_store
@@ -290,8 +316,17 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .checked_sub(previous_block.get_proposed_operation_id()?)
                     .unwrap_or(now);
                 let maximum_interval =
-                    duration_to_consistent_u64(self.config.commit_maximum_interval, 0);
-                return Ok(previous_block_elapsed >= maximum_interval);
+                    consistent_u64_from_duration(self.config.commit_maximum_interval);
+
+                if previous_block_elapsed >= maximum_interval {
+                    debug!(
+                        "{}: Enough operations to commit & it's my turn. Will propose a block.",
+                        local_node.id()
+                    );
+                    return Ok(true);
+                } else {
+                    return Ok(false);
+                }
             }
         }
 
@@ -364,9 +399,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let block_proposal_operation = block_proposal_frame_builder.sign_and_build(&local_node)?;
 
         debug!(
-            "Proposed block with operation_id {} for offset {}",
+            "{}: Proposed block at offset={} operation_id={}",
+            self.cell.local_node().id(),
+            previous_block.next_offset(),
             block_operation_id,
-            previous_block.next_offset()
         );
         pending_synchronizer.handle_new_operation(
             sync_context,
@@ -434,8 +470,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             signatures_frame,
         );
 
-        info!(
-            "Writing new block to chain: offset={} operations_count={}",
+        debug!(
+            "{}: Writing new block to chain: offset={} operations_count={}",
+            self.cell.local_node().id(),
             block.offset(),
             block_operations.operations_count()
         );
@@ -590,8 +627,9 @@ fn is_node_commit_turn(
         .position(|node| node.id() == my_node_id)
         .ok_or(Error::MyNodeNotFound)? as u64;
 
-    let commit_interval = duration_to_consistent_u64(config.commit_maximum_interval, 0);
-    let node_turn = (now / commit_interval) % (sorted_nodes.len() as u64);
+    let commit_interval = consistent_u64_from_duration(config.commit_maximum_interval);
+    let epoch = (now as f64 / commit_interval as f64).floor() as u64;
+    let node_turn = epoch % (sorted_nodes.len() as u64);
     Ok(node_turn == my_node_position)
 }
 
@@ -731,9 +769,12 @@ impl PendingBlocks {
                 }
             };
 
-            debug!(
-                "Found pending store's block {} with status {:?}",
-                proposal.offset, status
+            info!(
+                "{}: Found pending store's block: offset={} group_id={} status={:?}",
+                cell.local_node().id(),
+                proposal.offset,
+                group_id,
+                status
             );
             let pending_block = PendingBlock {
                 group_id: *group_id,
@@ -1249,19 +1290,19 @@ mod tests {
         };
 
         let nodes = cluster.cells[0].nodes();
-        let now = duration_to_consistent_u64(Duration::from_millis(0), 0);
+        let now = consistent_u64_from_duration(Duration::from_millis(0));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = duration_to_consistent_u64(Duration::from_millis(1999), 0);
+        let now = consistent_u64_from_duration(Duration::from_millis(1999));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = duration_to_consistent_u64(Duration::from_millis(2000), 0);
+        let now = consistent_u64_from_duration(Duration::from_millis(2000));
         assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = duration_to_consistent_u64(Duration::from_millis(3999), 0);
+        let now = consistent_u64_from_duration(Duration::from_millis(3999));
         assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 

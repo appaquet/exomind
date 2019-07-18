@@ -10,7 +10,7 @@ use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage
 use exocore_common::cell::{Cell, CellId, CellNodes};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::protos::data_transport_capnp::envelope;
+use exocore_common::protos::common_capnp::envelope;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
@@ -326,11 +326,7 @@ impl Libp2pTransport {
             )));
         };
 
-        let msg = InMessage {
-            from: source_node.clone(),
-            envelope: frame.to_owned(),
-        };
-
+        let msg = InMessage::from_node_and_frame(source_node.clone(), frame.to_owned())?;
         layer_stream
             .in_sender
             .try_send(msg)
@@ -466,7 +462,9 @@ mod tests {
         let to_nodes = vec![node2.node().clone()];
         let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
         let _builder = frame_builder.get_builder();
-        let msg = OutMessage::from_framed_message(&node1_cell, to_nodes, frame_builder)?;
+        let msg =
+            OutMessage::from_framed_message(&node1_cell, TransportLayer::Data, frame_builder)?
+                .with_to_nodes(to_nodes);
         handle1_tester.send(msg);
         expect_eventually(|| handle2_tester.received().len() == 1);
 
@@ -474,7 +472,9 @@ mod tests {
         let to_nodes = vec![node1.node().clone(), node1.node().clone()];
         let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
         let _builder = frame_builder.get_builder();
-        let msg = OutMessage::from_framed_message(&node2_cell, to_nodes, frame_builder)?;
+        let msg =
+            OutMessage::from_framed_message(&node2_cell, TransportLayer::Data, frame_builder)?
+                .with_to_nodes(to_nodes);
         handle2_tester.send(msg);
         expect_eventually(|| handle1_tester.received().len() == 2);
 

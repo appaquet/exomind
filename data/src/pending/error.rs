@@ -4,6 +4,7 @@ use crate::operation;
 pub enum Error {
     #[fail(display = "Operation related error: {:?}", _0)]
     Operation(#[fail(source)] operation::Error),
+
     #[fail(display = "Operation cannot be found")]
     NotFound,
 }

@@ -14,7 +14,7 @@ fi
 
 export OPENSSL_DIR=$CUR_DIR/openssl/target/arm
 export PATH=$NDK_STANDALONE/arm/bin:$PATH
-cargo build -p exocore-client-android --target arm-linux-androideabi
+cargo build -p exocore-client-android --target armv7-linux-androideabi
 
 export OPENSSL_DIR=$CUR_DIR/openssl/target/aarch64
 export PATH=$NDK_STANDALONE/arm64/bin:$PATH

@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
+[features]
+local_store = ["tantivy", "tokio-threadpool", "exocore-data/engine"]
+
 [dependencies]
 exocore-data = { path = "../data" }
 exocore-transport = { path = "../transport" }
@@ -16,10 +19,15 @@ serde_derive = "1.0"
 serde_json = "1.0"
 serde_yaml = "0.8"
 maplit = "1"
-tokio = { version = "0.1", features = ["io"] }
+tokio = { version = "0.1", features = ["io"], default-features = false }
 log = "0.4"
-tantivy = "0.10"
+wasm-timer = "0.1"
+
+# Local store
+tokio-threadpool = { version = "0.1", optional = true }
+tantivy = { version = "0.10", optional = true }
 
 [dev-dependencies]
 tempdir = "0.3"
 exocore-data = { path = "../data", features = ["tests_utils"] }
+exocore-common = { path = "../common", features = ["tests_utils"] }
