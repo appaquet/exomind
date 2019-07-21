@@ -566,7 +566,10 @@ mod tests {
         test_index.handle_engine_events()?;
 
         // index a few traits, they should now be available from pending index
-        test_index.put_contact_traits(0..=9)?;
+        let ops_id = test_index.put_contact_traits(0..=9)?;
+        test_index
+            .cluster
+            .wait_operations_exist(0, ops_id.into_iter());
         test_index.handle_engine_events()?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
@@ -575,7 +578,10 @@ mod tests {
         assert_eq!(chain_res, 0);
 
         // index a few traits, wait for them to be in a block
-        test_index.put_contact_traits(10..=19)?;
+        let ops_id = test_index.put_contact_traits(10..=19)?;
+        test_index
+            .cluster
+            .wait_operations_committed(0, ops_id.into_iter());
         test_index.handle_engine_events()?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
@@ -595,8 +601,10 @@ mod tests {
 
         // index a few traits & make sure it's in the chain index
         let mut test_index = TestEntitiesIndex::new_with_config(config)?;
-        test_index.put_contact_traits(0..=9)?;
-        test_index.cluster.wait_next_block_commit(0);
+        let ops_id = test_index.put_contact_traits(0..=9)?;
+        test_index
+            .cluster
+            .wait_operations_committed(0, ops_id.into_iter());
         test_index.cluster.clear_received_events(0);
         test_index.index.reindex_chain()?;
 
@@ -641,12 +649,18 @@ mod tests {
         let mut test_index = TestEntitiesIndex::new_with_config(config)?;
 
         // create 3 blocks worth of traits
-        test_index.put_contact_traits(0..=4)?;
-        test_index.cluster.wait_next_block_commit(0);
-        test_index.put_contact_traits(5..=9)?;
-        test_index.cluster.wait_next_block_commit(0);
-        test_index.put_contact_traits(10..=14)?;
-        test_index.cluster.wait_next_block_commit(0);
+        let ops_id = test_index.put_contact_traits(0..=4)?;
+        test_index
+            .cluster
+            .wait_operations_committed(0, ops_id.into_iter());
+        let ops_id = test_index.put_contact_traits(5..=9)?;
+        test_index
+            .cluster
+            .wait_operations_committed(0, ops_id.into_iter());
+        let ops_id = test_index.put_contact_traits(10..=14)?;
+        test_index
+            .cluster
+            .wait_operations_committed(0, ops_id.into_iter());
         test_index.cluster.clear_received_events(0);
 
         // divergence without anything in index will trigger re-indexation
@@ -664,7 +678,7 @@ mod tests {
             .unwrap();
         test_index
             .index
-            .handle_data_engine_event(Event::ChainDiverged(chain_last_offset))?;
+            .handle_data_engine_event(Event::ChainDiverged(chain_last_offset + 1))?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         assert_eq!(res.results.len(), 15);
 
@@ -685,17 +699,19 @@ mod tests {
         };
         let mut test_index = TestEntitiesIndex::new_with_config(config)?;
 
-        test_index.put_contact_trait("entity1", "trait1", "name1")?;
-        test_index.put_contact_trait("entity1", "trait2", "name2")?;
-        test_index.cluster.wait_next_block_commit(0);
+        let op1 = test_index.put_contact_trait("entity1", "trait1", "name1")?;
+        let op2 = test_index.put_contact_trait("entity1", "trait2", "name2")?;
+        test_index
+            .cluster
+            .wait_operations_committed(0, vec![op1, op2].into_iter());
         test_index.handle_engine_events()?;
 
         let entity = test_index.index.fetch_entity("entity1")?;
         assert_eq!(entity.traits.len(), 2);
 
         // delete trait2, this should delete via a tombstone in pending
-        test_index.delete_trait("entity1", "trait2")?;
-        test_index.cluster.wait_next_block_commit(0);
+        let op_id = test_index.delete_trait("entity1", "trait2")?;
+        test_index.cluster.wait_operation_committed(0, op_id);
         test_index.handle_engine_events()?;
         let entity = test_index.index.fetch_entity("entity1")?;
         assert_eq!(entity.traits.len(), 1);
@@ -707,8 +723,8 @@ mod tests {
         assert!(pending_res.iter().any(|r| r.tombstone));
 
         // now bury the deletion under 1 block, which should delete for real the trait
-        test_index.put_contact_trait("entity2", "trait2", "name1")?;
-        test_index.cluster.wait_next_block_commit(0);
+        let op_id = test_index.put_contact_trait("entity2", "trait2", "name1")?;
+        test_index.cluster.wait_operation_committed(0, op_id);
         test_index.handle_engine_events()?;
 
         // tombstone should have been deleted, and only 1 trait left in chain index
@@ -829,15 +845,17 @@ mod tests {
         fn put_contact_traits<R: Iterator<Item = i32>>(
             &mut self,
             range: R,
-        ) -> Result<(), failure::Error> {
+        ) -> Result<Vec<OperationId>, failure::Error> {
+            let mut ops_id = Vec::new();
             for i in range {
-                self.put_contact_trait(
+                let op_id = self.put_contact_trait(
                     format!("entity{}", i),
                     format!("trt{}", i),
                     format!("name{}", i),
                 )?;
+                ops_id.push(op_id)
             }
-            Ok(())
+            Ok(ops_id)
         }
 
         fn put_contact_trait<E: Into<EntityId>, T: Into<TraitId>, N: Into<String>>(

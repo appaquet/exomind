@@ -86,14 +86,14 @@ pub enum FutureStatus {
 ///
 pub fn expect_eventually<F>(cb: F)
 where
-    F: Fn() -> bool,
+    F: FnMut() -> bool,
 {
     expect_eventually_within(Duration::from_secs(5), cb)
 }
 
-pub fn expect_eventually_within<F>(timeout: Duration, cb: F)
+pub fn expect_eventually_within<F>(timeout: Duration, mut cb: F)
 where
-    F: Fn() -> bool,
+    F: FnMut() -> bool,
 {
     let start_time = Instant::now();
     while start_time.elapsed() < timeout {
@@ -112,14 +112,14 @@ where
 
 pub fn expect_result<F, R, E: Debug>(cb: F) -> R
 where
-    F: Fn() -> Result<R, E>,
+    F: FnMut() -> Result<R, E>,
 {
     expect_result_within(cb, Duration::from_secs(5))
 }
 
-pub fn expect_result_within<F, R, E: Debug>(cb: F, time: Duration) -> R
+pub fn expect_result_within<F, R, E: Debug>(mut cb: F, time: Duration) -> R
 where
-    F: Fn() -> Result<R, E>,
+    F: FnMut() -> Result<R, E>,
 {
     let begin = Instant::now();
     loop {

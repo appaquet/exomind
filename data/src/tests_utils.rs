@@ -298,6 +298,41 @@ impl DataTestCluster {
         })
     }
 
+    pub fn wait_operations_committed<I>(&self, node_idx: usize, operations_id: I)
+    where
+        I: Iterator<Item = OperationId>,
+    {
+        let operations_id = operations_id.collect_vec();
+
+        expect_result::<_, _, failure::Error>(|| {
+            for operation_id in &operations_id {
+                self.get_handle(node_idx)
+                    .get_operation(*operation_id)?
+                    .filter(|op| op.status.is_committed())
+                    .ok_or_else(|| err_msg("Operation not on node"))?;
+            }
+
+            Ok(())
+        });
+    }
+
+    pub fn wait_operations_exist<I>(&self, node_idx: usize, operations_id: I)
+    where
+        I: Iterator<Item = OperationId>,
+    {
+        let operations_id = operations_id.collect_vec();
+
+        expect_result::<_, _, failure::Error>(|| {
+            for operation_id in &operations_id {
+                self.get_handle(node_idx)
+                    .get_operation(*operation_id)?
+                    .ok_or_else(|| err_msg("Operation not on node"))?;
+            }
+
+            Ok(())
+        });
+    }
+
     pub fn wait_next_block_commit(&self, node_idx: usize) -> Vec<BlockOffset> {
         expect_result::<_, _, failure::Error>(|| {
             let events = self.get_received_events(node_idx);

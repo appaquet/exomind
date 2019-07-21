@@ -30,27 +30,34 @@ jobs:
           cargo clean -p exocore-common
           cargo clippy --all -- -D clippy::all
 
-          cargo test --all --verbose
+          cargo test --all --all-features
         displayName: 'Test all'
-#
-# Disabled until Tarpaulin fixes their bugs...
-# https://github.com/xd009642/tarpaulin/issues/190#issuecomment-491040656
-#
-#  - job: Coverage
-#    pool:
-#      vmImage: 'Ubuntu-16.04'
-#
-#    variables:
-#      - group: master_builds
-#
-#    steps:
-#      - checkout: self
-#        submodules: true
-#
-#      - script: |
-#          set -e
-#          docker --version
-#          ./utils/coverage.sh Xml no
-#          bash <(curl -s https://codecov.io/bash)
-#        displayName: 'Code coverage'
+
+  - job: Coverage
+    pool:
+      vmImage: 'Ubuntu-16.04'
+
+    variables:
+      - group: master_builds
+
+    steps:
+      - checkout: self
+        submodules: true
+
+      - script: |
+          set -e
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+          rustc --version && cargo --version
+          rustup toolchain install nightly
+        displayName: 'Install dependencies'
+
+      - script: |
+          set -e
+          wget https://github.com/mozilla/grcov/releases/download/v0.5.1/grcov-linux-x86_64.tar.bz2
+          tar -jxf grcov-linux-x86_64.tar.bz2
+          export PATH=$PATH:`pwd`
+          ./utils/coverage.sh codecov_io
+          bash <(curl -s https://codecov.io/bash)
+        displayName: 'Code coverage'
 
