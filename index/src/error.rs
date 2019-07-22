@@ -10,6 +10,9 @@ pub enum Error {
     #[fail(display = "Error parsing schema: {}", _0)]
     Schema(String),
 
+    #[fail(display = "Data integrity error: {}", _0)]
+    DataIntegrity(String),
+
     #[cfg(feature = "local_store")]
     #[fail(display = "Error in Tantivy: {}", _0)]
     Tantivy(Arc<tantivy::TantivyError>),

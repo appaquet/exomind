@@ -1,24 +1,35 @@
 #![deny(bare_trait_objects)]
 
+#[macro_use]
+extern crate log;
+
+use exocore_common::cell::Cell;
+use exocore_common::crypto::keys::PublicKey;
+use exocore_common::node::{LocalNode, Node};
+use exocore_common::time::Clock;
+use exocore_index::domain::schema::Schema;
+use exocore_index::domain::serialization::with_schema;
+use exocore_index::mutation::Mutation;
+use exocore_index::query::Query;
+use exocore_index::store::remote::{RemoteStore, StoreConfiguration, StoreHandle};
+use exocore_index::store::AsyncStore;
+use exocore_transport::TransportLayer;
+use failure::err_msg;
+use futures::Future;
+use log::Level;
+use std::fmt::Display;
+use std::sync::Arc;
+use stdweb;
 use wasm_bindgen::prelude::*;
 
-use stdweb;
-
-use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder, TypedCapnpFrame};
-use exocore_common::protos::common_capnp::envelope;
-use stdweb::traits::*;
-use stdweb::web::event::{SocketMessageEvent, SocketOpenEvent};
-use stdweb::web::{SocketBinaryType, WebSocket};
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
+mod ws;
+use ws::BrowserTransportClient;
 
 #[wasm_bindgen]
 pub struct ExocoreClient {
-    ws: WebSocket,
+    _transport: BrowserTransportClient,
+    store_handle: StoreHandle,
+    schema: Arc<Schema>,
 }
 
 #[wasm_bindgen]
@@ -27,39 +38,153 @@ impl ExocoreClient {
     pub fn new(url: &str) -> Result<ExocoreClient, JsValue> {
         stdweb::initialize();
 
-        let ws = WebSocket::new_with_protocols(url, &["exocore_websocket"]).unwrap();
-        ws.set_binary_type(SocketBinaryType::ArrayBuffer);
+        console_log::init_with_level(Level::Debug).expect("Couldn't init level");
 
-        // SEE: https://github.com/koute/stdweb/blob/dff1e06086124fe79e3393a99ae8e2d424f5b2f1/examples/echo/src/main.rs
-        ws.add_event_listener(move |event: SocketMessageEvent| {
-            let data = Vec::from(event.data().into_array_buffer().unwrap());
-            let frame = TypedCapnpFrame::<_, envelope::Owned>::new(data.as_slice()).unwrap();
-            let envelope_reader: envelope::Reader = frame.get_reader().unwrap();
-            log(&format!(
-                "Got message> {}",
-                String::from_utf8_lossy(envelope_reader.get_data().unwrap())
-            ));
-        });
+        let local_node = LocalNode::generate();
+        let cell_pk =
+            PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
+                .expect("Couldn't decode cell publickey");
+        let cell = Cell::new(cell_pk, local_node.clone());
+        let clock = Clock::new();
+        let schema = create_test_schema();
 
-        ws.add_event_listener(move |_event: SocketOpenEvent| {
-            log("Connected");
-        });
+        let remote_node_pk =
+            PublicKey::decode_base58_string("pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb")
+                .expect("Couldn't decode cell publickey");
+        let remote_node = Node::new_from_public_key(remote_node_pk);
 
-        Ok(ExocoreClient { ws })
+        let mut transport = BrowserTransportClient::new(url, remote_node.clone());
+        let index_handle = transport.get_handle(cell.clone(), TransportLayer::Index);
+        let remote_store = RemoteStore::new(
+            StoreConfiguration::default(),
+            cell,
+            clock,
+            schema.clone(),
+            index_handle,
+            remote_node.clone(),
+            Box::new(js_future_spawner),
+        )
+        .expect("Couldn't create index");
+
+        let store_handle = remote_store
+            .get_handle()
+            .expect("Couldn't get store handle");
+        js_future_spawner(Box::new(remote_store.map_err(|err| {
+            error!("Error starting remote store: {}", err);
+        })));
+
+        js_future_spawner(Box::new(
+            store_handle
+                .on_start()
+                .unwrap()
+                .and_then(|_| {
+                    info!("Remote store started");
+                    Ok(())
+                })
+                .map_err(|_err| ()),
+        ));
+
+        transport.start();
+
+        Ok(ExocoreClient {
+            _transport: transport,
+            store_handle,
+            schema,
+        })
     }
 
     #[wasm_bindgen]
-    pub fn send(&self, text: &str) {
-        let mut frame_builder = CapnpFrameBuilder::<envelope::Owned>::new();
-        let mut envelope_builder: envelope::Builder = frame_builder.get_builder();
-        envelope_builder.set_data(text.as_bytes());
-        self.ws.send_bytes(&frame_builder.as_bytes()).unwrap();
+    pub fn mutate(&mut self, query_json: &JsValue) -> js_sys::Promise {
+        let mutation = with_schema(&self.schema, || query_json.into_serde::<Mutation>());
+        let mutation = match mutation {
+            Ok(mutation) => mutation,
+            Err(err) => {
+                return wasm_bindgen_futures::future_to_promise(futures::failed(into_js_error(
+                    err_msg(format!("Couldn't parse mutation: {}", err)),
+                )));
+            }
+        };
+
+        let schema = self.schema.clone();
+        let fut_result = self
+            .store_handle
+            .mutate(mutation)
+            .map(move |res| {
+                with_schema(&schema, || JsValue::from_serde(&res)).unwrap_or_else(into_js_error)
+            })
+            .map_err(into_js_error);
+        wasm_bindgen_futures::future_to_promise(fut_result)
+    }
+
+    #[wasm_bindgen]
+    pub fn query(&mut self, query_json: &JsValue) -> js_sys::Promise {
+        let query = with_schema(&self.schema, || query_json.into_serde::<Query>());
+        let query = match query {
+            Ok(query) => query,
+            Err(err) => {
+                return wasm_bindgen_futures::future_to_promise(futures::failed(into_js_error(
+                    err_msg(format!("Couldn't parse query: {}", err)),
+                )));
+            }
+        };
+
+        let schema = self.schema.clone();
+        let fut_result = self
+            .store_handle
+            .query(query)
+            .map(move |res| {
+                with_schema(&schema, || JsValue::from_serde(&res)).unwrap_or_else(into_js_error)
+            })
+            .map_err(into_js_error);
+        wasm_bindgen_futures::future_to_promise(fut_result)
     }
 }
 
 impl Drop for ExocoreClient {
     fn drop(&mut self) {
-        log("Got dropped");
-        // TODO: Close connection ?
+        info!("Got dropped");
     }
+}
+
+fn into_js_error<E: Display>(err: E) -> JsValue {
+    let js_error = js_sys::Error::new(&format!("Error executing query: {}", err));
+    JsValue::from(js_error)
+}
+
+fn js_future_spawner(future: Box<dyn Future<Item = (), Error = ()> + Send>) {
+    wasm_bindgen_futures::spawn_local(future);
+}
+
+fn create_test_schema() -> Arc<Schema> {
+    Arc::new(
+        Schema::parse(
+            r#"
+        name: myschema
+        traits:
+            - id: 0
+              name: contact
+              fields:
+                - id: 0
+                  name: name
+                  type: string
+                  indexed: true
+                - id: 1
+                  name: email
+                  type: string
+                  indexed: true
+            - id: 1
+              name: email
+              fields:
+                - id: 0
+                  name: subject
+                  type: string
+                  indexed: true
+                - id: 1
+                  name: body
+                  type: string
+                  indexed: true
+        "#,
+        )
+        .unwrap(),
+    )
 }

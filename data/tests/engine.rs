@@ -143,6 +143,7 @@ fn single_node_restart() -> Result<(), failure::Error> {
     Ok(())
 }
 
+#[ignore] // Ignored until https://github.com/appaquet/exocore/issues/69
 #[test]
 fn two_nodes_full_replication() -> Result<(), failure::Error> {
     let mut cluster = DataTestCluster::new(2)?;
@@ -179,6 +180,7 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
     Ok(())
 }
 
+#[ignore] // Ignored until https://github.com/appaquet/exocore/issues/69
 #[test]
 fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
     let mut cluster = DataTestCluster::new(2)?;

@@ -5,6 +5,7 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
+default = ["local_store"]
 local_store = ["tantivy", "tokio-threadpool", "exocore-data/engine"]
 
 [dependencies]

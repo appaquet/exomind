@@ -2,7 +2,7 @@ use crate::node::Node;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+pub use wasm_timer::Instant;
 
 // TODO: This means we can't generate more than 100 consistent time per ms for now
 // TODO: But will be rewritten in consistent clock logic in ticket https://github.com/appaquet/exocore/issues/6
@@ -76,7 +76,9 @@ impl Clock {
             }
         };
 
-        let unix_elapsed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let unix_elapsed = wasm_timer::SystemTime::now()
+            .duration_since(wasm_timer::UNIX_EPOCH)
+            .unwrap();
         match &self.source {
             Source::System => consistent_u64_from_context(
                 unix_elapsed,

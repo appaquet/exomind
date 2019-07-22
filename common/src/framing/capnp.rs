@@ -118,24 +118,14 @@ where
         self.reader.get_segments()
     }
 
-    pub fn to_owned(&self) -> TypedCapnpFrame<I::OwnedType, T> {
-        let inner = self.reader.get_segments();
-        let inner_owned = inner.to_owned_frame();
-        TypedCapnpFrame::from_capnp(inner_owned)
-    }
-}
-
-impl<I: FrameReader, T> TypedCapnpFrame<I, T>
-where
-    T: for<'a> MessageType<'a>,
-{
     pub fn get_reader(&self) -> Result<<T as Owned>::Reader, capnp::Error> {
         self.reader.get_root()
     }
 
-    #[deprecated]
-    pub fn get_typed_reader(&self) -> Result<<T as Owned>::Reader, capnp::Error> {
-        self.reader.get_root()
+    pub fn to_owned(&self) -> TypedCapnpFrame<I::OwnedType, T> {
+        let inner = self.reader.get_segments();
+        let inner_owned = inner.to_owned_frame();
+        TypedCapnpFrame::from_capnp(inner_owned)
     }
 }
 
@@ -195,11 +185,6 @@ where
     }
 
     pub fn get_builder(&mut self) -> <T as capnp::traits::Owned>::Builder {
-        self.builder.get_root().unwrap()
-    }
-
-    #[deprecated]
-    pub fn get_builder_typed(&mut self) -> <T as capnp::traits::Owned>::Builder {
         self.builder.get_root().unwrap()
     }
 }

@@ -3,7 +3,7 @@ use exocore_common::protos::common_capnp::envelope;
 use exocore_common::protos::MessageType;
 
 use crate::{Error, TransportLayer};
-use exocore_common::cell::Cell;
+use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::time::ConsistentTimestamp;
 
@@ -58,6 +58,7 @@ impl OutMessage {
 #[derive(Clone)]
 pub struct InMessage {
     pub from: Node,
+    pub cell_id: CellId,
     pub layer: TransportLayer,
     pub follow_id: Option<ConsistentTimestamp>,
     pub message_type: u16,
@@ -76,6 +77,7 @@ impl InMessage {
             None
         };
 
+        let cell_id = CellId::from_bytes(envelope_reader.get_cell_id()?);
         let layer_id = envelope_reader.get_layer();
         let layer = TransportLayer::from_code(layer_id).ok_or_else(|| {
             Error::Other(format!("Got message with invalid layer id: {}", layer_id))
@@ -85,6 +87,7 @@ impl InMessage {
 
         Ok(InMessage {
             from,
+            cell_id,
             layer,
             follow_id,
             message_type,

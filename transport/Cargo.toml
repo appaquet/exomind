@@ -5,7 +5,6 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-default = ["libp2p_transport"]
 tests_utils = ["exocore-common/tests_utils", "tokio/rt-full"]
 websocket_transport = ["websocket", "tokio/reactor"]
 libp2p_transport = ["libp2p-core", "libp2p-swarm", "libp2p-tcp", "libp2p-dns", "libp2p-yamux", "libp2p-mplex", "libp2p-secio", "tokio/timer"]

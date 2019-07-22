@@ -22,8 +22,7 @@ lazycell = "1.2"
 failure = "0.1"
 futures = "0.1"
 libp2p-core = "0.11"
-
-[target."cfg(not(any(target_os = \"emscripten\", target_os = \"unknown\")))".dependencies]
+wasm-timer = "0.1"
 log4rs = { version = "0.8", optional = true }
 
 [build-dependencies]

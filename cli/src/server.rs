@@ -2,16 +2,21 @@ use crate::config::NodeConfig;
 use crate::options;
 use exocore_common::cell::Cell;
 use exocore_common::time::Clock;
-use exocore_data::engine::EngineHandle;
 use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, MemoryPendingStore,
 };
+use exocore_index::domain::schema::Schema;
+use exocore_index::store::local::entities_index::{EntitiesIndex, EntitiesIndexConfig};
+use exocore_index::store::local::store::LocalStore;
 use exocore_transport::lp2p::Libp2pTransportConfig;
-use exocore_transport::transport::TransportHandle;
-use exocore_transport::ws::{WebSocketTransportConfig, WebsocketTransport};
+use exocore_transport::ws::{
+    WebSocketTransportConfig, WebsocketTransport, WebsocketTransportHandle,
+};
 use exocore_transport::{Libp2pTransport, TransportLayer};
+use failure::err_msg;
 use futures::prelude::*;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 ///
@@ -32,7 +37,7 @@ pub fn start(
     let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);
 
     for cell_config in &config.cells {
-        let (_full_cell, cell) = cell_config.create_cell(&local_node)?;
+        let (opt_full_cell, cell) = cell_config.create_cell(&local_node)?;
         let clock = Clock::new();
 
         // make sure data directory exists
@@ -60,7 +65,7 @@ pub fn start(
         // we keep a handle of the engine, otherwise the engine will not start since it will get dropped
         let engine_handle = engine.get_handle();
         engines_handle.push(engine_handle);
-        let ws_engine_handle = engine.get_handle();
+        let index_engine_handle = engine.get_handle();
 
         // start the engine
         let cell_id1 = cell.id().clone();
@@ -77,7 +82,46 @@ pub fn start(
 
         // start ws server
         if let Some(listen_address) = config.websocket_listen_address {
-            start_ws_server(&mut rt, &cell, listen_address, ws_engine_handle)?;
+            info!("Starting a WebSocket transport server");
+            let ws_handle = start_ws_server(&mut rt, &cell, listen_address)?;
+
+            // start an index if needed
+            if server_opts.index_node {
+                let full_cell = opt_full_cell.ok_or_else(|| {
+                    err_msg("Tried to start a local index, but node doesn't have full cell access (not private key)")
+                })?;
+
+                let schema = create_test_schema();
+
+                let mut index_dir = cell_config.data_directory.clone();
+                index_dir.push("index");
+                std::fs::create_dir_all(&index_dir)?;
+
+                let entities_index_config = EntitiesIndexConfig::default();
+                let entities_index = EntitiesIndex::open_or_create(
+                    &index_dir,
+                    entities_index_config,
+                    schema.clone(),
+                    index_engine_handle.try_clone()?,
+                )?;
+
+                let local_index_store = LocalStore::new(
+                    full_cell.clone(),
+                    schema,
+                    index_engine_handle,
+                    entities_index,
+                    ws_handle,
+                )?;
+                rt.spawn(
+                    local_index_store
+                        .map(|_| {
+                            info!("Local index has stopped");
+                        })
+                        .map_err(|err| {
+                            error!("Local index has stopped: {}", err);
+                        }),
+                );
+            }
         }
     }
 
@@ -97,12 +141,11 @@ fn start_ws_server(
     rt: &mut Runtime,
     cell: &Cell,
     listen_address: SocketAddr,
-    engine_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
-) -> Result<(), failure::Error> {
+) -> Result<WebsocketTransportHandle, failure::Error> {
     // start transport
     let config = WebSocketTransportConfig::default();
     let mut transport = WebsocketTransport::new(listen_address, config);
-    let mut handle = transport.get_handle(cell)?;
+    let handle = transport.get_handle(cell)?;
     rt.spawn(
         transport
             .map(|_| {
@@ -113,19 +156,39 @@ fn start_ws_server(
             }),
     );
 
-    // wait for ws transport to start, then schedule stream & handle
-    rt.block_on(handle.on_start())?;
-    rt.spawn(
-        handle
-            .get_stream()
-            .for_each(move |_in_message| {
-                debug!("Got message in WebSocket transport");
-                let _ = engine_handle.write_entry_operation(b"hello world");
-                Ok(())
-            })
-            .map_err(|err| error!("Error in stream from transport handle: {}", err)),
-    );
-    rt.spawn(handle.map(|_| {}).map_err(|_| ()));
+    Ok(handle)
+}
 
-    Ok(())
+fn create_test_schema() -> Arc<Schema> {
+    Arc::new(
+        Schema::parse(
+            r#"
+        name: myschema
+        traits:
+            - id: 0
+              name: contact
+              fields:
+                - id: 0
+                  name: name
+                  type: string
+                  indexed: true
+                - id: 1
+                  name: email
+                  type: string
+                  indexed: true
+            - id: 1
+              name: email
+              fields:
+                - id: 0
+                  name: subject
+                  type: string
+                  indexed: true
+                - id: 1
+                  name: body
+                  type: string
+                  indexed: true
+        "#,
+        )
+        .unwrap(),
+    )
 }

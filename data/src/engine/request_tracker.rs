@@ -1,5 +1,5 @@
-use exocore_common::time::Clock;
-use std::time::{Duration, Instant};
+use exocore_common::time::{Clock, Instant};
+use std::time::Duration;
 
 ///
 /// Handles time tracking of synchronization request and response for timeouts, retries and backoff.

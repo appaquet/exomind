@@ -68,6 +68,19 @@ impl Trait {
         Ok(self)
     }
 
+    pub fn validate(&self) -> Result<(), Error> {
+        let _ = self
+            .value_by_name(TraitSchema::TRAIT_ID_FIELD)
+            .ok_or_else(|| {
+                Error::DataIntegrity(format!(
+                    "Trait with schema_trait_id={} didn't have an ID",
+                    self.schema_id
+                ))
+            })?;
+
+        Ok(())
+    }
+
     pub fn id(&self) -> &TraitId {
         match self.value_by_name(TraitSchema::TRAIT_ID_FIELD) {
             Some(FieldValue::String(id)) => id,
@@ -78,8 +91,8 @@ impl Trait {
         }
     }
 
-    pub fn with_id(self, id: TraitId) -> Self {
-        self.with_value_by_name(TraitSchema::TRAIT_ID_FIELD, id)
+    pub fn with_id<V: Into<TraitId>>(self, id: V) -> Self {
+        self.with_value_by_name(TraitSchema::TRAIT_ID_FIELD, id.into())
     }
 }
 

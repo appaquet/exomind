@@ -30,6 +30,14 @@ impl Mutation {
         })
     }
 
+    pub fn validate(&self) -> Result<(), Error> {
+        if let Mutation::PutTrait(mutation) = self {
+            mutation.trt.validate()?;
+        }
+
+        Ok(())
+    }
+
     pub fn to_mutation_request_frame(
         &self,
         schema: &Arc<Schema>,
@@ -121,5 +129,32 @@ impl MutationResult {
             let mutation_result = with_schema(schema, || serde_json::from_slice(data))?;
             Ok(mutation_result)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::domain::entity::Record;
+    use crate::domain::schema::tests::create_test_schema;
+
+    #[test]
+    fn trait_id_validate() {
+        let schema = create_test_schema();
+
+        let mutation = Mutation::PutTrait(PutTraitMutation {
+            entity_id: "entity1".to_owned(),
+            trt: Trait::new(schema.clone(), "contact").with_value_by_name("name", "bob"),
+        });
+        assert!(mutation.validate().is_err());
+
+        let mutation = Mutation::PutTrait(PutTraitMutation {
+            entity_id: "entity1".to_owned(),
+            trt: Trait::new(schema, "contact")
+                .with_id("someid")
+                .with_value_by_name("name", "bob"),
+        });
+        assert!(mutation.validate().is_ok());
     }
 }

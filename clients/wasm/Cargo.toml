@@ -9,8 +9,16 @@ crate-type = ["cdylib"]
 
 [dependencies]
 exocore-common = { path = "../../common" }
-exocore-index = { path = "../../index" }
+exocore-index = { path = "../../index", default-features = false }
+exocore-transport = { path = "../../transport" }
 tokio = { version = "0.1", features = ["io"], default-features = false }
+futures = "0.1"
 failure = "0.1"
-wasm-bindgen = "0.2"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.3"
+wasm-timer = "0.1"
 stdweb = "0.4"
+js-sys = "0.3"
+rand = { version = "0.6", features = ["wasm-bindgen"] }
+log = "0.4"
+console_log = "0.1"

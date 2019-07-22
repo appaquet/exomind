@@ -103,6 +103,7 @@ where
                 .get_stream()
                 .map_err(|err| Error::Fatal(format!("Error in incoming transport stream: {}", err)))
                 .for_each(move |in_message| {
+                    debug!("Got an incoming message");
                     if let Err(err) = Self::handle_incoming_message(&weak_inner1, in_message) {
                         if err.is_fatal() {
                             return Err(err);
@@ -331,6 +332,8 @@ where
             }
         }
 
+        mutation.validate()?;
+
         let json_mutation = mutation.to_json(self.schema.clone())?;
         let operation_id = self
             .data_handle
@@ -533,6 +536,28 @@ pub mod tests {
 
         let mutation = Mutation::TestFail(TestFailMutation {});
         assert!(test_store.mutate_via_transport(mutation).is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn mutation_validation_error_propagating() -> Result<(), failure::Error> {
+        let mut test_store = TestLocalStore::new()?;
+        test_store.start_store()?;
+
+        let invalid_mutation = Mutation::PutTrait(PutTraitMutation {
+            entity_id: "et1".into(),
+            trt: Trait::new(test_store.schema.clone(), "contact")
+                .with_value_by_name("name", "some name"),
+        });
+        assert!(test_store.mutate_via_handle(invalid_mutation).is_err());
+
+        let invalid_mutation = Mutation::PutTrait(PutTraitMutation {
+            entity_id: "et1".into(),
+            trt: Trait::new(test_store.schema.clone(), "contact")
+                .with_value_by_name("name", "some name"),
+        });
+        assert!(test_store.mutate_via_transport(invalid_mutation).is_err());
 
         Ok(())
     }

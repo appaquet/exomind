@@ -7,6 +7,7 @@ use exocore_common::cell::Cell;
 use exocore_common::node::Node;
 use exocore_common::protos::index_transport_capnp::{mutation_response, query_response};
 use exocore_common::protos::MessageType;
+use exocore_common::time::Instant;
 use exocore_common::time::{Clock, ConsistentTimestamp};
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
@@ -16,7 +17,7 @@ use futures::prelude::*;
 use futures::sync::{mpsc, oneshot};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 pub type FutureSpawner = Box<dyn Fn(Box<dyn Future<Item = (), Error = ()> + Send>) + Send>;
 
@@ -452,6 +453,10 @@ impl StoreHandle {
 
 impl AsyncStore for StoreHandle {
     fn mutate(&self, mutation: Mutation) -> AsyncResult<MutationResult> {
+        if let Err(err) = mutation.validate() {
+            return Box::new(futures::failed(err));
+        }
+
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
             None => return Box::new(futures::failed(Error::InnerUpgrade)),
@@ -494,9 +499,10 @@ impl AsyncStore for StoreHandle {
 
 #[cfg(test)]
 mod tests {
-    use super::super::local::store::tests::TestLocalStore;
     use super::*;
-    use crate::mutation::TestFailMutation;
+    use crate::domain::entity::{Record, Trait};
+    use crate::mutation::{PutTraitMutation, TestFailMutation};
+    use crate::store::local::store::tests::TestLocalStore;
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::expect_eventually;
     use exocore_transport::mock::MockTransportHandle;
@@ -529,6 +535,24 @@ mod tests {
 
         let mutation = Mutation::TestFail(TestFailMutation {});
         let result = test_remote_store.send_and_await_mutation(mutation);
+        assert!(result.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn mutation_validation_error_propagating() -> Result<(), failure::Error> {
+        let mut test_remote_store = TestRemoteStore::new()?;
+
+        // only start remote, so that it's remote store that validates mutation right away
+        test_remote_store.start_remote()?;
+
+        let invalid_mutation = Mutation::PutTrait(PutTraitMutation {
+            entity_id: "et1".into(),
+            trt: Trait::new(test_remote_store.local_store.schema.clone(), "contact")
+                .with_value_by_name("name", "some name"),
+        });
+        let result = test_remote_store.send_and_await_mutation(invalid_mutation);
         assert!(result.is_err());
 
         Ok(())
