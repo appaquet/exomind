@@ -1,8 +1,8 @@
 use futures::prelude::*;
-use libp2p_core::nodes::raw_swarm::ConnectedPoint;
-use libp2p_core::protocols_handler::{OneShotHandler, ProtocolsHandler};
-use libp2p_core::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
-use libp2p_core::{Multiaddr, PeerId};
+use libp2p_core::{ConnectedPoint, Multiaddr, PeerId};
+use libp2p_swarm::{
+    NetworkBehaviour, NetworkBehaviourAction, OneShotHandler, PollParameters, ProtocolsHandler,
+};
 use std::collections::{HashMap, VecDeque};
 use tokio::io::{AsyncRead, AsyncWrite};
 
@@ -165,13 +165,12 @@ impl From<()> for OneshotEvent {
 mod tests {
     use std::time::Duration;
 
-    use futures::prelude::*;
+    use super::*;
     use futures::sync::mpsc;
     use libp2p_core::identity;
-    use libp2p_core::{Multiaddr, PeerId, Swarm};
+    use libp2p_core::{Multiaddr, PeerId};
+    use libp2p_swarm::Swarm;
     use tokio::runtime::Runtime;
-
-    use super::*;
 
     #[test]
     fn behaviour_integration() {

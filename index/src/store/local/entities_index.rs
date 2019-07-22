@@ -567,9 +567,7 @@ mod tests {
 
         // index a few traits, they should now be available from pending index
         let ops_id = test_index.put_contact_traits(0..=9)?;
-        test_index
-            .cluster
-            .wait_operations_exist(0, ops_id.into_iter());
+        test_index.cluster.wait_operations_emitted(0, &ops_id);
         test_index.handle_engine_events()?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
@@ -579,9 +577,7 @@ mod tests {
 
         // index a few traits, wait for them to be in a block
         let ops_id = test_index.put_contact_traits(10..=19)?;
-        test_index
-            .cluster
-            .wait_operations_committed(0, ops_id.into_iter());
+        test_index.cluster.wait_operations_committed(0, &ops_id);
         test_index.handle_engine_events()?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
@@ -602,9 +598,7 @@ mod tests {
         // index a few traits & make sure it's in the chain index
         let mut test_index = TestEntitiesIndex::new_with_config(config)?;
         let ops_id = test_index.put_contact_traits(0..=9)?;
-        test_index
-            .cluster
-            .wait_operations_committed(0, ops_id.into_iter());
+        test_index.cluster.wait_operations_committed(0, &ops_id);
         test_index.cluster.clear_received_events(0);
         test_index.index.reindex_chain()?;
 
@@ -650,17 +644,11 @@ mod tests {
 
         // create 3 blocks worth of traits
         let ops_id = test_index.put_contact_traits(0..=4)?;
-        test_index
-            .cluster
-            .wait_operations_committed(0, ops_id.into_iter());
+        test_index.cluster.wait_operations_committed(0, &ops_id);
         let ops_id = test_index.put_contact_traits(5..=9)?;
-        test_index
-            .cluster
-            .wait_operations_committed(0, ops_id.into_iter());
+        test_index.cluster.wait_operations_committed(0, &ops_id);
         let ops_id = test_index.put_contact_traits(10..=14)?;
-        test_index
-            .cluster
-            .wait_operations_committed(0, ops_id.into_iter());
+        test_index.cluster.wait_operations_committed(0, &ops_id);
         test_index.cluster.clear_received_events(0);
 
         // divergence without anything in index will trigger re-indexation
@@ -701,9 +689,7 @@ mod tests {
 
         let op1 = test_index.put_contact_trait("entity1", "trait1", "name1")?;
         let op2 = test_index.put_contact_trait("entity1", "trait2", "name2")?;
-        test_index
-            .cluster
-            .wait_operations_committed(0, vec![op1, op2].into_iter());
+        test_index.cluster.wait_operations_committed(0, &[op1, op2]);
         test_index.handle_engine_events()?;
 
         let entity = test_index.index.fetch_entity("entity1")?;

@@ -35,7 +35,7 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
     assert_eq!(EngineOperationStatus::Pending, entry_operation.status);
 
     // wait for all operations to be emitted on stream
-    expect_operations_emitted(&cluster, &[op1, op2]);
+    cluster.wait_operations_emitted(0, &[op1, op2]);
     let block_offsets = cluster.wait_next_block_commit(0);
     let first_block_offset = block_offsets.first().unwrap();
 
@@ -95,7 +95,7 @@ fn single_node_chain_iteration() -> Result<(), failure::Error> {
     let op2 = cluster
         .get_handle_mut(0)
         .write_entry_operation(b"i love rust 2")?;
-    cluster.wait_next_block_commit(0);
+    cluster.wait_operations_committed(0, &[op1, op2]);
 
     let chain_operations = cluster
         .get_handle(0)
@@ -124,10 +124,10 @@ fn single_node_restart() -> Result<(), failure::Error> {
     let op1 = cluster
         .get_handle_mut(0)
         .write_entry_operation(b"i love rust 1")?;
-    expect_operations_emitted(&cluster, &[op1]);
+    cluster.wait_operations_emitted(0, &[op1]);
 
     // wait for operations to be committed
-    cluster.wait_next_block_commit(0);
+    cluster.wait_operation_committed(0, op1);
 
     // make sure operation is in chain
     let entry_before = cluster.get_handle(0).get_operation(op1)?.unwrap();

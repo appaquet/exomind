@@ -285,6 +285,22 @@ impl DataTestCluster {
         }
     }
 
+    pub fn wait_operations_emitted(&self, node_idx: usize, operations_id: &[u64]) {
+        expect_result::<_, _, failure::Error>(|| {
+            let events = self.get_received_events(node_idx);
+            let found_ops = extract_ops_events(&events);
+
+            if (&operations_id).iter().all(|op| found_ops.contains(op)) {
+                Ok(found_ops)
+            } else {
+                Err(failure::err_msg(format!(
+                    "Not all ops found: found={:?} expected={:?}",
+                    found_ops, &operations_id
+                )))
+            }
+        });
+    }
+
     pub fn wait_operation_committed(
         &self,
         node_idx: usize,
@@ -298,14 +314,9 @@ impl DataTestCluster {
         })
     }
 
-    pub fn wait_operations_committed<I>(&self, node_idx: usize, operations_id: I)
-    where
-        I: Iterator<Item = OperationId>,
-    {
-        let operations_id = operations_id.collect_vec();
-
+    pub fn wait_operations_committed(&self, node_idx: usize, operations_id: &[OperationId]) {
         expect_result::<_, _, failure::Error>(|| {
-            for operation_id in &operations_id {
+            for operation_id in operations_id {
                 self.get_handle(node_idx)
                     .get_operation(*operation_id)?
                     .filter(|op| op.status.is_committed())
@@ -316,14 +327,9 @@ impl DataTestCluster {
         });
     }
 
-    pub fn wait_operations_exist<I>(&self, node_idx: usize, operations_id: I)
-    where
-        I: Iterator<Item = OperationId>,
-    {
-        let operations_id = operations_id.collect_vec();
-
+    pub fn wait_operations_exist<I>(&self, node_idx: usize, operations_id: &[OperationId]) {
         expect_result::<_, _, failure::Error>(|| {
-            for operation_id in &operations_id {
+            for operation_id in operations_id {
                 self.get_handle(node_idx)
                     .get_operation(*operation_id)?
                     .ok_or_else(|| err_msg("Operation not on node"))?;
@@ -391,20 +397,4 @@ pub fn extract_blocks_events(events: &[Event]) -> Vec<BlockOffset> {
         })
         .sorted()
         .collect()
-}
-
-pub fn expect_operations_emitted(cluster: &DataTestCluster, expected_ops: &[u64]) {
-    expect_result::<_, _, failure::Error>(|| {
-        let events = cluster.get_received_events(0);
-        let found_ops = extract_ops_events(&events);
-
-        if (&expected_ops).iter().all(|op| found_ops.contains(op)) {
-            Ok(found_ops)
-        } else {
-            Err(failure::err_msg(format!(
-                "Not all ops found: found={:?} expected={:?}",
-                found_ops, &expected_ops
-            )))
-        }
-    });
 }

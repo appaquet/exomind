@@ -5,9 +5,10 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
+default = ["libp2p_transport"]
 tests_utils = ["exocore-common/tests_utils", "tokio/rt-full"]
 websocket_transport = ["websocket", "tokio/reactor"]
-libp2p_transport = ["libp2p-core", "libp2p-tcp", "libp2p-dns", "libp2p-yamux", "libp2p-mplex", "libp2p-secio", "tokio/timer"]
+libp2p_transport = ["libp2p-core", "libp2p-swarm", "libp2p-tcp", "libp2p-dns", "libp2p-yamux", "libp2p-mplex", "libp2p-secio", "tokio/timer"]
 
 [dependencies]
 exocore-common = { path = "../common" }
@@ -20,12 +21,13 @@ tokio = { version = "0.1", features = ["io"], default-features = false }
 websocket = { version = "0.23", optional = true }
 
 # libp2p transport
-libp2p-core = { version = "0.10", optional = true }
-libp2p-tcp = { version = "0.10", optional = true }
-libp2p-dns = { version = "0.10", optional = true }
-libp2p-yamux = { version = "0.10", optional = true }
-libp2p-mplex = { version = "0.10", optional = true }
-libp2p-secio = { version = "0.10", optional = true }
+libp2p-core = { version = "0.11", optional = true }
+libp2p-swarm = { version = "0.1.0", optional = true }
+libp2p-tcp = { version = "0.11", optional = true }
+libp2p-dns = { version = "0.11", optional = true }
+libp2p-yamux = { version = "0.11", optional = true }
+libp2p-mplex = { version = "0.11", optional = true }
+libp2p-secio = { version = "0.11", optional = true }
 
 [dev-dependencies]
 exocore-common = { path = "../common", features = ["tests_utils"] }
