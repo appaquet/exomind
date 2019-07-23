@@ -80,7 +80,7 @@ impl Clock {
             .duration_since(wasm_timer::UNIX_EPOCH)
             .unwrap();
         match &self.source {
-            Source::System => consistent_u64_from_context(
+            Source::System => consistent_timestamp_from_context(
                 unix_elapsed,
                 counter as u64,
                 node.consistent_clock_id(),
@@ -99,7 +99,7 @@ impl Clock {
                     unix_elapsed
                 };
 
-                consistent_u64_from_context(
+                consistent_timestamp_from_context(
                     unix_elapsed_offset,
                     counter as u64,
                     node.consistent_clock_id(),
@@ -154,7 +154,7 @@ enum Source {
     Mocked(std::sync::Arc<std::sync::RwLock<Option<Instant>>>),
 }
 
-pub fn consistent_u64_from_context(
+pub fn consistent_timestamp_from_context(
     duration: Duration,
     counter: u64,
     node_clock_id: u8,
@@ -166,8 +166,12 @@ pub fn consistent_u64_from_context(
         + counter
 }
 
-pub fn consistent_u64_from_duration(duration: Duration) -> ConsistentTimestamp {
-    consistent_u64_from_context(duration, 0, 0)
+pub fn consistent_timestamp_from_duration(duration: Duration) -> ConsistentTimestamp {
+    consistent_timestamp_from_context(duration, 0, 0)
+}
+
+pub fn consistent_timestamp_to_duration(timestamp: ConsistentTimestamp) -> Duration {
+    Duration::from_millis(timestamp / 100 / 100)
 }
 
 #[cfg(test)]
@@ -221,7 +225,7 @@ mod tests {
         std::thread::sleep(Duration::from_millis(10));
         let time4 = mocked_clock.consistent_time(local_node.node());
 
-        let elaps = consistent_u64_from_duration(Duration::from_millis(10));
+        let elaps = consistent_timestamp_from_duration(Duration::from_millis(10));
         assert!(time4 - time3 > elaps);
     }
 
@@ -253,8 +257,16 @@ mod tests {
         std::thread::sleep(Duration::from_millis(10));
         let time4 = mocked_clock.consistent_time(local_node.node());
 
-        let elaps = consistent_u64_from_duration(Duration::from_millis(10));
+        let elaps = consistent_timestamp_from_duration(Duration::from_millis(10));
         assert!(time4 - time3 > elaps);
+    }
+
+    #[test]
+    fn consistent_time_to_duration() {
+        let dur = Duration::from_millis(3_323_123);
+        let consistent = consistent_timestamp_from_duration(dur);
+        let dur_after = consistent_timestamp_to_duration(consistent);
+        assert_eq!(dur, dur_after);
     }
 
     #[test]

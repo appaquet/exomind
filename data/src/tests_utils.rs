@@ -15,7 +15,7 @@ use exocore_common::time::Clock;
 
 use crate::block::{BlockOffset, BlockOwned};
 use crate::chain::ChainStore;
-use crate::engine::{EngineHandle, EngineOperation, Event};
+use crate::engine::{EngineHandle, EngineOperation, Event, RequestTrackerConfig};
 use crate::operation::OperationId;
 use crate::*;
 use exocore_common::cell::FullCell;
@@ -73,8 +73,16 @@ impl DataTestCluster {
 
             let engine_config = EngineConfig {
                 manager_timer_interval: Duration::from_millis(100),
+                pending_synchronizer_config: PendingSyncConfig {
+                    request_tracker_config: RequestTrackerConfig {
+                        base_interval: Duration::from_millis(500),
+                        max_interval: Duration::from_millis(1000),
+                    },
+                    ..PendingSyncConfig::default()
+                },
                 commit_manager_config: CommitManagerConfig {
                     commit_maximum_interval: Duration::from_millis(500),
+                    block_proposal_timeout: Duration::from_millis(800),
                     ..CommitManagerConfig::default()
                 },
                 ..EngineConfig::default()

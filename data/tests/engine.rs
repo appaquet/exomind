@@ -143,7 +143,6 @@ fn single_node_restart() -> Result<(), failure::Error> {
     Ok(())
 }
 
-#[ignore] // Ignored until https://github.com/appaquet/exocore/issues/69
 #[test]
 fn two_nodes_full_replication() -> Result<(), failure::Error> {
     let mut cluster = DataTestCluster::new(2)?;
@@ -169,8 +168,8 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
         .write_entry_operation(b"i love rust 1")?;
 
     // wait for both nodes to have the operation committed locally
-    cluster.wait_operation_committed(0, op1);
-    cluster.wait_operation_committed(1, op2);
+    cluster.wait_operations_committed(0, &[op1, op2]);
+    cluster.wait_operations_committed(1, &[op1, op2]);
 
     // chain should be the same on both node with operations committed
     let segments_0 = cluster.get_handle(0).get_chain_segments()?;
@@ -180,7 +179,6 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
     Ok(())
 }
 
-#[ignore] // Ignored until https://github.com/appaquet/exocore/issues/69
 #[test]
 fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
     let mut cluster = DataTestCluster::new(2)?;

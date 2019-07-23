@@ -188,6 +188,8 @@ pub trait CellNodes {
             false
         } else if self.len() == 1 {
             count == 1
+        } else if self.len() == 2 {
+            count == 2
         } else {
             count > self.len() / 2
         }

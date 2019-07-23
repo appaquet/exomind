@@ -40,6 +40,7 @@ pub use commit_manager::CommitManagerConfig;
 pub use error::Error;
 pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
 pub use pending_sync::PendingSyncConfig;
+pub use request_tracker::RequestTrackerConfig;
 
 ///
 /// Data engine's configuration

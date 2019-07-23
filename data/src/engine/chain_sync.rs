@@ -78,9 +78,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
         let (nb_nodes_metadata_sync, nb_nodes) = self.check_nodes_status(&nodes);
         let majority_nodes_metadata_sync = nodes.is_quorum(usize::from(nb_nodes_metadata_sync));
+
+        let last_block_offset = store.get_last_block()?.map(|b| b.offset);
         debug!(
-            "Sync tick begins. current_status={:?} nb_nodes={} nb_nodes_metadata_sync={}",
-            self.status, nb_nodes, nb_nodes_metadata_sync
+            "Sync tick begins. current_status={:?} last_block_offset={:?} nb_nodes={} nb_nodes_metadata_sync={}",
+            self.status, last_block_offset, nb_nodes, nb_nodes_metadata_sync
         );
 
         // make sure we still have majority of nodes metadata
@@ -1388,7 +1390,7 @@ mod tests {
         let operation_size = cluster.chains_synchronizer[0].config.blocks_max_send_size / 9;
         let operations = (0..10)
             .map(|_i| {
-                let op_id = cluster.consistent_clock(0);
+                let op_id = cluster.consistent_timestamp(0);
                 let data = vec![0u8; operation_size + 1];
                 OperationBuilder::new_entry(op_id, node_0.id(), &data)
                     .sign_and_build(&node_0)

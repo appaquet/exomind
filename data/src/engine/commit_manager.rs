@@ -7,7 +7,10 @@ use crate::operation::{GroupId, OperationId};
 use exocore_common::crypto::signature::Signature;
 use exocore_common::node::NodeId;
 use exocore_common::protos::data_chain_capnp::chain_operation;
-use exocore_common::time::{consistent_u64_from_duration, Clock};
+use exocore_common::time::{
+    consistent_timestamp_from_duration, consistent_timestamp_to_duration, Clock,
+    ConsistentTimestamp,
+};
 
 use crate::block::{
     Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignature, BlockSignatures,
@@ -23,6 +26,37 @@ use super::Error;
 use crate::pending::CommitStatus;
 use exocore_common::cell::{Cell, CellNodes, CellNodesRead};
 use std::time::Duration;
+
+///
+/// CommitManager's configuration
+///
+#[derive(Copy, Clone, Debug)]
+pub struct CommitManagerConfig {
+    /// How deep a block need to be before we cleanup its operations from pending store
+    pub operations_cleanup_after_block_depth: BlockHeight,
+
+    /// After how many new operations in pending store do we force a commit, even if we aren't
+    /// past the commit interval
+    pub commit_maximum_pending_store_count: usize,
+
+    /// Interval at which commits are made, unless we hit `commit_maximum_pending_count`
+    pub commit_maximum_interval: Duration,
+
+    /// For how long a block proposal is considered valid after its creation
+    /// This is used to prevent
+    pub block_proposal_timeout: Duration,
+}
+
+impl Default for CommitManagerConfig {
+    fn default() -> Self {
+        CommitManagerConfig {
+            operations_cleanup_after_block_depth: 6,
+            commit_maximum_pending_store_count: 10,
+            commit_maximum_interval: Duration::from_secs(3),
+            block_proposal_timeout: Duration::from_secs(7),
+        }
+    }
+}
 
 ///
 /// Manages commit of pending store's operations to the chain. It does that by monitoring the pending store for incoming
@@ -61,11 +95,23 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         chain_store: &mut CS,
     ) -> Result<(), Error> {
         // find all blocks (proposed, committed, refused, etc.) in pending store
-        let mut pending_blocks = PendingBlocks::new(&self.cell, pending_store, chain_store)?;
+        let mut pending_blocks = PendingBlocks::new(
+            &self.config,
+            &self.clock,
+            &self.cell,
+            pending_store,
+            chain_store,
+        )?;
 
         // get all potential next blocks sorted by most probable to less probable, and select the best next block
         let potential_next_blocks = pending_blocks.potential_next_blocks();
         let best_potential_next_block = potential_next_blocks.first().map(|b| b.group_id);
+        debug!(
+            "{}: Tick begins. potential_next_blocks={:?} best_next_block={:?}",
+            self.cell.local_node().id(),
+            potential_next_blocks,
+            best_potential_next_block
+        );
 
         // if we have a next block, we check if we can sign it and commit it
         if let Some(next_block_id) = best_potential_next_block {
@@ -153,9 +199,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let block = pending_blocks.get_block(&block_id);
         let block_frame = block.proposal.get_block()?;
 
-        let offset = block.proposal.offset;
-        let group_id = block.group_id;
-
         // make sure we don't have operations that are already committed
         for operation_id in &block.operations {
             for block_id in pending_blocks
@@ -168,9 +211,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .get(block_id)
                     .expect("Couldn't find block");
                 if *op_block == BlockStatus::PastCommitted {
-                    info!("{}: Refusing block (offset={} group_id={}) because there is already a committed block at this offset",
-                          self.cell.local_node().id(),
-                          offset, group_id);
+                    info!("{}: Refusing block {:?} because there is already a committed block at this offset", self.cell.local_node().id(), block);
                     return Ok(false);
                 }
 
@@ -178,9 +219,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .get_block_by_operation_id(*operation_id)?
                     .is_some();
                 if operation_in_chain {
-                    info!("{}: Refusing block (offset={} group_id={}) because it contains an operation already in chain",
-                          self.cell.local_node().id(),
-                          offset, group_id);
+                    info!("{}: Refusing block {:?} because it contains operation_id={} already in chain", self.cell.local_node().id(), block, operation_id);
                     return Ok(false);
                 }
             }
@@ -192,10 +231,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let block_header_reader = block_frame.get_reader()?;
         if operations_hash.as_bytes() != block_header_reader.get_operations_hash()? {
             info!(
-                "{}: Refusing block (offset={} group_id={}) because entries hash didn't match our local hash for block",
-                self.cell.local_node().id(),
-                offset, group_id
-            );
+            "{}: Refusing block {:?} because entries hash didn't match our local hash for block",
+            self.cell.local_node().id(),
+            block
+        );
             return Ok(false);
         }
 
@@ -227,9 +266,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let signature_reader = signature_operation.get_operation_reader()?;
         let pending_signature = PendingBlockSignature::from_operation(signature_reader)?;
         debug!(
-            "{}: Signing block {}",
+            "{}: Signing block {:?}",
             self.cell.local_node().id(),
-            next_block.group_id
+            next_block,
         );
         next_block.add_my_signature(pending_signature);
 
@@ -316,7 +355,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .checked_sub(previous_block.get_proposed_operation_id()?)
                     .unwrap_or(now);
                 let maximum_interval =
-                    consistent_u64_from_duration(self.config.commit_maximum_interval);
+                    consistent_timestamp_from_duration(self.config.commit_maximum_interval);
 
                 if previous_block_elapsed >= maximum_interval {
                     debug!(
@@ -471,10 +510,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         );
 
         debug!(
-            "{}: Writing new block to chain: offset={} operations_count={}",
+            "{}: Writing new block to chain: {:?}",
             self.cell.local_node().id(),
-            block.offset(),
-            block_operations.operations_count()
+            next_block
         );
         chain_store.write_block(&block)?;
         for operation_id in block_operations.operations_id() {
@@ -542,7 +580,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
                 let height_diff = last_stored_block_height - block_height;
                 if height_diff >= self.config.operations_cleanup_after_block_depth {
-                    debug!("Block at offset={} height={} can be cleaned up (last_stored_block_height={})", block_offset, block_height, last_stored_block_height);
+                    debug!(
+                        "Block {:?} can be cleaned up (last_stored_block_height={})",
+                        block, last_stored_block_height
+                    );
 
                     // delete the block & related operations (sigs, refusals, etc.)
                     pending_store.delete_operation(*group_id)?;
@@ -627,36 +668,10 @@ fn is_node_commit_turn(
         .position(|node| node.id() == my_node_id)
         .ok_or(Error::MyNodeNotFound)? as u64;
 
-    let commit_interval = consistent_u64_from_duration(config.commit_maximum_interval);
+    let commit_interval = consistent_timestamp_from_duration(config.commit_maximum_interval);
     let epoch = (now as f64 / commit_interval as f64).floor() as u64;
     let node_turn = epoch % (sorted_nodes.len() as u64);
     Ok(node_turn == my_node_position)
-}
-
-///
-/// CommitManager's configuration
-///
-#[derive(Copy, Clone, Debug)]
-pub struct CommitManagerConfig {
-    /// How deep a block need to be before we cleanup its operations from pending store
-    pub operations_cleanup_after_block_depth: BlockHeight,
-
-    /// After how many new operations in pending store do we force a commit, even if we aren't
-    /// past the commit interval
-    pub commit_maximum_pending_store_count: usize,
-
-    /// Interval at which commits are made, unless we hit `commit_maximum_pending_count`
-    pub commit_maximum_interval: Duration,
-}
-
-impl Default for CommitManagerConfig {
-    fn default() -> Self {
-        CommitManagerConfig {
-            operations_cleanup_after_block_depth: 6,
-            commit_maximum_pending_store_count: 50,
-            commit_maximum_interval: Duration::from_secs(5),
-        }
-    }
 }
 
 ///
@@ -672,11 +687,14 @@ struct PendingBlocks {
 
 impl PendingBlocks {
     fn new<PS: pending::PendingStore, CS: chain::ChainStore>(
+        config: &CommitManagerConfig,
+        clock: &Clock,
         cell: &Cell,
         pending_store: &PS,
         chain_store: &CS,
     ) -> Result<PendingBlocks, Error> {
         let local_node = cell.local_node();
+        let now = clock.consistent_time(local_node.node());
 
         let last_stored_block = chain_store
             .get_last_block()?
@@ -743,10 +761,11 @@ impl PendingBlocks {
                 };
             }
 
-            let proposal =
+            let proposal: PendingBlockProposal =
                 proposal.expect("Couldn't find proposal operation within a group of the proposal");
             let has_my_refusal = refusals.iter().any(|sig| sig.node_id == *local_node.id());
             let has_my_signature = signatures.iter().any(|sig| sig.node_id == *local_node.id());
+            let has_expired = proposal.has_expired(config, now);
 
             let status = match chain_store.get_block(proposal.offset).ok() {
                 Some(block) => {
@@ -763,6 +782,8 @@ impl PendingBlocks {
                         BlockStatus::PastRefused
                     } else if nodes.is_quorum(refusals.len()) || has_my_refusal {
                         BlockStatus::NextRefused
+                    } else if has_expired {
+                        BlockStatus::NextExpired
                     } else {
                         BlockStatus::NextPotential
                     }
@@ -845,7 +866,7 @@ impl PendingBlocks {
         self.blocks
             .values()
             .filter(|block| block.status == BlockStatus::NextPotential)
-            .sorted_by(|a, b| PendingBlock::compare_potential_next_block(a, b))
+            .sorted_by(|a, b| PendingBlock::compare_potential_next_block(a, b).reverse())
             .collect()
     }
 }
@@ -912,7 +933,24 @@ impl PendingBlock {
         }
 
         // fallback to operation id, which is time ordered
-        a.group_id.cmp(&b.group_id)
+        if a.group_id < b.group_id {
+            Ordering::Greater
+        } else {
+            Ordering::Less
+        }
+    }
+}
+
+impl std::fmt::Debug for PendingBlock {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        f.debug_struct("PendingBlock")
+            .field("offset", &self.proposal.offset)
+            .field("group_id", &self.group_id)
+            .field("status", &self.status)
+            .field("nb_signatures", &self.signatures.len())
+            .field("has_my_signature", &self.has_my_signature)
+            .field("has_my_refusal", &self.has_my_refusal)
+            .finish()
     }
 }
 
@@ -920,6 +958,7 @@ impl PendingBlock {
 enum BlockStatus {
     PastRefused,
     PastCommitted,
+    NextExpired,
     NextPotential,
     NextRefused,
 }
@@ -945,6 +984,11 @@ impl PendingBlockProposal {
                     .to_string(),
             )),
         }
+    }
+
+    fn has_expired(&self, config: &CommitManagerConfig, now: ConsistentTimestamp) -> bool {
+        let elapsed = now.checked_sub(self.operation.operation_id).unwrap_or(0);
+        consistent_timestamp_to_duration(elapsed) >= config.block_proposal_timeout
     }
 }
 
@@ -1238,6 +1282,34 @@ mod tests {
     }
 
     #[test]
+    fn should_order_next_best_blocks() -> Result<(), failure::Error> {
+        let mut cluster = EngineTestCluster::new(1);
+        cluster.chain_add_genesis_block(0);
+        cluster.tick_chain_synchronizer(0)?;
+
+        // add 2 proposal
+        let op_id = append_new_operation(&mut cluster, b"hello world")?;
+        let block_id_signed = append_block_proposal_from_operations(&mut cluster, vec![op_id])?;
+        let _block_id_unsigned = append_block_proposal_from_operations(&mut cluster, vec![op_id])?;
+
+        // get blocks and fake signature on 1
+        let mut blocks = get_pending_blocks(&cluster)?;
+        blocks
+            .blocks
+            .get_mut(&block_id_signed)
+            .unwrap()
+            .has_my_signature = true;
+
+        // the signed block should be first
+        assert_eq!(
+            blocks.potential_next_blocks().first().unwrap().group_id,
+            block_id_signed
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn should_refuse_invalid_proposed_block() -> Result<(), failure::Error> {
         let mut cluster = EngineTestCluster::new(1);
         cluster.chain_add_genesis_block(0);
@@ -1272,6 +1344,44 @@ mod tests {
     }
 
     #[test]
+    fn proposal_should_expire_after_timeout() -> Result<(), failure::Error> {
+        let mut cluster = EngineTestCluster::new(1);
+
+        cluster.chain_add_genesis_block(0);
+        cluster.tick_chain_synchronizer(0)?;
+
+        let config = cluster.commit_managers[0].config;
+
+        // create block with 1 operation
+        cluster.clocks[0].set_fixed_instant(Instant::now());
+        let op_data = b"hello world";
+        let op_id = append_new_operation(&mut cluster, op_data)?;
+        let block_id = append_block_proposal_from_operations(&mut cluster, vec![op_id])?;
+
+        // not expired
+        let now = cluster.consistent_timestamp(0);
+        let blocks = get_pending_blocks(&cluster)?;
+        assert!(!blocks.blocks[&block_id].proposal.has_expired(&config, now));
+        assert_eq!(blocks.blocks[&block_id].status, BlockStatus::NextPotential);
+
+        // expired
+        cluster.clocks[0].add_fixed_instant_duration(config.block_proposal_timeout);
+        let now = cluster.consistent_timestamp(0);
+        let blocks = get_pending_blocks(&cluster)?;
+        assert!(blocks.blocks[&block_id].proposal.has_expired(&config, now));
+        assert_eq!(blocks.blocks[&block_id].status, BlockStatus::NextExpired);
+
+        // should propose a new block since previous has expired
+        cluster.clocks[0].add_fixed_instant_duration(Duration::from_millis(10));
+        cluster.tick_commit_manager(0)?;
+        let blocks = get_pending_blocks(&cluster)?;
+        let potential_next = blocks.potential_next_blocks();
+        assert_eq!(potential_next.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
     fn test_is_node_commit_turn() -> Result<(), failure::Error> {
         let cluster = EngineTestCluster::new(2);
         let node1 = cluster.get_node(0);
@@ -1290,19 +1400,19 @@ mod tests {
         };
 
         let nodes = cluster.cells[0].nodes();
-        let now = consistent_u64_from_duration(Duration::from_millis(0));
+        let now = consistent_timestamp_from_duration(Duration::from_millis(0));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = consistent_u64_from_duration(Duration::from_millis(1999));
+        let now = consistent_timestamp_from_duration(Duration::from_millis(1999));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = consistent_u64_from_duration(Duration::from_millis(2000));
+        let now = consistent_timestamp_from_duration(Duration::from_millis(2000));
         assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = consistent_u64_from_duration(Duration::from_millis(3999));
+        let now = consistent_timestamp_from_duration(Duration::from_millis(3999));
         assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
@@ -1404,10 +1514,10 @@ mod tests {
         let invalid_block = BlockOwned::new_with_prev_block(
             &cluster.cells[0],
             &preceding_valid_block,
-            cluster.consistent_clock(0),
+            cluster.consistent_timestamp(0),
             block_operations,
         )?;
-        let invalid_block_op_id = cluster.consistent_clock(0);
+        let invalid_block_op_id = cluster.consistent_timestamp(0);
         let block_proposal = OperationBuilder::new_block_proposal(
             invalid_block_op_id,
             cluster.get_node(0).id(),
@@ -1497,7 +1607,7 @@ mod tests {
         cluster: &mut EngineTestCluster,
         data: &[u8],
     ) -> Result<OperationId, Error> {
-        let op_id = cluster.consistent_clock(0);
+        let op_id = cluster.consistent_timestamp(0);
 
         for node in cluster.nodes.iter() {
             let idx = cluster.get_node_index(node.id());
@@ -1542,6 +1652,8 @@ mod tests {
 
     fn get_pending_blocks(cluster: &EngineTestCluster) -> Result<PendingBlocks, Error> {
         PendingBlocks::new(
+            &cluster.commit_managers[0].config,
+            &cluster.clocks[0],
             &cluster.cells[0],
             &cluster.pending_stores[0],
             &cluster.chains[0],
