@@ -566,8 +566,8 @@ mod tests {
         test_index.handle_engine_events()?;
 
         // index a few traits, they should now be available from pending index
-        let ops_id = test_index.put_contact_traits(0..=9)?;
-        test_index.cluster.wait_operations_emitted(0, &ops_id);
+        let first_ops_id = test_index.put_contact_traits(0..=9)?;
+        test_index.cluster.wait_operations_emitted(0, &first_ops_id);
         test_index.handle_engine_events()?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
@@ -575,15 +575,20 @@ mod tests {
         assert_eq!(pending_res, 10);
         assert_eq!(chain_res, 0);
 
-        // index a few traits, wait for them to be in a block
-        let ops_id = test_index.put_contact_traits(10..=19)?;
-        test_index.cluster.wait_operations_committed(0, &ops_id);
+        // index a few traits, wait for first block ot be committed
+        let second_ops_id = test_index.put_contact_traits(10..=19)?;
+        test_index
+            .cluster
+            .wait_operations_emitted(0, &second_ops_id);
+        test_index
+            .cluster
+            .wait_operations_committed(0, &first_ops_id);
         test_index.handle_engine_events()?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
-        assert_eq!(pending_res, 10);
-        assert_eq!(chain_res, 10);
+        assert!(chain_res >= 10);
+        assert_eq!(pending_res + chain_res, 20);
 
         Ok(())
     }
