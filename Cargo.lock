@@ -842,6 +842,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "exocore_client_ios"
+version = "0.1.0"
+dependencies = [
+ "exocore-common 0.1.0",
+ "exocore-index 0.1.0",
+ "exocore-transport 0.1.0",
+ "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.60 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log4rs 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "extindex"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

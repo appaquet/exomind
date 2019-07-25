@@ -1,6 +1,7 @@
 // TODO: move to new project for tests only
 
 use self::log4rs::config::Logger;
+use failure::err_msg;
 use futures::prelude::*;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
@@ -133,5 +134,32 @@ where
                 }
             }
         }
+    }
+}
+
+#[inline]
+pub fn result_assert_equal<A: PartialEq + Debug>(left: A, right: A) -> Result<(), failure::Error> {
+    if left != right {
+        Err(err_msg(format!("expected: {:?} got: {:?}", left, right)))
+    } else {
+        Ok(())
+    }
+}
+
+#[inline]
+pub fn result_assert_true(value: bool) -> Result<(), failure::Error> {
+    if !value {
+        Err(err_msg("value is not true"))
+    } else {
+        Ok(())
+    }
+}
+
+#[inline]
+pub fn result_assert_false(value: bool) -> Result<(), failure::Error> {
+    if value {
+        Err(err_msg("value is not false"))
+    } else {
+        Ok(())
     }
 }

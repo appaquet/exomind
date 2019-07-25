@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
 
+// TODO: To be moved https://github.com/appaquet/exocore/issues/123
 pub type FutureSpawner = Box<dyn Fn(Box<dyn Future<Item = (), Error = ()> + Send>) + Send>;
 
 ///

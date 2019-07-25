@@ -174,12 +174,12 @@ where
 
         let chain_results = self
             .chain_index
-            .search(query, 50)?
+            .search(query, 200)?
             .into_iter()
             .map(|res| (res, EntityResultSource::Chain));
         let pending_results = self
             .pending_index
-            .search(query, 50)?
+            .search(query, 200)?
             .into_iter()
             .map(|res| (res, EntityResultSource::Pending));
         debug!(
@@ -572,8 +572,7 @@ mod tests {
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
-        assert_eq!(pending_res, 10);
-        assert_eq!(chain_res, 0);
+        assert_eq!(pending_res + chain_res, 10);
 
         // index a few traits, wait for first block ot be committed
         let second_ops_id = test_index.put_contact_traits(10..=19)?;

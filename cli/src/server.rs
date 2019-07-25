@@ -1,18 +1,20 @@
 use crate::config::NodeConfig;
 use crate::options;
-use exocore_common::cell::Cell;
+use exocore_common::cell::{Cell, FullCell};
 use exocore_common::time::Clock;
 use exocore_data::{
-    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, MemoryPendingStore,
+    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
+    MemoryPendingStore,
 };
 use exocore_index::domain::schema::Schema;
 use exocore_index::store::local::entities_index::{EntitiesIndex, EntitiesIndexConfig};
 use exocore_index::store::local::store::LocalStore;
+use exocore_transport::either::EitherTransportHandle;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::ws::{
     WebSocketTransportConfig, WebsocketTransport, WebsocketTransportHandle,
 };
-use exocore_transport::{Libp2pTransport, TransportLayer};
+use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use failure::err_msg;
 use futures::prelude::*;
 use std::net::SocketAddr;
@@ -80,48 +82,54 @@ pub fn start(
                 }),
         );
 
-        // start ws server
-        if let Some(listen_address) = config.websocket_listen_address {
+        // start WebSocket server if needed
+        let ws_transport_handle = config.websocket_listen_address.map(|listen_address| {
             info!("Starting a WebSocket transport server");
-            let ws_handle = start_ws_server(&mut rt, &cell, listen_address)?;
+            start_ws_server(&mut rt, &cell, listen_address)
+        });
 
-            // start an index if needed
-            if server_opts.index_node {
-                let full_cell = opt_full_cell.ok_or_else(|| {
-                    err_msg("Tried to start a local index, but node doesn't have full cell access (not private key)")
-                })?;
+        // start an local store index if needed
+        if server_opts.index_node {
+            let full_cell = opt_full_cell.ok_or_else(|| {
+                err_msg("Tried to start a local index, but node doesn't have full cell access (not private key)")
+            })?;
+            let schema = create_test_schema();
 
-                let schema = create_test_schema();
+            let mut index_dir = cell_config.data_directory.clone();
+            index_dir.push("index");
+            std::fs::create_dir_all(&index_dir)?;
 
-                let mut index_dir = cell_config.data_directory.clone();
-                index_dir.push("index");
-                std::fs::create_dir_all(&index_dir)?;
+            let entities_index_config = EntitiesIndexConfig::default();
+            let entities_index = EntitiesIndex::open_or_create(
+                &index_dir,
+                entities_index_config,
+                schema.clone(),
+                index_engine_handle.try_clone()?,
+            )?;
 
-                let entities_index_config = EntitiesIndexConfig::default();
-                let entities_index = EntitiesIndex::open_or_create(
-                    &index_dir,
-                    entities_index_config,
-                    schema.clone(),
-                    index_engine_handle.try_clone()?,
-                )?;
-
-                let local_index_store = LocalStore::new(
-                    full_cell.clone(),
-                    schema,
+            // if we have a WebSocket handle, we create a combined transport
+            if let Some(ws_transport) = ws_transport_handle {
+                let libp2p_handle = transport.get_handle(cell.clone(), TransportLayer::Index)?;
+                let combined_transport = EitherTransportHandle::new(libp2p_handle, ws_transport?);
+                create_local_store(
+                    &mut rt,
+                    combined_transport,
                     index_engine_handle,
+                    full_cell,
+                    schema,
                     entities_index,
-                    ws_handle,
                 )?;
-                rt.spawn(
-                    local_index_store
-                        .map(|_| {
-                            info!("Local index has stopped");
-                        })
-                        .map_err(|err| {
-                            error!("Local index has stopped: {}", err);
-                        }),
-                );
-            }
+            } else {
+                let transport_handle = transport.get_handle(cell.clone(), TransportLayer::Index)?;
+                create_local_store(
+                    &mut rt,
+                    transport_handle,
+                    index_engine_handle,
+                    full_cell,
+                    schema,
+                    entities_index,
+                )?;
+            };
         }
     }
 
@@ -134,9 +142,6 @@ pub fn start(
     Ok(())
 }
 
-///
-/// Starts WebSocket transport server
-///
 fn start_ws_server(
     rt: &mut Runtime,
     cell: &Cell,
@@ -159,6 +164,35 @@ fn start_ws_server(
     Ok(handle)
 }
 
+fn create_local_store<T: TransportHandle>(
+    rt: &mut Runtime,
+    transport: T,
+    index_engine_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
+    full_cell: FullCell,
+    schema: Arc<Schema>,
+    entities_index: EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
+) -> Result<(), failure::Error> {
+    let local_index_store = LocalStore::new(
+        full_cell.clone(),
+        schema,
+        index_engine_handle,
+        entities_index,
+        transport,
+    )?;
+    rt.spawn(
+        local_index_store
+            .map(|_| {
+                info!("Local index has stopped");
+            })
+            .map_err(|err| {
+                error!("Local index has stopped: {}", err);
+            }),
+    );
+
+    Ok(())
+}
+
+// TODO: To be cleaned up in https://github.com/appaquet/exocore/issues/104
 fn create_test_schema() -> Arc<Schema> {
     Arc::new(
         Schema::parse(

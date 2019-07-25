@@ -40,6 +40,7 @@ impl ExocoreClient {
 
         console_log::init_with_level(Level::Debug).expect("Couldn't init level");
 
+        // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
         let local_node = LocalNode::generate();
         let cell_pk =
             PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
@@ -151,10 +152,12 @@ fn into_js_error<E: Display>(err: E) -> JsValue {
     JsValue::from(js_error)
 }
 
+// TODO: To be moved https://github.com/appaquet/exocore/issues/123
 fn js_future_spawner(future: Box<dyn Future<Item = (), Error = ()> + Send>) {
     wasm_bindgen_futures::spawn_local(future);
 }
 
+// TODO: To be cleaned up in https://github.com/appaquet/exocore/issues/104
 fn create_test_schema() -> Arc<Schema> {
     Arc::new(
         Schema::parse(

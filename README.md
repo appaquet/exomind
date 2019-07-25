@@ -23,8 +23,8 @@ A cell consists of:
 * **Data storage and replication layer**: Proof of concept
 * **Transport layer**: Proof of concept
 * **Index layer:** In development
-* **Security**: In development
 * **SDKs**: In development
+* **Security**: In development
 * **Applications layer**: Not yet started
 * **Cell management layer**: Not yet started
 * **Nodes discovery**: Not yet started
@@ -43,24 +43,13 @@ A cell consists of:
     * On Ubuntu: `apt install capnproto` 
 
 ### WASM (optional)
-* Rust's WASM target
-    * `rustup target add wasm32-unknown-unknown`
-* Clang
-    * On Ubuntu: `apt install clang`
-    * On MacOS: 
-        * Unfortunately, clang installed by Xcode isn't recent enough to compile to WASM. Follow instructions on 
-          [this page](https://00f.net/2019/04/07/compiling-to-webassembly-with-llvm-and-clang/)
-          to instal LLVM 8 from HomeBrew.
-            * `brew install llvm`
-            * Use LLVM from HomeBrew:
-                * Bash `export PATH=/usr/local/opt/llvm/bin:$PATH`
-                * Fish `set -g fish_user_paths "/usr/local/opt/llvm/bin" $fish_user_paths`
-* [Node & NPM](https://github.com/nodesource/distributions/blob/master/README.md#debinstall)
-* [`wasm-pack`](https://github.com/rustwasm/wasm-pack) to build and package WASM as NPM package
-    * `cargo install wasm-pack`
+* See [WASM client README](./clients/wasm/README.md)
 
 ### Android (optional)
 * See [Android client README](./clients/android/README.md)
+
+### iOS (optional)
+* See [iOS client README](./clients/ios/README.md)
 
 ## Usage & configuration
 * CLI:

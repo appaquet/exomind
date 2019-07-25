@@ -1,0 +1,19 @@
+[package]
+name = "exocore_client_ios"
+version = "0.1.0"
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+exocore-common = { path = "../../common" }
+exocore-transport = { path = "../../transport", features = ["libp2p_transport"] }
+exocore-index = { path = "../../index", default-features = false }
+libc = "0.2"
+log4rs = "0.8"
+log = "0.4"
+futures = "0.1"
+serde_json = "1.0"
+tokio = { version = "0.1", features = ["io"], default-features = false }

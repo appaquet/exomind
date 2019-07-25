@@ -341,8 +341,8 @@ impl Future for Libp2pTransport {
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
         if !self.start_notifier.is_complete() {
-            let start_result = self.start();
-            self.start_notifier.complete(start_result);
+            self.start()?;
+            self.start_notifier.complete(Ok(()));
         }
 
         self.stop_listener.poll().map_err(|err| match err {

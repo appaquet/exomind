@@ -8,4 +8,5 @@ members = [
   "transport",
   "clients/wasm",
   "clients/android",
+  "clients/ios",
 ]

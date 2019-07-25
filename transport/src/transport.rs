@@ -4,6 +4,19 @@ use futures::sync::mpsc;
 use crate::{Error, InMessage, OutMessage};
 
 ///
+/// Handle for a cell & layer to the transport
+///
+pub trait TransportHandle: Future<Item = (), Error = Error> + Send + 'static {
+    type StartFuture: Future<Item = (), Error = Error> + Send + 'static;
+    type Sink: Sink<SinkItem = OutMessage, SinkError = Error> + Send + 'static;
+    type Stream: Stream<Item = InMessage, Error = Error> + Send + 'static;
+
+    fn on_start(&self) -> Self::StartFuture;
+    fn get_sink(&mut self) -> Self::Sink;
+    fn get_stream(&mut self) -> Self::Stream;
+}
+
+///
 /// Layer of the Exocore architecture to which a message is intented / originating.
 /// Ex: Data layer
 ///
@@ -29,20 +42,6 @@ impl TransportLayer {
     pub fn to_code(self) -> u8 {
         self as u8
     }
-}
-
-///
-/// Handle to the Transport that allows a layer of the architecture to communicate with
-/// other nodes for a given cell.
-///
-pub trait TransportHandle: Future<Item = (), Error = Error> + Send + 'static {
-    type StartFuture: Future<Item = (), Error = Error>;
-    type Sink: Sink<SinkItem = OutMessage, SinkError = Error> + Send + 'static;
-    type Stream: Stream<Item = InMessage, Error = Error> + Send + 'static;
-
-    fn on_start(&self) -> Self::StartFuture;
-    fn get_sink(&mut self) -> Self::Sink;
-    fn get_stream(&mut self) -> Self::Stream;
 }
 
 ///

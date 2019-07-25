@@ -8,9 +8,14 @@ use exocore_common::node::{LocalNode, Node, NodeId};
 
 use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::{Error, InMessage, OutMessage, TransportHandle, TransportLayer};
-use exocore_common::framing::FrameBuilder;
+use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
+use exocore_common::protos::common_capnp::envelope;
+use exocore_common::tests_utils::FuturePeek;
 use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
+use futures::future;
 use futures::future::FutureResult;
+use futures::stream::Peekable;
+use tokio::runtime::Runtime;
 
 const CHANNELS_SIZE: usize = 1000;
 
@@ -68,6 +73,12 @@ pub struct MockTransportHandle {
     outgoing_stream: Option<mpsc::Receiver<OutMessage>>,
     completion_notifier: CompletionNotifier<(), Error>,
     completion_listener: CompletionListener<(), Error>,
+}
+
+impl MockTransportHandle {
+    pub fn into_testable(self) -> TestableTransportHandle<MockTransportHandle> {
+        TestableTransportHandle::new(self)
+    }
 }
 
 impl TransportHandle for MockTransportHandle {
@@ -172,16 +183,80 @@ impl Drop for MockTransportHandle {
     }
 }
 
+///
+/// Wraps a transport handle to add test methods
+///
+pub struct TestableTransportHandle<T: TransportHandle> {
+    handle: Option<T>,
+    handle_peek: Option<FuturePeek>,
+    out_sink: Option<T::Sink>,
+    in_stream: Option<Peekable<T::Stream>>,
+}
+
+impl<T: TransportHandle> TestableTransportHandle<T> {
+    pub fn new(mut handle: T) -> TestableTransportHandle<T> {
+        let sink = handle.get_sink();
+        let stream = handle.get_stream();
+
+        TestableTransportHandle {
+            handle: Some(handle),
+            handle_peek: None,
+            out_sink: Some(sink),
+            in_stream: Some(stream.peekable()),
+        }
+    }
+
+    pub fn start(&mut self, rt: &mut Runtime) {
+        let handle = self.handle.take().unwrap();
+        let (fut, peek) = FuturePeek::new(handle);
+        self.handle_peek = Some(peek);
+        rt.spawn(fut.map_err(|_| ()));
+    }
+
+    pub fn send_test_message(&mut self, rt: &mut Runtime, to: &Node, type_id: u16) {
+        let mut envelope_builder = CapnpFrameBuilder::<envelope::Owned>::new();
+        let mut builder = envelope_builder.get_builder();
+        builder.set_type(type_id);
+        builder.set_layer(TransportLayer::Data.to_code());
+
+        let out_message = OutMessage {
+            to: vec![to.clone()],
+            envelope_builder,
+        };
+
+        let sink = rt
+            .block_on(self.out_sink.take().unwrap().send(out_message))
+            .unwrap();
+        self.out_sink = Some(sink);
+    }
+
+    pub fn receive_test_message(&mut self, rt: &mut Runtime) -> (NodeId, u16) {
+        let stream = self.in_stream.take().unwrap();
+        let (message, stream) = rt.block_on(stream.into_future()).ok().unwrap();
+        self.in_stream = Some(stream);
+
+        let message = message.unwrap();
+        let message_reader = message.envelope.get_reader().unwrap();
+        (message.from.id().clone(), message_reader.get_type())
+    }
+
+    pub fn has_message(&mut self) -> Result<bool, Error> {
+        tokio::runtime::current_thread::block_on_all(future::lazy(|| {
+            let stream = self.in_stream.as_mut().unwrap();
+            match stream.peek()? {
+                Async::Ready(res) => Ok(res.is_some()),
+                Async::NotReady => Ok(false),
+            }
+        }))
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use tokio::runtime::Runtime;
-
-    use exocore_common::tests_utils::*;
-
     use super::*;
-    use exocore_common::framing::CapnpFrameBuilder;
     use exocore_common::node::LocalNode;
-    use exocore_common::protos::common_capnp::envelope;
+    use exocore_common::tests_utils::*;
+    use tokio::runtime::Runtime;
 
     #[test]
     fn send_and_receive() {
@@ -191,29 +266,25 @@ mod test {
         let node0 = LocalNode::generate();
         let node1 = LocalNode::generate();
 
-        let mut transport0 = hub.get_transport(node0.clone(), TransportLayer::Data);
-        let transport0_sink = transport0.get_sink();
-        let transport0_stream = transport0.get_stream();
-        rt.spawn(transport0.map_err(|_| ()));
+        let transport0 = hub.get_transport(node0.clone(), TransportLayer::Data);
+        let mut transport0_test = transport0.into_testable();
+        transport0_test.start(&mut rt);
 
-        let mut transport1 = hub.get_transport(node1.clone(), TransportLayer::Data);
-        let transport1_sink = transport1.get_sink();
-        let transport1_stream = transport1.get_stream();
-        rt.spawn(transport1.map_err(|_| ()));
+        let transport1 = hub.get_transport(node1.clone(), TransportLayer::Data);
+        let mut transport1_test = transport1.into_testable();
+        transport1_test.start(&mut rt);
 
-        send_message(&mut rt, transport0_sink, vec![node1.node().clone()], 100);
+        transport0_test.send_test_message(&mut rt, node1.node(), 100);
 
-        let (message, _transport1_stream) = receive_message(&mut rt, transport1_stream);
-        let message_reader = message.envelope.get_reader().unwrap();
-        assert_eq!(message.from.id(), node0.id());
-        assert_eq!(message_reader.get_type(), 100);
+        let (msg_node, msg) = transport1_test.receive_test_message(&mut rt);
+        assert_eq!(&msg_node, node0.id());
+        assert_eq!(msg, 100);
 
-        send_message(&mut rt, transport1_sink, vec![node0.node().clone()], 101);
+        transport1_test.send_test_message(&mut rt, node0.node(), 101);
 
-        let (message, _transport1_stream) = receive_message(&mut rt, transport0_stream);
-        let message_reader = message.envelope.get_reader().unwrap();
-        assert_eq!(message.from.id(), node1.id());
-        assert_eq!(message_reader.get_type(), 101);
+        let (msg_node, msg) = transport0_test.receive_test_message(&mut rt);
+        assert_eq!(&msg_node, node1.id());
+        assert_eq!(msg, 101);
     }
 
     #[test]
@@ -228,36 +299,11 @@ mod test {
         let _transport_stream = transport.get_stream();
 
         let transport_completion_sender = transport.completion_notifier.clone();
-
         let (transport_future, transport_future_watch) = FuturePeek::new(transport.map_err(|_| ()));
         rt.spawn(transport_future);
 
         assert_eq!(transport_future_watch.get_status(), FutureStatus::NotReady);
-
         transport_completion_sender.complete(Result::Ok(()));
-
         expect_eventually(|| transport_future_watch.get_status() == FutureStatus::Ok);
-    }
-
-    fn send_message(rt: &mut Runtime, sink: MpscHandleSink, to: Vec<Node>, type_id: u16) {
-        let mut envelope_builder = CapnpFrameBuilder::<envelope::Owned>::new();
-        let mut builder = envelope_builder.get_builder();
-        builder.set_type(type_id);
-        builder.set_layer(TransportLayer::Data.to_code());
-
-        let out_message = OutMessage {
-            to,
-            envelope_builder,
-        };
-
-        rt.block_on(sink.send(out_message)).unwrap();
-    }
-
-    fn receive_message(
-        rt: &mut Runtime,
-        stream: MpscHandleStream,
-    ) -> (InMessage, MpscHandleStream) {
-        let (message, stream) = rt.block_on(stream.into_future()).ok().unwrap();
-        (message.unwrap(), stream)
     }
 }
