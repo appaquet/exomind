@@ -457,7 +457,7 @@ mod tests {
         rt.block_on(handle2_tester.handle.on_start())?;
 
         // give time for nodes to connect to each others
-        std::thread::sleep(Duration::from_secs(1));
+        std::thread::sleep(Duration::from_millis(500));
 
         // send 1 to 2
         let to_nodes = vec![node2.node().clone()];

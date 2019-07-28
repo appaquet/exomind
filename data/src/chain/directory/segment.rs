@@ -339,13 +339,17 @@ mod tests {
 
     use super::super::tests::create_block;
     use super::*;
+    use exocore_common::cell::FullCell;
+    use exocore_common::node::LocalNode;
 
     #[test]
     fn directory_segment_create_and_open() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("test")?;
 
         let segment_id = 1234;
-        let block = create_block(1234);
+        let block = create_block(&cell, 1234);
 
         {
             let segment = DirectorySegment::create(Default::default(), dir.path(), &block)?;
@@ -376,15 +380,18 @@ mod tests {
 
     #[test]
     fn directory_segment_create_already_exist() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
+
         let dir = tempdir::TempDir::new("test")?;
 
         {
-            let block = create_block(1234);
+            let block = create_block(&cell, 1234);
             let _segment = DirectorySegment::create(Default::default(), dir.path(), &block)?;
         }
 
         {
-            let block = create_block(1234);
+            let block = create_block(&cell, 1234);
             assert!(DirectorySegment::create(Default::default(), dir.path(), &block).is_err());
         }
 
@@ -417,10 +424,12 @@ mod tests {
 
     #[test]
     fn directory_segment_append_block() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("test")?;
 
         let offset1 = 0;
-        let block = create_block(offset1);
+        let block = create_block(&cell, offset1);
         let mut segment = DirectorySegment::create(Default::default(), dir.path(), &block)?;
         {
             let block = segment.get_block(offset1)?;
@@ -429,7 +438,7 @@ mod tests {
 
         let offset2 = offset1 + block.total_size() as BlockOffset;
         assert_eq!(segment.next_block_offset, offset2);
-        let block = create_block(offset2);
+        let block = create_block(&cell, offset2);
         segment.write_block(&block)?;
         {
             let block = segment.get_block(offset2)?;
@@ -438,7 +447,7 @@ mod tests {
 
         let offset3 = offset2 + block.total_size() as BlockOffset;
         assert_eq!(segment.next_block_offset, offset3);
-        let block = create_block(offset3);
+        let block = create_block(&cell, offset3);
         segment.write_block(&block)?;
         {
             let block = segment.get_block(offset3)?;
@@ -460,19 +469,21 @@ mod tests {
 
     #[test]
     fn directory_segment_non_zero_offset_write() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("test")?;
         let config = Default::default();
         let segment_first_block_offset = 1234;
 
         {
-            let first_block = create_block(segment_first_block_offset);
+            let first_block = create_block(&cell, segment_first_block_offset);
             let mut segment = DirectorySegment::create(config, dir.path(), &first_block)?;
             let next_block_offset = segment.next_block_offset;
             assert_eq!(
                 next_block_offset,
                 segment_first_block_offset + first_block.total_size() as BlockOffset
             );
-            append_blocks_to_segment(&mut segment, next_block_offset, 999);
+            append_blocks_to_segment(&cell, &mut segment, next_block_offset, 999);
         }
 
         {
@@ -497,20 +508,22 @@ mod tests {
 
     #[test]
     fn directory_segment_grow_and_truncate() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_over_allocate_size = 100_000;
 
         let dir = tempdir::TempDir::new("test")?;
         let mut next_offset = 0;
 
-        let block = create_block(next_offset);
+        let block = create_block(&cell, next_offset);
         let mut segment = DirectorySegment::create(config, dir.path(), &block)?;
         next_offset += block.total_size() as u64;
         assert_eq!(segment.next_block_offset, next_offset);
         assert_eq!(segment.next_file_offset, block.total_size());
 
         let init_segment_size = segment.segment_file.current_size;
-        append_blocks_to_segment(&mut segment, next_offset, 999);
+        append_blocks_to_segment(&cell, &mut segment, next_offset, 999);
         let end_segment_size = segment.segment_file.current_size;
         let next_file_offset = segment.next_file_offset;
 
@@ -530,16 +543,18 @@ mod tests {
 
     #[test]
     fn directory_segment_truncate_from_segment() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
+        let dir = tempdir::TempDir::new("test")?;
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_over_allocate_size = 100_000;
 
-        let dir = tempdir::TempDir::new("test")?;
         let mut next_offset = 1000;
 
-        let block = create_block(next_offset);
+        let block = create_block(&cell, next_offset);
         let mut segment = DirectorySegment::create(config, dir.path(), &block)?;
         next_offset += block.total_size() as u64;
-        append_blocks_to_segment(&mut segment, next_offset, 999);
+        append_blocks_to_segment(&cell, &mut segment, next_offset, 999);
 
         // should not remove any blocks, only remove over allocated space
         segment.truncate_from_block_offset(segment.next_block_offset)?;
@@ -578,6 +593,7 @@ mod tests {
     }
 
     fn append_blocks_to_segment(
+        cell: &FullCell,
         segment: &mut DirectorySegment,
         first_block_offset: BlockOffset,
         nb_blocks: usize,
@@ -585,7 +601,7 @@ mod tests {
         let mut next_offset = first_block_offset;
         for _i in 0..nb_blocks {
             assert_eq!(next_offset, segment.next_block_offset);
-            let block = create_block(next_offset);
+            let block = create_block(&cell, next_offset);
             segment.write_block(&block).unwrap();
             next_offset += block.total_size() as u64;
         }

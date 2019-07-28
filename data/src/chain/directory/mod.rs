@@ -463,13 +463,15 @@ pub mod tests {
 
     #[test]
     fn directory_chain_create_and_open() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("test")?;
         let config: DirectoryChainStoreConfig = Default::default();
 
         let init_segments = {
             let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
 
-            let block = create_block(0);
+            let block = create_block(&cell, 0);
             let second_offset = directory_chain.write_block(&block)?;
 
             let block = directory_chain.get_block(0)?;
@@ -477,7 +479,7 @@ pub mod tests {
             let block = directory_chain.get_block_from_next_offset(second_offset)?;
             assert_eq!(block.offset, 0);
 
-            let block = create_block(second_offset);
+            let block = create_block(&cell, second_offset);
             let third_offset = directory_chain.write_block(&block)?;
             let block = directory_chain.get_block(second_offset)?;
             assert_eq!(block.offset, second_offset);
@@ -532,6 +534,8 @@ pub mod tests {
 
     #[test]
     fn directory_chain_write_until_second_segment() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("test")?;
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 350_000;
@@ -577,7 +581,7 @@ pub mod tests {
         let init_segments = {
             let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
 
-            append_blocks(&mut directory_chain, 1000, 0);
+            append_blocks(&cell, &mut directory_chain, 1000, 0);
             validate_directory(&directory_chain)?;
             validate_directory_operations_index(&directory_chain)?;
 
@@ -597,17 +601,19 @@ pub mod tests {
 
     #[test]
     fn directory_chain_truncate() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 1000;
         config.segment_over_allocate_size = 1500;
 
         // we cutoff the directory at different position to make sure of its integrity
-        for cutoff in 1..50 {
+        for cutoff in 1..30 {
             let dir = tempdir::TempDir::new("test")?;
 
             let (segments_before, block_n_offset, block_n_plus_offset) = {
                 let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
-                append_blocks(&mut directory_chain, 50, 0);
+                append_blocks(&cell, &mut directory_chain, 30, 0);
                 let segments_before = directory_chain
                     .segments()
                     .iter()
@@ -674,14 +680,16 @@ pub mod tests {
 
     #[test]
     fn directory_chain_truncate_all() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
+        let dir = tempdir::TempDir::new("test")?;
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 3000;
         config.segment_over_allocate_size = 3500;
-        let dir = tempdir::TempDir::new("test")?;
 
         {
             let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
-            append_blocks(&mut directory_chain, 100, 0);
+            append_blocks(&cell, &mut directory_chain, 100, 0);
 
             directory_chain.truncate_from_offset(0)?;
 
@@ -701,13 +709,14 @@ pub mod tests {
     }
 
     fn append_blocks(
+        cell: &FullCell,
         directory_chain: &mut DirectoryChainStore,
         nb_blocks: usize,
         from_offset: BlockOffset,
     ) {
         let mut next_offset = from_offset;
         for _i in 0..nb_blocks {
-            let block = create_block(next_offset);
+            let block = create_block(&cell, next_offset);
             next_offset = directory_chain.write_block(&block).unwrap();
         }
     }
@@ -774,19 +783,16 @@ pub mod tests {
         Ok(())
     }
 
-    pub fn create_block(offset: BlockOffset) -> BlockOwned {
-        let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
-
+    pub fn create_block(cell: &FullCell, offset: BlockOffset) -> BlockOwned {
         // only true for tests
         let operation_id = offset as u64 + 1;
         let operations = vec![
             crate::operation::OperationBuilder::new_entry(
                 operation_id,
-                local_node.id(),
+                cell.local_node().id(),
                 b"some_data",
             )
-            .sign_and_build(&local_node)
+            .sign_and_build(cell.local_node())
             .unwrap()
             .frame,
         ];

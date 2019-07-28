@@ -1,21 +1,25 @@
-use super::traits_index::{
-    IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
-};
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+use itertools::Itertools;
+
+use exocore_data::block::{BlockHeight, BlockOffset};
+use exocore_data::engine::{EngineOperation, Event};
+use exocore_data::operation::{Operation, OperationId};
+use exocore_data::{chain, pending};
+use exocore_data::{EngineHandle, EngineOperationStatus};
+
 use crate::domain::entity::{Entity, EntityId, EntityIdRef};
 use crate::domain::schema;
 use crate::domain::schema::Schema;
 use crate::error::Error;
 use crate::mutation::Mutation;
 use crate::query::*;
-use exocore_data::block::{BlockHeight, BlockOffset};
-use exocore_data::engine::{EngineOperation, Event};
-use exocore_data::operation::{Operation, OperationId};
-use exocore_data::{chain, pending};
-use exocore_data::{EngineHandle, EngineOperationStatus};
-use itertools::Itertools;
-use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+
+use super::traits_index::{
+    IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
+};
 
 ///
 /// Configuration of the entities index
@@ -31,6 +35,9 @@ pub struct EntitiesIndexConfig {
 
     /// Configuration for the persisted traits index that are in the chain
     pub chain_index_config: TraitsIndexConfig,
+
+    /// For tests, allow not hitting the disk
+    pub chain_index_in_memory: bool,
 }
 
 impl Default for EntitiesIndexConfig {
@@ -39,6 +46,7 @@ impl Default for EntitiesIndexConfig {
             chain_index_min_depth: 3,
             pending_index_config: TraitsIndexConfig::default(),
             chain_index_config: TraitsIndexConfig::default(),
+            chain_index_in_memory: false,
         }
     }
 }
@@ -90,11 +98,7 @@ where
             std::fs::create_dir_all(&chain_index_dir)?;
         }
 
-        let chain_index = TraitsIndex::open_or_create_mmap(
-            config.chain_index_config,
-            schema.clone(),
-            &chain_index_dir,
-        )?;
+        let chain_index = Self::create_chain_index(config, &schema, &chain_index_dir)?;
 
         Ok(EntitiesIndex {
             config,
@@ -155,8 +159,8 @@ where
                         // this can be prevented by tweaking the `EntitiesIndexConfig`.`chain_index_min_depth` value
                         return Err(Error::Fatal(
                             format!("Chain has diverged at an offset={}, which is before last indexed block at offset {}",
-                                                        diverged_block_offset,last_indexed_offset
-                        )));
+                                    diverged_block_offset, last_indexed_offset
+                            )));
                     }
                 } else {
                     warn!("Diverged with an empty chain index. Re-indexing...");
@@ -236,6 +240,25 @@ where
         })
     }
 
+    ///
+    /// Create the chain index based on configuration.
+    ///
+    fn create_chain_index(
+        config: EntitiesIndexConfig,
+        schema: &Arc<Schema>,
+        chain_index_dir: &PathBuf,
+    ) -> Result<TraitsIndex, Error> {
+        if !config.chain_index_in_memory {
+            TraitsIndex::open_or_create_mmap(
+                config.chain_index_config,
+                schema.clone(),
+                &chain_index_dir,
+            )
+        } else {
+            TraitsIndex::create_in_memory(config.chain_index_config, schema.clone())
+        }
+    }
+
     /// Fetch an entity and all its traits from indices and the data layer. Traits returned
     /// follow mutations in order of operation id.
     fn fetch_entity(&self, entity_id: &EntityIdRef) -> Result<Entity, Error> {
@@ -268,12 +291,12 @@ where
                     Ok(Some(mutation)) => mutation,
                     other => {
                         error!(
-                        "Couldn't fetch trait trait_id={} operation_id={} for entity_id={}: {:?}",
-                        trait_result.trait_id,
-                        trait_result.operation_id,
-                        trait_result.entity_id,
-                        other
-                    );
+                            "Couldn't fetch trait trait_id={} operation_id={} for entity_id={}: {:?}",
+                            trait_result.trait_id,
+                            trait_result.operation_id,
+                            trait_result.entity_id,
+                            other
+                        );
                         return None;
                     }
                 };
@@ -378,11 +401,8 @@ where
         std::fs::create_dir_all(&self.chain_index_dir)?;
 
         // re-create index, and force re-index of chain
-        self.chain_index = TraitsIndex::open_or_create_mmap(
-            self.config.chain_index_config,
-            self.schema.clone(),
-            &self.chain_index_dir,
-        )?;
+        self.chain_index =
+            Self::create_chain_index(self.config, &self.schema, &self.chain_index_dir)?;
         self.index_chain_new_blocks()?;
 
         self.reindex_pending()?;
@@ -547,14 +567,16 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use tempdir::TempDir;
+
+    use exocore_data::tests_utils::DataTestCluster;
+    use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 
     use crate::domain::entity::{Record, Trait, TraitId};
     use crate::domain::schema::tests::create_test_schema;
     use crate::mutation::{DeleteTraitMutation, PutTraitMutation};
-    use exocore_data::tests_utils::DataTestCluster;
-    use exocore_data::{DirectoryChainStore, MemoryPendingStore};
-    use tempdir::TempDir;
+
+    use super::*;
 
     #[test]
     fn index_full_pending_to_chain() -> Result<(), failure::Error> {
@@ -566,16 +588,16 @@ mod tests {
         test_index.handle_engine_events()?;
 
         // index a few traits, they should now be available from pending index
-        let first_ops_id = test_index.put_contact_traits(0..=9)?;
+        let first_ops_id = test_index.put_contact_traits(0..=4)?;
         test_index.cluster.wait_operations_emitted(0, &first_ops_id);
         test_index.handle_engine_events()?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
-        assert_eq!(pending_res + chain_res, 10);
+        assert_eq!(pending_res + chain_res, 5);
 
         // index a few traits, wait for first block ot be committed
-        let second_ops_id = test_index.put_contact_traits(10..=19)?;
+        let second_ops_id = test_index.put_contact_traits(5..=9)?;
         test_index
             .cluster
             .wait_operations_emitted(0, &second_ops_id);
@@ -586,8 +608,8 @@ mod tests {
         let res = test_index.index.search(&Query::with_trait("contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
-        assert!(chain_res >= 10);
-        assert_eq!(pending_res + chain_res, 20);
+        assert!(chain_res >= 5);
+        assert_eq!(pending_res + chain_res, 10);
 
         Ok(())
     }
@@ -596,6 +618,7 @@ mod tests {
     fn reopen_chain_index() -> Result<(), failure::Error> {
         let config = EntitiesIndexConfig {
             chain_index_min_depth: 0, // index as soon as new block appear
+            chain_index_in_memory: false,
             ..TestEntitiesIndex::create_test_config()
         };
 
@@ -620,7 +643,7 @@ mod tests {
         let mut test_index = TestEntitiesIndex::new()?;
 
         // index traits without indexing them by clearing events
-        test_index.put_contact_traits(0..=9)?;
+        test_index.put_contact_traits(0..=5)?;
         test_index.cluster.clear_received_events(0);
 
         let res = test_index.index.search(&Query::with_trait("contact"))?;
@@ -633,7 +656,7 @@ mod tests {
 
         // pending is indexed
         let res = test_index.index.search(&Query::with_trait("contact"))?;
-        assert_eq!(res.results.len(), 10);
+        assert_eq!(res.results.len(), 6);
 
         Ok(())
     }
@@ -647,11 +670,11 @@ mod tests {
         let mut test_index = TestEntitiesIndex::new_with_config(config)?;
 
         // create 3 blocks worth of traits
-        let ops_id = test_index.put_contact_traits(0..=4)?;
+        let ops_id = test_index.put_contact_traits(0..=2)?;
         test_index.cluster.wait_operations_committed(0, &ops_id);
-        let ops_id = test_index.put_contact_traits(5..=9)?;
+        let ops_id = test_index.put_contact_traits(3..=5)?;
         test_index.cluster.wait_operations_committed(0, &ops_id);
-        let ops_id = test_index.put_contact_traits(10..=14)?;
+        let ops_id = test_index.put_contact_traits(6..=9)?;
         test_index.cluster.wait_operations_committed(0, &ops_id);
         test_index.cluster.clear_received_events(0);
 
@@ -660,7 +683,7 @@ mod tests {
             .index
             .handle_data_engine_event(Event::ChainDiverged(0))?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
-        assert_eq!(res.results.len(), 15);
+        assert_eq!(res.results.len(), 10);
 
         // divergence at an offset not indexed yet will just re-index pending
         let (chain_last_offset, _) = test_index
@@ -672,7 +695,7 @@ mod tests {
             .index
             .handle_data_engine_event(Event::ChainDiverged(chain_last_offset + 1))?;
         let res = test_index.index.search(&Query::with_trait("contact"))?;
-        assert_eq!(res.results.len(), 15);
+        assert_eq!(res.results.len(), 10);
 
         // divergence at an offset indexed in chain index will fail
         let res = test_index
@@ -812,6 +835,7 @@ mod tests {
 
         fn create_test_config() -> EntitiesIndexConfig {
             EntitiesIndexConfig {
+                chain_index_in_memory: true,
                 pending_index_config: TraitsIndexConfig {
                     indexer_num_threads: Some(1),
                     ..TraitsIndexConfig::default()
@@ -885,5 +909,4 @@ mod tests {
             Ok(op_id)
         }
     }
-
 }

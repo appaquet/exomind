@@ -59,7 +59,7 @@ impl Deref for FullCell {
 ///
 #[derive(Clone)]
 pub struct Cell {
-    public_key: PublicKey,
+    public_key: Arc<PublicKey>,
     cell_id: CellId,
     local_node: LocalNode,
     nodes: Arc<RwLock<HashMap<NodeId, Node>>>,
@@ -73,7 +73,7 @@ impl Cell {
         nodes_map.insert(local_node.id().clone(), local_node.node().clone());
 
         Cell {
-            public_key,
+            public_key: Arc::new(public_key),
             cell_id,
             local_node: local_node.clone(),
             nodes: Arc::new(RwLock::new(nodes_map)),

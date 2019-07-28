@@ -444,17 +444,21 @@ mod tests {
     use crate::chain::directory::tests::create_block;
 
     use super::*;
+    use exocore_common::cell::FullCell;
+    use exocore_common::node::LocalNode;
 
     #[test]
     fn create_from_iterator() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("ops")?;
-
         let config = DirectoryChainStoreConfig {
             operations_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
         };
+
         let mut index = OperationsIndex::create(config, dir.path())?;
-        let generated_ops = generate_index_blocks(&mut index, 0, 1000)?;
+        let generated_ops = generate_index_blocks(&cell, &mut index, 0, 1000)?;
 
         // 19 because there is 2 ops per block (block itself + op inside)
         assert_eq!(19, index.stored_indices.len());
@@ -472,6 +476,8 @@ mod tests {
 
     #[test]
     fn open_existing() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("ops")?;
         let config = DirectoryChainStoreConfig {
             operations_index_max_memory_items: 100,
@@ -480,7 +486,7 @@ mod tests {
 
         let (memory_offset_from, generated_ops) = {
             let mut index = OperationsIndex::create(config, dir.path())?;
-            let generated_ops = generate_index_blocks(&mut index, 0, 1000)?;
+            let generated_ops = generate_index_blocks(&cell, &mut index, 0, 1000)?;
             (index.memory_offset_from, generated_ops)
         };
 
@@ -500,7 +506,7 @@ mod tests {
         }
 
         // we append some more operations, we expect all of them to be there
-        let new_ops = generate_index_blocks(&mut index, memory_offset_from, 200)?;
+        let new_ops = generate_index_blocks(&cell, &mut index, memory_offset_from, 200)?;
         for (op, offset) in &new_ops {
             assert_eq!(Some(*offset), index.get_operation_block(*op)?);
         }
@@ -511,15 +517,16 @@ mod tests {
 
     #[test]
     fn truncate_from_offset_memory() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("ops")?;
-
         let config = DirectoryChainStoreConfig {
             operations_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
         };
 
         let mut index = OperationsIndex::create(config, dir.path())?;
-        generate_index_blocks(&mut index, 0, 1000)?;
+        generate_index_blocks(&cell, &mut index, 0, 1000)?;
 
         let files_count_before = index.stored_indices.len();
         index.truncate_from_offset(index.memory_offset_from)?;
@@ -531,8 +538,9 @@ mod tests {
 
     #[test]
     fn truncate_from_offset_disk() -> Result<(), failure::Error> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node.clone());
         let dir = tempdir::TempDir::new("ops")?;
-
         let config = DirectoryChainStoreConfig {
             operations_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
@@ -540,7 +548,7 @@ mod tests {
 
         let next_expected_offset = {
             let mut index = OperationsIndex::create(config, dir.path())?;
-            let generated_ops = generate_index_blocks(&mut index, 0, 1000)?;
+            let generated_ops = generate_index_blocks(&cell, &mut index, 0, 1000)?;
 
             let operation_ids = generated_ops.keys().collect_vec();
             let middle_block_offset = generated_ops[operation_ids[operation_ids.len() / 2]];
@@ -564,6 +572,7 @@ mod tests {
     }
 
     fn generate_index_blocks(
+        full_cell: &FullCell,
         index: &mut OperationsIndex,
         from_offset: BlockOffset,
         count: usize,
@@ -573,7 +582,7 @@ mod tests {
         let mut next_offset = from_offset;
         let blocks_iter = (0..count).map(|_i| {
             // create_block will use offset as proposed operation id and will create 1 op inside
-            let block = create_block(next_offset);
+            let block = create_block(full_cell, next_offset);
             generated_ops.insert(next_offset, next_offset);
             generated_ops.insert(next_offset + 1, next_offset);
 

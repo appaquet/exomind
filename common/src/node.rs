@@ -127,14 +127,14 @@ impl Debug for Node {
 #[derive(Clone)]
 pub struct LocalNode {
     node: Node,
-    keypair: Keypair,
+    keypair: Arc<Keypair>,
 }
 
 impl LocalNode {
     pub fn new_from_keypair(keypair: Keypair) -> LocalNode {
         LocalNode {
             node: Node::new_from_public_key(keypair.public()),
-            keypair,
+            keypair: Arc::new(keypair),
         }
     }
 
