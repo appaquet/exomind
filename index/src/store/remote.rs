@@ -454,10 +454,6 @@ impl StoreHandle {
 
 impl AsyncStore for StoreHandle {
     fn mutate(&self, mutation: Mutation) -> AsyncResult<MutationResult> {
-        if let Err(err) = mutation.validate() {
-            return Box::new(futures::failed(err));
-        }
-
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
             None => return Box::new(futures::failed(Error::InnerUpgrade)),
@@ -501,8 +497,7 @@ impl AsyncStore for StoreHandle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::entity::{Record, Trait};
-    use crate::mutation::{PutTraitMutation, TestFailMutation};
+    use crate::mutation::TestFailMutation;
     use crate::store::local::store::tests::TestLocalStore;
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::expect_eventually;
@@ -536,24 +531,6 @@ mod tests {
 
         let mutation = Mutation::TestFail(TestFailMutation {});
         let result = test_remote_store.send_and_await_mutation(mutation);
-        assert!(result.is_err());
-
-        Ok(())
-    }
-
-    #[test]
-    fn mutation_validation_error_propagating() -> Result<(), failure::Error> {
-        let mut test_remote_store = TestRemoteStore::new()?;
-
-        // only start remote, so that it's remote store that validates mutation right away
-        test_remote_store.start_remote()?;
-
-        let invalid_mutation = Mutation::PutTrait(PutTraitMutation {
-            entity_id: "et1".into(),
-            trt: Trait::new(test_remote_store.local_store.schema.clone(), "contact")
-                .with_value_by_name("name", "some name"),
-        });
-        let result = test_remote_store.send_and_await_mutation(invalid_mutation);
         assert!(result.is_err());
 
         Ok(())

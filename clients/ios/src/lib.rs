@@ -156,34 +156,35 @@ pub extern "C" fn exocore_send_query(ctx: *mut Context, _query: *const libc::c_c
 }
 
 // TODO: To be cleaned up in https://github.com/appaquet/exocore/issues/104
-fn create_test_schema() -> Arc<Schema> {
+pub fn create_test_schema() -> Arc<Schema> {
     Arc::new(
         Schema::parse(
             r#"
-        name: myschema
-        traits:
-            - id: 0
-              name: contact
-              fields:
+        namespaces:
+            - name: exocore
+              traits:
                 - id: 0
-                  name: name
-                  type: string
-                  indexed: true
+                  name: contact
+                  fields:
+                    - id: 0
+                      name: name
+                      type: string
+                      indexed: true
+                    - id: 1
+                      name: email
+                      type: string
+                      indexed: true
                 - id: 1
                   name: email
-                  type: string
-                  indexed: true
-            - id: 1
-              name: email
-              fields:
-                - id: 0
-                  name: subject
-                  type: string
-                  indexed: true
-                - id: 1
-                  name: body
-                  type: string
-                  indexed: true
+                  fields:
+                    - id: 0
+                      name: subject
+                      type: string
+                      indexed: true
+                    - id: 1
+                      name: body
+                      type: string
+                      indexed: true
         "#,
         )
         .unwrap(),

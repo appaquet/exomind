@@ -572,7 +572,7 @@ mod tests {
     use exocore_data::tests_utils::DataTestCluster;
     use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 
-    use crate::domain::entity::{Record, Trait, TraitId};
+    use crate::domain::entity::{RecordBuilder, TraitBuilder, TraitId};
     use crate::domain::schema::tests::create_test_schema;
     use crate::mutation::{DeleteTraitMutation, PutTraitMutation};
 
@@ -591,7 +591,9 @@ mod tests {
         let first_ops_id = test_index.put_contact_traits(0..=4)?;
         test_index.cluster.wait_operations_emitted(0, &first_ops_id);
         test_index.handle_engine_events()?;
-        let res = test_index.index.search(&Query::with_trait("contact"))?;
+        let res = test_index
+            .index
+            .search(&Query::with_trait("exocore.contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
         assert_eq!(pending_res + chain_res, 5);
@@ -605,7 +607,9 @@ mod tests {
             .cluster
             .wait_operations_committed(0, &first_ops_id);
         test_index.handle_engine_events()?;
-        let res = test_index.index.search(&Query::with_trait("contact"))?;
+        let res = test_index
+            .index
+            .search(&Query::with_trait("exocore.contact"))?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
         assert!(chain_res >= 5);
@@ -632,7 +636,9 @@ mod tests {
         // reopen index, make sure data is still in there
         let test_index = test_index.with_reopened_index()?;
         // traits should still be indexed
-        let res = test_index.index.search(&Query::with_trait("contact"))?;
+        let res = test_index
+            .index
+            .search(&Query::with_trait("exocore.contact"))?;
         assert_eq!(res.results.len(), 10);
 
         Ok(())
@@ -646,7 +652,9 @@ mod tests {
         test_index.put_contact_traits(0..=5)?;
         test_index.cluster.clear_received_events(0);
 
-        let res = test_index.index.search(&Query::with_trait("contact"))?;
+        let res = test_index
+            .index
+            .search(&Query::with_trait("exocore.contact"))?;
         assert_eq!(res.results.len(), 0);
 
         // trigger discontinuity, which should force reindex
@@ -655,7 +663,9 @@ mod tests {
             .handle_data_engine_event(Event::StreamDiscontinuity)?;
 
         // pending is indexed
-        let res = test_index.index.search(&Query::with_trait("contact"))?;
+        let res = test_index
+            .index
+            .search(&Query::with_trait("exocore.contact"))?;
         assert_eq!(res.results.len(), 6);
 
         Ok(())
@@ -682,7 +692,9 @@ mod tests {
         test_index
             .index
             .handle_data_engine_event(Event::ChainDiverged(0))?;
-        let res = test_index.index.search(&Query::with_trait("contact"))?;
+        let res = test_index
+            .index
+            .search(&Query::with_trait("exocore.contact"))?;
         assert_eq!(res.results.len(), 10);
 
         // divergence at an offset not indexed yet will just re-index pending
@@ -694,7 +706,9 @@ mod tests {
         test_index
             .index
             .handle_data_engine_event(Event::ChainDiverged(chain_last_offset + 1))?;
-        let res = test_index.index.search(&Query::with_trait("contact"))?;
+        let res = test_index
+            .index
+            .search(&Query::with_trait("exocore.contact"))?;
         assert_eq!(res.results.len(), 10);
 
         // divergence at an offset indexed in chain index will fail
@@ -880,9 +894,10 @@ mod tests {
         ) -> Result<OperationId, failure::Error> {
             let mutation = Mutation::PutTrait(PutTraitMutation {
                 entity_id: entity_id.into(),
-                trt: Trait::new(self.schema.clone(), "contact")
-                    .with_id(trait_id.into())
-                    .with_value_by_name("name", name.into()),
+                trt: TraitBuilder::new(&self.schema, "exocore", "contact")?
+                    .set("id", trait_id.into())
+                    .set("name", name.into())
+                    .build()?,
             });
             let json_mutation = mutation.to_json(self.schema.clone())?;
             let op_id = self

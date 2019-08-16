@@ -12,7 +12,7 @@
 
 * Generate headers
     * If you change the API, you need to generate new C headers
-    * `cbindgen --config cbindgen.toml --crate exocore_client_ios --output exocore.h`
+    * `cbindgen --config cbindgen.toml --crate exocore-client-ios --output exocore.h`
 
 * Build the universal lib: `cargo lipo`
 

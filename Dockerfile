@@ -1,15 +1,15 @@
-FROM rust
 
-RUN apt-get update && \
-    apt-get install -y build-essential pkg-config libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
-
+# First build the app with all build dependencies
+# Alpine at this version has Rust 1.36
+FROM alpine:20190707 AS build-image
+RUN apk add rust cargo openssl-dev
 COPY . /opt/exocore/
-
 RUN cd /opt/exocore/cli && \
-    cargo install --path . && \
-    rm -rf /opt/exocore/ && \
-    rm -rf /usr/local/cargo/registry/
+    cargo install --path .
 
-WORKDIR /volume
-CMD exocore-cli
+# Then copy app & required libs to a blank Alpine
+FROM alpine
+WORKDIR /app
+COPY --from=build-image /usr/lib/libgcc* /usr/lib/
+COPY --from=build-image /root/.cargo/bin/exocore-cli /app/
+ENTRYPOINT [ "/app/exocore-cli" ]

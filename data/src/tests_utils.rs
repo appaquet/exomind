@@ -72,17 +72,17 @@ impl DataTestCluster {
             clocks.push(clock);
 
             let engine_config = EngineConfig {
-                manager_timer_interval: Duration::from_millis(100),
+                manager_timer_interval: Duration::from_millis(20),
                 pending_synchronizer_config: PendingSyncConfig {
                     request_tracker_config: RequestTrackerConfig {
-                        base_interval: Duration::from_millis(500),
+                        base_interval: Duration::from_millis(200),
                         max_interval: Duration::from_millis(1000),
                     },
                     ..PendingSyncConfig::default()
                 },
                 commit_manager_config: CommitManagerConfig {
-                    commit_maximum_interval: Duration::from_millis(500),
-                    block_proposal_timeout: Duration::from_millis(800),
+                    commit_maximum_interval: Duration::from_millis(100),
+                    block_proposal_timeout: Duration::from_millis(333),
                     ..CommitManagerConfig::default()
                 },
                 ..EngineConfig::default()

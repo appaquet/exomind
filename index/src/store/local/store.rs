@@ -332,8 +332,6 @@ where
             }
         }
 
-        mutation.validate()?;
-
         let json_mutation = mutation.to_json(self.schema.clone())?;
         let operation_id = self
             .data_handle
@@ -464,7 +462,7 @@ pub mod tests {
     use super::super::entities_index::EntitiesIndexConfig;
     use super::super::traits_index::TraitsIndexConfig;
     use super::*;
-    use crate::domain::entity::{EntityId, Record, Trait, TraitId};
+    use crate::domain::entity::{EntityId, RecordBuilder, TraitBuilder, TraitId};
     use crate::domain::schema::tests::create_test_schema;
     use crate::mutation::{MutationResult, PutTraitMutation, TestFailMutation};
     use exocore_common::node::LocalNode;
@@ -536,28 +534,6 @@ pub mod tests {
 
         let mutation = Mutation::TestFail(TestFailMutation {});
         assert!(test_store.mutate_via_transport(mutation).is_err());
-
-        Ok(())
-    }
-
-    #[test]
-    fn mutation_validation_error_propagating() -> Result<(), failure::Error> {
-        let mut test_store = TestLocalStore::new()?;
-        test_store.start_store()?;
-
-        let invalid_mutation = Mutation::PutTrait(PutTraitMutation {
-            entity_id: "et1".into(),
-            trt: Trait::new(test_store.schema.clone(), "contact")
-                .with_value_by_name("name", "some name"),
-        });
-        assert!(test_store.mutate_via_handle(invalid_mutation).is_err());
-
-        let invalid_mutation = Mutation::PutTrait(PutTraitMutation {
-            entity_id: "et1".into(),
-            trt: Trait::new(test_store.schema.clone(), "contact")
-                .with_value_by_name("name", "some name"),
-        });
-        assert!(test_store.mutate_via_transport(invalid_mutation).is_err());
 
         Ok(())
     }
@@ -785,9 +761,12 @@ pub mod tests {
         ) -> Mutation {
             Mutation::PutTrait(PutTraitMutation {
                 entity_id: entity_id.into(),
-                trt: Trait::new(self.schema.clone(), "contact")
-                    .with_id(trait_id.into())
-                    .with_value_by_name("name", name.into()),
+                trt: TraitBuilder::new(&self.schema, "exocore", "contact")
+                    .unwrap()
+                    .set("id", trait_id.into())
+                    .set("name", name.into())
+                    .build()
+                    .unwrap(),
             })
         }
     }
