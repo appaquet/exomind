@@ -62,7 +62,7 @@ impl UpgradeInfo for WireMessage {
 
 impl<TSocket> OutboundUpgrade<TSocket> for WireMessage
 where
-    TSocket: AsyncWrite,
+    TSocket: AsyncWrite + AsyncRead,
 {
     type Output = ();
     type Error = io::Error;

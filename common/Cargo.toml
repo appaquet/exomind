@@ -21,7 +21,7 @@ owning_ref = "0.4"
 lazycell = "1.2"
 failure = "0.1"
 futures = "0.1"
-libp2p-core = "0.11"
+libp2p-core = "0.12"
 wasm-timer = "0.1"
 log4rs = { version = "0.8", optional = true }
 
