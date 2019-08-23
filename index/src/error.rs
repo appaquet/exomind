@@ -1,5 +1,5 @@
-use crate::domain::schema::{SchemaFieldId, SchemaRecordId};
 use exocore_common::capnp;
+use exocore_schema::schema::{SchemaFieldId, SchemaRecordId};
 use std::sync::Arc;
 use std::time::Duration;
 

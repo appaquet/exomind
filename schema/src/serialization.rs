@@ -1,7 +1,7 @@
 use super::entity::{FieldValue, Record, Struct, Trait};
 use super::schema::{RecordSchema, Schema};
-use crate::domain::entity::{RecordBuilder, StructBuilder, TraitBuilder};
-use crate::domain::schema::{FieldSchema, FieldType};
+use crate::entity::{RecordBuilder, StructBuilder, TraitBuilder};
+use crate::schema::{FieldSchema, FieldType};
 use chrono::prelude::*;
 use serde::de::{MapAccess, Visitor};
 use serde::export::Formatter;

@@ -709,6 +709,7 @@ dependencies = [
  "exocore-common 0.1.0",
  "exocore-data 0.1.0",
  "exocore-index 0.1.0",
+ "exocore-schema 0.1.0",
  "exocore-transport 0.1.0",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -737,6 +738,7 @@ version = "0.1.0"
 dependencies = [
  "exocore-common 0.1.0",
  "exocore-index 0.1.0",
+ "exocore-schema 0.1.0",
  "exocore-transport 0.1.0",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.62 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -753,6 +755,7 @@ dependencies = [
  "console_log 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "exocore-common 0.1.0",
  "exocore-index 0.1.0",
+ "exocore-schema 0.1.0",
  "exocore-transport 0.1.0",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -775,6 +778,7 @@ dependencies = [
  "capnp 0.10.1 (git+https://github.com/appaquet/capnproto-rust.git?branch=thread-safe-arena-readlimiter)",
  "capnpc 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "criterion_bencher_compat 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "exocore-schema 0.1.0",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazycell 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -818,6 +822,7 @@ dependencies = [
  "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "exocore-common 0.1.0",
  "exocore-data 0.1.0",
+ "exocore-schema 0.1.0",
  "exocore-transport 0.1.0",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -834,6 +839,22 @@ dependencies = [
  "tokio-threadpool 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasm-timer 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "exocore-schema"
+version = "0.1.0"
+dependencies = [
+ "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "maplit 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.99 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.99 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_yaml 0.8.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tempdir 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uuid 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

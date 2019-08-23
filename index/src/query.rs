@@ -1,10 +1,10 @@
-use crate::domain::entity::{Entity, EntityId};
-use crate::domain::schema::Schema;
-use crate::domain::serialization::with_schema;
 use crate::error::Error;
 use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::protos::index_transport_capnp::{query_request, query_response};
 use exocore_common::time::ConsistentTimestamp;
+use exocore_schema::entity::{Entity, EntityId};
+use exocore_schema::schema::Schema;
+use exocore_schema::serialization::with_schema;
 use std::sync::Arc;
 
 pub type QueryId = ConsistentTimestamp;

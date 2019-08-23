@@ -1,4 +1,3 @@
-use crate::domain::schema::Schema;
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult};
@@ -12,6 +11,7 @@ use exocore_common::time::{Clock, ConsistentTimestamp};
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
+use exocore_schema::schema::Schema;
 use exocore_transport::{InMessage, OutMessage, TransportHandle, TransportLayer};
 use futures::prelude::*;
 use futures::sync::{mpsc, oneshot};

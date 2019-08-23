@@ -11,7 +11,10 @@ extern crate log;
 #[macro_use]
 extern crate maplit;
 
+pub mod entity;
 pub mod error;
-pub mod mutation;
-pub mod query;
-pub mod store;
+pub mod schema;
+pub mod serialization;
+
+#[cfg(any(test, feature = "tests_utils"))]
+pub mod tests_utils;

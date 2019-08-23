@@ -10,12 +10,12 @@ use exocore_data::operation::{Operation, OperationId};
 use exocore_data::{chain, pending};
 use exocore_data::{EngineHandle, EngineOperationStatus};
 
-use crate::domain::entity::{Entity, EntityId, EntityIdRef};
-use crate::domain::schema;
-use crate::domain::schema::Schema;
 use crate::error::Error;
 use crate::mutation::Mutation;
 use crate::query::*;
+use exocore_schema::entity::{Entity, EntityId, EntityIdRef};
+use exocore_schema::schema;
+use exocore_schema::schema::Schema;
 
 use super::traits_index::{
     IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
@@ -572,9 +572,9 @@ mod tests {
     use exocore_data::tests_utils::DataTestCluster;
     use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 
-    use crate::domain::entity::{RecordBuilder, TraitBuilder, TraitId};
-    use crate::domain::schema::tests::create_test_schema;
     use crate::mutation::{DeleteTraitMutation, PutTraitMutation};
+    use exocore_schema::entity::{RecordBuilder, TraitBuilder, TraitId};
+    use exocore_schema::tests_utils::create_test_schema;
 
     use super::*;
 

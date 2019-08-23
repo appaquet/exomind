@@ -1,10 +1,10 @@
-use crate::domain::entity::{EntityId, FieldValue, Record, Trait, TraitId};
-use crate::domain::schema;
-use crate::domain::schema::RecordSchema;
 use crate::error::Error;
 use crate::query::*;
 use exocore_data::block::BlockOffset;
 use exocore_data::operation::OperationId;
+use exocore_schema::entity::{EntityId, FieldValue, Record, Trait, TraitId};
+use exocore_schema::schema;
+use exocore_schema::schema::RecordSchema;
 use std::ops::Deref;
 use std::path::Path;
 use std::result::Result;
@@ -454,8 +454,8 @@ pub struct TraitResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::entity::{RecordBuilder, TraitBuilder};
-    use crate::domain::schema::tests::create_test_schema;
+    use exocore_schema::entity::{RecordBuilder, TraitBuilder};
+    use exocore_schema::tests_utils::create_test_schema;
 
     #[test]
     fn search_query_matches() -> Result<(), failure::Error> {

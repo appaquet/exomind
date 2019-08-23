@@ -1,5 +1,4 @@
 use super::entities_index::EntitiesIndex;
-use crate::domain::schema::Schema;
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult};
@@ -10,6 +9,7 @@ use exocore_common::protos::MessageType;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
+use exocore_schema::schema::Schema;
 use exocore_transport::{InMessage, OutMessage, TransportHandle};
 use futures::prelude::*;
 use futures::sync::mpsc;
@@ -462,12 +462,12 @@ pub mod tests {
     use super::super::entities_index::EntitiesIndexConfig;
     use super::super::traits_index::TraitsIndexConfig;
     use super::*;
-    use crate::domain::entity::{EntityId, RecordBuilder, TraitBuilder, TraitId};
-    use crate::domain::schema::tests::create_test_schema;
     use crate::mutation::{MutationResult, PutTraitMutation, TestFailMutation};
     use exocore_common::node::LocalNode;
     use exocore_data::tests_utils::DataTestCluster;
     use exocore_data::{DirectoryChainStore, MemoryPendingStore};
+    use exocore_schema::entity::{EntityId, RecordBuilder, TraitBuilder, TraitId};
+    use exocore_schema::tests_utils::create_test_schema;
     use exocore_transport::mock::MockTransportHandle;
     use exocore_transport::transport::{MpscHandleSink, MpscHandleStream};
     use exocore_transport::TransportLayer;

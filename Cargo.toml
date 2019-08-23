@@ -5,6 +5,7 @@ members = [
   "index",
   "data",
   "common",
+  "schema",
   "transport",
   "clients/wasm",
   "clients/android",

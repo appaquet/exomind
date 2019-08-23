@@ -1,10 +1,10 @@
-use crate::domain::entity::{EntityId, Trait, TraitId};
-use crate::domain::schema::Schema;
-use crate::domain::serialization::with_schema;
 use crate::error::Error;
 use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::protos::index_transport_capnp::{mutation_request, mutation_response};
 use exocore_data::operation::OperationId;
+use exocore_schema::entity::{EntityId, Trait, TraitId};
+use exocore_schema::schema::Schema;
+use exocore_schema::serialization::with_schema;
 use std::sync::Arc;
 
 #[serde(rename_all = "snake_case", tag = "type")]

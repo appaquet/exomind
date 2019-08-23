@@ -1,8 +1,8 @@
 use super::schema::RecordSchema;
-use crate::domain::schema::{
+use crate::error::Error;
+use crate::schema::{
     FieldSchema, Namespace, Schema, SchemaFieldId, StructSchema, TraitIdValue, TraitSchema,
 };
-use crate::error::Error;
 use chrono::prelude::*;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -682,9 +682,9 @@ impl<'s> TryFrom<&'s FieldValue> for &'s Struct {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::schema::tests::create_test_schema;
+    use crate::tests_utils::create_test_schema;
     use failure::_core::time::Duration;
-    use wasm_timer::SystemTime;
+    use std::time::SystemTime;
 
     #[test]
     fn string_field_value() -> Result<(), failure::Error> {

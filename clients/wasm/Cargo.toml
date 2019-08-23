@@ -11,6 +11,7 @@ crate-type = ["cdylib"]
 exocore-common = { path = "../../common" }
 exocore-index = { path = "../../index", default-features = false }
 exocore-transport = { path = "../../transport" }
+exocore-schema = { path = "../../schema" }
 tokio = { version = "0.1", features = ["io"], default-features = false }
 futures = "0.1"
 failure = "0.1"

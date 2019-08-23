@@ -12,6 +12,7 @@ local_store = ["tantivy", "tokio-threadpool", "exocore-data/engine"]
 exocore-data = { path = "../data" }
 exocore-transport = { path = "../transport" }
 exocore-common = { path = "../common" }
+exocore-schema = { path = "../schema" }
 failure = "0.1"
 futures = "0.1"
 itertools = "0.8"
@@ -36,3 +37,4 @@ tantivy = { version = "0.10", optional = true }
 tempdir = "0.3"
 exocore-data = { path = "../data", features = ["tests_utils"] }
 exocore-common = { path = "../common", features = ["tests_utils"] }
+exocore-schema = { path = "../schema", features = ["tests_utils"] }

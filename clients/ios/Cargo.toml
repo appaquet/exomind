@@ -9,6 +9,7 @@ crate-type = ["staticlib"]
 
 [dependencies]
 exocore-common = { path = "../../common" }
+exocore-schema = { path = "../../schema" }
 exocore-transport = { path = "../../transport", features = ["libp2p_transport"] }
 exocore-index = { path = "../../index", default-features = false }
 libc = "0.2"
