@@ -123,6 +123,13 @@ impl TraitsIndex {
 
             match mutation {
                 IndexMutation::PutTrait(new_trait) => {
+                    // delete older versions of the trait first
+                    let entity_trait_id = format!("{}_{}", new_trait.entity_id, new_trait.trt.id());
+                    index_writer.delete_term(Term::from_field_text(
+                        self.fields.entity_trait_id,
+                        &entity_trait_id,
+                    ));
+
                     let doc = self.put_mutation_to_document(&new_trait);
                     index_writer.add_document(doc);
                 }
@@ -194,15 +201,13 @@ impl TraitsIndex {
     /// Converts a put mutation to Tantivy document
     fn put_mutation_to_document(&self, mutation: &PutTraitMutation) -> Document {
         let record_schema: &schema::TraitSchema = mutation.trt.record_schema();
+        let entity_trait_id = &format!("{}_{}", mutation.entity_id, mutation.trt.id());
 
         let mut doc = Document::default();
         doc.add_u64(self.fields.trait_type, u64::from(record_schema.id()));
         doc.add_text(self.fields.trait_id, &mutation.trt.id());
         doc.add_text(self.fields.entity_id, &mutation.entity_id);
-        doc.add_text(
-            self.fields.entity_trait_id,
-            &format!("{}_{}", mutation.entity_id, mutation.trt.id()),
-        );
+        doc.add_text(self.fields.entity_trait_id, entity_trait_id);
         doc.add_u64(self.fields.operation_id, mutation.operation_id);
 
         if let Some(block_offset) = mutation.block_offset {
@@ -549,7 +554,7 @@ mod tests {
             operation_id: 2,
             entity_id: "et1".to_string(),
             trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trt1")
+                .set("id", "trt2")
                 .build()?,
         }))?;
         assert_eq!(index.highest_indexed_block()?, Some(1234));
@@ -563,6 +568,44 @@ mod tests {
                 .build()?,
         }))?;
         assert_eq!(index.highest_indexed_block()?, Some(9999));
+
+        Ok(())
+    }
+
+    #[test]
+    fn update_trait() -> Result<(), failure::Error> {
+        let schema = create_test_schema();
+        let config = TraitsIndexConfig::default();
+        let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
+
+        let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
+            block_offset: None,
+            operation_id: 1,
+            entity_id: "entity_id1".to_string(),
+            trt: TraitBuilder::new(&schema, "exocore", "contact")?
+                .set("id", "trudeau1")
+                .set("name", "Justin Trudeau")
+                .set("email", "justin.trudeau@gov.ca")
+                .build()?,
+        });
+        index.apply_mutation(contact_mutation)?;
+
+        let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
+            block_offset: None,
+            operation_id: 2,
+            entity_id: "entity_id1".to_string(),
+            trt: TraitBuilder::new(&schema, "exocore", "contact")?
+                .set("id", "trudeau1")
+                .set("name", "Justin Trudeau")
+                .set("email", "justin.trudeau@gov.ca")
+                .build()?,
+        });
+        index.apply_mutation(contact_mutation)?;
+
+        let query = Query::match_text("justin");
+        let results = index.search(&query, 10)?;
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].operation_id, 2);
 
         Ok(())
     }
