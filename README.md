@@ -1,8 +1,6 @@
 # Exocore
-[![Build Status](https://dev.azure.com/appaquet/exocore/_apis/build/status/appaquet.exocore?branchName=master)](https://dev.azure.com/appaquet/exocore/_build/latest?definitionId=1&branchName=master)
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
 [![dependency status](https://deps.rs/repo/github/appaquet/exocore/status.svg)](https://deps.rs/repo/github/appaquet/exocore)
-[![Docker](https://img.shields.io/docker/cloud/automated/appaquet/exocore)](https://hub.docker.com/r/appaquet/exocore/)
 
 **Warning: Exocore is at a very early development stage, hence very unstable and probably totally unsafe. Use at your own risk.**
 
@@ -56,7 +54,7 @@ A cell consists of:
   * Using Cargo: `cargo run --package exocore-cli -- <cli option>`
                  or `./utils/cli.sh <cli options>`
   * Using the latest Docker image:
-    `docker run --rm -it -v "$PWD:/volume" appaquet/exocore exocore-cli <cli options>`
+    `docker run --rm -it -v "$PWD:/volume" docker.pkg.github.com/appaquet/exocore/cli exocore-cli <cli options>`
 
 * Configuration
     * Most command requires a `config.yaml` file, for which an example can be found in here: [`./examples/config.yaml`]

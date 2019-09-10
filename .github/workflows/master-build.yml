@@ -1,0 +1,20 @@
+name: Master builder
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  docker_build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build & publish Docker
+      run: |
+        TAG=$(git rev-parse --short HEAD)
+
+        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} docker.pkg.github.com
+        docker build -t docker.pkg.github.com/appaquet/exocore/cli:$TAG .
+        docker push docker.pkg.github.com/appaquet/exocore/cli:$TAG
