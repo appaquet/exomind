@@ -9,10 +9,9 @@ use exocore_common::framing::{
 use exocore_common::node::{LocalNode, NodeId};
 use exocore_common::protos::data_chain_capnp::block_signature;
 use exocore_common::protos::data_chain_capnp::chain_operation;
-use exocore_common::time::ConsistentTimestamp;
 
-pub type GroupId = ConsistentTimestamp;
-pub type OperationId = ConsistentTimestamp;
+pub type GroupId = u64;
+pub type OperationId = u64;
 
 pub type OperationFrame<I> =
     TypedCapnpFrame<MultihashFrame<Sha3_256, SizedFrame<I>>, chain_operation::Owned>;

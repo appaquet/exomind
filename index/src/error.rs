@@ -23,6 +23,9 @@ pub enum Error {
     #[fail(display = "Field named {} was not in schema", _0)]
     NamedFieldNotInSchema(String),
 
+    #[fail(display = "Query parsing error: {}", _0)]
+    QueryParsing(String),
+
     #[cfg(feature = "local_store")]
     #[fail(display = "Error in Tantivy: {}", _0)]
     Tantivy(Arc<tantivy::TantivyError>),

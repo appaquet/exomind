@@ -72,7 +72,7 @@ where
         let mut unlocked_inner = inner.write()?;
 
         let my_node = unlocked_inner.cell.local_node();
-        let operation_id = unlocked_inner.clock.consistent_time(my_node);
+        let operation_id = unlocked_inner.clock.consistent_time(my_node).into();
 
         let operation_builder = OperationBuilder::new_entry(operation_id, my_node.id(), data);
         let operation = operation_builder.sign_and_build(&my_node)?;

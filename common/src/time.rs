@@ -1,14 +1,13 @@
 use crate::node::Node;
+pub use chrono::prelude::*;
+use std::ops::{Add, Sub};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 pub use wasm_timer::Instant;
 
-// TODO: This means we can't generate more than 100 consistent time per ms for now
 // TODO: But will be rewritten in consistent clock logic in ticket https://github.com/appaquet/exocore/issues/6
-const CONSISTENT_COUNTER_MAX: usize = 99;
-
-pub type ConsistentTimestamp = u64;
+const CONSISTENT_COUNTER_MAX: usize = 999;
 
 #[derive(Clone)]
 pub struct Clock {
@@ -80,7 +79,7 @@ impl Clock {
             .duration_since(wasm_timer::UNIX_EPOCH)
             .unwrap();
         match &self.source {
-            Source::System => consistent_timestamp_from_context(
+            Source::System => ConsistentTimestamp::from_context(
                 unix_elapsed,
                 counter as u64,
                 node.consistent_clock_id(),
@@ -99,7 +98,7 @@ impl Clock {
                     unix_elapsed
                 };
 
-                consistent_timestamp_from_context(
+                ConsistentTimestamp::from_context(
                     unix_elapsed_offset,
                     counter as u64,
                     node.consistent_clock_id(),
@@ -154,24 +153,70 @@ enum Source {
     Mocked(std::sync::Arc<std::sync::RwLock<Option<Instant>>>),
 }
 
-pub fn consistent_timestamp_from_context(
-    duration: Duration,
-    counter: u64,
-    node_clock_id: u8,
-) -> ConsistentTimestamp {
-    // we shift by 1000 for milliseconds, 100 for node id, 100 for the counter
-    duration.as_secs() * 1_000 * 100 * 100
-        + u64::from(duration.subsec_millis()) * 100 * 100
-        + u64::from(node_clock_id % 100) * 100
-        + counter
+///
+/// Timestamp that tries to be consistent and monotonic across cluster by incorporating node's unique id
+/// and a per-node counter.
+///
+/// It's designed to have the same resolution as a nanoseconds precision timestamp by encoding node id and counter in
+/// nanoseconds.
+///
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub struct ConsistentTimestamp(pub u64);
+
+impl ConsistentTimestamp {
+    pub fn from_context(
+        duration: Duration,
+        counter: u64,
+        node_clock_id: u16,
+    ) -> ConsistentTimestamp {
+        // we shift by 1000 for milliseconds, 1000 for node id, 1000 for the counter
+        let timestamp = duration.as_secs() * 1_000 * 1_000 * 1_000
+            + u64::from(duration.subsec_millis()) * 1_000 * 1_000
+            + u64::from(node_clock_id % 1_000) * 1_000
+            + counter;
+
+        ConsistentTimestamp(timestamp)
+    }
+
+    pub fn from_duration(dur: Duration) -> ConsistentTimestamp {
+        ConsistentTimestamp(dur.as_nanos() as u64)
+    }
+
+    pub fn to_datetime(self) -> DateTime<Utc> {
+        Utc.timestamp_nanos(self.0 as i64)
+    }
+
+    pub fn to_duration(self) -> Duration {
+        Duration::from_nanos(self.0)
+    }
 }
 
-pub fn consistent_timestamp_from_duration(duration: Duration) -> ConsistentTimestamp {
-    consistent_timestamp_from_context(duration, 0, 0)
+impl Sub<ConsistentTimestamp> for ConsistentTimestamp {
+    type Output = Option<ConsistentTimestamp>;
+
+    fn sub(self, rhs: ConsistentTimestamp) -> Self::Output {
+        self.0.checked_sub(rhs.0).map(ConsistentTimestamp)
+    }
 }
 
-pub fn consistent_timestamp_to_duration(timestamp: ConsistentTimestamp) -> Duration {
-    Duration::from_millis(timestamp / 100 / 100)
+impl Add<ConsistentTimestamp> for ConsistentTimestamp {
+    type Output = ConsistentTimestamp;
+
+    fn add(self, rhs: ConsistentTimestamp) -> Self::Output {
+        ConsistentTimestamp(self.0 + rhs.0)
+    }
+}
+
+impl From<u64> for ConsistentTimestamp {
+    fn from(value: u64) -> Self {
+        ConsistentTimestamp(value)
+    }
+}
+
+impl Into<u64> for ConsistentTimestamp {
+    fn into(self) -> u64 {
+        self.0
+    }
 }
 
 #[cfg(test)]
@@ -218,15 +263,15 @@ mod tests {
         let time1 = mocked_clock.consistent_time(local_node.node());
         std::thread::sleep(Duration::from_millis(10));
         let time2 = mocked_clock.consistent_time(local_node.node());
-        assert_eq!(time1 + 1, time2); // time2 is +1 because of counter
+        assert_eq!(time1 + ConsistentTimestamp::from(1), time2); // time2 is +1 because of counter
 
         mocked_clock.reset_fixed_instant();
         let time3 = mocked_clock.consistent_time(local_node.node());
         std::thread::sleep(Duration::from_millis(10));
         let time4 = mocked_clock.consistent_time(local_node.node());
 
-        let elaps = consistent_timestamp_from_duration(Duration::from_millis(10));
-        assert!(time4 - time3 > elaps);
+        let elaps = ConsistentTimestamp::from_duration(Duration::from_millis(10));
+        assert!((time4 - time3).unwrap() > elaps);
     }
 
     #[test]
@@ -234,7 +279,7 @@ mod tests {
         let mocked_clock = Clock::new_fixed_mocked(Instant::now());
         let local_node = LocalNode::generate();
 
-        let mut last_time = 0;
+        let mut last_time = ConsistentTimestamp::from(0);
         for _i in 0..100 {
             let current_time = mocked_clock.consistent_time(local_node.node());
             assert_ne!(last_time, current_time);
@@ -250,23 +295,31 @@ mod tests {
         let time1 = mocked_clock.consistent_time(local_node.node());
         std::thread::sleep(Duration::from_millis(10));
         let time2 = mocked_clock.consistent_time(local_node.node());
-        assert_eq!(time1 + 1, time2); // time2 is +1 because of counter
+        assert_eq!(time1 + ConsistentTimestamp::from(1), time2); // time2 is +1 because of counter
 
         mocked_clock.reset_fixed_instant();
         let time3 = mocked_clock.consistent_time(local_node.node());
         std::thread::sleep(Duration::from_millis(10));
         let time4 = mocked_clock.consistent_time(local_node.node());
 
-        let elaps = consistent_timestamp_from_duration(Duration::from_millis(10));
-        assert!(time4 - time3 > elaps);
+        let elaps = ConsistentTimestamp::from_duration(Duration::from_millis(10));
+        assert!((time4 - time3).unwrap() > elaps);
     }
 
     #[test]
     fn consistent_time_to_duration() {
         let dur = Duration::from_millis(3_323_123);
-        let consistent = consistent_timestamp_from_duration(dur);
-        let dur_after = consistent_timestamp_to_duration(consistent);
+        let consistent = ConsistentTimestamp::from_duration(dur);
+        let dur_after = consistent.to_duration();
         assert_eq!(dur, dur_after);
+    }
+
+    #[test]
+    fn consistent_time_to_chrono() {
+        let now: DateTime<Utc> = Utc::now();
+        let consistent = ConsistentTimestamp::from(now.timestamp_nanos() as u64);
+        let consistent_now = consistent.to_datetime();
+        assert_eq!(now.timestamp_millis(), consistent_now.timestamp_millis());
     }
 
     #[test]

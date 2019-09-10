@@ -267,7 +267,7 @@ pub enum Error {
     #[fail(display = "Given bytes couldn't be decoded by libp2p: {}", _0)]
     Libp2pDecode(String),
     #[fail(display = "Couldn't decode base58 string into bytes: {}", _0)]
-    Base58Decode(bs58::decode::DecodeError),
+    Base58Decode(bs58::decode::Error),
     #[fail(display = "Algorithm code is invalid: {}", _0)]
     InvalidAlgorithmCode(u8),
     #[fail(display = "Libp2p signing error: {}", _0)]

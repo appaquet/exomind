@@ -77,10 +77,18 @@ pub trait Record: Sized {
             .field_by_name(field_name)
             .ok_or_else(|| Error::NamedFieldNotInSchema(field_name.to_owned()))?;
 
+        self.get_by_id(field.id)
+    }
+
+    fn get_by_id<'s, T: TryFrom<&'s FieldValue, Error = Error>>(
+        &'s self,
+        field_id: SchemaFieldId,
+    ) -> Result<T, Error> {
+        let schema = self.record_schema();
         let value = self
             .values()
-            .get(&field.id)
-            .ok_or_else(|| Error::FieldEmptyValue(field.id, schema.id()))?;
+            .get(&field_id)
+            .ok_or_else(|| Error::FieldEmptyValue(field_id, schema.id()))?;
 
         T::try_from(value)
     }
@@ -200,12 +208,19 @@ pub struct Trait {
 }
 
 impl Trait {
-    pub fn id(&self) -> &TraitId {
-        let value = self.values.get(&TraitSchema::TRAIT_ID_FIELD);
-        match value {
-            Some(FieldValue::String(str)) => str,
-            _ => panic!("Trait didn't have a valid ID value"),
-        }
+    pub fn id(&self) -> &TraitIdRef {
+        self.get_by_id(TraitSchema::TRAIT_ID_FIELD)
+            .expect("Trait didn't have a valid ID value")
+    }
+
+    pub fn creation_date(&self) -> &DateTime<Utc> {
+        self.get_by_id(TraitSchema::CREATION_DATE_FIELD)
+            .expect("Trait didn't have creation date value")
+    }
+
+    pub fn modification_date(&self) -> &DateTime<Utc> {
+        self.get_by_id(TraitSchema::MODIFICATION_DATE_FIELD)
+            .expect("Trait didn't have modification date value")
     }
 }
 
@@ -313,6 +328,22 @@ impl TraitBuilder {
         self.values.insert(
             TraitSchema::TRAIT_ID_FIELD,
             FieldValue::String(value.into()),
+        );
+        self
+    }
+
+    pub fn set_creation_date<S: Into<DateTime<Utc>>>(mut self, value: S) -> Self {
+        self.values.insert(
+            TraitSchema::CREATION_DATE_FIELD,
+            FieldValue::DateTime(value.into()),
+        );
+        self
+    }
+
+    pub fn set_modification_date<S: Into<DateTime<Utc>>>(mut self, value: S) -> Self {
+        self.values.insert(
+            TraitSchema::MODIFICATION_DATE_FIELD,
+            FieldValue::DateTime(value.into()),
         );
         self
     }
@@ -847,6 +878,34 @@ mod tests {
 
         let date_time = SystemTime::from(*trt.get_datetime("date_value")?);
         assert!(date_time.elapsed()? <= Duration::from_millis(100));
+
+        let date_time = SystemTime::from(*trt.modification_date());
+        assert!(date_time.elapsed()? <= Duration::from_millis(100));
+
+        let date_time = SystemTime::from(*trt.creation_date());
+        assert!(date_time.elapsed()? <= Duration::from_millis(100));
+
+        Ok(())
+    }
+
+    #[test]
+    fn trait_builder_specific_values() -> Result<(), failure::Error> {
+        let schema = create_test_schema();
+
+        let creation_date = "2019-07-01T12:54:00+05:00".parse::<DateTime<Utc>>()?;
+        let modification_date = "2019-07-07T12:21:01+05:00".parse::<DateTime<Utc>>()?;
+
+        let email = TraitBuilder::new(&schema, "exocore", "email")?
+            .set("subject", "Some title")
+            .set("body", "Some body")
+            .set_id("id123")
+            .set_creation_date(creation_date)
+            .set_modification_date(modification_date)
+            .build()?;
+
+        assert_eq!(email.id(), "id123");
+        assert_eq!(email.creation_date(), &creation_date);
+        assert_eq!(email.modification_date(), &modification_date);
 
         Ok(())
     }

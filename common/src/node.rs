@@ -18,7 +18,7 @@ use std::sync::{Arc, RwLock};
 pub struct Node {
     node_id: NodeId,
     peer_id: PeerId,
-    consistent_clock_id: u8,
+    consistent_clock_id: u16,
     public_key: PublicKey,
     inner: Arc<RwLock<SharedInner>>,
 }
@@ -35,7 +35,12 @@ impl Node {
             .expect("Couldn't convert node_id to peer_id");
 
         // TODO: used for consistent time and to be fixed for real in https://github.com/appaquet/exocore/issues/6
-        let consistent_clock_id = *node_id.0.as_bytes().last().unwrap();
+        let node_id_bytes = node_id.0.as_bytes();
+        let node_id_bytes_len = node_id_bytes.len();
+        let consistent_clock_id = u16::from_le_bytes([
+            node_id_bytes[node_id_bytes_len - 1],
+            node_id_bytes[node_id_bytes_len - 2],
+        ]);
 
         Node {
             node_id,
@@ -56,7 +61,12 @@ impl Node {
             .expect("Couldn't convert node_id to peer_id");
 
         // TODO: used for consistent time and to be fixed for real in https://github.com/appaquet/exocore/issues/6
-        let consistent_clock_id = *node_id.0.as_bytes().last().unwrap();
+        let node_id_bytes = node_id.0.as_bytes();
+        let node_id_bytes_len = node_id_bytes.len();
+        let consistent_clock_id = u16::from_le_bytes([
+            node_id_bytes[node_id_bytes_len - 1],
+            node_id_bytes[node_id_bytes_len - 2],
+        ]);
 
         Node {
             node_id,
@@ -80,7 +90,7 @@ impl Node {
     }
 
     #[inline]
-    pub fn consistent_clock_id(&self) -> u8 {
+    pub fn consistent_clock_id(&self) -> u16 {
         self.consistent_clock_id
     }
 
@@ -254,5 +264,4 @@ mod tests {
         assert_eq!(node1, node1.clone());
         assert_ne!(node1, node2);
     }
-
 }

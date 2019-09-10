@@ -174,16 +174,16 @@ where
 
     /// Execute a search query on the indices, and returning all entities matching the query.
     pub fn search(&self, query: &Query) -> Result<QueryResult, Error> {
-        // TODO: Implement paging, counting, sorting & limit https://github.com/appaquet/exocore/issues/105
-
         let chain_results = self
             .chain_index
-            .search(query, 200)?
+            .search(query)?
+            .results
             .into_iter()
             .map(|res| (res, EntityResultSource::Chain));
         let pending_results = self
             .pending_index
-            .search(query, 200)?
+            .search(query)?
+            .results
             .into_iter()
             .map(|res| (res, EntityResultSource::Pending));
         debug!(
@@ -233,8 +233,8 @@ where
             current_page: QueryPaging {
                 // TODO: https://github.com/appaquet/exocore/issues/105
                 count: 0,
-                from_token: None,
-                to_token: None,
+                after_token: None,
+                before_token: None,
             },
             total_estimated: combined_results.len() as u32, // TODO: https://github.com/appaquet/exocore/issues/105
         })
@@ -264,11 +264,12 @@ where
     fn fetch_entity(&self, entity_id: &EntityIdRef) -> Result<Entity, Error> {
         let entity_query = Query::with_entity_id(entity_id);
 
-        let pending_results = self.pending_index.search(&entity_query, 9999)?;
-        let chain_results = self.chain_index.search(&entity_query, 9999)?;
+        let pending_results = self.pending_index.search(&entity_query)?;
+        let chain_results = self.chain_index.search(&entity_query)?;
         let ordered_traits = pending_results
+            .results
             .into_iter()
-            .chain(chain_results.into_iter())
+            .chain(chain_results.results.into_iter())
             .sorted_by_key(|result| result.operation_id);
 
         // only keep last operation for each trait, and remove trait if it's a tombstone
@@ -746,8 +747,8 @@ mod tests {
         let pending_res = test_index
             .index
             .pending_index
-            .search(&Query::with_entity_id("entity1"), 10)?;
-        assert!(pending_res.iter().any(|r| r.tombstone));
+            .search(&Query::with_entity_id("entity1"))?;
+        assert!(pending_res.results.iter().any(|r| r.tombstone));
 
         // now bury the deletion under 1 block, which should delete for real the trait
         let op_id = test_index.put_contact_trait("entity2", "trait2", "name1")?;
@@ -760,13 +761,13 @@ mod tests {
         let pending_res = test_index
             .index
             .pending_index
-            .search(&Query::with_entity_id("entity1"), 10)?;
-        assert!(pending_res.is_empty());
+            .search(&Query::with_entity_id("entity1"))?;
+        assert!(pending_res.results.is_empty());
         let chain_res = test_index
             .index
             .chain_index
-            .search(&Query::with_entity_id("entity1"), 10)?;
-        assert_eq!(chain_res.len(), 1);
+            .search(&Query::with_entity_id("entity1"))?;
+        assert_eq!(chain_res.results.len(), 1);
 
         Ok(())
     }

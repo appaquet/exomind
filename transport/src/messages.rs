@@ -48,7 +48,7 @@ impl OutMessage {
 
     pub fn with_follow_id(mut self, follow_id: ConsistentTimestamp) -> Self {
         let mut envelope_message_builder = self.envelope_builder.get_builder();
-        envelope_message_builder.set_follow_id(follow_id);
+        envelope_message_builder.set_follow_id(follow_id.into());
 
         self
     }
@@ -72,7 +72,7 @@ impl InMessage {
     ) -> Result<InMessage, Error> {
         let envelope_reader = envelope.get_reader()?;
         let follow_id = if envelope_reader.get_follow_id() != 0 {
-            Some(envelope_reader.get_follow_id())
+            Some(envelope_reader.get_follow_id().into())
         } else {
             None
         };

@@ -20,7 +20,7 @@ use exocore_common::crypto::hash::Sha3_256;
 use exocore_common::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
 };
-use exocore_common::time::Clock;
+use exocore_common::time::{Clock, ConsistentTimestamp};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 
@@ -239,7 +239,7 @@ impl EngineTestCluster {
 
         let last_block = self.chains[node_idx].get_last_block()?.unwrap();
 
-        let block_operation_id = self.consistent_timestamp(node_idx);
+        let block_operation_id = self.consistent_timestamp(node_idx).into();
         let block_operations = BlockOperations::from_operations(operations)?;
         let block = BlockOwned::new_with_prev_block(
             &self.cells[node_idx],
@@ -299,7 +299,7 @@ impl EngineTestCluster {
         Ok(sync_context)
     }
 
-    pub fn consistent_timestamp(&self, node_idx: usize) -> u64 {
+    pub fn consistent_timestamp(&self, node_idx: usize) -> ConsistentTimestamp {
         self.clocks[node_idx].consistent_time(&self.nodes[node_idx])
     }
 }

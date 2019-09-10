@@ -392,7 +392,7 @@ impl TraitSchema {
                 id: Self::CREATION_DATE_FIELD,
                 name: Self::CREATION_DATE_FIELD_NAME.to_owned(),
                 typ: FieldType::DateTime,
-                indexed: false, // TODO: Switch back
+                indexed: false, // special case, it's indexed & stored in another way
                 optional: false,
                 default: Some("now".to_owned()),
             },
@@ -400,7 +400,7 @@ impl TraitSchema {
                 id: Self::MODIFICATION_DATE_FIELD,
                 name: Self::MODIFICATION_DATE_FIELD_NAME.to_owned(),
                 typ: FieldType::DateTime,
-                indexed: false, // TODO: Switch back
+                indexed: false, // special case, it's indexed & stored in another way
                 optional: false,
                 default: Some("now".to_owned()),
             },

@@ -206,7 +206,7 @@ where
                     let _ = pending_request.result_sender.send(Ok(mutation));
                 } else {
                     return Err(Error::Other(format!(
-                        "Couldn't find pending mutation for mutation response (request_id={} type={:?} from={:?})",
+                        "Couldn't find pending mutation for mutation response (request_id={:?} type={:?} from={:?})",
                         request_id, in_message.message_type, in_message.from
                     )));
                 }
@@ -216,7 +216,7 @@ where
                     let _ = pending_request.result_sender.send(Ok(query));
                 } else {
                     return Err(Error::Other(format!(
-                        "Couldn't find pending query for query response (request_id={} type={:?} from={:?})",
+                        "Couldn't find pending query for query response (request_id={:?} type={:?} from={:?})",
                         request_id, in_message.message_type, in_message.from
                     )));
                 }

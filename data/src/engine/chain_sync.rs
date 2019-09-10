@@ -1390,7 +1390,7 @@ mod tests {
         let operation_size = cluster.chains_synchronizer[0].config.blocks_max_send_size / 9;
         let operations = (0..10)
             .map(|_i| {
-                let op_id = cluster.consistent_timestamp(0);
+                let op_id = cluster.consistent_timestamp(0).into();
                 let data = vec![0u8; operation_size + 1];
                 OperationBuilder::new_entry(op_id, node_0.id(), &data)
                     .sign_and_build(&node_0)
