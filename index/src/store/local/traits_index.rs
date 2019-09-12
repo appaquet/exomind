@@ -22,7 +22,7 @@ use tantivy::{
     Term,
 };
 
-const SCORE_TO_U64_MULTIPLIER: f32 = 1_000_000_000.0;
+const SCORE_TO_U64_MULTIPLIER: f32 = 10_000_000_000.0;
 const UNIQUE_SORT_TO_U64_DIVIDER: f32 = 100_000_000.0;
 const SEARCH_ENTITY_ID_LIMIT: usize = 1_000_000;
 
@@ -871,24 +871,24 @@ mod tests {
         let query1 = Query::match_text("trudeau").with_paging(QueryPaging::new(10));
         let results1 = indexer.search(&query1)?;
         assert_eq!(results1.total_results, 30);
-        assert_eq!(results1.remaining_results, 20);
         assert_eq!(results1.results.len(), 10);
+        assert_eq!(results1.remaining_results, 20);
         find_trait_result(&results1, "id29");
         find_trait_result(&results1, "id20");
 
         let query2 = query1.with_paging(results1.next_page.clone().unwrap());
         let results2 = indexer.search(&query2)?;
         assert_eq!(results2.total_results, 30);
-        assert_eq!(results2.remaining_results, 10);
         assert_eq!(results2.results.len(), 10);
+        assert_eq!(results2.remaining_results, 10);
         find_trait_result(&results1, "id19");
         find_trait_result(&results1, "id10");
 
         let query3 = query2.with_paging(results2.next_page.clone().unwrap());
         let results3 = indexer.search(&query3)?;
         assert_eq!(results3.total_results, 30);
-        assert_eq!(results3.remaining_results, 0);
         assert_eq!(results3.results.len(), 10);
+        assert_eq!(results3.remaining_results, 0);
         find_trait_result(&results1, "id9");
         find_trait_result(&results1, "id0");
 
