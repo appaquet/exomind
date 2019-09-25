@@ -13,13 +13,14 @@ use exocore_data::{EngineHandle, EngineOperationStatus};
 use crate::error::Error;
 use crate::mutation::Mutation;
 use crate::query::*;
-use exocore_schema::entity::{Entity, EntityId, EntityIdRef};
+use exocore_schema::entity::{Entity, EntityId, Trait};
 use exocore_schema::schema;
 use exocore_schema::schema::Schema;
 
 use super::traits_index::{
     IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
 };
+use crate::store::local::top_results_iter::RescoredTopResultsIterable;
 
 ///
 /// Configuration of the entities index
@@ -174,69 +175,100 @@ where
 
     /// Execute a search query on the indices, and returning all entities matching the query.
     pub fn search(&self, query: &Query) -> Result<QueryResult, Error> {
-        let chain_results = self
-            .chain_index
-            .search(query)?
-            .results
-            .into_iter()
-            .map(|res| (res, EntityResultSource::Chain));
-        let pending_results = self
-            .pending_index
-            .search(query)?
-            .results
-            .into_iter()
-            .map(|res| (res, EntityResultSource::Pending));
-        debug!(
-            "Found {} from chain, {} from pending",
-            chain_results.len(),
-            pending_results.len()
-        );
-        let combined_results = chain_results.chain(pending_results).collect_vec();
+        let current_page = query.paging_or_default();
 
-        // accumulate traits found for each entities
-        let mut entities_traits: HashMap<EntityId, Vec<(&TraitResult, EntityResultSource)>> =
-            HashMap::new();
-        for (trait_result, source) in &combined_results {
-            if let Some(traits) = entities_traits.get_mut(&trait_result.entity_id) {
-                traits.push((trait_result, *source));
-            } else {
-                entities_traits.insert(
-                    trait_result.entity_id.clone(),
-                    vec![(trait_result, *source)],
-                );
-            }
-        }
+        let chain_results = self.chain_index.search_all(query)?;
+        let pending_results = self.pending_index.search_all(query)?;
+
+        let total_estimated = chain_results.total_results + pending_results.total_results;
+        debug!(
+            "Found approximately {} from chain, {} from pending, for total of {}",
+            chain_results.total_results, pending_results.total_results, total_estimated
+        );
+
+        // create merged iterator, returning results from both underlying in order
+        let chain_results = chain_results.map(|res| (res, EntityResultSource::Chain));
+        let pending_results = pending_results.map(|res| (res, EntityResultSource::Pending));
+        let combined_results = chain_results
+            .merge_by(pending_results, |(res1, _src1), (res2, _src2)| {
+                res1.score <= res2.score
+            });
 
         // iterate through results and returning the first N entities
-        let mut included_entities = HashSet::new();
-        let results = combined_results
-            .iter()
+        let mut matched_entities = HashSet::new();
+        let results: Vec<EntityResult> = combined_results
+            // iterate through results, starting with best scores
             .flat_map(|(trait_result, source)| {
-                if included_entities.contains(&trait_result.entity_id) {
+                if matched_entities.contains(&trait_result.entity_id) {
+                    return None;
+                } else {
+                    matched_entities.insert(trait_result.entity_id.clone());
+                }
+
+                let indexed_traits = self
+                    .fetch_entity_traits_results(&trait_result.entity_id)
+                    .map_err(|err| {
+                        error!(
+                            "Error fetching traits for entity_id={}: {}",
+                            trait_result.entity_id, err
+                        );
+                        err
+                    })
+                    .ok()?;
+                if indexed_traits.is_empty() {
+                    // no traits remaining means that entity is now deleted
                     return None;
                 }
 
-                let entity = self.fetch_entity(&trait_result.entity_id).ok()?;
-                included_entities.insert(trait_result.entity_id.clone());
+                // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
+                let score = trait_result.score;
+                let sort_token = SortToken::from_u64(score);
+                if current_page.is_sort_token_in_bound(&sort_token) {
+                    Some((trait_result, indexed_traits, source, sort_token))
+                } else {
+                    None
+                }
+            })
+            // this steps consumes the results up until we reach the best 10 results based on the score
+            // of the highest matching trait, but re-scored negatively based on other traits
+            .top_negatively_rescored_results(
+                current_page.count as usize,
+                |(trait_result, _traits, _source, _sort_token)| {
+                    (trait_result.score, trait_result.score)
+                },
+            )
+            // take the best results and fetch the entities data
+            .flat_map(|(trait_result, indexed_traits, source, sort_token)| {
+                // TODO: Support for summary https://github.com/appaquet/exocore/issues/142
+                let traits_data = self.fetch_entity_traits_data(indexed_traits.values());
+                let entity = Entity {
+                    id: trait_result.entity_id.clone(),
+                    traits: traits_data,
+                };
 
                 Some(EntityResult {
                     entity,
-                    source: *source,
+                    source,
+                    sort_token,
                 })
             })
-            .take(100)
             .collect();
+
+        let next_page = if let Some(last_result) = results.last() {
+            Some(
+                current_page
+                    .clone()
+                    .with_before_token(last_result.sort_token.clone()),
+            )
+        } else {
+            None
+        };
 
         Ok(QueryResult {
             results,
-            next_page: None,
-            current_page: QueryPaging {
-                // TODO: https://github.com/appaquet/exocore/issues/105
-                count: 0,
-                after_token: None,
-                before_token: None,
-            },
-            total_estimated: combined_results.len() as u32, // TODO: https://github.com/appaquet/exocore/issues/105
+            next_page,
+            current_page: current_page.clone(),
+            total_estimated: total_estimated as u32,
         })
     }
 
@@ -261,11 +293,26 @@ where
 
     /// Fetch an entity and all its traits from indices and the data layer. Traits returned
     /// follow mutations in order of operation id.
-    fn fetch_entity(&self, entity_id: &EntityIdRef) -> Result<Entity, Error> {
-        let entity_query = Query::with_entity_id(entity_id);
+    #[cfg(test)]
+    fn fetch_entity(
+        &self,
+        entity_id: &exocore_schema::entity::EntityIdRef,
+    ) -> Result<Entity, Error> {
+        let traits_results = self.fetch_entity_traits_results(entity_id)?;
+        let full_traits = self.fetch_entity_traits_data(traits_results.values());
+        Ok(Entity {
+            id: entity_id.to_string(),
+            traits: full_traits,
+        })
+    }
 
-        let pending_results = self.pending_index.search(&entity_query)?;
-        let chain_results = self.chain_index.search(&entity_query)?;
+    /// Fetch traits metadata from pending and chain indices for this entity id, and merge them.
+    fn fetch_entity_traits_results(
+        &self,
+        entity_id: &str,
+    ) -> Result<HashMap<String, TraitResult>, Error> {
+        let pending_results = self.pending_index.search_entity_id(entity_id)?;
+        let chain_results = self.chain_index.search_entity_id(entity_id)?;
         let ordered_traits = pending_results
             .results
             .into_iter()
@@ -277,13 +324,20 @@ where
         for trait_result in ordered_traits {
             if trait_result.tombstone {
                 traits.remove(&trait_result.trait_id);
+            } else {
+                traits.insert(trait_result.trait_id.clone(), trait_result);
             }
-            traits.insert(trait_result.trait_id.clone(), trait_result);
         }
 
-        // for remaining traits, fetch operations from data layer
-        let final_traits = traits
-            .values()
+        Ok(traits)
+    }
+
+    /// Fetch traits data from data layer
+    fn fetch_entity_traits_data<'r, I>(&self, traits: I) -> Vec<Trait>
+    where
+        I: Iterator<Item = &'r TraitResult>,
+    {
+        traits
             .flat_map(|trait_result| {
                 let mutation = match self.fetch_trait_mutation_operation(
                     trait_result.operation_id,
@@ -310,12 +364,7 @@ where
                     Mutation::TestFail(_) => None,
                 }
             })
-            .collect();
-
-        Ok(Entity {
-            id: entity_id.to_string(),
-            traits: final_traits,
-        })
+            .collect()
     }
 
     /// Fetch an operation from the data layer by the given operation id and optional block
@@ -744,10 +793,7 @@ mod tests {
         let entity = test_index.index.fetch_entity("entity1")?;
         assert_eq!(entity.traits.len(), 1);
 
-        let pending_res = test_index
-            .index
-            .pending_index
-            .search(&Query::with_entity_id("entity1"))?;
+        let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
         assert!(pending_res.results.iter().any(|r| r.tombstone));
 
         // now bury the deletion under 1 block, which should delete for real the trait
@@ -758,17 +804,120 @@ mod tests {
         // tombstone should have been deleted, and only 1 trait left in chain index
         let entity = test_index.index.fetch_entity("entity1")?;
         assert_eq!(entity.traits.len(), 1);
-        let pending_res = test_index
-            .index
-            .pending_index
-            .search(&Query::with_entity_id("entity1"))?;
+        let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
         assert!(pending_res.results.is_empty());
-        let chain_res = test_index
-            .index
-            .chain_index
-            .search(&Query::with_entity_id("entity1"))?;
+        let chain_res = test_index.index.chain_index.search_entity_id("entity1")?;
         assert_eq!(chain_res.results.len(), 1);
 
+        Ok(())
+    }
+
+    #[test]
+    fn delete_entity() -> Result<(), failure::Error> {
+        let config = TestEntitiesIndex::create_test_config();
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
+
+        let op1 = test_index.put_contact_trait("entity1", "trait1", "name1")?;
+        let op2 = test_index.put_contact_trait("entity1", "trait2", "name2")?;
+        test_index.cluster.wait_operations_committed(0, &[op1, op2]);
+        test_index.handle_engine_events()?;
+
+        let query = Query::with_entity_id("entity1");
+        let res = test_index.index.search(&query)?;
+        assert_eq!(res.results.len(), 1);
+
+        let op_id = test_index.delete_trait("entity1", "trait1")?;
+        test_index.cluster.wait_operation_committed(0, op_id);
+        test_index.handle_engine_events()?;
+
+        let query = Query::with_entity_id("entity1");
+        let res = test_index.index.search(&query)?;
+        assert_eq!(res.results.len(), 1);
+
+        let op_id = test_index.delete_trait("entity1", "trait2")?;
+        test_index.cluster.wait_operation_committed(0, op_id);
+        test_index.handle_engine_events()?;
+
+        let query = Query::with_entity_id("entity1");
+        let res = test_index.index.search(&query)?;
+        assert_eq!(res.results.len(), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn query_paging() -> Result<(), failure::Error> {
+        let config = TestEntitiesIndex::create_test_config();
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
+
+        let ops_id = test_index.put_contact_traits(0..30)?;
+        test_index.cluster.wait_operations_emitted(0, &ops_id);
+        test_index.handle_engine_events()?;
+
+        // first page
+        let query = Query::with_trait("exocore.contact").with_count(10);
+        let res = test_index.index.search(&query)?;
+        let entities = res
+            .results
+            .iter()
+            .map(|res| res.entity.id.clone())
+            .collect_vec();
+
+        // estimated, since it may be in pending and chain store
+        assert!(res.total_estimated >= 30);
+        assert!(entities.contains(&"entity29".to_string()));
+        assert!(entities.contains(&"entity20".to_string()));
+
+        // second page
+        let query = query.with_paging(res.next_page.unwrap());
+        let res = test_index.index.search(&query)?;
+        let entities = res
+            .results
+            .iter()
+            .map(|res| res.entity.id.clone())
+            .collect_vec();
+        assert!(entities.contains(&"entity19".to_string()));
+        assert!(entities.contains(&"entity10".to_string()));
+
+        // third page
+        let query = query.with_paging(res.next_page.unwrap());
+        let res = test_index.index.search(&query)?;
+        let entities = res
+            .results
+            .iter()
+            .map(|res| res.entity.id.clone())
+            .collect_vec();
+        assert!(entities.contains(&"entity9".to_string()));
+        assert!(entities.contains(&"entity0".to_string()));
+
+        // fourth page (empty)
+        let query = query.with_paging(res.next_page.unwrap());
+        let res = test_index.index.search(&query)?;
+        assert_eq!(res.results.len(), 0);
+        assert!(res.next_page.is_none());
+
+        // test explicit after token
+        let paging = QueryPaging::new(10).with_after_token(SortToken::from_u64(0));
+        let query = query.with_paging(paging);
+        let res = test_index.index.search(&query)?;
+        assert_eq!(res.results.len(), 10);
+
+        let paging = QueryPaging::new(10).with_after_token(SortToken::from_u64(std::u64::MAX));
+        let query = query.with_paging(paging);
+        let res = test_index.index.search(&query)?;
+        assert_eq!(res.results.len(), 0);
+
+        // test explicit before token
+        let paging = QueryPaging::new(10).with_before_token(SortToken::from_u64(0));
+        let query = query.with_paging(paging);
+        let res = test_index.index.search(&query)?;
+        assert_eq!(res.results.len(), 0);
+
+        let paging = QueryPaging::new(10).with_before_token(SortToken::from_u64(std::u64::MAX));
+        let query = query.with_paging(paging);
+        let res = test_index.index.search(&query)?;
+        assert_eq!(res.results.len(), 10);
+        //
         Ok(())
     }
 
@@ -880,7 +1029,7 @@ mod tests {
                 let op_id = self.put_contact_trait(
                     format!("entity{}", i),
                     format!("trt{}", i),
-                    format!("name{}", i),
+                    format!("name{} common", i),
                 )?;
                 ops_id.push(op_id)
             }

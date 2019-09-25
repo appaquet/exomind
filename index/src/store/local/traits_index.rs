@@ -33,6 +33,7 @@ const SEARCH_ENTITY_ID_LIMIT: usize = 1_000_000;
 pub struct TraitsIndexConfig {
     pub indexer_num_threads: Option<usize>,
     pub indexer_heap_size_bytes: usize,
+    pub iterator_page_size: usize,
 }
 
 impl Default for TraitsIndexConfig {
@@ -40,6 +41,7 @@ impl Default for TraitsIndexConfig {
         TraitsIndexConfig {
             indexer_num_threads: None,
             indexer_heap_size_bytes: 50_000_000,
+            iterator_page_size: 50,
         }
     }
 }
@@ -55,6 +57,7 @@ impl Default for TraitsIndexConfig {
 /// "applies" mutation that may not be definitive onto the chain.
 ///
 pub struct TraitsIndex {
+    config: TraitsIndexConfig,
     index: TantivyIndex,
     index_reader: IndexReader,
     index_writer: Mutex<IndexWriter>,
@@ -80,6 +83,7 @@ impl TraitsIndex {
         };
 
         Ok(TraitsIndex {
+            config,
             index,
             index_reader,
             index_writer: Mutex::new(index_writer),
@@ -103,6 +107,7 @@ impl TraitsIndex {
         };
 
         Ok(TraitsIndex {
+            config,
             index,
             index_reader,
             index_writer: Mutex::new(index_writer),
@@ -185,22 +190,38 @@ impl TraitsIndex {
             .map(|(block_offset, _doc_addr)| *block_offset))
     }
 
-    /// Execute a query on the index and return the matching traits' information.
-    /// The actual data of the traits is stored in the chain.
-    pub fn search(&self, query: &Query) -> Result<TraitResults, Error> {
-        let searcher = self.index_reader.searcher();
-
-        let paging = query.paging_or_default();
+    /// Execute a query on the index and return a page of traits matching the query.
+    pub fn search(
+        &self,
+        query: &Query,
+        paging: Option<TraitPaging>,
+    ) -> Result<TraitResults, Error> {
         match &query.inner {
             InnerQuery::WithTrait(inner_query) => {
-                self.search_with_trait(searcher, inner_query, paging)
+                self.search_with_trait(&inner_query.trait_name, paging)
             }
-            InnerQuery::Match(inner_query) => self.search_matches(searcher, inner_query, paging),
-            InnerQuery::IdEqual(inner_query) => self.search_entity_id(searcher, inner_query),
+            InnerQuery::Match(inner_query) => self.search_matches(&inner_query.query, paging),
+            InnerQuery::IdEqual(inner_query) => self.search_entity_id(&inner_query.entity_id),
 
             #[cfg(test)]
             InnerQuery::TestFail(_query) => Err(Error::Other("Query failed for tests".to_string())),
         }
+    }
+
+    /// Execute a query on the index and return an iterator over all matching traits.
+    pub fn search_all<'i, 'q>(
+        &'i self,
+        query: &'q Query,
+    ) -> Result<TraitResultsIterator<'i, 'q>, Error> {
+        let results = self.search(query, None)?;
+
+        Ok(TraitResultsIterator {
+            index: self,
+            query,
+            total_results: results.total_results,
+            current_results: results.results.into_iter(),
+            next_page: results.next_page,
+        })
     }
 
     /// Converts a put mutation to Tantivy document
@@ -276,40 +297,34 @@ impl TraitsIndex {
     }
 
     /// Execute a search by trait type query
-    fn search_with_trait<S>(
+    pub fn search_with_trait(
         &self,
-        searcher: S,
-        inner_query: &WithTraitQuery,
-        paging: &QueryPaging,
-    ) -> Result<TraitResults, Error>
-    where
-        S: Deref<Target = Searcher>,
-    {
-        let trait_schema =
-            if let Some(trait_schema) = self.schema.trait_by_full_name(&inner_query.trait_name) {
-                trait_schema
-            } else {
-                warn!(
-                    "Tried to search for trait {}, but doesn't exist in schema",
-                    inner_query.trait_name
-                );
-                return Ok(TraitResults::new_empty());
-            };
+        trait_name: &str,
+        paging: Option<TraitPaging>,
+    ) -> Result<TraitResults, Error> {
+        let searcher = self.index_reader.searcher();
+        let paging = paging.unwrap_or_else(|| TraitPaging {
+            after_score: None,
+            before_score: None,
+            count: self.config.iterator_page_size,
+        });
+
+        let trait_schema = if let Some(trait_schema) = self.schema.trait_by_full_name(trait_name) {
+            trait_schema
+        } else {
+            warn!(
+                "Tried to search for trait {}, but doesn't exist in schema",
+                trait_name
+            );
+            return Ok(TraitResults::new_empty());
+        };
 
         let term = Term::from_field_u64(self.fields.trait_type, u64::from(trait_schema.id()));
         let query = TermQuery::new(term, IndexRecordOption::Basic);
 
-        let after_date = paging
-            .after_token
-            .as_ref()
-            .map(|token| token.to_u64().map(|value| value))
-            .unwrap_or(Ok(0))?;
+        let after_date = paging.after_score.unwrap_or(0);
 
-        let before_date = paging
-            .before_token
-            .as_ref()
-            .map(|token| token.to_u64().map(|value| value))
-            .unwrap_or(Ok(std::u64::MAX))?;
+        let before_date = paging.before_score.unwrap_or(std::u64::MAX);
 
         let total_count = Arc::new(AtomicUsize::new(0));
         let matching_count = Arc::new(AtomicUsize::new(0));
@@ -357,7 +372,7 @@ impl TraitsIndex {
             .checked_sub(results.len())
             .unwrap_or(0);
         let next_page = if remaining_results > 0 {
-            Some(Self::extract_next_page_token(&paging, &results))
+            Some(Self::extract_next_page(&paging, &results))
         } else {
             None
         };
@@ -366,35 +381,32 @@ impl TraitsIndex {
             results,
             total_results,
             remaining_results,
-            current_page: Some(paging.clone()),
             next_page,
         })
     }
 
     /// Execute a search by text query
-    fn search_matches<S>(
+    pub fn search_matches(
         &self,
-        searcher: S,
-        inner_query: &MatchQuery,
-        paging: &QueryPaging,
-    ) -> Result<TraitResults, Error>
-    where
-        S: Deref<Target = Searcher>,
-    {
-        let query_parser = QueryParser::for_index(&self.index, vec![self.fields.text]);
-        let query = query_parser.parse_query(&inner_query.query)?;
+        query: &str,
+        paging: Option<TraitPaging>,
+    ) -> Result<TraitResults, Error> {
+        let searcher = self.index_reader.searcher();
+        let paging = paging.unwrap_or_else(|| TraitPaging {
+            after_score: None,
+            before_score: None,
+            count: self.config.iterator_page_size,
+        });
 
-        let after_score = paging
-            .after_token
-            .as_ref()
-            .map(sort_token_to_score)
-            .unwrap_or(Ok(0.0))?;
+        let query_parser = QueryParser::for_index(&self.index, vec![self.fields.text]);
+        let query = query_parser.parse_query(query)?;
+
+        let after_score = paging.after_score.map(score_from_u64).unwrap_or(0.0);
 
         let before_score = paging
-            .before_token
-            .as_ref()
-            .map(sort_token_to_score)
-            .unwrap_or(Ok(std::f32::MAX))?;
+            .before_score
+            .map(score_from_u64)
+            .unwrap_or(std::f32::MAX);
 
         let total_count = Arc::new(AtomicUsize::new(0));
         let matching_count = Arc::new(AtomicUsize::new(0));
@@ -446,7 +458,7 @@ impl TraitsIndex {
             .checked_sub(results.len())
             .unwrap_or(0);
         let next_page = if remaining_results > 0 {
-            Some(Self::extract_next_page_token(&paging, &results))
+            Some(Self::extract_next_page(&paging, &results))
         } else {
             None
         };
@@ -455,21 +467,15 @@ impl TraitsIndex {
             results,
             total_results,
             remaining_results,
-            current_page: Some(paging.clone()),
             next_page,
         })
     }
 
     /// Execute a search by entity id query
-    fn search_entity_id<S>(
-        &self,
-        searcher: S,
-        inner_query: &IdEqualQuery,
-    ) -> Result<TraitResults, Error>
-    where
-        S: Deref<Target = Searcher>,
-    {
-        let term = Term::from_field_text(self.fields.entity_id, &inner_query.entity_id);
+    pub fn search_entity_id(&self, entity_id: &str) -> Result<TraitResults, Error> {
+        let searcher = self.index_reader.searcher();
+
+        let term = Term::from_field_text(self.fields.entity_id, &entity_id);
         let query = TermQuery::new(term, IndexRecordOption::Basic);
         let top_collector = TopDocs::with_limit(SEARCH_ENTITY_ID_LIMIT);
         let rescorer = |score| Some(score_to_u64(score));
@@ -481,7 +487,6 @@ impl TraitsIndex {
             results,
             total_results,
             remaining_results: 0,
-            current_page: None,
             next_page: None,
         })
     }
@@ -529,15 +534,11 @@ impl TraitsIndex {
         Ok(results)
     }
 
-    fn extract_next_page_token(
-        previous_page: &QueryPaging,
-        results: &[TraitResult],
-    ) -> QueryPaging {
+    fn extract_next_page(previous_page: &TraitPaging, results: &[TraitResult]) -> TraitPaging {
         let last_result = results.last().expect("Should had results, but got none");
-        let last_token = SortToken::from_u64(last_result.score);
-        QueryPaging {
-            after_token: None,
-            before_token: Some(last_token),
+        TraitPaging {
+            after_score: None,
+            before_score: Some(last_result.score),
             count: previous_page.count,
         }
     }
@@ -662,6 +663,27 @@ pub struct PutTraitTombstone {
 }
 
 ///
+/// Collection of `TraitResult`
+///
+pub struct TraitResults {
+    pub results: Vec<TraitResult>,
+    pub total_results: usize,
+    pub remaining_results: usize,
+    pub next_page: Option<TraitPaging>,
+}
+
+impl TraitResults {
+    fn new_empty() -> TraitResults {
+        TraitResults {
+            results: vec![],
+            total_results: 0,
+            remaining_results: 0,
+            next_page: None,
+        }
+    }
+}
+
+///
 /// Indexed trait returned as a result of a query
 ///
 #[derive(Debug)]
@@ -674,46 +696,55 @@ pub struct TraitResult {
     pub score: u64,
 }
 
-///
-/// Collection of `TraitResult`
-///
-#[derive(Debug)]
-pub struct TraitResults {
-    pub results: Vec<TraitResult>,
-    pub total_results: usize,
-    pub remaining_results: usize,
-    pub current_page: Option<QueryPaging>,
-    pub next_page: Option<QueryPaging>,
+#[serde(rename_all = "snake_case")]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TraitPaging {
+    pub after_score: Option<u64>,
+    pub before_score: Option<u64>,
+    pub count: usize,
 }
 
-impl TraitResults {
-    fn new_empty() -> TraitResults {
-        TraitResults {
-            results: vec![],
-            total_results: 0,
-            remaining_results: 0,
-            current_page: None,
-            next_page: None,
+///
+/// Iterates through all results matching a given initial query using the next_page score
+/// when a page got emptied.
+///
+pub struct TraitResultsIterator<'i, 'q> {
+    index: &'i TraitsIndex,
+    query: &'q Query,
+    pub total_results: usize,
+    current_results: std::vec::IntoIter<TraitResult>,
+    next_page: Option<TraitPaging>,
+}
+
+impl<'i, 'q> Iterator for TraitResultsIterator<'i, 'q> {
+    type Item = TraitResult;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next_result = self.current_results.next();
+        if let Some(next_result) = next_result {
+            Some(next_result)
+        } else {
+            let next_page = self.next_page.clone()?;
+            let results = self
+                .index
+                .search(self.query, Some(next_page))
+                .expect("Couldn't get another page from initial iterator query");
+            self.next_page = results.next_page;
+            self.current_results = results.results.into_iter();
+
+            self.current_results.next()
         }
     }
-}
-
-/// Convert SortToken string to Tantivy f32 score
-fn sort_token_to_score(token: &SortToken) -> Result<f32, Error> {
-    token
-        .to_u64()
-        .map(|score| score as f32 / SCORE_TO_U64_MULTIPLIER)
-}
-
-/// Convert Tantivy f32 score to SortToken string
-#[cfg(test)]
-fn score_to_sort_token(score: f32) -> SortToken {
-    SortToken::from_u64(score_to_u64(score))
 }
 
 /// Convert Tantivy f32 score to u64
 fn score_to_u64(score: f32) -> u64 {
     (score * SCORE_TO_U64_MULTIPLIER) as u64
+}
+
+/// Convert u64 score to Tantivy f32
+fn score_from_u64(value: u64) -> f32 {
+    value as f32 / SCORE_TO_U64_MULTIPLIER
 }
 
 #[cfg(test)]
@@ -729,7 +760,7 @@ mod tests {
     #[test]
     fn search_by_entity_id() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
 
         let contact1 = IndexMutation::PutTrait(PutTraitMutation {
@@ -756,19 +787,36 @@ mod tests {
         });
         indexer.apply_mutation(contact2)?;
 
-        let results = indexer.search(&Query::with_entity_id("entity_id1"))?;
+        let contact3 = IndexMutation::PutTrait(PutTraitMutation {
+            block_offset: Some(3),
+            operation_id: 21,
+            entity_id: "entity_id2".to_string(),
+            trt: TraitBuilder::new(&schema, "exocore", "contact")?
+                .set("id", "trudeau3")
+                .set("name", "Justin Trudeau Trudeau Trudeau Trudeau")
+                .set("email", "justin.trudeau@gov.ca")
+                .build()?,
+        });
+        indexer.apply_mutation(contact3)?;
+
+        let results = indexer.search_entity_id("entity_id1")?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.results[0].block_offset, Some(1));
         assert_eq!(results.results[0].operation_id, 10);
         assert_eq!(results.results[0].entity_id, "entity_id1");
         assert_eq!(results.results[0].trait_id, "trudeau1");
 
-        let results = indexer.search(&Query::with_entity_id("entity_id2"))?;
-        assert_eq!(results.results.len(), 1);
-        assert_eq!(results.results[0].block_offset, Some(2));
-        assert_eq!(results.results[0].operation_id, 20);
-        assert_eq!(results.results[0].entity_id, "entity_id2");
-        assert_eq!(results.results[0].trait_id, "trudeau2");
+        let results = indexer.search_entity_id("entity_id2")?;
+        assert_eq!(results.results.len(), 2);
+        find_trait_result(&results, "trudeau2");
+        find_trait_result(&results, "trudeau3");
+
+        // search all should return an iterator all results
+        let query = Query::with_entity_id("entity_id2");
+        let iter = indexer.search_all(&query)?;
+        assert_eq!(iter.total_results, 2);
+        let results = iter.collect_vec();
+        assert_eq!(results.len(), 2);
 
         Ok(())
     }
@@ -776,7 +824,7 @@ mod tests {
     #[test]
     fn search_query_matches() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
 
         let contact1 = IndexMutation::PutTrait(PutTraitMutation {
@@ -803,38 +851,46 @@ mod tests {
         });
         indexer.apply_mutation(contact2)?;
 
-        let query = Query::match_text("justin");
-        let results = indexer.search(&query)?;
+        let results = indexer.search_matches("justin", None)?;
         assert_eq!(results.results.len(), 2);
         assert_eq!(results.results[0].entity_id, "entity_id1"); // justin is repeated in entity 1
 
-        let query = Query::match_text("trudeau");
-        let results = indexer.search(&query)?;
+        let results = indexer.search_matches("trudeau", None)?;
         assert_eq!(results.results.len(), 2);
         assert!(results.results[0].score > score_to_u64(0.32));
         assert!(results.results[1].score > score_to_u64(0.25));
         assert_eq!(results.results[0].entity_id, "entity_id2"); // trudeau is repeated in entity 2
 
         // with limit
-        let query = Query::match_text("trudeau").with_paging(QueryPaging::new(1));
-        let results = indexer.search(&query)?;
+        let paging = TraitPaging {
+            after_score: None,
+            before_score: None,
+            count: 1,
+        };
+        let results = indexer.search_matches("trudeau", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 1);
         assert_eq!(results.total_results, 2);
 
         // only results from given score
-        let query = Query::match_text("trudeau")
-            .with_paging(QueryPaging::new(10).with_from_token(score_to_sort_token(0.30)));
-        let results = indexer.search(&query)?;
+        let paging = TraitPaging {
+            after_score: Some(score_to_u64(0.30)),
+            before_score: None,
+            count: 10,
+        };
+        let results = indexer.search_matches("trudeau", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 0);
         assert_eq!(results.total_results, 2);
         assert_eq!(results.results[0].entity_id, "entity_id2");
 
         // only results before given score
-        let query = Query::match_text("trudeau")
-            .with_paging(QueryPaging::new(10).with_to_token(score_to_sort_token(0.30)));
-        let results = indexer.search(&query)?;
+        let paging = TraitPaging {
+            after_score: None,
+            before_score: Some(score_to_u64(0.30)),
+            count: 10,
+        };
+        let results = indexer.search_matches("trudeau", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 0);
         assert_eq!(results.total_results, 2);
@@ -846,7 +902,7 @@ mod tests {
     #[test]
     fn search_query_matches_paging() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
         let clock = Clock::new();
         let node = LocalNode::generate();
@@ -868,29 +924,40 @@ mod tests {
         });
         indexer.apply_mutations(contacts)?;
 
-        let query1 = Query::match_text("trudeau").with_paging(QueryPaging::new(10));
-        let results1 = indexer.search(&query1)?;
+        let paging = TraitPaging {
+            after_score: None,
+            before_score: None,
+            count: 10,
+        };
+        let results1 = indexer.search_matches("trudeau", Some(paging))?;
         assert_eq!(results1.total_results, 30);
         assert_eq!(results1.results.len(), 10);
         assert_eq!(results1.remaining_results, 20);
         find_trait_result(&results1, "id29");
         find_trait_result(&results1, "id20");
 
-        let query2 = query1.with_paging(results1.next_page.clone().unwrap());
-        let results2 = indexer.search(&query2)?;
+        let results2 =
+            indexer.search_matches("trudeau", Some(results1.next_page.clone().unwrap()))?;
         assert_eq!(results2.total_results, 30);
         assert_eq!(results2.results.len(), 10);
         assert_eq!(results2.remaining_results, 10);
         find_trait_result(&results1, "id19");
         find_trait_result(&results1, "id10");
 
-        let query3 = query2.with_paging(results2.next_page.clone().unwrap());
-        let results3 = indexer.search(&query3)?;
+        let results3 =
+            indexer.search_matches("trudeau", Some(results2.next_page.clone().unwrap()))?;
         assert_eq!(results3.total_results, 30);
         assert_eq!(results3.results.len(), 10);
         assert_eq!(results3.remaining_results, 0);
         find_trait_result(&results1, "id9");
         find_trait_result(&results1, "id0");
+
+        // search all should return an iterator over all results
+        let query = Query::match_text("trudeau");
+        let iter = indexer.search_all(&query)?;
+        assert_eq!(iter.total_results, 30);
+        let results = iter.collect_vec();
+        assert_eq!(results.len(), 30);
 
         Ok(())
     }
@@ -898,7 +965,7 @@ mod tests {
     #[test]
     fn search_query_by_trait_type() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
         let context1 = IndexMutation::PutTrait(PutTraitMutation {
@@ -950,14 +1017,12 @@ mod tests {
 
         index.apply_mutations(vec![context1, email1, email2, email3].into_iter())?;
 
-        let query = Query::with_trait("exocore.contact");
-        let results = index.search(&query)?;
+        let results = index.search_with_trait("exocore.contact", None)?;
         assert_eq!(results.results.len(), 1);
         assert!(find_trait_result(&results, "trt1").is_some());
 
         // ordering of multiple traits is by modification date
-        let query = Query::with_trait("exocore.email");
-        let results = index.search(&query)?;
+        let results = index.search_with_trait("exocore.email", None)?;
         let traits_ids = results
             .results
             .iter()
@@ -966,15 +1031,23 @@ mod tests {
         assert_eq!(traits_ids, vec!["email2", "email3", "email1"]);
 
         // with limit
-        let query = Query::with_trait("exocore.email").with_paging(QueryPaging::new(1));
-        let results = index.search(&query)?;
+        let paging = TraitPaging {
+            after_score: None,
+            before_score: None,
+            count: 1,
+        };
+        let results = index.search_with_trait("exocore.email", Some(paging))?;
         assert_eq!(results.results.len(), 1);
 
         // only results after given modification date
         let date_token = SortToken::from_datetime("2019-09-02T11:59:00Z".parse::<DateTime<Utc>>()?);
-        let query = Query::with_trait("exocore.email")
-            .with_paging(QueryPaging::new(10).with_from_token(date_token.clone()));
-        let results = index.search(&query)?;
+        let date_value = date_token.to_u64()?;
+        let paging = TraitPaging {
+            after_score: Some(date_value),
+            before_score: None,
+            count: 10,
+        };
+        let results = index.search_with_trait("exocore.email", Some(paging))?;
         let traits_ids = results
             .results
             .iter()
@@ -983,9 +1056,12 @@ mod tests {
         assert_eq!(traits_ids, vec!["email2", "email3"]);
 
         // only results before given modification date
-        let query = Query::with_trait("exocore.email")
-            .with_paging(QueryPaging::new(10).with_to_token(date_token));
-        let results = index.search(&query)?;
+        let paging = TraitPaging {
+            after_score: None,
+            before_score: Some(date_value),
+            count: 10,
+        };
+        let results = index.search_with_trait("exocore.email", Some(paging))?;
         let traits_ids = results
             .results
             .iter()
@@ -999,7 +1075,7 @@ mod tests {
     #[test]
     fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
         let clock = Clock::new();
         let node = LocalNode::generate();
@@ -1022,29 +1098,41 @@ mod tests {
         });
         indexer.apply_mutations(contacts)?;
 
-        let query1 = Query::with_trait("exocore.contact").with_paging(QueryPaging::new(10));
-        let results1 = indexer.search(&query1)?;
+        let paging = TraitPaging {
+            after_score: None,
+            before_score: None,
+            count: 10,
+        };
+
+        let results1 = indexer.search_with_trait("exocore.contact", Some(paging))?;
         assert_eq!(results1.total_results, 30);
         assert_eq!(results1.remaining_results, 20);
         assert_eq!(results1.results.len(), 10);
         find_trait_result(&results1, "id29");
         find_trait_result(&results1, "id20");
 
-        let query2 = query1.with_paging(results1.next_page.clone().unwrap());
-        let results2 = indexer.search(&query2)?;
+        let results2 = indexer
+            .search_with_trait("exocore.contact", Some(results1.next_page.clone().unwrap()))?;
         assert_eq!(results2.total_results, 30);
         assert_eq!(results2.remaining_results, 10);
         assert_eq!(results2.results.len(), 10);
         find_trait_result(&results1, "id19");
         find_trait_result(&results1, "id10");
 
-        let query3 = query2.with_paging(results2.next_page.clone().unwrap());
-        let results3 = indexer.search(&query3)?;
+        let results3 = indexer
+            .search_with_trait("exocore.contact", Some(results2.next_page.clone().unwrap()))?;
         assert_eq!(results3.total_results, 30);
         assert_eq!(results3.remaining_results, 0);
         assert_eq!(results3.results.len(), 10);
         find_trait_result(&results1, "id9");
         find_trait_result(&results1, "id0");
+
+        // search all should return an iterator over all results
+        let query = Query::with_trait("exocore.contact");
+        let iter = indexer.search_all(&query)?;
+        assert_eq!(iter.total_results, 30);
+        let results = iter.collect_vec();
+        assert_eq!(results.len(), 30);
 
         Ok(())
     }
@@ -1052,7 +1140,7 @@ mod tests {
     #[test]
     fn highest_indexed_block() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
         assert_eq!(index.highest_indexed_block()?, None);
@@ -1093,7 +1181,7 @@ mod tests {
     #[test]
     fn update_trait() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
         let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
@@ -1120,8 +1208,7 @@ mod tests {
         });
         index.apply_mutation(contact_mutation)?;
 
-        let query = Query::match_text("justin");
-        let results = index.search(&query)?;
+        let results = index.search_matches("justin", None)?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.total_results, 1);
         assert_eq!(results.remaining_results, 0);
@@ -1133,7 +1220,7 @@ mod tests {
     #[test]
     fn delete_trait_mutation() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
         let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
@@ -1148,15 +1235,14 @@ mod tests {
         });
         index.apply_mutation(contact_mutation)?;
 
-        let query = Query::match_text("justin");
-        assert_eq!(index.search(&query)?.results.len(), 1);
+        assert_eq!(index.search_matches("justin", None)?.results.len(), 1);
 
         index.apply_mutation(IndexMutation::DeleteTrait(
             "entity_id1".to_string(),
             "trudeau1".to_string(),
         ))?;
 
-        assert_eq!(index.search(&query)?.results.len(), 0);
+        assert_eq!(index.search_matches("justin", None)?.results.len(), 0);
 
         Ok(())
     }
@@ -1164,7 +1250,7 @@ mod tests {
     #[test]
     fn delete_operation_id_mutation() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
         let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
@@ -1179,12 +1265,11 @@ mod tests {
         });
         index.apply_mutation(contact_mutation)?;
 
-        let query = Query::match_text("justin");
-        assert_eq!(index.search(&query)?.results.len(), 1);
+        assert_eq!(index.search_matches("justin", None)?.results.len(), 1);
 
         index.apply_mutation(IndexMutation::DeleteOperation(1234))?;
 
-        assert_eq!(index.search(&query)?.results.len(), 0);
+        assert_eq!(index.search_matches("justin", None)?.results.len(), 0);
 
         Ok(())
     }
@@ -1192,7 +1277,7 @@ mod tests {
     #[test]
     fn put_trait_tombstone() -> Result<(), failure::Error> {
         let schema = create_test_schema();
-        let config = TraitsIndexConfig::default();
+        let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
         let contact_mutation = IndexMutation::PutTraitTombstone(PutTraitTombstone {
@@ -1215,15 +1300,20 @@ mod tests {
         });
         index.apply_mutation(contact_mutation)?;
 
-        let query = Query::with_entity_id("entity_id1");
-        let res = index.search(&query)?;
+        let res = index.search_entity_id("entity_id1")?;
         assert!(res.results.first().unwrap().tombstone);
 
-        let query = Query::with_entity_id("entity_id2");
-        let res = index.search(&query)?;
+        let res = index.search_entity_id("entity_id2")?;
         assert!(!res.results.first().unwrap().tombstone);
 
         Ok(())
+    }
+
+    fn test_config() -> TraitsIndexConfig {
+        TraitsIndexConfig {
+            iterator_page_size: 7,
+            ..TraitsIndexConfig::default()
+        }
     }
 
     fn find_trait_result<'r>(results: &'r TraitResults, trait_id: &str) -> Option<&'r TraitResult> {
