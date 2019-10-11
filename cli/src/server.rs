@@ -75,7 +75,7 @@ pub fn start(
         rt.spawn(
             engine
                 .map(move |_| {
-                    info!("Engine for cell {:?} is done", cell_id1);
+                    info!("Engine for cell {:?} has stopped", cell_id1);
                 })
                 .map_err(move |err| {
                     error!("Engine for cell {} has failed: {}", cell_id2, err);
@@ -93,7 +93,7 @@ pub fn start(
             let full_cell = opt_full_cell.ok_or_else(|| {
                 err_msg("Tried to start a local index, but node doesn't have full cell access (not private key)")
             })?;
-            let schema = create_test_schema();
+            let schema = exocore_schema::test_schema::create();
 
             let mut index_dir = cell_config.data_directory.clone();
             index_dir.push("index");
@@ -130,11 +130,21 @@ pub fn start(
                     entities_index,
                 )?;
             };
+        } else {
+            info!("Local node is not an index node. Not starting local store index.")
         }
     }
 
     // start transport
-    rt.spawn(transport.map(|_| ()).map_err(|_| ()));
+    rt.spawn(
+        transport
+            .map(|_| {
+                info!("Libp2p transport has stopped");
+            })
+            .map_err(|err| {
+                error!("Libp2p transport stopped with error: {}", err);
+            }),
+    );
 
     // wait for runtime to finish all its task
     tokio::run(rt.shutdown_on_idle());
@@ -190,40 +200,4 @@ fn create_local_store<T: TransportHandle>(
     );
 
     Ok(())
-}
-
-// TODO: To be cleaned up in https://github.com/appaquet/exocore/issues/104
-pub fn create_test_schema() -> Arc<Schema> {
-    Arc::new(
-        Schema::parse(
-            r#"
-        namespaces:
-            - name: exocore
-              traits:
-                - id: 0
-                  name: contact
-                  fields:
-                    - id: 0
-                      name: name
-                      type: string
-                      indexed: true
-                    - id: 1
-                      name: email
-                      type: string
-                      indexed: true
-                - id: 1
-                  name: email
-                  fields:
-                    - id: 0
-                      name: subject
-                      type: string
-                      indexed: true
-                    - id: 1
-                      name: body
-                      type: string
-                      indexed: true
-        "#,
-        )
-        .unwrap(),
-    )
 }

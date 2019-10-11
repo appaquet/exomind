@@ -1,7 +1,7 @@
 use crate::schema::Schema;
 use std::sync::Arc;
 
-pub fn create_test_schema() -> Arc<Schema> {
+pub fn create() -> Arc<Schema> {
     Arc::new(
         Schema::parse(
             r#"
@@ -84,6 +84,15 @@ pub fn create_test_schema() -> Arc<Schema> {
                     indexed: true
                   - id: 1
                     name: id2
+                    type: string
+                    indexed: true
+              - id: 6
+                name: task
+                id_field:
+                    static: task
+                fields:
+                  - id: 0
+                    name: title
                     type: string
                     indexed: true
             structs:

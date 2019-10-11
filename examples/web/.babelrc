@@ -1,0 +1,4 @@
+{
+  "presets": ["@babel/preset-env", "@babel/preset-react", "@babel/preset-flow"],
+  "plugins": ["@babel/plugin-syntax-dynamic-import", "@babel/plugin-syntax-async-generators", "syntax-async-functions"]
+}

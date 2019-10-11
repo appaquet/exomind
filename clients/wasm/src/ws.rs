@@ -1,3 +1,16 @@
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, Weak};
+use std::time::Duration;
+
+use futures::prelude::*;
+use futures::sync::mpsc;
+use futures::MapErr;
+use js_sys::{ArrayBuffer, Uint8Array};
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use wasm_timer::Instant;
+use web_sys::{BinaryType, ErrorEvent, MessageEvent, WebSocket};
+
 use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::Node;
@@ -7,16 +20,6 @@ use exocore_common::utils::completion_notifier::{
 };
 use exocore_transport::transport::{MpscHandleSink, MpscHandleStream};
 use exocore_transport::{Error, InMessage, OutMessage, TransportHandle, TransportLayer};
-use futures::prelude::*;
-use futures::sync::mpsc;
-use futures::MapErr;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex, Weak};
-use std::time::Duration;
-use stdweb::traits::{IEventTarget, IMessageEvent};
-use stdweb::web::event::{SocketMessageEvent, SocketOpenEvent};
-use stdweb::web::{SocketBinaryType, SocketReadyState, WebSocket};
-use wasm_timer::Instant;
 
 ///
 /// Client for `exocore_transport` WebSocket transport for browser
@@ -94,8 +97,8 @@ impl BrowserTransportClient {
                         let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
                         let inner = inner.lock()?;
                         if let Some(ws) = &inner.socket {
-                            let message_bytes = out_message.envelope_builder.as_bytes();
-                            if let Err(_err) = ws.send_bytes(&message_bytes) {
+                            let mut message_bytes = out_message.envelope_builder.as_bytes();
+                            if let Err(_err) = ws.ws.send_with_u8_array(&mut message_bytes) {
                                 error!("Error sending a message to websocket");
                             }
                         }
@@ -135,7 +138,7 @@ impl BrowserTransportClient {
 struct Inner {
     remote_node: Node,
     url: String,
-    socket: Option<WebSocket>,
+    socket: Option<WSInstance>,
     last_connect_attempt: Option<Instant>,
     handles: HashMap<(CellId, TransportLayer), InnerHandle>,
     stop_notifier: CompletionNotifier<(), Error>,
@@ -146,17 +149,30 @@ struct InnerHandle {
     in_sender: mpsc::Sender<InMessage>,
 }
 
+struct WSInstance {
+    ws: WebSocket,
+    _onmessage_callback: Closure<dyn FnMut(MessageEvent)>,
+    _onerror_callback: Closure<dyn FnMut(ErrorEvent)>,
+    _onopen_callback: Closure<dyn FnMut(JsValue)>,
+}
+
 impl Inner {
     fn create_websocket(&mut self, weak_self: &Weak<Mutex<Inner>>) {
-        let ws = WebSocket::new_with_protocols(&self.url, &["exocore_websocket"]).unwrap();
-        ws.set_binary_type(SocketBinaryType::ArrayBuffer);
+        // See https://rustwasm.github.io/docs/wasm-bindgen/examples/websockets.html
+        // See https://docs.rs/web-sys/0.3.28/web_sys/struct.WebSocket.html#method.send_with_u8_array
 
-        // SEE: https://github.com/koute/stdweb/blob/dff1e06086124fe79e3393a99ae8e2d424f5b2f1/examples/echo/src/main.rs
+        let ws = WebSocket::new_with_str(&self.url, "exocore_websocket").unwrap();
+        ws.set_binary_type(BinaryType::Arraybuffer);
+
         let remote_node = self.remote_node.clone();
         let weak_self = weak_self.clone();
-        ws.add_event_listener(move |event: SocketMessageEvent| {
-            let data = Vec::from(event.data().into_array_buffer().unwrap());
-            let frame = TypedCapnpFrame::<_, envelope::Owned>::new(data.as_slice()).unwrap();
+        let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
+            let bin_data = ArrayBuffer::from(e.data());
+            let uint8_data = Uint8Array::new(&bin_data);
+            let mut bytes = vec![0; uint8_data.length() as usize];
+            uint8_data.copy_to(&mut bytes);
+
+            let frame = TypedCapnpFrame::<_, envelope::Owned>::new(bytes.as_slice()).unwrap();
             let in_message = InMessage::from_node_and_frame(remote_node.clone(), frame);
 
             match in_message {
@@ -169,20 +185,33 @@ impl Inner {
                     error!("Error parsing incoming message: {}", err);
                 }
             }
-        });
+        }) as Box<dyn FnMut(MessageEvent)>);
+        ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
 
-        ws.add_event_listener(move |_event: SocketOpenEvent| {
-            info!("Connected");
-        });
+        let onerror_callback = Closure::wrap(Box::new(move |e: ErrorEvent| {
+            error!("Error in WebSocket: {:?}", e);
+        }) as Box<dyn FnMut(ErrorEvent)>);
+        ws.set_onerror(Some(onerror_callback.as_ref().unchecked_ref()));
+
+        let onopen_callback = Closure::wrap(Box::new(move |_| {
+            info!("WebSocket opened");
+        }) as Box<dyn FnMut(JsValue)>);
+        ws.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
 
         self.last_connect_attempt = Some(Instant::now());
-        self.socket = Some(ws);
+        self.socket = Some(WSInstance {
+            ws,
+            _onmessage_callback: onmessage_callback,
+            _onerror_callback: onerror_callback,
+            _onopen_callback: onopen_callback,
+        })
     }
 
     fn check_should_reconnect(&mut self, weak_self: &Weak<Mutex<Inner>>) -> Result<(), Error> {
         if let Some(ws) = &self.socket {
-            match ws.ready_state() {
-                SocketReadyState::Connecting | SocketReadyState::Open => {
+            // see states here https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
+            match ws.ws.ready_state() {
+                0 /*connecting*/ | 1 /*open*/  => {
                     // nothing to do
                 }
                 socket_status => {
@@ -249,6 +278,7 @@ impl Future for BrowserTransportHandle {
 }
 
 type StartFutureType = MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
+
 impl TransportHandle for BrowserTransportHandle {
     type StartFuture = StartFutureType;
     type Sink = MpscHandleSink;

@@ -16,5 +16,4 @@ pub mod error;
 pub mod schema;
 pub mod serialization;
 
-#[cfg(any(test, feature = "tests_utils"))]
-pub mod tests_utils;
+pub mod test_schema;

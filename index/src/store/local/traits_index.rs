@@ -754,12 +754,11 @@ mod tests {
     use exocore_common::node::LocalNode;
     use exocore_common::time::Clock;
     use exocore_schema::entity::{RecordBuilder, TraitBuilder};
-    use exocore_schema::tests_utils::create_test_schema;
     use itertools::Itertools;
 
     #[test]
     fn search_by_entity_id() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
 
@@ -823,7 +822,7 @@ mod tests {
 
     #[test]
     fn search_query_matches() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
 
@@ -901,7 +900,7 @@ mod tests {
 
     #[test]
     fn search_query_matches_paging() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
         let clock = Clock::new();
@@ -964,7 +963,7 @@ mod tests {
 
     #[test]
     fn search_query_by_trait_type() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
@@ -1074,7 +1073,7 @@ mod tests {
 
     #[test]
     fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
         let clock = Clock::new();
@@ -1139,7 +1138,7 @@ mod tests {
 
     #[test]
     fn highest_indexed_block() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
@@ -1180,7 +1179,7 @@ mod tests {
 
     #[test]
     fn update_trait() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
@@ -1219,7 +1218,7 @@ mod tests {
 
     #[test]
     fn delete_trait_mutation() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
@@ -1249,7 +1248,7 @@ mod tests {
 
     #[test]
     fn delete_operation_id_mutation() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 
@@ -1276,7 +1275,7 @@ mod tests {
 
     #[test]
     fn put_trait_tombstone() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
         let config = test_config();
         let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
 

@@ -20,7 +20,7 @@ A cell consists of:
 ## Development status
 * **Data storage and replication layer**: Proof of concept
 * **Transport layer**: Proof of concept
-* **Index layer:** In development
+* **Index layer:** Proof of concept
 * **SDKs**: In development
 * **Security**: In development
 * **Applications layer**: Not yet started
@@ -78,11 +78,12 @@ A cell consists of:
     * Node 1: `./utils/cli.sh server --config ./node1.yaml start`
     * Node 2: `./utils/cli.sh server --config ./node2.yaml start`
 
-## WASM web client
+### Launch sample web project
 * Run the [web example](./examples/web):
   * Start development server which will watch files and rebuild automatically:
-    * `cd ./examples/web && npm run start`
+    * `cd ./examples/web && npm install && npm run start`
   * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
+  
 * Or build manually: 
     * `cd ./clients/wasm && wasm-pack build`
     * This will create a NPM module at ./clients/wasm/pkg

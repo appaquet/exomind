@@ -5,7 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::entity::{FieldValue, TraitId};
 use crate::error::Error;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 
 pub type SchemaRecordId = u16;
 pub type SchemaTraitId = SchemaRecordId;
@@ -534,7 +534,13 @@ impl FieldSchema {
             },
             FieldType::Struct(_) => None,
             FieldType::DateTime => match self.default.as_ref().map(|s| s.as_str()) {
-                Some("now") => Some(FieldValue::DateTime(Utc::now())),
+                Some("now") => {
+                    let unix_elapsed = wasm_timer::SystemTime::now()
+                        .duration_since(wasm_timer::UNIX_EPOCH)
+                        .unwrap();
+                    let now = Utc.timestamp_nanos(unix_elapsed.as_nanos() as i64);
+                    Some(FieldValue::DateTime(now))
+                }
                 _ => None,
             },
         }
@@ -589,11 +595,10 @@ pub(crate) fn parse_record_full_name(full_name: &str) -> Option<(&str, &str)> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::tests_utils::create_test_schema;
 
     #[test]
     fn serialization_deserialization() {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         let schema_yaml = schema.to_serializable().to_yaml_string();
         let schema_deser = Schema::parse(&schema_yaml).unwrap();
@@ -620,7 +625,7 @@ pub mod tests {
 
     #[test]
     fn schema_records_by_full_name() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
         assert!(schema.trait_by_full_name("exocore.contact").is_some());
         assert!(schema.trait_by_full_name("bla.contact").is_none());
         assert!(schema.trait_by_full_name("exocore.something").is_none());

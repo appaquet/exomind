@@ -25,10 +25,10 @@ zip -0 $COVERAGE_DIR/ccov.zip `find . \( -name "*exocore*.gc*" \) -print`;
 
 grcov $COVERAGE_DIR/ccov.zip -s . -t lcov --llvm -o $COVERAGE_DIR/lcov.info \
 	--ignore-not-existing \
-	--ignore-dir "clients/*" \
-	--ignore-dir "cli/*" \
-	--ignore-dir "/*" \
-	--ignore-dir "common/src/protos/*"
+	--ignore "clients/*" \
+	--ignore "cli/*" \
+	--ignore "/*" \
+	--ignore "common/src/protos/*"
 
 if [[ "$OUTPUT" == "Html" ]]; then
 	genhtml -o $COVERAGE_DIR/ --show-details --highlight --ignore-errors source --legend $COVERAGE_DIR/lcov.info

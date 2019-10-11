@@ -267,6 +267,12 @@ where
 
         {
             let mut unlocked_inner = self.inner.write()?;
+            let chain_last_block = unlocked_inner.chain_store.get_last_block()?;
+            if chain_last_block.is_none() {
+                warn!("{}: Chain has not been initialized (no genesis block). May not be able to start if no other nodes are found.",
+                      unlocked_inner.cell.local_node().id(),
+                )
+            }
             unlocked_inner.dispatch_event(&Event::Started);
         }
 

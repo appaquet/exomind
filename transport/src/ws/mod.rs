@@ -171,6 +171,11 @@ impl WebsocketTransport {
             .incoming()
             .map_err(|err| Error::Other(format!("Invalid incoming connection: {}", err.error)))
             .for_each(move |(upgrade, addr)| {
+                // make sure we should still be running
+                if inner1.upgrade().is_none() {
+                    return Err(Error::Upgrade);
+                }
+
                 if !upgrade.protocols().iter().any(|s| s == WEBSOCKET_PROTOCOL) {
                     debug!("Rejecting connection {} with wrong connection", addr);
                     tokio::spawn(upgrade.reject().map(|_| ()).map_err(|_| ()));
@@ -204,7 +209,16 @@ impl WebsocketTransport {
                 }
             });
 
-        tokio::spawn(incoming_stream);
+        let stop_listener = self
+            .stop_listener
+            .try_clone()
+            .expect("Couldn't clone stop listener");
+        tokio::spawn(
+            incoming_stream
+                .select2(stop_listener)
+                .map(|_| ())
+                .map_err(|_| ()),
+        );
 
         Ok(())
     }

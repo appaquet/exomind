@@ -5,23 +5,38 @@ const dist = path.resolve(__dirname, "dist");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
 module.exports = {
-  entry: "./js/index.js",
-  output: {
-    path: dist,
-    filename: "bundle.js"
-  },
-  devServer: {
-    contentBase: dist,
-  },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: 'index.html'
-    }),
+    entry: "./js/index.js",
 
-    new WasmPackPlugin({
-      crateDirectory: path.resolve(__dirname, "../../clients/wasm"),
-      // WasmPackPlugin defaults to compiling in "dev" profile. To change that, use forceMode: 'release':
-      forceMode: 'release'
-    }),
-  ]
+    output: {
+        path: dist,
+        filename: "bundle.js"
+    },
+
+    devServer: {
+        contentBase: dist,
+    },
+
+    module: {
+        rules: [
+            {
+                test: /\.(js|jsx)$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader'
+                }
+            }
+        ]
+    },
+
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: 'index.html'
+        }),
+
+        new WasmPackPlugin({
+          crateDirectory: path.resolve(__dirname, "../../clients/wasm"),
+          // WasmPackPlugin defaults to compiling in "dev" profile. To change that, use forceMode: 'release':
+          forceMode: 'release'
+        })
+    ]
 };

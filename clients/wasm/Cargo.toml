@@ -18,8 +18,9 @@ failure = "0.1"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.3"
 wasm-timer = "0.1"
-stdweb = "0.4"
+web-sys = { version = "0.3", features = ["ErrorEvent", "MessageEvent", "WebSocket", "BinaryType"] }
 js-sys = "0.3"
 rand = { version = "0.6", features = ["wasm-bindgen"] }
 log = "0.4"
 console_log = "0.1"
+

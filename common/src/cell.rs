@@ -376,5 +376,4 @@ mod tests {
             assert!(nodes.is_quorum(2));
         }
     }
-
 }

@@ -161,6 +161,7 @@ where
         );
 
         self.start_notifier.complete(Ok(()));
+        info!("Index local store started");
 
         Ok(())
     }
@@ -467,7 +468,6 @@ pub mod tests {
     use exocore_data::tests_utils::DataTestCluster;
     use exocore_data::{DirectoryChainStore, MemoryPendingStore};
     use exocore_schema::entity::{EntityId, RecordBuilder, TraitBuilder, TraitId};
-    use exocore_schema::tests_utils::create_test_schema;
     use exocore_transport::mock::MockTransportHandle;
     use exocore_transport::transport::{MpscHandleSink, MpscHandleStream};
     use exocore_transport::TransportLayer;
@@ -560,7 +560,7 @@ pub mod tests {
             let mut cluster = DataTestCluster::new_single_and_start()?;
 
             let temp_dir = tempdir::TempDir::new("store")?;
-            let schema = create_test_schema();
+            let schema = exocore_schema::test_schema::create();
 
             let index_config = EntitiesIndexConfig {
                 pending_index_config: TraitsIndexConfig {

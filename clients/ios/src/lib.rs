@@ -54,7 +54,7 @@ impl Context {
                 .expect("Couldn't decode cell publickey");
         let cell = Cell::new(cell_pk, local_node.clone());
         let clock = Clock::new();
-        let schema = create_test_schema();
+        let schema = exocore_schema::test_schema::create();
 
         let remote_node_pk =
             PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
@@ -153,42 +153,6 @@ pub extern "C" fn exocore_send_query(ctx: *mut Context, _query: *const libc::c_c
         }
         Err(err) => println!("got err: {}", err),
     }
-}
-
-// TODO: To be cleaned up in https://github.com/appaquet/exocore/issues/104
-pub fn create_test_schema() -> Arc<Schema> {
-    Arc::new(
-        Schema::parse(
-            r#"
-        namespaces:
-            - name: exocore
-              traits:
-                - id: 0
-                  name: contact
-                  fields:
-                    - id: 0
-                      name: name
-                      type: string
-                      indexed: true
-                    - id: 1
-                      name: email
-                      type: string
-                      indexed: true
-                - id: 1
-                  name: email
-                  fields:
-                    - id: 0
-                      name: subject
-                      type: string
-                      indexed: true
-                    - id: 1
-                      name: body
-                      type: string
-                      indexed: true
-        "#,
-        )
-        .unwrap(),
-    )
 }
 
 // TODO: To be moved https://github.com/appaquet/exocore/issues/123

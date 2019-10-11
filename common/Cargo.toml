@@ -28,7 +28,7 @@ log4rs = { version = "0.8", optional = true }
 chrono = "0.4"
 
 [build-dependencies]
-capnpc = "0.10"
+capnpc = { git = "https://github.com/appaquet/capnproto-rust.git", branch = "thread-safe-arena-readlimiter" }
 
 [dev-dependencies]
 tempdir = "0.3"

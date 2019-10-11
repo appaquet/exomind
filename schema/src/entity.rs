@@ -40,6 +40,10 @@ impl Entity {
         self.traits.push(trt);
         self
     }
+
+    pub fn generate_random_id() -> EntityId {
+        Uuid::new_v4().to_string()
+    }
 }
 
 ///
@@ -713,13 +717,12 @@ impl<'s> TryFrom<&'s FieldValue> for &'s Struct {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests_utils::create_test_schema;
     use failure::_core::time::Duration;
     use std::time::SystemTime;
 
     #[test]
     fn string_field_value() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         let collection = TraitBuilder::new(&schema, "exocore", "collection")?
             .set("name", "some collection")
@@ -738,7 +741,7 @@ mod tests {
 
     #[test]
     fn struct_field_value() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         let email_from = StructBuilder::new(&schema, "exocore", "email_contact")?
             .set("name", "Some Name")
@@ -761,7 +764,7 @@ mod tests {
 
     #[test]
     fn int_field_value() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         let annot = TraitBuilder::new(&schema, "exocore", "annotation")?
             .set("count", 1234)
@@ -775,7 +778,7 @@ mod tests {
 
     #[test]
     fn trait_id_generation() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         // email has specified id
         let email_res = TraitBuilder::new(&schema, "exocore", "email")?
@@ -825,7 +828,7 @@ mod tests {
 
     #[test]
     fn entity_build() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         let entity = Entity::new("entity_id").with_trait(
             TraitBuilder::new(&schema, "exocore", "email")?
@@ -890,7 +893,7 @@ mod tests {
 
     #[test]
     fn trait_builder_specific_values() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         let creation_date = "2019-07-01T12:54:00+05:00".parse::<DateTime<Utc>>()?;
         let modification_date = "2019-07-07T12:21:01+05:00".parse::<DateTime<Utc>>()?;
