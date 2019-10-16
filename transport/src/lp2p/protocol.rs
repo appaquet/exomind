@@ -5,7 +5,7 @@ use libp2p_core::{Negotiated, UpgradeInfo};
 use std::{io, iter};
 use tokio::io::{AsyncRead, AsyncWrite};
 
-static PACKET_MAX_SIZE: usize = 10 * 1024 * 1024; // 1MB
+static PACKET_MAX_SIZE: usize = 10 * 1024 * 1024; // 10MB
 
 /// Exocore protocol configuration. This exposes the information about protocol, and how
 /// message are serialized / deserialized.

@@ -221,6 +221,7 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 
         let out_message = OutMessage {
             to: vec![to.clone()],
+            expiration: None,
             envelope_builder,
         };
 

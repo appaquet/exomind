@@ -7,6 +7,9 @@ use std::collections::{HashMap, VecDeque};
 use tokio::io::{AsyncRead, AsyncWrite};
 
 use super::protocol::{ExocoreProtoConfig, WireMessage};
+use exocore_common::time::Instant;
+
+const MAX_PEER_QUEUE: usize = 20;
 
 ///
 /// Libp2p's behaviour for Exocore. The behaviour defines a protocol that is exposed to
@@ -18,9 +21,53 @@ where
     TSubstream: AsyncRead + AsyncWrite,
 {
     local_node: PeerId,
-    events: VecDeque<NetworkBehaviourAction<WireMessage, ExocoreBehaviourEvent>>,
-    peers: HashMap<PeerId, Vec<Multiaddr>>,
+    events: VecDeque<BehaviourEvent>,
+    peers: HashMap<PeerId, Peer>,
     phantom: std::marker::PhantomData<TSubstream>,
+}
+
+type BehaviourEvent = NetworkBehaviourAction<WireMessage, ExocoreBehaviourEvent>;
+
+struct Peer {
+    addresses: Vec<Multiaddr>,
+    temp_queue: VecDeque<QueuedPeerEvent>,
+    status: PeerStatus,
+}
+
+impl Peer {
+    fn cleanup_expired(&mut self) {
+        if !self.temp_queue.is_empty() {
+            let mut old_queue = VecDeque::new();
+            std::mem::swap(&mut self.temp_queue, &mut old_queue);
+
+            for event in old_queue {
+                if !event.has_expired() {
+                    self.temp_queue.push_back(event)
+                }
+            }
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq)]
+enum PeerStatus {
+    Connected,
+    Disconnected,
+}
+
+struct QueuedPeerEvent {
+    event: BehaviourEvent,
+    expiration: Option<Instant>,
+}
+
+impl QueuedPeerEvent {
+    fn has_expired(&self) -> bool {
+        if let Some(expiration) = self.expiration {
+            expiration <= Instant::now()
+        } else {
+            false
+        }
+    }
 }
 
 impl<TSubstream> ExocoreBehaviour<TSubstream>
@@ -36,22 +83,55 @@ where
         }
     }
 
-    pub fn send_message(&mut self, peer_id: PeerId, data: Vec<u8>) {
-        // TODO: If node is not online, we should queue https://github.com/appaquet/exocore/issues/60
-        self.events.push_back(NetworkBehaviourAction::SendEvent {
+    pub fn send_message(&mut self, peer_id: PeerId, expiration: Option<Instant>, data: Vec<u8>) {
+        let event = NetworkBehaviourAction::SendEvent {
             peer_id: peer_id.clone(),
             event: WireMessage { data },
-        });
+        };
+
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            if peer.status == PeerStatus::Connected {
+                self.events.push_back(event);
+            } else {
+                debug!("Peer {} not connected. Queuing message.", peer_id);
+                // Node is disconnected, push the event to a queue and try to connect
+                peer.temp_queue
+                    .push_back(QueuedPeerEvent { event, expiration });
+
+                // make sure queue doesn't go higher than limit
+                while peer.temp_queue.len() > MAX_PEER_QUEUE {
+                    peer.temp_queue.pop_front();
+                }
+
+                self.dial_peer(peer_id);
+            }
+        }
     }
 
     pub fn add_peer(&mut self, peer_id: PeerId, addresses: Vec<Multiaddr>) {
-        let current_addresses = self.peers.get(&peer_id);
-        if current_addresses.is_none() || current_addresses != Some(&addresses) {
-            self.peers.insert(peer_id.clone(), addresses);
-            self.events.push_back(NetworkBehaviourAction::DialPeer {
-                peer_id: peer_id.clone(),
-            });
+        if let Some(current_peer) = self.peers.get(&peer_id) {
+            if current_peer.addresses == addresses {
+                // no need to update, peer already exist with same addr
+                return;
+            }
         }
+
+        self.peers.insert(
+            peer_id.clone(),
+            Peer {
+                addresses,
+                temp_queue: VecDeque::new(),
+                status: PeerStatus::Disconnected,
+            },
+        );
+
+        self.dial_peer(peer_id.clone());
+    }
+
+    fn dial_peer(&mut self, peer_id: PeerId) {
+        self.events.push_back(NetworkBehaviourAction::DialPeer {
+            peer_id: peer_id.clone(),
+        });
     }
 }
 
@@ -78,18 +158,39 @@ where
     }
 
     fn addresses_of_peer(&mut self, peer_id: &PeerId) -> Vec<Multiaddr> {
-        self.peers.get(peer_id).cloned().unwrap_or_else(Vec::new)
+        self.peers
+            .get(peer_id)
+            .map(|p| p.addresses.clone())
+            .unwrap_or_else(Vec::new)
     }
 
     fn inject_connected(&mut self, peer_id: PeerId, _endpoint: ConnectedPoint) {
         debug!("{}: Connected to {}", self.local_node, peer_id,);
+
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            peer.status = PeerStatus::Connected;
+
+            // send any messages that were queued while node was disconnected, but that haven't expired
+            while let Some(event) = peer.temp_queue.pop_front() {
+                if !event.has_expired() {
+                    self.events.push_back(event.event);
+                }
+            }
+        }
     }
 
     fn inject_disconnected(&mut self, peer_id: &PeerId, _endpoint: ConnectedPoint) {
         debug!("{}: Disconnected from {}", self.local_node, peer_id,);
-        self.events.push_back(NetworkBehaviourAction::DialPeer {
-            peer_id: peer_id.clone(),
-        });
+
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            peer.status = PeerStatus::Disconnected;
+
+            // check if we need to reconnect
+            peer.cleanup_expired();
+            if !peer.temp_queue.is_empty() {
+                self.dial_peer(peer_id.clone());
+            }
+        }
     }
 
     fn inject_node_event(&mut self, peer_id: PeerId, event: OneshotEvent) {
@@ -105,6 +206,10 @@ where
         } else {
             trace!("{}: Our message got sent", self.local_node);
         }
+    }
+
+    fn inject_dial_failure(&mut self, peer_id: &PeerId) {
+        debug!("{}: Failed to connect to {}", self.local_node, peer_id);
     }
 
     fn poll(

@@ -43,9 +43,9 @@ impl Libp2pTransportConfig {
             .as_ref()
             .cloned()
             .or_else(|| local_node.addresses().first().cloned())
-             .ok_or_else(|| {
-                 Error::Other("Local node has no addresses, and no listen address were specified in transport config".to_string())
-             })
+            .ok_or_else(|| {
+                Error::Other("Local node has no addresses, and no listen address were specified in transport config".to_string())
+            })
     }
 }
 
@@ -241,10 +241,14 @@ impl Libp2pTransport {
                 // prevent cloning frame if we only send to 1 node
                 if msg.to.len() == 1 {
                     let to_node = msg.to.first().unwrap();
-                    swarm.send_message(to_node.peer_id().clone(), frame_data);
+                    swarm.send_message(to_node.peer_id().clone(), msg.expiration, frame_data);
                 } else {
                     for to_node in msg.to {
-                        swarm.send_message(to_node.peer_id().clone(), frame_data.clone());
+                        swarm.send_message(
+                            to_node.peer_id().clone(),
+                            msg.expiration,
+                            frame_data.clone(),
+                        );
                     }
                 }
             }
@@ -424,8 +428,10 @@ mod tests {
     use super::*;
     use exocore_common::cell::FullCell;
     use exocore_common::framing::CapnpFrameBuilder;
+    use exocore_common::node::Node;
     use exocore_common::protos::data_chain_capnp::block_operation_header;
     use exocore_common::tests_utils::expect_eventually;
+    use exocore_common::time::{ConsistentTimestamp, Instant};
     use std::sync::Mutex;
     use tokio::runtime::Runtime;
 
@@ -446,37 +452,25 @@ mod tests {
 
         let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
         let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
-        let handle1_tester = TransportHandlTester::new(&mut rt, handle1);
+        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
         rt.spawn(transport1.map(|_| ()).map_err(|_| ()));
         rt.block_on(handle1_tester.handle.on_start())?;
 
         let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
         let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
-        let handle2_tester = TransportHandlTester::new(&mut rt, handle2);
+        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell.clone());
         rt.spawn(transport2.map(|_| ()).map_err(|_| ()));
         rt.block_on(handle2_tester.handle.on_start())?;
 
         // give time for nodes to connect to each others
-        std::thread::sleep(Duration::from_millis(500));
+        std::thread::sleep(Duration::from_millis(100));
 
         // send 1 to 2
-        let to_nodes = vec![node2.node().clone()];
-        let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
-        let _builder = frame_builder.get_builder();
-        let msg =
-            OutMessage::from_framed_message(&node1_cell, TransportLayer::Data, frame_builder)?
-                .with_to_nodes(to_nodes);
-        handle1_tester.send(msg);
-        expect_eventually(|| handle2_tester.received().len() == 1);
+        handle1_tester.send(vec![node2.node().clone()], 123);
+        expect_eventually(|| handle2_tester.check_received(123));
 
-        // send 2 to twice 1 to test multiple nodes
-        let to_nodes = vec![node1.node().clone(), node1.node().clone()];
-        let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
-        let _builder = frame_builder.get_builder();
-        let msg =
-            OutMessage::from_framed_message(&node2_cell, TransportLayer::Data, frame_builder)?
-                .with_to_nodes(to_nodes);
-        handle2_tester.send(msg);
+        // send 2 to 1 by duplicating node, should expect receiving 2 messages
+        handle2_tester.send(vec![node1.node().clone(), node1.node().clone()], 234);
         expect_eventually(|| handle1_tester.received().len() == 2);
 
         Ok(())
@@ -527,10 +521,10 @@ mod tests {
 
         // we create 2 handles
         let handle1 = transport.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
-        let handle1_tester = TransportHandlTester::new(&mut rt, handle1);
+        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
 
         let handle2 = transport.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
-        let handle2_tester = TransportHandlTester::new(&mut rt, handle2);
+        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell.clone());
 
         rt.spawn(transport.map(|_| ()).map_err(|_| ()));
         rt.block_on(handle1_tester.handle.on_start())?;
@@ -550,14 +544,79 @@ mod tests {
         Ok(())
     }
 
-    struct TransportHandlTester {
+    #[test]
+    fn should_queue_message_until_connected() -> Result<(), failure::Error> {
+        let mut rt = Runtime::new()?;
+
+        let node1 = LocalNode::generate();
+        node1.add_address("/ip4/127.0.0.1/tcp/3005".parse().unwrap());
+        let node1_cell = FullCell::generate(node1.clone());
+
+        let node2 = LocalNode::generate();
+        node2.add_address("/ip4/127.0.0.1/tcp/3006".parse().unwrap());
+        let node2_cell = node1_cell.clone_for_local_node(node2.clone());
+
+        node1_cell.nodes_mut().add(node2.node().clone());
+        node2_cell.nodes_mut().add(node1.node().clone());
+
+        let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
+        let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
+        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
+        rt.spawn(transport1.map(|_| ()).map_err(|_| ()));
+        rt.block_on(handle1_tester.handle.on_start())?;
+
+        // send 1 to 2, but 2 is not yet connected. It should queue
+        handle1_tester.send(vec![node2.node().clone()], 1);
+
+        // send 1 to 2, but with expired message, which shouldn't be delivered
+        let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
+        let _builder = frame_builder.get_builder();
+        let msg = OutMessage::from_framed_message(&node1_cell, TransportLayer::Data, frame_builder)
+            .unwrap()
+            .with_expiration(Some(Instant::now() - Duration::from_secs(5)))
+            .with_rendez_vous_id(ConsistentTimestamp(2))
+            .with_to_nodes(vec![node2.node().clone()]);
+        handle1_tester.send_message(msg);
+
+        // leave some time for first messages to arrive
+        std::thread::sleep(Duration::from_millis(100));
+
+        // we create second node
+        let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
+        let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
+        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell.clone());
+        rt.spawn(transport2.map(|_| ()).map_err(|_| ()));
+        rt.block_on(handle2_tester.handle.on_start())?;
+
+        // leave some time to start listening and connect
+        std::thread::sleep(Duration::from_millis(100));
+
+        // send another message to force redial
+        handle1_tester.send(vec![node2.node().clone()], 3);
+
+        // should receive 1 & 3, but not 2 since it had expired
+        expect_eventually(|| {
+            handle2_tester.check_received(1)
+                && !handle2_tester.check_received(2)
+                && handle2_tester.check_received(3)
+        });
+
+        Ok(())
+    }
+
+    struct TransportHandleTester {
+        cell: FullCell,
         handle: Libp2pTransportHandle,
         sender: mpsc::UnboundedSender<OutMessage>,
         received: Arc<Mutex<Vec<InMessage>>>,
     }
 
-    impl TransportHandlTester {
-        fn new(rt: &mut Runtime, mut handle: Libp2pTransportHandle) -> TransportHandlTester {
+    impl TransportHandleTester {
+        fn new(
+            rt: &mut Runtime,
+            mut handle: Libp2pTransportHandle,
+            cell: FullCell,
+        ) -> TransportHandleTester {
             let (sender, receiver) = mpsc::unbounded();
             rt.spawn(
                 receiver
@@ -580,20 +639,40 @@ mod tests {
                     .map_err(|_| ()),
             );
 
-            TransportHandlTester {
+            TransportHandleTester {
+                cell,
                 handle,
                 sender,
                 received,
             }
         }
 
-        fn send(&self, message: OutMessage) {
+        fn send(&self, to_nodes: Vec<Node>, memo: u64) {
+            let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
+            let _builder = frame_builder.get_builder();
+            let msg =
+                OutMessage::from_framed_message(&self.cell, TransportLayer::Data, frame_builder)
+                    .unwrap()
+                    .with_rendez_vous_id(ConsistentTimestamp(memo))
+                    .with_to_nodes(to_nodes);
+
+            self.send_message(msg);
+        }
+
+        fn send_message(&self, message: OutMessage) {
             self.sender.unbounded_send(message).unwrap();
         }
 
         fn received(&self) -> Vec<InMessage> {
             let received = self.received.lock().unwrap();
             received.clone()
+        }
+
+        fn check_received(&self, memo: u64) -> bool {
+            let received = self.received();
+            received
+                .iter()
+                .any(|msg| msg.rendez_vous_id == Some(ConsistentTimestamp(memo)))
         }
     }
 }

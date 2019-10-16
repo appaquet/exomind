@@ -517,6 +517,7 @@ mod tests {
 
                         let out_message = OutMessage {
                             to: vec![message.from.clone()],
+                            expiration: None,
                             envelope_builder: frame_builder,
                         };
                         Ok(out_message)

@@ -88,7 +88,7 @@ pub mod envelope {
             self.reader.get_data_field::<u16>(1)
         }
         #[inline]
-        pub fn get_follow_id(self) -> u64 {
+        pub fn get_rendez_vous_id(self) -> u64 {
             self.reader.get_data_field::<u64>(1)
         }
         #[inline]
@@ -217,11 +217,11 @@ pub mod envelope {
             self.builder.set_data_field::<u16>(1, value);
         }
         #[inline]
-        pub fn get_follow_id(self) -> u64 {
+        pub fn get_rendez_vous_id(self) -> u64 {
             self.builder.get_data_field::<u64>(1)
         }
         #[inline]
-        pub fn set_follow_id(&mut self, value: u64) {
+        pub fn set_rendez_vous_id(&mut self, value: u64) {
             self.builder.set_data_field::<u64>(1, value);
         }
         #[inline]

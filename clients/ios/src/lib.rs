@@ -60,7 +60,7 @@ impl Context {
             PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
                 .expect("Couldn't decode cell publickey");
         let remote_node = Node::new_from_public_key(remote_node_pk);
-        let remote_addr = "/ip4/192.168.2.67/tcp/3330"
+        let remote_addr = "/ip4/192.168.2.19/tcp/3330"
             .parse()
             .expect("Couldn't parse remote node addr");
         remote_node.add_address(remote_addr);

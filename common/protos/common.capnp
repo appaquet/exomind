@@ -7,7 +7,7 @@ struct Envelope {
     cellId             @0: Data;
     layer              @1: UInt8;
     type               @2: UInt16;
-    followId           @3: UInt64;
+    rendezVousId       @3: UInt64;
     fromNodeId         @4: Text;
 
     data               @5: Data; # Usually a frame

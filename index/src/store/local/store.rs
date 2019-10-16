@@ -659,7 +659,7 @@ pub mod tests {
             let mutation_frame = mutation.to_mutation_request_frame(&self.schema)?;
 
             // send message to store
-            let follow_id = self.cluster.clocks[0].consistent_time(&self.cluster.nodes[0]);
+            let rendez_vous_id = self.cluster.clocks[0].consistent_time(&self.cluster.nodes[0]);
             let external_cell =
                 self.cluster.cells[0].clone_for_local_node(self.external_node.clone());
             let out_message = OutMessage::from_framed_message(
@@ -668,7 +668,7 @@ pub mod tests {
                 mutation_frame,
             )?
             .with_to_node(self.cluster.nodes[0].node().clone())
-            .with_follow_id(follow_id);
+            .with_rendez_vous_id(rendez_vous_id);
 
             let sink = self.cluster.runtime.block_on(
                 self.external_transport_sink
@@ -695,7 +695,7 @@ pub mod tests {
             let resp_frame = in_msg.get_data_as_framed_message()?;
             let response = MutationResult::from_response_frame(&self.schema, resp_frame)?;
 
-            assert_eq!(in_msg.follow_id, Some(follow_id));
+            assert_eq!(in_msg.rendez_vous_id, Some(rendez_vous_id));
 
             Ok(response)
         }
@@ -712,7 +712,7 @@ pub mod tests {
             let query_frame = query.to_query_request_frame(&self.schema)?;
 
             // send message to store
-            let follow_id = self.cluster.clocks[0].consistent_time(&self.cluster.nodes[0]);
+            let rendez_vous_id = self.cluster.clocks[0].consistent_time(&self.cluster.nodes[0]);
             let external_cell =
                 self.cluster.cells[0].clone_for_local_node(self.external_node.clone());
             let out_message = OutMessage::from_framed_message(
@@ -721,7 +721,7 @@ pub mod tests {
                 query_frame,
             )?
             .with_to_node(self.cluster.nodes[0].node().clone())
-            .with_follow_id(follow_id);
+            .with_rendez_vous_id(rendez_vous_id);
 
             let sink = self.cluster.runtime.block_on(
                 self.external_transport_sink
@@ -748,7 +748,7 @@ pub mod tests {
             let resp_frame = in_msg.get_data_as_framed_message()?;
             let results = QueryResult::from_query_frame(&self.schema, resp_frame)?;
 
-            assert_eq!(in_msg.follow_id, Some(follow_id));
+            assert_eq!(in_msg.rendez_vous_id, Some(rendez_vous_id));
 
             Ok(results)
         }
