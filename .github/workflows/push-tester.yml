@@ -30,6 +30,34 @@ jobs:
 
           cargo test --all --all-features
 
+  wasm_build:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:19.04 # required for clang with wasm
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Rust & Tools
+        run: |
+          set -e
+
+          apt update && apt install -y clang curl
+
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+          rustc --version && cargo --version
+
+          rustup target add wasm32-unknown-unknown
+
+      - name: Check & test
+        run: |
+          set -e
+          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+
+          cd $GITHUB_WORKSPACE
+          cargo build -p exocore-client-wasm --target "wasm32-unknown-unknown"
+
   coverage:
     runs-on: ubuntu-latest
 
@@ -41,7 +69,7 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
           export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
           rustc --version && cargo --version
-          rustup toolchain install nightly
+          rustup toolchain install nightly-2019-09-01 # if changed, change in coverage.sh
 
       - name: Check & test
         run: |

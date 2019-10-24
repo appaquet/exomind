@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::{InMessage, OutMessage, TransportHandle};
+use crate::{InEvent, OutEvent, TransportHandle};
 use exocore_common::node::NodeId;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
@@ -10,11 +10,11 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
 
 ///
-/// Transport handle that wraps 2 other transport handles. When it receives messages,
+/// Transport handle that wraps 2 other transport handles. When it receives events,
 /// it notes from which transport it came so that replies can be sent back via the same
 /// transport.
 ///
-/// !! If we never received a message for a node, it will automatically select the first handle !!
+/// !! If we never received an event for a node, it will automatically select the first handle !!
 ///
 pub struct EitherTransportHandle<TLeft: TransportHandle, TRight: TransportHandle> {
     left: TLeft,
@@ -44,8 +44,8 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
 {
     // TODO: Figure out static types https://github.com/appaquet/exocore/issues/125
     type StartFuture = Box<dyn Future<Item = (), Error = Error> + Send + 'static>;
-    type Sink = Box<dyn Sink<SinkItem = OutMessage, SinkError = Error> + Send + 'static>;
-    type Stream = Box<dyn Stream<Item = InMessage, Error = Error> + Send + 'static>;
+    type Sink = Box<dyn Sink<SinkItem = OutEvent, SinkError = Error> + Send + 'static>;
+    type Stream = Box<dyn Stream<Item = InEvent, Error = Error> + Send + 'static>;
 
     fn on_start(&self) -> Self::StartFuture {
         let left = self.left.on_start();
@@ -59,6 +59,7 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
     }
 
     fn get_sink(&mut self) -> Self::Sink {
+        // dispatch incoming events from left transport to handle
         let left = self.left.get_sink();
         let (left_sender, left_receiver) = mpsc::unbounded();
         let weak_inner = Arc::downgrade(&self.inner);
@@ -73,6 +74,7 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
                 }),
         );
 
+        // dispatch incoming events from right transport to handle
         let right = self.right.get_sink();
         let (right_sender, right_receiver) = mpsc::unbounded();
         let weak_inner = Arc::downgrade(&self.inner);
@@ -87,25 +89,32 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
                 }),
         );
 
-        let (sender, receiver) = mpsc::unbounded::<OutMessage>();
+        // redirect outgoing events coming from handles to underlying transports
+        let (sender, receiver) = mpsc::unbounded::<OutEvent>();
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
         tokio::spawn(
             receiver
                 .map_err(|_| Error::Other("Error in incoming channel stream".to_string()))
-                .for_each(move |out_message| {
-                    let node = out_message.to.first().ok_or_else(|| {
-                        Error::Other("Out message didn't have any destination node".to_string())
-                    })?;
-                    let side = Inner::get_side(&weak_inner1, node.id())?;
+                .for_each(move |event| {
+                    let side = match &event {
+                        OutEvent::Message(msg) => {
+                            let node = msg.to.first().ok_or_else(|| {
+                                Error::Other(
+                                    "Out event didn't have any destination node".to_string(),
+                                )
+                            })?;
+                            Inner::get_side(&weak_inner1, node.id())?
+                        }
+                    };
 
                     // default to left side if we didn't find node
                     if let Some(Side::Right) = side {
-                        right_sender.unbounded_send(out_message).map_err(|err| {
+                        right_sender.unbounded_send(event).map_err(|err| {
                             Error::Other(format!("Couldn't send to right sink: {}", err))
                         })?;
                     } else {
-                        left_sender.unbounded_send(out_message).map_err(|err| {
+                        left_sender.unbounded_send(event).map_err(|err| {
                             Error::Other(format!("Couldn't send to left sink: {}", err))
                         })?;
                     }
@@ -123,22 +132,21 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
 
     fn get_stream(&mut self) -> Self::Stream {
         let weak_inner = Arc::downgrade(&self.inner);
-        let left = self.left.get_stream().map(move |in_message| {
-            if let Err(err) = Inner::maybe_add_node(&weak_inner, in_message.from.id(), Side::Left) {
+        let left = self.left.get_stream().map(move |event| {
+            if let Err(err) = Inner::maybe_add_node(&weak_inner, &event, Side::Left) {
                 error!("Error saving node's transport from left side: {}", err);
                 let _ = Inner::maybe_complete_error(&weak_inner, err);
             }
-            in_message
+            event
         });
 
         let weak_inner = Arc::downgrade(&self.inner);
-        let right = self.right.get_stream().map(move |in_message| {
-            if let Err(err) = Inner::maybe_add_node(&weak_inner, in_message.from.id(), Side::Right)
-            {
+        let right = self.right.get_stream().map(move |event| {
+            if let Err(err) = Inner::maybe_add_node(&weak_inner, &event, Side::Right) {
                 error!("Error saving node's transport from right side: {}", err);
                 let _ = Inner::maybe_complete_error(&weak_inner, err);
             }
-            in_message
+            event
         });
 
         Box::new(left.select(right))
@@ -191,9 +199,14 @@ impl Inner {
 
     fn maybe_add_node(
         weak_inner: &Weak<RwLock<Inner>>,
-        node_id: &NodeId,
+        event: &InEvent,
         side: Side,
     ) -> Result<(), Error> {
+        let node_id = match event {
+            InEvent::Message(msg) => msg.from.id(),
+            _ => return Ok(()),
+        };
+
         let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
 
         {

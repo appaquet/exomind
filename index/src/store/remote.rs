@@ -12,7 +12,9 @@ use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
 use exocore_schema::schema::Schema;
-use exocore_transport::{InMessage, OutMessage, TransportHandle, TransportLayer};
+use exocore_transport::{
+    InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
+};
 use futures::prelude::*;
 use futures::sync::{mpsc, oneshot};
 use std::collections::HashMap;
@@ -138,12 +140,19 @@ where
             transport_handle
                 .get_stream()
                 .map_err(|err| Error::Fatal(format!("Error in incoming transport stream: {}", err)))
-                .for_each(move |in_message| {
-                    if let Err(err) = Self::handle_incoming_message(&weak_inner1, in_message) {
-                        if err.is_fatal() {
-                            return Err(err);
-                        } else {
-                            error!("Couldn't process incoming message: {}", err);
+                .for_each(move |event| {
+                    match event {
+                        InEvent::Message(msg) => {
+                            if let Err(err) = Self::handle_incoming_message(&weak_inner1, msg) {
+                                if err.is_fatal() {
+                                    return Err(err);
+                                } else {
+                                    error!("Couldn't process incoming message: {}", err);
+                                }
+                            }
+                        }
+                        InEvent::NodeStatus(_, _) => {
+                            // TODO: Do something with node status
                         }
                     }
                     Ok(())
@@ -186,7 +195,7 @@ where
 
     fn handle_incoming_message(
         weak_inner: &Weak<RwLock<Inner>>,
-        in_message: InMessage,
+        in_message: Box<InMessage>,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut inner = inner.write()?;
@@ -276,7 +285,7 @@ struct Inner {
     cell: Cell,
     clock: Clock,
     schema: Arc<Schema>,
-    transport_out: Option<mpsc::UnboundedSender<OutMessage>>,
+    transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
     index_node: Node,
     pending_queries: HashMap<ConsistentTimestamp, PendingRequest<QueryResult>>,
     pending_mutations: HashMap<ConsistentTimestamp, PendingRequest<MutationResult>>,
@@ -363,9 +372,13 @@ impl Inner {
             Error::Fatal("Tried to send message, but transport_out was none".to_string())
         })?;
 
-        transport.unbounded_send(message).map_err(|_err| {
-            Error::Fatal("Tried to send message, but transport_out channel is closed".to_string())
-        })?;
+        transport
+            .unbounded_send(OutEvent::Message(message))
+            .map_err(|_err| {
+                Error::Fatal(
+                    "Tried to send message, but transport_out channel is closed".to_string(),
+                )
+            })?;
 
         Ok(())
     }

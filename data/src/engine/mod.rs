@@ -16,7 +16,8 @@ use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
 use exocore_transport::{
-    Error as TransportError, InMessage, OutMessage, TransportHandle, TransportLayer,
+    Error as TransportError, InEvent, InMessage, OutEvent, OutMessage, TransportHandle,
+    TransportLayer,
 };
 use futures::prelude::*;
 use futures::sync::mpsc;
@@ -216,13 +217,22 @@ where
             tokio::spawn(
                 transport_in_stream
                     .map_err(Error::Transport)
-                    .for_each(move |msg| {
-                        Self::handle_incoming_message(&weak_inner1, msg)
-                            .map_err(|err| {
-                                error!("Error handling incoming message: {}", err);
-                                err
-                            })
-                            .or_else(Error::recover_non_fatal_error)
+                    .for_each(move |event| {
+                        match event {
+                            InEvent::Message(msg) => {
+                                Self::handle_incoming_message(&weak_inner1, msg)
+                                    .map_err(|err| {
+                                        error!("Error handling incoming message: {}", err);
+                                        err
+                                    })
+                                    .or_else(Error::recover_non_fatal_error)
+                            }
+                            InEvent::NodeStatus(_, _) => {
+                                // TODO: Do something with the node status
+
+                                Ok(())
+                            }
+                        }
                     })
                     .map_err(move |err| {
                         Self::handle_spawned_future_error(
@@ -282,7 +292,7 @@ where
 
     fn handle_incoming_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        message: InMessage,
+        message: Box<InMessage>,
     ) -> Result<(), Error> {
         let locked_inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut inner = locked_inner.write()?;
@@ -402,7 +412,7 @@ where
     events_stream_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
     handles_next_id: usize,
     handles_count: usize,
-    transport_sender: Option<mpsc::Sender<OutMessage>>,
+    transport_sender: Option<mpsc::Sender<OutEvent>>,
     sync_state: SyncState,
     stop_notifier: CompletionNotifier<(), Error>,
 }
@@ -545,7 +555,8 @@ where
             let transport_sender = self.transport_sender.as_mut().expect(
                 "Transport sender was none, which mean that the transport was never started",
             );
-            if let Err(err) = transport_sender.try_send(out_message) {
+
+            if let Err(err) = transport_sender.try_send(OutEvent::Message(out_message)) {
                 error!(
                     "Error sending message from sync context to transport: {}",
                     err

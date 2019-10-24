@@ -1,21 +1,21 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
+use futures::future;
+use futures::future::FutureResult;
 use futures::prelude::*;
+use futures::stream::Peekable;
 use futures::sync::mpsc;
+use tokio::runtime::Runtime;
 
-use exocore_common::node::{LocalNode, Node, NodeId};
-
-use crate::transport::{MpscHandleSink, MpscHandleStream};
-use crate::{Error, InMessage, OutMessage, TransportHandle, TransportLayer};
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
+use exocore_common::node::{LocalNode, Node, NodeId};
 use exocore_common::protos::common_capnp::envelope;
 use exocore_common::tests_utils::FuturePeek;
 use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
-use futures::future;
-use futures::future::FutureResult;
-use futures::stream::Peekable;
-use tokio::runtime::Runtime;
+
+use crate::transport::{MpscHandleSink, MpscHandleStream};
+use crate::{Error, InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer};
 
 const CHANNELS_SIZE: usize = 1000;
 
@@ -26,7 +26,7 @@ type HandleKey = (NodeId, TransportLayer);
 /// per cell per layer.
 ///
 pub struct MockTransport {
-    nodes_sink: Arc<Mutex<HashMap<HandleKey, mpsc::Sender<InMessage>>>>,
+    nodes_sink: Arc<Mutex<HashMap<HandleKey, mpsc::Sender<InEvent>>>>,
 }
 
 impl Default for MockTransport {
@@ -68,9 +68,9 @@ pub struct MockTransportHandle {
     node: Node,
     layer: TransportLayer,
     started: bool,
-    nodes_sink: Weak<Mutex<HashMap<HandleKey, mpsc::Sender<InMessage>>>>,
-    incoming_stream: Option<mpsc::Receiver<InMessage>>,
-    outgoing_stream: Option<mpsc::Receiver<OutMessage>>,
+    nodes_sink: Weak<Mutex<HashMap<HandleKey, mpsc::Sender<InEvent>>>>,
+    incoming_stream: Option<mpsc::Receiver<InEvent>>,
+    outgoing_stream: Option<mpsc::Receiver<OutEvent>>,
     completion_notifier: CompletionNotifier<(), Error>,
     completion_listener: CompletionListener<(), Error>,
 }
@@ -124,34 +124,38 @@ impl Future for MockTransportHandle {
             let layer = self.layer;
             let nodes_sink_weak = Weak::clone(&self.nodes_sink);
             let completion_handle = self.completion_notifier.clone();
-            tokio::spawn(outgoing_stream.for_each(move |message| {
-                let nodes_sink = nodes_sink_weak.upgrade().ok_or_else(|| {
-                    error!(
-                        "Couldn't upgrade nodes sink, which means hub got dropped. Stopping here."
-                    );
-                    completion_handle
-                        .complete(Err(Error::Other("Couldn't upgrade nodes sink".to_string())));
-                })?;
+            tokio::spawn(outgoing_stream.for_each(move |event| {
+                match event {
+                    OutEvent::Message(msg) => {
+                        let nodes_sink = nodes_sink_weak.upgrade().ok_or_else(|| {
+                            error!(
+                                "Couldn't upgrade nodes sink, which means hub got dropped. Stopping here."
+                            );
+                            completion_handle
+                                .complete(Err(Error::Other("Couldn't upgrade nodes sink".to_string())));
+                        })?;
 
-                let mut nodes_sink = nodes_sink.lock().map_err(|_| {
-                    error!("Couldn't get a lock on nodes sink. Stopping here.");
-                    completion_handle.complete(Err(Error::Other(
-                        "Couldn't get a lock on ndoes sink".to_string(),
-                    )));
-                })?;
+                        let mut nodes_sink = nodes_sink.lock().map_err(|_| {
+                            error!("Couldn't get a lock on nodes sink. Stopping here.");
+                            completion_handle.complete(Err(Error::Other(
+                                "Couldn't get a lock on ndoes sink".to_string(),
+                            )));
+                        })?;
 
-                let envelope = message.envelope_builder.as_owned_frame();
-                let in_message = InMessage::from_node_and_frame(node.clone(), envelope)
-                    .expect("Couldn't InMessage from OutMessage");
-                for dest_node in &message.to {
-                    let key = (dest_node.id().clone(), layer);
-                    if let Some(sink) = nodes_sink.get_mut(&key) {
-                        let _ = sink.try_send(in_message.clone());
-                    } else {
-                        warn!(
-                            "Couldn't send message to node {} since it's not in the hub anymore",
-                            dest_node.id()
-                        );
+                        let envelope = msg.envelope_builder.as_owned_frame();
+                        let in_message = InMessage::from_node_and_frame(node.clone(), envelope)
+                            .expect("Couldn't InMessage from OutMessage");
+                        for dest_node in &msg.to {
+                            let key = (dest_node.id().clone(), layer);
+                            if let Some(sink) = nodes_sink.get_mut(&key) {
+                                let _ = sink.try_send(InEvent::Message(in_message.clone()));
+                            } else {
+                                warn!(
+                                    "Couldn't send message to node {} since it's not in the hub anymore",
+                                    dest_node.id()
+                                );
+                            }
+                        }
                     }
                 }
 
@@ -226,19 +230,28 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
         };
 
         let sink = rt
-            .block_on(self.out_sink.take().unwrap().send(out_message))
+            .block_on(
+                self.out_sink
+                    .take()
+                    .unwrap()
+                    .send(OutEvent::Message(out_message)),
+            )
             .unwrap();
         self.out_sink = Some(sink);
     }
 
     pub fn receive_test_message(&mut self, rt: &mut Runtime) -> (NodeId, u16) {
         let stream = self.in_stream.take().unwrap();
-        let (message, stream) = rt.block_on(stream.into_future()).ok().unwrap();
+        let (event, stream) = rt.block_on(stream.into_future()).ok().unwrap();
         self.in_stream = Some(stream);
 
-        let message = message.unwrap();
-        let message_reader = message.envelope.get_reader().unwrap();
-        (message.from.id().clone(), message_reader.get_type())
+        match event.unwrap() {
+            InEvent::Message(message) => {
+                let message_reader = message.envelope.get_reader().unwrap();
+                (message.from.id().clone(), message_reader.get_type())
+            }
+            InEvent::NodeStatus(_, _) => self.receive_test_message(rt),
+        }
     }
 
     pub fn has_message(&mut self) -> Result<bool, Error> {
@@ -254,10 +267,12 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use tokio::runtime::Runtime;
+
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::*;
-    use tokio::runtime::Runtime;
+
+    use super::*;
 
     #[test]
     fn send_and_receive() {

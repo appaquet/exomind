@@ -2,8 +2,8 @@ pub mod behaviour;
 pub mod common_transport;
 pub mod protocol;
 
-use crate::messages::{InMessage, OutMessage};
-use crate::transport::{MpscHandleSink, MpscHandleStream};
+use crate::messages::InMessage;
+use crate::transport::{InEvent, MpscHandleSink, MpscHandleStream, OutEvent};
 use crate::Error;
 use crate::{TransportHandle, TransportLayer};
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
@@ -100,8 +100,8 @@ impl InnerTransport {
 
 struct InnerHandle {
     cell: Cell,
-    in_sender: mpsc::Sender<InMessage>,
-    out_receiver: Option<mpsc::Receiver<OutMessage>>,
+    in_sender: mpsc::Sender<InEvent>,
+    out_receiver: Option<mpsc::Receiver<OutEvent>>,
 }
 
 impl Libp2pTransport {
@@ -193,7 +193,7 @@ impl Libp2pTransport {
 
         // Spawn the swarm & receive message from a channel through which outgoing messages will go
         let (out_sender, mut out_receiver) =
-            mpsc::channel::<OutMessage>(self.config.handles_to_behaviour_channel_size);
+            mpsc::channel::<OutEvent>(self.config.handles_to_behaviour_channel_size);
 
         // Add initial nodes to swarm
         {
@@ -232,23 +232,31 @@ impl Libp2pTransport {
             }
 
             // we drain all messages coming from handles that need to be sent
-            while let Async::Ready(Some(msg)) = out_receiver
+            while let Async::Ready(Some(event)) = out_receiver
                 .poll()
                 .expect("Couldn't poll behaviour channel")
             {
-                let frame_data = msg.envelope_builder.as_bytes();
+                match event {
+                    OutEvent::Message(msg) => {
+                        let frame_data = msg.envelope_builder.as_bytes();
 
-                // prevent cloning frame if we only send to 1 node
-                if msg.to.len() == 1 {
-                    let to_node = msg.to.first().unwrap();
-                    swarm.send_message(to_node.peer_id().clone(), msg.expiration, frame_data);
-                } else {
-                    for to_node in msg.to {
-                        swarm.send_message(
-                            to_node.peer_id().clone(),
-                            msg.expiration,
-                            frame_data.clone(),
-                        );
+                        // prevent cloning frame if we only send to 1 node
+                        if msg.to.len() == 1 {
+                            let to_node = msg.to.first().unwrap();
+                            swarm.send_message(
+                                to_node.peer_id().clone(),
+                                msg.expiration,
+                                frame_data,
+                            );
+                        } else {
+                            for to_node in msg.to {
+                                swarm.send_message(
+                                    to_node.peer_id().clone(),
+                                    msg.expiration,
+                                    frame_data.clone(),
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -334,7 +342,7 @@ impl Libp2pTransport {
         let msg = InMessage::from_node_and_frame(source_node.clone(), frame.to_owned())?;
         layer_stream
             .in_sender
-            .try_send(msg)
+            .try_send(InEvent::Message(msg))
             .map_err(|err| Error::Other(format!("Couldn't send message to cell layer: {}", err)))
     }
 }
@@ -364,8 +372,8 @@ pub struct Libp2pTransportHandle {
     layer: TransportLayer,
     start_listener: CompletionListener<(), Error>,
     inner: Weak<RwLock<InnerTransport>>,
-    sink: Option<mpsc::Sender<OutMessage>>,
-    stream: Option<mpsc::Receiver<InMessage>>,
+    sink: Option<mpsc::Sender<OutEvent>>,
+    stream: Option<mpsc::Receiver<InEvent>>,
     stop_listener: CompletionListener<(), Error>,
 }
 
@@ -426,6 +434,7 @@ impl Drop for Libp2pTransportHandle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::OutMessage;
     use exocore_common::cell::FullCell;
     use exocore_common::framing::CapnpFrameBuilder;
     use exocore_common::node::Node;
@@ -607,8 +616,8 @@ mod tests {
     struct TransportHandleTester {
         cell: FullCell,
         handle: Libp2pTransportHandle,
-        sender: mpsc::UnboundedSender<OutMessage>,
-        received: Arc<Mutex<Vec<InMessage>>>,
+        sender: mpsc::UnboundedSender<OutEvent>,
+        received: Arc<Mutex<Vec<InEvent>>>,
     }
 
     impl TransportHandleTester {
@@ -660,19 +669,22 @@ mod tests {
         }
 
         fn send_message(&self, message: OutMessage) {
-            self.sender.unbounded_send(message).unwrap();
+            self.sender
+                .unbounded_send(OutEvent::Message(message))
+                .unwrap();
         }
 
-        fn received(&self) -> Vec<InMessage> {
+        fn received(&self) -> Vec<InEvent> {
             let received = self.received.lock().unwrap();
             received.clone()
         }
 
         fn check_received(&self, memo: u64) -> bool {
             let received = self.received();
-            received
-                .iter()
-                .any(|msg| msg.rendez_vous_id == Some(ConsistentTimestamp(memo)))
+            received.iter().any(|msg| match msg {
+                InEvent::Message(event) => event.rendez_vous_id == Some(ConsistentTimestamp(memo)),
+                InEvent::NodeStatus(_, _) => false,
+            })
         }
     }
 }

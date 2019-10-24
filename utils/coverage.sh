@@ -13,12 +13,13 @@ if [[ -d $CUR_DIR/../target ]]; then
   find $CUR_DIR/../target -name "*.gc*" -delete
 fi
 
+export RUSTUP_TOOLCHAIN=nightly-2019-09-01 # if changed, change in push-tester.yml
 export CARGO_OPTIONS="--all --all-features --exclude=exocore-cli --exclude=exocore-client-wasm --exclude=exocore-client-android"
 export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
-cargo +nightly clean -p exocore-common
-cargo +nightly build $CARGO_OPTIONS
-cargo +nightly test $CARGO_OPTIONS
+cargo clean -p exocore-common
+cargo build $CARGO_OPTIONS
+cargo test $CARGO_OPTIONS
 
 mkdir -p $COVERAGE_DIR
 zip -0 $COVERAGE_DIR/ccov.zip `find . \( -name "*exocore*.gc*" \) -print`;

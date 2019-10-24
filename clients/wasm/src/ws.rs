@@ -18,8 +18,11 @@ use exocore_common::protos::common_capnp::envelope;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
-use exocore_transport::transport::{MpscHandleSink, MpscHandleStream};
-use exocore_transport::{Error, InMessage, OutMessage, TransportHandle, TransportLayer};
+use exocore_transport::transport::{ConnectionStatus, MpscHandleSink, MpscHandleStream};
+use exocore_transport::{Error, InEvent, InMessage, OutEvent, TransportHandle, TransportLayer};
+
+const OUT_CHANNEL_SIZE: usize = 100;
+const IN_CHANNEL_SIZE: usize = 100;
 
 ///
 /// Client for `exocore_transport` WebSocket transport for browser
@@ -38,6 +41,7 @@ impl BrowserTransportClient {
             remote_node,
             url: url.to_owned(),
             socket: None,
+            connection_status: ConnectionStatus::Disconnected,
             last_connect_attempt: None,
             handles: HashMap::new(),
             stop_notifier,
@@ -52,8 +56,8 @@ impl BrowserTransportClient {
     pub fn get_handle(&mut self, cell: Cell, layer: TransportLayer) -> BrowserTransportHandle {
         let mut inner = self.inner.lock().expect("Couldn't get inner lock");
 
-        let (out_sender, out_receiver) = mpsc::channel(1000); // TODO: Config
-        let (in_sender, in_receiver) = mpsc::channel(1000); // TODO: Config
+        let (out_sender, out_receiver) = mpsc::channel(OUT_CHANNEL_SIZE);
+        let (in_sender, in_receiver) = mpsc::channel(IN_CHANNEL_SIZE);
 
         let inner_handle = InnerHandle {
             out_receiver: Some(out_receiver),
@@ -70,7 +74,7 @@ impl BrowserTransportClient {
         let stop_listener = inner
             .stop_notifier
             .get_listener()
-            .expect("Couldn't get a listener on start notifier");
+            .expect("Couldn't get a listener on stop notifier");
 
         BrowserTransportHandle {
             start_listener,
@@ -93,13 +97,18 @@ impl BrowserTransportClient {
             wasm_bindgen_futures::spawn_local(
                 out_receiver
                     .map_err(|_err| Error::Other("Handle out stream error err".to_string()))
-                    .for_each(move |out_message| {
-                        let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
-                        let inner = inner.lock()?;
-                        if let Some(ws) = &inner.socket {
-                            let mut message_bytes = out_message.envelope_builder.as_bytes();
-                            if let Err(_err) = ws.ws.send_with_u8_array(&mut message_bytes) {
-                                error!("Error sending a message to websocket");
+                    .for_each(move |event| {
+                        match event {
+                            OutEvent::Message(msg) => {
+                                let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
+                                let inner = inner.lock()?;
+                                if let Some(ws) = &inner.socket {
+                                    let mut message_bytes = msg.envelope_builder.as_bytes();
+                                    if let Err(_err) = ws.ws.send_with_u8_array(&mut message_bytes)
+                                    {
+                                        error!("Error sending a message to websocket");
+                                    }
+                                }
                             }
                         }
 
@@ -122,7 +131,7 @@ impl BrowserTransportClient {
             .for_each(move |_| {
                 let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
                 let mut inner = inner.lock()?;
-                inner.check_should_reconnect(&weak_inner)?;
+                inner.check_connection_status(&weak_inner)?;
                 Ok(())
             })
             .map_err(|err| {
@@ -139,14 +148,15 @@ struct Inner {
     remote_node: Node,
     url: String,
     socket: Option<WSInstance>,
+    connection_status: ConnectionStatus,
     last_connect_attempt: Option<Instant>,
     handles: HashMap<(CellId, TransportLayer), InnerHandle>,
     stop_notifier: CompletionNotifier<(), Error>,
 }
 
 struct InnerHandle {
-    out_receiver: Option<mpsc::Receiver<OutMessage>>,
-    in_sender: mpsc::Sender<InMessage>,
+    out_receiver: Option<mpsc::Receiver<OutEvent>>,
+    in_sender: mpsc::Sender<InEvent>,
 }
 
 struct WSInstance {
@@ -165,7 +175,7 @@ impl Inner {
         ws.set_binary_type(BinaryType::Arraybuffer);
 
         let remote_node = self.remote_node.clone();
-        let weak_self = weak_self.clone();
+        let weak_self1 = weak_self.clone();
         let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
             let bin_data = ArrayBuffer::from(e.data());
             let uint8_data = Uint8Array::new(&bin_data);
@@ -177,7 +187,7 @@ impl Inner {
 
             match in_message {
                 Ok(msg) => {
-                    if let Err(err) = Self::handle_incoming_message(&weak_self, msg) {
+                    if let Err(err) = Self::handle_incoming_message(&weak_self1, msg) {
                         error!("Error handling incoming message: {}", err);
                     }
                 }
@@ -188,13 +198,17 @@ impl Inner {
         }) as Box<dyn FnMut(MessageEvent)>);
         ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
 
+        let weak_self2 = weak_self.clone();
         let onerror_callback = Closure::wrap(Box::new(move |e: ErrorEvent| {
             error!("Error in WebSocket: {:?}", e);
+            let _ = Self::check_connection_status_weak(&weak_self2);
         }) as Box<dyn FnMut(ErrorEvent)>);
         ws.set_onerror(Some(onerror_callback.as_ref().unchecked_ref()));
 
+        let weak_self3 = weak_self.clone();
         let onopen_callback = Closure::wrap(Box::new(move |_| {
             info!("WebSocket opened");
+            let _ = Self::check_connection_status_weak(&weak_self3);
         }) as Box<dyn FnMut(JsValue)>);
         ws.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
 
@@ -207,28 +221,50 @@ impl Inner {
         })
     }
 
-    fn check_should_reconnect(&mut self, weak_self: &Weak<Mutex<Inner>>) -> Result<(), Error> {
+    fn check_connection_status_weak(weak_self: &Weak<Mutex<Inner>>) -> Result<(), Error> {
+        let inner = weak_self.upgrade().ok_or(Error::Upgrade)?;
+        let mut inner = inner.lock()?;
+        inner.check_connection_status(weak_self)
+    }
+
+    fn check_connection_status(&mut self, weak_self: &Weak<Mutex<Inner>>) -> Result<(), Error> {
+        let status_before = self.connection_status;
+
         if let Some(ws) = &self.socket {
             // see states here https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
             match ws.ws.ready_state() {
-                0 /*connecting*/ | 1 /*open*/  => {
-                    // nothing to do
+                0 /*connecting*/ => {
+                    self.connection_status = ConnectionStatus::Connecting;
+                }
+                1 /*open*/ => {
+                    self.connection_status = ConnectionStatus::Connected;
                 }
                 socket_status => {
+                    self.connection_status = ConnectionStatus::Disconnected;
+
                     let should_reconnect = self
                         .last_connect_attempt
                         .map_or(true, |attempt| attempt.elapsed() > Duration::from_secs(5));
 
                     if should_reconnect {
                         let last_connect_elapsed = self.last_connect_attempt.map(|i| i.elapsed());
-                        info!("WebSocket was not connected. Reconnecting... (socket_status={:?} last_connect_attempt={:?})", socket_status, last_connect_elapsed );
+                        info!("WebSocket was not connected. Reconnecting... (socket_status={:?} last_connect_attempt={:?})", socket_status, last_connect_elapsed);
                         self.create_websocket(weak_self);
                     }
                 }
             }
         } else {
             warn!("No WebSocket was started. Reconnecting...");
+            self.connection_status = ConnectionStatus::Disconnected;
             self.create_websocket(weak_self);
+        }
+
+        if status_before != self.connection_status {
+            info!(
+                "Dispatching new status: before={:?} after={:?}",
+                status_before, self.connection_status
+            );
+            let _ = self.dispatch_node_status();
         }
 
         Ok(())
@@ -236,7 +272,7 @@ impl Inner {
 
     fn handle_incoming_message(
         weak_self: &Weak<Mutex<Inner>>,
-        in_message: InMessage,
+        in_message: Box<InMessage>,
     ) -> Result<(), Error> {
         let inner = weak_self.upgrade().ok_or(Error::Upgrade)?;
         let mut inner = inner.lock()?;
@@ -247,9 +283,23 @@ impl Inner {
             .get_mut(&key)
             .ok_or_else(|| Error::Other(format!("Got message for unknown handle: {:?}", key)))?;
 
-        handle.in_sender.try_send(in_message).map_err(|err| {
-            Error::Other(format!("Got error sending to handle {:?}: {}", key, err))
-        })?;
+        handle
+            .in_sender
+            .try_send(InEvent::Message(in_message))
+            .map_err(|err| {
+                Error::Other(format!("Got error sending to handle {:?}: {}", key, err))
+            })?;
+
+        Ok(())
+    }
+
+    fn dispatch_node_status(&mut self) -> Result<(), Error> {
+        for (key, handle) in self.handles.iter_mut() {
+            let event = InEvent::NodeStatus(self.remote_node.id().clone(), self.connection_status);
+            handle.in_sender.try_send(event).map_err(|err| {
+                Error::Other(format!("Got error sending to handle {:?}: {}", key, err))
+            })?;
+        }
 
         Ok(())
     }

@@ -5,7 +5,7 @@ use self::websocket::r#async::MessageCodec;
 use self::websocket::OwnedMessage;
 pub use self::websocket::WebSocketError;
 use crate::transport::{MpscHandleSink, MpscHandleStream};
-use crate::{Error, InMessage, OutMessage, TransportHandle};
+use crate::{Error, InEvent, InMessage, OutEvent, TransportHandle};
 use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{Node, NodeId};
@@ -148,11 +148,12 @@ impl WebsocketTransport {
                 .out_stream
                 .take()
                 .expect("Out stream for handle was already taken out")
-                .for_each(move |out_message| {
-                    WebsocketTransport::dispatch_outgoing_message(&weak_inner, &out_message)
-                        .map_err(|err| {
+                .for_each(move |out_event| {
+                    WebsocketTransport::dispatch_outgoing_event(&weak_inner, &out_event).map_err(
+                        |err| {
                             error!("Error dispatching message from handle: {}", err);
-                        })
+                        },
+                    )
                 });
             tokio::spawn(stream_future);
         }
@@ -287,15 +288,16 @@ impl WebsocketTransport {
         Ok(())
     }
 
-    fn dispatch_outgoing_message(
+    fn dispatch_outgoing_event(
         weak_inner: &Weak<RwLock<InnerTransport>>,
-        out_message: &OutMessage,
+        event: &OutEvent,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
         let mut inner = inner.write()?;
 
-        let envelope_data = out_message.envelope_builder.as_bytes();
-        for node in &out_message.to {
+        let OutEvent::Message(msg) = event;
+        let envelope_data = msg.envelope_builder.as_bytes();
+        for node in &msg.to {
             if let Some(connection) = inner.connections.get_mut(node.id()) {
                 let send_result = connection.out_sink.try_send(envelope_data.clone());
                 if let Err(err) = send_result {
@@ -327,7 +329,8 @@ impl WebsocketTransport {
                     connection_node.clone(),
                     envelope_frame.to_owned(),
                 )?;
-                if let Err(err) = handle.in_sink.try_send(in_message) {
+
+                if let Err(err) = handle.in_sink.try_send(InEvent::Message(in_message)) {
                     error!("Error sending to handle: {}", err);
                 }
             }
@@ -382,14 +385,14 @@ pub struct WebsocketTransportHandle {
     cell_id: CellId,
     start_listener: CompletionListener<(), Error>,
     inner_transport: Weak<RwLock<InnerTransport>>,
-    sink: Option<mpsc::Sender<OutMessage>>,
-    stream: Option<mpsc::Receiver<InMessage>>,
+    sink: Option<mpsc::Sender<OutEvent>>,
+    stream: Option<mpsc::Receiver<InEvent>>,
     stop_listener: CompletionListener<(), Error>,
 }
 
 struct InnerHandle {
-    out_stream: Option<mpsc::Receiver<OutMessage>>,
-    in_sink: mpsc::Sender<InMessage>,
+    out_stream: Option<mpsc::Receiver<OutEvent>>,
+    in_sink: mpsc::Sender<InEvent>,
 }
 
 type StartFutureType = MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
@@ -444,7 +447,7 @@ impl Drop for WebsocketTransportHandle {
 mod tests {
     use super::websocket::ClientBuilder;
     use super::*;
-    use crate::TransportLayer;
+    use crate::{OutMessage, TransportLayer};
     use exocore_common::cell::FullCell;
     use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
     use exocore_common::node::LocalNode;
@@ -475,6 +478,7 @@ mod tests {
             let received_messages = received_messages.lock().unwrap();
             received_messages
                 .iter()
+                .filter_map(extract_message_event)
                 .any(|data| data.as_str() == "hello world")
         });
 
@@ -489,38 +493,54 @@ mod tests {
         Ok(())
     }
 
+    fn extract_message_event(event: &InEvent) -> Option<String> {
+        match event {
+            InEvent::Message(msg) => {
+                let message_data = msg.get_data().unwrap();
+                let data = String::from_utf8_lossy(message_data).to_string();
+                Some(data)
+            }
+            _ => None,
+        }
+    }
+
     fn schedule_server_handle(
         rt: &mut Runtime,
         mut handle: WebsocketTransportHandle,
-    ) -> Arc<Mutex<Vec<String>>> {
+    ) -> Arc<Mutex<Vec<InEvent>>> {
         rt.block_on(handle.on_start()).unwrap();
 
-        let received_messages = Arc::new(Mutex::new(Vec::new()));
+        let received_events = Arc::new(Mutex::new(Vec::new()));
 
         {
-            let received_messages = received_messages.clone();
+            let received_events = received_events.clone();
             rt.spawn(
                 handle
                     .get_stream()
-                    .and_then(move |message| {
-                        let message_data = message.get_data().unwrap();
-                        let mut received_messages = received_messages.lock().unwrap();
-                        received_messages.push(String::from_utf8_lossy(message_data).to_string());
+                    .filter_map(move |event| {
+                        let mut received_events = received_events.lock().unwrap();
+                        received_events.push(event.clone());
 
+                        match event {
+                            InEvent::Message(msg) => Some(msg),
+                            InEvent::NodeStatus(_node_id, _status) => None,
+                        }
+                    })
+                    .and_then(move |msg| {
                         // forward the message back to client
                         let mut frame_builder = CapnpFrameBuilder::<envelope::Owned>::new();
                         {
                             let mut message_builder = frame_builder.get_builder();
-                            message_builder.set_data(message_data);
+                            message_builder.set_data(msg.get_data().unwrap());
                             message_builder.set_layer(TransportLayer::Meta.to_code());
                         }
 
                         let out_message = OutMessage {
-                            to: vec![message.from.clone()],
+                            to: vec![msg.from.clone()],
                             expiration: None,
                             envelope_builder: frame_builder,
                         };
-                        Ok(out_message)
+                        Ok(OutEvent::Message(out_message))
                     })
                     .forward(handle.get_sink())
                     .map(|_| ())
@@ -530,7 +550,7 @@ mod tests {
 
         rt.spawn(handle.map(|_| ()).map_err(|_| ()));
 
-        received_messages
+        received_events
     }
 
     struct TestClient {

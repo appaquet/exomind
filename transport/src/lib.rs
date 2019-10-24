@@ -28,4 +28,4 @@ pub mod either;
 
 pub use error::Error;
 pub use messages::{InMessage, OutMessage};
-pub use transport::{TransportHandle, TransportLayer};
+pub use transport::{InEvent, OutEvent, TransportHandle, TransportLayer};

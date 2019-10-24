@@ -9,21 +9,27 @@ class App extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = { exocore: null };
+        this.state = {exocore: null};
         import("../../../clients/wasm/pkg").then(module => {
             // fix issue where not yet connected until we support transport status
             let client = new module.ExocoreClient("ws://127.0.0.1:3340");
+
+            window.exocore_client_status = (status) => {
+                if (status === "connected") {
+                    this.setState({
+                        exocore: client
+                    });
+                }
+            };
+
             setTimeout(() => {
-                this.setState({
-                    exocore: client
-                });
             }, 500);
         })
     }
 
     render() {
         if (this.state.exocore) {
-            return <List exocore={this.state.exocore} />;
+            return <List exocore={this.state.exocore}/>;
         } else {
             return this.renderLoading();
         }

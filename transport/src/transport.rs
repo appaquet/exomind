@@ -2,14 +2,15 @@ use futures::prelude::*;
 use futures::sync::mpsc;
 
 use crate::{Error, InMessage, OutMessage};
+use exocore_common::node::NodeId;
 
 ///
 /// Handle for a cell & layer to the transport
 ///
 pub trait TransportHandle: Future<Item = (), Error = Error> + Send + 'static {
     type StartFuture: Future<Item = (), Error = Error> + Send + 'static;
-    type Sink: Sink<SinkItem = OutMessage, SinkError = Error> + Send + 'static;
-    type Stream: Stream<Item = InMessage, Error = Error> + Send + 'static;
+    type Sink: Sink<SinkItem = OutEvent, SinkError = Error> + Send + 'static;
+    type Stream: Stream<Item = InEvent, Error = Error> + Send + 'static;
 
     fn on_start(&self) -> Self::StartFuture;
     fn get_sink(&mut self) -> Self::Sink;
@@ -26,6 +27,7 @@ pub enum TransportLayer {
     Common = 2,
     Data = 3,
     Index = 4,
+    Client = 5,
 }
 
 impl TransportLayer {
@@ -35,6 +37,7 @@ impl TransportLayer {
             2 => Some(TransportLayer::Common),
             3 => Some(TransportLayer::Data),
             4 => Some(TransportLayer::Index),
+            5 => Some(TransportLayer::Client),
             _ => None,
         }
     }
@@ -45,20 +48,40 @@ impl TransportLayer {
 }
 
 ///
+/// Connection status of a remote node via the transport.
+///
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum ConnectionStatus {
+    Connecting,
+    Connected,
+    Disconnected,
+}
+
+#[derive(Clone)]
+pub enum InEvent {
+    Message(Box<InMessage>),
+    NodeStatus(NodeId, ConnectionStatus),
+}
+
+pub enum OutEvent {
+    Message(OutMessage),
+}
+
+///
 /// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
 ///
 pub struct MpscHandleStream {
-    receiver: mpsc::Receiver<InMessage>,
+    receiver: mpsc::Receiver<InEvent>,
 }
 
 impl MpscHandleStream {
-    pub fn new(receiver: mpsc::Receiver<InMessage>) -> MpscHandleStream {
+    pub fn new(receiver: mpsc::Receiver<InEvent>) -> MpscHandleStream {
         MpscHandleStream { receiver }
     }
 }
 
 impl Stream for MpscHandleStream {
-    type Item = InMessage;
+    type Item = InEvent;
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
@@ -73,20 +96,20 @@ impl Stream for MpscHandleStream {
 /// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
 ///
 pub struct MpscHandleSink {
-    sender: mpsc::Sender<OutMessage>,
+    sender: mpsc::Sender<OutEvent>,
 }
 
 impl MpscHandleSink {
-    pub fn new(sender: mpsc::Sender<OutMessage>) -> MpscHandleSink {
+    pub fn new(sender: mpsc::Sender<OutEvent>) -> MpscHandleSink {
         MpscHandleSink { sender }
     }
 }
 
 impl Sink for MpscHandleSink {
-    type SinkItem = OutMessage;
+    type SinkItem = OutEvent;
     type SinkError = Error;
 
-    fn start_send(&mut self, item: OutMessage) -> StartSend<OutMessage, Error> {
+    fn start_send(&mut self, item: OutEvent) -> StartSend<OutEvent, Error> {
         self.sender.start_send(item).map_err(|err| {
             Error::Other(format!("Error calling 'start_send' to in_channel: {}", err))
         })

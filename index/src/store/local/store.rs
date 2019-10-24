@@ -10,7 +10,7 @@ use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
 use exocore_schema::schema::Schema;
-use exocore_transport::{InMessage, OutMessage, TransportHandle};
+use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandle};
 use futures::prelude::*;
 use futures::sync::mpsc;
 use std::sync::{Arc, RwLock, Weak};
@@ -102,15 +102,23 @@ where
             transport_handle
                 .get_stream()
                 .map_err(|err| Error::Fatal(format!("Error in incoming transport stream: {}", err)))
-                .for_each(move |in_message| {
+                .for_each(move |event| {
                     debug!("Got an incoming message");
-                    if let Err(err) = Self::handle_incoming_message(&weak_inner1, in_message) {
-                        if err.is_fatal() {
-                            return Err(err);
-                        } else {
-                            error!("Couldn't process incoming message: {}", err);
+                    match event {
+                        InEvent::Message(msg) => {
+                            if let Err(err) = Self::handle_incoming_message(&weak_inner1, msg) {
+                                if err.is_fatal() {
+                                    return Err(err);
+                                } else {
+                                    error!("Couldn't process incoming message: {}", err);
+                                }
+                            }
+                        }
+                        InEvent::NodeStatus(_, _) => {
+                            // TODO: Do something
                         }
                     }
+
                     Ok(())
                 })
                 .map(|_| ())
@@ -168,7 +176,7 @@ where
 
     fn handle_incoming_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        in_message: InMessage,
+        in_message: Box<InMessage>,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let inner = inner.read()?;
@@ -187,7 +195,7 @@ where
 
     fn handle_incoming_query_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        in_message: InMessage,
+        in_message: Box<InMessage>,
         query: Query,
     ) -> Result<(), Error> {
         let weak_inner1 = weak_inner.clone();
@@ -218,7 +226,7 @@ where
 
     fn handle_incoming_mutation_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        in_message: InMessage,
+        in_message: Box<InMessage>,
         mutation: Mutation,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
@@ -282,7 +290,7 @@ where
     schema: Arc<Schema>,
     index: EntitiesIndex<CS, PS>,
     data_handle: exocore_data::engine::EngineHandle<CS, PS>,
-    transport_out: Option<mpsc::UnboundedSender<OutMessage>>,
+    transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
     stop_notifier: CompletionNotifier<(), Error>,
 }
 
@@ -371,9 +379,13 @@ where
             Error::Fatal("Tried to send message, but transport_out was none".to_string())
         })?;
 
-        transport.unbounded_send(message).map_err(|_err| {
-            Error::Fatal("Tried to send message, but transport_out channel is closed".to_string())
-        })?;
+        transport
+            .unbounded_send(OutEvent::Message(message))
+            .map_err(|_err| {
+                Error::Fatal(
+                    "Tried to send message, but transport_out channel is closed".to_string(),
+                )
+            })?;
 
         Ok(())
     }
@@ -674,28 +686,17 @@ pub mod tests {
                 self.external_transport_sink
                     .take()
                     .unwrap()
-                    .send(out_message),
+                    .send(OutEvent::Message(out_message)),
             )?;
             self.external_transport_sink = Some(sink);
 
             // wait for response from store
-            let (received, stream) = self.cluster.runtime.block_on(
-                self.external_transport_stream
-                    .take()
-                    .unwrap()
-                    .into_future()
-                    .map_err(|(err, _stream)| {
-                        err_msg(format!("Error receiving from stream: {}", err))
-                    }),
-            )?;
-            self.external_transport_stream = Some(stream);
+            let msg = self.wait_receive_next_message()?;
 
             // read response into mutation response
-            let in_msg: InMessage = received.unwrap();
-            let resp_frame = in_msg.get_data_as_framed_message()?;
+            let resp_frame = msg.get_data_as_framed_message()?;
             let response = MutationResult::from_response_frame(&self.schema, resp_frame)?;
-
-            assert_eq!(in_msg.rendez_vous_id, Some(rendez_vous_id));
+            assert_eq!(msg.rendez_vous_id, Some(rendez_vous_id));
 
             Ok(response)
         }
@@ -727,24 +728,14 @@ pub mod tests {
                 self.external_transport_sink
                     .take()
                     .unwrap()
-                    .send(out_message),
+                    .send(OutEvent::Message(out_message)),
             )?;
             self.external_transport_sink = Some(sink);
 
             // wait for response from store
-            let (received, stream) = self.cluster.runtime.block_on(
-                self.external_transport_stream
-                    .take()
-                    .unwrap()
-                    .into_future()
-                    .map_err(|(err, _stream)| {
-                        err_msg(format!("Error receiving from stream: {}", err))
-                    }),
-            )?;
-            self.external_transport_stream = Some(stream);
+            let in_msg = self.wait_receive_next_message()?;
 
             // read response into a results
-            let in_msg: InMessage = received.unwrap();
             let resp_frame = in_msg.get_data_as_framed_message()?;
             let results = QueryResult::from_query_frame(&self.schema, resp_frame)?;
 
@@ -768,6 +759,30 @@ pub mod tests {
                     .build()
                     .unwrap(),
             })
+        }
+
+        fn wait_receive_next_message(&mut self) -> Result<Box<InMessage>, failure::Error> {
+            loop {
+                let (received, stream) = self.cluster.runtime.block_on(
+                    self.external_transport_stream
+                        .take()
+                        .unwrap()
+                        .into_future()
+                        .map_err(|(err, _stream)| {
+                            err_msg(format!("Error receiving from stream: {}", err))
+                        }),
+                )?;
+                self.external_transport_stream = Some(stream);
+
+                match received {
+                    Some(InEvent::Message(msg)) => {
+                        return Ok(msg);
+                    }
+                    _ => {
+                        continue;
+                    }
+                }
+            }
         }
     }
 }

@@ -76,7 +76,7 @@ impl InMessage {
     pub fn from_node_and_frame<I: FrameReader<OwnedType = Vec<u8>>>(
         from: Node,
         envelope: TypedCapnpFrame<I, envelope::Owned>,
-    ) -> Result<InMessage, Error> {
+    ) -> Result<Box<InMessage>, Error> {
         let envelope_reader = envelope.get_reader()?;
         let rendez_vous_id = if envelope_reader.get_rendez_vous_id() != 0 {
             Some(envelope_reader.get_rendez_vous_id().into())
@@ -92,14 +92,14 @@ impl InMessage {
 
         let message_type = envelope_reader.get_type();
 
-        Ok(InMessage {
+        Ok(Box::new(InMessage {
             from,
             cell_id,
             layer,
             rendez_vous_id,
             message_type,
             envelope: envelope.to_owned(),
-        })
+        }))
     }
 
     pub fn get_data(&self) -> Result<&[u8], Error> {
