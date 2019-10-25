@@ -22,6 +22,7 @@ jobs:
         run: |
           set -e
           export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+          export RUST_BACKTRACE=1
 
           cargo fmt --all -- --check
           cargo check --all
@@ -54,6 +55,7 @@ jobs:
         run: |
           set -e
           export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+          export RUST_BACKTRACE=1
 
           cd $GITHUB_WORKSPACE
           cargo build -p exocore-client-wasm --target "wasm32-unknown-unknown"
@@ -76,6 +78,7 @@ jobs:
           set -e
           curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
           export PATH=$PATH:`pwd`
+          export RUST_BACKTRACE=1
 
           export CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
           ./utils/coverage.sh codecov_io

@@ -101,14 +101,18 @@ where
 
         let chain_index = Self::create_chain_index(config, &schema, &chain_index_dir)?;
 
-        Ok(EntitiesIndex {
+        let mut index = EntitiesIndex {
             config,
             pending_index,
             chain_index_dir,
             chain_index,
             schema,
             data_handle,
-        })
+        };
+
+        index.reindex_pending()?;
+
+        Ok(index)
     }
 
     /// Handle an event coming from the data layer. These events allow keeping the index
@@ -403,32 +407,32 @@ where
         self.pending_index =
             TraitsIndex::create_in_memory(self.config.pending_index_config, self.schema.clone())?;
 
+        let last_indexed_offset = self
+            .last_chain_indexed_block()?
+            .map(|(offset, _height)| offset)
+            .unwrap_or(0);
+
         // create an iterator over operations from chain (if any) and pending store
         let pending_iter = self.data_handle.get_pending_operations(..)?.into_iter();
-        let pending_and_chain_iter: Box<dyn Iterator<Item = EngineOperation>> =
-            if let Some((last_indexed_offset, _last_indexed_height)) =
-                self.last_chain_indexed_block()?
-            {
-                // filter pending to exclude operations that are now in the chain index
-                let pending_iter =
-                    pending_iter.filter(move |op| op.status == EngineOperationStatus::Pending);
+        let pending_and_chain_iter = {
+            // filter pending to exclude operations that are now in the chain index
+            let pending_iter =
+                pending_iter.filter(move |op| op.status == EngineOperationStatus::Pending);
 
-                // take operations from chain that have not been indexed to the chain index yet
-                let chain_iter = self
-                    .data_handle
-                    .get_chain_operations(Some(last_indexed_offset))
-                    .filter(move |op| {
-                        if let EngineOperationStatus::Committed(offset, _height) = op.status {
-                            offset > last_indexed_offset
-                        } else {
-                            false
-                        }
-                    });
+            // take operations from chain that have not been indexed to the chain index yet
+            let chain_iter = self
+                .data_handle
+                .get_chain_operations(Some(last_indexed_offset))
+                .filter(move |op| {
+                    if let EngineOperationStatus::Committed(offset, _height) = op.status {
+                        offset > last_indexed_offset
+                    } else {
+                        false
+                    }
+                });
 
-                Box::new(chain_iter.chain(pending_iter))
-            } else {
-                Box::new(pending_iter)
-            };
+            Box::new(chain_iter.chain(pending_iter))
+        };
 
         let schema = self.schema.clone();
         let mutations_iter = pending_and_chain_iter
@@ -683,12 +687,48 @@ mod tests {
         test_index.index.reindex_chain()?;
 
         // reopen index, make sure data is still in there
-        let test_index = test_index.with_reopened_index()?;
+        let test_index = test_index.with_restarted_node()?;
         // traits should still be indexed
         let res = test_index
             .index
             .search(&Query::with_trait("exocore.contact"))?;
         assert_eq!(res.results.len(), 10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn reopen_chain_and_pending_transition() -> Result<(), failure::Error> {
+        let config = EntitiesIndexConfig {
+            chain_index_min_depth: 2,
+            chain_index_in_memory: false,
+            ..TestEntitiesIndex::create_test_config()
+        };
+
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
+        let query = Query::with_trait("exocore.contact").with_count(100);
+
+        let mut range_from = 0;
+        for i in 1..=3 {
+            let range_to = range_from + 9;
+
+            let ops_id = test_index.put_contact_traits(range_from..=range_to)?;
+            test_index.cluster.wait_operations_committed(0, &ops_id);
+            test_index.handle_engine_events()?;
+
+            let res = test_index.index.search(&query)?;
+            assert_eq!(res.results.len(), i * 10);
+
+            // restart node, which will clear pending
+            // reopening index should re-index first block in pending
+            test_index = test_index.with_restarted_node()?;
+
+            // traits should still be indexed
+            let res = test_index.index.search(&query)?;
+            assert_eq!(res.results.len(), i * 10);
+
+            range_from = range_to + 1;
+        }
 
         Ok(())
     }
@@ -981,16 +1021,18 @@ mod tests {
             })
         }
 
-        fn with_reopened_index(self) -> Result<TestEntitiesIndex, failure::Error> {
+        fn with_restarted_node(self) -> Result<TestEntitiesIndex, failure::Error> {
             // deconstruct so that we can drop index and close the index properly before reopening
             let TestEntitiesIndex {
                 schema,
-                cluster,
+                mut cluster,
                 config,
                 index,
                 temp_dir,
             } = self;
             drop(index);
+
+            cluster.restart_node(0)?;
 
             let index = EntitiesIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
                 temp_dir.path(),

@@ -367,9 +367,11 @@ impl DataTestCluster {
         self.create_node(node_idx)?;
         self.start_engine(node_idx);
 
+        let handle = self.handles[node_idx].as_ref().unwrap().try_clone()?;
+        self.runtime.block_on(handle.on_start()?)?;
+
         if was_collecting_events {
             self.collect_events_stream(node_idx);
-            self.wait_started(node_idx);
         }
 
         Ok(())
