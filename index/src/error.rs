@@ -63,8 +63,8 @@ pub enum Error {
     #[fail(display = "Try to lock a mutex that was poisoned")]
     Poisoned,
 
-    #[fail(display = "Inner was dropped or couldn't get locked")]
-    InnerUpgrade,
+    #[fail(display = "Dropped or couldn't get locked")]
+    Dropped,
 
     #[fail(display = "Other error occurred: {}", _0)]
     Other(String),
@@ -76,7 +76,7 @@ pub enum Error {
 impl Error {
     pub fn is_fatal(&self) -> bool {
         match self {
-            Error::Fatal(_) | Error::Poisoned | Error::InnerUpgrade | Error::IO(_, _) => true,
+            Error::Fatal(_) | Error::Poisoned | Error::Dropped | Error::IO(_, _) => true,
 
             #[cfg(feature = "local_store")]
             Error::TantivyOpenDirectoryError(_) => true,

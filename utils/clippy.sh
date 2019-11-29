@@ -8,5 +8,5 @@ cd $CUR_DIR/../
 cargo check --tests --all
 
 # Then clean common, which will force clippy to run on all its dependencies
-cargo clean -p exocore-common
+cargo clean -p exocore-schema
 cargo clippy --tests --all -- -D clippy::all # deny all warning to return error

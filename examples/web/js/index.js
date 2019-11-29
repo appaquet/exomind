@@ -12,18 +12,13 @@ class App extends React.Component {
         this.state = {exocore: null};
         import("../../../clients/wasm/pkg").then(module => {
             // fix issue where not yet connected until we support transport status
-            let client = new module.ExocoreClient("ws://127.0.0.1:3340");
-
-            window.exocore_client_status = (status) => {
+            let client = new module.ExocoreClient("ws://127.0.0.1:3340", (status) => {
                 if (status === "connected") {
                     this.setState({
                         exocore: client
                     });
                 }
-            };
-
-            setTimeout(() => {
-            }, 500);
+            });
         })
     }
 

@@ -1,6 +1,6 @@
-use libp2p_core::upgrade;
-use libp2p_core::{InboundUpgrade, OutboundUpgrade};
-use libp2p_core::{Negotiated, UpgradeInfo};
+use libp2p::core::upgrade;
+use libp2p::core::{InboundUpgrade, OutboundUpgrade};
+use libp2p::core::{Negotiated, UpgradeInfo};
 
 use std::{io, iter};
 use tokio::io::{AsyncRead, AsyncWrite};

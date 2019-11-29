@@ -17,3 +17,16 @@ struct QueryResponse {
     response           @0: Data;
     error              @1: Text;
 }
+
+struct WatchedQueryRequest {
+    request            @0: Data;
+}
+
+struct WatchedQueryResponse {
+    response           @0: Data;
+    error              @1: Text;
+}
+
+struct UnwatchQueryRequest {
+    token              @0: UInt64;
+}

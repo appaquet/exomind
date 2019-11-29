@@ -4,6 +4,7 @@ use exocore_common::node::NodeId;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
+use exocore_common::utils::futures::spawn_future;
 use futures::prelude::*;
 use futures::sync::mpsc;
 use std::collections::HashMap;
@@ -63,7 +64,7 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
         let left = self.left.get_sink();
         let (left_sender, left_receiver) = mpsc::unbounded();
         let weak_inner = Arc::downgrade(&self.inner);
-        tokio::spawn(
+        spawn_future(
             left_receiver
                 .map_err(|_| Error::Other("Left side channel has been dropped".to_owned()))
                 .forward(left)
@@ -78,7 +79,7 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
         let right = self.right.get_sink();
         let (right_sender, right_receiver) = mpsc::unbounded();
         let weak_inner = Arc::downgrade(&self.inner);
-        tokio::spawn(
+        spawn_future(
             right_receiver
                 .map_err(|_| Error::Other("Right side channel has been dropped".to_owned()))
                 .forward(right)
@@ -93,7 +94,7 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
         let (sender, receiver) = mpsc::unbounded::<OutEvent>();
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        tokio::spawn(
+        spawn_future(
             receiver
                 .map_err(|_| Error::Other("Error in incoming channel stream".to_string()))
                 .for_each(move |event| {

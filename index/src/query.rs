@@ -1,14 +1,18 @@
 use crate::error::Error;
 use chrono::{DateTime, Utc};
 use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_common::protos::index_transport_capnp::{query_request, query_response};
+use exocore_common::protos::index_transport_capnp::{
+    query_request, query_response, watched_query_request,
+};
 use exocore_common::time::ConsistentTimestamp;
 use exocore_schema::entity::{Entity, EntityId};
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
+use std::collections::hash_map::DefaultHasher;
 use std::sync::Arc;
 
-pub type QueryId = ConsistentTimestamp;
+pub type WatchToken = ConsistentTimestamp;
+pub type ResultHash = u64;
 
 #[serde(rename_all = "snake_case")]
 #[derive(Serialize, Deserialize, Clone)]
@@ -17,6 +21,13 @@ pub struct Query {
     pub inner: InnerQuery,
 
     pub paging: Option<QueryPaging>,
+
+    /// If true, only return summary
+    pub summary: bool,
+
+    /// If specified, if results from server matches this hash, only a summary will be returned.
+    #[serde(skip)]
+    pub result_hash: Option<ResultHash>,
 }
 
 #[serde(rename_all = "snake_case", tag = "type")]
@@ -36,6 +47,8 @@ impl Query {
                 query: query.into(),
             }),
             paging: None,
+            summary: false,
+            result_hash: None,
         }
     }
 
@@ -46,6 +59,8 @@ impl Query {
                 trait_query: None,
             }),
             paging: None,
+            summary: false,
+            result_hash: None,
         }
     }
 
@@ -55,6 +70,8 @@ impl Query {
                 entity_id: entity_id.into(),
             }),
             paging: None,
+            summary: false,
+            result_hash: None,
         }
     }
 
@@ -63,6 +80,8 @@ impl Query {
         Query {
             inner: InnerQuery::TestFail(TestFailQuery {}),
             paging: None,
+            summary: false,
+            result_hash: None,
         }
     }
 
@@ -80,11 +99,21 @@ impl Query {
         self
     }
 
+    pub fn only_summary(mut self) -> Self {
+        self.summary = true;
+        self
+    }
+
+    pub fn only_summary_if_equals(mut self, result_hash: ResultHash) -> Self {
+        self.result_hash = Some(result_hash);
+        self
+    }
+
     pub fn paging_or_default(&self) -> &QueryPaging {
         self.paging.as_ref().unwrap_or(&QueryPaging::DEFAULT_PAGING)
     }
 
-    pub fn to_query_request_frame(
+    pub fn to_request_frame(
         &self,
         schema: &Arc<Schema>,
     ) -> Result<CapnpFrameBuilder<query_request::Owned>, Error> {
@@ -96,10 +125,50 @@ impl Query {
         Ok(frame_builder)
     }
 
-    pub fn from_query_request_frame<I>(
+    pub fn from_request_frame<I>(
         schema: &Arc<Schema>,
         frame: TypedCapnpFrame<I, query_request::Owned>,
     ) -> Result<Query, Error>
+    where
+        I: FrameReader,
+    {
+        let reader = frame.get_reader()?;
+        let data = reader.get_request()?;
+        let query = with_schema(schema, || serde_json::from_slice(data))?;
+
+        Ok(query)
+    }
+}
+
+/// Query that will be watched for changes and be consumed as a stream instead of a future.
+#[serde(rename_all = "snake_case")]
+#[derive(Serialize, Deserialize, Clone)]
+pub struct WatchedQuery {
+    pub query: Query,
+    pub token: WatchToken,
+}
+
+impl WatchedQuery {
+    pub fn new(query: Query, token: WatchToken) -> WatchedQuery {
+        WatchedQuery { query, token }
+    }
+
+    pub fn to_request_frame(
+        &self,
+        schema: &Arc<Schema>,
+    ) -> Result<CapnpFrameBuilder<watched_query_request::Owned>, Error> {
+        let mut frame_builder = CapnpFrameBuilder::<watched_query_request::Owned>::new();
+        let mut msg_builder = frame_builder.get_builder();
+        let serialized_query = with_schema(schema, || serde_json::to_vec(&self))?;
+        msg_builder.set_request(&serialized_query);
+
+        Ok(frame_builder)
+    }
+
+    pub fn from_request_frame<I>(
+        schema: &Arc<Schema>,
+        frame: TypedCapnpFrame<I, watched_query_request::Owned>,
+    ) -> Result<WatchedQuery, Error>
     where
         I: FrameReader,
     {
@@ -243,19 +312,22 @@ impl From<String> for SortToken {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QueryResult {
     pub results: Vec<EntityResult>,
+    pub summary: bool,
     pub total_estimated: u32,
     pub current_page: QueryPaging,
     pub next_page: Option<QueryPaging>,
-    // TODO: currentPage, nextPage, queryToken
+    pub hash: ResultHash,
 }
 
 impl QueryResult {
     pub fn empty() -> QueryResult {
         QueryResult {
             results: vec![],
+            summary: false,
             total_estimated: 0,
             current_page: QueryPaging::new(0),
             next_page: None,
+            hash: 0,
         }
     }
 
@@ -310,6 +382,11 @@ pub struct EntityResult {
 pub enum EntityResultSource {
     Pending,
     Chain,
+}
+
+pub(crate) fn result_hasher() -> impl std::hash::Hasher {
+    // TODO: Switch to a guaranteed deterministic lightweight hasher
+    DefaultHasher::new()
 }
 
 #[cfg(test)]

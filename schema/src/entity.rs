@@ -22,7 +22,7 @@ pub type TraitIdRef = str;
 /// Traits can also represent relationship.
 ///   Ex: a "Child" trait can be used to add an entity into a collection
 ///
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(PartialEq, Serialize, Deserialize, Debug)]
 pub struct Entity {
     pub id: EntityId,
     pub traits: Vec<Trait>,
@@ -909,6 +909,84 @@ mod tests {
         assert_eq!(email.id(), "id123");
         assert_eq!(email.creation_date(), &creation_date);
         assert_eq!(email.modification_date(), &modification_date);
+
+        Ok(())
+    }
+
+    #[test]
+    fn struct_equality() -> Result<(), failure::Error> {
+        let schema = crate::test_schema::create();
+
+        let now = std::time::SystemTime::now();
+        let chrono_now = DateTime::<Utc>::from(now);
+
+        let strt = StructBuilder::new(&schema, "exocore", "struct1")?.build()?;
+
+        let value1 = StructBuilder::new(&schema, "exocore", "struct1")?
+            .set("string_field", "string_value")
+            .set("int_field", 1234)
+            .set("date_field", chrono_now)
+            .set("struct_field", strt.clone())
+            .build()?;
+
+        let value1_p = StructBuilder::new(&schema, "exocore", "struct1")?
+            .set("string_field", "string_value")
+            .set("int_field", 1234)
+            .set("date_field", chrono_now)
+            .set("struct_field", strt.clone())
+            .build()?;
+
+        let value2 = StructBuilder::new(&schema, "exocore", "struct1")?
+            .set("string_field", "somediff")
+            .set("int_field", 1234)
+            .set("date_field", chrono_now)
+            .set("struct_field", strt.clone())
+            .build()?;
+
+        assert_eq!(value1, value1_p);
+        assert_ne!(value2, value1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn trait_equality() -> Result<(), failure::Error> {
+        let schema = crate::test_schema::create();
+
+        let now = std::time::SystemTime::now();
+        let chrono_now = DateTime::<Utc>::from(now);
+
+        let strt = StructBuilder::new(&schema, "exocore", "struct1")?.build()?;
+
+        let value1 = TraitBuilder::new(&schema, "exocore", "trait1")?
+            .set_creation_date(now)
+            .set_modification_date(now)
+            .set("string_field", "string_value")
+            .set("int_field", 1234)
+            .set("date_field", chrono_now)
+            .set("struct_field", strt.clone())
+            .build()?;
+
+        let value1_p = TraitBuilder::new(&schema, "exocore", "trait1")?
+            .set_creation_date(now)
+            .set_modification_date(now)
+            .set("string_field", "string_value")
+            .set("int_field", 1234)
+            .set("date_field", chrono_now)
+            .set("struct_field", strt.clone())
+            .build()?;
+
+        let value2 = TraitBuilder::new(&schema, "exocore", "trait1")?
+            .set_creation_date(now)
+            .set_modification_date(now)
+            .set("string_field", "somediff")
+            .set("int_field", 1234)
+            .set("date_field", chrono_now)
+            .set("struct_field", strt.clone())
+            .build()?;
+
+        assert_eq!(value1, value1_p);
+        assert_ne!(value2, value1);
 
         Ok(())
     }

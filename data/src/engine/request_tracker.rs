@@ -1,4 +1,5 @@
 use exocore_common::time::{Clock, Instant};
+use exocore_common::utils::backoff::{BackoffCalculator, BackoffConfig};
 use std::time::Duration;
 
 ///
@@ -6,11 +7,10 @@ use std::time::Duration;
 ///
 pub struct RequestTracker {
     clock: Clock,
-    config: RequestTrackerConfig,
+    backoff_calculator: BackoffCalculator,
 
     last_request_send: Option<Instant>,
     last_response_receive: Option<Instant>,
-    response_failure_count: usize,
 
     // next can_send_request() will return true
     force_next_request: Option<bool>,
@@ -18,13 +18,23 @@ pub struct RequestTracker {
 
 impl RequestTracker {
     pub fn new_with_clock(clock: Clock, config: RequestTrackerConfig) -> RequestTracker {
+        let backoff_calculator = BackoffCalculator::new(
+            clock.clone(),
+            BackoffConfig {
+                normal_constant: config.min_interval,
+                failure_constant: config.min_interval,
+                failure_exp_base: 2.0,
+                failure_exp_multiplier: Duration::from_secs(5),
+                failure_maximum: config.max_interval,
+            },
+        );
+
         RequestTracker {
             clock,
-            config,
+            backoff_calculator,
 
             last_request_send: None,
             last_response_receive: None,
-            response_failure_count: 0,
 
             force_next_request: None,
         }
@@ -36,7 +46,7 @@ impl RequestTracker {
 
     pub fn set_last_responded_now(&mut self) {
         self.last_response_receive = Some(self.clock.instant());
-        self.response_failure_count = 0;
+        self.backoff_calculator.reset();
     }
 
     pub fn can_send_request(&mut self) -> bool {
@@ -44,14 +54,13 @@ impl RequestTracker {
             return true;
         }
 
-        let next_request_interval = self.next_request_interval();
         let should_send_request = self.last_request_send.map_or(true, |send_time| {
-            (self.clock.instant() - send_time) >= next_request_interval
+            (self.clock.instant() - send_time) >= self.backoff_calculator.backoff_duration()
         });
 
         if should_send_request {
             if self.last_request_send.is_some() && !self.has_responded_last_request() {
-                self.response_failure_count += 1;
+                self.backoff_calculator.increment_failure();
             }
 
             true
@@ -67,14 +76,7 @@ impl RequestTracker {
     pub fn reset(&mut self) {
         self.last_request_send = None;
         self.last_response_receive = None;
-        self.response_failure_count = 0;
         self.force_next_request = None;
-    }
-
-    fn next_request_interval(&self) -> Duration {
-        let interval = self.config.base_interval
-            + self.config.base_interval * self.response_failure_count as u32;
-        interval.min(self.config.max_interval)
     }
 
     fn has_responded_last_request(&self) -> bool {
@@ -85,12 +87,14 @@ impl RequestTracker {
     }
 
     pub fn response_failure_count(&self) -> usize {
-        self.response_failure_count
+        self.backoff_calculator.consecutive_failures_count() as usize
     }
 
     #[cfg(test)]
     pub fn set_response_failure_count(&mut self, count: usize) {
-        self.response_failure_count = count;
+        for _ in 0..count {
+            self.backoff_calculator.increment_failure();
+        }
     }
 }
 
@@ -99,14 +103,14 @@ impl RequestTracker {
 ///
 #[derive(Clone, Copy, Debug)]
 pub struct RequestTrackerConfig {
-    pub base_interval: Duration,
+    pub min_interval: Duration,
     pub max_interval: Duration,
 }
 
 impl Default for RequestTrackerConfig {
     fn default() -> Self {
         RequestTrackerConfig {
-            base_interval: Duration::from_secs(5),
+            min_interval: Duration::from_secs(5),
             max_interval: Duration::from_secs(30),
         }
     }
@@ -135,7 +139,7 @@ mod tests {
         mock_clock.set_fixed_instant(Instant::now() + Duration::from_millis(5001));
         assert!(tracker.can_send_request());
         assert!(!tracker.has_responded_last_request());
-        assert_eq!(tracker.response_failure_count, 1);
+        assert_eq!(tracker.response_failure_count(), 1);
     }
 
     #[test]
@@ -164,32 +168,5 @@ mod tests {
         assert!(!tracker.can_send_request());
         tracker.reset();
         assert!(tracker.can_send_request());
-    }
-
-    #[test]
-    fn test_can_send_request_timeout_backoff() {
-        let mock_clock = Clock::new_fixed_mocked(Instant::now());
-        let mut tracker =
-            RequestTracker::new_with_clock(mock_clock.clone(), RequestTrackerConfig::default());
-
-        tracker.can_send_request();
-        tracker.set_last_send_now();
-        assert_eq!(tracker.next_request_interval(), Duration::from_secs(5));
-
-        mock_clock.add_fixed_instant_duration(Duration::from_millis(5001));
-        tracker.can_send_request();
-        tracker.set_last_send_now();
-        assert_eq!(tracker.next_request_interval(), Duration::from_secs(10));
-
-        for _i in 0..10 {
-            mock_clock.add_fixed_instant_duration(
-                tracker.next_request_interval() + Duration::from_millis(1),
-            );
-            tracker.can_send_request();
-            tracker.set_last_send_now();
-        }
-
-        // should be capped to maximum
-        assert_eq!(tracker.next_request_interval(), Duration::from_secs(30));
     }
 }

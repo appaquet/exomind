@@ -333,8 +333,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             // number of operations in store minus number of operations in blocks ~= non-committed
             let approx_non_committed_operations = pending_blocks
                 .entries_operations_count
-                .checked_sub(pending_blocks.operations_blocks.len())
-                .unwrap_or(0);
+                .saturating_sub(pending_blocks.operations_blocks.len());
 
             if approx_non_committed_operations >= self.config.commit_maximum_pending_store_count {
                 debug!(
@@ -603,8 +602,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // get approx number of operations that are not associated with block
         let approx_non_committed_operations = pending_blocks
             .entries_operations_count
-            .checked_sub(pending_blocks.operations_blocks.len())
-            .unwrap_or(0);
+            .saturating_sub(pending_blocks.operations_blocks.len());
 
         // check for dangling operations, which are operations that are already in the chain but not in
         // any blocks that are in pending store. They probably got re-added to the pending store by a node

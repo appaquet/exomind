@@ -7,6 +7,8 @@ use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::time::{ConsistentTimestamp, Instant};
 
+pub type RendezVousId = ConsistentTimestamp;
+
 /// Message to be sent to one or more other nodes
 pub struct OutMessage {
     pub to: Vec<Node>,
@@ -48,7 +50,7 @@ impl OutMessage {
         self
     }
 
-    pub fn with_rendez_vous_id(mut self, rendez_vous_id: ConsistentTimestamp) -> Self {
+    pub fn with_rendez_vous_id(mut self, rendez_vous_id: RendezVousId) -> Self {
         let mut envelope_message_builder = self.envelope_builder.get_builder();
         envelope_message_builder.set_rendez_vous_id(rendez_vous_id.into());
 
@@ -67,7 +69,7 @@ pub struct InMessage {
     pub from: Node,
     pub cell_id: CellId,
     pub layer: TransportLayer,
-    pub rendez_vous_id: Option<ConsistentTimestamp>,
+    pub rendez_vous_id: Option<RendezVousId>,
     pub message_type: u16,
     pub envelope: TypedCapnpFrame<Vec<u8>, envelope::Owned>,
 }
@@ -120,6 +122,44 @@ impl InMessage {
         Ok(frame)
     }
 
+    pub fn get_reply_token(&self) -> Result<MessageReplyToken, Error> {
+        Ok(MessageReplyToken {
+            from: self.from.clone(),
+            layer: self.layer,
+            rendez_vous_id: self.get_rendez_vous_id()?,
+        })
+    }
+
+    pub fn to_response_message<T>(
+        &self,
+        cell: &Cell,
+        frame: CapnpFrameBuilder<T>,
+    ) -> Result<OutMessage, Error>
+    where
+        T: for<'a> MessageType<'a>,
+    {
+        let reply_token = self.get_reply_token()?;
+        reply_token.to_response_message(cell, frame)
+    }
+
+    fn get_rendez_vous_id(&self) -> Result<RendezVousId, Error> {
+        self.rendez_vous_id.ok_or_else(|| {
+            Error::Other(format!(
+                "Tried to respond to an InMessage without a follow id (message_type={} layer={:?})",
+                self.message_type, self.layer
+            ))
+        })
+    }
+}
+
+#[derive(Clone)]
+pub struct MessageReplyToken {
+    from: Node,
+    layer: TransportLayer,
+    rendez_vous_id: RendezVousId,
+}
+
+impl MessageReplyToken {
     pub fn to_response_message<T>(
         &self,
         cell: &Cell,
@@ -130,14 +170,6 @@ impl InMessage {
     {
         let out_message = OutMessage::from_framed_message(cell, self.layer, frame)?
             .with_to_node(self.from.clone());
-
-        let rendez_vous_id = self.rendez_vous_id.ok_or_else(|| {
-            Error::Other(format!(
-                "Tried to respond to an InMessage without a follow id (message_type={} layer={:?})",
-                self.message_type, self.layer
-            ))
-        })?;
-
-        Ok(out_message.with_rendez_vous_id(rendez_vous_id))
+        Ok(out_message.with_rendez_vous_id(self.rendez_vous_id))
     }
 }

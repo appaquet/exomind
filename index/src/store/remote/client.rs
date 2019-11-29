@@ -1,16 +1,20 @@
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
-use crate::query::{Query, QueryResult};
-use crate::store::{AsyncResult, AsyncStore};
+use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
+use crate::store::{AsyncResult, AsyncStore, ResultStream};
 use exocore_common::cell::Cell;
+use exocore_common::framing::CapnpFrameBuilder;
 use exocore_common::node::Node;
-use exocore_common::protos::index_transport_capnp::{mutation_response, query_response};
+use exocore_common::protos::index_transport_capnp::{
+    mutation_response, query_response, unwatch_query_request, watched_query_response,
+};
 use exocore_common::protos::MessageType;
 use exocore_common::time::Instant;
 use exocore_common::time::{Clock, ConsistentTimestamp};
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
+use exocore_common::utils::futures::spawn_future;
 use exocore_schema::schema::Schema;
 use exocore_transport::{
     InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
@@ -21,44 +25,34 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
 
-// TODO: To be moved https://github.com/appaquet/exocore/issues/123
-pub type FutureSpawner = Box<dyn Fn(Box<dyn Future<Item = (), Error = ()> + Send>) + Send>;
-
-///
-/// Configuration for remote store
-///
 #[derive(Debug, Clone, Copy)]
-pub struct StoreConfiguration {
-    /// Duration before considering query has timed out if not responded
+pub struct ClientConfiguration {
     pub query_timeout: Duration,
-
-    /// Duration before considering mutation has timed out if not responded
     pub mutation_timeout: Duration,
-
-    /// Interval at which we should check for pending queries and mutations timeout
-    pub timeout_check_interval: Duration,
+    pub management_interval: Duration,
+    pub watched_queries_register_interval: Duration,
+    pub watched_query_channel_size: usize,
 }
 
-impl Default for StoreConfiguration {
+impl Default for ClientConfiguration {
     fn default() -> Self {
-        StoreConfiguration {
+        ClientConfiguration {
             query_timeout: Duration::from_secs(10),
             mutation_timeout: Duration::from_secs(5),
-            timeout_check_interval: Duration::from_millis(100),
+            watched_queries_register_interval: Duration::from_secs(10),
+            management_interval: Duration::from_millis(100),
+            watched_query_channel_size: 1000,
         }
     }
 }
 
-///
 /// This implementation of the AsyncStore allow sending all queries and mutations to
-/// a remote node's local store.
-///
-pub struct RemoteStore<T>
+/// a remote node's local store running the `Server` component.
+pub struct Client<T>
 where
     T: TransportHandle,
 {
-    config: StoreConfiguration,
-    future_spawner: FutureSpawner,
+    config: ClientConfiguration,
     start_notifier: CompletionNotifier<(), Error>,
     started: bool,
     inner: Arc<RwLock<Inner>>,
@@ -66,19 +60,18 @@ where
     stop_listener: CompletionListener<(), Error>,
 }
 
-impl<T> RemoteStore<T>
+impl<T> Client<T>
 where
     T: TransportHandle,
 {
     pub fn new(
-        config: StoreConfiguration,
+        config: ClientConfiguration,
         cell: Cell,
         clock: Clock,
         schema: Arc<Schema>,
         transport_handle: T,
         index_node: Node,
-        future_spawner: FutureSpawner,
-    ) -> Result<RemoteStore<T>, Error> {
+    ) -> Result<Client<T>, Error> {
         let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
         let start_notifier = CompletionNotifier::new();
 
@@ -90,13 +83,13 @@ where
             transport_out: None,
             index_node,
             pending_queries: HashMap::new(),
+            watched_queries: HashMap::new(),
             pending_mutations: HashMap::new(),
             stop_notifier,
         }));
 
-        Ok(RemoteStore {
+        Ok(Client {
             config,
-            future_spawner,
             start_notifier,
             started: false,
             inner,
@@ -105,12 +98,12 @@ where
         })
     }
 
-    pub fn get_handle(&self) -> Result<StoreHandle, Error> {
+    pub fn get_handle(&self) -> Result<ClientHandle, Error> {
         let start_listener = self
             .start_notifier
             .get_listener()
             .expect("Couldn't get a listener on start notifier");
-        Ok(StoreHandle {
+        Ok(ClientHandle {
             start_listener,
             inner: Arc::downgrade(&self.inner),
         })
@@ -126,17 +119,17 @@ where
 
         // send outgoing messages to transport
         let (out_sender, out_receiver) = mpsc::unbounded();
-        (self.future_spawner)(Box::new(
+        spawn_future(
             out_receiver
                 .forward(transport_handle.get_sink().sink_map_err(|_err| ()))
                 .map(|_| ()),
-        ));
+        );
         inner.transport_out = Some(out_sender);
 
         // handle incoming messages
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        (self.future_spawner)(Box::new(
+        spawn_future(
             transport_handle
                 .get_stream()
                 .map_err(|err| Error::Fatal(format!("Error in incoming transport stream: {}", err)))
@@ -161,12 +154,12 @@ where
                 .map_err(move |err| {
                     Inner::notify_stop("incoming transport stream", &weak_inner2, Err(err));
                 }),
-        ));
+        );
 
         // schedule transport handle
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        (self.future_spawner)(Box::new(
+        spawn_future(
             transport_handle
                 .map(move |_| {
                     info!("Transport is done");
@@ -175,19 +168,19 @@ where
                 .map_err(move |err| {
                     Inner::notify_stop("transport error", &weak_inner2, Err(err.into()));
                 }),
-        ));
+        );
 
-        // schedule query & mutation requests timeout checker
+        // management timer that checks for timed out queries & register watched queries
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        (self.future_spawner)(Box::new(
-            wasm_timer::Interval::new_interval(self.config.timeout_check_interval)
-                .map_err(|err| Error::Fatal(format!("Timer error: {}", err)))
-                .for_each(move |_| Self::check_requests_timout(&weak_inner1))
+        spawn_future(
+            wasm_timer::Interval::new_interval(self.config.management_interval)
+                .map_err(|err| Error::Fatal(format!("Management timer error: {}", err)))
+                .for_each(move |_| Self::management_timer_process(&weak_inner1))
                 .map_err(move |err| {
-                    Inner::notify_stop("timeout check error", &weak_inner2, Err(err));
+                    Inner::notify_stop("management timer error", &weak_inner2, Err(err));
                 }),
-        ));
+        );
 
         self.start_notifier.complete(Ok(()));
         Ok(())
@@ -197,14 +190,14 @@ where
         weak_inner: &Weak<RwLock<Inner>>,
         in_message: Box<InMessage>,
     ) -> Result<(), Error> {
-        let inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
+        let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let mut inner = inner.write()?;
 
         let request_id = if let Some(rendez_vous_id) = in_message.rendez_vous_id {
             rendez_vous_id
         } else {
             return Err(Error::Other(format!(
-                "Got an InMessage without a follow id (type={:?} from={:?})",
+                "Got an InMessage without a rendez_vous_id (type={:?} from={:?})",
                 in_message.message_type, in_message.from
             )));
         };
@@ -220,9 +213,11 @@ where
                     )));
                 }
             }
-            Ok(IncomingMessage::QueryResponse(query)) => {
+            Ok(IncomingMessage::QueryResponse(result)) => {
                 if let Some(pending_request) = inner.pending_queries.remove(&request_id) {
-                    let _ = pending_request.result_sender.send(Ok(query));
+                    let _ = pending_request.result_sender.send(Ok(result));
+                } else if let Some(watched_query) = inner.watched_queries.get_mut(&request_id) {
+                    let _ = watched_query.result_sender.try_send(Ok(result));
                 } else {
                     return Err(Error::Other(format!(
                         "Couldn't find pending query for query response (request_id={:?} type={:?} from={:?})",
@@ -233,6 +228,8 @@ where
             Err(err) => {
                 if let Some(pending_request) = inner.pending_mutations.remove(&request_id) {
                     let _ = pending_request.result_sender.send(Err(err));
+                } else if let Some(mut watched_query) = inner.watched_queries.remove(&request_id) {
+                    let _ = watched_query.result_sender.try_send(Err(err));
                 } else if let Some(pending_request) = inner.pending_queries.remove(&request_id) {
                     let _ = pending_request.result_sender.send(Err(err));
                 }
@@ -242,8 +239,8 @@ where
         Ok(())
     }
 
-    fn check_requests_timout(weak_inner: &Weak<RwLock<Inner>>) -> Result<(), Error> {
-        let inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    fn management_timer_process(weak_inner: &Weak<RwLock<Inner>>) -> Result<(), Error> {
+        let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let mut inner = inner.write()?;
 
         let query_timeout = inner.config.query_timeout;
@@ -252,11 +249,13 @@ where
         let mutation_timeout = inner.config.mutation_timeout;
         Inner::check_map_requests_timeouts(&mut inner.pending_mutations, mutation_timeout);
 
+        inner.send_watched_queries_keepalive();
+
         Ok(())
     }
 }
 
-impl<T> Future for RemoteStore<T>
+impl<T> Future for Client<T>
 where
     T: TransportHandle,
 {
@@ -277,17 +276,15 @@ where
     }
 }
 
-///
-/// Inner instance of the store
-///
 struct Inner {
-    config: StoreConfiguration,
+    config: ClientConfiguration,
     cell: Cell,
     clock: Clock,
     schema: Arc<Schema>,
     transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
     index_node: Node,
     pending_queries: HashMap<ConsistentTimestamp, PendingRequest<QueryResult>>,
+    watched_queries: HashMap<ConsistentTimestamp, WatchedQueryRequest>,
     pending_mutations: HashMap<ConsistentTimestamp, PendingRequest<MutationResult>>,
     stop_notifier: CompletionNotifier<(), Error>,
 }
@@ -327,7 +324,7 @@ impl Inner {
         let (result_sender, receiver) = futures::oneshot();
 
         let request_id = self.clock.consistent_time(self.cell.local_node());
-        let request_frame = query.to_query_request_frame(&self.schema)?;
+        let request_frame = query.to_request_frame(&self.schema)?;
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
                 .with_to_node(self.index_node.clone())
@@ -347,6 +344,53 @@ impl Inner {
         Ok(receiver)
     }
 
+    fn watch_query(
+        &mut self,
+        watched_query: WatchedQuery,
+    ) -> Result<
+        (
+            ConsistentTimestamp,
+            mpsc::Receiver<Result<QueryResult, Error>>,
+        ),
+        Error,
+    > {
+        let (result_sender, receiver) = mpsc::channel(self.config.watched_query_channel_size);
+        let request_id = self.clock.consistent_time(self.cell.local_node());
+        let watched_query = WatchedQueryRequest {
+            request_id,
+            result_sender,
+            query: watched_query,
+            last_register: Instant::now(),
+        };
+
+        self.send_watch_query(&watched_query)?;
+        self.watched_queries.insert(request_id, watched_query);
+
+        Ok((request_id, receiver))
+    }
+
+    fn send_watch_query(&self, watched_query: &WatchedQueryRequest) -> Result<(), Error> {
+        let request_frame = watched_query.query.to_request_frame(&self.schema)?;
+        let message =
+            OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
+                .with_to_node(self.index_node.clone())
+                .with_rendez_vous_id(watched_query.request_id);
+
+        self.send_message(message)
+    }
+
+    fn send_unwatch_query(&self, token: WatchToken) -> Result<(), Error> {
+        let mut frame_builder = CapnpFrameBuilder::<unwatch_query_request::Owned>::new();
+        let mut message_builder = frame_builder.get_builder();
+        message_builder.set_token(token.0);
+
+        let message =
+            OutMessage::from_framed_message(&self.cell, TransportLayer::Index, frame_builder)?
+                .with_to_node(self.index_node.clone());
+
+        self.send_message(message)
+    }
+
     fn check_map_requests_timeouts<T>(
         requests: &mut HashMap<ConsistentTimestamp, PendingRequest<T>>,
         timeout: Duration,
@@ -364,6 +408,25 @@ impl Inner {
                     .result_sender
                     .send(Err(Error::Timeout(request.send_time.elapsed(), timeout)));
             }
+        }
+    }
+
+    fn send_watched_queries_keepalive(&mut self) {
+        let register_interval = self.config.watched_queries_register_interval;
+
+        let mut sent_queries = Vec::new();
+        for (token, query) in &self.watched_queries {
+            if query.last_register.elapsed() > register_interval {
+                if let Err(err) = self.send_watch_query(query) {
+                    error!("Couldn't send watch query: {}", err);
+                }
+                sent_queries.push(*token);
+            }
+        }
+
+        for token in &sent_queries {
+            let query = self.watched_queries.get_mut(token).unwrap();
+            query.last_register = Instant::now();
         }
     }
 
@@ -412,6 +475,7 @@ enum IncomingMessage {
     MutationResponse(MutationResult),
     QueryResponse(QueryResult),
 }
+
 impl IncomingMessage {
     fn parse_incoming_message(
         in_message: &InMessage,
@@ -424,6 +488,11 @@ impl IncomingMessage {
                 Ok(IncomingMessage::MutationResponse(mutation_result))
             }
             <query_response::Owned as MessageType>::MESSAGE_TYPE => {
+                let query_frame = in_message.get_data_as_framed_message()?;
+                let query_result = QueryResult::from_query_frame(schema, query_frame)?;
+                Ok(IncomingMessage::QueryResponse(query_result))
+            }
+            <watched_query_response::Owned as MessageType>::MESSAGE_TYPE => {
                 let query_frame = in_message.get_data_as_framed_message()?;
                 let query_result = QueryResult::from_query_frame(schema, query_frame)?;
                 Ok(IncomingMessage::QueryResponse(query_result))
@@ -445,17 +514,23 @@ struct PendingRequest<T> {
     send_time: Instant,
 }
 
+struct WatchedQueryRequest {
+    request_id: ConsistentTimestamp,
+    query: WatchedQuery,
+    result_sender: mpsc::Sender<Result<QueryResult, Error>>,
+    last_register: Instant,
+}
+
 ///
 /// Async handle to the store
 ///
-pub struct StoreHandle {
+pub struct ClientHandle {
     start_listener: CompletionListener<(), Error>,
     inner: Weak<RwLock<Inner>>,
 }
 
-impl StoreHandle {
+impl ClientHandle {
     pub fn on_start(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
-        // TODO: Should only return result
         Ok(self
             .start_listener
             .try_clone()
@@ -467,11 +542,11 @@ impl StoreHandle {
     }
 }
 
-impl AsyncStore for StoreHandle {
+impl AsyncStore for ClientHandle {
     fn mutate(&self, mutation: Mutation) -> AsyncResult<MutationResult> {
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
-            None => return Box::new(futures::failed(Error::InnerUpgrade)),
+            None => return Box::new(futures::failed(Error::Dropped)),
         };
         let mut inner = match inner.write() {
             Ok(inner) => inner,
@@ -491,7 +566,7 @@ impl AsyncStore for StoreHandle {
     fn query(&self, query: Query) -> AsyncResult<QueryResult> {
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
-            None => return Box::new(futures::failed(Error::InnerUpgrade)),
+            None => return Box::new(futures::failed(Error::Dropped)),
         };
         let mut inner = match inner.write() {
             Ok(inner) => inner,
@@ -507,187 +582,62 @@ impl AsyncStore for StoreHandle {
             Err(err) => Box::new(futures::failed(err)),
         }
     }
+
+    fn watched_query(&self, query: WatchedQuery) -> ResultStream<QueryResult> {
+        let inner = match self.inner.upgrade() {
+            Some(inner) => inner,
+            None => return Box::new(futures::stream::once(Err(Error::Dropped))),
+        };
+        let mut inner = match inner.write() {
+            Ok(inner) => inner,
+            Err(err) => return Box::new(futures::stream::once(Err(err.into()))),
+        };
+
+        let token = query.token;
+        match inner.watch_query(query) {
+            Ok((request_id, receiver)) => Box::new(WatchedQueryStream {
+                inner: self.inner.clone(),
+                token,
+                request_id,
+                receiver,
+            }),
+            Err(err) => Box::new(futures::stream::once(Err(err))),
+        }
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::mutation::TestFailMutation;
-    use crate::store::local::store::tests::TestLocalStore;
-    use exocore_common::node::LocalNode;
-    use exocore_common::tests_utils::expect_eventually;
-    use exocore_transport::mock::MockTransportHandle;
+struct WatchedQueryStream {
+    inner: Weak<RwLock<Inner>>,
+    token: WatchToken,
+    request_id: ConsistentTimestamp,
+    receiver: mpsc::Receiver<Result<QueryResult, Error>>,
+}
 
-    #[test]
-    fn mutation_and_query() -> Result<(), failure::Error> {
-        let mut test_remote_store = TestRemoteStore::new()?;
-        test_remote_store.start_local()?;
-        test_remote_store.start_remote()?;
+impl Stream for WatchedQueryStream {
+    type Item = QueryResult;
+    type Error = Error;
 
-        let mutation = test_remote_store
-            .local_store
-            .create_put_contact_mutation("entity1", "trait1", "hello");
-        test_remote_store.send_and_await_mutation(mutation)?;
-
-        expect_eventually(|| {
-            let query = Query::match_text("hello");
-            let results = test_remote_store.send_and_await_query(query).unwrap();
-            results.results.len() == 1
-        });
-
-        Ok(())
-    }
-
-    #[test]
-    fn mutation_error_propagation() -> Result<(), failure::Error> {
-        let mut test_remote_store = TestRemoteStore::new()?;
-        test_remote_store.start_local()?;
-        test_remote_store.start_remote()?;
-
-        let mutation = Mutation::TestFail(TestFailMutation {});
-        let result = test_remote_store.send_and_await_mutation(mutation);
-        assert!(result.is_err());
-
-        Ok(())
-    }
-
-    #[test]
-    fn query_error_propagation() -> Result<(), failure::Error> {
-        let mut test_remote_store = TestRemoteStore::new()?;
-        test_remote_store.start_local()?;
-        test_remote_store.start_remote()?;
-
-        let mutation = test_remote_store
-            .local_store
-            .create_put_contact_mutation("entity1", "trait1", "hello");
-        test_remote_store.send_and_await_mutation(mutation)?;
-
-        let query = Query::test_fail();
-        let result = test_remote_store.send_and_await_query(query);
-        assert!(result.is_err());
-
-        Ok(())
-    }
-
-    #[test]
-    fn query_timeout() -> Result<(), failure::Error> {
-        let config = StoreConfiguration {
-            query_timeout: Duration::from_millis(500),
-            ..StoreConfiguration::default()
-        };
-
-        let mut test_remote_store = TestRemoteStore::new_with_configuration(config)?;
-
-        // only start remote, so local won't answer and it should timeout
-        test_remote_store.start_remote()?;
-
-        let query = Query::match_text("hello");
-        let result = test_remote_store.send_and_await_query(query);
-        assert!(result.is_err());
-
-        Ok(())
-    }
-
-    #[test]
-    fn mutation_timeout() -> Result<(), failure::Error> {
-        let config = StoreConfiguration {
-            mutation_timeout: Duration::from_millis(500),
-            ..StoreConfiguration::default()
-        };
-
-        let mut test_remote_store = TestRemoteStore::new_with_configuration(config)?;
-
-        // only start remote, so local won't answer and it should timeout
-        test_remote_store.start_remote()?;
-
-        let mutation = test_remote_store
-            .local_store
-            .create_put_contact_mutation("entity1", "trait1", "hello");
-        let result = test_remote_store.send_and_await_mutation(mutation);
-        assert!(result.is_err());
-
-        Ok(())
-    }
-
-    struct TestRemoteStore {
-        local_store: TestLocalStore,
-        remote_store: Option<RemoteStore<MockTransportHandle>>,
-        remote_handle: StoreHandle,
-    }
-
-    impl TestRemoteStore {
-        fn new() -> Result<TestRemoteStore, failure::Error> {
-            let config = StoreConfiguration::default();
-            Self::new_with_configuration(config)
-        }
-
-        fn new_with_configuration(
-            config: StoreConfiguration,
-        ) -> Result<TestRemoteStore, failure::Error> {
-            let local_store = TestLocalStore::new()?;
-
-            let local_node = LocalNode::generate();
-            let remote_store = RemoteStore::new(
-                config,
-                local_store.cluster.cells[0].cell().clone(),
-                local_store.cluster.clocks[0].clone(),
-                local_store.schema.clone(),
-                local_store
-                    .cluster
-                    .transport_hub
-                    .get_transport(local_node, TransportLayer::Index),
-                local_store.cluster.nodes[0].node().clone(),
-                Box::new(tokio_future_spawner),
-            )?;
-
-            let remote_handle = remote_store.get_handle()?;
-
-            Ok(TestRemoteStore {
-                local_store,
-
-                remote_store: Some(remote_store),
-                remote_handle,
-            })
-        }
-
-        fn start_local(&mut self) -> Result<(), failure::Error> {
-            self.local_store.start_store()?;
-            Ok(())
-        }
-
-        fn start_remote(&mut self) -> Result<(), failure::Error> {
-            let remote_store = self.remote_store.take().unwrap();
-            self.local_store
-                .cluster
-                .runtime
-                .spawn(remote_store.map_err(|err| {
-                    error!("Error spawning remote store: {}", err);
-                }));
-
-            self.local_store
-                .cluster
-                .runtime
-                .block_on(self.remote_handle.on_start()?)?;
-
-            Ok(())
-        }
-
-        fn send_and_await_mutation(&mut self, mutation: Mutation) -> Result<MutationResult, Error> {
-            self.local_store
-                .cluster
-                .runtime
-                .block_on(self.remote_handle.mutate(mutation))
-        }
-
-        fn send_and_await_query(&mut self, query: Query) -> Result<QueryResult, Error> {
-            self.local_store
-                .cluster
-                .runtime
-                .block_on(self.remote_handle.query(query))
+    fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
+        let res = self.receiver.poll();
+        match res {
+            Ok(Async::Ready(Some(Ok(result)))) => Ok(Async::Ready(Some(result))),
+            Ok(Async::Ready(None)) => Ok(Async::Ready(None)),
+            Ok(Async::Ready(Some(Err(err)))) => Err(err),
+            Ok(Async::NotReady) => Ok(Async::NotReady),
+            Err(_) => Err(Error::Other(
+                "Error polling watch query channel".to_string(),
+            )),
         }
     }
+}
 
-    fn tokio_future_spawner(future: Box<dyn Future<Item = (), Error = ()> + Send>) {
-        tokio::spawn(future);
+impl Drop for WatchedQueryStream {
+    fn drop(&mut self) {
+        if let Some(inner) = self.inner.upgrade() {
+            if let Ok(mut inner) = inner.write() {
+                inner.watched_queries.remove(&self.request_id);
+                let _ = inner.send_unwatch_query(self.token);
+            }
+        }
     }
 }

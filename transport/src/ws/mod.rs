@@ -13,6 +13,7 @@ use exocore_common::protos::common_capnp::envelope;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
+use exocore_common::utils::futures::spawn_future;
 use futures::prelude::*;
 use futures::sync::mpsc;
 use futures::MapErr;
@@ -155,7 +156,7 @@ impl WebsocketTransport {
                         },
                     )
                 });
-            tokio::spawn(stream_future);
+            spawn_future(stream_future);
         }
 
         Ok(())
@@ -179,7 +180,7 @@ impl WebsocketTransport {
 
                 if !upgrade.protocols().iter().any(|s| s == WEBSOCKET_PROTOCOL) {
                     debug!("Rejecting connection {} with wrong connection", addr);
-                    tokio::spawn(upgrade.reject().map(|_| ()).map_err(|_| ()));
+                    spawn_future(upgrade.reject().map(|_| ()).map_err(|_| ()));
                     return Ok(());
                 }
 
@@ -197,7 +198,7 @@ impl WebsocketTransport {
                     .map_err(|err| {
                         error!("Error in incoming connection accept: {}", err);
                     });
-                tokio::spawn(client_connection);
+                spawn_future(client_connection);
 
                 Ok(())
             })
@@ -214,7 +215,7 @@ impl WebsocketTransport {
             .stop_listener
             .try_clone()
             .expect("Couldn't clone stop listener");
-        tokio::spawn(
+        spawn_future(
             incoming_stream
                 .select2(stop_listener)
                 .map(|_| ())
@@ -257,7 +258,7 @@ impl WebsocketTransport {
                     let _ = Self::close_errored_connection(&weak_inner, &temporary_node);
                     Error::Other("Error in sink forward to connection".to_string())
                 });
-            tokio::spawn(outgoing.map(|_| ()).map_err(|_| ()));
+            spawn_future(outgoing.map(|_| ()).map_err(|_| ()));
         }
 
         // handle incoming messages from connection
@@ -282,7 +283,7 @@ impl WebsocketTransport {
                     let _ = Self::close_errored_connection(&weak_inner2, &temporary_node2);
                     Error::Other(format!("Error in stream from connection: {}", err))
                 });
-            tokio::spawn(incoming.map(|_| ()).map_err(|_| ()));
+            spawn_future(incoming.map(|_| ()).map_err(|_| ()));
         }
 
         Ok(())
@@ -452,6 +453,7 @@ mod tests {
     use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::expect_eventually;
+    use exocore_common::utils::futures::spawn_future;
     use std::sync::Mutex;
     use tokio::runtime::Runtime;
 
@@ -579,7 +581,7 @@ mod tests {
                             }))
                             .map(|_| ())
                             .map_err(|_| ());
-                        tokio::spawn(sink_future);
+                        spawn_future(sink_future);
 
                         let stream_future = stream
                             .for_each(move |msg| {
@@ -605,7 +607,7 @@ mod tests {
                             })
                             .map(|_| ())
                             .map_err(|_| ());
-                        tokio::spawn(stream_future);
+                        spawn_future(stream_future);
 
                         Ok(())
                     })

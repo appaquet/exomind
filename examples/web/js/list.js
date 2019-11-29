@@ -44,6 +44,8 @@ export default class List extends React.Component {
         await result.ready();
 
         let results = result.to_json();
+        result.free();
+
         this.setState({
             entities: results.results.map(result => {
                 return result.entity;

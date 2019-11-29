@@ -1,6 +1,6 @@
 use futures::prelude::*;
-use libp2p_core::{ConnectedPoint, Multiaddr, PeerId};
-use libp2p_swarm::{
+use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
+use libp2p::swarm::{
     NetworkBehaviour, NetworkBehaviourAction, OneShotHandler, PollParameters, ProtocolsHandler,
 };
 use std::collections::{HashMap, VecDeque};

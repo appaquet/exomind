@@ -5,7 +5,7 @@ use wasm_bindgen::__rt::std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 use exocore_index::mutation::Mutation;
-use exocore_index::store::remote::StoreHandle;
+use exocore_index::store::remote::ClientHandle;
 use exocore_index::store::AsyncStore;
 use exocore_schema::entity::{Entity, FieldValue, RecordBuilder, TraitBuilder};
 use exocore_schema::schema::Schema;
@@ -16,14 +16,14 @@ use crate::js::into_js_error;
 #[wasm_bindgen]
 pub struct MutationBuilder {
     schema: Arc<Schema>,
-    store_handle: Arc<StoreHandle>,
+    store_handle: Arc<ClientHandle>,
 
     inner: Option<Mutation>,
 }
 
 #[wasm_bindgen]
 impl MutationBuilder {
-    pub(crate) fn new(schema: Arc<Schema>, store_handle: Arc<StoreHandle>) -> MutationBuilder {
+    pub(crate) fn new(schema: Arc<Schema>, store_handle: Arc<ClientHandle>) -> MutationBuilder {
         MutationBuilder {
             schema,
             store_handle,

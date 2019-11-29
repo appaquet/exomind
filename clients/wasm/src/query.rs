@@ -6,7 +6,7 @@ use futures::Future;
 use wasm_bindgen::prelude::*;
 
 use exocore_index::query::Query;
-use exocore_index::store::remote::StoreHandle;
+use exocore_index::store::remote::ClientHandle;
 use exocore_index::store::AsyncStore;
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
@@ -16,13 +16,13 @@ use crate::js::into_js_error;
 #[wasm_bindgen]
 pub struct QueryBuilder {
     schema: Arc<Schema>,
-    store_handle: Arc<StoreHandle>,
+    store_handle: Arc<ClientHandle>,
     inner: Option<Query>,
 }
 
 #[wasm_bindgen]
 impl QueryBuilder {
-    pub(crate) fn new(schema: Arc<Schema>, store_handle: Arc<StoreHandle>) -> QueryBuilder {
+    pub(crate) fn new(schema: Arc<Schema>, store_handle: Arc<ClientHandle>) -> QueryBuilder {
         QueryBuilder {
             schema,
             store_handle,
@@ -87,7 +87,7 @@ impl QueryBuilder {
 #[wasm_bindgen]
 pub struct QueryResult {
     schema: Arc<Schema>,
-    _store_handle: Arc<StoreHandle>,
+    _store_handle: Arc<ClientHandle>,
 
     promise: js_sys::Promise,
     inner:

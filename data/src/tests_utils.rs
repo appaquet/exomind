@@ -75,7 +75,7 @@ impl DataTestCluster {
                 manager_timer_interval: Duration::from_millis(20),
                 pending_synchronizer_config: PendingSyncConfig {
                     request_tracker_config: RequestTrackerConfig {
-                        base_interval: Duration::from_millis(200),
+                        min_interval: Duration::from_millis(200),
                         max_interval: Duration::from_millis(1000),
                     },
                     ..PendingSyncConfig::default()

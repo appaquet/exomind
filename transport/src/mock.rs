@@ -16,6 +16,7 @@ use exocore_common::utils::completion_notifier::{CompletionListener, CompletionN
 
 use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::{Error, InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer};
+use exocore_common::utils::futures::spawn_future;
 
 const CHANNELS_SIZE: usize = 1000;
 
@@ -124,7 +125,7 @@ impl Future for MockTransportHandle {
             let layer = self.layer;
             let nodes_sink_weak = Weak::clone(&self.nodes_sink);
             let completion_handle = self.completion_notifier.clone();
-            tokio::spawn(outgoing_stream.for_each(move |event| {
+            spawn_future(outgoing_stream.for_each(move |event| {
                 match event {
                     OutEvent::Message(msg) => {
                         let nodes_sink = nodes_sink_weak.upgrade().ok_or_else(|| {

@@ -39,6 +39,7 @@ pub(crate) mod testing;
 pub use chain_sync::ChainSyncConfig;
 pub use commit_manager::CommitManagerConfig;
 pub use error::Error;
+use exocore_common::utils::futures::spawn_future;
 pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
 pub use pending_sync::PendingSyncConfig;
 pub use request_tracker::RequestTrackerConfig;
@@ -187,7 +188,7 @@ where
             let weak_inner = Arc::downgrade(&self.inner);
             let (transport_out_channel_sender, transport_out_channel_receiver) =
                 mpsc::channel(self.config.to_transport_channel_size);
-            tokio::spawn(
+            spawn_future(
                 transport_out_channel_receiver
                     .map_err(|err| {
                         TransportError::Other(format!(
@@ -214,7 +215,7 @@ where
         {
             let weak_inner1 = Arc::downgrade(&self.inner);
             let weak_inner2 = Arc::downgrade(&self.inner);
-            tokio::spawn(
+            spawn_future(
                 transport_in_stream
                     .map_err(Error::Transport)
                     .for_each(move |event| {
@@ -248,7 +249,7 @@ where
         {
             let weak_inner1 = Arc::downgrade(&self.inner);
             let weak_inner2 = Arc::downgrade(&self.inner);
-            tokio::spawn({
+            spawn_future({
                 Interval::new_interval(self.config.manager_timer_interval)
                     .map_err(|err| Error::Other(format!("Interval error: {}", err)))
                     .for_each(move |_| {
@@ -268,7 +269,7 @@ where
         // schedule transport
         {
             let weak_inner1 = Arc::downgrade(&self.inner);
-            tokio::spawn({
+            spawn_future({
                 transport.map_err(move |err| {
                     Self::handle_spawned_future_error("transport", &weak_inner1, err.into());
                 })

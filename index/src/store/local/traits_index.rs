@@ -369,8 +369,7 @@ impl TraitsIndex {
         let total_results = total_count.load(Ordering::Relaxed);
         let remaining_results = matching_count
             .load(Ordering::Relaxed)
-            .checked_sub(results.len())
-            .unwrap_or(0);
+            .saturating_sub(results.len());
         let next_page = if remaining_results > 0 {
             Some(Self::extract_next_page(&paging, &results))
         } else {
@@ -455,8 +454,7 @@ impl TraitsIndex {
         let total_results = total_count.load(Ordering::Relaxed);
         let remaining_results = matching_count
             .load(Ordering::Relaxed)
-            .checked_sub(results.len())
-            .unwrap_or(0);
+            .saturating_sub(results.len());
         let next_page = if remaining_results > 0 {
             Some(Self::extract_next_page(&paging, &results))
         } else {

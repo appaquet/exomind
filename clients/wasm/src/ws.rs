@@ -18,6 +18,7 @@ use exocore_common::protos::common_capnp::envelope;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
+use exocore_common::utils::futures::spawn_future;
 use exocore_transport::transport::{ConnectionStatus, MpscHandleSink, MpscHandleStream};
 use exocore_transport::{Error, InEvent, InMessage, OutEvent, TransportHandle, TransportLayer};
 
@@ -94,7 +95,8 @@ impl BrowserTransportClient {
                 .out_receiver
                 .take()
                 .expect("InnerHandle's out_receiver was already consumed");
-            wasm_bindgen_futures::spawn_local(
+
+            spawn_future(
                 out_receiver
                     .map_err(|_err| Error::Other("Handle out stream error err".to_string()))
                     .for_each(move |event| {
@@ -137,7 +139,7 @@ impl BrowserTransportClient {
             .map_err(|err| {
                 error!("Error in timer: {}", err.to_string());
             });
-        wasm_bindgen_futures::spawn_local(check_connections);
+        spawn_future(check_connections);
     }
 }
 

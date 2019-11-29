@@ -113,3 +113,15 @@ impl<'a> MessageType<'a> for self::index_transport_capnp::mutation_request::Owne
 impl<'a> MessageType<'a> for self::index_transport_capnp::mutation_response::Owned {
     const MESSAGE_TYPE: u16 = 303;
 }
+
+impl<'a> MessageType<'a> for self::index_transport_capnp::watched_query_request::Owned {
+    const MESSAGE_TYPE: u16 = 304;
+}
+
+impl<'a> MessageType<'a> for self::index_transport_capnp::watched_query_response::Owned {
+    const MESSAGE_TYPE: u16 = 305;
+}
+
+impl<'a> MessageType<'a> for self::index_transport_capnp::unwatch_query_request::Owned {
+    const MESSAGE_TYPE: u16 = 306;
+}

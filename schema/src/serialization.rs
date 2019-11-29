@@ -389,7 +389,7 @@ mod tests {
 
     #[test]
     fn serialize_deserialize_struct() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         let now = std::time::SystemTime::now();
         let chrono_now = DateTime::<Utc>::from(now);
@@ -417,7 +417,7 @@ mod tests {
 
     #[test]
     fn serialize_deserialize_trait() -> Result<(), failure::Error> {
-        let schema = create_test_schema();
+        let schema = crate::test_schema::create();
 
         let now = std::time::SystemTime::now();
         let chrono_now = DateTime::<Utc>::from(now);
@@ -441,53 +441,5 @@ mod tests {
         assert_eq!(trt, value_deser);
 
         Ok(())
-    }
-
-    fn create_test_schema() -> Arc<Schema> {
-        Arc::new(
-            Schema::parse(
-                r#"
-            namespaces:
-              - name: exocore
-                traits:
-                - id: 0
-                  name: trait1
-                  id_field:
-                    field: 0
-                  fields:
-                    - id: 0
-                      name: string_field
-                      type: string
-                    - id: 1
-                      name: int_field
-                      type: int
-                    - id: 2
-                      name: date_field
-                      type: date_time
-                    - id: 3
-                      name: struct_field
-                      type:
-                          struct: 0
-                structs:
-                - id: 0
-                  name: struct1
-                  fields:
-                    - id: 0
-                      name: string_field
-                      type: string
-                    - id: 1
-                      name: int_field
-                      type: int
-                    - id: 2
-                      name: date_field
-                      type: date_time
-                    - id: 3
-                      name: struct_field
-                      type:
-                          struct: 0
-        "#,
-            )
-            .unwrap(),
-        )
     }
 }

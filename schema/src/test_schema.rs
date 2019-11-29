@@ -95,6 +95,24 @@ pub fn create() -> Arc<Schema> {
                     name: title
                     type: string
                     indexed: true
+              - id: 7
+                name: trait1
+                id_field:
+                  field: 0
+                fields:
+                  - id: 0
+                    name: string_field
+                    type: string
+                  - id: 1
+                    name: int_field
+                    type: int
+                  - id: 2
+                    name: date_field
+                    type: date_time
+                  - id: 3
+                    name: struct_field
+                    type:
+                        struct: 1
             structs:
               - id: 0
                 name: email_contact
@@ -107,6 +125,22 @@ pub fn create() -> Arc<Schema> {
                     name: email
                     type: string
                     indexed: true
+              - id: 1
+                name: struct1
+                fields:
+                  - id: 0
+                    name: string_field
+                    type: string
+                  - id: 1
+                    name: int_field
+                    type: int
+                  - id: 2
+                    name: date_field
+                    type: date_time
+                  - id: 3
+                    name: struct_field
+                    type:
+                        struct: 0
 
         "#,
         )

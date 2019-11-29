@@ -6,31 +6,34 @@ use exocore_common::cell::Cell;
 use exocore_common::crypto::keys::PublicKey;
 use exocore_common::node::{LocalNode, Node};
 use exocore_common::time::Clock;
-use exocore_index::store::remote::{RemoteStore, StoreConfiguration, StoreHandle};
+use exocore_common::utils::futures::spawn_future;
+use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_schema::schema::Schema;
 use exocore_transport::{InEvent, TransportHandle, TransportLayer};
 
-use crate::js::js_future_spawner;
 use crate::ws::BrowserTransportClient;
 use exocore_transport::transport::ConnectionStatus;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 #[wasm_bindgen]
 pub struct ExocoreClient {
     _transport: BrowserTransportClient,
-    store_handle: Arc<StoreHandle>,
+    store_handle: Arc<ClientHandle>,
     schema: Arc<Schema>,
+    inner: Arc<Mutex<Inner>>,
 }
 
-#[wasm_bindgen]
-extern "C" {
-    pub fn exocore_client_status(s: &str);
+struct Inner {
+    status_change_callback: Option<js_sys::Function>,
 }
 
 #[wasm_bindgen]
 impl ExocoreClient {
     #[wasm_bindgen(constructor)]
-    pub fn new(url: &str) -> Result<ExocoreClient, JsValue> {
+    pub fn new(
+        url: &str,
+        status_change_callback: Option<js_sys::Function>,
+    ) -> Result<ExocoreClient, JsValue> {
         console_log::init_with_level(Level::Debug).expect("Couldn't init level");
 
         // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
@@ -49,25 +52,24 @@ impl ExocoreClient {
 
         let mut transport = BrowserTransportClient::new(url, remote_node.clone());
         let index_handle = transport.get_handle(cell.clone(), TransportLayer::Index);
-        let remote_store = RemoteStore::new(
-            StoreConfiguration::default(),
+        let remote_store = Client::new(
+            ClientConfiguration::default(),
             cell.clone(),
             clock,
             schema.clone(),
             index_handle,
             remote_node.clone(),
-            Box::new(js_future_spawner),
         )
         .expect("Couldn't create index");
 
         let store_handle = remote_store
             .get_handle()
             .expect("Couldn't get store handle");
-        js_future_spawner(Box::new(remote_store.map_err(|err| {
+        spawn_future(remote_store.map_err(|err| {
             error!("Error starting remote store: {}", err);
-        })));
+        }));
 
-        js_future_spawner(Box::new(
+        spawn_future(
             store_handle
                 .on_start()
                 .unwrap()
@@ -76,11 +78,16 @@ impl ExocoreClient {
                     Ok(())
                 })
                 .map_err(|_err| ()),
-        ));
+        );
+
+        let inner = Arc::new(Mutex::new(Inner {
+            status_change_callback,
+        }));
 
         let mut client_transport_handle =
             transport.get_handle(cell.clone(), TransportLayer::Client);
-        js_future_spawner(Box::new(
+        let inner_clone = inner.clone();
+        spawn_future(
             client_transport_handle
                 .get_stream()
                 .for_each(move |event| {
@@ -91,13 +98,17 @@ impl ExocoreClient {
                             ConnectionStatus::Disconnected => "disconnected",
                         };
 
-                        exocore_client_status(str_status);
+                        let inner = inner_clone.lock().unwrap();
+                        if let Some(func) = &inner.status_change_callback {
+                            func.call1(&JsValue::null(), &JsValue::from_str(str_status))
+                                .unwrap();
+                        }
                     }
 
                     Ok(())
                 })
                 .map_err(|_| ()),
-        ));
+        );
 
         transport.start();
 
@@ -105,6 +116,7 @@ impl ExocoreClient {
             _transport: transport,
             store_handle: Arc::new(store_handle),
             schema,
+            inner,
         })
     }
 

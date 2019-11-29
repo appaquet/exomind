@@ -10,7 +10,7 @@ use exocore_common::crypto::keys::{Keypair, PublicKey};
 use exocore_common::node::{LocalNode, Node};
 use exocore_common::time::Clock;
 use exocore_index::query::Query;
-use exocore_index::store::remote::{RemoteStore, StoreConfiguration, StoreHandle};
+use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_index::store::AsyncStore;
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
@@ -28,7 +28,7 @@ enum Error {
 
 pub struct Context {
     runtime: Runtime,
-    store_handle: StoreHandle,
+    store_handle: ClientHandle,
     schema: Arc<Schema>,
 }
 
@@ -71,15 +71,14 @@ impl Context {
         let store_transport = transport
             .get_handle(cell.clone(), TransportLayer::Index)
             .expect("Couldn't get transport handle for remote index");
-        let remote_store_config = StoreConfiguration::default();
-        let remote_store = RemoteStore::new(
+        let remote_store_config = ClientConfiguration::default();
+        let remote_store = Client::new(
             remote_store_config,
             cell,
             clock,
             schema.clone(),
             store_transport,
             remote_node,
-            Box::new(tokio_future_spawner),
         )
         .expect("Couldn't start remote store");
 
@@ -153,9 +152,4 @@ pub extern "C" fn exocore_send_query(ctx: *mut Context, _query: *const libc::c_c
         }
         Err(err) => println!("got err: {}", err),
     }
-}
-
-// TODO: To be moved https://github.com/appaquet/exocore/issues/123
-fn tokio_future_spawner(future: Box<dyn Future<Item = (), Error = ()> + Send>) {
-    tokio::spawn(future);
 }

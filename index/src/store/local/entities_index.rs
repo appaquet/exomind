@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -10,17 +11,16 @@ use exocore_data::operation::{Operation, OperationId};
 use exocore_data::{chain, pending};
 use exocore_data::{EngineHandle, EngineOperationStatus};
 
-use crate::error::Error;
-use crate::mutation::Mutation;
-use crate::query::*;
-use exocore_schema::entity::{Entity, EntityId, Trait};
-use exocore_schema::schema;
-use exocore_schema::schema::Schema;
-
 use super::traits_index::{
     IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
 };
+use crate::error::Error;
+use crate::mutation::Mutation;
+use crate::query::*;
 use crate::store::local::top_results_iter::RescoredTopResultsIterable;
+use exocore_schema::entity::{Entity, EntityId, Trait};
+use exocore_schema::schema;
+use exocore_schema::schema::Schema;
 
 ///
 /// Configuration of the entities index
@@ -198,9 +198,11 @@ where
                 res1.score >= res2.score
             });
 
+        let mut hasher = result_hasher();
+
         // iterate through results and returning the first N entities
         let mut matched_entities = HashSet::new();
-        let results: Vec<EntityResult> = combined_results
+        let (mut entities_results, traits_results) = combined_results
             // iterate through results, starting with best scores
             .flat_map(|(trait_result, source)| {
                 if matched_entities.contains(&trait_result.entity_id) {
@@ -219,7 +221,7 @@ where
                         err
                     })
                     .ok()?;
-                if indexed_traits.is_empty() {
+                if indexed_traits.traits.is_empty() {
                     // no traits remaining means that entity is now deleted
                     return None;
                 }
@@ -241,24 +243,30 @@ where
                     (trait_result.score, trait_result.score)
                 },
             )
-            // take the best results and fetch the entities data
-            .flat_map(|(trait_result, indexed_traits, source, sort_token)| {
-                // TODO: Support for summary https://github.com/appaquet/exocore/issues/142
-                let traits_data = self.fetch_entity_traits_data(indexed_traits.values());
-                let entity = Entity {
-                    id: trait_result.entity_id.clone(),
-                    traits: traits_data,
-                };
+            // accumulate results
+            .fold(
+                (Vec::new(), Vec::new()),
+                |(mut entities_results, mut all_traits_results),
+                 (trait_result, traits_results, source, sort_token)| {
+                    hasher.write_u64(traits_results.hash);
+                    let entity = Entity {
+                        id: trait_result.entity_id.clone(),
+                        traits: Vec::new(),
+                    };
 
-                Some(EntityResult {
-                    entity,
-                    source,
-                    sort_token,
-                })
-            })
-            .collect();
+                    entities_results.push(EntityResult {
+                        entity,
+                        source,
+                        sort_token,
+                    });
 
-        let next_page = if let Some(last_result) = results.last() {
+                    all_traits_results.push(traits_results);
+
+                    (entities_results, all_traits_results)
+                },
+            );
+
+        let next_page = if let Some(last_result) = entities_results.last() {
             Some(
                 current_page
                     .clone()
@@ -268,17 +276,24 @@ where
             None
         };
 
+        // TODO: Support for summary https://github.com/appaquet/exocore/issues/142
+        let results_hash = hasher.finish();
+        let only_summary = query.summary || Some(results_hash) == query.result_hash;
+        if !only_summary {
+            self.fetch_entities_results_traits_data(&mut entities_results, traits_results);
+        }
+
         Ok(QueryResult {
-            results,
+            results: entities_results,
+            summary: only_summary,
             next_page,
             current_page: current_page.clone(),
             total_estimated: total_estimated as u32,
+            hash: results_hash,
         })
     }
 
-    ///
     /// Create the chain index based on configuration.
-    ///
     fn create_chain_index(
         config: EntitiesIndexConfig,
         schema: &Arc<Schema>,
@@ -303,7 +318,7 @@ where
         entity_id: &exocore_schema::entity::EntityIdRef,
     ) -> Result<Entity, Error> {
         let traits_results = self.fetch_entity_traits_results(entity_id)?;
-        let full_traits = self.fetch_entity_traits_data(traits_results.values());
+        let full_traits = self.fetch_entity_traits_data(traits_results);
         Ok(Entity {
             id: entity_id.to_string(),
             traits: full_traits,
@@ -311,10 +326,7 @@ where
     }
 
     /// Fetch traits metadata from pending and chain indices for this entity id, and merge them.
-    fn fetch_entity_traits_results(
-        &self,
-        entity_id: &str,
-    ) -> Result<HashMap<String, TraitResult>, Error> {
+    fn fetch_entity_traits_results(&self, entity_id: &str) -> Result<TraitsResults, Error> {
         let pending_results = self.pending_index.search_entity_id(entity_id)?;
         let chain_results = self.chain_index.search_entity_id(entity_id)?;
         let ordered_traits = pending_results
@@ -323,9 +335,15 @@ where
             .chain(chain_results.results.into_iter())
             .sorted_by_key(|result| result.operation_id);
 
+        let mut hasher = result_hasher();
+
         // only keep last operation for each trait, and remove trait if it's a tombstone
         let mut traits: HashMap<EntityId, TraitResult> = HashMap::new();
         for trait_result in ordered_traits {
+            // hashing operations instead of traits content allow invalidating results as soon
+            // as one operation is made since we can't guarantee anything
+            hasher.write_u64(trait_result.operation_id);
+
             if trait_result.tombstone {
                 traits.remove(&trait_result.trait_id);
             } else {
@@ -333,15 +351,32 @@ where
             }
         }
 
-        Ok(traits)
+        Ok(TraitsResults {
+            traits,
+            hash: hasher.finish(),
+        })
     }
 
-    /// Fetch traits data from data layer
-    fn fetch_entity_traits_data<'r, I>(&self, traits: I) -> Vec<Trait>
-    where
-        I: Iterator<Item = &'r TraitResult>,
-    {
-        traits
+    /// Populate traits in the EntityResult by fetching each entity's traits from the data layer.
+    fn fetch_entities_results_traits_data(
+        &self,
+        entities_results: &mut Vec<EntityResult>,
+        entities_traits_results: Vec<TraitsResults>,
+    ) {
+        for (entity_result, traits_results) in entities_results
+            .iter_mut()
+            .zip(entities_traits_results.into_iter())
+        {
+            let traits = self.fetch_entity_traits_data(traits_results);
+            entity_result.entity.traits = traits;
+        }
+    }
+
+    /// Fetch traits data from data layer.
+    fn fetch_entity_traits_data(&self, results: TraitsResults) -> Vec<Trait> {
+        results
+            .traits
+            .values()
             .flat_map(|trait_result| {
                 let mutation = match self.fetch_trait_mutation_operation(
                     trait_result.operation_id,
@@ -617,6 +652,11 @@ where
             }
         }
     }
+}
+
+struct TraitsResults {
+    traits: HashMap<String, TraitResult>,
+    hash: ResultHash,
 }
 
 #[cfg(test)]
@@ -969,6 +1009,32 @@ mod tests {
         let res = test_index.index.search(&query)?;
         assert_eq!(res.results.len(), 10);
         //
+        Ok(())
+    }
+
+    #[test]
+    fn summary_query() -> Result<(), failure::Error> {
+        let config = TestEntitiesIndex::create_test_config();
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
+
+        let op1 = test_index.put_contact_trait("entity1", "trait1", "name")?;
+        let op2 = test_index.put_contact_trait("entity2", "trait1", "name")?;
+        test_index.cluster.wait_operations_committed(0, &[op1, op2]);
+        test_index.handle_engine_events()?;
+
+        let query = Query::match_text("name").only_summary();
+        let res = test_index.index.search(&query)?;
+        assert!(res.summary);
+        assert!(res.results[0].entity.traits.is_empty());
+
+        let query = Query::match_text("name");
+        let res = test_index.index.search(&query)?;
+        assert!(!res.summary);
+
+        let query = Query::match_text("name").only_summary_if_equals(res.hash);
+        let res = test_index.index.search(&query)?;
+        assert!(res.summary);
+
         Ok(())
     }
 
