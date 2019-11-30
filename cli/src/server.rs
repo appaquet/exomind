@@ -57,7 +57,7 @@ pub fn start(
         let engine_config = EngineConfig::default();
         let mut engine = Engine::new(
             engine_config,
-            clock,
+            clock.clone(),
             data_transport,
             chain_store,
             pending_store,
@@ -116,6 +116,7 @@ pub fn start(
                     combined_transport,
                     index_engine_handle,
                     full_cell,
+                    clock,
                     schema,
                     entities_index,
                 )?;
@@ -126,6 +127,7 @@ pub fn start(
                     transport_handle,
                     index_engine_handle,
                     full_cell,
+                    clock,
                     schema,
                     entities_index,
                 )?;
@@ -179,12 +181,15 @@ fn create_local_store<T: TransportHandle>(
     transport: T,
     index_engine_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
     full_cell: FullCell,
+    clock: Clock,
     schema: Arc<Schema>,
     entities_index: EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
 ) -> Result<(), failure::Error> {
     let store_config = Default::default();
     let local_store = Store::new(
         store_config,
+        full_cell.cell().clone(),
+        clock,
         schema.clone(),
         index_engine_handle,
         entities_index,

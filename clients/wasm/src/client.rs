@@ -20,7 +20,7 @@ pub struct ExocoreClient {
     _transport: BrowserTransportClient,
     store_handle: Arc<ClientHandle>,
     schema: Arc<Schema>,
-    inner: Arc<Mutex<Inner>>,
+    _inner: Arc<Mutex<Inner>>,
 }
 
 struct Inner {
@@ -116,7 +116,7 @@ impl ExocoreClient {
             _transport: transport,
             store_handle: Arc::new(store_handle),
             schema,
-            inner,
+            _inner: inner,
         })
     }
 

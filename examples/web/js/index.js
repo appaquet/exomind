@@ -24,7 +24,11 @@ class App extends React.Component {
 
     render() {
         if (this.state.exocore) {
-            return <List exocore={this.state.exocore}/>;
+            return (<div>
+                <button onClick={this.disconnect.bind(this)}>Disconnect</button>
+
+                <List exocore={this.state.exocore}/>
+            </div>);
         } else {
             return this.renderLoading();
         }
@@ -32,6 +36,10 @@ class App extends React.Component {
 
     renderLoading() {
         return <div>Loading...</div>;
+    }
+
+    disconnect() {
+        this.setState({exocore: null});
     }
 }
 

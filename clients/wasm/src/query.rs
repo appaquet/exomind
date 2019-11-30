@@ -10,8 +10,11 @@ use exocore_index::store::remote::ClientHandle;
 use exocore_index::store::AsyncStore;
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
+use futures::prelude::*;
+use futures::unsync::oneshot;
 
 use crate::js::into_js_error;
+use exocore_common::utils::futures::spawn_future;
 
 #[wasm_bindgen]
 pub struct QueryBuilder {
@@ -56,10 +59,10 @@ impl QueryBuilder {
     pub fn execute(self) -> crate::query::QueryResult {
         let query = self.inner.expect("Query was not initialized");
 
-        let results_cell = Rc::new(RefCell::new(None));
+        let result_cell = Rc::new(RefCell::new(None));
         let fut_results = {
-            let results_cell1 = results_cell.clone();
-            let results_cell2 = results_cell.clone();
+            let results_cell1 = result_cell.clone();
+            let results_cell2 = result_cell.clone();
             self.store_handle
                 .query(query)
                 .map(move |result| {
@@ -76,22 +79,70 @@ impl QueryBuilder {
 
         crate::query::QueryResult {
             schema: self.schema.clone(),
-            _store_handle: self.store_handle.clone(),
-
             promise: wasm_bindgen_futures::future_to_promise(fut_results),
-            inner: results_cell,
+            result_cell,
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn execute_and_watch(self) -> crate::query::WatchedQuery {
+        let query = self.inner.expect("Query was not initialized");
+
+        let result_cell = Rc::new(RefCell::new(None));
+        let callback_cell = Rc::new(RefCell::<Option<js_sys::Function>>::new(None));
+
+        let results_cell1 = result_cell.clone();
+        let callback_cell1 = callback_cell.clone();
+        let (drop_sender, drop_receiver) = oneshot::channel();
+        let stream = self
+            .store_handle
+            .watched_query(query)
+            .then(move |result| {
+                let ret = result.as_ref().map(|_| ()).map_err(|_| ());
+
+                if let Err(err) = &result {
+                    error!("Error in watched query: {}", err);
+                }
+
+                {
+                    let mut res_cell = results_cell1.borrow_mut();
+                    *res_cell = Some(result);
+                }
+
+                {
+                    let callback = callback_cell1.borrow();
+                    if let Some(func) = &*callback {
+                        func.call0(&JsValue::null()).unwrap();
+                    }
+                }
+
+                ret
+            })
+            .for_each(|_| Ok(()));
+
+        spawn_future(stream.select(drop_receiver.map_err(|_| ())).then(|_| {
+            info!("Watch query stream is done");
+            Ok(())
+        }));
+
+        crate::query::WatchedQuery {
+            schema: self.schema.clone(),
+            result_cell,
+            callback_cell,
+            _drop_sender: drop_sender,
         }
     }
 }
 
+type ResultCell =
+    Rc<RefCell<Option<Result<exocore_index::query::QueryResult, exocore_index::error::Error>>>>;
+type CallbackCell = Rc<RefCell<Option<js_sys::Function>>>;
+
 #[wasm_bindgen]
 pub struct QueryResult {
     schema: Arc<Schema>,
-    _store_handle: Arc<ClientHandle>,
-
     promise: js_sys::Promise,
-    inner:
-        Rc<RefCell<Option<Result<exocore_index::query::QueryResult, exocore_index::error::Error>>>>,
+    result_cell: ResultCell,
 }
 
 #[wasm_bindgen]
@@ -103,13 +154,13 @@ impl QueryResult {
 
     #[wasm_bindgen]
     pub fn is_ready(&self) -> bool {
-        let res = self.inner.borrow();
+        let res = self.result_cell.borrow();
         res.is_some()
     }
 
     #[wasm_bindgen]
     pub fn len(&self) -> usize {
-        let res = self.inner.borrow();
+        let res = self.result_cell.borrow();
         let res = res.as_ref().unwrap();
         let res = res.as_ref().unwrap();
 
@@ -118,7 +169,7 @@ impl QueryResult {
 
     #[wasm_bindgen]
     pub fn is_empty(&self) -> bool {
-        let res = self.inner.borrow();
+        let res = self.result_cell.borrow();
         let res = res.as_ref().unwrap();
         let res = res.as_ref().unwrap();
 
@@ -127,7 +178,7 @@ impl QueryResult {
 
     #[wasm_bindgen]
     pub fn get(&self, index: usize) -> JsValue {
-        let res = self.inner.borrow();
+        let res = self.result_cell.borrow();
         let res = res.as_ref().unwrap();
         let res = res.as_ref().unwrap();
 
@@ -137,7 +188,43 @@ impl QueryResult {
 
     #[wasm_bindgen]
     pub fn to_json(&self) -> JsValue {
-        let res = self.inner.borrow();
+        let res = self.result_cell.borrow();
+        let res = res.as_ref().unwrap();
+        let res = res.as_ref().unwrap();
+
+        with_schema(&self.schema, || JsValue::from_serde(res)).unwrap_or_else(into_js_error)
+    }
+}
+
+#[wasm_bindgen]
+pub struct WatchedQuery {
+    schema: Arc<Schema>,
+    result_cell: ResultCell,
+    callback_cell: CallbackCell,
+    _drop_sender: oneshot::Sender<()>,
+}
+
+#[wasm_bindgen]
+impl WatchedQuery {
+    #[wasm_bindgen]
+    pub fn on_change(&self, promise: js_sys::Function) {
+        let mut cb = self.callback_cell.borrow_mut();
+        *cb = Some(promise);
+    }
+
+    #[wasm_bindgen]
+    pub fn get(&self, index: usize) -> JsValue {
+        let res = self.result_cell.borrow();
+        let res = res.as_ref().unwrap();
+        let res = res.as_ref().unwrap();
+
+        with_schema(&self.schema, || JsValue::from_serde(&res.results[index]))
+            .unwrap_or_else(into_js_error)
+    }
+
+    #[wasm_bindgen]
+    pub fn to_json(&self) -> JsValue {
+        let res = self.result_cell.borrow();
         let res = res.as_ref().unwrap();
         let res = res.as_ref().unwrap();
 

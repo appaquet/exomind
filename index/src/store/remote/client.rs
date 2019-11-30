@@ -583,7 +583,7 @@ impl AsyncStore for ClientHandle {
         }
     }
 
-    fn watched_query(&self, query: WatchedQuery) -> ResultStream<QueryResult> {
+    fn watched_query(&self, query: Query) -> ResultStream<QueryResult> {
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
             None => return Box::new(futures::stream::once(Err(Error::Dropped))),
@@ -593,11 +593,18 @@ impl AsyncStore for ClientHandle {
             Err(err) => return Box::new(futures::stream::once(Err(err.into()))),
         };
 
-        let token = query.token;
-        match inner.watch_query(query) {
+        let watch_token = query
+            .watch_token
+            .unwrap_or_else(|| inner.clock.consistent_time(inner.cell.local_node()));
+        let watch_query = WatchedQuery {
+            query,
+            token: watch_token,
+        };
+
+        match inner.watch_query(watch_query) {
             Ok((request_id, receiver)) => Box::new(WatchedQueryStream {
                 inner: self.inner.clone(),
-                token,
+                watch_token,
                 request_id,
                 receiver,
             }),
@@ -608,7 +615,7 @@ impl AsyncStore for ClientHandle {
 
 struct WatchedQueryStream {
     inner: Weak<RwLock<Inner>>,
-    token: WatchToken,
+    watch_token: WatchToken,
     request_id: ConsistentTimestamp,
     receiver: mpsc::Receiver<Result<QueryResult, Error>>,
 }
@@ -636,7 +643,7 @@ impl Drop for WatchedQueryStream {
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut inner) = inner.write() {
                 inner.watched_queries.remove(&self.request_id);
-                let _ = inner.send_unwatch_query(self.token);
+                let _ = inner.send_unwatch_query(self.watch_token);
             }
         }
     }

@@ -28,6 +28,9 @@ pub struct Query {
     /// If specified, if results from server matches this hash, only a summary will be returned.
     #[serde(skip)]
     pub result_hash: Option<ResultHash>,
+
+    /// Optional watch token if this query is to be used for watching.
+    pub watch_token: Option<WatchToken>,
 }
 
 #[serde(rename_all = "snake_case", tag = "type")]
@@ -49,6 +52,7 @@ impl Query {
             paging: None,
             summary: false,
             result_hash: None,
+            watch_token: None,
         }
     }
 
@@ -61,6 +65,7 @@ impl Query {
             paging: None,
             summary: false,
             result_hash: None,
+            watch_token: None,
         }
     }
 
@@ -72,6 +77,7 @@ impl Query {
             paging: None,
             summary: false,
             result_hash: None,
+            watch_token: None,
         }
     }
 
@@ -82,6 +88,7 @@ impl Query {
             paging: None,
             summary: false,
             result_hash: None,
+            watch_token: None,
         }
     }
 
@@ -111,6 +118,11 @@ impl Query {
 
     pub fn paging_or_default(&self) -> &QueryPaging {
         self.paging.as_ref().unwrap_or(&QueryPaging::DEFAULT_PAGING)
+    }
+
+    pub fn with_watch_token(mut self, token: WatchToken) -> Self {
+        self.watch_token = Some(token);
+        self
     }
 
     pub fn to_request_frame(

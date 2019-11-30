@@ -54,6 +54,8 @@ impl TestStore {
 
         let store = Store::new(
             Default::default(),
+            cluster.cells[0].cell().clone(),
+            cluster.clocks[0].clone(),
             schema.clone(),
             cluster.get_new_handle(0),
             index,

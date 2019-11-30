@@ -9,13 +9,12 @@ use exocore_transport::TransportLayer;
 
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult, TestFailMutation};
-use crate::query::{Query, QueryResult, WatchedQuery};
+use crate::query::{Query, QueryResult};
 use crate::store::local::TestStore;
 use crate::store::{AsyncStore, ResultStream};
 
 use super::*;
 use crate::store::remote::server::{Server, ServerConfiguration};
-use exocore_common::time::ConsistentTimestamp;
 
 #[test]
 fn mutation_and_query() -> Result<(), failure::Error> {
@@ -122,7 +121,6 @@ fn watched_query() -> Result<(), failure::Error> {
     test_remote_store.send_and_await_mutation(mutation)?;
 
     let query = Query::match_text("hello");
-    let query = WatchedQuery::new(query, ConsistentTimestamp(1234));
     let stream = test_remote_store.client_handle.watched_query(query);
 
     let (results, stream) = test_remote_store.get_stream_result(stream).unwrap();
@@ -147,7 +145,6 @@ fn watched_query_error_propagation() -> Result<(), failure::Error> {
     test_remote_store.start_client()?;
 
     let query = Query::test_fail();
-    let query = WatchedQuery::new(query, ConsistentTimestamp(1234));
     let stream = test_remote_store.client_handle.watched_query(query);
 
     let (results, stream) = test_remote_store.get_stream_result(stream).unwrap();
@@ -185,7 +182,6 @@ fn watched_query_timeout() -> Result<(), failure::Error> {
     test_remote_store.send_and_await_mutation(mutation)?;
 
     let query = Query::match_text("hello");
-    let query = WatchedQuery::new(query, ConsistentTimestamp(1234));
     let stream = test_remote_store.client_handle.watched_query(query);
 
     let (results, stream) = test_remote_store.get_stream_result(stream).unwrap();
@@ -217,8 +213,6 @@ fn watched_drop_unregisters() -> Result<(), failure::Error> {
     test_remote_store.start_client()?;
 
     let query = Query::match_text("hello");
-    let query = WatchedQuery::new(query, ConsistentTimestamp(1234));
-
     let stream = test_remote_store.client_handle.watched_query(query);
 
     // wait for watched query to registered

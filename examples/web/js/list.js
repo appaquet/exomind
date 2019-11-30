@@ -6,8 +6,7 @@ export default class List extends React.Component {
 
         this.exocore = props.exocore;
         this.state = {entities: []};
-
-        this.fetchList();
+        this.registerQuery();
     }
 
     render() {
@@ -32,8 +31,6 @@ export default class List extends React.Component {
         await this.exocore.mutate.create_entity("exocore.task", {
             title: text
         }).execute();
-
-        this.fetchList();
     }
 
     async fetchList() {
@@ -51,6 +48,26 @@ export default class List extends React.Component {
                 return result.entity;
             })
         })
+    }
+
+    registerQuery() {
+        this.watched_query = this.exocore.query
+            .with_trait("exocore.task")
+            .with_count(1000)
+            .execute_and_watch();
+
+        this.watched_query.on_change(() => {
+            let results = this.watched_query.to_json();
+            this.setState({
+                entities: results.results.map(result => {
+                    return result.entity;
+                })
+            })
+        })
+    }
+
+    componentWillUnmount() {
+        this.watched_query.free();
     }
 }
 

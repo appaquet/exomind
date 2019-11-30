@@ -17,6 +17,8 @@ use crate::store::local::watched_queries::WatchedQueries;
 use crate::store::{AsyncResult, AsyncStore, ResultStream};
 
 use super::entities_index::EntitiesIndex;
+use exocore_common::cell::Cell;
+use exocore_common::time::Clock;
 
 /// Config for `Store`
 #[derive(Clone, Copy)]
@@ -57,6 +59,8 @@ where
 {
     pub fn new(
         config: StoreConfig,
+        cell: Cell,
+        clock: Clock,
         schema: Arc<Schema>,
         data_handle: exocore_data::engine::EngineHandle<CS, PS>,
         index: EntitiesIndex<CS, PS>,
@@ -66,6 +70,8 @@ where
 
         let watched = WatchedQueries::new();
         let inner = Arc::new(RwLock::new(Inner {
+            cell,
+            clock,
             schema,
             index,
             watched_queries: watched,
@@ -280,6 +286,8 @@ where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
 {
+    cell: Cell,
+    clock: Clock,
     schema: Arc<Schema>,
     index: EntitiesIndex<CS, PS>,
     watched_queries: WatchedQueries,
@@ -444,7 +452,7 @@ where
         )
     }
 
-    fn watched_query(&self, watched_query: WatchedQuery) -> ResultStream<QueryResult> {
+    fn watched_query(&self, query: Query) -> ResultStream<QueryResult> {
         let inner = if let Some(inner) = self.inner.upgrade() {
             inner
         } else {
@@ -457,7 +465,13 @@ where
             return Box::new(stream::once(Err(Error::Dropped)));
         };
 
-        let watch_token = watched_query.token;
+        let watch_token = query
+            .watch_token
+            .unwrap_or_else(|| inner.clock.consistent_time(inner.cell.local_node()));
+        let watched_query = WatchedQuery {
+            query,
+            token: watch_token,
+        };
 
         let (sender, receiver) = mpsc::channel(self.config.handle_watch_query_channel_size);
         let new_sender = inner.queries_sender.as_mut().expect("Queries sender channel was not initialized. A query was made before the store was started.");
@@ -559,7 +573,6 @@ pub mod tests {
 
     use super::*;
     use crate::store::local::TestStore;
-    use exocore_common::time::ConsistentTimestamp;
     use std::time::Duration;
 
     #[test]
@@ -608,7 +621,6 @@ pub mod tests {
         test_store.start_store()?;
 
         let query = Query::match_text("hello");
-        let query = WatchedQuery::new(query, ConsistentTimestamp(123));
         let stream = test_store.store_handle.watched_query(query);
 
         let (result, stream) = test_store
@@ -663,7 +675,6 @@ pub mod tests {
         test_store.start_store()?;
 
         let query = Query::test_fail();
-        let query = WatchedQuery::new(query, ConsistentTimestamp(123));
         let stream = test_store.store_handle.watched_query(query);
 
         let result = test_store.cluster.runtime.block_on(stream.into_future());

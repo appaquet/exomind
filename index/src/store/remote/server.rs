@@ -238,13 +238,13 @@ where
     fn handle_incoming_watched_query_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         in_message: Box<InMessage>,
-        query: WatchedQuery,
+        watched_query: WatchedQuery,
     ) -> Result<(), Error> {
         let weak_inner1 = weak_inner.clone();
         let weak_inner2 = weak_inner.clone();
         let weak_inner3 = weak_inner.clone();
 
-        let watch_token = query.token;
+        let watch_token = watched_query.token;
         let (result_stream, timeout_receiver) = {
             // check if this query already exists. if so, just update its last register
             let inner = weak_inner1.upgrade().ok_or(Error::Dropped)?;
@@ -256,13 +256,16 @@ where
 
             // register query
             let (timeout_sender, timeout_receiver) = oneshot::channel();
-            let watched_query = RegisteredWatchedQuery {
+            let registered_watched_query = RegisteredWatchedQuery {
                 last_register: Instant::now(),
                 _timeout_sender: timeout_sender,
             };
-            inner.watched_queries.insert(watch_token, watched_query);
+            inner
+                .watched_queries
+                .insert(watch_token, registered_watched_query);
 
-            let result_stream = inner.store_handle.watched_query(query.clone());
+            let query = watched_query.query.clone().with_watch_token(watch_token);
+            let result_stream = inner.store_handle.watched_query(query);
 
             (result_stream, timeout_receiver)
         };
