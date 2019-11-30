@@ -4,7 +4,7 @@
     ```
     rustup target add i686-linux-android
     rustup target add x86_64-linux-android
-    rustup target add arm-linux-androideabi
+    rustup target add armv7-linux-androideabi
     rustup target add aarch64-linux-android
     ```
 
@@ -20,9 +20,9 @@
     * Install API 14 and API 21 tools:
         ```
         $ANDROID_HOME/tools/bin/sdkmanager "platform-tools"
-        $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-18"
+        $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-14"
         $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-21"
-        $ANDROID_HOME/tools/bin/sdkmanager "build-tools;26.0.1"
+        $ANDROID_HOME/tools/bin/sdkmanager "build-tools"
         ```
         
 * Create a Standalone NDK
@@ -55,9 +55,6 @@
     ar = "<YOUR_HOME>/Android/NDK/x86_64/bin/x86_64-linux-androidi-ar"
     linker = "<YOUR_HOME>/Android/NDK/x86_64/bin/x86_64-linux-android-clang"
     ```
-    
-* Build OpenSSL
-    * `./build_openssl.sh`
     
 * Build the clients
     * `./build.sh`
