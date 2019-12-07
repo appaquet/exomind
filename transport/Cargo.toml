@@ -17,7 +17,7 @@ failure = "0.1"
 tokio = { version = "0.1", features = ["io"], default-features = false }
 
 # Websocket transport
-websocket = { version = "0.23", optional = true, default-features = false, features = ["async"] }
+websocket = { version = "0.24", optional = true, default-features = false, features = ["async"] }
 
 # libp2p transport
 libp2p = { version = "0.13", features = ["secp256k1"], default-features = false, optional = true }
