@@ -23,7 +23,7 @@ lazycell = "1.2"
 failure = "0.1"
 futures = "0.1"
 libp2p-core = "0.13"
-log4rs = { version = "0.8", optional = true }
+log4rs = { version = "0.9", optional = true }
 chrono = "0.4"
 wasm-timer = "0.1"
 
@@ -39,7 +39,7 @@ capnpc = { git = "https://github.com/appaquet/capnproto-rust.git", branch = "thr
 
 [dev-dependencies]
 tempdir = "0.3"
-log4rs = "0.8"
+log4rs = "0.9"
 criterion_bencher_compat = "0.3"
 tokio = { version = "0.1", features = ["rt-full"] }
 
