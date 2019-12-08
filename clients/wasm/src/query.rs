@@ -7,14 +7,13 @@ use wasm_bindgen::prelude::*;
 
 use exocore_index::query::Query;
 use exocore_index::store::remote::ClientHandle;
-use exocore_index::store::AsyncStore;
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
 use futures::prelude::*;
 use futures::unsync::oneshot;
 
 use crate::js::into_js_error;
-use exocore_common::utils::futures::spawn_future;
+use exocore_common::utils::futures::spawn_future_non_send;
 
 #[wasm_bindgen]
 pub struct QueryBuilder {
@@ -65,6 +64,7 @@ impl QueryBuilder {
             let results_cell2 = result_cell.clone();
             self.store_handle
                 .query(query)
+                .expect("Couldn't query store")
                 .map(move |result| {
                     let mut res_cell = results_cell1.borrow_mut();
                     *res_cell = Some(Ok(result));
@@ -97,6 +97,7 @@ impl QueryBuilder {
         let stream = self
             .store_handle
             .watched_query(query)
+            .expect("Couldn't watched query store")
             .then(move |result| {
                 let ret = result.as_ref().map(|_| ()).map_err(|_| ());
 
@@ -120,7 +121,7 @@ impl QueryBuilder {
             })
             .for_each(|_| Ok(()));
 
-        spawn_future(stream.select(drop_receiver.map_err(|_| ())).then(|_| {
+        spawn_future_non_send(stream.select(drop_receiver.map_err(|_| ())).then(|_| {
             info!("Watch query stream is done");
             Ok(())
         }));

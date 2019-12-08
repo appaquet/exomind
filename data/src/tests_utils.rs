@@ -284,7 +284,7 @@ impl DataTestCluster {
             let event = self.events_receiver[node_idx]
                 .as_ref()
                 .unwrap()
-                .recv_timeout(Duration::from_secs(5))
+                .recv_timeout(Duration::from_secs(10))
                 .unwrap();
 
             if predicate(&event) {

@@ -6,7 +6,7 @@ use exocore_common::cell::Cell;
 use exocore_common::crypto::keys::PublicKey;
 use exocore_common::node::{LocalNode, Node};
 use exocore_common::time::Clock;
-use exocore_common::utils::futures::spawn_future;
+use exocore_common::utils::futures::spawn_future_non_send;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_schema::schema::Schema;
 use exocore_transport::{InEvent, TransportHandle, TransportLayer};
@@ -65,11 +65,11 @@ impl ExocoreClient {
         let store_handle = remote_store
             .get_handle()
             .expect("Couldn't get store handle");
-        spawn_future(remote_store.map_err(|err| {
+        spawn_future_non_send(remote_store.map_err(|err| {
             error!("Error starting remote store: {}", err);
         }));
 
-        spawn_future(
+        spawn_future_non_send(
             store_handle
                 .on_start()
                 .unwrap()
@@ -87,7 +87,7 @@ impl ExocoreClient {
         let mut client_transport_handle =
             transport.get_handle(cell.clone(), TransportLayer::Client);
         let inner_clone = inner.clone();
-        spawn_future(
+        spawn_future_non_send(
             client_transport_handle
                 .get_stream()
                 .for_each(move |event| {

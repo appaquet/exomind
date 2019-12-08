@@ -18,7 +18,6 @@ use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandl
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
-use crate::store::AsyncStore;
 use exocore_common::time::ConsistentTimestamp;
 use exocore_transport::messages::MessageReplyToken;
 use std::collections::HashMap;
@@ -208,7 +207,7 @@ where
             let inner = weak_inner1.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
             inner.store_handle.query(query.clone())
-        };
+        }?;
 
         let weak_inner2 = weak_inner.clone();
         spawn_future(
@@ -265,7 +264,7 @@ where
                 .insert(watch_token, registered_watched_query);
 
             let query = watched_query.query.clone().with_watch_token(watch_token);
-            let result_stream = inner.store_handle.watched_query(query);
+            let result_stream = inner.store_handle.watched_query(query)?;
 
             (result_stream, timeout_receiver)
         };
@@ -329,34 +328,17 @@ where
         in_message: Box<InMessage>,
         mutation: Mutation,
     ) -> Result<(), Error> {
-        let future_result = {
-            let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
-            let inner = inner.read()?;
-            inner.store_handle.mutate(mutation)
-        };
+        let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+        let inner = inner.read()?;
+        let result = inner.store_handle.mutate(mutation);
 
-        let weak_inner1 = weak_inner.clone();
-        spawn_future(
-            future_result
-                .then(move |result| {
-                    let inner = weak_inner1.upgrade().ok_or(Error::Dropped)?;
-                    let inner = inner.read()?;
+        if let Err(err) = &result {
+            error!("Returning error executing incoming mutation: {}", err);
+        }
 
-                    if let Err(err) = &result {
-                        error!("Returning error executing incoming mutation: {}", err);
-                    }
-
-                    let resp_frame =
-                        MutationResult::result_to_response_frame(&inner.schema, result)?;
-                    let message = in_message.to_response_message(&inner.cell, resp_frame)?;
-                    inner.send_message(message)?;
-
-                    Ok(())
-                })
-                .map_err(|err: Error| {
-                    error!("Error executing incoming query: {}", err);
-                }),
-        );
+        let resp_frame = MutationResult::result_to_response_frame(&inner.schema, result)?;
+        let message = in_message.to_response_message(&inner.cell, resp_frame)?;
+        inner.send_message(message)?;
 
         Ok(())
     }

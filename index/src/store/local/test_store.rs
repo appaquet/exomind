@@ -13,7 +13,6 @@ use crate::query::{Query, QueryResult};
 use crate::store::local::store::StoreHandle;
 use crate::store::local::traits_index::TraitsIndexConfig;
 use crate::store::local::EntitiesIndexConfig;
-use crate::store::AsyncStore;
 
 use super::*;
 
@@ -90,15 +89,11 @@ impl TestStore {
     }
 
     pub fn mutate(&mut self, mutation: Mutation) -> Result<MutationResult, failure::Error> {
-        let resp_future = self.store_handle.mutate(mutation);
-        self.cluster
-            .runtime
-            .block_on(resp_future)
-            .map_err(|err| err.into())
+        self.store_handle.mutate(mutation).map_err(|err| err.into())
     }
 
     pub fn query(&mut self, query: Query) -> Result<QueryResult, failure::Error> {
-        let resp_future = self.store_handle.query(query);
+        let resp_future = self.store_handle.query(query)?;
         self.cluster
             .runtime
             .block_on(resp_future)

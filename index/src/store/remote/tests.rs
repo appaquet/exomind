@@ -11,7 +11,6 @@ use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult, TestFailMutation};
 use crate::query::{Query, QueryResult};
 use crate::store::local::TestStore;
-use crate::store::{AsyncStore, ResultStream};
 
 use super::*;
 use crate::store::remote::server::{Server, ServerConfiguration};
@@ -121,7 +120,10 @@ fn watched_query() -> Result<(), failure::Error> {
     test_remote_store.send_and_await_mutation(mutation)?;
 
     let query = Query::match_text("hello");
-    let stream = test_remote_store.client_handle.watched_query(query);
+    let stream = test_remote_store
+        .client_handle
+        .watched_query(query)
+        .unwrap();
 
     let (results, stream) = test_remote_store.get_stream_result(stream).unwrap();
     let results = results.unwrap();
@@ -145,7 +147,10 @@ fn watched_query_error_propagation() -> Result<(), failure::Error> {
     test_remote_store.start_client()?;
 
     let query = Query::test_fail();
-    let stream = test_remote_store.client_handle.watched_query(query);
+    let stream = test_remote_store
+        .client_handle
+        .watched_query(query)
+        .unwrap();
 
     let (results, stream) = test_remote_store.get_stream_result(stream).unwrap();
     assert!(results.is_err());
@@ -182,7 +187,7 @@ fn watched_query_timeout() -> Result<(), failure::Error> {
     test_remote_store.send_and_await_mutation(mutation)?;
 
     let query = Query::match_text("hello");
-    let stream = test_remote_store.client_handle.watched_query(query);
+    let stream = test_remote_store.client_handle.watched_query(query)?;
 
     let (results, stream) = test_remote_store.get_stream_result(stream).unwrap();
     let results = results.unwrap();
@@ -213,7 +218,7 @@ fn watched_drop_unregisters() -> Result<(), failure::Error> {
     test_remote_store.start_client()?;
 
     let query = Query::match_text("hello");
-    let stream = test_remote_store.client_handle.watched_query(query);
+    let stream = test_remote_store.client_handle.watched_query(query)?;
 
     // wait for watched query to registered
     expect_eventually(|| {
@@ -229,6 +234,67 @@ fn watched_drop_unregisters() -> Result<(), failure::Error> {
         let watched_queries = test_remote_store.local_store.store_handle.watched_queries();
         watched_queries.is_empty()
     });
+
+    Ok(())
+}
+
+#[test]
+fn watched_cancel() -> Result<(), failure::Error> {
+    let mut test_remote_store = TestRemoteStore::new()?;
+    test_remote_store.start_server()?;
+    test_remote_store.start_client()?;
+
+    let query = Query::match_text("hello");
+    let stream = test_remote_store.client_handle.watched_query(query)?;
+    let query_id = stream.query_id();
+
+    // wait for watched query to registered
+    expect_eventually(|| {
+        let watched_queries = test_remote_store.local_store.store_handle.watched_queries();
+        !watched_queries.is_empty()
+    });
+
+    test_remote_store.client_handle.cancel_query(query_id)?;
+
+    // query should be unwatched
+    expect_eventually(|| {
+        let watched_queries = test_remote_store.local_store.store_handle.watched_queries();
+        watched_queries.is_empty()
+    });
+
+    Ok(())
+}
+
+#[test]
+fn client_drop_stops_watched_stream() -> Result<(), failure::Error> {
+    let mut test_remote_store = TestRemoteStore::new()?;
+    test_remote_store.start_server()?;
+    test_remote_store.start_client()?;
+
+    let query = Query::match_text("hello");
+    let stream = test_remote_store
+        .client_handle
+        .watched_query(query)
+        .unwrap();
+
+    let (results, stream) = test_remote_store.get_stream_result(stream).unwrap();
+    assert!(results.is_ok());
+
+    // drop remote store client
+    let TestRemoteStore {
+        mut local_store,
+        client_handle,
+        ..
+    } = test_remote_store;
+    drop(client_handle);
+
+    // stream should have been closed because it got dropped
+    match local_store.cluster.runtime.block_on(stream.into_future()) {
+        Ok((None, _stream)) => { /* stream got dropped */ }
+        _ => {
+            panic!("Got another result");
+        }
+    }
 
     Ok(())
 }
@@ -319,20 +385,20 @@ impl TestRemoteStore {
         self.local_store
             .cluster
             .runtime
-            .block_on(self.client_handle.mutate(mutation))
+            .block_on(self.client_handle.mutate(mutation)?)
     }
 
     fn send_and_await_query(&mut self, query: Query) -> Result<QueryResult, Error> {
         self.local_store
             .cluster
             .runtime
-            .block_on(self.client_handle.query(query))
+            .block_on(self.client_handle.query(query)?)
     }
 
-    fn get_stream_result(
-        &mut self,
-        stream: ResultStream<QueryResult>,
-    ) -> Option<(Result<QueryResult, Error>, ResultStream<QueryResult>)> {
+    fn get_stream_result<S>(&mut self, stream: S) -> Option<(Result<QueryResult, Error>, S)>
+    where
+        S: Stream<Item = QueryResult, Error = Error> + Send + 'static,
+    {
         let res = self
             .local_store
             .cluster

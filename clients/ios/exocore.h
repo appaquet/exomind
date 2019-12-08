@@ -5,19 +5,57 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum ExocoreError {
-  ExocoreError_Success = 0,
-  ExocoreError_TokioRuntime = 1,
+enum ExocoreContextStatus {
+  ExocoreContextStatus_Success = 0,
+  ExocoreContextStatus_Error,
 };
-typedef uint8_t ExocoreError;
+typedef uint8_t ExocoreContextStatus;
+
+enum ExocoreQueryStatus {
+  ExocoreQueryStatus_Success = 0,
+  ExocoreQueryStatus_Done = 1,
+  ExocoreQueryStatus_Error,
+};
+typedef uint8_t ExocoreQueryStatus;
+
+enum ExocoreQueryStreamStatus {
+  ExocoreQueryStreamStatus_Success = 0,
+  ExocoreQueryStreamStatus_Done,
+  ExocoreQueryStreamStatus_Error,
+};
+typedef uint8_t ExocoreQueryStreamStatus;
 
 typedef struct ExocoreContext ExocoreContext;
 
-typedef struct ExocoreContextResult {
-  ExocoreError status;
+typedef struct ExocoreExocoreContext {
+  ExocoreContextStatus status;
   ExocoreContext *context;
-} ExocoreContextResult;
+} ExocoreExocoreContext;
 
-ExocoreContextResult exocore_context_new(void);
+typedef struct ExocoreQueryHandle {
+  ExocoreQueryStatus status;
+  uint64_t query_id;
+} ExocoreQueryHandle;
 
-void exocore_send_query(ExocoreContext *ctx, const char *query);
+typedef struct ExocoreQueryStreamHandle {
+  ExocoreQueryStreamStatus status;
+  uint64_t query_id;
+} ExocoreQueryStreamHandle;
+
+void exocore_context_free(ExocoreContext *ctx);
+
+ExocoreExocoreContext exocore_context_new(void);
+
+ExocoreQueryHandle exocore_query(ExocoreContext *ctx,
+                                 const char *query,
+                                 void (*callback)(ExocoreQueryStatus status, const char*, const void*),
+                                 const void *callback_ctx);
+
+void exocore_query_cancel(ExocoreContext *ctx, ExocoreQueryHandle handle);
+
+ExocoreQueryStreamHandle exocore_watched_query(ExocoreContext *ctx,
+                                               const char *query,
+                                               void (*callback)(ExocoreQueryStatus status, const char*, const void*),
+                                               const void *callback_ctx);
+
+void exocore_watched_query_cancel(ExocoreContext *ctx, ExocoreQueryStreamHandle handle);

@@ -1,15 +1,13 @@
 use std::sync::Arc;
 
-use futures::Future;
-use wasm_bindgen::__rt::std::collections::HashMap;
-use wasm_bindgen::prelude::*;
-
 use exocore_index::mutation::Mutation;
 use exocore_index::store::remote::ClientHandle;
-use exocore_index::store::AsyncStore;
 use exocore_schema::entity::{Entity, FieldValue, RecordBuilder, TraitBuilder};
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
+use futures::prelude::*;
+use wasm_bindgen::__rt::std::collections::HashMap;
+use wasm_bindgen::prelude::*;
 
 use crate::js::into_js_error;
 
@@ -64,6 +62,7 @@ impl MutationBuilder {
         let fut_result = self
             .store_handle
             .mutate(mutation)
+            .expect("Couldn't send mutation")
             .map(move |res| {
                 with_schema(&schema, || JsValue::from_serde(&res)).unwrap_or_else(into_js_error)
             })

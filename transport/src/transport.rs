@@ -23,6 +23,7 @@ pub trait TransportHandle: Future<Item = (), Error = Error> + Send + 'static {
 ///
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum TransportLayer {
+    None = 0,
     Meta = 1,
     Common = 2,
     Data = 3,
@@ -33,6 +34,7 @@ pub enum TransportLayer {
 impl TransportLayer {
     pub fn from_code(code: u8) -> Option<TransportLayer> {
         match code {
+            0 => Some(TransportLayer::None),
             1 => Some(TransportLayer::Meta),
             2 => Some(TransportLayer::Common),
             3 => Some(TransportLayer::Data),

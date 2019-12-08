@@ -14,7 +14,6 @@ use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
 use crate::store::local::watched_queries::WatchedQueries;
-use crate::store::{AsyncResult, AsyncStore, ResultStream};
 
 use super::entities_index::EntitiesIndex;
 use exocore_common::cell::Cell;
@@ -409,31 +408,22 @@ where
 
         tokens
     }
-}
 
-impl<CS, PS> AsyncStore for StoreHandle<CS, PS>
-where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
-{
-    fn mutate(&self, mutation: Mutation) -> AsyncResult<MutationResult> {
-        Box::new(future::result(Inner::write_mutation_weak(
-            &self.inner,
-            mutation,
-        )))
+    pub fn mutate(&self, mutation: Mutation) -> Result<MutationResult, Error> {
+        Inner::write_mutation_weak(&self.inner, mutation)
     }
 
-    fn query(&self, query: Query) -> AsyncResult<QueryResult> {
+    pub fn query(&self, query: Query) -> Result<QueryFuture, Error> {
         let inner = if let Some(inner) = self.inner.upgrade() {
             inner
         } else {
-            return Box::new(future::err(Error::Dropped));
+            return Err(Error::Dropped);
         };
 
         let mut inner = if let Ok(inner) = inner.write() {
             inner
         } else {
-            return Box::new(future::err(Error::Dropped));
+            return Err(Error::Dropped);
         };
 
         let (sender, receiver) = oneshot::channel();
@@ -445,24 +435,20 @@ where
             sender: QueryRequestSender::Future(sender),
         });
 
-        Box::new(
-            receiver
-                .map_err(|_| Error::Other("Query channel was cancelled".to_string()))
-                .and_then(|result| result),
-        )
+        Ok(QueryFuture { receiver })
     }
 
-    fn watched_query(&self, query: Query) -> ResultStream<QueryResult> {
+    pub fn watched_query(&self, query: Query) -> Result<WatchedQueryStream<CS, PS>, Error> {
         let inner = if let Some(inner) = self.inner.upgrade() {
             inner
         } else {
-            return Box::new(stream::once(Err(Error::Dropped)));
+            return Err(Error::Dropped);
         };
 
         let mut inner = if let Ok(inner) = inner.write() {
             inner
         } else {
-            return Box::new(stream::once(Err(Error::Dropped)));
+            return Err(Error::Dropped);
         };
 
         let watch_token = query
@@ -482,7 +468,7 @@ where
             sender: QueryRequestSender::Stream(Arc::new(Mutex::new(sender)), watch_token),
         });
 
-        Box::new(LocalWatchedQuery {
+        Ok(WatchedQueryStream {
             watch_token,
             inner: self.inner.clone(),
             receiver,
@@ -490,9 +476,30 @@ where
     }
 }
 
+/// Future result of a query.
+pub struct QueryFuture {
+    receiver: oneshot::Receiver<Result<QueryResult, Error>>,
+}
+
+impl Future for QueryFuture {
+    type Item = QueryResult;
+    type Error = Error;
+
+    fn poll(&mut self) -> Result<Async<QueryResult>, Error> {
+        match self.receiver.poll() {
+            Ok(Async::Ready(Ok(res))) => Ok(Async::Ready(res)),
+            Ok(Async::Ready(Err(err))) => Err(err),
+            Ok(Async::NotReady) => Ok(Async::NotReady),
+            Err(_) => Err(Error::Other(
+                "Error polling query result future".to_string(),
+            )),
+        }
+    }
+}
+
 /// A query received through the `watched_query` method that needs to be watched and notified
 /// when new changes happen to the store that would affects its results.
-pub struct LocalWatchedQuery<CS, PS>
+pub struct WatchedQueryStream<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
@@ -502,7 +509,7 @@ where
     receiver: mpsc::Receiver<Result<QueryResult, Error>>,
 }
 
-impl<CS, PS> Stream for LocalWatchedQuery<CS, PS>
+impl<CS, PS> Stream for WatchedQueryStream<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
@@ -524,7 +531,7 @@ where
     }
 }
 
-impl<CS, PS> Drop for LocalWatchedQuery<CS, PS>
+impl<CS, PS> Drop for WatchedQueryStream<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
@@ -621,7 +628,7 @@ pub mod tests {
         test_store.start_store()?;
 
         let query = Query::match_text("hello");
-        let stream = test_store.store_handle.watched_query(query);
+        let stream = test_store.store_handle.watched_query(query)?;
 
         let (result, stream) = test_store
             .cluster
@@ -675,7 +682,7 @@ pub mod tests {
         test_store.start_store()?;
 
         let query = Query::test_fail();
-        let stream = test_store.store_handle.watched_query(query);
+        let stream = test_store.store_handle.watched_query(query)?;
 
         let result = test_store.cluster.runtime.block_on(stream.into_future());
         assert!(result.is_err());
