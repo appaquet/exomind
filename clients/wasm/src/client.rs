@@ -71,7 +71,7 @@ impl ExocoreClient {
 
         spawn_future_non_send(async move {
             if let Err(err) = remote_store.run().await {
-                error!("Error starting remote store: {}", err);
+                error!("Error running remote store: {}", err);
             }
 
             Ok(())
