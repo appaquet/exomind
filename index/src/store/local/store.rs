@@ -1,13 +1,13 @@
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
-use futures::prelude::*;
-use futures::sync::{mpsc, oneshot};
+use futures01::prelude::*;
+use futures01::sync::{mpsc, oneshot};
 use tokio::prelude::*;
 
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
-use exocore_common::utils::futures::spawn_future;
+use exocore_common::utils::futures::spawn_future_01;
 use exocore_schema::schema::Schema;
 
 use crate::error::Error;
@@ -109,7 +109,7 @@ where
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
         let weak_inner3 = Arc::downgrade(&self.inner);
-        spawn_future(
+        spawn_future_01(
             queries_receiver
                 .map_err(|_| Error::Dropped)
                 .map(move |watch_request: QueryRequest| {
@@ -166,7 +166,7 @@ where
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
         let weak_inner3 = Arc::downgrade(&self.inner);
-        spawn_future(
+        spawn_future_01(
             inner
                 .data_handle
                 .take_events_stream()?
@@ -197,7 +197,7 @@ where
         // checks if watched queries have their results changed
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future(
+        spawn_future_01(
             watch_check_receiver
                 .map_err(|_| Error::Dropped)
                 .for_each(move |_| {

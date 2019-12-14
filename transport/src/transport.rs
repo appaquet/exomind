@@ -1,5 +1,5 @@
-use futures::prelude::*;
-use futures::sync::mpsc;
+use futures01::prelude::*;
+use futures01::sync::mpsc;
 
 use crate::{Error, InMessage, OutMessage};
 use exocore_common::node::NodeId;

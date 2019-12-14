@@ -1,6 +1,13 @@
-use crate::error::Error;
-use crate::mutation::{Mutation, MutationResult};
-use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
+use std::collections::HashMap;
+use std::pin::Pin;
+use std::sync::{Arc, RwLock, Weak};
+use std::task::{Context, Poll};
+use std::time::Duration;
+
+use futures::channel::{mpsc, oneshot};
+use futures::compat::{Future01CompatExt, Sink01CompatExt, Stream01CompatExt};
+use futures::prelude::*;
+
 use exocore_common::cell::Cell;
 use exocore_common::framing::CapnpFrameBuilder;
 use exocore_common::node::Node;
@@ -10,19 +17,15 @@ use exocore_common::protos::index_transport_capnp::{
 use exocore_common::protos::MessageType;
 use exocore_common::time::Instant;
 use exocore_common::time::{Clock, ConsistentTimestamp};
-use exocore_common::utils::completion_notifier::{
-    CompletionError, CompletionListener, CompletionNotifier,
-};
-use exocore_common::utils::futures::spawn_future;
+use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
 use exocore_schema::schema::Schema;
 use exocore_transport::{
     InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
 };
-use futures::prelude::*;
-use futures::sync::{mpsc, oneshot};
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock, Weak};
-use std::time::Duration;
+
+use crate::error::Error;
+use crate::mutation::{Mutation, MutationResult};
+use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClientConfiguration {
@@ -53,7 +56,6 @@ where
 {
     config: ClientConfiguration,
     start_notifier: CompletionNotifier<(), Error>,
-    started: bool,
     inner: Arc<RwLock<Inner>>,
     transport_handle: Option<T>,
     stop_listener: CompletionListener<(), Error>,
@@ -91,7 +93,6 @@ where
         Ok(Client {
             config,
             start_notifier,
-            started: false,
             inner,
             transport_handle: Some(transport_handle),
             stop_listener,
@@ -114,83 +115,97 @@ where
         })
     }
 
-    fn start(&mut self) -> Result<(), Error> {
+    pub async fn run(mut self) -> Result<(), Error> {
         let mut transport_handle = self
             .transport_handle
             .take()
             .expect("Transport handle was already consumed");
 
-        let mut inner = self.inner.write()?;
+        // create a channel through which we will receive message from our handles to be sent to transport
+        let out_receiver = {
+            let mut inner = self.inner.write()?;
+            let (out_sender, out_receiver) = mpsc::unbounded();
+            inner.transport_out = Some(out_sender);
+            out_receiver
+        };
 
         // send outgoing messages to transport
-        let (out_sender, out_receiver) = mpsc::unbounded();
-        spawn_future(
-            out_receiver
-                .forward(transport_handle.get_sink().sink_map_err(|_err| ()))
-                .map(|_| ()),
-        );
-        inner.transport_out = Some(out_sender);
+        let mut transport_sink = transport_handle.get_sink().sink_compat();
+        let transport_sender = async move {
+            let mut receiver = out_receiver;
 
-        // handle incoming messages
-        let weak_inner1 = Arc::downgrade(&self.inner);
-        let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future(
-            transport_handle
-                .get_stream()
-                .map_err(|err| Error::Fatal(format!("Error in incoming transport stream: {}", err)))
-                .for_each(move |event| {
-                    match event {
-                        InEvent::Message(msg) => {
-                            if let Err(err) = Self::handle_incoming_message(&weak_inner1, msg) {
-                                if err.is_fatal() {
-                                    return Err(err);
-                                } else {
-                                    error!("Couldn't process incoming message: {}", err);
-                                }
-                            }
-                        }
-                        InEvent::NodeStatus(_, _) => {
-                            // TODO: Do something with node status
+            while let Some(item) = receiver.next().await {
+                transport_sink.send(item).await?;
+            }
+
+            Ok::<(), Error>(())
+        };
+
+        // handle incoming messages from transport
+        let weak_inner = Arc::downgrade(&self.inner);
+        let mut transport_stream = transport_handle.get_stream().compat();
+        let transport_receiver = async move {
+            while let Some(event) = transport_stream.next().await {
+                if let InEvent::Message(msg) = event? {
+                    if let Err(err) = Inner::handle_incoming_message(&weak_inner, msg) {
+                        if err.is_fatal() {
+                            return Err(err);
+                        } else {
+                            error!("Couldn't process incoming message: {}", err);
                         }
                     }
-                    Ok(())
-                })
-                .map(|_| ())
-                .map_err(move |err| {
-                    Inner::notify_stop("incoming transport stream", &weak_inner2, Err(err));
-                }),
-        );
+                }
+            }
 
-        // schedule transport handle
-        let weak_inner1 = Arc::downgrade(&self.inner);
-        let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future(
-            transport_handle
-                .map(move |_| {
-                    info!("Transport is done");
-                    Inner::notify_stop("transport completion", &weak_inner1, Ok(()));
-                })
-                .map_err(move |err| {
-                    Inner::notify_stop("transport error", &weak_inner2, Err(err.into()));
-                }),
-        );
+            Ok::<(), Error>(())
+        };
 
         // management timer that checks for timed out queries & register watched queries
-        let weak_inner1 = Arc::downgrade(&self.inner);
-        let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future(
-            wasm_timer::Interval::new_interval(self.config.management_interval)
-                .map_err(|err| Error::Fatal(format!("Management timer error: {}", err)))
-                .for_each(move |_| Self::management_timer_process(&weak_inner1))
-                .map_err(move |err| {
-                    Inner::notify_stop("management timer error", &weak_inner2, Err(err));
-                }),
-        );
+        let weak_inner = Arc::downgrade(&self.inner);
+        let management_interval = self.config.management_interval;
+        let manager = async move {
+            let mut timer = wasm_timer::Interval::new(management_interval);
 
+            while let Some(_) = timer.next().await {
+                Inner::management_timer_process(&weak_inner)?;
+            }
+
+            Ok::<(), Error>(())
+        };
+
+        // notify handles that we have started
         self.start_notifier.complete(Ok(()));
+
+        // wait for handles to be completed
+        let stop_listener = self.stop_listener.compat();
+
+        futures::select! {
+            _ = transport_sender.fuse() => (),
+            _ = transport_receiver.fuse() => (),
+            _ = manager.fuse() => (),
+            _ = transport_handle.compat().fuse() => (),
+            _ = stop_listener.fuse() => (),
+        };
+
         Ok(())
     }
+}
 
+struct Inner {
+    config: ClientConfiguration,
+    cell: Cell,
+    clock: Clock,
+    schema: Arc<Schema>,
+    transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
+    handles_count: usize,
+    index_node: Node,
+    pending_queries: HashMap<ConsistentTimestamp, PendingRequest<QueryResult>>,
+    watched_queries: HashMap<ConsistentTimestamp, WatchedQueryRequest>,
+    pending_mutations: HashMap<ConsistentTimestamp, PendingRequest<MutationResult>>,
+    stop_notifier: CompletionNotifier<(), Error>,
+}
+
+impl Inner {
     fn handle_incoming_message(
         weak_inner: &Weak<RwLock<Inner>>,
         in_message: Box<InMessage>,
@@ -258,49 +273,12 @@ where
 
         Ok(())
     }
-}
 
-impl<T> Future for Client<T>
-where
-    T: TransportHandle,
-{
-    type Item = ();
-    type Error = Error;
-
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        if !self.started {
-            self.start()?;
-            self.started = true;
-        }
-
-        // check if store got stopped
-        self.stop_listener.poll().map_err(|err| match err {
-            CompletionError::UserError(err) => err,
-            _ => Error::Other("Error in completion error".to_string()),
-        })
-    }
-}
-
-struct Inner {
-    config: ClientConfiguration,
-    cell: Cell,
-    clock: Clock,
-    schema: Arc<Schema>,
-    transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
-    handles_count: usize,
-    index_node: Node,
-    pending_queries: HashMap<ConsistentTimestamp, PendingRequest<QueryResult>>,
-    watched_queries: HashMap<ConsistentTimestamp, WatchedQueryRequest>,
-    pending_mutations: HashMap<ConsistentTimestamp, PendingRequest<MutationResult>>,
-    stop_notifier: CompletionNotifier<(), Error>,
-}
-
-impl Inner {
     fn send_mutation(
         &mut self,
         mutation: Mutation,
     ) -> Result<oneshot::Receiver<Result<MutationResult, Error>>, Error> {
-        let (result_sender, receiver) = futures::oneshot();
+        let (result_sender, receiver) = oneshot::channel();
 
         let request_id = self.clock.consistent_time(self.cell.local_node());
         let request_frame = mutation.to_mutation_request_frame(&self.schema)?;
@@ -333,7 +311,7 @@ impl Inner {
         ),
         Error,
     > {
-        let (result_sender, receiver) = futures::oneshot();
+        let (result_sender, receiver) = oneshot::channel();
 
         let request_id = self.clock.consistent_time(self.cell.local_node());
         let request_frame = query.to_request_frame(&self.schema)?;
@@ -457,27 +435,6 @@ impl Inner {
 
         Ok(())
     }
-
-    fn notify_stop(future_name: &str, weak_inner: &Weak<RwLock<Inner>>, res: Result<(), Error>) {
-        match &res {
-            Ok(()) => info!("Local store has completed"),
-            Err(err) => error!("Got an error in future {}: {}", future_name, err),
-        }
-
-        let locked_inner = if let Some(locked_inner) = weak_inner.upgrade() {
-            locked_inner
-        } else {
-            return;
-        };
-
-        let inner = if let Ok(inner) = locked_inner.read() {
-            inner
-        } else {
-            return;
-        };
-
-        inner.stop_notifier.complete(res);
-    }
 }
 
 ///
@@ -542,78 +499,85 @@ pub struct ClientHandle {
 }
 
 impl ClientHandle {
-    pub fn on_start(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
-        Ok(self
-            .start_listener
-            .try_clone()
-            .map_err(|_err| Error::Other("Couldn't clone start listener in handle".to_string()))?
-            .map_err(|err| match err {
-                CompletionError::UserError(err) => err,
-                _ => Error::Other("Error in completion error".to_string()),
-            }))
+    pub async fn on_start(&self) -> Result<(), Error> {
+        let listener = {
+            self.start_listener
+                .try_clone()
+                .map_err(|_err| Error::Dropped)?
+                .compat()
+        };
+
+        listener.await.map_err(|_err| Error::Dropped)
     }
 
-    pub fn mutate(
-        &self,
-        mutation: Mutation,
-    ) -> Result<impl Future<Item = MutationResult, Error = Error>, Error> {
+    pub async fn mutate(&self, mutation: Mutation) -> Result<MutationResult, Error> {
+        let result = {
+            let inner = match self.inner.upgrade() {
+                Some(inner) => inner,
+                None => return Err(Error::Dropped),
+            };
+            let mut inner = match inner.write() {
+                Ok(inner) => inner,
+                Err(err) => return Err(err.into()),
+            };
+
+            inner.send_mutation(mutation)?
+        };
+
+        result.await.map_err(|_err| Error::Cancelled)?
+    }
+
+    pub fn query(&self, query: Query) -> QueryFuture {
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
-            None => return Err(Error::Dropped),
+            None => return Error::Dropped.into(),
         };
         let mut inner = match inner.write() {
             Ok(inner) => inner,
-            Err(err) => return Err(err.into()),
+            Err(_err) => return Error::Poisoned.into(),
         };
 
-        Ok(inner
-            .send_mutation(mutation)?
-            .map_err(|_| Error::Other("Mutation future channel closed".to_string()))
-            .and_then(|res| res))
-    }
-
-    pub fn query(&self, query: Query) -> Result<QueryFuture, Error> {
-        let inner = match self.inner.upgrade() {
-            Some(inner) => inner,
-            None => return Err(Error::Dropped),
-        };
-        let mut inner = match inner.write() {
-            Ok(inner) => inner,
-            Err(err) => return Err(err.into()),
+        let (request_id, receiver) = match inner.send_query(query) {
+            Ok((request_id, receiver)) => (request_id, receiver),
+            Err(err) => return err.into(),
         };
 
-        let (request_id, receiver) = inner.send_query(query)?;
-        Ok(QueryFuture {
-            receiver,
+        QueryFuture {
+            result: Ok(receiver),
             request_id,
-        })
+        }
     }
 
-    pub fn watched_query(&self, query: Query) -> Result<WatchedQueryStream, Error> {
+    pub fn watched_query(&self, query: Query) -> WatchedQueryStream {
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
-            None => return Err(Error::Dropped),
+            None => return WatchedQueryStream::from_error(self.inner.clone(), Error::Dropped),
         };
         let mut inner = match inner.write() {
             Ok(inner) => inner,
-            Err(err) => return Err(err.into()),
+            Err(err) => return WatchedQueryStream::from_error(self.inner.clone(), err.into()),
         };
 
         let watch_token = query
             .watch_token
             .unwrap_or_else(|| inner.clock.consistent_time(inner.cell.local_node()));
+
         let watch_query = WatchedQuery {
             query,
             token: watch_token,
         };
 
-        let (request_id, receiver) = inner.watch_query(watch_query)?;
-        Ok(WatchedQueryStream {
+        let (request_id, receiver) = match inner.watch_query(watch_query) {
+            Ok(tup) => tup,
+            Err(err) => return WatchedQueryStream::from_error(self.inner.clone(), err),
+        };
+
+        WatchedQueryStream {
             inner: self.inner.clone(),
-            watch_token,
+            watch_token: Some(watch_token),
             request_id,
-            receiver,
-        })
+            result: Ok(receiver),
+        }
     }
 
     pub fn cancel_query(&self, query_id: ConsistentTimestamp) -> Result<(), Error> {
@@ -655,7 +619,7 @@ impl Drop for ClientHandle {
 }
 
 pub struct QueryFuture {
-    receiver: oneshot::Receiver<Result<QueryResult, Error>>,
+    result: Result<oneshot::Receiver<Result<QueryResult, Error>>, Error>,
     request_id: ConsistentTimestamp,
 }
 
@@ -665,49 +629,58 @@ impl QueryFuture {
     }
 }
 
-impl Future for QueryFuture {
-    type Item = QueryResult;
-    type Error = Error;
+impl From<Error> for QueryFuture {
+    fn from(err: Error) -> Self {
+        QueryFuture {
+            result: Err(err),
+            request_id: ConsistentTimestamp(0),
+        }
+    }
+}
 
-    fn poll(&mut self) -> Result<Async<QueryResult>, Error> {
-        match self.receiver.poll() {
-            Ok(Async::Ready(Ok(res))) => Ok(Async::Ready(res)),
-            Ok(Async::Ready(Err(err))) => Err(err),
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(_) => Err(Error::Other(
-                "Error polling query result future".to_string(),
-            )),
+impl Future for QueryFuture {
+    type Output = Result<QueryResult, Error>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        match self.result.as_mut() {
+            Err(err) => Poll::Ready(Err(err.clone())),
+            Ok(receiver) => receiver
+                .poll_unpin(cx)
+                .map(|res| res.map_err(|_| Error::Cancelled).and_then(|res| res))
+                .map_err(|_err| Error::Cancelled),
         }
     }
 }
 
 pub struct WatchedQueryStream {
     inner: Weak<RwLock<Inner>>,
-    watch_token: WatchToken,
+    watch_token: Option<WatchToken>,
     request_id: ConsistentTimestamp,
-    receiver: mpsc::Receiver<Result<QueryResult, Error>>,
+    result: Result<mpsc::Receiver<Result<QueryResult, Error>>, Error>,
 }
 
 impl WatchedQueryStream {
     pub fn query_id(&self) -> ConsistentTimestamp {
         self.request_id
     }
+
+    fn from_error(inner: Weak<RwLock<Inner>>, err: Error) -> Self {
+        WatchedQueryStream {
+            inner,
+            watch_token: None,
+            result: Err(err),
+            request_id: ConsistentTimestamp(0),
+        }
+    }
 }
 
 impl Stream for WatchedQueryStream {
-    type Item = QueryResult;
-    type Error = Error;
+    type Item = Result<QueryResult, Error>;
 
-    fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
-        let res = self.receiver.poll();
-        match res {
-            Ok(Async::Ready(Some(Ok(result)))) => Ok(Async::Ready(Some(result))),
-            Ok(Async::Ready(None)) => Ok(Async::Ready(None)),
-            Ok(Async::Ready(Some(Err(err)))) => Err(err),
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(_) => Err(Error::Other(
-                "Error polling watch query channel".to_string(),
-            )),
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match self.result.as_mut() {
+            Err(err) => Poll::Ready(Some(Err(err.clone()))),
+            Ok(stream) => stream.poll_next_unpin(cx),
         }
     }
 }
@@ -717,7 +690,10 @@ impl Drop for WatchedQueryStream {
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut inner) = inner.write() {
                 inner.watched_queries.remove(&self.request_id);
-                let _ = inner.send_unwatch_query(self.watch_token);
+
+                if let Some(watch_token) = self.watch_token {
+                    let _ = inner.send_unwatch_query(watch_token);
+                }
             }
         }
     }

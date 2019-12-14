@@ -2,7 +2,7 @@
 
 use self::log4rs::config::Logger;
 use failure::err_msg;
-use futures::prelude::*;
+use futures01::prelude::*;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

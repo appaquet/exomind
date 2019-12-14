@@ -12,3 +12,5 @@ exocore-common = { path = "../../common" }
 exocore-transport = { path = "../../transport", features = ["libp2p_transport"] }
 exocore-index = { path = "../../index" }
 failure = "0.1"
+futures = { version = "0.3", features = ["async-await", "compat"] }
+futures01 = { package = "futures", version = "0.1" }

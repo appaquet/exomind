@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock, Weak};
 
-use futures::prelude::*;
-use futures::sync::{mpsc, oneshot};
+use futures01::prelude::*;
+use futures01::sync::{mpsc, oneshot};
 
 use exocore_common::cell::Cell;
 use exocore_common::protos::index_transport_capnp::{
@@ -11,7 +11,7 @@ use exocore_common::protos::MessageType;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
-use exocore_common::utils::futures::spawn_future;
+use exocore_common::utils::futures::spawn_future_01;
 use exocore_schema::schema::Schema;
 use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandle};
 
@@ -98,7 +98,7 @@ where
 
         // send outgoing messages to transport
         let (out_sender, out_receiver) = mpsc::unbounded();
-        spawn_future(
+        spawn_future_01(
             out_receiver
                 .forward(transport_handle.get_sink().sink_map_err(|_err| ()))
                 .map(|_| ()),
@@ -108,7 +108,7 @@ where
         // handle incoming messages
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future(
+        spawn_future_01(
             transport_handle
                 .get_stream()
                 .map_err(|err| Error::Fatal(format!("Error in incoming transport stream: {}", err)))
@@ -140,7 +140,7 @@ where
         // management time
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future(
+        spawn_future_01(
             tokio::timer::Interval::new_interval(self.config.management_timer_interval)
                 .map_err(|err| Error::Fatal(format!("Management timer error: {}", err)))
                 .for_each(move |_| Self::management_timer_process(&weak_inner1))
@@ -152,7 +152,7 @@ where
         // schedule transport handle
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future(
+        spawn_future_01(
             transport_handle
                 .map(move |_| {
                     info!("Transport is done");
@@ -210,7 +210,7 @@ where
         }?;
 
         let weak_inner2 = weak_inner.clone();
-        spawn_future(
+        spawn_future_01(
             future_result
                 .then(move |result| {
                     let inner = weak_inner2.upgrade().ok_or(Error::Dropped)?;
@@ -271,7 +271,7 @@ where
 
         let reply_token1 = in_message.get_reply_token()?;
         let reply_token2 = reply_token1.clone();
-        spawn_future(
+        spawn_future_01(
             result_stream
                 .then(move |result| -> Result<(), Error> {
                     let inner = weak_inner2.upgrade().ok_or(Error::Dropped)?;

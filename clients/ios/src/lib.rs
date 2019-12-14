@@ -15,7 +15,8 @@ use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
-use futures::prelude::*;
+use futures::{FutureExt, StreamExt, TryFutureExt, TryStreamExt};
+use futures01::prelude::*;
 use libc;
 use std::ffi::CString;
 use std::os::raw::c_void;
@@ -56,7 +57,7 @@ impl Context {
             PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
                 .expect("Couldn't decode cell publickey");
         let remote_node = Node::new_from_public_key(remote_node_pk);
-        let remote_addr = "/ip4/192.168.2.13/tcp/3330"
+        let remote_addr = "/ip4/192.168.2.16/tcp/3330"
             .parse()
             .expect("Couldn't parse remote node addr");
         remote_node.add_address(remote_addr);
@@ -113,6 +114,9 @@ impl Context {
 
         runtime.spawn(
             remote_store_client
+                .run()
+                .boxed()
+                .compat()
                 .map(|_| {
                     error!("Remote store is done");
                 })
@@ -136,12 +140,7 @@ impl Context {
     ) -> Result<QueryHandle, QueryStatus> {
         let future_result = self
             .store_handle
-            .query(Query::with_trait("exocore.task").with_count(1000))
-            .map_err(|err| {
-                error!("Couldn't create query: {}", err);
-                QueryStatus::Error
-            })?;
-
+            .query(Query::with_trait("exocore.task").with_count(1000));
         let query_id = future_result.query_id();
 
         let schema = self.schema.clone();
@@ -152,6 +151,8 @@ impl Context {
         let callback_ctx3 = callback_ctx1.clone();
         self.runtime.spawn(
             future_result
+                .boxed()
+                .compat()
                 .and_then(move |res| {
                     let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
                     let cstr = CString::new(json).unwrap();
@@ -196,11 +197,7 @@ impl Context {
     ) -> Result<QueryStreamHandle, QueryStreamStatus> {
         let result_stream = self
             .store_handle
-            .watched_query(Query::with_trait("exocore.task").with_count(1000))
-            .map_err(|err| {
-                error!("Couldn't create query: {}", err);
-                QueryStreamStatus::Error
-            })?;
+            .watched_query(Query::with_trait("exocore.task").with_count(1000));
 
         let query_id = result_stream.query_id();
 
@@ -212,6 +209,8 @@ impl Context {
         let callback_ctx3 = callback_ctx1.clone();
         self.runtime.spawn(
             result_stream
+                .boxed()
+                .compat()
                 .for_each(move |res| {
                     let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
                     let cstr = CString::new(json).unwrap();

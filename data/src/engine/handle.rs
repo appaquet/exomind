@@ -7,7 +7,7 @@ use crate::{chain, operation};
 use exocore_common;
 use exocore_common::protos::data_chain_capnp::chain_operation;
 use exocore_common::utils::completion_notifier::{CompletionError, CompletionListener};
-use futures::prelude::*;
+use futures01::prelude::*;
 use std::ops::RangeBounds;
 use std::sync::{Arc, RwLock, Weak};
 
@@ -206,7 +206,7 @@ where
     /// Calling the engine on every call should be throttled in the case of a big read amplification.
     pub fn take_events_stream(
         &mut self,
-    ) -> Result<impl futures::Stream<Item = Event, Error = Error>, Error> {
+    ) -> Result<impl Stream<Item = Event, Error = Error>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
 

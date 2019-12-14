@@ -1,4 +1,4 @@
-use futures::prelude::*;
+use futures01::prelude::*;
 use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
 use libp2p::swarm::{
     NetworkBehaviour, NetworkBehaviourAction, OneShotHandler, PollParameters, ProtocolsHandler,

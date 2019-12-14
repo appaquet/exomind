@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
 
-use futures::prelude::*;
-use futures::sync::mpsc;
-use futures::MapErr;
+use futures01::prelude::*;
+use futures01::sync::mpsc;
+use futures01::MapErr;
 use js_sys::{ArrayBuffer, Uint8Array};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -21,6 +21,8 @@ use exocore_common::utils::completion_notifier::{
 use exocore_common::utils::futures::spawn_future_non_send;
 use exocore_transport::transport::{ConnectionStatus, MpscHandleSink, MpscHandleStream};
 use exocore_transport::{Error, InEvent, InMessage, OutEvent, TransportHandle, TransportLayer};
+use futures::compat::Stream01CompatExt;
+use futures::StreamExt;
 
 const OUT_CHANNEL_SIZE: usize = 100;
 const IN_CHANNEL_SIZE: usize = 100;
@@ -91,35 +93,32 @@ impl BrowserTransportClient {
         // get stream for outgoing messages from each handle, and pipe it to websocket
         for ((_cell_id, _layer), ref mut inner_handle) in &mut inner.handles {
             let weak_inner = Arc::downgrade(&self.inner);
-            let out_receiver = inner_handle
+            let mut out_receiver = inner_handle
                 .out_receiver
                 .take()
-                .expect("InnerHandle's out_receiver was already consumed");
+                .expect("InnerHandle's out_receiver was already consumed")
+                .compat();
 
-            spawn_future_non_send(
-                out_receiver
-                    .map_err(|_err| Error::Other("Handle out stream error err".to_string()))
-                    .for_each(move |event| {
-                        match event {
-                            OutEvent::Message(msg) => {
-                                let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
-                                let inner = inner.lock()?;
-                                if let Some(ws) = &inner.socket {
-                                    let mut message_bytes = msg.envelope_builder.as_bytes();
-                                    if let Err(_err) = ws.ws.send_with_u8_array(&mut message_bytes)
-                                    {
-                                        error!("Error sending a message to websocket");
-                                    }
+            spawn_future_non_send(async move {
+                while let Some(event) = out_receiver.next().await {
+                    let event = event?;
+
+                    match event {
+                        OutEvent::Message(msg) => {
+                            let inner = weak_inner.upgrade().ok_or(())?;
+                            let inner = inner.lock().map_err(|_| ())?;
+                            if let Some(ws) = &inner.socket {
+                                let mut message_bytes = msg.envelope_builder.as_bytes();
+                                if let Err(_err) = ws.ws.send_with_u8_array(&mut message_bytes) {
+                                    error!("Error sending a message to websocket");
                                 }
                             }
                         }
+                    }
+                }
 
-                        Ok(())
-                    })
-                    .map_err(|err| {
-                        error!("Got an error in out stream of handle: {}", err);
-                    }),
-            );
+                Ok(())
+            });
         }
 
         // start websocket
@@ -128,18 +127,17 @@ impl BrowserTransportClient {
 
         // start management timer
         let weak_inner = Arc::downgrade(&self.inner);
-        let check_connections = wasm_timer::Interval::new_interval(Duration::from_millis(1000))
-            .map_err(|err| Error::Other(format!("Timer error: {}", err)))
-            .for_each(move |_| {
-                let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
-                let mut inner = inner.lock()?;
-                inner.check_connection_status(&weak_inner)?;
-                Ok(())
-            })
-            .map_err(|err| {
-                error!("Error in timer: {}", err.to_string());
-            });
-        spawn_future_non_send(check_connections);
+        spawn_future_non_send(async move {
+            let mut interval = wasm_timer::Interval::new(Duration::from_millis(1000));
+
+            while let Some(_) = interval.next().await {
+                let inner = weak_inner.upgrade().ok_or(())?;
+                let mut inner = inner.lock().map_err(|_| ())?;
+                inner.check_connection_status(&weak_inner).map_err(|_| ())?;
+            }
+
+            Ok(())
+        })
     }
 }
 

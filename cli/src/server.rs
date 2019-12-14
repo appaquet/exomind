@@ -16,7 +16,7 @@ use exocore_transport::ws::{
 };
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use failure::err_msg;
-use futures::prelude::*;
+use futures01::prelude::*;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::runtime::Runtime;

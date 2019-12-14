@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use failure::err_msg;
-use futures::prelude::*;
+use futures01::prelude::*;
 use itertools::Itertools;
 use tempdir;
 use tokio::runtime::Runtime;

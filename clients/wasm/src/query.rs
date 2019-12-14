@@ -1,19 +1,20 @@
+#![allow(clippy::unnecessary_mut_passed)]
+
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use futures::Future;
 use wasm_bindgen::prelude::*;
 
 use exocore_index::query::Query;
 use exocore_index::store::remote::ClientHandle;
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
-use futures::prelude::*;
-use futures::unsync::oneshot;
 
 use crate::js::into_js_error;
 use exocore_common::utils::futures::spawn_future_non_send;
+use futures::channel::oneshot;
+use futures::prelude::*;
 
 #[wasm_bindgen]
 pub struct QueryBuilder {
@@ -58,23 +59,20 @@ impl QueryBuilder {
     pub fn execute(self) -> crate::query::QueryResult {
         let query = self.inner.expect("Query was not initialized");
 
+        let store_handle = self.store_handle;
         let result_cell = Rc::new(RefCell::new(None));
-        let fut_results = {
-            let results_cell1 = result_cell.clone();
-            let results_cell2 = result_cell.clone();
-            self.store_handle
-                .query(query)
-                .expect("Couldn't query store")
-                .map(move |result| {
-                    let mut res_cell = results_cell1.borrow_mut();
-                    *res_cell = Some(Ok(result));
-                    true.into()
-                })
-                .map_err(move |err| {
-                    let mut res_cell = results_cell2.borrow_mut();
-                    *res_cell = Some(Err(err.clone()));
-                    into_js_error(err)
-                })
+        let result_cell1 = result_cell.clone();
+        let fut_results = async move {
+            let result = store_handle.query(query).await;
+            let js_result = match &result {
+                Ok(_res) => Ok(true.into()),
+                Err(err) => Err(into_js_error(err)),
+            };
+
+            let mut res_cell = result_cell1.borrow_mut();
+            *res_cell = Some(result);
+
+            js_result
         };
 
         crate::query::QueryResult {
@@ -93,38 +91,50 @@ impl QueryBuilder {
 
         let results_cell1 = result_cell.clone();
         let callback_cell1 = callback_cell.clone();
+        let report_result = move |result: Result<
+            exocore_index::query::QueryResult,
+            exocore_index::error::Error,
+        >| {
+            if let Err(err) = &result {
+                error!("Error in watched query: {}", err);
+            }
+
+            {
+                let mut res_cell = results_cell1.borrow_mut();
+                *res_cell = Some(result);
+            }
+
+            {
+                let callback = callback_cell1.borrow();
+                if let Some(func) = &*callback {
+                    func.call0(&JsValue::null()).unwrap();
+                }
+            }
+        };
+
         let (drop_sender, drop_receiver) = oneshot::channel();
-        let stream = self
-            .store_handle
-            .watched_query(query)
-            .expect("Couldn't watched query store")
-            .then(move |result| {
-                let ret = result.as_ref().map(|_| ()).map_err(|_| ());
+        let store_handle = self.store_handle;
+        spawn_future_non_send(async move {
+            let mut results = store_handle.watched_query(query);
+            let mut drop_receiver = drop_receiver.fuse();
 
-                if let Err(err) = &result {
-                    error!("Error in watched query: {}", err);
-                }
+            loop {
+                futures::select! {
+                    result = results.next().fuse() => {
+                        let result = if let Some(result) = result {
+                            result
+                        } else {
+                            return Ok(());
+                        };
 
-                {
-                    let mut res_cell = results_cell1.borrow_mut();
-                    *res_cell = Some(result);
-                }
-
-                {
-                    let callback = callback_cell1.borrow();
-                    if let Some(func) = &*callback {
-                        func.call0(&JsValue::null()).unwrap();
+                        report_result(result);
                     }
-                }
-
-                ret
-            })
-            .for_each(|_| Ok(()));
-
-        spawn_future_non_send(stream.select(drop_receiver.map_err(|_| ())).then(|_| {
-            info!("Watch query stream is done");
-            Ok(())
-        }));
+                    _ = drop_receiver => {
+                        return Ok(());
+                    }
+                };
+            }
+        });
 
         crate::query::WatchedQuery {
             schema: self.schema.clone(),

@@ -1,5 +1,5 @@
-use futures::prelude::*;
-use futures::sync::oneshot;
+use futures01::prelude::*;
+use futures01::sync::oneshot;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::{Arc, RwLock, Weak};

@@ -13,14 +13,14 @@ exocore-index = { path = "../../index", default-features = false }
 exocore-transport = { path = "../../transport" }
 exocore-schema = { path = "../../schema" }
 tokio = { version = "0.1", features = ["io"], default-features = false }
-futures = "0.1"
 failure = "0.1"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue
-wasm-bindgen-futures = "0.3"
-wasm-timer = "0.1"
+wasm-bindgen-futures = "0.4"
+wasm-timer = "0.2"
 web-sys = { version = "0.3", features = ["ErrorEvent", "MessageEvent", "WebSocket", "BinaryType"] }
 js-sys = "0.3"
 rand = { version = "0.7", features = ["wasm-bindgen"] }
 log = "0.4"
 console_log = "0.1"
-
+futures = { version = "0.3", features = ["async-await", "compat"] }
+futures01 = { package = "futures", version = "0.1" }

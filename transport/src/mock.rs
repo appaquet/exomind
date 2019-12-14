@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
-use futures::future;
-use futures::future::FutureResult;
-use futures::prelude::*;
-use futures::stream::Peekable;
-use futures::sync::mpsc;
+use futures01::future;
+use futures01::future::FutureResult;
+use futures01::prelude::*;
+use futures01::stream::Peekable;
+use futures01::sync::mpsc;
 use tokio::runtime::Runtime;
 
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
@@ -16,7 +16,7 @@ use exocore_common::utils::completion_notifier::{CompletionListener, CompletionN
 
 use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::{Error, InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer};
-use exocore_common::utils::futures::spawn_future;
+use exocore_common::utils::futures::spawn_future_01;
 
 const CHANNELS_SIZE: usize = 1000;
 
@@ -88,7 +88,7 @@ impl TransportHandle for MockTransportHandle {
     type Stream = MpscHandleStream;
 
     fn on_start(&self) -> Self::StartFuture {
-        futures::done(Ok(()))
+        futures01::done(Ok(()))
     }
 
     fn get_sink(&mut self) -> Self::Sink {
@@ -125,7 +125,7 @@ impl Future for MockTransportHandle {
             let layer = self.layer;
             let nodes_sink_weak = Weak::clone(&self.nodes_sink);
             let completion_handle = self.completion_notifier.clone();
-            spawn_future(outgoing_stream.for_each(move |event| {
+            spawn_future_01(outgoing_stream.for_each(move |event| {
                 match event {
                     OutEvent::Message(msg) => {
                         let nodes_sink = nodes_sink_weak.upgrade().ok_or_else(|| {

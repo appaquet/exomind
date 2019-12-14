@@ -19,8 +19,8 @@ use exocore_transport::{
     Error as TransportError, InEvent, InMessage, OutEvent, OutMessage, TransportHandle,
     TransportLayer,
 };
-use futures::prelude::*;
-use futures::sync::mpsc;
+use futures01::prelude::*;
+use futures01::sync::mpsc;
 use std;
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
@@ -39,7 +39,7 @@ pub(crate) mod testing;
 pub use chain_sync::ChainSyncConfig;
 pub use commit_manager::CommitManagerConfig;
 pub use error::Error;
-use exocore_common::utils::futures::spawn_future;
+use exocore_common::utils::futures::spawn_future_01;
 pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
 pub use pending_sync::PendingSyncConfig;
 pub use request_tracker::RequestTrackerConfig;
@@ -188,7 +188,7 @@ where
             let weak_inner = Arc::downgrade(&self.inner);
             let (transport_out_channel_sender, transport_out_channel_receiver) =
                 mpsc::channel(self.config.to_transport_channel_size);
-            spawn_future(
+            spawn_future_01(
                 transport_out_channel_receiver
                     .map_err(|err| {
                         TransportError::Other(format!(
@@ -215,7 +215,7 @@ where
         {
             let weak_inner1 = Arc::downgrade(&self.inner);
             let weak_inner2 = Arc::downgrade(&self.inner);
-            spawn_future(
+            spawn_future_01(
                 transport_in_stream
                     .map_err(Error::Transport)
                     .for_each(move |event| {
@@ -249,7 +249,7 @@ where
         {
             let weak_inner1 = Arc::downgrade(&self.inner);
             let weak_inner2 = Arc::downgrade(&self.inner);
-            spawn_future({
+            spawn_future_01({
                 Interval::new_interval(self.config.manager_timer_interval)
                     .map_err(|err| Error::Other(format!("Interval error: {}", err)))
                     .for_each(move |_| {
@@ -269,7 +269,7 @@ where
         // schedule transport
         {
             let weak_inner1 = Arc::downgrade(&self.inner);
-            spawn_future({
+            spawn_future_01({
                 transport.map_err(move |err| {
                     Self::handle_spawned_future_error("transport", &weak_inner1, err.into());
                 })
@@ -376,7 +376,7 @@ where
     fn poll(&mut self) -> Result<Async<()>, Error> {
         // first, make sure transport is started
         if let Some(transport_handle) = &self.transport {
-            try_ready!(transport_handle.on_start().poll());
+            futures01::try_ready!(transport_handle.on_start().poll());
         }
 
         // start the engine if it's not started

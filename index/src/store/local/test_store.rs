@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use futures::Future;
+use futures01::Future;
 use tempdir::TempDir;
 
 use exocore_data::tests_utils::DataTestCluster;

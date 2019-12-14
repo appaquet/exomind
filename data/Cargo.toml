@@ -14,13 +14,14 @@ memory_pending = []
 exocore-common = { path = "../common" }
 exocore-transport = { path = "../transport" }
 log = "0.4"
-futures = "0.1"
 tokio = { version = "0.1", features = ["io"], default-features = false }
 byteorder = "1.2"
 failure = "0.1"
 itertools = "0.8"
 serde = "1.0"
 serde_derive = "1.0"
+futures = { version = "0.3", features = ["async-await", "compat"] }
+futures01 = { package = "futures", version = "0.1" }
 
 # For directory chain
 memmap = { version = "0.7", optional = true }

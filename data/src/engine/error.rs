@@ -2,7 +2,7 @@ use crate::engine::{chain_sync, commit_manager, pending_sync};
 use crate::{block, chain, operation, pending};
 use exocore_common::capnp;
 use exocore_transport::Error as TransportError;
-use futures::sync::mpsc;
+use futures01::sync::mpsc;
 
 ///
 /// Engine errors

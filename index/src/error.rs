@@ -63,6 +63,9 @@ pub enum Error {
     #[fail(display = "Try to lock a mutex that was poisoned")]
     Poisoned,
 
+    #[fail(display = "Query or mutation got cancelled")]
+    Cancelled,
+
     #[fail(display = "Dropped or couldn't get locked")]
     Dropped,
 

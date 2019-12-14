@@ -11,10 +11,11 @@ libp2p_transport = ["libp2p", "tokio/timer"]
 
 [dependencies]
 exocore-common = { path = "../common" }
-futures = "0.1"
 log = "0.4"
 failure = "0.1"
 tokio = { version = "0.1", features = ["io"], default-features = false }
+futures = { version = "0.3", features = ["async-await", "compat"] }
+futures01 = { package = "futures", version = "0.1" }
 
 # Websocket transport
 websocket = { version = "0.24", optional = true, default-features = false, features = ["async"] }

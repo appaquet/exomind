@@ -5,7 +5,6 @@ use exocore_index::store::remote::ClientHandle;
 use exocore_schema::entity::{Entity, FieldValue, RecordBuilder, TraitBuilder};
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
-use futures::prelude::*;
 use wasm_bindgen::__rt::std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
@@ -56,19 +55,21 @@ impl MutationBuilder {
 
     #[wasm_bindgen]
     pub fn execute(self) -> js_sys::Promise {
+        let store_handle = self.store_handle;
         let mutation = self.inner.expect("Mutation was not initialized");
-
         let schema = self.schema;
-        let fut_result = self
-            .store_handle
-            .mutate(mutation)
-            .expect("Couldn't send mutation")
-            .map(move |res| {
-                with_schema(&schema, || JsValue::from_serde(&res)).unwrap_or_else(into_js_error)
-            })
-            .map_err(into_js_error);
 
-        wasm_bindgen_futures::future_to_promise(fut_result)
+        wasm_bindgen_futures::future_to_promise(async move {
+            let result = store_handle.mutate(mutation).await;
+
+            match result {
+                Ok(res) => {
+                    let serialized = with_schema(&schema, || JsValue::from_serde(&res));
+                    serialized.map_err(into_js_error)
+                }
+                Err(err) => Err(into_js_error(err)),
+            }
+        })
     }
 
     fn jsdata_to_trait_builder(&self, trait_type: &str, data: JsValue) -> TraitBuilder {

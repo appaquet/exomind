@@ -1,4 +1,3 @@
-use futures::{Future, Stream};
 use log::Level;
 use wasm_bindgen::prelude::*;
 
@@ -13,6 +12,8 @@ use exocore_transport::{InEvent, TransportHandle, TransportLayer};
 
 use crate::ws::BrowserTransportClient;
 use exocore_transport::transport::ConnectionStatus;
+use futures::compat::Stream01CompatExt;
+use futures::StreamExt;
 use std::sync::{Arc, Mutex};
 
 #[wasm_bindgen]
@@ -62,23 +63,30 @@ impl ExocoreClient {
         )
         .expect("Couldn't create index");
 
-        let store_handle = remote_store
-            .get_handle()
-            .expect("Couldn't get store handle");
-        spawn_future_non_send(remote_store.map_err(|err| {
-            error!("Error starting remote store: {}", err);
-        }));
-
-        spawn_future_non_send(
-            store_handle
-                .on_start()
-                .unwrap()
-                .and_then(|_| {
-                    info!("Remote store started");
-                    Ok(())
-                })
-                .map_err(|_err| ()),
+        let store_handle = Arc::new(
+            remote_store
+                .get_handle()
+                .expect("Couldn't get store handle"),
         );
+
+        spawn_future_non_send(async move {
+            if let Err(err) = remote_store.run().await {
+                error!("Error starting remote store: {}", err);
+            }
+
+            Ok(())
+        });
+
+        let store_handle1 = store_handle.clone();
+        spawn_future_non_send(async move {
+            let start_future = store_handle1.on_start();
+            match start_future.await {
+                Ok(_) => info!("Remote store started"),
+                Err(err) => error!("Error starting remote store: {}", err),
+            }
+
+            Ok(())
+        });
 
         let inner = Arc::new(Mutex::new(Inner {
             status_change_callback,
@@ -87,34 +95,39 @@ impl ExocoreClient {
         let mut client_transport_handle =
             transport.get_handle(cell.clone(), TransportLayer::Client);
         let inner_clone = inner.clone();
-        spawn_future_non_send(
-            client_transport_handle
-                .get_stream()
-                .for_each(move |event| {
-                    if let InEvent::NodeStatus(_, status) = event {
-                        let str_status = match status {
-                            ConnectionStatus::Connecting => "connecting",
-                            ConnectionStatus::Connected => "connected",
-                            ConnectionStatus::Disconnected => "disconnected",
-                        };
+        spawn_future_non_send(async move {
+            let mut stream = client_transport_handle.get_stream().compat();
 
-                        let inner = inner_clone.lock().unwrap();
-                        if let Some(func) = &inner.status_change_callback {
-                            func.call1(&JsValue::null(), &JsValue::from_str(str_status))
-                                .unwrap();
-                        }
+            while let Some(event) = stream.next().await {
+                let event = if let Ok(event) = event {
+                    event
+                } else {
+                    return Ok(());
+                };
+
+                if let InEvent::NodeStatus(_, status) = event {
+                    let str_status = match status {
+                        ConnectionStatus::Connecting => "connecting",
+                        ConnectionStatus::Connected => "connected",
+                        ConnectionStatus::Disconnected => "disconnected",
+                    };
+
+                    let inner = inner_clone.lock().unwrap();
+                    if let Some(func) = &inner.status_change_callback {
+                        func.call1(&JsValue::null(), &JsValue::from_str(str_status))
+                            .unwrap();
                     }
+                }
+            }
 
-                    Ok(())
-                })
-                .map_err(|_| ()),
-        );
+            Ok(())
+        });
 
         transport.start();
 
         Ok(ExocoreClient {
             _transport: transport,
-            store_handle: Arc::new(store_handle),
+            store_handle,
             schema,
             _inner: inner,
         })
