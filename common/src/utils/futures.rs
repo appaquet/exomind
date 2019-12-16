@@ -51,3 +51,20 @@ where
 {
     wasm_bindgen_futures::spawn_local(f.unwrap_or_else(|_| ()));
 }
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+pub trait AsyncRuntimeExt {
+    fn spawn_async<F>(&mut self, f: F)
+    where
+        F: Future03<Output = ()> + Send + 'static;
+}
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+impl AsyncRuntimeExt for tokio::runtime::Runtime {
+    fn spawn_async<F>(&mut self, f: F)
+    where
+        F: Future03<Output = ()> + Send + 'static,
+    {
+        self.spawn(f.unit_error().boxed().compat());
+    }
+}

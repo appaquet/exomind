@@ -16,11 +16,14 @@ struct MainView: View {
     var body: some View {
         VStack {
             HStack {
-                Button("Connect") {
-                    self.list.connect()
+                Button("Watch query") {
+                    self.list.watch()
+                }
+                Button("Unwatch") {
+                    self.list.unwatch()
                 }
                 Button("Disconnect") {
-                    self.list.disconnect()
+                    self.list.drop()
                 }
             }
 
@@ -28,10 +31,6 @@ struct MainView: View {
                 Text(item.text)
             }
         }
-    }
-
-    func addItem() {
-        self.list.connect()
     }
 }
 
@@ -44,7 +43,7 @@ class MyList : ObservableObject {
     init() {
     }
 
-    func connect() {
+    func watch() {
         if self.client == nil {
             self.client = Client()
         }
@@ -63,8 +62,12 @@ class MyList : ObservableObject {
         })
     }
 
-    func disconnect() {
+    func unwatch() {
         self.resultStream = nil
+    }
+
+    func drop() {
+        self.client = nil
     }
 
 }

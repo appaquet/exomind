@@ -313,7 +313,7 @@ impl TestRemoteStore {
                 .get_transport(local_node, TransportLayer::Index),
             local_store.cluster.nodes[0].node().clone(),
         )?;
-        let client_handle = store_client.get_handle()?;
+        let client_handle = store_client.get_handle();
 
         Ok(TestRemoteStore {
             local_store,
@@ -355,7 +355,7 @@ impl TestRemoteStore {
                 error!("Error spawning remote store: {}", err);
             }));
 
-        futures::executor::block_on(self.client_handle.on_start())?;
+        futures::executor::block_on(self.client_handle.on_start());
 
         Ok(())
     }

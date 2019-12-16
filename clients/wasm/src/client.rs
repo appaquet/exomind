@@ -63,28 +63,19 @@ impl ExocoreClient {
         )
         .expect("Couldn't create index");
 
-        let store_handle = Arc::new(
-            remote_store
-                .get_handle()
-                .expect("Couldn't get store handle"),
-        );
+        let store_handle = Arc::new(remote_store.get_handle());
 
         spawn_future_non_send(async move {
             if let Err(err) = remote_store.run().await {
                 error!("Error running remote store: {}", err);
             }
-
             Ok(())
         });
 
         let store_handle1 = store_handle.clone();
         spawn_future_non_send(async move {
             let start_future = store_handle1.on_start();
-            match start_future.await {
-                Ok(_) => info!("Remote store started"),
-                Err(err) => error!("Error starting remote store: {}", err),
-            }
-
+            start_future.await;
             Ok(())
         });
 

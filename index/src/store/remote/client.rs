@@ -17,7 +17,6 @@ use exocore_common::protos::index_transport_capnp::{
 use exocore_common::protos::MessageType;
 use exocore_common::time::Instant;
 use exocore_common::time::{Clock, ConsistentTimestamp};
-use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
 use exocore_schema::schema::Schema;
 use exocore_transport::{
     InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
@@ -26,6 +25,7 @@ use exocore_transport::{
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
+use exocore_common::utils::handle_set::{Handle, HandleSet};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClientConfiguration {
@@ -55,10 +55,9 @@ where
     T: TransportHandle,
 {
     config: ClientConfiguration,
-    start_notifier: CompletionNotifier<(), Error>,
     inner: Arc<RwLock<Inner>>,
-    transport_handle: Option<T>,
-    stop_listener: CompletionListener<(), Error>,
+    transport_handle: T,
+    handles: HandleSet,
 }
 
 impl<T> Client<T>
@@ -73,54 +72,34 @@ where
         transport_handle: T,
         index_node: Node,
     ) -> Result<Client<T>, Error> {
-        let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
-        let start_notifier = CompletionNotifier::new();
-
         let inner = Arc::new(RwLock::new(Inner {
             config,
             cell,
             clock,
             schema,
             transport_out: None,
-            handles_count: 0,
             index_node,
             pending_queries: HashMap::new(),
             watched_queries: HashMap::new(),
             pending_mutations: HashMap::new(),
-            stop_notifier,
         }));
 
         Ok(Client {
             config,
-            start_notifier,
             inner,
-            transport_handle: Some(transport_handle),
-            stop_listener,
+            transport_handle,
+            handles: HandleSet::new(),
         })
     }
 
-    pub fn get_handle(&self) -> Result<ClientHandle, Error> {
-        let mut inner = self.inner.write()?;
-
-        let start_listener = self
-            .start_notifier
-            .get_listener()
-            .expect("Couldn't get a listener on start notifier");
-
-        inner.handles_count += 1;
-
-        Ok(ClientHandle {
-            start_listener,
+    pub fn get_handle(&self) -> ClientHandle {
+        ClientHandle {
             inner: Arc::downgrade(&self.inner),
-        })
+            handle: self.handles.get_handle(),
+        }
     }
 
     pub async fn run(mut self) -> Result<(), Error> {
-        let mut transport_handle = self
-            .transport_handle
-            .take()
-            .expect("Transport handle was already consumed");
-
         // create a channel through which we will receive message from our handles to be sent to transport
         let out_receiver = {
             let mut inner = self.inner.write()?;
@@ -130,7 +109,7 @@ where
         };
 
         // send outgoing messages to transport
-        let mut transport_sink = transport_handle.get_sink().sink_compat();
+        let mut transport_sink = self.transport_handle.get_sink().sink_compat();
         let transport_sender = async move {
             let mut receiver = out_receiver;
 
@@ -143,7 +122,7 @@ where
 
         // handle incoming messages from transport
         let weak_inner = Arc::downgrade(&self.inner);
-        let mut transport_stream = transport_handle.get_stream().compat();
+        let mut transport_stream = self.transport_handle.get_stream().compat();
         let transport_receiver = async move {
             while let Some(event) = transport_stream.next().await {
                 if let InEvent::Message(msg) = event? {
@@ -173,18 +152,12 @@ where
             Ok::<(), Error>(())
         };
 
-        // notify handles that we have started
-        self.start_notifier.complete(Ok(()));
-
-        // wait for handles to be completed
-        let stop_listener = self.stop_listener.compat();
-
         futures::select! {
             _ = transport_sender.fuse() => (),
             _ = transport_receiver.fuse() => (),
             _ = manager.fuse() => (),
-            _ = transport_handle.compat().fuse() => (),
-            _ = stop_listener.fuse() => (),
+            _ = self.transport_handle.compat().fuse() => (),
+            _ = self.handles.on_handles_dropped().fuse() => (),
         };
 
         Ok(())
@@ -197,12 +170,10 @@ struct Inner {
     clock: Clock,
     schema: Arc<Schema>,
     transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
-    handles_count: usize,
     index_node: Node,
     pending_queries: HashMap<ConsistentTimestamp, PendingRequest<QueryResult>>,
     watched_queries: HashMap<ConsistentTimestamp, WatchedQueryRequest>,
     pending_mutations: HashMap<ConsistentTimestamp, PendingRequest<MutationResult>>,
-    stop_notifier: CompletionNotifier<(), Error>,
 }
 
 impl Inner {
@@ -494,20 +465,13 @@ struct WatchedQueryRequest {
 /// Async handle to the store
 ///
 pub struct ClientHandle {
-    start_listener: CompletionListener<(), Error>,
     inner: Weak<RwLock<Inner>>,
+    handle: Handle,
 }
 
 impl ClientHandle {
-    pub async fn on_start(&self) -> Result<(), Error> {
-        let listener = {
-            self.start_listener
-                .try_clone()
-                .map_err(|_err| Error::Dropped)?
-                .compat()
-        };
-
-        listener.await.map_err(|_err| Error::Dropped)
+    pub async fn on_start(&self) {
+        self.handle.on_set_started().await;
     }
 
     pub async fn mutate(&self, mutation: Mutation) -> Result<MutationResult, Error> {
@@ -599,22 +563,6 @@ impl ClientHandle {
         }
 
         Ok(())
-    }
-}
-
-impl Drop for ClientHandle {
-    fn drop(&mut self) {
-        debug!("Client handle got dropped");
-        if let Some(inner) = self.inner.upgrade() {
-            if let Ok(mut inner) = inner.write() {
-                inner.handles_count -= 1;
-
-                if inner.handles_count == 0 {
-                    info!("Last handle got dropped. Stopping client.");
-                    inner.stop_notifier.complete(Ok(()));
-                }
-            }
-        }
     }
 }
 

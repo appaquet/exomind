@@ -15,13 +15,15 @@ use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
-use futures::{FutureExt, StreamExt, TryFutureExt, TryStreamExt};
-use futures01::prelude::*;
+use futures::compat::Future01CompatExt;
+use futures::{FutureExt, StreamExt, TryFutureExt};
 use libc;
 use std::ffi::CString;
 use std::os::raw::c_void;
-use std::sync::Arc;
+use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
+
+static INIT: Once = Once::new();
 
 pub struct Context {
     runtime: Runtime,
@@ -31,8 +33,9 @@ pub struct Context {
 
 impl Context {
     fn new() -> Result<Context, ContextStatus> {
-        logging::setup(Some(log::LevelFilter::Debug));
-        info!("Initializing...");
+        INIT.call_once(|| {
+            logging::setup(Some(log::LevelFilter::Debug));
+        });
 
         let mut runtime = Runtime::new().expect("Couldn't start runtime");
 
@@ -83,11 +86,7 @@ impl Context {
             ContextStatus::Error
         })?;
 
-        let store_handle = remote_store_client.get_handle().map_err(|err| {
-            error!("Couldn't get transport handle: {}", err);
-            ContextStatus::Error
-        })?;
-
+        let store_handle = remote_store_client.get_handle();
         let management_handle = transport
             .get_handle(cell.clone(), TransportLayer::None)
             .map_err(|err| {
@@ -96,13 +95,13 @@ impl Context {
             })?;
 
         runtime.spawn(
-            transport
-                .map(|_| {
-                    error!("Transport is done");
-                })
-                .map_err(|err| {
-                    error!("Error in transport: {}", err);
-                }),
+            async move {
+                let _ = transport.compat().await;
+                info!("Transport is done");
+                Ok(())
+            }
+                .boxed()
+                .compat(),
         );
 
         runtime
@@ -113,16 +112,13 @@ impl Context {
             })?;
 
         runtime.spawn(
-            remote_store_client
-                .run()
+            async move {
+                let _ = remote_store_client.run().await;
+                info!("Remote store is done");
+                Ok(())
+            }
                 .boxed()
-                .compat()
-                .map(|_| {
-                    error!("Remote store is done");
-                })
-                .map_err(|err| {
-                    error!("Error in remote store: {}", err);
-                }),
+                .compat(),
         );
 
         Ok(Context {
@@ -144,43 +140,33 @@ impl Context {
         let query_id = future_result.query_id();
 
         let schema = self.schema.clone();
-        let callback_ctx1 = Arc::new(CallbackWrapper {
-            callback_ptr: callback_ctx,
-        });
-        let callback_ctx2 = callback_ctx1.clone();
-        let callback_ctx3 = callback_ctx1.clone();
+        let callback_ctx = CallbackContext { ctx: callback_ctx };
         self.runtime.spawn(
-            future_result
+            async move {
+                let result = future_result.await;
+                match result {
+                    Ok(res) => {
+                        debug!("Query results received");
+                        let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
+                        let cstr = CString::new(json).unwrap();
+
+                        callback(
+                            QueryStatus::Success,
+                            cstr.as_ref().as_ptr(),
+                            callback_ctx.ctx,
+                        );
+                    }
+
+                    Err(err) => {
+                        warn!("Query future has failed: {}", err);
+                        callback(QueryStatus::Error, std::ptr::null(), callback_ctx.ctx);
+                    }
+                }
+
+                Ok(())
+            }
                 .boxed()
-                .compat()
-                .and_then(move |res| {
-                    let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
-                    let cstr = CString::new(json).unwrap();
-
-                    callback(
-                        QueryStatus::Success,
-                        cstr.as_ref().as_ptr(),
-                        callback_ctx1.callback_ptr,
-                    );
-
-                    Ok(())
-                })
-                .map(move |_| {
-                    info!("Query future is done");
-                    callback(
-                        QueryStatus::Done,
-                        std::ptr::null(),
-                        callback_ctx2.callback_ptr,
-                    );
-                })
-                .map_err(move |err| {
-                    info!("Query future has failed: {}", err);
-                    callback(
-                        QueryStatus::Error,
-                        std::ptr::null(),
-                        callback_ctx3.callback_ptr,
-                    );
-                }),
+                .compat(),
         );
 
         Ok(QueryHandle {
@@ -202,43 +188,41 @@ impl Context {
         let query_id = result_stream.query_id();
 
         let schema = self.schema.clone();
-        let callback_ctx1 = Arc::new(CallbackWrapper {
-            callback_ptr: callback_ctx,
-        });
-        let callback_ctx2 = callback_ctx1.clone();
-        let callback_ctx3 = callback_ctx1.clone();
+        let callback_ctx = CallbackContext { ctx: callback_ctx };
         self.runtime.spawn(
-            result_stream
+            async move {
+                let mut stream = result_stream;
+
+                while let Some(result) = stream.next().await {
+                    match result {
+                        Ok(res) => {
+                            debug!("Watched query results received");
+                            let json =
+                                with_schema(&schema, || serde_json::to_string(&res)).unwrap();
+                            let cstr = CString::new(json).unwrap();
+
+                            callback(
+                                QueryStatus::Success,
+                                cstr.as_ref().as_ptr(),
+                                callback_ctx.ctx,
+                            );
+                        }
+
+                        Err(err) => {
+                            warn!("Watched query has failed: {}", err);
+                            callback(QueryStatus::Error, std::ptr::null(), callback_ctx.ctx);
+                            return Ok(());
+                        }
+                    }
+                }
+
+                info!("Watched query done");
+                callback(QueryStatus::Done, std::ptr::null(), callback_ctx.ctx);
+
+                Ok(())
+            }
                 .boxed()
-                .compat()
-                .for_each(move |res| {
-                    let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
-                    let cstr = CString::new(json).unwrap();
-
-                    callback(
-                        QueryStatus::Success,
-                        cstr.as_ref().as_ptr(),
-                        callback_ctx1.callback_ptr,
-                    );
-
-                    Ok(())
-                })
-                .map(move |_| {
-                    info!("Query stream future is done");
-                    callback(
-                        QueryStatus::Done,
-                        std::ptr::null(),
-                        callback_ctx2.callback_ptr,
-                    );
-                })
-                .map_err(move |err| {
-                    info!("Query stream future has failed: {}", err);
-                    callback(
-                        QueryStatus::Error,
-                        std::ptr::null(),
-                        callback_ctx3.callback_ptr,
-                    );
-                }),
+                .compat(),
         );
 
         Ok(QueryStreamHandle {
@@ -260,12 +244,13 @@ enum ContextStatus {
     Error,
 }
 
-struct CallbackWrapper {
-    callback_ptr: *const c_void,
+struct CallbackContext {
+    ctx: *const c_void,
 }
 
-unsafe impl Send for CallbackWrapper {}
-unsafe impl Sync for CallbackWrapper {}
+unsafe impl Send for CallbackContext {}
+
+unsafe impl Sync for CallbackContext {}
 
 #[repr(u8)]
 pub enum QueryStatus {
@@ -329,7 +314,7 @@ pub extern "C" fn exocore_context_free(ctx: *mut Context) {
     info!("Waiting for runtime to be done");
 
     // wait for all queries future to be completed
-    if let Err(_err) = runtime.shutdown_on_idle().wait() {
+    if futures::executor::block_on(runtime.shutdown_on_idle().compat()).is_err() {
         error!("Error shutting down runtime");
     }
 }
