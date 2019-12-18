@@ -32,7 +32,7 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # Local store
 tokio-threadpool = { version = "0.1", optional = true }
-tantivy = { version = "0.10", optional = true }
+tantivy = { version = "0.11", optional = true }
 crc = { version = "1.8", optional = true }
 
 [dev-dependencies]
