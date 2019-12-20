@@ -213,7 +213,7 @@ impl DataTestCluster {
                     .for_each(move |event| {
                         let mut events = events.lock().unwrap();
                         events.push(event.clone());
-                        events_sender.send(event.clone()).unwrap();
+                        events_sender.send(event).unwrap();
                         Ok(())
                     })
                     .map_err(|_| ()),

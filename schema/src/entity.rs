@@ -356,7 +356,7 @@ impl TraitBuilder {
         let trait_id = self.generate_id()?;
 
         self.values
-            .insert(TraitSchema::TRAIT_ID_FIELD, trait_id.clone().into());
+            .insert(TraitSchema::TRAIT_ID_FIELD, trait_id.into());
 
         check_and_default_record_values(&self.trait_schema, &mut self.values)?;
 
@@ -730,7 +730,7 @@ mod tests {
         assert_eq!(collection.get_string("name")?, "some collection");
         assert_eq!(collection.get::<&str>("name")?, "some collection");
 
-        let email_contact = StructBuilder::new(&schema.clone(), "exocore", "email_contact")?
+        let email_contact = StructBuilder::new(&schema, "exocore", "email_contact")?
             .set("name", "Some Name")
             .build()?;
         assert_eq!(email_contact.get::<&str>("name")?, "Some Name");
@@ -940,7 +940,7 @@ mod tests {
             .set("string_field", "somediff")
             .set("int_field", 1234)
             .set("date_field", chrono_now)
-            .set("struct_field", strt.clone())
+            .set("struct_field", strt)
             .build()?;
 
         assert_eq!(value1, value1_p);
@@ -982,7 +982,7 @@ mod tests {
             .set("string_field", "somediff")
             .set("int_field", 1234)
             .set("date_field", chrono_now)
-            .set("struct_field", strt.clone())
+            .set("struct_field", strt)
             .build()?;
 
         assert_eq!(value1, value1_p);

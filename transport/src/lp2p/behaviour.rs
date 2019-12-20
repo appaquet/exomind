@@ -125,13 +125,12 @@ where
             },
         );
 
-        self.dial_peer(peer_id.clone());
+        self.dial_peer(peer_id);
     }
 
     fn dial_peer(&mut self, peer_id: PeerId) {
-        self.events.push_back(NetworkBehaviourAction::DialPeer {
-            peer_id: peer_id.clone(),
-        });
+        self.events
+            .push_back(NetworkBehaviourAction::DialPeer { peer_id });
     }
 }
 

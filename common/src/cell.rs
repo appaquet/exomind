@@ -75,7 +75,7 @@ impl Cell {
         Cell {
             public_key: Arc::new(public_key),
             cell_id,
-            local_node: local_node.clone(),
+            local_node,
             nodes: Arc::new(RwLock::new(nodes_map)),
         }
     }

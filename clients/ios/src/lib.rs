@@ -52,7 +52,7 @@ impl Context {
         let cell_pk =
             PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
                 .expect("Couldn't decode cell publickey");
-        let cell = Cell::new(cell_pk, local_node.clone());
+        let cell = Cell::new(cell_pk, local_node);
         let clock = Clock::new();
         let schema = exocore_schema::test_schema::create();
 
@@ -87,12 +87,13 @@ impl Context {
         })?;
 
         let store_handle = remote_store_client.get_handle();
-        let management_handle = transport
-            .get_handle(cell.clone(), TransportLayer::None)
-            .map_err(|err| {
-                error!("Couldn't get transport handle: {}", err);
-                ContextStatus::Error
-            })?;
+        let management_handle =
+            transport
+                .get_handle(cell, TransportLayer::None)
+                .map_err(|err| {
+                    error!("Couldn't get transport handle: {}", err);
+                    ContextStatus::Error
+                })?;
 
         runtime.spawn(
             async move {
@@ -100,8 +101,8 @@ impl Context {
                 info!("Transport is done");
                 Ok(())
             }
-                .boxed()
-                .compat(),
+            .boxed()
+            .compat(),
         );
 
         runtime
@@ -117,8 +118,8 @@ impl Context {
                 info!("Remote store is done");
                 Ok(())
             }
-                .boxed()
-                .compat(),
+            .boxed()
+            .compat(),
         );
 
         Ok(Context {
@@ -165,8 +166,8 @@ impl Context {
 
                 Ok(())
             }
-                .boxed()
-                .compat(),
+            .boxed()
+            .compat(),
         );
 
         Ok(QueryHandle {
@@ -221,8 +222,8 @@ impl Context {
 
                 Ok(())
             }
-                .boxed()
-                .compat(),
+            .boxed()
+            .compat(),
         );
 
         Ok(QueryStreamHandle {

@@ -464,7 +464,7 @@ pub mod tests {
     #[test]
     fn directory_chain_create_and_open() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let dir = tempdir::TempDir::new("test")?;
         let config: DirectoryChainStoreConfig = Default::default();
 
@@ -535,7 +535,7 @@ pub mod tests {
     #[test]
     fn directory_chain_write_until_second_segment() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let dir = tempdir::TempDir::new("test")?;
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 350_000;
@@ -602,7 +602,7 @@ pub mod tests {
     #[test]
     fn directory_chain_truncate() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 1000;
         config.segment_over_allocate_size = 1500;
@@ -681,7 +681,7 @@ pub mod tests {
     #[test]
     fn directory_chain_truncate_all() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let dir = tempdir::TempDir::new("test")?;
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 3000;

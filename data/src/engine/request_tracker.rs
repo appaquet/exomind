@@ -146,7 +146,7 @@ mod tests {
     fn test_force_request() {
         let mock_clock = Clock::new_mocked();
         let mut tracker =
-            RequestTracker::new_with_clock(mock_clock.clone(), RequestTrackerConfig::default());
+            RequestTracker::new_with_clock(mock_clock, RequestTrackerConfig::default());
 
         tracker.can_send_request();
         tracker.set_last_send_now();
@@ -160,7 +160,7 @@ mod tests {
     fn test_reset() {
         let mock_clock = Clock::new_mocked();
         let mut tracker =
-            RequestTracker::new_with_clock(mock_clock.clone(), RequestTrackerConfig::default());
+            RequestTracker::new_with_clock(mock_clock, RequestTrackerConfig::default());
 
         tracker.can_send_request();
         tracker.set_last_send_now();

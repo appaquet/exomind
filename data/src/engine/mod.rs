@@ -126,7 +126,7 @@ where
         let inner = Arc::new(RwLock::new(Inner {
             config,
             cell,
-            clock: clock.clone(),
+            clock,
             pending_store,
             pending_synchronizer,
             chain_store,

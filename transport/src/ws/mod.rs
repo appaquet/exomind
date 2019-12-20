@@ -265,8 +265,8 @@ impl WebsocketTransport {
         {
             let weak_inner1 = weak_inner.clone();
             let temporary_node1 = temporary_node.clone();
-            let weak_inner2 = weak_inner.clone();
-            let temporary_node2 = temporary_node.clone();
+            let weak_inner2 = weak_inner;
+            let temporary_node2 = temporary_node;
             let incoming = client_stream
                 .take_while(|m| Ok(!m.is_close()))
                 .for_each(move |message| {

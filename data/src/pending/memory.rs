@@ -160,7 +160,7 @@ impl PendingStore for MemoryPendingStore {
         if let Some(group_operations_id) = self
             .groups_operations
             .get(&operation_id)
-            .map(|group| group.operations.keys().clone())
+            .map(|group| group.operations.keys())
         {
             // the operation is a group, we delete all its operations
             for operation_id in group_operations_id {

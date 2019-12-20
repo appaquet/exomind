@@ -74,7 +74,7 @@ impl TraitsIndex {
     ) -> Result<TraitsIndex, Error> {
         let (tantivy_schema, fields) = Self::build_tantivy_schema(schema.as_ref());
         let directory = MmapDirectory::open(directory)?;
-        let index = TantivyIndex::open_or_create(directory, tantivy_schema.clone())?;
+        let index = TantivyIndex::open_or_create(directory, tantivy_schema)?;
         let index_reader = index.reader()?;
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
             index.writer_with_num_threads(nb_threads, config.indexer_heap_size_bytes)?
@@ -98,7 +98,7 @@ impl TraitsIndex {
         schema: Arc<schema::Schema>,
     ) -> Result<TraitsIndex, Error> {
         let (tantivy_schema, fields) = Self::build_tantivy_schema(schema.as_ref());
-        let index = TantivyIndex::create_in_ram(tantivy_schema.clone());
+        let index = TantivyIndex::create_in_ram(tantivy_schema);
         let index_reader = index.reader()?;
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
             index.writer_with_num_threads(nb_threads, config.indexer_heap_size_bytes)?
@@ -941,8 +941,7 @@ mod tests {
         find_trait_result(&results1, "id19");
         find_trait_result(&results1, "id10");
 
-        let results3 =
-            indexer.search_matches("trudeau", Some(results2.next_page.clone().unwrap()))?;
+        let results3 = indexer.search_matches("trudeau", Some(results2.next_page.unwrap()))?;
         assert_eq!(results3.total_results, 30);
         assert_eq!(results3.results.len(), 10);
         assert_eq!(results3.remaining_results, 0);
@@ -1116,8 +1115,8 @@ mod tests {
         find_trait_result(&results1, "id19");
         find_trait_result(&results1, "id10");
 
-        let results3 = indexer
-            .search_with_trait("exocore.contact", Some(results2.next_page.clone().unwrap()))?;
+        let results3 =
+            indexer.search_with_trait("exocore.contact", Some(results2.next_page.unwrap()))?;
         assert_eq!(results3.total_results, 30);
         assert_eq!(results3.remaining_results, 0);
         assert_eq!(results3.results.len(), 10);

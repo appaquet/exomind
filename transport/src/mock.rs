@@ -311,7 +311,7 @@ mod test {
 
         let node0 = LocalNode::generate();
 
-        let mut transport = hub.get_transport(node0.clone(), TransportLayer::Data);
+        let mut transport = hub.get_transport(node0, TransportLayer::Data);
         let _transport_sink = transport.get_sink();
         let _transport_stream = transport.get_stream();
 

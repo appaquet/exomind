@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn can_build_to_owned() -> Result<(), failure::Error> {
         let inner = b"hello".to_vec();
-        let builder = MultihashFrameBuilder::<Sha3_256, _>::new(inner.clone());
+        let builder = MultihashFrameBuilder::<Sha3_256, _>::new(inner);
 
         let frame = builder.as_owned_frame();
         assert!(frame.verify()?);

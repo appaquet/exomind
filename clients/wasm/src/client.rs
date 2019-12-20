@@ -42,7 +42,7 @@ impl ExocoreClient {
         let cell_pk =
             PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
                 .expect("Couldn't decode cell publickey");
-        let cell = Cell::new(cell_pk, local_node.clone());
+        let cell = Cell::new(cell_pk, local_node);
         let clock = Clock::new();
         let schema = exocore_schema::test_schema::create();
 
@@ -59,7 +59,7 @@ impl ExocoreClient {
             clock,
             schema.clone(),
             index_handle,
-            remote_node.clone(),
+            remote_node,
         )
         .expect("Couldn't create index");
 
@@ -83,8 +83,7 @@ impl ExocoreClient {
             status_change_callback,
         }));
 
-        let mut client_transport_handle =
-            transport.get_handle(cell.clone(), TransportLayer::Client);
+        let mut client_transport_handle = transport.get_handle(cell, TransportLayer::Client);
         let inner_clone = inner.clone();
         spawn_future_non_send(async move {
             let mut stream = client_transport_handle.get_stream().compat();

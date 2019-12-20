@@ -63,8 +63,7 @@ impl TestStore {
 
         Ok(TestStore {
             cluster,
-            schema: schema.clone(),
-
+            schema,
             store: Some(store),
             store_handle,
             _temp_dir: temp_dir,

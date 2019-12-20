@@ -922,10 +922,10 @@ impl PendingBlock {
             return Ordering::Less;
         }
 
-        if a.signatures.len() > b.signatures.len() {
-            return Ordering::Greater;
-        } else if a.signatures.len() < b.signatures.len() {
-            return Ordering::Less;
+        match a.signatures.len().cmp(&b.signatures.len()) {
+            o @ Ordering::Greater => return o,
+            o @ Ordering::Less => return o,
+            Ordering::Equal => {}
         }
 
         // fallback to operation id, which is time ordered

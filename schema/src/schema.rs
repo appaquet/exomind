@@ -37,7 +37,7 @@ impl Schema {
         }
 
         self.namespaces.push(namespace.clone());
-        self.namespaces_name.insert(name, namespace.clone());
+        self.namespaces_name.insert(name, namespace);
 
         Ok(())
     }

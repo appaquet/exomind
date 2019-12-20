@@ -173,7 +173,7 @@ fn extract_record_type<E: serde::de::Error>(
         return Err(serde::de::Error::custom("Field _type was not a string"));
     };
 
-    Ok(record_type.to_string())
+    Ok(record_type)
 }
 
 fn struct_from_values<'de, D: Deserializer<'de>>(

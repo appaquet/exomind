@@ -206,7 +206,7 @@ where
         let future_result = {
             let inner = weak_inner1.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
-            inner.store_handle.query(query.clone())
+            inner.store_handle.query(query)
         }?;
 
         let weak_inner2 = weak_inner.clone();
@@ -263,7 +263,7 @@ where
                 .watched_queries
                 .insert(watch_token, registered_watched_query);
 
-            let query = watched_query.query.clone().with_watch_token(watch_token);
+            let query = watched_query.query.with_watch_token(watch_token);
             let result_stream = inner.store_handle.watched_query(query)?;
 
             (result_stream, timeout_receiver)

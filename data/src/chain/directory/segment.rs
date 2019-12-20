@@ -345,7 +345,7 @@ mod tests {
     #[test]
     fn directory_segment_create_and_open() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let dir = tempdir::TempDir::new("test")?;
 
         let segment_id = 1234;
@@ -381,7 +381,7 @@ mod tests {
     #[test]
     fn directory_segment_create_already_exist() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
 
         let dir = tempdir::TempDir::new("test")?;
 
@@ -425,7 +425,7 @@ mod tests {
     #[test]
     fn directory_segment_append_block() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let dir = tempdir::TempDir::new("test")?;
 
         let offset1 = 0;
@@ -470,7 +470,7 @@ mod tests {
     #[test]
     fn directory_segment_non_zero_offset_write() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let dir = tempdir::TempDir::new("test")?;
         let config = Default::default();
         let segment_first_block_offset = 1234;
@@ -509,7 +509,7 @@ mod tests {
     #[test]
     fn directory_segment_grow_and_truncate() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_over_allocate_size = 100_000;
 
@@ -544,7 +544,7 @@ mod tests {
     #[test]
     fn directory_segment_truncate_from_segment() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let cell = FullCell::generate(local_node);
         let dir = tempdir::TempDir::new("test")?;
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_over_allocate_size = 100_000;

@@ -737,11 +737,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 if last_local_block.get_height()? > node_height =>
             {
                 // there are other nodes, but i have the longest chain
-                Some(local_node_id.clone())
+                Some(local_node_id)
             }
             (None, Some(_last_local_block)) => {
                 // i have at least the genesis block, i'm alone, so i'm the leader
-                Some(local_node_id.clone())
+                Some(local_node_id)
             }
             (Some((node_info, _)), _) => Some(node_info.node_id.clone()),
             _ => None,
@@ -1383,7 +1383,7 @@ mod tests {
     fn sync_single_block_even_if_max_out_size() -> Result<(), failure::Error> {
         let mut cluster = EngineTestCluster::new(2);
 
-        let node_0 = cluster.get_local_node(0).clone();
+        let node_0 = cluster.get_local_node(0);
         cluster.chain_add_genesis_block(0);
 
         // generate a block that exceeds maximum send size
@@ -1647,7 +1647,7 @@ mod tests {
             return Ok((0, 0));
         }
 
-        let node2 = cluster.get_node(node_id_b).clone();
+        let node2 = cluster.get_node(node_id_b);
         let message = extract_request_frame_sync_context(&sync_context, node2.id());
 
         run_sync_1_to_1_with_request(cluster, node_id_a, node_id_b, message)
@@ -1672,8 +1672,8 @@ mod tests {
         node_id_b: usize,
         first_request: TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned>,
     ) -> Result<(usize, usize), Error> {
-        let node1 = cluster.get_node(node_id_a).clone();
-        let node2 = cluster.get_node(node_id_b).clone();
+        let node1 = cluster.get_node(node_id_a);
+        let node2 = cluster.get_node(node_id_b);
 
         let mut count_1_to_2 = 0;
         let mut count_2_to_1 = 0;

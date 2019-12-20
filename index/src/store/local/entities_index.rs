@@ -250,7 +250,7 @@ where
                  (trait_result, traits_results, source, sort_token)| {
                     hasher.write_u64(traits_results.hash);
                     let entity = Entity {
-                        id: trait_result.entity_id.clone(),
+                        id: trait_result.entity_id,
                         traits: Vec::new(),
                     };
 

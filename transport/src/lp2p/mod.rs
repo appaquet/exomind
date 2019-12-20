@@ -460,13 +460,13 @@ mod tests {
 
         let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
         let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
-        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
+        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell);
         rt.spawn(transport1.map(|_| ()).map_err(|_| ()));
         rt.block_on(handle1_tester.handle.on_start())?;
 
         let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
         let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
-        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell.clone());
+        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
         rt.spawn(transport2.map(|_| ()).map_err(|_| ()));
         rt.block_on(handle2_tester.handle.on_start())?;
 
@@ -496,13 +496,13 @@ mod tests {
             listen_address: Some(addr2.clone()),
             ..Libp2pTransportConfig::default()
         };
-        assert_eq!(addr2.clone(), config.listen_address(&node1)?);
+        assert_eq!(addr2, config.listen_address(&node1)?);
 
         // fallback to node if not specified in config
         let node1 = LocalNode::generate();
         node1.add_address(addr1.clone());
         let config = Libp2pTransportConfig::default();
-        assert_eq!(addr1.clone(), config.listen_address(&node1)?);
+        assert_eq!(addr1, config.listen_address(&node1)?);
 
         // error if no addresses found
         let node1 = LocalNode::generate();
@@ -522,17 +522,17 @@ mod tests {
 
         let node2 = LocalNode::generate();
         node2.add_address("/ip4/127.0.0.1/tcp/0".parse()?);
-        let node2_cell = FullCell::generate(node2.clone());
+        let node2_cell = FullCell::generate(node2);
 
-        let mut transport = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
+        let mut transport = Libp2pTransport::new(node1, Libp2pTransportConfig::default());
         let inner_weak = Arc::downgrade(&transport.inner);
 
         // we create 2 handles
         let handle1 = transport.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
-        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
+        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell);
 
         let handle2 = transport.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
-        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell.clone());
+        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
 
         rt.spawn(transport.map(|_| ()).map_err(|_| ()));
         rt.block_on(handle1_tester.handle.on_start())?;
@@ -567,7 +567,7 @@ mod tests {
         node1_cell.nodes_mut().add(node2.node().clone());
         node2_cell.nodes_mut().add(node1.node().clone());
 
-        let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
+        let mut transport1 = Libp2pTransport::new(node1, Libp2pTransportConfig::default());
         let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
         let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
         rt.spawn(transport1.map(|_| ()).map_err(|_| ()));
@@ -592,7 +592,7 @@ mod tests {
         // we create second node
         let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
         let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
-        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell.clone());
+        let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
         rt.spawn(transport2.map(|_| ()).map_err(|_| ()));
         rt.block_on(handle2_tester.handle.on_start())?;
 
