@@ -1,7 +1,6 @@
 
 # First build the app with all build dependencies
-# Alpine at this version has Rust 1.36
-FROM alpine:20190707 AS build-image
+FROM alpine AS build-image
 RUN apk add rust cargo openssl-dev
 COPY . /opt/exocore/
 RUN cd /opt/exocore/cli && \
