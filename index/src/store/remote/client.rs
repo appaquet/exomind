@@ -142,7 +142,7 @@ where
         // management timer that checks for timed out queries & register watched queries
         let weak_inner = Arc::downgrade(&self.inner);
         let management_interval = self.config.management_interval;
-        let manager = async move {
+        let management_timer = async move {
             let mut timer = wasm_timer::Interval::new(management_interval);
 
             while let Some(_) = timer.next().await {
@@ -155,7 +155,7 @@ where
         futures::select! {
             _ = transport_sender.fuse() => (),
             _ = transport_receiver.fuse() => (),
-            _ = manager.fuse() => (),
+            _ = management_timer.fuse() => (),
             _ = self.transport_handle.compat().fuse() => (),
             _ = self.handles.on_handles_dropped().fuse() => (),
         };
@@ -408,9 +408,7 @@ impl Inner {
     }
 }
 
-///
-/// Parsed incoming message via transport
-///
+/// Parsed incoming message via transport.
 enum IncomingMessage {
     MutationResponse(MutationResult),
     QueryResponse(QueryResult),
@@ -445,9 +443,7 @@ impl IncomingMessage {
     }
 }
 
-///
-/// Query or mutation request for which we're waiting a response
-///
+/// Query or mutation request for which we're waiting a response.
 struct PendingRequest<T> {
     request_id: ConsistentTimestamp,
     result_sender: oneshot::Sender<Result<T, Error>>,
@@ -461,9 +457,7 @@ struct WatchedQueryRequest {
     last_register: Instant,
 }
 
-///
-/// Async handle to the store
-///
+/// Async handle to the store.
 pub struct ClientHandle {
     inner: Weak<RwLock<Inner>>,
     handle: Handle,
@@ -566,6 +560,7 @@ impl ClientHandle {
     }
 }
 
+/// Future query result.
 pub struct QueryFuture {
     result: Result<oneshot::Receiver<Result<QueryResult, Error>>, Error>,
     request_id: ConsistentTimestamp,
@@ -600,6 +595,7 @@ impl Future for QueryFuture {
     }
 }
 
+/// Stream of results for a watched query.
 pub struct WatchedQueryStream {
     inner: Weak<RwLock<Inner>>,
     watch_token: Option<WatchToken>,

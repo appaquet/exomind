@@ -339,7 +339,7 @@ impl TestRemoteStore {
         self.local_store
             .cluster
             .runtime
-            .spawn(server.map_err(|err| {
+            .spawn(server.run().boxed().compat().map_err(|err| {
                 error!("Error spawning remote store server: {}", err);
             }));
 

@@ -2,6 +2,7 @@ use crate::config::NodeConfig;
 use crate::options;
 use exocore_common::cell::{Cell, FullCell};
 use exocore_common::time::Clock;
+use exocore_common::utils::futures::AsyncRuntimeExt;
 use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -215,15 +216,12 @@ fn create_local_store<T: TransportHandle>(
         store_handle,
         transport,
     )?;
-    rt.spawn(
-        remote_store_server
-            .map(|_| {
-                info!("Local index has stopped");
-            })
-            .map_err(|err| {
-                error!("Local index has stopped: {}", err);
-            }),
-    );
+    rt.spawn_async(async move {
+        match remote_store_server.run().await {
+            Ok(_) => info!("Remote store server has stopped"),
+            Err(err) => info!("Remote store server has failed: {}", err),
+        }
+    });
 
     Ok(())
 }

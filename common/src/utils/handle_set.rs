@@ -74,6 +74,7 @@ impl Default for HandleSet {
     }
 }
 
+#[derive(Clone)]
 pub struct Handle {
     set_started_receiver: Shared<oneshot::Receiver<()>>,
     set_dropped_receiver: Shared<oneshot::Receiver<()>>,

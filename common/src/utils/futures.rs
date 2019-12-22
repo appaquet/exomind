@@ -15,9 +15,9 @@ where
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 pub fn spawn_future<F>(f: F) -> tokio::executor::Spawn
 where
-    F: Future03<Output = Result<(), ()>> + 'static + Send,
+    F: Future03<Output = ()> + 'static + Send,
 {
-    tokio::executor::spawn(f.boxed().compat())
+    tokio::executor::spawn(f.boxed().unit_error().compat())
 }
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
