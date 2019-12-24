@@ -12,7 +12,7 @@ use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
 use exocore_common::time::ConsistentTimestamp;
-use exocore_common::utils::owned_spawn::OwnedSpawnSet;
+use exocore_common::utils::futures::OwnedSpawnSet;
 use futures::channel::{mpsc, oneshot};
 use futures::compat::{Future01CompatExt, Sink01CompatExt, Stream01CompatExt};
 use futures::{FutureExt, SinkExt, StreamExt};

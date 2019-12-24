@@ -7,7 +7,7 @@ mod consistent_timestamp;
 pub use chrono::prelude::*;
 pub use consistent_timestamp::ConsistentTimestamp;
 pub use std::time::Duration;
-pub use wasm_timer::Instant;
+pub use wasm_timer::{Instant, SystemTime, UNIX_EPOCH};
 
 // TODO: But will be rewritten in consistent clock logic in ticket https://github.com/appaquet/exocore/issues/6
 const CONSISTENT_COUNTER_MAX: usize = 999;

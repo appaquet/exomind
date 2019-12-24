@@ -5,7 +5,7 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-tests_utils = ["log4rs"]
+tests_utils = ["log4rs", "tokio-compat"]
 
 [dependencies]
 exocore-schema = { path = "../schema" }
@@ -18,22 +18,23 @@ sha3 = "0.8"
 bs58 = "0.3"
 capnp = { git = "https://github.com/appaquet/capnproto-rust.git", branch = "thread-safe-arena-readlimiter" }
 byteorder = "1.2"
-owning_ref = "0.4"
-lazycell = "1.2"
 failure = "0.1"
 libp2p-core = "0.13"
-log4rs = { version = "0.9", optional = true }
 chrono = "0.4"
 wasm-timer = "0.2"
+
 futures = { version = "0.3", features = ["async-await", "compat"] }
 futures01 = { package = "futures", version = "0.1" }
+tokio = { version = "0.1", features = ["io"], default-features = false }
+tokio02 = { version = "0.2", package = "tokio", features = ["rt-core"], default-features = false }
+
+# For tests
+log4rs = { version = "0.9", optional = true }
+tokio-compat = { version = "0.1", features = ["blocking"], optional = true }
 
 [target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue
 wasm-bindgen-futures = "0.4"
-
-[target."cfg(not(all(target_arch = \"wasm32\", target_os = \"unknown\")))".dependencies]
-tokio = { version = "0.1", features = ["io"], default-features = false }
 
 [build-dependencies]
 capnpc = { git = "https://github.com/appaquet/capnproto-rust.git", branch = "thread-safe-arena-readlimiter" }
@@ -42,7 +43,10 @@ capnpc = { git = "https://github.com/appaquet/capnproto-rust.git", branch = "thr
 tempdir = "0.3"
 log4rs = "0.9"
 criterion_bencher_compat = "0.3"
+
 tokio = { version = "0.1", features = ["rt-full"] }
+tokio02 = { version = "0.2", package = "tokio" }
+tokio-compat = { version = "0.1", features = ["blocking"] }
 
 [[bench]]
 name = "capnp_frame"

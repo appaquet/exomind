@@ -100,19 +100,17 @@ impl Handle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::futures::AsyncRuntimeExt;
-    use futures::executor::block_on;
-    use tokio;
+    use crate::utils::futures::*;
 
     #[test]
     fn on_all_handles_dropped() -> Result<(), failure::Error> {
-        let mut rt = tokio::runtime::Runtime::new()?;
+        let rt = Runtime::new()?;
         let set = HandleSet::new();
 
         let handle = set.get_handle();
 
         let (sender, receiver) = oneshot::channel();
-        rt.spawn_async(async move {
+        rt.spawn_std(async move {
             set.on_handles_dropped().await;
             let _ = sender.send(());
         });
@@ -126,13 +124,13 @@ mod tests {
 
     #[test]
     fn set_started() -> Result<(), failure::Error> {
-        let mut rt = tokio::runtime::Runtime::new()?;
+        let rt = Runtime::new()?;
         let set = HandleSet::new();
 
         let handle = set.get_handle();
         assert!(!handle.set_is_started());
 
-        rt.spawn_async(async move {
+        rt.spawn_std(async move {
             set.on_handles_dropped().await;
         });
 

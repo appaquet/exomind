@@ -133,97 +133,85 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::futures::Runtime;
     use std::sync::atomic::AtomicBool;
     use std::sync::atomic::Ordering;
     use std::sync::Arc;
     use std::time::Duration;
-    use tokio::runtime::Runtime;
     use wasm_timer::Delay;
 
     #[test]
     fn propagate_spawned_result() -> Result<(), failure::Error> {
         let mut ret = Runtime::new()?;
-        ret.block_on(
-            async move {
-                let spawned = owned_spawn(async move { 1 + 1 });
-                assert_eq!(2, spawned.await?);
+        ret.block_on_std(async move {
+            let spawned = owned_spawn(async move { 1 + 1 });
+            assert_eq!(2, spawned.await?);
 
-                Ok::<(), failure::Error>(())
-            }
-            .boxed()
-            .compat(),
-        )?;
+            Ok::<(), failure::Error>(())
+        })?;
         Ok(())
     }
 
     #[test]
     fn owner_drop_cancels_spawned() -> Result<(), failure::Error> {
         let mut ret = Runtime::new()?;
-        ret.block_on(
-            async move {
-                let dropper = Dropper::default();
-                let dropped = dropper.dropped.clone();
+        ret.block_on_std(async move {
+            let dropper = Dropper::default();
+            let dropped = dropper.dropped.clone();
 
-                let spawned = owned_spawn(async move {
-                    let _ = dropper;
-                    let _ = Delay::new(Duration::from_secs(3600)).await;
-                    Ok::<(), ()>(())
-                });
+            let spawned = owned_spawn(async move {
+                let _ = dropper;
+                let _ = Delay::new(Duration::from_secs(3600)).await;
+                Ok::<(), ()>(())
+            });
 
-                let _ = Delay::new(Duration::from_millis(100)).await;
+            let _ = Delay::new(Duration::from_millis(100)).await;
 
-                assert!(!dropped.load(Ordering::SeqCst));
+            assert!(!dropped.load(Ordering::SeqCst));
 
-                drop(spawned);
+            drop(spawned);
 
-                let _ = Delay::new(Duration::from_millis(100)).await;
-                assert!(dropped.load(Ordering::SeqCst));
+            let _ = Delay::new(Duration::from_millis(100)).await;
+            assert!(dropped.load(Ordering::SeqCst));
 
-                Ok::<(), failure::Error>(())
-            }
-            .boxed()
-            .compat(),
-        )?;
+            Ok::<(), failure::Error>(())
+        })?;
         Ok(())
     }
 
     #[test]
     fn spawn_set_cleanup() -> Result<(), failure::Error> {
         let mut ret = Runtime::new()?;
-        ret.block_on(
-            async move {
-                let mut set = OwnedSpawnSet::<i32>::new();
+        ret.block_on_std(async move {
+            let mut set = OwnedSpawnSet::<i32>::new();
 
-                set = set.cleanup().await;
+            set = set.cleanup().await;
 
-                set.spawn(async { 1 + 1 });
-                assert_eq!(1, set.spawns.len());
+            set.spawn(async { 1 + 1 });
+            assert_eq!(1, set.spawns.len());
 
-                let _ = Delay::new(Duration::from_millis(100)).await;
-                set = set.cleanup().await;
-                assert_eq!(0, set.spawns.len());
+            let _ = Delay::new(Duration::from_millis(100)).await;
+            set = set.cleanup().await;
+            assert_eq!(0, set.spawns.len());
 
-                let dropper = Dropper::default();
-                let dropped = dropper.dropped.clone();
-                set.spawn(async move {
-                    let _ = dropper;
-                    let _ = Delay::new(Duration::from_secs(3600)).await;
-                    1 + 1
-                });
+            let dropper = Dropper::default();
+            let dropped = dropper.dropped.clone();
+            set.spawn(async move {
+                let _ = dropper;
+                let _ = Delay::new(Duration::from_secs(3600)).await;
+                1 + 1
+            });
 
-                set = set.cleanup().await;
-                assert_eq!(1, set.spawns.len());
+            set = set.cleanup().await;
+            assert_eq!(1, set.spawns.len());
 
-                drop(set);
+            drop(set);
 
-                let _ = Delay::new(Duration::from_millis(100)).await;
-                assert!(dropped.load(Ordering::SeqCst));
+            let _ = Delay::new(Duration::from_millis(100)).await;
+            assert!(dropped.load(Ordering::SeqCst));
 
-                Ok::<(), failure::Error>(())
-            }
-            .boxed()
-            .compat(),
-        )?;
+            Ok::<(), failure::Error>(())
+        })?;
         Ok(())
     }
 

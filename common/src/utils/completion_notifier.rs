@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     fn drop_completion_notifies() -> Result<(), failure::Error> {
-        let mut rt = tokio::runtime::Runtime::new()?;
+        let rt = crate::utils::futures::Runtime::new()?;
 
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
 
@@ -241,7 +241,7 @@ mod tests {
 
     #[test]
     fn complete_notifies_async() -> Result<(), failure::Error> {
-        let mut rt = tokio::runtime::Runtime::new()?;
+        let rt = crate::utils::futures::Runtime::new()?;
 
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
         completion.complete(Ok(true));
@@ -258,7 +258,7 @@ mod tests {
 
     #[test]
     fn already_complete_notifies() -> Result<(), failure::Error> {
-        let mut rt = tokio::runtime::Runtime::new()?;
+        let mut rt = crate::utils::futures::Runtime::new()?;
 
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
         completion.complete(Ok(true));
