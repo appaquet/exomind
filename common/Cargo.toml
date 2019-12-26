@@ -5,7 +5,8 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-tests_utils = ["log4rs", "tokio-compat"]
+tests_utils = ["log4rs", "tokio-compat", "runtime"]
+runtime = ["tokio-compat"]
 
 [dependencies]
 exocore-schema = { path = "../schema" }
@@ -26,7 +27,7 @@ wasm-timer = "0.2"
 futures = { version = "0.3", features = ["async-await", "compat"] }
 futures01 = { package = "futures", version = "0.1" }
 tokio = { version = "0.1", features = ["io"], default-features = false }
-tokio02 = { version = "0.2", package = "tokio", features = ["rt-core"], default-features = false }
+tokio02 = { version = "0.2", package = "tokio", features = ["rt-core", "blocking"], default-features = false }
 
 # For tests
 log4rs = { version = "0.9", optional = true }
@@ -45,7 +46,7 @@ log4rs = "0.9"
 criterion_bencher_compat = "0.3"
 
 tokio = { version = "0.1", features = ["rt-full"] }
-tokio02 = { version = "0.2", package = "tokio" }
+tokio02 = { version = "0.2", package = "tokio", features = ["blocking"] }
 tokio-compat = { version = "0.1", features = ["blocking"] }
 
 [[bench]]

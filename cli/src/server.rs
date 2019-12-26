@@ -2,7 +2,7 @@ use crate::config::NodeConfig;
 use crate::options;
 use exocore_common::cell::{Cell, FullCell};
 use exocore_common::time::Clock;
-use exocore_common::utils::futures::AsyncRuntimeExt;
+use exocore_common::utils::futures::Runtime;
 use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -20,7 +20,6 @@ use failure::err_msg;
 use futures01::prelude::*;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::runtime::Runtime;
 
 ///
 /// Starts servers based on given command line options
@@ -216,7 +215,7 @@ fn create_local_store<T: TransportHandle>(
         store_handle,
         transport,
     )?;
-    rt.spawn_async(async move {
+    rt.spawn_std(async move {
         match remote_store_server.run().await {
             Ok(_) => info!("Remote store server has stopped"),
             Err(err) => info!("Remote store server has failed: {}", err),

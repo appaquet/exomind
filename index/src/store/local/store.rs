@@ -1,13 +1,13 @@
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
+use futures::compat::Compat;
 use futures01::prelude::*;
 use futures01::sync::{mpsc, oneshot};
-use tokio::prelude::*;
 
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
-use exocore_common::utils::futures::spawn_future_01;
+use exocore_common::utils::futures::{spawn_blocking, spawn_future_01};
 use exocore_schema::schema::Schema;
 
 use crate::error::Error;
@@ -346,24 +346,18 @@ where
         weak_inner: Weak<RwLock<Inner<CS, PS>>>,
         query: Query,
     ) -> impl Future<Item = QueryResult, Error = Error> {
-        future::lazy(|| {
-            future::poll_fn(move || {
-                let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
-                let inner = inner.read()?;
+        let res = spawn_blocking(move || {
+            let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+            let inner = inner.read()?;
 
-                let res = tokio_threadpool::blocking(|| inner.index.search(&query));
-                match res {
-                    Ok(Async::Ready(Ok(results))) => Ok(Async::Ready(results)),
-                    Ok(Async::Ready(Err(err))) => Err(err),
-                    Ok(Async::NotReady) => Ok(Async::NotReady),
-                    Err(err) => Err(Error::Other(format!(
-                        "Error executing query in blocking block: {}",
-                        err
-                    ))),
-                }
+            inner.index.search(&query)
+        });
+
+        Compat::new(res)
+            .map_err(|err| {
+                Error::Other(format!("Error executing query in blocking block: {}", err))
             })
-        })
-        .map_err(|err| Error::Other(format!("Error executing query in blocking block: {}", err)))
+            .and_then(|res| res)
     }
 }
 
@@ -581,6 +575,7 @@ pub mod tests {
     use super::*;
     use crate::store::local::TestStore;
     use std::time::Duration;
+    use tokio::prelude::FutureExt;
 
     #[test]
     fn store_mutate_query_via_handle() -> Result<(), failure::Error> {

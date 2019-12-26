@@ -248,8 +248,8 @@ mod tests {
     use crate::TransportLayer::Index;
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::{expect_result, result_assert_false, result_assert_true};
+    use exocore_common::utils::futures::Runtime;
     use futures01::future;
-    use tokio::runtime::Runtime;
 
     #[test]
     fn test_send_and_receive() -> Result<(), failure::Error> {
@@ -265,8 +265,8 @@ mod tests {
         let node1_transport1 = mock_transport1.get_transport(node1.clone(), Index);
         let node1_transport2 = mock_transport2.get_transport(node1.clone(), Index);
         let mut node1_either = rt
-            .block_on::<_, _, Error>(future::lazy(|| {
-                future::ok(TestableTransportHandle::new(EitherTransportHandle::new(
+            .block_on(future::lazy(|| {
+                future::ok::<_, Error>(TestableTransportHandle::new(EitherTransportHandle::new(
                     node1_transport1,
                     node1_transport2,
                 )))

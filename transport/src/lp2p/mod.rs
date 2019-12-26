@@ -440,8 +440,8 @@ mod tests {
     use exocore_common::protos::data_chain_capnp::block_operation_header;
     use exocore_common::tests_utils::expect_eventually;
     use exocore_common::time::{ConsistentTimestamp, Instant};
+    use exocore_common::utils::futures::Runtime;
     use std::sync::Mutex;
-    use tokio::runtime::Runtime;
 
     #[test]
     fn test_integration() -> Result<(), failure::Error> {

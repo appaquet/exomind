@@ -9,6 +9,7 @@ use exocore_common::cell::Cell;
 use exocore_common::crypto::keys::{Keypair, PublicKey};
 use exocore_common::node::{LocalNode, Node};
 use exocore_common::time::{Clock, ConsistentTimestamp};
+use exocore_common::utils::futures::Runtime;
 use exocore_index::query::Query;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_schema::schema::Schema;
@@ -16,12 +17,11 @@ use exocore_schema::serialization::with_schema;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use futures::compat::Future01CompatExt;
-use futures::{FutureExt, StreamExt, TryFutureExt};
+use futures::StreamExt;
 use libc;
 use std::ffi::CString;
 use std::os::raw::c_void;
 use std::sync::{Arc, Once};
-use tokio::runtime::Runtime;
 
 static INIT: Once = Once::new();
 
@@ -95,15 +95,10 @@ impl Context {
                     ContextStatus::Error
                 })?;
 
-        runtime.spawn(
-            async move {
-                let _ = transport.compat().await;
-                info!("Transport is done");
-                Ok(())
-            }
-            .boxed()
-            .compat(),
-        );
+        runtime.spawn_std(async move {
+            let _ = transport.compat().await;
+            info!("Transport is done");
+        });
 
         runtime
             .block_on(management_handle.on_start())
@@ -112,15 +107,10 @@ impl Context {
                 ContextStatus::Error
             })?;
 
-        runtime.spawn(
-            async move {
-                let _ = remote_store_client.run().await;
-                info!("Remote store is done");
-                Ok(())
-            }
-            .boxed()
-            .compat(),
-        );
+        runtime.spawn_std(async move {
+            let _ = remote_store_client.run().await;
+            info!("Remote store is done");
+        });
 
         Ok(Context {
             runtime,
@@ -142,33 +132,27 @@ impl Context {
 
         let schema = self.schema.clone();
         let callback_ctx = CallbackContext { ctx: callback_ctx };
-        self.runtime.spawn(
-            async move {
-                let result = future_result.await;
-                match result {
-                    Ok(res) => {
-                        debug!("Query results received");
-                        let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
-                        let cstr = CString::new(json).unwrap();
+        self.runtime.spawn_std(async move {
+            let result = future_result.await;
+            match result {
+                Ok(res) => {
+                    debug!("Query results received");
+                    let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
+                    let cstr = CString::new(json).unwrap();
 
-                        callback(
-                            QueryStatus::Success,
-                            cstr.as_ref().as_ptr(),
-                            callback_ctx.ctx,
-                        );
-                    }
-
-                    Err(err) => {
-                        warn!("Query future has failed: {}", err);
-                        callback(QueryStatus::Error, std::ptr::null(), callback_ctx.ctx);
-                    }
+                    callback(
+                        QueryStatus::Success,
+                        cstr.as_ref().as_ptr(),
+                        callback_ctx.ctx,
+                    );
                 }
 
-                Ok(())
+                Err(err) => {
+                    warn!("Query future has failed: {}", err);
+                    callback(QueryStatus::Error, std::ptr::null(), callback_ctx.ctx);
+                }
             }
-            .boxed()
-            .compat(),
-        );
+        });
 
         Ok(QueryHandle {
             status: QueryStatus::Success,
@@ -190,41 +174,34 @@ impl Context {
 
         let schema = self.schema.clone();
         let callback_ctx = CallbackContext { ctx: callback_ctx };
-        self.runtime.spawn(
-            async move {
-                let mut stream = result_stream;
+        self.runtime.spawn_std(async move {
+            let mut stream = result_stream;
 
-                while let Some(result) = stream.next().await {
-                    match result {
-                        Ok(res) => {
-                            debug!("Watched query results received");
-                            let json =
-                                with_schema(&schema, || serde_json::to_string(&res)).unwrap();
-                            let cstr = CString::new(json).unwrap();
+            while let Some(result) = stream.next().await {
+                match result {
+                    Ok(res) => {
+                        debug!("Watched query results received");
+                        let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
+                        let cstr = CString::new(json).unwrap();
 
-                            callback(
-                                QueryStatus::Success,
-                                cstr.as_ref().as_ptr(),
-                                callback_ctx.ctx,
-                            );
-                        }
+                        callback(
+                            QueryStatus::Success,
+                            cstr.as_ref().as_ptr(),
+                            callback_ctx.ctx,
+                        );
+                    }
 
-                        Err(err) => {
-                            warn!("Watched query has failed: {}", err);
-                            callback(QueryStatus::Error, std::ptr::null(), callback_ctx.ctx);
-                            return Ok(());
-                        }
+                    Err(err) => {
+                        warn!("Watched query has failed: {}", err);
+                        callback(QueryStatus::Error, std::ptr::null(), callback_ctx.ctx);
+                        return;
                     }
                 }
-
-                info!("Watched query done");
-                callback(QueryStatus::Done, std::ptr::null(), callback_ctx.ctx);
-
-                Ok(())
             }
-            .boxed()
-            .compat(),
-        );
+
+            info!("Watched query done");
+            callback(QueryStatus::Done, std::ptr::null(), callback_ctx.ctx);
+        });
 
         Ok(QueryStreamHandle {
             status: QueryStreamStatus::Success,

@@ -454,14 +454,14 @@ mod tests {
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::expect_eventually;
     use exocore_common::utils::futures::spawn_future_01;
+    use exocore_common::utils::futures::Runtime;
     use std::sync::Mutex;
-    use tokio::runtime::Runtime;
 
     #[test]
     fn client_send_receive() -> Result<(), failure::Error> {
         let node = LocalNode::generate();
         let cell = FullCell::generate(node);
-        let mut rt = tokio::runtime::Runtime::new()?;
+        let mut rt = Runtime::new()?;
 
         let listen_address = "127.0.0.1:3100".parse()?;
         let config = WebSocketTransportConfig::default();

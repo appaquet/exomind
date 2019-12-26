@@ -6,13 +6,13 @@ use futures01::future::FutureResult;
 use futures01::prelude::*;
 use futures01::stream::Peekable;
 use futures01::sync::mpsc;
-use tokio::runtime::Runtime;
 
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
 use exocore_common::node::{LocalNode, Node, NodeId};
 use exocore_common::protos::common_capnp::envelope;
 use exocore_common::tests_utils::FuturePeek;
 use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
+use exocore_common::utils::futures::Runtime;
 
 use crate::transport::{MpscHandleSink, MpscHandleStream};
 use crate::{Error, InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer};
@@ -268,12 +268,10 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 
 #[cfg(test)]
 mod test {
-    use tokio::runtime::Runtime;
-
+    use super::*;
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::*;
-
-    use super::*;
+    use exocore_common::utils::futures::Runtime;
 
     #[test]
     fn send_and_receive() {
@@ -306,7 +304,7 @@ mod test {
 
     #[test]
     fn completion_future() {
-        let mut rt = Runtime::new().unwrap();
+        let rt = Runtime::new().unwrap();
         let hub = MockTransport::default();
 
         let node0 = LocalNode::generate();

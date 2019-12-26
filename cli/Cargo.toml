@@ -5,7 +5,7 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-exocore-common = { path = "../common" }
+exocore-common = { path = "../common", features = ["runtime"] }
 exocore-schema = { path = "../schema" }
 exocore-data = { path = "../data", features = ["engine", "directory_chain", "memory_pending"] }
 exocore-index = { path = "../index", features = ["local_store"] }
