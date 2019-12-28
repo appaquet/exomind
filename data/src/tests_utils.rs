@@ -132,7 +132,6 @@ impl DataTestCluster {
         cluster.start_engine(0);
 
         // wait for engine to start
-        cluster.collect_events_stream(0);
         cluster.wait_started(0);
 
         Ok(cluster)
@@ -189,6 +188,8 @@ impl DataTestCluster {
 
         let engine_handle = engine.get_handle();
         self.handles[node_idx] = Some(engine_handle);
+
+        self.collect_events_stream(node_idx);
 
         self.runtime
             .spawn(engine.map_err(|err| error!("Got an error in engine: {}", err)));
@@ -361,18 +362,12 @@ impl DataTestCluster {
     }
 
     pub fn restart_node(&mut self, node_idx: usize) -> Result<(), failure::Error> {
-        let was_collecting_events = self.events_received[node_idx].is_some();
-
         self.stop_node(node_idx);
         self.create_node(node_idx)?;
         self.start_engine(node_idx);
 
         let handle = self.handles[node_idx].as_ref().unwrap().try_clone()?;
         self.runtime.block_on(handle.on_start()?)?;
-
-        if was_collecting_events {
-            self.collect_events_stream(node_idx);
-        }
 
         Ok(())
     }

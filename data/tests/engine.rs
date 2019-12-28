@@ -17,7 +17,6 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
     cluster.start_engine(0);
 
     // wait for engine to start
-    cluster.collect_events_stream(0);
     cluster.wait_started(0);
 
     let op1 = cluster
@@ -83,7 +82,6 @@ fn single_node_chain_iteration() -> Result<(), failure::Error> {
     cluster.start_engine(0);
 
     // wait for engine to start
-    cluster.collect_events_stream(0);
     cluster.wait_started(0);
 
     let chain_operations = cluster.get_handle(0).get_chain_operations(None);
@@ -116,8 +114,6 @@ fn single_node_restart() -> Result<(), failure::Error> {
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
     cluster.start_engine(0);
-
-    cluster.collect_events_stream(0);
     cluster.wait_started(0);
 
     // wait for all operations to be emitted on stream
@@ -153,8 +149,6 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
 
     cluster.start_engine(0);
     cluster.start_engine(1);
-    cluster.collect_events_stream(0);
-    cluster.collect_events_stream(1);
     cluster.wait_started(0);
     cluster.wait_started(1);
 
@@ -197,8 +191,6 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
 
     cluster.start_engine(0);
     cluster.start_engine(1);
-    cluster.collect_events_stream(0);
-    cluster.collect_events_stream(1);
     cluster.wait_started(0);
     cluster.wait_started(1);
 
