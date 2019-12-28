@@ -1,14 +1,11 @@
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
-use futures::compat::Compat;
-use futures01::prelude::*;
-use futures01::sync::{mpsc, oneshot};
-
-use exocore_common::utils::completion_notifier::{
-    CompletionError, CompletionListener, CompletionNotifier,
-};
-use exocore_common::utils::futures::{spawn_blocking, spawn_future_01};
+use exocore_common::utils::futures::spawn_blocking;
+use exocore_common::utils::handle_set::{Handle, HandleSet};
 use exocore_schema::schema::Schema;
+use futures::channel::{mpsc, oneshot};
+use futures::compat::Stream01CompatExt;
+use futures::prelude::*;
 
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
@@ -18,6 +15,8 @@ use crate::store::local::watched_queries::WatchedQueries;
 use super::entities_index::EntitiesIndex;
 use exocore_common::cell::Cell;
 use exocore_common::time::Clock;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
 /// Config for `Store`
 #[derive(Clone, Copy)]
@@ -37,18 +36,17 @@ impl Default for StoreConfig {
     }
 }
 
-/// Locally persisted store. It uses a data engine handle and entities index to
-/// perform mutations and resolve queries.
+/// Locally persisted store. It forwards mutation requests to the data engine, receives back data events that gets indexed
+/// by the entities index. Queries are executed by the entities index.
 pub struct Store<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
 {
-    start_notifier: CompletionNotifier<(), Error>,
     config: StoreConfig,
-    started: bool,
+    handle_set: HandleSet,
+    incoming_queries_receiver: mpsc::Receiver<QueryRequest>,
     inner: Arc<RwLock<Inner<CS, PS>>>,
-    stop_listener: CompletionListener<(), Error>,
 }
 
 impl<CS, PS> Store<CS, PS>
@@ -64,222 +62,158 @@ where
         data_handle: exocore_data::engine::EngineHandle<CS, PS>,
         index: EntitiesIndex<CS, PS>,
     ) -> Result<Store<CS, PS>, Error> {
-        let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
-        let start_notifier = CompletionNotifier::new();
+        let (incoming_queries_sender, incoming_queries_receiver) =
+            mpsc::channel::<QueryRequest>(config.query_channel_size);
 
-        let watched = WatchedQueries::new();
+        let watched_queries = WatchedQueries::new();
         let inner = Arc::new(RwLock::new(Inner {
             cell,
             clock,
             schema,
             index,
-            watched_queries: watched,
-            queries_sender: None,
+            watched_queries,
+            incoming_queries_sender,
             data_handle,
-            stop_notifier,
         }));
 
         Ok(Store {
-            start_notifier,
             config,
-            started: false,
+            handle_set: HandleSet::new(),
+            incoming_queries_receiver,
             inner,
-            stop_listener,
         })
     }
 
     pub fn get_handle(&self) -> StoreHandle<CS, PS> {
-        let start_listener = self
-            .start_notifier
-            .get_listener()
-            .expect("Couldn't get a listener on start notifier");
-
         StoreHandle {
             config: self.config,
-            start_listener,
+            handle: self.handle_set.get_handle(),
             inner: Arc::downgrade(&self.inner),
         }
     }
 
-    fn start(&mut self) -> Result<(), Error> {
-        let mut inner = self.inner.write()?;
+    pub async fn run(self) -> Result<(), Error> {
+        let config = self.config;
 
         // incoming queries execution
-        let (queries_sender, queries_receiver) = mpsc::channel(self.config.query_channel_size);
+        let incoming_queries_receiver = self.incoming_queries_receiver;
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        let weak_inner3 = Arc::downgrade(&self.inner);
-        spawn_future_01(
-            queries_receiver
-                .map_err(|_| Error::Dropped)
+        let queries_executor = async move {
+            let mut executed_queries = incoming_queries_receiver
                 .map(move |watch_request: QueryRequest| {
-                    debug!("Executing new query");
-                    Inner::execute_query_async(weak_inner1.clone(), watch_request.query.clone())
-                        .then(|result| Ok((result, watch_request)))
+                    let weak_inner = weak_inner1.clone();
+                    async move {
+                        let result =
+                            Inner::execute_query_async(weak_inner, watch_request.query.clone())
+                                .await;
+                        (result, watch_request)
+                    }
                 })
-                .buffer_unordered(self.config.query_parallelism)
-                .for_each(move |(result, query_request)| {
-                    let inner = weak_inner2.upgrade().ok_or(Error::Dropped)?;
-                    let inner = inner.read()?;
+                .buffer_unordered(config.query_parallelism);
 
-                    match &result {
-                        Ok(_) => debug!("Got query result"),
-                        Err(err) => warn!("Error executing query: err={}", err),
+            while let Some((result, query_request)) = executed_queries.next().await {
+                let inner = weak_inner2.upgrade().ok_or(Error::Dropped)?;
+                let inner = inner.read()?;
+
+                match &result {
+                    Ok(_) => debug!("Got query result"),
+                    Err(err) => warn!("Error executing query: err={}", err),
+                }
+
+                let should_reply = match (&query_request.sender, &result) {
+                    (QueryRequestSender::Stream(sender, watch_token), Ok(result)) => {
+                        inner.watched_queries.update_query_results(
+                            *watch_token,
+                            &query_request.query,
+                            result,
+                            sender.clone(),
+                        )
                     }
 
-                    let should_reply = match (&query_request.sender, &result) {
-                        (QueryRequestSender::Stream(sender, watch_token), Ok(result)) => {
-                            inner.watched_queries.update_query_results(
-                                *watch_token,
-                                &query_request.query,
-                                result,
-                                sender.clone(),
-                            )
-                        }
-
-                        (QueryRequestSender::Stream(_, watch_token), Err(_err)) => {
-                            inner.watched_queries.unwatch_query(*watch_token);
-                            true
-                        }
-
-                        (QueryRequestSender::Future(_), _result) => true,
-                    };
-
-                    if should_reply {
-                        query_request.send(result);
+                    (QueryRequestSender::Stream(_, watch_token), Err(_err)) => {
+                        inner.watched_queries.unwatch_query(*watch_token);
+                        true
                     }
 
-                    Ok(())
-                })
-                .map_err(move |_| {
-                    Inner::notify_stop(
-                        "watched query events stream",
-                        &weak_inner3,
-                        Err(Error::Dropped),
-                    )
-                }),
-        );
-        inner.queries_sender = Some(queries_sender);
+                    (QueryRequestSender::Future(_), _result) => true,
+                };
+
+                if should_reply {
+                    query_request.reply(result);
+                }
+            }
+
+            Ok::<(), Error>(())
+        };
+
+        let mut events_stream = {
+            let mut inner = self.inner.write()?;
+            inner.data_handle.take_events_stream()?.compat()
+        };
 
         // schedule data engine events stream
-        let (mut watch_check_sender, watch_check_receiver) = mpsc::channel(2);
-        let weak_inner1 = Arc::downgrade(&self.inner);
-        let weak_inner2 = Arc::downgrade(&self.inner);
-        let weak_inner3 = Arc::downgrade(&self.inner);
-        spawn_future_01(
-            inner
-                .data_handle
-                .take_events_stream()?
-                // TODO: Should be throttled & buffered https://github.com/appaquet/exocore/issues/130
-                .map_err(|err| err.into())
-                .for_each(move |event| {
-                    if let Err(err) = Self::handle_data_engine_event(&weak_inner1, event) {
-                        if err.is_fatal() {
-                            return Err(err);
-                        } else {
-                            error!("Error handling data engine event: {}", err);
-                        }
+        let (mut watch_check_sender, mut watch_check_receiver) = mpsc::channel(2);
+        let weak_inner = Arc::downgrade(&self.inner);
+        let data_events_handler = async move {
+            // TODO: Should be throttled & buffered https://github.com/appaquet/exocore/issues/130
+            while let Some(event) = events_stream.next().await {
+                let event = event?;
+                if let Err(err) = Inner::handle_data_engine_event(&weak_inner, event).await {
+                    error!("Error handling data engine event: {}", err);
+                    if err.is_fatal() {
+                        return Err(err);
                     }
+                }
 
-                    // notify query watching. if it's full, it's guaranteed that it will catch those changes on next iteration
-                    let _ = watch_check_sender.try_send(());
-
-                    Ok(())
-                })
-                .map(move |_| {
-                    Inner::notify_stop("data engine event stream completion", &weak_inner2, Ok(()))
-                })
-                .map_err(move |err| {
-                    Inner::notify_stop("data engine event stream", &weak_inner3, Err(err))
-                }),
-        );
+                // notify query watching. if it's full, it's guaranteed that it will catch those changes on next iteration
+                let _ = watch_check_sender.try_send(());
+            }
+            Ok(())
+        };
 
         // checks if watched queries have their results changed
-        let weak_inner1 = Arc::downgrade(&self.inner);
-        let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future_01(
-            watch_check_receiver
-                .map_err(|_| Error::Dropped)
-                .for_each(move |_| {
-                    let inner = weak_inner1.upgrade().ok_or(Error::Dropped)?;
-                    let mut inner = inner.write()?;
+        let weak_inner = Arc::downgrade(&self.inner);
+        let watched_queries_checker = async move {
+            while let Some(_) = watch_check_receiver.next().await {
+                let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+                let mut inner = inner.write()?;
 
-                    for watched_query in inner.watched_queries.queries() {
-                        let send_result =
-                            inner
-                                .queries_sender
-                                .as_mut()
-                                .unwrap()
-                                .try_send(QueryRequest {
-                                    query: watched_query.query.as_ref().clone(),
-                                    sender: QueryRequestSender::Stream(
-                                        watched_query.sender.clone(),
-                                        watched_query.token,
-                                    ),
-                                });
+                for watched_query in inner.watched_queries.queries() {
+                    let send_result = inner.incoming_queries_sender.try_send(QueryRequest {
+                        query: watched_query.query.as_ref().clone(),
+                        sender: QueryRequestSender::Stream(
+                            watched_query.sender.clone(),
+                            watched_query.token,
+                        ),
+                    });
 
-                        if let Err(err) = send_result {
-                            error!(
-                                "Error sending to watched query. Removing it from queries: {}",
-                                err
-                            );
-                            inner.watched_queries.unwatch_query(watched_query.token);
-                        }
+                    if let Err(err) = send_result {
+                        error!(
+                            "Error sending to watched query. Removing it from queries: {}",
+                            err
+                        );
+                        inner.watched_queries.unwatch_query(watched_query.token);
                     }
+                }
+            }
 
-                    Ok(())
-                })
-                .map_err(move |_| {
-                    Inner::notify_stop(
-                        "watched queries checker stream",
-                        &weak_inner2,
-                        Err(Error::Dropped),
-                    )
-                }),
-        );
+            Ok::<(), Error>(())
+        };
 
-        self.start_notifier.complete(Ok(()));
         info!("Index store started");
 
-        Ok(())
-    }
-
-    fn handle_data_engine_event(
-        weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        event: exocore_data::engine::Event,
-    ) -> Result<(), Error> {
-        let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
-        let mut inner = inner.write()?;
-        inner.index.handle_data_engine_event(event)?;
-        Ok(())
-    }
-}
-
-impl<CS, PS> Future for Store<CS, PS>
-where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
-{
-    type Item = ();
-    type Error = Error;
-
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        if !self.started {
-            self.start()?;
-            self.started = true;
+        futures::select! {
+            _ = self.handle_set.on_handles_dropped().fuse() => (),
+            _ = queries_executor.fuse() => (),
+            _ = data_events_handler.fuse() => (),
+            _ = watched_queries_checker.fuse() => (),
         }
 
-        // check if store got stopped
-        self.stop_listener.poll().map_err(|err| match err {
-            CompletionError::UserError(err) => err,
-            _ => Error::Other("Error in completion error".to_string()),
-        })
+        Ok(())
     }
 }
 
-///
-/// Inner instance of the store
-///
 struct Inner<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
@@ -290,9 +224,8 @@ where
     schema: Arc<Schema>,
     index: EntitiesIndex<CS, PS>,
     watched_queries: WatchedQueries,
-    queries_sender: Option<mpsc::Sender<QueryRequest>>,
+    incoming_queries_sender: mpsc::Sender<QueryRequest>,
     data_handle: exocore_data::engine::EngineHandle<CS, PS>,
-    stop_notifier: CompletionNotifier<(), Error>,
 }
 
 impl<CS, PS> Inner<CS, PS>
@@ -300,23 +233,6 @@ where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
 {
-    fn notify_stop(
-        future_name: &str,
-        weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        res: Result<(), Error>,
-    ) {
-        match &res {
-            Ok(()) => info!("Local store has completed"),
-            Err(err) => error!("Got an error in future {}: {}", future_name, err),
-        }
-
-        if let Some(locked_inner) = weak_inner.upgrade() {
-            if let Ok(inner) = locked_inner.read() {
-                inner.stop_notifier.complete(res);
-            }
-        };
-    }
-
     fn write_mutation_weak(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         mutation: Mutation,
@@ -342,22 +258,34 @@ where
         Ok(MutationResult { operation_id })
     }
 
-    fn execute_query_async(
+    async fn execute_query_async(
         weak_inner: Weak<RwLock<Inner<CS, PS>>>,
         query: Query,
-    ) -> impl Future<Item = QueryResult, Error = Error> {
-        let res = spawn_blocking(move || {
+    ) -> Result<QueryResult, Error> {
+        let result = spawn_blocking(move || {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
             inner.index.search(&query)
-        });
+        })
+        .await;
 
-        Compat::new(res)
-            .map_err(|err| {
-                Error::Other(format!("Error executing query in blocking block: {}", err))
-            })
-            .and_then(|res| res)
+        result.map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
+    }
+
+    async fn handle_data_engine_event(
+        weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
+        event: exocore_data::engine::Event,
+    ) -> Result<(), Error> {
+        let weak_inner = weak_inner.clone();
+        let result = spawn_blocking(move || -> Result<(), Error> {
+            let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+            let mut inner = inner.write()?;
+            inner.index.handle_data_engine_event(event)
+        })
+        .await;
+
+        result.map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
     }
 }
 
@@ -370,7 +298,7 @@ where
     PS: exocore_data::pending::PendingStore,
 {
     config: StoreConfig,
-    start_listener: CompletionListener<(), Error>,
+    handle: Handle,
     inner: Weak<RwLock<Inner<CS, PS>>>,
 }
 
@@ -379,15 +307,8 @@ where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
 {
-    pub fn on_start(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
-        Ok(self
-            .start_listener
-            .try_clone()
-            .map_err(|_err| Error::Other("Couldn't clone start listener in handle".to_string()))?
-            .map_err(|err| match err {
-                CompletionError::UserError(err) => err,
-                _ => Error::Other("Error in completion error".to_string()),
-            }))
+    pub async fn on_start(&self) {
+        self.handle.on_set_started().await
     }
 
     #[cfg(test)]
@@ -407,43 +328,27 @@ where
         Inner::write_mutation_weak(&self.inner, mutation)
     }
 
-    pub fn query(&self, query: Query) -> Result<QueryFuture, Error> {
-        let inner = if let Some(inner) = self.inner.upgrade() {
-            inner
-        } else {
-            return Err(Error::Dropped);
-        };
-
-        let mut inner = if let Ok(inner) = inner.write() {
-            inner
-        } else {
-            return Err(Error::Dropped);
-        };
+    pub fn query(
+        &self,
+        query: Query,
+    ) -> Result<impl Future<Output = Result<QueryResult, Error>>, Error> {
+        let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
+        let mut inner = inner.write().map_err(|_| Error::Dropped)?;
 
         let (sender, receiver) = oneshot::channel();
-        let new_sender = inner.queries_sender.as_mut().expect("Queries sender channel was not initialized. A query was made before the store was started.");
 
         // ok to dismiss send as sender end will be dropped in case of an error and consumer will be notified by channel being closed
-        let _ = new_sender.try_send(QueryRequest {
+        let _ = inner.incoming_queries_sender.try_send(QueryRequest {
             query,
             sender: QueryRequestSender::Future(sender),
         });
 
-        Ok(QueryFuture { receiver })
+        Ok(async move { receiver.await.map_err(|_err| Error::Cancelled)? })
     }
 
     pub fn watched_query(&self, query: Query) -> Result<WatchedQueryStream<CS, PS>, Error> {
-        let inner = if let Some(inner) = self.inner.upgrade() {
-            inner
-        } else {
-            return Err(Error::Dropped);
-        };
-
-        let mut inner = if let Ok(inner) = inner.write() {
-            inner
-        } else {
-            return Err(Error::Dropped);
-        };
+        let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
+        let mut inner = inner.write().map_err(|_| Error::Dropped)?;
 
         let watch_token = query
             .watch_token
@@ -454,10 +359,9 @@ where
         };
 
         let (sender, receiver) = mpsc::channel(self.config.handle_watch_query_channel_size);
-        let new_sender = inner.queries_sender.as_mut().expect("Queries sender channel was not initialized. A query was made before the store was started.");
 
         // ok to dismiss send as sender end will be dropped in case of an error and consumer will be notified by channel being closed
-        let _ = new_sender.try_send(QueryRequest {
+        let _ = inner.incoming_queries_sender.try_send(QueryRequest {
             query: watched_query.query,
             sender: QueryRequestSender::Stream(Arc::new(Mutex::new(sender)), watch_token),
         });
@@ -467,27 +371,6 @@ where
             inner: self.inner.clone(),
             receiver,
         })
-    }
-}
-
-/// Future result of a query.
-pub struct QueryFuture {
-    receiver: oneshot::Receiver<Result<QueryResult, Error>>,
-}
-
-impl Future for QueryFuture {
-    type Item = QueryResult;
-    type Error = Error;
-
-    fn poll(&mut self) -> Result<Async<QueryResult>, Error> {
-        match self.receiver.poll() {
-            Ok(Async::Ready(Ok(res))) => Ok(Async::Ready(res)),
-            Ok(Async::Ready(Err(err))) => Err(err),
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(_) => Err(Error::Other(
-                "Error polling query result future".to_string(),
-            )),
-        }
     }
 }
 
@@ -503,25 +386,15 @@ where
     receiver: mpsc::Receiver<Result<QueryResult, Error>>,
 }
 
-impl<CS, PS> Stream for WatchedQueryStream<CS, PS>
+impl<CS, PS> futures::Stream for WatchedQueryStream<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
 {
-    type Item = QueryResult;
-    type Error = Error;
+    type Item = Result<QueryResult, Error>;
 
-    fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
-        let res = self.receiver.poll();
-        match res {
-            Ok(Async::Ready(Some(Ok(result)))) => Ok(Async::Ready(Some(result))),
-            Ok(Async::Ready(None)) => Ok(Async::Ready(None)),
-            Ok(Async::Ready(Some(Err(err)))) => Err(err),
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(_) => Err(Error::Other(
-                "Error polling watch query channel".to_string(),
-            )),
-        }
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        self.receiver.poll_next_unpin(cx)
     }
 }
 
@@ -554,7 +427,7 @@ enum QueryRequestSender {
 }
 
 impl QueryRequest {
-    fn send(mut self, result: Result<QueryResult, Error>) {
+    fn reply(mut self, result: Result<QueryResult, Error>) {
         match self.sender {
             QueryRequestSender::Future(sender) => {
                 let _ = sender.send(result);
@@ -574,8 +447,9 @@ pub mod tests {
 
     use super::*;
     use crate::store::local::TestStore;
+    use futures::executor::block_on_stream;
     use std::time::Duration;
-    use tokio::prelude::FutureExt;
+    use wasm_timer::Delay;
 
     #[test]
     fn store_mutate_query_via_handle() -> Result<(), failure::Error> {
@@ -623,14 +497,9 @@ pub mod tests {
         test_store.start_store()?;
 
         let query = Query::match_text("hello");
-        let stream = test_store.store_handle.watched_query(query)?;
+        let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
 
-        let (result, stream) = test_store
-            .cluster
-            .runtime
-            .block_on(stream.into_future())
-            .map_err(|_| ())
-            .unwrap();
+        let result = stream.next().unwrap();
         assert_eq!(result.unwrap().results.len(), 0);
 
         let mutation = test_store.create_put_contact_mutation("entry1", "contact1", "Hello World");
@@ -639,12 +508,7 @@ pub mod tests {
             .cluster
             .wait_operation_committed(0, response.operation_id);
 
-        let (result, stream) = test_store
-            .cluster
-            .runtime
-            .block_on(stream.into_future())
-            .map_err(|_| ())
-            .unwrap();
+        let result = stream.next().unwrap();
         assert_eq!(result.unwrap().results.len(), 1);
 
         let mutation =
@@ -654,19 +518,19 @@ pub mod tests {
             .cluster
             .wait_operation_committed(0, response.operation_id);
 
-        let result = test_store
-            .cluster
-            .runtime
-            .block_on(stream.into_future().timeout(Duration::from_secs(1)));
+        test_store.cluster.runtime.block_on_std(async move {
+            let mut stream = stream.into_inner();
+            let delay = Delay::new(Duration::from_secs(1));
 
-        match &result {
-            Err(err) if err.is_elapsed() => {
-                // fine
+            futures::select! {
+                res = stream.next().fuse() => {
+                    panic!("Got result, should have timed out");
+                },
+                _ = delay.fuse() => {
+                    // alright
+                }
             }
-            _ => {
-                panic!("Expected timeout, got something else");
-            }
-        }
+        });
 
         Ok(())
     }
@@ -677,9 +541,9 @@ pub mod tests {
         test_store.start_store()?;
 
         let query = Query::test_fail();
-        let stream = test_store.store_handle.watched_query(query)?;
+        let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
 
-        let result = test_store.cluster.runtime.block_on(stream.into_future());
+        let result = stream.next().unwrap();
         assert!(result.is_err());
 
         Ok(())

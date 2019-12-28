@@ -5,6 +5,7 @@ use futures01::Future as Future01;
 pub use tokio_compat::runtime::Runtime;
 
 pub use tokio02::task::spawn_blocking;
+pub use tokio02::time::{delay_for, delay_until, interval, interval_at, Interval};
 
 pub fn spawn_future_01<F>(f: F) -> tokio::executor::Spawn
 where

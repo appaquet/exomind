@@ -149,7 +149,7 @@ pub fn start(
     );
 
     // wait for runtime to finish all its task
-    tokio::run(rt.shutdown_on_idle());
+    rt.shutdown_on_idle().wait().unwrap();
 
     Ok(())
 }
@@ -196,16 +196,13 @@ fn create_local_store<T: TransportHandle>(
     )?;
     let store_handle = local_store.get_handle();
 
-    rt.spawn(
-        local_store
-            .map(|_| {
-                info!("Local index has stopped");
-            })
-            .map_err(|err| {
-                error!("Local index has stopped: {}", err);
-            }),
-    );
-    let _ = rt.block_on(store_handle.on_start()?);
+    rt.spawn_std(async move {
+        match local_store.run().await {
+            Ok(_) => info!("Local index has stopped"),
+            Err(err) => error!("Local index has stopped: {}", err),
+        }
+    });
+    rt.block_on_std(store_handle.on_start());
 
     let server_config = Default::default();
     let remote_store_server = Server::new(

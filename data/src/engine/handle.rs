@@ -200,7 +200,6 @@ where
         Ok(pending_operation.map(EngineOperation::from_pending))
     }
 
-    ///
     /// Take the events stream receiver out of this `Handle`.
     /// This stream is bounded and consumptions should be non-blocking to prevent losing events.
     /// Calling the engine on every call should be throttled in the case of a big read amplification.

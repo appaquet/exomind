@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use futures01::sync::mpsc;
+use futures::channel::mpsc;
 
 use exocore_common::time::Instant;
 

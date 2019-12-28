@@ -16,8 +16,4 @@ libc = "0.2"
 log4rs = "0.9"
 log = "0.4"
 serde_json = "1.0"
-
-futures = { version = "0.3", features = ["async-await", "compat"] }
-futures01 = { package = "futures", version = "0.1" }
-tokio = { version = "0.1", features = ["io"], default-features = false }
-tokio02 = { version = "0.2", package = "tokio", features = ["rt-core"], default-features = false }
+futures = { version = "0.3", features = ["async-await"] }

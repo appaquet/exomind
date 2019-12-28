@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use futures01::Future;
 use tempdir::TempDir;
 
 use exocore_data::tests_utils::DataTestCluster;
@@ -72,18 +71,17 @@ impl TestStore {
 
     pub fn start_store(&mut self) -> Result<(), failure::Error> {
         let store = self.store.take().unwrap();
-        self.cluster.runtime.spawn(
-            store
-                .map(|_| {
-                    info!("Test store completed");
-                })
-                .map_err(|err| {
-                    error!("Test store future failed: {}", err);
-                }),
-        );
+        self.cluster.runtime.spawn_std(async move {
+            match store.run().await {
+                Ok(_) => {}
+                Err(err) => error!("Error running store: {}", err),
+            }
+        });
+
         self.cluster
             .runtime
-            .block_on(self.store_handle.on_start()?)?;
+            .block_on_std(self.store_handle.on_start());
+
         Ok(())
     }
 
@@ -92,10 +90,9 @@ impl TestStore {
     }
 
     pub fn query(&mut self, query: Query) -> Result<QueryResult, failure::Error> {
-        let resp_future = self.store_handle.query(query)?;
         self.cluster
             .runtime
-            .block_on(resp_future)
+            .block_on_std(self.store_handle.query(query)?)
             .map_err(|err| err.into())
     }
 

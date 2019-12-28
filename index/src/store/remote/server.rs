@@ -11,13 +11,12 @@ use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandl
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
-use exocore_common::time::ConsistentTimestamp;
-use exocore_common::utils::futures::OwnedSpawnSet;
+use exocore_common::time::{ConsistentTimestamp, Duration, Instant};
+use exocore_common::utils::futures::{interval, OwnedSpawnSet};
 use futures::channel::{mpsc, oneshot};
 use futures::compat::{Future01CompatExt, Sink01CompatExt, Stream01CompatExt};
 use futures::{FutureExt, SinkExt, StreamExt};
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy)]
 pub struct ServerConfiguration {
@@ -42,7 +41,8 @@ where
 {
     config: ServerConfiguration,
     inner: Arc<RwLock<Inner<CS, PS>>>,
-    transport_handle: Option<T>,
+    transport_handle: T,
+    transport_out_receiver: mpsc::UnboundedReceiver<OutEvent>,
 }
 
 impl<CS, PS, T> Server<CS, PS, T>
@@ -58,41 +58,37 @@ where
         store_handle: crate::store::local::StoreHandle<CS, PS>,
         transport_handle: T,
     ) -> Result<Server<CS, PS, T>, Error> {
+        let (transport_out_sender, transport_out_receiver) = mpsc::unbounded();
+
         let inner = Arc::new(RwLock::new(Inner {
             config,
             cell,
             schema,
             store_handle,
             watched_queries: HashMap::new(),
-            transport_out: None,
+            transport_out_sender,
         }));
 
         Ok(Server {
             config,
             inner,
-            transport_handle: Some(transport_handle),
+            transport_handle,
+            transport_out_receiver,
         })
     }
 
-    pub async fn run(mut self) -> Result<(), Error> {
-        let mut transport_handle = self
-            .transport_handle
-            .take()
-            .expect("Transport handle was already consumed");
+    pub async fn run(self) -> Result<(), Error> {
+        let mut transport_handle = self.transport_handle;
 
         // send outgoing messages to transport
-        let (out_sender, mut out_receiver) = mpsc::unbounded();
         let mut transport_sink = transport_handle.get_sink().sink_compat();
+        let mut transport_out_receiver = self.transport_out_receiver;
         let transport_sender = async move {
-            while let Some(event) = out_receiver.next().await {
+            while let Some(event) = transport_out_receiver.next().await {
                 transport_sink.send(event).await?;
             }
             Ok::<(), Error>(())
         };
-        {
-            let mut inner = self.inner.write()?;
-            inner.transport_out = Some(out_sender);
-        }
 
         // handle incoming messages
         let weak_inner = Arc::downgrade(&self.inner);
@@ -125,8 +121,7 @@ where
         let weak_inner = Arc::downgrade(&self.inner);
         let management_timer_interval = self.config.management_timer_interval;
         let management_timer = async move {
-            let mut interval =
-                tokio::timer::Interval::new_interval(management_timer_interval).compat();
+            let mut interval = interval(management_timer_interval);
             while let Some(_) = interval.next().await {
                 Self::management_timer_process(&weak_inner)?;
             }
@@ -185,8 +180,8 @@ where
         let future_result = {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
-            inner.store_handle.query(query)
-        }?;
+            inner.store_handle.query(query)?
+        };
 
         let weak_inner = weak_inner.clone();
         let send_response = move |result: Result<QueryResult, Error>| -> Result<(), Error> {
@@ -202,14 +197,14 @@ where
         };
 
         spawn_set.spawn(async move {
-            let result = future_result.compat().await;
+            let result = future_result.await;
 
             if let Err(err) = &result {
                 error!("Returning error executing incoming query: {}", err);
             }
 
             if let Err(err) = send_response(result) {
-                error!("Error sending response for incomign query: {}", err);
+                error!("Error sending response for incoming query: {}", err);
             }
         });
 
@@ -265,7 +260,7 @@ where
         spawn_set.spawn(async move {
             let send_response1 = send_response.clone();
             let stream_consumer = async move {
-                let mut result_stream = result_stream.compat();
+                let mut result_stream = result_stream;
                 while let Some(result) = result_stream.next().await {
                     if let Err(err) = &result {
                         error!("Returning error executing incoming query: {}", err);
@@ -355,7 +350,7 @@ where
     schema: Arc<Schema>,
     store_handle: crate::store::local::StoreHandle<CS, PS>,
     watched_queries: HashMap<WatchToken, RegisteredWatchedQuery>,
-    transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
+    transport_out_sender: mpsc::UnboundedSender<OutEvent>,
 }
 
 impl<CS, PS> Inner<CS, PS>
@@ -364,11 +359,7 @@ where
     PS: exocore_data::pending::PendingStore,
 {
     fn send_message(&self, message: OutMessage) -> Result<(), Error> {
-        let transport = self.transport_out.as_ref().ok_or_else(|| {
-            Error::Fatal("Tried to send message, but transport_out was none".to_string())
-        })?;
-
-        transport
+        self.transport_out_sender
             .unbounded_send(OutEvent::Message(message))
             .map_err(|_err| {
                 Error::Fatal(
