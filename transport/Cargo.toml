@@ -13,7 +13,6 @@ libp2p_transport = ["libp2p", "tokio/timer"]
 exocore-common = { path = "../common" }
 log = "0.4"
 failure = "0.1"
-
 futures = { version = "0.3", features = ["async-await", "compat"] }
 futures01 = { package = "futures", version = "0.1" }
 tokio = { version = "0.1", features = ["io"], default-features = false }

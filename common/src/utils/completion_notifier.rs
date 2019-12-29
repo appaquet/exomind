@@ -190,6 +190,7 @@ pub enum CompletionError<E: Clone + Debug + Send + Sync + 'static> {
 mod tests {
     use super::*;
     use crate::tests_utils::{expect_eventually, FuturePeek, FutureStatus};
+    use crate::utils::futures::Runtime;
 
     #[test]
     fn clone_and_drop_listener() -> Result<(), failure::Error> {
@@ -225,7 +226,7 @@ mod tests {
 
     #[test]
     fn drop_completion_notifies() -> Result<(), failure::Error> {
-        let rt = crate::utils::futures::Runtime::new()?;
+        let rt = Runtime::new()?;
 
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
 
@@ -241,7 +242,7 @@ mod tests {
 
     #[test]
     fn complete_notifies_async() -> Result<(), failure::Error> {
-        let rt = crate::utils::futures::Runtime::new()?;
+        let rt = Runtime::new()?;
 
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
         completion.complete(Ok(true));
@@ -258,7 +259,7 @@ mod tests {
 
     #[test]
     fn already_complete_notifies() -> Result<(), failure::Error> {
-        let mut rt = crate::utils::futures::Runtime::new()?;
+        let mut rt = Runtime::new()?;
 
         let (completion, listener) = CompletionNotifier::<bool, ()>::new_with_listener();
         completion.complete(Ok(true));

@@ -15,8 +15,6 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
     cluster.start_engine(0);
-
-    // wait for engine to start
     cluster.wait_started(0);
 
     let op1 = cluster
@@ -80,8 +78,6 @@ fn single_node_chain_iteration() -> Result<(), failure::Error> {
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
     cluster.start_engine(0);
-
-    // wait for engine to start
     cluster.wait_started(0);
 
     let chain_operations = cluster.get_handle(0).get_chain_operations(None);

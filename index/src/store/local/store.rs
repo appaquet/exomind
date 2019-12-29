@@ -36,7 +36,7 @@ impl Default for StoreConfig {
     }
 }
 
-/// Locally persisted store. It forwards mutation requests to the data engine, receives back data events that gets indexed
+/// Locally persisted store. It forwards mutation requests to the data engine, receives back data events that get indexed
 /// by the entities index. Queries are executed by the entities index.
 pub struct Store<CS, PS>
 where
@@ -65,13 +65,12 @@ where
         let (incoming_queries_sender, incoming_queries_receiver) =
             mpsc::channel::<QueryRequest>(config.query_channel_size);
 
-        let watched_queries = WatchedQueries::new();
         let inner = Arc::new(RwLock::new(Inner {
             cell,
             clock,
             schema,
             index,
-            watched_queries,
+            watched_queries: WatchedQueries::new(),
             incoming_queries_sender,
             data_handle,
         }));

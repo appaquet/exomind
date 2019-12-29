@@ -11,10 +11,8 @@ use futures01::prelude::*;
 use std::ops::RangeBounds;
 use std::sync::{Arc, RwLock, Weak};
 
-///
 /// Handle ot the Engine, allowing communication with the engine.
 /// The engine itself is owned by a future executor.
-///
 pub struct EngineHandle<CS, PS>
 where
     CS: chain::ChainStore,

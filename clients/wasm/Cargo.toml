@@ -21,6 +21,5 @@ js-sys = "0.3"
 rand = { version = "0.7", features = ["wasm-bindgen"] }
 log = "0.4"
 console_log = "0.1"
-
 futures = { version = "0.3", features = ["async-await", "compat"] }
 futures01 = { package = "futures", version = "0.1" }

@@ -10,7 +10,6 @@ use futures01::sync::mpsc;
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
 use exocore_common::node::{LocalNode, Node, NodeId};
 use exocore_common::protos::common_capnp::envelope;
-use exocore_common::tests_utils::FuturePeek;
 use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
 use exocore_common::utils::futures::Runtime;
 
@@ -193,7 +192,6 @@ impl Drop for MockTransportHandle {
 ///
 pub struct TestableTransportHandle<T: TransportHandle> {
     handle: Option<T>,
-    handle_peek: Option<FuturePeek>,
     out_sink: Option<T::Sink>,
     in_stream: Option<Peekable<T::Stream>>,
 }
@@ -205,7 +203,6 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 
         TestableTransportHandle {
             handle: Some(handle),
-            handle_peek: None,
             out_sink: Some(sink),
             in_stream: Some(stream.peekable()),
         }
@@ -213,9 +210,7 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 
     pub fn start(&mut self, rt: &mut Runtime) {
         let handle = self.handle.take().unwrap();
-        let (fut, peek) = FuturePeek::new(handle);
-        self.handle_peek = Some(peek);
-        rt.spawn(fut.map_err(|_| ()));
+        rt.spawn(handle.map_err(|_| ()));
     }
 
     pub fn send_test_message(&mut self, rt: &mut Runtime, to: &Node, type_id: u16) {
