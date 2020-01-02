@@ -3,6 +3,9 @@ use crate::chain;
 use crate::operation;
 use crate::operation::NewOperation;
 use crate::pending;
+pub use chain_sync::ChainSyncConfig;
+pub use commit_manager::CommitManagerConfig;
+pub use error::Error;
 use exocore_common;
 use exocore_common::cell::{Cell, CellNodes};
 use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
@@ -15,12 +18,19 @@ use exocore_common::time::Clock;
 use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
+use exocore_common::utils::futures::{spawn_future, spawn_future_01};
 use exocore_transport::{
     Error as TransportError, InEvent, InMessage, OutEvent, OutMessage, TransportHandle,
     TransportLayer,
 };
+use futures::future::FutureExt;
+use futures::TryFutureExt;
+use futures::{SinkExt, StreamExt, TryStreamExt};
 use futures01::prelude::*;
 use futures01::sync::mpsc;
+pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
+pub use pending_sync::PendingSyncConfig;
+pub use request_tracker::RequestTrackerConfig;
 use std;
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
@@ -35,14 +45,6 @@ mod pending_sync;
 mod request_tracker;
 #[cfg(test)]
 pub(crate) mod testing;
-
-pub use chain_sync::ChainSyncConfig;
-pub use commit_manager::CommitManagerConfig;
-pub use error::Error;
-use exocore_common::utils::futures::spawn_future_01;
-pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
-pub use pending_sync::PendingSyncConfig;
-pub use request_tracker::RequestTrackerConfig;
 
 ///
 /// Data engine's configuration
@@ -175,13 +177,13 @@ where
     }
 
     fn start(&mut self) -> Result<(), Error> {
-        let mut transport = self
+        let mut transport_handle = self
             .transport
             .take()
             .ok_or_else(|| Error::Other("Transport was none in engine".to_string()))?;
 
-        let transport_in_stream = transport.get_stream();
-        let transport_out_sink = transport.get_sink();
+        let transport_in_stream = transport_handle.get_stream().map(Ok).compat();
+        let transport_out_sink = transport_handle.get_sink().compat();
 
         // create channel to send messages to transport's sink
         {
@@ -267,14 +269,7 @@ where
         }
 
         // schedule transport
-        {
-            let weak_inner1 = Arc::downgrade(&self.inner);
-            spawn_future_01({
-                transport.map_err(move |err| {
-                    Self::handle_spawned_future_error("transport", &weak_inner1, err.into());
-                })
-            });
-        }
+        spawn_future(transport_handle);
 
         {
             let mut unlocked_inner = self.inner.write()?;
@@ -376,7 +371,12 @@ where
     fn poll(&mut self) -> Result<Async<()>, Error> {
         // first, make sure transport is started
         if let Some(transport_handle) = &self.transport {
-            futures01::try_ready!(transport_handle.on_start().poll());
+            let mut handle_start = transport_handle
+                .on_start()
+                .unit_error()
+                .map_err(|_| Error::Other("Impossible error".to_string()))
+                .compat();
+            futures01::try_ready!(handle_start.poll());
         }
 
         // start the engine if it's not started

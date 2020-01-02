@@ -87,25 +87,19 @@ impl Context {
         })?;
 
         let store_handle = remote_store_client.get_handle();
-        let management_handle =
-            transport
-                .get_handle(cell, TransportLayer::None)
-                .map_err(|err| {
-                    error!("Couldn't get transport handle: {}", err);
-                    ContextStatus::Error
-                })?;
-
-        runtime.spawn_std(async move {
-            let _ = transport.compat().await;
-            info!("Transport is done");
-        });
-
-        runtime
-            .block_on(management_handle.on_start())
+        let management_transport_handle = transport
+            .get_handle(cell, TransportLayer::None)
             .map_err(|err| {
-                error!("Couldn't start transport: {}", err);
+                error!("Couldn't get transport handle: {}", err);
                 ContextStatus::Error
             })?;
+
+        runtime.spawn_std(async move {
+            let res = transport.run().await;
+            info!("Transport is done: {:?}", res);
+        });
+
+        runtime.block_on_std(management_transport_handle.on_start());
 
         runtime.spawn_std(async move {
             let _ = remote_store_client.run().await;

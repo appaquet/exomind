@@ -12,7 +12,6 @@ use exocore_transport::{InEvent, TransportHandle, TransportLayer};
 
 use crate::ws::BrowserTransportClient;
 use exocore_transport::transport::ConnectionStatus;
-use futures::compat::Stream01CompatExt;
 use futures::StreamExt;
 use std::sync::{Arc, Mutex};
 
@@ -86,15 +85,9 @@ impl ExocoreClient {
         let mut client_transport_handle = transport.get_handle(cell, TransportLayer::Client);
         let inner_clone = inner.clone();
         spawn_future_non_send(async move {
-            let mut stream = client_transport_handle.get_stream().compat();
+            let mut stream = client_transport_handle.get_stream();
 
             while let Some(event) = stream.next().await {
-                let event = if let Ok(event) = event {
-                    event
-                } else {
-                    return Ok(());
-                };
-
                 if let InEvent::NodeStatus(_, status) = event {
                     let str_status = match status {
                         ConnectionStatus::Connecting => "connecting",

@@ -14,7 +14,6 @@ use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
 use exocore_common::time::{ConsistentTimestamp, Duration, Instant};
 use exocore_common::utils::futures::{interval, OwnedSpawnSet};
 use futures::channel::{mpsc, oneshot};
-use futures::compat::{Future01CompatExt, Sink01CompatExt, Stream01CompatExt};
 use futures::{FutureExt, SinkExt, StreamExt};
 use std::collections::HashMap;
 
@@ -81,7 +80,7 @@ where
         let mut transport_handle = self.transport_handle;
 
         // send outgoing messages to transport
-        let mut transport_sink = transport_handle.get_sink().sink_compat();
+        let mut transport_sink = transport_handle.get_sink();
         let mut transport_out_receiver = self.transport_out_receiver;
         let transport_sender = async move {
             while let Some(event) = transport_out_receiver.next().await {
@@ -92,7 +91,7 @@ where
 
         // handle incoming messages
         let weak_inner = Arc::downgrade(&self.inner);
-        let mut transport_stream = transport_handle.get_stream().compat();
+        let mut transport_stream = transport_handle.get_stream();
         let transport_receiver = async move {
             let mut spawn_set = OwnedSpawnSet::new();
 
@@ -100,7 +99,7 @@ where
                 // cleanup any queries that have completed
                 spawn_set = spawn_set.cleanup().await;
 
-                if let InEvent::Message(msg) = event? {
+                if let InEvent::Message(msg) = event {
                     debug!("Got an incoming message");
                     if let Err(err) =
                         Self::handle_incoming_message(&weak_inner, &mut spawn_set, msg)
@@ -134,7 +133,7 @@ where
             _ = transport_sender.fuse() => (),
             _ = transport_receiver.fuse() => (),
             _ = management_timer.fuse() => (),
-            _ = transport_handle.compat().fuse() => (),
+            _ = transport_handle.fuse() => (),
         };
 
         Ok(())

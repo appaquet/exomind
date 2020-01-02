@@ -5,7 +5,6 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use futures::channel::{mpsc, oneshot};
-use futures::compat::{Future01CompatExt, Sink01CompatExt, Stream01CompatExt};
 use futures::prelude::*;
 
 use exocore_common::cell::Cell;
@@ -109,7 +108,7 @@ where
         };
 
         // send outgoing messages to transport
-        let mut transport_sink = self.transport_handle.get_sink().sink_compat();
+        let mut transport_sink = self.transport_handle.get_sink();
         let transport_sender = async move {
             let mut receiver = out_receiver;
 
@@ -122,10 +121,10 @@ where
 
         // handle incoming messages from transport
         let weak_inner = Arc::downgrade(&self.inner);
-        let mut transport_stream = self.transport_handle.get_stream().compat();
+        let mut transport_stream = self.transport_handle.get_stream();
         let transport_receiver = async move {
             while let Some(event) = transport_stream.next().await {
-                if let InEvent::Message(msg) = event? {
+                if let InEvent::Message(msg) = event {
                     if let Err(err) = Inner::handle_incoming_message(&weak_inner, msg) {
                         if err.is_fatal() {
                             return Err(err);
@@ -156,7 +155,7 @@ where
             _ = transport_sender.fuse() => (),
             _ = transport_receiver.fuse() => (),
             _ = management_timer.fuse() => (),
-            _ = self.transport_handle.compat().fuse() => (),
+            _ = self.transport_handle.fuse() => (),
             _ = self.handles.on_handles_dropped().fuse() => (),
         };
 

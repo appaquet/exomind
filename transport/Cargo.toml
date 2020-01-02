@@ -5,7 +5,6 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-default = ["tests_utils", "websocket_transport"]
 tests_utils = ["exocore-common/tests_utils", "tokio/rt-full"]
 websocket_transport = ["websocket", "tokio/reactor"]
 libp2p_transport = ["libp2p", "tokio/timer"]

@@ -138,15 +138,10 @@ pub fn start(
     }
 
     // start transport
-    rt.spawn(
-        transport
-            .map(|_| {
-                info!("Libp2p transport has stopped");
-            })
-            .map_err(|err| {
-                error!("Libp2p transport stopped with error: {}", err);
-            }),
-    );
+    rt.spawn_std(async {
+        let res = transport.run().await;
+        info!("Libp2p transport done: {:?}", res);
+    });
 
     // wait for runtime to finish all its task
     rt.shutdown_on_idle().wait().unwrap();
@@ -163,15 +158,10 @@ fn start_ws_server(
     let config = WebSocketTransportConfig::default();
     let mut transport = WebsocketTransport::new(listen_address, config);
     let handle = transport.get_handle(cell)?;
-    rt.spawn(
-        transport
-            .map(|_| {
-                info!("WebSocket transport has stopped");
-            })
-            .map_err(|err| {
-                error!("WebSocket transport stopped with error: {}", err);
-            }),
-    );
+    rt.spawn_std(async {
+        let res = transport.run().await;
+        info!("Websocket transport done: {:?}", res);
+    });
 
     Ok(handle)
 }

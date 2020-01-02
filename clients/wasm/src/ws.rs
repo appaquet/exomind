@@ -1,28 +1,28 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex, Weak};
-use std::time::Duration;
-
-use futures01::future::Future as Future01;
-use futures01::sync::mpsc;
-use futures01::Async as Async01;
-use js_sys::{ArrayBuffer, Uint8Array};
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use wasm_timer::Instant;
-use web_sys::{BinaryType, ErrorEvent, MessageEvent, WebSocket};
-
 use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::Node;
 use exocore_common::protos::common_capnp::envelope;
-use exocore_common::utils::completion_notifier::{
-    CompletionError, CompletionListener, CompletionNotifier,
-};
+use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
 use exocore_common::utils::futures::spawn_future_non_send;
-use exocore_transport::transport::{ConnectionStatus, MpscHandleSink, MpscHandleStream};
+use exocore_transport::transport::{
+    ConnectionStatus, MpscHandleSink, MpscHandleStream, TransportHandleOnStart,
+};
 use exocore_transport::{Error, InEvent, InMessage, OutEvent, TransportHandle, TransportLayer};
-use futures::compat::Stream01CompatExt;
-use futures::StreamExt;
+use futures::channel::mpsc;
+use futures::compat::{Compat01As03, Future01CompatExt};
+use futures::future::Future;
+use futures::{FutureExt, StreamExt};
+use js_sys::{ArrayBuffer, Uint8Array};
+use pin_project::pin_project;
+use std::collections::HashMap;
+use std::pin::Pin;
+use std::sync::{Arc, Mutex, Weak};
+use std::task::{Context, Poll};
+use std::time::Duration;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use wasm_timer::Instant;
+use web_sys::{BinaryType, ErrorEvent, MessageEvent, WebSocket};
 
 const OUT_CHANNEL_SIZE: usize = 100;
 const IN_CHANNEL_SIZE: usize = 100;
@@ -77,7 +77,8 @@ impl BrowserTransportClient {
         let stop_listener = inner
             .stop_notifier
             .get_listener()
-            .expect("Couldn't get a listener on stop notifier");
+            .expect("Couldn't get a listener on stop notifier")
+            .compat();
 
         BrowserTransportHandle {
             start_listener,
@@ -96,23 +97,18 @@ impl BrowserTransportClient {
             let mut out_receiver = inner_handle
                 .out_receiver
                 .take()
-                .expect("InnerHandle's out_receiver was already consumed")
-                .compat();
+                .expect("InnerHandle's out_receiver was already consumed");
 
             spawn_future_non_send(async move {
                 while let Some(event) = out_receiver.next().await {
-                    let event = event?;
+                    let OutEvent::Message(msg) = event;
 
-                    match event {
-                        OutEvent::Message(msg) => {
-                            let inner = weak_inner.upgrade().ok_or(())?;
-                            let inner = inner.lock().map_err(|_| ())?;
-                            if let Some(ws) = &inner.socket {
-                                let mut message_bytes = msg.envelope_builder.as_bytes();
-                                if let Err(_err) = ws.ws.send_with_u8_array(&mut message_bytes) {
-                                    error!("Error sending a message to websocket");
-                                }
-                            }
+                    let inner = weak_inner.upgrade().ok_or(())?;
+                    let inner = inner.lock().map_err(|_| ())?;
+                    if let Some(ws) = &inner.socket {
+                        let mut message_bytes = msg.envelope_builder.as_bytes();
+                        if let Err(_err) = ws.ws.send_with_u8_array(&mut message_bytes) {
+                            error!("Error sending a message to websocket");
                         }
                     }
                 }
@@ -308,41 +304,36 @@ impl Inner {
 ///
 /// Handle to the websocket transport
 ///
+#[pin_project]
 pub struct BrowserTransportHandle {
     start_listener: CompletionListener<(), Error>,
     in_receiver: Option<MpscHandleStream>,
     out_sender: Option<MpscHandleSink>,
-    stop_listener: CompletionListener<(), Error>,
+    #[pin]
+    stop_listener: Compat01As03<CompletionListener<(), Error>>,
 }
 
-impl Future01 for BrowserTransportHandle {
-    type Item = ();
-    type Error = Error;
+impl Future for BrowserTransportHandle {
+    type Output = ();
 
-    fn poll(&mut self) -> Result<Async01<Self::Item>, Self::Error> {
-        self.stop_listener.poll().map_err(|err| match err {
-            CompletionError::UserError(err) => err,
-            _ => Error::Other("Error in completion error".to_string()),
-        })
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        this.stop_listener.map(|_| ()).poll_unpin(cx)
     }
 }
 
-type StartFutureType =
-    futures01::future::MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
-
 impl TransportHandle for BrowserTransportHandle {
-    type StartFuture = StartFutureType;
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
 
-    fn on_start(&self) -> Self::StartFuture {
-        self.start_listener
+    fn on_start(&self) -> TransportHandleOnStart {
+        let on_start = self
+            .start_listener
             .try_clone()
             .expect("Couldn't clone start listener")
-            .map_err(|err| match err {
-                CompletionError::UserError(err) => err,
-                _ => Error::Other("Error in completion error".to_string()),
-            })
+            .compat()
+            .map(|_| ());
+        Box::new(on_start)
     }
 
     fn get_sink(&mut self) -> Self::Sink {

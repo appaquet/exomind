@@ -373,8 +373,6 @@ mod tests {
 
     #[test]
     fn client_send_receive() -> Result<(), failure::Error> {
-        setup_logging();
-
         let node = LocalNode::generate();
         let cell = FullCell::generate(node);
         let mut rt = Runtime::new()?;
