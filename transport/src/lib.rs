@@ -23,7 +23,7 @@ pub mod ws;
 #[cfg(any(test, feature = "tests_utils"))]
 pub mod mock;
 
-#[cfg(feature = "libp2p_transport")]
+#[cfg(any(test, feature = "libp2p_transport"))]
 pub mod either;
 
 pub use error::Error;

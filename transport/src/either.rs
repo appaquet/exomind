@@ -1,14 +1,18 @@
 use crate::error::Error;
+use crate::transport::TransportHandleOnStart;
 use crate::{InEvent, OutEvent, TransportHandle};
 use exocore_common::node::NodeId;
-use exocore_common::utils::completion_notifier::{
-    CompletionError, CompletionListener, CompletionNotifier,
-};
-use exocore_common::utils::futures::spawn_future_01;
-use futures01::prelude::*;
-use futures01::sync::mpsc;
+use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
+use exocore_common::utils::futures::OwnedSpawnSet;
+use futures::channel::mpsc;
+use futures::compat::{Compat01As03, Future01CompatExt};
+use futures::prelude::*;
+use futures::{Future, FutureExt, Sink, SinkExt, Stream, StreamExt};
+use pin_project::pin_project;
 use std::collections::HashMap;
+use std::pin::Pin;
 use std::sync::{Arc, RwLock, Weak};
+use std::task::{Context, Poll};
 
 ///
 /// Transport handle that wraps 2 other transport handles. When it receives events,
@@ -17,17 +21,31 @@ use std::sync::{Arc, RwLock, Weak};
 ///
 /// !! If we never received an event for a node, it will automatically select the first handle !!
 ///
-pub struct EitherTransportHandle<TLeft: TransportHandle, TRight: TransportHandle> {
+#[pin_project]
+pub struct EitherTransportHandle<TLeft, TRight>
+where
+    TLeft: TransportHandle,
+    TRight: TransportHandle,
+{
+    #[pin]
     left: TLeft,
+    #[pin]
     right: TRight,
     inner: Arc<RwLock<Inner>>,
-    completion_listener: CompletionListener<(), Error>,
+    #[pin]
+    completion_listener: Compat01As03<CompletionListener<(), Error>>,
+    owned_spawn_set: OwnedSpawnSet<()>,
 }
 
-impl<TLeft: TransportHandle, TRight: TransportHandle> EitherTransportHandle<TLeft, TRight> {
+impl<TLeft, TRight> EitherTransportHandle<TLeft, TRight>
+where
+    TLeft: TransportHandle,
+    TRight: TransportHandle,
+{
     pub fn new(left: TLeft, right: TRight) -> EitherTransportHandle<TLeft, TRight> {
         let (completion_notifier, completion_listener) = CompletionNotifier::new_with_listener();
 
+        let owned_spawn_set = OwnedSpawnSet::new();
         EitherTransportHandle {
             left,
             right,
@@ -35,69 +53,72 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> EitherTransportHandle<TLef
                 node_map: HashMap::new(),
                 completion_notifier,
             })),
-            completion_listener,
+            completion_listener: completion_listener.compat(),
+            owned_spawn_set,
         }
     }
 }
 
-impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
-    for EitherTransportHandle<TLeft, TRight>
+impl<TLeft, TRight> TransportHandle for EitherTransportHandle<TLeft, TRight>
+where
+    TLeft: TransportHandle,
+    TRight: TransportHandle,
 {
     // TODO: Figure out static types https://github.com/appaquet/exocore/issues/125
-    type StartFuture = Box<dyn Future<Item = (), Error = Error> + Send + 'static>;
-    type Sink = Box<dyn Sink<SinkItem = OutEvent, SinkError = Error> + Send + 'static>;
-    type Stream = Box<dyn Stream<Item = InEvent, Error = Error> + Send + 'static>;
+    type Sink = Box<dyn Sink<OutEvent, Error = Error> + Send + Unpin + 'static>;
+    type Stream = Box<dyn Stream<Item = InEvent> + Send + Unpin + 'static>;
 
-    fn on_start(&self) -> Self::StartFuture {
+    fn on_start(&self) -> TransportHandleOnStart {
         let left = self.left.on_start();
         let right = self.right.on_start();
 
-        Box::new(
-            left.select(right)
-                .map(|(res, _)| res)
-                .map_err(|(err, _)| err),
-        )
+        Box::new(future::select(left, right).map(|_| ()))
     }
 
     fn get_sink(&mut self) -> Self::Sink {
         // dispatch incoming events from left transport to handle
-        let left = self.left.get_sink();
-        let (left_sender, left_receiver) = mpsc::unbounded();
-        let weak_inner = Arc::downgrade(&self.inner);
-        spawn_future_01(
-            left_receiver
-                .map_err(|_| Error::Other("Left side channel has been dropped".to_owned()))
-                .forward(left)
-                .map(|_| ())
-                .map_err(move |err| {
-                    error!("Got an error sending to left sink: {}", err);
-                    let _ = Inner::maybe_complete_error(&weak_inner, err);
-                }),
+        let mut left = self.left.get_sink();
+        let (left_sender, mut left_receiver) = mpsc::unbounded();
+        let weak_inner2 = Arc::downgrade(&self.inner);
+        self.owned_spawn_set.spawn(
+            async move {
+                while let Some(event) = left_receiver.next().await {
+                    left.send(event).await?;
+                }
+                Ok(())
+            }
+            .map_err(move |err| {
+                error!("Error in sending to either side: {}", err);
+                let _ = Inner::maybe_complete_error(&weak_inner2, err);
+            })
+            .map(|_| ()),
         );
 
         // dispatch incoming events from right transport to handle
-        let right = self.right.get_sink();
-        let (right_sender, right_receiver) = mpsc::unbounded();
-        let weak_inner = Arc::downgrade(&self.inner);
-        spawn_future_01(
-            right_receiver
-                .map_err(|_| Error::Other("Right side channel has been dropped".to_owned()))
-                .forward(right)
-                .map(|_| ())
-                .map_err(move |err| {
-                    error!("Got an error sending to right sink: {}", err);
-                    let _ = Inner::maybe_complete_error(&weak_inner, err);
-                }),
+        let mut right = self.right.get_sink();
+        let (right_sender, mut right_receiver) = mpsc::unbounded();
+        let weak_inner2 = Arc::downgrade(&self.inner);
+        self.owned_spawn_set.spawn(
+            async move {
+                while let Some(event) = right_receiver.next().await {
+                    right.send(event).await?;
+                }
+                Ok(())
+            }
+            .map_err(move |err| {
+                error!("Error in sending to either side: {}", err);
+                let _ = Inner::maybe_complete_error(&weak_inner2, err);
+            })
+            .map(|_| ()),
         );
 
         // redirect outgoing events coming from handles to underlying transports
-        let (sender, receiver) = mpsc::unbounded::<OutEvent>();
+        let (sender, mut receiver) = mpsc::unbounded::<OutEvent>();
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
-        spawn_future_01(
-            receiver
-                .map_err(|_| Error::Other("Error in incoming channel stream".to_string()))
-                .for_each(move |event| {
+        self.owned_spawn_set.spawn(
+            async move {
+                while let Some(event) = receiver.next().await {
                     let side = match &event {
                         OutEvent::Message(msg) => {
                             let node = msg.to.first().ok_or_else(|| {
@@ -119,13 +140,15 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
                             Error::Other(format!("Couldn't send to left sink: {}", err))
                         })?;
                     }
+                }
 
-                    Ok(())
-                })
-                .map_err(move |err| {
-                    error!("Got an error sending to sink: {}", err);
-                    let _ = Inner::maybe_complete_error(&weak_inner2, err);
-                }),
+                Ok::<_, Error>(())
+            }
+            .map_err(move |err| {
+                error!("Error in sending to either side: {}", err);
+                let _ = Inner::maybe_complete_error(&weak_inner2, err);
+            })
+            .map(|_| ()),
         );
 
         Box::new(sender.sink_map_err(|err| Error::Other(format!("Error in either sink: {}", err))))
@@ -150,36 +173,32 @@ impl<TLeft: TransportHandle, TRight: TransportHandle> TransportHandle
             event
         });
 
-        Box::new(left.select(right))
+        Box::new(futures::stream::select(left, right))
     }
 }
 
-impl<TLeft: TransportHandle, TRight: TransportHandle> Future
-    for EitherTransportHandle<TLeft, TRight>
+impl<TLeft, TRight> Future for EitherTransportHandle<TLeft, TRight>
+where
+    TLeft: TransportHandle,
+    TRight: TransportHandle,
 {
-    type Item = ();
-    type Error = Error;
+    type Output = ();
 
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        if let Async::Ready(_) = self.left.poll()? {
-            return Ok(Async::Ready(()));
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        if let Poll::Ready(_) = this.left.poll(cx) {
+            return Poll::Ready(());
         }
 
-        if let Async::Ready(_) = self.right.poll()? {
-            return Ok(Async::Ready(()));
+        if let Poll::Ready(_) = this.right.poll(cx) {
+            return Poll::Ready(());
         }
 
-        let completion_poll = self.completion_listener.poll().map_err(|err| match err {
-            CompletionError::UserError(err) => err,
-            CompletionError::Dropped => {
-                Error::Other("Completion notifier has been dropped".to_owned())
-            }
-        })?;
-        if let Async::Ready(_) = completion_poll {
-            return Ok(Async::Ready(()));
+        if let Poll::Ready(_) = this.completion_listener.poll(cx) {
+            return Poll::Ready(());
         }
 
-        Ok(Async::NotReady)
+        Poll::Pending
     }
 }
 

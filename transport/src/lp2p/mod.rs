@@ -2,7 +2,7 @@ pub mod behaviour;
 pub mod protocol;
 
 use crate::messages::InMessage;
-use crate::transport::{InEvent, MpscHandleSink, MpscHandleStream, OutEvent};
+use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
 use crate::Error;
 use crate::{TransportHandle, TransportLayer};
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
@@ -14,15 +14,21 @@ use exocore_common::utils::completion_notifier::{
     CompletionError, CompletionListener, CompletionNotifier,
 };
 use exocore_common::utils::futures::spawn_future_01;
-use futures01::prelude::*;
-use futures01::sync::mpsc;
-use futures01::MapErr;
+use futures::channel::mpsc;
+use futures::channel::mpsc::SendError;
+use futures::compat::{Compat, Stream01CompatExt};
+use futures::future::Future as Future03;
+use futures::sink::SinkMapErr;
+use futures::{FutureExt, SinkExt, StreamExt, TryStreamExt};
+use futures01::future::Future as Future01;
+use futures01::Async as Async01;
 use libp2p::core::{Multiaddr, PeerId};
 use libp2p::swarm::Swarm;
 use std::collections::{HashMap, HashSet};
+use std::pin::Pin;
 use std::sync::{Arc, RwLock, Weak};
+use std::task::{Context, Poll};
 use std::time::Duration;
-use tokio::timer::Interval;
 
 ///
 /// libp2p transport configuration
@@ -173,7 +179,7 @@ impl Libp2pTransport {
             inner: Arc::downgrade(&self.inner),
             sink: Some(out_sender),
             stream: Some(in_receiver),
-            stop_listener,
+            stop_listener: stop_listener.compat(),
         })
     }
 
@@ -205,7 +211,8 @@ impl Libp2pTransport {
         // Spawn the main Future which will take care of the swarm
         let inner = Arc::clone(&self.inner);
         let mut nodes_update_interval =
-            Interval::new_interval(self.config.swarm_nodes_update_interval);
+            exocore_common::utils::futures::interval(self.config.swarm_nodes_update_interval)
+                .compat();
 
         spawn_future_01(futures01::future::poll_fn(move || -> Result<_, ()> {
             {
@@ -213,13 +220,13 @@ impl Libp2pTransport {
                 if let Ok(inner) = inner.read() {
                     if inner.handles.is_empty() {
                         info!("No more handles are running. Stopping transport");
-                        return Ok(Async::Ready(()));
+                        return Ok(Async01::Ready(()));
                     }
                 }
             }
 
             // at interval, we update peers that we should be connected to
-            if let Async::Ready(_) = nodes_update_interval
+            if let Async01::Ready(_) = nodes_update_interval
                 .poll()
                 .expect("Couldn't poll nodes update interval")
             {
@@ -231,7 +238,7 @@ impl Libp2pTransport {
             }
 
             // we drain all messages coming from handles that need to be sent
-            while let Async::Ready(Some(event)) = out_receiver
+            while let Async01::Ready(Some(event)) = out_receiver
                 .poll()
                 .expect("Couldn't poll behaviour channel")
             {
@@ -261,7 +268,7 @@ impl Libp2pTransport {
             }
 
             // we poll the behaviour for incoming messages to be dispatched to handles
-            while let Async::Ready(Some(data)) = swarm.poll().expect("Couldn't poll swarm") {
+            while let Async01::Ready(Some(data)) = swarm.poll().expect("Couldn't poll swarm") {
                 match data {
                     ExocoreBehaviourEvent::Message(msg) => {
                         trace!("Got message from {}", msg.source);
@@ -273,7 +280,7 @@ impl Libp2pTransport {
                 }
             }
 
-            Ok(Async::NotReady)
+            Ok(Async01::NotReady)
         }));
 
         // Sends each layer's outgoing messages to the behaviour's input channel
@@ -285,11 +292,7 @@ impl Libp2pTransport {
                     .take()
                     .expect("Out receiver of one layer was already consummed");
 
-                spawn_future_01(
-                    out_receiver
-                        .forward(out_sender.clone().sink_map_err(|_| ()))
-                        .map(|_| ()),
-                );
+                spawn_future_01(out_receiver.forward(out_sender.clone()).map(|_| ()));
             }
         }
 
@@ -346,11 +349,11 @@ impl Libp2pTransport {
     }
 }
 
-impl Future for Libp2pTransport {
+impl Future01 for Libp2pTransport {
     type Item = ();
     type Error = Error;
 
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
+    fn poll(&mut self) -> Result<Async01<Self::Item>, Self::Error> {
         if !self.start_notifier.is_complete() {
             self.start()?;
             self.start_notifier.complete(Ok(()));
@@ -373,44 +376,40 @@ pub struct Libp2pTransportHandle {
     inner: Weak<RwLock<InnerTransport>>,
     sink: Option<mpsc::Sender<OutEvent>>,
     stream: Option<mpsc::Receiver<InEvent>>,
-    stop_listener: CompletionListener<(), Error>,
+    stop_listener: Compat<CompletionListener<(), Error>>,
 }
 
-type StartFutureType = MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
-
 impl TransportHandle for Libp2pTransportHandle {
-    type StartFuture = StartFutureType;
-    type Sink = MpscHandleSink;
-    type Stream = MpscHandleStream;
+    type Sink = SinkMapErr<mpsc::Sender<OutEvent>, fn(SendError) -> Error>;
+    type Stream = mpsc::Receiver<InEvent>;
 
-    fn on_start(&self) -> Self::StartFuture {
+    fn on_start(&self) -> TransportHandleOnStart {
         self.start_listener
             .try_clone()
             .expect("Couldn't clone start listener")
             .map_err(|err| match err {
                 CompletionError::UserError(err) => err,
                 _ => Error::Other("Error in completion error".to_string()),
-            })
+            });
     }
 
     fn get_sink(&mut self) -> Self::Sink {
-        MpscHandleSink::new(self.sink.take().expect("Sink was already consumed"))
+        self.sink
+            .take()
+            .expect("Sink was already consumed")
+            .sink_map_err(|err| Error::Other(format!("Sink error: {}", err)))
     }
 
     fn get_stream(&mut self) -> Self::Stream {
-        MpscHandleStream::new(self.stream.take().expect("Stream was already consumed"))
+        self.stream.take().expect("Stream was already consumed")
     }
 }
 
-impl Future for Libp2pTransportHandle {
-    type Item = ();
-    type Error = Error;
+impl Future03 for Libp2pTransportHandle {
+    type Output = ();
 
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        self.stop_listener.poll().map_err(|err| match err {
-            CompletionError::UserError(err) => err,
-            _ => Error::Other("Error in completion error".to_string()),
-        })
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.stop_listener.poll_unpin(cx).map(|_| ())
     }
 }
 
@@ -441,6 +440,7 @@ mod tests {
     use exocore_common::tests_utils::expect_eventually;
     use exocore_common::time::{ConsistentTimestamp, Instant};
     use exocore_common::utils::futures::Runtime;
+    use futures::{SinkExt, StreamExt};
     use std::sync::Mutex;
 
     #[test]
@@ -626,26 +626,25 @@ mod tests {
             cell: FullCell,
         ) -> TransportHandleTester {
             let (sender, receiver) = mpsc::unbounded();
-            rt.spawn(
-                receiver
-                    .forward(handle.get_sink().sink_map_err(|_| ()))
-                    .map(|_| ())
-                    .map_err(|_| ()),
-            );
+            let sink = handle.get_sink();
+            rt.spawn_std(async move {
+                let mut receiver = receiver;
+                while let Some(event) = receiver.next().await {
+                    sink.send(event).await;
+                }
+            });
 
             let received = Arc::new(Mutex::new(Vec::new()));
             let received_weak = Arc::downgrade(&received);
-            rt.spawn(
-                handle
-                    .get_stream()
-                    .for_each(move |msg| {
-                        let received = received_weak.upgrade().unwrap();
-                        let mut received = received.lock().unwrap();
-                        received.push(msg);
-                        Ok(())
-                    })
-                    .map_err(|_| ()),
-            );
+            rt.spawn_std(async move {
+                let mut stream = handle.get_stream();
+
+                while let Some(msg) = stream.next().await {
+                    let received = received_weak.upgrade().unwrap();
+                    let mut received = received.lock().unwrap();
+                    received.push(msg);
+                }
+            });
 
             TransportHandleTester {
                 cell,

@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
 
-use futures01::prelude::*;
+use futures01::future::Future as Future01;
 use futures01::sync::mpsc;
-use futures01::MapErr;
+use futures01::Async as Async01;
 use js_sys::{ArrayBuffer, Uint8Array};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -315,11 +315,11 @@ pub struct BrowserTransportHandle {
     stop_listener: CompletionListener<(), Error>,
 }
 
-impl Future for BrowserTransportHandle {
+impl Future01 for BrowserTransportHandle {
     type Item = ();
     type Error = Error;
 
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
+    fn poll(&mut self) -> Result<Async01<Self::Item>, Self::Error> {
         self.stop_listener.poll().map_err(|err| match err {
             CompletionError::UserError(err) => err,
             _ => Error::Other("Error in completion error".to_string()),
@@ -327,7 +327,8 @@ impl Future for BrowserTransportHandle {
     }
 }
 
-type StartFutureType = MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
+type StartFutureType =
+    futures01::future::MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
 
 impl TransportHandle for BrowserTransportHandle {
     type StartFuture = StartFutureType;

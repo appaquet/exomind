@@ -10,13 +10,15 @@ use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{Node, NodeId};
 use exocore_common::protos::common_capnp::envelope;
-use exocore_common::utils::completion_notifier::{
-    CompletionError, CompletionListener, CompletionNotifier,
-};
+use exocore_common::utils::completion_notifier::CompletionListener;
 use exocore_common::utils::futures::spawn_future_01;
-use futures01::prelude::*;
-use futures01::sync::mpsc;
-use futures01::MapErr;
+use exocore_common::utils::handle_set::HandleSet;
+use failure::_core::pin::Pin;
+use failure::_core::task::{Context, Poll};
+use futures::channel::mpsc;
+use futures::compat::Compat01As03;
+use futures::prelude::*;
+use futures::FutureExt;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock, Weak};
@@ -56,46 +58,30 @@ impl Default for WebSocketTransportConfig {
 pub struct WebsocketTransport {
     config: WebSocketTransportConfig,
     listen_address: SocketAddr,
-    start_notifier: CompletionNotifier<(), Error>,
     inner: Arc<RwLock<InnerTransport>>,
-    stop_listener: CompletionListener<(), Error>,
+    handle_set: HandleSet,
 }
 
 struct InnerTransport {
     config: WebSocketTransportConfig,
     handles: HashMap<CellId, InnerHandle>,
     connections: HashMap<NodeId, Connection>,
-    stop_notifier: CompletionNotifier<(), Error>,
-}
-
-impl InnerTransport {
-    fn remove_handle(&mut self, cell_id: &CellId) {
-        self.handles.remove(cell_id);
-        if self.handles.is_empty() {
-            info!("No more handles, killing transport");
-            self.stop_notifier.complete(Ok(()));
-        }
-    }
 }
 
 impl WebsocketTransport {
     pub fn new(listen_address: SocketAddr, config: WebSocketTransportConfig) -> WebsocketTransport {
-        let start_notifier = CompletionNotifier::new();
-        let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
-
         let inner = Arc::new(RwLock::new(InnerTransport {
             config,
             handles: HashMap::new(),
             connections: HashMap::new(),
-            stop_notifier,
         }));
 
+        let handle_set = HandleSet::new();
         WebsocketTransport {
             config,
-            start_notifier,
             listen_address,
             inner,
-            stop_listener,
+            handle_set,
         }
     }
 
@@ -133,94 +119,79 @@ impl WebsocketTransport {
         })
     }
 
-    fn start(&mut self) -> Result<(), Error> {
-        self.schedule_handles_streams()?;
-        self.start_websocket_server()?;
+    pub async fn run(mut self) -> Result<(), Error> {
+        let handles_senders = {
+            let mut handles_senders = Vec::new();
+            let mut inner = self.inner.write()?;
+            for handle in inner.handles.values_mut() {
+                let weak_inner = Arc::downgrade(&self.inner);
 
-        Ok(())
-    }
+                let stream_future = async move {
+                    let mut stream = handle
+                        .out_stream
+                        .take()
+                        .expect("Out stream for handle was already taken out");
 
-    fn schedule_handles_streams(&mut self) -> Result<(), Error> {
-        let mut inner = self.inner.write()?;
-
-        for handle in inner.handles.values_mut() {
-            let weak_inner = Arc::downgrade(&self.inner);
-            let stream_future = handle
-                .out_stream
-                .take()
-                .expect("Out stream for handle was already taken out")
-                .for_each(move |out_event| {
-                    WebsocketTransport::dispatch_outgoing_event(&weak_inner, &out_event).map_err(
-                        |err| {
+                    while let Some(out_event) = stream.next().await {
+                        if let Err(err) =
+                            WebsocketTransport::dispatch_outgoing_event(&weak_inner, &out_event)
+                        {
                             error!("Error dispatching message from handle: {}", err);
-                        },
-                    )
-                });
-            spawn_future_01(stream_future);
-        }
+                        }
+                    }
+                };
 
-        Ok(())
-    }
+                handles_senders.push(stream_future);
+            }
 
-    fn start_websocket_server(&mut self) -> Result<(), Error> {
+            futures::future::join_all(handles_senders)
+        };
+
         let reactor_handle = &tokio::reactor::Handle::default();
         let server = websocket::r#async::Server::bind(self.listen_address, reactor_handle)
             .map_err(|err| Error::Other(format!("Cannot start websocket: {}", err)))?;
 
-        let inner1 = Arc::downgrade(&self.inner);
-        let inner2 = Arc::downgrade(&self.inner);
-        let incoming_stream = server
-            .incoming()
-            .map_err(|err| Error::Other(format!("Invalid incoming connection: {}", err.error)))
-            .for_each(move |(upgrade, addr)| {
-                // make sure we should still be running
-                if inner1.upgrade().is_none() {
-                    return Err(Error::Upgrade);
+        //        let inner1 = Arc::downgrade(&self.inner);
+        //        let inner2 = Arc::downgrade(&self.inner);
+        //        let incoming_stream = server
+        //            .incoming()
+        //            .map_err(|err| Error::Other(format!("Invalid incoming connection: {}", err.error)))
+        //            .for_each(move |(upgrade, addr)| {
+        //                // make sure we should still be running
+        //                if inner1.upgrade().is_none() {
+        //                    return Err(Error::Upgrade);
+        //                }
+        //
+        //                if !upgrade.protocols().iter().any(|s| s == WEBSOCKET_PROTOCOL) {
+        //                    debug!("Rejecting connection {} with wrong connection", addr);
+        //                    spawn_future_01(upgrade.reject().map(|_| ()).map_err(|_| ()));
+        //                    return Ok(());
+        //                }
+        //
+        //                // accept the request to be a ws connection if it does
+        //                debug!("Got a connection from: {}", addr);
+        //                let weak_inner = inner1.clone();
+        //                let client_connection = upgrade
+        //                    .use_protocol(WEBSOCKET_PROTOCOL)
+        //                    .accept()
+        //                    .map_err(|err| Error::WebsocketTransport(Arc::new(err)))
+        //                    .and_then(move |(connection, _)| {
+        //                        Self::schedule_incoming_connection(weak_inner, connection)
+        //                    })
+        //                    .map(|_| ())
+        //                    .map_err(|err| {
+        //                        error!("Error in incoming connection accept: {}", err);
+        //                    });
+        //                spawn_future_01(client_connection);
+        //
+        //                Ok(())
+        //            });
+
+        futures::select! {
+                     _ = handles_senders.fuse() => (),
+                     _ = self.handle_set.on_handles_dropped().fuse() => (),
+        //             _ = incoming_stream.compat().fuse() => (),
                 }
-
-                if !upgrade.protocols().iter().any(|s| s == WEBSOCKET_PROTOCOL) {
-                    debug!("Rejecting connection {} with wrong connection", addr);
-                    spawn_future_01(upgrade.reject().map(|_| ()).map_err(|_| ()));
-                    return Ok(());
-                }
-
-                // accept the request to be a ws connection if it does
-                debug!("Got a connection from: {}", addr);
-                let weak_inner = inner1.clone();
-                let client_connection = upgrade
-                    .use_protocol(WEBSOCKET_PROTOCOL)
-                    .accept()
-                    .map_err(|err| Error::WebsocketTransport(Arc::new(err)))
-                    .and_then(move |(connection, _)| {
-                        Self::schedule_incoming_connection(weak_inner, connection)
-                    })
-                    .map(|_| ())
-                    .map_err(|err| {
-                        error!("Error in incoming connection accept: {}", err);
-                    });
-                spawn_future_01(client_connection);
-
-                Ok(())
-            })
-            .map_err(move |err| {
-                error!("Error in incoming connections stream: {}", err);
-                if let Some(inner) = inner2.upgrade() {
-                    if let Ok(inner) = inner.write() {
-                        inner.stop_notifier.complete(Err(err));
-                    }
-                }
-            });
-
-        let stop_listener = self
-            .stop_listener
-            .try_clone()
-            .expect("Couldn't clone stop listener");
-        spawn_future_01(
-            incoming_stream
-                .select2(stop_listener)
-                .map(|_| ())
-                .map_err(|_| ()),
-        );
 
         Ok(())
     }
@@ -354,23 +325,6 @@ impl WebsocketTransport {
     }
 }
 
-impl Future for WebsocketTransport {
-    type Item = ();
-    type Error = Error;
-
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        if !self.start_notifier.is_complete() {
-            let start_res = self.start();
-            self.start_notifier.complete(start_res);
-        }
-
-        self.stop_listener.poll().map_err(|err| match err {
-            CompletionError::UserError(err) => err,
-            _ => Error::Other("Error in completion error".to_string()),
-        })
-    }
-}
-
 ///
 /// Incoming WebSocket connection, with sink that can be used to send messages to it
 ///
@@ -384,11 +338,11 @@ struct Connection {
 ///
 pub struct WebsocketTransportHandle {
     cell_id: CellId,
-    start_listener: CompletionListener<(), Error>,
+    start_listener: Compat01As03<CompletionListener<(), Error>>,
     inner_transport: Weak<RwLock<InnerTransport>>,
     sink: Option<mpsc::Sender<OutEvent>>,
     stream: Option<mpsc::Receiver<InEvent>>,
-    stop_listener: CompletionListener<(), Error>,
+    stop_listener: Compat01As03<CompletionListener<(), Error>>,
 }
 
 struct InnerHandle {
@@ -396,21 +350,17 @@ struct InnerHandle {
     in_sink: mpsc::Sender<InEvent>,
 }
 
-type StartFutureType = MapErr<CompletionListener<(), Error>, fn(CompletionError<Error>) -> Error>;
-
 impl TransportHandle for WebsocketTransportHandle {
-    type StartFuture = StartFutureType;
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
 
-    fn on_start(&self) -> Self::StartFuture {
-        self.start_listener
+    fn on_start(&self) -> Box<dyn Future<Output = ()>> {
+        let listener = self
+            .start_listener
             .try_clone()
-            .expect("Couldn't clone start listener")
-            .map_err(|err| match err {
-                CompletionError::UserError(err) => err,
-                _ => Error::Other("Error in completion error".to_string()),
-            })
+            .expect("Couldn't clone start listener");
+
+        Box::new(listener)
     }
 
     fn get_sink(&mut self) -> Self::Sink {
@@ -423,14 +373,10 @@ impl TransportHandle for WebsocketTransportHandle {
 }
 
 impl Future for WebsocketTransportHandle {
-    type Item = ();
-    type Error = Error;
+    type Output = ();
 
-    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
-        self.stop_listener.poll().map_err(|err| match err {
-            CompletionError::UserError(err) => err,
-            _ => Error::Other("Error in completion error".to_string()),
-        })
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.stop_listener.poll_unpin(cx).map(|_| ())
     }
 }
 

@@ -1,6 +1,6 @@
 use futures::channel::{mpsc, oneshot};
 use futures::future::Shared;
-use futures::{FutureExt, StreamExt};
+use futures::{Future, FutureExt, StreamExt};
 
 ///
 /// Manages a set of handles so that their lifetime is managed along their parent's lifetime.
@@ -86,14 +86,12 @@ impl Handle {
         self.set_started_receiver.peek().is_some()
     }
 
-    pub async fn on_set_started(&self) {
-        let receiver = self.set_started_receiver.clone();
-        let _ = receiver.await;
+    pub fn on_set_started(&self) -> impl Future<Output = ()> {
+        self.set_started_receiver.clone().map(|_| ())
     }
 
-    pub async fn on_set_dropped(&mut self) {
-        let receiver = self.set_dropped_receiver.clone();
-        let _ = receiver.await;
+    pub fn on_set_dropped(&mut self) -> impl Future<Output = ()> {
+        self.set_dropped_receiver.clone().map(|_| ())
     }
 }
 
