@@ -4,32 +4,31 @@ use self::websocket::client::r#async::{Framed, TcpStream};
 use self::websocket::r#async::MessageCodec;
 use self::websocket::OwnedMessage;
 pub use self::websocket::WebSocketError;
-use crate::transport::{MpscHandleSink, MpscHandleStream};
+use crate::transport::{MpscHandleSink, MpscHandleStream, TransportHandleOnStart};
 use crate::{Error, InEvent, InMessage, OutEvent, TransportHandle};
 use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{Node, NodeId};
 use exocore_common::protos::common_capnp::envelope;
-use exocore_common::utils::completion_notifier::CompletionListener;
-use exocore_common::utils::futures::spawn_future_01;
-use exocore_common::utils::handle_set::HandleSet;
-use failure::_core::pin::Pin;
-use failure::_core::task::{Context, Poll};
+use exocore_common::utils::futures::{spawn_future, spawn_future_01};
+use exocore_common::utils::handle_set::{Handle, HandleSet};
 use futures::channel::mpsc;
-use futures::compat::Compat01As03;
+use futures::compat::{Sink01CompatExt, Stream01CompatExt};
 use futures::prelude::*;
 use futures::FutureExt;
+use futures01::stream::Stream as Stream01;
+use futures01::Future as Future01;
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::pin::Pin;
 use std::sync::{Arc, RwLock, Weak};
+use std::task::{Context, Poll};
 
 static WEBSOCKET_PROTOCOL: &str = "exocore_websocket";
 
 // TODO: Handle Cell authentication: https://github.com/appaquet/exocore/issues/73
 
-///
 /// Configuration for WebSocket transport
-///
 #[derive(Clone, Copy)]
 pub struct WebSocketTransportConfig {
     pub handle_in_channel_size: usize,
@@ -47,14 +46,12 @@ impl Default for WebSocketTransportConfig {
     }
 }
 
-///
 /// WebSocket based transport made for communication from WASM / Web.
 ///
 /// It's not a full transport since it cannot allow sending messages to cluster nodes, but
 /// only to inbound connections.
 ///
 /// Each connection is assigned a temporary node that is used internally for communication.
-///
 pub struct WebsocketTransport {
     config: WebSocketTransportConfig,
     listen_address: SocketAddr,
@@ -86,16 +83,6 @@ impl WebsocketTransport {
     }
 
     pub fn get_handle(&mut self, cell: &Cell) -> Result<WebsocketTransportHandle, Error> {
-        let start_listener = self.start_notifier.get_listener().map_err(|err| {
-            Error::Other(format!(
-                "Couldn't get a listener on start notifier: {}",
-                err
-            ))
-        })?;
-        let stop_listener = self.stop_listener.try_clone().map_err(|err| {
-            Error::Other(format!("Couldn't clone listener on stop notifier: {}", err))
-        })?;
-
         let (out_sink, out_stream) = mpsc::channel(self.config.handle_in_channel_size);
         let (in_sink, in_stream) = mpsc::channel(self.config.handle_out_channel_size);
 
@@ -110,28 +97,25 @@ impl WebsocketTransport {
         }
 
         Ok(WebsocketTransportHandle {
-            cell_id: cell.id().clone(),
-            start_listener,
-            inner_transport: Arc::downgrade(&self.inner),
             sink: Some(out_sink),
             stream: Some(in_stream),
-            stop_listener,
+            handle: self.handle_set.get_handle(),
         })
     }
 
-    pub async fn run(mut self) -> Result<(), Error> {
-        let handles_senders = {
+    pub async fn run(self) -> Result<(), Error> {
+        let outgoing_handler = {
             let mut handles_senders = Vec::new();
             let mut inner = self.inner.write()?;
             for handle in inner.handles.values_mut() {
                 let weak_inner = Arc::downgrade(&self.inner);
 
-                let stream_future = async move {
-                    let mut stream = handle
-                        .out_stream
-                        .take()
-                        .expect("Out stream for handle was already taken out");
+                let mut stream = handle
+                    .out_stream
+                    .take()
+                    .expect("Out stream for handle was already taken out");
 
+                let stream_future = async move {
                     while let Some(out_event) = stream.next().await {
                         if let Err(err) =
                             WebsocketTransport::dispatch_outgoing_event(&weak_inner, &out_event)
@@ -150,48 +134,48 @@ impl WebsocketTransport {
         let reactor_handle = &tokio::reactor::Handle::default();
         let server = websocket::r#async::Server::bind(self.listen_address, reactor_handle)
             .map_err(|err| Error::Other(format!("Cannot start websocket: {}", err)))?;
+        let inner = Arc::downgrade(&self.inner);
+        let incoming_handler = async move {
+            let mut incoming_connections = server.incoming().compat();
+            while let Some(connection) = incoming_connections.next().await {
+                let (upgrade, addr) = if let Err(err) = connection {
+                    error!("Invalid incoming connection: {:?}", err);
+                    continue;
+                } else {
+                    connection.unwrap()
+                };
 
-        //        let inner1 = Arc::downgrade(&self.inner);
-        //        let inner2 = Arc::downgrade(&self.inner);
-        //        let incoming_stream = server
-        //            .incoming()
-        //            .map_err(|err| Error::Other(format!("Invalid incoming connection: {}", err.error)))
-        //            .for_each(move |(upgrade, addr)| {
-        //                // make sure we should still be running
-        //                if inner1.upgrade().is_none() {
-        //                    return Err(Error::Upgrade);
-        //                }
-        //
-        //                if !upgrade.protocols().iter().any(|s| s == WEBSOCKET_PROTOCOL) {
-        //                    debug!("Rejecting connection {} with wrong connection", addr);
-        //                    spawn_future_01(upgrade.reject().map(|_| ()).map_err(|_| ()));
-        //                    return Ok(());
-        //                }
-        //
-        //                // accept the request to be a ws connection if it does
-        //                debug!("Got a connection from: {}", addr);
-        //                let weak_inner = inner1.clone();
-        //                let client_connection = upgrade
-        //                    .use_protocol(WEBSOCKET_PROTOCOL)
-        //                    .accept()
-        //                    .map_err(|err| Error::WebsocketTransport(Arc::new(err)))
-        //                    .and_then(move |(connection, _)| {
-        //                        Self::schedule_incoming_connection(weak_inner, connection)
-        //                    })
-        //                    .map(|_| ())
-        //                    .map_err(|err| {
-        //                        error!("Error in incoming connection accept: {}", err);
-        //                    });
-        //                spawn_future_01(client_connection);
-        //
-        //                Ok(())
-        //            });
-
-        futures::select! {
-                     _ = handles_senders.fuse() => (),
-                     _ = self.handle_set.on_handles_dropped().fuse() => (),
-        //             _ = incoming_stream.compat().fuse() => (),
+                if !upgrade.protocols().iter().any(|s| s == WEBSOCKET_PROTOCOL) {
+                    debug!("Rejecting connection {} with wrong connection", addr);
+                    spawn_future_01(upgrade.reject().map(|_| ()).map_err(|_| ()));
+                    continue;
                 }
+
+                // accept the request to be a ws connection if it does
+                debug!("Got a connection from: {}", addr);
+                let weak_inner = inner.clone();
+                let client_connection = upgrade
+                    .use_protocol(WEBSOCKET_PROTOCOL)
+                    .accept()
+                    .map_err(|err| Error::WebsocketTransport(Arc::new(err)))
+                    .and_then(move |(connection, _)| {
+                        Self::schedule_incoming_connection(weak_inner, connection)
+                    })
+                    .map(|_| ())
+                    .map_err(|err| {
+                        error!("Error in incoming connection accept: {}", err);
+                    });
+                spawn_future_01(client_connection);
+            }
+        };
+
+        info!("Websocket transport server now running");
+        futures::select! {
+             _ = outgoing_handler.fuse() => (),
+             _ = incoming_handler.fuse() => (),
+             _ = self.handle_set.on_handles_dropped().fuse() => (),
+        }
+        info!("Websocket transport server done");
 
         Ok(())
     }
@@ -205,7 +189,7 @@ impl WebsocketTransport {
 
         // create a connection struct with temporary node associated with it
         let temporary_node = Node::generate_temporary();
-        let (connection_sender, connection_receiver) =
+        let (connection_sender, mut connection_receiver) =
             mpsc::channel(inner.config.handle_out_to_websocket_channel_size);
         let connection = Connection {
             _temporary_node: temporary_node.clone(),
@@ -221,15 +205,16 @@ impl WebsocketTransport {
         {
             let weak_inner = weak_inner.clone();
             let temporary_node = temporary_node.clone();
-            let outgoing = connection_receiver
-                .map(websocket::OwnedMessage::Binary)
-                .forward(client_sink.sink_map_err(|_| ()))
-                .map(|_| ())
-                .map_err(move |_| {
-                    let _ = Self::close_errored_connection(&weak_inner, &temporary_node);
-                    Error::Other("Error in sink forward to connection".to_string())
-                });
-            spawn_future_01(outgoing.map(|_| ()).map_err(|_| ()));
+            let mut client_sink = client_sink.sink_compat();
+            spawn_future(async move {
+                while let Some(data) = connection_receiver.next().await {
+                    let message = websocket::OwnedMessage::Binary(data);
+                    if let Err(err) = client_sink.send(message).await {
+                        error!("Error in websocket connection. Closing it: {}", err);
+                        let _ = Self::close_errored_connection(&weak_inner, &temporary_node);
+                    }
+                }
+            });
         }
 
         // handle incoming messages from connection
@@ -251,6 +236,7 @@ impl WebsocketTransport {
                     Ok(())
                 })
                 .map_err(move |err| {
+                    error!("Error in websocket connection. Closing it: {}", err);
                     let _ = Self::close_errored_connection(&weak_inner2, &temporary_node2);
                     Error::Other(format!("Error in stream from connection: {}", err))
                 });
@@ -337,12 +323,9 @@ struct Connection {
 /// Handle used to send & receive messages from active connections for a given cell
 ///
 pub struct WebsocketTransportHandle {
-    cell_id: CellId,
-    start_listener: Compat01As03<CompletionListener<(), Error>>,
-    inner_transport: Weak<RwLock<InnerTransport>>,
     sink: Option<mpsc::Sender<OutEvent>>,
     stream: Option<mpsc::Receiver<InEvent>>,
-    stop_listener: Compat01As03<CompletionListener<(), Error>>,
+    handle: Handle,
 }
 
 struct InnerHandle {
@@ -354,13 +337,8 @@ impl TransportHandle for WebsocketTransportHandle {
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
 
-    fn on_start(&self) -> Box<dyn Future<Output = ()>> {
-        let listener = self
-            .start_listener
-            .try_clone()
-            .expect("Couldn't clone start listener");
-
-        Box::new(listener)
+    fn on_start(&self) -> TransportHandleOnStart {
+        Box::new(self.handle.on_set_started())
     }
 
     fn get_sink(&mut self) -> Self::Sink {
@@ -375,18 +353,8 @@ impl TransportHandle for WebsocketTransportHandle {
 impl Future for WebsocketTransportHandle {
     type Output = ();
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        self.stop_listener.poll_unpin(cx).map(|_| ())
-    }
-}
-
-impl Drop for WebsocketTransportHandle {
-    fn drop(&mut self) {
-        if let Some(inner) = self.inner_transport.upgrade() {
-            if let Ok(mut inner) = inner.write() {
-                inner.remove_handle(&self.cell_id);
-            }
-        }
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.handle.on_set_dropped().poll_unpin(cx)
     }
 }
 
@@ -398,13 +366,15 @@ mod tests {
     use exocore_common::cell::FullCell;
     use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
     use exocore_common::node::LocalNode;
-    use exocore_common::tests_utils::expect_eventually;
-    use exocore_common::utils::futures::spawn_future_01;
+    use exocore_common::tests_utils::{expect_eventually, setup_logging};
     use exocore_common::utils::futures::Runtime;
+    use futures::compat::Future01CompatExt;
     use std::sync::Mutex;
 
     #[test]
     fn client_send_receive() -> Result<(), failure::Error> {
+        setup_logging();
+
         let node = LocalNode::generate();
         let cell = FullCell::generate(node);
         let mut rt = Runtime::new()?;
@@ -415,7 +385,11 @@ mod tests {
         let handle = server.get_handle(&cell)?;
 
         // start server & wait for it to be started
-        rt.spawn(server.map(|_| ()).map_err(|_| ()));
+        rt.spawn_std(async move {
+            if let Err(err) = server.run().await {
+                error!("Error in server: {}", err);
+            }
+        });
         let received_messages = schedule_server_handle(&mut rt, handle);
 
         let client = TestClient::new(&mut rt, "ws://127.0.0.1:3100");
@@ -456,47 +430,41 @@ mod tests {
         rt: &mut Runtime,
         mut handle: WebsocketTransportHandle,
     ) -> Arc<Mutex<Vec<InEvent>>> {
-        rt.block_on(handle.on_start()).unwrap();
+        rt.block_on_std(handle.on_start());
 
         let received_events = Arc::new(Mutex::new(Vec::new()));
 
-        {
-            let received_events = received_events.clone();
-            rt.spawn(
-                handle
-                    .get_stream()
-                    .filter_map(move |event| {
-                        let mut received_events = received_events.lock().unwrap();
-                        received_events.push(event.clone());
+        // loops back messages
+        let received_events1 = received_events.clone();
+        let mut stream = handle.get_stream();
+        let mut sink = handle.get_sink();
+        rt.spawn_std(async move {
+            while let Some(event) = stream.next().await {
+                {
+                    let mut received_events = received_events1.lock().unwrap();
+                    received_events.push(event.clone());
+                }
 
-                        match event {
-                            InEvent::Message(msg) => Some(msg),
-                            InEvent::NodeStatus(_node_id, _status) => None,
-                        }
-                    })
-                    .and_then(move |msg| {
-                        // forward the message back to client
-                        let mut frame_builder = CapnpFrameBuilder::<envelope::Owned>::new();
-                        {
-                            let mut message_builder = frame_builder.get_builder();
-                            message_builder.set_data(msg.get_data().unwrap());
-                            message_builder.set_layer(TransportLayer::Meta.to_code());
-                        }
+                if let InEvent::Message(msg) = event {
+                    let mut frame_builder = CapnpFrameBuilder::<envelope::Owned>::new();
+                    {
+                        let mut message_builder = frame_builder.get_builder();
+                        message_builder.set_data(msg.get_data().unwrap());
+                        message_builder.set_layer(TransportLayer::Meta.to_code());
+                    }
 
-                        let out_message = OutMessage {
-                            to: vec![msg.from.clone()],
-                            expiration: None,
-                            envelope_builder: frame_builder,
-                        };
-                        Ok(OutEvent::Message(out_message))
-                    })
-                    .forward(handle.get_sink())
-                    .map(|_| ())
-                    .map_err(|_| ()),
-            );
-        }
+                    let out_message = OutMessage {
+                        to: vec![msg.from.clone()],
+                        expiration: None,
+                        envelope_builder: frame_builder,
+                    };
 
-        rt.spawn(handle.map(|_| ()).map_err(|_| ()));
+                    let _ = sink.send(OutEvent::Message(out_message)).await;
+                }
+            }
+        });
+
+        rt.spawn_std(handle);
 
         received_events
     }
@@ -508,60 +476,69 @@ mod tests {
 
     impl TestClient {
         fn new(rt: &mut Runtime, url: &str) -> TestClient {
-            let (out_sender, out_receiver) = mpsc::unbounded();
+            let (out_sender, mut out_receiver) = mpsc::unbounded();
             let received_messages = Arc::new(Mutex::new(Vec::new()));
 
-            {
-                let received_messages = received_messages.clone();
-                let builder = ClientBuilder::new(url)
-                    .unwrap()
-                    .add_protocol(WEBSOCKET_PROTOCOL)
-                    .async_connect_insecure()
-                    .and_then(move |(duplex, _)| {
-                        let (sink, stream) = duplex.split();
+            let url = url.to_string();
+            let received_messages1 = received_messages.clone();
+            rt.spawn_std(
+                async move {
+                    let (duplex, _) = ClientBuilder::new(&url)
+                        .unwrap()
+                        .add_protocol(WEBSOCKET_PROTOCOL)
+                        .async_connect_insecure()
+                        .compat()
+                        .await?;
 
-                        let sink_future = out_receiver
-                            .map_err(|_err| Error::Other("Error in out receiver".to_string()))
-                            .forward(sink.sink_map_err(|err| {
-                                Error::Other(format!("Error in sink: {}", err))
-                            }))
-                            .map(|_| ())
-                            .map_err(|_| ());
-                        spawn_future_01(sink_future);
+                    let (sink, stream) = duplex.split();
+                    let sender = async move {
+                        let mut sink = sink.sink_compat();
+                        while let Some(msg) = out_receiver.next().await {
+                            debug!("Sending message to server");
+                            if let Err(err) = sink.send(msg).await {
+                                error!("Error sending to server: {}", err);
+                            }
+                        }
+                    };
 
-                        let stream_future = stream
-                            .for_each(move |msg| {
-                                match msg {
-                                    OwnedMessage::Binary(data) => {
-                                        let envelope_frame =
-                                            TypedCapnpFrame::<_, envelope::Owned>::new(data)
-                                                .unwrap();
-                                        let envelope_reader = envelope_frame.get_reader().unwrap();
-                                        let message_data = String::from_utf8_lossy(
-                                            envelope_reader.get_data().unwrap(),
-                                        )
-                                        .to_string();
+                    let receiver = async move {
+                        let mut stream = stream.compat();
+                        while let Some(msg) = stream.next().await {
+                            match msg {
+                                Ok(OwnedMessage::Binary(data)) => {
+                                    let envelope_frame =
+                                        TypedCapnpFrame::<_, envelope::Owned>::new(data).unwrap();
+                                    let envelope_reader = envelope_frame.get_reader().unwrap();
+                                    let message_data = String::from_utf8_lossy(
+                                        envelope_reader.get_data().unwrap(),
+                                    )
+                                    .to_string();
 
-                                        let mut received_messages =
-                                            received_messages.lock().unwrap();
-                                        received_messages.push(message_data);
-                                    }
-                                    _ => panic!("Received unexpected message: {:?}", msg),
+                                    let mut received_messages = received_messages1.lock().unwrap();
+                                    received_messages.push(message_data);
                                 }
+                                _ => {
+                                    error!("Receiver an invalid message through websocket client");
+                                    return;
+                                }
+                            }
+                        }
+                    };
 
-                                Ok(())
-                            })
-                            .map(|_| ())
-                            .map_err(|_| ());
-                        spawn_future_01(stream_future);
+                    info!("Test client started");
+                    futures::select! {
+                        _ = sender.fuse() => (),
+                        _ = receiver.fuse() => (),
+                    }
+                    info!("Test client done");
 
-                        Ok(())
-                    })
-                    .into_future()
-                    .map(|_| ())
-                    .map_err(|_| ());
-                rt.spawn(builder);
-            }
+                    Ok::<_, failure::Error>(())
+                }
+                .map_err(|err| {
+                    error!("Error in client: {}", err);
+                })
+                .map(|_| ()),
+            );
 
             TestClient {
                 out_sender,
