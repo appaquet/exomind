@@ -62,13 +62,12 @@ where
     TLeft: TransportHandle,
     TRight: TransportHandle,
 {
-    // TODO: Figure out static types https://github.com/appaquet/exocore/issues/125
     type Sink = Box<dyn Sink<OutEvent, Error = Error> + Send + Unpin + 'static>;
     type Stream = Box<dyn Stream<Item = InEvent> + Send + Unpin + 'static>;
 
-    fn on_start(&self) -> TransportHandleOnStart {
-        let left = self.left.on_start();
-        let right = self.right.on_start();
+    fn on_started(&self) -> TransportHandleOnStart {
+        let left = self.left.on_started();
+        let right = self.right.on_started();
 
         Box::new(future::select(left, right).map(|_| ()))
     }

@@ -2,14 +2,12 @@ use futures::channel::{mpsc, oneshot};
 use futures::future::Shared;
 use futures::{Future, FutureExt, StreamExt};
 
-///
 /// Manages a set of handles so that their lifetime is managed along their parent's lifetime.
 ///
 /// This management happens in 3 ways:
 ///    1) Handle can be notified when parent is ready.
 ///    2) Handle can be notified when parent has been dropped.
 ///    3) Parent can be notified when all its handles have been dropped.
-///
 pub struct HandleSet {
     handle_dropped_sender: mpsc::Sender<()>,
     handle_dropped_receiver: mpsc::Receiver<()>,

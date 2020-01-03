@@ -78,7 +78,7 @@ impl TransportHandle for MockTransportHandle {
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
 
-    fn on_start(&self) -> TransportHandleOnStart {
+    fn on_started(&self) -> TransportHandleOnStart {
         Box::new(futures::future::ready(()))
     }
 

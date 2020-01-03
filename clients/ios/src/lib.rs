@@ -99,7 +99,7 @@ impl Context {
             info!("Transport is done: {:?}", res);
         });
 
-        runtime.block_on_std(management_transport_handle.on_start());
+        runtime.block_on_std(management_transport_handle.on_started());
 
         runtime.spawn_std(async move {
             let _ = remote_store_client.run().await;

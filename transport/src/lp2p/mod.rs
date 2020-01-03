@@ -334,7 +334,7 @@ impl TransportHandle for Libp2pTransportHandle {
     type Sink = SinkMapErr<mpsc::Sender<OutEvent>, fn(SendError) -> Error>;
     type Stream = mpsc::Receiver<InEvent>;
 
-    fn on_start(&self) -> TransportHandleOnStart {
+    fn on_started(&self) -> TransportHandleOnStart {
         Box::new(self.handle.on_set_started())
     }
 
@@ -616,7 +616,7 @@ mod tests {
         }
 
         fn start_handle(&self, rt: &mut Runtime) {
-            rt.block_on_std(self.handle.on_start());
+            rt.block_on_std(self.handle.on_started());
         }
 
         fn send(&self, to_nodes: Vec<Node>, memo: u64) {

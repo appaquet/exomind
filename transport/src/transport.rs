@@ -16,16 +16,13 @@ pub trait TransportHandle: Future<Output = ()> + Send + Unpin + 'static {
     type Sink: Sink<OutEvent, Error = Error> + Send + Unpin + 'static;
     type Stream: Stream<Item = InEvent> + Send + Unpin + 'static;
 
-    // TODO: Add a run() instead of making the handle a future and refactor either
-    fn on_start(&self) -> TransportHandleOnStart;
+    fn on_started(&self) -> TransportHandleOnStart;
     fn get_sink(&mut self) -> Self::Sink;
     fn get_stream(&mut self) -> Self::Stream;
 }
 
-///
 /// Layer of the Exocore architecture to which a message is intented / originating.
 /// Ex: Data layer
-///
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum TransportLayer {
     None = 0,
@@ -54,9 +51,7 @@ impl TransportLayer {
     }
 }
 
-///
 /// Connection status of a remote node via the transport.
-///
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ConnectionStatus {
     Connecting,
@@ -74,9 +69,7 @@ pub enum OutEvent {
     Message(OutMessage),
 }
 
-///
 /// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
-///
 pub struct MpscHandleStream {
     receiver: mpsc::Receiver<InEvent>,
 }
@@ -95,9 +88,7 @@ impl Stream for MpscHandleStream {
     }
 }
 
-///
 /// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
-///
 #[pin_project]
 pub struct MpscHandleSink {
     #[pin]

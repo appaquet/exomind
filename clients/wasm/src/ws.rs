@@ -326,7 +326,7 @@ impl TransportHandle for BrowserTransportHandle {
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
 
-    fn on_start(&self) -> TransportHandleOnStart {
+    fn on_started(&self) -> TransportHandleOnStart {
         let on_start = self
             .start_listener
             .try_clone()

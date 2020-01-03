@@ -339,7 +339,7 @@ impl TransportHandle for WebsocketTransportHandle {
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
 
-    fn on_start(&self) -> TransportHandleOnStart {
+    fn on_started(&self) -> TransportHandleOnStart {
         Box::new(self.handle.on_set_started())
     }
 
@@ -430,7 +430,7 @@ mod tests {
         rt: &mut Runtime,
         mut handle: WebsocketTransportHandle,
     ) -> Arc<Mutex<Vec<InEvent>>> {
-        rt.block_on_std(handle.on_start());
+        rt.block_on_std(handle.on_started());
 
         let received_events = Arc::new(Mutex::new(Vec::new()));
 

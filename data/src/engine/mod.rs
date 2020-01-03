@@ -3,9 +3,6 @@ use crate::chain;
 use crate::operation;
 use crate::operation::NewOperation;
 use crate::pending;
-pub use chain_sync::ChainSyncConfig;
-pub use commit_manager::CommitManagerConfig;
-pub use error::Error;
 use exocore_common;
 use exocore_common::cell::{Cell, CellNodes};
 use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
@@ -28,9 +25,6 @@ use futures::TryFutureExt;
 use futures::{SinkExt, StreamExt, TryStreamExt};
 use futures01::prelude::*;
 use futures01::sync::mpsc;
-pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
-pub use pending_sync::PendingSyncConfig;
-pub use request_tracker::RequestTrackerConfig;
 use std;
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
@@ -45,6 +39,12 @@ mod pending_sync;
 mod request_tracker;
 #[cfg(test)]
 pub(crate) mod testing;
+pub use chain_sync::ChainSyncConfig;
+pub use commit_manager::CommitManagerConfig;
+pub use error::Error;
+pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
+pub use pending_sync::PendingSyncConfig;
+pub use request_tracker::RequestTrackerConfig;
 
 /// Data engine's configuration
 #[derive(Copy, Clone)]
@@ -368,7 +368,7 @@ where
         // first, make sure transport is started
         if let Some(transport_handle) = &self.transport {
             let mut handle_start = transport_handle
-                .on_start()
+                .on_started()
                 .unit_error()
                 .map_err(|_| Error::Other("Impossible error".to_string()))
                 .compat();
