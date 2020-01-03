@@ -120,7 +120,6 @@ where
             chain_synchronizer,
             commit_manager,
             events_stream_sender: Vec::new(),
-            handles_next_id: 0,
             transport_sender: None,
             sync_state: SyncState::default(),
         }));
@@ -134,17 +133,7 @@ where
     }
 
     pub fn get_handle(&mut self) -> EngineHandle<CS, PS> {
-        let mut unlocked_inner = self
-            .inner
-            .write()
-            .expect("Inner couldn't get locked, but engine isn't even started yet.");
-        let handle_id = unlocked_inner.get_new_handle_id();
-
-        EngineHandle::new(
-            handle_id,
-            Arc::downgrade(&self.inner),
-            self.handle_set.get_handle(),
-        )
+        EngineHandle::new(Arc::downgrade(&self.inner), self.handle_set.get_handle())
     }
 
     pub async fn run(mut self) -> Result<(), Error> {
@@ -314,7 +303,6 @@ where
     chain_synchronizer: chain_sync::ChainSynchronizer<CS>,
     commit_manager: commit_manager::CommitManager<PS, CS>,
     events_stream_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
-    handles_next_id: usize,
     transport_sender: Option<mpsc::Sender<OutEvent>>,
     sync_state: SyncState,
 }
@@ -464,12 +452,6 @@ where
         }
 
         Ok(())
-    }
-
-    fn get_new_handle_id(&mut self) -> usize {
-        let id = self.handles_next_id;
-        self.handles_next_id += 1;
-        id
     }
 
     fn get_new_events_stream(&mut self, handle_id: usize) -> mpsc::Receiver<Event> {

@@ -786,7 +786,7 @@ impl PendingBlocks {
                 }
             };
 
-            info!(
+            debug!(
                 "{}: Found pending store's block: offset={} group_id={} status={:?}",
                 cell.local_node().id(),
                 proposal.offset,

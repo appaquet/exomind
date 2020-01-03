@@ -24,14 +24,14 @@ type HandleKey = (NodeId, TransportLayer);
 /// In memory transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
 pub struct MockTransport {
-    nodes_sink: Arc<Mutex<HashMap<HandleKey, mpsc::Sender<InEvent>>>>,
+    handles_sink: Arc<Mutex<HashMap<HandleKey, HandleSink>>>,
     handle_set: HandleSet,
 }
 
 impl Default for MockTransport {
     fn default() -> MockTransport {
         MockTransport {
-            nodes_sink: Arc::new(Mutex::new(HashMap::new())),
+            handles_sink: Arc::new(Mutex::new(HashMap::new())),
             handle_set: HandleSet::new(),
         }
     }
@@ -39,33 +39,46 @@ impl Default for MockTransport {
 
 impl MockTransport {
     pub fn get_transport(&self, node: LocalNode, layer: TransportLayer) -> MockTransportHandle {
-        let mut nodes_sink = self.nodes_sink.lock().unwrap();
+        let mut handles_sink = self.handles_sink.lock().unwrap();
+
+        let handle = self.handle_set.get_handle();
 
         // create channel incoming message for this node will be sent to
         let (incoming_sender, incoming_receiver) = mpsc::channel(CHANNELS_SIZE);
-        nodes_sink.insert((node.id().clone(), layer), incoming_sender);
+        handles_sink.insert(
+            (node.id().clone(), layer),
+            HandleSink {
+                id: handle.id(),
+                sender: incoming_sender,
+            },
+        );
 
         MockTransportHandle {
+            handle,
             node: node.node().clone(),
             layer,
             started: false,
-            nodes_sink: Arc::downgrade(&self.nodes_sink),
+            handles_sink: Arc::downgrade(&self.handles_sink),
             incoming_stream: Some(incoming_receiver),
             outgoing_stream: None,
-            handle: self.handle_set.get_handle(),
         }
     }
 }
 
 /// Handle taken by a Cell layer to receive and send message for a given node
 pub struct MockTransportHandle {
+    handle: Handle,
     node: Node,
     layer: TransportLayer,
     started: bool,
-    nodes_sink: Weak<Mutex<HashMap<HandleKey, mpsc::Sender<InEvent>>>>,
+    handles_sink: Weak<Mutex<HashMap<HandleKey, HandleSink>>>,
     incoming_stream: Option<mpsc::Receiver<InEvent>>,
     outgoing_stream: Option<mpsc::Receiver<OutEvent>>,
-    handle: Handle,
+}
+
+struct HandleSink {
+    id: usize,
+    sender: mpsc::Sender<InEvent>,
 }
 
 impl MockTransportHandle {
@@ -113,23 +126,25 @@ impl Future for MockTransportHandle {
 
             let node = self.node.clone();
             let layer = self.layer;
-            let nodes_sink_weak = Weak::clone(&self.nodes_sink);
+            let handles_sink_weak = Weak::clone(&self.handles_sink);
             spawn_future(async move {
                 while let Some(OutEvent::Message(msg)) = outgoing_stream.next().await {
-                    let nodes_sink = if let Some(nodes_sink) = nodes_sink_weak.upgrade() {
-                        nodes_sink
+                    let handles_sink = if let Some(handles_sink) = handles_sink_weak.upgrade() {
+                        handles_sink
                     } else {
                         return;
                     };
-                    let mut nodes_sink = nodes_sink.lock().unwrap();
+                    let mut handles_sink = handles_sink.lock().unwrap();
 
                     let envelope = msg.envelope_builder.as_owned_frame();
                     let in_message = InMessage::from_node_and_frame(node.clone(), envelope)
                         .expect("Couldn't get InMessage from OutMessage");
                     for dest_node in &msg.to {
                         let key = (dest_node.id().clone(), layer);
-                        if let Some(sink) = nodes_sink.get_mut(&key) {
-                            let _ = sink.try_send(InEvent::Message(in_message.clone()));
+                        if let Some(node_sink) = handles_sink.get_mut(&key) {
+                            let _ = node_sink
+                                .sender
+                                .try_send(InEvent::Message(in_message.clone()));
                         } else {
                             warn!(
                                 "Couldn't send message to node {} since it's not in the hub anymore",
@@ -149,14 +164,22 @@ impl Future for MockTransportHandle {
 
 impl Drop for MockTransportHandle {
     fn drop(&mut self) {
-        if let Some(node_sinks) = self.nodes_sink.upgrade() {
+        if let Some(node_sinks) = self.handles_sink.upgrade() {
             if let Ok(mut node_sinks) = node_sinks.lock() {
-                debug!(
-                    "Removing node {} from transport hub because it's been dropped",
-                    self.node.id()
-                );
-
                 let key = (self.node.id().clone(), self.layer);
+
+                // if another handle got registered after us, we need to keep it there
+                if let Some(stream) = node_sinks.get(&key) {
+                    if stream.id != self.handle.id() {
+                        return;
+                    }
+                }
+
+                debug!(
+                    "Removing node={} layer={:?} from transport hub because it's been dropped",
+                    self.node.id(),
+                    self.layer,
+                );
                 node_sinks.remove(&key);
             }
         }

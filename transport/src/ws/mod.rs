@@ -10,6 +10,7 @@ use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{Node, NodeId};
 use exocore_common::protos::common_capnp::envelope;
+use exocore_common::utils::futures::tokio01;
 use exocore_common::utils::futures::{spawn_future, spawn_future_01};
 use exocore_common::utils::handle_set::{Handle, HandleSet};
 use futures::channel::mpsc;
@@ -133,7 +134,7 @@ impl WebsocketTransport {
         };
 
         // handles incoming connections
-        let reactor_handle = &tokio::reactor::Handle::default();
+        let reactor_handle = &tokio01::reactor::Handle::default();
         let server = websocket::r#async::Server::bind(self.listen_address, reactor_handle)
             .map_err(|err| Error::Other(format!("Cannot start websocket: {}", err)))?;
         let inner = Arc::downgrade(&self.inner);

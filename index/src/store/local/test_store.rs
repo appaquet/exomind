@@ -47,7 +47,7 @@ impl TestStore {
             temp_dir.path(),
             index_config,
             schema.clone(),
-            cluster.get_handle(0).try_clone()?,
+            cluster.get_handle(0).clone(),
         )?;
 
         let store = Store::new(

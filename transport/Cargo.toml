@@ -5,9 +5,9 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [features]
-tests_utils = ["exocore-common/tests_utils", "tokio/rt-full"]
-websocket_transport = ["websocket", "tokio/reactor"]
-libp2p_transport = ["libp2p", "tokio/timer"]
+tests_utils = ["exocore-common/tests_utils"]
+websocket_transport = ["websocket"]
+libp2p_transport = ["libp2p"]
 
 [dependencies]
 exocore-common = { path = "../common" }
@@ -15,7 +15,6 @@ log = "0.4"
 failure = "0.1"
 futures = { version = "0.3", features = ["compat"] }
 futures01 = { package = "futures", version = "0.1" }
-tokio = { version = "0.1", features = ["io"], default-features = false }
 pin-project = "0.4"
 
 # Websocket transport
@@ -26,6 +25,3 @@ libp2p = { version = "0.13", features = ["secp256k1"], default-features = false,
 
 [dev-dependencies]
 exocore-common = { path = "../common", features = ["tests_utils"] }
-tokio = { version = "0.1", features = ["rt-full"] }
-tokio02 = { version = "0.2", package = "tokio", features = ["blocking"] }
-tokio-compat = { version = "0.1", features = ["blocking"] }

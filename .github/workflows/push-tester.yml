@@ -28,7 +28,7 @@ jobs:
           cargo clean -p exocore-common
           cargo clippy --all -- -D clippy::all
 
-          cargo test --all --all-features
+          cargo test --all --all-features -- --test-threads=1
 
   wasm_build:
     runs-on: ubuntu-latest

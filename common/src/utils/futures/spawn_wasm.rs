@@ -1,15 +1,7 @@
 use futures::compat::Future01CompatExt;
 use futures::{Future as Future03, TryFutureExt};
 use futures01::Future as Future01;
-
 use wasm_timer::{Delay, Interval};
-
-pub fn spawn_future_01<F>(f: F)
-where
-    F: Future01<Item = (), Error = ()> + 'static,
-{
-    wasm_bindgen_futures::spawn_local(f.compat().unwrap_or_else(|_| ()));
-}
 
 pub fn spawn_future<F>(f: F)
 where

@@ -138,6 +138,11 @@ impl TraitsIndex {
                 IndexMutation::PutTrait(new_trait) => {
                     // delete older versions of the trait first
                     let entity_trait_id = format!("{}_{}", new_trait.entity_id, new_trait.trt.id());
+                    trace!(
+                        "Putting trait {} with op {}",
+                        entity_trait_id,
+                        new_trait.operation_id
+                    );
                     index_writer.delete_term(Term::from_field_text(
                         self.fields.entity_trait_id,
                         &entity_trait_id,
@@ -147,17 +152,25 @@ impl TraitsIndex {
                     index_writer.add_document(doc);
                 }
                 IndexMutation::PutTraitTombstone(trait_tombstone) => {
+                    trace!(
+                        "Putting tombstone for {}_{} with op {}",
+                        trait_tombstone.entity_id,
+                        trait_tombstone.trait_id,
+                        trait_tombstone.operation_id
+                    );
                     let doc = self.tombstone_mutation_to_document(&trait_tombstone);
                     index_writer.add_document(doc);
                 }
                 IndexMutation::DeleteTrait(entity_id, trait_id) => {
                     let entity_trait_id = format!("{}_{}", entity_id, trait_id);
+                    trace!("Deleting trait {}", entity_trait_id,);
                     index_writer.delete_term(Term::from_field_text(
                         self.fields.entity_trait_id,
                         &entity_trait_id,
                     ));
                 }
                 IndexMutation::DeleteOperation(operation_id) => {
+                    trace!("Deleting op from index {}", operation_id);
                     index_writer
                         .delete_term(Term::from_field_u64(self.fields.operation_id, operation_id));
                 }

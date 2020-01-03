@@ -96,7 +96,7 @@ pub fn start(
                 &index_dir,
                 entities_index_config,
                 schema.clone(),
-                index_engine_handle.try_clone()?,
+                index_engine_handle.clone(),
             )?;
 
             // if we have a WebSocket handle, we create a combined transport

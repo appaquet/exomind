@@ -52,7 +52,6 @@ impl Default for EntitiesIndexConfig {
     }
 }
 
-///
 /// Manages and index entities and their traits stored in the chain and pending store of the data
 /// layer. The index accepts mutation from the data layer through its event stream, and managed
 /// both indices to be consistent.
@@ -61,7 +60,6 @@ impl Default for EntitiesIndexConfig {
 /// persistence in the chain is not definitive until blocks and their operations (traits mutations)
 /// are stored at a certain depth, a part of the chain is actually indexed in the in-memory index.
 /// Once they reach a certain depth, they are persisted in the chain index.
-///
 pub struct EntitiesIndex<CS, PS>
 where
     CS: chain::ChainStore,
@@ -71,9 +69,8 @@ where
     pending_index: TraitsIndex,
     chain_index_dir: PathBuf,
     chain_index: TraitsIndex,
-
+    chain_index_last_block: Option<BlockOffset>,
     schema: Arc<Schema>,
-
     data_handle: EngineHandle<CS, PS>,
 }
 
@@ -106,6 +103,7 @@ where
             pending_index,
             chain_index_dir,
             chain_index,
+            chain_index_last_block: None,
             schema,
             data_handle,
         };
@@ -437,18 +435,32 @@ where
     /// Reindexes the pending store completely, along the last few blocks of the chain
     /// (see `EntitiesIndexConfig`.`chain_index_min_depth`) that are not considered definitive yet.
     fn reindex_pending(&mut self) -> Result<(), Error> {
-        info!("Clearing & reindexing pending index");
-
         self.pending_index =
             TraitsIndex::create_in_memory(self.config.pending_index_config, self.schema.clone())?;
 
-        let last_indexed_offset = self
+        let last_chain_indexed_offset = self
             .last_chain_indexed_block()?
             .map(|(offset, _height)| offset)
             .unwrap_or(0);
 
-        // create an iterator over operations from chain (if any) and pending store
-        let pending_iter = self.data_handle.get_pending_operations(..)?.into_iter();
+        info!(
+            "Clearing & reindexing pending index. last_chain_indexed_offset={}",
+            last_chain_indexed_offset
+        );
+
+        // create an iterator over operations in pending store that aren't in chain index
+        let pending_iter = self
+            .data_handle
+            .get_pending_operations(..)?
+            .into_iter()
+            .filter(|op| match op.status {
+                EngineOperationStatus::Pending => true,
+                EngineOperationStatus::Committed(offset, _height) => {
+                    offset > last_chain_indexed_offset
+                }
+            });
+
+        // combine pending and chain operations that aren't deemed committed yet
         let pending_and_chain_iter = {
             // filter pending to exclude operations that are now in the chain index
             let pending_iter =
@@ -457,10 +469,10 @@ where
             // take operations from chain that have not been indexed to the chain index yet
             let chain_iter = self
                 .data_handle
-                .get_chain_operations(Some(last_indexed_offset))
+                .get_chain_operations(Some(last_chain_indexed_offset))
                 .filter(move |op| {
                     if let EngineOperationStatus::Committed(offset, _height) = op.status {
-                        offset > last_indexed_offset
+                        offset > last_chain_indexed_offset
                     } else {
                         false
                     }
@@ -515,6 +527,7 @@ where
             })?;
 
         let last_indexed_block = self.last_chain_indexed_block()?;
+        let offset_from = last_indexed_block.map(|(offset, _height)| offset);
         if let Some((_last_indexed_offset, last_indexed_height)) = last_indexed_block {
             if last_chain_block_height - last_indexed_height < self.config.chain_index_min_depth {
                 debug!("No new blocks to index from chain. last_chain_block_height={} last_indexed_block_height={}",
@@ -523,13 +536,12 @@ where
                 return Ok(());
             }
         }
-
-        let offset_from = last_indexed_block.map(|(offset, _height)| offset);
-        let operations = self.data_handle.get_chain_operations(offset_from);
+        let chain_index_min_height = self.config.chain_index_min_depth;
 
         let mut pending_index_mutations = Vec::new();
+        let mut new_highest_block_offset: Option<BlockOffset> = None;
 
-        let chain_index_min_height = self.config.chain_index_min_depth;
+        let operations = self.data_handle.get_chain_operations(offset_from);
         let schema = self.schema.clone();
         let chain_index_mutations = operations
             .flat_map(|op| {
@@ -555,6 +567,11 @@ where
                 // for every mutation we index in the chain index, we delete it from the pending index
                 pending_index_mutations.push(IndexMutation::DeleteOperation(op.operation_id));
 
+                // take note of the latest block that we indexed in chain
+                if Some(offset) > new_highest_block_offset {
+                    new_highest_block_offset = Some(offset);
+                }
+
                 match mutation {
                     Mutation::PutTrait(trt_mut) => {
                         Some(IndexMutation::PutTrait(PutTraitMutation {
@@ -576,18 +593,26 @@ where
 
         self.chain_index.apply_mutations(chain_index_mutations)?;
         info!(
-            "Indexed {} new operations to chain",
-            pending_index_mutations.len()
+            "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
+            pending_index_mutations.len(), new_highest_block_offset
         );
         self.pending_index
             .apply_mutations(pending_index_mutations.into_iter())?;
+
+        if let Some(new_highest_block_offset) = new_highest_block_offset {
+            self.chain_index_last_block = Some(new_highest_block_offset);
+        }
 
         Ok(())
     }
 
     /// Get last block that got indexed in the chain index
     fn last_chain_indexed_block(&self) -> Result<Option<(BlockOffset, BlockHeight)>, Error> {
-        let last_indexed_offset = self.chain_index.highest_indexed_block()?;
+        let mut last_indexed_offset = self.chain_index_last_block;
+
+        if last_indexed_offset.is_none() {
+            last_indexed_offset = self.chain_index.highest_indexed_block()?;
+        }
 
         Ok(last_indexed_offset
             .and_then(|offset| self.data_handle.get_chain_block_info(offset).ok())
@@ -892,6 +917,53 @@ mod tests {
     }
 
     #[test]
+    fn reindex_pending_without_chain_operations() -> Result<(), failure::Error> {
+        let config = EntitiesIndexConfig {
+            chain_index_min_depth: 1, // index in chain as soon as another block is after
+            ..TestEntitiesIndex::create_test_config()
+        };
+        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
+
+        let op1 = test_index.put_contact_trait("entity1", "trait1", "name1")?;
+        let op2 = test_index.put_contact_trait("entity1", "trait2", "name2")?;
+        test_index.cluster.wait_operations_committed(0, &[op1, op2]);
+        test_index.handle_engine_events()?;
+
+        let entity = test_index.index.fetch_entity("entity1")?;
+        assert_eq!(entity.traits.len(), 2);
+
+        // delete trait2, this should delete via a tombstone in pending
+        let op_id = test_index.delete_trait("entity1", "trait2")?;
+        test_index.cluster.wait_operation_committed(0, op_id);
+        test_index.handle_engine_events()?;
+        let entity = test_index.index.fetch_entity("entity1")?;
+        assert_eq!(entity.traits.len(), 1);
+
+        let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
+        assert!(pending_res.results.iter().any(|r| r.tombstone));
+
+        // now bury the deletion under 1 block, which should delete for real the trait
+        let op_id = test_index.put_contact_trait("entity2", "trait2", "name1")?;
+        test_index.cluster.wait_operation_committed(0, op_id);
+        test_index.handle_engine_events()?;
+
+        // trigger discontinuity forcing pending reindex
+        test_index
+            .index
+            .handle_data_engine_event(Event::StreamDiscontinuity)?;
+
+        // tombstone should have been deleted, and only 1 trait left in chain index
+        let entity = test_index.index.fetch_entity("entity1")?;
+        assert_eq!(entity.traits.len(), 1);
+        let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
+        assert!(pending_res.results.is_empty());
+        let chain_res = test_index.index.chain_index.search_entity_id("entity1")?;
+        assert_eq!(chain_res.results.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
     fn delete_entity() -> Result<(), failure::Error> {
         let config = TestEntitiesIndex::create_test_config();
         let mut test_index = TestEntitiesIndex::new_with_config(config)?;
@@ -1046,9 +1118,7 @@ mod tests {
             .count()
     }
 
-    ///
     /// Utility to test entities index
-    ///
     pub struct TestEntitiesIndex {
         schema: Arc<Schema>,
         cluster: DataTestCluster,
@@ -1070,7 +1140,7 @@ mod tests {
 
             let temp_dir = tempdir::TempDir::new("entities_index")?;
 
-            let data_handle = cluster.get_handle(0).try_clone()?;
+            let data_handle = cluster.get_handle(0).clone();
             let index = EntitiesIndex::open_or_create(
                 temp_dir.path(),
                 config,
@@ -1104,7 +1174,7 @@ mod tests {
                 temp_dir.path(),
                 config,
                 schema.clone(),
-                cluster.get_handle(0).try_clone()?,
+                cluster.get_handle(0).clone(),
             )?;
 
             Ok(TestEntitiesIndex {

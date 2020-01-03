@@ -18,7 +18,6 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    id: usize,
     inner: Weak<RwLock<Inner<CS, PS>>>,
     handle: Handle,
 }
@@ -28,12 +27,8 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    pub(crate) fn new(
-        id: usize,
-        inner: Weak<RwLock<Inner<CS, PS>>>,
-        handle: Handle,
-    ) -> EngineHandle<CS, PS> {
-        EngineHandle { id, inner, handle }
+    pub(crate) fn new(inner: Weak<RwLock<Inner<CS, PS>>>, handle: Handle) -> EngineHandle<CS, PS> {
+        EngineHandle { inner, handle }
     }
 
     pub fn on_started(&self) -> impl Future<Output = ()> {
@@ -180,21 +175,9 @@ where
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
 
-        let stream = unlocked_inner.get_new_events_stream(self.id);
+        let stream = unlocked_inner.get_new_events_stream(self.handle.id());
 
         Ok(stream)
-    }
-
-    pub fn try_clone(&self) -> Result<EngineHandle<CS, PS>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let mut unlocked_inner = inner.write()?;
-        let handle_id = unlocked_inner.get_new_handle_id();
-
-        Ok(EngineHandle::new(
-            handle_id,
-            self.inner.clone(),
-            self.handle.clone(),
-        ))
     }
 }
 
@@ -208,9 +191,19 @@ where
 
         if let Some(inner) = self.inner.upgrade() {
             if let Ok(mut unlocked_inner) = inner.write() {
-                unlocked_inner.unregister_handle(self.id);
+                unlocked_inner.unregister_handle(self.handle.id());
             }
         }
+    }
+}
+
+impl<CS, PS> Clone for EngineHandle<CS, PS>
+where
+    CS: chain::ChainStore,
+    PS: pending::PendingStore,
+{
+    fn clone(&self) -> Self {
+        EngineHandle::new(self.inner.clone(), self.handle.clone())
     }
 }
 

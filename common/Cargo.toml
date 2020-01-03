@@ -6,7 +6,7 @@ edition = "2018"
 
 [features]
 tests_utils = ["log4rs", "tokio-compat", "runtime"]
-runtime = ["tokio-compat"]
+runtime = ["tokio-compat", "tokio/full"]
 
 [dependencies]
 exocore-schema = { path = "../schema" }
@@ -25,8 +25,8 @@ chrono = "0.4"
 wasm-timer = "0.2"
 futures = { version = "0.3", features = ["async-await", "compat"] }
 futures01 = { package = "futures", version = "0.1" }
-tokio = { version = "0.1", features = ["io"], default-features = false }
-tokio02 = { version = "0.2", package = "tokio", features = ["rt-core", "blocking"], default-features = false }
+tokio01 = { version = "0.1", package = "tokio", features = ["io"], default-features = false }
+tokio = { version = "0.2", features = ["rt-core", "blocking"], default-features = false }
 log4rs = { version = "0.9", optional = true }
 tokio-compat = { version = "0.1", features = ["blocking"], optional = true }
 
@@ -41,8 +41,8 @@ capnpc = { git = "https://github.com/appaquet/capnproto-rust.git", branch = "thr
 tempdir = "0.3"
 log4rs = "0.9"
 criterion_bencher_compat = "0.3"
-tokio = { version = "0.1", features = ["rt-full"] }
-tokio02 = { version = "0.2", package = "tokio", features = ["blocking"] }
+tokio01 = { version = "0.1", package = "tokio", features = ["rt-full"] }
+tokio = { version = "0.2", features = ["blocking"] }
 tokio-compat = { version = "0.1", features = ["blocking"] }
 
 [[bench]]

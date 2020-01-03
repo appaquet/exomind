@@ -20,7 +20,8 @@ pub fn setup_logging() {
     let config = Config::builder()
         .appender(Appender::builder().build("stdout", Box::new(stdout)))
         .logger(Logger::builder().build("tokio_reactor", LevelFilter::Info))
-        .logger(Logger::builder().build("tantivy", LevelFilter::Info))
+        .logger(Logger::builder().build("tantivy", LevelFilter::Error))
+        .logger(Logger::builder().build("exocore_data", LevelFilter::Info))
         .build(Root::builder().appender("stdout").build(LevelFilter::Debug))
         .unwrap();
 

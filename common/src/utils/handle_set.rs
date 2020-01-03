@@ -1,6 +1,8 @@
 use futures::channel::{mpsc, oneshot};
 use futures::future::Shared;
 use futures::{Future, FutureExt, StreamExt};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 /// Manages a set of handles so that their lifetime is managed along their parent's lifetime.
 ///
@@ -15,6 +17,7 @@ pub struct HandleSet {
     set_started_receiver: Shared<oneshot::Receiver<()>>,
     set_dropped_sender: oneshot::Sender<()>,
     set_dropped_receiver: Shared<oneshot::Receiver<()>>,
+    next_handle_id: Arc<AtomicUsize>,
 }
 
 impl HandleSet {
@@ -30,14 +33,19 @@ impl HandleSet {
             set_started_receiver: set_started_receiver.shared(),
             set_dropped_sender,
             set_dropped_receiver: set_dropped_receiver.shared(),
+            next_handle_id: Arc::new(AtomicUsize::new(0)),
         }
     }
 
     pub fn get_handle(&self) -> Handle {
+        let handle_id = self.next_handle_id.fetch_add(1, Ordering::SeqCst);
+
         Handle {
+            next_handle_id: self.next_handle_id.clone(),
+            handle_id,
             set_started_receiver: self.set_started_receiver.clone(),
             set_dropped_receiver: self.set_dropped_receiver.clone(),
-            _handle_dropped_sender: self.handle_dropped_sender.clone(),
+            handle_dropped_sender: self.handle_dropped_sender.clone(),
         }
     }
 
@@ -72,14 +80,19 @@ impl Default for HandleSet {
     }
 }
 
-#[derive(Clone)]
 pub struct Handle {
+    next_handle_id: Arc<AtomicUsize>,
+    handle_id: usize,
     set_started_receiver: Shared<oneshot::Receiver<()>>,
     set_dropped_receiver: Shared<oneshot::Receiver<()>>,
-    _handle_dropped_sender: mpsc::Sender<()>,
+    handle_dropped_sender: mpsc::Sender<()>,
 }
 
 impl Handle {
+    pub fn id(&self) -> usize {
+        self.handle_id
+    }
+
     pub fn set_is_started(&self) -> bool {
         self.set_started_receiver.peek().is_some()
     }
@@ -90,6 +103,20 @@ impl Handle {
 
     pub fn on_set_dropped(&self) -> impl Future<Output = ()> {
         self.set_dropped_receiver.clone().map(|_| ())
+    }
+}
+
+impl Clone for Handle {
+    fn clone(&self) -> Self {
+        let handle_id = self.next_handle_id.fetch_add(1, Ordering::SeqCst);
+
+        Handle {
+            next_handle_id: self.next_handle_id.clone(),
+            handle_id,
+            set_started_receiver: self.set_started_receiver.clone(),
+            set_dropped_receiver: self.set_dropped_receiver.clone(),
+            handle_dropped_sender: self.handle_dropped_sender.clone(),
+        }
     }
 }
 
@@ -116,6 +143,18 @@ mod tests {
         let _ = block_on(receiver);
 
         Ok(())
+    }
+
+    #[test]
+    fn handle_have_unique_ids() {
+        let set = HandleSet::new();
+        let handle1 = set.get_handle();
+        let handle2 = set.get_handle();
+        assert_ne!(handle1.id(), handle2.id());
+
+        let handle3 = handle2.clone();
+        assert_ne!(handle2.id(), handle3.id());
+        assert_ne!(handle1.id(), handle3.id());
     }
 
     #[test]

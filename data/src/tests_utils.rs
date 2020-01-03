@@ -235,7 +235,7 @@ impl DataTestCluster {
         let events_locked = self.events_received[node_idx].as_ref().unwrap();
         let mut events = events_locked.lock().unwrap();
         if !events.is_empty() {
-            // not performant, but it's for tests
+            // slow, but it's for tests
             Some(events.remove(0))
         } else {
             None
@@ -266,11 +266,7 @@ impl DataTestCluster {
         &self,
         node_idx: usize,
     ) -> EngineHandle<DirectoryChainStore, MemoryPendingStore> {
-        self.handles[node_idx]
-            .as_ref()
-            .unwrap()
-            .try_clone()
-            .unwrap()
+        self.handles[node_idx].as_ref().unwrap().clone()
     }
 
     pub fn wait_any_event(&self, node_idx: usize) -> Event {
@@ -366,7 +362,7 @@ impl DataTestCluster {
         self.create_node(node_idx)?;
         self.start_engine(node_idx);
 
-        let handle = self.handles[node_idx].as_ref().unwrap().try_clone()?;
+        let handle = self.handles[node_idx].as_ref().unwrap().clone();
         self.runtime.block_on_std(handle.on_started());
 
         Ok(())

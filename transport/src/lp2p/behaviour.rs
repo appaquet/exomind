@@ -1,10 +1,10 @@
+use exocore_common::utils::futures::tokio01::io::{AsyncRead, AsyncWrite};
 use futures01::prelude::*;
 use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
 use libp2p::swarm::{
     NetworkBehaviour, NetworkBehaviourAction, OneShotHandler, PollParameters, ProtocolsHandler,
 };
 use std::collections::{HashMap, VecDeque};
-use tokio::io::{AsyncRead, AsyncWrite};
 
 use super::protocol::{ExocoreProtoConfig, WireMessage};
 use exocore_common::time::Instant;
