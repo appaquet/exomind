@@ -353,7 +353,7 @@ impl TransportHandle for Libp2pTransportHandle {
 impl Future03 for Libp2pTransportHandle {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         self.handle.on_set_dropped().poll_unpin(cx)
     }
 }

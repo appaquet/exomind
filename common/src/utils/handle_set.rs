@@ -88,7 +88,7 @@ impl Handle {
         self.set_started_receiver.clone().map(|_| ())
     }
 
-    pub fn on_set_dropped(&mut self) -> impl Future<Output = ()> {
+    pub fn on_set_dropped(&self) -> impl Future<Output = ()> {
         self.set_dropped_receiver.clone().map(|_| ())
     }
 }
@@ -141,7 +141,7 @@ mod tests {
     fn set_dropped() -> Result<(), failure::Error> {
         let set = HandleSet::new();
 
-        let mut handle = set.get_handle();
+        let handle = set.get_handle();
 
         drop(set);
 

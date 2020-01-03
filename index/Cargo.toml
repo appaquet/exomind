@@ -17,7 +17,7 @@ failure = "0.1"
 itertools = "0.8"
 maplit = "1"
 log = "0.4"
-futures = { version = "0.3", features = ["compat"] }
+futures = "0.3"
 
 # Schema
 serde = "1.0"

@@ -2,14 +2,13 @@ use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::Node;
 use exocore_common::protos::common_capnp::envelope;
-use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
 use exocore_common::utils::futures::{interval, spawn_future_non_send};
+use exocore_common::utils::handle_set::{Handle, HandleSet};
 use exocore_transport::transport::{
     ConnectionStatus, MpscHandleSink, MpscHandleStream, TransportHandleOnStart,
 };
 use exocore_transport::{Error, InEvent, InMessage, OutEvent, TransportHandle, TransportLayer};
 use futures::channel::mpsc;
-use futures::compat::{Compat01As03, Future01CompatExt};
 use futures::future::Future;
 use futures::{FutureExt, StreamExt};
 use js_sys::{ArrayBuffer, Uint8Array};
@@ -31,15 +30,12 @@ const IN_CHANNEL_SIZE: usize = 100;
 /// Client for `exocore_transport` WebSocket transport for browser
 ///
 pub struct BrowserTransportClient {
-    start_notifier: CompletionNotifier<(), Error>,
     inner: Arc<Mutex<Inner>>,
+    handle_set: HandleSet,
 }
 
 impl BrowserTransportClient {
     pub fn new(url: &str, remote_node: Node) -> BrowserTransportClient {
-        let start_notifier = CompletionNotifier::new();
-        let stop_notifier = CompletionNotifier::new();
-
         let inner = Arc::new(Mutex::new(Inner {
             remote_node,
             url: url.to_owned(),
@@ -47,12 +43,11 @@ impl BrowserTransportClient {
             connection_status: ConnectionStatus::Disconnected,
             last_connect_attempt: None,
             handles: HashMap::new(),
-            stop_notifier,
         }));
 
         BrowserTransportClient {
-            start_notifier,
             inner,
+            handle_set: HandleSet::new(),
         }
     }
 
@@ -70,21 +65,10 @@ impl BrowserTransportClient {
             .handles
             .insert((cell.id().clone(), layer), inner_handle);
 
-        let start_listener = self
-            .start_notifier
-            .get_listener()
-            .expect("Couldn't get a listener on start notifier");
-        let stop_listener = inner
-            .stop_notifier
-            .get_listener()
-            .expect("Couldn't get a listener on stop notifier")
-            .compat();
-
         BrowserTransportHandle {
-            start_listener,
             in_receiver: Some(MpscHandleStream::new(in_receiver)),
             out_sender: Some(MpscHandleSink::new(out_sender)),
-            stop_listener,
+            handle: self.handle_set.get_handle(),
         }
     }
 
@@ -147,7 +131,6 @@ struct Inner {
     connection_status: ConnectionStatus,
     last_connect_attempt: Option<Instant>,
     handles: HashMap<(CellId, TransportLayer), InnerHandle>,
-    stop_notifier: CompletionNotifier<(), Error>,
 }
 
 struct InnerHandle {
@@ -306,19 +289,16 @@ impl Inner {
 ///
 #[pin_project]
 pub struct BrowserTransportHandle {
-    start_listener: CompletionListener<(), Error>,
     in_receiver: Option<MpscHandleStream>,
     out_sender: Option<MpscHandleSink>,
-    #[pin]
-    stop_listener: Compat01As03<CompletionListener<(), Error>>,
+    handle: Handle,
 }
 
 impl Future for BrowserTransportHandle {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
-        this.stop_listener.map(|_| ()).poll_unpin(cx)
+        self.handle.on_set_dropped().poll_unpin(cx)
     }
 }
 
@@ -327,13 +307,7 @@ impl TransportHandle for BrowserTransportHandle {
     type Stream = MpscHandleStream;
 
     fn on_started(&self) -> TransportHandleOnStart {
-        let on_start = self
-            .start_listener
-            .try_clone()
-            .expect("Couldn't clone start listener")
-            .compat()
-            .map(|_| ());
-        Box::new(on_start)
+        Box::new(self.handle.on_set_started())
     }
 
     fn get_sink(&mut self) -> Self::Sink {

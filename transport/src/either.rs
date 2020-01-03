@@ -2,10 +2,8 @@ use crate::error::Error;
 use crate::transport::TransportHandleOnStart;
 use crate::{InEvent, OutEvent, TransportHandle};
 use exocore_common::node::NodeId;
-use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
 use exocore_common::utils::futures::OwnedSpawnSet;
 use futures::channel::mpsc;
-use futures::compat::{Compat01As03, Future01CompatExt};
 use futures::prelude::*;
 use futures::{Future, FutureExt, Sink, SinkExt, Stream, StreamExt};
 use pin_project::pin_project;
@@ -29,10 +27,11 @@ where
     left: TLeft,
     #[pin]
     right: TRight,
-    inner: Arc<RwLock<Inner>>,
-    #[pin]
-    completion_listener: Compat01As03<CompletionListener<(), Error>>,
+    nodes_side: Arc<RwLock<HashMap<NodeId, Side>>>,
     owned_spawn_set: OwnedSpawnSet<()>,
+    completion_sender: mpsc::Sender<()>,
+    #[pin]
+    completion_receiver: mpsc::Receiver<()>,
 }
 
 impl<TLeft, TRight> EitherTransportHandle<TLeft, TRight>
@@ -41,19 +40,54 @@ where
     TRight: TransportHandle,
 {
     pub fn new(left: TLeft, right: TRight) -> EitherTransportHandle<TLeft, TRight> {
-        let (completion_notifier, completion_listener) = CompletionNotifier::new_with_listener();
-
         let owned_spawn_set = OwnedSpawnSet::new();
+        let (completion_sender, completion_receiver) = mpsc::channel(1);
         EitherTransportHandle {
             left,
             right,
-            inner: Arc::new(RwLock::new(Inner {
-                node_map: HashMap::new(),
-                completion_notifier,
-            })),
-            completion_listener: completion_listener.compat(),
+            nodes_side: Arc::new(RwLock::new(HashMap::new())),
             owned_spawn_set,
+            completion_sender,
+            completion_receiver,
         }
+    }
+
+    fn get_side(
+        nodes_side: &Weak<RwLock<HashMap<NodeId, Side>>>,
+        node_id: &NodeId,
+    ) -> Result<Option<Side>, Error> {
+        let nodes_side = nodes_side.upgrade().ok_or(Error::Upgrade)?;
+        let nodes_side = nodes_side.read()?;
+        Ok(nodes_side.get(node_id).cloned())
+    }
+
+    fn maybe_add_node(
+        nodes_side: &Weak<RwLock<HashMap<NodeId, Side>>>,
+        event: &InEvent,
+        side: Side,
+    ) -> Result<(), Error> {
+        let node_id = match event {
+            InEvent::Message(msg) => msg.from.id(),
+            _ => return Ok(()),
+        };
+
+        let nodes_side = nodes_side.upgrade().ok_or(Error::Upgrade)?;
+
+        {
+            // check if node is already in map with read lock
+            let nodes_side = nodes_side.read()?;
+            if nodes_side.get(node_id) == Some(&side) {
+                return Ok(());
+            }
+        }
+
+        {
+            // if we're here, node is not in the map and need the write lock
+            let mut nodes_side = nodes_side.write()?;
+            nodes_side.insert(node_id.clone(), side);
+        }
+
+        Ok(())
     }
 }
 
@@ -76,43 +110,37 @@ where
         // dispatch incoming events from left transport to handle
         let mut left = self.left.get_sink();
         let (left_sender, mut left_receiver) = mpsc::unbounded();
-        let weak_inner2 = Arc::downgrade(&self.inner);
-        self.owned_spawn_set.spawn(
-            async move {
-                while let Some(event) = left_receiver.next().await {
-                    left.send(event).await?;
+        let mut completion_sender = self.completion_sender.clone();
+        self.owned_spawn_set.spawn(async move {
+            while let Some(event) = left_receiver.next().await {
+                if let Err(err) = left.send(event).await {
+                    error!("Error in sending to left side: {}", err);
+                    break;
                 }
-                Ok(())
             }
-            .map_err(move |err| {
-                error!("Error in sending to either side: {}", err);
-                let _ = Inner::maybe_complete_error(&weak_inner2, err);
-            })
-            .map(|_| ()),
-        );
+
+            let _ = completion_sender.send(()).await;
+        });
 
         // dispatch incoming events from right transport to handle
         let mut right = self.right.get_sink();
         let (right_sender, mut right_receiver) = mpsc::unbounded();
-        let weak_inner2 = Arc::downgrade(&self.inner);
-        self.owned_spawn_set.spawn(
-            async move {
-                while let Some(event) = right_receiver.next().await {
-                    right.send(event).await?;
+        let mut completion_sender = self.completion_sender.clone();
+        self.owned_spawn_set.spawn(async move {
+            while let Some(event) = right_receiver.next().await {
+                if let Err(err) = right.send(event).await {
+                    error!("Error in sending to right side: {}", err);
+                    break;
                 }
-                Ok(())
             }
-            .map_err(move |err| {
-                error!("Error in sending to either side: {}", err);
-                let _ = Inner::maybe_complete_error(&weak_inner2, err);
-            })
-            .map(|_| ()),
-        );
+
+            let _ = completion_sender.send(()).await;
+        });
 
         // redirect outgoing events coming from handles to underlying transports
         let (sender, mut receiver) = mpsc::unbounded::<OutEvent>();
-        let weak_inner1 = Arc::downgrade(&self.inner);
-        let weak_inner2 = Arc::downgrade(&self.inner);
+        let nodes_side = Arc::downgrade(&self.nodes_side);
+        let mut completion_sender = self.completion_sender.clone();
         self.owned_spawn_set.spawn(
             async move {
                 while let Some(event) = receiver.next().await {
@@ -123,7 +151,7 @@ where
                                     "Out event didn't have any destination node".to_string(),
                                 )
                             })?;
-                            Inner::get_side(&weak_inner1, node.id())?
+                            Self::get_side(&nodes_side, node.id())?
                         }
                     };
 
@@ -143,7 +171,7 @@ where
             }
             .map_err(move |err| {
                 error!("Error in sending to either side: {}", err);
-                let _ = Inner::maybe_complete_error(&weak_inner2, err);
+                let _ = completion_sender.try_send(());
             })
             .map(|_| ()),
         );
@@ -152,20 +180,22 @@ where
     }
 
     fn get_stream(&mut self) -> Self::Stream {
-        let weak_inner = Arc::downgrade(&self.inner);
+        let nodes_side = Arc::downgrade(&self.nodes_side);
+        let mut completion_sender = self.completion_sender.clone();
         let left = self.left.get_stream().map(move |event| {
-            if let Err(err) = Inner::maybe_add_node(&weak_inner, &event, Side::Left) {
+            if let Err(err) = Self::maybe_add_node(&nodes_side, &event, Side::Left) {
                 error!("Error saving node's transport from left side: {}", err);
-                let _ = Inner::maybe_complete_error(&weak_inner, err);
+                let _ = completion_sender.try_send(());
             }
             event
         });
 
-        let weak_inner = Arc::downgrade(&self.inner);
+        let nodes_side = Arc::downgrade(&self.nodes_side);
+        let mut completion_sender = self.completion_sender.clone();
         let right = self.right.get_stream().map(move |event| {
-            if let Err(err) = Inner::maybe_add_node(&weak_inner, &event, Side::Right) {
+            if let Err(err) = Self::maybe_add_node(&nodes_side, &event, Side::Right) {
                 error!("Error saving node's transport from right side: {}", err);
-                let _ = Inner::maybe_complete_error(&weak_inner, err);
+                let _ = completion_sender.try_send(());
             }
             event
         });
@@ -182,7 +212,7 @@ where
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
+        let mut this = self.project();
         if let Poll::Ready(_) = this.left.poll(cx) {
             return Poll::Ready(());
         }
@@ -191,60 +221,11 @@ where
             return Poll::Ready(());
         }
 
-        if let Poll::Ready(_) = this.completion_listener.poll(cx) {
+        if let Poll::Ready(_) = this.completion_receiver.next().poll_unpin(cx) {
             return Poll::Ready(());
         }
 
         Poll::Pending
-    }
-}
-
-struct Inner {
-    node_map: HashMap<NodeId, Side>,
-    completion_notifier: CompletionNotifier<(), Error>,
-}
-
-impl Inner {
-    fn get_side(weak_inner: &Weak<RwLock<Inner>>, node_id: &NodeId) -> Result<Option<Side>, Error> {
-        let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
-        let inner = inner.read()?;
-        Ok(inner.node_map.get(node_id).cloned())
-    }
-
-    fn maybe_add_node(
-        weak_inner: &Weak<RwLock<Inner>>,
-        event: &InEvent,
-        side: Side,
-    ) -> Result<(), Error> {
-        let node_id = match event {
-            InEvent::Message(msg) => msg.from.id(),
-            _ => return Ok(()),
-        };
-
-        let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
-
-        {
-            // check if node is already in map with read lock
-            let inner = inner.read()?;
-            if inner.node_map.get(node_id) == Some(&side) {
-                return Ok(());
-            }
-        }
-
-        {
-            // if we're here, node is not in the map and need the write lock
-            let mut inner = inner.write()?;
-            inner.node_map.insert(node_id.clone(), side);
-        }
-
-        Ok(())
-    }
-
-    fn maybe_complete_error(weak_inner: &Weak<RwLock<Inner>>, error: Error) -> Result<(), Error> {
-        let inner = weak_inner.upgrade().ok_or(Error::Upgrade)?;
-        let inner = inner.read()?;
-        inner.completion_notifier.complete(Err(error));
-        Ok(())
     }
 }
 
