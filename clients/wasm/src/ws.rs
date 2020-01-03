@@ -3,7 +3,7 @@ use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::Node;
 use exocore_common::protos::common_capnp::envelope;
 use exocore_common::utils::completion_notifier::{CompletionListener, CompletionNotifier};
-use exocore_common::utils::futures::spawn_future_non_send;
+use exocore_common::utils::futures::{interval, spawn_future_non_send};
 use exocore_transport::transport::{
     ConnectionStatus, MpscHandleSink, MpscHandleStream, TransportHandleOnStart,
 };
@@ -124,7 +124,7 @@ impl BrowserTransportClient {
         // start management timer
         let weak_inner = Arc::downgrade(&self.inner);
         spawn_future_non_send(async move {
-            let mut interval = wasm_timer::Interval::new(Duration::from_millis(1000));
+            let mut interval = interval(Duration::from_millis(1000));
 
             while let Some(_) = interval.next().await {
                 let inner = weak_inner.upgrade().ok_or(())?;

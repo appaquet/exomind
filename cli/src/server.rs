@@ -2,7 +2,7 @@ use crate::config::NodeConfig;
 use crate::options;
 use exocore_common::cell::{Cell, FullCell};
 use exocore_common::time::Clock;
-use exocore_common::utils::futures::Runtime;
+use exocore_common::utils::futures::{Future01, Runtime};
 use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -17,7 +17,6 @@ use exocore_transport::ws::{
 };
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use failure::err_msg;
-use futures01::prelude::*;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -70,17 +69,10 @@ pub fn start(
         let index_engine_handle = engine.get_handle();
 
         // start the engine
-        let cell_id1 = cell.id().clone();
-        let cell_id2 = cell.id().clone();
-        rt.spawn(
-            engine
-                .map(move |_| {
-                    info!("Engine for cell {:?} has stopped", cell_id1);
-                })
-                .map_err(move |err| {
-                    error!("Engine for cell {} has failed: {}", cell_id2, err);
-                }),
-        );
+        rt.spawn_std(async {
+            let res = engine.run().await;
+            info!("Engine is done: {:?}", res);
+        });
 
         // start WebSocket server if needed
         let ws_transport_handle = config.websocket_listen_address.map(|listen_address| {

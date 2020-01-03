@@ -4,7 +4,6 @@ use exocore_common::utils::futures::spawn_blocking;
 use exocore_common::utils::handle_set::{Handle, HandleSet};
 use exocore_schema::schema::Schema;
 use futures::channel::{mpsc, oneshot};
-use futures::compat::Stream01CompatExt;
 use futures::prelude::*;
 
 use crate::error::Error;
@@ -148,7 +147,7 @@ where
 
         let mut events_stream = {
             let mut inner = self.inner.write()?;
-            inner.data_handle.take_events_stream()?.compat()
+            inner.data_handle.take_events_stream()?
         };
 
         // schedule data engine events stream
@@ -157,7 +156,6 @@ where
         let data_events_handler = async move {
             // TODO: Should be throttled & buffered https://github.com/appaquet/exocore/issues/130
             while let Some(event) = events_stream.next().await {
-                let event = event?;
                 if let Err(err) = Inner::handle_data_engine_event(&weak_inner, event).await {
                     error!("Error handling data engine event: {}", err);
                     if err.is_fatal() {
@@ -446,9 +444,9 @@ pub mod tests {
 
     use super::*;
     use crate::store::local::TestStore;
+    use exocore_common::utils::futures::delay_for;
     use futures::executor::block_on_stream;
     use std::time::Duration;
-    use wasm_timer::Delay;
 
     #[test]
     fn store_mutate_query_via_handle() -> Result<(), failure::Error> {
@@ -519,7 +517,7 @@ pub mod tests {
 
         test_store.cluster.runtime.block_on_std(async move {
             let mut stream = stream.into_inner();
-            let delay = Delay::new(Duration::from_secs(1));
+            let delay = delay_for(Duration::from_secs(1));
 
             futures::select! {
                 res = stream.next().fuse() => {

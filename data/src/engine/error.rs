@@ -2,7 +2,6 @@ use crate::engine::{chain_sync, commit_manager, pending_sync};
 use crate::{block, chain, operation, pending};
 use exocore_common::capnp;
 use exocore_transport::Error as TransportError;
-use futures01::sync::mpsc;
 
 ///
 /// Engine errors
@@ -35,8 +34,6 @@ pub enum Error {
     NotFound(String),
     #[fail(display = "Local node not found in nodes list")]
     MyNodeNotFound,
-    #[fail(display = "Couldn't send message to a mpsc channel because its receiver was dropped")]
-    MpscSendDropped,
     #[fail(display = "Inner was dropped or couldn't get locked")]
     InnerUpgrade,
     #[fail(display = "Try to lock a mutex that was poisoned")]
@@ -52,11 +49,7 @@ impl Error {
         match self {
             Error::ChainStore(inner) => inner.is_fatal(),
             Error::ChainSync(inner) => inner.is_fatal(),
-            Error::MyNodeNotFound
-            | Error::MpscSendDropped
-            | Error::InnerUpgrade
-            | Error::Poisoned
-            | Error::Fatal(_) => true,
+            Error::MyNodeNotFound | Error::InnerUpgrade | Error::Poisoned | Error::Fatal(_) => true,
             _ => false,
         }
     }
@@ -115,12 +108,6 @@ impl From<block::Error> for Error {
 impl From<operation::Error> for Error {
     fn from(err: operation::Error) -> Self {
         Error::Operation(err)
-    }
-}
-
-impl<T> From<mpsc::SendError<T>> for Error {
-    fn from(_err: mpsc::SendError<T>) -> Self {
-        Error::MpscSendDropped
     }
 }
 

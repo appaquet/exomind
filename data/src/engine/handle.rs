@@ -6,8 +6,8 @@ use crate::pending::CommitStatus;
 use crate::{chain, operation};
 use exocore_common;
 use exocore_common::protos::data_chain_capnp::chain_operation;
-use exocore_common::utils::completion_notifier::{CompletionError, CompletionListener};
-use futures01::prelude::*;
+use exocore_common::utils::handle_set::Handle;
+use futures::prelude::*;
 use std::ops::RangeBounds;
 use std::sync::{Arc, RwLock, Weak};
 
@@ -20,8 +20,7 @@ where
 {
     id: usize,
     inner: Weak<RwLock<Inner<CS, PS>>>,
-    start_listener: CompletionListener<(), Error>,
-    stop_listener: CompletionListener<(), Error>,
+    handle: Handle,
 }
 
 impl<CS, PS> EngineHandle<CS, PS>
@@ -32,37 +31,13 @@ where
     pub(crate) fn new(
         id: usize,
         inner: Weak<RwLock<Inner<CS, PS>>>,
-        start_listener: CompletionListener<(), Error>,
-        stop_listener: CompletionListener<(), Error>,
+        handle: Handle,
     ) -> EngineHandle<CS, PS> {
-        EngineHandle {
-            id,
-            inner,
-            start_listener,
-            stop_listener,
-        }
+        EngineHandle { id, inner, handle }
     }
 
-    pub fn on_start(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
-        Ok(self
-            .start_listener
-            .try_clone()
-            .map_err(|_err| Error::Other("Couldn't clone start listener in handle".to_string()))?
-            .map_err(|err| match err {
-                CompletionError::UserError(err) => err,
-                _ => Error::Other("Error in completion error".to_string()),
-            }))
-    }
-
-    pub fn on_stop(&self) -> Result<impl Future<Item = (), Error = Error>, Error> {
-        Ok(self
-            .stop_listener
-            .try_clone()
-            .map_err(|_err| Error::Other("Couldn't clone stop listener in handle".to_string()))?
-            .map_err(|err| match err {
-                CompletionError::UserError(err) => err,
-                _ => Error::Other("Error in completion error".to_string()),
-            }))
+    pub fn on_started(&self) -> impl Future<Output = ()> {
+        self.handle.on_set_started()
     }
 
     pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationId, Error> {
@@ -201,15 +176,11 @@ where
     /// Take the events stream receiver out of this `Handle`.
     /// This stream is bounded and consumptions should be non-blocking to prevent losing events.
     /// Calling the engine on every call should be throttled in the case of a big read amplification.
-    pub fn take_events_stream(
-        &mut self,
-    ) -> Result<impl Stream<Item = Event, Error = Error>, Error> {
+    pub fn take_events_stream(&mut self) -> Result<impl Stream<Item = Event>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
 
-        let stream = unlocked_inner
-            .get_new_events_stream(self.id)
-            .map_err(|_err| Error::Other("Error in incoming events stream".to_string()));
+        let stream = unlocked_inner.get_new_events_stream(self.id);
 
         Ok(stream)
     }
@@ -217,26 +188,12 @@ where
     pub fn try_clone(&self) -> Result<EngineHandle<CS, PS>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
-
-        let start_listener = self.start_listener.try_clone().map_err(|err| {
-            Error::Other(format!(
-                "Couldn't clone start_listener to clone handle: {}",
-                err
-            ))
-        })?;
-        let stop_listener = self.stop_listener.try_clone().map_err(|err| {
-            Error::Other(format!(
-                "Couldn't clone start_listener to clone handle: {}",
-                err
-            ))
-        })?;
-
         let handle_id = unlocked_inner.get_new_handle_id();
+
         Ok(EngineHandle::new(
             handle_id,
             self.inner.clone(),
-            start_listener,
-            stop_listener,
+            self.handle.clone(),
         ))
     }
 }

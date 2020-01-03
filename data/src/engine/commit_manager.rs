@@ -342,7 +342,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     approx_non_committed_operations,
                     self.config.commit_maximum_pending_store_count
                 );
-                return Ok(true);
+                Ok(true)
             } else {
                 let previous_block = chain_store
                     .get_last_block()?
@@ -359,14 +359,14 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                         "{}: Enough operations to commit & it's my turn. Will propose a block.",
                         local_node.id()
                     );
-                    return Ok(true);
+                    Ok(true)
                 } else {
-                    return Ok(false);
+                    Ok(false)
                 }
             }
+        } else {
+            Ok(false)
         }
-
-        Ok(false)
     }
 
     ///

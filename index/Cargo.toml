@@ -6,7 +6,7 @@ edition = "2018"
 
 [features]
 default = ["local_store"]
-local_store = ["tantivy", "tokio-threadpool", "exocore-data/engine", "crc"]
+local_store = ["tantivy", "exocore-data/engine", "crc"]
 
 [dependencies]
 exocore-data = { path = "../data" }
@@ -17,11 +17,7 @@ failure = "0.1"
 itertools = "0.8"
 maplit = "1"
 log = "0.4"
-wasm-timer = "0.2"
-futures = { version = "0.3", features = ["async-await", "compat"] }
-futures01 = { package = "futures", version = "0.1" }
-tokio = { version = "0.1", features = ["io"], default-features = false }
-tokio02 = { version = "0.2", package = "tokio", features = ["rt-core"], default-features = false }
+futures = { version = "0.3", features = ["compat"] }
 
 # Schema
 serde = "1.0"
@@ -32,7 +28,6 @@ uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Local store
-tokio-threadpool = { version = "0.1", optional = true }
 tantivy = { version = "0.11", optional = true }
 crc = { version = "1.8", optional = true }
 

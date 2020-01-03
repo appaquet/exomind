@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use failure::err_msg;
-use futures01::prelude::*;
+use futures::prelude::*;
 use itertools::Itertools;
 use tempdir;
 
@@ -73,7 +73,7 @@ impl DataTestCluster {
 
             let engine_config = EngineConfig {
                 manager_timer_interval: Duration::from_millis(20),
-                pending_synchronizer_config: PendingSyncConfig {
+                pending_sync_config: PendingSyncConfig {
                     request_tracker_config: RequestTrackerConfig {
                         min_interval: Duration::from_millis(200),
                         max_interval: Duration::from_millis(1000),
@@ -191,8 +191,10 @@ impl DataTestCluster {
 
         self.collect_events_stream(node_idx);
 
-        self.runtime
-            .spawn(engine.map_err(|err| error!("Got an error in engine: {}", err)));
+        self.runtime.spawn_std(async {
+            let res = engine.run().await;
+            info!("Engine done: {:?}", res);
+        });
     }
 
     pub fn wait_started(&self, node_idx: usize) {
@@ -205,20 +207,18 @@ impl DataTestCluster {
 
         {
             let events = Arc::clone(&received_events);
-            self.runtime.spawn(
-                self.handles[node_idx]
-                    .as_mut()
-                    .unwrap()
-                    .take_events_stream()
-                    .unwrap()
-                    .for_each(move |event| {
-                        let mut events = events.lock().unwrap();
-                        events.push(event.clone());
-                        events_sender.send(event).unwrap();
-                        Ok(())
-                    })
-                    .map_err(|_| ()),
-            );
+            let mut stream_events = self.handles[node_idx]
+                .as_mut()
+                .unwrap()
+                .take_events_stream()
+                .unwrap();
+            self.runtime.spawn_std(async move {
+                while let Some(event) = stream_events.next().await {
+                    let mut events = events.lock().unwrap();
+                    events.push(event.clone());
+                    events_sender.send(event).unwrap();
+                }
+            });
         }
 
         self.events_received[node_idx] = Some(received_events);
@@ -367,7 +367,7 @@ impl DataTestCluster {
         self.start_engine(node_idx);
 
         let handle = self.handles[node_idx].as_ref().unwrap().try_clone()?;
-        self.runtime.block_on(handle.on_start()?)?;
+        self.runtime.block_on_std(handle.on_started());
 
         Ok(())
     }

@@ -16,6 +16,8 @@ use exocore_common::protos::index_transport_capnp::{
 use exocore_common::protos::MessageType;
 use exocore_common::time::Instant;
 use exocore_common::time::{Clock, ConsistentTimestamp};
+use exocore_common::utils::futures::interval;
+use exocore_common::utils::handle_set::{Handle, HandleSet};
 use exocore_schema::schema::Schema;
 use exocore_transport::{
     InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
@@ -24,7 +26,6 @@ use exocore_transport::{
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
-use exocore_common::utils::handle_set::{Handle, HandleSet};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClientConfiguration {
@@ -142,7 +143,7 @@ where
         let weak_inner = Arc::downgrade(&self.inner);
         let management_interval = self.config.management_interval;
         let management_timer = async move {
-            let mut timer = wasm_timer::Interval::new(management_interval);
+            let mut timer = interval(management_interval);
 
             while let Some(_) = timer.next().await {
                 Inner::management_timer_process(&weak_inner)?;

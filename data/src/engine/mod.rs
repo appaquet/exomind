@@ -12,24 +12,15 @@ use exocore_common::protos::data_transport_capnp::{
 };
 use exocore_common::protos::MessageType;
 use exocore_common::time::Clock;
-use exocore_common::utils::completion_notifier::{
-    CompletionError, CompletionListener, CompletionNotifier,
-};
-use exocore_common::utils::futures::{spawn_future, spawn_future_01};
+use exocore_common::utils::futures::{interval, spawn_blocking};
 use exocore_transport::{
-    Error as TransportError, InEvent, InMessage, OutEvent, OutMessage, TransportHandle,
-    TransportLayer,
+    InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
 };
+use futures::channel::mpsc;
 use futures::future::FutureExt;
-use futures::TryFutureExt;
-use futures::{SinkExt, StreamExt, TryStreamExt};
-use futures01::prelude::*;
-use futures01::sync::mpsc;
-use std;
+use futures::{SinkExt, StreamExt};
 use std::sync::{Arc, RwLock, Weak};
 use std::time::Duration;
-use tokio;
-use tokio::timer::Interval;
 
 mod chain_sync;
 mod commit_manager;
@@ -37,31 +28,33 @@ mod error;
 mod handle;
 mod pending_sync;
 mod request_tracker;
+
 #[cfg(test)]
 pub(crate) mod testing;
 pub use chain_sync::ChainSyncConfig;
 pub use commit_manager::CommitManagerConfig;
 pub use error::Error;
+use exocore_common::utils::handle_set::HandleSet;
 pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
 pub use pending_sync::PendingSyncConfig;
 pub use request_tracker::RequestTrackerConfig;
 
 /// Data engine's configuration
 #[derive(Copy, Clone)]
-pub struct Config {
-    pub chain_synchronizer_config: ChainSyncConfig,
-    pub pending_synchronizer_config: PendingSyncConfig,
+pub struct EngineConfig {
+    pub chain_sync_config: ChainSyncConfig,
+    pub pending_sync_config: PendingSyncConfig,
     pub commit_manager_config: CommitManagerConfig,
     pub manager_timer_interval: Duration,
     pub events_stream_buffer_size: usize,
     pub to_transport_channel_size: usize,
 }
 
-impl Default for Config {
+impl Default for EngineConfig {
     fn default() -> Self {
-        Config {
-            chain_synchronizer_config: ChainSyncConfig::default(),
-            pending_synchronizer_config: PendingSyncConfig::default(),
+        EngineConfig {
+            chain_sync_config: ChainSyncConfig::default(),
+            pending_sync_config: PendingSyncConfig::default(),
             commit_manager_config: CommitManagerConfig::default(),
             manager_timer_interval: Duration::from_secs(1),
             events_stream_buffer_size: 1000,
@@ -81,11 +74,10 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    start_notifier: CompletionNotifier<(), Error>,
-    config: Config,
-    transport: Option<T>,
+    config: EngineConfig,
+    transport: T,
     inner: Arc<RwLock<Inner<CS, PS>>>,
-    stop_listener: CompletionListener<(), Error>,
+    handle_set: HandleSet,
 }
 
 impl<T, CS, PS> Engine<T, CS, PS>
@@ -95,23 +87,20 @@ where
     PS: pending::PendingStore,
 {
     pub fn new(
-        config: Config,
+        config: EngineConfig,
         clock: Clock,
         transport: T,
         chain_store: CS,
         pending_store: PS,
         cell: Cell,
     ) -> Engine<T, CS, PS> {
-        let (stop_notifier, stop_listener) = CompletionNotifier::new_with_listener();
-        let start_notifier = CompletionNotifier::new();
-
         let pending_synchronizer = pending_sync::PendingSynchronizer::new(
-            config.pending_synchronizer_config,
+            config.pending_sync_config,
             cell.clone(),
             clock.clone(),
         );
         let chain_synchronizer = chain_sync::ChainSynchronizer::new(
-            config.chain_synchronizer_config,
+            config.chain_sync_config,
             cell.clone(),
             clock.clone(),
         );
@@ -132,18 +121,15 @@ where
             commit_manager,
             events_stream_sender: Vec::new(),
             handles_next_id: 0,
-            handles_count: 0,
             transport_sender: None,
             sync_state: SyncState::default(),
-            stop_notifier,
         }));
 
         Engine {
-            start_notifier,
             config,
             inner,
-            transport: Some(transport),
-            stop_listener,
+            transport,
+            handle_set: HandleSet::new(),
         }
     }
 
@@ -152,240 +138,165 @@ where
             .inner
             .write()
             .expect("Inner couldn't get locked, but engine isn't even started yet.");
-
-        let start_listener = self
-            .start_notifier
-            .get_listener()
-            .expect("Couldn't get start listener for handle");
-
-        let stop_listener = unlocked_inner
-            .stop_notifier
-            .get_listener()
-            .expect("Couldn't get stop listener for handle");
-
         let handle_id = unlocked_inner.get_new_handle_id();
+
         EngineHandle::new(
             handle_id,
             Arc::downgrade(&self.inner),
-            start_listener,
-            stop_listener,
+            self.handle_set.get_handle(),
         )
     }
 
-    fn start(&mut self) -> Result<(), Error> {
-        let mut transport_handle = self
-            .transport
-            .take()
-            .ok_or_else(|| Error::Other("Transport was none in engine".to_string()))?;
+    pub async fn run(mut self) -> Result<(), Error> {
+        let config = self.config;
 
-        let transport_in_stream = transport_handle.get_stream().map(Ok).compat();
-        let transport_out_sink = transport_handle.get_sink().compat();
+        let (transport_out_sender, mut transport_out_receiver) =
+            mpsc::channel(config.to_transport_channel_size);
+        let mut transport_out_sink = self.transport.get_sink();
+        let outgoing_transport_handler = async move {
+            while let Some(event) = transport_out_receiver.next().await {
+                if let Err(err) = transport_out_sink.send(event).await {
+                    error!("Error sending to transport sink: {}", err);
+                }
+            }
+        };
 
-        // create channel to send messages to transport's sink
-        {
-            let weak_inner = Arc::downgrade(&self.inner);
-            let (transport_out_channel_sender, transport_out_channel_receiver) =
-                mpsc::channel(self.config.to_transport_channel_size);
-            spawn_future_01(
-                transport_out_channel_receiver
-                    .map_err(|err| {
-                        TransportError::Other(format!(
-                            "Couldn't send to transport_out channel's receiver: {:?}",
-                            err
-                        ))
-                    })
-                    .forward(transport_out_sink)
-                    .map(|_| ())
-                    .map_err(move |err| {
-                        Self::handle_spawned_future_error(
-                            "transport incoming stream",
-                            &weak_inner,
-                            Error::Transport(err),
-                        );
-                    }),
-            );
+        let mut transport_in_stream = self.transport.get_stream();
+        let weak_inner = Arc::downgrade(&self.inner);
+        let incoming_transport_handler = async move {
+            while let Some(event) = transport_in_stream.next().await {
+                let result = Self::handle_incoming_event(weak_inner.clone(), event).await;
+                if let Err(err) = result {
+                    error!("Error handling incoming message: {}", err);
+                    if err.is_fatal() {
+                        return;
+                    }
+                }
+            }
+        };
 
-            let mut unlocked_inner = self.inner.write()?;
-            unlocked_inner.transport_sender = Some(transport_out_channel_sender);
-        }
-
-        // handle transport's incoming messages
-        {
-            let weak_inner1 = Arc::downgrade(&self.inner);
-            let weak_inner2 = Arc::downgrade(&self.inner);
-            spawn_future_01(
-                transport_in_stream
-                    .map_err(Error::Transport)
-                    .for_each(move |event| {
-                        match event {
-                            InEvent::Message(msg) => {
-                                Self::handle_incoming_message(&weak_inner1, msg)
-                                    .map_err(|err| {
-                                        error!("Error handling incoming message: {}", err);
-                                        err
-                                    })
-                                    .or_else(Error::recover_non_fatal_error)
-                            }
-                            InEvent::NodeStatus(_, _) => {
-                                // TODO: Do something with the node status
-
-                                Ok(())
-                            }
-                        }
-                    })
-                    .map_err(move |err| {
-                        Self::handle_spawned_future_error(
-                            "transport incoming stream",
-                            &weak_inner2,
-                            err,
-                        );
-                    }),
-            );
-        }
-
-        // management timer
-        {
-            let weak_inner1 = Arc::downgrade(&self.inner);
-            let weak_inner2 = Arc::downgrade(&self.inner);
-            spawn_future_01({
-                Interval::new_interval(self.config.manager_timer_interval)
-                    .map_err(|err| Error::Other(format!("Interval error: {}", err)))
-                    .for_each(move |_| {
-                        Self::handle_management_timer_tick(&weak_inner1)
-                            .map_err(|err| {
-                                error!("Error in management timer tick: {}", err);
-                                err
-                            })
-                            .or_else(Error::recover_non_fatal_error)
-                    })
-                    .map_err(move |err| {
-                        Self::handle_spawned_future_error("management timer", &weak_inner2, err);
-                    })
-            });
-        }
-
-        // schedule transport
-        spawn_future(transport_handle);
+        let weak_inner = Arc::downgrade(&self.inner);
+        let management_timer = async move {
+            let mut interval = interval(config.manager_timer_interval);
+            while let Some(_) = interval.next().await {
+                let result = Self::handle_management_timer_tick(weak_inner.clone()).await;
+                if let Err(err) = result {
+                    error!("Error in management timer: {}", err);
+                    if err.is_fatal() {
+                        return;
+                    }
+                }
+            }
+        };
 
         {
             let mut unlocked_inner = self.inner.write()?;
+            unlocked_inner.transport_sender = Some(transport_out_sender);
+
             let chain_last_block = unlocked_inner.chain_store.get_last_block()?;
             if chain_last_block.is_none() {
                 warn!("{}: Chain has not been initialized (no genesis block). May not be able to start if no other nodes are found.",
                       unlocked_inner.cell.local_node().id(),
                 )
             }
+
             unlocked_inner.dispatch_event(&Event::Started);
         }
 
-        info!("Engine started!");
+        info!("Engine started");
+        futures::select! {
+            _ = outgoing_transport_handler.fuse() => (),
+            _ = incoming_transport_handler.fuse() => (),
+            _ = management_timer.fuse() => (),
+            _ = self.handle_set.on_handles_dropped().fuse() => (),
+            _ = self.transport.fuse() => (),
+        }
+        info!("Engine done");
+
         Ok(())
     }
 
-    fn handle_incoming_message(
-        weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
+    async fn handle_incoming_event(
+        weak_inner: Weak<RwLock<Inner<CS, PS>>>,
+        event: InEvent,
+    ) -> Result<(), Error> {
+        match event {
+            InEvent::Message(msg) => Self::handle_incoming_message(weak_inner, msg).await,
+            InEvent::NodeStatus(_, _) => {
+                // unhandled for now, but could be used by synchronizers
+                Ok(())
+            }
+        }
+    }
+
+    async fn handle_incoming_message(
+        weak_inner: Weak<RwLock<Inner<CS, PS>>>,
         message: Box<InMessage>,
     ) -> Result<(), Error> {
-        let locked_inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let mut inner = locked_inner.write()?;
+        let join_result = spawn_blocking(move || {
+            let locked_inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
+            let mut inner = locked_inner.write()?;
 
-        debug!(
-            "{}: Got message of type {} from node {}",
-            inner.cell.local_node().id(),
-            message.message_type,
-            message.from.id(),
-        );
+            debug!(
+                "{}: Got message of type {} from node {}",
+                inner.cell.local_node().id(),
+                message.message_type,
+                message.from.id(),
+            );
 
-        match message.message_type {
-            <pending_sync_request::Owned as MessageType>::MESSAGE_TYPE => {
-                let sync_request = message.get_data_as_framed_message()?;
-                inner.handle_incoming_pending_sync_request(&message, sync_request)?;
+            match message.message_type {
+                <pending_sync_request::Owned as MessageType>::MESSAGE_TYPE => {
+                    let sync_request = message.get_data_as_framed_message()?;
+                    inner.handle_incoming_pending_sync_request(&message, sync_request)?;
+                }
+                <chain_sync_request::Owned as MessageType>::MESSAGE_TYPE => {
+                    let sync_request = message.get_data_as_framed_message()?;
+                    inner.handle_incoming_chain_sync_request(&message, sync_request)?;
+                }
+                <chain_sync_response::Owned as MessageType>::MESSAGE_TYPE => {
+                    let sync_response = message.get_data_as_framed_message()?;
+                    inner.handle_incoming_chain_sync_response(&message, sync_response)?;
+                }
+                msg_type => {
+                    return Err(Error::Other(format!(
+                        "Got an unknown message type: message_type={} transport_layer={:?}",
+                        msg_type, message.layer,
+                    )));
+                }
             }
-            <chain_sync_request::Owned as MessageType>::MESSAGE_TYPE => {
-                let sync_request = message.get_data_as_framed_message()?;
-                inner.handle_incoming_chain_sync_request(&message, sync_request)?;
-            }
-            <chain_sync_response::Owned as MessageType>::MESSAGE_TYPE => {
-                let sync_response = message.get_data_as_framed_message()?;
-                inner.handle_incoming_chain_sync_response(&message, sync_response)?;
-            }
-            msg_type => {
-                return Err(Error::Other(format!(
-                    "Got an unknown message type: message_type={} transport_layer={:?}",
-                    msg_type, message.layer,
-                )));
-            }
-        }
 
-        Ok(())
-    }
-
-    fn handle_management_timer_tick(weak_inner: &Weak<RwLock<Inner<CS, PS>>>) -> Result<(), Error> {
-        let locked_inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
-        let mut inner = locked_inner.write()?;
-
-        inner.tick_synchronizers()?;
-
-        Ok(())
-    }
-
-    fn handle_spawned_future_error(
-        future_name: &str,
-        weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        error: Error,
-    ) {
-        error!("Got an error in future {}: {}", future_name, error);
-
-        let locked_inner = if let Some(locked_inner) = weak_inner.upgrade() {
-            locked_inner
-        } else {
-            return;
-        };
-
-        let inner = if let Ok(inner) = locked_inner.read() {
-            inner
-        } else {
-            return;
-        };
-
-        inner.stop_notifier.complete(Err(Error::Other(format!(
-            "Couldn't send to completion channel: {:?}",
-            error
-        ))));
-    }
-}
-
-impl<T, CS, PS> Future for Engine<T, CS, PS>
-where
-    T: TransportHandle,
-    CS: chain::ChainStore,
-    PS: pending::PendingStore,
-{
-    type Item = ();
-    type Error = Error;
-
-    fn poll(&mut self) -> Result<Async<()>, Error> {
-        // first, make sure transport is started
-        if let Some(transport_handle) = &self.transport {
-            let mut handle_start = transport_handle
-                .on_started()
-                .unit_error()
-                .map_err(|_| Error::Other("Impossible error".to_string()))
-                .compat();
-            futures01::try_ready!(handle_start.poll());
-        }
-
-        // start the engine if it's not started
-        if !self.start_notifier.is_complete() {
-            let start_res = self.start();
-            self.start_notifier.complete(start_res);
-        }
-
-        // check if engine got stopped
-        self.stop_listener.poll().map_err(|err| match err {
-            CompletionError::UserError(err) => err,
-            _ => Error::Other("Error in completion error".to_string()),
+            Ok(())
         })
+        .await;
+
+        match join_result {
+            Ok(res) => res,
+            Err(err) => Err(Error::Fatal(format!(
+                "Error joining blocking spawn: {}",
+                err
+            ))),
+        }
+    }
+
+    async fn handle_management_timer_tick(
+        weak_inner: Weak<RwLock<Inner<CS, PS>>>,
+    ) -> Result<(), Error> {
+        let join_result = spawn_blocking(move || {
+            let locked_inner = weak_inner.upgrade().ok_or(Error::InnerUpgrade)?;
+            let mut inner = locked_inner.write()?;
+            inner.tick_synchronizers()?;
+
+            Ok(())
+        })
+        .await;
+
+        match join_result {
+            Ok(res) => res,
+            Err(err) => Err(Error::Fatal(format!(
+                "Error joining blocking spawn: {}",
+                err
+            ))),
+        }
     }
 }
 
@@ -394,7 +305,7 @@ where
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
-    config: Config,
+    config: EngineConfig,
     cell: Cell,
     clock: Clock,
     pending_store: PS,
@@ -404,10 +315,8 @@ where
     commit_manager: commit_manager::CommitManager<PS, CS>,
     events_stream_sender: Vec<(usize, bool, mpsc::Sender<Event>)>,
     handles_next_id: usize,
-    handles_count: usize,
     transport_sender: Option<mpsc::Sender<OutEvent>>,
     sync_state: SyncState,
-    stop_notifier: CompletionNotifier<(), Error>,
 }
 
 impl<CS, PS> Inner<CS, PS>
@@ -545,10 +454,7 @@ where
 
         for message in messages {
             let out_message = message.into_out_message(&self.cell)?;
-            let transport_sender = self.transport_sender.as_mut().expect(
-                "Transport sender was none, which mean that the transport was never started",
-            );
-
+            let transport_sender = self.transport_sender.as_mut().unwrap();
             if let Err(err) = transport_sender.try_send(OutEvent::Message(out_message)) {
                 error!(
                     "Error sending message from sync context to transport: {}",
@@ -563,7 +469,6 @@ where
     fn get_new_handle_id(&mut self) -> usize {
         let id = self.handles_next_id;
         self.handles_next_id += 1;
-        self.handles_count += 1;
         id
     }
 
@@ -625,13 +530,6 @@ where
                 self.events_stream_sender
                     .push((handle_id, discontinued, sender));
             }
-        }
-
-        // if it was last handle, we kill the engine
-        self.handles_count -= 1;
-        if self.handles_count == 0 {
-            debug!("Last engine handle got dropped, killing the engine.");
-            self.stop_notifier.complete(Ok(()));
         }
     }
 }

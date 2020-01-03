@@ -31,8 +31,8 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
     assert_eq!(b"i love rust 2", entry_operation.as_entry_data()?);
     assert_eq!(EngineOperationStatus::Pending, entry_operation.status);
 
-    // wait for all operations to be emitted on stream
-    cluster.wait_operations_emitted(0, &[op1, op2]);
+    // wait for all operations to be committed to a block
+    cluster.wait_operations_committed(0, &[op1, op2]);
     let block_offsets = cluster.wait_next_block_commit(0);
     let first_block_offset = block_offsets.first().unwrap();
 
@@ -50,7 +50,7 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
     assert_eq!(b"i love rust 1", entry_operation.as_entry_data()?);
     assert!(entry_operation.status.is_committed());
 
-    // get operation from anywhere, should not be committed
+    // get operation from anywhere, should now be committed
     let entry_operation = cluster.get_handle(0).get_operation(op1)?.unwrap();
     assert_eq!(b"i love rust 1", entry_operation.as_entry_data()?);
     assert!(entry_operation.status.is_committed());

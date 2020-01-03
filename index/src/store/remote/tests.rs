@@ -13,8 +13,6 @@ use crate::store::local::TestStore;
 use super::*;
 use crate::store::remote::server::{Server, ServerConfiguration};
 use futures::executor::block_on_stream;
-use futures::{FutureExt, TryFutureExt};
-use futures01::future::Future as Future01;
 
 #[test]
 fn mutation_and_query() -> Result<(), failure::Error> {
@@ -336,24 +334,20 @@ impl TestRemoteStore {
         );
 
         let server = Server::new(self.server_config, cell, schema, store_handle, transport)?;
-        self.local_store
-            .cluster
-            .runtime
-            .spawn(server.run().boxed().compat().map_err(|err| {
-                error!("Error spawning remote store server: {}", err);
-            }));
+        self.local_store.cluster.runtime.spawn_std(async move {
+            let res = server.run().await;
+            info!("Server is done: {:?}", res);
+        });
 
         Ok(())
     }
 
     fn start_client(&mut self) -> Result<(), failure::Error> {
         let client = self.client.take().unwrap();
-        self.local_store
-            .cluster
-            .runtime
-            .spawn(client.run().boxed().compat().map_err(|err| {
-                error!("Error spawning remote store: {}", err);
-            }));
+        self.local_store.cluster.runtime.spawn_std(async move {
+            let res = client.run().await;
+            info!("Client is done: {:?}", res);
+        });
 
         futures::executor::block_on(self.client_handle.on_start());
 

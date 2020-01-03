@@ -26,7 +26,7 @@ pub mod tests_utils;
 pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
 #[cfg(feature = "engine")]
 pub use crate::engine::{
-    ChainSyncConfig, CommitManagerConfig, Config as EngineConfig, Engine, EngineHandle,
+    ChainSyncConfig, CommitManagerConfig, Engine, EngineConfig, EngineHandle,
     EngineOperationStatus, PendingSyncConfig,
 };
 #[cfg(feature = "memory_pending")]

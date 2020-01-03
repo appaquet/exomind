@@ -133,12 +133,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::futures::Runtime;
+    use crate::utils::futures::{delay_for, Runtime};
     use std::sync::atomic::AtomicBool;
     use std::sync::atomic::Ordering;
     use std::sync::Arc;
     use std::time::Duration;
-    use wasm_timer::Delay;
 
     #[test]
     fn propagate_spawned_result() -> Result<(), failure::Error> {
@@ -161,17 +160,17 @@ mod tests {
 
             let spawned = owned_spawn(async move {
                 let _ = dropper;
-                let _ = Delay::new(Duration::from_secs(3600)).await;
+                delay_for(Duration::from_secs(3600)).await;
                 Ok::<(), ()>(())
             });
 
-            let _ = Delay::new(Duration::from_millis(100)).await;
+            delay_for(Duration::from_millis(100)).await;
 
             assert!(!dropped.load(Ordering::SeqCst));
 
             drop(spawned);
 
-            let _ = Delay::new(Duration::from_millis(100)).await;
+            delay_for(Duration::from_millis(100)).await;
             assert!(dropped.load(Ordering::SeqCst));
 
             Ok::<(), failure::Error>(())
@@ -190,7 +189,7 @@ mod tests {
             set.spawn(async { 1 + 1 });
             assert_eq!(1, set.spawns.len());
 
-            let _ = Delay::new(Duration::from_millis(100)).await;
+            delay_for(Duration::from_millis(100)).await;
             set = set.cleanup().await;
             assert_eq!(0, set.spawns.len());
 
@@ -198,7 +197,7 @@ mod tests {
             let dropped = dropper.dropped.clone();
             set.spawn(async move {
                 let _ = dropper;
-                let _ = Delay::new(Duration::from_secs(3600)).await;
+                delay_for(Duration::from_secs(3600)).await;
                 1 + 1
             });
 
@@ -207,7 +206,7 @@ mod tests {
 
             drop(set);
 
-            let _ = Delay::new(Duration::from_millis(100)).await;
+            delay_for(Duration::from_millis(100)).await;
             assert!(dropped.load(Ordering::SeqCst));
 
             Ok::<(), failure::Error>(())

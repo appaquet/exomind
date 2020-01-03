@@ -1,5 +1,6 @@
 use futures::{Future as Future03, FutureExt, TryFutureExt};
-use futures01::Future as Future01;
+
+pub use futures01::Future as Future01;
 
 #[cfg(any(test, feature = "tests_utils", feature = "runtime"))]
 pub use tokio_compat::runtime::Runtime;
