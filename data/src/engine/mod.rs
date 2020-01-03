@@ -46,9 +46,7 @@ mod request_tracker;
 #[cfg(test)]
 pub(crate) mod testing;
 
-///
 /// Data engine's configuration
-///
 #[derive(Copy, Clone)]
 pub struct Config {
     pub chain_synchronizer_config: ChainSyncConfig,
@@ -72,13 +70,11 @@ impl Default for Config {
     }
 }
 
-///
 /// The data engine manages storage and replication of data among the nodes of the cell.
 ///
 /// It contains 2 stores:
 ///   * Pending store: temporary store in which operations are stored until they get commited to chain
 ///   * Chain store: persistent store using a block-chain like data structure
-///
 pub struct Engine<T, CS, PS>
 where
     T: TransportHandle,
@@ -393,10 +389,6 @@ where
     }
 }
 
-///
-/// Inner instance of the engine, since the engine is owned by the executor. The executor owns a strong
-/// reference to this Inner, while handles own weak references.
-///
 pub(crate) struct Inner<CS, PS>
 where
     CS: chain::ChainStore,
@@ -644,10 +636,8 @@ where
     }
 }
 
-///
 /// Synchronization context used by `chain_sync`, `pending_sync` and `commit_manager` to dispatch
 /// messages to other nodes, and dispatch events to be sent to engine handles.
-///
 struct SyncContext {
     events: Vec<Event>,
     messages: Vec<SyncContextMessage>,
@@ -743,17 +733,13 @@ impl SyncContextMessage {
     }
 }
 
-///
 /// State of the synchronization, used to communicate information between the `ChainSynchronizer`,
 /// `CommitManager` and `PendingSynchronizer`.
-///
 #[derive(Clone, Copy)]
 struct SyncState {
-    ///
     /// Indicates what is the last block that got cleaned up from pending store, and that
     /// is now only available from the chain. This is used by the `PendingSynchronizer` to
     /// know which operations it should not include anymore in its requests.
-    ///
     pending_last_cleanup_block: Option<(BlockOffset, BlockHeight)>,
 }
 

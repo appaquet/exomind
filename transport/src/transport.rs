@@ -1,6 +1,5 @@
 use crate::{Error, InMessage, OutMessage};
 use exocore_common::node::NodeId;
-use exocore_common::utils::handle_set::Handle;
 use futures::channel::mpsc;
 use futures::channel::mpsc::SendError;
 use futures::prelude::*;
@@ -10,9 +9,9 @@ use pin_project::pin_project;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-///
+pub type TransportHandleOnStart = Box<dyn Future<Output = ()> + Send + Unpin + 'static>;
+
 /// Handle for a cell & layer to the transport
-///
 pub trait TransportHandle: Future<Output = ()> + Send + Unpin + 'static {
     type Sink: Sink<OutEvent, Error = Error> + Send + Unpin + 'static;
     type Stream: Stream<Item = InEvent> + Send + Unpin + 'static;
@@ -21,71 +20,6 @@ pub trait TransportHandle: Future<Output = ()> + Send + Unpin + 'static {
     fn on_start(&self) -> TransportHandleOnStart;
     fn get_sink(&mut self) -> Self::Sink;
     fn get_stream(&mut self) -> Self::Stream;
-}
-
-pub type TransportHandleOnStart = Box<dyn Future<Output = ()> + Send + Unpin + 'static>;
-
-#[pin_project]
-pub struct GenericTransportHandle<E> {
-    handle: Handle,
-    receiver: Option<mpsc::Receiver<InEvent>>,
-    sender: Option<mpsc::Sender<OutEvent>>,
-    #[pin]
-    handle_set_dropped: Box<dyn Future<Output = ()> + Send + Unpin>,
-    extra: E,
-}
-
-impl<E> GenericTransportHandle<E>
-where
-    E: Send + 'static,
-{
-    pub fn new(
-        mut handle: Handle,
-        receiver: mpsc::Receiver<InEvent>,
-        sender: mpsc::Sender<OutEvent>,
-        extra: E,
-    ) -> GenericTransportHandle<E> {
-        let handle_set_dropped = Box::new(handle.on_set_dropped());
-        GenericTransportHandle {
-            handle,
-            receiver: Some(receiver),
-            sender: Some(sender),
-            handle_set_dropped,
-            extra,
-        }
-    }
-}
-
-impl<E> TransportHandle for GenericTransportHandle<E>
-where
-    E: Send + Unpin + 'static,
-{
-    type Sink = MpscHandleSink;
-    type Stream = MpscHandleStream;
-
-    fn on_start(&self) -> TransportHandleOnStart {
-        Box::new(self.handle.on_set_started())
-    }
-
-    fn get_sink(&mut self) -> Self::Sink {
-        MpscHandleSink::new(self.sender.take().expect("Sink was already taken"))
-    }
-
-    fn get_stream(&mut self) -> Self::Stream {
-        MpscHandleStream::new(self.receiver.take().expect("Stream was already taken"))
-    }
-}
-
-impl<E> Future for GenericTransportHandle<E>
-where
-    E: Send + 'static,
-{
-    type Output = ();
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
-        this.handle_set_dropped.poll(cx)
-    }
 }
 
 ///

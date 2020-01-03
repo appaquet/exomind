@@ -73,8 +73,7 @@ impl ExocoreClient {
 
         let store_handle1 = store_handle.clone();
         spawn_future_non_send(async move {
-            let start_future = store_handle1.on_start();
-            start_future.await;
+            store_handle1.on_start().await;
             Ok(())
         });
 

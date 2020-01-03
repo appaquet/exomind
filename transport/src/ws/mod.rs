@@ -104,6 +104,7 @@ impl WebsocketTransport {
     }
 
     pub async fn run(self) -> Result<(), Error> {
+        // sends message to existing connections
         let outgoing_handler = {
             let mut handles_senders = Vec::new();
             let mut inner = self.inner.write()?;
@@ -131,6 +132,7 @@ impl WebsocketTransport {
             futures::future::join_all(handles_senders)
         };
 
+        // handles incoming connections
         let reactor_handle = &tokio::reactor::Handle::default();
         let server = websocket::r#async::Server::bind(self.listen_address, reactor_handle)
             .map_err(|err| Error::Other(format!("Cannot start websocket: {}", err)))?;
@@ -366,7 +368,7 @@ mod tests {
     use exocore_common::cell::FullCell;
     use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
     use exocore_common::node::LocalNode;
-    use exocore_common::tests_utils::{expect_eventually, setup_logging};
+    use exocore_common::tests_utils::expect_eventually;
     use exocore_common::utils::futures::Runtime;
     use futures::compat::Future01CompatExt;
     use std::sync::Mutex;

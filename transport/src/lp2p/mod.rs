@@ -125,7 +125,7 @@ impl Libp2pTransport {
         let (in_sender, in_receiver) = mpsc::channel(self.config.handle_in_channel_size);
         let (out_sender, out_receiver) = mpsc::channel(self.config.handle_out_channel_size);
 
-        // register our handle and its streams
+        // Register new handle and its streams
         let mut handles = self.handles.write()?;
         let inner_layer = HandleChannels {
             cell: cell.clone(),
@@ -150,9 +150,7 @@ impl Libp2pTransport {
         })
     }
 
-    ///
-    /// Starts the engine by spawning different tasks onto the current Runtime
-    ///
+    /// Runs the transport to completion.
     pub async fn run(self) -> Result<(), Error> {
         let local_keypair = self.local_node.keypair().clone();
         let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone());
@@ -242,7 +240,7 @@ impl Libp2pTransport {
         })
         .compat();
 
-        // Sends each handle's outgoing messages to the behaviour's input channel
+        // Sends handles' outgoing messages to the behaviour's input channel
         let handles_dispatcher = {
             let mut inner = self.handles.write()?;
             let mut futures = Vec::new();
@@ -250,7 +248,7 @@ impl Libp2pTransport {
                 let out_receiver = inner_layer
                     .out_receiver
                     .take()
-                    .expect("Out receiver of one layer was already consummed");
+                    .expect("Out receiver of one layer was already consumed");
 
                 let mut out_sender = out_sender.clone();
                 futures.push(async move {
@@ -263,18 +261,18 @@ impl Libp2pTransport {
             futures::future::join_all(futures)
         };
 
+        info!("Libp2p transport now running");
         futures::select! {
             _ = swarm_task.fuse() => (),
             _ = handles_dispatcher.fuse() => (),
             _ = self.handle_set.on_handles_dropped().fuse() => (),
         };
+        info!("Libp2p transport is done");
 
         Ok(())
     }
 
-    ///
     /// Dispatches a received message from libp2p to corresponding handle
-    ///
     fn dispatch_message(
         inner: &RwLock<Handles>,
         message: ExocoreBehaviourMessage,
@@ -322,9 +320,7 @@ impl Libp2pTransport {
     }
 }
 
-///
 /// Handle taken by a Cell layer to receive and send message for a given node & cell.
-///
 pub struct Libp2pTransportHandle {
     cell_id: CellId,
     layer: TransportLayer,

@@ -21,10 +21,8 @@ const CHANNELS_SIZE: usize = 1000;
 
 type HandleKey = (NodeId, TransportLayer);
 
-///
 /// In memory transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
-///
 pub struct MockTransport {
     nodes_sink: Arc<Mutex<HashMap<HandleKey, mpsc::Sender<InEvent>>>>,
     handle_set: HandleSet,
@@ -47,7 +45,6 @@ impl MockTransport {
         let (incoming_sender, incoming_receiver) = mpsc::channel(CHANNELS_SIZE);
         nodes_sink.insert((node.id().clone(), layer), incoming_sender);
 
-        let handle = self.handle_set.get_handle();
         MockTransportHandle {
             node: node.node().clone(),
             layer,
@@ -55,14 +52,12 @@ impl MockTransport {
             nodes_sink: Arc::downgrade(&self.nodes_sink),
             incoming_stream: Some(incoming_receiver),
             outgoing_stream: None,
-            handle,
+            handle: self.handle_set.get_handle(),
         }
     }
 }
 
-///
 /// Handle taken by a Cell layer to receive and send message for a given node
-///
 pub struct MockTransportHandle {
     node: Node,
     layer: TransportLayer,
@@ -168,9 +163,7 @@ impl Drop for MockTransportHandle {
     }
 }
 
-///
 /// Wraps a transport handle to add test methods
-///
 pub struct TestableTransportHandle<T: TransportHandle> {
     handle: Option<T>,
     out_sink: Option<T::Sink>,

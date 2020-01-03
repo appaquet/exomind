@@ -14,13 +14,11 @@ use std::pin::Pin;
 use std::sync::{Arc, RwLock, Weak};
 use std::task::{Context, Poll};
 
-///
 /// Transport handle that wraps 2 other transport handles. When it receives events,
 /// it notes from which transport it came so that replies can be sent back via the same
 /// transport.
 ///
 /// !! If we never received an event for a node, it will automatically select the first handle !!
-///
 #[pin_project]
 pub struct EitherTransportHandle<TLeft, TRight>
 where
@@ -202,9 +200,6 @@ where
     }
 }
 
-///
-/// Inner shared instance of the handle
-///
 struct Inner {
     node_map: HashMap<NodeId, Side>,
     completion_notifier: CompletionNotifier<(), Error>,
