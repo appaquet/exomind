@@ -11,3 +11,6 @@ members = [
   "clients/android",
   "clients/ios",
 ]
+
+[patch.crates-io]
+tokio = { git = "https://github.com/appaquet/tokio", path = "./tokio", branch = "queue-reintrant-deadlock" }

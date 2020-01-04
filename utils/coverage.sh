@@ -19,7 +19,7 @@ export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
 cargo clean -p exocore-schema
 cargo build $CARGO_OPTIONS
-cargo test $CARGO_OPTIONS -- --test-threads=1
+cargo test $CARGO_OPTIONS
 
 mkdir -p $COVERAGE_DIR
 zip -0 $COVERAGE_DIR/ccov.zip `find . \( -name "*exocore*.gc*" \) -print`;
