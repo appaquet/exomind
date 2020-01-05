@@ -1,0 +1,27 @@
+
+syntax = "proto3";
+package exocore.test;
+
+import "exocore/options.proto";
+import "google/protobuf/wrappers.proto";
+
+message DynamicMessage {
+}
+
+message TestDynamicMessage {
+    string string_field = 1 [(exocore.indexed) = true];
+
+    google.protobuf.StringValue string_value_field = 2;
+
+    TestStruct struct_field = 3;
+
+    oneof fields {
+        string oneof_string = 4;
+    }
+
+    string string_field2 = 5;
+}
+
+message TestStruct {
+    string field = 1;
+}
