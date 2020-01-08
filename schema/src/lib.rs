@@ -7,10 +7,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate log;
 
-#[allow(unused_imports)]
-#[macro_use]
-extern crate maplit;
-
 pub mod entity;
 pub mod error;
 pub mod schema;

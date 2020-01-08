@@ -1,6 +1,5 @@
 #![deny(bare_trait_objects)]
 
-extern crate exocore_common;
 #[macro_use]
 extern crate failure;
 #[macro_use]

@@ -15,7 +15,6 @@ exocore-common = { path = "../common" }
 exocore-schema = { path = "../schema" }
 failure = "0.1"
 itertools = "0.8"
-maplit = "1"
 log = "0.4"
 futures = "0.3"
 

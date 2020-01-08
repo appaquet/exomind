@@ -42,7 +42,6 @@ protoc-rust = "2.0"
 tempdir = "0.3"
 log4rs = "0.9"
 criterion_bencher_compat = "0.3"
-tokio01 = { version = "0.1", package = "tokio", features = ["rt-full"] }
 tokio = { version = "0.2", features = ["blocking"] }
 tokio-compat = { version = "0.1", features = ["blocking"] }
 

@@ -19,7 +19,7 @@ message TestDynamicMessage {
         string oneof_string = 4;
     }
 
-    string string_field2 = 5;
+    string string_field2 = 5 [(exocore.indexed) = false];
 }
 
 message TestStruct {

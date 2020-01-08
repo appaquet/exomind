@@ -377,9 +377,9 @@ mod tests {
         let value_deser = serde_json::from_str(&value_ser)?;
         assert_eq!(value, value_deser);
 
-        let value = FieldValue::Map(hashmap!(
-            "key".to_string() => "value".into()
-        ));
+        let mut data = HashMap::new();
+        data.insert("key".to_string(), "value".into());
+        let value = FieldValue::Map(data);
         let value_ser = serde_json::to_string(&value)?;
         let value_deser = serde_json::from_str(&value_ser)?;
         assert_eq!(value, value_deser);

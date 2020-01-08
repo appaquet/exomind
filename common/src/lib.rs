@@ -4,11 +4,6 @@
 extern crate failure;
 #[macro_use]
 extern crate log;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_json;
-#[cfg(test)]
-extern crate tempdir;
 
 pub extern crate capnp;
 pub mod protos;
