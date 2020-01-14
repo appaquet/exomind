@@ -159,6 +159,7 @@ pub struct TestDynamicMessage {
     pub string_value_field: ::protobuf::SingularPtrField<::protobuf::well_known_types::StringValue>,
     pub struct_field: ::protobuf::SingularPtrField<TestStruct>,
     pub string_field2: ::std::string::String,
+    pub datetime_field1: ::protobuf::SingularPtrField<::protobuf::well_known_types::Timestamp>,
     // message oneof groups
     pub fields: ::std::option::Option<TestDynamicMessage_oneof_fields>,
     // special fields
@@ -348,6 +349,39 @@ impl TestDynamicMessage {
     pub fn take_string_field2(&mut self) -> ::std::string::String {
         ::std::mem::replace(&mut self.string_field2, ::std::string::String::new())
     }
+
+    // .google.protobuf.Timestamp datetime_field1 = 6;
+
+
+    pub fn get_datetime_field1(&self) -> &::protobuf::well_known_types::Timestamp {
+        self.datetime_field1.as_ref().unwrap_or_else(|| ::protobuf::well_known_types::Timestamp::default_instance())
+    }
+    pub fn clear_datetime_field1(&mut self) {
+        self.datetime_field1.clear();
+    }
+
+    pub fn has_datetime_field1(&self) -> bool {
+        self.datetime_field1.is_some()
+    }
+
+    // Param is passed by value, moved
+    pub fn set_datetime_field1(&mut self, v: ::protobuf::well_known_types::Timestamp) {
+        self.datetime_field1 = ::protobuf::SingularPtrField::some(v);
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_datetime_field1(&mut self) -> &mut ::protobuf::well_known_types::Timestamp {
+        if self.datetime_field1.is_none() {
+            self.datetime_field1.set_default();
+        }
+        self.datetime_field1.as_mut().unwrap()
+    }
+
+    // Take field
+    pub fn take_datetime_field1(&mut self) -> ::protobuf::well_known_types::Timestamp {
+        self.datetime_field1.take().unwrap_or_else(|| ::protobuf::well_known_types::Timestamp::new())
+    }
 }
 
 impl ::protobuf::Message for TestDynamicMessage {
@@ -358,6 +392,11 @@ impl ::protobuf::Message for TestDynamicMessage {
             }
         };
         for v in &self.struct_field {
+            if !v.is_initialized() {
+                return false;
+            }
+        };
+        for v in &self.datetime_field1 {
             if !v.is_initialized() {
                 return false;
             }
@@ -387,6 +426,9 @@ impl ::protobuf::Message for TestDynamicMessage {
                 5 => {
                     ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.string_field2)?;
                 },
+                6 => {
+                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.datetime_field1)?;
+                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -412,6 +454,10 @@ impl ::protobuf::Message for TestDynamicMessage {
         }
         if !self.string_field2.is_empty() {
             my_size += ::protobuf::rt::string_size(5, &self.string_field2);
+        }
+        if let Some(ref v) = self.datetime_field1.as_ref() {
+            let len = v.compute_size();
+            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         }
         if let ::std::option::Option::Some(ref v) = self.fields {
             match v {
@@ -441,6 +487,11 @@ impl ::protobuf::Message for TestDynamicMessage {
         }
         if !self.string_field2.is_empty() {
             os.write_string(5, &self.string_field2)?;
+        }
+        if let Some(ref v) = self.datetime_field1.as_ref() {
+            os.write_tag(6, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_raw_varint32(v.get_cached_size())?;
+            v.write_to_with_cached_sizes(os)?;
         }
         if let ::std::option::Option::Some(ref v) = self.fields {
             match v {
@@ -516,6 +567,11 @@ impl ::protobuf::Message for TestDynamicMessage {
                     |m: &TestDynamicMessage| { &m.string_field2 },
                     |m: &mut TestDynamicMessage| { &mut m.string_field2 },
                 ));
+                fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<::protobuf::well_known_types::Timestamp>>(
+                    "datetime_field1",
+                    |m: &TestDynamicMessage| { &m.datetime_field1 },
+                    |m: &mut TestDynamicMessage| { &mut m.datetime_field1 },
+                ));
                 ::protobuf::reflect::MessageDescriptor::new::<TestDynamicMessage>(
                     "TestDynamicMessage",
                     fields,
@@ -543,6 +599,7 @@ impl ::protobuf::Clear for TestDynamicMessage {
         self.struct_field.clear();
         self.fields = ::std::option::Option::None;
         self.string_field2.clear();
+        self.datetime_field1.clear();
         self.unknown_fields.clear();
     }
 }
@@ -728,16 +785,19 @@ impl ::protobuf::reflect::ProtobufValue for TestStruct {
     }
 }
 
-pub static file_descriptor_proto_data: &'static [u8] = b"\
+static file_descriptor_proto_data: &'static [u8] = b"\
     \n\rdynamic.proto\x12\x0cexocore.test\x1a\x15exocore/options.proto\x1a\
-    \x1egoogle/protobuf/wrappers.proto\"\x10\n\x0eDynamicMessage\"\x99\x02\n\
-    \x12TestDynamicMessage\x12&\n\x0cstring_field\x18\x01\x20\x01(\tR\x0bstr\
-    ingFieldB\x03\xc0>\x01\x12J\n\x12string_value_field\x18\x02\x20\x01(\x0b\
-    2\x1c.google.protobuf.StringValueR\x10stringValueField\x12;\n\x0cstruct_\
-    field\x18\x03\x20\x01(\x0b2\x18.exocore.test.TestStructR\x0bstructField\
-    \x12#\n\x0coneof_string\x18\x04\x20\x01(\tH\0R\x0boneofString\x12#\n\rst\
-    ring_field2\x18\x05\x20\x01(\tR\x0cstringField2B\x08\n\x06fields\"\"\n\n\
-    TestStruct\x12\x14\n\x05field\x18\x01\x20\x01(\tR\x05fieldb\x06proto3\
+    \x1egoogle/protobuf/wrappers.proto\x1a\x1fgoogle/protobuf/timestamp.prot\
+    o\"\x10\n\x0eDynamicMessage\"\xe8\x02\n\x12TestDynamicMessage\x12&\n\x0c\
+    string_field\x18\x01\x20\x01(\tR\x0bstringFieldB\x03\xc0>\x01\x12J\n\x12\
+    string_value_field\x18\x02\x20\x01(\x0b2\x1c.google.protobuf.StringValue\
+    R\x10stringValueField\x12;\n\x0cstruct_field\x18\x03\x20\x01(\x0b2\x18.e\
+    xocore.test.TestStructR\x0bstructField\x12#\n\x0coneof_string\x18\x04\
+    \x20\x01(\tH\0R\x0boneofString\x12(\n\rstring_field2\x18\x05\x20\x01(\tR\
+    \x0cstringField2B\x03\xc0>\0\x12H\n\x0fdatetime_field1\x18\x06\x20\x01(\
+    \x0b2\x1a.google.protobuf.TimestampR\x0edatetimeField1B\x03\xc0>\x01B\
+    \x08\n\x06fields\"\"\n\nTestStruct\x12\x14\n\x05field\x18\x01\x20\x01(\t\
+    R\x05fieldb\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

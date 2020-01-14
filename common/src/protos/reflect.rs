@@ -4,9 +4,14 @@ use protobuf::{Message, ProtobufError};
 use std::sync::Arc;
 
 use crate::protos::generated::dynamic::DynamicMessage as DynamicMessageProto;
-use protobuf::types::{ProtobufType, ProtobufTypeBool, ProtobufTypeString};
-use protobuf::well_known_types::Any;
+use protobuf::types::{
+    ProtobufType, ProtobufTypeBool, ProtobufTypeInt32, ProtobufTypeInt64, ProtobufTypeMessage,
+    ProtobufTypeString, ProtobufTypeUint32, ProtobufTypeUint64,
+};
+use protobuf::well_known_types::{Any, Timestamp};
 use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::fmt::Debug;
 use std::sync::RwLock;
 
 pub struct Registry {
@@ -42,6 +47,18 @@ impl Registry {
         for field in msg_descriptor.get_field() {
             let field_type = match field.get_field_type() {
                 FieldDescriptorProto_Type::TYPE_STRING => FieldType::String,
+                FieldDescriptorProto_Type::TYPE_INT32 => FieldType::Int32,
+                FieldDescriptorProto_Type::TYPE_UINT32 => FieldType::Uint32,
+                FieldDescriptorProto_Type::TYPE_INT64 => FieldType::Int64,
+                FieldDescriptorProto_Type::TYPE_UINT64 => FieldType::Uint64,
+                FieldDescriptorProto_Type::TYPE_MESSAGE => {
+                    let typ = field.get_type_name().trim_start_matches('.').to_string();
+                    if typ == "google.protobuf.Timestamp" {
+                        FieldType::DateTime
+                    } else {
+                        FieldType::Message(typ)
+                    }
+                }
                 _ => continue,
             };
 
@@ -119,20 +136,55 @@ pub struct FieldDescriptor {
 #[derive(Debug, Clone, PartialEq)]
 pub enum FieldType {
     String,
+    Int32,
+    Uint32,
+    Int64,
+    Uint64,
+    DateTime,
     Message(String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
 pub enum FieldValue {
     String(String),
+    Int32(i32),
+    Uint32(u32),
+    Int64(i64),
+    Uint64(u64),
+    DateTime(chrono::DateTime<chrono::Utc>),
+    Message(Box<dyn ReflectMessage>),
+}
+
+impl FieldValue {
+    pub fn as_str(&self) -> Result<&str, Error> {
+        if let FieldValue::String(value) = self {
+            Ok(value.as_ref())
+        } else {
+            Err(Error::InvalidFieldType)
+        }
+    }
+
+    pub fn as_datetime(&self) -> Result<&chrono::DateTime<chrono::Utc>, Error> {
+        if let FieldValue::DateTime(value) = self {
+            Ok(value)
+        } else {
+            Err(Error::InvalidFieldType)
+        }
+    }
+}
+
+impl<'s> TryFrom<&'s FieldValue> for &'s str {
+    type Error = Error;
+
+    fn try_from(value: &'s FieldValue) -> Result<Self, Error> {
+        match value {
+            FieldValue::String(value) => Ok(value),
+            _ => Err(Error::InvalidFieldType),
+        }
+    }
 }
 
 pub trait ReflectMessage {
-    type Message: Message;
-
     fn descriptor(&self) -> &ReflectMessageDescriptor;
-
-    fn inner(&self) -> &Self::Message;
 
     fn full_name(&self) -> &str {
         &self.descriptor().name
@@ -142,7 +194,117 @@ pub trait ReflectMessage {
         self.descriptor().fields.as_ref()
     }
 
-    fn field_value(&self, field: &FieldDescriptor) -> Option<FieldValue>;
+    fn get_field_value(&self, field: &FieldDescriptor) -> Result<FieldValue, Error>;
+}
+
+pub struct GeneratedMessage<T: Message> {
+    message: T,
+    descriptor: Arc<ReflectMessageDescriptor>,
+}
+
+impl<T: Message> ReflectMessage for GeneratedMessage<T> {
+    fn descriptor(&self) -> &ReflectMessageDescriptor {
+        self.descriptor.as_ref()
+    }
+
+    fn get_field_value(&self, field: &FieldDescriptor) -> Result<FieldValue, Error> {
+        let value = self.message.descriptor().field_by_number(field.id);
+        match &field.field_type {
+            FieldType::String => {
+                let value = value.get_str(&self.message).to_string();
+                Ok(FieldValue::String(value))
+            }
+            FieldType::Int32 => {
+                let value = value.get_i32(&self.message);
+                Ok(FieldValue::Int32(value))
+            }
+            FieldType::Uint32 => {
+                let value = value.get_u32(&self.message);
+                Ok(FieldValue::Uint32(value))
+            }
+            FieldType::Int64 => {
+                let value = value.get_i64(&self.message);
+                Ok(FieldValue::Int64(value))
+            }
+            FieldType::Uint64 => {
+                let value = value.get_u64(&self.message);
+                Ok(FieldValue::Uint64(value))
+            }
+            FieldType::DateTime => {
+                let value = value.get_message(&self.message);
+                let secs = value.descriptor().field_by_number(1).get_i64(value);
+                let nanos = value.descriptor().field_by_number(2).get_i32(value);
+                Ok(FieldValue::DateTime(timestamp_parts_to_datetime(
+                    secs, nanos,
+                )))
+            }
+            FieldType::Message(_full_name) => Err(Error::InvalidFieldType),
+        }
+    }
+}
+
+pub struct DynamicMessage {
+    message: DynamicMessageProto,
+    descriptor: Arc<ReflectMessageDescriptor>,
+}
+
+impl ReflectMessage for DynamicMessage {
+    fn descriptor(&self) -> &ReflectMessageDescriptor {
+        self.descriptor.as_ref()
+    }
+
+    fn get_field_value(&self, field: &FieldDescriptor) -> Result<FieldValue, Error> {
+        let value = self
+            .message
+            .unknown_fields
+            .get(field.id)
+            .ok_or(Error::NoSuchField)?;
+
+        match field.field_type {
+            FieldType::String => {
+                let value =
+                    ProtobufTypeString::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                Ok(FieldValue::String(value))
+            }
+            FieldType::Int32 => {
+                let value = ProtobufTypeInt32::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                Ok(FieldValue::Int32(value))
+            }
+            FieldType::Uint32 => {
+                let value =
+                    ProtobufTypeUint32::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                Ok(FieldValue::Uint32(value))
+            }
+            FieldType::Int64 => {
+                let value = ProtobufTypeInt64::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                Ok(FieldValue::Int64(value))
+            }
+            FieldType::Uint64 => {
+                let value =
+                    ProtobufTypeUint64::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                Ok(FieldValue::Uint64(value))
+            }
+            FieldType::DateTime => {
+                let value = ProtobufTypeMessage::<Timestamp>::get_from_unknown(value)
+                    .ok_or(Error::NoSuchField)?;
+                Ok(FieldValue::DateTime(timestamp_parts_to_datetime(
+                    value.seconds,
+                    value.nanos,
+                )))
+            }
+            _ => Err(Error::NoSuchField),
+        }
+    }
+}
+
+pub fn message_to_any<M: Message>(message: &M) -> Result<Any, Error> {
+    let mut any = Any::new();
+    any.set_type_url(format!(
+        "type.googleapis.com/{}",
+        message.descriptor().full_name()
+    ));
+    any.set_value(message.write_to_bytes()?);
+    Ok(any)
 }
 
 pub fn from_generated<T: Message>(registry: &Registry, message: T) -> GeneratedMessage<T> {
@@ -166,79 +328,35 @@ pub fn from_any(registry: &Registry, any: &Any) -> Result<DynamicMessage, Error>
     })
 }
 
-pub struct GeneratedMessage<T: Message> {
-    message: T,
-    descriptor: Arc<ReflectMessageDescriptor>,
+pub fn from_proto_timestamp(ts: Timestamp) -> chrono::DateTime<chrono::Utc> {
+    timestamp_parts_to_datetime(ts.seconds, ts.nanos)
 }
 
-impl<T: Message> ReflectMessage for GeneratedMessage<T> {
-    type Message = T;
-
-    fn descriptor(&self) -> &ReflectMessageDescriptor {
-        self.descriptor.as_ref()
-    }
-
-    fn inner(&self) -> &T {
-        &self.message
-    }
-
-    fn field_value(&self, field: &FieldDescriptor) -> Option<FieldValue> {
-        let value = self.message.descriptor().field_by_number(field.id);
-        match field.field_type {
-            FieldType::String => {
-                let value = value.get_str(&self.message).to_string();
-                Some(FieldValue::String(value))
-            }
-            _ => None,
-        }
-    }
+pub fn timestamp_parts_to_datetime(secs: i64, nanos: i32) -> chrono::DateTime<chrono::Utc> {
+    chrono::DateTime::from_utc(
+        chrono::NaiveDateTime::from_timestamp(secs, nanos as u32),
+        chrono::Utc,
+    )
 }
 
-pub struct DynamicMessage {
-    message: DynamicMessageProto,
-    descriptor: Arc<ReflectMessageDescriptor>,
-}
-
-impl DynamicMessage {}
-
-impl ReflectMessage for DynamicMessage {
-    type Message = DynamicMessageProto;
-
-    fn descriptor(&self) -> &ReflectMessageDescriptor {
-        self.descriptor.as_ref()
+pub fn to_proto_timestamp(dt: chrono::DateTime<chrono::Utc>) -> Timestamp {
+    Timestamp {
+        seconds: dt.timestamp(),
+        nanos: dt.timestamp_subsec_nanos() as i32,
+        ..Default::default()
     }
-
-    fn inner(&self) -> &DynamicMessageProto {
-        &self.message
-    }
-
-    fn field_value(&self, field: &FieldDescriptor) -> Option<FieldValue> {
-        let value = self.message.unknown_fields.get(field.id)?;
-
-        match field.field_type {
-            FieldType::String => {
-                let value = ProtobufTypeString::get_from_unknown(value)?;
-                Some(FieldValue::String(value))
-            }
-            _ => None,
-        }
-    }
-}
-
-pub fn message_to_any<M: Message>(message: &M) -> Result<Any, Error> {
-    let mut any = Any::new();
-    any.set_type_url(format!(
-        "type.googleapis.com/{}",
-        message.descriptor().full_name()
-    ));
-    any.set_value(message.write_to_bytes()?);
-    Ok(any)
 }
 
 #[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "Message type is not in registry")]
     NotInRegistry,
+    #[fail(display = "Field doesn't exist")]
+    NoSuchField,
+    #[fail(display = "Invalid field type")]
+    InvalidFieldType,
+    #[fail(display = "Field type not supported")]
+    NotSupported,
     #[fail(display = "Protobuf error: {}", _0)]
     Protobuf(ProtobufError),
 }
@@ -253,6 +371,7 @@ impl From<ProtobufError> for Error {
 mod tests {
     use super::*;
     use crate::protos::generated::dynamic::TestDynamicMessage;
+    use chrono::Utc;
 
     #[test]
     fn reflect_message_from_any() -> Result<(), failure::Error> {
@@ -261,8 +380,10 @@ mod tests {
             crate::protos::generated::dynamic::file_descriptor_proto().clone(),
         );
 
+        let now = Utc::now();
         let msg = TestDynamicMessage {
             string_field: "field1".to_string(),
+            datetime_field1: Some(to_proto_timestamp(now)).into(),
             ..Default::default()
         };
         let msg_any = message_to_any(&msg)?;
@@ -273,34 +394,37 @@ mod tests {
         assert_eq!("exocore.test.TestDynamicMessage", dyn_msg.full_name());
         assert_eq!("exocore.test.TestDynamicMessage", gen_msg.full_name());
 
-        assert_eq!(dyn_msg.fields().len(), 3);
-        assert_eq!(gen_msg.fields().len(), 3);
+        assert_eq!(dyn_msg.fields().len(), 6);
+        assert_eq!(gen_msg.fields().len(), 6);
 
         let field1dyn = &dyn_msg.fields()[0];
         assert!(field1dyn.indexed_flag);
-        assert_eq!(
-            dyn_msg.field_value(field1dyn),
-            Some(FieldValue::String("field1".to_string()))
-        );
-        assert_eq!(
-            gen_msg.field_value(field1dyn),
-            Some(FieldValue::String("field1".to_string()))
-        );
+        assert_eq!(dyn_msg.get_field_value(field1dyn)?.as_str()?, "field1");
+        assert_eq!(gen_msg.get_field_value(field1dyn)?.as_str()?, "field1");
 
         let field1gen = &gen_msg.fields()[0];
         assert!(field1dyn.indexed_flag);
-        assert_eq!(
-            dyn_msg.field_value(field1gen),
-            Some(FieldValue::String("field1".to_string()))
-        );
-        assert_eq!(
-            gen_msg.field_value(field1gen),
-            Some(FieldValue::String("field1".to_string()))
-        );
+        assert_eq!(dyn_msg.get_field_value(field1gen)?.as_str()?, "field1");
+        assert_eq!(gen_msg.get_field_value(field1gen)?.as_str()?, "field1");
 
         let field2 = &dyn_msg.fields()[2];
         assert!(!field2.indexed_flag);
 
+        let field5 = &dyn_msg.fields()[5];
+        assert_eq!(dyn_msg.get_field_value(field5)?.as_datetime()?, &now);
+        assert_eq!(gen_msg.get_field_value(field5)?.as_datetime()?, &now);
+        assert!(field5.indexed_flag);
+
         Ok(())
+    }
+
+    #[test]
+    fn timestamp_conversion() {
+        let now = Utc::now();
+
+        let ts = to_proto_timestamp(now);
+        let dt = from_proto_timestamp(ts);
+
+        assert_eq!(dt, now);
     }
 }

@@ -1,6 +1,4 @@
-use futures::compat::Future01CompatExt;
 use futures::{Future as Future03, TryFutureExt};
-use futures01::Future as Future01;
 use wasm_timer::{Delay, Interval};
 
 pub fn spawn_future<F>(f: F)

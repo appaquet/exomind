@@ -8,7 +8,6 @@ use exocore_common::time::ConsistentTimestamp;
 use exocore_schema::entity::{Entity, EntityId};
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
-use std::collections::hash_map::DefaultHasher;
 use std::sync::Arc;
 
 pub type WatchToken = ConsistentTimestamp;
@@ -396,9 +395,10 @@ pub enum EntityResultSource {
     Chain,
 }
 
+#[cfg(feature = "local_store")]
 pub(crate) fn result_hasher() -> impl std::hash::Hasher {
     // TODO: Switch to a guaranteed deterministic lightweight hasher
-    DefaultHasher::new()
+    std::collections::hash_map::DefaultHasher::new()
 }
 
 #[cfg(test)]
