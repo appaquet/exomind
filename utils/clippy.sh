@@ -7,6 +7,16 @@ cd $CUR_DIR/../
 # Force check on whole workspace to prevent clippy run on dependencies
 cargo check --tests --all
 
-# Then clean common, which will force clippy to run on all its dependencies
-cargo clean -p exocore-schema
+# Which will force clippy to run on all its dependencies
+cargo clean  \
+    -p exo \
+    -p exocore-index \
+    -p exocore-data \
+    -p exocore-common \
+    -p exocore-schema \
+    -p exocore-transport \
+    -p exocore-client-wasm \
+    -p exocore-client-android \
+    -p exocore-client-ios
+
 cargo clippy --tests --all -- -D clippy::all # deny all warning to return error

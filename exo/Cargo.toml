@@ -1,8 +1,13 @@
 [package]
-name = "exocore-cli"
+name = "exo"
+description = "CLI for Exocore (Distributed applications framework)"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
+keywords = ["networking", "mobile", "web", "framework", "ios", "android", "webassembly", "storage", "database"]
+categories = ["Database implementations", "Command-line interface", "WebAssembly", "Web programming"]
+repository = "https://github.com/appaquet/exocore"
+license = "MIT"
 
 [dependencies]
 exocore-common = { path = "../common", features = ["runtime"] }

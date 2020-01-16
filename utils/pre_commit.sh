@@ -18,10 +18,12 @@ echo "Running clippy..."
 ./clippy.sh
 
 echo "Validating wasm compilation for exocore-client-wasm"
-cargo clippy -p exocore-client-wasm --target "wasm32-unknown-unknown"
+pushd $CUR_DIR/../clients/wasm
+cargo clippy --target "wasm32-unknown-unknown"
+popd
 
-echo "Validating cli compilation"
-cargo check -p exocore-cli
+echo "Validating exo compilation"
+cargo check -p exo
 
 echo "Validating release build..."
 cargo build --release

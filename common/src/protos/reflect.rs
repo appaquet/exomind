@@ -26,7 +26,7 @@ impl Registry {
     }
 
     pub fn register_file_descriptor(&self, file_descriptor: FileDescriptorProto) {
-        let file_descriptor = Arc::new(file_descriptor.clone());
+        let file_descriptor = Arc::new(file_descriptor);
 
         for msg_descriptor in file_descriptor.get_message_type() {
             let full_name = format!(
@@ -117,6 +117,12 @@ impl Registry {
             full_name.to_string(),
             message.descriptor().get_proto().clone(),
         )
+    }
+}
+
+impl Default for Registry {
+    fn default() -> Self {
+        Registry::new()
     }
 }
 

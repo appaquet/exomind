@@ -1,21 +1,19 @@
 # Exocore
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
-[![dependency status](https://deps.rs/repo/github/appaquet/exocore/status.svg)](https://deps.rs/repo/github/appaquet/exocore)
 
-**Warning: Exocore is at a very early development stage, hence very unstable and probably totally unsafe. Use at your own risk.**
+**Warning: Exocore is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
 
-Exocore is a distributed applications framework with private and encrypted data storage. 
-It runs applications and their data in an encrypted [blockchain](https://en.wikipedia.org/wiki/Blockchain) 
-which is unique per user and distributed on trusted or semi-trusted nodes. It is designed to be resilient to 
-failures, allow offline usage (ex: on mobile) and can be used as a backend for applications requiring user data 
-encryption. Exocore exposes SDKs for web/webassembly, mobile (Android/iOS) and Rust.
+Exocore is a distributed applications framework with private and encrypted data storage. It can be used as a computing and 
+storage backend for web and mobile applications, and is extensible via WebAssembly. It is designed to be resilient to 
+failures, allow offline usage (ex: on mobile). Exocore exposes SDKs for web/WebAssembly, Mobile (Android/iOS) and Rust.
 
 The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data. 
+
 A cell consists of:
-* Data nodes managing replication and storage of the blockchain
-* Index nodes managing indexation, querying and mutation of the data (collocated with data node)
-* Applications nodes run applications written in WebAssembly (could be collocated with index  nodes)
-* Clients (fat or thin) that can also act as index, data and applications nodes
+* Data nodes managing replication and storage by using a blockchain data structure.
+* Index nodes managing indexation, querying and mutation of the data (collocated with data node).
+* Applications nodes run applications written in WebAssembly (that can be collocated with index nodes)
+* Clients (fat or thin) that can also act as index, data and partially run applications' WebAssembly.
 
 ## Development status
 * **Data storage and replication layer**: Proof of concept
@@ -33,13 +31,19 @@ A cell consists of:
 * Build dependencies
     * On MacOS: Install Xcode and command lines tools
     * On Ubuntu: `apt install build-essential pkg-config libssl-dev`
+    
 * [Rust](https://www.rust-lang.org/learn/get-started)
   * Install using [rustup](https://www.rust-lang.org/learn/get-started)
   * Clippy and Rustfmt: `rustup component add clippy rustfmt`
+  
 * [Cap'n Proto](https://capnproto.org/install.html)
     * On MacOS: `brew install capnp` 
     * On Ubuntu: `apt install capnproto` 
 
+* [Protobuf](https://developers.google.com/protocol-buffers/)
+    * On MacOS: `brew install protobuf` 
+    * On Ubuntu: `snap install protobuf` 
+    
 ### WASM (optional)
 * See [WASM client README](./clients/wasm/README.md)
 
@@ -51,10 +55,8 @@ A cell consists of:
 
 ## Usage & configuration
 * CLI:
-  * Using Cargo: `cargo run --package exocore-cli -- <cli option>`
-                 or `./utils/cli.sh <cli options>`
-  * Using the latest Docker image:
-    `docker run --rm -it -v "$PWD:/volume" docker.pkg.github.com/appaquet/exocore/cli exocore-cli <cli options>`
+  * Using Cargo: `cargo run --package exo -- <cli option>`
+  * Using the latest Docker image: `docker run --rm -it -v "$PWD:/volume" docker.pkg.github.com/appaquet/exocore/cli <cli options>`
 
 * Configuration
     * Most command requires a `config.yaml` file, for which an example can be found in here: [`./examples/config.yaml`]
