@@ -55,8 +55,8 @@ jobs:
           export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
           export RUST_BACKTRACE=1
 
-          cd $GITHUB_WORKSPACE
-          cargo build -p exocore-client-wasm --target "wasm32-unknown-unknown"
+          cd $GITHUB_WORKSPACE/clients/wasm
+          cargo build --target "wasm32-unknown-unknown"
 
   coverage:
     runs-on: ubuntu-latest

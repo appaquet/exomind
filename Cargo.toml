@@ -4,20 +4,20 @@ description = "Distributed applications framework"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
-keywords = ["networking", "mobile", "web", "framework", "ios", "android", "webassembly", "storage", "database"]
-categories = ["Database implementations", "Command-line interface", "WebAssembly", "Web programming"]
+keywords = ["networking", "mobile", "webassembly", "storage", "database"]
+categories = ["database-implementations", "command-line-interface", "wasm", "web-programming"]
 repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [dependencies]
-exocore-common = { path = "./common" }
-exocore-transport = { path = "./transport" }
-exocore-schema = { path = "./schema" }
-exocore-index = { path = "./index" }
-exocore-data = { path = "./data" }
+exocore-common = { version = "0.1.0", path = "./common" }
+exocore-transport = { version = "0.1.0", path = "./transport" }
+exocore-schema = { version = "0.1.0", path = "./schema" }
+exocore-index = { version = "0.1.0", path = "./index" }
+exocore-data = { version = "0.1.0", path = "./data" }
 
 [dev-dependencies]
-exocore-common = { path = "./common", features = ["tests_utils"] }
+exocore-common = { version = "0.1.0", path = "./common", features = ["tests_utils"] }
 
 [workspace]
 members = [
