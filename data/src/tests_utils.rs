@@ -8,10 +8,10 @@ use futures::prelude::*;
 use itertools::Itertools;
 use tempdir;
 
+use exocore_common::futures::Runtime;
 use exocore_common::node::LocalNode;
 use exocore_common::tests_utils::expect_result;
 use exocore_common::time::Clock;
-use exocore_common::utils::futures::Runtime;
 
 use crate::block::{BlockOffset, BlockOwned};
 use crate::chain::ChainStore;

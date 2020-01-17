@@ -12,6 +12,7 @@ pub(crate) use self::protos::*; // generated protos expect protos to be at root 
 pub mod cell;
 pub mod crypto;
 pub mod framing;
+pub mod futures;
 pub mod node;
 pub mod range;
 pub mod simple_store;

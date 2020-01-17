@@ -7,9 +7,9 @@ mod logging;
 
 use exocore_common::cell::Cell;
 use exocore_common::crypto::keys::{Keypair, PublicKey};
+use exocore_common::futures::Runtime;
 use exocore_common::node::{LocalNode, Node};
 use exocore_common::time::{Clock, ConsistentTimestamp};
-use exocore_common::utils::futures::Runtime;
 use exocore_index::query::Query;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_schema::schema::Schema;

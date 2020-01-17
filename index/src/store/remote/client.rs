@@ -9,6 +9,7 @@ use futures::prelude::*;
 
 use exocore_common::cell::Cell;
 use exocore_common::framing::CapnpFrameBuilder;
+use exocore_common::futures::interval;
 use exocore_common::node::Node;
 use exocore_common::protos::index_transport_capnp::{
     mutation_response, query_response, unwatch_query_request, watched_query_response,
@@ -16,7 +17,6 @@ use exocore_common::protos::index_transport_capnp::{
 use exocore_common::protos::MessageType;
 use exocore_common::time::Instant;
 use exocore_common::time::{Clock, ConsistentTimestamp};
-use exocore_common::utils::futures::interval;
 use exocore_common::utils::handle_set::{Handle, HandleSet};
 use exocore_schema::schema::Schema;
 use exocore_transport::{

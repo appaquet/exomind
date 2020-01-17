@@ -123,7 +123,7 @@ impl Clone for Handle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::futures::*;
+    use crate::futures::*;
 
     #[test]
     fn on_all_handles_dropped() -> Result<(), failure::Error> {

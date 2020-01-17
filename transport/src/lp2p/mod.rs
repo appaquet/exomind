@@ -176,7 +176,7 @@ impl Libp2pTransport {
         // Spawn the main Future which will take care of the swarm
         let inner = Arc::clone(&self.handles);
         let mut nodes_update_interval =
-            exocore_common::utils::futures::interval(self.config.swarm_nodes_update_interval)
+            exocore_common::futures::interval(self.config.swarm_nodes_update_interval)
                 .map(Ok::<_, ()>)
                 .compat();
         let mut out_receiver = out_receiver.map(Ok::<_, ()>).compat();
@@ -380,11 +380,11 @@ mod tests {
     use crate::OutMessage;
     use exocore_common::cell::FullCell;
     use exocore_common::framing::CapnpFrameBuilder;
+    use exocore_common::futures::Runtime;
     use exocore_common::node::Node;
     use exocore_common::protos::data_chain_capnp::block_operation_header;
     use exocore_common::tests_utils::expect_eventually;
     use exocore_common::time::{ConsistentTimestamp, Instant};
-    use exocore_common::utils::futures::Runtime;
     use futures::{SinkExt, StreamExt};
     use std::sync::Mutex;
 

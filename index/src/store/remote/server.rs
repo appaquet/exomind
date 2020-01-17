@@ -11,8 +11,8 @@ use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandl
 use crate::error::Error;
 use crate::mutation::{Mutation, MutationResult};
 use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
+use exocore_common::futures::{interval, OwnedSpawnSet};
 use exocore_common::time::{ConsistentTimestamp, Duration, Instant};
-use exocore_common::utils::futures::{interval, OwnedSpawnSet};
 use futures::channel::{mpsc, oneshot};
 use futures::{FutureExt, SinkExt, StreamExt};
 use std::collections::HashMap;

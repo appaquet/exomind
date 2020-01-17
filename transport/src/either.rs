@@ -1,8 +1,8 @@
 use crate::error::Error;
 use crate::transport::TransportHandleOnStart;
 use crate::{InEvent, OutEvent, TransportHandle};
+use exocore_common::futures::OwnedSpawnSet;
 use exocore_common::node::NodeId;
-use exocore_common::utils::futures::OwnedSpawnSet;
 use futures::channel::mpsc;
 use futures::prelude::*;
 use futures::{Future, FutureExt, Sink, SinkExt, Stream, StreamExt};
@@ -240,9 +240,9 @@ mod tests {
     use super::*;
     use crate::mock::{MockTransport, TestableTransportHandle};
     use crate::TransportLayer::Index;
+    use exocore_common::futures::Runtime;
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::{expect_result, result_assert_false, result_assert_true};
-    use exocore_common::utils::futures::Runtime;
 
     #[test]
     fn test_send_and_receive() -> Result<(), failure::Error> {

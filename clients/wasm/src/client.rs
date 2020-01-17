@@ -3,9 +3,9 @@ use wasm_bindgen::prelude::*;
 
 use exocore_common::cell::Cell;
 use exocore_common::crypto::keys::PublicKey;
+use exocore_common::futures::spawn_future_non_send;
 use exocore_common::node::{LocalNode, Node};
 use exocore_common::time::Clock;
-use exocore_common::utils::futures::spawn_future_non_send;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_schema::schema::Schema;
 use exocore_transport::{InEvent, TransportHandle, TransportLayer};

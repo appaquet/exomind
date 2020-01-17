@@ -1,4 +1,4 @@
-use crate::utils::futures::spawn_future;
+use super::spawn_future;
 use futures::channel::oneshot;
 use futures::channel::oneshot::Canceled;
 use futures::prelude::*;
@@ -132,8 +132,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::super::{delay_for, Runtime};
     use super::*;
-    use crate::utils::futures::{delay_for, Runtime};
     use std::sync::atomic::AtomicBool;
     use std::sync::atomic::Ordering;
     use std::sync::Arc;

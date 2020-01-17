@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
-use exocore_common::utils::futures::spawn_blocking;
+use exocore_common::futures::spawn_blocking;
 use exocore_common::utils::handle_set::{Handle, HandleSet};
 use exocore_schema::schema::Schema;
 use futures::channel::{mpsc, oneshot};
@@ -444,7 +444,7 @@ pub mod tests {
 
     use super::*;
     use crate::store::local::TestStore;
-    use exocore_common::utils::futures::delay_for;
+    use exocore_common::futures::delay_for;
     use futures::executor::block_on_stream;
     use std::time::Duration;
 

@@ -8,10 +8,10 @@ use crate::transport::{MpscHandleSink, MpscHandleStream, TransportHandleOnStart}
 use crate::{Error, InEvent, InMessage, OutEvent, TransportHandle};
 use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
+use exocore_common::futures::tokio01;
+use exocore_common::futures::{spawn_future, spawn_future_01};
 use exocore_common::node::{Node, NodeId};
 use exocore_common::protos::common_capnp::envelope;
-use exocore_common::utils::futures::tokio01;
-use exocore_common::utils::futures::{spawn_future, spawn_future_01};
 use exocore_common::utils::handle_set::{Handle, HandleSet};
 use futures::channel::mpsc;
 use futures::compat::{Sink01CompatExt, Stream01CompatExt};
@@ -368,9 +368,9 @@ mod tests {
     use crate::{OutMessage, TransportLayer};
     use exocore_common::cell::FullCell;
     use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
+    use exocore_common::futures::Runtime;
     use exocore_common::node::LocalNode;
     use exocore_common::tests_utils::expect_eventually;
-    use exocore_common::utils::futures::Runtime;
     use futures::compat::Future01CompatExt;
     use std::sync::Mutex;
 

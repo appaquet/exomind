@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
+use exocore_common::futures::{spawn_future, Runtime};
 use exocore_common::node::{LocalNode, Node, NodeId};
 use exocore_common::protos::common_capnp::envelope;
-use exocore_common::utils::futures::{spawn_future, Runtime};
 use futures::channel::mpsc;
 use futures::prelude::*;
 
@@ -267,8 +267,8 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use exocore_common::futures::Runtime;
     use exocore_common::node::LocalNode;
-    use exocore_common::utils::futures::Runtime;
 
     #[test]
     fn send_and_receive() {

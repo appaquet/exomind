@@ -12,7 +12,7 @@ use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
 
 use crate::js::into_js_error;
-use exocore_common::utils::futures::spawn_future_non_send;
+use exocore_common::futures::spawn_future_non_send;
 use futures::channel::oneshot;
 use futures::prelude::*;
 
