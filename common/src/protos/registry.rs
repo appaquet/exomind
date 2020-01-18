@@ -1,12 +1,16 @@
 use super::reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor};
 use super::Error;
 use protobuf;
-use protobuf::descriptor::{DescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto};
+use protobuf::descriptor::{
+    DescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto, FileDescriptorSet,
+};
 use protobuf::types::{ProtobufType, ProtobufTypeBool};
 use protobuf::Message;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
+
+pub const EXOCORE_INDEX_FDSET: &[u8] = include_bytes!("./generated/exocore_index.fd");
 
 pub struct Registry {
     message_descriptors: RwLock<HashMap<String, Arc<ReflectMessageDescriptor>>>,
@@ -16,6 +20,20 @@ impl Registry {
     pub fn new() -> Registry {
         Registry {
             message_descriptors: RwLock::new(HashMap::new()),
+        }
+    }
+
+    pub fn new_with_exocore_types() -> Registry {
+        let reg = Registry::new();
+        let fd = protobuf::parse_from_bytes(EXOCORE_INDEX_FDSET)
+            .expect("Couldn't parse exocore_index FileDescriptorProto");
+        reg.register_file_descriptor_set(fd);
+        reg
+    }
+
+    pub fn register_file_descriptor_set(&self, fd_set: FileDescriptorSet) {
+        for fd in fd_set.get_file() {
+            self.register_file_descriptor(fd.clone());
         }
     }
 
@@ -117,5 +135,18 @@ impl Registry {
 impl Default for Registry {
     fn default() -> Self {
         Registry::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn with_exocore_types() {
+        let reg = Registry::new_with_exocore_types();
+        let entity = reg.get_message_descriptor("exocore.index.Entity").unwrap();
+        assert_eq!(entity.name, "exocore.index.Entity");
+        assert!(!entity.fields.is_empty());
     }
 }

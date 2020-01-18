@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package exocore.index;
+
+message EntityQuery {
+    oneof predicate {
+        MatchPredicate match = 1;
+        TraitPredicate trait = 2;
+        IdPredicate id = 3;
+        FailPredicate fail = 4;
+    }
+
+    Paging paging = 5;
+
+    /// If true, only return summary
+    bool summary = 6;
+
+    /// Optional watch token if this query is to be used for watching.
+    string watch_token = 7;
+
+    /// If specified, if results from server matches this hash, only a summary will be returned.
+    string result_hash = 8;
+}
+
+message MatchPredicate {
+    string query = 1;
+}
+
+message IdPredicate {
+    string id = 1;
+}
+
+message FailPredicate {
+}
+
+message TraitPredicate {
+    string trait_name = 1;
+
+    TraitQuery query = 2;
+}
+
+message TraitQuery {
+}
+
+message Paging {
+    /// Returns results after token.
+    string after_token = 1;
+
+    /// Returns results before token.
+    string before_token = 2;
+
+    /// Desired results count. Default if 0.
+    uint32 count = 3;
+}

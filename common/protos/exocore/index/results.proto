@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package exocore.index;
+
+import "exocore/index/entity.proto";
+import "exocore/index/query.proto";
+
+message EntityResults {
+
+    repeated EntityResults entities = 1;
+
+    bool summary = 2;
+
+    uint32 estimated_count = 3;
+
+    Paging current_page = 4;
+
+    Paging next_page = 5;
+
+    string hash = 6;
+
+}
+
+message EntityResult {
+    Entity entity = 1;
+
+    EntityResultSource source = 2;
+
+    string sort_token = 3;
+}
+
+enum EntityResultSource {
+    UNKNOWN = 0;
+    PENDING = 1;
+    CHAIN = 2;
+}

@@ -29,7 +29,7 @@ grcov $COVERAGE_DIR/ccov.zip -s . -t lcov --llvm -o $COVERAGE_DIR/lcov.info \
 	--ignore "clients/*" \
 	--ignore "cli/*" \
 	--ignore "/*" \
-	--ignore "common/src/protos/*"
+	--ignore "common/src/protos/generated/*"
 
 if [[ "$OUTPUT" == "Html" ]]; then
   # genhtml is provided by `lcov` package

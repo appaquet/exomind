@@ -1,4 +1,4 @@
-use super::generated::dynamic::DynamicMessage as DynamicMessageProto;
+use super::generated::reflect::DynamicMessage as DynamicMessageProto;
 use super::registry::Registry;
 use super::Error;
 use protobuf;
@@ -210,10 +210,18 @@ pub fn from_generated<T: Message>(registry: &Registry, message: T) -> GeneratedM
 }
 
 pub fn from_any(registry: &Registry, any: &Any) -> Result<DynamicMessage, Error> {
-    let full_name = any.type_url.replace("type.googleapis.com/", "");
+    from_any_url_and_data(registry, &any.type_url, any.get_value())
+}
+
+pub fn from_any_url_and_data(
+    registry: &Registry,
+    url: &str,
+    data: &[u8],
+) -> Result<DynamicMessage, Error> {
+    let full_name = url.replace("type.googleapis.com/", "");
 
     let descriptor = registry.get_message_descriptor(&full_name)?;
-    let message = protobuf::parse_from_bytes::<DynamicMessageProto>(any.get_value())?;
+    let message = protobuf::parse_from_bytes::<DynamicMessageProto>(data)?;
 
     Ok(DynamicMessage {
         message,
@@ -243,14 +251,14 @@ pub fn to_proto_timestamp(dt: chrono::DateTime<chrono::Utc>) -> Timestamp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protos::generated::dynamic::TestDynamicMessage;
+    use crate::protos::generated::reflect::TestDynamicMessage;
     use chrono::Utc;
 
     #[test]
     fn reflect_message_from_any() -> Result<(), failure::Error> {
         let registry = Registry::new();
         registry.register_file_descriptor(
-            crate::protos::generated::dynamic::file_descriptor_proto().clone(),
+            crate::protos::generated::reflect::file_descriptor_proto().clone(),
         );
 
         let now = Utc::now();

@@ -15,7 +15,12 @@ pub mod common_capnp;
 pub mod data_chain_capnp;
 pub mod data_transport_capnp;
 pub mod index_transport_capnp;
-pub(crate) mod dynamic;
 
 pub mod types;
 pub use types::*;
+
+pub(crate) mod reflect;
+
+pub mod entity;
+pub mod query;
+pub mod results;

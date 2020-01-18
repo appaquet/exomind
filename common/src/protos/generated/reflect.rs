@@ -17,7 +17,7 @@
 #![allow(unsafe_code)]
 #![allow(unused_imports)]
 #![allow(unused_results)]
-//! Generated file from `dynamic.proto`
+//! Generated file from `reflect.proto`
 
 use protobuf::Message as Message_imported_for_functions;
 use protobuf::ProtobufEnum as ProtobufEnum_imported_for_functions;
@@ -786,18 +786,18 @@ impl ::protobuf::reflect::ProtobufValue for TestStruct {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\rdynamic.proto\x12\x0cexocore.test\x1a\x15exocore/options.proto\x1a\
-    \x1egoogle/protobuf/wrappers.proto\x1a\x1fgoogle/protobuf/timestamp.prot\
-    o\"\x10\n\x0eDynamicMessage\"\xe8\x02\n\x12TestDynamicMessage\x12&\n\x0c\
-    string_field\x18\x01\x20\x01(\tR\x0bstringFieldB\x03\xc0>\x01\x12J\n\x12\
-    string_value_field\x18\x02\x20\x01(\x0b2\x1c.google.protobuf.StringValue\
-    R\x10stringValueField\x12;\n\x0cstruct_field\x18\x03\x20\x01(\x0b2\x18.e\
-    xocore.test.TestStructR\x0bstructField\x12#\n\x0coneof_string\x18\x04\
-    \x20\x01(\tH\0R\x0boneofString\x12(\n\rstring_field2\x18\x05\x20\x01(\tR\
-    \x0cstringField2B\x03\xc0>\0\x12H\n\x0fdatetime_field1\x18\x06\x20\x01(\
-    \x0b2\x1a.google.protobuf.TimestampR\x0edatetimeField1B\x03\xc0>\x01B\
-    \x08\n\x06fields\"\"\n\nTestStruct\x12\x14\n\x05field\x18\x01\x20\x01(\t\
-    R\x05fieldb\x06proto3\
+    \n\rreflect.proto\x12\x0cexocore.test\x1a\x1bexocore/index/options.proto\
+    \x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fgoogle/protobuf/timestamp.\
+    proto\"\x10\n\x0eDynamicMessage\"\xe8\x02\n\x12TestDynamicMessage\x12&\n\
+    \x0cstring_field\x18\x01\x20\x01(\tR\x0bstringFieldB\x03\xc0>\x01\x12J\n\
+    \x12string_value_field\x18\x02\x20\x01(\x0b2\x1c.google.protobuf.StringV\
+    alueR\x10stringValueField\x12;\n\x0cstruct_field\x18\x03\x20\x01(\x0b2\
+    \x18.exocore.test.TestStructR\x0bstructField\x12#\n\x0coneof_string\x18\
+    \x04\x20\x01(\tH\0R\x0boneofString\x12(\n\rstring_field2\x18\x05\x20\x01\
+    (\tR\x0cstringField2B\x03\xc0>\0\x12H\n\x0fdatetime_field1\x18\x06\x20\
+    \x01(\x0b2\x1a.google.protobuf.TimestampR\x0edatetimeField1B\x03\xc0>\
+    \x01B\x08\n\x06fields\"\"\n\nTestStruct\x12\x14\n\x05field\x18\x01\x20\
+    \x01(\tR\x05fieldb\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

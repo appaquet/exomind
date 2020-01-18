@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package exocore.index;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+message Entity {
+    string id = 1;
+
+    repeated Trait traits = 4;
+}
+
+message Trait {
+    google.protobuf.Any message = 1;
+
+    google.protobuf.Timestamp created_at = 2;
+
+    google.protobuf.Timestamp modified_at = 3;
+}

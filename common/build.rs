@@ -16,12 +16,18 @@ fn main() {
                 .expect(&format!("compiling {} schema", proto_file));
         }
 
-        let protobuf_protos_file = vec!["protos/dynamic.proto"];
+        let protobuf_protos_file = vec![
+            "protos/reflect.proto",
+            "protos/exocore/index/entity.proto",
+            "protos/exocore/index/query.proto",
+            "protos/exocore/index/results.proto",
+        ];
         protoc_rust::run(protoc_rust::Args {
             out_dir: "src/protos/generated",
             input: &protobuf_protos_file,
             includes: &["protos"],
             customize: Customize {
+                expose_fields: Some(true),
                 ..Default::default()
             },
         })

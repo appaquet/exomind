@@ -34,6 +34,8 @@ tokio = { version = "0.2", features = ["rt-core", "blocking"], default-features 
 log4rs = { version = "0.9", optional = true }
 tokio-compat = { version = "0.1", features = ["blocking"], optional = true }
 protobuf = { version = "2", features = ["with-bytes"] }
+prost = "0.6"
+prost-types = "0.6"
 
 [target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue
@@ -42,6 +44,7 @@ wasm-bindgen-futures = "0.4"
 [build-dependencies]
 capnpc = { version = "=0.10.1", git = "https://github.com/appaquet/capnproto-rust.git", branch = "thread-safe-arena-readlimiter" }
 protoc-rust = "2.0"
+prost-build = "0.6"
 
 [dev-dependencies]
 tempdir = "0.3"
