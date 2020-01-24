@@ -2,12 +2,14 @@ syntax = "proto3";
 
 package exocore.index;
 
+import "exocore/index/entity.proto";
+
 message EntityQuery {
     oneof predicate {
         MatchPredicate match = 1;
         TraitPredicate trait = 2;
         IdPredicate id = 3;
-        FailPredicate fail = 4;
+        TestPredicate test = 99;
     }
 
     Paging paging = 5;
@@ -16,10 +18,10 @@ message EntityQuery {
     bool summary = 6;
 
     /// Optional watch token if this query is to be used for watching.
-    string watch_token = 7;
+    uint64 watch_token = 7;
 
     /// If specified, if results from server matches this hash, only a summary will be returned.
-    string result_hash = 8;
+    uint64 result_hash = 8;
 }
 
 message MatchPredicate {
@@ -30,7 +32,8 @@ message IdPredicate {
     string id = 1;
 }
 
-message FailPredicate {
+message TestPredicate {
+    bool success = 1;
 }
 
 message TraitPredicate {
@@ -51,4 +54,34 @@ message Paging {
 
     /// Desired results count. Default if 0.
     uint32 count = 3;
+}
+
+message EntityResults {
+
+    repeated EntityResult entities = 1;
+
+    bool summary = 2;
+
+    uint32 estimated_count = 3;
+
+    Paging current_page = 4;
+
+    Paging next_page = 5;
+
+    uint64 hash = 6;
+
+}
+
+message EntityResult {
+    Entity entity = 1;
+
+    EntityResultSource source = 2;
+
+    string sort_token = 3;
+}
+
+enum EntityResultSource {
+    UNKNOWN = 0;
+    PENDING = 1;
+    CHAIN = 2;
 }

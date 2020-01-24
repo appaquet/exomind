@@ -56,7 +56,6 @@ impl ExocoreClient {
             ClientConfiguration::default(),
             cell.clone(),
             clock,
-            schema.clone(),
             index_handle,
             remote_node,
         )

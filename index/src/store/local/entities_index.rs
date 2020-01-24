@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -15,16 +14,17 @@ use super::traits_index::{
     IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
 };
 use crate::error::Error;
-use crate::mutation::Mutation;
-use crate::query::*;
+use crate::query::{ResultHash, SortToken};
 use crate::store::local::top_results_iter::RescoredTopResultsIterable;
-use exocore_schema::entity::{Entity, EntityId, Trait};
-use exocore_schema::schema;
-use exocore_schema::schema::Schema;
+use exocore_common::protos::generated::exocore_index::entity_mutation::Mutation;
+use exocore_common::protos::generated::exocore_index::{
+    Entity, EntityMutation, EntityQuery, EntityResult, EntityResultSource, EntityResults, Paging,
+    Trait,
+};
+use exocore_common::protos::registry::Registry;
+use prost::Message;
+use std::hash::Hasher;
 
-///
-/// Configuration of the entities index
-///
 #[derive(Clone, Copy, Debug)]
 pub struct EntitiesIndexConfig {
     /// When should we index a block in the chain so that odds that we aren't going to revert it are high enough.
@@ -70,7 +70,7 @@ where
     chain_index_dir: PathBuf,
     chain_index: TraitsIndex,
     chain_index_last_block: Option<BlockOffset>,
-    schema: Arc<Schema>,
+    registry: Arc<Registry>,
     data_handle: EngineHandle<CS, PS>,
 }
 
@@ -83,11 +83,11 @@ where
     pub fn open_or_create(
         data_dir: &Path,
         config: EntitiesIndexConfig,
-        schema: Arc<schema::Schema>,
+        registry: Arc<Registry>,
         data_handle: EngineHandle<CS, PS>,
     ) -> Result<EntitiesIndex<CS, PS>, Error> {
         let pending_index =
-            TraitsIndex::create_in_memory(config.pending_index_config, schema.clone())?;
+            TraitsIndex::create_in_memory(config.pending_index_config, registry.clone())?;
 
         // make sure directories are created
         let mut chain_index_dir = data_dir.to_path_buf();
@@ -96,7 +96,7 @@ where
             std::fs::create_dir_all(&chain_index_dir)?;
         }
 
-        let chain_index = Self::create_chain_index(config, &schema, &chain_index_dir)?;
+        let chain_index = Self::create_chain_index(config, &registry, &chain_index_dir)?;
 
         let mut index = EntitiesIndex {
             config,
@@ -104,7 +104,7 @@ where
             chain_index_dir,
             chain_index,
             chain_index_last_block: None,
-            schema,
+            registry,
             data_handle,
         };
 
@@ -176,8 +176,11 @@ where
     }
 
     /// Execute a search query on the indices, and returning all entities matching the query.
-    pub fn search(&self, query: &Query) -> Result<QueryResult, Error> {
-        let current_page = query.paging_or_default();
+    pub fn search(&self, query: &EntityQuery) -> Result<EntityResults, Error> {
+        let current_page = query
+            .paging
+            .clone()
+            .unwrap_or_else(crate::query::default_paging);
 
         let chain_results = self.chain_index.search_all(query)?;
         let pending_results = self.pending_index.search_all(query)?;
@@ -227,7 +230,7 @@ where
                 // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
                 let score = trait_result.score;
                 let sort_token = SortToken::from_u64(score);
-                if current_page.is_sort_token_in_bound(&sort_token) {
+                if sort_token.is_within_page_bound(&current_page) {
                     Some((trait_result, indexed_traits, source, sort_token))
                 } else {
                     None
@@ -253,9 +256,9 @@ where
                     };
 
                     entities_results.push(EntityResult {
-                        entity,
-                        source,
-                        sort_token,
+                        entity: Some(entity),
+                        source: source.into(),
+                        sort_token: sort_token.0,
                     });
 
                     all_traits_results.push(traits_results);
@@ -265,28 +268,29 @@ where
             );
 
         let next_page = if let Some(last_result) = entities_results.last() {
-            Some(
-                current_page
-                    .clone()
-                    .with_before_token(last_result.sort_token.clone()),
-            )
+            let new_page = Paging {
+                before_token: last_result.sort_token.clone(),
+                ..current_page.clone()
+            };
+
+            Some(new_page)
         } else {
             None
         };
 
         // TODO: Support for summary https://github.com/appaquet/exocore/issues/142
         let results_hash = hasher.finish();
-        let only_summary = query.summary || Some(results_hash) == query.result_hash;
+        let only_summary = query.summary || results_hash == query.result_hash;
         if !only_summary {
             self.fetch_entities_results_traits_data(&mut entities_results, traits_results);
         }
 
-        Ok(QueryResult {
-            results: entities_results,
+        Ok(EntityResults {
+            entities: entities_results,
             summary: only_summary,
             next_page,
-            current_page: current_page.clone(),
-            total_estimated: total_estimated as u32,
+            current_page: Some(current_page),
+            estimated_count: total_estimated as u32,
             hash: results_hash,
         })
     }
@@ -294,27 +298,24 @@ where
     /// Create the chain index based on configuration.
     fn create_chain_index(
         config: EntitiesIndexConfig,
-        schema: &Arc<Schema>,
+        registry: &Arc<Registry>,
         chain_index_dir: &PathBuf,
     ) -> Result<TraitsIndex, Error> {
         if !config.chain_index_in_memory {
             TraitsIndex::open_or_create_mmap(
                 config.chain_index_config,
-                schema.clone(),
+                registry.clone(),
                 &chain_index_dir,
             )
         } else {
-            TraitsIndex::create_in_memory(config.chain_index_config, schema.clone())
+            TraitsIndex::create_in_memory(config.chain_index_config, registry.clone())
         }
     }
 
     /// Fetch an entity and all its traits from indices and the data layer. Traits returned
     /// follow mutations in order of operation id.
     #[cfg(test)]
-    fn fetch_entity(
-        &self,
-        entity_id: &exocore_schema::entity::EntityIdRef,
-    ) -> Result<Entity, Error> {
+    fn fetch_entity(&self, entity_id: &str) -> Result<Entity, Error> {
         let traits_results = self.fetch_entity_traits_results(entity_id)?;
         let full_traits = self.fetch_entity_traits_data(traits_results);
         Ok(Entity {
@@ -336,7 +337,7 @@ where
         let mut hasher = result_hasher();
 
         // only keep last operation for each trait, and remove trait if it's a tombstone
-        let mut traits: HashMap<EntityId, TraitResult> = HashMap::new();
+        let mut traits: HashMap<String, TraitResult> = HashMap::new();
         for trait_result in ordered_traits {
             // hashing operations instead of traits content allow invalidating results as soon
             // as one operation is made since we can't guarantee anything
@@ -366,7 +367,9 @@ where
             .zip(entities_traits_results.into_iter())
         {
             let traits = self.fetch_entity_traits_data(traits_results);
-            entity_result.entity.traits = traits;
+            if let Some(entity) = entity_result.entity.as_mut() {
+                entity.traits = traits;
+            }
         }
     }
 
@@ -376,7 +379,7 @@ where
             .traits
             .values()
             .flat_map(|trait_result| {
-                let mutation = match self.fetch_trait_mutation_operation(
+                let entity_mutation = match self.fetch_trait_mutation_operation(
                     trait_result.operation_id,
                     trait_result.block_offset,
                 ) {
@@ -393,12 +396,11 @@ where
                     }
                 };
 
+                let mutation = entity_mutation.mutation?;
                 match mutation {
-                    Mutation::PutTrait(trait_put) => Some(trait_put.trt),
+                    Mutation::PutTrait(trait_put) => trait_put.r#trait,
                     Mutation::DeleteTrait(_) => None,
-
-                    #[cfg(test)]
-                    Mutation::TestFail(_) => None,
+                    Mutation::Test(_) => None,
                 }
             })
             .collect()
@@ -410,7 +412,7 @@ where
         &self,
         operation_id: OperationId,
         block_offset: Option<BlockOffset>,
-    ) -> Result<Option<Mutation>, Error> {
+    ) -> Result<Option<EntityMutation>, Error> {
         let operation = if let Some(block_offset) = block_offset {
             self.data_handle
                 .get_chain_operation(block_offset, operation_id)?
@@ -425,7 +427,7 @@ where
         };
 
         if let Ok(data) = operation.as_entry_data() {
-            let mutation = Mutation::from_json_slice(self.schema.clone(), data)?;
+            let mutation = EntityMutation::decode(data)?;
             Ok(Some(mutation))
         } else {
             Ok(None)
@@ -436,7 +438,7 @@ where
     /// (see `EntitiesIndexConfig`.`chain_index_min_depth`) that are not considered definitive yet.
     fn reindex_pending(&mut self) -> Result<(), Error> {
         self.pending_index =
-            TraitsIndex::create_in_memory(self.config.pending_index_config, self.schema.clone())?;
+            TraitsIndex::create_in_memory(self.config.pending_index_config, self.registry.clone())?;
 
         let last_chain_indexed_offset = self
             .last_chain_indexed_block()?
@@ -481,9 +483,8 @@ where
             Box::new(chain_iter.chain(pending_iter))
         };
 
-        let schema = self.schema.clone();
-        let mutations_iter = pending_and_chain_iter
-            .flat_map(|op| Self::chain_operation_to_index_mutation(schema.clone(), op));
+        let mutations_iter =
+            pending_and_chain_iter.flat_map(Self::chain_operation_to_index_mutation);
         self.pending_index.apply_mutations(mutations_iter)?;
 
         Ok(())
@@ -495,7 +496,7 @@ where
 
         // create temporary in-memory to wipe directory
         self.chain_index =
-            TraitsIndex::create_in_memory(self.config.pending_index_config, self.schema.clone())?;
+            TraitsIndex::create_in_memory(self.config.pending_index_config, self.registry.clone())?;
 
         // remove and re-create data dir
         std::fs::remove_dir_all(&self.chain_index_dir)?;
@@ -503,7 +504,7 @@ where
 
         // re-create index, and force re-index of chain
         self.chain_index =
-            Self::create_chain_index(self.config, &self.schema, &self.chain_index_dir)?;
+            Self::create_chain_index(self.config, &self.registry, &self.chain_index_dir)?;
         self.index_chain_new_blocks()?;
 
         self.reindex_pending()?;
@@ -542,7 +543,6 @@ where
         let mut new_highest_block_offset: Option<BlockOffset> = None;
 
         let operations = self.data_handle.get_chain_operations(offset_from);
-        let schema = self.schema.clone();
         let chain_index_mutations = operations
             .flat_map(|op| {
                 if let EngineOperationStatus::Committed(offset, height) = op.status {
@@ -557,13 +557,20 @@ where
             })
             .flat_map(|(offset, height, op)| {
                 if let Ok(data) = op.as_entry_data() {
-                    let mutation = Mutation::from_json_slice(schema.clone(), data).ok()?;
-                    Some((offset, height, op, mutation))
+                    match EntityMutation::decode(data) {
+                        Ok(entity_mutation) => {
+                            Some((offset, height, op, entity_mutation))
+                        },
+                        Err(err) => {
+                            error!("Couldn't read operation from chain at offset={} and operation_id={}: {}", offset, op.operation_id, err);
+                            None
+                        }
+                    }
                 } else {
                     None
                 }
             })
-            .flat_map(|(offset, _height, op, mutation)| {
+            .flat_map(|(offset, _height, op, entity_mutation)| {
                 // for every mutation we index in the chain index, we delete it from the pending index
                 pending_index_mutations.push(IndexMutation::DeleteOperation(op.operation_id));
 
@@ -572,22 +579,22 @@ where
                     new_highest_block_offset = Some(offset);
                 }
 
+                let mutation = entity_mutation.mutation?;
                 match mutation {
                     Mutation::PutTrait(trt_mut) => {
                         Some(IndexMutation::PutTrait(PutTraitMutation {
                             block_offset: Some(offset),
                             operation_id: op.operation_id,
-                            entity_id: trt_mut.entity_id,
-                            trt: trt_mut.trt,
+                            entity_id: entity_mutation.entity_id,
+                            trt: trt_mut.r#trait?,
                         }))
                     }
                     Mutation::DeleteTrait(trt_del) => Some(IndexMutation::DeleteTrait(
-                        trt_del.entity_id,
+                        entity_mutation.entity_id,
                         trt_del.trait_id,
                     )),
 
-                    #[cfg(test)]
-                    Mutation::TestFail(_) => None,
+                    Mutation::Test(_) => None,
                 }
             });
 
@@ -625,12 +632,11 @@ where
         &mut self,
         operation_id: OperationId,
     ) -> Result<(), Error> {
-        let schema = self.schema.clone();
         let operation = self
             .data_handle
             .get_pending_operation(operation_id)?
             .expect("Couldn't find operation in data layer for an event we received");
-        if let Some(mutation) = Self::chain_operation_to_index_mutation(schema, operation) {
+        if let Some(mutation) = Self::chain_operation_to_index_mutation(operation) {
             self.pending_index.apply_mutation(mutation)?;
         }
 
@@ -639,33 +645,29 @@ where
 
     /// Converts a operations from the data layer (chain or pending) into
     /// the trait mutation
-    fn chain_operation_to_index_mutation(
-        schema: Arc<Schema>,
-        operation: EngineOperation,
-    ) -> Option<IndexMutation> {
+    fn chain_operation_to_index_mutation(operation: EngineOperation) -> Option<IndexMutation> {
         match operation.as_entry_data() {
             Ok(data) => {
-                let mutation = Mutation::from_json_slice(schema, data).ok()?;
-                match mutation {
-                    Mutation::PutTrait(mutation) => {
+                let entity_mutation = EntityMutation::decode(data).ok()?;
+                match entity_mutation.mutation? {
+                    Mutation::PutTrait(trt_mut) => {
                         Some(IndexMutation::PutTrait(PutTraitMutation {
                             block_offset: None,
                             operation_id: operation.operation_id,
-                            entity_id: mutation.entity_id,
-                            trt: mutation.trt,
+                            entity_id: entity_mutation.entity_id,
+                            trt: trt_mut.r#trait?,
                         }))
                     }
-                    Mutation::DeleteTrait(mutation) => {
+                    Mutation::DeleteTrait(trt_del) => {
                         Some(IndexMutation::PutTraitTombstone(PutTraitTombstone {
                             block_offset: None,
                             operation_id: operation.operation_id,
-                            entity_id: mutation.entity_id,
-                            trait_id: mutation.trait_id,
+                            entity_id: entity_mutation.entity_id,
+                            trait_id: trt_del.trait_id,
                         }))
                     }
 
-                    #[cfg(test)]
-                    Mutation::TestFail(_mutation) => None,
+                    Mutation::Test(_mutation) => None,
                 }
             }
             Err(err) => {
@@ -684,6 +686,11 @@ struct TraitsResults {
     hash: ResultHash,
 }
 
+#[cfg(feature = "local_store")]
+fn result_hasher() -> impl std::hash::Hasher {
+    crc::crc64::Digest::new(crc::crc64::ECMA)
+}
+
 #[cfg(test)]
 mod tests {
     use tempdir::TempDir;
@@ -691,10 +698,16 @@ mod tests {
     use exocore_data::tests_utils::DataTestCluster;
     use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 
-    use crate::mutation::{DeleteTraitMutation, PutTraitMutation};
-    use exocore_schema::entity::{RecordBuilder, TraitBuilder, TraitId};
+    use crate::mutation::MutationBuilder;
 
     use super::*;
+    use crate::query::QueryBuilder;
+    use chrono::Utc;
+    use exocore_common::protos::generated::exocore_test::TestMessage;
+    use exocore_common::protos::prost::{
+        ProstAnyPackMessageExt, ProstDateTimeExt, ProstMessageExt,
+    };
+    use exocore_common::protos::registry::Registry;
 
     #[test]
     fn index_full_pending_to_chain() -> Result<(), failure::Error> {
@@ -711,7 +724,7 @@ mod tests {
         test_index.handle_engine_events()?;
         let res = test_index
             .index
-            .search(&Query::with_trait("exocore.contact"))?;
+            .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
         assert_eq!(pending_res + chain_res, 5);
@@ -727,7 +740,7 @@ mod tests {
         test_index.handle_engine_events()?;
         let res = test_index
             .index
-            .search(&Query::with_trait("exocore.contact"))?;
+            .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
         assert!(chain_res >= 5);
@@ -756,8 +769,8 @@ mod tests {
         // traits should still be indexed
         let res = test_index
             .index
-            .search(&Query::with_trait("exocore.contact"))?;
-        assert_eq!(res.results.len(), 10);
+            .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        assert_eq!(res.entities.len(), 10);
 
         Ok(())
     }
@@ -771,7 +784,9 @@ mod tests {
         };
 
         let mut test_index = TestEntitiesIndex::new_with_config(config)?;
-        let query = Query::with_trait("exocore.contact").with_count(100);
+        let query = QueryBuilder::with_trait("exocore.test.TestMessage")
+            .with_count(100)
+            .build();
 
         let mut range_from = 0;
         for i in 1..=3 {
@@ -782,7 +797,7 @@ mod tests {
             test_index.handle_engine_events()?;
 
             let res = test_index.index.search(&query)?;
-            assert_eq!(res.results.len(), i * 10);
+            assert_eq!(res.entities.len(), i * 10);
 
             // restart node, which will clear pending
             // reopening index should re-index first block in pending
@@ -790,7 +805,7 @@ mod tests {
 
             // traits should still be indexed
             let res = test_index.index.search(&query)?;
-            assert_eq!(res.results.len(), i * 10);
+            assert_eq!(res.entities.len(), i * 10);
 
             range_from = range_to + 1;
         }
@@ -808,8 +823,8 @@ mod tests {
 
         let res = test_index
             .index
-            .search(&Query::with_trait("exocore.contact"))?;
-        assert_eq!(res.results.len(), 0);
+            .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        assert_eq!(res.entities.len(), 0);
 
         // trigger discontinuity, which should force reindex
         test_index
@@ -819,8 +834,8 @@ mod tests {
         // pending is indexed
         let res = test_index
             .index
-            .search(&Query::with_trait("exocore.contact"))?;
-        assert_eq!(res.results.len(), 6);
+            .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        assert_eq!(res.entities.len(), 6);
 
         Ok(())
     }
@@ -848,8 +863,8 @@ mod tests {
             .handle_data_engine_event(Event::ChainDiverged(0))?;
         let res = test_index
             .index
-            .search(&Query::with_trait("exocore.contact"))?;
-        assert_eq!(res.results.len(), 10);
+            .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        assert_eq!(res.entities.len(), 10);
 
         // divergence at an offset not indexed yet will just re-index pending
         let (chain_last_offset, _) = test_index
@@ -862,8 +877,8 @@ mod tests {
             .handle_data_engine_event(Event::ChainDiverged(chain_last_offset + 1))?;
         let res = test_index
             .index
-            .search(&Query::with_trait("exocore.contact"))?;
-        assert_eq!(res.results.len(), 10);
+            .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        assert_eq!(res.entities.len(), 10);
 
         // divergence at an offset indexed in chain index will fail
         let res = test_index
@@ -973,25 +988,25 @@ mod tests {
         test_index.cluster.wait_operations_committed(0, &[op1, op2]);
         test_index.handle_engine_events()?;
 
-        let query = Query::with_entity_id("entity1");
+        let query = QueryBuilder::with_entity_id("entity1").build();
         let res = test_index.index.search(&query)?;
-        assert_eq!(res.results.len(), 1);
+        assert_eq!(res.entities.len(), 1);
 
         let op_id = test_index.delete_trait("entity1", "trait1")?;
         test_index.cluster.wait_operation_committed(0, op_id);
         test_index.handle_engine_events()?;
 
-        let query = Query::with_entity_id("entity1");
+        let query = QueryBuilder::with_entity_id("entity1").build();
         let res = test_index.index.search(&query)?;
-        assert_eq!(res.results.len(), 1);
+        assert_eq!(res.entities.len(), 1);
 
         let op_id = test_index.delete_trait("entity1", "trait2")?;
         test_index.cluster.wait_operation_committed(0, op_id);
         test_index.handle_engine_events()?;
 
-        let query = Query::with_entity_id("entity1");
+        let query = QueryBuilder::with_entity_id("entity1").build();
         let res = test_index.index.search(&query)?;
-        assert_eq!(res.results.len(), 0);
+        assert_eq!(res.entities.len(), 0);
 
         Ok(())
     }
@@ -1018,69 +1033,85 @@ mod tests {
         test_index.handle_engine_events()?;
 
         // first page
-        let query = Query::with_trait("exocore.contact").with_count(10);
-        let res = test_index.index.search(&query)?;
+        let query_builder = QueryBuilder::with_trait("exocore.test.TestMessage").with_count(10);
+        let res = test_index.index.search(&query_builder.clone().build())?;
         let entities = res
-            .results
+            .entities
             .iter()
-            .map(|res| res.entity.id.clone())
+            .map(|res| res.entity.as_ref().unwrap().id.clone())
             .collect_vec();
 
         // estimated, since it may be in pending and chain store
-        assert!(res.total_estimated >= 30);
+        assert!(res.estimated_count >= 30);
         assert!(entities.contains(&"entity29".to_string()));
         assert!(entities.contains(&"entity20".to_string()));
 
         // second page
-        let query = query.with_paging(res.next_page.unwrap());
-        let res = test_index.index.search(&query)?;
+        let query_builder = query_builder.with_paging(res.next_page.unwrap());
+        let res = test_index.index.search(&query_builder.clone().build())?;
         let entities = res
-            .results
+            .entities
             .iter()
-            .map(|res| res.entity.id.clone())
+            .map(|res| res.entity.as_ref().unwrap().id.clone())
             .collect_vec();
         assert!(entities.contains(&"entity19".to_string()));
         assert!(entities.contains(&"entity10".to_string()));
 
         // third page
-        let query = query.with_paging(res.next_page.unwrap());
-        let res = test_index.index.search(&query)?;
+        let query_builder = query_builder.with_paging(res.next_page.unwrap());
+        let res = test_index.index.search(&query_builder.clone().build())?;
         let entities = res
-            .results
+            .entities
             .iter()
-            .map(|res| res.entity.id.clone())
+            .map(|res| res.entity.as_ref().unwrap().id.clone())
             .collect_vec();
         assert!(entities.contains(&"entity9".to_string()));
         assert!(entities.contains(&"entity0".to_string()));
 
         // fourth page (empty)
-        let query = query.with_paging(res.next_page.unwrap());
-        let res = test_index.index.search(&query)?;
-        assert_eq!(res.results.len(), 0);
+        let query_builder = query_builder.with_paging(res.next_page.unwrap());
+        let res = test_index.index.search(&query_builder.clone().build())?;
+        assert_eq!(res.entities.len(), 0);
         assert!(res.next_page.is_none());
 
         // test explicit after token
-        let paging = QueryPaging::new(10).with_after_token(SortToken::from_u64(0));
-        let query = query.with_paging(paging);
-        let res = test_index.index.search(&query)?;
-        assert_eq!(res.results.len(), 10);
+        let paging = Paging {
+            count: 10,
+            after_token: SortToken::from_u64(0).into(),
+            ..Default::default()
+        };
+        let query_builder = query_builder.with_paging(paging);
+        let res = test_index.index.search(&query_builder.clone().build())?;
+        assert_eq!(res.entities.len(), 10);
 
-        let paging = QueryPaging::new(10).with_after_token(SortToken::from_u64(std::u64::MAX));
-        let query = query.with_paging(paging);
-        let res = test_index.index.search(&query)?;
-        assert_eq!(res.results.len(), 0);
+        let paging = Paging {
+            count: 10,
+            after_token: SortToken::from_u64(std::u64::MAX).into(),
+            ..Default::default()
+        };
+        let query_builder = query_builder.with_paging(paging);
+        let res = test_index.index.search(&query_builder.clone().build())?;
+        assert_eq!(res.entities.len(), 0);
 
         // test explicit before token
-        let paging = QueryPaging::new(10).with_before_token(SortToken::from_u64(0));
-        let query = query.with_paging(paging);
-        let res = test_index.index.search(&query)?;
-        assert_eq!(res.results.len(), 0);
+        let paging = Paging {
+            count: 10,
+            before_token: SortToken::from_u64(0).into(),
+            ..Default::default()
+        };
+        let query_builder = query_builder.with_paging(paging);
+        let res = test_index.index.search(&query_builder.clone().build())?;
+        assert_eq!(res.entities.len(), 0);
 
-        let paging = QueryPaging::new(10).with_before_token(SortToken::from_u64(std::u64::MAX));
-        let query = query.with_paging(paging);
-        let res = test_index.index.search(&query)?;
-        assert_eq!(res.results.len(), 10);
-        //
+        let paging = Paging {
+            count: 10,
+            before_token: SortToken::from_u64(std::u64::MAX).into(),
+            ..Default::default()
+        };
+        let query_builder = query_builder.with_paging(paging);
+        let res = test_index.index.search(&query_builder.build())?;
+        assert_eq!(res.entities.len(), 10);
+
         Ok(())
     }
 
@@ -1094,33 +1125,35 @@ mod tests {
         test_index.cluster.wait_operations_committed(0, &[op1, op2]);
         test_index.handle_engine_events()?;
 
-        let query = Query::match_text("name").only_summary();
+        let query = QueryBuilder::match_text("name").only_summary().build();
         let res = test_index.index.search(&query)?;
         assert!(res.summary);
-        assert!(res.results[0].entity.traits.is_empty());
+        assert!(res.entities[0].entity.as_ref().unwrap().traits.is_empty());
 
-        let query = Query::match_text("name");
+        let query = QueryBuilder::match_text("name").build();
         let res = test_index.index.search(&query)?;
         assert!(!res.summary);
 
-        let query = Query::match_text("name").only_summary_if_equals(res.hash);
+        let query = QueryBuilder::match_text("name")
+            .only_summary_if_equals(res.hash)
+            .build();
         let res = test_index.index.search(&query)?;
         assert!(res.summary);
 
         Ok(())
     }
 
-    fn count_results_source(results: &QueryResult, source: EntityResultSource) -> usize {
+    fn count_results_source(results: &EntityResults, source: EntityResultSource) -> usize {
         results
-            .results
+            .entities
             .iter()
-            .filter(|r| r.source == source)
+            .filter(|r| r.source == i32::from(source))
             .count()
     }
 
     /// Utility to test entities index
     pub struct TestEntitiesIndex {
-        schema: Arc<Schema>,
+        registry: Arc<Registry>,
         cluster: DataTestCluster,
         config: EntitiesIndexConfig,
         index: EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
@@ -1135,7 +1168,7 @@ mod tests {
         fn new_with_config(
             config: EntitiesIndexConfig,
         ) -> Result<TestEntitiesIndex, failure::Error> {
-            let schema = exocore_schema::test_schema::create();
+            let registry = Arc::new(Registry::new_with_exocore_types());
             let cluster = DataTestCluster::new_single_and_start()?;
 
             let temp_dir = tempdir::TempDir::new("entities_index")?;
@@ -1144,12 +1177,12 @@ mod tests {
             let index = EntitiesIndex::open_or_create(
                 temp_dir.path(),
                 config,
-                schema.clone(),
+                registry.clone(),
                 data_handle,
             )?;
 
             Ok(TestEntitiesIndex {
-                schema,
+                registry,
                 cluster,
                 config,
                 index,
@@ -1160,7 +1193,7 @@ mod tests {
         fn with_restarted_node(self) -> Result<TestEntitiesIndex, failure::Error> {
             // deconstruct so that we can drop index and close the index properly before reopening
             let TestEntitiesIndex {
-                schema,
+                registry,
                 mut cluster,
                 config,
                 index,
@@ -1173,12 +1206,12 @@ mod tests {
             let index = EntitiesIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
                 temp_dir.path(),
                 config,
-                schema.clone(),
+                registry.clone(),
                 cluster.get_handle(0).clone(),
             )?;
 
             Ok(TestEntitiesIndex {
-                schema,
+                registry,
                 cluster,
                 config,
                 index,
@@ -1225,41 +1258,42 @@ mod tests {
             Ok(ops_id)
         }
 
-        fn put_contact_trait<E: Into<EntityId>, T: Into<TraitId>, N: Into<String>>(
+        fn put_contact_trait<E: Into<String>, T: Into<String>, N: Into<String>>(
             &mut self,
             entity_id: E,
             trait_id: T,
             name: N,
         ) -> Result<OperationId, failure::Error> {
-            let mutation = Mutation::PutTrait(PutTraitMutation {
-                entity_id: entity_id.into(),
-                trt: TraitBuilder::new(&self.schema, "exocore", "contact")?
-                    .set("id", trait_id.into())
-                    .set("name", name.into())
-                    .build()?,
-            });
-            let json_mutation = mutation.to_json(self.schema.clone())?;
-            let op_id = self
-                .cluster
-                .get_handle(0)
-                .write_entry_operation(json_mutation.as_bytes())?;
+            let trt = Trait {
+                id: trait_id.into(),
+                message: Some(
+                    TestMessage {
+                        string1: name.into(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                creation_date: Some(Utc::now().to_proto_timestamp()),
+                modification_date: Some(Utc::now().to_proto_timestamp()),
+            };
+
+            let mutation = MutationBuilder::put_trait(entity_id.into(), trt);
+            let buf = mutation.encode_to_vec()?;
+            let op_id = self.cluster.get_handle(0).write_entry_operation(&buf)?;
+
             Ok(op_id)
         }
 
-        fn delete_trait<E: Into<EntityId>, T: Into<TraitId>>(
+        fn delete_trait<E: Into<String>, T: Into<String>>(
             &mut self,
             entity_id: E,
             trait_id: T,
         ) -> Result<OperationId, failure::Error> {
-            let mutation = Mutation::DeleteTrait(DeleteTraitMutation {
-                entity_id: entity_id.into(),
-                trait_id: trait_id.into(),
-            });
-            let json_mutation = mutation.to_json(self.schema.clone())?;
-            let op_id = self
-                .cluster
-                .get_handle(0)
-                .write_entry_operation(json_mutation.as_bytes())?;
+            let mutation = MutationBuilder::delete_trait(entity_id.into(), trait_id.into());
+
+            let buf = mutation.encode_to_vec()?;
+            let op_id = self.cluster.get_handle(0).write_entry_operation(&buf)?;
+
             Ok(op_id)
         }
     }

@@ -1,28 +1,9 @@
 use exocore_common::capnp;
-use exocore_schema::schema::{SchemaFieldId, SchemaRecordId};
 use std::sync::Arc;
 use std::time::Duration;
 
-///
-/// Index related error
-///
 #[derive(Debug, Fail, Clone)]
 pub enum Error {
-    #[fail(display = "Error parsing schema: {}", _0)]
-    Schema(String),
-
-    #[fail(display = "Data integrity error: {}", _0)]
-    DataIntegrity(String),
-
-    #[fail(display = "Field id {} of record id {} didn't have a value", _0, _1)]
-    FieldEmptyValue(SchemaRecordId, SchemaFieldId),
-
-    #[fail(display = "Record field invalid type error: {}", _0)]
-    FieldInvalidType(String),
-
-    #[fail(display = "Field named {} was not in schema", _0)]
-    NamedFieldNotInSchema(String),
-
     #[fail(display = "Query parsing error: {}", _0)]
     QueryParsing(String),
 
@@ -38,9 +19,6 @@ pub enum Error {
     #[fail(display = "Error parsing Tantivy query: {:?}", _0)]
     TantitvyQueryParsing(Arc<tantivy::query::QueryParserError>),
 
-    #[fail(display = "Serde json serialization/deserialization error: {}", _0)]
-    SerdeJson(Arc<serde_json::Error>),
-
     #[cfg(feature = "local_store")]
     #[fail(display = "Data engine error: {}", _0)]
     DataEngine(#[fail(cause)] exocore_data::engine::Error),
@@ -50,6 +28,12 @@ pub enum Error {
 
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
+
+    #[fail(display = "Protobuf error: {}", _0)]
+    Proto(#[fail(cause)] exocore_common::protos::Error),
+
+    #[fail(display = "A protobuf field was expected, but was empty: {}", _0)]
+    ProtoFieldExpected(&'static str),
 
     #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
     IO(std::io::ErrorKind, String),
@@ -113,9 +97,21 @@ impl From<tantivy::directory::error::OpenDirectoryError> for Error {
     }
 }
 
-impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Self {
-        Error::SerdeJson(Arc::new(err))
+impl From<prost::DecodeError> for Error {
+    fn from(err: prost::DecodeError) -> Self {
+        Error::Proto(err.into())
+    }
+}
+
+impl From<prost::EncodeError> for Error {
+    fn from(err: prost::EncodeError) -> Self {
+        Error::Proto(err.into())
+    }
+}
+
+impl From<exocore_common::protos::Error> for Error {
+    fn from(err: exocore_common::protos::Error) -> Self {
+        Error::Proto(err)
     }
 }
 

@@ -12,9 +12,11 @@ message Entity {
 }
 
 message Trait {
-    google.protobuf.Any message = 1;
+    string id = 1;
 
-    google.protobuf.Timestamp created_at = 2;
+    google.protobuf.Any message = 2;
 
-    google.protobuf.Timestamp modified_at = 3;
+    google.protobuf.Timestamp creation_date = 3;
+
+    google.protobuf.Timestamp modification_date = 4;
 }

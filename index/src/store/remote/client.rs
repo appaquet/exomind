@@ -18,14 +18,15 @@ use exocore_common::protos::MessageType;
 use exocore_common::time::Instant;
 use exocore_common::time::{Clock, ConsistentTimestamp};
 use exocore_common::utils::handle_set::{Handle, HandleSet};
-use exocore_schema::schema::Schema;
 use exocore_transport::{
     InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
 };
 
 use crate::error::Error;
-use crate::mutation::{Mutation, MutationResult};
-use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
+use crate::query::WatchToken;
+use exocore_common::protos::generated::exocore_index::{
+    EntityMutation, EntityQuery, EntityResults, MutationResult,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClientConfiguration {
@@ -68,7 +69,6 @@ where
         config: ClientConfiguration,
         cell: Cell,
         clock: Clock,
-        schema: Arc<Schema>,
         transport_handle: T,
         index_node: Node,
     ) -> Result<Client<T>, Error> {
@@ -76,7 +76,6 @@ where
             config,
             cell,
             clock,
-            schema,
             transport_out: None,
             index_node,
             pending_queries: HashMap::new(),
@@ -168,10 +167,9 @@ struct Inner {
     config: ClientConfiguration,
     cell: Cell,
     clock: Clock,
-    schema: Arc<Schema>,
     transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
     index_node: Node,
-    pending_queries: HashMap<ConsistentTimestamp, PendingRequest<QueryResult>>,
+    pending_queries: HashMap<ConsistentTimestamp, PendingRequest<EntityResults>>,
     watched_queries: HashMap<ConsistentTimestamp, WatchedQueryRequest>,
     pending_mutations: HashMap<ConsistentTimestamp, PendingRequest<MutationResult>>,
 }
@@ -193,7 +191,7 @@ impl Inner {
             )));
         };
 
-        match IncomingMessage::parse_incoming_message(&in_message, &inner.schema) {
+        match IncomingMessage::parse_incoming_message(&in_message) {
             Ok(IncomingMessage::MutationResponse(mutation)) => {
                 if let Some(pending_request) = inner.pending_mutations.remove(&request_id) {
                     let _ = pending_request.result_sender.send(Ok(mutation));
@@ -247,12 +245,12 @@ impl Inner {
 
     fn send_mutation(
         &mut self,
-        mutation: Mutation,
+        entity_mutation: EntityMutation,
     ) -> Result<oneshot::Receiver<Result<MutationResult, Error>>, Error> {
         let (result_sender, receiver) = oneshot::channel();
 
         let request_id = self.clock.consistent_time(self.cell.local_node());
-        let request_frame = mutation.to_mutation_request_frame(&self.schema)?;
+        let request_frame = crate::mutation::mutation_to_request_frame(entity_mutation)?;
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
                 .with_to_node(self.index_node.clone())
@@ -274,18 +272,18 @@ impl Inner {
 
     fn send_query(
         &mut self,
-        query: Query,
+        query: EntityQuery,
     ) -> Result<
         (
             ConsistentTimestamp,
-            oneshot::Receiver<Result<QueryResult, Error>>,
+            oneshot::Receiver<Result<EntityResults, Error>>,
         ),
         Error,
     > {
         let (result_sender, receiver) = oneshot::channel();
 
         let request_id = self.clock.consistent_time(self.cell.local_node());
-        let request_frame = query.to_request_frame(&self.schema)?;
+        let request_frame = crate::query::query_to_request_frame(&query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
                 .with_to_node(self.index_node.clone())
@@ -307,11 +305,11 @@ impl Inner {
 
     fn watch_query(
         &mut self,
-        watched_query: WatchedQuery,
+        query: EntityQuery,
     ) -> Result<
         (
             ConsistentTimestamp,
-            mpsc::Receiver<Result<QueryResult, Error>>,
+            mpsc::Receiver<Result<EntityResults, Error>>,
         ),
         Error,
     > {
@@ -320,7 +318,7 @@ impl Inner {
         let watched_query = WatchedQueryRequest {
             request_id,
             result_sender,
-            query: watched_query,
+            query,
             last_register: Instant::now(),
         };
 
@@ -331,7 +329,7 @@ impl Inner {
     }
 
     fn send_watch_query(&self, watched_query: &WatchedQueryRequest) -> Result<(), Error> {
-        let request_frame = watched_query.query.to_request_frame(&self.schema)?;
+        let request_frame = crate::query::watched_query_to_request_frame(&watched_query.query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
                 .with_to_node(self.index_node.clone())
@@ -343,7 +341,7 @@ impl Inner {
     fn send_unwatch_query(&self, token: WatchToken) -> Result<(), Error> {
         let mut frame_builder = CapnpFrameBuilder::<unwatch_query_request::Owned>::new();
         let mut message_builder = frame_builder.get_builder();
-        message_builder.set_token(token.0);
+        message_builder.set_token(token);
 
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, frame_builder)?
@@ -411,28 +409,26 @@ impl Inner {
 /// Parsed incoming message via transport.
 enum IncomingMessage {
     MutationResponse(MutationResult),
-    QueryResponse(QueryResult),
+    QueryResponse(EntityResults),
 }
 
 impl IncomingMessage {
-    fn parse_incoming_message(
-        in_message: &InMessage,
-        schema: &Arc<Schema>,
-    ) -> Result<IncomingMessage, Error> {
+    fn parse_incoming_message(in_message: &InMessage) -> Result<IncomingMessage, Error> {
         match in_message.message_type {
             <mutation_response::Owned as MessageType>::MESSAGE_TYPE => {
                 let mutation_frame = in_message.get_data_as_framed_message()?;
-                let mutation_result = MutationResult::from_response_frame(schema, mutation_frame)?;
+                let mutation_result =
+                    crate::mutation::mutation_result_from_response_frame(mutation_frame)?;
                 Ok(IncomingMessage::MutationResponse(mutation_result))
             }
             <query_response::Owned as MessageType>::MESSAGE_TYPE => {
                 let query_frame = in_message.get_data_as_framed_message()?;
-                let query_result = QueryResult::from_query_frame(schema, query_frame)?;
+                let query_result = crate::query::query_results_from_response_frame(query_frame)?;
                 Ok(IncomingMessage::QueryResponse(query_result))
             }
             <watched_query_response::Owned as MessageType>::MESSAGE_TYPE => {
                 let query_frame = in_message.get_data_as_framed_message()?;
-                let query_result = QueryResult::from_query_frame(schema, query_frame)?;
+                let query_result = crate::query::query_results_from_response_frame(query_frame)?;
                 Ok(IncomingMessage::QueryResponse(query_result))
             }
             other => Err(Error::Other(format!(
@@ -452,8 +448,8 @@ struct PendingRequest<T> {
 
 struct WatchedQueryRequest {
     request_id: ConsistentTimestamp,
-    query: WatchedQuery,
-    result_sender: mpsc::Sender<Result<QueryResult, Error>>,
+    query: EntityQuery,
+    result_sender: mpsc::Sender<Result<EntityResults, Error>>,
     last_register: Instant,
 }
 
@@ -468,7 +464,7 @@ impl ClientHandle {
         self.handle.on_set_started().await;
     }
 
-    pub async fn mutate(&self, mutation: Mutation) -> Result<MutationResult, Error> {
+    pub async fn mutate(&self, mutation: EntityMutation) -> Result<MutationResult, Error> {
         let result = {
             let inner = match self.inner.upgrade() {
                 Some(inner) => inner,
@@ -485,7 +481,7 @@ impl ClientHandle {
         result.await.map_err(|_err| Error::Cancelled)?
     }
 
-    pub fn query(&self, query: Query) -> QueryFuture {
+    pub fn query(&self, query: EntityQuery) -> QueryFuture {
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
             None => return Error::Dropped.into(),
@@ -506,7 +502,7 @@ impl ClientHandle {
         }
     }
 
-    pub fn watched_query(&self, query: Query) -> WatchedQueryStream {
+    pub fn watched_query(&self, mut query: EntityQuery) -> WatchedQueryStream {
         let inner = match self.inner.upgrade() {
             Some(inner) => inner,
             None => return WatchedQueryStream::from_error(self.inner.clone(), Error::Dropped),
@@ -516,16 +512,13 @@ impl ClientHandle {
             Err(err) => return WatchedQueryStream::from_error(self.inner.clone(), err.into()),
         };
 
-        let watch_token = query
-            .watch_token
-            .unwrap_or_else(|| inner.clock.consistent_time(inner.cell.local_node()));
+        let mut watch_token = query.watch_token;
+        if watch_token == 0 {
+            watch_token = inner.clock.consistent_time(inner.cell.local_node()).into();
+            query.watch_token = watch_token;
+        }
 
-        let watch_query = WatchedQuery {
-            query,
-            token: watch_token,
-        };
-
-        let (request_id, receiver) = match inner.watch_query(watch_query) {
+        let (request_id, receiver) = match inner.watch_query(query) {
             Ok(tup) => tup,
             Err(err) => return WatchedQueryStream::from_error(self.inner.clone(), err),
         };
@@ -550,7 +543,7 @@ impl ClientHandle {
 
         if let Some(query) = inner.watched_queries.remove(&query_id) {
             debug!("Cancelling watched query {:?}", query_id);
-            let _ = inner.send_unwatch_query(query.query.token);
+            let _ = inner.send_unwatch_query(query.query.watch_token);
         } else {
             debug!("Cancelling query {:?}", query_id);
             inner.pending_queries.remove(&query_id);
@@ -562,7 +555,7 @@ impl ClientHandle {
 
 /// Future query result.
 pub struct QueryFuture {
-    result: Result<oneshot::Receiver<Result<QueryResult, Error>>, Error>,
+    result: Result<oneshot::Receiver<Result<EntityResults, Error>>, Error>,
     request_id: ConsistentTimestamp,
 }
 
@@ -582,7 +575,7 @@ impl From<Error> for QueryFuture {
 }
 
 impl Future for QueryFuture {
-    type Output = Result<QueryResult, Error>;
+    type Output = Result<EntityResults, Error>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.result.as_mut() {
@@ -600,7 +593,7 @@ pub struct WatchedQueryStream {
     inner: Weak<RwLock<Inner>>,
     watch_token: Option<WatchToken>,
     request_id: ConsistentTimestamp,
-    result: Result<mpsc::Receiver<Result<QueryResult, Error>>, Error>,
+    result: Result<mpsc::Receiver<Result<EntityResults, Error>>, Error>,
 }
 
 impl WatchedQueryStream {
@@ -619,7 +612,7 @@ impl WatchedQueryStream {
 }
 
 impl Stream for WatchedQueryStream {
-    type Item = Result<QueryResult, Error>;
+    type Item = Result<EntityResults, Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match self.result.as_mut() {

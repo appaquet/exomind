@@ -4,21 +4,25 @@ use tempdir::TempDir;
 
 use exocore_data::tests_utils::DataTestCluster;
 use exocore_data::{DirectoryChainStore, MemoryPendingStore};
-use exocore_schema::entity::{EntityId, RecordBuilder, TraitBuilder, TraitId};
-use exocore_schema::schema::Schema;
 
-use crate::mutation::{Mutation, MutationResult, PutTraitMutation};
-use crate::query::{Query, QueryResult};
+use crate::mutation::MutationBuilder;
 use crate::store::local::store::StoreHandle;
 use crate::store::local::traits_index::TraitsIndexConfig;
 use crate::store::local::EntitiesIndexConfig;
 
 use super::*;
+use chrono::Utc;
+use exocore_common::protos::generated::exocore_index::{
+    EntityMutation, EntityQuery, EntityResults, MutationResult, Trait,
+};
+use exocore_common::protos::generated::exocore_test::TestMessage;
+use exocore_common::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
+use exocore_common::protos::registry::Registry;
 
 /// Utility to test store
 pub struct TestStore {
     pub cluster: DataTestCluster,
-    pub schema: Arc<Schema>,
+    pub registry: Arc<Registry>,
 
     pub store: Option<Store<DirectoryChainStore, MemoryPendingStore>>,
     pub store_handle: StoreHandle<DirectoryChainStore, MemoryPendingStore>,
@@ -30,7 +34,7 @@ impl TestStore {
         let cluster = DataTestCluster::new_single_and_start()?;
 
         let temp_dir = tempdir::TempDir::new("store")?;
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
 
         let index_config = EntitiesIndexConfig {
             pending_index_config: TraitsIndexConfig {
@@ -46,7 +50,7 @@ impl TestStore {
         let index = EntitiesIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
             temp_dir.path(),
             index_config,
-            schema.clone(),
+            registry.clone(),
             cluster.get_handle(0).clone(),
         )?;
 
@@ -54,7 +58,6 @@ impl TestStore {
             Default::default(),
             cluster.cells[0].cell().clone(),
             cluster.clocks[0].clone(),
-            schema.clone(),
             cluster.get_new_handle(0),
             index,
         )?;
@@ -62,7 +65,7 @@ impl TestStore {
 
         Ok(TestStore {
             cluster,
-            schema,
+            registry,
             store: Some(store),
             store_handle,
             _temp_dir: temp_dir,
@@ -85,31 +88,38 @@ impl TestStore {
         Ok(())
     }
 
-    pub fn mutate(&mut self, mutation: Mutation) -> Result<MutationResult, failure::Error> {
+    pub fn mutate(&mut self, mutation: EntityMutation) -> Result<MutationResult, failure::Error> {
         self.store_handle.mutate(mutation).map_err(|err| err.into())
     }
 
-    pub fn query(&mut self, query: Query) -> Result<QueryResult, failure::Error> {
+    pub fn query(&mut self, query: EntityQuery) -> Result<EntityResults, failure::Error> {
         self.cluster
             .runtime
             .block_on_std(self.store_handle.query(query)?)
             .map_err(|err| err.into())
     }
 
-    pub fn create_put_contact_mutation<E: Into<EntityId>, T: Into<TraitId>, N: Into<String>>(
+    pub fn create_put_contact_mutation<E: Into<String>, T: Into<String>, N: Into<String>>(
         &self,
         entity_id: E,
         trait_id: T,
         name: N,
-    ) -> Mutation {
-        Mutation::PutTrait(PutTraitMutation {
-            entity_id: entity_id.into(),
-            trt: TraitBuilder::new(&self.schema, "exocore", "contact")
-                .unwrap()
-                .set("id", trait_id.into())
-                .set("name", name.into())
-                .build()
-                .unwrap(),
-        })
+    ) -> EntityMutation {
+        MutationBuilder::put_trait(
+            entity_id,
+            Trait {
+                id: trait_id.into(),
+                message: Some(
+                    TestMessage {
+                        string1: name.into(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()
+                    .unwrap(),
+                ),
+                creation_date: Some(Utc::now().to_proto_timestamp()),
+                modification_date: Some(Utc::now().to_proto_timestamp()),
+            },
+        )
     }
 }

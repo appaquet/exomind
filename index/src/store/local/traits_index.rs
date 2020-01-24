@@ -1,10 +1,13 @@
 use crate::error::Error;
-use crate::query::*;
+use exocore_common::protos::generated::exocore_index::{
+    entity_query::Predicate, EntityQuery, Trait,
+};
+use exocore_common::protos::prost::ProstTimestampExt;
+use exocore_common::protos::reflect;
+use exocore_common::protos::reflect::{FieldType, FieldValue, ReflectMessage};
+use exocore_common::protos::registry::Registry;
 use exocore_data::block::BlockOffset;
 use exocore_data::operation::OperationId;
-use exocore_schema::entity::{EntityId, FieldValue, Record, Trait, TraitId};
-use exocore_schema::schema;
-use exocore_schema::schema::RecordSchema;
 use std::ops::Deref;
 use std::path::Path;
 use std::result::Result;
@@ -14,8 +17,7 @@ use tantivy::collector::{Collector, TopDocs};
 use tantivy::directory::MmapDirectory;
 use tantivy::query::{AllQuery, QueryParser, TermQuery};
 use tantivy::schema::{
-    Field, IndexRecordOption, Schema as TantivySchema, SchemaBuilder, FAST, INDEXED, STORED,
-    STRING, TEXT,
+    Field, IndexRecordOption, Schema, SchemaBuilder, FAST, INDEXED, STORED, STRING, TEXT,
 };
 use tantivy::{
     DocAddress, Document, Index as TantivyIndex, IndexReader, IndexWriter, Searcher, SegmentReader,
@@ -26,9 +28,7 @@ const SCORE_TO_U64_MULTIPLIER: f32 = 10_000_000_000.0;
 const UNIQUE_SORT_TO_U64_DIVIDER: f32 = 100_000_000.0;
 const SEARCH_ENTITY_ID_LIMIT: usize = 1_000_000;
 
-///
 /// Traits index configuration
-///
 #[derive(Clone, Copy, Debug)]
 pub struct TraitsIndexConfig {
     pub indexer_num_threads: Option<usize>,
@@ -46,7 +46,6 @@ impl Default for TraitsIndexConfig {
     }
 }
 
-///
 /// Index (full-text & fields) for traits in the given schema. Each trait is individually
 /// indexed as a single document.
 ///
@@ -55,13 +54,12 @@ impl Default for TraitsIndexConfig {
 /// is handled differently. On the disk persisted, we delete using Tantivy document deletion,
 /// while the pending-store uses a tombstone approach. This is needed since the pending store
 /// "applies" mutation that may not be definitive onto the chain.
-///
 pub struct TraitsIndex {
     config: TraitsIndexConfig,
     index: TantivyIndex,
     index_reader: IndexReader,
     index_writer: Mutex<IndexWriter>,
-    schema: Arc<schema::Schema>,
+    registry: Arc<Registry>,
     fields: Fields,
 }
 
@@ -69,10 +67,10 @@ impl TraitsIndex {
     /// Creates or opens a disk persisted traits index
     pub fn open_or_create_mmap(
         config: TraitsIndexConfig,
-        schema: Arc<schema::Schema>,
+        registry: Arc<Registry>,
         directory: &Path,
     ) -> Result<TraitsIndex, Error> {
-        let (tantivy_schema, fields) = Self::build_tantivy_schema(schema.as_ref());
+        let (tantivy_schema, fields) = Self::build_tantivy_schema(registry.as_ref());
         let directory = MmapDirectory::open(directory)?;
         let index = TantivyIndex::open_or_create(directory, tantivy_schema)?;
         let index_reader = index.reader()?;
@@ -87,7 +85,7 @@ impl TraitsIndex {
             index,
             index_reader,
             index_writer: Mutex::new(index_writer),
-            schema,
+            registry,
             fields,
         })
     }
@@ -95,9 +93,9 @@ impl TraitsIndex {
     /// Creates or opens a in-memory traits index
     pub fn create_in_memory(
         config: TraitsIndexConfig,
-        schema: Arc<schema::Schema>,
+        registry: Arc<Registry>,
     ) -> Result<TraitsIndex, Error> {
-        let (tantivy_schema, fields) = Self::build_tantivy_schema(schema.as_ref());
+        let (tantivy_schema, fields) = Self::build_tantivy_schema(registry.as_ref());
         let index = TantivyIndex::create_in_ram(tantivy_schema);
         let index_reader = index.reader()?;
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
@@ -111,7 +109,7 @@ impl TraitsIndex {
             index,
             index_reader,
             index_writer: Mutex::new(index_writer),
-            schema,
+            registry,
             fields,
         })
     }
@@ -137,7 +135,7 @@ impl TraitsIndex {
             match mutation {
                 IndexMutation::PutTrait(new_trait) => {
                     // delete older versions of the trait first
-                    let entity_trait_id = format!("{}_{}", new_trait.entity_id, new_trait.trt.id());
+                    let entity_trait_id = format!("{}_{}", new_trait.entity_id, new_trait.trt.id);
                     trace!(
                         "Putting trait {} with op {}",
                         entity_trait_id,
@@ -148,7 +146,7 @@ impl TraitsIndex {
                         &entity_trait_id,
                     ));
 
-                    let doc = self.put_mutation_to_document(&new_trait);
+                    let doc = self.put_mutation_to_document(&new_trait)?;
                     index_writer.add_document(doc);
                 }
                 IndexMutation::PutTraitTombstone(trait_tombstone) => {
@@ -206,25 +204,28 @@ impl TraitsIndex {
     /// Execute a query on the index and return a page of traits matching the query.
     pub fn search(
         &self,
-        query: &Query,
+        query: &EntityQuery,
         paging: Option<TraitPaging>,
     ) -> Result<TraitResults, Error> {
-        match &query.inner {
-            InnerQuery::WithTrait(inner_query) => {
+        let predicate = query
+            .predicate
+            .as_ref()
+            .ok_or(Error::ProtoFieldExpected("predicate"))?;
+
+        match predicate {
+            Predicate::Trait(inner_query) => {
                 self.search_with_trait(&inner_query.trait_name, paging)
             }
-            InnerQuery::Match(inner_query) => self.search_matches(&inner_query.query, paging),
-            InnerQuery::IdEqual(inner_query) => self.search_entity_id(&inner_query.entity_id),
-
-            #[cfg(test)]
-            InnerQuery::TestFail(_query) => Err(Error::Other("Query failed for tests".to_string())),
+            Predicate::Match(inner_query) => self.search_matches(&inner_query.query, paging),
+            Predicate::Id(inner_query) => self.search_entity_id(&inner_query.id),
+            Predicate::Test(_query) => Err(Error::Other("Query failed for tests".to_string())),
         }
     }
 
     /// Execute a query on the index and return an iterator over all matching traits.
     pub fn search_all<'i, 'q>(
         &'i self,
-        query: &'q Query,
+        query: &'q EntityQuery,
     ) -> Result<TraitResultsIterator<'i, 'q>, Error> {
         let results = self.search(query, None)?;
 
@@ -238,29 +239,44 @@ impl TraitsIndex {
     }
 
     /// Converts a put mutation to Tantivy document
-    fn put_mutation_to_document(&self, mutation: &PutTraitMutation) -> Document {
-        let record_schema: &schema::TraitSchema = mutation.trt.record_schema();
-        let entity_trait_id = &format!("{}_{}", mutation.entity_id, mutation.trt.id());
+    fn put_mutation_to_document(&self, mutation: &PutTraitMutation) -> Result<Document, Error> {
+        let message = mutation
+            .trt
+            .message
+            .as_ref()
+            .ok_or_else(|| Error::ProtoFieldExpected("Trait message"))?;
+        let dyn_message =
+            reflect::from_prost_any(self.registry.as_ref(), message).map_err(Error::Proto)?;
 
         let mut doc = Document::default();
-        doc.add_u64(self.fields.trait_type, u64::from(record_schema.id()));
-        doc.add_text(self.fields.trait_id, &mutation.trt.id());
+        doc.add_text(self.fields.trait_type, dyn_message.full_name());
+        doc.add_text(self.fields.trait_id, &mutation.trt.id);
         doc.add_text(self.fields.entity_id, &mutation.entity_id);
-        doc.add_text(self.fields.entity_trait_id, entity_trait_id);
+        doc.add_text(
+            self.fields.entity_trait_id,
+            &format!("{}_{}", mutation.entity_id, &mutation.trt.id),
+        );
 
         doc.add_u64(self.fields.operation_id, mutation.operation_id);
         if let Some(block_offset) = mutation.block_offset {
             doc.add_u64(self.fields.block_offset, block_offset);
         }
 
-        doc.add_u64(
-            self.fields.creation_date,
-            mutation.trt.creation_date().timestamp_nanos() as u64,
-        );
-        doc.add_u64(
-            self.fields.modification_date,
-            mutation.trt.modification_date().timestamp_nanos() as u64,
-        );
+        let creation_ts = mutation
+            .trt
+            .creation_date
+            .as_ref()
+            .map(|d| d.to_timestamp_nanos())
+            .unwrap_or(0);
+        doc.add_u64(self.fields.creation_date, creation_ts);
+
+        let modification_ts = mutation
+            .trt
+            .modification_date
+            .as_ref()
+            .map(|d| d.to_timestamp_nanos())
+            .unwrap_or(creation_ts);
+        doc.add_u64(self.fields.modification_date, modification_ts);
 
         // value added as stable randomness to stabilize order for documents with same score
         doc.add_u64(
@@ -270,22 +286,24 @@ impl TraitsIndex {
             )),
         );
 
-        let indexed_fields = record_schema.fields().iter().filter(|f| f.indexed);
-        for field in indexed_fields {
-            if let Some(field_value) = mutation.trt.value(field) {
-                match (&field.typ, field_value) {
-                    (schema::FieldType::String, FieldValue::String(v)) => {
-                        doc.add_text(self.fields.text, &v);
+        for field in dyn_message.fields() {
+            if !field.indexed_flag {
+                continue;
+            }
+
+            match &field.field_type {
+                FieldType::String => {
+                    if let Ok(FieldValue::String(val)) = dyn_message.get_field_value(field) {
+                        doc.add_text(self.fields.text, &val);
                     }
-                    _ => panic!(
-                        "Type not supported yet: ({:?}, {:?})",
-                        field.typ, field_value
-                    ),
+                }
+                ft => {
+                    warn!("Unsupported indexed field type: {:?}", ft);
                 }
             }
         }
 
-        doc
+        Ok(doc)
     }
 
     /// Converts a tombstone mutation to Tantivy document
@@ -322,17 +340,7 @@ impl TraitsIndex {
             count: self.config.iterator_page_size,
         });
 
-        let trait_schema = if let Some(trait_schema) = self.schema.trait_by_full_name(trait_name) {
-            trait_schema
-        } else {
-            warn!(
-                "Tried to search for trait {}, but doesn't exist in schema",
-                trait_name
-            );
-            return Ok(TraitResults::new_empty());
-        };
-
-        let term = Term::from_field_u64(self.fields.trait_type, u64::from(trait_schema.id()));
+        let term = Term::from_field_text(self.fields.trait_type, trait_name);
         let query = TermQuery::new(term, IndexRecordOption::Basic);
 
         let after_date = paging.after_score.unwrap_or(0);
@@ -579,9 +587,9 @@ impl TraitsIndex {
     }
 
     /// Builds Tantivy schema based on the domain schema
-    fn build_tantivy_schema(_schema: &schema::Schema) -> (TantivySchema, Fields) {
+    fn build_tantivy_schema(_registry: &Registry) -> (Schema, Fields) {
         let mut schema_builder = SchemaBuilder::default();
-        schema_builder.add_u64_field("trait_type", INDEXED);
+        schema_builder.add_text_field("trait_type", STRING | STORED);
         schema_builder.add_text_field("entity_id", STRING | STORED);
         schema_builder.add_text_field("trait_id", STRING | STORED);
         schema_builder.add_text_field("entity_trait_id", STRING);
@@ -620,9 +628,7 @@ impl TraitsIndex {
     }
 }
 
-///
-/// Tantivy fields used by traits index
-///
+/// Tantitvy schema fields
 struct Fields {
     trait_type: Field,
     entity_id: Field,
@@ -640,9 +646,6 @@ struct Fields {
     text: Field,
 }
 
-///
-/// Mutation to applied to the index
-///
 pub enum IndexMutation {
     /// New version of a trait at a new position in chain or pending
     PutTrait(PutTraitMutation),
@@ -653,7 +656,7 @@ pub enum IndexMutation {
     PutTraitTombstone(PutTraitTombstone),
 
     /// Delete a trait by its entity id and trait id from index
-    DeleteTrait(EntityId, TraitId),
+    DeleteTrait(String, String),
 
     /// Delete a trait by its operation id
     DeleteOperation(OperationId),
@@ -662,20 +665,18 @@ pub enum IndexMutation {
 pub struct PutTraitMutation {
     pub block_offset: Option<BlockOffset>,
     pub operation_id: OperationId,
-    pub entity_id: EntityId,
+    pub entity_id: String,
     pub trt: Trait,
 }
 
 pub struct PutTraitTombstone {
     pub block_offset: Option<BlockOffset>,
     pub operation_id: OperationId,
-    pub entity_id: EntityId,
-    pub trait_id: TraitId,
+    pub entity_id: String,
+    pub trait_id: String,
 }
 
-///
 /// Collection of `TraitResult`
-///
 pub struct TraitResults {
     pub results: Vec<TraitResult>,
     pub total_results: usize,
@@ -683,45 +684,29 @@ pub struct TraitResults {
     pub next_page: Option<TraitPaging>,
 }
 
-impl TraitResults {
-    fn new_empty() -> TraitResults {
-        TraitResults {
-            results: vec![],
-            total_results: 0,
-            remaining_results: 0,
-            next_page: None,
-        }
-    }
-}
-
-///
 /// Indexed trait returned as a result of a query
-///
 #[derive(Debug)]
 pub struct TraitResult {
     pub operation_id: OperationId,
     pub block_offset: Option<BlockOffset>,
-    pub entity_id: EntityId,
-    pub trait_id: TraitId,
+    pub entity_id: String,
+    pub trait_id: String,
     pub tombstone: bool,
     pub score: u64,
 }
 
-#[serde(rename_all = "snake_case")]
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct TraitPaging {
     pub after_score: Option<u64>,
     pub before_score: Option<u64>,
     pub count: usize,
 }
 
-///
 /// Iterates through all results matching a given initial query using the next_page score
 /// when a page got emptied.
-///
 pub struct TraitResultsIterator<'i, 'q> {
     index: &'i TraitsIndex,
-    query: &'q Query,
+    query: &'q EntityQuery,
     pub total_results: usize,
     current_results: std::vec::IntoIter<TraitResult>,
     next_page: Option<TraitPaging>,
@@ -761,51 +746,71 @@ fn score_from_u64(value: u64) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::query::{QueryBuilder, SortToken};
     use chrono::{DateTime, Utc};
     use exocore_common::node::LocalNode;
+    use exocore_common::protos::generated::exocore_test::{TestMessage, TestMessage2};
+    use exocore_common::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
     use exocore_common::time::Clock;
-    use exocore_schema::entity::{RecordBuilder, TraitBuilder};
     use itertools::Itertools;
 
     #[test]
     fn search_by_entity_id() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut indexer = TraitsIndex::create_in_memory(config, registry)?;
 
-        let contact1 = IndexMutation::PutTrait(PutTraitMutation {
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(1),
             operation_id: 10,
             entity_id: "entity_id1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau1")
-                .set("name", "Justin Justin Justin Justin Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Foo Foo Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
-        indexer.apply_mutation(contact1)?;
+        indexer.apply_mutation(trait1)?;
 
-        let contact2 = IndexMutation::PutTrait(PutTraitMutation {
+        let trait2 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(2),
             operation_id: 20,
             entity_id: "entity_id2".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau2")
-                .set("name", "Justin Trudeau Trudeau Trudeau Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo2".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Foo Foo Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
-        indexer.apply_mutation(contact2)?;
+        indexer.apply_mutation(trait2)?;
 
         let contact3 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(3),
             operation_id: 21,
             entity_id: "entity_id2".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau3")
-                .set("name", "Justin Trudeau Trudeau Trudeau Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo3".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Foo Foo Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
         indexer.apply_mutation(contact3)?;
 
@@ -814,15 +819,15 @@ mod tests {
         assert_eq!(results.results[0].block_offset, Some(1));
         assert_eq!(results.results[0].operation_id, 10);
         assert_eq!(results.results[0].entity_id, "entity_id1");
-        assert_eq!(results.results[0].trait_id, "trudeau1");
+        assert_eq!(results.results[0].trait_id, "foo1");
 
         let results = indexer.search_entity_id("entity_id2")?;
         assert_eq!(results.results.len(), 2);
-        find_trait_result(&results, "trudeau2");
-        find_trait_result(&results, "trudeau3");
+        find_trait_result(&results, "foo2");
+        find_trait_result(&results, "foo3");
 
         // search all should return an iterator all results
-        let query = Query::with_entity_id("entity_id2");
+        let query = QueryBuilder::with_entity_id("entity_id2").build();
         let iter = indexer.search_all(&query)?;
         assert_eq!(iter.total_results, 2);
         let results = iter.collect_vec();
@@ -833,43 +838,55 @@ mod tests {
 
     #[test]
     fn search_query_matches() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut indexer = TraitsIndex::create_in_memory(config, registry)?;
 
-        let contact1 = IndexMutation::PutTrait(PutTraitMutation {
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(1),
             operation_id: 10,
             entity_id: "entity_id1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau1")
-                .set("name", "Justin Justin Justin Justin Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Foo Foo Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
-        indexer.apply_mutation(contact1)?;
+        indexer.apply_mutation(trait1)?;
 
-        let contact2 = IndexMutation::PutTrait(PutTraitMutation {
+        let trait2 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(2),
             operation_id: 20,
             entity_id: "entity_id2".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau2")
-                .set("name", "Justin Trudeau Trudeau Trudeau Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo2".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Bar Bar Bar Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
-        indexer.apply_mutation(contact2)?;
+        indexer.apply_mutation(trait2)?;
 
-        let results = indexer.search_matches("justin", None)?;
+        let results = indexer.search_matches("foo", None)?;
         assert_eq!(results.results.len(), 2);
-        assert_eq!(results.results[0].entity_id, "entity_id1"); // justin is repeated in entity 1
+        assert_eq!(results.results[0].entity_id, "entity_id1"); // foo is repeated in entity 1
 
-        let results = indexer.search_matches("trudeau", None)?;
+        let results = indexer.search_matches("bar", None)?;
         assert_eq!(results.results.len(), 2);
-        assert!(results.results[0].score > score_to_u64(0.32));
-        assert!(results.results[1].score > score_to_u64(0.25));
-        assert_eq!(results.results[0].entity_id, "entity_id2"); // trudeau is repeated in entity 2
+        assert!(results.results[0].score > score_to_u64(0.30));
+        assert!(results.results[1].score > score_to_u64(0.18));
+        assert_eq!(results.results[0].entity_id, "entity_id2"); // foo is repeated in entity 2
 
         // with limit
         let paging = TraitPaging {
@@ -877,7 +894,7 @@ mod tests {
             before_score: None,
             count: 1,
         };
-        let results = indexer.search_matches("trudeau", Some(paging))?;
+        let results = indexer.search_matches("foo", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 1);
         assert_eq!(results.total_results, 2);
@@ -888,7 +905,7 @@ mod tests {
             before_score: None,
             count: 10,
         };
-        let results = indexer.search_matches("trudeau", Some(paging))?;
+        let results = indexer.search_matches("bar", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 0);
         assert_eq!(results.total_results, 2);
@@ -900,7 +917,7 @@ mod tests {
             before_score: Some(score_to_u64(0.30)),
             count: 10,
         };
-        let results = indexer.search_matches("trudeau", Some(paging))?;
+        let results = indexer.search_matches("bar", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 0);
         assert_eq!(results.total_results, 2);
@@ -911,50 +928,54 @@ mod tests {
 
     #[test]
     fn search_query_matches_paging() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut indexer = TraitsIndex::create_in_memory(config, registry)?;
         let clock = Clock::new();
         let node = LocalNode::generate();
 
-        let contacts = (0..30).map(|i| {
+        let traits = (0..30).map(|i| {
             let op_id = clock.consistent_time(node.node()).into();
             IndexMutation::PutTrait(PutTraitMutation {
                 block_offset: Some(i),
                 operation_id: op_id,
                 entity_id: format!("entity_id{}", i),
-                trt: TraitBuilder::new(&schema, "exocore", "contact")
-                    .unwrap()
-                    .set("id", format!("entity_id{}", i))
-                    .set("name", "Justin Trudeau")
-                    .set("email", "justin.trudeau@gov.ca")
-                    .build()
-                    .unwrap(),
+                trt: Trait {
+                    id: format!("entity_id{}", i),
+                    message: Some(
+                        TestMessage {
+                            string1: "Foo Bar".to_string(),
+                            ..Default::default()
+                        }
+                        .pack_to_any()
+                        .unwrap(),
+                    ),
+                    ..Default::default()
+                },
             })
         });
-        indexer.apply_mutations(contacts)?;
+        indexer.apply_mutations(traits)?;
 
         let paging = TraitPaging {
             after_score: None,
             before_score: None,
             count: 10,
         };
-        let results1 = indexer.search_matches("trudeau", Some(paging))?;
+        let results1 = indexer.search_matches("foo", Some(paging))?;
         assert_eq!(results1.total_results, 30);
         assert_eq!(results1.results.len(), 10);
         assert_eq!(results1.remaining_results, 20);
         find_trait_result(&results1, "id29");
         find_trait_result(&results1, "id20");
 
-        let results2 =
-            indexer.search_matches("trudeau", Some(results1.next_page.clone().unwrap()))?;
+        let results2 = indexer.search_matches("foo", Some(results1.next_page.clone().unwrap()))?;
         assert_eq!(results2.total_results, 30);
         assert_eq!(results2.results.len(), 10);
         assert_eq!(results2.remaining_results, 10);
         find_trait_result(&results1, "id19");
         find_trait_result(&results1, "id10");
 
-        let results3 = indexer.search_matches("trudeau", Some(results2.next_page.unwrap()))?;
+        let results3 = indexer.search_matches("foo", Some(results2.next_page.unwrap()))?;
         assert_eq!(results3.total_results, 30);
         assert_eq!(results3.results.len(), 10);
         assert_eq!(results3.remaining_results, 0);
@@ -962,7 +983,7 @@ mod tests {
         find_trait_result(&results1, "id0");
 
         // search all should return an iterator over all results
-        let query = Query::match_text("trudeau");
+        let query = QueryBuilder::match_text("foo").build();
         let iter = indexer.search_all(&query)?;
         assert_eq!(iter.total_results, 30);
         let results = iter.collect_vec();
@@ -973,71 +994,108 @@ mod tests {
 
     #[test]
     fn search_query_by_trait_type() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut index = TraitsIndex::create_in_memory(config, registry)?;
 
-        let context1 = IndexMutation::PutTrait(PutTraitMutation {
+        let date = "2019-08-01T12:00:00Z"
+            .parse::<DateTime<Utc>>()?
+            .to_proto_timestamp();
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 1,
             entity_id: "entity_id1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set_id("trt1".to_string())
-                .set("name", "Justin Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "trt1".to_string(),
+                creation_date: Some(date.clone()),
+                modification_date: Some(date),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+            },
         });
 
-        let email1 = IndexMutation::PutTrait(PutTraitMutation {
+        let date = "2019-09-01T12:00:00Z"
+            .parse::<DateTime<Utc>>()?
+            .to_proto_timestamp();
+        let trait2 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 2,
             entity_id: "entity_id2".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "email")?
-                .set_id("email1")
-                .set_modification_date("2019-09-01T12:00:00Z".parse::<DateTime<Utc>>()?)
-                .set("subject", "Some subject")
-                .set("body", "Very important body")
-                .build()?,
+            trt: Trait {
+                id: "trait2".to_string(),
+                creation_date: Some(date.clone()),
+                modification_date: Some(date),
+                message: Some(
+                    TestMessage2 {
+                        string1: "Some subject".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+            },
         });
 
-        let email2 = IndexMutation::PutTrait(PutTraitMutation {
+        let date = "2019-09-03T12:00:00Z"
+            .parse::<DateTime<Utc>>()?
+            .to_proto_timestamp();
+        let trait3 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
-            operation_id: 2,
+            operation_id: 3,
             entity_id: "entity_id3".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "email")?
-                .set_id("email2")
-                .set_modification_date("2019-09-03T12:00:00Z".parse::<DateTime<Utc>>()?)
-                .set("subject", "Some subject")
-                .set("body", "Very important body")
-                .build()?,
+            trt: Trait {
+                id: "trait3".to_string(),
+                creation_date: Some(date.clone()),
+                modification_date: Some(date),
+                message: Some(
+                    TestMessage2 {
+                        string1: "Some subject".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+            },
         });
 
-        let email3 = IndexMutation::PutTrait(PutTraitMutation {
+        let date = "2019-09-02T12:00:00Z"
+            .parse::<DateTime<Utc>>()?
+            .to_proto_timestamp();
+        let trait4 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
-            operation_id: 2,
+            operation_id: 4,
             entity_id: "entity_id4".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "email")?
-                .set_id("email3")
-                .set_modification_date("2019-09-02T12:00:00Z".parse::<DateTime<Utc>>()?)
-                .set("subject", "Some subject")
-                .set("body", "Very important body")
-                .build()?,
+            trt: Trait {
+                id: "trait4".to_string(),
+                creation_date: Some(date.clone()),
+                modification_date: Some(date),
+                message: Some(
+                    TestMessage2 {
+                        string1: "Some subject".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+            },
         });
 
-        index.apply_mutations(vec![context1, email1, email2, email3].into_iter())?;
+        index.apply_mutations(vec![trait1, trait2, trait3, trait4].into_iter())?;
 
-        let results = index.search_with_trait("exocore.contact", None)?;
+        let results = index.search_with_trait("exocore.test.TestMessage", None)?;
         assert_eq!(results.results.len(), 1);
         assert!(find_trait_result(&results, "trt1").is_some());
 
         // ordering of multiple traits is by modification date
-        let results = index.search_with_trait("exocore.email", None)?;
+        let results = index.search_with_trait("exocore.test.TestMessage2", None)?;
         let traits_ids = results
             .results
             .iter()
             .map(|res| res.trait_id.clone())
             .collect_vec();
-        assert_eq!(traits_ids, vec!["email2", "email3", "email1"]);
+        assert_eq!(traits_ids, vec!["trait3", "trait4", "trait2"]);
 
         // with limit
         let paging = TraitPaging {
@@ -1045,7 +1103,7 @@ mod tests {
             before_score: None,
             count: 1,
         };
-        let results = index.search_with_trait("exocore.email", Some(paging))?;
+        let results = index.search_with_trait("exocore.test.TestMessage2", Some(paging))?;
         assert_eq!(results.results.len(), 1);
 
         // only results after given modification date
@@ -1056,13 +1114,13 @@ mod tests {
             before_score: None,
             count: 10,
         };
-        let results = index.search_with_trait("exocore.email", Some(paging))?;
+        let results = index.search_with_trait("exocore.test.TestMessage2", Some(paging))?;
         let traits_ids = results
             .results
             .iter()
             .map(|res| res.trait_id.clone())
             .collect_vec();
-        assert_eq!(traits_ids, vec!["email2", "email3"]);
+        assert_eq!(traits_ids, vec!["trait3", "trait4"]);
 
         // only results before given modification date
         let paging = TraitPaging {
@@ -1070,39 +1128,45 @@ mod tests {
             before_score: Some(date_value),
             count: 10,
         };
-        let results = index.search_with_trait("exocore.email", Some(paging))?;
+        let results = index.search_with_trait("exocore.test.TestMessage2", Some(paging))?;
         let traits_ids = results
             .results
             .iter()
             .map(|res| res.trait_id.clone())
             .collect_vec();
-        assert_eq!(traits_ids, vec!["email1"]);
+        assert_eq!(traits_ids, vec!["trait2"]);
 
         Ok(())
     }
 
     #[test]
     fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut indexer = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut indexer = TraitsIndex::create_in_memory(config, registry)?;
         let clock = Clock::new();
         let node = LocalNode::generate();
 
         let contacts = (0..30).map(|i| {
             let now = clock.consistent_time(node.node());
+
             IndexMutation::PutTrait(PutTraitMutation {
                 block_offset: Some(i),
                 operation_id: now.into(),
                 entity_id: format!("entity_id{}", i),
-                trt: TraitBuilder::new(&schema, "exocore", "contact")
-                    .unwrap()
-                    .set("id", format!("entity_id{}", i))
-                    .set("name", "Justin Trudeau")
-                    .set("email", "justin.trudeau@gov.ca")
-                    .set_modification_date(now.to_datetime())
-                    .build()
-                    .unwrap(),
+                trt: Trait {
+                    id: format!("entity_id{}", i),
+                    creation_date: Some(now.to_datetime().to_proto_timestamp()),
+                    modification_date: Some(now.to_datetime().to_proto_timestamp()),
+                    message: Some(
+                        TestMessage {
+                            string1: "Some Subject".to_string(),
+                            ..Default::default()
+                        }
+                        .pack_to_any()
+                        .unwrap(),
+                    ),
+                },
             })
         });
         indexer.apply_mutations(contacts)?;
@@ -1113,23 +1177,27 @@ mod tests {
             count: 10,
         };
 
-        let results1 = indexer.search_with_trait("exocore.contact", Some(paging))?;
+        let results1 = indexer.search_with_trait("exocore.test.TestMessage", Some(paging))?;
         assert_eq!(results1.total_results, 30);
         assert_eq!(results1.remaining_results, 20);
         assert_eq!(results1.results.len(), 10);
         find_trait_result(&results1, "id29");
         find_trait_result(&results1, "id20");
 
-        let results2 = indexer
-            .search_with_trait("exocore.contact", Some(results1.next_page.clone().unwrap()))?;
+        let results2 = indexer.search_with_trait(
+            "exocore.test.TestMessage",
+            Some(results1.next_page.clone().unwrap()),
+        )?;
         assert_eq!(results2.total_results, 30);
         assert_eq!(results2.remaining_results, 10);
         assert_eq!(results2.results.len(), 10);
         find_trait_result(&results1, "id19");
         find_trait_result(&results1, "id10");
 
-        let results3 =
-            indexer.search_with_trait("exocore.contact", Some(results2.next_page.unwrap()))?;
+        let results3 = indexer.search_with_trait(
+            "exocore.test.TestMessage",
+            Some(results2.next_page.unwrap()),
+        )?;
         assert_eq!(results3.total_results, 30);
         assert_eq!(results3.remaining_results, 0);
         assert_eq!(results3.results.len(), 10);
@@ -1137,7 +1205,7 @@ mod tests {
         find_trait_result(&results1, "id0");
 
         // search all should return an iterator over all results
-        let query = Query::with_trait("exocore.contact");
+        let query = QueryBuilder::with_trait("exocore.test.TestMessage").build();
         let iter = indexer.search_all(&query)?;
         assert_eq!(iter.total_results, 30);
         let results = iter.collect_vec();
@@ -1148,9 +1216,9 @@ mod tests {
 
     #[test]
     fn highest_indexed_block() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut index = TraitsIndex::create_in_memory(config, registry)?;
 
         assert_eq!(index.highest_indexed_block()?, None);
 
@@ -1158,9 +1226,17 @@ mod tests {
             block_offset: Some(1234),
             operation_id: 1,
             entity_id: "et1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trt1")
-                .build()?,
+            trt: Trait {
+                id: "trt1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Some Subject".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         }))?;
         assert_eq!(index.highest_indexed_block()?, Some(1234));
 
@@ -1168,9 +1244,17 @@ mod tests {
             block_offset: Some(120),
             operation_id: 2,
             entity_id: "et1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trt2")
-                .build()?,
+            trt: Trait {
+                id: "trt2".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Some Subject".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         }))?;
         assert_eq!(index.highest_indexed_block()?, Some(1234));
 
@@ -1178,9 +1262,17 @@ mod tests {
             block_offset: Some(9999),
             operation_id: 3,
             entity_id: "et1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trt1")
-                .build()?,
+            trt: Trait {
+                id: "trt1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Some Subject".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         }))?;
         assert_eq!(index.highest_indexed_block()?, Some(9999));
 
@@ -1189,19 +1281,25 @@ mod tests {
 
     #[test]
     fn update_trait() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut index = TraitsIndex::create_in_memory(config, registry)?;
 
         let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 1,
             entity_id: "entity_id1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau1")
-                .set("name", "Justin Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
         index.apply_mutation(contact_mutation)?;
 
@@ -1209,15 +1307,21 @@ mod tests {
             block_offset: None,
             operation_id: 2,
             entity_id: "entity_id1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau1")
-                .set("name", "Justin Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
         index.apply_mutation(contact_mutation)?;
 
-        let results = index.search_matches("justin", None)?;
+        let results = index.search_matches("foo", None)?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.total_results, 1);
         assert_eq!(results.remaining_results, 0);
@@ -1228,72 +1332,84 @@ mod tests {
 
     #[test]
     fn delete_trait_mutation() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut index = TraitsIndex::create_in_memory(config, registry)?;
 
         let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 1234,
             entity_id: "entity_id1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau1")
-                .set("name", "Justin Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
         index.apply_mutation(contact_mutation)?;
 
-        assert_eq!(index.search_matches("justin", None)?.results.len(), 1);
+        assert_eq!(index.search_matches("foo", None)?.results.len(), 1);
 
         index.apply_mutation(IndexMutation::DeleteTrait(
             "entity_id1".to_string(),
-            "trudeau1".to_string(),
+            "foo1".to_string(),
         ))?;
 
-        assert_eq!(index.search_matches("justin", None)?.results.len(), 0);
+        assert_eq!(index.search_matches("foo", None)?.results.len(), 0);
 
         Ok(())
     }
 
     #[test]
     fn delete_operation_id_mutation() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut index = TraitsIndex::create_in_memory(config, registry)?;
 
         let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 1234,
             entity_id: "entity_id1".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau1")
-                .set("name", "Justin Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
         index.apply_mutation(contact_mutation)?;
 
-        assert_eq!(index.search_matches("justin", None)?.results.len(), 1);
+        assert_eq!(index.search_matches("foo", None)?.results.len(), 1);
 
         index.apply_mutation(IndexMutation::DeleteOperation(1234))?;
 
-        assert_eq!(index.search_matches("justin", None)?.results.len(), 0);
+        assert_eq!(index.search_matches("foo", None)?.results.len(), 0);
 
         Ok(())
     }
 
     #[test]
     fn put_trait_tombstone() -> Result<(), failure::Error> {
-        let schema = exocore_schema::test_schema::create();
+        let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, schema.clone())?;
+        let mut index = TraitsIndex::create_in_memory(config, registry)?;
 
         let contact_mutation = IndexMutation::PutTraitTombstone(PutTraitTombstone {
             block_offset: None,
             operation_id: 1234,
             entity_id: "entity_id1".to_string(),
-            trait_id: "trudeau1".to_string(),
+            trait_id: "foo1".to_string(),
         });
         index.apply_mutation(contact_mutation)?;
 
@@ -1301,11 +1417,17 @@ mod tests {
             block_offset: None,
             operation_id: 2345,
             entity_id: "entity_id2".to_string(),
-            trt: TraitBuilder::new(&schema, "exocore", "contact")?
-                .set("id", "trudeau2")
-                .set("name", "Justin Trudeau")
-                .set("email", "justin.trudeau@gov.ca")
-                .build()?,
+            trt: Trait {
+                id: "foo2".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                ..Default::default()
+            },
         });
         index.apply_mutation(contact_mutation)?;
 

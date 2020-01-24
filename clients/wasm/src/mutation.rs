@@ -1,21 +1,23 @@
 use std::sync::Arc;
 
-use exocore_index::mutation::Mutation;
+use exocore_index::mutation::MutationBuilder as InnerMutationBuilder;
 use exocore_index::store::remote::ClientHandle;
 use exocore_schema::entity::{Entity, FieldValue, RecordBuilder, TraitBuilder};
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
-use wasm_bindgen::__rt::std::collections::HashMap;
+use js_sys::Uint8Array;
+use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 use crate::js::into_js_error;
+use exocore_common::protos::generated::exocore_index::EntityMutation;
 
 #[wasm_bindgen]
 pub struct MutationBuilder {
     schema: Arc<Schema>,
     store_handle: Arc<ClientHandle>,
 
-    inner: Option<Mutation>,
+    inner: Option<EntityMutation>,
 }
 
 #[wasm_bindgen]
@@ -35,21 +37,22 @@ impl MutationBuilder {
         trait_type: &str,
         data: JsValue,
     ) -> MutationBuilder {
-        let trait_builder = self.jsdata_to_trait_builder(trait_type, data);
-        let trt = trait_builder.build().expect("Couldn't build trait");
-        self.inner = Some(Mutation::put_trait(entity_id, trt));
+        // TODO: Parse
+        //        let trait_builder = self.jsdata_to_trait_builder(trait_type, data);
+        //        let trt = trait_builder.build().expect("Couldn't build trait");
+        //        self.inner = Some(InnerMutationBuilder::put_trait(entity_id, trt));
         self
     }
 
     #[wasm_bindgen]
     pub fn delete_trait(mut self, entity_id: String, trait_id: String) -> MutationBuilder {
-        self.inner = Some(Mutation::delete_trait(entity_id, trait_id));
+        self.inner = Some(InnerMutationBuilder::delete_trait(entity_id, trait_id));
         self
     }
 
     #[wasm_bindgen]
     pub fn create_entity(self, trait_type: &str, data: JsValue) -> MutationBuilder {
-        let entity_id = Entity::generate_random_id();
+        let entity_id = Entity::generate_random_id(); // TODO: move to some method in core
         self.put_trait(entity_id, trait_type, data)
     }
 
@@ -64,23 +67,13 @@ impl MutationBuilder {
 
             match result {
                 Ok(res) => {
-                    let serialized = with_schema(&schema, || JsValue::from_serde(&res));
-                    serialized.map_err(into_js_error)
+                    // TODO:
+                    //                    let serialized = with_schema(&schema, || JsValue::from_serde(&res));
+                    //                    serialized.map_err(into_js_error)
+                    Ok("".into())
                 }
                 Err(err) => Err(into_js_error(err)),
             }
         })
-    }
-
-    fn jsdata_to_trait_builder(&self, trait_type: &str, data: JsValue) -> TraitBuilder {
-        let dict: HashMap<String, FieldValue> = data.into_serde().expect("Couldn't parse data");
-
-        let mut trait_builder = TraitBuilder::new_full_name(&self.schema, trait_type)
-            .expect("Couldn't create TraitBuilder");
-        for (name, value) in dict {
-            trait_builder = trait_builder.set(&name, value);
-        }
-
-        trait_builder
     }
 }

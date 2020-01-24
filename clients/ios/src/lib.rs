@@ -9,11 +9,10 @@ use exocore_common::cell::Cell;
 use exocore_common::crypto::keys::{Keypair, PublicKey};
 use exocore_common::futures::Runtime;
 use exocore_common::node::{LocalNode, Node};
+use exocore_common::protos::prost::ProstMessageExt;
 use exocore_common::time::{Clock, ConsistentTimestamp};
-use exocore_index::query::Query;
+use exocore_index::query::QueryBuilder;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
-use exocore_schema::schema::Schema;
-use exocore_schema::serialization::with_schema;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use futures::compat::Future01CompatExt;
@@ -21,14 +20,13 @@ use futures::StreamExt;
 use libc;
 use std::ffi::CString;
 use std::os::raw::c_void;
-use std::sync::{Arc, Once};
+use std::sync::Once;
 
 static INIT: Once = Once::new();
 
 pub struct Context {
     runtime: Runtime,
     store_handle: ClientHandle,
-    schema: Arc<Schema>,
 }
 
 impl Context {
@@ -54,7 +52,6 @@ impl Context {
                 .expect("Couldn't decode cell publickey");
         let cell = Cell::new(cell_pk, local_node);
         let clock = Clock::new();
-        let schema = exocore_schema::test_schema::create();
 
         let remote_node_pk =
             PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
@@ -77,7 +74,6 @@ impl Context {
             remote_store_config,
             cell.clone(),
             clock,
-            schema.clone(),
             store_transport,
             remote_node,
         )
@@ -108,7 +104,6 @@ impl Context {
 
         Ok(Context {
             runtime,
-            schema,
             store_handle,
         })
     }
@@ -119,20 +114,21 @@ impl Context {
         callback: extern "C" fn(status: QueryStatus, *const libc::c_char, *const c_void),
         callback_ctx: *const c_void,
     ) -> Result<QueryHandle, QueryStatus> {
-        let future_result = self
-            .store_handle
-            .query(Query::with_trait("exocore.task").with_count(1000));
+        let future_result = self.store_handle.query(
+            QueryBuilder::with_trait("exocore.task")
+                .with_count(1000)
+                .build(),
+        );
         let query_id = future_result.query_id();
 
-        let schema = self.schema.clone();
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         self.runtime.spawn_std(async move {
             let result = future_result.await;
             match result {
                 Ok(res) => {
                     debug!("Query results received");
-                    let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
-                    let cstr = CString::new(json).unwrap();
+                    let encoded = res.encode_to_vec().unwrap();
+                    let cstr = CString::new(encoded).unwrap();
 
                     callback(
                         QueryStatus::Success,
@@ -160,13 +156,14 @@ impl Context {
         callback: extern "C" fn(status: QueryStatus, *const libc::c_char, *const c_void),
         callback_ctx: *const c_void,
     ) -> Result<QueryStreamHandle, QueryStreamStatus> {
-        let result_stream = self
-            .store_handle
-            .watched_query(Query::with_trait("exocore.task").with_count(1000));
+        let result_stream = self.store_handle.watched_query(
+            QueryBuilder::with_trait("exocore.task")
+                .with_count(1000)
+                .build(),
+        );
 
         let query_id = result_stream.query_id();
 
-        let schema = self.schema.clone();
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         self.runtime.spawn_std(async move {
             let mut stream = result_stream;
@@ -175,8 +172,8 @@ impl Context {
                 match result {
                     Ok(res) => {
                         debug!("Watched query results received");
-                        let json = with_schema(&schema, || serde_json::to_string(&res)).unwrap();
-                        let cstr = CString::new(json).unwrap();
+                        let encoded = res.encode_to_vec().unwrap();
+                        let cstr = CString::new(encoded).unwrap();
 
                         callback(
                             QueryStatus::Success,

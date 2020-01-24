@@ -7,12 +7,14 @@ pub struct Entity {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Trait {
-    #[prost(message, optional, tag = "1")]
-    pub message: ::std::option::Option<::prost_types::Any>,
+    #[prost(string, tag = "1")]
+    pub id: std::string::String,
     #[prost(message, optional, tag = "2")]
-    pub created_at: ::std::option::Option<::prost_types::Timestamp>,
+    pub message: ::std::option::Option<::prost_types::Any>,
     #[prost(message, optional, tag = "3")]
-    pub modified_at: ::std::option::Option<::prost_types::Timestamp>,
+    pub creation_date: ::std::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "4")]
+    pub modification_date: ::std::option::Option<::prost_types::Timestamp>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityQuery {
@@ -22,12 +24,12 @@ pub struct EntityQuery {
     #[prost(bool, tag = "6")]
     pub summary: bool,
     //// Optional watch token if this query is to be used for watching.
-    #[prost(string, tag = "7")]
-    pub watch_token: std::string::String,
+    #[prost(uint64, tag = "7")]
+    pub watch_token: u64,
     //// If specified, if results from server matches this hash, only a summary will be returned.
-    #[prost(string, tag = "8")]
-    pub result_hash: std::string::String,
-    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4")]
+    #[prost(uint64, tag = "8")]
+    pub result_hash: u64,
+    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 99")]
     pub predicate: ::std::option::Option<entity_query::Predicate>,
 }
 pub mod entity_query {
@@ -39,8 +41,8 @@ pub mod entity_query {
         Trait(super::TraitPredicate),
         #[prost(message, tag = "3")]
         Id(super::IdPredicate),
-        #[prost(message, tag = "4")]
-        Fail(super::FailPredicate),
+        #[prost(message, tag = "99")]
+        Test(super::TestPredicate),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -54,7 +56,10 @@ pub struct IdPredicate {
     pub id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FailPredicate {}
+pub struct TestPredicate {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitPredicate {
     #[prost(string, tag = "1")]
@@ -79,7 +84,7 @@ pub struct Paging {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityResults {
     #[prost(message, repeated, tag = "1")]
-    pub entities: ::std::vec::Vec<EntityResults>,
+    pub entities: ::std::vec::Vec<EntityResult>,
     #[prost(bool, tag = "2")]
     pub summary: bool,
     #[prost(uint32, tag = "3")]
@@ -88,8 +93,8 @@ pub struct EntityResults {
     pub current_page: ::std::option::Option<Paging>,
     #[prost(message, optional, tag = "5")]
     pub next_page: ::std::option::Option<Paging>,
-    #[prost(string, tag = "6")]
-    pub hash: std::string::String,
+    #[prost(uint64, tag = "6")]
+    pub hash: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityResult {
@@ -106,4 +111,42 @@ pub enum EntityResultSource {
     Unknown = 0,
     Pending = 1,
     Chain = 2,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EntityMutation {
+    #[prost(string, tag = "1")]
+    pub entity_id: std::string::String,
+    #[prost(oneof = "entity_mutation::Mutation", tags = "2, 3, 99")]
+    pub mutation: ::std::option::Option<entity_mutation::Mutation>,
+}
+pub mod entity_mutation {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Mutation {
+        #[prost(message, tag = "2")]
+        PutTrait(super::PutTraitMutation),
+        #[prost(message, tag = "3")]
+        DeleteTrait(super::DeleteTraitMutation),
+        #[prost(message, tag = "99")]
+        Test(super::TestMutation),
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PutTraitMutation {
+    #[prost(message, optional, tag = "1")]
+    pub r#trait: ::std::option::Option<Trait>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTraitMutation {
+    #[prost(string, tag = "1")]
+    pub trait_id: std::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TestMutation {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MutationResult {
+    #[prost(uint64, tag = "1")]
+    pub operation_id: u64,
 }

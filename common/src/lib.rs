@@ -7,7 +7,7 @@ extern crate log;
 
 pub extern crate capnp;
 pub mod protos;
-pub(crate) use self::protos::*; // generated protos expect protos to be at root of crate
+pub(crate) use self::protos::generated::{common_capnp, data_chain_capnp, data_transport_capnp}; // generated capnp protos expect to be at root
 
 pub mod cell;
 pub mod crypto;

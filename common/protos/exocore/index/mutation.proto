@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package exocore.index;
+
+import "exocore/index/entity.proto";
+
+message EntityMutation {
+    string entity_id = 1;
+
+    oneof mutation {
+        PutTraitMutation put_trait = 2;
+        DeleteTraitMutation delete_trait = 3;
+        TestMutation test = 99;
+    }
+}
+
+message PutTraitMutation {
+    Trait trait = 1;
+}
+
+message DeleteTraitMutation {
+    string trait_id = 1;
+}
+
+message TestMutation {
+    bool success = 1;
+}
+
+
+message MutationResult {
+    uint64 operation_id = 1;
+}

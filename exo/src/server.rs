@@ -2,6 +2,7 @@ use crate::config::NodeConfig;
 use crate::options;
 use exocore_common::cell::{Cell, FullCell};
 use exocore_common::futures::{Future01, Runtime};
+use exocore_common::protos::registry::Registry;
 use exocore_common::time::Clock;
 use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
@@ -9,7 +10,6 @@ use exocore_data::{
 };
 use exocore_index::store::local::{EntitiesIndex, EntitiesIndexConfig, Store};
 use exocore_index::store::remote::server::Server;
-use exocore_schema::schema::Schema;
 use exocore_transport::either::EitherTransportHandle;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::ws::{
@@ -85,7 +85,7 @@ pub fn start(
             let full_cell = opt_full_cell.ok_or_else(|| {
                 err_msg("Tried to start a local index, but node doesn't have full cell access (not private key)")
             })?;
-            let schema = exocore_schema::test_schema::create();
+            let registry = Arc::new(Registry::new_with_exocore_types());
 
             let mut index_dir = cell_config.data_directory.clone();
             index_dir.push("index");
@@ -95,7 +95,7 @@ pub fn start(
             let entities_index = EntitiesIndex::open_or_create(
                 &index_dir,
                 entities_index_config,
-                schema.clone(),
+                registry.clone(),
                 index_engine_handle.clone(),
             )?;
 
@@ -109,7 +109,6 @@ pub fn start(
                     index_engine_handle,
                     full_cell,
                     clock,
-                    schema,
                     entities_index,
                 )?;
             } else {
@@ -120,7 +119,6 @@ pub fn start(
                     index_engine_handle,
                     full_cell,
                     clock,
-                    schema,
                     entities_index,
                 )?;
             };
@@ -164,7 +162,6 @@ fn create_local_store<T: TransportHandle>(
     index_engine_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
     full_cell: FullCell,
     clock: Clock,
-    schema: Arc<Schema>,
     entities_index: EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
 ) -> Result<(), failure::Error> {
     let store_config = Default::default();
@@ -172,7 +169,6 @@ fn create_local_store<T: TransportHandle>(
         store_config,
         full_cell.cell().clone(),
         clock,
-        schema.clone(),
         index_engine_handle,
         entities_index,
     )?;
@@ -190,7 +186,6 @@ fn create_local_store<T: TransportHandle>(
     let remote_store_server = Server::new(
         server_config,
         full_cell.cell().clone(),
-        schema,
         store_handle,
         transport,
     )?;

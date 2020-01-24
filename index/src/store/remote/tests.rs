@@ -6,12 +6,15 @@ use exocore_transport::mock::MockTransportHandle;
 use exocore_transport::TransportLayer;
 
 use crate::error::Error;
-use crate::mutation::{Mutation, MutationResult, TestFailMutation};
-use crate::query::{Query, QueryResult};
 use crate::store::local::TestStore;
 
 use super::*;
+use crate::mutation::MutationBuilder;
+use crate::query::QueryBuilder;
 use crate::store::remote::server::{Server, ServerConfiguration};
+use exocore_common::protos::generated::exocore_index::{
+    EntityMutation, EntityQuery, EntityResults, MutationResult,
+};
 use futures::executor::block_on_stream;
 
 #[test]
@@ -26,9 +29,9 @@ fn mutation_and_query() -> Result<(), failure::Error> {
     test_remote_store.send_and_await_mutation(mutation)?;
 
     expect_eventually(|| {
-        let query = Query::match_text("hello");
+        let query = QueryBuilder::match_text("hello").build();
         let results = test_remote_store.send_and_await_query(query).unwrap();
-        results.results.len() == 1
+        results.entities.len() == 1
     });
 
     Ok(())
@@ -40,7 +43,7 @@ fn mutation_error_propagation() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let mutation = Mutation::TestFail(TestFailMutation {});
+    let mutation = MutationBuilder::fail_mutation("entity1");
     let result = test_remote_store.send_and_await_mutation(mutation);
     assert!(result.is_err());
 
@@ -58,7 +61,7 @@ fn query_error_propagation() -> Result<(), failure::Error> {
         .create_put_contact_mutation("entity1", "trait1", "hello");
     test_remote_store.send_and_await_mutation(mutation)?;
 
-    let query = Query::test_fail();
+    let query = QueryBuilder::failed().build();
     let result = test_remote_store.send_and_await_query(query);
     assert!(result.is_err());
 
@@ -78,7 +81,7 @@ fn query_timeout() -> Result<(), failure::Error> {
     // only start remote, so local won't answer and it should timeout
     test_remote_store.start_client()?;
 
-    let query = Query::match_text("hello");
+    let query = QueryBuilder::match_text("hello").build();
     let result = test_remote_store.send_and_await_query(query);
     assert!(result.is_err());
 
@@ -118,11 +121,11 @@ fn watched_query() -> Result<(), failure::Error> {
         .create_put_contact_mutation("entity1", "trait1", "hello");
     test_remote_store.send_and_await_mutation(mutation)?;
 
-    let query = Query::match_text("hello");
+    let query = QueryBuilder::match_text("hello").build();
     let mut stream = block_on_stream(test_remote_store.client_handle.watched_query(query));
 
     let results = stream.next().unwrap().unwrap();
-    assert_eq!(results.results.len(), 1);
+    assert_eq!(results.entities.len(), 1);
 
     let mutation = test_remote_store
         .local_store
@@ -130,7 +133,7 @@ fn watched_query() -> Result<(), failure::Error> {
     test_remote_store.send_and_await_mutation(mutation)?;
 
     let results = stream.next().unwrap().unwrap();
-    assert_eq!(results.results.len(), 2);
+    assert_eq!(results.entities.len(), 2);
 
     Ok(())
 }
@@ -141,7 +144,7 @@ fn watched_query_error_propagation() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let query = Query::test_fail();
+    let query = QueryBuilder::failed().build();
     let mut stream = block_on_stream(test_remote_store.client_handle.watched_query(query));
 
     let results = stream.next().unwrap();
@@ -178,11 +181,11 @@ fn watched_query_timeout() -> Result<(), failure::Error> {
         .create_put_contact_mutation("entity1", "trait1", "hello");
     test_remote_store.send_and_await_mutation(mutation)?;
 
-    let query = Query::match_text("hello");
+    let query = QueryBuilder::match_text("hello").build();
     let mut stream = block_on_stream(test_remote_store.client_handle.watched_query(query));
 
     let results = stream.next().unwrap().unwrap();
-    assert_eq!(results.results.len(), 1);
+    assert_eq!(results.entities.len(), 1);
 
     let watched_queries = test_remote_store.local_store.store_handle.watched_queries();
     assert_eq!(watched_queries.len(), 1);
@@ -208,7 +211,7 @@ fn watched_drop_unregisters() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let query = Query::match_text("hello");
+    let query = QueryBuilder::match_text("hello").build();
     let stream = test_remote_store.client_handle.watched_query(query);
 
     // wait for watched query to registered
@@ -235,7 +238,7 @@ fn watched_cancel() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let query = Query::match_text("hello");
+    let query = QueryBuilder::match_text("hello").build();
     let stream = test_remote_store.client_handle.watched_query(query);
     let query_id = stream.query_id();
 
@@ -262,7 +265,7 @@ fn client_drop_stops_watched_stream() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let query = Query::match_text("hello");
+    let query = QueryBuilder::match_text("hello").build();
     let mut stream = block_on_stream(test_remote_store.client_handle.watched_query(query));
 
     let results = stream.next().unwrap();
@@ -304,7 +307,6 @@ impl TestRemoteStore {
             client_config,
             local_store.cluster.cells[0].cell().clone(),
             local_store.cluster.clocks[0].clone(),
-            local_store.schema.clone(),
             local_store
                 .cluster
                 .transport_hub
@@ -327,13 +329,12 @@ impl TestRemoteStore {
         self.local_store.start_store()?;
 
         let cell = self.local_store.cluster.cells[0].cell().clone();
-        let schema = self.local_store.schema.clone();
         let transport = self.local_store.cluster.transport_hub.get_transport(
             self.local_store.cluster.nodes[0].clone(),
             TransportLayer::Index,
         );
 
-        let server = Server::new(self.server_config, cell, schema, store_handle, transport)?;
+        let server = Server::new(self.server_config, cell, store_handle, transport)?;
         self.local_store.cluster.runtime.spawn_std(async move {
             let res = server.run().await;
             info!("Server is done: {:?}", res);
@@ -354,11 +355,14 @@ impl TestRemoteStore {
         Ok(())
     }
 
-    fn send_and_await_mutation(&mut self, mutation: Mutation) -> Result<MutationResult, Error> {
+    fn send_and_await_mutation(
+        &mut self,
+        mutation: EntityMutation,
+    ) -> Result<MutationResult, Error> {
         futures::executor::block_on(self.client_handle.mutate(mutation))
     }
 
-    fn send_and_await_query(&mut self, query: Query) -> Result<QueryResult, Error> {
+    fn send_and_await_query(&mut self, query: EntityQuery) -> Result<EntityResults, Error> {
         futures::executor::block_on(self.client_handle.query(query))
     }
 }

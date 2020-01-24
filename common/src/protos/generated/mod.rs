@@ -19,8 +19,8 @@ pub mod index_transport_capnp;
 pub mod types;
 pub use types::*;
 
-pub(crate) mod reflect;
-
-pub mod entity;
-pub mod query;
-pub mod results;
+// Protobuf
+pub mod exocore_index;
+pub mod exocore_test;
+pub const INDEX_FDSET: &[u8] = include_bytes!("./exocore_index.fd");
+pub const TEST_FDSET: &[u8] = include_bytes!("./exocore_test.fd");

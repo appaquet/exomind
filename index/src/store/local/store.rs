@@ -2,22 +2,24 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use exocore_common::futures::spawn_blocking;
 use exocore_common::utils::handle_set::{Handle, HandleSet};
-use exocore_schema::schema::Schema;
 use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
 use crate::error::Error;
-use crate::mutation::{Mutation, MutationResult};
-use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
+use crate::query::WatchToken;
 use crate::store::local::watched_queries::WatchedQueries;
 
 use super::entities_index::EntitiesIndex;
 use exocore_common::cell::Cell;
+use exocore_common::protos::generated::exocore_index::entity_mutation::Mutation;
+use exocore_common::protos::generated::exocore_index::{
+    EntityMutation, EntityQuery, EntityResults, MutationResult,
+};
+use exocore_common::protos::prost::ProstMessageExt;
 use exocore_common::time::Clock;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-/// Config for `Store`
 #[derive(Clone, Copy)]
 pub struct StoreConfig {
     pub query_channel_size: usize,
@@ -57,7 +59,6 @@ where
         config: StoreConfig,
         cell: Cell,
         clock: Clock,
-        schema: Arc<Schema>,
         data_handle: exocore_data::engine::EngineHandle<CS, PS>,
         index: EntitiesIndex<CS, PS>,
     ) -> Result<Store<CS, PS>, Error> {
@@ -67,7 +68,6 @@ where
         let inner = Arc::new(RwLock::new(Inner {
             cell,
             clock,
-            schema,
             index,
             watched_queries: WatchedQueries::new(),
             incoming_queries_sender,
@@ -218,7 +218,6 @@ where
 {
     cell: Cell,
     clock: Clock,
-    schema: Arc<Schema>,
     index: EntitiesIndex<CS, PS>,
     watched_queries: WatchedQueries,
     incoming_queries_sender: mpsc::Sender<QueryRequest>,
@@ -232,33 +231,28 @@ where
 {
     fn write_mutation_weak(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        mutation: Mutation,
+        entity_mutation: EntityMutation,
     ) -> Result<MutationResult, Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let inner = inner.read()?;
-        inner.write_mutation(mutation)
+        inner.write_mutation(entity_mutation)
     }
 
-    fn write_mutation(&self, mutation: Mutation) -> Result<MutationResult, Error> {
-        #[cfg(test)]
-        {
-            if let Mutation::TestFail(_mutation) = &mutation {
-                return Err(Error::Other("TestFail mutation".to_string()));
-            }
+    fn write_mutation(&self, entity_mutation: EntityMutation) -> Result<MutationResult, Error> {
+        if let Some(Mutation::Test(_mutation)) = entity_mutation.mutation {
+            return Err(Error::Other("TestFail mutation".to_string()));
         }
 
-        let json_mutation = mutation.to_json(self.schema.clone())?;
-        let operation_id = self
-            .data_handle
-            .write_entry_operation(json_mutation.as_bytes())?;
+        let buf = entity_mutation.encode_to_vec()?;
+        let operation_id = self.data_handle.write_entry_operation(&buf)?;
 
         Ok(MutationResult { operation_id })
     }
 
     async fn execute_query_async(
         weak_inner: Weak<RwLock<Inner<CS, PS>>>,
-        query: Query,
-    ) -> Result<QueryResult, Error> {
+        query: EntityQuery,
+    ) -> Result<EntityResults, Error> {
         let result = spawn_blocking(move || {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
@@ -321,14 +315,14 @@ where
         tokens
     }
 
-    pub fn mutate(&self, mutation: Mutation) -> Result<MutationResult, Error> {
+    pub fn mutate(&self, mutation: EntityMutation) -> Result<MutationResult, Error> {
         Inner::write_mutation_weak(&self.inner, mutation)
     }
 
     pub fn query(
         &self,
-        query: Query,
-    ) -> Result<impl Future<Output = Result<QueryResult, Error>>, Error> {
+        query: EntityQuery,
+    ) -> Result<impl Future<Output = Result<EntityResults, Error>>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
         let mut inner = inner.write().map_err(|_| Error::Dropped)?;
 
@@ -343,23 +337,24 @@ where
         Ok(async move { receiver.await.map_err(|_err| Error::Cancelled)? })
     }
 
-    pub fn watched_query(&self, query: Query) -> Result<WatchedQueryStream<CS, PS>, Error> {
+    pub fn watched_query(
+        &self,
+        mut query: EntityQuery,
+    ) -> Result<WatchedQueryStream<CS, PS>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
         let mut inner = inner.write().map_err(|_| Error::Dropped)?;
 
-        let watch_token = query
-            .watch_token
-            .unwrap_or_else(|| inner.clock.consistent_time(inner.cell.local_node()));
-        let watched_query = WatchedQuery {
-            query,
-            token: watch_token,
-        };
+        let mut watch_token = query.watch_token;
+        if watch_token == 0 {
+            watch_token = inner.clock.consistent_time(inner.cell.local_node()).into();
+            query.watch_token = watch_token;
+        }
 
         let (sender, receiver) = mpsc::channel(self.config.handle_watch_query_channel_size);
 
         // ok to dismiss send as sender end will be dropped in case of an error and consumer will be notified by channel being closed
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
-            query: watched_query.query,
+            query,
             sender: QueryRequestSender::Stream(Arc::new(Mutex::new(sender)), watch_token),
         });
 
@@ -380,7 +375,7 @@ where
 {
     watch_token: WatchToken,
     inner: Weak<RwLock<Inner<CS, PS>>>,
-    receiver: mpsc::Receiver<Result<QueryResult, Error>>,
+    receiver: mpsc::Receiver<Result<EntityResults, Error>>,
 }
 
 impl<CS, PS> futures::Stream for WatchedQueryStream<CS, PS>
@@ -388,7 +383,7 @@ where
     CS: exocore_data::chain::ChainStore,
     PS: exocore_data::pending::PendingStore,
 {
-    type Item = Result<QueryResult, Error>;
+    type Item = Result<EntityResults, Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.receiver.poll_next_unpin(cx)
@@ -411,20 +406,20 @@ where
 
 /// Incoming query to be executed, or re-scheduled watched query to be re-executed.
 struct QueryRequest {
-    query: Query,
+    query: EntityQuery,
     sender: QueryRequestSender,
 }
 
 enum QueryRequestSender {
     Stream(
-        Arc<Mutex<mpsc::Sender<Result<QueryResult, Error>>>>,
+        Arc<Mutex<mpsc::Sender<Result<EntityResults, Error>>>>,
         WatchToken,
     ),
-    Future(oneshot::Sender<Result<QueryResult, Error>>),
+    Future(oneshot::Sender<Result<EntityResults, Error>>),
 }
 
 impl QueryRequest {
-    fn reply(mut self, result: Result<QueryResult, Error>) {
+    fn reply(mut self, result: Result<EntityResults, Error>) {
         match self.sender {
             QueryRequestSender::Future(sender) => {
                 let _ = sender.send(result);
@@ -440,10 +435,10 @@ impl QueryRequest {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::mutation::TestFailMutation;
-
+    use super::super::TestStore;
     use super::*;
-    use crate::store::local::TestStore;
+    use crate::mutation::MutationBuilder;
+    use crate::query::QueryBuilder;
     use exocore_common::futures::delay_for;
     use futures::executor::block_on_stream;
     use std::time::Duration;
@@ -459,9 +454,9 @@ pub mod tests {
             .cluster
             .wait_operation_committed(0, response.operation_id);
 
-        let query = Query::match_text("hello");
+        let query = QueryBuilder::match_text("hello").build();
         let results = test_store.query(query)?;
-        assert_eq!(results.results.len(), 1);
+        assert_eq!(results.entities.len(), 1);
 
         Ok(())
     }
@@ -471,7 +466,7 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let query = Query::test_fail();
+        let query = QueryBuilder::failed().build();
         assert!(test_store.query(query).is_err());
 
         Ok(())
@@ -482,7 +477,7 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let mutation = Mutation::TestFail(TestFailMutation {});
+        let mutation = MutationBuilder::fail_mutation("entity_id".to_string());
         assert!(test_store.mutate(mutation).is_err());
 
         Ok(())
@@ -493,11 +488,11 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let query = Query::match_text("hello");
+        let query = QueryBuilder::match_text("hello").build();
         let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
 
         let result = stream.next().unwrap();
-        assert_eq!(result.unwrap().results.len(), 0);
+        assert_eq!(result.unwrap().entities.len(), 0);
 
         let mutation = test_store.create_put_contact_mutation("entry1", "contact1", "Hello World");
         let response = test_store.mutate(mutation)?;
@@ -506,7 +501,7 @@ pub mod tests {
             .wait_operation_committed(0, response.operation_id);
 
         let result = stream.next().unwrap();
-        assert_eq!(result.unwrap().results.len(), 1);
+        assert_eq!(result.unwrap().entities.len(), 1);
 
         let mutation =
             test_store.create_put_contact_mutation("entry2", "contact2", "Something else");
@@ -537,7 +532,7 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let query = Query::test_fail();
+        let query = QueryBuilder::failed().build();
         let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
 
         let result = stream.next().unwrap();

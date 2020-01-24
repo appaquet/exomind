@@ -1,4 +1,3 @@
-use super::generated::reflect::DynamicMessage as DynamicMessageProto;
 use super::registry::Registry;
 use super::Error;
 use protobuf;
@@ -7,7 +6,7 @@ use protobuf::types::{
     ProtobufType, ProtobufTypeInt32, ProtobufTypeInt64, ProtobufTypeMessage, ProtobufTypeString,
     ProtobufTypeUint32, ProtobufTypeUint64,
 };
-use protobuf::well_known_types::{Any, Timestamp};
+use protobuf::well_known_types::{Any, Empty, Timestamp};
 use protobuf::Message;
 use std::convert::TryFrom;
 use std::fmt::Debug;
@@ -64,9 +63,9 @@ impl<T: Message> ReflectMessage for GeneratedMessage<T> {
                 let value = value.get_message(&self.message);
                 let secs = value.descriptor().field_by_number(1).get_i64(value);
                 let nanos = value.descriptor().field_by_number(2).get_i32(value);
-                Ok(FieldValue::DateTime(timestamp_parts_to_datetime(
-                    secs, nanos,
-                )))
+                Ok(FieldValue::DateTime(
+                    crate::time::timestamp_parts_to_datetime(secs, nanos),
+                ))
             }
             FieldType::Message(_full_name) => Err(Error::InvalidFieldType),
         }
@@ -74,7 +73,7 @@ impl<T: Message> ReflectMessage for GeneratedMessage<T> {
 }
 
 pub struct DynamicMessage {
-    message: DynamicMessageProto,
+    message: Empty,
     descriptor: Arc<ReflectMessageDescriptor>,
 }
 
@@ -117,10 +116,9 @@ impl ReflectMessage for DynamicMessage {
             FieldType::DateTime => {
                 let value = ProtobufTypeMessage::<Timestamp>::get_from_unknown(value)
                     .ok_or(Error::NoSuchField)?;
-                Ok(FieldValue::DateTime(timestamp_parts_to_datetime(
-                    value.seconds,
-                    value.nanos,
-                )))
+                Ok(FieldValue::DateTime(
+                    crate::time::timestamp_parts_to_datetime(value.seconds, value.nanos),
+                ))
             }
             _ => Err(Error::NoSuchField),
         }
@@ -190,16 +188,6 @@ impl<'s> TryFrom<&'s FieldValue> for &'s str {
     }
 }
 
-pub fn message_to_any<M: Message>(message: &M) -> Result<Any, Error> {
-    let mut any = Any::new();
-    any.set_type_url(format!(
-        "type.googleapis.com/{}",
-        message.descriptor().full_name()
-    ));
-    any.set_value(message.write_to_bytes()?);
-    Ok(any)
-}
-
 pub fn from_generated<T: Message>(registry: &Registry, message: T) -> GeneratedMessage<T> {
     let descriptor = registry.get_or_register_generated_descriptor(&message);
 
@@ -210,7 +198,14 @@ pub fn from_generated<T: Message>(registry: &Registry, message: T) -> GeneratedM
 }
 
 pub fn from_any(registry: &Registry, any: &Any) -> Result<DynamicMessage, Error> {
-    from_any_url_and_data(registry, &any.type_url, any.get_value())
+    from_any_url_and_data(registry, &any.type_url, &any.value)
+}
+
+pub fn from_prost_any(
+    registry: &Registry,
+    any: &prost_types::Any,
+) -> Result<DynamicMessage, Error> {
+    from_any_url_and_data(registry, &any.type_url, &any.value)
 }
 
 pub fn from_any_url_and_data(
@@ -221,7 +216,7 @@ pub fn from_any_url_and_data(
     let full_name = url.replace("type.googleapis.com/", "");
 
     let descriptor = registry.get_message_descriptor(&full_name)?;
-    let message = protobuf::parse_from_bytes::<DynamicMessageProto>(data)?;
+    let message = protobuf::parse_from_bytes::<Empty>(data)?;
 
     Ok(DynamicMessage {
         message,
@@ -229,83 +224,42 @@ pub fn from_any_url_and_data(
     })
 }
 
-pub fn from_proto_timestamp(ts: Timestamp) -> chrono::DateTime<chrono::Utc> {
-    timestamp_parts_to_datetime(ts.seconds, ts.nanos)
-}
-
-pub fn timestamp_parts_to_datetime(secs: i64, nanos: i32) -> chrono::DateTime<chrono::Utc> {
-    chrono::DateTime::from_utc(
-        chrono::NaiveDateTime::from_timestamp(secs, nanos as u32),
-        chrono::Utc,
-    )
-}
-
-pub fn to_proto_timestamp(dt: chrono::DateTime<chrono::Utc>) -> Timestamp {
-    Timestamp {
-        seconds: dt.timestamp(),
-        nanos: dt.timestamp_subsec_nanos() as i32,
-        ..Default::default()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protos::generated::reflect::TestDynamicMessage;
+    use crate::protos::generated::exocore_test::TestMessage;
+    use crate::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
     use chrono::Utc;
 
     #[test]
     fn reflect_message_from_any() -> Result<(), failure::Error> {
-        let registry = Registry::new();
-        registry.register_file_descriptor(
-            crate::protos::generated::reflect::file_descriptor_proto().clone(),
-        );
+        let registry = Registry::new_with_exocore_types();
 
         let now = Utc::now();
-        let msg = TestDynamicMessage {
-            string_field: "field1".to_string(),
-            datetime_field1: Some(to_proto_timestamp(now)).into(),
+        let msg = TestMessage {
+            string1: "val1".to_string(),
+            date1: Some(now.to_proto_timestamp()),
             ..Default::default()
         };
-        let msg_any = message_to_any(&msg)?;
+        let msg_any = msg.pack_to_stepan_any()?;
 
         let dyn_msg = from_any(&registry, &msg_any)?;
-        let gen_msg = from_generated(&registry, msg);
 
-        assert_eq!("exocore.test.TestDynamicMessage", dyn_msg.full_name());
-        assert_eq!("exocore.test.TestDynamicMessage", gen_msg.full_name());
+        assert_eq!("exocore.test.TestMessage", dyn_msg.full_name());
 
-        assert_eq!(dyn_msg.fields().len(), 6);
-        assert_eq!(gen_msg.fields().len(), 6);
+        assert_eq!(dyn_msg.fields().len(), 9);
 
         let field1dyn = &dyn_msg.fields()[0];
         assert!(field1dyn.indexed_flag);
-        assert_eq!(dyn_msg.get_field_value(field1dyn)?.as_str()?, "field1");
-        assert_eq!(gen_msg.get_field_value(field1dyn)?.as_str()?, "field1");
-
-        let field1gen = &gen_msg.fields()[0];
-        assert!(field1dyn.indexed_flag);
-        assert_eq!(dyn_msg.get_field_value(field1gen)?.as_str()?, "field1");
-        assert_eq!(gen_msg.get_field_value(field1gen)?.as_str()?, "field1");
+        assert_eq!(dyn_msg.get_field_value(field1dyn)?.as_str()?, "val1");
 
         let field2 = &dyn_msg.fields()[2];
         assert!(!field2.indexed_flag);
 
         let field5 = &dyn_msg.fields()[5];
         assert_eq!(dyn_msg.get_field_value(field5)?.as_datetime()?, &now);
-        assert_eq!(gen_msg.get_field_value(field5)?.as_datetime()?, &now);
         assert!(field5.indexed_flag);
 
         Ok(())
-    }
-
-    #[test]
-    fn timestamp_conversion() {
-        let now = Utc::now();
-
-        let ts = to_proto_timestamp(now);
-        let dt = from_proto_timestamp(ts);
-
-        assert_eq!(dt, now);
     }
 }

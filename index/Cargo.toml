@@ -17,18 +17,12 @@ local_store = ["tantivy", "exocore-data/engine", "crc"]
 exocore-data = { path = "../data" }
 exocore-transport = { path = "../transport" }
 exocore-common = { path = "../common" }
-exocore-schema = { path = "../schema" }
 failure = "0.1"
 itertools = "0.8"
 log = "0.4"
 futures = "0.3"
-
-# Schema
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-serde_yaml = "0.8"
-uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
+prost = "0.6"
+bytes = "0.5"
 chrono = { version = "0.4", features = ["serde"] }
 
 # Local store
@@ -39,4 +33,3 @@ crc = { version = "1.8", optional = true }
 tempdir = "0.3"
 exocore-data = { path = "../data", features = ["tests_utils"] }
 exocore-common = { path = "../common", features = ["tests_utils"] }
-exocore-schema = { path = "../schema", features = ["tests_utils"] }

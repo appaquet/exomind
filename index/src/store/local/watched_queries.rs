@@ -6,7 +6,8 @@ use futures::channel::mpsc;
 use exocore_common::time::Instant;
 
 use crate::error::Error;
-use crate::query::{Query, QueryResult, ResultHash, WatchToken};
+use crate::query::{ResultHash, WatchToken};
+use exocore_common::protos::generated::exocore_index::{EntityQuery, EntityResults};
 
 pub struct WatchedQueries {
     inner: Mutex<Inner>,
@@ -24,9 +25,9 @@ impl WatchedQueries {
     pub fn update_query_results(
         &self,
         token: WatchToken,
-        query: &Query,
-        results: &QueryResult,
-        sender: Arc<Mutex<mpsc::Sender<Result<QueryResult, Error>>>>,
+        query: &EntityQuery,
+        results: &EntityResults,
+        sender: Arc<Mutex<mpsc::Sender<Result<EntityResults, Error>>>>,
     ) -> bool {
         let mut inner = self.inner.lock().expect("Inner got poisoned");
 
@@ -70,8 +71,8 @@ struct Inner {
 #[derive(Clone)]
 pub struct RegisteredWatchedQuery {
     pub(crate) token: WatchToken,
-    pub(crate) sender: Arc<Mutex<mpsc::Sender<Result<QueryResult, Error>>>>,
-    pub(crate) query: Arc<Query>,
+    pub(crate) sender: Arc<Mutex<mpsc::Sender<Result<EntityResults, Error>>>>,
+    pub(crate) query: Arc<EntityQuery>,
     pub(crate) last_register: Instant,
     pub(crate) last_hash: ResultHash,
 }

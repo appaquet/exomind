@@ -10,8 +10,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-pub const EXOCORE_INDEX_FDSET: &[u8] = include_bytes!("./generated/exocore_index.fd");
-
 pub struct Registry {
     message_descriptors: RwLock<HashMap<String, Arc<ReflectMessageDescriptor>>>,
 }
@@ -25,9 +23,15 @@ impl Registry {
 
     pub fn new_with_exocore_types() -> Registry {
         let reg = Registry::new();
-        let fd = protobuf::parse_from_bytes(EXOCORE_INDEX_FDSET)
+
+        let fd = protobuf::parse_from_bytes(super::generated::INDEX_FDSET)
             .expect("Couldn't parse exocore_index FileDescriptorProto");
         reg.register_file_descriptor_set(fd);
+
+        let fd = protobuf::parse_from_bytes(super::generated::TEST_FDSET)
+            .expect("Couldn't parse reflect FileDescriptorProto");
+        reg.register_file_descriptor_set(fd);
+
         reg
     }
 

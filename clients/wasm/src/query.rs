@@ -6,13 +6,14 @@ use std::sync::Arc;
 
 use wasm_bindgen::prelude::*;
 
-use exocore_index::query::Query;
+use exocore_index::query::QueryBuilder as InnerQueryBuilder;
 use exocore_index::store::remote::ClientHandle;
 use exocore_schema::schema::Schema;
 use exocore_schema::serialization::with_schema;
 
 use crate::js::into_js_error;
 use exocore_common::futures::spawn_future_non_send;
+use exocore_common::protos::generated::exocore_index::EntityResults;
 use futures::channel::oneshot;
 use futures::prelude::*;
 
@@ -20,7 +21,7 @@ use futures::prelude::*;
 pub struct QueryBuilder {
     schema: Arc<Schema>,
     store_handle: Arc<ClientHandle>,
-    inner: Option<Query>,
+    inner: Option<InnerQueryBuilder>,
 }
 
 #[wasm_bindgen]
@@ -35,13 +36,13 @@ impl QueryBuilder {
 
     #[wasm_bindgen]
     pub fn match_text(mut self, query: String) -> Self {
-        self.inner = Some(Query::match_text(query));
+        self.inner = Some(InnerQueryBuilder::match_text(query));
         self
     }
 
     #[wasm_bindgen]
     pub fn with_trait(mut self, name: String) -> Self {
-        self.inner = Some(Query::with_trait(name));
+        self.inner = Some(InnerQueryBuilder::with_trait(name));
         self
     }
 
@@ -63,7 +64,7 @@ impl QueryBuilder {
         let result_cell = Rc::new(RefCell::new(None));
         let result_cell1 = result_cell.clone();
         let fut_results = async move {
-            let result = store_handle.query(query).await;
+            let result = store_handle.query(query.build()).await;
             let js_result = match &result {
                 Ok(_res) => Ok(true.into()),
                 Err(err) => Err(into_js_error(err)),
@@ -91,10 +92,7 @@ impl QueryBuilder {
 
         let results_cell1 = result_cell.clone();
         let callback_cell1 = callback_cell.clone();
-        let report_result = move |result: Result<
-            exocore_index::query::QueryResult,
-            exocore_index::error::Error,
-        >| {
+        let report_result = move |result: Result<EntityResults, exocore_index::error::Error>| {
             if let Err(err) = &result {
                 error!("Error in watched query: {}", err);
             }
@@ -115,7 +113,7 @@ impl QueryBuilder {
         let (drop_sender, drop_receiver) = oneshot::channel();
         let store_handle = self.store_handle;
         spawn_future_non_send(async move {
-            let mut results = store_handle.watched_query(query);
+            let mut results = store_handle.watched_query(query.build());
             let mut drop_receiver = drop_receiver.fuse();
 
             loop {
@@ -145,8 +143,7 @@ impl QueryBuilder {
     }
 }
 
-type ResultCell =
-    Rc<RefCell<Option<Result<exocore_index::query::QueryResult, exocore_index::error::Error>>>>;
+type ResultCell = Rc<RefCell<Option<Result<EntityResults, exocore_index::error::Error>>>>;
 type CallbackCell = Rc<RefCell<Option<js_sys::Function>>>;
 
 #[wasm_bindgen]
@@ -158,53 +155,53 @@ pub struct QueryResult {
 
 #[wasm_bindgen]
 impl QueryResult {
-    #[wasm_bindgen]
-    pub fn ready(&self) -> js_sys::Promise {
-        self.promise.clone()
-    }
-
-    #[wasm_bindgen]
-    pub fn is_ready(&self) -> bool {
-        let res = self.result_cell.borrow();
-        res.is_some()
-    }
-
-    #[wasm_bindgen]
-    pub fn len(&self) -> usize {
-        let res = self.result_cell.borrow();
-        let res = res.as_ref().unwrap();
-        let res = res.as_ref().unwrap();
-
-        res.results.len()
-    }
-
-    #[wasm_bindgen]
-    pub fn is_empty(&self) -> bool {
-        let res = self.result_cell.borrow();
-        let res = res.as_ref().unwrap();
-        let res = res.as_ref().unwrap();
-
-        res.results.is_empty()
-    }
-
-    #[wasm_bindgen]
-    pub fn get(&self, index: usize) -> JsValue {
-        let res = self.result_cell.borrow();
-        let res = res.as_ref().unwrap();
-        let res = res.as_ref().unwrap();
-
-        with_schema(&self.schema, || JsValue::from_serde(&res.results[index]))
-            .unwrap_or_else(into_js_error)
-    }
-
-    #[wasm_bindgen]
-    pub fn to_json(&self) -> JsValue {
-        let res = self.result_cell.borrow();
-        let res = res.as_ref().unwrap();
-        let res = res.as_ref().unwrap();
-
-        with_schema(&self.schema, || JsValue::from_serde(res)).unwrap_or_else(into_js_error)
-    }
+    //    #[wasm_bindgen]
+    //    pub fn ready(&self) -> js_sys::Promise {
+    //        self.promise.clone()
+    //    }
+    //
+    //    #[wasm_bindgen]
+    //    pub fn is_ready(&self) -> bool {
+    //        let res = self.result_cell.borrow();
+    //        res.is_some()
+    //    }
+    //
+    //    #[wasm_bindgen]
+    //    pub fn len(&self) -> usize {
+    //        let res = self.result_cell.borrow();
+    //        let res = res.as_ref().unwrap();
+    //        let res = res.as_ref().unwrap();
+    //
+    //        res.entities.len()
+    //    }
+    //
+    //    #[wasm_bindgen]
+    //    pub fn is_empty(&self) -> bool {
+    //        let res = self.result_cell.borrow();
+    //        let res = res.as_ref().unwrap();
+    //        let res = res.as_ref().unwrap();
+    //
+    //        res.entities.is_empty()
+    //    }
+    //
+    //    #[wasm_bindgen]
+    //    pub fn get(&self, index: usize) -> JsValue {
+    //        let res = self.result_cell.borrow();
+    //        let res = res.as_ref().unwrap();
+    //        let res = res.as_ref().unwrap();
+    //
+    //        with_schema(&self.schema, || JsValue::from_serde(&res.results[index]))
+    //            .unwrap_or_else(into_js_error)
+    //    }
+    //
+    //    #[wasm_bindgen]
+    //    pub fn to_json(&self) -> JsValue {
+    //        let res = self.result_cell.borrow();
+    //        let res = res.as_ref().unwrap();
+    //        let res = res.as_ref().unwrap();
+    //
+    //        with_schema(&self.schema, || JsValue::from_serde(res)).unwrap_or_else(into_js_error)
+    //    }
 }
 
 #[wasm_bindgen]
@@ -217,28 +214,28 @@ pub struct WatchedQuery {
 
 #[wasm_bindgen]
 impl WatchedQuery {
-    #[wasm_bindgen]
-    pub fn on_change(&self, promise: js_sys::Function) {
-        let mut cb = self.callback_cell.borrow_mut();
-        *cb = Some(promise);
-    }
-
-    #[wasm_bindgen]
-    pub fn get(&self, index: usize) -> JsValue {
-        let res = self.result_cell.borrow();
-        let res = res.as_ref().unwrap();
-        let res = res.as_ref().unwrap();
-
-        with_schema(&self.schema, || JsValue::from_serde(&res.results[index]))
-            .unwrap_or_else(into_js_error)
-    }
-
-    #[wasm_bindgen]
-    pub fn to_json(&self) -> JsValue {
-        let res = self.result_cell.borrow();
-        let res = res.as_ref().unwrap();
-        let res = res.as_ref().unwrap();
-
-        with_schema(&self.schema, || JsValue::from_serde(res)).unwrap_or_else(into_js_error)
-    }
+    //    #[wasm_bindgen]
+    //    pub fn on_change(&self, promise: js_sys::Function) {
+    //        let mut cb = self.callback_cell.borrow_mut();
+    //        *cb = Some(promise);
+    //    }
+    //
+    //    #[wasm_bindgen]
+    //    pub fn get(&self, index: usize) -> JsValue {
+    //        let res = self.result_cell.borrow();
+    //        let res = res.as_ref().unwrap();
+    //        let res = res.as_ref().unwrap();
+    //
+    //        with_schema(&self.schema, || JsValue::from_serde(&res.results[index]))
+    //            .unwrap_or_else(into_js_error)
+    //    }
+    //
+    //    #[wasm_bindgen]
+    //    pub fn to_json(&self) -> JsValue {
+    //        let res = self.result_cell.borrow();
+    //        let res = res.as_ref().unwrap();
+    //        let res = res.as_ref().unwrap();
+    //
+    //        with_schema(&self.schema, || JsValue::from_serde(res)).unwrap_or_else(into_js_error)
+    //    }
 }

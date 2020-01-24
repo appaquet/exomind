@@ -1,0 +1,36 @@
+syntax = "proto3";
+package exocore.test;
+
+import "exocore/index/options.proto";
+import "google/protobuf/timestamp.proto";
+
+message TestMessage {
+    string string1 = 1 [(exocore.indexed) = true];
+
+    string string2 = 2 [(exocore.indexed) = false];
+
+    TestStruct struct1 = 3;
+
+    oneof fields {
+        string oneof_string1 = 4;
+        uint32 oneof_int1 = 5;
+    }
+
+    google.protobuf.Timestamp date1 = 8 [(exocore.indexed) = true];
+
+    google.protobuf.Timestamp date2 = 9 [(exocore.indexed) = false];
+
+    uint32 int1 = 10 [(exocore.indexed) = true];
+
+    uint32 int2 = 11 [(exocore.indexed) = false];
+}
+
+message TestStruct {
+    string string1 = 1;
+}
+
+message TestMessage2 {
+    string string1 = 1 [(exocore.indexed) = true];
+
+    string string2 = 2 [(exocore.indexed) = false];
+}

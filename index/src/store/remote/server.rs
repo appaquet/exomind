@@ -5,14 +5,15 @@ use exocore_common::protos::index_transport_capnp::{
     mutation_request, query_request, unwatch_query_request, watched_query_request,
 };
 use exocore_common::protos::MessageType;
-use exocore_schema::schema::Schema;
 use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandle};
 
 use crate::error::Error;
-use crate::mutation::{Mutation, MutationResult};
-use crate::query::{Query, QueryResult, WatchToken, WatchedQuery};
+use crate::query::WatchToken;
 use exocore_common::futures::{interval, OwnedSpawnSet};
-use exocore_common::time::{ConsistentTimestamp, Duration, Instant};
+use exocore_common::protos::generated::exocore_index::{
+    EntityMutation, EntityQuery, EntityResults,
+};
+use exocore_common::time::{Duration, Instant};
 use futures::channel::{mpsc, oneshot};
 use futures::{FutureExt, SinkExt, StreamExt};
 use std::collections::HashMap;
@@ -53,7 +54,6 @@ where
     pub fn new(
         config: ServerConfiguration,
         cell: Cell,
-        schema: Arc<Schema>,
         store_handle: crate::store::local::StoreHandle<CS, PS>,
         transport_handle: T,
     ) -> Result<Server<CS, PS, T>, Error> {
@@ -62,7 +62,6 @@ where
         let inner = Arc::new(RwLock::new(Inner {
             config,
             cell,
-            schema,
             store_handle,
             watched_queries: HashMap::new(),
             transport_out_sender,
@@ -144,11 +143,7 @@ where
         spawn_set: &mut OwnedSpawnSet<()>,
         in_message: Box<InMessage>,
     ) -> Result<(), Error> {
-        let parsed_message = {
-            let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
-            let inner = inner.read()?;
-            IncomingMessage::parse_incoming_message(&in_message, &inner.schema)?
-        };
+        let parsed_message = IncomingMessage::parse_incoming_message(&in_message)?;
 
         match parsed_message {
             IncomingMessage::Mutation(mutation) => {
@@ -174,7 +169,7 @@ where
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
         in_message: Box<InMessage>,
-        query: Query,
+        query: EntityQuery,
     ) -> Result<(), Error> {
         let future_result = {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
@@ -183,11 +178,11 @@ where
         };
 
         let weak_inner = weak_inner.clone();
-        let send_response = move |result: Result<QueryResult, Error>| -> Result<(), Error> {
+        let send_response = move |result: Result<EntityResults, Error>| -> Result<(), Error> {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
-            let resp_frame = QueryResult::result_to_response_frame(&inner.schema, result)?;
+            let resp_frame = crate::query::query_results_to_response_frame(result)?;
             let message = in_message.to_response_message(&inner.cell, resp_frame)?;
 
             inner.send_message(message)?;
@@ -214,9 +209,10 @@ where
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
         in_message: Box<InMessage>,
-        watched_query: WatchedQuery,
+        query: EntityQuery,
     ) -> Result<(), Error> {
-        let watch_token = watched_query.token;
+        let watch_token = query.watch_token;
+
         let weak_inner1 = weak_inner.clone();
         let (result_stream, drop_receiver) = {
             // check if this query already exists. if so, just update its last register
@@ -237,7 +233,6 @@ where
                 .watched_queries
                 .insert(watch_token, registered_watched_query);
 
-            let query = watched_query.query.with_watch_token(watch_token);
             let result_stream = inner.store_handle.watched_query(query)?;
 
             (result_stream, drop_receiver)
@@ -245,11 +240,11 @@ where
 
         let weak_inner1 = weak_inner.clone();
         let reply_token = in_message.get_reply_token()?;
-        let send_response = move |result: Result<QueryResult, Error>| -> Result<(), Error> {
+        let send_response = move |result: Result<EntityResults, Error>| -> Result<(), Error> {
             let inner = weak_inner1.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
-            let resp_frame = QueryResult::result_to_response_frame(&inner.schema, result)?;
+            let resp_frame = crate::query::query_results_to_response_frame(result)?;
             let message = reply_token.to_response_message(&inner.cell, resp_frame)?;
             inner.send_message(message)?;
 
@@ -287,17 +282,17 @@ where
     fn handle_incoming_mutation_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         in_message: Box<InMessage>,
-        mutation: Mutation,
+        entity_mutation: EntityMutation,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let inner = inner.read()?;
-        let result = inner.store_handle.mutate(mutation);
+        let result = inner.store_handle.mutate(entity_mutation);
 
         if let Err(err) = &result {
             error!("Returning error executing incoming mutation: {}", err);
         }
 
-        let resp_frame = MutationResult::result_to_response_frame(&inner.schema, result)?;
+        let resp_frame = crate::mutation::mutation_result_to_response_frame(result)?;
         let message = in_message.to_response_message(&inner.cell, resp_frame)?;
         inner.send_message(message)?;
 
@@ -346,7 +341,6 @@ where
 {
     config: ServerConfiguration,
     cell: Cell,
-    schema: Arc<Schema>,
     store_handle: crate::store::local::StoreHandle<CS, PS>,
     watched_queries: HashMap<WatchToken, RegisteredWatchedQuery>,
     transport_out_sender: mpsc::UnboundedSender<OutEvent>,
@@ -371,38 +365,35 @@ where
 }
 
 enum IncomingMessage {
-    Mutation(Mutation),
-    Query(Query),
-    WatchedQuery(WatchedQuery),
+    Mutation(EntityMutation),
+    Query(EntityQuery),
+    WatchedQuery(EntityQuery),
     UnwatchQuery(WatchToken),
 }
 
 impl IncomingMessage {
-    fn parse_incoming_message(
-        in_message: &InMessage,
-        schema: &Arc<Schema>,
-    ) -> Result<IncomingMessage, Error> {
+    fn parse_incoming_message(in_message: &InMessage) -> Result<IncomingMessage, Error> {
         match in_message.message_type {
             <mutation_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
-                let mutation = Mutation::from_mutation_request_frame(schema, frame)?;
+                let mutation = crate::mutation::mutation_from_request_frame(frame)?;
                 Ok(IncomingMessage::Mutation(mutation))
             }
             <query_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
-                let query = Query::from_request_frame(schema, frame)?;
+                let query = crate::query::query_from_request_frame(frame)?;
                 Ok(IncomingMessage::Query(query))
             }
             <watched_query_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
-                let query = WatchedQuery::from_request_frame(schema, frame)?;
+                let query = crate::query::query_from_request_frame(frame)?;
                 Ok(IncomingMessage::WatchedQuery(query))
             }
             <unwatch_query_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame =
                     in_message.get_data_as_framed_message::<unwatch_query_request::Owned>()?;
                 let reader = frame.get_reader()?;
-                let watch_token = ConsistentTimestamp(reader.get_token());
+                let watch_token = reader.get_token();
                 Ok(IncomingMessage::UnwatchQuery(watch_token))
             }
             other => Err(Error::Other(format!(
