@@ -10,9 +10,11 @@
     * `cargo install cargo-lipo`
     * `cargo install cbindgen` (optional, only if changing the API)
 
-* Generate headers
-    * If you change the API, you need to generate new C headers
-    * `cbindgen --config cbindgen.toml --crate exocore-client-ios --output exocore.h`
+* Install [Swift Protobuf Plugin](https://github.com/apple/swift-protobuf/)
+    * `brew install swift-protobuf`
+
+* Generate headers & protobufs
+    * `./generate.sh`
 
 * Build the universal lib: `cargo lipo`
 

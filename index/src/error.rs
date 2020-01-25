@@ -1,5 +1,4 @@
 use exocore_common::capnp;
-use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Debug, Fail, Clone)]
@@ -9,15 +8,15 @@ pub enum Error {
 
     #[cfg(feature = "local_store")]
     #[fail(display = "Error in Tantivy: {}", _0)]
-    Tantivy(Arc<tantivy::TantivyError>),
+    Tantivy(std::sync::Arc<tantivy::TantivyError>),
 
     #[cfg(feature = "local_store")]
     #[fail(display = "Error opening Tantivy directory: {:?}", _0)]
-    TantivyOpenDirectoryError(Arc<tantivy::directory::error::OpenDirectoryError>),
+    TantivyOpenDirectoryError(std::sync::Arc<tantivy::directory::error::OpenDirectoryError>),
 
     #[cfg(feature = "local_store")]
     #[fail(display = "Error parsing Tantivy query: {:?}", _0)]
-    TantitvyQueryParsing(Arc<tantivy::query::QueryParserError>),
+    TantitvyQueryParsing(std::sync::Arc<tantivy::query::QueryParserError>),
 
     #[cfg(feature = "local_store")]
     #[fail(display = "Data engine error: {}", _0)]
@@ -79,21 +78,21 @@ impl Error {
 #[cfg(feature = "local_store")]
 impl From<tantivy::TantivyError> for Error {
     fn from(err: tantivy::TantivyError) -> Self {
-        Error::Tantivy(Arc::new(err))
+        Error::Tantivy(std::sync::Arc::new(err))
     }
 }
 
 #[cfg(feature = "local_store")]
 impl From<tantivy::query::QueryParserError> for Error {
     fn from(err: tantivy::query::QueryParserError) -> Self {
-        Error::TantitvyQueryParsing(Arc::new(err))
+        Error::TantitvyQueryParsing(std::sync::Arc::new(err))
     }
 }
 
 #[cfg(feature = "local_store")]
 impl From<tantivy::directory::error::OpenDirectoryError> for Error {
     fn from(err: tantivy::directory::error::OpenDirectoryError) -> Self {
-        Error::TantivyOpenDirectoryError(Arc::new(err))
+        Error::TantivyOpenDirectoryError(std::sync::Arc::new(err))
     }
 }
 

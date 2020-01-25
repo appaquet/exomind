@@ -48,14 +48,14 @@ ExocoreExocoreContext exocore_context_new(void);
 
 ExocoreQueryHandle exocore_query(ExocoreContext *ctx,
                                  const char *query,
-                                 void (*callback)(ExocoreQueryStatus status, const char*, const void*),
+                                 void (*callback)(ExocoreQueryStatus status, const unsigned char*, uintptr_t, const void*),
                                  const void *callback_ctx);
 
 void exocore_query_cancel(ExocoreContext *ctx, ExocoreQueryHandle handle);
 
 ExocoreQueryStreamHandle exocore_watched_query(ExocoreContext *ctx,
                                                const char *query,
-                                               void (*callback)(ExocoreQueryStatus status, const char*, const void*),
+                                               void (*callback)(ExocoreQueryStatus status, const unsigned char*, uintptr_t, const void*),
                                                const void *callback_ctx);
 
 void exocore_watched_query_cancel(ExocoreContext *ctx, ExocoreQueryStreamHandle handle);

@@ -3,11 +3,16 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		392335996C51C8466DA8087F /* Pods_exocore_client_ios.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A802B6DAB9619719E52A645B /* Pods_exocore_client_ios.framework */; };
 		6D0367D22399D6AB0087A80B /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0367D12399D6AB0087A80B /* MainViewController.swift */; };
+		6D07425D23DC9FE000BF1545 /* test.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D07425723DC9FE000BF1545 /* test.pb.swift */; };
+		6D07425E23DC9FE000BF1545 /* query.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D07425923DC9FE000BF1545 /* query.pb.swift */; };
+		6D07425F23DC9FE000BF1545 /* entity.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D07425A23DC9FE000BF1545 /* entity.pb.swift */; };
+		6D07426123DC9FE000BF1545 /* mutation.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D07425C23DC9FE000BF1545 /* mutation.pb.swift */; };
 		6DEED5A722E88BC30090AF30 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DEED5A622E88BC30090AF30 /* AppDelegate.swift */; };
 		6DEED5A922E88BC30090AF30 /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DEED5A822E88BC30090AF30 /* Client.swift */; };
 		6DEED5AC22E88BC30090AF30 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6DEED5AA22E88BC30090AF30 /* Main.storyboard */; };
@@ -17,8 +22,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0D27A425AEE4671302E001E1 /* Pods-exocore-client-ios.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exocore-client-ios.debug.xcconfig"; path = "Target Support Files/Pods-exocore-client-ios/Pods-exocore-client-ios.debug.xcconfig"; sourceTree = "<group>"; };
 		6D0367D12399D6AB0087A80B /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		6D0367D32399DFB60087A80B /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		6D07425723DC9FE000BF1545 /* test.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = test.pb.swift; sourceTree = "<group>"; };
+		6D07425923DC9FE000BF1545 /* query.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = query.pb.swift; sourceTree = "<group>"; };
+		6D07425A23DC9FE000BF1545 /* entity.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = entity.pb.swift; sourceTree = "<group>"; };
+		6D07425C23DC9FE000BF1545 /* mutation.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = mutation.pb.swift; sourceTree = "<group>"; };
 		6DEED5A322E88BC30090AF30 /* exocore-client-ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "exocore-client-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6DEED5A622E88BC30090AF30 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6DEED5A822E88BC30090AF30 /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
@@ -28,6 +38,8 @@
 		6DEED5B222E88BC50090AF30 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6DEED5B922E88BF20090AF30 /* libexocore_client_ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libexocore_client_ios.a; path = ../../../../target/universal/debug/libexocore_client_ios.a; sourceTree = "<group>"; };
 		6DEED5BC22E88EEC0090AF30 /* exocore-client-ios-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "exocore-client-ios-Bridging-Header.h"; sourceTree = "<group>"; };
+		A802B6DAB9619719E52A645B /* Pods_exocore_client_ios.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_exocore_client_ios.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E111411E5A8E4A8E891EF16C /* Pods-exocore-client-ios.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exocore-client-ios.release.xcconfig"; path = "Target Support Files/Pods-exocore-client-ios/Pods-exocore-client-ios.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,18 +48,55 @@
 			buildActionMask = 2147483647;
 			files = (
 				6DEED5BB22E88E3D0090AF30 /* libexocore_client_ios.a in Frameworks */,
+				392335996C51C8466DA8087F /* Pods_exocore_client_ios.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6D07425423DC9FE000BF1545 /* proto */ = {
+			isa = PBXGroup;
+			children = (
+				6D07425523DC9FE000BF1545 /* exocore */,
+			);
+			path = proto;
+			sourceTree = "<group>";
+		};
+		6D07425523DC9FE000BF1545 /* exocore */ = {
+			isa = PBXGroup;
+			children = (
+				6D07425623DC9FE000BF1545 /* test */,
+				6D07425823DC9FE000BF1545 /* index */,
+			);
+			path = exocore;
+			sourceTree = "<group>";
+		};
+		6D07425623DC9FE000BF1545 /* test */ = {
+			isa = PBXGroup;
+			children = (
+				6D07425723DC9FE000BF1545 /* test.pb.swift */,
+			);
+			path = test;
+			sourceTree = "<group>";
+		};
+		6D07425823DC9FE000BF1545 /* index */ = {
+			isa = PBXGroup;
+			children = (
+				6D07425923DC9FE000BF1545 /* query.pb.swift */,
+				6D07425A23DC9FE000BF1545 /* entity.pb.swift */,
+				6D07425C23DC9FE000BF1545 /* mutation.pb.swift */,
+			);
+			path = index;
+			sourceTree = "<group>";
+		};
 		6DEED59A22E88BC30090AF30 = {
 			isa = PBXGroup;
 			children = (
 				6DEED5A522E88BC30090AF30 /* exocore-client-ios */,
 				6DEED5A422E88BC30090AF30 /* Products */,
 				6DEED5B822E88BF10090AF30 /* Frameworks */,
+				D76B0B1B3F3131F298D626EC /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -62,6 +111,7 @@
 		6DEED5A522E88BC30090AF30 /* exocore-client-ios */ = {
 			isa = PBXGroup;
 			children = (
+				6D07425423DC9FE000BF1545 /* proto */,
 				6DEED5BC22E88EEC0090AF30 /* exocore-client-ios-Bridging-Header.h */,
 				6DEED5B222E88BC50090AF30 /* Info.plist */,
 				6DEED5A622E88BC30090AF30 /* AppDelegate.swift */,
@@ -79,8 +129,18 @@
 			children = (
 				6D0367D32399DFB60087A80B /* SwiftUI.framework */,
 				6DEED5B922E88BF20090AF30 /* libexocore_client_ios.a */,
+				A802B6DAB9619719E52A645B /* Pods_exocore_client_ios.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D76B0B1B3F3131F298D626EC /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				0D27A425AEE4671302E001E1 /* Pods-exocore-client-ios.debug.xcconfig */,
+				E111411E5A8E4A8E891EF16C /* Pods-exocore-client-ios.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -90,9 +150,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6DEED5B522E88BC50090AF30 /* Build configuration list for PBXNativeTarget "exocore-client-ios" */;
 			buildPhases = (
+				BADB72AC96A786D421CD2BAF /* [CP] Check Pods Manifest.lock */,
 				6DEED59F22E88BC30090AF30 /* Sources */,
 				6DEED5A022E88BC30090AF30 /* Frameworks */,
 				6DEED5A122E88BC30090AF30 /* Resources */,
+				52B15DCE514D7F2247B3ABC6 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -150,14 +212,60 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		52B15DCE514D7F2247B3ABC6 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-exocore-client-ios/Pods-exocore-client-ios-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-exocore-client-ios/Pods-exocore-client-ios-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exocore-client-ios/Pods-exocore-client-ios-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		BADB72AC96A786D421CD2BAF /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-exocore-client-ios-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		6DEED59F22E88BC30090AF30 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D07425D23DC9FE000BF1545 /* test.pb.swift in Sources */,
 				6DEED5A922E88BC30090AF30 /* Client.swift in Sources */,
 				6DEED5A722E88BC30090AF30 /* AppDelegate.swift in Sources */,
+				6D07425E23DC9FE000BF1545 /* query.pb.swift in Sources */,
 				6D0367D22399D6AB0087A80B /* MainViewController.swift in Sources */,
+				6D07426123DC9FE000BF1545 /* mutation.pb.swift in Sources */,
+				6D07425F23DC9FE000BF1545 /* entity.pb.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -307,6 +415,7 @@
 		};
 		6DEED5B622E88BC50090AF30 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0D27A425AEE4671302E001E1 /* Pods-exocore-client-ios.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -330,6 +439,7 @@
 		};
 		6DEED5B722E88BC50090AF30 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E111411E5A8E4A8E891EF16C /* Pods-exocore-client-ios.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

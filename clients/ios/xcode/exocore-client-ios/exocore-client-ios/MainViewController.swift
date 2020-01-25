@@ -51,8 +51,17 @@ class MyList : ObservableObject {
         self.resultStream = self.client?.watched_query(onChange: { [weak self] (status, results) in
             DispatchQueue.main.async {
                 if let results = results {
-                    self?.items = results.results.map { (result: QueryResult) -> Item in
-                        return Item(id: result.entity.id, text: result.entity.traits.first?.title ?? "")
+                    self?.items = results.entities.map { (result: Exocore_Index_EntityResult) -> Item in
+
+                        var title = "UNKNOWN"
+                        if let trait = result.entity.traits.first {
+                            if trait.message.isA(Exocore_Test_TestMessage.self) {
+                                let msg = try! Exocore_Test_TestMessage(unpackingAny: trait.message)
+                                title = msg.string1
+                            }
+                        }
+
+                        return Item(id: result.entity.id, text: title)
                     }
                 } else {
                     self?.items = []

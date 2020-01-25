@@ -18,7 +18,6 @@ use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use futures::compat::Future01CompatExt;
 use futures::StreamExt;
 use libc;
-use std::ffi::CString;
 use std::os::raw::c_void;
 use std::sync::Once;
 
@@ -57,7 +56,7 @@ impl Context {
             PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
                 .expect("Couldn't decode cell publickey");
         let remote_node = Node::new_from_public_key(remote_node_pk);
-        let remote_addr = "/ip4/192.168.2.16/tcp/3330"
+        let remote_addr = "/ip4/192.168.2.123/tcp/3330"
             .parse()
             .expect("Couldn't parse remote node addr");
         remote_node.add_address(remote_addr);
@@ -111,7 +110,7 @@ impl Context {
     pub fn query(
         &mut self,
         _query: *const libc::c_char,
-        callback: extern "C" fn(status: QueryStatus, *const libc::c_char, *const c_void),
+        callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
         callback_ctx: *const c_void,
     ) -> Result<QueryHandle, QueryStatus> {
         let future_result = self.store_handle.query(
@@ -128,18 +127,18 @@ impl Context {
                 Ok(res) => {
                     debug!("Query results received");
                     let encoded = res.encode_to_vec().unwrap();
-                    let cstr = CString::new(encoded).unwrap();
 
                     callback(
                         QueryStatus::Success,
-                        cstr.as_ref().as_ptr(),
+                        encoded.as_ptr(),
+                        encoded.len(),
                         callback_ctx.ctx,
                     );
                 }
 
                 Err(err) => {
                     warn!("Query future has failed: {}", err);
-                    callback(QueryStatus::Error, std::ptr::null(), callback_ctx.ctx);
+                    callback(QueryStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
                 }
             }
         });
@@ -153,7 +152,7 @@ impl Context {
     pub fn watched_query(
         &mut self,
         _query: *const libc::c_char,
-        callback: extern "C" fn(status: QueryStatus, *const libc::c_char, *const c_void),
+        callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
         callback_ctx: *const c_void,
     ) -> Result<QueryStreamHandle, QueryStreamStatus> {
         let result_stream = self.store_handle.watched_query(
@@ -173,25 +172,25 @@ impl Context {
                     Ok(res) => {
                         debug!("Watched query results received");
                         let encoded = res.encode_to_vec().unwrap();
-                        let cstr = CString::new(encoded).unwrap();
 
                         callback(
                             QueryStatus::Success,
-                            cstr.as_ref().as_ptr(),
+                            encoded.as_ptr(),
+                            encoded.len(),
                             callback_ctx.ctx,
                         );
                     }
 
                     Err(err) => {
                         warn!("Watched query has failed: {}", err);
-                        callback(QueryStatus::Error, std::ptr::null(), callback_ctx.ctx);
+                        callback(QueryStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
                         return;
                     }
                 }
             }
 
             info!("Watched query done");
-            callback(QueryStatus::Done, std::ptr::null(), callback_ctx.ctx);
+            callback(QueryStatus::Done, std::ptr::null(), 0, callback_ctx.ctx);
         });
 
         Ok(QueryStreamHandle {
@@ -292,7 +291,7 @@ pub extern "C" fn exocore_context_free(ctx: *mut Context) {
 pub extern "C" fn exocore_query(
     ctx: *mut Context,
     query: *const libc::c_char,
-    callback: extern "C" fn(status: QueryStatus, *const libc::c_char, *const c_void),
+    callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
     callback_ctx: *const c_void,
 ) -> QueryHandle {
     let context = unsafe { ctx.as_mut().unwrap() };
@@ -322,7 +321,7 @@ pub extern "C" fn exocore_query_cancel(ctx: *mut Context, handle: QueryHandle) {
 pub extern "C" fn exocore_watched_query(
     ctx: *mut Context,
     query: *const libc::c_char,
-    callback: extern "C" fn(status: QueryStatus, *const libc::c_char, *const c_void),
+    callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
     callback_ctx: *const c_void,
 ) -> QueryStreamHandle {
     let context = unsafe { ctx.as_mut().unwrap() };
