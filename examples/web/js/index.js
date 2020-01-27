@@ -1,5 +1,7 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
+import { getClient } from "exocore";
+import { Entity, Trait, TestMessage } from "exocore";
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -10,9 +12,15 @@ class App extends React.Component {
         super(props);
 
         this.state = {exocore: null};
-        import("../../../clients/wasm/pkg").then(module => {
+
+        console.log('Connecting...');
+        let msg = new TestMessage();
+        msg.string1 = "bob";
+
+        getClient().then(module => {
             // fix issue where not yet connected until we support transport status
             let client = new module.ExocoreClient("ws://127.0.0.1:3340", (status) => {
+                console.log('Status ' + status);
                 if (status === "connected") {
                     this.setState({
                         exocore: client

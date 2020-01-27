@@ -6,6 +6,6 @@ cd "$CUR_DIR"
 cbindgen --config cbindgen.toml --crate exocore-client-ios --output exocore.h
 
 protoc -I"$CUR_DIR/../../common/protos/" \
+  --swift_out=xcode/exocore-client-ios/exocore-client-ios/proto/ \
   $CUR_DIR/../../common/protos/exocore/index/*.proto \
-  $CUR_DIR/../../common/protos/exocore/test/*.proto \
-  --swift_out=xcode/exocore-client-ios/exocore-client-ios/proto/
+  $CUR_DIR/../../common/protos/exocore/test/*.proto

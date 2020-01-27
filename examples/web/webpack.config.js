@@ -1,8 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-
 const dist = path.resolve(__dirname, "dist");
-const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
+//const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
 module.exports = {
     entry: "./js/index.js",
@@ -31,12 +30,12 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             template: 'index.html'
-        }),
+        }) //,
 
-        new WasmPackPlugin({
+        /*new WasmPackPlugin({
           crateDirectory: path.resolve(__dirname, "../../clients/wasm"),
           // WasmPackPlugin defaults to compiling in "dev" profile. To change that, use forceMode: 'release':
           forceMode: 'release'
-        })
+        })*/
     ]
 };

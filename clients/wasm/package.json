@@ -1,0 +1,14 @@
+{
+  "author": "Andre-Philippe Paquet <appaquet@gmail.com>",
+  "name": "exocore",
+  "version": "0.1.0",
+  "repository": "https://github.com/appaquet/exocore",
+  "license": "(MIT OR Apache-2.0)",
+  "scripts": {},
+  "main": "index.js",
+  "devDependencies": {},
+  "dependencies": {
+    "exocore-client-wasm": "file:./pkg",
+    "ts-protoc-gen": "^0.12.0"
+  }
+}

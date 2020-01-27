@@ -1,2 +1,4 @@
 pkg
-web/node_modules
+node_modules
+*.tgz
+yarn-error.log

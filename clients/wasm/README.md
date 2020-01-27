@@ -17,8 +17,14 @@
 
 * Install [Node & NPM](https://github.com/nodesource/distributions/blob/master/README.md#debinstall)
 
-* Install [`wasm-pack`](https://github.com/rustwasm/wasm-pack) to build and package WASM as NPM package
-    * `cargo install wasm-pack`
+* To generate proto: 
+    * Make sure `protoc` is installed. See root's [README](../../README.md).
+    * Then `./generate.sh`
+
+* To package WASM
+    * Install [`wasm-pack`](https://github.com/rustwasm/wasm-pack) to build and package WASM as NPM package
+        * `cargo install wasm-pack`
+    * Then `wasm-pack build`
 
 * Launch the [sample project](../../examples/web) 
     * `npm install && npm run start`

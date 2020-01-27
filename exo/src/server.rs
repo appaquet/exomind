@@ -144,7 +144,8 @@ fn start_ws_server(
     cell: &Cell,
     listen_address: SocketAddr,
 ) -> Result<WebsocketTransportHandle, failure::Error> {
-    // start transport
+    info!("Starting websocket transport server");
+
     let config = WebSocketTransportConfig::default();
     let mut transport = WebsocketTransport::new(listen_address, config);
     let handle = transport.get_handle(cell)?;

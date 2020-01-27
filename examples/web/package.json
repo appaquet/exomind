@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "core-js": "^3.2.1",
-    "exocore-client-wasm": "file:./../../clients/wasm/pkg",
+    "exocore": "file:./../../clients/wasm",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",
     "regenerator-runtime": "^0.13.3"
