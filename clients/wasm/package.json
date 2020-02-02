@@ -5,10 +5,11 @@
   "repository": "https://github.com/appaquet/exocore",
   "license": "(MIT OR Apache-2.0)",
   "scripts": {},
-  "main": "index.js",
+  "main": "js/index.js",
+  "types": "js/index.d.ts",
   "devDependencies": {},
   "dependencies": {
     "exocore-client-wasm": "file:./pkg",
-    "ts-protoc-gen": "^0.12.0"
+    "protobufjs": "^6.8.8"
   }
 }

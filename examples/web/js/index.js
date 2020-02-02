@@ -1,7 +1,7 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
-import { getClient } from "exocore";
-import { Entity, Trait, TestMessage } from "exocore";
+
+import { Client, Registry, proto } from "exocore";
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -13,25 +13,26 @@ class App extends React.Component {
 
         this.state = {exocore: null};
 
-        console.log('Connecting...');
-        let msg = new TestMessage();
-        msg.string1 = "bob";
+        Registry.registerMessage(proto.exocore.test.TestMessage, 'exocore.test.TestMessage');
+        Registry.registerMessage(proto.exocore.test.TestMessage2, 'exocore.test.TestMessage2');
 
-        getClient().then(module => {
-            // fix issue where not yet connected until we support transport status
-            let client = new module.ExocoreClient("ws://127.0.0.1:3340", (status) => {
-                console.log('Status ' + status);
-                if (status === "connected") {
-                    this.setState({
-                        exocore: client
-                    });
-                }
+        console.log('Connecting...');
+        Client.create("ws://127.0.0.1:3340", (status) => {
+            console.log('Status ' + status);
+            if (status === "connected") {
+                this.setState({
+                    status: status,
+                });
+            }
+        }).then((client) => {
+            this.setState({
+                exocore: client,
             });
-        })
+        });
     }
 
     render() {
-        if (this.state.exocore) {
+        if (this.state.exocore && this.state.status === 'connected') {
             return (<div>
                 <button onClick={this.disconnect.bind(this)}>Disconnect</button>
 

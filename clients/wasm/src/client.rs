@@ -1,25 +1,29 @@
+use std::sync::{Arc, Mutex};
+
+use futures::StreamExt;
 use log::Level;
+use prost::Message;
 use wasm_bindgen::prelude::*;
 
 use exocore_common::cell::Cell;
 use exocore_common::crypto::keys::PublicKey;
 use exocore_common::futures::spawn_future_non_send;
 use exocore_common::node::{LocalNode, Node};
+use exocore_common::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_common::time::Clock;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
-use exocore_schema::schema::Schema;
+use exocore_transport::transport::ConnectionStatus;
 use exocore_transport::{InEvent, TransportHandle, TransportLayer};
 
+use crate::js::into_js_error;
+use crate::watched_query::WatchedQuery;
 use crate::ws::BrowserTransportClient;
-use exocore_transport::transport::ConnectionStatus;
-use futures::StreamExt;
-use std::sync::{Arc, Mutex};
+use exocore_common::protos::prost::ProstMessageExt;
 
 #[wasm_bindgen]
 pub struct ExocoreClient {
     _transport: BrowserTransportClient,
     store_handle: Arc<ClientHandle>,
-    schema: Arc<Schema>,
     _inner: Arc<Mutex<Inner>>,
 }
 
@@ -43,7 +47,6 @@ impl ExocoreClient {
                 .expect("Couldn't decode cell publickey");
         let cell = Cell::new(cell_pk, local_node);
         let clock = Clock::new();
-        let schema = exocore_schema::test_schema::create();
 
         let remote_node_pk =
             PublicKey::decode_base58_string("pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb")
@@ -109,19 +112,60 @@ impl ExocoreClient {
         Ok(ExocoreClient {
             _transport: transport,
             store_handle,
-            schema,
             _inner: inner,
         })
     }
 
-    #[wasm_bindgen(getter)]
-    pub fn query(&self) -> crate::query::QueryBuilder {
-        crate::query::QueryBuilder::new(self.schema.clone(), self.store_handle.clone())
+    #[wasm_bindgen]
+    pub fn mutate(&self, mutation_bytes: js_sys::Uint8Array) -> js_sys::Promise {
+        info!("Got mutation");
+
+        let mut bytes = vec![0u8; mutation_bytes.length() as usize];
+        mutation_bytes.copy_to(&mut bytes);
+        let entity_mutation =
+            EntityMutation::decode(bytes.as_ref()).expect("Couldn't encode query");
+
+        let store_handle = self.store_handle.clone();
+        let fut_results = async move {
+            let result = store_handle
+                .mutate(entity_mutation)
+                .await
+                .map_err(into_js_error)?;
+
+            let results_data = result.encode_to_vec().map_err(into_js_error)?;
+            Ok(js_sys::Uint8Array::from(results_data.as_ref()).into())
+        };
+
+        wasm_bindgen_futures::future_to_promise(fut_results)
     }
 
-    #[wasm_bindgen(getter)]
-    pub fn mutate(&self) -> crate::mutation::MutationBuilder {
-        crate::mutation::MutationBuilder::new(self.schema.clone(), self.store_handle.clone())
+    #[wasm_bindgen]
+    pub fn query(&self, query_bytes: js_sys::Uint8Array) -> js_sys::Promise {
+        let mut bytes = vec![0u8; query_bytes.length() as usize];
+        query_bytes.copy_to(&mut bytes);
+        let entity_query = EntityQuery::decode(bytes.as_ref()).expect("Couldn't encode query");
+
+        let store_handle = self.store_handle.clone();
+        let fut_results = async move {
+            let result = store_handle
+                .query(entity_query)
+                .await
+                .map_err(into_js_error)?;
+
+            let results_data = result.encode_to_vec().map_err(into_js_error)?;
+            Ok(js_sys::Uint8Array::from(results_data.as_ref()).into())
+        };
+
+        wasm_bindgen_futures::future_to_promise(fut_results)
+    }
+
+    #[wasm_bindgen]
+    pub fn watched_query(&self, query_bytes: js_sys::Uint8Array) -> WatchedQuery {
+        let mut bytes = vec![0u8; query_bytes.length() as usize];
+        query_bytes.copy_to(&mut bytes);
+        let entity_query = EntityQuery::decode(bytes.as_ref()).expect("Couldn't encode query");
+
+        WatchedQuery::new(self.store_handle.clone(), entity_query)
     }
 }
 

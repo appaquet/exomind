@@ -34,7 +34,7 @@ where
             let inner_iter = self.inner_iter.take().unwrap();
             for item in inner_iter {
                 let (score, penalized_score) = (self.scorer)(&item);
-                assert!(
+                debug_assert!(
                     score >= penalized_score,
                     "penalized score can't be higher than original score"
                 );

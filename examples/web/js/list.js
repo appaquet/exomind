@@ -1,105 +1,116 @@
 import React from 'react';
+import { proto, Registry, MutationBuilder, QueryBuilder, matchTrait } from 'exocore';
 
 export default class List extends React.Component {
-    constructor(props) {
-        super(props);
+  constructor(props) {
+    super(props);
 
-        this.exocore = props.exocore;
-        this.state = {entities: []};
-        this.registerQuery();
-    }
+    this.exocore = props.exocore;
+    this.state = {entities: []};
 
-    render() {
-        return (
-            <div>
-                <Input onAdd={this.onAdd.bind(this)}/>
+    this.registerQuery();
+  }
 
-                <ul>
-                    {this.renderList()}
-                </ul>
-            </div>
-        );
-    }
+  render() {
+    return (
+      <div>
+        <Input onAdd={this.onAdd.bind(this)}/>
 
-    renderList() {
-        return this.state.entities.map(entity =>
-            <li key={entity.id}>{entity.traits[0].title}</li>
-        );
-    }
+        <ul>
+          {this.renderList()}
+        </ul>
+      </div>
+    );
+  }
 
-    async onAdd(text) {
-        await this.exocore.mutate.create_entity("exocore.task", {
-            title: text
-        }).execute();
-    }
+  renderList() {
+    const DeleteButton = (props) => {
+      return <button onClick={this.onDelete.bind(this, props.entity.id, props.trait.id)}>Delete</button>
+    };
 
-    async fetchList() {
-        let result = this.exocore.query
-            .with_trait("exocore.task")
-            .with_count(1000)
-            .execute();
-        await result.ready();
+    return this.state.entities.map(res =>
+      <li key={res.entity.id}>{res.trait.string1} (<DeleteButton entity={res.entity} trait={res.trait} />)</li>
+    );
+  }
 
-        let results = result.to_json();
-        result.free();
+  async onAdd(text) {
+    const mutation = MutationBuilder
+      .createEntity()
+      .putTrait(new proto.exocore.test.TestMessage({
+        string1: text,
+      }))
+      .build();
 
-        this.setState({
-            entities: results.results.map(result => {
-                return result.entity;
-            })
+    await this.exocore.mutate(mutation);
+  }
+
+  async onDelete(entityId, traitId) {
+    const mutation = MutationBuilder
+      .updateEntity(entityId)
+      .deleteTrait(traitId)
+      .build();
+
+    await this.exocore.mutate(mutation);
+  }
+
+  registerQuery() {
+    const query = QueryBuilder
+      .withTrait(proto.exocore.test.TestMessage)
+      .count(100)
+      .build();
+
+    this.watched_query = this.exocore.watched_query(query);
+    this.watched_query.on_change(() => {
+      const results = proto.exocore.index.EntityResults.decode(this.watched_query.get());
+
+      let res = results.entities.flatMap((res) => {
+        return matchTrait(res.entity.traits[0], {
+          [Registry.messageFullName(proto.exocore.test.TestMessage)]: (trait) => {
+            return {entity: res.entity, trait: trait};
+          }
         })
-    }
+      });
 
-    registerQuery() {
-        this.watched_query = this.exocore.query
-            .with_trait("exocore.task")
-            .with_count(1000)
-            .execute_and_watch();
+      this.setState({
+        entities: res
+      })
+    })
+  }
 
-        this.watched_query.on_change(() => {
-            let results = this.watched_query.to_json();
-            this.setState({
-                entities: results.results.map(result => {
-                    return result.entity;
-                })
-            })
-        })
-    }
-
-    componentWillUnmount() {
-        this.watched_query.free();
-    }
+  componentWillUnmount() {
+    this.watched_query.free();
+  }
 }
 
 class Input extends React.Component {
-    constructor(props) {
-        super(props);
+  constructor(props) {
+    super(props);
 
-        this.state = {
-            text: ''
-        }
+    this.state = {
+      text: ''
     }
+  }
 
-    render() {
-        return (
-            <div>
-                <input value={this.state.text} onChange={this.onTextChange.bind(this)}/>
-                <button onClick={this.onAddClick.bind(this)}>Add</button>
-            </div>
-        )
-    }
+  render() {
+    return (
+      <div>
+        <input value={this.state.text} onChange={this.onTextChange.bind(this)}/>
+        <button onClick={this.onAddClick.bind(this)}>Add</button>
+      </div>
+    )
+  }
 
-    onTextChange(e) {
-        this.setState({
-            text: e.target.value
-        });
-    }
+  onTextChange(e) {
+    this.setState({
+      text: e.target.value
+    });
+  }
 
-    onAddClick(e) {
-        this.props.onAdd(this.state.text);
-        this.setState({
-            text: ''
-        });
-    }
+  onAddClick(e) {
+    this.props.onAdd(this.state.text);
+    this.setState({
+      text: ''
+    });
+  }
 }
 

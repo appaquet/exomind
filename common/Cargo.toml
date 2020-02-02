@@ -37,6 +37,7 @@ protobuf = "2"
 prost = "0.6"
 prost-types = "0.6"
 bytes = "0.5"
+uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
 
 [target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue

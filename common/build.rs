@@ -12,7 +12,7 @@ fn main() {
             capnpc::CompilerCommand::new()
                 .file(proto_file)
                 .run()
-                .expect(&format!("compiling {} schema", proto_file));
+                .unwrap_or_else(|_| panic!("compiling {} schema", proto_file));
         }
 
         let prost_protos_file = vec![
