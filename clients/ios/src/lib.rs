@@ -3,29 +3,33 @@
 #[macro_use]
 extern crate log;
 
-mod logging;
+use std::os::raw::c_void;
+use std::sync::{Arc, Once};
+
+use futures::compat::Future01CompatExt;
+use futures::StreamExt;
+use libc;
+use prost::Message;
 
 use exocore_common::cell::Cell;
 use exocore_common::crypto::keys::{Keypair, PublicKey};
 use exocore_common::futures::Runtime;
 use exocore_common::node::{LocalNode, Node};
+use exocore_common::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_common::protos::prost::ProstMessageExt;
 use exocore_common::time::{Clock, ConsistentTimestamp};
-use exocore_index::query::QueryBuilder;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
-use futures::compat::Future01CompatExt;
-use futures::StreamExt;
-use libc;
-use std::os::raw::c_void;
-use std::sync::Once;
+
+mod context;
+mod logging;
 
 static INIT: Once = Once::new();
 
 pub struct Context {
     runtime: Runtime,
-    store_handle: ClientHandle,
+    store_handle: Arc<ClientHandle>,
 }
 
 impl Context {
@@ -56,7 +60,7 @@ impl Context {
             PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
                 .expect("Couldn't decode cell publickey");
         let remote_node = Node::new_from_public_key(remote_node_pk);
-        let remote_addr = "/ip4/192.168.2.123/tcp/3330"
+        let remote_addr = "/ip4/192.168.2.13/tcp/3330"
             .parse()
             .expect("Couldn't parse remote node addr");
         remote_node.add_address(remote_addr);
@@ -81,7 +85,7 @@ impl Context {
             ContextStatus::Error
         })?;
 
-        let store_handle = remote_store_client.get_handle();
+        let store_handle = Arc::new(remote_store_client.get_handle());
         let management_transport_handle = transport
             .get_handle(cell, TransportLayer::None)
             .map_err(|err| {
@@ -107,17 +111,66 @@ impl Context {
         })
     }
 
+    pub fn mutate(
+        &mut self,
+        mutation_bytes: *const libc::c_uchar,
+        mutation_size: usize,
+        callback: extern "C" fn(status: MutationStatus, *const libc::c_uchar, usize, *const c_void),
+        callback_ctx: *const c_void,
+    ) -> Result<MutationHandle, MutationStatus> {
+        let mutation_bytes = unsafe { std::slice::from_raw_parts(mutation_bytes, mutation_size) };
+        let mutation = EntityMutation::decode(mutation_bytes).map_err(|_| MutationStatus::Error)?;
+
+        let store_handle = self.store_handle.clone();
+
+        let callback_ctx = CallbackContext { ctx: callback_ctx };
+        self.runtime.spawn_std(async move {
+            let future_result = store_handle.mutate(mutation);
+
+            let result = future_result.await;
+            match result {
+                Ok(res) => {
+                    let encoded = match res.encode_to_vec() {
+                        Ok(res) => res,
+                        Err(err) => {
+                            error!("Error decoding mutation result: {}", err);
+                            callback(MutationStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
+                            return;
+                        }
+                    };
+
+                    debug!("Mutation result received");
+                    callback(
+                        MutationStatus::Success,
+                        encoded.as_ptr(),
+                        encoded.len(),
+                        callback_ctx.ctx,
+                    );
+                }
+
+                Err(err) => {
+                    warn!("Mutation future has failed: {}", err);
+                    callback(MutationStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
+                }
+            }
+        });
+
+        Ok(MutationHandle {
+            status: MutationStatus::Success,
+        })
+    }
+
     pub fn query(
         &mut self,
-        _query: *const libc::c_char,
+        query_bytes: *const libc::c_uchar,
+        query_size: usize,
         callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
         callback_ctx: *const c_void,
     ) -> Result<QueryHandle, QueryStatus> {
-        let future_result = self.store_handle.query(
-            QueryBuilder::with_trait("exocore.task")
-                .with_count(1000)
-                .build(),
-        );
+        let query_bytes = unsafe { std::slice::from_raw_parts(query_bytes, query_size) };
+        let query = EntityQuery::decode(query_bytes).map_err(|_| QueryStatus::Error)?;
+
+        let future_result = self.store_handle.query(query);
         let query_id = future_result.query_id();
 
         let callback_ctx = CallbackContext { ctx: callback_ctx };
@@ -125,9 +178,16 @@ impl Context {
             let result = future_result.await;
             match result {
                 Ok(res) => {
-                    debug!("Query results received");
-                    let encoded = res.encode_to_vec().unwrap();
+                    let encoded = match res.encode_to_vec() {
+                        Ok(res) => res,
+                        Err(err) => {
+                            error!("Error decoding query result: {}", err);
+                            callback(QueryStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
+                            return;
+                        }
+                    };
 
+                    debug!("Query results received");
                     callback(
                         QueryStatus::Success,
                         encoded.as_ptr(),
@@ -151,16 +211,15 @@ impl Context {
 
     pub fn watched_query(
         &mut self,
-        _query: *const libc::c_char,
+        query_bytes: *const libc::c_uchar,
+        query_size: usize,
         callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
         callback_ctx: *const c_void,
     ) -> Result<QueryStreamHandle, QueryStreamStatus> {
-        let result_stream = self.store_handle.watched_query(
-            QueryBuilder::with_trait("exocore.task")
-                .with_count(1000)
-                .build(),
-        );
+        let query_bytes = unsafe { std::slice::from_raw_parts(query_bytes, query_size) };
+        let query = EntityQuery::decode(query_bytes).map_err(|_| QueryStreamStatus::Error)?;
 
+        let result_stream = self.store_handle.watched_query(query);
         let query_id = result_stream.query_id();
 
         let callback_ctx = CallbackContext { ctx: callback_ctx };
@@ -170,9 +229,16 @@ impl Context {
             while let Some(result) = stream.next().await {
                 match result {
                     Ok(res) => {
-                        debug!("Watched query results received");
-                        let encoded = res.encode_to_vec().unwrap();
+                        let encoded = match res.encode_to_vec() {
+                            Ok(res) => res,
+                            Err(err) => {
+                                error!("Error decoding watched query result: {}", err);
+                                callback(QueryStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
+                                return;
+                            }
+                        };
 
+                        debug!("Watched query results received");
                         callback(
                             QueryStatus::Success,
                             encoded.as_ptr(),
@@ -201,7 +267,7 @@ impl Context {
 }
 
 #[repr(C)]
-pub struct ExocoreContext {
+pub struct ContextResult {
     status: ContextStatus,
     context: *mut Context,
 }
@@ -246,19 +312,30 @@ pub struct QueryStreamHandle {
     query_id: u64,
 }
 
+#[repr(u8)]
+pub enum MutationStatus {
+    Success = 0,
+    Error,
+}
+
+#[repr(C)]
+pub struct MutationHandle {
+    status: MutationStatus,
+}
+
 #[no_mangle]
-pub extern "C" fn exocore_context_new() -> ExocoreContext {
+pub extern "C" fn exocore_context_new() -> ContextResult {
     let context = match Context::new() {
         Ok(context) => context,
         Err(err) => {
-            return ExocoreContext {
+            return ContextResult {
                 status: err,
                 context: std::ptr::null_mut(),
             };
         }
     };
 
-    ExocoreContext {
+    ContextResult {
         status: ContextStatus::Success,
         context: Box::into_raw(Box::new(context)),
     }
@@ -288,15 +365,32 @@ pub extern "C" fn exocore_context_free(ctx: *mut Context) {
 }
 
 #[no_mangle]
+pub extern "C" fn exocore_mutation(
+    ctx: *mut Context,
+    mutation_bytes: *const libc::c_uchar,
+    mutation_size: usize,
+    callback: extern "C" fn(status: MutationStatus, *const libc::c_uchar, usize, *const c_void),
+    callback_ctx: *const c_void,
+) -> MutationHandle {
+    let context = unsafe { ctx.as_mut().unwrap() };
+
+    match context.mutate(mutation_bytes, mutation_size, callback, callback_ctx) {
+        Ok(res) => res,
+        Err(status) => MutationHandle { status },
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn exocore_query(
     ctx: *mut Context,
-    query: *const libc::c_char,
+    query_bytes: *const libc::c_uchar,
+    query_size: usize,
     callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
     callback_ctx: *const c_void,
 ) -> QueryHandle {
     let context = unsafe { ctx.as_mut().unwrap() };
 
-    match context.query(query, callback, callback_ctx) {
+    match context.query(query_bytes, query_size, callback, callback_ctx) {
         Ok(res) => res,
         Err(status) => QueryHandle {
             status,
@@ -320,13 +414,14 @@ pub extern "C" fn exocore_query_cancel(ctx: *mut Context, handle: QueryHandle) {
 #[no_mangle]
 pub extern "C" fn exocore_watched_query(
     ctx: *mut Context,
-    query: *const libc::c_char,
+    query_bytes: *const libc::c_uchar,
+    query_size: usize,
     callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
     callback_ctx: *const c_void,
 ) -> QueryStreamHandle {
     let context = unsafe { ctx.as_mut().unwrap() };
 
-    match context.watched_query(query, callback, callback_ctx) {
+    match context.watched_query(query_bytes, query_size, callback, callback_ctx) {
         Ok(res) => res,
         Err(status) => QueryStreamHandle {
             status,

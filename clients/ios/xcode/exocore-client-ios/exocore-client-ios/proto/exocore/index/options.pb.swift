@@ -23,18 +23,18 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 
 extension SwiftProtobuf.Google_Protobuf_FieldOptions {
 
-  var Exocore_indexed: Bool {
+  public var Exocore_indexed: Bool {
     get {return getExtensionValue(ext: Exocore_Extensions_indexed) ?? false}
     set {setExtensionValue(ext: Exocore_Extensions_indexed, value: newValue)}
   }
   /// Returns true if extension `Exocore_Extensions_indexed`
   /// has been explicitly set.
-  var hasExocore_indexed: Bool {
+  public var hasExocore_indexed: Bool {
     return hasExtensionValue(ext: Exocore_Extensions_indexed)
   }
   /// Clears the value of extension `Exocore_Extensions_indexed`.
   /// Subsequent reads from it will return its default value.
-  mutating func clearExocore_indexed() {
+  public mutating func clearExocore_indexed() {
     clearExtensionValue(ext: Exocore_Extensions_indexed)
   }
 
@@ -44,7 +44,7 @@ extension SwiftProtobuf.Google_Protobuf_FieldOptions {
 /// this .proto file. It can be used any place an `SwiftProtobuf.ExtensionMap` is needed
 /// in parsing, or it can be combined with other `SwiftProtobuf.SimpleExtensionMap`s to create
 /// a larger `SwiftProtobuf.SimpleExtensionMap`.
-let Exocore_Options_Extensions: SwiftProtobuf.SimpleExtensionMap = [
+public let Exocore_Options_Extensions: SwiftProtobuf.SimpleExtensionMap = [
   Exocore_Extensions_indexed
 ]
 

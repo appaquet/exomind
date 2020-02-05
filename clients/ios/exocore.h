@@ -11,6 +11,12 @@ enum ExocoreContextStatus {
 };
 typedef uint8_t ExocoreContextStatus;
 
+enum ExocoreMutationStatus {
+  ExocoreMutationStatus_Success = 0,
+  ExocoreMutationStatus_Error,
+};
+typedef uint8_t ExocoreMutationStatus;
+
 enum ExocoreQueryStatus {
   ExocoreQueryStatus_Success = 0,
   ExocoreQueryStatus_Done = 1,
@@ -27,10 +33,14 @@ typedef uint8_t ExocoreQueryStreamStatus;
 
 typedef struct ExocoreContext ExocoreContext;
 
-typedef struct ExocoreExocoreContext {
+typedef struct ExocoreContextResult {
   ExocoreContextStatus status;
   ExocoreContext *context;
-} ExocoreExocoreContext;
+} ExocoreContextResult;
+
+typedef struct ExocoreMutationHandle {
+  ExocoreMutationStatus status;
+} ExocoreMutationHandle;
 
 typedef struct ExocoreQueryHandle {
   ExocoreQueryStatus status;
@@ -44,17 +54,25 @@ typedef struct ExocoreQueryStreamHandle {
 
 void exocore_context_free(ExocoreContext *ctx);
 
-ExocoreExocoreContext exocore_context_new(void);
+ExocoreContextResult exocore_context_new(void);
+
+ExocoreMutationHandle exocore_mutation(ExocoreContext *ctx,
+                                       const unsigned char *mutation_bytes,
+                                       uintptr_t mutation_size,
+                                       void (*callback)(ExocoreMutationStatus status, const unsigned char*, uintptr_t, const void*),
+                                       const void *callback_ctx);
 
 ExocoreQueryHandle exocore_query(ExocoreContext *ctx,
-                                 const char *query,
+                                 const unsigned char *query_bytes,
+                                 uintptr_t query_size,
                                  void (*callback)(ExocoreQueryStatus status, const unsigned char*, uintptr_t, const void*),
                                  const void *callback_ctx);
 
 void exocore_query_cancel(ExocoreContext *ctx, ExocoreQueryHandle handle);
 
 ExocoreQueryStreamHandle exocore_watched_query(ExocoreContext *ctx,
-                                               const char *query,
+                                               const unsigned char *query_bytes,
+                                               uintptr_t query_size,
                                                void (*callback)(ExocoreQueryStatus status, const unsigned char*, uintptr_t, const void*),
                                                const void *callback_ctx);
 

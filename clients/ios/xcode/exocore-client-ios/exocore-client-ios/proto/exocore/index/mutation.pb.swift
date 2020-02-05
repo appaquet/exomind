@@ -19,22 +19,22 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-struct Exocore_Index_EntityMutation {
+public struct Exocore_Index_EntityMutation {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var entityID: String {
+  public var entityID: String {
     get {return _storage._entityID}
     set {_uniqueStorage()._entityID = newValue}
   }
 
-  var mutation: OneOf_Mutation? {
+  public var mutation: OneOf_Mutation? {
     get {return _storage._mutation}
     set {_uniqueStorage()._mutation = newValue}
   }
 
-  var putTrait: Exocore_Index_PutTraitMutation {
+  public var putTrait: Exocore_Index_PutTraitMutation {
     get {
       if case .putTrait(let v)? = _storage._mutation {return v}
       return Exocore_Index_PutTraitMutation()
@@ -42,7 +42,7 @@ struct Exocore_Index_EntityMutation {
     set {_uniqueStorage()._mutation = .putTrait(newValue)}
   }
 
-  var deleteTrait: Exocore_Index_DeleteTraitMutation {
+  public var deleteTrait: Exocore_Index_DeleteTraitMutation {
     get {
       if case .deleteTrait(let v)? = _storage._mutation {return v}
       return Exocore_Index_DeleteTraitMutation()
@@ -50,7 +50,7 @@ struct Exocore_Index_EntityMutation {
     set {_uniqueStorage()._mutation = .deleteTrait(newValue)}
   }
 
-  var test: Exocore_Index_TestMutation {
+  public var test: Exocore_Index_TestMutation {
     get {
       if case .test(let v)? = _storage._mutation {return v}
       return Exocore_Index_TestMutation()
@@ -58,15 +58,15 @@ struct Exocore_Index_EntityMutation {
     set {_uniqueStorage()._mutation = .test(newValue)}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum OneOf_Mutation: Equatable {
+  public enum OneOf_Mutation: Equatable {
     case putTrait(Exocore_Index_PutTraitMutation)
     case deleteTrait(Exocore_Index_DeleteTraitMutation)
     case test(Exocore_Index_TestMutation)
 
   #if !swift(>=4.1)
-    static func ==(lhs: Exocore_Index_EntityMutation.OneOf_Mutation, rhs: Exocore_Index_EntityMutation.OneOf_Mutation) -> Bool {
+    public static func ==(lhs: Exocore_Index_EntityMutation.OneOf_Mutation, rhs: Exocore_Index_EntityMutation.OneOf_Mutation) -> Bool {
       switch (lhs, rhs) {
       case (.putTrait(let l), .putTrait(let r)): return l == r
       case (.deleteTrait(let l), .deleteTrait(let r)): return l == r
@@ -77,66 +77,66 @@ struct Exocore_Index_EntityMutation {
   #endif
   }
 
-  init() {}
+  public init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
-struct Exocore_Index_PutTraitMutation {
+public struct Exocore_Index_PutTraitMutation {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var trait: Exocore_Index_Trait {
+  public var trait: Exocore_Index_Trait {
     get {return _storage._trait ?? Exocore_Index_Trait()}
     set {_uniqueStorage()._trait = newValue}
   }
   /// Returns true if `trait` has been explicitly set.
-  var hasTrait: Bool {return _storage._trait != nil}
+  public var hasTrait: Bool {return _storage._trait != nil}
   /// Clears the value of `trait`. Subsequent reads from it will return its default value.
-  mutating func clearTrait() {_uniqueStorage()._trait = nil}
+  public mutating func clearTrait() {_uniqueStorage()._trait = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
-struct Exocore_Index_DeleteTraitMutation {
+public struct Exocore_Index_DeleteTraitMutation {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var traitID: String = String()
+  public var traitID: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
-struct Exocore_Index_TestMutation {
+public struct Exocore_Index_TestMutation {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var success: Bool = false
+  public var success: Bool = false
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
-struct Exocore_Index_MutationResult {
+public struct Exocore_Index_MutationResult {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var operationID: UInt64 = 0
+  public var operationID: UInt64 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -144,8 +144,8 @@ struct Exocore_Index_MutationResult {
 fileprivate let _protobuf_package = "exocore.index"
 
 extension Exocore_Index_EntityMutation: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".EntityMutation"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".EntityMutation"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "entity_id"),
     2: .standard(proto: "put_trait"),
     3: .standard(proto: "delete_trait"),
@@ -173,7 +173,7 @@ extension Exocore_Index_EntityMutation: SwiftProtobuf.Message, SwiftProtobuf._Me
     return _storage
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -209,7 +209,7 @@ extension Exocore_Index_EntityMutation: SwiftProtobuf.Message, SwiftProtobuf._Me
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       if !_storage._entityID.isEmpty {
         try visitor.visitSingularStringField(value: _storage._entityID, fieldNumber: 1)
@@ -227,7 +227,7 @@ extension Exocore_Index_EntityMutation: SwiftProtobuf.Message, SwiftProtobuf._Me
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Index_EntityMutation, rhs: Exocore_Index_EntityMutation) -> Bool {
+  public static func ==(lhs: Exocore_Index_EntityMutation, rhs: Exocore_Index_EntityMutation) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
@@ -244,8 +244,8 @@ extension Exocore_Index_EntityMutation: SwiftProtobuf.Message, SwiftProtobuf._Me
 }
 
 extension Exocore_Index_PutTraitMutation: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".PutTraitMutation"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".PutTraitMutation"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "trait"),
   ]
 
@@ -268,7 +268,7 @@ extension Exocore_Index_PutTraitMutation: SwiftProtobuf.Message, SwiftProtobuf._
     return _storage
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -280,7 +280,7 @@ extension Exocore_Index_PutTraitMutation: SwiftProtobuf.Message, SwiftProtobuf._
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       if let v = _storage._trait {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
@@ -289,7 +289,7 @@ extension Exocore_Index_PutTraitMutation: SwiftProtobuf.Message, SwiftProtobuf._
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Index_PutTraitMutation, rhs: Exocore_Index_PutTraitMutation) -> Bool {
+  public static func ==(lhs: Exocore_Index_PutTraitMutation, rhs: Exocore_Index_PutTraitMutation) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
@@ -305,12 +305,12 @@ extension Exocore_Index_PutTraitMutation: SwiftProtobuf.Message, SwiftProtobuf._
 }
 
 extension Exocore_Index_DeleteTraitMutation: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".DeleteTraitMutation"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".DeleteTraitMutation"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "trait_id"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularStringField(value: &self.traitID)
@@ -319,14 +319,14 @@ extension Exocore_Index_DeleteTraitMutation: SwiftProtobuf.Message, SwiftProtobu
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.traitID.isEmpty {
       try visitor.visitSingularStringField(value: self.traitID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Index_DeleteTraitMutation, rhs: Exocore_Index_DeleteTraitMutation) -> Bool {
+  public static func ==(lhs: Exocore_Index_DeleteTraitMutation, rhs: Exocore_Index_DeleteTraitMutation) -> Bool {
     if lhs.traitID != rhs.traitID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -334,12 +334,12 @@ extension Exocore_Index_DeleteTraitMutation: SwiftProtobuf.Message, SwiftProtobu
 }
 
 extension Exocore_Index_TestMutation: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".TestMutation"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".TestMutation"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "success"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularBoolField(value: &self.success)
@@ -348,14 +348,14 @@ extension Exocore_Index_TestMutation: SwiftProtobuf.Message, SwiftProtobuf._Mess
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.success != false {
       try visitor.visitSingularBoolField(value: self.success, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Index_TestMutation, rhs: Exocore_Index_TestMutation) -> Bool {
+  public static func ==(lhs: Exocore_Index_TestMutation, rhs: Exocore_Index_TestMutation) -> Bool {
     if lhs.success != rhs.success {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -363,12 +363,12 @@ extension Exocore_Index_TestMutation: SwiftProtobuf.Message, SwiftProtobuf._Mess
 }
 
 extension Exocore_Index_MutationResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".MutationResult"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".MutationResult"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "operation_id"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularUInt64Field(value: &self.operationID)
@@ -377,14 +377,14 @@ extension Exocore_Index_MutationResult: SwiftProtobuf.Message, SwiftProtobuf._Me
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.operationID != 0 {
       try visitor.visitSingularUInt64Field(value: self.operationID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Index_MutationResult, rhs: Exocore_Index_MutationResult) -> Bool {
+  public static func ==(lhs: Exocore_Index_MutationResult, rhs: Exocore_Index_MutationResult) -> Bool {
     if lhs.operationID != rhs.operationID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

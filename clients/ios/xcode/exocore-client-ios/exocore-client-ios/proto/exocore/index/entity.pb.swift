@@ -19,60 +19,60 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-struct Exocore_Index_Entity {
+public struct Exocore_Index_Entity {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var id: String = String()
+  public var id: String = String()
 
-  var traits: [Exocore_Index_Trait] = []
+  public var traits: [Exocore_Index_Trait] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
-struct Exocore_Index_Trait {
+public struct Exocore_Index_Trait {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var id: String {
+  public var id: String {
     get {return _storage._id}
     set {_uniqueStorage()._id = newValue}
   }
 
-  var message: SwiftProtobuf.Google_Protobuf_Any {
+  public var message: SwiftProtobuf.Google_Protobuf_Any {
     get {return _storage._message ?? SwiftProtobuf.Google_Protobuf_Any()}
     set {_uniqueStorage()._message = newValue}
   }
   /// Returns true if `message` has been explicitly set.
-  var hasMessage: Bool {return _storage._message != nil}
+  public var hasMessage: Bool {return _storage._message != nil}
   /// Clears the value of `message`. Subsequent reads from it will return its default value.
-  mutating func clearMessage() {_uniqueStorage()._message = nil}
+  public mutating func clearMessage() {_uniqueStorage()._message = nil}
 
-  var creationDate: SwiftProtobuf.Google_Protobuf_Timestamp {
+  public var creationDate: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {return _storage._creationDate ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._creationDate = newValue}
   }
   /// Returns true if `creationDate` has been explicitly set.
-  var hasCreationDate: Bool {return _storage._creationDate != nil}
+  public var hasCreationDate: Bool {return _storage._creationDate != nil}
   /// Clears the value of `creationDate`. Subsequent reads from it will return its default value.
-  mutating func clearCreationDate() {_uniqueStorage()._creationDate = nil}
+  public mutating func clearCreationDate() {_uniqueStorage()._creationDate = nil}
 
-  var modificationDate: SwiftProtobuf.Google_Protobuf_Timestamp {
+  public var modificationDate: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {return _storage._modificationDate ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._modificationDate = newValue}
   }
   /// Returns true if `modificationDate` has been explicitly set.
-  var hasModificationDate: Bool {return _storage._modificationDate != nil}
+  public var hasModificationDate: Bool {return _storage._modificationDate != nil}
   /// Clears the value of `modificationDate`. Subsequent reads from it will return its default value.
-  mutating func clearModificationDate() {_uniqueStorage()._modificationDate = nil}
+  public mutating func clearModificationDate() {_uniqueStorage()._modificationDate = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
@@ -82,13 +82,13 @@ struct Exocore_Index_Trait {
 fileprivate let _protobuf_package = "exocore.index"
 
 extension Exocore_Index_Entity: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Entity"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".Entity"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "id"),
     4: .same(proto: "traits"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularStringField(value: &self.id)
@@ -98,7 +98,7 @@ extension Exocore_Index_Entity: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -108,7 +108,7 @@ extension Exocore_Index_Entity: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Index_Entity, rhs: Exocore_Index_Entity) -> Bool {
+  public static func ==(lhs: Exocore_Index_Entity, rhs: Exocore_Index_Entity) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.traits != rhs.traits {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -117,8 +117,8 @@ extension Exocore_Index_Entity: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
 }
 
 extension Exocore_Index_Trait: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Trait"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".Trait"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "id"),
     2: .same(proto: "message"),
     3: .standard(proto: "creation_date"),
@@ -150,7 +150,7 @@ extension Exocore_Index_Trait: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     return _storage
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -165,7 +165,7 @@ extension Exocore_Index_Trait: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       if !_storage._id.isEmpty {
         try visitor.visitSingularStringField(value: _storage._id, fieldNumber: 1)
@@ -183,7 +183,7 @@ extension Exocore_Index_Trait: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Index_Trait, rhs: Exocore_Index_Trait) -> Bool {
+  public static func ==(lhs: Exocore_Index_Trait, rhs: Exocore_Index_Trait) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0

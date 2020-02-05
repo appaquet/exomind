@@ -19,36 +19,36 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-struct Exocore_Test_TestMessage {
+public struct Exocore_Test_TestMessage {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var string1: String {
+  public var string1: String {
     get {return _storage._string1}
     set {_uniqueStorage()._string1 = newValue}
   }
 
-  var string2: String {
+  public var string2: String {
     get {return _storage._string2}
     set {_uniqueStorage()._string2 = newValue}
   }
 
-  var struct1: Exocore_Test_TestStruct {
+  public var struct1: Exocore_Test_TestStruct {
     get {return _storage._struct1 ?? Exocore_Test_TestStruct()}
     set {_uniqueStorage()._struct1 = newValue}
   }
   /// Returns true if `struct1` has been explicitly set.
-  var hasStruct1: Bool {return _storage._struct1 != nil}
+  public var hasStruct1: Bool {return _storage._struct1 != nil}
   /// Clears the value of `struct1`. Subsequent reads from it will return its default value.
-  mutating func clearStruct1() {_uniqueStorage()._struct1 = nil}
+  public mutating func clearStruct1() {_uniqueStorage()._struct1 = nil}
 
-  var fields: OneOf_Fields? {
+  public var fields: OneOf_Fields? {
     get {return _storage._fields}
     set {_uniqueStorage()._fields = newValue}
   }
 
-  var oneofString1: String {
+  public var oneofString1: String {
     get {
       if case .oneofString1(let v)? = _storage._fields {return v}
       return String()
@@ -56,7 +56,7 @@ struct Exocore_Test_TestMessage {
     set {_uniqueStorage()._fields = .oneofString1(newValue)}
   }
 
-  var oneofInt1: UInt32 {
+  public var oneofInt1: UInt32 {
     get {
       if case .oneofInt1(let v)? = _storage._fields {return v}
       return 0
@@ -64,42 +64,42 @@ struct Exocore_Test_TestMessage {
     set {_uniqueStorage()._fields = .oneofInt1(newValue)}
   }
 
-  var date1: SwiftProtobuf.Google_Protobuf_Timestamp {
+  public var date1: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {return _storage._date1 ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._date1 = newValue}
   }
   /// Returns true if `date1` has been explicitly set.
-  var hasDate1: Bool {return _storage._date1 != nil}
+  public var hasDate1: Bool {return _storage._date1 != nil}
   /// Clears the value of `date1`. Subsequent reads from it will return its default value.
-  mutating func clearDate1() {_uniqueStorage()._date1 = nil}
+  public mutating func clearDate1() {_uniqueStorage()._date1 = nil}
 
-  var date2: SwiftProtobuf.Google_Protobuf_Timestamp {
+  public var date2: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {return _storage._date2 ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._date2 = newValue}
   }
   /// Returns true if `date2` has been explicitly set.
-  var hasDate2: Bool {return _storage._date2 != nil}
+  public var hasDate2: Bool {return _storage._date2 != nil}
   /// Clears the value of `date2`. Subsequent reads from it will return its default value.
-  mutating func clearDate2() {_uniqueStorage()._date2 = nil}
+  public mutating func clearDate2() {_uniqueStorage()._date2 = nil}
 
-  var int1: UInt32 {
+  public var int1: UInt32 {
     get {return _storage._int1}
     set {_uniqueStorage()._int1 = newValue}
   }
 
-  var int2: UInt32 {
+  public var int2: UInt32 {
     get {return _storage._int2}
     set {_uniqueStorage()._int2 = newValue}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum OneOf_Fields: Equatable {
+  public enum OneOf_Fields: Equatable {
     case oneofString1(String)
     case oneofInt1(UInt32)
 
   #if !swift(>=4.1)
-    static func ==(lhs: Exocore_Test_TestMessage.OneOf_Fields, rhs: Exocore_Test_TestMessage.OneOf_Fields) -> Bool {
+    public static func ==(lhs: Exocore_Test_TestMessage.OneOf_Fields, rhs: Exocore_Test_TestMessage.OneOf_Fields) -> Bool {
       switch (lhs, rhs) {
       case (.oneofString1(let l), .oneofString1(let r)): return l == r
       case (.oneofInt1(let l), .oneofInt1(let r)): return l == r
@@ -109,35 +109,35 @@ struct Exocore_Test_TestMessage {
   #endif
   }
 
-  init() {}
+  public init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
-struct Exocore_Test_TestStruct {
+public struct Exocore_Test_TestStruct {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var string1: String = String()
+  public var string1: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
-struct Exocore_Test_TestMessage2 {
+public struct Exocore_Test_TestMessage2 {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var string1: String = String()
+  public var string1: String = String()
 
-  var string2: String = String()
+  public var string2: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -145,8 +145,8 @@ struct Exocore_Test_TestMessage2 {
 fileprivate let _protobuf_package = "exocore.test"
 
 extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".TestMessage"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".TestMessage"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "string1"),
     2: .same(proto: "string2"),
     3: .same(proto: "struct1"),
@@ -191,7 +191,7 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
     return _storage
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -219,7 +219,7 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       if !_storage._string1.isEmpty {
         try visitor.visitSingularStringField(value: _storage._string1, fieldNumber: 1)
@@ -253,7 +253,7 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Test_TestMessage, rhs: Exocore_Test_TestMessage) -> Bool {
+  public static func ==(lhs: Exocore_Test_TestMessage, rhs: Exocore_Test_TestMessage) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
@@ -276,12 +276,12 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
 }
 
 extension Exocore_Test_TestStruct: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".TestStruct"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".TestStruct"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "string1"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularStringField(value: &self.string1)
@@ -290,14 +290,14 @@ extension Exocore_Test_TestStruct: SwiftProtobuf.Message, SwiftProtobuf._Message
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.string1.isEmpty {
       try visitor.visitSingularStringField(value: self.string1, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Test_TestStruct, rhs: Exocore_Test_TestStruct) -> Bool {
+  public static func ==(lhs: Exocore_Test_TestStruct, rhs: Exocore_Test_TestStruct) -> Bool {
     if lhs.string1 != rhs.string1 {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -305,13 +305,13 @@ extension Exocore_Test_TestStruct: SwiftProtobuf.Message, SwiftProtobuf._Message
 }
 
 extension Exocore_Test_TestMessage2: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".TestMessage2"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".TestMessage2"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "string1"),
     2: .same(proto: "string2"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularStringField(value: &self.string1)
@@ -321,7 +321,7 @@ extension Exocore_Test_TestMessage2: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.string1.isEmpty {
       try visitor.visitSingularStringField(value: self.string1, fieldNumber: 1)
     }
@@ -331,7 +331,7 @@ extension Exocore_Test_TestMessage2: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exocore_Test_TestMessage2, rhs: Exocore_Test_TestMessage2) -> Bool {
+  public static func ==(lhs: Exocore_Test_TestMessage2, rhs: Exocore_Test_TestMessage2) -> Bool {
     if lhs.string1 != rhs.string1 {return false}
     if lhs.string2 != rhs.string2 {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

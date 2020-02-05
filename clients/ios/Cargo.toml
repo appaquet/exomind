@@ -12,7 +12,9 @@ exocore-common = { path = "../../common", features = ["runtime"] }
 exocore-transport = { path = "../../transport", features = ["libp2p_transport"] }
 exocore-index = { path = "../../index", default-features = false }
 libc = "0.2"
-log4rs = "0.9"
+log4rs = "0.10"
 log = "0.4"
 serde_json = "1.0"
 futures = "0.3"
+prost = "0.6"
+bytes = "0.5"

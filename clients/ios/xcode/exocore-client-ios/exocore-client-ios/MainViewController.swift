@@ -48,7 +48,12 @@ class MyList : ObservableObject {
             self.client = Client()
         }
 
-        self.resultStream = self.client?.watched_query(onChange: { [weak self] (status, results) in
+        var query = Exocore_Index_EntityQuery()
+        var match = Exocore_Index_MatchPredicate()
+        match.query = "test"
+        query.match = match
+
+        self.resultStream = self.client?.watched_query(query: query, onChange: { [weak self] (status, results) in
             DispatchQueue.main.async {
                 if let results = results {
                     self?.items = results.entities.map { (result: Exocore_Index_EntityResult) -> Item in
