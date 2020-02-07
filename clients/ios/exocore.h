@@ -56,11 +56,15 @@ void exocore_context_free(ExocoreContext *ctx);
 
 ExocoreContextResult exocore_context_new(void);
 
-ExocoreMutationHandle exocore_mutation(ExocoreContext *ctx,
-                                       const unsigned char *mutation_bytes,
-                                       uintptr_t mutation_size,
-                                       void (*callback)(ExocoreMutationStatus status, const unsigned char*, uintptr_t, const void*),
-                                       const void *callback_ctx);
+void exocore_free_string(char *ptr);
+
+char *exocore_generate_id(const char *prefix);
+
+ExocoreMutationHandle exocore_mutate(ExocoreContext *ctx,
+                                     const unsigned char *mutation_bytes,
+                                     uintptr_t mutation_size,
+                                     void (*callback)(ExocoreMutationStatus status, const unsigned char*, uintptr_t, const void*),
+                                     const void *callback_ctx);
 
 ExocoreQueryHandle exocore_query(ExocoreContext *ctx,
                                  const unsigned char *query_bytes,

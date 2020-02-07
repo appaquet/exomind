@@ -10,8 +10,8 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [features]
-tests_utils = ["log4rs", "tokio-compat", "runtime"]
-runtime = ["tokio-compat", "tokio/full"]
+tests_utils = ["log4rs", "runtime"]
+runtime = ["tokio-compat", "tokio/full", "tokio01"]
 
 [dependencies]
 log = "0.4"
@@ -29,15 +29,19 @@ chrono = "0.4"
 wasm-timer = "0.2"
 futures = { version = "0.3", features = ["async-await", "compat"] }
 futures01 = { package = "futures", version = "0.1" }
-tokio01 = { version = "0.1", package = "tokio", features = ["io"], default-features = false }
 tokio = { version = "0.2", features = ["rt-core", "blocking"], default-features = false }
-log4rs = { version = "0.10", optional = true }
-tokio-compat = { version = "0.1", features = ["blocking"], optional = true }
 protobuf = "2"
 prost = "0.6"
 prost-types = "0.6"
 bytes = "0.5"
 uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
+
+# tests_utils
+log4rs = { version = "0.10", optional = true }
+
+# runtime + tests_utils
+tokio-compat = { version = "0.1", features = ["blocking"], optional = true }
+tokio01 = { version = "0.1", package = "tokio", features = ["io"], default-features = false, optional = true }
 
 [target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue

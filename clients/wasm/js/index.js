@@ -128,9 +128,10 @@ export class MutationBuilder {
     return new MutationBuilder(entityId);
   }
 
-  putTrait(message) {
+  putTrait(message, traitId = null) {
     this.mutation.putTrait = new proto.exocore.index.PutTraitMutation({
       trait: new proto.exocore.index.Trait({
+        id: traitId,
         creationDate: toProtoTimestamp(new Date()),
         message: Registry.packToAny(message),
       })

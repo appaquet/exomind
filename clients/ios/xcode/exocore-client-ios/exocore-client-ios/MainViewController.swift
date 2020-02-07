@@ -4,6 +4,7 @@ import SwiftUI
 
 struct MainView: View {
     @ObservedObject var list: MyList
+    @State private var text = ""
 
     init(mockedItems items: [Item]) {
         self.list = MyList()
@@ -16,7 +17,7 @@ struct MainView: View {
     var body: some View {
         VStack {
             HStack {
-                Button("Watch query") {
+                Button("Watch") {
                     self.list.watch()
                 }
                 Button("Unwatch") {
@@ -27,8 +28,23 @@ struct MainView: View {
                 }
             }
 
-            List(list.items) { item in
-                Text(item.text)
+            HStack {
+                TextField("", text: $text)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+
+                Button("Add") {
+                    self.list.add(self.$text.wrappedValue)
+                    self.$text.wrappedValue = ""
+                }.padding()
+            }
+
+            List {
+                ForEach(list.items, id: \.self.id) { (item) in
+                    Text(item.text)
+                }.onDelete { (indexSet) in
+                    self.list.remove(atOffsets: indexSet)
+                }
             }
         }
     }
@@ -36,7 +52,7 @@ struct MainView: View {
 
 class MyList : ObservableObject {
     var client: Client?
-    var resultStream: ResultStream?
+    var resultStream: QueryStreamHandle?
 
     @Published var items: [Item] = []
 
@@ -48,11 +64,9 @@ class MyList : ObservableObject {
             self.client = Client()
         }
 
-        var query = Exocore_Index_EntityQuery()
-        var match = Exocore_Index_MatchPredicate()
-        match.query = "test"
-        query.match = match
-
+        let query = QueryBuilder.withTrait(message: Exocore_Test_TestMessage())
+            .count(count: 100)
+            .build()
         self.resultStream = self.client?.watched_query(query: query, onChange: { [weak self] (status, results) in
             DispatchQueue.main.async {
                 if let results = results {
@@ -73,6 +87,33 @@ class MyList : ObservableObject {
                 }
 
             }
+        })
+    }
+
+    func add(_ text: String) {
+        var msg = Exocore_Test_TestMessage()
+        msg.string1 = text
+
+        let mutation = try! MutationBuilder
+            .createEntity()
+            .putTrait(trait: msg)
+            .build()
+
+        _ = self.client?.mutate(mutation: mutation, onCompletion: { (status, res) in
+            print("Mutation done: \(status) \(String(describing: res?.operationID))")
+        })
+    }
+
+    func remove(atOffsets: IndexSet) {
+        let item = self.items[atOffsets.first!]
+
+        let mutation = MutationBuilder
+            .updateEntity(entityId: item.id)
+            .deleteTrait(traitId: "")
+            .build()
+
+        _ = self.client?.mutate(mutation: mutation, onCompletion: { (status, res) in
+            print("Mutation done: \(status) \(String(describing: res?.operationID))")
         })
     }
 

@@ -1,10 +1,3 @@
-//
-//  AppDelegate.swift
-//  exocore-client-ios
-//
-//  Created by Andre-Philippe Paquet on 2019-07-24.
-//  Copyright © 2019 Andre-Philippe Paquet. All rights reserved.
-//
 
 import UIKit
 

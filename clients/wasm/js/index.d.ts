@@ -25,13 +25,12 @@ export class Registry {
     static unpackAny(any: proto.google.protobuf.Any): any;
 }
 
-
 export class MutationBuilder {
     static createEntity(entityId?: string | null): MutationBuilder;
 
     static updateEntity(entityId: string): MutationBuilder;
 
-    putTrait(message: any): MutationBuilder;
+    putTrait(message: any, traitId?: string): MutationBuilder;
 
     deleteTrait(traitId: string): MutationBuilder;
 
@@ -47,7 +46,6 @@ export class QueryBuilder {
 
     build(): proto.exocore.index.EntityQuery;
 }
-
 
 export function toProtoTimestamp(date: Date): proto.google.protobuf.Timestamp;
 

@@ -18,9 +18,11 @@ use exocore_common::node::{LocalNode, Node};
 use exocore_common::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_common::protos::prost::ProstMessageExt;
 use exocore_common::time::{Clock, ConsistentTimestamp};
+use exocore_common::utils::id::{generate_id, generate_prefixed_id};
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
+use std::ffi::{CStr, CString};
 
 mod context;
 mod logging;
@@ -60,7 +62,7 @@ impl Context {
             PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
                 .expect("Couldn't decode cell publickey");
         let remote_node = Node::new_from_public_key(remote_node_pk);
-        let remote_addr = "/ip4/192.168.2.13/tcp/3330"
+        let remote_addr = "/ip4/192.168.2.19/tcp/3330"
             .parse()
             .expect("Couldn't parse remote node addr");
         remote_node.add_address(remote_addr);
@@ -365,7 +367,7 @@ pub extern "C" fn exocore_context_free(ctx: *mut Context) {
 }
 
 #[no_mangle]
-pub extern "C" fn exocore_mutation(
+pub extern "C" fn exocore_mutate(
     ctx: *mut Context,
     mutation_bytes: *const libc::c_uchar,
     mutation_size: usize,
@@ -440,4 +442,21 @@ pub extern "C" fn exocore_watched_query_cancel(ctx: *mut Context, handle: QueryS
     {
         error!("Error cancelling query stream: {}", err)
     }
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_generate_id(prefix: *const libc::c_char) -> *mut libc::c_char {
+    let generated = if prefix.is_null() {
+        generate_id()
+    } else {
+        let prefix = unsafe { CStr::from_ptr(prefix).to_string_lossy() };
+        generate_prefixed_id(&prefix)
+    };
+
+    CString::new(generated).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_free_string(ptr: *mut libc::c_char) {
+    unsafe { drop(CString::from_raw(ptr)) }
 }
