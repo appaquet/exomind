@@ -42,21 +42,67 @@ jobs:
         run: |
           set -e
 
-          apt update && apt install -y clang curl
+          apt update && apt install -y clang curl pkg-config libssl-dev
 
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -c rustfmt clippy -t wasm32-unknown-unknown
+          curl -sL https://deb.nodesource.com/setup_13.x | bash -
+          apt-get install -y nodejs
+
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -t wasm32-unknown-unknown
           export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
           rustup update
           rustc --version && cargo --version
 
-      - name: Check & test
+          cargo install wasm-pack
+
+      - name: Build client & example
         run: |
           set -e
           export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
           export RUST_BACKTRACE=1
 
           cd $GITHUB_WORKSPACE/clients/wasm
-          cargo build --target "wasm32-unknown-unknown"
+          wasm-pack build
+          npm install
+
+          cd $GITHUB_WORKSPACE/examples/web
+          npm install
+          npm run build
+
+  ios_build:
+    runs-on: macOS-latest
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Rust & Tools
+        run: |
+          set -e
+
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+          rustup update
+          rustc --version && cargo --version
+
+          rustup target add aarch64-apple-ios
+          rustup target add x86_64-apple-ios
+
+          cargo install cargo-lipo
+
+      - name: Force Xcode 11.3
+        run: sudo xcode-select -switch /Applications/Xcode_11.3.app
+
+      - name: Build ios lib
+        run: |
+          set -e
+          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
+          export RUST_BACKTRACE=1
+
+          cd $GITHUB_WORKSPACE/clients/ios
+          cargo lipo
+
+          cd $GITHUB_WORKSPACE/clients/ios/xcode/exocore-client-ios
+          pod install
+          xcodebuild -workspace exocore-client-ios.xcworkspace -scheme exocore-client-ios -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
   coverage:
     runs-on: ubuntu-latest
@@ -73,7 +119,7 @@ jobs:
           rustc --version && cargo --version
           rustup toolchain install nightly-2020-02-06 # if changed, change in coverage.sh
 
-      - name: Check & test
+      - name: Test coverage
         run: |
           set -e
           curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -

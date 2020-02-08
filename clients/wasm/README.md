@@ -24,7 +24,7 @@
 * To package WASM:
     * Install [`wasm-pack`](https://github.com/rustwasm/wasm-pack) to build and package WASM as NPM package
         * `cargo install wasm-pack`
-    * Then `wasm-pack build`
+    * Then `wasm-pack build --release`
 
 * Launch the [sample project](../../examples/web) 
     * `cd ../../examples/web && npm install && npm run start`
