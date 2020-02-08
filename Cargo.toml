@@ -12,7 +12,6 @@ license = "MIT"
 [dependencies]
 exocore-common = { version = "0.1.0", path = "./common" }
 exocore-transport = { version = "0.1.0", path = "./transport" }
-exocore-schema = { version = "0.1.0", path = "./schema" }
 exocore-index = { version = "0.1.0", path = "./index" }
 exocore-data = { version = "0.1.0", path = "./data" }
 
@@ -25,7 +24,6 @@ members = [
   "index",
   "data",
   "common",
-  "schema",
   "transport",
   "clients/wasm",
   "clients/android",

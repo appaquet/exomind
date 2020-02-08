@@ -13,7 +13,6 @@ cargo clean  \
     -p exocore-index \
     -p exocore-data \
     -p exocore-common \
-    -p exocore-schema \
     -p exocore-transport \
     -p exocore-client-wasm \
     -p exocore-client-android \
