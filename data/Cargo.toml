@@ -27,7 +27,7 @@ futures = "0.3"
 
 # For directory chain
 memmap = { version = "0.7", optional = true }
-extindex = { version = "0.2", optional = true }
+extindex = { version = "0.3", optional = true }
 
 # For tests
 tempdir = { version = "0.3", optional = true }

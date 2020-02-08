@@ -14,7 +14,8 @@ use exocore_common::protos::generated::data_chain_capnp::block_header;
 use exocore_common::simple_store::json_disk_store::JsonDiskStore;
 use exocore_common::simple_store::SimpleStore;
 
-use crate::chain::{Block, BlockOffset, Error};
+use crate::block::{Block, BlockOffset};
+use crate::chain::Error;
 
 use super::{DirectoryChainStoreConfig, DirectoryError};
 use std::sync::Arc;
@@ -406,11 +407,11 @@ impl Encodable<StoredIndexKey> for StoredIndexKey {
         Some(8) // u64
     }
 
-    fn encode(item: &StoredIndexKey, write: &mut dyn Write) -> Result<(), std::io::Error> {
+    fn encode<W: Write>(item: &StoredIndexKey, write: &mut W) -> Result<(), std::io::Error> {
         write.write_u64::<LittleEndian>(item.operation_id)
     }
 
-    fn decode(data: &mut dyn Read, _size: usize) -> Result<StoredIndexKey, std::io::Error> {
+    fn decode<R: Read>(data: &mut R, _size: usize) -> Result<StoredIndexKey, std::io::Error> {
         let operation_id = data.read_u64::<LittleEndian>()?;
         Ok(StoredIndexKey { operation_id })
     }
@@ -429,11 +430,11 @@ impl Encodable<StoredIndexValue> for StoredIndexValue {
         Some(8) // u64
     }
 
-    fn encode(item: &StoredIndexValue, write: &mut dyn Write) -> Result<(), std::io::Error> {
+    fn encode<W: Write>(item: &StoredIndexValue, write: &mut W) -> Result<(), std::io::Error> {
         write.write_u64::<LittleEndian>(item.offset)
     }
 
-    fn decode(data: &mut dyn Read, _size: usize) -> Result<StoredIndexValue, std::io::Error> {
+    fn decode<R: Read>(data: &mut R, _size: usize) -> Result<StoredIndexValue, std::io::Error> {
         let offset = data.read_u64::<LittleEndian>()?;
         Ok(StoredIndexValue { offset })
     }
