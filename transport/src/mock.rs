@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex, Weak};
 use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
 use exocore_common::futures::{spawn_future, Runtime};
 use exocore_common::node::{LocalNode, Node, NodeId};
-use exocore_common::protos::common_capnp::envelope;
+use exocore_common::protos::generated::common_capnp::envelope;
 use futures::channel::mpsc;
 use futures::prelude::*;
 

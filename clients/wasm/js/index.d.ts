@@ -13,6 +13,8 @@ export class Client {
     query(query: proto.exocore.index.EntityQuery): Promise<proto.exocore.index.EntityResults>;
 
     watched_query(query: proto.exocore.index.EntityQuery): WatchedQuery;
+
+    generate_id(prefix?: string): string;
 }
 
 export class Registry {

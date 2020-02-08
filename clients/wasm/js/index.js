@@ -20,7 +20,7 @@ export class Client {
       return import("exocore-client-wasm").then((module) => {
         _exocore_wasm = module;
 
-        console.log("Wasm client loaded");
+        console.log("Exocore WASM client loaded");
         const innerClient = new _exocore_wasm.ExocoreClient(url, statusChangeCallback);
         return new Client(innerClient);
       });
@@ -28,32 +28,33 @@ export class Client {
   }
 
   mutate(mutation) {
-    console.log('Sending mutation', mutation);
     const encoded = proto.exocore.index.EntityMutation.encode(mutation).finish();
 
     return this.innerClient
       .mutate(encoded)
       .then((resultsData) => {
         const result = proto.exocore.index.MutationResult.decode(resultsData);
-        console.log('Got mutation ack', mutation, result);
         return result;
       });
   }
 
   query(query) {
-    console.log('Sending query', query);
-
     const encoded = proto.exocore.index.EntityQuery.encode(query).finish();
+
     return this.innerClient
       .query(encoded).then((resultsData) => {
-        console.log('Got query result', query);
         return proto.exocore.index.EntityResults.decode(resultsData);
       });
   }
 
   watched_query(query) {
     const encoded = proto.exocore.index.EntityQuery.encode(query).finish();
+
     return this.innerClient.watched_query(encoded);
+  }
+
+  generate_id(prefix = '') {
+    return _exocore_wasm.generate_id(prefix);
   }
 }
 

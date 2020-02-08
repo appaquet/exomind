@@ -1,4 +1,3 @@
-use crate::block::Block;
 use exocore_common::capnp;
 use exocore_common::crypto::hash::Sha3_256;
 use exocore_common::crypto::signature::Signature;
@@ -7,8 +6,9 @@ use exocore_common::framing::{
     SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
 };
 use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::protos::data_chain_capnp::block_signature;
-use exocore_common::protos::data_chain_capnp::chain_operation;
+use exocore_common::protos::generated::data_chain_capnp::{block_signature, chain_operation};
+
+use crate::block::Block;
 
 pub type GroupId = u64;
 pub type OperationId = u64;

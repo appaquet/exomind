@@ -13,6 +13,8 @@ pub fn setup(level: Option<LevelFilter>) {
         .logger(Logger::builder().build("tokio_reactor", LevelFilter::Info))
         .logger(Logger::builder().build("tokio_threadpool", LevelFilter::Info))
         .logger(Logger::builder().build("yamux", LevelFilter::Info))
+        .logger(Logger::builder().build("multistream_select", LevelFilter::Info))
+        .logger(Logger::builder().build("libp2p_core", LevelFilter::Info))
         .build(Root::builder().appender("default_output").build(level))
         .expect("Couldn't configure logger");
 

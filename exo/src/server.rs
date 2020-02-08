@@ -1,5 +1,8 @@
-use crate::config::NodeConfig;
-use crate::options;
+use std::net::SocketAddr;
+use std::sync::Arc;
+
+use failure::err_msg;
+
 use exocore_common::cell::{Cell, FullCell};
 use exocore_common::futures::{Future01, Runtime};
 use exocore_common::protos::registry::Registry;
@@ -16,9 +19,9 @@ use exocore_transport::ws::{
     WebSocketTransportConfig, WebsocketTransport, WebsocketTransportHandle,
 };
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
-use failure::err_msg;
-use std::net::SocketAddr;
-use std::sync::Arc;
+
+use crate::config::NodeConfig;
+use crate::options;
 
 ///
 /// Starts servers based on given command line options

@@ -2,7 +2,7 @@ use exocore_common::cell::{Cell, CellId};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::futures::{interval, spawn_future_non_send};
 use exocore_common::node::Node;
-use exocore_common::protos::common_capnp::envelope;
+use exocore_common::protos::generated::common_capnp::envelope;
 use exocore_common::utils::handle_set::{Handle, HandleSet};
 use exocore_transport::transport::{
     ConnectionStatus, MpscHandleSink, MpscHandleStream, TransportHandleOnStart,

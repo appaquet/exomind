@@ -9,7 +9,7 @@ use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage
 use exocore_common::cell::{Cell, CellId, CellNodes};
 use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::protos::common_capnp::envelope;
+use exocore_common::protos::generated::common_capnp::envelope;
 use exocore_common::utils::handle_set::{Handle, HandleSet};
 use futures::channel::mpsc;
 use futures::channel::mpsc::SendError;
@@ -382,7 +382,7 @@ mod tests {
     use exocore_common::framing::CapnpFrameBuilder;
     use exocore_common::futures::Runtime;
     use exocore_common::node::Node;
-    use exocore_common::protos::data_chain_capnp::block_operation_header;
+    use exocore_common::protos::generated::data_chain_capnp::block_operation_header;
     use exocore_common::tests_utils::expect_eventually;
     use exocore_common::time::{ConsistentTimestamp, Instant};
     use futures::{SinkExt, StreamExt};

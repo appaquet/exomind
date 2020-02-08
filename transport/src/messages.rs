@@ -1,6 +1,6 @@
 use exocore_common::node::Node;
-use exocore_common::protos::common_capnp::envelope;
-use exocore_common::protos::MessageType;
+use exocore_common::protos::generated::common_capnp::envelope;
+use exocore_common::protos::generated::MessageType;
 
 use crate::{Error, TransportLayer};
 use exocore_common::cell::{Cell, CellId};

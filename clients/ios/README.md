@@ -8,14 +8,14 @@
     
 * Install tools
     * `cargo install cargo-lipo`
-    * `cargo install cbindgen` (optional, only if changing the API)
+    * `cargo install cbindgen`
 
 * Install [Swift Protobuf Plugin](https://github.com/apple/swift-protobuf/)
     * `brew install swift-protobuf`
 
-* Generate headers & protobufs
+* Generate headers & protobuf
     * `./generate.sh`
 
 * Build the universal lib: `cargo lipo`
 
-* Open the [`xcode`](./xcode/exocore-client-ios) project in XCode
+* Open the [`xcode`](./xcode/exocore-client-ios) project in XCode / AppCode

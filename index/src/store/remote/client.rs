@@ -11,10 +11,13 @@ use exocore_common::cell::Cell;
 use exocore_common::framing::CapnpFrameBuilder;
 use exocore_common::futures::interval;
 use exocore_common::node::Node;
-use exocore_common::protos::index_transport_capnp::{
+use exocore_common::protos::generated::exocore_index::{
+    EntityMutation, EntityQuery, EntityResults, MutationResult,
+};
+use exocore_common::protos::generated::index_transport_capnp::{
     mutation_response, query_response, unwatch_query_request, watched_query_response,
 };
-use exocore_common::protos::MessageType;
+use exocore_common::protos::generated::MessageType;
 use exocore_common::time::Instant;
 use exocore_common::time::{Clock, ConsistentTimestamp};
 use exocore_common::utils::handle_set::{Handle, HandleSet};
@@ -24,9 +27,6 @@ use exocore_transport::{
 
 use crate::error::Error;
 use crate::query::WatchToken;
-use exocore_common::protos::generated::exocore_index::{
-    EntityMutation, EntityQuery, EntityResults, MutationResult,
-};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClientConfiguration {

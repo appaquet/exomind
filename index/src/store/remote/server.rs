@@ -1,22 +1,23 @@
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
 
-use exocore_common::cell::Cell;
-use exocore_common::protos::index_transport_capnp::{
-    mutation_request, query_request, unwatch_query_request, watched_query_request,
-};
-use exocore_common::protos::MessageType;
-use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandle};
+use futures::channel::{mpsc, oneshot};
+use futures::{FutureExt, SinkExt, StreamExt};
 
-use crate::error::Error;
-use crate::query::WatchToken;
+use exocore_common::cell::Cell;
 use exocore_common::futures::{interval, OwnedSpawnSet};
 use exocore_common::protos::generated::exocore_index::{
     EntityMutation, EntityQuery, EntityResults,
 };
+use exocore_common::protos::generated::index_transport_capnp::{
+    mutation_request, query_request, unwatch_query_request, watched_query_request,
+};
+use exocore_common::protos::generated::MessageType;
 use exocore_common::time::{Duration, Instant};
-use futures::channel::{mpsc, oneshot};
-use futures::{FutureExt, SinkExt, StreamExt};
-use std::collections::HashMap;
+use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandle};
+
+use crate::error::Error;
+use crate::query::WatchToken;
 
 #[derive(Clone, Copy)]
 pub struct ServerConfiguration {

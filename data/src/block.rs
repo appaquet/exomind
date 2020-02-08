@@ -8,7 +8,7 @@ use exocore_common::framing::{
     PaddedFrame, PaddedFrameBuilder, SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
 };
 use exocore_common::node::NodeId;
-use exocore_common::protos::data_chain_capnp::{
+use exocore_common::protos::generated::data_chain_capnp::{
     block_header, block_operation_header, block_signature, block_signatures,
 };
 use std::borrow::Borrow;

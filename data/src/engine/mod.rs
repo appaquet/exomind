@@ -8,10 +8,10 @@ use exocore_common::cell::{Cell, CellNodes};
 use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::futures::{interval, spawn_blocking};
 use exocore_common::node::NodeId;
-use exocore_common::protos::data_transport_capnp::{
+use exocore_common::protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_response, pending_sync_request,
 };
-use exocore_common::protos::MessageType;
+use exocore_common::protos::generated::MessageType;
 use exocore_common::time::Clock;
 use exocore_transport::{
     InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,

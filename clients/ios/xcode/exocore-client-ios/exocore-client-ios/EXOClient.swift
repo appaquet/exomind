@@ -1,8 +1,7 @@
-
 import UIKit
 
-public class Client {
-    var context: OpaquePointer?
+public class EXOClient {
+    fileprivate var context: OpaquePointer?
 
     public init() {
         let res = exocore_context_new();
@@ -11,9 +10,8 @@ public class Client {
         }
     }
 
-    public func mutate(mutation: Exocore_Index_EntityMutation, onCompletion: @escaping (MutationStatus, Exocore_Index_MutationResult?) -> Void) -> MutationResult {
-        // See https://www.mikeash.com/pyblog/friday-qa-2017-08-11-swiftunmanaged.html
-        let cb = MutationCallback(cb: onCompletion)
+    public func mutate(mutation: Exocore_Index_EntityMutation, onCompletion: @escaping (EXOMutationStatus, Exocore_Index_MutationResult?) -> Void) -> EXOMutationResult {
+        let cb = EXOMutationCallback(cb: onCompletion)
         let observer = UnsafeRawPointer(Unmanaged.passRetained(cb).toOpaque())
 
         let mutationData = try! mutation.serializedData()
@@ -21,7 +19,7 @@ public class Client {
             let addr = ptr.bindMemory(to: UInt8.self).baseAddress
 
             return exocore_mutate(self.context, addr, UInt(mutationData.count), { (status, resultsPtr, resultsSize, observer) in
-                let cb = Unmanaged<MutationCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
+                let cb = Unmanaged<EXOMutationCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
 
                 if status == UInt8(ExocoreMutationStatus_Error.rawValue) {
                     cb.cb(.error, nil)
@@ -36,12 +34,11 @@ public class Client {
             }, observer)
         }
 
-        return MutationResult(mutationHandle: handle, client: self)
+        return EXOMutationResult(mutationHandle: handle, client: self)
     }
 
-    public func query(query: Exocore_Index_EntityQuery, onChange: @escaping (QueryStatus, Exocore_Index_EntityResults?) -> Void) -> QueryHandle {
-        // See https://www.mikeash.com/pyblog/friday-qa-2017-08-11-swiftunmanaged.html
-        let cb = QueryCallback(cb: onChange)
+    public func query(query: Exocore_Index_EntityQuery, onChange: @escaping (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void) -> EXOQueryHandle {
+        let cb = EXOQueryCallback(cb: onChange)
         let observer = UnsafeRawPointer(Unmanaged.passRetained(cb).toOpaque())
 
         let queryData = try! query.serializedData()
@@ -49,7 +46,7 @@ public class Client {
             let addr = ptr.bindMemory(to: UInt8.self).baseAddress
 
             return exocore_query(self.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
-                let cb = Unmanaged<QueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
+                let cb = Unmanaged<EXOQueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
 
                 if status == UInt8(ExocoreQueryStatus_Error.rawValue) {
                     cb.cb(.error, nil)
@@ -64,12 +61,11 @@ public class Client {
             }, observer)
         }
 
-        return QueryHandle(queryHandle: handle, client: self)
+        return EXOQueryHandle(queryHandle: handle, client: self)
     }
 
-    public func watched_query(query: Exocore_Index_EntityQuery, onChange: @escaping (QueryStatus, Exocore_Index_EntityResults?) -> Void) -> QueryStreamHandle {
-        // See https://www.mikeash.com/pyblog/friday-qa-2017-08-11-swiftunmanaged.html
-        let cb = QueryCallback(cb: onChange)
+    public func watched_query(query: Exocore_Index_EntityQuery, onChange: @escaping (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void) -> EXOQueryStreamHandle {
+        let cb = EXOQueryCallback(cb: onChange)
         let observer = UnsafeRawPointer(Unmanaged.passRetained(cb).toOpaque())
 
         let queryData = try! query.serializedData()
@@ -78,16 +74,16 @@ public class Client {
 
             return exocore_watched_query(self.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
                 if status == UInt8(ExocoreQueryStreamStatus_Done.rawValue) {
-                    let cb = Unmanaged<QueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
+                    let cb = Unmanaged<EXOQueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
                     cb.cb(.done, nil)
                     return
-                } else if  status == UInt8(ExocoreQueryStreamStatus_Error.rawValue) {
-                    let cb = Unmanaged<QueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
+                } else if status == UInt8(ExocoreQueryStreamStatus_Error.rawValue) {
+                    let cb = Unmanaged<EXOQueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
                     cb.cb(.error, nil)
                     return
                 }
 
-                let cb = Unmanaged<QueryCallback>.fromOpaque(observer!).takeUnretainedValue() // don't consume the ptr
+                let cb = Unmanaged<EXOQueryCallback>.fromOpaque(observer!).takeUnretainedValue() // don't consume the ptr
                 let resultsData = Data(bytes: resultsPtr!, count: Int(resultsSize))
                 if let results = try? Exocore_Index_EntityResults(serializedData: resultsData) {
                     cb.cb(.running, results)
@@ -97,101 +93,101 @@ public class Client {
             }, observer)
         }
 
-        return QueryStreamHandle(queryHandle: handle, client: self)
+        return EXOQueryStreamHandle(queryHandle: handle, client: self)
     }
 
     deinit {
-        print("Client > Deinit start...")
+        print("EXOClient > Deinit start...")
         // free context, which will trigger all query to fail and get freed
         exocore_context_free(self.context)
-        print("Client > Deinit done")
+        print("EXOClient > Deinit done")
     }
 }
 
-class QueryCallback {
-    var cb: (QueryStatus, Exocore_Index_EntityResults?) -> Void
+public class EXOQueryCallback {
+    var cb: (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void
 
-    init(cb: @escaping (QueryStatus, Exocore_Index_EntityResults?) -> Void) {
+    init(cb: @escaping (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void) {
         self.cb = cb
     }
 
     deinit {
-        print("QueryCallback > Deinit")
+        print("EXOQueryCallback > Deinit")
     }
 }
 
-public enum QueryStatus {
+public enum EXOQueryStatus {
     case running
     case done
     case error
 }
 
-public class QueryStreamHandle {
+public class EXOQueryStreamHandle {
     var handle: ExocoreQueryStreamHandle
-    weak var client: Client?
+    weak var client: EXOClient?
 
-    init(queryHandle: ExocoreQueryStreamHandle, client: Client) {
+    init(queryHandle: ExocoreQueryStreamHandle, client: EXOClient) {
         self.handle = queryHandle
         self.client = client
     }
 
     deinit {
-        print("ResultStream > Deinit")
+        print("EXOResultStreamHandle > Deinit")
         if let client = self.client {
             exocore_watched_query_cancel(client.context, self.handle)
         }
     }
 }
 
-public class QueryHandle {
+public class EXOQueryHandle {
     var handle: ExocoreQueryHandle
-    weak var client: Client?
+    weak var client: EXOClient?
 
-    init(queryHandle: ExocoreQueryHandle, client: Client) {
+    init(queryHandle: ExocoreQueryHandle, client: EXOClient) {
         self.handle = queryHandle
         self.client = client
     }
 
     deinit {
-        print("ResultFuture > Deinit")
+        print("EXOQueryHandle > Deinit")
         if let client = self.client {
             exocore_query_cancel(client.context, self.handle)
         }
     }
 }
 
-class MutationCallback {
-    var cb: (MutationStatus, Exocore_Index_MutationResult?) -> Void
+public class EXOMutationCallback {
+    var cb: (EXOMutationStatus, Exocore_Index_MutationResult?) -> Void
 
-    init(cb: @escaping (MutationStatus, Exocore_Index_MutationResult?) -> Void) {
+    init(cb: @escaping (EXOMutationStatus, Exocore_Index_MutationResult?) -> Void) {
         self.cb = cb
     }
 
     deinit {
-        print("MutationCallback > Deinit")
+        print("EXOMutationCallback > Deinit")
     }
 }
 
-public enum MutationStatus {
+public enum EXOMutationStatus {
     case done
     case error
 }
 
-public class MutationResult {
+public class EXOMutationResult {
     var handle: ExocoreMutationHandle
-    weak var client: Client?
+    weak var client: EXOClient?
 
-    init(mutationHandle: ExocoreMutationHandle, client: Client) {
+    init(mutationHandle: ExocoreMutationHandle, client: EXOClient) {
         self.handle = mutationHandle
         self.client = client
     }
 
     deinit {
-        print("MutationResult > Deinit")
+        print("EXOMutationResult > Deinit")
     }
 }
 
-public func GenerateId(prefix: String? = nil) -> String {
+public func EXOGenerateId(prefix: String? = nil) -> String {
     let idPtr = exocore_generate_id(prefix)
     let idStr = String(cString: idPtr!)
     exocore_free_string(idPtr)

@@ -1,30 +1,34 @@
 use std::collections::{HashMap, HashSet};
+use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use itertools::Itertools;
+use prost::Message;
 
-use exocore_data::block::{BlockHeight, BlockOffset};
-use exocore_data::engine::{EngineOperation, Event};
-use exocore_data::operation::{Operation, OperationId};
-use exocore_data::{chain, pending};
-use exocore_data::{EngineHandle, EngineOperationStatus};
-
-use super::traits_index::{
-    IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
-};
-use crate::error::Error;
-use crate::query::{ResultHash, SortToken};
-use crate::store::local::top_results_iter::RescoredTopResultsIterable;
 use exocore_common::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_common::protos::generated::exocore_index::{
     Entity, EntityMutation, EntityQuery, EntityResult, EntityResultSource, EntityResults, Paging,
     Trait,
 };
 use exocore_common::protos::registry::Registry;
-use prost::Message;
-use std::hash::Hasher;
+use exocore_data::block::{BlockHeight, BlockOffset};
+use exocore_data::engine::{EngineOperation, Event};
+use exocore_data::operation::{Operation, OperationId};
+use exocore_data::{chain, pending};
+use exocore_data::{EngineHandle, EngineOperationStatus};
 
+use crate::error::Error;
+use crate::query::{ResultHash, SortToken};
+use crate::store::local::top_results_iter::RescoredTopResultsIterable;
+
+use super::traits_index::{
+    IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
+};
+
+///
+/// Configuration of the entities index
+///
 #[derive(Clone, Copy, Debug)]
 pub struct EntitiesIndexConfig {
     /// When should we index a block in the chain so that odds that we aren't going to revert it are high enough.
@@ -693,21 +697,21 @@ fn result_hasher() -> impl std::hash::Hasher {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
     use tempdir::TempDir;
 
-    use exocore_data::tests_utils::DataTestCluster;
-    use exocore_data::{DirectoryChainStore, MemoryPendingStore};
-
-    use crate::mutation::MutationBuilder;
-
-    use super::*;
-    use crate::query::QueryBuilder;
-    use chrono::Utc;
     use exocore_common::protos::generated::exocore_test::TestMessage;
     use exocore_common::protos::prost::{
         ProstAnyPackMessageExt, ProstDateTimeExt, ProstMessageExt,
     };
     use exocore_common::protos::registry::Registry;
+    use exocore_data::tests_utils::DataTestCluster;
+    use exocore_data::{DirectoryChainStore, MemoryPendingStore};
+
+    use crate::mutation::MutationBuilder;
+    use crate::query::QueryBuilder;
+
+    use super::*;
 
     #[test]
     fn index_full_pending_to_chain() -> Result<(), failure::Error> {

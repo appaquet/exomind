@@ -26,7 +26,6 @@ message TestMutation {
     bool success = 1;
 }
 
-
 message MutationResult {
     uint64 operation_id = 1;
 }

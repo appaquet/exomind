@@ -135,8 +135,9 @@ impl<T> RescoredTopResultsIterable for T where T: Iterator {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use itertools::Itertools;
+
+    use super::*;
 
     #[test]
     fn test_rescored_top_results() {

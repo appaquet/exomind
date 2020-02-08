@@ -1,18 +1,9 @@
-use crate::error::Error;
-use exocore_common::protos::generated::exocore_index::{
-    entity_query::Predicate, EntityQuery, Trait,
-};
-use exocore_common::protos::prost::ProstTimestampExt;
-use exocore_common::protos::reflect;
-use exocore_common::protos::reflect::{FieldType, FieldValue, ReflectMessage};
-use exocore_common::protos::registry::Registry;
-use exocore_data::block::BlockOffset;
-use exocore_data::operation::OperationId;
 use std::ops::Deref;
 use std::path::Path;
 use std::result::Result;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
+
 use tantivy::collector::{Collector, TopDocs};
 use tantivy::directory::MmapDirectory;
 use tantivy::query::{AllQuery, QueryParser, TermQuery};
@@ -23,6 +14,18 @@ use tantivy::{
     DocAddress, Document, Index as TantivyIndex, IndexReader, IndexWriter, Searcher, SegmentReader,
     Term,
 };
+
+use exocore_common::protos::generated::exocore_index::{
+    entity_query::Predicate, EntityQuery, Trait,
+};
+use exocore_common::protos::prost::ProstTimestampExt;
+use exocore_common::protos::reflect;
+use exocore_common::protos::reflect::{FieldType, FieldValue, ReflectMessage};
+use exocore_common::protos::registry::Registry;
+use exocore_data::block::BlockOffset;
+use exocore_data::operation::OperationId;
+
+use crate::error::Error;
 
 const SCORE_TO_U64_MULTIPLIER: f32 = 10_000_000_000.0;
 const UNIQUE_SORT_TO_U64_DIVIDER: f32 = 100_000_000.0;
@@ -745,14 +748,17 @@ fn score_from_u64(value: u64) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::query::{QueryBuilder, SortToken};
     use chrono::{DateTime, Utc};
+    use itertools::Itertools;
+
     use exocore_common::node::LocalNode;
     use exocore_common::protos::generated::exocore_test::{TestMessage, TestMessage2};
     use exocore_common::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
     use exocore_common::time::Clock;
-    use itertools::Itertools;
+
+    use crate::query::{QueryBuilder, SortToken};
+
+    use super::*;
 
     #[test]
     fn search_by_entity_id() -> Result<(), failure::Error> {

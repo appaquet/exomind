@@ -125,6 +125,7 @@ impl Context {
 
         let store_handle = self.store_handle.clone();
 
+        debug!("Sending a mutation");
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         self.runtime.spawn_std(async move {
             let future_result = store_handle.mutate(mutation);
@@ -175,6 +176,7 @@ impl Context {
         let future_result = self.store_handle.query(query);
         let query_id = future_result.query_id();
 
+        debug!("Sending a query");
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         self.runtime.spawn_std(async move {
             let result = future_result.await;
@@ -224,6 +226,7 @@ impl Context {
         let result_stream = self.store_handle.watched_query(query);
         let query_id = result_stream.query_id();
 
+        debug!("Sending a watch query");
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         self.runtime.spawn_std(async move {
             let mut stream = result_stream;

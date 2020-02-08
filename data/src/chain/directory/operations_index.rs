@@ -10,7 +10,7 @@ use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::operation::OperationId;
-use exocore_common::protos::data_chain_capnp::block_header;
+use exocore_common::protos::generated::data_chain_capnp::block_header;
 use exocore_common::simple_store::json_disk_store::JsonDiskStore;
 use exocore_common::simple_store::SimpleStore;
 

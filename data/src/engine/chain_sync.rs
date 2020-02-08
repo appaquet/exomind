@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use capnp::traits::ToU16;
 use exocore_common::capnp;
 use exocore_common::node::{Node, NodeId};
-use exocore_common::protos::data_chain_capnp::{block_header, block_partial_header};
-use exocore_common::protos::data_transport_capnp::{
+use exocore_common::protos::generated::data_chain_capnp::{block_header, block_partial_header};
+use exocore_common::protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
 };
 use exocore_common::time::Clock;

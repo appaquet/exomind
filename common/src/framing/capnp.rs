@@ -1,5 +1,5 @@
 use super::{check_into_size, Error, FrameBuilder, FrameReader};
-use crate::protos::MessageType;
+use crate::protos::generated::MessageType;
 use capnp::message::{Builder, HeapAllocator, Reader, ReaderSegments};
 use capnp::traits::Owned;
 use capnp::Word;
@@ -233,7 +233,7 @@ where
 mod tests {
     use super::*;
     use crate::framing::assert_builder_equals;
-    use crate::protos::data_chain_capnp::block_header;
+    use crate::protos::generated::data_chain_capnp::block_header;
 
     #[test]
     fn assert_typed_frame_send_sync() -> Result<(), failure::Error> {

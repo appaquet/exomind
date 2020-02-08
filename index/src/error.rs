@@ -1,5 +1,6 @@
-use exocore_common::capnp;
 use std::time::Duration;
+
+use exocore_common::capnp;
 
 #[derive(Debug, Fail, Clone)]
 pub enum Error {

@@ -1,21 +1,22 @@
 use std::time::Duration;
 
+use futures::executor::block_on_stream;
+
 use exocore_common::node::LocalNode;
+use exocore_common::protos::generated::exocore_index::{
+    EntityMutation, EntityQuery, EntityResults, MutationResult,
+};
 use exocore_common::tests_utils::expect_eventually;
 use exocore_transport::mock::MockTransportHandle;
 use exocore_transport::TransportLayer;
 
 use crate::error::Error;
-use crate::store::local::TestStore;
-
-use super::*;
 use crate::mutation::MutationBuilder;
 use crate::query::QueryBuilder;
+use crate::store::local::TestStore;
 use crate::store::remote::server::{Server, ServerConfiguration};
-use exocore_common::protos::generated::exocore_index::{
-    EntityMutation, EntityQuery, EntityResults, MutationResult,
-};
-use futures::executor::block_on_stream;
+
+use super::*;
 
 #[test]
 fn mutation_and_query() -> Result<(), failure::Error> {

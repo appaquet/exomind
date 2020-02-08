@@ -1,4 +1,3 @@
-
 import Combine
 import SwiftUI
 
@@ -30,8 +29,8 @@ struct MainView: View {
 
             HStack {
                 TextField("", text: $text)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
 
                 Button("Add") {
                     self.list.add(self.$text.wrappedValue)
@@ -50,9 +49,9 @@ struct MainView: View {
     }
 }
 
-class MyList : ObservableObject {
-    var client: Client?
-    var resultStream: QueryStreamHandle?
+class MyList: ObservableObject {
+    var client: EXOClient?
+    var resultStream: EXOQueryStreamHandle?
 
     @Published var items: [Item] = []
 
@@ -61,12 +60,12 @@ class MyList : ObservableObject {
 
     func watch() {
         if self.client == nil {
-            self.client = Client()
+            self.client = EXOClient()
         }
 
-        let query = QueryBuilder.withTrait(message: Exocore_Test_TestMessage())
-            .count(count: 100)
-            .build()
+        let query = EXOQueryBuilder.withTrait(message: Exocore_Test_TestMessage())
+                .count(count: 100)
+                .build()
         self.resultStream = self.client?.watched_query(query: query, onChange: { [weak self] (status, results) in
             DispatchQueue.main.async {
                 if let results = results {
@@ -94,26 +93,24 @@ class MyList : ObservableObject {
         var msg = Exocore_Test_TestMessage()
         msg.string1 = text
 
-        let mutation = try! MutationBuilder
-            .createEntity()
-            .putTrait(trait: msg)
-            .build()
+        let mutation = try! EXOMutationBuilder
+                .createEntity()
+                .putTrait(trait: msg)
+                .build()
 
         _ = self.client?.mutate(mutation: mutation, onCompletion: { (status, res) in
-            print("Mutation done: \(status) \(String(describing: res?.operationID))")
         })
     }
 
     func remove(atOffsets: IndexSet) {
         let item = self.items[atOffsets.first!]
 
-        let mutation = MutationBuilder
-            .updateEntity(entityId: item.id)
-            .deleteTrait(traitId: "")
-            .build()
+        let mutation = EXOMutationBuilder
+                .updateEntity(entityId: item.id)
+                .deleteTrait(traitId: "")
+                .build()
 
         _ = self.client?.mutate(mutation: mutation, onCompletion: { (status, res) in
-            print("Mutation done: \(status) \(String(describing: res?.operationID))")
         })
     }
 

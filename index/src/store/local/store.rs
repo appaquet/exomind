@@ -1,24 +1,25 @@
+use std::pin::Pin;
 use std::sync::{Arc, Mutex, RwLock, Weak};
+use std::task::{Context, Poll};
 
-use exocore_common::futures::spawn_blocking;
-use exocore_common::utils::handle_set::{Handle, HandleSet};
 use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
-use crate::error::Error;
-use crate::query::WatchToken;
-use crate::store::local::watched_queries::WatchedQueries;
-
-use super::entities_index::EntitiesIndex;
 use exocore_common::cell::Cell;
+use exocore_common::futures::spawn_blocking;
 use exocore_common::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_common::protos::generated::exocore_index::{
     EntityMutation, EntityQuery, EntityResults, MutationResult,
 };
 use exocore_common::protos::prost::ProstMessageExt;
 use exocore_common::time::Clock;
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use exocore_common::utils::handle_set::{Handle, HandleSet};
+
+use crate::error::Error;
+use crate::query::WatchToken;
+use crate::store::local::watched_queries::WatchedQueries;
+
+use super::entities_index::EntitiesIndex;
 
 #[derive(Clone, Copy)]
 pub struct StoreConfig {
@@ -435,13 +436,17 @@ impl QueryRequest {
 
 #[cfg(test)]
 pub mod tests {
-    use super::super::TestStore;
-    use super::*;
+    use std::time::Duration;
+
+    use futures::executor::block_on_stream;
+
+    use exocore_common::futures::delay_for;
+
     use crate::mutation::MutationBuilder;
     use crate::query::QueryBuilder;
-    use exocore_common::futures::delay_for;
-    use futures::executor::block_on_stream;
-    use std::time::Duration;
+
+    use super::super::TestStore;
+    use super::*;
 
     #[test]
     fn store_mutate_query_via_handle() -> Result<(), failure::Error> {

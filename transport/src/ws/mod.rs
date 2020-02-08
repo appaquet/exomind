@@ -11,7 +11,7 @@ use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_common::futures::tokio01;
 use exocore_common::futures::{spawn_future, spawn_future_01};
 use exocore_common::node::{Node, NodeId};
-use exocore_common::protos::common_capnp::envelope;
+use exocore_common::protos::generated::common_capnp::envelope;
 use exocore_common::utils::handle_set::{Handle, HandleSet};
 use futures::channel::mpsc;
 use futures::compat::{Sink01CompatExt, Stream01CompatExt};

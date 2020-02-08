@@ -185,7 +185,7 @@ pub struct IteratedSizedFrame<'a> {
 mod tests {
     use super::*;
     use crate::framing::{assert_builder_equals, CapnpFrameBuilder, TypedCapnpFrame};
-    use crate::protos::data_chain_capnp::block_header;
+    use crate::protos::generated::data_chain_capnp::block_header;
     use std::io::Cursor;
 
     #[test]

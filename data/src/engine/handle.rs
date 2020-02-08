@@ -5,7 +5,7 @@ use crate::pending;
 use crate::pending::CommitStatus;
 use crate::{chain, operation};
 use exocore_common;
-use exocore_common::protos::data_chain_capnp::chain_operation;
+use exocore_common::protos::generated::data_chain_capnp::chain_operation;
 use exocore_common::utils::handle_set::Handle;
 use futures::prelude::*;
 use std::ops::RangeBounds;

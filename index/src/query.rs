@@ -1,14 +1,16 @@
-use crate::error::Error;
 use chrono::{DateTime, Utc};
+use prost::Message;
+
 use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_common::protos::generated::exocore_index::{
     entity_query, EntityQuery, EntityResults, IdPredicate, MatchPredicate, Paging, TestPredicate,
     TraitPredicate,
 };
 use exocore_common::protos::generated::index_transport_capnp::watched_query_request;
-use exocore_common::protos::index_transport_capnp::{query_request, query_response};
+use exocore_common::protos::generated::index_transport_capnp::{query_request, query_response};
 use exocore_common::protos::prost::ProstMessageExt;
-use prost::Message;
+
+use crate::error::Error;
 
 pub type WatchToken = u64;
 pub type ResultHash = u64;

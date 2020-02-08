@@ -27,5 +27,5 @@
     * Then `wasm-pack build`
 
 * Launch the [sample project](../../examples/web) 
-    * `npm install && npm run start`
+    * `cd ../../examples/web && npm install && npm run start`
     * Navigate to [http://localhost:8080](http://localhost:8080)
