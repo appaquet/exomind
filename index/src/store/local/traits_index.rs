@@ -15,13 +15,11 @@ use tantivy::{
     Term,
 };
 
-use exocore_common::protos::generated::exocore_index::{
-    entity_query::Predicate, EntityQuery, Trait,
-};
-use exocore_common::protos::prost::ProstTimestampExt;
-use exocore_common::protos::reflect;
-use exocore_common::protos::reflect::{FieldType, FieldValue, ReflectMessage};
-use exocore_common::protos::registry::Registry;
+use exocore_core::protos::generated::exocore_index::{entity_query::Predicate, EntityQuery, Trait};
+use exocore_core::protos::prost::ProstTimestampExt;
+use exocore_core::protos::reflect;
+use exocore_core::protos::reflect::{FieldType, FieldValue, ReflectMessage};
+use exocore_core::protos::registry::Registry;
 use exocore_data::block::BlockOffset;
 use exocore_data::operation::OperationId;
 
@@ -751,10 +749,10 @@ mod tests {
     use chrono::{DateTime, Utc};
     use itertools::Itertools;
 
-    use exocore_common::node::LocalNode;
-    use exocore_common::protos::generated::exocore_test::{TestMessage, TestMessage2};
-    use exocore_common::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
-    use exocore_common::time::Clock;
+    use exocore_core::node::LocalNode;
+    use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
+    use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
+    use exocore_core::time::Clock;
 
     use crate::query::{QueryBuilder, SortToken};
 

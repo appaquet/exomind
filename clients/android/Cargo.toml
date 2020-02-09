@@ -8,7 +8,7 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-exocore-common = { path = "../../common", features = ["runtime"] }
+exocore-core = { path = "../../core", features = ["runtime"] }
 exocore-transport = { path = "../../transport", features = ["libp2p_transport"] }
 exocore-index = { path = "../../index" }
 failure = "0.1"

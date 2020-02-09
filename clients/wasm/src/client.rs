@@ -5,12 +5,12 @@ use log::Level;
 use prost::Message;
 use wasm_bindgen::prelude::*;
 
-use exocore_common::cell::Cell;
-use exocore_common::crypto::keys::PublicKey;
-use exocore_common::futures::spawn_future_non_send;
-use exocore_common::node::{LocalNode, Node};
-use exocore_common::protos::generated::exocore_index::{EntityMutation, EntityQuery};
-use exocore_common::time::Clock;
+use exocore_core::cell::Cell;
+use exocore_core::crypto::keys::PublicKey;
+use exocore_core::futures::spawn_future_non_send;
+use exocore_core::node::{LocalNode, Node};
+use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
+use exocore_core::time::Clock;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::transport::ConnectionStatus;
 use exocore_transport::{InEvent, TransportHandle, TransportLayer};
@@ -18,7 +18,7 @@ use exocore_transport::{InEvent, TransportHandle, TransportLayer};
 use crate::js::into_js_error;
 use crate::watched_query::WatchedQuery;
 use crate::ws::BrowserTransportClient;
-use exocore_common::protos::prost::ProstMessageExt;
+use exocore_core::protos::prost::ProstMessageExt;
 
 #[wasm_bindgen]
 pub struct ExocoreClient {

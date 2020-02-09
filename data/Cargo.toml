@@ -11,13 +11,13 @@ license = "MIT"
 
 [features]
 default = ["engine", "directory_chain", "memory_pending"]
-tests_utils = ["engine", "tempdir", "directory_chain", "memory_pending", "exocore-common/tests_utils", "exocore-transport/tests_utils"]
+tests_utils = ["engine", "tempdir", "directory_chain", "memory_pending", "exocore-core/tests_utils", "exocore-transport/tests_utils"]
 engine = []
 directory_chain = ["memmap", "extindex"]
 memory_pending = []
 
 [dependencies]
-exocore-common = { path = "../common" }
+exocore-core = { path = "../core" }
 exocore-transport = { path = "../transport", default-features = false }
 log = "0.4"
 byteorder = "1.2"
@@ -35,7 +35,7 @@ extindex = { version = "0.3", optional = true }
 tempdir = { version = "0.3", optional = true }
 
 [dev-dependencies]
-exocore-common = { path = "../common", features = ["tests_utils"] }
+exocore-core = { path = "../core", features = ["tests_utils"] }
 exocore-transport = { path = "../transport", features = ["tests_utils"] }
 tempdir = "0.3"
 

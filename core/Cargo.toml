@@ -1,5 +1,5 @@
 [package]
-name = "exocore-common"
+name = "exocore-core"
 description = "Core of Exocore (Distributed applications framework)"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]

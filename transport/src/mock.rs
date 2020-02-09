@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
-use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
-use exocore_common::futures::{spawn_future, Runtime};
-use exocore_common::node::{LocalNode, Node, NodeId};
-use exocore_common::protos::generated::common_capnp::envelope;
+use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder};
+use exocore_core::futures::{spawn_future, Runtime};
+use exocore_core::node::{LocalNode, Node, NodeId};
+use exocore_core::protos::generated::common_capnp::envelope;
 use futures::channel::mpsc;
 use futures::prelude::*;
 
 use crate::transport::{MpscHandleSink, MpscHandleStream, TransportHandleOnStart};
 use crate::{Error, InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer};
-use exocore_common::utils::handle_set::{Handle, HandleSet};
+use exocore_core::utils::handle_set::{Handle, HandleSet};
 use futures::executor::block_on;
 use futures::stream::Peekable;
 use futures::{FutureExt, StreamExt};
@@ -267,8 +267,8 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use exocore_common::futures::Runtime;
-    use exocore_common::node::LocalNode;
+    use exocore_core::futures::Runtime;
+    use exocore_core::node::LocalNode;
 
     #[test]
     fn send_and_receive() {

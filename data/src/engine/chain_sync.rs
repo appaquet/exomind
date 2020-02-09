@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use capnp::traits::ToU16;
-use exocore_common::capnp;
-use exocore_common::node::{Node, NodeId};
-use exocore_common::protos::generated::data_chain_capnp::{block_header, block_partial_header};
-use exocore_common::protos::generated::data_transport_capnp::{
+use exocore_core::capnp;
+use exocore_core::node::{Node, NodeId};
+use exocore_core::protos::generated::data_chain_capnp::{block_header, block_partial_header};
+use exocore_core::protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
 };
-use exocore_common::time::Clock;
+use exocore_core::time::Clock;
 
 use crate::block::{Block, BlockHeight, BlockOffset, BlockRef, BlockSignaturesSize};
 use crate::chain;
@@ -15,8 +15,8 @@ use crate::chain::ChainStore;
 use crate::engine::request_tracker::RequestTracker;
 use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
-use exocore_common::cell::{Cell, CellNodes, CellNodesOwned};
-use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
+use exocore_core::cell::{Cell, CellNodes, CellNodesOwned};
+use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 
 ///
 /// Synchronizes the local chain against remote nodes' chain.
@@ -1083,7 +1083,7 @@ mod tests {
 
     use super::*;
     use crate::operation::OperationBuilder;
-    use exocore_common::framing::FrameBuilder;
+    use exocore_core::framing::FrameBuilder;
     use itertools::Itertools;
 
     #[test]

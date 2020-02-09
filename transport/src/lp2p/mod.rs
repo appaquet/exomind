@@ -6,11 +6,11 @@ use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
 use crate::Error;
 use crate::{TransportHandle, TransportLayer};
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
-use exocore_common::cell::{Cell, CellId, CellNodes};
-use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
-use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::protos::generated::common_capnp::envelope;
-use exocore_common::utils::handle_set::{Handle, HandleSet};
+use exocore_core::cell::{Cell, CellId, CellNodes};
+use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
+use exocore_core::node::{LocalNode, NodeId};
+use exocore_core::protos::generated::common_capnp::envelope;
+use exocore_core::utils::handle_set::{Handle, HandleSet};
 use futures::channel::mpsc;
 use futures::channel::mpsc::SendError;
 use futures::compat::Future01CompatExt;
@@ -176,7 +176,7 @@ impl Libp2pTransport {
         // Spawn the main Future which will take care of the swarm
         let inner = Arc::clone(&self.handles);
         let mut nodes_update_interval =
-            exocore_common::futures::interval(self.config.swarm_nodes_update_interval)
+            exocore_core::futures::interval(self.config.swarm_nodes_update_interval)
                 .map(Ok::<_, ()>)
                 .compat();
         let mut out_receiver = out_receiver.map(Ok::<_, ()>).compat();
@@ -378,13 +378,13 @@ impl Drop for Libp2pTransportHandle {
 mod tests {
     use super::*;
     use crate::OutMessage;
-    use exocore_common::cell::FullCell;
-    use exocore_common::framing::CapnpFrameBuilder;
-    use exocore_common::futures::Runtime;
-    use exocore_common::node::Node;
-    use exocore_common::protos::generated::data_chain_capnp::block_operation_header;
-    use exocore_common::tests_utils::expect_eventually;
-    use exocore_common::time::{ConsistentTimestamp, Instant};
+    use exocore_core::cell::FullCell;
+    use exocore_core::framing::CapnpFrameBuilder;
+    use exocore_core::futures::Runtime;
+    use exocore_core::node::Node;
+    use exocore_core::protos::generated::data_chain_capnp::block_operation_header;
+    use exocore_core::tests_utils::expect_eventually;
+    use exocore_core::time::{ConsistentTimestamp, Instant};
     use futures::{SinkExt, StreamExt};
     use std::sync::Mutex;
 

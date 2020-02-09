@@ -453,13 +453,13 @@ pub mod tests {
     use itertools::Itertools;
     use tempdir;
 
-    use exocore_common::node::LocalNode;
-    use exocore_common::range;
+    use exocore_core::node::LocalNode;
+    use exocore_core::range;
 
     use crate::block::{Block, BlockOperations, BlockOwned};
 
     use super::*;
-    use exocore_common::cell::FullCell;
+    use exocore_core::cell::FullCell;
 
     #[test]
     fn directory_chain_create_and_open() -> Result<(), failure::Error> {

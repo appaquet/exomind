@@ -1,14 +1,14 @@
 use crate::operation::OperationId;
-use exocore_common::capnp;
-use exocore_common::cell::{Cell, FullCell};
-use exocore_common::crypto::hash::{Digest, Multihash, MultihashDigest, Sha3_256};
-use exocore_common::crypto::signature::Signature;
-use exocore_common::framing::{
+use exocore_core::capnp;
+use exocore_core::cell::{Cell, FullCell};
+use exocore_core::crypto::hash::{Digest, Multihash, MultihashDigest, Sha3_256};
+use exocore_core::crypto::signature::Signature;
+use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
     PaddedFrame, PaddedFrameBuilder, SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
 };
-use exocore_common::node::NodeId;
-use exocore_common::protos::generated::data_chain_capnp::{
+use exocore_core::node::NodeId;
+use exocore_core::protos::generated::data_chain_capnp::{
     block_header, block_operation_header, block_signature, block_signatures,
 };
 use std::borrow::Borrow;
@@ -759,7 +759,7 @@ pub enum Error {
     #[fail(display = "Operations related error: {}", _0)]
     Operation(#[fail(cause)] crate::operation::Error),
     #[fail(display = "Framing error: {}", _0)]
-    Framing(#[fail(cause)] exocore_common::framing::Error),
+    Framing(#[fail(cause)] exocore_core::framing::Error),
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
     #[fail(display = "Field is not in capnp schema: code={}", _0)]
@@ -780,8 +780,8 @@ impl From<capnp::NotInSchema> for Error {
     }
 }
 
-impl From<exocore_common::framing::Error> for Error {
-    fn from(err: exocore_common::framing::Error) -> Self {
+impl From<exocore_core::framing::Error> for Error {
+    fn from(err: exocore_core::framing::Error) -> Self {
         Error::Framing(err)
     }
 }
@@ -791,9 +791,9 @@ mod tests {
     use super::*;
     use crate::block::{Block, BlockOperations, BlockOwned, BlockRef};
     use crate::operation::OperationBuilder;
-    use exocore_common::cell::FullCell;
-    use exocore_common::framing::FrameReader;
-    use exocore_common::node::LocalNode;
+    use exocore_core::cell::FullCell;
+    use exocore_core::framing::FrameReader;
+    use exocore_core::node::LocalNode;
 
     #[test]
     fn block_create_and_read() -> Result<(), failure::Error> {

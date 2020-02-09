@@ -10,7 +10,7 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [dependencies]
-exocore-common = { path = "../common", features = ["runtime"] }
+exocore-core = { path = "../core", features = ["runtime"] }
 exocore-data = { path = "../data", features = ["engine", "directory_chain", "memory_pending"] }
 exocore-index = { path = "../index", features = ["local_store"] }
 exocore-transport = { path = "../transport", features = ["websocket_transport", "libp2p_transport"] }

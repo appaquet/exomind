@@ -4,10 +4,10 @@ use std::collections::{HashMap, HashSet};
 use itertools::Itertools;
 
 use crate::operation::{GroupId, OperationId};
-use exocore_common::crypto::signature::Signature;
-use exocore_common::node::NodeId;
-use exocore_common::protos::generated::data_chain_capnp::chain_operation;
-use exocore_common::time::{Clock, ConsistentTimestamp};
+use exocore_core::crypto::signature::Signature;
+use exocore_core::node::NodeId;
+use exocore_core::protos::generated::data_chain_capnp::chain_operation;
+use exocore_core::time::{Clock, ConsistentTimestamp};
 
 use crate::block::{
     Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignature, BlockSignatures,
@@ -21,7 +21,7 @@ use std::str::FromStr;
 
 use super::Error;
 use crate::pending::CommitStatus;
-use exocore_common::cell::{Cell, CellNodes, CellNodesRead};
+use exocore_core::cell::{Cell, CellNodes, CellNodesRead};
 use std::time::Duration;
 
 ///

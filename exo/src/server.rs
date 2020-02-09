@@ -3,10 +3,10 @@ use std::sync::Arc;
 
 use failure::err_msg;
 
-use exocore_common::cell::{Cell, FullCell};
-use exocore_common::futures::{Future01, Runtime};
-use exocore_common::protos::registry::Registry;
-use exocore_common::time::Clock;
+use exocore_core::cell::{Cell, FullCell};
+use exocore_core::futures::{Future01, Runtime};
+use exocore_core::protos::registry::Registry;
+use exocore_core::time::Clock;
 use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,

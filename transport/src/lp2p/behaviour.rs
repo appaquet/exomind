@@ -1,4 +1,4 @@
-use exocore_common::futures::tokio01::io::{AsyncRead, AsyncWrite};
+use exocore_core::futures::tokio01::io::{AsyncRead, AsyncWrite};
 use futures01::prelude::*;
 use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
 use libp2p::swarm::{
@@ -7,7 +7,7 @@ use libp2p::swarm::{
 use std::collections::{HashMap, VecDeque};
 
 use super::protocol::{ExocoreProtoConfig, WireMessage};
-use exocore_common::time::Instant;
+use exocore_core::time::Instant;
 
 const MAX_PEER_QUEUE: usize = 20;
 

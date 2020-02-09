@@ -17,7 +17,7 @@ export RUSTUP_TOOLCHAIN=nightly-2020-02-06 # if changed, change in push-tester.y
 export CARGO_OPTIONS="--all --all-features --exclude=exo --exclude=exocore-client-wasm --exclude=exocore-client-android --exclude=exocore-client-ios"
 export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
-cargo clean -p exocore-common
+cargo clean -p exocore-core
 cargo build $CARGO_OPTIONS
 cargo test $CARGO_OPTIONS
 
@@ -29,7 +29,7 @@ grcov $COVERAGE_DIR/ccov.zip -s . -t lcov --llvm -o $COVERAGE_DIR/lcov.info \
 	--ignore "clients/*" \
 	--ignore "cli/*" \
 	--ignore "/*" \
-	--ignore "common/src/protos/generated/*"
+	--ignore "core/src/protos/generated/*"
 
 if [[ "$OUTPUT" == "Html" ]]; then
   # genhtml is provided by `lcov` package

@@ -1,14 +1,12 @@
 use prost::Message;
 
-use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_common::protos::generated::exocore_index::entity_mutation::Mutation;
-use exocore_common::protos::generated::exocore_index::{
+use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
+use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
+use exocore_core::protos::generated::exocore_index::{
     DeleteTraitMutation, EntityMutation, MutationResult, PutTraitMutation, TestMutation, Trait,
 };
-use exocore_common::protos::generated::index_transport_capnp::{
-    mutation_request, mutation_response,
-};
-use exocore_common::protos::prost::ProstMessageExt;
+use exocore_core::protos::generated::index_transport_capnp::{mutation_request, mutation_response};
+use exocore_core::protos::prost::ProstMessageExt;
 
 use crate::error::Error;
 

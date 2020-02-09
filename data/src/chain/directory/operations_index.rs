@@ -10,9 +10,9 @@ use itertools::Itertools;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::operation::OperationId;
-use exocore_common::protos::generated::data_chain_capnp::block_header;
-use exocore_common::simple_store::json_disk_store::JsonDiskStore;
-use exocore_common::simple_store::SimpleStore;
+use exocore_core::protos::generated::data_chain_capnp::block_header;
+use exocore_core::simple_store::json_disk_store::JsonDiskStore;
+use exocore_core::simple_store::SimpleStore;
 
 use crate::block::{Block, BlockOffset};
 use crate::chain::Error;
@@ -445,8 +445,8 @@ mod tests {
     use crate::chain::directory::tests::create_block;
 
     use super::*;
-    use exocore_common::cell::FullCell;
-    use exocore_common::node::LocalNode;
+    use exocore_core::cell::FullCell;
+    use exocore_core::node::LocalNode;
 
     #[test]
     fn create_from_iterator() -> Result<(), failure::Error> {

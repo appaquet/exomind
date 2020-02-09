@@ -1,14 +1,14 @@
 use chrono::{DateTime, Utc};
 use prost::Message;
 
-use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_common::protos::generated::exocore_index::{
+use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
+use exocore_core::protos::generated::exocore_index::{
     entity_query, EntityQuery, EntityResults, IdPredicate, MatchPredicate, Paging, TestPredicate,
     TraitPredicate,
 };
-use exocore_common::protos::generated::index_transport_capnp::watched_query_request;
-use exocore_common::protos::generated::index_transport_capnp::{query_request, query_response};
-use exocore_common::protos::prost::ProstMessageExt;
+use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
+use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
+use exocore_core::protos::prost::ProstMessageExt;
 
 use crate::error::Error;
 

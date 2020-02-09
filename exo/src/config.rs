@@ -1,6 +1,6 @@
-use exocore_common::cell::{Cell, FullCell};
-use exocore_common::crypto::keys::{Keypair, PublicKey};
-use exocore_common::node::{LocalNode, Node};
+use exocore_core::cell::{Cell, FullCell};
+use exocore_core::crypto::keys::{Keypair, PublicKey};
+use exocore_core::node::{LocalNode, Node};
 use failure::err_msg;
 use serde_derive::{Deserialize, Serialize};
 use std::fs::OpenOptions;

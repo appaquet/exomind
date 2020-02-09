@@ -339,8 +339,8 @@ mod tests {
 
     use super::super::tests::create_block;
     use super::*;
-    use exocore_common::cell::FullCell;
-    use exocore_common::node::LocalNode;
+    use exocore_core::cell::FullCell;
+    use exocore_core::node::LocalNode;
 
     #[test]
     fn directory_segment_create_and_open() -> Result<(), failure::Error> {

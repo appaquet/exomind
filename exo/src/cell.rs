@@ -1,6 +1,6 @@
 use crate::config::NodeConfig;
 use crate::options;
-use exocore_common::protos::generated::data_chain_capnp::block_header;
+use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_data::block::Block;
 use exocore_data::chain::ChainStore;
 use exocore_data::{DirectoryChainStore, DirectoryChainStoreConfig};

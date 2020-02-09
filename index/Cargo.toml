@@ -16,7 +16,7 @@ local_store = ["tantivy", "exocore-data/engine", "crc"]
 [dependencies]
 exocore-data = { path = "../data", default-features = false }
 exocore-transport = { path = "../transport", default-features = false }
-exocore-common = { path = "../common" }
+exocore-core = { path = "../core" }
 failure = "0.1"
 itertools = "0.8"
 log = "0.4"
@@ -32,4 +32,4 @@ crc = { version = "1.8", optional = true }
 [dev-dependencies]
 tempdir = "0.3"
 exocore-data = { path = "../data", features = ["tests_utils"] }
-exocore-common = { path = "../common", features = ["tests_utils"] }
+exocore-core = { path = "../core", features = ["tests_utils"] }

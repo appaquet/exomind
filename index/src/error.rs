@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exocore_common::capnp;
+use exocore_core::capnp;
 
 #[derive(Debug, Fail, Clone)]
 pub enum Error {
@@ -30,7 +30,7 @@ pub enum Error {
     Serialization(capnp::ErrorKind, String),
 
     #[fail(display = "Protobuf error: {}", _0)]
-    Proto(#[fail(cause)] exocore_common::protos::Error),
+    Proto(#[fail(cause)] exocore_core::protos::Error),
 
     #[fail(display = "A protobuf field was expected, but was empty: {}", _0)]
     ProtoFieldExpected(&'static str),
@@ -109,8 +109,8 @@ impl From<prost::EncodeError> for Error {
     }
 }
 
-impl From<exocore_common::protos::Error> for Error {
-    fn from(err: exocore_common::protos::Error) -> Self {
+impl From<exocore_core::protos::Error> for Error {
+    fn from(err: exocore_core::protos::Error) -> Self {
         Error::Proto(err)
     }
 }

@@ -6,12 +6,12 @@ use std::sync::Arc;
 use itertools::Itertools;
 use prost::Message;
 
-use exocore_common::protos::generated::exocore_index::entity_mutation::Mutation;
-use exocore_common::protos::generated::exocore_index::{
+use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
+use exocore_core::protos::generated::exocore_index::{
     Entity, EntityMutation, EntityQuery, EntityResult, EntityResultSource, EntityResults, Paging,
     Trait,
 };
-use exocore_common::protos::registry::Registry;
+use exocore_core::protos::registry::Registry;
 use exocore_data::block::{BlockHeight, BlockOffset};
 use exocore_data::engine::{EngineOperation, Event};
 use exocore_data::operation::{Operation, OperationId};
@@ -700,11 +700,9 @@ mod tests {
     use chrono::Utc;
     use tempdir::TempDir;
 
-    use exocore_common::protos::generated::exocore_test::TestMessage;
-    use exocore_common::protos::prost::{
-        ProstAnyPackMessageExt, ProstDateTimeExt, ProstMessageExt,
-    };
-    use exocore_common::protos::registry::Registry;
+    use exocore_core::protos::generated::exocore_test::TestMessage;
+    use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt, ProstMessageExt};
+    use exocore_core::protos::registry::Registry;
     use exocore_data::tests_utils::DataTestCluster;
     use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 

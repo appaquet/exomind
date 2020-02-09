@@ -1,12 +1,12 @@
-use exocore_common::capnp;
-use exocore_common::crypto::hash::Sha3_256;
-use exocore_common::crypto::signature::Signature;
-use exocore_common::framing::{
+use exocore_core::capnp;
+use exocore_core::crypto::hash::Sha3_256;
+use exocore_core::crypto::signature::Signature;
+use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
     SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
 };
-use exocore_common::node::{LocalNode, NodeId};
-use exocore_common::protos::generated::data_chain_capnp::{block_signature, chain_operation};
+use exocore_core::node::{LocalNode, NodeId};
+use exocore_core::protos::generated::data_chain_capnp::{block_signature, chain_operation};
 
 use crate::block::Block;
 
@@ -201,7 +201,7 @@ pub enum Error {
     #[fail(display = "The operation is not any entry operation")]
     NotAnEntry,
     #[fail(display = "Framing error: {}", _0)]
-    Framing(#[fail(cause)] exocore_common::framing::Error),
+    Framing(#[fail(cause)] exocore_core::framing::Error),
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
     #[fail(display = "Field is not in capnp schema: code={}", _0)]
@@ -222,8 +222,8 @@ impl From<capnp::NotInSchema> for Error {
     }
 }
 
-impl From<exocore_common::framing::Error> for Error {
-    fn from(err: exocore_common::framing::Error) -> Self {
+impl From<exocore_core::framing::Error> for Error {
+    fn from(err: exocore_core::framing::Error) -> Self {
         Error::Framing(err)
     }
 }

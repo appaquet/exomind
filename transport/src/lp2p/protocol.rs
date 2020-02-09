@@ -2,7 +2,7 @@ use libp2p::core::upgrade;
 use libp2p::core::{InboundUpgrade, OutboundUpgrade};
 use libp2p::core::{Negotiated, UpgradeInfo};
 
-use exocore_common::futures::tokio01::io::{AsyncRead, AsyncWrite};
+use exocore_core::futures::tokio01::io::{AsyncRead, AsyncWrite};
 use std::{io, iter};
 
 static PACKET_MAX_SIZE: usize = 10 * 1024 * 1024; // 10MB

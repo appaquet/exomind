@@ -5,15 +5,15 @@ use std::task::{Context, Poll};
 use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
-use exocore_common::cell::Cell;
-use exocore_common::futures::spawn_blocking;
-use exocore_common::protos::generated::exocore_index::entity_mutation::Mutation;
-use exocore_common::protos::generated::exocore_index::{
+use exocore_core::cell::Cell;
+use exocore_core::futures::spawn_blocking;
+use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
+use exocore_core::protos::generated::exocore_index::{
     EntityMutation, EntityQuery, EntityResults, MutationResult,
 };
-use exocore_common::protos::prost::ProstMessageExt;
-use exocore_common::time::Clock;
-use exocore_common::utils::handle_set::{Handle, HandleSet};
+use exocore_core::protos::prost::ProstMessageExt;
+use exocore_core::time::Clock;
+use exocore_core::utils::handle_set::{Handle, HandleSet};
 
 use crate::error::Error;
 use crate::query::WatchToken;
@@ -440,7 +440,7 @@ pub mod tests {
 
     use futures::executor::block_on_stream;
 
-    use exocore_common::futures::delay_for;
+    use exocore_core::futures::delay_for;
 
     use crate::mutation::MutationBuilder;
     use crate::query::QueryBuilder;

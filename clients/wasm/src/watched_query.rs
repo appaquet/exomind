@@ -8,9 +8,9 @@ use futures::channel::oneshot;
 use futures::prelude::*;
 use wasm_bindgen::prelude::*;
 
-use exocore_common::futures::spawn_future_non_send;
-use exocore_common::protos::generated::exocore_index::{EntityQuery, EntityResults};
-use exocore_common::protos::prost::ProstMessageExt;
+use exocore_core::futures::spawn_future_non_send;
+use exocore_core::protos::generated::exocore_index::{EntityQuery, EntityResults};
+use exocore_core::protos::prost::ProstMessageExt;
 use exocore_index::store::remote::ClientHandle;
 
 type ResultCell = Rc<RefCell<Option<Result<EntityResults, exocore_index::error::Error>>>>;

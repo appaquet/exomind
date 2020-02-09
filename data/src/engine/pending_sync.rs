@@ -4,10 +4,10 @@ use std::ops::{Bound, RangeBounds};
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::operation::OperationId;
-use exocore_common::crypto::hash::{Digest, MultihashDigest, Sha3_256};
-use exocore_common::node::{Node, NodeId};
-use exocore_common::protos::generated::data_chain_capnp::chain_operation_header;
-use exocore_common::protos::generated::data_transport_capnp::{
+use exocore_core::crypto::hash::{Digest, MultihashDigest, Sha3_256};
+use exocore_core::node::{Node, NodeId};
+use exocore_core::protos::generated::data_chain_capnp::chain_operation_header;
+use exocore_core::protos::generated::data_transport_capnp::{
     pending_sync_range, pending_sync_request,
 };
 
@@ -16,9 +16,9 @@ use crate::engine::{request_tracker, Event};
 use crate::engine::{Error, SyncContext};
 use crate::operation::{NewOperation, Operation};
 use crate::pending::{CommitStatus, PendingStore, StoredOperation};
-use exocore_common::cell::{Cell, CellNodes};
-use exocore_common::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_common::time::Clock;
+use exocore_core::cell::{Cell, CellNodes};
+use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
+use exocore_core::time::Clock;
 
 ///
 /// Synchronizes local pending store against remote nodes' pending stores. It does that by exchanging
@@ -776,7 +776,7 @@ pub enum PendingSyncError {
 mod tests {
     use std::sync::Arc;
 
-    use exocore_common::protos::generated::data_chain_capnp::{
+    use exocore_core::protos::generated::data_chain_capnp::{
         chain_operation, chain_operation_header,
     };
 
@@ -788,8 +788,8 @@ mod tests {
     use super::*;
     use crate::pending::CommitStatus;
     use crate::MemoryPendingStore;
-    use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder};
-    use exocore_common::node::LocalNode;
+    use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder};
+    use exocore_core::node::LocalNode;
     use std::time::{Duration, Instant};
 
     #[test]

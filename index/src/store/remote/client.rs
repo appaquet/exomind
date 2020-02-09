@@ -7,20 +7,20 @@ use std::time::Duration;
 use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
-use exocore_common::cell::Cell;
-use exocore_common::framing::CapnpFrameBuilder;
-use exocore_common::futures::interval;
-use exocore_common::node::Node;
-use exocore_common::protos::generated::exocore_index::{
+use exocore_core::cell::Cell;
+use exocore_core::framing::CapnpFrameBuilder;
+use exocore_core::futures::interval;
+use exocore_core::node::Node;
+use exocore_core::protos::generated::exocore_index::{
     EntityMutation, EntityQuery, EntityResults, MutationResult,
 };
-use exocore_common::protos::generated::index_transport_capnp::{
+use exocore_core::protos::generated::index_transport_capnp::{
     mutation_response, query_response, unwatch_query_request, watched_query_response,
 };
-use exocore_common::protos::generated::MessageType;
-use exocore_common::time::Instant;
-use exocore_common::time::{Clock, ConsistentTimestamp};
-use exocore_common::utils::handle_set::{Handle, HandleSet};
+use exocore_core::protos::generated::MessageType;
+use exocore_core::time::Instant;
+use exocore_core::time::{Clock, ConsistentTimestamp};
+use exocore_core::utils::handle_set::{Handle, HandleSet};
 use exocore_transport::{
     InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
 };

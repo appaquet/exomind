@@ -246,7 +246,7 @@ mod test {
     use crate::engine::testing::create_dummy_new_entry_op;
 
     use super::*;
-    use exocore_common::node::LocalNode;
+    use exocore_core::node::LocalNode;
 
     #[test]
     fn put_and_retrieve_operation() -> Result<(), failure::Error> {

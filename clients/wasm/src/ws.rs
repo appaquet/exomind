@@ -1,9 +1,9 @@
-use exocore_common::cell::{Cell, CellId};
-use exocore_common::framing::{FrameBuilder, TypedCapnpFrame};
-use exocore_common::futures::{interval, spawn_future_non_send};
-use exocore_common::node::Node;
-use exocore_common::protos::generated::common_capnp::envelope;
-use exocore_common::utils::handle_set::{Handle, HandleSet};
+use exocore_core::cell::{Cell, CellId};
+use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
+use exocore_core::futures::{interval, spawn_future_non_send};
+use exocore_core::node::Node;
+use exocore_core::protos::generated::common_capnp::envelope;
+use exocore_core::utils::handle_set::{Handle, HandleSet};
 use exocore_transport::transport::{
     ConnectionStatus, MpscHandleSink, MpscHandleStream, TransportHandleOnStart,
 };

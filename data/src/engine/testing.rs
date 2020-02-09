@@ -1,7 +1,7 @@
 use tempdir::TempDir;
 
-use exocore_common::node::{LocalNode, Node, NodeId};
-use exocore_common::protos::generated::data_chain_capnp::block_header;
+use exocore_core::node::{LocalNode, Node, NodeId};
+use exocore_core::protos::generated::data_chain_capnp::block_header;
 
 use crate::block::{
     Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignatures,
@@ -15,12 +15,12 @@ use crate::engine::{pending_sync, SyncState};
 use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, OperationId};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
-use exocore_common::cell::FullCell;
-use exocore_common::crypto::hash::Sha3_256;
-use exocore_common::framing::{
+use exocore_core::cell::FullCell;
+use exocore_core::crypto::hash::Sha3_256;
+use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
 };
-use exocore_common::time::{Clock, ConsistentTimestamp};
+use exocore_core::time::{Clock, ConsistentTimestamp};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 

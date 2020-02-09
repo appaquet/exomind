@@ -1,7 +1,7 @@
 use failure::err_msg;
 use itertools::Itertools;
 
-use exocore_common::tests_utils::expect_result;
+use exocore_core::tests_utils::expect_result;
 
 use exocore_data::operation::Operation;
 use exocore_data::tests_utils::*;

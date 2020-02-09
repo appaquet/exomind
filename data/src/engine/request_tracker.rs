@@ -1,5 +1,5 @@
-use exocore_common::time::{Clock, Instant};
-use exocore_common::utils::backoff::{BackoffCalculator, BackoffConfig};
+use exocore_core::time::{Clock, Instant};
+use exocore_core::utils::backoff::{BackoffCalculator, BackoffConfig};
 use std::time::Duration;
 
 ///
@@ -119,7 +119,7 @@ impl Default for RequestTrackerConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use exocore_common::time::Clock;
+    use exocore_core::time::Clock;
 
     #[test]
     fn test_can_send_request_interval() {

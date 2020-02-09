@@ -1,4 +1,4 @@
-use exocore_common::capnp;
+use exocore_core::capnp;
 
 #[cfg(any(feature = "libp2p_transport", feature = "websocket_transport"))]
 use std::sync::Arc;

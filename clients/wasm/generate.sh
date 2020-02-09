@@ -8,12 +8,12 @@ PROTOC_GEN_TS_PATH="./node_modules/.bin/protoc-gen-ts"
 OUT_DIR="./proto"
 ./node_modules/.bin/pbjs \
     -t static-module \
-    -w commonjs \
+    -w corejs \
     -o $CUR_DIR/js/proto.js \
-    -p "$CUR_DIR/../../common/protos/" \
+    -p "$CUR_DIR/../../core/protos/" \
     --es6 \
-    $CUR_DIR/../../common/protos/exocore/index/*.proto \
-    $CUR_DIR/../../common/protos/exocore/test/*.proto
+    $CUR_DIR/../../core/protos/exocore/index/*.proto \
+    $CUR_DIR/../../core/protos/exocore/test/*.proto
 
 # Generate typescript definition for protos
 ./node_modules/.bin/pbts $CUR_DIR/js/proto.js -o $CUR_DIR/js/proto.d.ts

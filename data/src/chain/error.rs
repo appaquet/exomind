@@ -1,5 +1,5 @@
 use crate::block;
-use exocore_common::capnp;
+use exocore_core::capnp;
 
 #[derive(Clone, Debug, Fail)]
 pub enum Error {

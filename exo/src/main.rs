@@ -9,7 +9,7 @@ mod server;
 #[macro_use]
 extern crate log;
 
-use exocore_common::crypto::keys::Keypair;
+use exocore_core::crypto::keys::Keypair;
 use log::LevelFilter;
 use std::str::FromStr;
 use structopt::StructOpt;

@@ -1,11 +1,11 @@
-use exocore_common::node::Node;
-use exocore_common::protos::generated::common_capnp::envelope;
-use exocore_common::protos::generated::MessageType;
+use exocore_core::node::Node;
+use exocore_core::protos::generated::common_capnp::envelope;
+use exocore_core::protos::generated::MessageType;
 
 use crate::{Error, TransportLayer};
-use exocore_common::cell::{Cell, CellId};
-use exocore_common::framing::{CapnpFrameBuilder, FrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_common::time::{ConsistentTimestamp, Instant};
+use exocore_core::cell::{Cell, CellId};
+use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder, FrameReader, TypedCapnpFrame};
+use exocore_core::time::{ConsistentTimestamp, Instant};
 
 pub type RendezVousId = ConsistentTimestamp;
 
