@@ -25,7 +25,7 @@ jobs:
 
           cargo fmt --all -- --check
           cargo check --all
-          cargo clean -p exocore-common
+          cargo clean -p exocore-core
           cargo clippy --all -- -D clippy::all
 
           cargo test --all --all-features
