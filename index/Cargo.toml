@@ -14,8 +14,8 @@ default = ["local_store"]
 local_store = ["tantivy", "exocore-data/engine", "crc"]
 
 [dependencies]
-exocore-data = { path = "../data" }
-exocore-transport = { path = "../transport" }
+exocore-data = { path = "../data", default-features = false }
+exocore-transport = { path = "../transport", default-features = false }
 exocore-common = { path = "../common" }
 failure = "0.1"
 itertools = "0.8"
