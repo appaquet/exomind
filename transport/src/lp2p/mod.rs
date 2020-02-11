@@ -1,31 +1,31 @@
-pub mod behaviour;
-pub mod protocol;
+use std::collections::{HashMap, HashSet};
+use std::pin::Pin;
+use std::sync::{Arc, RwLock, Weak};
+use std::task::{Context, Poll};
+use std::time::Duration;
 
-use crate::messages::InMessage;
-use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
-use crate::Error;
-use crate::{TransportHandle, TransportLayer};
+use futures::channel::mpsc;
+use futures::channel::mpsc::SendError;
+use futures::prelude::*;
+use futures::sink::SinkMapErr;
+use futures::{FutureExt, SinkExt, StreamExt};
+use libp2p::core::{Multiaddr, PeerId};
+use libp2p::swarm::Swarm;
+
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_core::cell::{Cell, CellId, CellNodes};
 use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_core::node::{LocalNode, NodeId};
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
-use futures::channel::mpsc;
-use futures::channel::mpsc::SendError;
-use futures::compat::Future01CompatExt;
-use futures::future::Future as Future03;
-use futures::sink::SinkMapErr;
-use futures::{FutureExt, SinkExt, StreamExt, TryStreamExt};
-use futures01::stream::Stream as Stream01;
-use futures01::Async as Async01;
-use libp2p::core::{Multiaddr, PeerId};
-use libp2p::swarm::Swarm;
-use std::collections::{HashMap, HashSet};
-use std::pin::Pin;
-use std::sync::{Arc, RwLock, Weak};
-use std::task::{Context, Poll};
-use std::time::Duration;
+
+use crate::messages::InMessage;
+use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
+use crate::Error;
+use crate::{TransportHandle, TransportLayer};
+
+pub mod behaviour;
+pub mod protocol;
 
 /// libp2p transport configuration
 #[derive(Clone)]
@@ -153,7 +153,7 @@ impl Libp2pTransport {
     /// Runs the transport to completion.
     pub async fn run(self) -> Result<(), Error> {
         let local_keypair = self.local_node.keypair().clone();
-        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone());
+        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone())?;
 
         let behaviour = ExocoreBehaviour::new();
         let mut swarm = Swarm::new(transport, behaviour, self.local_node.peer_id().clone());
@@ -162,7 +162,7 @@ impl Libp2pTransport {
         Swarm::listen_on(&mut swarm, listen_address)?;
 
         // Spawn the swarm & receive message from a channel through which outgoing messages will go
-        let (out_sender, out_receiver) =
+        let (out_sender, mut out_receiver) =
             mpsc::channel::<OutEvent>(self.config.handles_to_behaviour_channel_size);
 
         // Add initial nodes to swarm
@@ -173,19 +173,13 @@ impl Libp2pTransport {
             }
         }
 
+        let mut nodes_update_interval =
+            exocore_core::futures::interval(self.config.swarm_nodes_update_interval);
+
         // Spawn the main Future which will take care of the swarm
         let inner = Arc::clone(&self.handles);
-        let mut nodes_update_interval =
-            exocore_core::futures::interval(self.config.swarm_nodes_update_interval)
-                .map(Ok::<_, ()>)
-                .compat();
-        let mut out_receiver = out_receiver.map(Ok::<_, ()>).compat();
-        let swarm_task = futures01::future::poll_fn(move || -> Result<Async01<()>, ()> {
-            // at interval, we update peers that we should be connected to
-            if let Async01::Ready(_) = nodes_update_interval
-                .poll()
-                .expect("Couldn't poll nodes update interval")
-            {
+        let swarm_task = future::poll_fn(move |cx: &mut Context| -> Poll<()> {
+            if let Poll::Ready(_) = nodes_update_interval.poll_next_unpin(cx) {
                 if let Ok(inner) = inner.read() {
                     for (peer_id, addresses) in inner.all_peers() {
                         swarm.add_peer(peer_id, addresses);
@@ -194,10 +188,7 @@ impl Libp2pTransport {
             }
 
             // we drain all messages coming from handles that need to be sent
-            while let Async01::Ready(Some(event)) = out_receiver
-                .poll()
-                .expect("Couldn't poll behaviour channel")
-            {
+            while let Poll::Ready(Some(event)) = out_receiver.poll_next_unpin(cx) {
                 match event {
                     OutEvent::Message(msg) => {
                         let frame_data = msg.envelope_builder.as_bytes();
@@ -224,7 +215,7 @@ impl Libp2pTransport {
             }
 
             // we poll the behaviour for incoming messages to be dispatched to handles
-            while let Async01::Ready(Some(data)) = swarm.poll().expect("Couldn't poll swarm") {
+            while let Poll::Ready(Some(data)) = swarm.poll_next_unpin(cx) {
                 match data {
                     ExocoreBehaviourEvent::Message(msg) => {
                         trace!("Got message from {}", msg.source);
@@ -236,9 +227,8 @@ impl Libp2pTransport {
                 }
             }
 
-            Ok(Async01::NotReady)
-        })
-        .compat();
+            Poll::Pending
+        });
 
         // Sends handles' outgoing messages to the behaviour's input channel
         let handles_dispatcher = {
@@ -350,7 +340,7 @@ impl TransportHandle for Libp2pTransportHandle {
     }
 }
 
-impl Future03 for Libp2pTransportHandle {
+impl Future for Libp2pTransportHandle {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -376,8 +366,10 @@ impl Drop for Libp2pTransportHandle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::OutMessage;
+    use std::sync::Mutex;
+
+    use futures::{SinkExt, StreamExt};
+
     use exocore_core::cell::FullCell;
     use exocore_core::framing::CapnpFrameBuilder;
     use exocore_core::futures::Runtime;
@@ -385,8 +377,10 @@ mod tests {
     use exocore_core::protos::generated::data_chain_capnp::block_operation_header;
     use exocore_core::tests_utils::expect_eventually;
     use exocore_core::time::{ConsistentTimestamp, Instant};
-    use futures::{SinkExt, StreamExt};
-    use std::sync::Mutex;
+
+    use crate::OutMessage;
+
+    use super::*;
 
     #[test]
     fn test_integration() -> Result<(), failure::Error> {

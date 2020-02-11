@@ -1,10 +1,6 @@
-// TODO: move to new project for tests only
-
 use self::log4rs::config::Logger;
 use failure::err_msg;
-use futures01::prelude::*;
 use std::fmt::Debug;
-use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 extern crate log4rs;
@@ -26,61 +22,6 @@ pub fn setup_logging() {
         .unwrap();
 
     log4rs::init_config(config).unwrap();
-}
-
-///
-/// Allows peeking into a future and watch its status, while exposing another future that
-/// makes the inner future progress.
-///
-pub struct FuturePeek {
-    status: Arc<Mutex<FutureStatus>>,
-}
-
-impl FuturePeek {
-    pub fn new<F, I, E>(
-        fut: F,
-    ) -> (
-        Box<dyn Future<Item = I, Error = E> + 'static + Send>,
-        FuturePeek,
-    )
-    where
-        F: Future<Item = I, Error = E> + Send + 'static,
-        I: Send + 'static,
-        E: Send + 'static,
-    {
-        let status = Arc::new(Mutex::new(FutureStatus::NotReady));
-
-        let inner_status = Arc::downgrade(&status);
-        let wrapped_future = Box::new(fut.then(move |res| {
-            if let Some(upgraded) = inner_status.upgrade() {
-                if let Ok(mut unlocked) = upgraded.lock() {
-                    match res {
-                        Ok(_) => *unlocked = FutureStatus::Ok,
-                        Err(_) => *unlocked = FutureStatus::Failed,
-                    }
-                }
-            }
-
-            res
-        }));
-
-        (wrapped_future, FuturePeek { status })
-    }
-
-    pub fn get_status(&self) -> FutureStatus {
-        if let Ok(unlocked) = self.status.as_ref().lock() {
-            *unlocked
-        } else {
-            FutureStatus::Failed
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum FutureStatus {
-    NotReady,
-    Ok,
-    Failed,
 }
 
 ///

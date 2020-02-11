@@ -1,24 +1,22 @@
-use exocore_core::futures::tokio01::io::{AsyncRead, AsyncWrite};
-use futures01::prelude::*;
-use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
-use libp2p::swarm::{
-    NetworkBehaviour, NetworkBehaviourAction, OneShotHandler, PollParameters, ProtocolsHandler,
-};
 use std::collections::{HashMap, VecDeque};
 
-use super::protocol::{ExocoreProtoConfig, WireMessage};
+use futures::prelude::*;
+use futures::task::{Context, Poll};
+use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
+use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, OneShotHandler, PollParameters};
+
 use exocore_core::time::Instant;
+
+use super::protocol::{ExocoreProtocol, WireMessage};
 
 const MAX_PEER_QUEUE: usize = 20;
 
-///
 /// Libp2p's behaviour for Exocore. The behaviour defines a protocol that is exposed to
 /// lp2p, peers that we want to talk to and acts as a stream / sink of messages exchanged
 /// between nodes.
-///
 pub struct ExocoreBehaviour<TSubstream>
 where
-    TSubstream: AsyncRead + AsyncWrite,
+    TSubstream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
 {
     local_node: PeerId,
     events: VecDeque<BehaviourEvent>,
@@ -49,30 +47,9 @@ impl Peer {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
-enum PeerStatus {
-    Connected,
-    Disconnected,
-}
-
-struct QueuedPeerEvent {
-    event: BehaviourEvent,
-    expiration: Option<Instant>,
-}
-
-impl QueuedPeerEvent {
-    fn has_expired(&self) -> bool {
-        if let Some(expiration) = self.expiration {
-            expiration <= Instant::now()
-        } else {
-            false
-        }
-    }
-}
-
 impl<TSubstream> ExocoreBehaviour<TSubstream>
 where
-    TSubstream: AsyncRead + AsyncWrite,
+    TSubstream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
 {
     pub fn new() -> ExocoreBehaviour<TSubstream> {
         ExocoreBehaviour {
@@ -136,7 +113,7 @@ where
 
 impl<TSubstream> Default for ExocoreBehaviour<TSubstream>
 where
-    TSubstream: AsyncRead + AsyncWrite,
+    TSubstream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
 {
     fn default() -> Self {
         ExocoreBehaviour::new()
@@ -145,10 +122,9 @@ where
 
 impl<TSubstream> NetworkBehaviour for ExocoreBehaviour<TSubstream>
 where
-    TSubstream: AsyncRead + AsyncWrite,
+    TSubstream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
 {
-    type ProtocolsHandler =
-        OneShotHandler<TSubstream, ExocoreProtoConfig, WireMessage, OneshotEvent>;
+    type ProtocolsHandler = OneShotHandler<TSubstream, ExocoreProtocol, WireMessage, OneshotEvent>;
     type OutEvent = ExocoreBehaviourEvent;
 
     fn new_handler(&mut self) -> Self::ProtocolsHandler {
@@ -213,24 +189,41 @@ where
 
     fn poll(
         &mut self,
+        _: &mut Context,
         _poll_params: &mut impl PollParameters,
-    ) -> Async<
-        NetworkBehaviourAction<
-            <Self::ProtocolsHandler as ProtocolsHandler>::InEvent,
-            Self::OutEvent,
-        >,
-    > {
+    ) -> Poll<NetworkBehaviourAction<WireMessage, ExocoreBehaviourEvent>> {
         if let Some(event) = self.events.pop_front() {
-            return Async::Ready(event);
+            return Poll::Ready(event);
         }
 
-        Async::NotReady
+        Poll::Pending
     }
 }
 
-///
-/// Event emitted by the ExocoreBehaviour
-///
+#[derive(Copy, Clone, PartialEq)]
+enum PeerStatus {
+    Connected,
+    Disconnected,
+}
+
+/// Queued events to be sent to a peer that may not be connected yet.
+/// It may get discarded if it reaches expiration before the peer gets connected.
+struct QueuedPeerEvent {
+    event: BehaviourEvent,
+    expiration: Option<Instant>,
+}
+
+impl QueuedPeerEvent {
+    fn has_expired(&self) -> bool {
+        if let Some(expiration) = self.expiration {
+            expiration <= Instant::now()
+        } else {
+            false
+        }
+    }
+}
+
+/// Event emitted by the ExocoreBehaviour (ex: incoming message), consumed by the Exocore's transport.
 #[derive(Debug)]
 pub enum ExocoreBehaviourEvent {
     Message(ExocoreBehaviourMessage),
@@ -242,10 +235,7 @@ pub struct ExocoreBehaviourMessage {
     pub data: Vec<u8>,
 }
 
-///
-/// Event emitted by OneShotHandler (protocol handler) when a message has been received
-/// or sent.
-///
+/// Event emitted by OneShotHandler (protocol handler) when a message has been received or sent.
 pub enum OneshotEvent {
     Received(WireMessage),
     Sent,

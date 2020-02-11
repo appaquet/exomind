@@ -1,6 +1,7 @@
 use futures::compat::Future01CompatExt;
 use futures::Future as Future03;
 
+pub use futures01::stream::Stream as Stream01;
 pub use futures01::Future as Future01;
 
 pub use tokio::task::spawn_blocking;
