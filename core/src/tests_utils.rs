@@ -24,9 +24,6 @@ pub fn setup_logging() {
     log4rs::init_config(config).unwrap();
 }
 
-///
-/// Testing utils
-///
 pub fn expect_eventually<F>(cb: F)
 where
     F: FnMut() -> bool,
