@@ -1,14 +1,15 @@
+FROM rust:slim-stretch
 
-# First build the app with all build dependencies
-FROM alpine:edge AS build-image
-RUN apk add rust cargo openssl-dev
+RUN apt-get update && \
+    apt-get install -y build-essential pkg-config libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY . /opt/exocore/
-RUN cd /opt/exocore/exo && \
-    cargo install --path .
 
-# Then copy app & required libs to a blank Alpine
-FROM alpine
-WORKDIR /app
-COPY --from=build-image /usr/lib/libgcc* /usr/lib/
-COPY --from=build-image /root/.cargo/bin/exo /app/
-ENTRYPOINT [ "/app/exo" ]
+RUN cd /opt/exocore/exo && \
+    cargo install --path . && \
+    rm -rf /opt/exocore/ && \
+    rm -rf /usr/local/cargo/registry/
+
+WORKDIR /volume
+CMD exo
