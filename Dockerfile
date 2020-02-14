@@ -12,4 +12,4 @@ RUN cd /opt/exocore/exo && \
     rm -rf /usr/local/cargo/registry/
 
 WORKDIR /volume
-CMD exo
+ENTRYPOINT ["/usr/local/cargo/bin/exo"]

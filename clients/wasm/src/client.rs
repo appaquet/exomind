@@ -6,23 +6,23 @@ use prost::Message;
 use wasm_bindgen::prelude::*;
 
 use exocore_core::cell::Cell;
-use exocore_core::crypto::keys::PublicKey;
+use exocore_core::crypto::keys::{PublicKey, Keypair};
 use exocore_core::futures::spawn_future_non_send;
 use exocore_core::node::{LocalNode, Node};
 use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_core::time::Clock;
 use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::transport::ConnectionStatus;
-use exocore_transport::{InEvent, TransportHandle, TransportLayer};
+use exocore_transport::{InEvent, TransportHandle, TransportLayer, Libp2pTransport};
 
 use crate::js::into_js_error;
 use crate::watched_query::WatchedQuery;
 use crate::ws::BrowserTransportClient;
 use exocore_core::protos::prost::ProstMessageExt;
+use exocore_transport::lp2p::Libp2pTransportConfig;
 
 #[wasm_bindgen]
 pub struct ExocoreClient {
-    _transport: BrowserTransportClient,
     store_handle: Arc<ClientHandle>,
     _inner: Arc<Mutex<Inner>>,
 }
@@ -39,9 +39,29 @@ impl ExocoreClient {
         status_change_callback: Option<js_sys::Function>,
     ) -> Result<ExocoreClient, JsValue> {
         console_log::init_with_level(Level::Debug).expect("Couldn't init level");
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+//        // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
+//        let local_node = LocalNode::generate();
+//        let cell_pk =
+//            PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
+//                .expect("Couldn't decode cell publickey");
+//        let cell = Cell::new(cell_pk, local_node);
+//        let clock = Clock::new();
+//
+//        let remote_node_pk =
+//            PublicKey::decode_base58_string("pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb")
+//                .expect("Couldn't decode cell publickey");
+//        let remote_node = Node::new_from_public_key(remote_node_pk);
+//
+//        let mut transport = BrowserTransportClient::new(url, remote_node.clone());
 
         // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
-        let local_node = LocalNode::generate();
+        let local_node = LocalNode::new_from_keypair(Keypair::decode_base58_string("ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP").unwrap());
+
+        let transport_config = Libp2pTransportConfig::default();
+        let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);
+
         let cell_pk =
             PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
                 .expect("Couldn't decode cell publickey");
@@ -49,12 +69,18 @@ impl ExocoreClient {
         let clock = Clock::new();
 
         let remote_node_pk =
-            PublicKey::decode_base58_string("pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb")
+            PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
                 .expect("Couldn't decode cell publickey");
         let remote_node = Node::new_from_public_key(remote_node_pk);
+        let remote_addr = "/ip4/127.0.0.1/tcp/3341/ws"
+            .parse()
+            .expect("Couldn't parse remote node addr");
+        remote_node.add_address(remote_addr);
+        {
+            cell.nodes_mut().add(remote_node.clone());
+        }
 
-        let mut transport = BrowserTransportClient::new(url, remote_node.clone());
-        let index_handle = transport.get_handle(cell.clone(), TransportLayer::Index);
+        let index_handle = transport.get_handle(cell.clone(), TransportLayer::Index).unwrap();
         let remote_store = Client::new(
             ClientConfiguration::default(),
             cell.clone(),
@@ -83,7 +109,7 @@ impl ExocoreClient {
             status_change_callback,
         }));
 
-        let mut client_transport_handle = transport.get_handle(cell, TransportLayer::Client);
+        let mut client_transport_handle = transport.get_handle(cell, TransportLayer::Client).unwrap();
         let inner_clone = inner.clone();
         spawn_future_non_send(async move {
             let mut stream = client_transport_handle.get_stream();
@@ -107,10 +133,17 @@ impl ExocoreClient {
             Ok(())
         });
 
-        transport.start();
+        spawn_future_non_send( async move {
+            info!("Starting libp2p transport...");
+            match transport.run().await {
+                Ok(_) => info!("Libp2p transport done"),
+                Err(err) => error!("Error in libp2p transport: {}", err),
+            }
+
+            Ok(())
+        });
 
         Ok(ExocoreClient {
-            _transport: transport,
             store_handle,
             _inner: inner,
         })

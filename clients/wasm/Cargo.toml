@@ -8,13 +8,16 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-exocore-core = { path = "../../core" }
+exocore-core = { path = "../../core", default-features = false  }
 exocore-index = { path = "../../index", default-features = false }
-exocore-transport = { path = "../../transport", default-features = false }
+exocore-transport = { path = "../../transport", default-features = false, features = ["libp2p_transport"]  }
+libp2p = { path = "../../../rust-libp2p", version = "0.16" }
+#libp2p = { git = "https://github.com/appaquet/rust-libp2p", branch = "016-wasm-ext", version = "0.16" }
 failure = "0.1"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue
 wasm-bindgen-futures = "0.4"
 wasm-timer = "0.2"
+console_error_panic_hook = "0.1"
 web-sys = { version = "0.3", features = ["ErrorEvent", "MessageEvent", "WebSocket", "BinaryType"] }
 js-sys = "0.3"
 rand = { version = "0.7", features = ["wasm-bindgen"] }

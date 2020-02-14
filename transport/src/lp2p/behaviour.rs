@@ -1,6 +1,5 @@
 use std::collections::{HashMap, VecDeque};
 
-use futures::prelude::*;
 use futures::task::{Context, Poll};
 use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
 use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, OneShotHandler, PollParameters};
@@ -14,14 +13,10 @@ const MAX_PEER_QUEUE: usize = 20;
 /// Libp2p's behaviour for Exocore. The behaviour defines a protocol that is exposed to
 /// lp2p, peers that we want to talk to and acts as a stream / sink of messages exchanged
 /// between nodes.
-pub struct ExocoreBehaviour<TSubstream>
-where
-    TSubstream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
-{
+pub struct ExocoreBehaviour {
     local_node: PeerId,
     events: VecDeque<BehaviourEvent>,
     peers: HashMap<PeerId, Peer>,
-    phantom: std::marker::PhantomData<TSubstream>,
 }
 
 type BehaviourEvent = NetworkBehaviourAction<WireMessage, ExocoreBehaviourEvent>;
@@ -47,16 +42,12 @@ impl Peer {
     }
 }
 
-impl<TSubstream> ExocoreBehaviour<TSubstream>
-where
-    TSubstream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
-{
-    pub fn new() -> ExocoreBehaviour<TSubstream> {
+impl ExocoreBehaviour {
+    pub fn new() -> ExocoreBehaviour {
         ExocoreBehaviour {
             local_node: PeerId::random(),
             events: VecDeque::new(),
             peers: HashMap::new(),
-            phantom: std::marker::PhantomData,
         }
     }
 
@@ -111,20 +102,14 @@ where
     }
 }
 
-impl<TSubstream> Default for ExocoreBehaviour<TSubstream>
-where
-    TSubstream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
-{
+impl Default for ExocoreBehaviour {
     fn default() -> Self {
         ExocoreBehaviour::new()
     }
 }
 
-impl<TSubstream> NetworkBehaviour for ExocoreBehaviour<TSubstream>
-where
-    TSubstream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
-{
-    type ProtocolsHandler = OneShotHandler<TSubstream, ExocoreProtocol, WireMessage, OneshotEvent>;
+impl NetworkBehaviour for ExocoreBehaviour {
+    type ProtocolsHandler = OneShotHandler<ExocoreProtocol, WireMessage, OneshotEvent>;
     type OutEvent = ExocoreBehaviourEvent;
 
     fn new_handler(&mut self) -> Self::ProtocolsHandler {
@@ -140,7 +125,7 @@ where
     }
 
     fn inject_connected(&mut self, peer_id: PeerId, _endpoint: ConnectedPoint) {
-        debug!("{}: Connected to {}", self.local_node, peer_id,);
+        debug!("{}: Connected to {}", self.local_node, peer_id, );
 
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             peer.status = PeerStatus::Connected;
@@ -155,9 +140,9 @@ where
     }
 
     fn inject_disconnected(&mut self, peer_id: &PeerId, _endpoint: ConnectedPoint) {
-        debug!("{}: Disconnected from {}", self.local_node, peer_id,);
+        debug!("{}: Disconnected from {}", self.local_node, peer_id, );
 
-        if let Some(peer) = self.peers.get_mut(&peer_id) {
+        if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.status = PeerStatus::Disconnected;
 
             // check if we need to reconnect

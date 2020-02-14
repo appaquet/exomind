@@ -1,7 +1,7 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
-import { Client, Registry, proto } from "exocore";
+import {Client, Registry, proto} from "exocore";
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -27,6 +27,7 @@ class App extends React.Component {
         }).then((client) => {
             this.setState({
                 exocore: client,
+                status: 'connected',
             });
         });
     }

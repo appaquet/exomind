@@ -4,13 +4,14 @@ use std::sync::{Arc, RwLock, Weak};
 use std::task::{Context, Poll};
 use std::time::Duration;
 
+use futures::{FutureExt, SinkExt, StreamExt};
 use futures::channel::mpsc;
 use futures::channel::mpsc::SendError;
 use futures::prelude::*;
 use futures::sink::SinkMapErr;
-use futures::{FutureExt, SinkExt, StreamExt};
 use libp2p::core::{Multiaddr, PeerId};
 use libp2p::swarm::Swarm;
+use libp2p::core::transport::Transport;
 
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_core::cell::{Cell, CellId, CellNodes};
@@ -19,10 +20,10 @@ use exocore_core::node::{LocalNode, NodeId};
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
 
+use crate::{TransportHandle, TransportLayer};
+use crate::Error;
 use crate::messages::InMessage;
 use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
-use crate::Error;
-use crate::{TransportHandle, TransportLayer};
 
 pub mod behaviour;
 pub mod protocol;
@@ -30,7 +31,7 @@ pub mod protocol;
 /// libp2p transport configuration
 #[derive(Clone)]
 pub struct Libp2pTransportConfig {
-    pub listen_address: Option<Multiaddr>,
+    pub listen_addresses: Vec<Multiaddr>,
     pub handle_in_channel_size: usize,
     pub handle_out_channel_size: usize,
     pub handles_to_behaviour_channel_size: usize,
@@ -38,22 +39,20 @@ pub struct Libp2pTransportConfig {
 }
 
 impl Libp2pTransportConfig {
-    fn listen_address(&self, local_node: &LocalNode) -> Result<Multiaddr, Error> {
-        self
-            .listen_address
-            .as_ref()
-            .cloned()
-            .or_else(|| local_node.addresses().first().cloned())
-            .ok_or_else(|| {
-                Error::Other("Local node has no addresses, and no listen address were specified in transport config".to_string())
-            })
+    fn listen_addresses(&self, local_node: &LocalNode) -> Result<Vec<Multiaddr>, Error> {
+        let mut conf_addresses = self.listen_addresses.clone();
+        let mut node_addresses = local_node.addresses();
+
+        node_addresses.append(&mut conf_addresses);
+
+        Ok(node_addresses)
     }
 }
 
 impl Default for Libp2pTransportConfig {
     fn default() -> Self {
         Libp2pTransportConfig {
-            listen_address: None,
+            listen_addresses: Vec::new(),
             handle_in_channel_size: 1000,
             handle_out_channel_size: 1000,
             handles_to_behaviour_channel_size: 5000,
@@ -153,13 +152,25 @@ impl Libp2pTransport {
     /// Runs the transport to completion.
     pub async fn run(self) -> Result<(), Error> {
         let local_keypair = self.local_node.keypair().clone();
-        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone())?;
+
+        let transport = libp2p::wasm_ext::ExtTransport::default()
+            .upgrade(libp2p::core::upgrade::Version::V1)
+            .authenticate(libp2p::secio::SecioConfig::new(local_keypair.to_libp2p().clone()))
+            .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
+                libp2p::yamux::Config::default(),
+                libp2p::mplex::MplexConfig::new(),
+            ))
+            .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)));
+
+//        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone())?;
 
         let behaviour = ExocoreBehaviour::new();
         let mut swarm = Swarm::new(transport, behaviour, self.local_node.peer_id().clone());
 
-        let listen_address = self.config.listen_address(&self.local_node)?;
-        Swarm::listen_on(&mut swarm, listen_address)?;
+        let listen_addresses = self.config.listen_addresses(&self.local_node)?;
+        for listen_address in listen_addresses {
+            Swarm::listen_on(&mut swarm, listen_address)?;
+        }
 
         // Spawn the swarm & receive message from a channel through which outgoing messages will go
         let (out_sender, mut out_receiver) =
@@ -425,34 +436,6 @@ mod tests {
         // send 2 to 1 by duplicating node, should expect receiving 2 messages
         handle2_tester.send(vec![node1.node().clone(), node1.node().clone()], 234);
         expect_eventually(|| handle1_tester.received().len() == 2);
-
-        Ok(())
-    }
-
-    #[test]
-    fn listen_address_override() -> Result<(), failure::Error> {
-        let addr1: Multiaddr = "/ip4/127.0.0.1/tcp/1000".parse()?;
-        let addr2: Multiaddr = "/ip4/127.0.0.1/tcp/1001".parse()?;
-
-        // config always take precedence
-        let node1 = LocalNode::generate();
-        node1.add_address(addr1.clone());
-        let config = Libp2pTransportConfig {
-            listen_address: Some(addr2.clone()),
-            ..Libp2pTransportConfig::default()
-        };
-        assert_eq!(addr2, config.listen_address(&node1)?);
-
-        // fallback to node if not specified in config
-        let node1 = LocalNode::generate();
-        node1.add_address(addr1.clone());
-        let config = Libp2pTransportConfig::default();
-        assert_eq!(addr1, config.listen_address(&node1)?);
-
-        // error if no addresses found
-        let node1 = LocalNode::generate();
-        let config = Libp2pTransportConfig::default();
-        assert!(config.listen_address(&node1).is_err());
 
         Ok(())
     }
