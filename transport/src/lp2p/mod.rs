@@ -4,14 +4,13 @@ use std::sync::{Arc, RwLock, Weak};
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use futures::{FutureExt, SinkExt, StreamExt};
 use futures::channel::mpsc;
 use futures::channel::mpsc::SendError;
 use futures::prelude::*;
 use futures::sink::SinkMapErr;
+use futures::{FutureExt, SinkExt, StreamExt};
 use libp2p::core::{Multiaddr, PeerId};
 use libp2p::swarm::Swarm;
-use libp2p::core::transport::Transport;
 
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_core::cell::{Cell, CellId, CellNodes};
@@ -19,13 +18,14 @@ use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_core::node::{LocalNode, NodeId};
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
-
-use crate::{TransportHandle, TransportLayer};
-use crate::Error;
 use crate::messages::InMessage;
 use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
+use crate::Error;
+use crate::{TransportHandle, TransportLayer};
+use libp2p::Transport;
 
 pub mod behaviour;
+pub mod handler;
 pub mod protocol;
 
 /// libp2p transport configuration
@@ -99,6 +99,8 @@ struct HandleChannels {
     out_receiver: Option<mpsc::Receiver<OutEvent>>,
 }
 
+
+
 impl Libp2pTransport {
     /// Creates a new transport for given node and config. The node is important here
     /// since all messages are authenticated using the node's private key thanks to secio
@@ -152,22 +154,25 @@ impl Libp2pTransport {
     /// Runs the transport to completion.
     pub async fn run(self) -> Result<(), Error> {
         let local_keypair = self.local_node.keypair().clone();
-
-        let transport = libp2p::wasm_ext::ExtTransport::default()
-            .upgrade(libp2p::core::upgrade::Version::V1)
-            .authenticate(libp2p::secio::SecioConfig::new(local_keypair.to_libp2p().clone()))
-            .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
-                libp2p::yamux::Config::default(),
-                libp2p::mplex::MplexConfig::new(),
-            ))
-            .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)));
-
-//        let transport = libp2p::build_tcp_ws_secio_mplex_yamux(local_keypair.to_libp2p().clone())?;
-
-        let behaviour = ExocoreBehaviour::new();
-        let mut swarm = Swarm::new(transport, behaviour, self.local_node.peer_id().clone());
-
         let listen_addresses = self.config.listen_addresses(&self.local_node)?;
+
+        let mut swarm = if cfg!(not(target_arch = "wasm32")) {
+            let transport = libp2p::build_tcp_ws_secio_mplex_yamux(self.local_node.keypair().to_libp2p().clone())?;
+            let behaviour = ExocoreBehaviour::new();
+            Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
+        } else {
+            let transport = libp2p::wasm_ext::ExtTransport::default()
+                .upgrade(libp2p::core::upgrade::Version::V1)
+                .authenticate(libp2p::secio::SecioConfig::new(local_keypair.to_libp2p().clone()))
+                .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
+                    libp2p::yamux::Config::default(),
+                    libp2p::mplex::MplexConfig::new(),
+                ))
+                .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)));
+            let behaviour = ExocoreBehaviour::new();
+            Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
+        };
+
         for listen_address in listen_addresses {
             Swarm::listen_on(&mut swarm, listen_address)?;
         }
@@ -267,7 +272,8 @@ impl Libp2pTransport {
             _ = swarm_task.fuse() => (),
             _ = handles_dispatcher.fuse() => (),
             _ = self.handle_set.on_handles_dropped().fuse() => (),
-        };
+        }
+        ;
         info!("Libp2p transport is done");
 
         Ok(())
@@ -386,7 +392,7 @@ mod tests {
     use exocore_core::futures::Runtime;
     use exocore_core::node::Node;
     use exocore_core::protos::generated::data_chain_capnp::block_operation_header;
-    use exocore_core::tests_utils::expect_eventually;
+    use exocore_core::tests_utils::{expect_eventually, setup_logging};
     use exocore_core::time::{ConsistentTimestamp, Instant};
 
     use crate::OutMessage;
@@ -395,6 +401,8 @@ mod tests {
 
     #[test]
     fn test_integration() -> Result<(), failure::Error> {
+        setup_logging();
+
         let mut rt = Runtime::new()?;
 
         let node1 = LocalNode::generate();

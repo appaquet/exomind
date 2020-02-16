@@ -29,3 +29,6 @@ members = [
   "clients/android",
   "clients/ios"
 ]
+exclude = [
+    "3rd"
+]
