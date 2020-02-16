@@ -29,7 +29,7 @@ export default class List extends React.Component {
     };
 
     return this.state.entities.map(res =>
-      <li key={res.entity.id}>{res.trait.string1} (<DeleteButton entity={res.entity} trait={res.trait} />)</li>
+      <li key={res.entity.id}>{res.trait.string1} (<DeleteButton entity={res.entity} trait={res.trait}/>)</li>
     );
   }
 

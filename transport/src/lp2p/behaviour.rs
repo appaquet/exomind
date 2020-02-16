@@ -6,21 +6,25 @@ use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
 
 use exocore_core::time::Instant;
 
-use super::protocol::WireMessage;
-use crate::lp2p::handler::{ProtoHandler, ProtoMessage};
+use crate::lp2p::protocol::{ExocoreProtoHandler, ExocoreProtoMessage};
+use std::time::Duration;
 
 const MAX_PEER_QUEUE: usize = 20;
+const DEFAULT_DIALING_MESSAGE_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// Libp2p's behaviour for Exocore. The behaviour defines a protocol that is exposed to
-/// lp2p, peers that we want to talk to and acts as a stream / sink of messages exchanged
-/// between nodes.
+/// Libp2p's behaviour for Exocore transport.
+///
+/// This manages:
+///   * Peers that we want to be connected to.
+///   * Incoming messages from the protocol handler, to be dispatched via Exocore's transport.
+///   * Outgoing messages from Exocore's transport to be dispatched to the protocol handler.
 pub struct ExocoreBehaviour {
     local_node: PeerId,
-    events: VecDeque<BehaviourEvent>,
+    actions: VecDeque<BehaviourAction>,
     peers: HashMap<PeerId, Peer>,
 }
 
-type BehaviourEvent = NetworkBehaviourAction<ProtoMessage, ExocoreBehaviourEvent>;
+type BehaviourAction = NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehaviourEvent>;
 
 struct Peer {
     addresses: Vec<Multiaddr>,
@@ -47,7 +51,7 @@ impl ExocoreBehaviour {
     pub fn new() -> ExocoreBehaviour {
         ExocoreBehaviour {
             local_node: PeerId::random(),
-            events: VecDeque::new(),
+            actions: VecDeque::new(),
             peers: HashMap::new(),
         }
     }
@@ -55,17 +59,22 @@ impl ExocoreBehaviour {
     pub fn send_message(&mut self, peer_id: PeerId, expiration: Option<Instant>, data: Vec<u8>) {
         let event = NetworkBehaviourAction::SendEvent {
             peer_id: peer_id.clone(),
-            event: ProtoMessage { data },
+            event: ExocoreProtoMessage { data },
         };
 
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             if peer.status == PeerStatus::Connected {
-                self.events.push_back(event);
+                self.actions.push_back(event);
             } else {
+                let expiration =
+                    expiration.unwrap_or_else(|| Instant::now() + DEFAULT_DIALING_MESSAGE_TIMEOUT);
+
                 debug!("Peer {} not connected. Queuing message.", peer_id);
                 // Node is disconnected, push the event to a queue and try to connect
-                peer.temp_queue
-                    .push_back(QueuedPeerEvent { event, expiration });
+                peer.temp_queue.push_back(QueuedPeerEvent {
+                    event,
+                    expiration: Some(expiration),
+                });
 
                 // make sure queue doesn't go higher than limit
                 while peer.temp_queue.len() > MAX_PEER_QUEUE {
@@ -98,7 +107,7 @@ impl ExocoreBehaviour {
     }
 
     fn dial_peer(&mut self, peer_id: PeerId) {
-        self.events
+        self.actions
             .push_back(NetworkBehaviourAction::DialPeer { peer_id });
     }
 }
@@ -110,8 +119,7 @@ impl Default for ExocoreBehaviour {
 }
 
 impl NetworkBehaviour for ExocoreBehaviour {
-    //    type ProtocolsHandler = OneShotHandler<ExocoreProtocol, WireMessage, OneshotEvent>;
-    type ProtocolsHandler = ProtoHandler;
+    type ProtocolsHandler = ExocoreProtoHandler;
     type OutEvent = ExocoreBehaviourEvent;
 
     fn new_handler(&mut self) -> Self::ProtocolsHandler {
@@ -132,10 +140,15 @@ impl NetworkBehaviour for ExocoreBehaviour {
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             peer.status = PeerStatus::Connected;
 
+            self.actions
+                .push_back(NetworkBehaviourAction::GenerateEvent(
+                    ExocoreBehaviourEvent::PeerStatus(peer_id.clone(), peer.status),
+                ));
+
             // send any messages that were queued while node was disconnected, but that haven't expired
             while let Some(event) = peer.temp_queue.pop_front() {
                 if !event.has_expired() {
-                    self.events.push_back(event.event);
+                    self.actions.push_back(event.event);
                 }
             }
         }
@@ -147,6 +160,11 @@ impl NetworkBehaviour for ExocoreBehaviour {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.status = PeerStatus::Disconnected;
 
+            self.actions
+                .push_back(NetworkBehaviourAction::GenerateEvent(
+                    ExocoreBehaviourEvent::PeerStatus(peer_id.clone(), peer.status),
+                ));
+
             // check if we need to reconnect
             peer.cleanup_expired();
             if !peer.temp_queue.is_empty() {
@@ -155,15 +173,16 @@ impl NetworkBehaviour for ExocoreBehaviour {
         }
     }
 
-    fn inject_node_event(&mut self, peer_id: PeerId, msg: ProtoMessage) {
+    fn inject_node_event(&mut self, peer_id: PeerId, msg: ExocoreProtoMessage) {
         trace!("{}: Received message from {}", self.local_node, peer_id);
 
-        self.events.push_back(NetworkBehaviourAction::GenerateEvent(
-            ExocoreBehaviourEvent::Message(ExocoreBehaviourMessage {
-                source: peer_id,
-                data: msg.data,
-            }),
-        ));
+        self.actions
+            .push_back(NetworkBehaviourAction::GenerateEvent(
+                ExocoreBehaviourEvent::Message(ExocoreBehaviourMessage {
+                    source: peer_id,
+                    data: msg.data,
+                }),
+            ));
     }
 
     fn inject_dial_failure(&mut self, peer_id: &PeerId) {
@@ -172,10 +191,10 @@ impl NetworkBehaviour for ExocoreBehaviour {
 
     fn poll(
         &mut self,
-        _: &mut Context,
-        _poll_params: &mut impl PollParameters,
-    ) -> Poll<NetworkBehaviourAction<ProtoMessage, ExocoreBehaviourEvent>> {
-        if let Some(event) = self.events.pop_front() {
+        _ctx: &mut Context,
+        _params: &mut impl PollParameters,
+    ) -> Poll<NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehaviourEvent>> {
+        if let Some(event) = self.actions.pop_front() {
             return Poll::Ready(event);
         }
 
@@ -183,16 +202,10 @@ impl NetworkBehaviour for ExocoreBehaviour {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
-enum PeerStatus {
-    Connected,
-    Disconnected,
-}
-
 /// Queued events to be sent to a peer that may not be connected yet.
 /// It may get discarded if it reaches expiration before the peer gets connected.
 struct QueuedPeerEvent {
-    event: BehaviourEvent,
+    event: BehaviourAction,
     expiration: Option<Instant>,
 }
 
@@ -207,9 +220,9 @@ impl QueuedPeerEvent {
 }
 
 /// Event emitted by the ExocoreBehaviour (ex: incoming message), consumed by the Exocore's transport.
-#[derive(Debug)]
 pub enum ExocoreBehaviourEvent {
     Message(ExocoreBehaviourMessage),
+    PeerStatus(PeerId, PeerStatus),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -218,22 +231,8 @@ pub struct ExocoreBehaviourMessage {
     pub data: Vec<u8>,
 }
 
-/// Event emitted by OneShotHandler (protocol handler) when a message has been received or sent.
-pub enum OneshotEvent {
-    Received(WireMessage),
-    Sent,
-}
-
-impl From<WireMessage> for OneshotEvent {
-    #[inline]
-    fn from(rpc: WireMessage) -> OneshotEvent {
-        OneshotEvent::Received(rpc)
-    }
-}
-
-impl From<()> for OneshotEvent {
-    #[inline]
-    fn from(_: ()) -> OneshotEvent {
-        OneshotEvent::Sent
-    }
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum PeerStatus {
+    Connected,
+    Disconnected,
 }

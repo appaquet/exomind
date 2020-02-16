@@ -50,7 +50,6 @@ prost-build = "0.6"
 tempdir = "0.3"
 log4rs = "0.10"
 criterion_bencher_compat = "0.3"
-tokio = { version = "0.2", features = ["blocking"] }
 
 [[bench]]
 name = "capnp_frame"

@@ -11,55 +11,23 @@ use futures::sink::SinkMapErr;
 use futures::{FutureExt, SinkExt, StreamExt};
 use libp2p::core::{Multiaddr, PeerId};
 use libp2p::swarm::Swarm;
+use libp2p::Transport;
 
-use crate::messages::InMessage;
-use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
-use crate::Error;
-use crate::{TransportHandle, TransportLayer};
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_core::cell::{Cell, CellId, CellNodes};
 use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
-use exocore_core::node::{LocalNode, NodeId};
+use exocore_core::node::{LocalNode, Node, NodeId};
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
-use libp2p::Transport;
+
+use crate::lp2p::behaviour::PeerStatus;
+use crate::messages::InMessage;
+use crate::transport::{ConnectionStatus, InEvent, OutEvent, TransportHandleOnStart};
+use crate::Error;
+use crate::{TransportHandle, TransportLayer};
 
 pub mod behaviour;
-pub mod handler;
 pub mod protocol;
-
-/// libp2p transport configuration
-#[derive(Clone)]
-pub struct Libp2pTransportConfig {
-    pub listen_addresses: Vec<Multiaddr>,
-    pub handle_in_channel_size: usize,
-    pub handle_out_channel_size: usize,
-    pub handles_to_behaviour_channel_size: usize,
-    pub swarm_nodes_update_interval: Duration,
-}
-
-impl Libp2pTransportConfig {
-    fn listen_addresses(&self, local_node: &LocalNode) -> Result<Vec<Multiaddr>, Error> {
-        let mut conf_addresses = self.listen_addresses.clone();
-        let mut node_addresses = local_node.addresses();
-
-        node_addresses.append(&mut conf_addresses);
-
-        Ok(node_addresses)
-    }
-}
-
-impl Default for Libp2pTransportConfig {
-    fn default() -> Self {
-        Libp2pTransportConfig {
-            listen_addresses: Vec::new(),
-            handle_in_channel_size: 1000,
-            handle_out_channel_size: 1000,
-            handles_to_behaviour_channel_size: 5000,
-            swarm_nodes_update_interval: Duration::from_secs(1),
-        }
-    }
-}
 
 /// Libp2p transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
@@ -242,6 +210,13 @@ impl Libp2pTransport {
                             warn!("Couldn't dispatch message: {}", err);
                         }
                     }
+                    ExocoreBehaviourEvent::PeerStatus(peer_id, status) => {
+                        debug!("Peer status {} changed to {:?}", peer_id, status);
+
+                        if let Err(err) = Self::dispatch_node_status(&inner, peer_id, status) {
+                            warn!("Couldn't dispatch node status: {}", err);
+                        }
+                    }
                 }
             }
 
@@ -300,7 +275,7 @@ impl Libp2pTransport {
         })?;
 
         let key = (cell_id, layer);
-        let layer_stream = if let Some(layer_stream) = inner.handles.get_mut(&key) {
+        let handle_channels = if let Some(layer_stream) = inner.handles.get_mut(&key) {
             layer_stream
         } else {
             return Err(Error::Other(format!(
@@ -309,22 +284,86 @@ impl Libp2pTransport {
             )));
         };
 
-        let node_id = NodeId::from_peer_id(&message.source);
-        let cell_nodes = layer_stream.cell.nodes();
-        let source_node = if let Some(source_node) = cell_nodes.get(&node_id) {
-            source_node
-        } else {
-            return Err(Error::Other(format!(
-                "Couldn't find node with id {} in local nodes",
-                node_id
-            )));
-        };
-
-        let msg = InMessage::from_node_and_frame(source_node.clone(), frame.to_owned())?;
-        layer_stream
+        let source_node = Self::get_node_by_peer(&handle_channels.cell, &message.source)?;
+        let msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
+        handle_channels
             .in_sender
             .try_send(InEvent::Message(msg))
             .map_err(|err| Error::Other(format!("Couldn't send message to cell layer: {}", err)))
+    }
+
+    /// Dispatches a node status change.
+    fn dispatch_node_status(
+        inner: &RwLock<Handles>,
+        peer_id: PeerId,
+        peer_status: PeerStatus,
+    ) -> Result<(), Error> {
+        let mut inner = inner.write()?;
+
+        let status = match peer_status {
+            PeerStatus::Connected => ConnectionStatus::Connected,
+            PeerStatus::Disconnected => ConnectionStatus::Disconnected,
+        };
+
+        for handle in inner.handles.values_mut() {
+            if let Ok(node) = Self::get_node_by_peer(&handle.cell, &peer_id) {
+                handle
+                    .in_sender
+                    .try_send(InEvent::NodeStatus(node.id().clone(), status))
+                    .map_err(|err| {
+                        Error::Other(format!("Couldn't send message to cell layer: {}", err))
+                    })?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn get_node_by_peer(cell: &Cell, peer_id: &PeerId) -> Result<Node, Error> {
+        let node_id = NodeId::from_peer_id(peer_id);
+        let cell_nodes = cell.nodes();
+
+        if let Some(source_node) = cell_nodes.get(&node_id) {
+            Ok(source_node.clone())
+        } else {
+            Err(Error::Other(format!(
+                "Couldn't find node with id {} in local nodes",
+                node_id
+            )))
+        }
+    }
+}
+
+/// libp2p transport configuration
+#[derive(Clone)]
+pub struct Libp2pTransportConfig {
+    pub listen_addresses: Vec<Multiaddr>,
+    pub handle_in_channel_size: usize,
+    pub handle_out_channel_size: usize,
+    pub handles_to_behaviour_channel_size: usize,
+    pub swarm_nodes_update_interval: Duration,
+}
+
+impl Libp2pTransportConfig {
+    fn listen_addresses(&self, local_node: &LocalNode) -> Result<Vec<Multiaddr>, Error> {
+        let mut conf_addresses = self.listen_addresses.clone();
+        let mut node_addresses = local_node.addresses();
+
+        node_addresses.append(&mut conf_addresses);
+
+        Ok(node_addresses)
+    }
+}
+
+impl Default for Libp2pTransportConfig {
+    fn default() -> Self {
+        Libp2pTransportConfig {
+            listen_addresses: Vec::new(),
+            handle_in_channel_size: 1000,
+            handle_out_channel_size: 1000,
+            handles_to_behaviour_channel_size: 5000,
+            swarm_nodes_update_interval: Duration::from_secs(1),
+        }
     }
 }
 
@@ -393,7 +432,7 @@ mod tests {
     use exocore_core::futures::Runtime;
     use exocore_core::node::Node;
     use exocore_core::protos::generated::data_chain_capnp::block_operation_header;
-    use exocore_core::tests_utils::expect_eventually;
+    use exocore_core::tests_utils::{expect_eventually, setup_logging};
     use exocore_core::time::{ConsistentTimestamp, Instant};
 
     use crate::OutMessage;
@@ -402,6 +441,8 @@ mod tests {
 
     #[test]
     fn test_integration() -> Result<(), failure::Error> {
+        setup_logging();
+
         let mut rt = Runtime::new()?;
 
         let node1 = LocalNode::generate();
@@ -433,8 +474,11 @@ mod tests {
         });
         handle2_tester.start_handle(&mut rt);
 
-        // give time for nodes to connect to each others
-        std::thread::sleep(Duration::from_millis(100));
+        // wait for nodes to be connected
+        expect_eventually(|| {
+            handle1_tester.node_status(node2.id()) == ConnectionStatus::Connected
+                && handle2_tester.node_status(node1.id()) == ConnectionStatus::Connected
+        });
 
         // send 1 to 2
         handle1_tester.send(vec![node2.node().clone()], 123);
@@ -442,7 +486,7 @@ mod tests {
 
         // send 2 to 1 by duplicating node, should expect receiving 2 messages
         handle2_tester.send(vec![node1.node().clone(), node1.node().clone()], 234);
-        expect_eventually(|| handle1_tester.received().len() == 2);
+        expect_eventually(|| handle1_tester.received_messages().len() == 2);
 
         Ok(())
     }
@@ -621,13 +665,43 @@ mod tests {
                 .unwrap();
         }
 
-        fn received(&self) -> Vec<InEvent> {
+        fn received_events(&self) -> Vec<InEvent> {
             let received = self.received.lock().unwrap();
             received.clone()
         }
 
+        fn received_messages(&self) -> Vec<InEvent> {
+            let received = self.received.lock().unwrap();
+            received
+                .iter()
+                .filter(|event| match event {
+                    InEvent::Message(_event) => true,
+                    _ => false,
+                })
+                .cloned()
+                .collect()
+        }
+
+        fn node_status(&self, node_id: &NodeId) -> ConnectionStatus {
+            let received = self.received.lock().unwrap();
+            let status = received
+                .iter()
+                .flat_map(|event| match event {
+                    InEvent::NodeStatus(some_node_id, status) if some_node_id == node_id => {
+                        Some(*status)
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+
+            status
+                .last()
+                .cloned()
+                .unwrap_or_else(|| ConnectionStatus::Disconnected)
+        }
+
         fn check_received(&self, memo: u64) -> bool {
-            let received = self.received();
+            let received = self.received_events();
             received.iter().any(|msg| match msg {
                 InEvent::Message(event) => event.rendez_vous_id == Some(ConsistentTimestamp(memo)),
                 InEvent::NodeStatus(_, _) => false,
