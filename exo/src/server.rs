@@ -1,10 +1,9 @@
-use std::net::SocketAddr;
 use std::sync::Arc;
 
 use failure::err_msg;
 
-use exocore_core::cell::{Cell, FullCell};
-use exocore_core::futures::{Future01, Runtime};
+use exocore_core::cell::FullCell;
+use exocore_core::futures::Runtime;
 use exocore_core::protos::registry::Registry;
 use exocore_core::time::Clock;
 use exocore_data::{
@@ -13,11 +12,7 @@ use exocore_data::{
 };
 use exocore_index::store::local::{EntitiesIndex, EntitiesIndexConfig, Store};
 use exocore_index::store::remote::server::Server;
-use exocore_transport::either::EitherTransportHandle;
 use exocore_transport::lp2p::Libp2pTransportConfig;
-use exocore_transport::ws::{
-    WebSocketTransportConfig, WebsocketTransport, WebsocketTransportHandle,
-};
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 
 use crate::config::NodeConfig;
@@ -72,15 +67,9 @@ pub fn start(
         let index_engine_handle = engine.get_handle();
 
         // start the engine
-        rt.spawn_std(async {
+        rt.spawn(async {
             let res = engine.run().await;
             info!("Engine is done: {:?}", res);
-        });
-
-        // start WebSocket server if needed
-        let ws_transport_handle = config.websocket_listen_address.map(|listen_address| {
-            info!("Starting a WebSocket transport server");
-            start_ws_server(&mut rt, &cell, listen_address)
         });
 
         // start an local store index if needed
@@ -103,61 +92,29 @@ pub fn start(
             )?;
 
             // if we have a WebSocket handle, we create a combined transport
-            if let Some(ws_transport) = ws_transport_handle {
-                let libp2p_handle = transport.get_handle(cell.clone(), TransportLayer::Index)?;
-                let combined_transport = EitherTransportHandle::new(libp2p_handle, ws_transport?);
-                create_local_store(
-                    &mut rt,
-                    combined_transport,
-                    index_engine_handle,
-                    full_cell,
-                    clock,
-                    entities_index,
-                )?;
-            } else {
-                let transport_handle = transport.get_handle(cell.clone(), TransportLayer::Index)?;
-                create_local_store(
-                    &mut rt,
-                    transport_handle,
-                    index_engine_handle,
-                    full_cell,
-                    clock,
-                    entities_index,
-                )?;
-            };
+            let transport_handle = transport.get_handle(cell.clone(), TransportLayer::Index)?;
+            create_local_store(
+                &mut rt,
+                transport_handle,
+                index_engine_handle,
+                full_cell,
+                clock,
+                entities_index,
+            )?;
         } else {
             info!("Local node is not an index node. Not starting local store index.")
         }
     }
 
     // start transport
-    rt.spawn_std(async {
+    rt.spawn(async {
         let res = transport.run().await;
         info!("Libp2p transport done: {:?}", res);
     });
 
-    // wait for runtime to finish all its task
-    rt.shutdown_on_idle().wait().unwrap();
+    std::thread::park();
 
     Ok(())
-}
-
-fn start_ws_server(
-    rt: &mut Runtime,
-    cell: &Cell,
-    listen_address: SocketAddr,
-) -> Result<WebsocketTransportHandle, failure::Error> {
-    info!("Starting websocket transport server");
-
-    let config = WebSocketTransportConfig::default();
-    let mut transport = WebsocketTransport::new(listen_address, config);
-    let handle = transport.get_handle(cell)?;
-    rt.spawn_std(async {
-        let res = transport.run().await;
-        info!("Websocket transport done: {:?}", res);
-    });
-
-    Ok(handle)
 }
 
 fn create_local_store<T: TransportHandle>(
@@ -178,13 +135,13 @@ fn create_local_store<T: TransportHandle>(
     )?;
     let store_handle = local_store.get_handle();
 
-    rt.spawn_std(async move {
+    rt.spawn(async move {
         match local_store.run().await {
             Ok(_) => info!("Local index has stopped"),
             Err(err) => error!("Local index has stopped: {}", err),
         }
     });
-    rt.block_on_std(store_handle.on_start());
+    rt.block_on(store_handle.on_start());
 
     let server_config = Default::default();
     let remote_store_server = Server::new(
@@ -193,7 +150,7 @@ fn create_local_store<T: TransportHandle>(
         store_handle,
         transport,
     )?;
-    rt.spawn_std(async move {
+    rt.spawn(async move {
         match remote_store_server.run().await {
             Ok(_) => info!("Remote store server has stopped"),
             Err(err) => info!("Remote store server has failed: {}", err),

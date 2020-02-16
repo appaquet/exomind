@@ -515,7 +515,7 @@ pub mod tests {
             .cluster
             .wait_operation_committed(0, response.operation_id);
 
-        test_store.cluster.runtime.block_on_std(async move {
+        test_store.cluster.runtime.block_on(async move {
             let mut stream = stream.into_inner();
             let delay = delay_for(Duration::from_secs(1));
 

@@ -191,7 +191,7 @@ impl DataTestCluster {
 
         self.collect_events_stream(node_idx);
 
-        self.runtime.spawn_std(async {
+        self.runtime.spawn(async {
             let res = engine.run().await;
             info!("Engine done: {:?}", res);
         });
@@ -212,7 +212,7 @@ impl DataTestCluster {
                 .unwrap()
                 .take_events_stream()
                 .unwrap();
-            self.runtime.spawn_std(async move {
+            self.runtime.spawn(async move {
                 while let Some(event) = stream_events.next().await {
                     let mut events = events.lock().unwrap();
                     events.push(event.clone());
@@ -363,7 +363,7 @@ impl DataTestCluster {
         self.start_engine(node_idx);
 
         let handle = self.handles[node_idx].as_ref().unwrap().clone();
-        self.runtime.block_on_std(handle.on_started());
+        self.runtime.block_on(handle.on_started());
 
         Ok(())
     }

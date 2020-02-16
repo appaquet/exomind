@@ -257,7 +257,7 @@ mod tests {
         // on node 1, we use it combined using the EitherTransportHandle
         let node1_transport1 = mock_transport1.get_transport(node1.clone(), Index);
         let node1_transport2 = mock_transport2.get_transport(node1.clone(), Index);
-        let mut node1_either = rt.block_on_std(async move {
+        let mut node1_either = rt.block_on(async move {
             TestableTransportHandle::new(EitherTransportHandle::new(
                 node1_transport1,
                 node1_transport2,

@@ -4,7 +4,6 @@
 extern crate log;
 
 mod js;
-mod ws;
 
 pub mod client;
 pub mod watched_query;

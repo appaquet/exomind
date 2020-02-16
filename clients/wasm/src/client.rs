@@ -33,26 +33,11 @@ struct Inner {
 impl ExocoreClient {
     #[wasm_bindgen(constructor)]
     pub fn new(
-        url: &str,
+        maddr: &str,
         status_change_callback: Option<js_sys::Function>,
     ) -> Result<ExocoreClient, JsValue> {
-        wasm_logger::init(wasm_logger::Config::default());
+        wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
-        //        // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
-        //        let local_node = LocalNode::generate();
-        //        let cell_pk =
-        //            PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
-        //                .expect("Couldn't decode cell publickey");
-        //        let cell = Cell::new(cell_pk, local_node);
-        //        let clock = Clock::new();
-        //
-        //        let remote_node_pk =
-        //            PublicKey::decode_base58_string("pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb")
-        //                .expect("Couldn't decode cell publickey");
-        //        let remote_node = Node::new_from_public_key(remote_node_pk);
-        //
-        //        let mut transport = BrowserTransportClient::new(url, remote_node.clone());
 
         // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
         let local_node = LocalNode::new_from_keypair(Keypair::decode_base58_string("ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP").unwrap());
@@ -70,9 +55,7 @@ impl ExocoreClient {
             PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
                 .expect("Couldn't decode cell publickey");
         let remote_node = Node::new_from_public_key(remote_node_pk);
-        let remote_addr = "/ip4/127.0.0.1/tcp/3341/ws"
-            .parse()
-            .expect("Couldn't parse remote node addr");
+        let remote_addr = maddr.parse().expect("Couldn't parse remote node addr");
         remote_node.add_address(remote_addr);
         {
             cell.nodes_mut().add(remote_node.clone());
@@ -152,8 +135,6 @@ impl ExocoreClient {
 
     #[wasm_bindgen]
     pub fn mutate(&self, mutation_bytes: js_sys::Uint8Array) -> js_sys::Promise {
-        info!("Got mutation");
-
         let mut bytes = vec![0u8; mutation_bytes.length() as usize];
         mutation_bytes.copy_to(&mut bytes);
         let entity_mutation =

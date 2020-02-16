@@ -6,7 +6,6 @@ extern crate log;
 use std::os::raw::c_void;
 use std::sync::{Arc, Once};
 
-use futures::compat::Future01CompatExt;
 use futures::StreamExt;
 use libc;
 use prost::Message;
@@ -30,7 +29,7 @@ mod logging;
 static INIT: Once = Once::new();
 
 pub struct Context {
-    runtime: Runtime,
+    _runtime: Runtime,
     store_handle: Arc<ClientHandle>,
 }
 
@@ -95,20 +94,20 @@ impl Context {
                 ContextStatus::Error
             })?;
 
-        runtime.spawn_std(async move {
+        runtime.spawn(async move {
             let res = transport.run().await;
             info!("Transport is done: {:?}", res);
         });
 
-        runtime.block_on_std(management_transport_handle.on_started());
+        runtime.block_on(management_transport_handle.on_started());
 
-        runtime.spawn_std(async move {
+        runtime.spawn(async move {
             let _ = remote_store_client.run().await;
             info!("Remote store is done");
         });
 
         Ok(Context {
-            runtime,
+            _runtime: runtime,
             store_handle,
         })
     }
@@ -127,7 +126,7 @@ impl Context {
 
         debug!("Sending a mutation");
         let callback_ctx = CallbackContext { ctx: callback_ctx };
-        self.runtime.spawn_std(async move {
+        self._runtime.spawn(async move {
             let future_result = store_handle.mutate(mutation);
 
             let result = future_result.await;
@@ -178,7 +177,7 @@ impl Context {
 
         debug!("Sending a query");
         let callback_ctx = CallbackContext { ctx: callback_ctx };
-        self.runtime.spawn_std(async move {
+        self._runtime.spawn(async move {
             let result = future_result.await;
             match result {
                 Ok(res) => {
@@ -228,7 +227,7 @@ impl Context {
 
         debug!("Sending a watch query");
         let callback_ctx = CallbackContext { ctx: callback_ctx };
-        self.runtime.spawn_std(async move {
+        self._runtime.spawn(async move {
             let mut stream = result_stream;
 
             while let Some(result) = stream.next().await {
@@ -349,24 +348,7 @@ pub extern "C" fn exocore_context_new() -> ContextResult {
 #[no_mangle]
 pub extern "C" fn exocore_context_free(ctx: *mut Context) {
     let context = unsafe { Box::from_raw(ctx) };
-
-    let Context {
-        runtime,
-        store_handle,
-        ..
-    } = *context;
-
-    info!("Dropping handle...");
-
-    // dropping store will cancel all queries' future
-    drop(store_handle);
-
-    info!("Waiting for runtime to be done");
-
-    // wait for all queries future to be completed
-    if futures::executor::block_on(runtime.shutdown_on_idle().compat()).is_err() {
-        error!("Error shutting down runtime");
-    }
+    drop(context);
 }
 
 #[no_mangle]

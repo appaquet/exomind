@@ -336,7 +336,7 @@ impl TestRemoteStore {
         );
 
         let server = Server::new(self.server_config, cell, store_handle, transport)?;
-        self.local_store.cluster.runtime.spawn_std(async move {
+        self.local_store.cluster.runtime.spawn(async move {
             let res = server.run().await;
             info!("Server is done: {:?}", res);
         });
@@ -346,7 +346,7 @@ impl TestRemoteStore {
 
     fn start_client(&mut self) -> Result<(), failure::Error> {
         let client = self.client.take().unwrap();
-        self.local_store.cluster.runtime.spawn_std(async move {
+        self.local_store.cluster.runtime.spawn(async move {
             let res = client.run().await;
             info!("Client is done: {:?}", res);
         });

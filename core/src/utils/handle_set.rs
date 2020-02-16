@@ -133,7 +133,7 @@ mod tests {
         let handle = set.get_handle();
 
         let (sender, receiver) = oneshot::channel();
-        rt.spawn_std(async move {
+        rt.spawn(async move {
             set.on_handles_dropped().await;
             let _ = sender.send(());
         });
@@ -165,7 +165,7 @@ mod tests {
         let handle = set.get_handle();
         assert!(!handle.set_is_started());
 
-        rt.spawn_std(async move {
+        rt.spawn(async move {
             set.on_handles_dropped().await;
         });
 

@@ -12,16 +12,16 @@ use futures::{FutureExt, SinkExt, StreamExt};
 use libp2p::core::{Multiaddr, PeerId};
 use libp2p::swarm::Swarm;
 
+use crate::messages::InMessage;
+use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
+use crate::Error;
+use crate::{TransportHandle, TransportLayer};
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_core::cell::{Cell, CellId, CellNodes};
 use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_core::node::{LocalNode, NodeId};
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
-use crate::messages::InMessage;
-use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
-use crate::Error;
-use crate::{TransportHandle, TransportLayer};
 use libp2p::Transport;
 
 pub mod behaviour;
@@ -99,8 +99,6 @@ struct HandleChannels {
     out_receiver: Option<mpsc::Receiver<OutEvent>>,
 }
 
-
-
 impl Libp2pTransport {
     /// Creates a new transport for given node and config. The node is important here
     /// since all messages are authenticated using the node's private key thanks to secio
@@ -157,13 +155,17 @@ impl Libp2pTransport {
         let listen_addresses = self.config.listen_addresses(&self.local_node)?;
 
         let mut swarm = if cfg!(not(target_arch = "wasm32")) {
-            let transport = libp2p::build_tcp_ws_secio_mplex_yamux(self.local_node.keypair().to_libp2p().clone())?;
+            let transport = libp2p::build_tcp_ws_secio_mplex_yamux(
+                self.local_node.keypair().to_libp2p().clone(),
+            )?;
             let behaviour = ExocoreBehaviour::new();
             Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
         } else {
             let transport = libp2p::wasm_ext::ExtTransport::default()
                 .upgrade(libp2p::core::upgrade::Version::V1)
-                .authenticate(libp2p::secio::SecioConfig::new(local_keypair.to_libp2p().clone()))
+                .authenticate(libp2p::secio::SecioConfig::new(
+                    local_keypair.to_libp2p().clone(),
+                ))
                 .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
                     libp2p::yamux::Config::default(),
                     libp2p::mplex::MplexConfig::new(),
@@ -272,8 +274,7 @@ impl Libp2pTransport {
             _ = swarm_task.fuse() => (),
             _ = handles_dispatcher.fuse() => (),
             _ = self.handle_set.on_handles_dropped().fuse() => (),
-        }
-        ;
+        };
         info!("Libp2p transport is done");
 
         Ok(())
@@ -392,7 +393,7 @@ mod tests {
     use exocore_core::futures::Runtime;
     use exocore_core::node::Node;
     use exocore_core::protos::generated::data_chain_capnp::block_operation_header;
-    use exocore_core::tests_utils::{expect_eventually, setup_logging};
+    use exocore_core::tests_utils::expect_eventually;
     use exocore_core::time::{ConsistentTimestamp, Instant};
 
     use crate::OutMessage;
@@ -401,8 +402,6 @@ mod tests {
 
     #[test]
     fn test_integration() -> Result<(), failure::Error> {
-        setup_logging();
-
         let mut rt = Runtime::new()?;
 
         let node1 = LocalNode::generate();
@@ -419,7 +418,7 @@ mod tests {
         let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
         let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
         let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell);
-        rt.spawn_std(async {
+        rt.spawn(async {
             let res = transport1.run().await;
             info!("Transport done: {:?}", res);
         });
@@ -428,7 +427,7 @@ mod tests {
         let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
         let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
         let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
-        rt.spawn_std(async {
+        rt.spawn(async {
             let res = transport2.run().await;
             info!("Transport done: {:?}", res);
         });
@@ -470,7 +469,7 @@ mod tests {
         let handle2 = transport.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
         let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
 
-        rt.spawn_std(async {
+        rt.spawn(async {
             let res = transport.run().await;
             info!("Transport done: {:?}", res);
         });
@@ -509,7 +508,7 @@ mod tests {
         let mut transport1 = Libp2pTransport::new(node1, Libp2pTransportConfig::default());
         let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
         let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
-        rt.spawn_std(async {
+        rt.spawn(async {
             let res = transport1.run().await;
             info!("Transport done: {:?}", res);
         });
@@ -535,7 +534,7 @@ mod tests {
         let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
         let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
         let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
-        rt.spawn_std(async {
+        rt.spawn(async {
             let res = transport2.run().await;
             info!("Transport done: {:?}", res);
         });
@@ -572,7 +571,7 @@ mod tests {
         ) -> TransportHandleTester {
             let (sender, receiver) = mpsc::unbounded();
             let mut sink = handle.get_sink();
-            rt.spawn_std(async move {
+            rt.spawn(async move {
                 let mut receiver = receiver;
                 while let Some(event) = receiver.next().await {
                     if let Err(err) = sink.send(event).await {
@@ -584,7 +583,7 @@ mod tests {
             let received = Arc::new(Mutex::new(Vec::new()));
             let received_weak = Arc::downgrade(&received);
             let mut stream = handle.get_stream();
-            rt.spawn_std(async move {
+            rt.spawn(async move {
                 while let Some(msg) = stream.next().await {
                     let received = received_weak.upgrade().unwrap();
                     let mut received = received.lock().unwrap();
@@ -601,7 +600,7 @@ mod tests {
         }
 
         fn start_handle(&self, rt: &mut Runtime) {
-            rt.block_on_std(self.handle.on_started());
+            rt.block_on(self.handle.on_started());
         }
 
         fn send(&self, to_nodes: Vec<Node>, memo: u64) {

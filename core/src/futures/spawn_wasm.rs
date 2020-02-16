@@ -1,16 +1,16 @@
-use futures::{Future as Future03, TryFutureExt};
+use futures::{Future, TryFutureExt};
 use wasm_timer::{Delay, Interval};
 
 pub fn spawn_future<F>(f: F)
 where
-    F: Future03<Output = ()> + 'static,
+    F: Future<Output = ()> + 'static,
 {
     wasm_bindgen_futures::spawn_local(f);
 }
 
 pub fn spawn_future_non_send<F>(f: F)
 where
-    F: Future03<Output = Result<(), ()>> + 'static,
+    F: Future<Output = Result<(), ()>> + 'static,
 {
     wasm_bindgen_futures::spawn_local(f.unwrap_or_else(|_| ()));
 }

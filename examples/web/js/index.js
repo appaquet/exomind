@@ -17,7 +17,7 @@ class App extends React.Component {
         Registry.registerMessage(proto.exocore.test.TestMessage2, 'exocore.test.TestMessage2');
 
         console.log('Connecting...');
-        Client.create("ws://127.0.0.1:3340", (status) => {
+        Client.create("/dns4/localhost/tcp/3341/ws", (status) => {
             console.log('Status ' + status);
             if (status === "connected") {
                 this.setState({

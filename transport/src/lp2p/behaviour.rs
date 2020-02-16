@@ -2,11 +2,11 @@ use std::collections::{HashMap, VecDeque};
 
 use futures::task::{Context, Poll};
 use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
-use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, OneShotHandler, PollParameters};
+use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
 
 use exocore_core::time::Instant;
 
-use super::protocol::{ExocoreProtocol, WireMessage};
+use super::protocol::WireMessage;
 use crate::lp2p::handler::{ProtoHandler, ProtoMessage};
 
 const MAX_PEER_QUEUE: usize = 20;
@@ -110,7 +110,7 @@ impl Default for ExocoreBehaviour {
 }
 
 impl NetworkBehaviour for ExocoreBehaviour {
-//    type ProtocolsHandler = OneShotHandler<ExocoreProtocol, WireMessage, OneshotEvent>;
+    //    type ProtocolsHandler = OneShotHandler<ExocoreProtocol, WireMessage, OneshotEvent>;
     type ProtocolsHandler = ProtoHandler;
     type OutEvent = ExocoreBehaviourEvent;
 
@@ -156,18 +156,14 @@ impl NetworkBehaviour for ExocoreBehaviour {
     }
 
     fn inject_node_event(&mut self, peer_id: PeerId, msg: ProtoMessage) {
-//        if let OneshotEvent::Received(msg) = event {
-            info!("{}: Received message from {}", self.local_node, peer_id);
+        trace!("{}: Received message from {}", self.local_node, peer_id);
 
-            self.events.push_back(NetworkBehaviourAction::GenerateEvent(
-                ExocoreBehaviourEvent::Message(ExocoreBehaviourMessage {
-                    source: peer_id,
-                    data: msg.data,
-                }),
-            ));
-//        } else {
-//            trace!("{}: Our message got sent", self.local_node);
-//        }
+        self.events.push_back(NetworkBehaviourAction::GenerateEvent(
+            ExocoreBehaviourEvent::Message(ExocoreBehaviourMessage {
+                source: peer_id,
+                data: msg.data,
+            }),
+        ));
     }
 
     fn inject_dial_failure(&mut self, peer_id: &PeerId) {

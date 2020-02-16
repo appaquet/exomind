@@ -18,9 +18,6 @@ pub mod lp2p;
 #[cfg(feature = "libp2p_transport")]
 pub use lp2p::{Libp2pTransport, Libp2pTransportHandle};
 
-#[cfg(feature = "websocket_transport")]
-pub mod ws;
-
 #[cfg(any(test, feature = "tests_utils"))]
 pub mod mock;
 

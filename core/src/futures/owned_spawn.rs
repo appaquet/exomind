@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn propagate_spawned_result() -> Result<(), failure::Error> {
         let mut ret = Runtime::new()?;
-        ret.block_on_std(async move {
+        ret.block_on(async move {
             let spawned = owned_spawn(async move { 1 + 1 });
             assert_eq!(2, spawned.await?);
 
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn owner_drop_cancels_spawned() -> Result<(), failure::Error> {
         let mut ret = Runtime::new()?;
-        ret.block_on_std(async move {
+        ret.block_on(async move {
             let dropper = Dropper::default();
             let dropped = dropper.dropped.clone();
 
@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn spawn_set_cleanup() -> Result<(), failure::Error> {
         let mut ret = Runtime::new()?;
-        ret.block_on_std(async move {
+        ret.block_on(async move {
             let mut set = OwnedSpawnSet::<i32>::new();
 
             set = set.cleanup().await;

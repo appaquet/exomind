@@ -74,16 +74,14 @@ impl TestStore {
 
     pub fn start_store(&mut self) -> Result<(), failure::Error> {
         let store = self.store.take().unwrap();
-        self.cluster.runtime.spawn_std(async move {
+        self.cluster.runtime.spawn(async move {
             match store.run().await {
                 Ok(_) => {}
                 Err(err) => error!("Error running store: {}", err),
             }
         });
 
-        self.cluster
-            .runtime
-            .block_on_std(self.store_handle.on_start());
+        self.cluster.runtime.block_on(self.store_handle.on_start());
 
         Ok(())
     }
@@ -95,7 +93,7 @@ impl TestStore {
     pub fn query(&mut self, query: EntityQuery) -> Result<EntityResults, failure::Error> {
         self.cluster
             .runtime
-            .block_on_std(self.store_handle.query(query)?)
+            .block_on(self.store_handle.query(query)?)
             .map_err(|err| err.into())
     }
 

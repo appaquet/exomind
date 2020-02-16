@@ -207,7 +207,7 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 
     pub fn start(&mut self, rt: &mut Runtime) {
         let handle = self.handle.take().unwrap();
-        rt.spawn_std(handle);
+        rt.spawn(handle);
     }
 
     pub fn send_test_message(&mut self, rt: &mut Runtime, to: &Node, type_id: u16) {
@@ -222,7 +222,7 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
             envelope_builder,
         };
 
-        rt.block_on_std(
+        rt.block_on(
             self.out_sink
                 .as_mut()
                 .unwrap()
@@ -233,7 +233,7 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
 
     pub fn receive_test_message(&mut self, rt: &mut Runtime) -> (NodeId, u16) {
         let stream = self.in_stream.as_mut().unwrap();
-        let event = rt.block_on_std(async { stream.next().await });
+        let event = rt.block_on(async { stream.next().await });
 
         match event.unwrap() {
             InEvent::Message(message) => {
