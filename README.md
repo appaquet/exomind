@@ -1,5 +1,6 @@
 # Exocore
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
+[![dependency status](https://deps.rs/repo/github/appaquet/exocore/status.svg)](https://deps.rs/repo/github/appaquet/exocore)
 
 **Warning: Exocore is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
 
