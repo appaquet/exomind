@@ -26,8 +26,8 @@ use crate::transport::{ConnectionStatus, InEvent, OutEvent, TransportHandleOnSta
 use crate::Error;
 use crate::{TransportHandle, TransportLayer};
 
-pub mod behaviour;
-pub mod protocol;
+mod behaviour;
+mod protocol;
 
 /// Libp2p transport used by all layers of Exocore through handles. There is one handle
 /// per cell per layer.
@@ -39,32 +39,6 @@ pub struct Libp2pTransport {
     config: Libp2pTransportConfig,
     handles: Arc<RwLock<Handles>>,
     handle_set: HandleSet,
-}
-
-struct Handles {
-    handles: HashMap<(CellId, TransportLayer), HandleChannels>,
-}
-
-impl Handles {
-    fn all_peers(&self) -> HashSet<(PeerId, Vec<Multiaddr>)> {
-        let mut peers = HashSet::new();
-        for inner_layer in self.handles.values() {
-            for node in inner_layer.cell.nodes().iter().all() {
-                peers.insert((node.peer_id().clone(), node.addresses()));
-            }
-        }
-        peers
-    }
-
-    fn remove_handle(&mut self, cell_id: &CellId, layer: TransportLayer) {
-        self.handles.remove(&(cell_id.clone(), layer));
-    }
-}
-
-struct HandleChannels {
-    cell: Cell,
-    in_sender: mpsc::Sender<InEvent>,
-    out_receiver: Option<mpsc::Receiver<OutEvent>>,
 }
 
 impl Libp2pTransport {
@@ -334,7 +308,7 @@ impl Libp2pTransport {
     }
 }
 
-/// libp2p transport configuration
+/// `Libp2pTransport` configuration.
 #[derive(Clone)]
 pub struct Libp2pTransportConfig {
     pub listen_addresses: Vec<Multiaddr>,
@@ -365,6 +339,35 @@ impl Default for Libp2pTransportConfig {
             swarm_nodes_update_interval: Duration::from_secs(1),
         }
     }
+}
+
+/// Transport handles created on the `Libp2pTransport`.
+///
+/// A transport can be used for multiple cells, so multiple handles for the same layers, but on different cells may be created.
+struct Handles {
+    handles: HashMap<(CellId, TransportLayer), HandleChannels>,
+}
+
+impl Handles {
+    fn all_peers(&self) -> HashSet<(PeerId, Vec<Multiaddr>)> {
+        let mut peers = HashSet::new();
+        for inner_layer in self.handles.values() {
+            for node in inner_layer.cell.nodes().iter().all() {
+                peers.insert((node.peer_id().clone(), node.addresses()));
+            }
+        }
+        peers
+    }
+
+    fn remove_handle(&mut self, cell_id: &CellId, layer: TransportLayer) {
+        self.handles.remove(&(cell_id.clone(), layer));
+    }
+}
+
+struct HandleChannels {
+    cell: Cell,
+    in_sender: mpsc::Sender<InEvent>,
+    out_receiver: Option<mpsc::Receiver<OutEvent>>,
 }
 
 /// Handle taken by a Cell layer to receive and send message for a given node & cell.

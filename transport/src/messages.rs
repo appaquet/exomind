@@ -9,7 +9,7 @@ use exocore_core::time::{ConsistentTimestamp, Instant};
 
 pub type RendezVousId = ConsistentTimestamp;
 
-/// Message to be sent to one or more other nodes
+/// Message to be sent to one or more other nodes.
 pub struct OutMessage {
     pub to: Vec<Node>,
     pub expiration: Option<Instant>,
@@ -63,7 +63,7 @@ impl OutMessage {
     }
 }
 
-/// Message receive from another node
+/// Message receive from another node.
 #[derive(Clone)]
 pub struct InMessage {
     pub from: Node,
@@ -152,6 +152,7 @@ impl InMessage {
     }
 }
 
+/// Structure that contains information that can be used to reply to a received message.
 #[derive(Clone)]
 pub struct MessageReplyToken {
     from: Node,

@@ -26,27 +26,6 @@ pub struct ExocoreBehaviour {
 
 type BehaviourAction = NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehaviourEvent>;
 
-struct Peer {
-    addresses: Vec<Multiaddr>,
-    temp_queue: VecDeque<QueuedPeerEvent>,
-    status: PeerStatus,
-}
-
-impl Peer {
-    fn cleanup_expired(&mut self) {
-        if !self.temp_queue.is_empty() {
-            let mut old_queue = VecDeque::new();
-            std::mem::swap(&mut self.temp_queue, &mut old_queue);
-
-            for event in old_queue {
-                if !event.has_expired() {
-                    self.temp_queue.push_back(event)
-                }
-            }
-        }
-    }
-}
-
 impl ExocoreBehaviour {
     pub fn new() -> ExocoreBehaviour {
         ExocoreBehaviour {
@@ -202,6 +181,29 @@ impl NetworkBehaviour for ExocoreBehaviour {
     }
 }
 
+/// Peer that the behaviour connects with, or may be connecting too.
+/// The behaviour manages messages sent and received to these peers.
+struct Peer {
+    addresses: Vec<Multiaddr>,
+    temp_queue: VecDeque<QueuedPeerEvent>,
+    status: PeerStatus,
+}
+
+impl Peer {
+    fn cleanup_expired(&mut self) {
+        if !self.temp_queue.is_empty() {
+            let mut old_queue = VecDeque::new();
+            std::mem::swap(&mut self.temp_queue, &mut old_queue);
+
+            for event in old_queue {
+                if !event.has_expired() {
+                    self.temp_queue.push_back(event)
+                }
+            }
+        }
+    }
+}
+
 /// Queued events to be sent to a peer that may not be connected yet.
 /// It may get discarded if it reaches expiration before the peer gets connected.
 struct QueuedPeerEvent {
@@ -219,7 +221,7 @@ impl QueuedPeerEvent {
     }
 }
 
-/// Event emitted by the ExocoreBehaviour (ex: incoming message), consumed by the Exocore's transport.
+/// Event emitted by the ExocoreBehaviour (ex: incoming message), consumed by `Libp2pTransport`.
 pub enum ExocoreBehaviourEvent {
     Message(ExocoreBehaviourMessage),
     PeerStatus(PeerId, PeerStatus),

@@ -100,6 +100,7 @@ impl ProtocolsHandler for ExocoreProtoHandler {
         _message: ExocoreProtoMessage,
         _err: ProtocolsHandlerUpgrErr<io::Error>,
     ) {
+        debug!("Upgrade error. Dropping stream.");
         self.outbound_dialing = false;
     }
 
