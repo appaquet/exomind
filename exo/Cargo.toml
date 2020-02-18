@@ -10,7 +10,7 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [dependencies]
-exocore-core = { path = "../core" }
+exocore-core = { path = "../core", features = ["runtime"] }
 exocore-data = { path = "../data" }
 exocore-index = { path = "../index" }
 exocore-transport = { path = "../transport" }

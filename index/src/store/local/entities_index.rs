@@ -26,36 +26,6 @@ use super::traits_index::{
     IndexMutation, PutTraitMutation, PutTraitTombstone, TraitResult, TraitsIndex, TraitsIndexConfig,
 };
 
-///
-/// Configuration of the entities index
-///
-#[derive(Clone, Copy, Debug)]
-pub struct EntitiesIndexConfig {
-    /// When should we index a block in the chain so that odds that we aren't going to revert it are high enough.
-    /// Related to `CommitManagerConfig`.`operations_cleanup_after_block_depth`
-    pub chain_index_min_depth: BlockHeight,
-
-    /// Configuration for the in-memory traits index that are in the pending store
-    pub pending_index_config: TraitsIndexConfig,
-
-    /// Configuration for the persisted traits index that are in the chain
-    pub chain_index_config: TraitsIndexConfig,
-
-    /// For tests, allow not hitting the disk
-    pub chain_index_in_memory: bool,
-}
-
-impl Default for EntitiesIndexConfig {
-    fn default() -> Self {
-        EntitiesIndexConfig {
-            chain_index_min_depth: 3,
-            pending_index_config: TraitsIndexConfig::default(),
-            chain_index_config: TraitsIndexConfig::default(),
-            chain_index_in_memory: false,
-        }
-    }
-}
-
 /// Manages and index entities and their traits stored in the chain and pending store of the data
 /// layer. The index accepts mutation from the data layer through its event stream, and managed
 /// both indices to be consistent.
@@ -117,63 +87,87 @@ where
         Ok(index)
     }
 
-    /// Handle an event coming from the data layer. These events allow keeping the index
+    pub fn handle_data_engine_event(&mut self, event: Event) -> Result<(), Error> {
+        self.handle_data_engine_events(std::iter::once(event))
+    }
+
+    /// Handle events coming from the data layer. These events allow keeping the index
     /// consistent with the data layer, up to the consistency guarantees that the layer offers.
     ///
     /// Since the events stream is buffered, we may receive a discontinuity if the data layer
     /// couldn't send us an event. In that case, we re-index the pending index since we can't
     /// guarantee that we didn't lose an event.
-    pub fn handle_data_engine_event(&mut self, event: Event) -> Result<(), Error> {
-        match event {
-            Event::Started => {
-                info!("Data engine is ready, indexing pending store & chain");
-                self.index_chain_new_blocks()?;
-                self.reindex_pending()?;
+    pub fn handle_data_engine_events<E>(&mut self, events: E) -> Result<(), Error>
+    where
+        E: Iterator<Item = Event>,
+    {
+        let mut pending_operations = Vec::new();
+        for event in events {
+            // We collect new pending operations so that we can apply them in batch. As soon as we hit
+            // another kind of event, we apply collected events and then continue.
+            if let Event::NewPendingOperation(op_id) = event {
+                pending_operations.push(op_id);
+                continue;
+            } else if !pending_operations.is_empty() {
+                self.handle_engine_event_new_pending_operations(pending_operations.into_iter())?;
+                pending_operations = Vec::new();
             }
-            Event::StreamDiscontinuity => {
-                warn!("Got a stream discontinuity. Forcing re-indexation of pending...");
-                self.reindex_pending()?;
-            }
-            Event::NewPendingOperation(op_id) => {
-                self.handle_engine_event_new_pending_operation(op_id)?;
-            }
-            Event::NewChainBlock(block_offset) => {
-                debug!(
-                    "Got new block at offset {}, checking if we can index a new block",
-                    block_offset
-                );
-                self.index_chain_new_blocks()?;
-            }
-            Event::ChainDiverged(diverged_block_offset) => {
-                let highest_indexed_block = self.chain_index.highest_indexed_block()?;
-                warn!(
-                    "Chain has diverged at offset={}. Highest indexed block at = {:?}",
-                    diverged_block_offset, highest_indexed_block
-                );
 
-                if let Some(last_indexed_offset) = highest_indexed_block {
-                    if last_indexed_offset < diverged_block_offset {
-                        // since we only index blocks that have a certain depth, and therefor higher
-                        // probability of being definitive, if we have a divergence, we can just re-index
-                        // the pending store which should still contain operations that are in our invalid
-                        // chain
-                        warn!("Divergence is after last indexed offset, we only re-index pending");
-                        self.reindex_pending()?;
-                    } else {
-                        // if we are here, we indexed a block from the chain that isn't valid anymore
-                        // since we are deleting traits that got deleted from the actual index, there is no
-                        // way to rollback to the diverged offset, and will require a re-index.
-                        // this can be prevented by tweaking the `EntitiesIndexConfig`.`chain_index_min_depth` value
-                        return Err(Error::Fatal(
-                            format!("Chain has diverged at an offset={}, which is before last indexed block at offset {}",
-                                    diverged_block_offset, last_indexed_offset
-                            )));
-                    }
-                } else {
-                    warn!("Diverged with an empty chain index. Re-indexing...");
-                    self.reindex_chain()?;
+            match event {
+                Event::Started => {
+                    info!("Data engine is ready, indexing pending store & chain");
+                    self.index_chain_new_blocks()?;
+                    self.reindex_pending()?;
                 }
+                Event::StreamDiscontinuity => {
+                    warn!("Got a stream discontinuity. Forcing re-indexation of pending...");
+                    self.reindex_pending()?;
+                }
+                Event::NewChainBlock(block_offset) => {
+                    debug!(
+                        "Got new block at offset {}, checking if we can index a new block",
+                        block_offset
+                    );
+                    self.index_chain_new_blocks()?;
+                }
+                Event::ChainDiverged(diverged_block_offset) => {
+                    let highest_indexed_block = self.chain_index.highest_indexed_block()?;
+                    warn!(
+                        "Chain has diverged at offset={}. Highest indexed block at = {:?}",
+                        diverged_block_offset, highest_indexed_block
+                    );
+
+                    if let Some(last_indexed_offset) = highest_indexed_block {
+                        if last_indexed_offset < diverged_block_offset {
+                            // since we only index blocks that have a certain depth, and therefor higher
+                            // probability of being definitive, if we have a divergence, we can just re-index
+                            // the pending store which should still contain operations that are in our invalid
+                            // chain
+                            warn!(
+                                "Divergence is after last indexed offset, we only re-index pending"
+                            );
+                            self.reindex_pending()?;
+                        } else {
+                            // if we are here, we indexed a block from the chain that isn't valid anymore
+                            // since we are deleting traits that got deleted from the actual index, there is no
+                            // way to rollback to the diverged offset, and will require a re-index.
+                            // this can be prevented by tweaking the `EntitiesIndexConfig`.`chain_index_min_depth` value
+                            return Err(Error::Fatal(
+                                format!("Chain has diverged at an offset={}, which is before last indexed block at offset {}",
+                                        diverged_block_offset, last_indexed_offset
+                                )));
+                        }
+                    } else {
+                        warn!("Diverged with an empty chain index. Re-indexing...");
+                        self.reindex_chain()?;
+                    }
+                }
+                Event::NewPendingOperation(_op_id) => unreachable!(),
             }
+        }
+
+        if !pending_operations.is_empty() {
+            self.handle_engine_event_new_pending_operations(pending_operations.into_iter())?;
         }
 
         Ok(())
@@ -564,7 +558,7 @@ where
                     match EntityMutation::decode(data) {
                         Ok(entity_mutation) => {
                             Some((offset, height, op, entity_mutation))
-                        },
+                        }
                         Err(err) => {
                             error!("Couldn't read operation from chain at offset={} and operation_id={}: {}", offset, op.operation_id, err);
                             None
@@ -630,21 +624,34 @@ where
             .and_then(|opt| opt))
     }
 
-    /// Handle a new pending store operation event from the data layer by indexing it
-    /// into the pending index
-    fn handle_engine_event_new_pending_operation(
+    /// Handle new pending store operations events from the data layer by indexing them
+    /// into the pending index.
+    fn handle_engine_event_new_pending_operations<O>(
         &mut self,
-        operation_id: OperationId,
-    ) -> Result<(), Error> {
-        let operation = self
-            .data_handle
-            .get_pending_operation(operation_id)?
-            .expect("Couldn't find operation in data layer for an event we received");
-        if let Some(mutation) = Self::chain_operation_to_index_mutation(operation) {
-            self.pending_index.apply_mutation(mutation)?;
-        }
+        operations_id: O,
+    ) -> Result<(), Error>
+    where
+        O: Iterator<Item = OperationId>,
+    {
+        let mutations = operations_id.flat_map(|op_id| {
+            match self
+                .data_handle
+                .get_pending_operation(op_id) {
+                Ok(Some(op)) => {
+                    Self::chain_operation_to_index_mutation(op)
+                }
+                Ok(None) => {
+                    error!("An event from data layer contained a pending operation that wasn't found: operation_id={}", op_id);
+                    None
+                }
+                Err(err) => {
+                    error!("An event from data layer contained that couldn't be fetched from pending operation: {}", err);
+                    None
+                }
+            }
+        }).collect::<Vec<IndexMutation>>();
 
-        Ok(())
+        self.pending_index.apply_mutations(mutations.into_iter())
     }
 
     /// Converts a operations from the data layer (chain or pending) into
@@ -685,6 +692,36 @@ where
     }
 }
 
+/// Configuration of the entities index
+#[derive(Clone, Copy, Debug)]
+pub struct EntitiesIndexConfig {
+    /// When should we index a block in the chain so that odds that we aren't going to revert it are high enough.
+    /// Related to `CommitManagerConfig`.`operations_cleanup_after_block_depth`
+    pub chain_index_min_depth: BlockHeight,
+
+    /// Configuration for the in-memory traits index that are in the pending store
+    pub pending_index_config: TraitsIndexConfig,
+
+    /// Configuration for the persisted traits index that are in the chain
+    pub chain_index_config: TraitsIndexConfig,
+
+    /// For tests, allow not hitting the disk
+    pub chain_index_in_memory: bool,
+}
+
+impl Default for EntitiesIndexConfig {
+    fn default() -> Self {
+        EntitiesIndexConfig {
+            chain_index_min_depth: 3,
+            pending_index_config: TraitsIndexConfig::default(),
+            chain_index_config: TraitsIndexConfig::default(),
+            chain_index_in_memory: false,
+        }
+    }
+}
+
+/// Traits of an entity as retrieved from the traits index, as opposed as being complete from
+/// the data layer.
 struct TraitsResults {
     traits: HashMap<String, TraitResult>,
     hash: ResultHash,
@@ -763,7 +800,7 @@ mod tests {
         let mut test_index = TestEntitiesIndex::new_with_config(config)?;
         let ops_id = test_index.put_contact_traits(0..=9)?;
         test_index.cluster.wait_operations_committed(0, &ops_id);
-        test_index.cluster.clear_received_events(0);
+        test_index.cluster.drain_received_events(0);
         test_index.index.reindex_chain()?;
 
         // reopen index, make sure data is still in there
@@ -821,7 +858,7 @@ mod tests {
 
         // index traits without indexing them by clearing events
         test_index.put_contact_traits(0..=5)?;
-        test_index.cluster.clear_received_events(0);
+        test_index.cluster.drain_received_events(0);
 
         let res = test_index
             .index
@@ -857,7 +894,7 @@ mod tests {
         test_index.cluster.wait_operations_committed(0, &ops_id);
         let ops_id = test_index.put_contact_traits(6..=9)?;
         test_index.cluster.wait_operations_committed(0, &ops_id);
-        test_index.cluster.clear_received_events(0);
+        test_index.cluster.drain_received_events(0);
 
         // divergence without anything in index will trigger re-indexation
         test_index
@@ -1237,8 +1274,9 @@ mod tests {
         }
 
         fn handle_engine_events(&mut self) -> Result<(), Error> {
-            while let Some(event) = self.cluster.pop_received_event(0) {
-                self.index.handle_data_engine_event(event)?;
+            let events = self.cluster.drain_received_events(0);
+            if !events.is_empty() {
+                self.index.handle_data_engine_events(events.into_iter())?;
             }
 
             Ok(())

@@ -23,7 +23,9 @@ cargo clippy --target "wasm32-unknown-unknown"
 popd
 
 echo "Validating exo compilation"
-cargo check -p exo
+pushd $CUR_DIR/../exo
+cargo check
+popd
 
 echo "Validating release build..."
 cargo build --release

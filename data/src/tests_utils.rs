@@ -242,10 +242,10 @@ impl DataTestCluster {
         }
     }
 
-    pub fn clear_received_events(&self, node_idx: usize) {
+    pub fn drain_received_events(&self, node_idx: usize) -> Vec<Event> {
         let events_locked = self.events_received[node_idx].as_ref().unwrap();
         let mut events = events_locked.lock().unwrap();
-        events.clear();
+        std::mem::replace(events.as_mut(), Vec::new())
     }
 
     pub fn get_handle(

@@ -6,7 +6,7 @@ use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
 use exocore_core::cell::Cell;
-use exocore_core::futures::spawn_blocking;
+use exocore_core::futures::{spawn_blocking, BatchingStream};
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
     EntityMutation, EntityQuery, EntityResults, MutationResult,
@@ -21,25 +21,10 @@ use crate::store::local::watched_queries::WatchedQueries;
 
 use super::entities_index::EntitiesIndex;
 
-#[derive(Clone, Copy)]
-pub struct StoreConfig {
-    pub query_channel_size: usize,
-    pub query_parallelism: usize,
-    pub handle_watch_query_channel_size: usize,
-}
-
-impl Default for StoreConfig {
-    fn default() -> Self {
-        StoreConfig {
-            query_channel_size: 1000,
-            query_parallelism: 4,
-            handle_watch_query_channel_size: 1000,
-        }
-    }
-}
-
-/// Locally persisted store. It forwards mutation requests to the data engine, receives back data events that get indexed
-/// by the entities index. Queries are executed by the entities index.
+/// Locally persisted entities store allowing mutation and queries on entities and their traits.
+///
+/// It forwards mutation requests to the data engine, receives back data events that get indexed by
+/// the entities index. Queries are executed by the entities index.
 pub struct Store<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
@@ -146,18 +131,19 @@ where
             Ok::<(), Error>(())
         };
 
+        // schedule data engine events stream
         let mut events_stream = {
             let mut inner = self.inner.write()?;
-            inner.data_handle.take_events_stream()?
-        };
+            let events = inner.data_handle.take_events_stream()?;
 
-        // schedule data engine events stream
+            // batching stream consumes all available events from stream without waiting
+            BatchingStream::new(events, config.handle_watch_query_channel_size)
+        };
         let (mut watch_check_sender, mut watch_check_receiver) = mpsc::channel(2);
         let weak_inner = Arc::downgrade(&self.inner);
         let data_events_handler = async move {
-            // TODO: Should be throttled & buffered https://github.com/appaquet/exocore/issues/130
-            while let Some(event) = events_stream.next().await {
-                if let Err(err) = Inner::handle_data_engine_event(&weak_inner, event).await {
+            while let Some(events) = events_stream.next().await {
+                if let Err(err) = Inner::handle_data_engine_events(&weak_inner, events).await {
                     error!("Error handling data engine event: {}", err);
                     if err.is_fatal() {
                         return Err(err);
@@ -209,6 +195,26 @@ where
         }
 
         Ok(())
+    }
+}
+
+/// Configuration for `Store`.
+#[derive(Clone, Copy)]
+pub struct StoreConfig {
+    pub query_channel_size: usize,
+    pub query_parallelism: usize,
+    pub handle_watch_query_channel_size: usize,
+    pub data_events_batch_size: usize,
+}
+
+impl Default for StoreConfig {
+    fn default() -> Self {
+        StoreConfig {
+            query_channel_size: 1000,
+            query_parallelism: 4,
+            handle_watch_query_channel_size: 1000,
+            data_events_batch_size: 50,
+        }
     }
 }
 
@@ -265,15 +271,15 @@ where
         result.map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
     }
 
-    async fn handle_data_engine_event(
+    async fn handle_data_engine_events(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        event: exocore_data::engine::Event,
+        events: Vec<exocore_data::engine::Event>,
     ) -> Result<(), Error> {
         let weak_inner = weak_inner.clone();
         let result = spawn_blocking(move || -> Result<(), Error> {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let mut inner = inner.write()?;
-            inner.index.handle_data_engine_event(event)
+            inner.index.handle_data_engine_events(events.into_iter())
         })
         .await;
 

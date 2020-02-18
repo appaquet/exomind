@@ -8,6 +8,10 @@ mod spawn_wasm;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub use spawn_wasm::*;
 
-mod owned_spawn;
 pub use futures::executor::block_on;
+
+mod owned_spawn;
 pub use owned_spawn::*;
+
+mod batching_stream;
+pub use batching_stream::*;

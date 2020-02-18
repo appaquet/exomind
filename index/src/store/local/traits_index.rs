@@ -117,7 +117,8 @@ impl TraitsIndex {
 
     /// Apply a single trait mutation. A costly commit & refresh is done at each mutation,
     /// so `apply_mutations` should be used for multiple mutations.
-    pub fn apply_mutation(&mut self, mutation: IndexMutation) -> Result<(), Error> {
+    #[cfg(test)]
+    fn apply_mutation(&mut self, mutation: IndexMutation) -> Result<(), Error> {
         self.apply_mutations(Some(mutation).into_iter())
     }
 
@@ -780,7 +781,6 @@ mod tests {
                 ..Default::default()
             },
         });
-        indexer.apply_mutation(trait1)?;
 
         let trait2 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(2),
@@ -798,9 +798,8 @@ mod tests {
                 ..Default::default()
             },
         });
-        indexer.apply_mutation(trait2)?;
 
-        let contact3 = IndexMutation::PutTrait(PutTraitMutation {
+        let trait3 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(3),
             operation_id: 21,
             entity_id: "entity_id2".to_string(),
@@ -816,7 +815,7 @@ mod tests {
                 ..Default::default()
             },
         });
-        indexer.apply_mutation(contact3)?;
+        indexer.apply_mutations(vec![trait1, trait2, trait3].into_iter())?;
 
         let results = indexer.search_entity_id("entity_id1")?;
         assert_eq!(results.results.len(), 1);
@@ -862,7 +861,6 @@ mod tests {
                 ..Default::default()
             },
         });
-        indexer.apply_mutation(trait1)?;
 
         let trait2 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(2),
@@ -880,7 +878,7 @@ mod tests {
                 ..Default::default()
             },
         });
-        indexer.apply_mutation(trait2)?;
+        indexer.apply_mutations(vec![trait1, trait2].into_iter())?;
 
         let results = indexer.search_matches("foo", None)?;
         assert_eq!(results.results.len(), 2);
