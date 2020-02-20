@@ -11,7 +11,6 @@ use futures::sink::SinkMapErr;
 use futures::{FutureExt, SinkExt, StreamExt};
 use libp2p::core::{Multiaddr, PeerId};
 use libp2p::swarm::Swarm;
-use libp2p::Transport;
 
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_core::cell::{Cell, CellId, CellNodes};
@@ -93,30 +92,36 @@ impl Libp2pTransport {
 
     /// Runs the transport to completion.
     pub async fn run(self) -> Result<(), Error> {
-        let local_keypair = self.local_node.keypair().clone();
-        let listen_addresses = self.config.listen_addresses(&self.local_node)?;
+        let behaviour = ExocoreBehaviour::new();
 
-        let mut swarm = if cfg!(not(target_arch = "wasm32")) {
-            let transport = libp2p::build_tcp_ws_secio_mplex_yamux(
-                self.local_node.keypair().to_libp2p().clone(),
-            )?;
-            let behaviour = ExocoreBehaviour::new();
-            Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
-        } else {
-            let transport = libp2p::wasm_ext::ExtTransport::default()
-                .upgrade(libp2p::core::upgrade::Version::V1)
-                .authenticate(libp2p::secio::SecioConfig::new(
-                    local_keypair.to_libp2p().clone(),
-                ))
-                .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
-                    libp2p::yamux::Config::default(),
-                    libp2p::mplex::MplexConfig::new(),
-                ))
-                .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)));
-            let behaviour = ExocoreBehaviour::new();
+        #[cfg(all(feature = "libp2p_websocket", target_arch = "wasm32"))]
+        let mut swarm = {
+            use libp2p::Transport;
+            let transport =
+                libp2p_wasm_ext::ExtTransport::new(libp2p_wasm_ext::ffi::websocket_transport())
+                    .upgrade(libp2p::core::upgrade::Version::V1)
+                    .authenticate(libp2p::secio::SecioConfig::new(
+                        self.local_node.keypair().to_libp2p().clone(),
+                    ))
+                    .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
+                        libp2p::yamux::Config::default(),
+                        libp2p::mplex::MplexConfig::new(),
+                    ))
+                    .map(|(peer, muxer), _| {
+                        (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer))
+                    });
             Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
         };
 
+        #[cfg(not(all(feature = "libp2p_websocket", target_arch = "wasm32")))]
+        let mut swarm = {
+            let transport = libp2p::build_tcp_ws_secio_mplex_yamux(
+                self.local_node.keypair().to_libp2p().clone(),
+            )?;
+            Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
+        };
+
+        let listen_addresses = self.config.listen_addresses(&self.local_node)?;
         for listen_address in listen_addresses {
             Swarm::listen_on(&mut swarm, listen_address)?;
         }
@@ -435,7 +440,7 @@ mod tests {
     use exocore_core::futures::Runtime;
     use exocore_core::node::Node;
     use exocore_core::protos::generated::data_chain_capnp::block_operation_header;
-    use exocore_core::tests_utils::{expect_eventually, setup_logging};
+    use exocore_core::tests_utils::expect_eventually;
     use exocore_core::time::{ConsistentTimestamp, Instant};
 
     use crate::OutMessage;
@@ -444,8 +449,6 @@ mod tests {
 
     #[test]
     fn test_integration() -> Result<(), failure::Error> {
-        setup_logging();
-
         let mut rt = Runtime::new()?;
 
         let node1 = LocalNode::generate();

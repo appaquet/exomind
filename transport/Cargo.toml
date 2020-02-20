@@ -13,6 +13,7 @@ license = "MIT"
 default = ["libp2p_transport"]
 tests_utils = ["exocore-core/tests_utils"]
 libp2p_transport = ["libp2p"]
+libp2p_websocket = ["libp2p-wasm-ext"]
 
 [dependencies]
 exocore-core = { path = "../core" }
@@ -22,8 +23,9 @@ futures = { version = "0.3", features = ["compat"] }
 pin-project = "0.4"
 byteorder = "1.3"
 
-# libp2p transport
-libp2p = { git = "https://github.com/appaquet/rust-libp2p", branch = "016-wasm-ext", version = "0.16", optional = true }
+# libp2p_transport
+libp2p = { git = "https://github.com/appaquet/rust-libp2p", branch = "master", version = "0.16", optional = true }
+libp2p-wasm-ext = { git = "https://github.com/appaquet/rust-libp2p", branch = "master", version = "0.16", features = ["websocket"], optional = true }
 
 [dev-dependencies]
 exocore-core = { path = "../core", features = ["tests_utils"] }

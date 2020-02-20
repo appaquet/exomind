@@ -98,12 +98,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cff77d8686867eceff3105329d4698d96c2391c176d5d03adc90c7389162b5b8"
 
 [[package]]
-name = "ascii"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eab1c04a571841102f5345a8fc0f6bb3d31c315dec879b5c6e42e40ce7ffa34e"
-
-[[package]]
 name = "asn1_der"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -501,15 +495,12 @@ dependencies = [
 
 [[package]]
 name = "combine"
-version = "3.8.1"
+version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da3da6baa321ec19e1cc41d31bf599f00c783d0517095cdaf0332e3fe8d20680"
+checksum = "c875843236b5e2eb535fd0b696387bfb623f896479b10ed626cf442b836e8032"
 dependencies = [
- "ascii",
- "byteorder 1.3.4",
- "either",
+ "bytes 0.5.4",
  "memchr",
- "unreachable",
 ]
 
 [[package]]
@@ -893,7 +884,6 @@ dependencies = [
  "failure",
  "futures 0.3.4",
  "js-sys",
- "libp2p",
  "log",
  "pin-project",
  "prost",
@@ -919,7 +909,7 @@ dependencies = [
  "libp2p-core",
  "log",
  "log4rs",
- "parity-multihash 0.2.3",
+ "parity-multihash 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost",
  "prost-build",
  "prost-types",
@@ -982,6 +972,7 @@ dependencies = [
  "failure",
  "futures 0.3.4",
  "libp2p",
+ "libp2p-wasm-ext",
  "log",
  "pin-project",
 ]
@@ -1538,8 +1529,8 @@ checksum = "d515b1f41455adea1313a4a2ac8a8a477634fbae63cc6100e3aebb207ce61558"
 
 [[package]]
 name = "libp2p"
-version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+version = "0.16.1"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "bytes 0.5.4",
  "futures 0.3.4",
@@ -1566,7 +1557,7 @@ dependencies = [
  "libp2p-websocket",
  "libp2p-yamux",
  "parity-multiaddr",
- "parity-multihash 0.2.2",
+ "parity-multihash 0.2.3 (git+https://github.com/appaquet/rust-libp2p)",
  "parking_lot 0.10.0",
  "pin-project",
  "smallvec 1.2.0",
@@ -1576,7 +1567,7 @@ dependencies = [
 [[package]]
 name = "libp2p-core"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "asn1_der",
  "bs58",
@@ -1589,7 +1580,7 @@ dependencies = [
  "log",
  "multistream-select",
  "parity-multiaddr",
- "parity-multihash 0.2.2",
+ "parity-multihash 0.2.3 (git+https://github.com/appaquet/rust-libp2p)",
  "parking_lot 0.10.0",
  "pin-project",
  "prost",
@@ -1608,7 +1599,7 @@ dependencies = [
 [[package]]
 name = "libp2p-core-derive"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "quote",
  "syn",
@@ -1617,7 +1608,7 @@ dependencies = [
 [[package]]
 name = "libp2p-deflate"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "flate2",
  "futures 0.3.4",
@@ -1627,7 +1618,7 @@ dependencies = [
 [[package]]
 name = "libp2p-dns"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "futures 0.3.4",
  "libp2p-core",
@@ -1637,7 +1628,7 @@ dependencies = [
 [[package]]
 name = "libp2p-floodsub"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "cuckoofilter",
  "fnv",
@@ -1653,7 +1644,7 @@ dependencies = [
 [[package]]
 name = "libp2p-gossipsub"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "base64 0.11.0",
  "byteorder 1.3.4",
@@ -1677,7 +1668,7 @@ dependencies = [
 [[package]]
 name = "libp2p-identify"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "futures 0.3.4",
  "libp2p-core",
@@ -1691,8 +1682,8 @@ dependencies = [
 
 [[package]]
 name = "libp2p-kad"
-version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+version = "0.16.1"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "arrayvec 0.5.1",
  "bytes 0.5.4",
@@ -1703,7 +1694,7 @@ dependencies = [
  "libp2p-core",
  "libp2p-swarm",
  "log",
- "parity-multihash 0.2.2",
+ "parity-multihash 0.2.3 (git+https://github.com/appaquet/rust-libp2p)",
  "prost",
  "prost-build",
  "rand 0.7.3",
@@ -1718,7 +1709,7 @@ dependencies = [
 [[package]]
 name = "libp2p-mdns"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "async-std",
  "data-encoding",
@@ -1739,7 +1730,7 @@ dependencies = [
 [[package]]
 name = "libp2p-mplex"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "bytes 0.5.4",
  "fnv",
@@ -1754,7 +1745,7 @@ dependencies = [
 [[package]]
 name = "libp2p-noise"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "curve25519-dalek 1.2.3",
  "futures 0.3.4",
@@ -1774,7 +1765,7 @@ dependencies = [
 [[package]]
 name = "libp2p-ping"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "futures 0.3.4",
  "libp2p-core",
@@ -1788,7 +1779,7 @@ dependencies = [
 [[package]]
 name = "libp2p-plaintext"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "bytes 0.5.4",
  "futures 0.3.4",
@@ -1805,7 +1796,7 @@ dependencies = [
 [[package]]
 name = "libp2p-pnet"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "futures 0.3.4",
  "log",
@@ -1817,8 +1808,8 @@ dependencies = [
 
 [[package]]
 name = "libp2p-secio"
-version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+version = "0.16.1"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "aes-ctr",
  "ctr",
@@ -1846,8 +1837,8 @@ dependencies = [
 
 [[package]]
 name = "libp2p-swarm"
-version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+version = "0.16.1"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "futures 0.3.4",
  "libp2p-core",
@@ -1860,7 +1851,7 @@ dependencies = [
 [[package]]
 name = "libp2p-tcp"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "async-std",
  "futures 0.3.4",
@@ -1874,7 +1865,7 @@ dependencies = [
 [[package]]
 name = "libp2p-uds"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "async-std",
  "futures 0.3.4",
@@ -1884,8 +1875,8 @@ dependencies = [
 
 [[package]]
 name = "libp2p-wasm-ext"
-version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+version = "0.16.1"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "futures 0.3.4",
  "js-sys",
@@ -1898,7 +1889,7 @@ dependencies = [
 [[package]]
 name = "libp2p-websocket"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "async-tls",
  "bytes 0.5.4",
@@ -1918,7 +1909,7 @@ dependencies = [
 [[package]]
 name = "libp2p-yamux"
 version = "0.16.0"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "futures 0.3.4",
  "libp2p-core",
@@ -2150,8 +2141,8 @@ checksum = "a97fbd5d00e0e37bfb10f433af8f5aaf631e739368dc9fc28286ca81ca4948dc"
 
 [[package]]
 name = "multistream-select"
-version = "0.7.2"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+version = "0.7.0"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "bytes 0.5.4",
  "futures 0.1.29",
@@ -2202,9 +2193,9 @@ checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 
 [[package]]
 name = "nohash-hasher"
-version = "0.1.3"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "721a2bf1c26159ebf17e0a980bc4ce61f4b2fec5ec3b42d42fddd7a84a9e538f"
+checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "nom"
@@ -2312,13 +2303,13 @@ dependencies = [
 [[package]]
 name = "parity-multiaddr"
 version = "0.7.2"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "arrayref",
  "bs58",
  "byteorder 1.3.4",
  "data-encoding",
- "parity-multihash 0.2.2",
+ "parity-multihash 0.2.3 (git+https://github.com/appaquet/rust-libp2p)",
  "percent-encoding",
  "serde",
  "static_assertions",
@@ -2328,8 +2319,8 @@ dependencies = [
 
 [[package]]
 name = "parity-multihash"
-version = "0.2.2"
-source = "git+https://github.com/appaquet/rust-libp2p?branch=016-wasm-ext#a37cb9e63d1ff905e94f841dc43853b6810e8619"
+version = "0.2.3"
+source = "git+https://github.com/appaquet/rust-libp2p#e84cbf278ab7e5bd4b7b5ede20a59f93e69dd474"
 dependencies = [
  "blake2",
  "bytes 0.5.4",
@@ -3195,13 +3186,9 @@ checksum = "5c2fb2ec9bcd216a5b0d0ccf31ab17b5ed1d627960edff65bbe95d3ce221cefc"
 
 [[package]]
 name = "snap"
-version = "0.2.5"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95d697d63d44ad8b78b8d235bf85b34022a78af292c8918527c5f0cffdde7f43"
-dependencies = [
- "byteorder 1.3.4",
- "lazy_static",
-]
+checksum = "f7fb9b0bb877b35a1cc1474a3b43d9c226a2625311760cdda2cbccbc0c7a8376"
 
 [[package]]
 name = "snow"
@@ -3364,9 +3351,9 @@ dependencies = [
 
 [[package]]
 name = "tantivy"
-version = "0.11.3"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c90faa34809a6a13c92e7b078bc623973e4023f6a2b08acb3ccad70b0fc5ad62"
+checksum = "02e1d2fbfa82ab829208e5f03f4d2c177b8a126252ab4f80ed232e1064770efb"
 dependencies = [
  "atomicwrites",
  "base64 0.11.0",
@@ -3411,9 +3398,9 @@ dependencies = [
 
 [[package]]
 name = "tantivy-fst"
-version = "0.1.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16b22af5ff09b8897093287642a5aaee6f30eb496526ef83a8dd0f4c636ac367"
+checksum = "38878efb477cf2efb7d9112b12b230c27d32abdfec4bea5e66095733f2928610"
 dependencies = [
  "byteorder 1.3.4",
  "levenshtein_automata",
@@ -3423,9 +3410,9 @@ dependencies = [
 
 [[package]]
 name = "tantivy-query-grammar"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13c33707d9d9c6e439e41bf88dc2036a5062341bb8221dbc1827079ae4bbb5ad"
+checksum = "900f098da37d350b0e8f116791b9ee43e600704cb6b5cc83b7f826d1b119f21c"
 dependencies = [
  "combine",
 ]
@@ -3640,15 +3627,6 @@ name = "unicode-xid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
-
-[[package]]
-name = "unreachable"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "382810877fe448991dfc7f0dd6e3ae5d58088fd0ea5e35189655f84e6814fa56"
-dependencies = [
- "void",
-]
 
 [[package]]
 name = "unsafe-any"
@@ -3999,9 +3977,9 @@ dependencies = [
 
 [[package]]
 name = "yamux"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "902f4cee32c401c211b6b69f4a3f6f4cf3515644db5bd822cf685a7dbd6201f9"
+checksum = "d73295bc9d9acf89dd9336b3b5f5b57731ee72b587857dd4312721a0196b48e5"
 dependencies = [
  "bytes 0.5.4",
  "futures 0.3.4",

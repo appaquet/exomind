@@ -36,7 +36,7 @@ impl ExocoreClient {
         maddr: &str,
         status_change_callback: Option<js_sys::Function>,
     ) -> Result<ExocoreClient, JsValue> {
-        wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
+        wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
         // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80

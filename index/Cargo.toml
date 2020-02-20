@@ -26,7 +26,7 @@ bytes = "0.5"
 chrono = { version = "0.4", features = ["serde"] }
 
 # Local store
-tantivy = { version = "0.11", optional = true }
+tantivy = { version = "0.12", optional = true }
 crc = { version = "1.8", optional = true }
 
 [dev-dependencies]
