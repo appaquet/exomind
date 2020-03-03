@@ -347,14 +347,15 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 let previous_block = chain_store
                     .get_last_block()?
                     .ok_or(Error::UninitializedChain)?;
+                let prev_block_op_id = previous_block.get_proposed_operation_id()?;
+                let prev_block_time = ConsistentTimestamp::from(prev_block_op_id);
+                let previous_block_elapsed = if let Some(elapsed) = now - prev_block_time {
+                    elapsed
+                } else {
+                    return Ok(false);
+                };
 
-                let op_time =
-                    ConsistentTimestamp::from(previous_block.get_proposed_operation_id()?);
-                let previous_block_elapsed = (now - op_time).unwrap_or(now);
-                let maximum_interval =
-                    ConsistentTimestamp::from_duration(self.config.commit_maximum_interval);
-
-                if previous_block_elapsed >= maximum_interval {
+                if previous_block_elapsed >= self.config.commit_maximum_interval {
                     debug!(
                         "{}: Enough operations to commit & it's my turn. Will propose a block.",
                         local_node.id()
@@ -664,8 +665,8 @@ fn is_node_commit_turn(
         .position(|node| node.id() == my_node_id)
         .ok_or(Error::MyNodeNotFound)? as u64;
 
-    let commit_interval = ConsistentTimestamp::from_duration(config.commit_maximum_interval);
-    let epoch = (now.0 as f64 / commit_interval.0 as f64).floor() as u64;
+    let commit_interval = config.commit_maximum_interval.as_nanos() as f64;
+    let epoch = (now.0 as f64 / commit_interval as f64).floor() as u64;
     let node_turn = epoch % (sorted_nodes.len() as u64);
     Ok(node_turn == my_node_position)
 }
@@ -984,9 +985,7 @@ impl PendingBlockProposal {
 
     fn has_expired(&self, config: &CommitManagerConfig, now: ConsistentTimestamp) -> bool {
         let op_time = ConsistentTimestamp::from(self.operation.operation_id);
-        (now - op_time).map_or(false, |elapsed| {
-            elapsed.to_duration() >= config.block_proposal_timeout
-        })
+        (now - op_time).map_or(false, |elapsed| elapsed >= config.block_proposal_timeout)
     }
 }
 
@@ -1398,19 +1397,19 @@ mod tests {
         };
 
         let nodes = cluster.cells[0].nodes();
-        let now = ConsistentTimestamp::from_duration(Duration::from_millis(0));
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = ConsistentTimestamp::from_duration(Duration::from_millis(1999));
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(1999));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = ConsistentTimestamp::from_duration(Duration::from_millis(2000));
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(2000));
         assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-        let now = ConsistentTimestamp::from_duration(Duration::from_millis(3999));
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(3999));
         assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 

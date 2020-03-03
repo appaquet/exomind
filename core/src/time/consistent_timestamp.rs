@@ -15,20 +15,20 @@ pub struct ConsistentTimestamp(pub u64);
 
 impl ConsistentTimestamp {
     pub fn from_context(
-        duration: Duration,
+        unix_elapsed: Duration,
         counter: u64,
         node_clock_id: u16,
     ) -> ConsistentTimestamp {
         // we shift by 1000 for milliseconds, 1000 for node id, 1000 for the counter
-        let timestamp = duration.as_secs() * 1_000 * 1_000 * 1_000
-            + u64::from(duration.subsec_millis()) * 1_000 * 1_000
+        let timestamp = unix_elapsed.as_secs() * 1_000 * 1_000 * 1_000
+            + u64::from(unix_elapsed.subsec_millis()) * 1_000 * 1_000
             + u64::from(node_clock_id % 1_000) * 1_000
             + counter;
 
         ConsistentTimestamp(timestamp)
     }
 
-    pub fn from_duration(dur: Duration) -> ConsistentTimestamp {
+    pub fn from_unix_elapsed(dur: Duration) -> ConsistentTimestamp {
         ConsistentTimestamp(dur.as_nanos() as u64)
     }
 
@@ -36,16 +36,16 @@ impl ConsistentTimestamp {
         Utc.timestamp_nanos(self.0 as i64)
     }
 
-    pub fn to_duration(self) -> Duration {
+    pub fn unix_elapsed_duration(self) -> Duration {
         Duration::from_nanos(self.0)
     }
 }
 
 impl Sub<ConsistentTimestamp> for ConsistentTimestamp {
-    type Output = Option<ConsistentTimestamp>;
+    type Output = Option<Duration>;
 
     fn sub(self, rhs: ConsistentTimestamp) -> Self::Output {
-        self.0.checked_sub(rhs.0).map(ConsistentTimestamp)
+        self.0.checked_sub(rhs.0).map(Duration::from_nanos)
     }
 }
 
@@ -95,8 +95,8 @@ mod tests {
     #[test]
     fn consistent_time_to_duration() {
         let dur = Duration::from_millis(3_323_123);
-        let consistent = ConsistentTimestamp::from_duration(dur);
-        let dur_after = consistent.to_duration();
+        let consistent = ConsistentTimestamp::from_unix_elapsed(dur);
+        let dur_after = consistent.unix_elapsed_duration();
         assert_eq!(dur, dur_after);
     }
 

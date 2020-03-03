@@ -1,6 +1,8 @@
 use futures::Future;
 
 pub use tokio::task::spawn_blocking;
+
+#[cfg(any(test, feature = "tests_utils", feature = "runtime"))]
 pub use tokio::time::{delay_for, delay_until, interval, interval_at, Interval};
 
 #[cfg(any(test, feature = "tests_utils", feature = "runtime"))]

@@ -7,8 +7,8 @@ use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 
 use crate::mutation::MutationBuilder;
 use crate::store::local::store::StoreHandle;
-use crate::store::local::traits_index::TraitsIndexConfig;
-use crate::store::local::EntitiesIndexConfig;
+use crate::store::local::trait_index::TraitIndexConfig;
+use crate::store::local::EntityIndexConfig;
 
 use super::*;
 use chrono::Utc;
@@ -36,18 +36,18 @@ impl TestStore {
         let temp_dir = tempdir::TempDir::new("store")?;
         let registry = Arc::new(Registry::new_with_exocore_types());
 
-        let index_config = EntitiesIndexConfig {
-            pending_index_config: TraitsIndexConfig {
+        let index_config = EntityIndexConfig {
+            pending_index_config: TraitIndexConfig {
                 indexer_num_threads: Some(1),
-                ..TraitsIndexConfig::default()
+                ..TraitIndexConfig::default()
             },
-            chain_index_config: TraitsIndexConfig {
+            chain_index_config: TraitIndexConfig {
                 indexer_num_threads: Some(1),
-                ..TraitsIndexConfig::default()
+                ..TraitIndexConfig::default()
             },
-            ..EntitiesIndexConfig::default()
+            ..EntityIndexConfig::default()
         };
-        let index = EntitiesIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
+        let index = EntityIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
             temp_dir.path(),
             index_config,
             registry.clone(),

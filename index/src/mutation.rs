@@ -3,24 +3,27 @@ use prost::Message;
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
-    DeleteTraitMutation, EntityMutation, MutationResult, PutTraitMutation, TestMutation, Trait,
+    compact_trait_mutation, CompactTraitMutation, DeleteEntityMutation, DeleteTraitMutation,
+    EntityMutation, MutationResult, PutTraitMutation, Trait,
 };
 use exocore_core::protos::generated::index_transport_capnp::{mutation_request, mutation_response};
 use exocore_core::protos::prost::ProstMessageExt;
 
+use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
+use exocore_data::operation::OperationId;
 
 pub struct MutationBuilder;
 
 impl MutationBuilder {
-    pub fn put_trait<E: Into<String>>(entity_id: E, trt: Trait) -> EntityMutation {
+    pub fn put_trait<E: Into<EntityId>>(entity_id: E, trt: Trait) -> EntityMutation {
         EntityMutation {
             entity_id: entity_id.into(),
             mutation: Some(Mutation::PutTrait(PutTraitMutation { r#trait: Some(trt) })),
         }
     }
 
-    pub fn delete_trait<E: Into<String>, T: Into<String>>(
+    pub fn delete_trait<E: Into<EntityId>, T: Into<TraitId>>(
         entity_id: E,
         trait_id: T,
     ) -> EntityMutation {
@@ -32,10 +35,40 @@ impl MutationBuilder {
         }
     }
 
-    pub fn fail_mutation<E: Into<String>>(entity_id: E) -> EntityMutation {
+    pub fn delete_entity<E: Into<EntityId>>(entity_id: E) -> EntityMutation {
         EntityMutation {
             entity_id: entity_id.into(),
-            mutation: Some(Mutation::Test(TestMutation { success: false })),
+            mutation: Some(Mutation::DeleteEntity(DeleteEntityMutation {})),
+        }
+    }
+
+    #[allow(unused)]
+    pub(crate) fn compact_traits<E: Into<TraitId>>(
+        entity_id: E,
+        trt: Trait,
+        compacted_operations: Vec<OperationId>,
+    ) -> EntityMutation {
+        let operations = compacted_operations
+            .iter()
+            .map(|id| compact_trait_mutation::Operation { operation_id: *id })
+            .collect();
+
+        EntityMutation {
+            entity_id: entity_id.into(),
+            mutation: Some(Mutation::CompactTrait(CompactTraitMutation {
+                r#trait: Some(trt),
+                compacted_operations: operations,
+            })),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn fail_mutation<E: Into<EntityId>>(entity_id: E) -> EntityMutation {
+        EntityMutation {
+            entity_id: entity_id.into(),
+            mutation: Some(Mutation::Test(
+                exocore_core::protos::generated::exocore_index::TestMutation { success: false },
+            )),
         }
     }
 }

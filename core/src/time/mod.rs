@@ -215,7 +215,7 @@ mod tests {
         std::thread::sleep(Duration::from_millis(10));
         let time4 = mocked_clock.consistent_time(local_node.node());
 
-        let elaps = ConsistentTimestamp::from_duration(Duration::from_millis(10));
+        let elaps = Duration::from_millis(10);
         assert!((time4 - time3).unwrap() > elaps);
     }
 
@@ -247,7 +247,7 @@ mod tests {
         std::thread::sleep(Duration::from_millis(10));
         let time4 = mocked_clock.consistent_time(local_node.node());
 
-        let elaps = ConsistentTimestamp::from_duration(Duration::from_millis(10));
+        let elaps = Duration::from_millis(10);
         assert!((time4 - time3).unwrap() > elaps);
     }
 

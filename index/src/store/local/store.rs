@@ -19,7 +19,7 @@ use crate::error::Error;
 use crate::query::WatchToken;
 use crate::store::local::watched_queries::WatchedQueries;
 
-use super::entities_index::EntitiesIndex;
+use super::entity_index::EntityIndex;
 
 /// Locally persisted entities store allowing mutation and queries on entities and their traits.
 ///
@@ -46,7 +46,7 @@ where
         cell: Cell,
         clock: Clock,
         data_handle: exocore_data::engine::EngineHandle<CS, PS>,
-        index: EntitiesIndex<CS, PS>,
+        index: EntityIndex<CS, PS>,
     ) -> Result<Store<CS, PS>, Error> {
         let (incoming_queries_sender, incoming_queries_receiver) =
             mpsc::channel::<QueryRequest>(config.query_channel_size);
@@ -225,7 +225,7 @@ where
 {
     cell: Cell,
     clock: Clock,
-    index: EntitiesIndex<CS, PS>,
+    index: EntityIndex<CS, PS>,
     watched_queries: WatchedQueries,
     incoming_queries_sender: mpsc::Sender<QueryRequest>,
     data_handle: exocore_data::engine::EngineHandle<CS, PS>,

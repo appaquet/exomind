@@ -4,6 +4,7 @@ use std::result::Result;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
+use chrono::{DateTime, TimeZone, Utc};
 use tantivy::collector::{Collector, TopDocs};
 use tantivy::directory::MmapDirectory;
 use tantivy::query::{AllQuery, QueryParser, TermQuery};
@@ -23,29 +24,12 @@ use exocore_core::protos::registry::Registry;
 use exocore_data::block::BlockOffset;
 use exocore_data::operation::OperationId;
 
+use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
 
 const SCORE_TO_U64_MULTIPLIER: f32 = 10_000_000_000.0;
 const UNIQUE_SORT_TO_U64_DIVIDER: f32 = 100_000_000.0;
 const SEARCH_ENTITY_ID_LIMIT: usize = 1_000_000;
-
-/// Traits index configuration
-#[derive(Clone, Copy, Debug)]
-pub struct TraitsIndexConfig {
-    pub indexer_num_threads: Option<usize>,
-    pub indexer_heap_size_bytes: usize,
-    pub iterator_page_size: usize,
-}
-
-impl Default for TraitsIndexConfig {
-    fn default() -> Self {
-        TraitsIndexConfig {
-            indexer_num_threads: None,
-            indexer_heap_size_bytes: 50_000_000,
-            iterator_page_size: 50,
-        }
-    }
-}
 
 /// Index (full-text & fields) for traits in the given schema. Each trait is individually
 /// indexed as a single document.
@@ -55,8 +39,8 @@ impl Default for TraitsIndexConfig {
 /// is handled differently. On the disk persisted, we delete using Tantivy document deletion,
 /// while the pending-store uses a tombstone approach. This is needed since the pending store
 /// "applies" mutation that may not be definitive onto the chain.
-pub struct TraitsIndex {
-    config: TraitsIndexConfig,
+pub struct TraitIndex {
+    config: TraitIndexConfig,
     index: TantivyIndex,
     index_reader: IndexReader,
     index_writer: Mutex<IndexWriter>,
@@ -64,13 +48,13 @@ pub struct TraitsIndex {
     fields: Fields,
 }
 
-impl TraitsIndex {
+impl TraitIndex {
     /// Creates or opens a disk persisted traits index
     pub fn open_or_create_mmap(
-        config: TraitsIndexConfig,
+        config: TraitIndexConfig,
         registry: Arc<Registry>,
         directory: &Path,
-    ) -> Result<TraitsIndex, Error> {
+    ) -> Result<TraitIndex, Error> {
         let (tantivy_schema, fields) = Self::build_tantivy_schema(registry.as_ref());
         let directory = MmapDirectory::open(directory)?;
         let index = TantivyIndex::open_or_create(directory, tantivy_schema)?;
@@ -81,7 +65,7 @@ impl TraitsIndex {
             index.writer(config.indexer_heap_size_bytes)?
         };
 
-        Ok(TraitsIndex {
+        Ok(TraitIndex {
             config,
             index,
             index_reader,
@@ -93,9 +77,9 @@ impl TraitsIndex {
 
     /// Creates or opens a in-memory traits index
     pub fn create_in_memory(
-        config: TraitsIndexConfig,
+        config: TraitIndexConfig,
         registry: Arc<Registry>,
-    ) -> Result<TraitsIndex, Error> {
+    ) -> Result<TraitIndex, Error> {
         let (tantivy_schema, fields) = Self::build_tantivy_schema(registry.as_ref());
         let index = TantivyIndex::create_in_ram(tantivy_schema);
         let index_reader = index.reader()?;
@@ -105,7 +89,7 @@ impl TraitsIndex {
             index.writer(config.indexer_heap_size_bytes)?
         };
 
-        Ok(TraitsIndex {
+        Ok(TraitIndex {
             config,
             index,
             index_reader,
@@ -136,38 +120,33 @@ impl TraitsIndex {
 
             match mutation {
                 IndexMutation::PutTrait(new_trait) => {
-                    // delete older versions of the trait first
                     let entity_trait_id = format!("{}_{}", new_trait.entity_id, new_trait.trt.id);
                     trace!(
                         "Putting trait {} with op {}",
                         entity_trait_id,
                         new_trait.operation_id
                     );
-                    index_writer.delete_term(Term::from_field_text(
-                        self.fields.entity_trait_id,
-                        &entity_trait_id,
-                    ));
-
-                    let doc = self.put_mutation_to_document(&new_trait)?;
+                    let doc = self.trait_to_document(&new_trait)?;
                     index_writer.add_document(doc);
                 }
                 IndexMutation::PutTraitTombstone(trait_tombstone) => {
                     trace!(
-                        "Putting tombstone for {}_{} with op {}",
+                        "Putting tombstone for trait {}_{} with op {}",
                         trait_tombstone.entity_id,
                         trait_tombstone.trait_id,
                         trait_tombstone.operation_id
                     );
-                    let doc = self.tombstone_mutation_to_document(&trait_tombstone);
+                    let doc = self.trait_tombstone_to_document(&trait_tombstone);
                     index_writer.add_document(doc);
                 }
-                IndexMutation::DeleteTrait(entity_id, trait_id) => {
-                    let entity_trait_id = format!("{}_{}", entity_id, trait_id);
-                    trace!("Deleting trait {}", entity_trait_id,);
-                    index_writer.delete_term(Term::from_field_text(
-                        self.fields.entity_trait_id,
-                        &entity_trait_id,
-                    ));
+                IndexMutation::PutEntityTombstone(entity_tombstone) => {
+                    trace!(
+                        "Putting tombstone for entity {} with op {}",
+                        entity_tombstone.entity_id,
+                        entity_tombstone.operation_id
+                    );
+                    let doc = self.entity_tombstone_to_document(&entity_tombstone);
+                    index_writer.add_document(doc);
                 }
                 IndexMutation::DeleteOperation(operation_id) => {
                     trace!("Deleting op from index {}", operation_id);
@@ -182,8 +161,6 @@ impl TraitsIndex {
             index_writer.commit()?;
             // it may take milliseconds for reader to see committed changes, so we force reload
             self.index_reader.reload()?;
-        } else {
-            debug!("Applied 0 mutations, not committing");
         }
 
         Ok(())
@@ -207,20 +184,18 @@ impl TraitsIndex {
     pub fn search(
         &self,
         query: &EntityQuery,
-        paging: Option<TraitPaging>,
-    ) -> Result<TraitResults, Error> {
+        paging: Option<QueryPaging>,
+    ) -> Result<Results, Error> {
         let predicate = query
             .predicate
             .as_ref()
             .ok_or(Error::ProtoFieldExpected("predicate"))?;
 
         match predicate {
-            Predicate::Trait(inner_query) => {
-                self.search_with_trait(&inner_query.trait_name, paging)
-            }
-            Predicate::Match(inner_query) => self.search_matches(&inner_query.query, paging),
-            Predicate::Id(inner_query) => self.search_entity_id(&inner_query.id),
-            Predicate::Test(_query) => Err(Error::Other("Query failed for tests".to_string())),
+            Predicate::Trait(inner) => self.search_with_trait(&inner.trait_name, paging),
+            Predicate::Match(inner) => self.search_matches(&inner.query, paging),
+            Predicate::Id(inner) => self.search_entity_id(&inner.id),
+            Predicate::Test(_inner) => Err(Error::Other("Query failed for tests".to_string())),
         }
     }
 
@@ -228,10 +203,10 @@ impl TraitsIndex {
     pub fn search_all<'i, 'q>(
         &'i self,
         query: &'q EntityQuery,
-    ) -> Result<TraitResultsIterator<'i, 'q>, Error> {
+    ) -> Result<ResultsIterator<'i, 'q>, Error> {
         let results = self.search(query, None)?;
 
-        Ok(TraitResultsIterator {
+        Ok(ResultsIterator {
             index: self,
             query,
             total_results: results.total_results,
@@ -240,8 +215,8 @@ impl TraitsIndex {
         })
     }
 
-    /// Converts a put mutation to Tantivy document
-    fn put_mutation_to_document(&self, mutation: &PutTraitMutation) -> Result<Document, Error> {
+    /// Converts a trait put / update to Tantivy document
+    fn trait_to_document(&self, mutation: &PutTraitMutation) -> Result<Document, Error> {
         let message = mutation
             .trt
             .message
@@ -264,29 +239,28 @@ impl TraitsIndex {
             doc.add_u64(self.fields.block_offset, block_offset);
         }
 
-        let creation_ts = mutation
-            .trt
-            .creation_date
-            .as_ref()
-            .map(|d| d.to_timestamp_nanos())
-            .unwrap_or(0);
-        doc.add_u64(self.fields.creation_date, creation_ts);
+        if let Some(creation_date) = &mutation.trt.creation_date {
+            doc.add_u64(
+                self.fields.creation_date,
+                creation_date.to_timestamp_nanos(),
+            );
+        }
+        if let Some(modification_date) = &mutation.trt.modification_date {
+            doc.add_u64(
+                self.fields.modification_date,
+                modification_date.to_timestamp_nanos(),
+            );
+        }
 
-        let modification_ts = mutation
-            .trt
-            .modification_date
-            .as_ref()
-            .map(|d| d.to_timestamp_nanos())
-            .unwrap_or(creation_ts);
-        doc.add_u64(self.fields.modification_date, modification_ts);
-
-        // value added as stable randomness to stabilize order for documents with same score
+        // random value added to each document to make sorting by documents of the same score deterministic
         doc.add_u64(
-            self.fields.sort_unique,
+            self.fields.sort_tie_breaker,
             u64::from(crc::crc16::checksum_usb(
                 &mutation.operation_id.to_be_bytes(),
             )),
         );
+
+        doc.add_u64(self.fields.document_type, MutationType::TRAIT_PUT_ID);
 
         for field in dyn_message.fields() {
             if !field.indexed_flag {
@@ -308,8 +282,8 @@ impl TraitsIndex {
         Ok(doc)
     }
 
-    /// Converts a tombstone mutation to Tantivy document
-    fn tombstone_mutation_to_document(&self, mutation: &PutTraitTombstone) -> Document {
+    /// Converts a trait tombstone mutation to Tantivy document
+    fn trait_tombstone_to_document(&self, mutation: &PutTraitTombstone) -> Document {
         let mut doc = Document::default();
 
         doc.add_text(self.fields.trait_id, &mutation.trait_id);
@@ -324,19 +298,35 @@ impl TraitsIndex {
             doc.add_u64(self.fields.block_offset, block_offset);
         }
 
-        doc.add_u64(self.fields.tombstone, 1);
+        doc.add_u64(self.fields.document_type, MutationType::TRAIT_TOMBSTONE_ID);
 
         doc
     }
 
-    /// Execute a search by trait type query
+    /// Converts an entity tombstone mutation to Tantivy document
+    fn entity_tombstone_to_document(&self, mutation: &PutEntityTombstone) -> Document {
+        let mut doc = Document::default();
+
+        doc.add_text(self.fields.entity_id, &mutation.entity_id);
+        doc.add_u64(self.fields.operation_id, mutation.operation_id);
+
+        if let Some(block_offset) = mutation.block_offset {
+            doc.add_u64(self.fields.block_offset, block_offset);
+        }
+
+        doc.add_u64(self.fields.document_type, MutationType::ENTITY_TOMBSTONE_ID);
+
+        doc
+    }
+
+    /// Execute a search by trait type query and return traits in modification date descending order.
     pub fn search_with_trait(
         &self,
         trait_name: &str,
-        paging: Option<TraitPaging>,
-    ) -> Result<TraitResults, Error> {
+        paging: Option<QueryPaging>,
+    ) -> Result<Results, Error> {
         let searcher = self.index_reader.searcher();
-        let paging = paging.unwrap_or_else(|| TraitPaging {
+        let paging = paging.unwrap_or_else(|| QueryPaging {
             after_score: None,
             before_score: None,
             count: self.config.iterator_page_size,
@@ -345,33 +335,32 @@ impl TraitsIndex {
         let term = Term::from_field_text(self.fields.trait_type, trait_name);
         let query = TermQuery::new(term, IndexRecordOption::Basic);
 
-        let after_date = paging.after_score.unwrap_or(0);
-
-        let before_date = paging.before_score.unwrap_or(std::u64::MAX);
+        let after_op = paging.after_score.unwrap_or(0);
+        let before_op = paging.before_score.unwrap_or(std::u64::MAX);
 
         let total_count = Arc::new(AtomicUsize::new(0));
         let matching_count = Arc::new(AtomicUsize::new(0));
         let top_collector = {
             let total_count = total_count.clone();
             let matching_count = matching_count.clone();
-            let mod_date_field = self.fields.modification_date;
+            let op_id_field = self.fields.operation_id;
 
             TopDocs::with_limit(paging.count as usize).custom_score(
                 move |segment_reader: &SegmentReader| {
                     let total_docs = total_count.clone();
                     let remaining_count = matching_count.clone();
 
-                    let mod_date_fast_field = segment_reader
+                    let op_id_fast_field = segment_reader
                         .fast_fields()
-                        .u64(mod_date_field)
+                        .u64(op_id_field)
                         .expect("Field requested is not a i64/u64 fast field.");
                     move |doc_id| {
-                        let mod_date = mod_date_fast_field.get(doc_id);
+                        let op_id = op_id_fast_field.get(doc_id);
 
                         total_docs.fetch_add(1, Ordering::SeqCst);
-                        if mod_date > after_date && mod_date < before_date {
+                        if op_id > after_op && op_id < before_op {
                             remaining_count.fetch_add(1, Ordering::SeqCst);
-                            mod_date
+                            op_id
                         } else {
                             0
                         }
@@ -380,9 +369,9 @@ impl TraitsIndex {
             )
         };
 
-        let rescorer = |mod_date| {
-            if mod_date > 0 {
-                Some(mod_date)
+        let rescorer = |op_id| {
+            if op_id > 0 {
+                Some(op_id)
             } else {
                 None
             }
@@ -399,7 +388,7 @@ impl TraitsIndex {
             None
         };
 
-        Ok(TraitResults {
+        Ok(Results {
             results,
             total_results,
             remaining_results,
@@ -411,10 +400,10 @@ impl TraitsIndex {
     pub fn search_matches(
         &self,
         query: &str,
-        paging: Option<TraitPaging>,
-    ) -> Result<TraitResults, Error> {
+        paging: Option<QueryPaging>,
+    ) -> Result<Results, Error> {
         let searcher = self.index_reader.searcher();
-        let paging = paging.unwrap_or_else(|| TraitPaging {
+        let paging = paging.unwrap_or_else(|| QueryPaging {
             after_score: None,
             before_score: None,
             count: self.config.iterator_page_size,
@@ -435,24 +424,24 @@ impl TraitsIndex {
         let top_collector = {
             let total_count = total_count.clone();
             let matching_count = matching_count.clone();
-            let sort_unique_field = self.fields.sort_unique;
+            let sort_tie_breaker_field = self.fields.sort_tie_breaker;
 
             TopDocs::with_limit(paging.count as usize).tweak_score(
                 move |segment_reader: &SegmentReader| {
                     let total_docs = total_count.clone();
                     let remaining_count = matching_count.clone();
-                    let sort_unique_fast_field = segment_reader
+                    let sort_tie_breaker_fast_field = segment_reader
                         .fast_fields()
-                        .u64(sort_unique_field)
+                        .u64(sort_tie_breaker_field)
                         .expect("Field requested is not a i64/u64 fast field.");
 
                     move |doc_id, score| {
                         total_docs.fetch_add(1, Ordering::SeqCst);
 
                         // add stable randomness to score so that documents with same score don't equal
-                        let sort_unique =
-                            sort_unique_fast_field.get(doc_id) as f32 / UNIQUE_SORT_TO_U64_DIVIDER;
-                        let rescored = score + sort_unique;
+                        let sort_tie_breaker = sort_tie_breaker_fast_field.get(doc_id) as f32
+                            / UNIQUE_SORT_TO_U64_DIVIDER;
+                        let rescored = score + sort_tie_breaker;
                         if rescored > after_score && rescored < before_score {
                             remaining_count.fetch_add(1, Ordering::SeqCst);
                             rescored
@@ -484,7 +473,7 @@ impl TraitsIndex {
             None
         };
 
-        Ok(TraitResults {
+        Ok(Results {
             results,
             total_results,
             remaining_results,
@@ -493,7 +482,7 @@ impl TraitsIndex {
     }
 
     /// Execute a search by entity id query
-    pub fn search_entity_id(&self, entity_id: &str) -> Result<TraitResults, Error> {
+    pub fn search_entity_id(&self, entity_id: &str) -> Result<Results, Error> {
         let searcher = self.index_reader.searcher();
 
         let term = Term::from_field_text(self.fields.entity_id, &entity_id);
@@ -504,7 +493,7 @@ impl TraitsIndex {
         let results = self.execute_tantivy_query(searcher, &query, &top_collector, rescorer)?;
         let total_results = results.len();
 
-        Ok(TraitResults {
+        Ok(Results {
             results,
             total_results,
             remaining_results: 0,
@@ -519,7 +508,7 @@ impl TraitsIndex {
         query: &dyn tantivy::query::Query,
         top_collector: &C,
         rescorer: FS,
-    ) -> Result<Vec<TraitResult>, Error>
+    ) -> Result<Vec<MutationMetadata>, Error>
     where
         S: Deref<Target = Searcher>,
         C: Collector<Fruit = Vec<(SC, DocAddress)>>,
@@ -530,23 +519,31 @@ impl TraitsIndex {
 
         let mut results = Vec::new();
         for (score, doc_addr) in search_results {
-            if let Some(score_u64) = rescorer(score) {
+            if let Some(score) = rescorer(score) {
                 let doc = searcher.doc(doc_addr)?;
-                let block_offset = self.get_doc_opt_u64_value(&doc, self.fields.block_offset);
-                let operation_id = self.get_doc_u64_value(&doc, self.fields.operation_id);
-                let entity_id = self.get_doc_string_value(&doc, self.fields.entity_id);
-                let trait_id = self.get_doc_string_value(&doc, self.fields.trait_id);
-                let tombstone = self
-                    .get_doc_opt_u64_value(&doc, self.fields.tombstone)
-                    .map_or(false, |v| v == 1);
+                let block_offset = get_doc_opt_u64_value(&doc, self.fields.block_offset);
+                let operation_id = get_doc_u64_value(&doc, self.fields.operation_id);
+                let entity_id = get_doc_string_value(&doc, self.fields.entity_id);
+                let opt_trait_id = get_doc_opt_string_value(&doc, self.fields.trait_id);
+                let document_type_id = get_doc_u64_value(&doc, self.fields.document_type);
 
-                let result = TraitResult {
+                let mut mutation_type = MutationType::new(document_type_id, opt_trait_id)?;
+
+                if let MutationType::TraitPut(put_trait) = &mut mutation_type {
+                    put_trait.creation_date =
+                        get_doc_opt_u64_value(&doc, self.fields.creation_date)
+                            .map(|ts| Utc.timestamp_nanos(ts as i64));
+                    put_trait.modification_date =
+                        get_doc_opt_u64_value(&doc, self.fields.modification_date)
+                            .map(|ts| Utc.timestamp_nanos(ts as i64));
+                }
+
+                let result = MutationMetadata {
                     block_offset,
                     operation_id,
                     entity_id,
-                    trait_id,
-                    tombstone,
-                    score: score_u64,
+                    mutation_type,
+                    score,
                 };
                 results.push(result);
             }
@@ -555,36 +552,12 @@ impl TraitsIndex {
         Ok(results)
     }
 
-    fn extract_next_page(previous_page: &TraitPaging, results: &[TraitResult]) -> TraitPaging {
+    fn extract_next_page(previous_page: &QueryPaging, results: &[MutationMetadata]) -> QueryPaging {
         let last_result = results.last().expect("Should had results, but got none");
-        TraitPaging {
+        QueryPaging {
             after_score: None,
             before_score: Some(last_result.score),
             count: previous_page.count,
-        }
-    }
-
-    /// Extracts optional string value from Tantivy document
-    fn get_doc_string_value(&self, doc: &Document, field: Field) -> String {
-        match doc.get_first(field) {
-            Some(tantivy::schema::Value::Str(v)) => v.to_string(),
-            _ => panic!("Couldn't find field of type string"),
-        }
-    }
-
-    /// Extracts optional u46 value from Tantivy document
-    fn get_doc_opt_u64_value(&self, doc: &Document, field: Field) -> Option<u64> {
-        match doc.get_first(field) {
-            Some(tantivy::schema::Value::U64(v)) => Some(*v),
-            _ => None,
-        }
-    }
-
-    /// Extracts u46 value from Tantivy document
-    fn get_doc_u64_value(&self, doc: &Document, field: Field) -> u64 {
-        match doc.get_first(field) {
-            Some(tantivy::schema::Value::U64(v)) => *v,
-            _ => panic!("Couldn't find field of type u64"),
         }
     }
 
@@ -595,15 +568,12 @@ impl TraitsIndex {
         schema_builder.add_text_field("entity_id", STRING | STORED);
         schema_builder.add_text_field("trait_id", STRING | STORED);
         schema_builder.add_text_field("entity_trait_id", STRING);
-        schema_builder.add_u64_field("creation_date", STORED | FAST);
-        schema_builder.add_u64_field("modification_date", STORED | FAST);
-
+        schema_builder.add_u64_field("sort_tie_breaker", STORED | FAST);
+        schema_builder.add_u64_field("creation_date", STORED);
+        schema_builder.add_u64_field("modification_date", STORED);
         schema_builder.add_u64_field("block_offset", STORED | FAST);
-        schema_builder.add_u64_field("operation_id", INDEXED | FAST | STORED);
-
-        schema_builder.add_u64_field("tombstone", STORED);
-        schema_builder.add_u64_field("sort_unique", STORED | FAST);
-
+        schema_builder.add_u64_field("operation_id", INDEXED | STORED | FAST);
+        schema_builder.add_u64_field("document_type", STORED);
         schema_builder.add_text_field("text", TEXT);
 
         let schema = schema_builder.build();
@@ -613,20 +583,34 @@ impl TraitsIndex {
             entity_id: schema.get_field("entity_id").unwrap(),
             trait_id: schema.get_field("trait_id").unwrap(),
             entity_trait_id: schema.get_field("entity_trait_id").unwrap(),
-
+            sort_tie_breaker: schema.get_field("sort_tie_breaker").unwrap(),
             creation_date: schema.get_field("creation_date").unwrap(),
             modification_date: schema.get_field("modification_date").unwrap(),
-
             block_offset: schema.get_field("block_offset").unwrap(),
             operation_id: schema.get_field("operation_id").unwrap(),
-
-            tombstone: schema.get_field("tombstone").unwrap(),
-            sort_unique: schema.get_field("sort_unique").unwrap(),
-
+            document_type: schema.get_field("document_type").unwrap(),
             text: schema.get_field("text").unwrap(),
         };
 
         (schema, fields)
+    }
+}
+
+/// Trait index configuration
+#[derive(Clone, Copy, Debug)]
+pub struct TraitIndexConfig {
+    pub indexer_num_threads: Option<usize>,
+    pub indexer_heap_size_bytes: usize,
+    pub iterator_page_size: usize,
+}
+
+impl Default for TraitIndexConfig {
+    fn default() -> Self {
+        TraitIndexConfig {
+            indexer_num_threads: None,
+            indexer_heap_size_bytes: 50_000_000,
+            iterator_page_size: 50,
+        }
     }
 }
 
@@ -636,69 +620,107 @@ struct Fields {
     entity_id: Field,
     trait_id: Field,
     entity_trait_id: Field,
+    sort_tie_breaker: Field,
     creation_date: Field,
     modification_date: Field,
-
     block_offset: Field,
     operation_id: Field,
-
-    tombstone: Field,
-    sort_unique: Field,
-
+    document_type: Field,
     text: Field,
 }
 
+/// Mutation of the index.
 pub enum IndexMutation {
     /// New version of a trait at a new position in chain or pending
     PutTrait(PutTraitMutation),
 
-    /// Mark a trait has being delete without deleting it. This only used in pending index to notify
-    /// the entities index that the trait was deleted (but it may be reverted, hence the
-    /// tombstone)
+    /// Mark a trait has being deleted without deleting it.
     PutTraitTombstone(PutTraitTombstone),
 
-    /// Delete a trait by its entity id and trait id from index
-    DeleteTrait(String, String),
+    /// Mark an entity has being deleted without deleting it.
+    PutEntityTombstone(PutEntityTombstone),
 
-    /// Delete a trait by its operation id
+    /// Delete a document by its operation id.
     DeleteOperation(OperationId),
 }
 
 pub struct PutTraitMutation {
     pub block_offset: Option<BlockOffset>,
     pub operation_id: OperationId,
-    pub entity_id: String,
+    pub entity_id: EntityId,
     pub trt: Trait,
 }
 
 pub struct PutTraitTombstone {
     pub block_offset: Option<BlockOffset>,
     pub operation_id: OperationId,
-    pub entity_id: String,
-    pub trait_id: String,
+    pub entity_id: EntityId,
+    pub trait_id: TraitId,
 }
 
-/// Collection of `TraitResult`
-pub struct TraitResults {
-    pub results: Vec<TraitResult>,
+pub struct PutEntityTombstone {
+    pub block_offset: Option<BlockOffset>,
+    pub operation_id: OperationId,
+    pub entity_id: EntityId,
+}
+
+/// Collection of `MutationMetadata`
+pub struct Results {
+    pub results: Vec<MutationMetadata>,
     pub total_results: usize,
     pub remaining_results: usize,
-    pub next_page: Option<TraitPaging>,
+    pub next_page: Option<QueryPaging>,
 }
 
-/// Indexed trait returned as a result of a query
-#[derive(Debug)]
-pub struct TraitResult {
+/// Indexed trait / entity mutation metadata returned as a result of a query.
+#[derive(Debug, Clone)]
+pub struct MutationMetadata {
     pub operation_id: OperationId,
     pub block_offset: Option<BlockOffset>,
-    pub entity_id: String,
-    pub trait_id: String,
-    pub tombstone: bool,
+    pub entity_id: EntityId,
     pub score: u64,
+    pub mutation_type: MutationType,
 }
 
 #[derive(Debug, Clone)]
-pub struct TraitPaging {
+pub enum MutationType {
+    TraitPut(PutTraitMetadata),
+    TraitTombstone(TraitId),
+    EntityTombstone,
+}
+
+impl MutationType {
+    const TRAIT_TOMBSTONE_ID: u64 = 0;
+    const TRAIT_PUT_ID: u64 = 1;
+    const ENTITY_TOMBSTONE_ID: u64 = 2;
+
+    fn new(document_type_id: u64, opt_trait_id: Option<TraitId>) -> Result<MutationType, Error> {
+        match document_type_id {
+            Self::TRAIT_TOMBSTONE_ID => Ok(MutationType::TraitTombstone(opt_trait_id.unwrap())),
+            Self::TRAIT_PUT_ID => Ok(MutationType::TraitPut(PutTraitMetadata {
+                trait_id: opt_trait_id.unwrap(),
+                creation_date: None,
+                modification_date: None,
+            })),
+            Self::ENTITY_TOMBSTONE_ID => Ok(MutationType::EntityTombstone),
+            _ => Err(Error::Fatal(format!(
+                "Invalid document type id {}",
+                document_type_id
+            ))),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PutTraitMetadata {
+    pub trait_id: TraitId,
+    pub creation_date: Option<DateTime<Utc>>,
+    pub modification_date: Option<DateTime<Utc>>,
+}
+
+/// Paging information for traits querying.
+#[derive(Debug, Clone)]
+pub struct QueryPaging {
     pub after_score: Option<u64>,
     pub before_score: Option<u64>,
     pub count: usize,
@@ -706,16 +728,16 @@ pub struct TraitPaging {
 
 /// Iterates through all results matching a given initial query using the next_page score
 /// when a page got emptied.
-pub struct TraitResultsIterator<'i, 'q> {
-    index: &'i TraitsIndex,
+pub struct ResultsIterator<'i, 'q> {
+    index: &'i TraitIndex,
     query: &'q EntityQuery,
     pub total_results: usize,
-    current_results: std::vec::IntoIter<TraitResult>,
-    next_page: Option<TraitPaging>,
+    current_results: std::vec::IntoIter<MutationMetadata>,
+    next_page: Option<QueryPaging>,
 }
 
-impl<'i, 'q> Iterator for TraitResultsIterator<'i, 'q> {
-    type Item = TraitResult;
+impl<'i, 'q> Iterator for ResultsIterator<'i, 'q> {
+    type Item = MutationMetadata;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next_result = self.current_results.next();
@@ -745,17 +767,47 @@ fn score_from_u64(value: u64) -> f32 {
     value as f32 / SCORE_TO_U64_MULTIPLIER
 }
 
+/// Extracts string value from Tantivy document
+fn get_doc_string_value(doc: &Document, field: Field) -> String {
+    match doc.get_first(field) {
+        Some(tantivy::schema::Value::Str(v)) => v.to_string(),
+        _ => panic!("Couldn't find field of type string"),
+    }
+}
+
+/// Extracts optional string value from Tantivy document
+fn get_doc_opt_string_value(doc: &Document, field: Field) -> Option<String> {
+    match doc.get_first(field) {
+        Some(tantivy::schema::Value::Str(v)) => Some(v.to_string()),
+        _ => None,
+    }
+}
+
+/// Extracts optional u46 value from Tantivy document
+fn get_doc_opt_u64_value(doc: &Document, field: Field) -> Option<u64> {
+    match doc.get_first(field) {
+        Some(tantivy::schema::Value::U64(v)) => Some(*v),
+        _ => None,
+    }
+}
+
+/// Extracts u46 value from Tantivy document
+fn get_doc_u64_value(doc: &Document, field: Field) -> u64 {
+    match doc.get_first(field) {
+        Some(tantivy::schema::Value::U64(v)) => *v,
+        _ => panic!("Couldn't find field of type u64"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::{DateTime, Utc};
     use itertools::Itertools;
 
-    use exocore_core::node::LocalNode;
     use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
     use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
-    use exocore_core::time::Clock;
 
-    use crate::query::{QueryBuilder, SortToken};
+    use crate::query::QueryBuilder;
 
     use super::*;
 
@@ -763,7 +815,7 @@ mod tests {
     fn search_by_entity_id() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut indexer = TraitsIndex::create_in_memory(config, registry)?;
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
         let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(1),
@@ -815,23 +867,23 @@ mod tests {
                 ..Default::default()
             },
         });
-        indexer.apply_mutations(vec![trait1, trait2, trait3].into_iter())?;
+        index.apply_mutations(vec![trait1, trait2, trait3].into_iter())?;
 
-        let results = indexer.search_entity_id("entity_id1")?;
+        let results = index.search_entity_id("entity_id1")?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.results[0].block_offset, Some(1));
         assert_eq!(results.results[0].operation_id, 10);
         assert_eq!(results.results[0].entity_id, "entity_id1");
-        assert_eq!(results.results[0].trait_id, "foo1");
+        assert_is_put_trait(&results.results[0].mutation_type, "foo1");
 
-        let results = indexer.search_entity_id("entity_id2")?;
+        let results = index.search_entity_id("entity_id2")?;
         assert_eq!(results.results.len(), 2);
-        find_trait_result(&results, "foo2");
-        find_trait_result(&results, "foo3");
+        find_put_trait(&results, "foo2");
+        find_put_trait(&results, "foo3");
 
         // search all should return an iterator all results
         let query = QueryBuilder::with_entity_id("entity_id2").build();
-        let iter = indexer.search_all(&query)?;
+        let iter = index.search_all(&query)?;
         assert_eq!(iter.total_results, 2);
         let results = iter.collect_vec();
         assert_eq!(results.len(), 2);
@@ -843,7 +895,7 @@ mod tests {
     fn search_query_matches() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut indexer = TraitsIndex::create_in_memory(config, registry)?;
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
         let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(1),
@@ -878,48 +930,48 @@ mod tests {
                 ..Default::default()
             },
         });
-        indexer.apply_mutations(vec![trait1, trait2].into_iter())?;
+        index.apply_mutations(vec![trait1, trait2].into_iter())?;
 
-        let results = indexer.search_matches("foo", None)?;
+        let results = index.search_matches("foo", None)?;
         assert_eq!(results.results.len(), 2);
         assert_eq!(results.results[0].entity_id, "entity_id1"); // foo is repeated in entity 1
 
-        let results = indexer.search_matches("bar", None)?;
+        let results = index.search_matches("bar", None)?;
         assert_eq!(results.results.len(), 2);
         assert!(results.results[0].score > score_to_u64(0.30));
         assert!(results.results[1].score > score_to_u64(0.18));
         assert_eq!(results.results[0].entity_id, "entity_id2"); // foo is repeated in entity 2
 
         // with limit
-        let paging = TraitPaging {
+        let paging = QueryPaging {
             after_score: None,
             before_score: None,
             count: 1,
         };
-        let results = indexer.search_matches("foo", Some(paging))?;
+        let results = index.search_matches("foo", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 1);
         assert_eq!(results.total_results, 2);
 
         // only results from given score
-        let paging = TraitPaging {
+        let paging = QueryPaging {
             after_score: Some(score_to_u64(0.30)),
             before_score: None,
             count: 10,
         };
-        let results = indexer.search_matches("bar", Some(paging))?;
+        let results = index.search_matches("bar", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 0);
         assert_eq!(results.total_results, 2);
         assert_eq!(results.results[0].entity_id, "entity_id2");
 
         // only results before given score
-        let paging = TraitPaging {
+        let paging = QueryPaging {
             after_score: None,
             before_score: Some(score_to_u64(0.30)),
             count: 10,
         };
-        let results = indexer.search_matches("bar", Some(paging))?;
+        let results = index.search_matches("bar", Some(paging))?;
         assert_eq!(results.results.len(), 1);
         assert_eq!(results.remaining_results, 0);
         assert_eq!(results.total_results, 2);
@@ -932,15 +984,12 @@ mod tests {
     fn search_query_matches_paging() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut indexer = TraitsIndex::create_in_memory(config, registry)?;
-        let clock = Clock::new();
-        let node = LocalNode::generate();
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
         let traits = (0..30).map(|i| {
-            let op_id = clock.consistent_time(node.node()).into();
             IndexMutation::PutTrait(PutTraitMutation {
                 block_offset: Some(i),
-                operation_id: op_id,
+                operation_id: i,
                 entity_id: format!("entity_id{}", i),
                 trt: Trait {
                     id: format!("entity_id{}", i),
@@ -956,37 +1005,37 @@ mod tests {
                 },
             })
         });
-        indexer.apply_mutations(traits)?;
+        index.apply_mutations(traits)?;
 
-        let paging = TraitPaging {
+        let paging = QueryPaging {
             after_score: None,
             before_score: None,
             count: 10,
         };
-        let results1 = indexer.search_matches("foo", Some(paging))?;
+        let results1 = index.search_matches("foo", Some(paging))?;
         assert_eq!(results1.total_results, 30);
         assert_eq!(results1.results.len(), 10);
         assert_eq!(results1.remaining_results, 20);
-        find_trait_result(&results1, "id29");
-        find_trait_result(&results1, "id20");
+        find_put_trait(&results1, "id29");
+        find_put_trait(&results1, "id20");
 
-        let results2 = indexer.search_matches("foo", Some(results1.next_page.clone().unwrap()))?;
+        let results2 = index.search_matches("foo", Some(results1.next_page.clone().unwrap()))?;
         assert_eq!(results2.total_results, 30);
         assert_eq!(results2.results.len(), 10);
         assert_eq!(results2.remaining_results, 10);
-        find_trait_result(&results1, "id19");
-        find_trait_result(&results1, "id10");
+        find_put_trait(&results1, "id19");
+        find_put_trait(&results1, "id10");
 
-        let results3 = indexer.search_matches("foo", Some(results2.next_page.unwrap()))?;
+        let results3 = index.search_matches("foo", Some(results2.next_page.unwrap()))?;
         assert_eq!(results3.total_results, 30);
         assert_eq!(results3.results.len(), 10);
         assert_eq!(results3.remaining_results, 0);
-        find_trait_result(&results1, "id9");
-        find_trait_result(&results1, "id0");
+        find_put_trait(&results1, "id9");
+        find_put_trait(&results1, "id0");
 
         // search all should return an iterator over all results
         let query = QueryBuilder::match_text("foo").build();
-        let iter = indexer.search_all(&query)?;
+        let iter = index.search_all(&query)?;
         assert_eq!(iter.total_results, 30);
         let results = iter.collect_vec();
         assert_eq!(results.len(), 30);
@@ -998,19 +1047,14 @@ mod tests {
     fn search_query_by_trait_type() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, registry)?;
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
-        let date = "2019-08-01T12:00:00Z"
-            .parse::<DateTime<Utc>>()?
-            .to_proto_timestamp();
         let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 1,
             entity_id: "entity_id1".to_string(),
             trt: Trait {
                 id: "trt1".to_string(),
-                creation_date: Some(date.clone()),
-                modification_date: Some(date),
                 message: Some(
                     TestMessage {
                         string1: "Foo Bar".to_string(),
@@ -1018,20 +1062,16 @@ mod tests {
                     }
                     .pack_to_any()?,
                 ),
+                ..Default::default()
             },
         });
 
-        let date = "2019-09-01T12:00:00Z"
-            .parse::<DateTime<Utc>>()?
-            .to_proto_timestamp();
         let trait2 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 2,
             entity_id: "entity_id2".to_string(),
             trt: Trait {
                 id: "trait2".to_string(),
-                creation_date: Some(date.clone()),
-                modification_date: Some(date),
                 message: Some(
                     TestMessage2 {
                         string1: "Some subject".to_string(),
@@ -1039,20 +1079,16 @@ mod tests {
                     }
                     .pack_to_any()?,
                 ),
+                ..Default::default()
             },
         });
 
-        let date = "2019-09-03T12:00:00Z"
-            .parse::<DateTime<Utc>>()?
-            .to_proto_timestamp();
         let trait3 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 3,
             entity_id: "entity_id3".to_string(),
             trt: Trait {
                 id: "trait3".to_string(),
-                creation_date: Some(date.clone()),
-                modification_date: Some(date),
                 message: Some(
                     TestMessage2 {
                         string1: "Some subject".to_string(),
@@ -1060,20 +1096,16 @@ mod tests {
                     }
                     .pack_to_any()?,
                 ),
+                ..Default::default()
             },
         });
 
-        let date = "2019-09-02T12:00:00Z"
-            .parse::<DateTime<Utc>>()?
-            .to_proto_timestamp();
         let trait4 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 4,
             entity_id: "entity_id4".to_string(),
             trt: Trait {
                 id: "trait4".to_string(),
-                creation_date: Some(date.clone()),
-                modification_date: Some(date),
                 message: Some(
                     TestMessage2 {
                         string1: "Some subject".to_string(),
@@ -1081,26 +1113,25 @@ mod tests {
                     }
                     .pack_to_any()?,
                 ),
+                ..Default::default()
             },
         });
 
-        index.apply_mutations(vec![trait1, trait2, trait3, trait4].into_iter())?;
+        index.apply_mutations(vec![trait4, trait3, trait2, trait1].into_iter())?;
 
         let results = index.search_with_trait("exocore.test.TestMessage", None)?;
         assert_eq!(results.results.len(), 1);
-        assert!(find_trait_result(&results, "trt1").is_some());
+        assert!(find_put_trait(&results, "trt1").is_some());
 
-        // ordering of multiple traits is by modification date
+        // ordering of multiple traits is operation id
         let results = index.search_with_trait("exocore.test.TestMessage2", None)?;
-        let traits_ids = results
-            .results
-            .iter()
-            .map(|res| res.trait_id.clone())
-            .collect_vec();
-        assert_eq!(traits_ids, vec!["trait3", "trait4", "trait2"]);
+        assert_eq!(
+            extract_traits_id(results),
+            vec!["trait4", "trait3", "trait2"]
+        );
 
         // with limit
-        let paging = TraitPaging {
+        let paging = QueryPaging {
             after_score: None,
             before_score: None,
             count: 1,
@@ -1109,34 +1140,22 @@ mod tests {
         assert_eq!(results.results.len(), 1);
 
         // only results after given modification date
-        let date_token = SortToken::from_datetime("2019-09-02T11:59:00Z".parse::<DateTime<Utc>>()?);
-        let date_value = date_token.to_u64()?;
-        let paging = TraitPaging {
-            after_score: Some(date_value),
+        let paging = QueryPaging {
+            after_score: Some(2),
             before_score: None,
             count: 10,
         };
         let results = index.search_with_trait("exocore.test.TestMessage2", Some(paging))?;
-        let traits_ids = results
-            .results
-            .iter()
-            .map(|res| res.trait_id.clone())
-            .collect_vec();
-        assert_eq!(traits_ids, vec!["trait3", "trait4"]);
+        assert_eq!(extract_traits_id(results), vec!["trait4", "trait3"]);
 
         // only results before given modification date
-        let paging = TraitPaging {
+        let paging = QueryPaging {
             after_score: None,
-            before_score: Some(date_value),
+            before_score: Some(3),
             count: 10,
         };
         let results = index.search_with_trait("exocore.test.TestMessage2", Some(paging))?;
-        let traits_ids = results
-            .results
-            .iter()
-            .map(|res| res.trait_id.clone())
-            .collect_vec();
-        assert_eq!(traits_ids, vec!["trait2"]);
+        assert_eq!(extract_traits_id(results), vec!["trait2"]);
 
         Ok(())
     }
@@ -1145,21 +1164,15 @@ mod tests {
     fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut indexer = TraitsIndex::create_in_memory(config, registry)?;
-        let clock = Clock::new();
-        let node = LocalNode::generate();
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
-        let contacts = (0..30).map(|i| {
-            let now = clock.consistent_time(node.node());
-
+        let traits = (0..30).map(|i| {
             IndexMutation::PutTrait(PutTraitMutation {
                 block_offset: Some(i),
-                operation_id: now.into(),
+                operation_id: 30 - i,
                 entity_id: format!("entity_id{}", i),
                 trt: Trait {
                     id: format!("entity_id{}", i),
-                    creation_date: Some(now.to_datetime().to_proto_timestamp()),
-                    modification_date: Some(now.to_datetime().to_proto_timestamp()),
                     message: Some(
                         TestMessage {
                             string1: "Some Subject".to_string(),
@@ -1168,47 +1181,48 @@ mod tests {
                         .pack_to_any()
                         .unwrap(),
                     ),
+                    ..Default::default()
                 },
             })
         });
-        indexer.apply_mutations(contacts)?;
+        index.apply_mutations(traits)?;
 
-        let paging = TraitPaging {
+        let paging = QueryPaging {
             after_score: None,
             before_score: None,
             count: 10,
         };
 
-        let results1 = indexer.search_with_trait("exocore.test.TestMessage", Some(paging))?;
+        let results1 = index.search_with_trait("exocore.test.TestMessage", Some(paging))?;
         assert_eq!(results1.total_results, 30);
         assert_eq!(results1.remaining_results, 20);
         assert_eq!(results1.results.len(), 10);
-        find_trait_result(&results1, "id29");
-        find_trait_result(&results1, "id20");
+        find_put_trait(&results1, "id29");
+        find_put_trait(&results1, "id20");
 
-        let results2 = indexer.search_with_trait(
+        let results2 = index.search_with_trait(
             "exocore.test.TestMessage",
             Some(results1.next_page.clone().unwrap()),
         )?;
         assert_eq!(results2.total_results, 30);
         assert_eq!(results2.remaining_results, 10);
         assert_eq!(results2.results.len(), 10);
-        find_trait_result(&results1, "id19");
-        find_trait_result(&results1, "id10");
+        find_put_trait(&results1, "id19");
+        find_put_trait(&results1, "id10");
 
-        let results3 = indexer.search_with_trait(
+        let results3 = index.search_with_trait(
             "exocore.test.TestMessage",
             Some(results2.next_page.unwrap()),
         )?;
         assert_eq!(results3.total_results, 30);
         assert_eq!(results3.remaining_results, 0);
         assert_eq!(results3.results.len(), 10);
-        find_trait_result(&results1, "id9");
-        find_trait_result(&results1, "id0");
+        find_put_trait(&results1, "id9");
+        find_put_trait(&results1, "id0");
 
         // search all should return an iterator over all results
         let query = QueryBuilder::with_trait("exocore.test.TestMessage").build();
-        let iter = indexer.search_all(&query)?;
+        let iter = index.search_all(&query)?;
         assert_eq!(iter.total_results, 30);
         let results = iter.collect_vec();
         assert_eq!(results.len(), 30);
@@ -1220,7 +1234,7 @@ mod tests {
     fn highest_indexed_block() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, registry)?;
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
         assert_eq!(index.highest_indexed_block()?, None);
 
@@ -1282,14 +1296,15 @@ mod tests {
     }
 
     #[test]
-    fn update_trait() -> Result<(), failure::Error> {
+    fn put_delete_put_trait() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, registry)?;
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
-        let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
+        let operation_id = 1;
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
-            operation_id: 1,
+            operation_id,
             entity_id: "entity_id1".to_string(),
             trt: Trait {
                 id: "foo1".to_string(),
@@ -1303,9 +1318,11 @@ mod tests {
                 ..Default::default()
             },
         });
-        index.apply_mutation(contact_mutation)?;
+        index.apply_mutation(trait1)?;
 
-        let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
+        index.apply_mutation(IndexMutation::DeleteOperation(operation_id))?;
+
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 2,
             entity_id: "entity_id1".to_string(),
@@ -1321,7 +1338,7 @@ mod tests {
                 ..Default::default()
             },
         });
-        index.apply_mutation(contact_mutation)?;
+        index.apply_mutation(trait1)?;
 
         let results = index.search_matches("foo", None)?;
         assert_eq!(results.results.len(), 1);
@@ -1336,11 +1353,12 @@ mod tests {
     fn delete_trait_mutation() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, registry)?;
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
-        let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
+        let operation_id = 1234;
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
-            operation_id: 1234,
+            operation_id,
             entity_id: "entity_id1".to_string(),
             trt: Trait {
                 id: "foo1".to_string(),
@@ -1354,14 +1372,11 @@ mod tests {
                 ..Default::default()
             },
         });
-        index.apply_mutation(contact_mutation)?;
+        index.apply_mutation(trait1)?;
 
         assert_eq!(index.search_matches("foo", None)?.results.len(), 1);
 
-        index.apply_mutation(IndexMutation::DeleteTrait(
-            "entity_id1".to_string(),
-            "foo1".to_string(),
-        ))?;
+        index.apply_mutation(IndexMutation::DeleteOperation(operation_id))?;
 
         assert_eq!(index.search_matches("foo", None)?.results.len(), 0);
 
@@ -1372,9 +1387,9 @@ mod tests {
     fn delete_operation_id_mutation() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, registry)?;
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
-        let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 1234,
             entity_id: "entity_id1".to_string(),
@@ -1390,7 +1405,7 @@ mod tests {
                 ..Default::default()
             },
         });
-        index.apply_mutation(contact_mutation)?;
+        index.apply_mutation(trait1)?;
 
         assert_eq!(index.search_matches("foo", None)?.results.len(), 1);
 
@@ -1405,7 +1420,7 @@ mod tests {
     fn put_trait_tombstone() -> Result<(), failure::Error> {
         let registry = Arc::new(Registry::new_with_exocore_types());
         let config = test_config();
-        let mut index = TraitsIndex::create_in_memory(config, registry)?;
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
 
         let contact_mutation = IndexMutation::PutTraitTombstone(PutTraitTombstone {
             block_offset: None,
@@ -1415,7 +1430,7 @@ mod tests {
         });
         index.apply_mutation(contact_mutation)?;
 
-        let contact_mutation = IndexMutation::PutTrait(PutTraitMutation {
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
             block_offset: None,
             operation_id: 2345,
             entity_id: "entity_id2".to_string(),
@@ -1431,25 +1446,119 @@ mod tests {
                 ..Default::default()
             },
         });
-        index.apply_mutation(contact_mutation)?;
+        index.apply_mutation(trait1)?;
 
         let res = index.search_entity_id("entity_id1")?;
-        assert!(res.results.first().unwrap().tombstone);
+        assert_is_trait_tombstone(&res.results.first().unwrap().mutation_type, "foo1");
 
         let res = index.search_entity_id("entity_id2")?;
-        assert!(!res.results.first().unwrap().tombstone);
+        assert_is_put_trait(&res.results.first().unwrap().mutation_type, "foo2");
 
         Ok(())
     }
 
-    fn test_config() -> TraitsIndexConfig {
-        TraitsIndexConfig {
+    #[test]
+    fn put_entity_tombstone() -> Result<(), failure::Error> {
+        let registry = Arc::new(Registry::new_with_exocore_types());
+        let config = test_config();
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
+
+        let trait1 = IndexMutation::PutEntityTombstone(PutEntityTombstone {
+            block_offset: None,
+            operation_id: 1234,
+            entity_id: "entity_id1".to_string(),
+        });
+        index.apply_mutation(trait1)?;
+
+        let res = index.search_entity_id("entity_id1")?;
+        assert_is_entity_tombstone(&res.results.first().unwrap().mutation_type);
+
+        Ok(())
+    }
+
+    #[test]
+    fn trait_dates() -> Result<(), failure::Error> {
+        let registry = Arc::new(Registry::new_with_exocore_types());
+        let config = test_config();
+        let mut index = TraitIndex::create_in_memory(config, registry)?;
+
+        let creation_date = "2019-08-01T12:00:00Z".parse::<DateTime<Utc>>()?;
+        let modification_date = "2019-12-03T12:00:00Z".parse::<DateTime<Utc>>()?;
+
+        let trait1 = IndexMutation::PutTrait(PutTraitMutation {
+            block_offset: Some(1),
+            operation_id: 10,
+            entity_id: "entity_id1".to_string(),
+            trt: Trait {
+                id: "foo1".to_string(),
+                message: Some(
+                    TestMessage {
+                        string1: "Foo Foo Foo Foo Bar".to_string(),
+                        ..Default::default()
+                    }
+                    .pack_to_any()?,
+                ),
+                creation_date: Some(creation_date.to_proto_timestamp()),
+                modification_date: Some(modification_date.to_proto_timestamp()),
+            },
+        });
+        index.apply_mutation(trait1)?;
+
+        let res = index.search_entity_id("entity_id1")?;
+        let trait_meta = find_put_trait(&res, "foo1").unwrap();
+        let trait_put = assert_is_put_trait(&trait_meta.mutation_type, "foo1");
+        assert_eq!(creation_date, trait_put.creation_date.unwrap());
+        assert_eq!(modification_date, trait_put.modification_date.unwrap());
+
+        Ok(())
+    }
+
+    fn test_config() -> TraitIndexConfig {
+        TraitIndexConfig {
             iterator_page_size: 7,
-            ..TraitsIndexConfig::default()
+            ..TraitIndexConfig::default()
         }
     }
 
-    fn find_trait_result<'r>(results: &'r TraitResults, trait_id: &str) -> Option<&'r TraitResult> {
-        results.results.iter().find(|t| t.trait_id == trait_id)
+    fn find_put_trait<'r>(results: &'r Results, trait_id: &str) -> Option<&'r MutationMetadata> {
+        results.results.iter().find(|t| match &t.mutation_type {
+            MutationType::TraitPut(put_trait) if put_trait.trait_id == trait_id => true,
+            _ => false,
+        })
+    }
+
+    fn assert_is_put_trait<'r>(
+        document_type: &'r MutationType,
+        trait_id: &str,
+    ) -> &'r PutTraitMetadata {
+        match document_type {
+            MutationType::TraitPut(put_trait) if put_trait.trait_id == trait_id => put_trait,
+            other => panic!("Expected TraitPut type, but got {:?}", other),
+        }
+    }
+
+    fn assert_is_trait_tombstone(document_type: &MutationType, trait_id: &str) {
+        match document_type {
+            MutationType::TraitTombstone(trt_id) if trt_id == trait_id => {}
+            other => panic!("Expected TraitTombstone type, but got {:?}", other),
+        }
+    }
+
+    fn assert_is_entity_tombstone(document_type: &MutationType) {
+        match document_type {
+            MutationType::EntityTombstone => {}
+            other => panic!("Expected EntityTombstone type, but got {:?}", other),
+        }
+    }
+
+    fn extract_traits_id(results: Results) -> Vec<String> {
+        results
+            .results
+            .iter()
+            .map(|res| match &res.mutation_type {
+                MutationType::TraitPut(put_trait) => put_trait.trait_id.clone(),
+                other => panic!("Expected trait put, got something else: {:?}", other),
+            })
+            .collect()
     }
 }

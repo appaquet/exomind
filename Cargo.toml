@@ -10,13 +10,13 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [dependencies]
-exocore-core = { version = "0.1.0", path = "core" }
+exocore-core = { version = "0.1.0", path = "./core" }
 exocore-transport = { version = "0.1.0", path = "./transport" }
 exocore-index = { version = "0.1.0", path = "./index" }
 exocore-data = { version = "0.1.0", path = "./data" }
 
 [dev-dependencies]
-exocore-core = { version = "0.1.0", path = "core", features = ["tests_utils"] }
+exocore-core = { version = "0.1.0", path = "./core", features = ["tests_utils"] }
 
 [workspace]
 members = [

@@ -10,7 +10,7 @@ use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
 };
-use exocore_index::store::local::{EntitiesIndex, EntitiesIndexConfig, Store};
+use exocore_index::store::local::{EntityIndex, EntityIndexConfig, Store};
 use exocore_index::store::remote::server::Server;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
@@ -83,8 +83,8 @@ pub fn start(
             index_dir.push("index");
             std::fs::create_dir_all(&index_dir)?;
 
-            let entities_index_config = EntitiesIndexConfig::default();
-            let entities_index = EntitiesIndex::open_or_create(
+            let entities_index_config = EntityIndexConfig::default();
+            let entities_index = EntityIndex::open_or_create(
                 &index_dir,
                 entities_index_config,
                 registry.clone(),
@@ -123,7 +123,7 @@ fn create_local_store<T: TransportHandle>(
     index_engine_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
     full_cell: FullCell,
     clock: Clock,
-    entities_index: EntitiesIndex<DirectoryChainStore, MemoryPendingStore>,
+    entities_index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
 ) -> Result<(), failure::Error> {
     let store_config = Default::default();
     let local_store = Store::new(

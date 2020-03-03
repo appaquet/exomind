@@ -1,10 +1,10 @@
-mod entities_index;
+mod entity_index;
 mod store;
 mod top_results_iter;
-mod traits_index;
+mod trait_index;
 mod watched_queries;
 
-pub use entities_index::{EntitiesIndex, EntitiesIndexConfig};
+pub use entity_index::{EntityIndex, EntityIndexConfig};
 pub use store::{Store, StoreHandle};
 
 #[cfg(test)]

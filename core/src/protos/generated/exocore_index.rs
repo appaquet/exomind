@@ -116,7 +116,7 @@ pub enum EntityResultSource {
 pub struct EntityMutation {
     #[prost(string, tag = "1")]
     pub entity_id: std::string::String,
-    #[prost(oneof = "entity_mutation::Mutation", tags = "2, 3, 99")]
+    #[prost(oneof = "entity_mutation::Mutation", tags = "2, 3, 4, 5, 6, 99")]
     pub mutation: ::std::option::Option<entity_mutation::Mutation>,
 }
 pub mod entity_mutation {
@@ -126,6 +126,12 @@ pub mod entity_mutation {
         PutTrait(super::PutTraitMutation),
         #[prost(message, tag = "3")]
         DeleteTrait(super::DeleteTraitMutation),
+        #[prost(message, tag = "4")]
+        DeleteEntity(super::DeleteEntityMutation),
+        #[prost(message, tag = "5")]
+        UpdateTrait(super::UpdateTraitMutation),
+        #[prost(message, tag = "6")]
+        CompactTrait(super::CompactTraitMutation),
         #[prost(message, tag = "99")]
         Test(super::TestMutation),
     }
@@ -139,6 +145,37 @@ pub struct PutTraitMutation {
 pub struct DeleteTraitMutation {
     #[prost(string, tag = "1")]
     pub trait_id: std::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteEntityMutation {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTraitMutation {
+    #[prost(string, tag = "1")]
+    pub trait_id: std::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub r#trait: ::std::option::Option<Trait>,
+    #[prost(message, optional, tag = "3")]
+    pub field_mask: ::std::option::Option<::prost_types::FieldMask>,
+    /// Updates is only valid if the last mutation operation on trait this given operation id.
+    #[prost(uint64, tag = "4")]
+    pub if_last_operation_id: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CompactTraitMutation {
+    /// List of operations that are compacted by this compaction. The compaction will only succeed
+    /// if there were no operations between these operations and the compaction's operation itself.
+    #[prost(message, repeated, tag = "1")]
+    pub compacted_operations: ::std::vec::Vec<compact_trait_mutation::Operation>,
+    /// Trait with merged values from compacted operations
+    #[prost(message, optional, tag = "2")]
+    pub r#trait: ::std::option::Option<Trait>,
+}
+pub mod compact_trait_mutation {
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct Operation {
+        #[prost(uint64, tag = "1")]
+        pub operation_id: u64,
+    }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestMutation {
