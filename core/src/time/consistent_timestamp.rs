@@ -4,12 +4,11 @@ use std::ops::{Add, Sub};
 use std::time::Duration;
 
 ///
-/// Timestamp that tries to be consistent and monotonic across cluster by incorporating node's unique id
-/// and a per-node counter.
+/// Timestamp that tries to be consistent and monotonic across cluster by
+/// incorporating node's unique id and a per-node counter.
 ///
-/// It's designed to have the same resolution as a nanoseconds precision timestamp by encoding node id and counter in
-/// nanoseconds.
-///
+/// It's designed to have the same resolution as a nanoseconds precision
+/// timestamp by encoding node id and counter in nanoseconds.
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct ConsistentTimestamp(pub u64);
 

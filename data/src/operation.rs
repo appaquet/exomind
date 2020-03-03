@@ -22,7 +22,6 @@ pub type OperationFrameBuilder =
 ///
 /// Wraps an operation that is stored either in the pending store, or in the
 /// the chain.
-///
 pub trait Operation {
     fn get_operation_reader(&self) -> Result<chain_operation::Reader, Error>;
 
@@ -57,7 +56,6 @@ pub trait Operation {
 
 ///
 /// Types of operations
-///
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum OperationType {
     Entry,
@@ -68,7 +66,6 @@ pub enum OperationType {
 
 ///
 /// Chain operation frame building helper
-///
 pub struct OperationBuilder {
     pub frame_builder: CapnpFrameBuilder<chain_operation::Owned>,
 }
@@ -175,7 +172,6 @@ pub fn read_operation_frame<I: FrameReader>(inner: I) -> Result<OperationFrame<I
 
 ///
 /// Operation to be added or replaced in the store
-///
 #[derive(Clone)]
 pub struct NewOperation {
     pub frame: OperationFrame<Vec<u8>>,
@@ -195,7 +191,6 @@ impl crate::operation::Operation for NewOperation {
 
 ///
 /// Operations related error
-///
 #[derive(Clone, Debug, Fail)]
 pub enum Error {
     #[fail(display = "The operation is not any entry operation")]

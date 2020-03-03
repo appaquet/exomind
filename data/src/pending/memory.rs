@@ -7,7 +7,6 @@ use crate::operation::Operation;
 
 ///
 /// In memory pending store
-///
 pub struct MemoryPendingStore {
     operations_timeline: BTreeMap<OperationId, GroupId>,
     groups_operations: HashMap<GroupId, GroupOperations>,
@@ -195,8 +194,6 @@ impl MemoryPendingStore {
 }
 
 ///
-///
-///
 struct GroupOperations {
     operations: BTreeMap<OperationId, GroupOperation>,
 }
@@ -216,8 +213,6 @@ struct GroupOperation {
     frame: Arc<crate::operation::OperationFrame<Vec<u8>>>,
 }
 
-///
-///
 ///
 struct OperationsIterator<'store> {
     store: &'store MemoryPendingStore,

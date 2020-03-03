@@ -23,20 +23,20 @@ use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 ///
 /// It achieves synchronization in 3 stages:
 ///
-/// 1) Gather knowledge about remote nodes' chain metadata (last block, last common block).
-///    During this stage, the status is 'Unknown'
+/// 1) Gather knowledge about remote nodes' chain metadata (last block, last
+/// common block).    During this stage, the status is 'Unknown'
 ///
-/// 2) Once we have knowledge of the majority of node, we find the leader node with the longest chain.
-///    Taking the longest chain is valid, since this node could not have made progress without a majority
-///    of nodes signing the latest blocks.
+/// 2) Once we have knowledge of the majority of node, we find the leader node
+/// with the longest chain.    Taking the longest chain is valid, since this
+/// node could not have made progress without a majority    of nodes signing the
+/// latest blocks.
 ///
-/// 3) Download the missing blocks from the leader, starting from the latest common block, which
-///    is our common ancestor.
+/// 3) Download the missing blocks from the leader, starting from the latest
+/// common block, which    is our common ancestor.
 ///    During this stage, the status is 'Downloading'
 ///
-/// 4) Once fully downloaded, we keep asking for other nodes' metadata to make sure we progress and
-///    leadership hasn't changed.
-///
+/// 4) Once fully downloaded, we keep asking for other nodes' metadata to make
+/// sure we progress and    leadership hasn't changed.
 pub(super) struct ChainSynchronizer<CS: ChainStore> {
     config: ChainSyncConfig,
     cell: Cell,
@@ -68,10 +68,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Called at interval to make progress on the synchronization. Depending on the current synchronization
-    /// status, we could be asking for more details about remote nodes' chain, or could be asking for blocks
+    /// Called at interval to make progress on the synchronization. Depending on
+    /// the current synchronization status, we could be asking for more
+    /// details about remote nodes' chain, or could be asking for blocks
     /// data from the lead node.
-    ///
     pub fn tick(&mut self, sync_context: &mut SyncContext, store: &CS) -> Result<(), Error> {
         let status_start = self.status;
         let nodes = self.cell.nodes().to_owned();
@@ -119,8 +119,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             }
         }
 
-        // if we lost synchronization, we reset request trackers to allow quicker resynchronization by
-        // not waiting for request interval
+        // if we lost synchronization, we reset request trackers to allow quicker
+        // resynchronization by not waiting for request interval
         if status_start == Status::Synchronized && self.status != Status::Synchronized {
             for node in self.nodes_info.values_mut() {
                 node.request_tracker.reset();
@@ -153,13 +153,12 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
                 self.start_leader_downloading(sync_context, store, &nodes)?;
             } else {
-                return Err(ChainSyncError::Diverged(
-                    format!(
-                        "Our local chain is divergent with a majority of nodes (only {} non divergents out of {})",
-                        nb_non_divergent,
-                        nodes.len()
-                    )
-                ).into());
+                return Err(ChainSyncError::Diverged(format!(
+                    "Our local chain is divergent with a majority of nodes (only {} non divergents out of {})",
+                    nb_non_divergent,
+                    nodes.len()
+                ))
+                .into());
             }
         }
 
@@ -174,8 +173,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Handles an incoming sync request. This request can be for headers, or could be for blocks.
-    ///
+    /// Handles an incoming sync request. This request can be for headers, or
+    /// could be for blocks.
     pub fn handle_sync_request<F: FrameReader>(
         &mut self,
         sync_context: &mut SyncContext,
@@ -241,11 +240,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Handles a sync response from a node, that could contain either headers or blocks data.
-    /// If it contains headers, we gather the knowledge about the remote node's chain metadata.
-    /// If it contains data, it means that it comes from the leader node and we need to append data
+    /// Handles a sync response from a node, that could contain either headers
+    /// or blocks data. If it contains headers, we gather the knowledge
+    /// about the remote node's chain metadata. If it contains data, it
+    /// means that it comes from the leader node and we need to append data
     /// to our local chain.
-    ///
     pub fn handle_sync_response<R: FrameReader>(
         &mut self,
         sync_context: &mut SyncContext,
@@ -267,8 +266,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             );
         }
 
-        // last responded is set at the end so that if we failed reading response, it's considered
-        // as if we didn't receive anything (which will lead to timeout & retries)
+        // last responded is set at the end so that if we failed reading response, it's
+        // considered as if we didn't receive anything (which will lead to
+        // timeout & retries)
         let node_info = self.get_or_create_node_info_mut(&from_node.id());
         node_info.request_tracker.set_last_responded_now();
 
@@ -290,9 +290,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Sends a sync request to each node that has elapsed the periodic check duration to discover
-    /// its chain (last common block, last known block, etc.)
-    ///
+    /// Sends a sync request to each node that has elapsed the periodic check
+    /// duration to discover its chain (last common block, last known block,
+    /// etc.)
     fn synchronize_nodes_metadata(
         &mut self,
         sync_context: &mut SyncContext,
@@ -314,9 +314,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Starts chain downloading from current leader if needed. If leader is the local node, we don't
-    /// need to download anything and mark as synchronized.
-    ///
+    /// Starts chain downloading from current leader if needed. If leader is the
+    /// local node, we don't need to download anything and mark as
+    /// synchronized.
     fn start_leader_downloading(
         &mut self,
         sync_context: &mut SyncContext,
@@ -338,7 +338,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             return Ok(());
         };
 
-        // leader is another node, we check if we're already synced with it, or initiate downloading with it
+        // leader is another node, we check if we're already synced with it, or initiate
+        // downloading with it
         let leader_node_info = self.get_or_create_node_info_mut(&leader_node_id);
 
         if leader_node_info.chain_fully_downloaded() {
@@ -369,7 +370,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 ))
             })?;
 
-            debug!("Initiating chain download with leader: last_common_block={:?} last_known_block={:?}", leader_node_info.last_common_block, leader_node_info.last_known_block);
+            debug!(
+                "Initiating chain download with leader: last_common_block={:?} last_known_block={:?}",
+                leader_node_info.last_common_block, leader_node_info.last_known_block
+            );
             let to_offset = leader_node_info
                 .last_known_block
                 .as_ref()
@@ -388,10 +392,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Creates a new sync request to be sent to a node, asking for headers or blocks. Headers are
-    /// used remote node's chain metadata, while blocks are requested if we determined that a node
-    /// is our leader.
-    ///
+    /// Creates a new sync request to be sent to a node, asking for headers or
+    /// blocks. Headers are used remote node's chain metadata, while blocks
+    /// are requested if we determined that a node is our leader.
     fn create_sync_request(
         node_info: &NodeSyncInfo,
         requested_details: RequestedDetails,
@@ -401,8 +404,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let mut request_builder: chain_sync_request::Builder = frame_builder.get_builder();
 
         let from_offset = node_info.last_common_block.as_ref().map_or(0, |b| {
-            // if we requesting blocks, we want data from next offset to prevent getting data
-            // for a block we have already have
+            // if we requesting blocks, we want data from next offset to prevent getting
+            // data for a block we have already have
             if requested_details == RequestedDetails::Headers {
                 b.offset
             } else {
@@ -429,7 +432,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
     ///
     /// Creates a response to a request for headers from a remote node.
-    ///
     fn create_sync_response_for_headers(
         from_offset: BlockOffset,
         to_offset: BlockOffset,
@@ -458,7 +460,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     ///
     /// Creates a response to request for blocks data from a remote node.
     /// If we're asked for data, this means we're the lead.
-    ///
     fn create_sync_response_for_blocks<'s, I: Iterator<Item = BlockRef<'s>>>(
         config: &ChainSyncConfig,
         from_offset: BlockOffset,
@@ -474,7 +475,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let mut data_size = 0;
         let blocks = blocks_iter
             .take_while(|block| {
-                // check if we reached max at first so that we send at least 1 block even if it max out
+                // check if we reached max at first so that we send at least 1 block even if it
+                // max out
                 let is_full = data_size < config.blocks_max_send_size;
                 data_size += block.total_size();
                 is_full
@@ -502,12 +504,12 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Manages headers response by comparing to local blocks and finding the common ancestor (if any)
-    /// and the last block of the node against which we're syncing.
+    /// Manages headers response by comparing to local blocks and finding the
+    /// common ancestor (if any) and the last block of the node against
+    /// which we're syncing.
     ///
-    /// If we didn't find the latest common ancestor, we reply with another request from the earliest
-    /// common ancestor we could find so far.
-    ///
+    /// If we didn't find the latest common ancestor, we reply with another
+    /// request from the earliest common ancestor we could find so far.
     fn handle_sync_response_headers(
         &mut self,
         sync_context: &mut SyncContext,
@@ -528,8 +530,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             let offset = header_reader.get_offset();
             let height = header_reader.get_height();
 
-            // check if headers are contiguous blocks, which would mean we can take for granted that no block
-            // are missing between the first and last given header
+            // check if headers are contiguous blocks, which would mean we can take for
+            // granted that no block are missing between the first and last
+            // given header
             if let Some(last_header_height) = last_header_height {
                 if height != last_header_height + 1 {
                     all_contiguous = false;
@@ -537,8 +540,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             }
             last_header_height = Some(height);
 
-            // if we haven't encountered a block we didn't have in common, we keep checking if we have
-            // the block locally, and update the last_common_block
+            // if we haven't encountered a block we didn't have in common, we keep checking
+            // if we have the block locally, and update the last_common_block
             if first_non_common_block.is_none() {
                 if let Ok(local_block) = store.get_block(offset) {
                     let local_block_signature =
@@ -575,8 +578,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             }
         }
 
-        // if we have new common block, and blocks weren't contiguous, it means we need to ask for headers
-        // from our common ancestors again, since we may have a higher common block that wasn't in headers
+        // if we have new common block, and blocks weren't contiguous, it means we need
+        // to ask for headers from our common ancestors again, since we may have
+        // a higher common block that wasn't in headers
         if has_new_common_block && !all_contiguous {
             let to_offset = first_non_common_block;
             debug!(
@@ -590,9 +594,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         } else if !from_node_info.last_common_is_known {
             debug!(
                 "Finished fetching metadata of node {}. last_known_block={:?}, last_common_ancestor={:?}",
-                from_node_info.node_id,
-                from_node_info.last_known_block,
-                from_node_info.last_common_block
+                from_node_info.node_id, from_node_info.last_known_block, from_node_info.last_common_block
             );
             from_node_info.last_common_is_known = true;
             from_node_info.request_tracker.force_next_request();
@@ -602,9 +604,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Manages blocks (full data) response coming from the lead node, and appends them to our local chain.
-    /// If there are still blocks after, we respond with a further request
-    ///
+    /// Manages blocks (full data) response coming from the lead node, and
+    /// appends them to our local chain. If there are still blocks after, we
+    /// respond with a further request
     fn handle_sync_response_blocks(
         &mut self,
         sync_context: &mut SyncContext,
@@ -690,8 +692,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 
     ///
-    /// Iterates through all nodes we sync against and check if their status has changed
-    ///
+    /// Iterates through all nodes we sync against and check if their status has
+    /// changed
     fn check_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
         let mut nodes_total = 0;
         let mut nodes_metadata_sync = 0;
@@ -753,31 +755,34 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
 ///
 /// Chain synchronizer's configuration
-///
 #[derive(Copy, Clone, Debug)]
 pub struct ChainSyncConfig {
     /// Config for requests timing tracker
     pub request_tracker: request_tracker::RequestTrackerConfig,
 
-    /// Maximum number of synchronization failures before considering a node offsync
+    /// Maximum number of synchronization failures before considering a node
+    /// offsync
     pub meta_sync_max_failures: usize,
 
-    /// Number of headers to always include at beginning of a headers sync request
+    /// Number of headers to always include at beginning of a headers sync
+    /// request
     pub headers_sync_begin_count: BlockOffset,
 
     /// Number of headers to always include at end of a headers sync request
     pub headers_sync_end_count: BlockOffset,
 
-    /// Number of sampled headers to include between begin and end headers of a headers sync request
+    /// Number of sampled headers to include between begin and end headers of a
+    /// headers sync request
     pub headers_sync_sampled_count: BlockOffset,
 
     /// Maximum number of bytes worth of blocks to send in a response
     /// This should be lower than transport maximum packet size
     pub blocks_max_send_size: usize,
 
-    /// Maximum height in blocks that we can tolerate between our common ancestor block
-    /// and its latest block. If it gets higher than this value, this means that we may
-    /// have diverged and we need to re-synchronize.
+    /// Maximum height in blocks that we can tolerate between our common
+    /// ancestor block and its latest block. If it gets higher than this
+    /// value, this means that we may have diverged and we need to
+    /// re-synchronize.
     pub max_leader_common_block_height_delta: BlockHeight,
 }
 
@@ -797,7 +802,6 @@ impl Default for ChainSyncConfig {
 
 ///
 /// Synchronization information about a remote node
-///
 struct NodeSyncInfo {
     config: ChainSyncConfig,
     node_id: NodeId,
@@ -854,9 +858,8 @@ impl NodeSyncInfo {
     }
 
     ///
-    /// Returns delta in block height between the last known block of the node and the last common block
-    /// that we have.
-    ///
+    /// Returns delta in block height between the last known block of the node
+    /// and the last common block that we have.
     fn common_blocks_height_delta(&self) -> Option<BlockHeight> {
         match (&self.last_common_block, &self.last_known_block) {
             (Some(common), Some(known)) => Some(known.height - common.height),
@@ -865,9 +868,9 @@ impl NodeSyncInfo {
     }
 
     ///
-    /// Check if what we know of the remote node's chain is considered divergent. A divergent chain
-    /// is a forked chain, in which we have a common ancestor, but different subsequent blocks.
-    ///
+    /// Check if what we know of the remote node's chain is considered
+    /// divergent. A divergent chain is a forked chain, in which we have a
+    /// common ancestor, but different subsequent blocks.
     fn is_divergent<CS: ChainStore>(&self, local_store: &CS) -> Result<bool, Error> {
         if let Some(last_common_block) = &self.last_common_block {
             let last_known_block = if let Some(last_known_block) = self.last_known_block.as_ref() {
@@ -883,12 +886,14 @@ impl NodeSyncInfo {
             })?;
             let last_local_height = last_local_block.get_height()?;
 
-            // if we have a block after common, and that the remote has one too, we are divergent
+            // if we have a block after common, and that the remote has one too, we are
+            // divergent
             Ok(last_local_height > last_common_block.height
                 && last_known_block.height > last_common_block.height)
         } else {
-            // if we don't have any common block and we have at least one block in local chain,
-            // and that remote node is not empty, we have diverged from it
+            // if we don't have any common block and we have at least one block in local
+            // chain, and that remote node is not empty, we have diverged from
+            // it
             let last_local_block = local_store.get_last_block()?;
             Ok(last_local_block.is_some() && self.last_known_block.is_some())
         }
@@ -902,9 +907,8 @@ enum NodeStatus {
 }
 
 ///
-/// Partial header of a block coming from local store or remote node, used for comparison
-/// between local and remote stores
-///
+/// Partial header of a block coming from local store or remote node, used for
+/// comparison between local and remote stores
 #[derive(Debug)]
 struct BlockPartialHeader {
     offset: BlockOffset,
@@ -973,7 +977,6 @@ impl BlockPartialHeader {
 
 ///
 /// Chain synchronizer specific error
-///
 #[derive(Clone, Debug, Fail)]
 pub enum ChainSyncError {
     #[fail(display = "Got an invalid sync request: {}", _0)]
@@ -996,12 +999,14 @@ impl ChainSyncError {
 }
 
 ///
-/// Samples the local chain and returns a collection of `BlockPartialHeader` at different position in the asked range.
+/// Samples the local chain and returns a collection of `BlockPartialHeader` at
+/// different position in the asked range.
 ///
-/// `from_offset` and `to_offset` are best efforts and fallback to begin/end of chain if they don't exist.
-/// `begin_count` and `end_count` are number of headers to include without sampling from beginning and end of range.
-/// `sampled_count` is the approximate number of headers to return, excluding the `begin_count` and `end_count`
-///
+/// `from_offset` and `to_offset` are best efforts and fallback to begin/end of
+/// chain if they don't exist. `begin_count` and `end_count` are number of
+/// headers to include without sampling from beginning and end of range.
+/// `sampled_count` is the approximate number of headers to return, excluding
+/// the `begin_count` and `end_count`
 fn chain_sample_block_partial_headers<CS: chain::ChainStore>(
     store: &CS,
     from_offset: BlockOffset,
@@ -1048,7 +1053,8 @@ fn chain_sample_block_partial_headers<CS: chain::ChainStore>(
     let range_blocks_count = last_block_height - first_block_height;
     let range_blocks_skip = (range_blocks_count / sampled_count).max(1);
 
-    // from which block do we include all headers so that we always include last `end_count` blocks
+    // from which block do we include all headers so that we always include last
+    // `end_count` blocks
     let range_blocks_lasts = range_blocks_count
         .checked_sub(end_count)
         .unwrap_or(range_blocks_count);
@@ -1057,8 +1063,9 @@ fn chain_sample_block_partial_headers<CS: chain::ChainStore>(
         .enumerate()
         .take(range_blocks_count as usize + 1)
     {
-        // we always include headers if the block is within the first `begin_count` or in the last `end_count`
-        // otherwise, we include if it falls within sampling condition
+        // we always include headers if the block is within the first `begin_count` or
+        // in the last `end_count` otherwise, we include if it falls within
+        // sampling condition
         let blocks_count = blocks_count as BlockOffset;
         if blocks_count < begin_count
             || blocks_count > range_blocks_lasts
@@ -1231,7 +1238,8 @@ mod tests {
         assert_eq!(Status::Synchronized, cluster.chains_synchronizer[0].status);
         assert!(cluster.chains_synchronizer[0].is_leader(node1.id()));
 
-        // force status back to downloading to check if tick will turn back to synchronized
+        // force status back to downloading to check if tick will turn back to
+        // synchronized
         cluster.chains_synchronizer[0].status = Status::Downloading;
         run_sync_1_to_1(&mut cluster, 0, 1)?;
         assert_eq!(Status::Synchronized, cluster.chains_synchronizer[0].status);
@@ -1411,8 +1419,8 @@ mod tests {
         run_sync_1_to_1(&mut cluster, 1, 0)?;
         run_sync_1_to_1(&mut cluster, 1, 0)?;
 
-        // node 1 should have the block even if it was bigger than maximum size, but it should
-        // have sent blocks 1 by 1 instead
+        // node 1 should have the block even if it was bigger than maximum size, but it
+        // should have sent blocks 1 by 1 instead
         let node1_last_block = cluster.chains[1].get_last_block()?.unwrap();
         assert_eq!(
             node0_last_block_size,
@@ -1559,7 +1567,8 @@ mod tests {
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(10));
         run_sync_1_to_1(&mut cluster, 0, 1)?;
 
-        // now, a simple tick should reset status to downloading since we need to catch up with master
+        // now, a simple tick should reset status to downloading since we need to catch
+        // up with master
         cluster.tick_chain_synchronizer(0)?;
         assert_eq!(Status::Downloading, cluster.chains_synchronizer[0].status(),);
 
@@ -1587,7 +1596,8 @@ mod tests {
             assert_eq!(NodeStatus::Unknown, node_info.check_status());
         }
 
-        // we lost quorum, we should now be synchronized anymore, no matter how many ticks we do
+        // we lost quorum, we should now be synchronized anymore, no matter how many
+        // ticks we do
         cluster.tick_chain_synchronizer(0)?;
         cluster.tick_chain_synchronizer(0)?;
         cluster.tick_chain_synchronizer(0)?;

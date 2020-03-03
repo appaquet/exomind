@@ -21,8 +21,8 @@ pub trait TransportHandle: Future<Output = ()> + Send + Unpin + 'static {
     fn get_stream(&mut self) -> Self::Stream;
 }
 
-/// Layer of the Exocore architecture to which a message is intented / originating.
-/// Ex: Data layer
+/// Layer of the Exocore architecture to which a message is intented /
+/// originating. Ex: Data layer
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum TransportLayer {
     None = 0,
@@ -69,7 +69,8 @@ pub enum OutEvent {
     Message(OutMessage),
 }
 
-/// Wraps mpsc Stream channel to map Transport's error without having a convoluted type
+/// Wraps mpsc Stream channel to map Transport's error without having a
+/// convoluted type
 pub struct MpscHandleStream {
     receiver: mpsc::Receiver<InEvent>,
 }
@@ -88,7 +89,8 @@ impl Stream for MpscHandleStream {
     }
 }
 
-/// Wraps mpsc Sink channel to map Transport's error without having a convoluted type
+/// Wraps mpsc Sink channel to map Transport's error without having a convoluted
+/// type
 #[pin_project]
 pub struct MpscHandleSink {
     #[pin]

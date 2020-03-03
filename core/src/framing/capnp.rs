@@ -7,7 +7,6 @@ use std::io;
 
 ///
 /// Frame that wraps a Capnproto message
-///
 pub struct CapnpFrame<I: FrameReader> {
     inner: I,
     segment_slices: Vec<(usize, usize)>,
@@ -86,7 +85,6 @@ impl<I: FrameReader + Clone> Clone for CapnpFrame<I> {
 
 ///
 /// Frame that wraps a Capnpframe with type annotation.
-///
 pub struct TypedCapnpFrame<I: FrameReader, T>
 where
     T: for<'a> MessageType<'a>,
@@ -163,7 +161,6 @@ where
 
 ///
 /// Capnproto frame builder
-///
 pub struct CapnpFrameBuilder<T>
 where
     T: for<'a> MessageType<'a>,

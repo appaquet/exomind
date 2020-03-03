@@ -6,8 +6,8 @@ use exocore_data::tests_utils::DataTestCluster;
 use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 
 use crate::mutation::MutationBuilder;
+use crate::store::local::mutation_index::MutationIndexConfig;
 use crate::store::local::store::StoreHandle;
-use crate::store::local::trait_index::TraitIndexConfig;
 use crate::store::local::EntityIndexConfig;
 
 use super::*;
@@ -37,13 +37,13 @@ impl TestStore {
         let registry = Arc::new(Registry::new_with_exocore_types());
 
         let index_config = EntityIndexConfig {
-            pending_index_config: TraitIndexConfig {
+            pending_index_config: MutationIndexConfig {
                 indexer_num_threads: Some(1),
-                ..TraitIndexConfig::default()
+                ..MutationIndexConfig::default()
             },
-            chain_index_config: TraitIndexConfig {
+            chain_index_config: MutationIndexConfig {
                 indexer_num_threads: Some(1),
-                ..TraitIndexConfig::default()
+                ..MutationIndexConfig::default()
             },
             ..EntityIndexConfig::default()
         };

@@ -152,7 +152,8 @@ impl InMessage {
     }
 }
 
-/// Structure that contains information that can be used to reply to a received message.
+/// Structure that contains information that can be used to reply to a received
+/// message.
 #[derive(Clone)]
 pub struct MessageReplyToken {
     from: Node,

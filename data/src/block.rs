@@ -26,18 +26,19 @@ pub type SignaturesFrame<I> = TypedCapnpFrame<PaddedFrame<SizedFrame<I>>, block_
 
 ///
 /// A trait representing a block stored or to be stored in the chain.
-/// It can either be a referenced block (`BlockRef`) or a in-memory block (`BlockOwned`).
+/// It can either be a referenced block (`BlockRef`) or a in-memory block
+/// (`BlockOwned`).
 ///
 /// A block consists of 3 parts:
 ///  * Block header
 ///  * Operations' bytes (capnp serialized `chain_operation` frames)
 ///  * Block signatures
 ///
-/// The block header and operations' data are the same on all nodes. Since a node writes a block
-/// as soon as it has enough signatures, signatures can differ from one node to the other. Signatures
-/// frame is pre-allocated, which means that not all signatures may fit. But in theory, it should always
+/// The block header and operations' data are the same on all nodes. Since a
+/// node writes a block as soon as it has enough signatures, signatures can
+/// differ from one node to the other. Signatures frame is pre-allocated, which
+/// means that not all signatures may fit. But in theory, it should always
 /// contain enough space for all nodes to add their own signature.
-///
 pub trait Block {
     type UnderlyingFrame: FrameReader<OwnedType = Vec<u8>>;
 
@@ -177,7 +178,6 @@ pub trait Block {
 
 ///
 /// Reads block header frame from an underlying frame (or just data)
-///
 pub fn read_header_frame<I: FrameReader>(inner: I) -> Result<BlockHeaderFrame<I>, Error> {
     let sized_frame = SizedFrame::new(inner)?;
     let multihash_frame = MultihashFrame::new(sized_frame)?;
@@ -203,7 +203,6 @@ pub fn build_header_frame(
 
 ///
 /// Iterator over operations stored in a block.
-///
 pub struct BlockOperationsIterator<'a> {
     index: usize,
     operations_header: Vec<BlockOperationHeader>,
@@ -243,7 +242,6 @@ impl<'a> Iterator for BlockOperationsIterator<'a> {
 
 ///
 /// In-memory block.
-///
 pub struct BlockOwned {
     pub offset: BlockOffset,
     pub header: BlockHeaderFrame<Vec<u8>>,
@@ -333,7 +331,8 @@ impl BlockOwned {
             header_builder.copy_into_builder(&mut entry_builder);
         }
 
-        // create an empty signature for each node as a placeholder to find the size required for signatures
+        // create an empty signature for each node as a placeholder to find the size
+        // required for signatures
         let signature_frame = BlockSignatures::empty_signatures_for_nodes(cell)
             .to_frame_for_new_block(operations_data_size)?;
 
@@ -377,7 +376,6 @@ impl Block for BlockOwned {
 
 ///
 /// A referenced block
-///
 pub struct BlockRef<'a> {
     pub offset: BlockOffset,
     pub header: BlockHeaderFrame<&'a [u8]>,
@@ -463,7 +461,6 @@ impl<'a> Block for BlockRef<'a> {
 
 ///
 /// Block iterator over a slice of data.
-///
 pub struct ChainBlockIterator<'a> {
     current_offset: usize,
     data: &'a [u8],
@@ -504,7 +501,6 @@ impl<'a> Iterator for ChainBlockIterator<'a> {
 
 ///
 /// Wraps operations header stored in a block.
-///
 pub struct BlockOperations {
     multihash_bytes: Vec<u8>,
     headers: Vec<BlockOperationHeader>,
@@ -583,8 +579,8 @@ impl BlockOperations {
 }
 
 ///
-/// Header of an operation stored within a block. It represents the position in the bytes of the block.
-///
+/// Header of an operation stored within a block. It represents the position in
+/// the bytes of the block.
 struct BlockOperationHeader {
     operation_id: u64,
     data_offset: u32,
@@ -608,10 +604,11 @@ impl BlockOperationHeader {
 }
 
 ///
-/// Represents signatures stored in a block. Since a node writes a block as soon as it has enough signatures, signatures can
-/// differ from one node to the other. Signatures frame is pre-allocated, which means that not all signatures may fit. But in
-/// theory, it should always contain enough space for all nodes to add their own signature.
-///
+/// Represents signatures stored in a block. Since a node writes a block as soon
+/// as it has enough signatures, signatures can differ from one node to the
+/// other. Signatures frame is pre-allocated, which means that not all
+/// signatures may fit. But in theory, it should always contain enough space for
+/// all nodes to add their own signature.
 pub struct BlockSignatures {
     signatures: Vec<BlockSignature>,
 }
@@ -622,9 +619,8 @@ impl BlockSignatures {
     }
 
     ///
-    /// Create signatures with pre-allocated space for the number of nodes we have in
-    /// the cell
-    ///
+    /// Create signatures with pre-allocated space for the number of nodes we
+    /// have in the cell
     pub fn empty_signatures_for_nodes(cell: &Cell) -> BlockSignatures {
         let nodes = cell.nodes();
         let signatures = nodes
@@ -698,7 +694,8 @@ impl BlockSignatures {
         // we build the frame and re-read it
         let signatures_frame = Self::read_frame(frame_builder.as_bytes())?;
 
-        // make sure that the signatures frame size is the same as the one in block header
+        // make sure that the signatures frame size is the same as the one in block
+        // header
         if signatures_frame.whole_data_size() != expected_signatures_size {
             return Err(Error::Integrity(format!(
                 "Block local signatures isn't the same size as expected (got={} expected={})",
@@ -729,8 +726,8 @@ impl BlockSignatures {
 }
 
 ///
-/// Represents a signature of the block by one node, using its own key to sign the block's hash.
-///
+/// Represents a signature of the block by one node, using its own key to sign
+/// the block's hash.
 pub struct BlockSignature {
     pub node_id: NodeId,
     pub signature: Signature,
@@ -749,7 +746,6 @@ impl BlockSignature {
 
 ///
 /// Block related errors
-///
 #[derive(Clone, Debug, Fail)]
 pub enum Error {
     #[fail(display = "Block integrity error: {}", _0)]
@@ -913,7 +909,8 @@ mod tests {
         let block_signatures = BlockSignatures::new_from_signatures(Vec::new());
         let signatures_frame = block_signatures.to_frame_for_existing_block(&block1_reader)?;
 
-        // new signatures frame should be the same size as the signatures specified in block
+        // new signatures frame should be the same size as the signatures specified in
+        // block
         assert_eq!(
             usize::from(block1_reader.get_signatures_size()),
             signatures_frame.whole_data_size()

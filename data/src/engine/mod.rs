@@ -63,10 +63,12 @@ impl Default for EngineConfig {
     }
 }
 
-/// The data engine manages storage and replication of data among the nodes of the cell.
+/// The data engine manages storage and replication of data among the nodes of
+/// the cell.
 ///
 /// It contains 2 stores:
-///   * Pending store: temporary store in which operations are stored until they get commited to chain
+///   * Pending store: temporary store in which operations are stored until they get commited to
+///     chain
 ///   * Chain store: persistent store using a block-chain like data structure
 pub struct Engine<T, CS, PS>
 where
@@ -321,8 +323,8 @@ where
         )?;
         self.sync_state = sync_context.sync_state;
 
-        // to prevent sending operations that may have already been committed, we don't propagate
-        // pending store changes unless the chain is synchronized
+        // to prevent sending operations that may have already been committed, we don't
+        // propagate pending store changes unless the chain is synchronized
         if self.chain_is_synchronized() {
             self.send_messages_from_sync_context(&mut sync_context)?;
         }
@@ -337,8 +339,8 @@ where
         message: &InMessage,
         request: TypedCapnpFrame<R, pending_sync_request::Owned>,
     ) -> Result<(), Error> {
-        // to prevent sending operations that may have already been committed, we don't accept
-        // any pending sync requests until the chain is synchronized
+        // to prevent sending operations that may have already been committed, we don't
+        // accept any pending sync requests until the chain is synchronized
         if !self.chain_is_synchronized() {
             return Ok(());
         }
@@ -404,11 +406,13 @@ where
         self.chain_synchronizer
             .tick(&mut sync_context, &self.chain_store)?;
 
-        // to prevent synchronizing operations that may have added to the chain, we should only
-        // start doing commit management & pending synchronization once the chain is synchronized
+        // to prevent synchronizing operations that may have added to the chain, we
+        // should only start doing commit management & pending synchronization
+        // once the chain is synchronized
         if self.chain_is_synchronized() {
-            // commit manager should always be ticked before pending synchronizer so that it may
-            // remove operations that don't need to be synchronized anymore (ex: been committed)
+            // commit manager should always be ticked before pending synchronizer so that it
+            // may remove operations that don't need to be synchronized anymore
+            // (ex: been committed)
             self.commit_manager.tick(
                 &mut sync_context,
                 &mut self.pending_synchronizer,
@@ -471,8 +475,9 @@ where
 
     fn dispatch_event(&mut self, event: &Event) {
         for (handle_id, discontinued, stream_sender) in self.events_stream_sender.iter_mut() {
-            // if we hit a full buffer at last send, the stream got a discontinuity and we need to advise consumer.
-            // we try to emit a discontinuity event, and if we succeed (buffer has space), we try to send the next event
+            // if we hit a full buffer at last send, the stream got a discontinuity and we
+            // need to advise consumer. we try to emit a discontinuity event,
+            // and if we succeed (buffer has space), we try to send the next event
             if *discontinued {
                 if let Ok(()) = stream_sender.try_send(Event::StreamDiscontinuity) {
                     *discontinued = false;
@@ -484,14 +489,16 @@ where
             match stream_sender.try_send(event.clone()) {
                 Ok(()) => {}
                 Err(ref err) if err.is_full() => {
-                    error!("Couldn't send event to handle {} because channel buffer is full. Marking as discontinued", handle_id);
+                    error!(
+                        "Couldn't send event to handle {} because channel buffer is full. Marking as discontinued",
+                        handle_id
+                    );
                     *discontinued = true;
                 }
                 Err(err) => {
                     error!(
                         "Couldn't send event to handle {} for a reason other than channel buffer full: {:}",
-                        handle_id,
-                        err
+                        handle_id, err
                     );
                 }
             }
@@ -516,8 +523,9 @@ where
     }
 }
 
-/// Synchronization context used by `chain_sync`, `pending_sync` and `commit_manager` to dispatch
-/// messages to other nodes, and dispatch events to be sent to engine handles.
+/// Synchronization context used by `chain_sync`, `pending_sync` and
+/// `commit_manager` to dispatch messages to other nodes, and dispatch events to
+/// be sent to engine handles.
 struct SyncContext {
     events: Vec<Event>,
     messages: Vec<SyncContextMessage>,
@@ -613,13 +621,14 @@ impl SyncContextMessage {
     }
 }
 
-/// State of the synchronization, used to communicate information between the `ChainSynchronizer`,
-/// `CommitManager` and `PendingSynchronizer`.
+/// State of the synchronization, used to communicate information between the
+/// `ChainSynchronizer`, `CommitManager` and `PendingSynchronizer`.
 #[derive(Clone, Copy)]
 struct SyncState {
-    /// Indicates what is the last block that got cleaned up from pending store, and that
-    /// is now only available from the chain. This is used by the `PendingSynchronizer` to
-    /// know which operations it should not include anymore in its requests.
+    /// Indicates what is the last block that got cleaned up from pending store,
+    /// and that is now only available from the chain. This is used by the
+    /// `PendingSynchronizer` to know which operations it should not include
+    /// anymore in its requests.
     pending_last_cleanup_block: Option<(BlockOffset, BlockHeight)>,
 }
 

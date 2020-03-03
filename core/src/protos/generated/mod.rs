@@ -1,5 +1,5 @@
-// TODO: When Rust IntelliJ will support macro inclusion, we'll get back to the normal way
-//pub mod common_capnp {
+// TODO: When Rust IntelliJ will support macro inclusion, we'll get back to the
+// normal way pub mod common_capnp {
 //    include!(concat!(env!("OUT_DIR"), "/proto/common_capnp.rs"));
 //}
 //

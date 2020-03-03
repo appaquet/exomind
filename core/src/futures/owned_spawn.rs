@@ -6,8 +6,9 @@ use futures::FutureExt;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-/// Spawns a future on current executor that can be cancelled by dropping the `OwnedSpawn` handle.
-/// It is also possible to get the result of the spawned future by awaiting on the handle.
+/// Spawns a future on current executor that can be cancelled by dropping the
+/// `OwnedSpawn` handle. It is also possible to get the result of the spawned
+/// future by awaiting on the handle.
 pub fn owned_spawn<F, O>(fut: F) -> OwnedSpawn<O>
 where
     F: Future<Output = O> + 'static + Send,
@@ -55,10 +56,11 @@ where
     }
 }
 
-/// Collection of `OwnedSpawn` that allow keeping ownership over spawned futures and manage their
-/// completion.
+/// Collection of `OwnedSpawn` that allow keeping ownership over spawned futures
+/// and manage their completion.
 ///
-/// Caution: The `cleanup` method needs to be called in order to cleanup completed spawns.
+/// Caution: The `cleanup` method needs to be called in order to cleanup
+/// completed spawns.
 pub struct OwnedSpawnSet<O>
 where
     O: Send + 'static,
@@ -82,7 +84,8 @@ where
         self.spawns.push(spawn);
     }
 
-    /// Cleans up the completed spawns and return a new set with remaining spawns.
+    /// Cleans up the completed spawns and return a new set with remaining
+    /// spawns.
     pub async fn cleanup(self) -> OwnedSpawnSet<O> {
         let remaining_spawns = OwnedSpawnCleaner(self.spawns).await;
         OwnedSpawnSet {

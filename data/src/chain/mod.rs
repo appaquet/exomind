@@ -11,7 +11,6 @@ pub use error::Error;
 
 ///
 /// Persistence for the chain
-///
 pub trait ChainStore: Send + Sync + 'static {
     fn segments(&self) -> Vec<Segment>;
 
@@ -41,9 +40,8 @@ pub trait ChainStore: Send + Sync + 'static {
 ///
 /// Segment of the chain with a specified offsets range, in bytes.
 ///
-/// The upper range is exclusive. You can use `get_block_from_next_offset` to get the last block
-/// of the segment.
-///
+/// The upper range is exclusive. You can use `get_block_from_next_offset` to
+/// get the last block of the segment.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Segment {
     pub range: Range<BlockOffset>,
@@ -51,5 +49,4 @@ pub struct Segment {
 
 ///
 /// Iterator over stored blocks.
-///
 type StoredBlockIterator<'pers> = Box<dyn Iterator<Item = BlockRef<'pers>> + 'pers>;

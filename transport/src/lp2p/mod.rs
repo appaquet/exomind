@@ -28,11 +28,12 @@ use crate::{TransportHandle, TransportLayer};
 mod behaviour;
 mod protocol;
 
-/// Libp2p transport used by all layers of Exocore through handles. There is one handle
-/// per cell per layer.
+/// Libp2p transport used by all layers of Exocore through handles. There is one
+/// handle per cell per layer.
 ///
-/// The transport itself is scheduled on an Executor, and its future will complete as soon
-/// it's ready. Once all handles are dropped, all its scheduled tasks will be stopped too.
+/// The transport itself is scheduled on an Executor, and its future will
+/// complete as soon it's ready. Once all handles are dropped, all its scheduled
+/// tasks will be stopped too.
 pub struct Libp2pTransport {
     local_node: LocalNode,
     config: Libp2pTransportConfig,
@@ -41,8 +42,9 @@ pub struct Libp2pTransport {
 }
 
 impl Libp2pTransport {
-    /// Creates a new transport for given node and config. The node is important here
-    /// since all messages are authenticated using the node's private key thanks to secio
+    /// Creates a new transport for given node and config. The node is important
+    /// here since all messages are authenticated using the node's private
+    /// key thanks to secio
     pub fn new(local_node: LocalNode, config: Libp2pTransportConfig) -> Libp2pTransport {
         let inner = Handles {
             handles: HashMap::new(),
@@ -126,7 +128,8 @@ impl Libp2pTransport {
             Swarm::listen_on(&mut swarm, listen_address)?;
         }
 
-        // Spawn the swarm & receive message from a channel through which outgoing messages will go
+        // Spawn the swarm & receive message from a channel through which outgoing
+        // messages will go
         let (out_sender, mut out_receiver) =
             mpsc::channel::<OutEvent>(self.config.handles_to_behaviour_channel_size);
 
@@ -348,7 +351,8 @@ impl Default for Libp2pTransportConfig {
 
 /// Transport handles created on the `Libp2pTransport`.
 ///
-/// A transport can be used for multiple cells, so multiple handles for the same layers, but on different cells may be created.
+/// A transport can be used for multiple cells, so multiple handles for the same
+/// layers, but on different cells may be created.
 struct Handles {
     handles: HashMap<(CellId, TransportLayer), HandleChannels>,
 }
@@ -375,7 +379,8 @@ struct HandleChannels {
     out_receiver: Option<mpsc::Receiver<OutEvent>>,
 }
 
-/// Handle taken by a Cell layer to receive and send message for a given node & cell.
+/// Handle taken by a Cell layer to receive and send message for a given node &
+/// cell.
 pub struct Libp2pTransportHandle {
     cell_id: CellId,
     layer: TransportLayer,
@@ -533,7 +538,8 @@ mod tests {
             assert_eq!(1, inner.handles.len());
         }
 
-        // we drop second handle, we expect inner to be dropped and therefor transport killed
+        // we drop second handle, we expect inner to be dropped and therefor transport
+        // killed
         drop(handle2_tester);
         expect_eventually(|| inner_weak.upgrade().is_none());
 

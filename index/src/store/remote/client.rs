@@ -49,8 +49,8 @@ impl Default for ClientConfiguration {
     }
 }
 
-/// This implementation of the AsyncStore allow sending all queries and mutations to
-/// a remote node's local store running the `Server` component.
+/// This implementation of the AsyncStore allow sending all queries and
+/// mutations to a remote node's local store running the `Server` component.
 pub struct Client<T>
 where
     T: TransportHandle,
@@ -99,7 +99,8 @@ where
     }
 
     pub async fn run(mut self) -> Result<(), Error> {
-        // create a channel through which we will receive message from our handles to be sent to transport
+        // create a channel through which we will receive message from our handles to be
+        // sent to transport
         let out_receiver = {
             let mut inner = self.inner.write()?;
             let (out_sender, out_receiver) = mpsc::unbounded();

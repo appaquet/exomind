@@ -4,7 +4,6 @@ use std::io;
 
 ///
 /// Checksumed frame using a multihash encoded digest
-///
 pub struct MultihashFrame<D: MultihashDigest, I: FrameReader> {
     inner: I,
     phantom: std::marker::PhantomData<D>,
@@ -71,7 +70,6 @@ impl<D: MultihashDigest, I: FrameReader + Clone> Clone for MultihashFrame<D, I> 
 
 ///
 /// Multihash frame builder
-///
 pub struct MultihashFrameBuilder<D: MultihashDigest, I: FrameBuilder> {
     inner: I,
     phantom: std::marker::PhantomData<D>,

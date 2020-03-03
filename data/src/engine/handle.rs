@@ -153,7 +153,8 @@ where
             None
         };
 
-        // if it's not found in pending store, or that it didn't have a clear status, we check in chain
+        // if it's not found in pending store, or that it didn't have a clear status, we
+        // check in chain
         if let Some(block) = unlocked_inner
             .chain_store
             .get_block_by_operation_id(operation_id)?
@@ -163,14 +164,15 @@ where
             }
         }
 
-        // if we're here, the operation was either absent, or just had a unknown status in pending store
-        // we return the pending store operation (if any)
+        // if we're here, the operation was either absent, or just had a unknown status
+        // in pending store we return the pending store operation (if any)
         Ok(pending_operation.map(EngineOperation::from_pending))
     }
 
     /// Take the events stream receiver out of this `Handle`.
-    /// This stream is bounded and consumptions should be non-blocking to prevent losing events.
-    /// Calling the engine on every call should be throttled in the case of a big read amplification.
+    /// This stream is bounded and consumptions should be non-blocking to
+    /// prevent losing events. Calling the engine on every call should be
+    /// throttled in the case of a big read amplification.
     pub fn take_events_stream(&mut self) -> Result<impl Stream<Item = Event>, Error> {
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
@@ -209,14 +211,14 @@ where
 
 ///
 /// Events dispatched to handles to notify changes in the different stores.
-///
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
     /// The engine is now started
     Started,
 
-    /// The stream of events hit the maximum buffer size, and some events got discarded.
-    /// Consumer state should be rebuilt from scratch to prevent having inconsistencies.
+    /// The stream of events hit the maximum buffer size, and some events got
+    /// discarded. Consumer state should be rebuilt from scratch to prevent
+    /// having inconsistencies.
     StreamDiscontinuity,
 
     /// An operation added to the pending store.
@@ -225,14 +227,14 @@ pub enum Event {
     /// A new block got added to the chain.
     NewChainBlock(BlockOffset),
 
-    /// The chain has diverged from given offset, which mean it will get re-written with new blocks.
-    /// Operations after this offset should ignored.
+    /// The chain has diverged from given offset, which mean it will get
+    /// re-written with new blocks. Operations after this offset should
+    /// ignored.
     ChainDiverged(BlockOffset),
 }
 
 ///
 /// Operation that comes either from the chain or from the pending store
-///
 pub struct EngineOperation {
     pub operation_id: OperationId,
     pub status: EngineOperationStatus,
@@ -295,7 +297,6 @@ impl EngineOperationStatus {
 
 ///
 /// Iterator of operations in the chain
-///
 pub struct ChainOperationsIterator<CS, PS>
 where
     CS: chain::ChainStore,
@@ -326,7 +327,8 @@ where
         let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
         let inner = inner.read()?;
 
-        // since a block may not contain operations (ex: genesis), we need to loop until we find one
+        // since a block may not contain operations (ex: genesis), we need to loop until
+        // we find one
         while self.current_operations.is_empty() {
             let block = inner.chain_store.get_block(self.next_offset)?;
             let height = block.get_height()?;

@@ -5,7 +5,6 @@ use exocore_transport::Error as TransportError;
 
 ///
 /// Engine errors
-///
 #[derive(Clone, Debug, Fail)]
 pub enum Error {
     #[fail(display = "Error in transport: {:?}", _0)]

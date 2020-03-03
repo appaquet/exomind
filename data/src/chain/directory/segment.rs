@@ -9,12 +9,12 @@ use super::DirectoryChainStoreConfig;
 use std::ffi::OsStr;
 
 ///
-/// A segment of the chain, stored in its own file (`segment_file`) and that should not exceed a size
-/// specified by configuration.
+/// A segment of the chain, stored in its own file (`segment_file`) and that
+/// should not exceed a size specified by configuration.
 ///
-/// As mmap can only accessed allocated space in the file, we need to pre-allocate space in the file.
-/// When a block would exceed this pre-allocated space, we re-size and re-open the file.
-///
+/// As mmap can only accessed allocated space in the file, we need to
+/// pre-allocate space in the file. When a block would exceed this pre-allocated
+/// space, we re-size and re-open the file.
 pub struct DirectorySegment {
     config: DirectoryChainStoreConfig,
     first_block_offset: BlockOffset,
@@ -142,7 +142,10 @@ impl DirectorySegment {
 
         let block_offset = block.offset();
         if next_block_offset != block_offset {
-            return Err(Error::Integrity(format!("Trying to write a block at an offset that wasn't next offset: next_block_offset={} block_offset={}", next_block_offset, block_offset)));
+            return Err(Error::Integrity(format!(
+                "Trying to write a block at an offset that wasn't next offset: next_block_offset={} block_offset={}",
+                next_block_offset, block_offset
+            )));
         }
 
         {
@@ -256,10 +259,10 @@ impl DirectorySegment {
 }
 
 ///
-/// Wraps a mmap'ed file stored on disk. As mmap cannot access content that is beyond the file size,
-/// the segment is over-allocated so that we can write via mmap. If writing would exceed the size,
-/// we re-allocate the file and re-open the mmap.
-///
+/// Wraps a mmap'ed file stored on disk. As mmap cannot access content that is
+/// beyond the file size, the segment is over-allocated so that we can write via
+/// mmap. If writing would exceed the size, we re-allocate the file and re-open
+/// the mmap.
 struct SegmentFile {
     path: PathBuf,
     file: File,

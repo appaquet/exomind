@@ -21,19 +21,22 @@ use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::time::Clock;
 
 ///
-/// Synchronizes local pending store against remote nodes' pending stores. It does that by exchanging
-/// PendingSyncRequest messages.
+/// Synchronizes local pending store against remote nodes' pending stores. It
+/// does that by exchanging PendingSyncRequest messages.
 ///
-/// This PendingSyncRequest message contains information about ranges of operations (by `OperationID`) in a local pending store,
-/// and is sent to be applied / compared to the remote pending store. If there are differences in the remote store, the remote
-/// nodes reply with a request that represents the intent of the remote store. That intent could be to request missing data,
-/// or send missing data.
+/// This PendingSyncRequest message contains information about ranges of
+/// operations (by `OperationID`) in a local pending store, and is sent to be
+/// applied / compared to the remote pending store. If there are differences in
+/// the remote store, the remote nodes reply with a request that represents the
+/// intent of the remote store. That intent could be to request missing data, or
+/// send missing data.
 ///
-/// The store could be compared as a whole (no boundaries), but that would result in excessive data transmission, because
-/// a single difference would require the whole store to be compared. In order to minimize this, when building ranges, a node
-/// tries to limit the number of operations by range. If a single range is not equal, only this range will be compared via
+/// The store could be compared as a whole (no boundaries), but that would
+/// result in excessive data transmission, because a single difference would
+/// require the whole store to be compared. In order to minimize this, when
+/// building ranges, a node tries to limit the number of operations by range. If
+/// a single range is not equal, only this range will be compared via
 /// headers exchange and full operations exchange.
-///
 pub(super) struct PendingSynchronizer<PS: PendingStore> {
     config: PendingSyncConfig,
     cell: Cell,
@@ -54,9 +57,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Called at interval by the engine to make progress on synchronizing with other nodes. In theory, all changes are propagated
-    /// in real-time when operations get added, but this periodic synchronization makes sure that we didn't lose anything.
-    ///
+    /// Called at interval by the engine to make progress on synchronizing with
+    /// other nodes. In theory, all changes are propagated in real-time when
+    /// operations get added, but this periodic synchronization makes sure that
+    /// we didn't lose anything.
     pub fn tick(&mut self, sync_context: &mut SyncContext, store: &PS) -> Result<(), Error> {
         debug!("Sync tick begins");
 
@@ -78,9 +82,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Handles a new operation coming from our own node, to be added to the pending store.
-    /// This will add it to local pending store, and create a request message to be sent to other nodes.
-    ///
+    /// Handles a new operation coming from our own node, to be added to the
+    /// pending store. This will add it to local pending store, and create a
+    /// request message to be sent to other nodes.
     pub fn handle_new_operation(
         &mut self,
         sync_context: &mut SyncContext,
@@ -91,7 +95,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         store.put_operation(operation)?;
         sync_context.push_event(Event::NewPendingOperation(operation_id));
 
-        // create a sync request for which we send full detail for new op, but none for other ops
+        // create a sync request for which we send full detail for new op, but none for
+        // other ops
         let nodes = self.cell.nodes();
         for node in nodes.iter().all_except_local() {
             let request =
@@ -109,12 +114,13 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Handles a sync request coming from a remote node. A request contains ranges of operation ids that need to be merged and/or
-    /// compared to our local store. See `handle_incoming_sync_ranges` for more details on the merge / comparison.
+    /// Handles a sync request coming from a remote node. A request contains
+    /// ranges of operation ids that need to be merged and/or compared to
+    /// our local store. See `handle_incoming_sync_ranges` for more details on
+    /// the merge / comparison.
     ///
-    /// If we have any differences with remote node data, we send a request back with more data that will allow converging in the
-    /// same stored data.
-    ///
+    /// If we have any differences with remote node data, we send a request back
+    /// with more data that will allow converging in the same stored data.
     pub fn handle_incoming_sync_request<F: FrameReader>(
         &mut self,
         from_node: &Node,
@@ -155,8 +161,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Handles the ranges coming from a sync request. For each range, we check if we have
-    /// the same information locally, and take actions based on it.
+    /// Handles the ranges coming from a sync request. For each range, we check
+    /// if we have the same information locally, and take actions based on
+    /// it.
     ///
     /// For each range, actions include:
     ///   * Doing nothing if both remote and local are equals
@@ -164,8 +171,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     ///   * Sending headers operations if we differences without any headers to compared with
     ///   * Diffing our headers vs remote headers if headers are included.
     ///
-    /// In any case, if the range includes operations, we always apply them first.
-    ///
+    /// In any case, if the range includes operations, we always apply them
+    /// first.
     fn handle_incoming_sync_ranges<'a, I>(
         &mut self,
         sync_context: &mut SyncContext,
@@ -211,8 +218,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 }
             }
 
-            // then check local store's range hash and count. if our local store data is the same as the one described in the
-            // payload, we stop here since everything is synchronized
+            // then check local store's range hash and count. if our local store data is the
+            // same as the one described in the payload, we stop here since
+            // everything is synchronized
             let (local_hash, local_count) =
                 self.local_store_range_info(store, bounds_range, operations_from_height)?;
             let remote_hash = sync_range_reader.get_operations_hash()?;
@@ -227,7 +235,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 continue;
             }
 
-            // if we're here, remote's data is different from local data. we check what we need to do
+            // if we're here, remote's data is different from local data. we check what we
+            // need to do
             out_ranges_contains_changes = true;
             out_ranges.push_new_range(bounds_from);
 
@@ -267,8 +276,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Creates a sync request with the given details for the given range of operation IDs
-    ///
+    /// Creates a sync request with the given details for the given range of
+    /// operation IDs
     fn create_sync_request_for_range<R, F>(
         &self,
         sync_context: &SyncContext,
@@ -318,9 +327,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Hashes the operations of the store for the given range. This will be used to compare with the
-    /// incoming sync request.
-    ///
+    /// Hashes the operations of the store for the given range. This will be
+    /// used to compare with the incoming sync request.
     fn local_store_range_info<R>(
         &self,
         store: &PS,
@@ -344,8 +352,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Do a diff of the local and remote data based on the headers in the sync request payload.
-    ///
+    /// Do a diff of the local and remote data based on the headers in the sync
+    /// request payload.
     fn diff_local_remote_range<'a, 'b, RI, LI>(
         out_ranges: &mut SyncRangesBuilder,
         included_operations: &mut HashSet<u64>,
@@ -376,7 +384,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                         // Remote is missing it, send full operation
                         out_ranges.push_operation(local_op, OperationDetails::Full);
                     } else {
-                        // Else, it was included in operations, so we tell remote that we have it now
+                        // Else, it was included in operations, so we tell remote that we have it
+                        // now
                         out_ranges.push_operation(local_op, OperationDetails::Header);
                     }
                 }
@@ -386,7 +395,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             }
         }
         if !diff_has_difference {
-            return Err(PendingSyncError::InvalidSyncState("Got into diff branch, but didn't result in any changes, which shouldn't have happened".to_string()).into());
+            return Err(PendingSyncError::InvalidSyncState(
+                "Got into diff branch, but didn't result in any changes, which shouldn't have happened".to_string(),
+            )
+            .into());
         }
 
         Ok(())
@@ -406,9 +418,8 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Returns operations from the pending store, but only if they are not committed, or
-    /// committed after the given height.
-    ///
+    /// Returns operations from the pending store, but only if they are not
+    /// committed, or committed after the given height.
     fn operations_iter_from_height<'store, R>(
         &self,
         store: &'store PS,
@@ -432,9 +443,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 
     ///
-    /// Returns the block height at which we filter operations from pending store with. See `PendingSyncConfig`.`operations_included_depth`.
-    /// The height from the request has priority, and then we fallback to the one in the sync_state.
-    ///
+    /// Returns the block height at which we filter operations from pending
+    /// store with. See `PendingSyncConfig`.`operations_included_depth`. The
+    /// height from the request has priority, and then we fallback to the one in
+    /// the sync_state.
     fn get_from_block_height(
         &self,
         sync_context: &SyncContext,
@@ -460,7 +472,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
 ///
 /// Synchronizer's configuration
-///
 #[derive(Copy, Clone, Debug)]
 pub struct PendingSyncConfig {
     pub max_operations_per_range: u32,
@@ -469,17 +480,17 @@ pub struct PendingSyncConfig {
 
     ///
     /// Related to `CommitManagerConfig`.`operations_cleanup_after_block_depth`.
-    /// This indicates how many blocks after the last cleaned up block we should include by
-    /// default when doing sync requests, so that we don't request for operations that may
-    /// have been cleaned up on other nodes.
+    /// This indicates how many blocks after the last cleaned up block we should
+    /// include by default when doing sync requests, so that we don't
+    /// request for operations that may have been cleaned up on other nodes.
     ///
-    /// The `CommitManager` does cleanup at interval, and sets the last block that got cleaned
-    /// in the `SyncState` up from the `PendingStore` because it was committed for more than
-    /// `CommitManagerConfig`.`operations_cleanup_after_block_depth` of depth.
+    /// The `CommitManager` does cleanup at interval, and sets the last block
+    /// that got cleaned in the `SyncState` up from the `PendingStore`
+    /// because it was committed for more than `CommitManagerConfig`.
+    /// `operations_cleanup_after_block_depth` of depth.
     ///
-    /// This value is added to the `SyncState` last cleanup block depth to make sure we don't
-    /// ask or include operations that got cleaned up.
-    ///
+    /// This value is added to the `SyncState` last cleanup block depth to make
+    /// sure we don't ask or include operations that got cleaned up.
     pub operations_depth_after_cleanup: BlockHeight,
 }
 
@@ -495,7 +506,6 @@ impl Default for PendingSyncConfig {
 
 ///
 /// Synchronization information about a remote node
-///
 struct NodeSyncInfo {
     request_tracker: request_tracker::RequestTracker,
 }
@@ -513,7 +523,6 @@ impl NodeSyncInfo {
 
 ///
 /// Converts bounds from sync_request range to SyncBounds
-///
 fn extract_sync_bounds(
     sync_range_reader: &pending_sync_range::Reader,
 ) -> Result<SyncBounds, Error> {
@@ -545,8 +554,8 @@ type SyncBounds = (
 );
 
 ///
-/// Collection of SyncRangeBuilder, taking into account maximum operations we want per range.
-///
+/// Collection of SyncRangeBuilder, taking into account maximum operations we
+/// want per range.
 struct SyncRangesBuilder {
     config: PendingSyncConfig,
     ranges: Vec<SyncRangeBuilder>,
@@ -561,8 +570,8 @@ impl SyncRangesBuilder {
     }
 
     ///
-    /// Pushes the given operation to the latest range, or to a new range if the latest is full.
-    ///
+    /// Pushes the given operation to the latest range, or to a new range if the
+    /// latest is full.
     fn push_operation(&mut self, operation: StoredOperation, details: OperationDetails) {
         if self.ranges.is_empty() {
             self.push_new_range(Bound::Unbounded);
@@ -571,7 +580,8 @@ impl SyncRangesBuilder {
             if last_range_size > self.config.max_operations_per_range {
                 let last_range_to = self.last_range_to_bound().expect("Should had a last range");
 
-                // converted included into excluded for starting bound of next range since the item is in current range, not next one
+                // converted included into excluded for starting bound of next range since the
+                // item is in current range, not next one
                 if let Bound::Included(to) = last_range_to {
                     self.push_new_range(Bound::Excluded(to));
                 } else {
@@ -608,14 +618,14 @@ impl SyncRangesBuilder {
 }
 
 ///
-/// Builder for pending_sync_range messages. A pending sync range represents a range in the Pending Store to be synchronized
-/// against a remote node's own store.
+/// Builder for pending_sync_range messages. A pending sync range represents a
+/// range in the Pending Store to be synchronized against a remote node's own
+/// store.
 ///
 /// It can describe the operations in 3 ways:
 ///  * High level metadata (hash + count)
 ///  * Operations headers
 ///  * Operations full data
-///
 struct SyncRangeBuilder {
     from_operation: Bound<OperationId>,
     to_operation: Bound<OperationId>,
@@ -763,7 +773,6 @@ impl SyncRangeBuilder {
 
 ///
 /// Pending Synchronization Error
-///
 #[derive(Clone, Debug, Fail)]
 pub enum PendingSyncError {
     #[fail(display = "Got into an invalid synchronization state: {}", _0)]
@@ -863,7 +872,8 @@ mod tests {
         let ranges = sync_request_reader.get_ranges()?;
         assert!(ranges.len() > 1);
 
-        // filter with height of 1000 should generate only 1 empty range since it matches no operations
+        // filter with height of 1000 should generate only 1 empty range since it
+        // matches no operations
         cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
         let mut sync_context = SyncContext::new(SyncState::default());
         sync_context.sync_state.pending_last_cleanup_block = Some((0, 1000));

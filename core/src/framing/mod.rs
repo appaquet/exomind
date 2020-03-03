@@ -16,15 +16,14 @@ pub use sized::{IteratedSizedFrame, SizedFrame, SizedFrameBuilder, SizedFrameIte
 ///
 /// Represents a frame that either wrap another frame or bytes (vec or slice).
 ///
-/// The hierarchy of a FrameReader instances are the opposite of the persisted hierarchy.
-/// Ex:
+/// The hierarchy of a FrameReader instances are the opposite of the persisted
+/// hierarchy. Ex:
 ///     Stored: SizedFrame( MultihashFrame( Data ) )
 ///     Runtime: Data ( MultiHash ( SizedFrame ) )
 ///
-/// The reason for this reversal is that the inner most frame doesn't know how to extract
-/// the bytes from the whole frame. Therefor, the wrapping frame "exposes" the bytes to
-/// the inner most frames at runtime.
-///
+/// The reason for this reversal is that the inner most frame doesn't know how
+/// to extract the bytes from the whole frame. Therefor, the wrapping frame
+/// "exposes" the bytes to the inner most frames at runtime.
 pub trait FrameReader {
     type OwnedType: FrameReader;
 
@@ -92,13 +91,12 @@ impl FrameReader for &[u8] {
 }
 
 ///
-/// A frame builder can wrap another frame (or just data), and can be wrapped into another
-/// frame. The runtime hierarchy is the same as persisted.
+/// A frame builder can wrap another frame (or just data), and can be wrapped
+/// into another frame. The runtime hierarchy is the same as persisted.
 ///
 /// Ex:
 ///     Stored: SizedFrame(MultihashFrame(Data))
 ///     Runtime: SizedFrameBuilder(MultihashFrameBuilder(Data))
-///
 pub trait FrameBuilder {
     type OwnedFrameType;
 
@@ -108,11 +106,12 @@ pub trait FrameBuilder {
     /// Write the frame into the given bytes slice
     fn write_into(&self, into: &mut [u8]) -> Result<usize, Error>;
 
-    /// Expected size of the frame (in bytes). Optional since some kind of frames
-    /// have an unknown size until they are serialized (ex: capnp)
+    /// Expected size of the frame (in bytes). Optional since some kind of
+    /// frames have an unknown size until they are serialized (ex: capnp)
     fn expected_size(&self) -> Option<usize>;
 
-    /// Creates a owned version of this frame, which is usually a FrameReader implementation
+    /// Creates a owned version of this frame, which is usually a FrameReader
+    /// implementation
     fn as_owned_frame(&self) -> Self::OwnedFrameType;
 
     /// Writes the frame into a in-memory buffer and returns it.
@@ -125,9 +124,8 @@ pub trait FrameBuilder {
 }
 
 ///
-/// Implementation of FrameBuilder for a bytes array allow wrapping the content of
-/// the array into another frame
-///
+/// Implementation of FrameBuilder for a bytes array allow wrapping the content
+/// of the array into another frame
 impl FrameBuilder for Vec<u8> {
     type OwnedFrameType = Vec<u8>;
 

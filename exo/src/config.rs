@@ -9,7 +9,6 @@ use std::path::{Path, PathBuf};
 
 ///
 /// Root configuration of a Node running servers and Cells
-///
 #[derive(Serialize, Deserialize)]
 pub struct NodeConfig {
     pub node_keypair: String,
@@ -57,7 +56,6 @@ impl NodeConfig {
 
 ///
 /// Configuration of a Cell running in the node
-///
 #[derive(Serialize, Deserialize)]
 pub struct CellConfig {
     pub public_key: String,

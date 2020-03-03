@@ -21,8 +21,8 @@ const CHANNELS_SIZE: usize = 1000;
 
 type HandleKey = (NodeId, TransportLayer);
 
-/// In memory transport used by all layers of Exocore through handles. There is one handle
-/// per cell per layer.
+/// In memory transport used by all layers of Exocore through handles. There is
+/// one handle per cell per layer.
 pub struct MockTransport {
     handles_sink: Arc<Mutex<HashMap<HandleKey, HandleSink>>>,
     handle_set: HandleSet,

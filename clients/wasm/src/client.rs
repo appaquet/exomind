@@ -40,7 +40,12 @@ impl ExocoreClient {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
         // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
-        let local_node = LocalNode::new_from_keypair(Keypair::decode_base58_string("ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP").unwrap());
+        let local_node = LocalNode::new_from_keypair(
+            Keypair::decode_base58_string(
+                "ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP",
+            )
+            .unwrap(),
+        );
 
         let transport_config = Libp2pTransportConfig::default();
         let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);

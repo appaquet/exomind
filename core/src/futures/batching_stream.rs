@@ -4,9 +4,9 @@ use futures::{Stream, StreamExt};
 
 /// Wraps a stream to batch all available capped number of items.
 ///
-/// This stream doesn't block wait for a certain duration before sending available items, but will
-/// consume the underlying stream until it would block, or until the maximum number of items is
-/// collected.
+/// This stream doesn't block wait for a certain duration before sending
+/// available items, but will consume the underlying stream until it would
+/// block, or until the maximum number of items is collected.
 pub struct BatchingStream<S>
 where
     S: Stream + Unpin,

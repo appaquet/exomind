@@ -9,7 +9,6 @@ extern crate log;
 
 ///
 /// Modules
-///
 pub mod block;
 pub mod chain;
 #[cfg(feature = "engine")]
@@ -22,7 +21,6 @@ pub mod tests_utils;
 
 ///
 /// Re-exports
-///
 #[cfg(feature = "directory_chain")]
 pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
 #[cfg(feature = "engine")]

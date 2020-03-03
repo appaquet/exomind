@@ -42,7 +42,12 @@ impl Context {
         let mut runtime = Runtime::new().expect("Couldn't start runtime");
 
         // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
-        let local_node = LocalNode::new_from_keypair(Keypair::decode_base58_string("ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP").unwrap());
+        let local_node = LocalNode::new_from_keypair(
+            Keypair::decode_base58_string(
+                "ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP",
+            )
+            .unwrap(),
+        );
         let local_addr = "/ip4/0.0.0.0/tcp/0"
             .parse()
             .expect("Couldn't parse local node");

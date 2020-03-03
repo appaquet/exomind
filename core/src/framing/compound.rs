@@ -4,7 +4,6 @@ use std::io;
 
 ///
 /// Frame that wraps 2 underlying frame into a single frame (like a tuple)
-///
 pub struct CompoundFrame<I: FrameReader> {
     inner: I,
     offset_right: usize,
@@ -66,7 +65,6 @@ impl<'p, I: FrameReader> FrameReader for CompoundSideReader<'p, I> {
 
 ///
 /// Compound frame builder
-///
 pub struct CompoundFrameBuilder<A: FrameBuilder, B: FrameBuilder> {
     left: A,
     right: B,

@@ -1,8 +1,9 @@
 use std::collections::{BinaryHeap, LinkedList};
 
-/// Iterator that extracts top results from underlying descend sorted iterator, but taking into account
-/// a scoring function that returns an original ordering and a penalized ordering.  This property
-/// allows early exit and prevent us from iterating through all results to extract top results.
+/// Iterator that extracts top results from underlying descend sorted iterator,
+/// but taking into account a scoring function that returns an original ordering
+/// and a penalized ordering.  This property allows early exit and prevent us
+/// from iterating through all results to extract top results.
 pub struct RescoredTopResultsIterator<I, E, F, S>
 where
     I: Iterator<Item = E>,
@@ -26,9 +27,10 @@ where
     fn next(&mut self) -> Option<E> {
         // on first call, we consume the inner iterator and build the top results
         if self.inner_iter.is_some() {
-            // create a sorted reserve in which we will add items that are uncertain to be next, but
-            // that will get added once we find an item from underlying iterator whose score is smaller
-            // than reserve's penalized score
+            // create a sorted reserve in which we will add items that are uncertain to be
+            // next, but that will get added once we find an item from
+            // underlying iterator whose score is smaller than reserve's
+            // penalized score
             let mut reserve = BinaryHeap::<ReserveItem<E, S>>::new();
 
             let inner_iter = self.inner_iter.take().unwrap();
@@ -40,8 +42,8 @@ where
                 );
 
                 // if we find items in reserve that have higher score than the original score of
-                // current item, it means we can add these reserve items since we will never find any
-                // new results with higher score
+                // current item, it means we can add these reserve items since we will never
+                // find any new results with higher score
                 while is_reserve_peek_higher(&mut reserve, score)
                     && self.top_results.len() < self.count
                 {
@@ -64,7 +66,8 @@ where
             }
         }
 
-        // if we are here, inner iterator was consumed and we just dequeue from to results
+        // if we are here, inner iterator was consumed and we just dequeue from to
+        // results
         self.top_results.pop_front()
     }
 }
@@ -107,11 +110,12 @@ fn is_reserve_peek_higher<E, S: Ord + Copy>(
 
 ///
 /// Add `top_negatively_rescored_results` function to any iterator.
-///
 pub trait RescoredTopResultsIterable: Iterator {
-    /// Iterator that extracts top results from underlying descend sorted iterator, but taking into account
-    /// a scoring function that returns an original ordering and a penalized ordering.  This property
-    /// allows early exit and prevent us from iterating through all results to extract top results.
+    /// Iterator that extracts top results from underlying descend sorted
+    /// iterator, but taking into account a scoring function that returns an
+    /// original ordering and a penalized ordering.  This property
+    /// allows early exit and prevent us from iterating through all results to
+    /// extract top results.
     fn top_negatively_rescored_results<F, S>(
         self,
         count: usize,
@@ -166,6 +170,6 @@ mod tests {
             .collect_vec();
 
         // order followed remapped
-        assert_eq!(results, vec![20, 15, 18 /*11*/, 10, 8, 5, 12 /*4*/]);
+        assert_eq!(results, vec![20, 15, 18 /* 11 */, 10, 8, 5, 12 /* 4 */]);
     }
 }

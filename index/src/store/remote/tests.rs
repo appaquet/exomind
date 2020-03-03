@@ -165,8 +165,8 @@ fn watched_query_timeout() -> Result<(), failure::Error> {
         watched_queries_register_timeout: Duration::from_millis(1000),
     };
 
-    // client will re-register itself at higher interval then expected on server, which will
-    // result in timing out eventually
+    // client will re-register itself at higher interval then expected on server,
+    // which will result in timing out eventually
     let client_config = ClientConfiguration {
         watched_queries_register_interval: Duration::from_millis(1100),
         ..ClientConfiguration::default()

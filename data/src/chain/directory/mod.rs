@@ -14,9 +14,9 @@ use operations_index::OperationsIndex;
 use std::sync::Arc;
 
 ///
-/// Directory based chain persistence. The chain is split in segments with configurable maximum size.
-/// This maximum size allows using mmap on 32bit systems by preventing segments from growing over 4gb.
-///
+/// Directory based chain persistence. The chain is split in segments with
+/// configurable maximum size. This maximum size allows using mmap on 32bit
+/// systems by preventing segments from growing over 4gb.
 pub struct DirectoryChainStore {
     config: DirectoryChainStoreConfig,
     directory: PathBuf,
@@ -327,8 +327,8 @@ impl ChainStore for DirectoryChainStore {
             }
         }
 
-        // we need to take out the index because it needs a block iterator that depends on the store itself
-        // TODO: To be solved in https://github.com/appaquet/exocore/issues/34
+        // we need to take out the index because it needs a block iterator that depends
+        // on the store itself TODO: To be solved in https://github.com/appaquet/exocore/issues/34
         let mut index = self
             .operations_index
             .take()
@@ -345,7 +345,6 @@ impl ChainStore for DirectoryChainStore {
 
 ///
 /// Configuration for directory based chain persistence.
-///
 #[derive(Copy, Clone, Debug)]
 pub struct DirectoryChainStoreConfig {
     pub segment_over_allocate_size: u64,
@@ -367,7 +366,6 @@ impl Default for DirectoryChainStoreConfig {
 
 ///
 /// Iterator over blocks stored in this directory based chain persistence.
-///
 struct DirectoryBlockIterator<'pers> {
     directory: &'pers DirectoryChainStore,
     current_offset: BlockOffset,
@@ -420,7 +418,8 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
             self.current_segment = None;
         }
 
-        // if we're in reverse and next offset would be lower than 0, we indicate we're done
+        // if we're in reverse and next offset would be lower than 0, we indicate we're
+        // done
         if self.reverse && data_size > self.current_offset {
             self.done = true;
         }
@@ -439,7 +438,6 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
 
 ///
 /// Directory chain store specific errors
-///
 #[derive(Clone, Debug, Fail)]
 pub enum DirectoryError {
     #[fail(display = "Error building operations index: {:?}", _0)]
@@ -772,7 +770,8 @@ pub mod tests {
             let block = store.get_block_by_operation_id(block_offset)?.unwrap();
             assert_eq!(block_offset, block.offset);
 
-            // `create_block` creates 1 operation in the block with offset +1 as operation id
+            // `create_block` creates 1 operation in the block with offset +1 as operation
+            // id
             let block = store.get_block_by_operation_id(block_offset + 1)?.unwrap();
             assert_eq!(block_offset, block.offset);
 

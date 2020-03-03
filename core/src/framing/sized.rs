@@ -5,10 +5,9 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io;
 
 ///
-/// Frame that encode the size of the underlying frame so that it can expose the exact
-/// data when decoding. The size is prepended and appended to support to support iteration
-/// in both directions.
-///
+/// Frame that encode the size of the underlying frame so that it can expose the
+/// exact data when decoding. The size is prepended and appended to support to
+/// support iteration in both directions.
 pub struct SizedFrame<I: FrameReader> {
     inner: I,
     inner_size: usize,
@@ -77,7 +76,6 @@ impl<I: FrameReader + Clone> Clone for SizedFrame<I> {
 
 ///
 /// Sized frame builder
-///
 pub struct SizedFrameBuilder<I: FrameBuilder> {
     inner: I,
 }
@@ -139,7 +137,6 @@ impl<I: FrameBuilder> FrameBuilder for SizedFrameBuilder<I> {
 
 ///
 /// Iterate through a series of sized frame in the given buffer.
-///
 pub struct SizedFrameIterator<'a> {
     buffer: &'a [u8],
     current_offset: usize,

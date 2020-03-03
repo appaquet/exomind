@@ -4,7 +4,6 @@ use std::io;
 
 ///
 /// Frame that pads an underlying frame so that it has a minimum size.
-///
 pub struct PaddedFrame<I: FrameReader> {
     inner: I,
     padding_size: usize,
@@ -55,7 +54,6 @@ impl<I: FrameReader + Clone> Clone for PaddedFrame<I> {
 
 ///
 /// Padded frame builder
-///
 pub struct PaddedFrameBuilder<I: FrameBuilder> {
     inner: I,
     minimum_size: usize,

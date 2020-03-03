@@ -11,7 +11,6 @@ use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 ///
 /// A Cell for which we have full access since we have the private key.
-///
 #[derive(Clone)]
 pub struct FullCell {
     cell: Cell,
@@ -54,9 +53,8 @@ impl Deref for FullCell {
 }
 
 ///
-/// A Cell represents a private enclosure in which the data and applications of a user
-/// are hosted. A Cell resides on multiple nodes.
-///
+/// A Cell represents a private enclosure in which the data and applications of
+/// a user are hosted. A Cell resides on multiple nodes.
 #[derive(Clone)]
 pub struct Cell {
     public_key: Arc<PublicKey>,
@@ -114,14 +112,13 @@ impl Cell {
 
 ///
 /// Unique identifier of a cell, which is built by hashing the public key
-///
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct CellId(String);
 
 impl CellId {
     ///
-    /// Create a Cell ID from a public key by using libp2p method to be compatible with it
-    ///
+    /// Create a Cell ID from a public key by using libp2p method to be
+    /// compatible with it
     pub fn from_public_key(public_key: &PublicKey) -> CellId {
         let peer_id = PeerId::from_public_key(public_key.to_libp2p().clone());
         CellId(peer_id.to_string())
@@ -158,7 +155,6 @@ impl std::str::FromStr for CellId {
 
 ///
 /// Common methods collection of nodes of a `Cell`
-///
 pub trait CellNodes {
     fn cell(&self) -> &Cell;
     fn nodes_map(&self) -> &HashMap<NodeId, Node>;
@@ -204,9 +200,9 @@ pub trait CellNodes {
 }
 
 ///
-/// Wraps a `CellNodes` to expose iterator methods. This is needed because of the complexity
-/// of return types of iterators which require `impl` to be used, but cannot be used in traits.
-///
+/// Wraps a `CellNodes` to expose iterator methods. This is needed because of
+/// the complexity of return types of iterators which require `impl` to be used,
+/// but cannot be used in traits.
 pub struct CellNodesIter<'cn, N: CellNodes> {
     nodes: &'cn N,
 }
@@ -231,7 +227,6 @@ impl<'cn, N: CellNodes> CellNodesIter<'cn, N> {
 
 ///
 /// Read reference to nodes of a `Cell`
-///
 pub struct CellNodesRead<'cell> {
     cell: &'cell Cell,
     nodes: RwLockReadGuard<'cell, HashMap<NodeId, Node>>,
@@ -257,7 +252,6 @@ impl<'cell> CellNodes for CellNodesRead<'cell> {
 
 ///
 /// Write reference to nodes of a `Cell`
-///
 pub struct CellNodesWrite<'cell> {
     cell: &'cell Cell,
     nodes: RwLockWriteGuard<'cell, HashMap<NodeId, Node>>,
@@ -287,7 +281,6 @@ impl<'cell> CellNodes for CellNodesWrite<'cell> {
 
 ///
 /// Owned copy of nodes of a `Cell`
-///
 pub struct CellNodesOwned {
     cell: Cell,
     nodes: HashMap<NodeId, Node>,

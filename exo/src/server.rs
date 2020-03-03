@@ -20,7 +20,6 @@ use crate::options;
 
 ///
 /// Starts servers based on given command line options
-///
 pub fn start(
     _opts: &options::Options,
     server_opts: &options::ServerOptions,
@@ -61,7 +60,8 @@ pub fn start(
             cell.clone(),
         );
 
-        // we keep a handle of the engine, otherwise the engine will not start since it will get dropped
+        // we keep a handle of the engine, otherwise the engine will not start since it
+        // will get dropped
         let engine_handle = engine.get_handle();
         engines_handle.push(engine_handle);
         let index_engine_handle = engine.get_handle();

@@ -102,7 +102,8 @@ impl NetworkBehaviour for ExocoreBehaviour {
     type OutEvent = ExocoreBehaviourEvent;
 
     fn new_handler(&mut self) -> Self::ProtocolsHandler {
-        // We use OneShot protocol handler that opens a new stream for every message (stream, not connection)
+        // We use OneShot protocol handler that opens a new stream for every message
+        // (stream, not connection)
         Default::default()
     }
 
@@ -124,7 +125,8 @@ impl NetworkBehaviour for ExocoreBehaviour {
                     ExocoreBehaviourEvent::PeerStatus(peer_id.clone(), peer.status),
                 ));
 
-            // send any messages that were queued while node was disconnected, but that haven't expired
+            // send any messages that were queued while node was disconnected, but that
+            // haven't expired
             while let Some(event) = peer.temp_queue.pop_front() {
                 if !event.has_expired() {
                     self.actions.push_back(event.event);
@@ -205,7 +207,8 @@ impl Peer {
 }
 
 /// Queued events to be sent to a peer that may not be connected yet.
-/// It may get discarded if it reaches expiration before the peer gets connected.
+/// It may get discarded if it reaches expiration before the peer gets
+/// connected.
 struct QueuedPeerEvent {
     event: BehaviourAction,
     expiration: Option<Instant>,
@@ -221,7 +224,8 @@ impl QueuedPeerEvent {
     }
 }
 
-/// Event emitted by the ExocoreBehaviour (ex: incoming message), consumed by `Libp2pTransport`.
+/// Event emitted by the ExocoreBehaviour (ex: incoming message), consumed by
+/// `Libp2pTransport`.
 pub enum ExocoreBehaviourEvent {
     Message(ExocoreBehaviourMessage),
     PeerStatus(PeerId, PeerStatus),

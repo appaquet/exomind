@@ -1,7 +1,7 @@
 mod entity_index;
+mod mutation_index;
 mod store;
 mod top_results_iter;
-mod trait_index;
 mod watched_queries;
 
 pub use entity_index::{EntityIndex, EntityIndexConfig};

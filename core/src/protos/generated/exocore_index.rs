@@ -156,14 +156,16 @@ pub struct UpdateTraitMutation {
     pub r#trait: ::std::option::Option<Trait>,
     #[prost(message, optional, tag = "3")]
     pub field_mask: ::std::option::Option<::prost_types::FieldMask>,
-    /// Updates is only valid if the last mutation operation on trait this given operation id.
+    /// Updates is only valid if the last mutation operation on trait this given
+    /// operation id.
     #[prost(uint64, tag = "4")]
     pub if_last_operation_id: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompactTraitMutation {
-    /// List of operations that are compacted by this compaction. The compaction will only succeed
-    /// if there were no operations between these operations and the compaction's operation itself.
+    /// List of operations that are compacted by this compaction. The compaction
+    /// will only succeed if there were no operations between these
+    /// operations and the compaction's operation itself.
     #[prost(message, repeated, tag = "1")]
     pub compacted_operations: ::std::vec::Vec<compact_trait_mutation::Operation>,
     /// Trait with merged values from compacted operations

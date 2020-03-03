@@ -24,7 +24,6 @@ use exocore_transport::TransportLayer;
 
 ///
 /// exocore-data testing utility
-///
 pub struct DataTestCluster {
     pub tempdir: tempdir::TempDir,
     pub runtime: Runtime,

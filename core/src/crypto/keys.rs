@@ -7,7 +7,6 @@ const ENCODE_PUBLIC_KEY_CODE: u8 = b'p';
 
 ///
 /// Private and public keypair
-///
 #[derive(Clone)]
 pub struct Keypair {
     keypair: libp2p_Keypair,
@@ -42,7 +41,6 @@ impl Keypair {
     ///
     /// Sign given message with the keypair.
     /// The `verify` method on the public key can be used to validate signature.
-    ///
     pub fn sign(&self, msg: &[u8]) -> Result<Vec<u8>, Error> {
         self.keypair
             .sign(msg)
@@ -51,7 +49,6 @@ impl Keypair {
 
     ///
     /// Encode the keypair into a bytes representation.
-    ///
     pub fn encode(&self) -> Vec<u8> {
         match &self.keypair {
             libp2p_Keypair::Ed25519(kp) => {
@@ -67,7 +64,6 @@ impl Keypair {
 
     ///
     /// Encode the keypair into a base58 representation
-    ///
     pub fn encode_base58_string(&self) -> String {
         encode_base58(&self.encode())
     }
@@ -75,7 +71,6 @@ impl Keypair {
     ///
     /// Decodes given bytes into a keypair.
     /// The method takes a mutable slice since libp2p zeroize it afterward.
-    ///
     pub fn decode(bytes: &mut [u8]) -> Result<Keypair, Error> {
         if bytes.len() < 3 {
             return Err(Error::DecodeInvalidSize);
@@ -100,7 +95,6 @@ impl Keypair {
 
     ///
     /// Decode given a base58 represented string into a keypair.
-    ///
     pub fn decode_base58_string(input: &str) -> Result<Keypair, Error> {
         let mut bytes = decode_base58(input)?;
         Self::decode(&mut bytes)
@@ -109,7 +103,6 @@ impl Keypair {
 
 ///
 /// Public key
-///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicKey {
     key: libp2p_PublicKey,
@@ -125,15 +118,14 @@ impl PublicKey {
     }
 
     ///
-    /// Verify the message for authenticity (signed by key) and integrity (not tampered with).
-    ///
+    /// Verify the message for authenticity (signed by key) and integrity (not
+    /// tampered with).
     pub fn verify(&self, msg: &[u8], sig: &[u8]) -> bool {
         self.key.verify(msg, sig)
     }
 
     ///
     /// Encode the public key into a bytes representation.
-    ///
     pub fn encode(&self) -> Vec<u8> {
         match &self.key {
             libp2p_PublicKey::Ed25519(pk) => {
@@ -148,14 +140,12 @@ impl PublicKey {
     }
     ///
     /// Encode the public key into a base58 representation
-    ///
     pub fn encode_base58_string(&self) -> String {
         encode_base58(&self.encode())
     }
 
     ///
     /// Decodes given bytes into a public key.
-    ///
     pub fn decode(bytes: &[u8]) -> Result<PublicKey, Error> {
         if bytes.len() < 3 {
             return Err(Error::DecodeInvalidSize);
@@ -180,7 +170,6 @@ impl PublicKey {
 
     ///
     /// Decode given a base58 represented string into a public key.
-    ///
     pub fn decode_base58_string(input: &str) -> Result<PublicKey, Error> {
         let bytes = decode_base58(input)?;
         Self::decode(&bytes)
@@ -189,7 +178,6 @@ impl PublicKey {
 
 ///
 /// Convert key to base58 representation
-///
 fn encode_base58(bytes: &[u8]) -> String {
     format!(
         "{}{}{}",
@@ -201,7 +189,6 @@ fn encode_base58(bytes: &[u8]) -> String {
 
 ///
 /// Convert base58 key representation to bytes
-///
 fn decode_base58(input: &str) -> Result<Vec<u8>, Error> {
     let input_bytes = input.as_bytes();
     if input_bytes.len() < 3 {
@@ -223,7 +210,6 @@ fn decode_base58(input: &str) -> Result<Vec<u8>, Error> {
 
 ///
 /// Encryption / signature algorithm type
-///
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Algorithm {
     ED25519,
@@ -255,7 +241,6 @@ impl Algorithm {
 
 ///
 /// Cryptographic keys related error
-///
 #[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "Given bytes to decode doesn't have the right size")]

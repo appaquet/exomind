@@ -4,7 +4,8 @@ use futures::{Future, FutureExt, StreamExt};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
-/// Manages a set of handles so that their lifetime is managed along their parent's lifetime.
+/// Manages a set of handles so that their lifetime is managed along their
+/// parent's lifetime.
 ///
 /// This management happens in 3 ways:
 ///    1) Handle can be notified when parent is ready.

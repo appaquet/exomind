@@ -12,11 +12,12 @@ use std::pin::Pin;
 use std::sync::{Arc, RwLock, Weak};
 use std::task::{Context, Poll};
 
-/// Transport handle that wraps 2 other transport handles. When it receives events,
-/// it notes from which transport it came so that replies can be sent back via the same
-/// transport.
+/// Transport handle that wraps 2 other transport handles. When it receives
+/// events, it notes from which transport it came so that replies can be sent
+/// back via the same transport.
 ///
-/// !! If we never received an event for a node, it will automatically select the first handle !!
+/// !! If we never received an event for a node, it will automatically select
+/// the first handle !!
 #[pin_project]
 pub struct EitherTransportHandle<TLeft, TRight>
 where
@@ -275,7 +276,8 @@ mod tests {
             .into_testable();
         node2_transport2.start(&mut rt);
 
-        // since node1 has never sent message, it will send to node 2 via transport 1 (left side)
+        // since node1 has never sent message, it will send to node 2 via transport 1
+        // (left side)
         node1_either.send_test_message(&mut rt, node2.node(), 1);
         expect_result::<_, _, failure::Error>(|| {
             let transport1_has_message = node2_transport1.has_message()?;
@@ -295,7 +297,8 @@ mod tests {
         assert_eq!(&from, node2.id());
         assert_eq!(msg, 3);
 
-        // sending to node2 should now be sent via transport 2 since its last used transport (right side)
+        // sending to node2 should now be sent via transport 2 since its last used
+        // transport (right side)
         node1_either.send_test_message(&mut rt, node2.node(), 4);
         let (from, msg) = node2_transport2.receive_test_message(&mut rt);
         assert_eq!(&from, node1.id());

@@ -3,8 +3,8 @@ use exocore_core::utils::backoff::{BackoffCalculator, BackoffConfig};
 use std::time::Duration;
 
 ///
-/// Handles time tracking of synchronization request and response for timeouts, retries and backoff.
-///
+/// Handles time tracking of synchronization request and response for timeouts,
+/// retries and backoff.
 pub struct RequestTracker {
     clock: Clock,
     backoff_calculator: BackoffCalculator,
@@ -100,7 +100,6 @@ impl RequestTracker {
 
 ///
 /// Configuration for RequestTracker
-///
 #[derive(Clone, Copy, Debug)]
 pub struct RequestTrackerConfig {
     pub min_interval: Duration,
@@ -135,7 +134,8 @@ mod tests {
         assert!(!tracker.can_send_request());
         assert!(!tracker.has_responded_last_request());
 
-        // after timeout, we should be able to make query, but then # failures is increased
+        // after timeout, we should be able to make query, but then # failures is
+        // increased
         mock_clock.set_fixed_instant(Instant::now() + Duration::from_millis(5001));
         assert!(tracker.can_send_request());
         assert!(!tracker.has_responded_last_request());

@@ -30,11 +30,12 @@ type OutboundStreamFuture =
 ///
 /// It handles:
 ///   * Outgoing message requests from the behaviour.
-///   * If we don't have any outgoing streams, we request one from libp2p, which then upgrade a stream for us using `ExocoreProtoConfig`
-///   * When an outgoing stream is open, it writes the outgoing messages to it. Since this is asynchronous, we keep the futures
-///     and poll to completion.
-///   * When an incoming stream is open to us, it reads the incoming message from it. Since this is asynchronous, we keep the futures
-///     and poll to completion.
+///   * If we don't have any outgoing streams, we request one from libp2p, which then upgrade a
+///     stream for us using `ExocoreProtoConfig`
+///   * When an outgoing stream is open, it writes the outgoing messages to it. Since this is
+///     asynchronous, we keep the futures and poll to completion.
+///   * When an incoming stream is open to us, it reads the incoming message from it. Since this is
+///     asynchronous, we keep the futures and poll to completion.
 ///
 /// Note:
 ///   * Streams are not mapped 1:1 to sockets as the transport may be multiplexed.
@@ -109,7 +110,8 @@ impl ProtocolsHandler for ExocoreProtoHandler {
     }
 
     fn poll(&mut self, cx: &mut Context) -> Poll<HandlerEvent> {
-        // if we have a message to send, but no outgoing streams via which to send it, we request one
+        // if we have a message to send, but no outgoing streams via which to send it,
+        // we request one
         if !self.send_queue.is_empty()
             && self.idle_outbound_stream.is_none()
             && self.outbound_stream_futures.is_empty()
@@ -126,7 +128,8 @@ impl ProtocolsHandler for ExocoreProtoHandler {
             });
         }
 
-        // if we have a message to send, and a stream it available, we write the message to it and keep the future to poll to completion
+        // if we have a message to send, and a stream it available, we write the message
+        // to it and keep the future to poll to completion
         if self.idle_outbound_stream.is_some() && !self.send_queue.is_empty() {
             trace!("Sending message to idle output stream");
             let message = self.send_queue.pop_front().unwrap();
@@ -135,7 +138,8 @@ impl ProtocolsHandler for ExocoreProtoHandler {
                 .push(Box::pin(stream.send_message(message)));
         }
 
-        // we poll all futures that writes messages to completion. once completed, we take back the stream for next message.
+        // we poll all futures that writes messages to completion. once completed, we
+        // take back the stream for next message.
         if !self.outbound_stream_futures.is_empty() {
             let futures = std::mem::replace(&mut self.outbound_stream_futures, Vec::new());
             for mut fut in futures {
@@ -189,10 +193,12 @@ impl ProtocolsHandler for ExocoreProtoHandler {
     }
 }
 
-/// Protocol configuration that defines the protocol identification string and stream upgrading capabilities.
+/// Protocol configuration that defines the protocol identification string and
+/// stream upgrading capabilities.
 ///
-/// Stream protocol negotiation and upgrading is entirely managed by libp2p. Once an incoming stream or outgoing stream
-/// is upgraded, we wrap it into a `WrappedStream` that will then be used by `ExocoreProtoHandler`.
+/// Stream protocol negotiation and upgrading is entirely managed by libp2p.
+/// Once an incoming stream or outgoing stream is upgraded, we wrap it into a
+/// `WrappedStream` that will then be used by `ExocoreProtoHandler`.
 #[derive(Clone, Default)]
 pub struct ExocoreProtoConfig;
 
@@ -234,7 +240,8 @@ where
     }
 }
 
-/// Wire message sent and receive over the streams managed by `ExocoreProtoHandler`
+/// Wire message sent and receive over the streams managed by
+/// `ExocoreProtoHandler`
 pub struct ExocoreProtoMessage {
     pub(crate) data: Vec<u8>,
 }

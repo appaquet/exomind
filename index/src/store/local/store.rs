@@ -21,10 +21,12 @@ use crate::store::local::watched_queries::WatchedQueries;
 
 use super::entity_index::EntityIndex;
 
-/// Locally persisted entities store allowing mutation and queries on entities and their traits.
+/// Locally persisted entities store allowing mutation and queries on entities
+/// and their traits.
 ///
-/// It forwards mutation requests to the data engine, receives back data events that get indexed by
-/// the entities index. Queries are executed by the entities index.
+/// It forwards mutation requests to the data engine, receives back data events
+/// that get indexed by the entities index. Queries are executed by the entities
+/// index.
 pub struct Store<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
@@ -150,7 +152,8 @@ where
                     }
                 }
 
-                // notify query watching. if it's full, it's guaranteed that it will catch those changes on next iteration
+                // notify query watching. if it's full, it's guaranteed that it will catch those
+                // changes on next iteration
                 let _ = watch_check_sender.try_send(());
             }
             Ok(())
@@ -289,7 +292,6 @@ where
 
 ///
 /// Handle to the store, allowing communication to the store asynchronously
-///
 pub struct StoreHandle<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
@@ -335,7 +337,8 @@ where
 
         let (sender, receiver) = oneshot::channel();
 
-        // ok to dismiss send as sender end will be dropped in case of an error and consumer will be notified by channel being closed
+        // ok to dismiss send as sender end will be dropped in case of an error and
+        // consumer will be notified by channel being closed
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
             query,
             sender: QueryRequestSender::Future(sender),
@@ -359,7 +362,8 @@ where
 
         let (sender, receiver) = mpsc::channel(self.config.handle_watch_query_channel_size);
 
-        // ok to dismiss send as sender end will be dropped in case of an error and consumer will be notified by channel being closed
+        // ok to dismiss send as sender end will be dropped in case of an error and
+        // consumer will be notified by channel being closed
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
             query,
             sender: QueryRequestSender::Stream(Arc::new(Mutex::new(sender)), watch_token),
@@ -373,8 +377,9 @@ where
     }
 }
 
-/// A query received through the `watched_query` method that needs to be watched and notified
-/// when new changes happen to the store that would affects its results.
+/// A query received through the `watched_query` method that needs to be watched
+/// and notified when new changes happen to the store that would affects its
+/// results.
 pub struct WatchedQueryStream<CS, PS>
 where
     CS: exocore_data::chain::ChainStore,
@@ -411,7 +416,8 @@ where
     }
 }
 
-/// Incoming query to be executed, or re-scheduled watched query to be re-executed.
+/// Incoming query to be executed, or re-scheduled watched query to be
+/// re-executed.
 struct QueryRequest {
     query: EntityQuery,
     sender: QueryRequestSender,

@@ -18,27 +18,26 @@ use exocore_data::operation::{Operation, OperationId};
 use exocore_data::{chain, pending};
 use exocore_data::{EngineHandle, EngineOperationStatus};
 
-use super::top_results_iter::RescoredTopResultsIterable;
-use super::trait_index;
-use super::trait_index::{
-    IndexMutation, MutationMetadata, PutTraitMutation, PutTraitTombstone, TraitIndex,
-    TraitIndexConfig,
+use super::mutation_index::{
+    IndexMutation, MutationIndex, MutationIndexConfig, MutationMetadata, MutationMetadataType,
+    PutEntityTombstone, PutTraitMetadata, PutTraitMutation, PutTraitTombstone,
 };
+use super::top_results_iter::RescoredTopResultsIterable;
 use crate::entity::TraitId;
 use crate::error::Error;
 use crate::query::{ResultHash, SortToken};
-use crate::store::local::trait_index::{PutEntityTombstone, PutTraitMetadata};
 use exocore_core::protos::prost::ProstDateTimeExt;
 use exocore_core::time::ConsistentTimestamp;
 use smallvec::SmallVec;
 
-/// Manages and index entities and their traits stored in the chain and pending store of the data
-/// layer. The index accepts mutation from the data layer through its event stream, and manages
-/// both indices to be consistent.
+/// Manages and index entities and their traits stored in the chain and pending
+/// store of the data layer. The index accepts mutation from the data layer
+/// through its event stream, and manages both indices to be consistent.
 ///
-/// The chain index is persisted on disk, while the pending store index is an in-memory index. Since the
-/// persistence in the chain is not definitive until blocks and their operations (traits mutations)
-/// are stored at a certain depth, a part of the chain is actually indexed in the in-memory index.
+/// The chain index is persisted on disk, while the pending store index is an
+/// in-memory index. Since the persistence in the chain is not definitive until
+/// blocks and their operations (traits mutations) are stored at a certain
+/// depth, a part of the chain is actually indexed in the in-memory index.
 /// Once they reach a certain depth, they are persisted in the chain index.
 pub struct EntityIndex<CS, PS>
 where
@@ -46,9 +45,9 @@ where
     PS: pending::PendingStore,
 {
     config: EntityIndexConfig,
-    pending_index: TraitIndex,
+    pending_index: MutationIndex,
     chain_index_dir: PathBuf,
-    chain_index: TraitIndex,
+    chain_index: MutationIndex,
     chain_index_last_block: Option<BlockOffset>,
     registry: Arc<Registry>,
     data_handle: EngineHandle<CS, PS>,
@@ -67,7 +66,7 @@ where
         data_handle: EngineHandle<CS, PS>,
     ) -> Result<EntityIndex<CS, PS>, Error> {
         let pending_index =
-            TraitIndex::create_in_memory(config.pending_index_config, registry.clone())?;
+            MutationIndex::create_in_memory(config.pending_index_config, registry.clone())?;
 
         // make sure directories are created
         let mut chain_index_dir = data_dir.to_path_buf();
@@ -97,20 +96,23 @@ where
         self.handle_data_engine_events(std::iter::once(event))
     }
 
-    /// Handle events coming from the data layer. These events allow keeping the index
-    /// consistent with the data layer, up to the consistency guarantees that the layer offers.
+    /// Handle events coming from the data layer. These events allow keeping the
+    /// index consistent with the data layer, up to the consistency
+    /// guarantees that the layer offers.
     ///
-    /// Since the events stream is buffered, we may receive a discontinuity if the data layer
-    /// couldn't send us an event. In that case, we re-index the pending index since we can't
-    /// guarantee that we didn't lose an event.
+    /// Since the events stream is buffered, we may receive a discontinuity if
+    /// the data layer couldn't send us an event. In that case, we re-index
+    /// the pending index since we can't guarantee that we didn't lose an
+    /// event.
     pub fn handle_data_engine_events<E>(&mut self, events: E) -> Result<(), Error>
     where
         E: Iterator<Item = Event>,
     {
         let mut pending_operations = Vec::new();
         for event in events {
-            // We collect new pending operations so that we can apply them in batch. As soon as we hit
-            // another kind of events, we apply collected events at once and then continue.
+            // We collect new pending operations so that we can apply them in batch. As soon
+            // as we hit another kind of events, we apply collected events at
+            // once and then continue.
             if let Event::NewPendingOperation(op_id) = event {
                 pending_operations.push(op_id);
                 continue;
@@ -145,23 +147,26 @@ where
 
                     if let Some(last_indexed_offset) = highest_indexed_block {
                         if last_indexed_offset < diverged_block_offset {
-                            // since we only index blocks that have a certain depth, and therefor higher
-                            // probability of being definitive, if we have a divergence, we can just re-index
-                            // the pending store which should still contain operations that are in our invalid
-                            // chain
+                            // since we only index blocks that have a certain depth, and therefor
+                            // higher probability of being definitive,
+                            // if we have a divergence, we can just re-index
+                            // the pending store which should still contain operations that are in
+                            // our invalid chain
                             warn!(
                                 "Divergence is after last indexed offset, we only re-index pending"
                             );
                             self.reindex_pending()?;
                         } else {
-                            // if we are here, we indexed a block from the chain that isn't valid anymore
-                            // since we are deleting traits that got deleted from the actual index, there is no
+                            // if we are here, we indexed a block from the chain that isn't valid
+                            // anymore since we are deleting traits that
+                            // got deleted from the actual index, there is no
                             // way to rollback to the diverged offset, and will require a re-index.
-                            // this can be prevented by tweaking the `EntitiesIndexConfig`.`chain_index_min_depth` value
-                            return Err(Error::Fatal(
-                                format!("Chain has diverged at an offset={}, which is before last indexed block at offset {}",
-                                        diverged_block_offset, last_indexed_offset
-                                )));
+                            // this can be prevented by tweaking the
+                            // `EntitiesIndexConfig`.`chain_index_min_depth` value
+                            return Err(Error::Fatal(format!(
+                                "Chain has diverged at an offset={}, which is before last indexed block at offset {}",
+                                diverged_block_offset, last_indexed_offset
+                            )));
                         }
                     } else {
                         warn!("Diverged with an empty chain index. Re-indexing...");
@@ -179,7 +184,8 @@ where
         Ok(())
     }
 
-    /// Execute a search query on the indices, and returning all entities matching the query.
+    /// Execute a search query on the indices, and returning all entities
+    /// matching the query.
     pub fn search(&self, query: &EntityQuery) -> Result<EntityResults, Error> {
         let current_page = query
             .paging
@@ -210,7 +216,8 @@ where
         let (mut entities_results, traits_results) = combined_results
             // iterate through results, starting with best scores
             .flat_map(|(trait_meta, source)| {
-                // check if we already processed this entity through another trait result that ranked higher
+                // check if we already processed this entity through another trait result that
+                // ranked higher
                 if matched_entities.contains(&trait_meta.entity_id) {
                     return None;
                 }
@@ -230,8 +237,9 @@ where
                     .contains(&trait_meta.operation_id);
                 if traits_meta.traits.is_empty() || !operation_is_active {
                     // no traits remaining means that entity is now deleted
-                    // if current operation is not active anymore, it means that it got overridden by another
-                    // operation and should not be considered at this point as a result
+                    // if current operation is not active anymore, it means that it got overridden
+                    // by another operation and should not be considered at this
+                    // point as a result
                     return None;
                 }
 
@@ -246,8 +254,9 @@ where
                     None
                 }
             })
-            // this steps consumes the results up until we reach the best 10 results based on the score
-            // of the highest matching trait, but re-scored negatively based on other traits
+            // this steps consumes the results up until we reach the best 10 results based on the
+            // score of the highest matching trait, but re-scored negatively based on
+            // other traits
             .top_negatively_rescored_results(
                 current_page.count as usize,
                 |(trait_result, _traits, _source, _sort_token)| {
@@ -310,23 +319,26 @@ where
         config: EntityIndexConfig,
         registry: &Arc<Registry>,
         chain_index_dir: &PathBuf,
-    ) -> Result<TraitIndex, Error> {
+    ) -> Result<MutationIndex, Error> {
         if !config.chain_index_in_memory {
-            TraitIndex::open_or_create_mmap(
+            MutationIndex::open_or_create_mmap(
                 config.chain_index_config,
                 registry.clone(),
                 &chain_index_dir,
             )
         } else {
-            TraitIndex::create_in_memory(config.chain_index_config, registry.clone())
+            MutationIndex::create_in_memory(config.chain_index_config, registry.clone())
         }
     }
 
-    /// Re-indexes the pending store completely, along the last few blocks of the chain
-    /// (see `EntitiesIndexConfig`.`chain_index_min_depth`) that are not considered definitive yet.
+    /// Re-indexes the pending store completely, along the last few blocks of
+    /// the chain (see `EntitiesIndexConfig`.`chain_index_min_depth`) that
+    /// are not considered definitive yet.
     fn reindex_pending(&mut self) -> Result<(), Error> {
-        self.pending_index =
-            TraitIndex::create_in_memory(self.config.pending_index_config, self.registry.clone())?;
+        self.pending_index = MutationIndex::create_in_memory(
+            self.config.pending_index_config,
+            self.registry.clone(),
+        )?;
 
         let last_chain_indexed_offset = self
             .last_chain_indexed_block()?
@@ -338,7 +350,8 @@ where
             last_chain_indexed_offset
         );
 
-        // create an iterator over operations in pending store that aren't in chain index
+        // create an iterator over operations in pending store that aren't in chain
+        // index
         let pending_iter = self
             .data_handle
             .get_pending_operations(..)?
@@ -383,8 +396,10 @@ where
         info!("Clearing & reindexing chain index");
 
         // create temporary in-memory to wipe directory
-        self.chain_index =
-            TraitIndex::create_in_memory(self.config.pending_index_config, self.registry.clone())?;
+        self.chain_index = MutationIndex::create_in_memory(
+            self.config.pending_index_config,
+            self.registry.clone(),
+        )?;
 
         // remove and re-create data dir
         std::fs::remove_dir_all(&self.chain_index_dir)?;
@@ -401,13 +416,15 @@ where
     }
 
     /// Check if we need to index any new block in the chain.
-    /// Blocks don't get indexed as soon as they appear in the chain so that we don't
-    /// need to revert them from the chain index since their wouldn't be "easy" way to revert
-    /// them from the chain index (Tantivy don't support deletion revert).
+    /// Blocks don't get indexed as soon as they appear in the chain so that we
+    /// don't need to revert them from the chain index since their wouldn't
+    /// be "easy" way to revert them from the chain index (Tantivy don't
+    /// support deletion revert).
     ///
-    /// The latest blocks that aren't considered definitive are kept in the pending store, and
-    /// deletion are actually implemented using tombstone in the pending store. If a trait gets
-    /// deleted from the chain, the tombstone in the in-memory will be used to remove it from
+    /// The latest blocks that aren't considered definitive are kept in the
+    /// pending store, and deletion are actually implemented using tombstone
+    /// in the pending store. If a trait gets deleted from the chain, the
+    /// tombstone in the in-memory will be used to remove it from
     /// the results.
     fn index_chain_new_blocks(&mut self) -> Result<(), Error> {
         let (_last_chain_block_offset, last_chain_block_height) =
@@ -420,8 +437,9 @@ where
         let offset_from = last_indexed_block.map(|(offset, _height)| offset);
         if let Some((_last_indexed_offset, last_indexed_height)) = last_indexed_block {
             if last_chain_block_height - last_indexed_height < chain_index_min_depth {
-                debug!("No new blocks to index from chain. last_chain_block_height={} last_indexed_block_height={}",
-                       last_chain_block_height, last_indexed_height
+                debug!(
+                    "No new blocks to index from chain. last_chain_block_height={} last_indexed_block_height={}",
+                    last_chain_block_height, last_indexed_height
                 );
                 return Ok(());
             }
@@ -440,13 +458,14 @@ where
                 }
             })
             .filter(|(offset, height, _engine_operation)| {
-                // make sure that this operation belongs to the chain index by making sure its depth
-                // is below the configured chain_index_min_depth.
+                // make sure that this operation belongs to the chain index by making sure its
+                // depth is below the configured chain_index_min_depth.
                 *offset > offset_from.unwrap_or(0)
                     && last_chain_block_height - *height >= chain_index_min_depth
             })
             .flat_map(|(offset, _height, engine_operation)| {
-                // for every mutation we index in the chain index, we delete it from the pending index
+                // for every mutation we index in the chain index, we delete it from the pending
+                // index
                 pending_index_mutations.push(IndexMutation::DeleteOperation(
                     engine_operation.operation_id,
                 ));
@@ -462,7 +481,8 @@ where
         self.chain_index.apply_mutations(chain_index_mutations)?;
         info!(
             "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
-            pending_index_mutations.len(), new_highest_block_offset
+            pending_index_mutations.len(),
+            new_highest_block_offset
         );
         self.pending_index
             .apply_mutations(pending_index_mutations.into_iter())?;
@@ -487,8 +507,8 @@ where
             .and_then(|opt| opt))
     }
 
-    /// Handle new pending store operations events from the data layer by indexing them
-    /// into the pending index.
+    /// Handle new pending store operations events from the data layer by
+    /// indexing them into the pending index.
     fn handle_data_engine_event_pending_operations<O>(
         &mut self,
         operations_id: O,
@@ -496,28 +516,31 @@ where
     where
         O: Iterator<Item = OperationId>,
     {
-        let mutations = operations_id.flat_map(|op_id| {
-            match self
-                .data_handle
-                .get_pending_operation(op_id) {
-                Ok(Some(op)) => {
-                    Self::engine_operation_to_pending_index_mutation(op)
-                }
+        let mutations = operations_id
+            .flat_map(|op_id| match self.data_handle.get_pending_operation(op_id) {
+                Ok(Some(op)) => Self::engine_operation_to_pending_index_mutation(op),
                 Ok(None) => {
-                    error!("An event from data layer contained a pending operation that wasn't found: operation_id={}", op_id);
+                    error!(
+                        "An event from data layer contained a pending operation that wasn't found: operation_id={}",
+                        op_id
+                    );
                     smallvec![]
                 }
                 Err(err) => {
-                    error!("An event from data layer contained that couldn't be fetched from pending operation: {}", err);
+                    error!(
+                        "An event from data layer contained that couldn't be fetched from pending operation: {}",
+                        err
+                    );
                     smallvec![]
                 }
-            }
-        }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         self.pending_index.apply_mutations(mutations.into_iter())
     }
 
-    /// Converts an engine operation from the data layer (chain or pending) into a pending index mutation.
+    /// Converts an engine operation from the data layer (chain or pending) into
+    /// a pending index mutation.
     fn engine_operation_to_pending_index_mutation(
         operation: EngineOperation,
     ) -> SmallVec<[IndexMutation; 1]> {
@@ -564,7 +587,8 @@ where
                 })]
             }
             Mutation::UpdateTrait(_) => {
-                // An update is handled at the store level where it will be succeeded by a put created of the current value
+                // An update is handled at the store level where it will be succeeded by a put
+                // created of the current value
                 smallvec![]
             }
             Mutation::DeleteTrait(trt_del) => {
@@ -586,7 +610,8 @@ where
         }
     }
 
-    /// Converts an engine operation from the data layer (chain or pending) into a chain index mutation.
+    /// Converts an engine operation from the data layer (chain or pending) into
+    /// a chain index mutation.
     fn engine_operation_to_chain_index_mutation(
         operation: EngineOperation,
         block_offset: BlockOffset,
@@ -605,8 +630,8 @@ where
         };
 
         match mutation {
-            Mutation::PutTrait(trt_mut) => {
-                let trt = if let Some(trt) = trt_mut.r#trait {
+            Mutation::PutTrait(trait_put) => {
+                let trt = if let Some(trt) = trait_put.r#trait {
                     trt
                 } else {
                     return smallvec![];
@@ -619,15 +644,15 @@ where
                     trt,
                 })]
             }
-            Mutation::CompactTrait(cmpt_mut) => {
-                let trt = if let Some(trt) = cmpt_mut.r#trait {
+            Mutation::CompactTrait(trait_compact) => {
+                let trt = if let Some(trt) = trait_compact.r#trait {
                     trt
                 } else {
                     return smallvec![];
                 };
 
                 let mut index_mutations = SmallVec::new();
-                for op in cmpt_mut.compacted_operations {
+                for op in trait_compact.compacted_operations {
                     index_mutations.push(IndexMutation::DeleteOperation(op.operation_id));
                 }
 
@@ -641,7 +666,8 @@ where
                 index_mutations
             }
             Mutation::UpdateTrait(_trt_up) => {
-                // An update is handled at the store level where it will be succeeded by a put created of the current value
+                // An update is handled at the store level where it will be succeeded by a put
+                // created of the current value
                 smallvec![]
             }
             Mutation::DeleteTrait(trt_del) => {
@@ -690,8 +716,8 @@ where
         }
     }
 
-    /// Fetch an entity and all its traits from indices and the data layer. Traits returned
-    /// follow mutations in order of operation id.
+    /// Fetch an entity and all its traits from indices and the data layer.
+    /// Traits returned follow mutations in order of operation id.
     #[cfg(test)]
     fn fetch_entity(&self, entity_id: &str) -> Result<Entity, Error> {
         let traits_metadata = self.fetch_entity_traits_metadata(entity_id)?;
@@ -703,7 +729,8 @@ where
         })
     }
 
-    /// Fetch indexed traits metadata from pending and chain indices for this entity id, and merge them.
+    /// Fetch indexed traits metadata from pending and chain indices for this
+    /// entity id, and merge them.
     fn fetch_entity_traits_metadata(&self, entity_id: &str) -> Result<EntityTraitsMetadata, Error> {
         let pending_results = self.pending_index.search_entity_id(entity_id)?;
         let chain_results = self.chain_index.search_entity_id(entity_id)?;
@@ -720,12 +747,12 @@ where
         let mut traits = HashMap::<TraitId, MutationMetadata>::new();
         let mut active_operations_id = HashSet::<OperationId>::new();
         for mut trait_metadata in ordered_traits_metadata {
-            // hashing operations instead of traits content allow invalidating results as soon
-            // as one operation is made since we can't guarantee anything
+            // hashing operations instead of traits content allow invalidating results as
+            // soon as one operation is made since we can't guarantee anything
             hasher.write_u64(trait_metadata.operation_id);
 
             match &mut trait_metadata.mutation_type {
-                trait_index::MutationType::TraitPut(put_trait) => {
+                MutationMetadataType::TraitPut(put_trait) => {
                     let opt_prev_trait = traits.get(&put_trait.trait_id);
                     if let Some(prev_trait) = opt_prev_trait {
                         active_operations_id.remove(&prev_trait.operation_id);
@@ -740,14 +767,14 @@ where
                     active_operations_id.insert(trait_metadata.operation_id);
                     traits.insert(put_trait.trait_id.clone(), trait_metadata);
                 }
-                trait_index::MutationType::TraitTombstone(trait_id) => {
+                MutationMetadataType::TraitTombstone(trait_id) => {
                     if let Some(prev_trait) = traits.get(trait_id) {
                         active_operations_id.remove(&prev_trait.operation_id);
                     }
                     active_operations_id.insert(trait_metadata.operation_id);
                     traits.remove(trait_id);
                 }
-                trait_index::MutationType::EntityTombstone => {
+                MutationMetadataType::EntityTombstone => {
                     active_operations_id.clear();
                     active_operations_id.insert(trait_metadata.operation_id);
                     traits.clear();
@@ -762,8 +789,9 @@ where
         })
     }
 
-    /// Populates the creation and modification dates of a PutTraitMetadata based on current operation id,
-    /// previous version of the same trait and current dates data.
+    /// Populates the creation and modification dates of a PutTraitMetadata
+    /// based on current operation id, previous version of the same trait
+    /// and current dates data.
     fn merge_trait_metadata_dates(
         operation_id: OperationId,
         put_trait: &mut PutTraitMetadata,
@@ -783,10 +811,11 @@ where
             modification_date = put_trait.modification_date;
         }
 
-        // if we currently have a mutation for this trait, we merge creation and modifications dates
-        // so that creation date is the oldest date and modification is the newest
+        // if we currently have a mutation for this trait, we merge creation and
+        // modifications dates so that creation date is the oldest date and
+        // modification is the newest
         if let Some(prev_trait) = opt_prev_trait {
-            if let trait_index::MutationType::TraitPut(prev_trait) = &prev_trait.mutation_type {
+            if let MutationMetadataType::TraitPut(prev_trait) = &prev_trait.mutation_type {
                 if modification_date.is_none() {
                     modification_date = Some(op_time);
                 }
@@ -813,7 +842,8 @@ where
         }
     }
 
-    /// Populate traits in the EntityResult by fetching each entity's traits from the data layer.
+    /// Populate traits in the EntityResult by fetching each entity's traits
+    /// from the data layer.
     fn fetch_entities_results_full_traits(
         &self,
         entities_results: &mut Vec<EntityResult>,
@@ -860,9 +890,9 @@ where
                     | Mutation::Test(_) => return None,
                 }?;
 
-                // update the trait with creation & modification date that got merged from metadata
-                if let trait_index::MutationType::TraitPut(put_mut) = &merged_metadata.mutation_type
-                {
+                // update the trait with creation & modification date that got merged from
+                // metadata
+                if let MutationMetadataType::TraitPut(put_mut) = &merged_metadata.mutation_type {
                     trait_instance.creation_date =
                         put_mut.creation_date.map(|d| d.to_proto_timestamp());
                     trait_instance.modification_date =
@@ -874,7 +904,8 @@ where
             .collect()
     }
 
-    /// Fetch an operation from the data layer by the given operation id and optional block offset.
+    /// Fetch an operation from the data layer by the given operation id and
+    /// optional block offset.
     fn fetch_trait_mutation_operation(
         &self,
         operation_id: OperationId,
@@ -905,15 +936,17 @@ where
 /// Configuration of the entities index
 #[derive(Clone, Copy, Debug)]
 pub struct EntityIndexConfig {
-    /// When should we index a block in the chain so that odds that we aren't going to revert it are high enough.
-    /// Related to `CommitManagerConfig`.`operations_cleanup_after_block_depth`
+    /// When should we index a block in the chain so that odds that we aren't
+    /// going to revert it are high enough. Related to
+    /// `CommitManagerConfig`.`operations_cleanup_after_block_depth`
     pub chain_index_min_depth: BlockHeight,
 
-    /// Configuration for the in-memory traits index that are in the pending store
-    pub pending_index_config: TraitIndexConfig,
+    /// Configuration for the in-memory traits index that are in the pending
+    /// store
+    pub pending_index_config: MutationIndexConfig,
 
     /// Configuration for the persisted traits index that are in the chain
-    pub chain_index_config: TraitIndexConfig,
+    pub chain_index_config: MutationIndexConfig,
 
     /// For tests, allow not hitting the disk
     pub chain_index_in_memory: bool,
@@ -923,15 +956,15 @@ impl Default for EntityIndexConfig {
     fn default() -> Self {
         EntityIndexConfig {
             chain_index_min_depth: 3,
-            pending_index_config: TraitIndexConfig::default(),
-            chain_index_config: TraitIndexConfig::default(),
+            pending_index_config: MutationIndexConfig::default(),
+            chain_index_config: MutationIndexConfig::default(),
             chain_index_in_memory: false,
         }
     }
 }
 
-/// Traits metadata of an entity as retrieved from the traits index, as opposed as being complete from
-/// the data layer.
+/// Traits metadata of an entity as retrieved from the traits index, as opposed
+/// as being complete from the data layer.
 struct EntityTraitsMetadata {
     // final traits of the entity once all mutations were aggregated
     traits: HashMap<TraitId, MutationMetadata>,
@@ -963,7 +996,7 @@ mod tests {
     use crate::query::QueryBuilder;
 
     use super::*;
-    use exocore_core::tests_utils::setup_logging;
+    use crate::store::local::mutation_index::MutationResults;
 
     #[test]
     fn index_full_pending_to_chain() -> Result<(), failure::Error> {
@@ -997,7 +1030,8 @@ mod tests {
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
         assert_eq!(pending_res + chain_res, 10);
 
-        // wait for second block to be committed, first operations should now be indexed in chain
+        // wait for second block to be committed, first operations should now be indexed
+        // in chain
         test_index.wait_operations_committed(&second_ops_id);
         test_index.handle_engine_events()?;
         let res = test_index
@@ -1176,7 +1210,7 @@ mod tests {
 
         let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
         assert!(pending_res.results.iter().any(|r| match &r.mutation_type {
-            trait_index::MutationType::TraitTombstone(_) => true,
+            MutationMetadataType::TraitTombstone(_) => true,
             _ => false,
         }));
 
@@ -1184,54 +1218,6 @@ mod tests {
         let op_id = test_index.put_test_trait("entity2", "trait2", "name1")?;
         test_index.wait_operation_committed(op_id);
         test_index.handle_engine_events()?;
-
-        Ok(())
-    }
-
-    #[test]
-    fn reindex_pending_without_chain_operations() -> Result<(), failure::Error> {
-        // TODO: This test may be useless...
-
-        let config = EntityIndexConfig {
-            chain_index_min_depth: 1, // index in chain as soon as another block is after
-            ..TestEntitiesIndex::create_test_config()
-        };
-        let mut test_index = TestEntitiesIndex::new_with_config(config)?;
-
-        let op1 = test_index.put_test_trait("entity1", "trait1", "name1")?;
-        let op2 = test_index.put_test_trait("entity1", "trait2", "name2")?;
-        test_index.wait_operations_committed(&[op1, op2]);
-        test_index.handle_engine_events()?;
-
-        let entity = test_index.index.fetch_entity("entity1")?;
-        assert_eq!(entity.traits.len(), 2);
-
-        // delete trait2, this should delete via a tombstone in pending
-        let op_id = test_index.delete_trait("entity1", "trait2")?;
-        test_index.wait_operation_committed(op_id);
-        test_index.handle_engine_events()?;
-        let entity = test_index.index.fetch_entity("entity1")?;
-        assert_eq!(entity.traits.len(), 1);
-
-        let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
-        assert!(pending_res.results.iter().any(|r| match &r.mutation_type {
-            trait_index::MutationType::TraitTombstone(_) => true,
-            _ => false,
-        }));
-
-        // now bury the deletion under 1 block, which should delete for real the trait
-        let op_id = test_index.put_test_trait("entity2", "trait2", "name1")?;
-        test_index.wait_operation_committed(op_id);
-        test_index.handle_engine_events()?;
-
-        // trigger discontinuity forcing pending reindex
-        test_index
-            .index
-            .handle_data_engine_event(Event::StreamDiscontinuity)?;
-
-        // second trait should still be there
-        let entity = test_index.index.fetch_entity("entity1")?;
-        assert_eq!(entity.traits.len(), 1);
 
         Ok(())
     }
@@ -1307,10 +1293,7 @@ mod tests {
     }
 
     #[test]
-    // TODO:
     fn traits_compaction() -> Result<(), failure::Error> {
-        setup_logging();
-
         let config = EntityIndexConfig {
             chain_index_min_depth: 1, // index in chain as soon as another block is after
             ..TestEntitiesIndex::create_test_config()
@@ -1534,7 +1517,7 @@ mod tests {
             .collect()
     }
 
-    fn extract_indexed_operations_id(res: trait_index::Results) -> Vec<OperationId> {
+    fn extract_indexed_operations_id(res: MutationResults) -> Vec<OperationId> {
         res.results
             .iter()
             .map(|r| r.operation_id)
@@ -1580,7 +1563,8 @@ mod tests {
         }
 
         fn with_restarted_node(self) -> Result<TestEntitiesIndex, failure::Error> {
-            // deconstruct so that we can drop index and close the index properly before reopening
+            // deconstruct so that we can drop index and close the index properly before
+            // reopening
             let TestEntitiesIndex {
                 registry,
                 mut cluster,
@@ -1611,13 +1595,13 @@ mod tests {
         fn create_test_config() -> EntityIndexConfig {
             EntityIndexConfig {
                 chain_index_in_memory: true,
-                pending_index_config: TraitIndexConfig {
+                pending_index_config: MutationIndexConfig {
                     indexer_num_threads: Some(1),
-                    ..TraitIndexConfig::default()
+                    ..MutationIndexConfig::default()
                 },
-                chain_index_config: TraitIndexConfig {
+                chain_index_config: MutationIndexConfig {
                     indexer_num_threads: Some(1),
-                    ..TraitIndexConfig::default()
+                    ..MutationIndexConfig::default()
                 },
                 ..EntityIndexConfig::default()
             }

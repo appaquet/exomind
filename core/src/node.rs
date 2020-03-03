@@ -12,8 +12,8 @@ use std::sync::{Arc, RwLock};
 //
 
 ///
-/// Represents a machine / process on which Exocore runs. A node can host multiple `Cell`.
-///
+/// Represents a machine / process on which Exocore runs. A node can host
+/// multiple `Cell`.
 #[derive(Clone)]
 pub struct Node {
     node_id: NodeId,
@@ -131,9 +131,9 @@ impl Debug for Node {
 }
 
 ///
-/// Represents the local `Node` being run in the current process. Contrarily to other nodes,
-/// we have a full private+public keypair that we can sign messages with.
-///
+/// Represents the local `Node` being run in the current process. Contrarily to
+/// other nodes, we have a full private+public keypair that we can sign messages
+/// with.
 #[derive(Clone)]
 pub struct LocalNode {
     node: Node,
@@ -192,19 +192,18 @@ impl Debug for LocalNode {
 }
 
 ///
-/// Unique identifier of a node, which is built by hashing the public key of the node.
+/// Unique identifier of a node, which is built by hashing the public key of the
+/// node.
 ///
-/// For now, it has a one to one correspondence with libp2p's PeerId, which is a base58 encoded
-/// version of the public key of the node encoded in protobuf.
-///
+/// For now, it has a one to one correspondence with libp2p's PeerId, which is a
+/// base58 encoded version of the public key of the node encoded in protobuf.
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct NodeId(String);
 
 impl NodeId {
     ///
-    /// Create a Node ID from a public key by using libp2p method to support compatibility
-    /// with PeerId
-    ///
+    /// Create a Node ID from a public key by using libp2p method to support
+    /// compatibility with PeerId
     pub fn from_public_key(public_key: &PublicKey) -> NodeId {
         let peer_id = PeerId::from_public_key(public_key.to_libp2p().clone());
         NodeId::from_peer_id(&peer_id)

@@ -26,17 +26,18 @@ use std::time::Duration;
 
 ///
 /// CommitManager's configuration
-///
 #[derive(Copy, Clone, Debug)]
 pub struct CommitManagerConfig {
-    /// How deep a block need to be before we cleanup its operations from pending store
+    /// How deep a block need to be before we cleanup its operations from
+    /// pending store
     pub operations_cleanup_after_block_depth: BlockHeight,
 
-    /// After how many new operations in pending store do we force a commit, even if we aren't
-    /// past the commit interval
+    /// After how many new operations in pending store do we force a commit,
+    /// even if we aren't past the commit interval
     pub commit_maximum_pending_store_count: usize,
 
-    /// Interval at which commits are made, unless we hit `commit_maximum_pending_count`
+    /// Interval at which commits are made, unless we hit
+    /// `commit_maximum_pending_count`
     pub commit_maximum_interval: Duration,
 
     /// For how long a block proposal is considered valid after its creation
@@ -56,12 +57,13 @@ impl Default for CommitManagerConfig {
 }
 
 ///
-/// Manages commit of pending store's operations to the chain. It does that by monitoring the pending store for incoming
-/// block proposal, signing/refusing them or proposing new blocks.
+/// Manages commit of pending store's operations to the chain. It does that by
+/// monitoring the pending store for incoming block proposal, signing/refusing
+/// them or proposing new blocks.
 ///
-/// It also manages cleanup of the pending store, by deleting old operations that were committed to the chain and that are
-/// in block with sufficient height.
-///
+/// It also manages cleanup of the pending store, by deleting old operations
+/// that were committed to the chain and that are in block with sufficient
+/// height.
 pub(super) struct CommitManager<PS: pending::PendingStore, CS: chain::ChainStore> {
     config: CommitManagerConfig,
     cell: Cell,
@@ -80,10 +82,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     }
 
     ///
-    /// Tick is called by the Engine at interval to make progress on proposing blocks, signing / refusing
-    /// proposed blocks, and committing them to the chain. We also cleanup the pending store once operations
-    /// have passed a certain depth in the chain, which guarantees their persistence.
-    ///
+    /// Tick is called by the Engine at interval to make progress on proposing
+    /// blocks, signing / refusing proposed blocks, and committing them to
+    /// the chain. We also cleanup the pending store once operations
+    /// have passed a certain depth in the chain, which guarantees their
+    /// persistence.
     pub fn tick(
         &mut self,
         sync_context: &mut SyncContext,
@@ -100,7 +103,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             chain_store,
         )?;
 
-        // get all potential next blocks sorted by most probable to less probable, and select the best next block
+        // get all potential next blocks sorted by most probable to less probable, and
+        // select the best next block
         let potential_next_blocks = pending_blocks.potential_next_blocks();
         let best_potential_next_block = potential_next_blocks.first().map(|b| b.group_id);
         debug!(
@@ -182,10 +186,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     }
 
     ///
-    /// Checks if we should sign a block that was previously proposed. We need to make sure
-    /// all operations are valid and not already in the chain and then validate the hash of
-    /// the block with local version of the operations.
-    ///
+    /// Checks if we should sign a block that was previously proposed. We need
+    /// to make sure all operations are valid and not already in the chain
+    /// and then validate the hash of the block with local version of the
+    /// operations.
     fn check_should_sign_block(
         &self,
         block_id: OperationId,
@@ -208,7 +212,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .get(block_id)
                     .expect("Couldn't find block");
                 if *op_block == BlockStatus::PastCommitted {
-                    info!("{}: Refusing block {:?} because there is already a committed block at this offset", self.cell.local_node().id(), block);
+                    info!(
+                        "{}: Refusing block {:?} because there is already a committed block at this offset",
+                        self.cell.local_node().id(),
+                        block
+                    );
                     return Ok(false);
                 }
 
@@ -216,7 +224,12 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .get_block_by_operation_id(*operation_id)?
                     .is_some();
                 if operation_in_chain {
-                    info!("{}: Refusing block {:?} because it contains operation_id={} already in chain", self.cell.local_node().id(), block, operation_id);
+                    info!(
+                        "{}: Refusing block {:?} because it contains operation_id={} already in chain",
+                        self.cell.local_node().id(),
+                        block,
+                        operation_id
+                    );
                     return Ok(false);
                 }
             }
@@ -240,7 +253,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
     ///
     /// Adds our signature to a given block proposal.
-    ///
     fn sign_block(
         &self,
         sync_context: &mut SyncContext,
@@ -280,7 +292,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
     ///
     /// Adds our refusal to a given block proposal (ex: it's not valid)
-    ///
     fn refuse_block(
         &self,
         sync_context: &mut SyncContext,
@@ -314,9 +325,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     }
 
     ///
-    /// Checks if we need to propose a new block, based on when the last block was created and
-    /// how many operations are in the store.
-    ///
+    /// Checks if we need to propose a new block, based on when the last block
+    /// was created and how many operations are in the store.
     fn should_propose_block(
         &self,
         chain_store: &CS,
@@ -330,7 +340,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let nodes = self.cell.nodes();
         let now = self.clock.consistent_time(local_node);
         if is_node_commit_turn(&nodes, local_node.id(), now, &self.config)? {
-            // number of operations in store minus number of operations in blocks ~= non-committed
+            // number of operations in store minus number of operations in blocks ~=
+            // non-committed
             let approx_non_committed_operations = pending_blocks
                 .entries_operations_count
                 .saturating_sub(pending_blocks.operations_blocks.len());
@@ -372,7 +383,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
     ///
     /// Creates a new block proposal with operations currently in the store.
-    ///
     fn propose_block(
         &self,
         sync_context: &mut SyncContext,
@@ -452,7 +462,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
     ///
     /// Commits (write) the given block to the chain.
-    ///
     fn commit_block(
         &self,
         sync_context: &mut SyncContext,
@@ -471,7 +480,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             Self::get_block_operations(next_block, pending_store)?.map(|operation| operation.frame);
 
         // make sure that the hash of operations is same as defined by the block
-        // this should never happen since we wouldn't have signed the block if hash didn't match
+        // this should never happen since we wouldn't have signed the block if hash
+        // didn't match
         let block_operations = BlockOperations::from_operations(block_operations)?;
         if block_operations.multihash_bytes() != block_header_reader.get_operations_hash()? {
             return Err(Error::Fatal(
@@ -525,8 +535,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     }
 
     ///
-    /// Retrieves from the pending store all operations that are in the given block
-    ///
+    /// Retrieves from the pending store all operations that are in the given
+    /// block
     fn get_block_operations(
         next_block: &PendingBlock,
         pending_store: &PS,
@@ -550,9 +560,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     }
 
     ///
-    /// Cleanups all operations that have been committed to the chain and that are deep enough
-    /// to be considered impossible to be removed (i.e. there are no plausible fork)
-    ///
+    /// Cleanups all operations that have been committed to the chain and that
+    /// are deep enough to be considered impossible to be removed (i.e.
+    /// there are no plausible fork)
     fn maybe_cleanup_pending_store(
         &self,
         sync_context: &mut SyncContext,
@@ -565,7 +575,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .ok_or(Error::UninitializedChain)?;
         let last_stored_block_height = last_stored_block.get_height()?;
 
-        // cleanup all blocks and their operations that are committed or refused with enough depth
+        // cleanup all blocks and their operations that are committed or refused with
+        // enough depth
         for (group_id, block) in &pending_blocks.blocks {
             if block.status == BlockStatus::PastCommitted
                 || block.status == BlockStatus::PastRefused
@@ -593,7 +604,8 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                         }
                     }
 
-                    // update the sync state so that the `PendingSynchronizer` knows what was last block to get cleaned
+                    // update the sync state so that the `PendingSynchronizer` knows what was last
+                    // block to get cleaned
                     sync_context.sync_state.pending_last_cleanup_block =
                         Some((block_offset, block_height));
                 }
@@ -605,9 +617,9 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .entries_operations_count
             .saturating_sub(pending_blocks.operations_blocks.len());
 
-        // check for dangling operations, which are operations that are already in the chain but not in
-        // any blocks that are in pending store. They probably got re-added to the pending store by a node
-        // that was out of sync
+        // check for dangling operations, which are operations that are already in the
+        // chain but not in any blocks that are in pending store. They probably
+        // got re-added to the pending store by a node that was out of sync
         if approx_non_committed_operations > 0 {
             let mut operations_to_delete = Vec::new();
             for operation in pending_store.operations_iter(..)? {
@@ -643,12 +655,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 }
 
 ///
-/// In order to prevent nodes to commit new blocks all the same time resulting in splitting
-/// the vote, we make nodes propose blocks in turns.
+/// In order to prevent nodes to commit new blocks all the same time resulting
+/// in splitting the vote, we make nodes propose blocks in turns.
 ///
-/// Turns are calculated by sorting nodes by their node ids, and then finding out who's turn
-/// it is based on current time.
-///
+/// Turns are calculated by sorting nodes by their node ids, and then finding
+/// out who's turn it is based on current time.
 fn is_node_commit_turn(
     nodes: &CellNodesRead,
     my_node_id: &NodeId,
@@ -673,8 +684,8 @@ fn is_node_commit_turn(
 
 ///
 /// Structure that contains information on the pending store and blocks in it.
-/// It is used by the commit manager to know if it needs to propose, sign, commit blocks
-///
+/// It is used by the commit manager to know if it needs to propose, sign,
+/// commit blocks
 struct PendingBlocks {
     blocks: HashMap<GroupId, PendingBlock>,
     blocks_status: HashMap<GroupId, BlockStatus>,
@@ -721,7 +732,10 @@ impl PendingBlocks {
             {
                 group_operations
             } else {
-                warn!("Didn't have any operations for block proposal with group_id={}, which shouldn't be possible", group_id);
+                warn!(
+                    "Didn't have any operations for block proposal with group_id={}, which shouldn't be possible",
+                    group_id
+                );
                 continue;
             };
 
@@ -859,7 +873,8 @@ impl PendingBlocks {
     }
 
     fn potential_next_blocks(&self) -> Vec<&PendingBlock> {
-        // we sort potential next blocks by which block has better potential to become a block
+        // we sort potential next blocks by which block has better potential to become a
+        // block
         self.blocks
             .values()
             .filter(|block| block.status == BlockStatus::NextPotential)
@@ -871,9 +886,8 @@ impl PendingBlocks {
 ///
 /// Information about a block in the pending store.
 ///
-/// This block could be a past block (committed to chain or refused), which will eventually be cleaned up,
-/// or could be a next potential or refused block.
-///
+/// This block could be a past block (committed to chain or refused), which will
+/// eventually be cleaned up, or could be a next potential or refused block.
 struct PendingBlock {
     group_id: OperationId,
     status: BlockStatus,
@@ -962,7 +976,6 @@ enum BlockStatus {
 
 ///
 /// Block proposal wrapper
-///
 struct PendingBlockProposal {
     offset: BlockOffset,
     operation: pending::StoredOperation,
@@ -991,7 +1004,6 @@ impl PendingBlockProposal {
 
 ///
 /// Block refusal wrapper
-///
 struct PendingBlockRefusal {
     node_id: NodeId,
 }
@@ -1019,7 +1031,6 @@ impl PendingBlockRefusal {
 
 ///
 /// Block signature wrapper
-///
 struct PendingBlockSignature {
     node_id: NodeId,
     signature: Signature,
@@ -1053,7 +1064,6 @@ impl PendingBlockSignature {
 
 ///
 /// CommitManager related error
-///
 #[derive(Clone, Debug, Fail)]
 pub enum CommitManagerError {
     #[fail(display = "Invalid signature in commit manager: {}", _0)]
@@ -1505,8 +1515,8 @@ mod tests {
                 .frame
         });
 
-        // we generate a block that is after block #2 in the chain, but is invalid since there is already
-        // a block a this position
+        // we generate a block that is after block #2 in the chain, but is invalid since
+        // there is already a block a this position
         let block_operations = BlockOperations::from_operations(operations)?;
         let block_id = cluster.consistent_timestamp(0).into();
         let invalid_block = BlockOwned::new_with_prev_block(
@@ -1541,8 +1551,8 @@ mod tests {
             &cluster.chains[0],
         )?;
 
-        // all operations previously created should still be there since they aren't committed
-        // and were in a past refused block
+        // all operations previously created should still be there since they aren't
+        // committed and were in a past refused block
         for operation_id in &operations_id {
             assert!(&cluster.pending_stores[0]
                 .get_operation(*operation_id)

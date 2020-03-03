@@ -8,7 +8,6 @@ use structopt::StructOpt;
 
 ///
 /// CLI options
-///
 #[derive(StructOpt)]
 #[structopt(name = "exocore-cli", about = "Exocore Command Line Interface")]
 pub struct Options {
@@ -43,7 +42,6 @@ pub enum ServerCommand {
 
 ///
 /// Keys related options
-///
 #[derive(StructOpt)]
 pub struct KeysOptions {
     #[structopt(long, default_value = "ed25519")]
@@ -76,7 +74,6 @@ impl FromStr for KeyAlgorithm {
 
 ///
 /// Cell related options
-///
 #[derive(StructOpt)]
 pub struct CellOptions {
     #[structopt(long, short = "c", default_value = "config.yaml")]
