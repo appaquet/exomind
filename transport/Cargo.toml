@@ -24,8 +24,8 @@ pin-project = "0.4"
 byteorder = "1.3"
 
 # libp2p_transport
-libp2p = { git = "https://github.com/appaquet/rust-libp2p", branch = "master", version = "0.16", optional = true }
-libp2p-wasm-ext = { git = "https://github.com/appaquet/rust-libp2p", branch = "master", version = "0.16", features = ["websocket"], optional = true }
+libp2p = { version = "0.16", optional = true }
+libp2p-wasm-ext = { version = "0.16", features = ["websocket"], optional = true }
 
 [dev-dependencies]
 exocore-core = { path = "../core", features = ["tests_utils"] }
