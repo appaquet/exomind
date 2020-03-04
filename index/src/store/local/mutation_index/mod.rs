@@ -4,7 +4,7 @@ use std::result::Result;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{TimeZone, Utc};
 use tantivy::collector::{Collector, TopDocs};
 use tantivy::directory::MmapDirectory;
 use tantivy::query::{AllQuery, QueryParser, TermQuery};
@@ -16,16 +16,22 @@ use tantivy::{
     Term,
 };
 
-use exocore_core::protos::generated::exocore_index::{entity_query::Predicate, EntityQuery, Trait};
+use exocore_core::protos::generated::exocore_index::{entity_query::Predicate, EntityQuery};
 use exocore_core::protos::prost::ProstTimestampExt;
 use exocore_core::protos::reflect;
 use exocore_core::protos::reflect::{FieldType, FieldValue, ReflectMessage};
 use exocore_core::protos::registry::Registry;
 use exocore_data::block::BlockOffset;
-use exocore_data::operation::OperationId;
 
-use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
+
+mod config;
+mod mutation;
+mod results;
+
+pub use config::*;
+pub use mutation::*;
+pub use results::*;
 
 const SCORE_TO_U64_MULTIPLIER: f32 = 10_000_000_000.0;
 const UNIQUE_SORT_TO_U64_DIVIDER: f32 = 100_000_000.0;
@@ -611,24 +617,6 @@ impl MutationIndex {
     }
 }
 
-/// Trait index configuration
-#[derive(Clone, Copy, Debug)]
-pub struct MutationIndexConfig {
-    pub indexer_num_threads: Option<usize>,
-    pub indexer_heap_size_bytes: usize,
-    pub iterator_page_size: usize,
-}
-
-impl Default for MutationIndexConfig {
-    fn default() -> Self {
-        MutationIndexConfig {
-            indexer_num_threads: None,
-            indexer_heap_size_bytes: 50_000_000,
-            iterator_page_size: 50,
-        }
-    }
-}
-
 /// Tantitvy schema fields
 struct Fields {
     trait_type: Field,
@@ -644,137 +632,12 @@ struct Fields {
     text: Field,
 }
 
-/// Mutation of the index.
-pub enum IndexMutation {
-    /// New version of a trait at a new position in chain or pending
-    PutTrait(PutTraitMutation),
-
-    /// Mark a trait has being deleted without deleting it.
-    PutTraitTombstone(PutTraitTombstone),
-
-    /// Mark an entity has being deleted without deleting it.
-    PutEntityTombstone(PutEntityTombstone),
-
-    /// Delete a document by its operation id.
-    DeleteOperation(OperationId),
-}
-
-pub struct PutTraitMutation {
-    pub block_offset: Option<BlockOffset>,
-    pub operation_id: OperationId,
-    pub entity_id: EntityId,
-    pub trt: Trait,
-}
-
-pub struct PutTraitTombstone {
-    pub block_offset: Option<BlockOffset>,
-    pub operation_id: OperationId,
-    pub entity_id: EntityId,
-    pub trait_id: TraitId,
-}
-
-pub struct PutEntityTombstone {
-    pub block_offset: Option<BlockOffset>,
-    pub operation_id: OperationId,
-    pub entity_id: EntityId,
-}
-
-/// Collection of `MutationMetadata`
-pub struct MutationResults {
-    pub results: Vec<MutationMetadata>,
-    pub total_results: usize,
-    pub remaining_results: usize,
-    pub next_page: Option<QueryPaging>,
-}
-
-/// Indexed trait / entity mutation metadata returned as a result of a query.
-#[derive(Debug, Clone)]
-pub struct MutationMetadata {
-    pub operation_id: OperationId,
-    pub block_offset: Option<BlockOffset>,
-    pub entity_id: EntityId,
-    pub score: u64,
-    pub mutation_type: MutationMetadataType,
-}
-
-#[derive(Debug, Clone)]
-pub enum MutationMetadataType {
-    TraitPut(PutTraitMetadata),
-    TraitTombstone(TraitId),
-    EntityTombstone,
-}
-
-#[derive(Debug, Clone)]
-pub struct PutTraitMetadata {
-    pub trait_id: TraitId,
-    pub creation_date: Option<DateTime<Utc>>,
-    pub modification_date: Option<DateTime<Utc>>,
-}
-
-impl MutationMetadataType {
-    const TRAIT_TOMBSTONE_ID: u64 = 0;
-    const TRAIT_PUT_ID: u64 = 1;
-    const ENTITY_TOMBSTONE_ID: u64 = 2;
-
-    fn new(
-        document_type_id: u64,
-        opt_trait_id: Option<TraitId>,
-    ) -> Result<MutationMetadataType, Error> {
-        match document_type_id {
-            Self::TRAIT_TOMBSTONE_ID => {
-                Ok(MutationMetadataType::TraitTombstone(opt_trait_id.unwrap()))
-            }
-            Self::TRAIT_PUT_ID => Ok(MutationMetadataType::TraitPut(PutTraitMetadata {
-                trait_id: opt_trait_id.unwrap(),
-                creation_date: None,
-                modification_date: None,
-            })),
-            Self::ENTITY_TOMBSTONE_ID => Ok(MutationMetadataType::EntityTombstone),
-            _ => Err(Error::Fatal(format!(
-                "Invalid document type id {}",
-                document_type_id
-            ))),
-        }
-    }
-}
-
 /// Paging information for mutations querying.
 #[derive(Debug, Clone)]
 pub struct QueryPaging {
     pub after_score: Option<u64>,
     pub before_score: Option<u64>,
     pub count: usize,
-}
-
-/// Iterates through all results matching a given initial query using the
-/// next_page score when a page got emptied.
-pub struct ResultsIterator<'i, 'q> {
-    index: &'i MutationIndex,
-    query: &'q EntityQuery,
-    pub total_results: usize,
-    current_results: std::vec::IntoIter<MutationMetadata>,
-    next_page: Option<QueryPaging>,
-}
-
-impl<'i, 'q> Iterator for ResultsIterator<'i, 'q> {
-    type Item = MutationMetadata;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let next_result = self.current_results.next();
-        if let Some(next_result) = next_result {
-            Some(next_result)
-        } else {
-            let next_page = self.next_page.clone()?;
-            let results = self
-                .index
-                .search(self.query, Some(next_page))
-                .expect("Couldn't get another page from initial iterator query");
-            self.next_page = results.next_page;
-            self.current_results = results.results.into_iter();
-
-            self.current_results.next()
-        }
-    }
 }
 
 /// Convert Tantivy f32 score to u64
@@ -824,6 +687,7 @@ mod tests {
     use chrono::{DateTime, Utc};
     use itertools::Itertools;
 
+    use exocore_core::protos::generated::exocore_index::Trait;
     use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
     use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
 
