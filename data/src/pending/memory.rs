@@ -5,7 +5,6 @@ use std::sync::Arc;
 use super::*;
 use crate::operation::Operation;
 
-///
 /// In memory pending store
 pub struct MemoryPendingStore {
     operations_timeline: BTreeMap<OperationId, GroupId>,
@@ -193,7 +192,6 @@ impl MemoryPendingStore {
     }
 }
 
-///
 struct GroupOperations {
     operations: BTreeMap<OperationId, GroupOperation>,
 }
@@ -213,7 +211,6 @@ struct GroupOperation {
     frame: Arc<crate::operation::OperationFrame<Vec<u8>>>,
 }
 
-///
 struct OperationsIterator<'store> {
     store: &'store MemoryPendingStore,
     ids_iterator: Box<dyn Iterator<Item = (OperationId, GroupId)> + 'store>,

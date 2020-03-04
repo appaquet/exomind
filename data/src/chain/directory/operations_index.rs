@@ -20,7 +20,6 @@ use crate::chain::Error;
 use super::{DirectoryChainStoreConfig, DirectoryError};
 use std::sync::Arc;
 
-///
 /// Operation ID to Block offset index. This is used to retrieve the block
 /// offset in which a given operation ID has been stored.
 ///
@@ -47,7 +46,6 @@ pub struct OperationsIndex {
 }
 
 impl OperationsIndex {
-    ///
     /// Creates a new operation index that will be stored in given directory.
     pub fn create(
         config: DirectoryChainStoreConfig,
@@ -84,7 +82,6 @@ impl OperationsIndex {
         Ok(operations_index)
     }
 
-    ///
     /// Open an existing operation index stored in given directory.
     pub fn open(
         config: DirectoryChainStoreConfig,
@@ -149,14 +146,12 @@ impl OperationsIndex {
         })
     }
 
-    ///
     /// Returns the offset that we expect the next block to have. This can be
     /// used to know which operations are missing and need to be re-indexed.
     pub fn next_expected_block_offset(&self) -> BlockOffset {
         self.next_expected_offset
     }
 
-    ///
     /// Indexes an iterator of blocks. There is no guarantee that they will be
     /// actually stored to disk if they can still fit in the in-memory
     /// index.
@@ -173,7 +168,6 @@ impl OperationsIndex {
         Ok(())
     }
 
-    ///
     /// Indexes a block. There is no guarantee that it will be actually stored
     /// if it can still fit in the in-memory index.
     pub fn index_block<B: Block>(&mut self, block: &B) -> Result<(), Error> {
@@ -207,7 +201,6 @@ impl OperationsIndex {
         Ok(())
     }
 
-    ///
     /// Retrieves the block offset in which a given operation was stored.
     pub fn get_operation_block(
         &self,
@@ -232,11 +225,10 @@ impl OperationsIndex {
         Ok(None)
     }
 
-    ///
     /// Truncates the index from the given offset. Because of the nature of the
     /// immutable underlying indices, we cannot delete from the exact
     /// offset.
-    ///
+
     /// Therefor, we expect `index_blocks` to be called right after to index any
     /// missing blocks that we over-truncated. The
     /// `next_expected_block_offset` method can be used to know from which
@@ -272,13 +264,11 @@ impl OperationsIndex {
         Ok(())
     }
 
-    ///
     /// Inserts a single operation in the in-memory index
     fn put_operation_block(&mut self, operation_id: OperationId, block_offset: BlockOffset) {
         self.memory_index.insert(operation_id, block_offset);
     }
 
-    ///
     /// Checks the size of the in-memory index and flush it to disk if it
     /// exceeds configured maximum.
     fn maybe_flush_to_disk(&mut self) -> Result<(), Error> {
@@ -329,7 +319,6 @@ impl OperationsIndex {
         Ok(())
     }
 
-    ///
     /// Writes metadata to disk
     fn write_metadata(&self) -> Result<(), Error> {
         let files = self
@@ -355,7 +344,6 @@ impl OperationsIndex {
     }
 }
 
-///
 /// Represents an immutable on-disk index for a given range of offsets.
 struct StoredIndex {
     range: Range<BlockOffset>,
@@ -372,7 +360,6 @@ impl StoredIndex {
     }
 }
 
-///
 /// Metadata stored on disk to describe segments of the block that are indexed.
 #[derive(Serialize, Deserialize)]
 struct Metadata {
@@ -392,7 +379,6 @@ struct MetadataIndexFile {
     file_name: String,
 }
 
-///
 /// Wraps the key stored in the on-disk index.
 /// This is needed for encoding / decoding.
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -415,7 +401,6 @@ impl Encodable<StoredIndexKey> for StoredIndexKey {
     }
 }
 
-///
 /// Wraps the value stored in the on-disk index.
 /// This is needed for encoding / decoding.
 struct StoredIndexValue {

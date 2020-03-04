@@ -28,27 +28,6 @@ use exocore_transport::{
 use crate::error::Error;
 use crate::query::WatchToken;
 
-#[derive(Debug, Clone, Copy)]
-pub struct ClientConfiguration {
-    pub query_timeout: Duration,
-    pub mutation_timeout: Duration,
-    pub management_interval: Duration,
-    pub watched_queries_register_interval: Duration,
-    pub watched_query_channel_size: usize,
-}
-
-impl Default for ClientConfiguration {
-    fn default() -> Self {
-        ClientConfiguration {
-            query_timeout: Duration::from_secs(10),
-            mutation_timeout: Duration::from_secs(5),
-            watched_queries_register_interval: Duration::from_secs(10),
-            management_interval: Duration::from_millis(100),
-            watched_query_channel_size: 1000,
-        }
-    }
-}
-
 /// This implementation of the AsyncStore allow sending all queries and
 /// mutations to a remote node's local store running the `Server` component.
 pub struct Client<T>
@@ -161,6 +140,27 @@ where
         };
 
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ClientConfiguration {
+    pub query_timeout: Duration,
+    pub mutation_timeout: Duration,
+    pub management_interval: Duration,
+    pub watched_queries_register_interval: Duration,
+    pub watched_query_channel_size: usize,
+}
+
+impl Default for ClientConfiguration {
+    fn default() -> Self {
+        ClientConfiguration {
+            query_timeout: Duration::from_secs(10),
+            mutation_timeout: Duration::from_secs(5),
+            watched_queries_register_interval: Duration::from_secs(10),
+            management_interval: Duration::from_millis(100),
+            watched_query_channel_size: 1000,
+        }
     }
 }
 

@@ -3,7 +3,6 @@ use crate::{block, chain, operation, pending};
 use exocore_core::capnp;
 use exocore_transport::Error as TransportError;
 
-///
 /// Engine errors
 #[derive(Clone, Debug, Fail)]
 pub enum Error {

@@ -2,7 +2,6 @@ use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io;
 
-///
 /// Frame that wraps 2 underlying frame into a single frame (like a tuple)
 pub struct CompoundFrame<I: FrameReader> {
     inner: I,
@@ -63,7 +62,6 @@ impl<'p, I: FrameReader> FrameReader for CompoundSideReader<'p, I> {
     }
 }
 
-///
 /// Compound frame builder
 pub struct CompoundFrameBuilder<A: FrameBuilder, B: FrameBuilder> {
     left: A,

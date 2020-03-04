@@ -2,7 +2,6 @@ use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 use crate::crypto::hash::MultihashDigest;
 use std::io;
 
-///
 /// Checksumed frame using a multihash encoded digest
 pub struct MultihashFrame<D: MultihashDigest, I: FrameReader> {
     inner: I,
@@ -68,7 +67,6 @@ impl<D: MultihashDigest, I: FrameReader + Clone> Clone for MultihashFrame<D, I> 
     }
 }
 
-///
 /// Multihash frame builder
 pub struct MultihashFrameBuilder<D: MultihashDigest, I: FrameBuilder> {
     inner: I,

@@ -8,7 +8,6 @@ use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};
 use super::DirectoryChainStoreConfig;
 use std::ffi::OsStr;
 
-///
 /// A segment of the chain, stored in its own file (`segment_file`) and that
 /// should not exceed a size specified by configuration.
 ///
@@ -258,7 +257,6 @@ impl DirectorySegment {
     }
 }
 
-///
 /// Wraps a mmap'ed file stored on disk. As mmap cannot access content that is
 /// beyond the file size, the segment is over-allocated so that we can write via
 /// mmap. If writing would exceed the size, we re-allocate the file and re-open

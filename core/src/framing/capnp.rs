@@ -5,7 +5,6 @@ use capnp::traits::Owned;
 use capnp::Word;
 use std::io;
 
-///
 /// Frame that wraps a Capnproto message
 pub struct CapnpFrame<I: FrameReader> {
     inner: I,
@@ -83,7 +82,6 @@ impl<I: FrameReader + Clone> Clone for CapnpFrame<I> {
     }
 }
 
-///
 /// Frame that wraps a Capnpframe with type annotation.
 pub struct TypedCapnpFrame<I: FrameReader, T>
 where
@@ -159,7 +157,6 @@ where
     }
 }
 
-///
 /// Capnproto frame builder
 pub struct CapnpFrameBuilder<T>
 where

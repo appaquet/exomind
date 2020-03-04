@@ -1,6 +1,5 @@
 use capnp;
 
-///
 /// Trait that needs to have an impl for each capnp generated message struct.
 /// Used to identify a unique type id for each message and annotate each framed
 /// message.
@@ -8,13 +7,11 @@ pub trait MessageType<'a>: capnp::traits::Owned<'a> {
     const MESSAGE_TYPE: u16;
 }
 
-///
 /// Common messages
 impl<'a> MessageType<'a> for super::common_capnp::envelope::Owned {
     const MESSAGE_TYPE: u16 = 0;
 }
 
-///
 /// Messages related to the chain / operations storage
 impl<'a> MessageType<'a> for super::data_chain_capnp::chain_operation::Owned {
     const MESSAGE_TYPE: u16 = 100;
@@ -56,7 +53,6 @@ impl<'a> MessageType<'a> for super::data_chain_capnp::block_operation_header::Ow
     const MESSAGE_TYPE: u16 = 133;
 }
 
-///
 /// Messages related to transport / messaging between nodes on data layer
 impl<'a> MessageType<'a> for super::data_transport_capnp::pending_sync_request::Owned {
     const MESSAGE_TYPE: u16 = 200;
@@ -74,7 +70,6 @@ impl<'a> MessageType<'a> for super::data_transport_capnp::chain_sync_response::O
     const MESSAGE_TYPE: u16 = 203;
 }
 
-///
 /// Messages related to transport / messaging between nodes on index layer
 impl<'a> MessageType<'a> for super::index_transport_capnp::query_request::Owned {
     const MESSAGE_TYPE: u16 = 300;

@@ -7,7 +7,6 @@ extern crate failure;
 #[macro_use]
 extern crate log;
 
-///
 /// Modules
 pub mod block;
 pub mod chain;
@@ -19,7 +18,6 @@ pub mod pending;
 #[cfg(feature = "tests_utils")]
 pub mod tests_utils;
 
-///
 /// Re-exports
 #[cfg(feature = "directory_chain")]
 pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};

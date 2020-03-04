@@ -19,7 +19,6 @@ pub type OperationFrame<I> =
 pub type OperationFrameBuilder =
     SizedFrameBuilder<MultihashFrameBuilder<Sha3_256, CapnpFrameBuilder<chain_operation::Owned>>>;
 
-///
 /// Wraps an operation that is stored either in the pending store, or in the
 /// the chain.
 pub trait Operation {
@@ -54,7 +53,6 @@ pub trait Operation {
     }
 }
 
-///
 /// Types of operations
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum OperationType {
@@ -64,7 +62,6 @@ pub enum OperationType {
     BlockRefuse,
 }
 
-///
 /// Chain operation frame building helper
 pub struct OperationBuilder {
     pub frame_builder: CapnpFrameBuilder<chain_operation::Owned>,
@@ -170,7 +167,6 @@ pub fn read_operation_frame<I: FrameReader>(inner: I) -> Result<OperationFrame<I
     Ok(frame)
 }
 
-///
 /// Operation to be added or replaced in the store
 #[derive(Clone)]
 pub struct NewOperation {
@@ -189,7 +185,6 @@ impl crate::operation::Operation for NewOperation {
     }
 }
 
-///
 /// Operations related error
 #[derive(Clone, Debug, Fail)]
 pub enum Error {

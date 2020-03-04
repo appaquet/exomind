@@ -108,7 +108,6 @@ fn is_reserve_peek_higher<E, S: Ord + Copy>(
     }
 }
 
-///
 /// Add `top_negatively_rescored_results` function to any iterator.
 pub trait RescoredTopResultsIterable: Iterator {
     /// Iterator that extracts top results from underlying descend sorted

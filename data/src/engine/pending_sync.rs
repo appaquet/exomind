@@ -20,7 +20,6 @@ use exocore_core::cell::{Cell, CellNodes};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::time::Clock;
 
-///
 /// Synchronizes local pending store against remote nodes' pending stores. It
 /// does that by exchanging PendingSyncRequest messages.
 ///
@@ -56,7 +55,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         }
     }
 
-    ///
     /// Called at interval by the engine to make progress on synchronizing with
     /// other nodes. In theory, all changes are propagated in real-time when
     /// operations get added, but this periodic synchronization makes sure that
@@ -81,7 +79,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok(())
     }
 
-    ///
     /// Handles a new operation coming from our own node, to be added to the
     /// pending store. This will add it to local pending store, and create a
     /// request message to be sent to other nodes.
@@ -113,12 +110,11 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok(())
     }
 
-    ///
     /// Handles a sync request coming from a remote node. A request contains
     /// ranges of operation ids that need to be merged and/or compared to
     /// our local store. See `handle_incoming_sync_ranges` for more details on
     /// the merge / comparison.
-    ///
+
     /// If we have any differences with remote node data, we send a request back
     /// with more data that will allow converging in the same stored data.
     pub fn handle_incoming_sync_request<F: FrameReader>(
@@ -160,17 +156,16 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok(())
     }
 
-    ///
     /// Handles the ranges coming from a sync request. For each range, we check
     /// if we have the same information locally, and take actions based on
     /// it.
-    ///
+
     /// For each range, actions include:
     ///   * Doing nothing if both remote and local are equals
     ///   * Sending full operations if remote is empty while we have operations locally
     ///   * Sending headers operations if we differences without any headers to compared with
     ///   * Diffing our headers vs remote headers if headers are included.
-    ///
+
     /// In any case, if the range includes operations, we always apply them
     /// first.
     fn handle_incoming_sync_ranges<'a, I>(
@@ -275,7 +270,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         }
     }
 
-    ///
     /// Creates a sync request with the given details for the given range of
     /// operation IDs
     fn create_sync_request_for_range<R, F>(
@@ -326,7 +320,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok(sync_request_frame_builder)
     }
 
-    ///
     /// Hashes the operations of the store for the given range. This will be
     /// used to compare with the incoming sync request.
     fn local_store_range_info<R>(
@@ -351,7 +344,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok((frame_hasher.into_multihash_bytes(), count))
     }
 
-    ///
     /// Do a diff of the local and remote data based on the headers in the sync
     /// request payload.
     fn diff_local_remote_range<'a, 'b, RI, LI>(
@@ -417,7 +409,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             .or_insert_with(move || NodeSyncInfo::new(&config, clock))
     }
 
-    ///
     /// Returns operations from the pending store, but only if they are not
     /// committed, or committed after the given height.
     fn operations_iter_from_height<'store, R>(
@@ -442,7 +433,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         Ok(iter)
     }
 
-    ///
     /// Returns the block height at which we filter operations from pending
     /// store with. See `PendingSyncConfig`.`operations_included_depth`. The
     /// height from the request has priority, and then we fallback to the one in
@@ -470,7 +460,6 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     }
 }
 
-///
 /// Synchronizer's configuration
 #[derive(Copy, Clone, Debug)]
 pub struct PendingSyncConfig {
@@ -478,17 +467,16 @@ pub struct PendingSyncConfig {
 
     pub request_tracker_config: request_tracker::RequestTrackerConfig,
 
-    ///
     /// Related to `CommitManagerConfig`.`operations_cleanup_after_block_depth`.
     /// This indicates how many blocks after the last cleaned up block we should
     /// include by default when doing sync requests, so that we don't
     /// request for operations that may have been cleaned up on other nodes.
-    ///
+
     /// The `CommitManager` does cleanup at interval, and sets the last block
     /// that got cleaned in the `SyncState` up from the `PendingStore`
     /// because it was committed for more than `CommitManagerConfig`.
     /// `operations_cleanup_after_block_depth` of depth.
-    ///
+
     /// This value is added to the `SyncState` last cleanup block depth to make
     /// sure we don't ask or include operations that got cleaned up.
     pub operations_depth_after_cleanup: BlockHeight,
@@ -504,7 +492,6 @@ impl Default for PendingSyncConfig {
     }
 }
 
-///
 /// Synchronization information about a remote node
 struct NodeSyncInfo {
     request_tracker: request_tracker::RequestTracker,
@@ -521,7 +508,6 @@ impl NodeSyncInfo {
     }
 }
 
-///
 /// Converts bounds from sync_request range to SyncBounds
 fn extract_sync_bounds(
     sync_range_reader: &pending_sync_range::Reader,
@@ -553,7 +539,6 @@ type SyncBounds = (
     OperationId,
 );
 
-///
 /// Collection of SyncRangeBuilder, taking into account maximum operations we
 /// want per range.
 struct SyncRangesBuilder {
@@ -569,7 +554,6 @@ impl SyncRangesBuilder {
         }
     }
 
-    ///
     /// Pushes the given operation to the latest range, or to a new range if the
     /// latest is full.
     fn push_operation(&mut self, operation: StoredOperation, details: OperationDetails) {
@@ -617,7 +601,6 @@ impl SyncRangesBuilder {
     }
 }
 
-///
 /// Builder for pending_sync_range messages. A pending sync range represents a
 /// range in the Pending Store to be synchronized against a remote node's own
 /// store.
@@ -771,7 +754,6 @@ impl SyncRangeBuilder {
     }
 }
 
-///
 /// Pending Synchronization Error
 #[derive(Clone, Debug, Fail)]
 pub enum PendingSyncError {

@@ -13,7 +13,6 @@ pub use multihash::{MultihashFrame, MultihashFrameBuilder};
 pub use padded::{PaddedFrame, PaddedFrameBuilder};
 pub use sized::{IteratedSizedFrame, SizedFrame, SizedFrameBuilder, SizedFrameIterator};
 
-///
 /// Represents a frame that either wrap another frame or bytes (vec or slice).
 ///
 /// The hierarchy of a FrameReader instances are the opposite of the persisted
@@ -90,7 +89,6 @@ impl FrameReader for &[u8] {
     }
 }
 
-///
 /// A frame builder can wrap another frame (or just data), and can be wrapped
 /// into another frame. The runtime hierarchy is the same as persisted.
 ///
@@ -123,7 +121,6 @@ pub trait FrameBuilder {
     }
 }
 
-///
 /// Implementation of FrameBuilder for a bytes array allow wrapping the content
 /// of the array into another frame
 impl FrameBuilder for Vec<u8> {

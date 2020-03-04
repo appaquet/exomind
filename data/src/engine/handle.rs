@@ -209,7 +209,6 @@ where
     }
 }
 
-///
 /// Events dispatched to handles to notify changes in the different stores.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
@@ -233,7 +232,6 @@ pub enum Event {
     ChainDiverged(BlockOffset),
 }
 
-///
 /// Operation that comes either from the chain or from the pending store
 pub struct EngineOperation {
     pub operation_id: OperationId,
@@ -295,7 +293,6 @@ impl EngineOperationStatus {
     }
 }
 
-///
 /// Iterator of operations in the chain
 pub struct ChainOperationsIterator<CS, PS>
 where

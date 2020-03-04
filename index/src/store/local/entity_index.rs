@@ -99,7 +99,7 @@ where
     /// Handle events coming from the data layer. These events allow keeping the
     /// index consistent with the data layer, up to the consistency
     /// guarantees that the layer offers.
-    ///
+
     /// Since the events stream is buffered, we may receive a discontinuity if
     /// the data layer couldn't send us an event. In that case, we re-index
     /// the pending index since we can't guarantee that we didn't lose an
@@ -420,7 +420,7 @@ where
     /// don't need to revert them from the chain index since their wouldn't
     /// be "easy" way to revert them from the chain index (Tantivy don't
     /// support deletion revert).
-    ///
+
     /// The latest blocks that aren't considered definitive are kept in the
     /// pending store, and deletion are actually implemented using tombstone
     /// in the pending store. If a trait gets deleted from the chain, the
@@ -731,7 +731,10 @@ where
 
     /// Fetch indexed traits metadata from pending and chain indices for this
     /// entity id, and merge them.
-    fn fetch_entity_traits_metadata(&self, entity_id: &str) -> Result<EntityTraitsMetadata, Error> {
+    fn fetch_entity_traits_metadata(
+        &self,
+        entity_id: &str,
+    ) -> Result<EntityTraitsMutations, Error> {
         let pending_results = self.pending_index.search_entity_id(entity_id)?;
         let chain_results = self.chain_index.search_entity_id(entity_id)?;
         let ordered_traits_metadata = pending_results
@@ -782,7 +785,7 @@ where
             }
         }
 
-        Ok(EntityTraitsMetadata {
+        Ok(EntityTraitsMutations {
             traits,
             active_operations_id,
             hash: hasher.finish(),
@@ -847,7 +850,7 @@ where
     fn fetch_entities_results_full_traits(
         &self,
         entities_results: &mut Vec<EntityResult>,
-        entities_traits_results: Vec<EntityTraitsMetadata>,
+        entities_traits_results: Vec<EntityTraitsMutations>,
     ) {
         for (entity_result, traits_results) in entities_results
             .iter_mut()
@@ -861,7 +864,7 @@ where
     }
 
     /// Fetch traits data from data layer.
-    fn fetch_entity_traits_data(&self, results: EntityTraitsMetadata) -> Vec<Trait> {
+    fn fetch_entity_traits_data(&self, results: EntityTraitsMutations) -> Vec<Trait> {
         results
             .traits
             .values()
@@ -965,7 +968,7 @@ impl Default for EntityIndexConfig {
 
 /// Traits metadata of an entity as retrieved from the traits index, as opposed
 /// as being complete from the data layer.
-struct EntityTraitsMetadata {
+struct EntityTraitsMutations {
     // final traits of the entity once all mutations were aggregated
     traits: HashMap<TraitId, MutationMetadata>,
 

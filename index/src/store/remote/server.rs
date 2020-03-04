@@ -17,21 +17,6 @@ use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandl
 use crate::error::Error;
 use crate::query::WatchToken;
 
-#[derive(Clone, Copy)]
-pub struct ServerConfiguration {
-    pub watched_queries_register_timeout: Duration,
-    pub management_timer_interval: Duration,
-}
-
-impl Default for ServerConfiguration {
-    fn default() -> Self {
-        ServerConfiguration {
-            watched_queries_register_timeout: Duration::from_secs(30),
-            management_timer_interval: Duration::from_millis(500),
-        }
-    }
-}
-
 pub struct Server<CS, PS, T>
 where
     CS: exocore_data::chain::ChainStore,
@@ -330,6 +315,21 @@ where
         }
 
         Ok(())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct ServerConfiguration {
+    pub watched_queries_register_timeout: Duration,
+    pub management_timer_interval: Duration,
+}
+
+impl Default for ServerConfiguration {
+    fn default() -> Self {
+        ServerConfiguration {
+            watched_queries_register_timeout: Duration::from_secs(30),
+            management_timer_interval: Duration::from_millis(500),
+        }
     }
 }
 

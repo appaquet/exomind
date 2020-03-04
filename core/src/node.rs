@@ -7,11 +7,8 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
-//
 // TODO: Encryption/signature ticket: https://github.com/appaquet/exocore/issues/46
-//
 
-///
 /// Represents a machine / process on which Exocore runs. A node can host
 /// multiple `Cell`.
 #[derive(Clone)]
@@ -130,7 +127,6 @@ impl Debug for Node {
     }
 }
 
-///
 /// Represents the local `Node` being run in the current process. Contrarily to
 /// other nodes, we have a full private+public keypair that we can sign messages
 /// with.
@@ -191,7 +187,6 @@ impl Debug for LocalNode {
     }
 }
 
-///
 /// Unique identifier of a node, which is built by hashing the public key of the
 /// node.
 ///
@@ -201,7 +196,6 @@ impl Debug for LocalNode {
 pub struct NodeId(String);
 
 impl NodeId {
-    ///
     /// Create a Node ID from a public key by using libp2p method to support
     /// compatibility with PeerId
     pub fn from_public_key(public_key: &PublicKey) -> NodeId {

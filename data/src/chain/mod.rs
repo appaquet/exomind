@@ -9,7 +9,6 @@ pub mod directory;
 pub mod error;
 pub use error::Error;
 
-///
 /// Persistence for the chain
 pub trait ChainStore: Send + Sync + 'static {
     fn segments(&self) -> Vec<Segment>;
@@ -37,7 +36,6 @@ pub trait ChainStore: Send + Sync + 'static {
     fn truncate_from_offset(&mut self, offset: BlockOffset) -> Result<(), Error>;
 }
 
-///
 /// Segment of the chain with a specified offsets range, in bytes.
 ///
 /// The upper range is exclusive. You can use `get_block_from_next_offset` to
@@ -47,6 +45,5 @@ pub struct Segment {
     pub range: Range<BlockOffset>,
 }
 
-///
 /// Iterator over stored blocks.
 type StoredBlockIterator<'pers> = Box<dyn Iterator<Item = BlockRef<'pers>> + 'pers>;

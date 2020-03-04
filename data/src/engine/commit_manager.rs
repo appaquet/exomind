@@ -24,39 +24,6 @@ use crate::pending::CommitStatus;
 use exocore_core::cell::{Cell, CellNodes, CellNodesRead};
 use std::time::Duration;
 
-///
-/// CommitManager's configuration
-#[derive(Copy, Clone, Debug)]
-pub struct CommitManagerConfig {
-    /// How deep a block need to be before we cleanup its operations from
-    /// pending store
-    pub operations_cleanup_after_block_depth: BlockHeight,
-
-    /// After how many new operations in pending store do we force a commit,
-    /// even if we aren't past the commit interval
-    pub commit_maximum_pending_store_count: usize,
-
-    /// Interval at which commits are made, unless we hit
-    /// `commit_maximum_pending_count`
-    pub commit_maximum_interval: Duration,
-
-    /// For how long a block proposal is considered valid after its creation
-    /// This is used to prevent
-    pub block_proposal_timeout: Duration,
-}
-
-impl Default for CommitManagerConfig {
-    fn default() -> Self {
-        CommitManagerConfig {
-            operations_cleanup_after_block_depth: 6,
-            commit_maximum_pending_store_count: 10,
-            commit_maximum_interval: Duration::from_secs(3),
-            block_proposal_timeout: Duration::from_secs(7),
-        }
-    }
-}
-
-///
 /// Manages commit of pending store's operations to the chain. It does that by
 /// monitoring the pending store for incoming block proposal, signing/refusing
 /// them or proposing new blocks.
@@ -81,7 +48,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         }
     }
 
-    ///
     /// Tick is called by the Engine at interval to make progress on proposing
     /// blocks, signing / refusing proposed blocks, and committing them to
     /// the chain. We also cleanup the pending store once operations
@@ -185,7 +151,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    ///
     /// Checks if we should sign a block that was previously proposed. We need
     /// to make sure all operations are valid and not already in the chain
     /// and then validate the hash of the block with local version of the
@@ -251,7 +216,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(true)
     }
 
-    ///
     /// Adds our signature to a given block proposal.
     fn sign_block(
         &self,
@@ -290,7 +254,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    ///
     /// Adds our refusal to a given block proposal (ex: it's not valid)
     fn refuse_block(
         &self,
@@ -324,7 +287,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    ///
     /// Checks if we need to propose a new block, based on when the last block
     /// was created and how many operations are in the store.
     fn should_propose_block(
@@ -381,7 +343,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         }
     }
 
-    ///
     /// Creates a new block proposal with operations currently in the store.
     fn propose_block(
         &self,
@@ -460,7 +421,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    ///
     /// Commits (write) the given block to the chain.
     fn commit_block(
         &self,
@@ -534,7 +494,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
-    ///
     /// Retrieves from the pending store all operations that are in the given
     /// block
     fn get_block_operations(
@@ -559,7 +518,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(operations)
     }
 
-    ///
     /// Cleanups all operations that have been committed to the chain and that
     /// are deep enough to be considered impossible to be removed (i.e.
     /// there are no plausible fork)
@@ -654,7 +612,37 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     }
 }
 
-///
+/// CommitManager's configuration
+#[derive(Copy, Clone, Debug)]
+pub struct CommitManagerConfig {
+    /// How deep a block need to be before we cleanup its operations from
+    /// pending store
+    pub operations_cleanup_after_block_depth: BlockHeight,
+
+    /// After how many new operations in pending store do we force a commit,
+    /// even if we aren't past the commit interval
+    pub commit_maximum_pending_store_count: usize,
+
+    /// Interval at which commits are made, unless we hit
+    /// `commit_maximum_pending_count`
+    pub commit_maximum_interval: Duration,
+
+    /// For how long a block proposal is considered valid after its creation
+    /// This is used to prevent
+    pub block_proposal_timeout: Duration,
+}
+
+impl Default for CommitManagerConfig {
+    fn default() -> Self {
+        CommitManagerConfig {
+            operations_cleanup_after_block_depth: 6,
+            commit_maximum_pending_store_count: 10,
+            commit_maximum_interval: Duration::from_secs(3),
+            block_proposal_timeout: Duration::from_secs(7),
+        }
+    }
+}
+
 /// In order to prevent nodes to commit new blocks all the same time resulting
 /// in splitting the vote, we make nodes propose blocks in turns.
 ///
@@ -682,7 +670,6 @@ fn is_node_commit_turn(
     Ok(node_turn == my_node_position)
 }
 
-///
 /// Structure that contains information on the pending store and blocks in it.
 /// It is used by the commit manager to know if it needs to propose, sign,
 /// commit blocks
@@ -883,7 +870,6 @@ impl PendingBlocks {
     }
 }
 
-///
 /// Information about a block in the pending store.
 ///
 /// This block could be a past block (committed to chain or refused), which will
@@ -974,7 +960,6 @@ enum BlockStatus {
     NextRefused,
 }
 
-///
 /// Block proposal wrapper
 struct PendingBlockProposal {
     offset: BlockOffset,
@@ -1002,7 +987,6 @@ impl PendingBlockProposal {
     }
 }
 
-///
 /// Block refusal wrapper
 struct PendingBlockRefusal {
     node_id: NodeId,
@@ -1029,7 +1013,6 @@ impl PendingBlockRefusal {
     }
 }
 
-///
 /// Block signature wrapper
 struct PendingBlockSignature {
     node_id: NodeId,
@@ -1062,7 +1045,6 @@ impl PendingBlockSignature {
     }
 }
 
-///
 /// CommitManager related error
 #[derive(Clone, Debug, Fail)]
 pub enum CommitManagerError {

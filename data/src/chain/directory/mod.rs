@@ -13,7 +13,6 @@ mod segment;
 use operations_index::OperationsIndex;
 use std::sync::Arc;
 
-///
 /// Directory based chain persistence. The chain is split in segments with
 /// configurable maximum size. This maximum size allows using mmap on 32bit
 /// systems by preventing segments from growing over 4gb.
@@ -343,7 +342,6 @@ impl ChainStore for DirectoryChainStore {
     }
 }
 
-///
 /// Configuration for directory based chain persistence.
 #[derive(Copy, Clone, Debug)]
 pub struct DirectoryChainStoreConfig {
@@ -364,7 +362,6 @@ impl Default for DirectoryChainStoreConfig {
     }
 }
 
-///
 /// Iterator over blocks stored in this directory based chain persistence.
 struct DirectoryBlockIterator<'pers> {
     directory: &'pers DirectoryChainStore,
@@ -436,7 +433,6 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
     }
 }
 
-///
 /// Directory chain store specific errors
 #[derive(Clone, Debug, Fail)]
 pub enum DirectoryError {

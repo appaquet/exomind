@@ -24,7 +24,6 @@ pub type BlockHeaderFrameBuilder =
     SizedFrameBuilder<MultihashFrameBuilder<Sha3_256, CapnpFrameBuilder<block_header::Owned>>>;
 pub type SignaturesFrame<I> = TypedCapnpFrame<PaddedFrame<SizedFrame<I>>, block_signatures::Owned>;
 
-///
 /// A trait representing a block stored or to be stored in the chain.
 /// It can either be a referenced block (`BlockRef`) or a in-memory block
 /// (`BlockOwned`).
@@ -176,7 +175,6 @@ pub trait Block {
     }
 }
 
-///
 /// Reads block header frame from an underlying frame (or just data)
 pub fn read_header_frame<I: FrameReader>(inner: I) -> Result<BlockHeaderFrame<I>, Error> {
     let sized_frame = SizedFrame::new(inner)?;
@@ -201,7 +199,6 @@ pub fn build_header_frame(
     SizedFrameBuilder::new(MultihashFrameBuilder::<Sha3_256, _>::new(header))
 }
 
-///
 /// Iterator over operations stored in a block.
 pub struct BlockOperationsIterator<'a> {
     index: usize,
@@ -240,7 +237,6 @@ impl<'a> Iterator for BlockOperationsIterator<'a> {
     }
 }
 
-///
 /// In-memory block.
 pub struct BlockOwned {
     pub offset: BlockOffset,
@@ -374,7 +370,6 @@ impl Block for BlockOwned {
     }
 }
 
-///
 /// A referenced block
 pub struct BlockRef<'a> {
     pub offset: BlockOffset,
@@ -459,7 +454,6 @@ impl<'a> Block for BlockRef<'a> {
     }
 }
 
-///
 /// Block iterator over a slice of data.
 pub struct ChainBlockIterator<'a> {
     current_offset: usize,
@@ -499,7 +493,6 @@ impl<'a> Iterator for ChainBlockIterator<'a> {
     }
 }
 
-///
 /// Wraps operations header stored in a block.
 pub struct BlockOperations {
     multihash_bytes: Vec<u8>,
@@ -578,7 +571,6 @@ impl BlockOperations {
     }
 }
 
-///
 /// Header of an operation stored within a block. It represents the position in
 /// the bytes of the block.
 struct BlockOperationHeader {
@@ -603,7 +595,6 @@ impl BlockOperationHeader {
     }
 }
 
-///
 /// Represents signatures stored in a block. Since a node writes a block as soon
 /// as it has enough signatures, signatures can differ from one node to the
 /// other. Signatures frame is pre-allocated, which means that not all
@@ -618,7 +609,6 @@ impl BlockSignatures {
         BlockSignatures { signatures }
     }
 
-    ///
     /// Create signatures with pre-allocated space for the number of nodes we
     /// have in the cell
     pub fn empty_signatures_for_nodes(cell: &Cell) -> BlockSignatures {
@@ -725,7 +715,6 @@ impl BlockSignatures {
     }
 }
 
-///
 /// Represents a signature of the block by one node, using its own key to sign
 /// the block's hash.
 pub struct BlockSignature {
@@ -744,7 +733,6 @@ impl BlockSignature {
     }
 }
 
-///
 /// Block related errors
 #[derive(Clone, Debug, Fail)]
 pub enum Error {

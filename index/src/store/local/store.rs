@@ -290,7 +290,6 @@ where
     }
 }
 
-///
 /// Handle to the store, allowing communication to the store asynchronously
 pub struct StoreHandle<CS, PS>
 where

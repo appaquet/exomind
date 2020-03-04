@@ -2,7 +2,6 @@ use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io;
 
-///
 /// Frame that pads an underlying frame so that it has a minimum size.
 pub struct PaddedFrame<I: FrameReader> {
     inner: I,
@@ -52,7 +51,6 @@ impl<I: FrameReader + Clone> Clone for PaddedFrame<I> {
     }
 }
 
-///
 /// Padded frame builder
 pub struct PaddedFrameBuilder<I: FrameBuilder> {
     inner: I,

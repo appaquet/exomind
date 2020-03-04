@@ -18,7 +18,6 @@ use crate::engine::{Error, SyncContext};
 use exocore_core::cell::{Cell, CellNodes, CellNodesOwned};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 
-///
 /// Synchronizes the local chain against remote nodes' chain.
 ///
 /// It achieves synchronization in 3 stages:
@@ -67,7 +66,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         }
     }
 
-    ///
     /// Called at interval to make progress on the synchronization. Depending on
     /// the current synchronization status, we could be asking for more
     /// details about remote nodes' chain, or could be asking for blocks
@@ -172,7 +170,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    ///
     /// Handles an incoming sync request. This request can be for headers, or
     /// could be for blocks.
     pub fn handle_sync_request<F: FrameReader>(
@@ -239,7 +236,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    ///
     /// Handles a sync response from a node, that could contain either headers
     /// or blocks data. If it contains headers, we gather the knowledge
     /// about the remote node's chain metadata. If it contains data, it
@@ -289,7 +285,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             .map_or(false, |leader| leader == node_id)
     }
 
-    ///
     /// Sends a sync request to each node that has elapsed the periodic check
     /// duration to discover its chain (last common block, last known block,
     /// etc.)
@@ -313,7 +308,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    ///
     /// Starts chain downloading from current leader if needed. If leader is the
     /// local node, we don't need to download anything and mark as
     /// synchronized.
@@ -391,7 +385,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    ///
     /// Creates a new sync request to be sent to a node, asking for headers or
     /// blocks. Headers are used remote node's chain metadata, while blocks
     /// are requested if we determined that a node is our leader.
@@ -430,7 +423,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(frame_builder)
     }
 
-    ///
     /// Creates a response to a request for headers from a remote node.
     fn create_sync_response_for_headers(
         from_offset: BlockOffset,
@@ -457,7 +449,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(frame_builder)
     }
 
-    ///
     /// Creates a response to request for blocks data from a remote node.
     /// If we're asked for data, this means we're the lead.
     fn create_sync_response_for_blocks<'s, I: Iterator<Item = BlockRef<'s>>>(
@@ -503,11 +494,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(frame_builder)
     }
 
-    ///
     /// Manages headers response by comparing to local blocks and finding the
     /// common ancestor (if any) and the last block of the node against
     /// which we're syncing.
-    ///
+
     /// If we didn't find the latest common ancestor, we reply with another
     /// request from the earliest common ancestor we could find so far.
     fn handle_sync_response_headers(
@@ -603,7 +593,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    ///
     /// Manages blocks (full data) response coming from the lead node, and
     /// appends them to our local chain. If there are still blocks after, we
     /// respond with a further request
@@ -691,7 +680,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             .or_insert_with(move || NodeSyncInfo::new(node_id.clone(), config, clock))
     }
 
-    ///
     /// Iterates through all nodes we sync against and check if their status has
     /// changed
     fn check_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
@@ -753,7 +741,6 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     }
 }
 
-///
 /// Chain synchronizer's configuration
 #[derive(Copy, Clone, Debug)]
 pub struct ChainSyncConfig {
@@ -800,7 +787,6 @@ impl Default for ChainSyncConfig {
     }
 }
 
-///
 /// Synchronization information about a remote node
 struct NodeSyncInfo {
     config: ChainSyncConfig,
@@ -857,7 +843,6 @@ impl NodeSyncInfo {
         self.last_known_block.is_some() && last_known_offset == last_common_offset
     }
 
-    ///
     /// Returns delta in block height between the last known block of the node
     /// and the last common block that we have.
     fn common_blocks_height_delta(&self) -> Option<BlockHeight> {
@@ -867,7 +852,6 @@ impl NodeSyncInfo {
         }
     }
 
-    ///
     /// Check if what we know of the remote node's chain is considered
     /// divergent. A divergent chain is a forked chain, in which we have a
     /// common ancestor, but different subsequent blocks.
@@ -906,7 +890,6 @@ enum NodeStatus {
     Synchronized,
 }
 
-///
 /// Partial header of a block coming from local store or remote node, used for
 /// comparison between local and remote stores
 #[derive(Debug)]
@@ -975,7 +958,6 @@ impl BlockPartialHeader {
     }
 }
 
-///
 /// Chain synchronizer specific error
 #[derive(Clone, Debug, Fail)]
 pub enum ChainSyncError {
@@ -998,7 +980,6 @@ impl ChainSyncError {
     }
 }
 
-///
 /// Samples the local chain and returns a collection of `BlockPartialHeader` at
 /// different position in the asked range.
 ///

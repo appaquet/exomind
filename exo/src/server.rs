@@ -18,7 +18,6 @@ use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use crate::config::NodeConfig;
 use crate::options;
 
-///
 /// Starts servers based on given command line options
 pub fn start(
     _opts: &options::Options,

@@ -22,7 +22,6 @@ use exocore_core::cell::FullCell;
 use exocore_transport::mock::MockTransport;
 use exocore_transport::TransportLayer;
 
-///
 /// exocore-data testing utility
 pub struct DataTestCluster {
     pub tempdir: tempdir::TempDir,

@@ -2,7 +2,6 @@ use exocore_core::time::{Clock, Instant};
 use exocore_core::utils::backoff::{BackoffCalculator, BackoffConfig};
 use std::time::Duration;
 
-///
 /// Handles time tracking of synchronization request and response for timeouts,
 /// retries and backoff.
 pub struct RequestTracker {
@@ -98,7 +97,6 @@ impl RequestTracker {
     }
 }
 
-///
 /// Configuration for RequestTracker
 #[derive(Clone, Copy, Debug)]
 pub struct RequestTrackerConfig {

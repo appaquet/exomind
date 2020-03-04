@@ -3,7 +3,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops::{Add, Sub};
 use std::time::Duration;
 
-///
 /// Timestamp that tries to be consistent and monotonic across cluster by
 /// incorporating node's unique id and a per-node counter.
 ///
