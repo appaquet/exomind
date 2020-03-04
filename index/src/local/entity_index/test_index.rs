@@ -1,8 +1,8 @@
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
+use crate::local::mutation_index::MutationIndexConfig;
+use crate::local::{EntityIndex, EntityIndexConfig};
 use crate::mutation::MutationBuilder;
-use crate::store::local::mutation_index::MutationIndexConfig;
-use crate::store::local::{EntityIndex, EntityIndexConfig};
 use exocore_core::protos::generated::exocore_index::{EntityMutation, Trait};
 use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstMessageExt};

@@ -10,7 +10,7 @@ use exocore_core::futures::spawn_future_non_send;
 use exocore_core::node::{LocalNode, Node};
 use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_core::time::Clock;
-use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
+use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::transport::ConnectionStatus;
 use exocore_transport::{InEvent, Libp2pTransport, TransportHandle, TransportLayer};
 

@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 use exocore_core::futures::spawn_future_non_send;
 use exocore_core::protos::generated::exocore_index::{EntityQuery, EntityResults};
 use exocore_core::protos::prost::ProstMessageExt;
-use exocore_index::store::remote::ClientHandle;
+use exocore_index::remote::ClientHandle;
 
 type ResultCell = Rc<RefCell<Option<Result<EntityResults, exocore_index::error::Error>>>>;
 type CallbackCell = Rc<RefCell<Option<js_sys::Function>>>;

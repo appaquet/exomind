@@ -38,7 +38,7 @@ where
     pub fn new(
         config: ServerConfiguration,
         cell: Cell,
-        store_handle: crate::store::local::StoreHandle<CS, PS>,
+        store_handle: crate::local::StoreHandle<CS, PS>,
         transport_handle: T,
     ) -> Result<Server<CS, PS, T>, Error> {
         let (transport_out_sender, transport_out_receiver) = mpsc::unbounded();
@@ -340,7 +340,7 @@ where
 {
     config: ServerConfiguration,
     cell: Cell,
-    store_handle: crate::store::local::StoreHandle<CS, PS>,
+    store_handle: crate::local::StoreHandle<CS, PS>,
     watched_queries: HashMap<WatchToken, RegisteredWatchedQuery>,
     transport_out_sender: mpsc::UnboundedSender<OutEvent>,
 }

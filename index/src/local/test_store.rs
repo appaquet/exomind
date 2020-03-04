@@ -5,10 +5,10 @@ use tempdir::TempDir;
 use exocore_data::tests_utils::DataTestCluster;
 use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 
+use crate::local::mutation_index::MutationIndexConfig;
+use crate::local::store::StoreHandle;
+use crate::local::EntityIndexConfig;
 use crate::mutation::MutationBuilder;
-use crate::store::local::mutation_index::MutationIndexConfig;
-use crate::store::local::store::StoreHandle;
-use crate::store::local::EntityIndexConfig;
 
 use super::*;
 use chrono::Utc;

@@ -11,10 +11,10 @@ use exocore_transport::mock::MockTransportHandle;
 use exocore_transport::TransportLayer;
 
 use crate::error::Error;
+use crate::local::TestStore;
 use crate::mutation::MutationBuilder;
 use crate::query::QueryBuilder;
-use crate::store::local::TestStore;
-use crate::store::remote::server::{Server, ServerConfiguration};
+use crate::remote::server::{Server, ServerConfiguration};
 
 use super::*;
 

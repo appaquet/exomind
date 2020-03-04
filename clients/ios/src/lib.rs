@@ -18,7 +18,7 @@ use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery
 use exocore_core::protos::prost::ProstMessageExt;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use exocore_core::utils::id::{generate_id, generate_prefixed_id};
-use exocore_index::store::remote::{Client, ClientConfiguration, ClientHandle};
+use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use std::ffi::{CStr, CString};

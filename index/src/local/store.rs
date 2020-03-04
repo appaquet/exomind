@@ -16,8 +16,8 @@ use exocore_core::time::Clock;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
 
 use crate::error::Error;
+use crate::local::watched_queries::WatchedQueries;
 use crate::query::WatchToken;
-use crate::store::local::watched_queries::WatchedQueries;
 
 use super::entity_index::EntityIndex;
 

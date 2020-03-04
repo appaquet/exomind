@@ -7,9 +7,11 @@ extern crate log;
 #[macro_use]
 extern crate smallvec;
 
-pub mod error;
-pub mod store;
-
 pub mod entity;
+pub mod error;
 pub mod mutation;
 pub mod query;
+
+#[cfg(feature = "local_store")]
+pub mod local;
+pub mod remote;

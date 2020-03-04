@@ -1,4 +1,4 @@
-use crate::store::local::mutation_index::MutationIndexConfig;
+use crate::local::mutation_index::MutationIndexConfig;
 use exocore_data::block::BlockHeight;
 
 /// Configuration of the entities index
