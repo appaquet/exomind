@@ -1,17 +1,12 @@
-use tempdir::TempDir;
-
-use exocore_core::node::{LocalNode, Node, NodeId};
-use exocore_core::protos::generated::data_chain_capnp::block_header;
-
+use super::commit_manager::CommitManager;
+use super::{chain_sync, SyncContext};
+use super::{pending_sync, SyncState};
 use crate::block::{
     Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignatures,
     BlockSignaturesSize, SignaturesFrame,
 };
 use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
 use crate::chain::ChainStore;
-use crate::engine::commit_manager::CommitManager;
-use crate::engine::{chain_sync, SyncContext};
-use crate::engine::{pending_sync, SyncState};
 use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, OperationId};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
@@ -20,9 +15,12 @@ use exocore_core::crypto::hash::Sha3_256;
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
 };
+use exocore_core::node::{LocalNode, Node, NodeId};
+use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use std::borrow::Borrow;
 use std::collections::HashMap;
+use tempdir::TempDir;
 
 pub(super) struct EngineTestCluster {
     pub cells: Vec<FullCell>,
@@ -227,7 +225,7 @@ impl EngineTestCluster {
         &mut self,
         node_idx: usize,
         operations: I,
-    ) -> Result<(), crate::engine::Error>
+    ) -> Result<(), crate::engine::EngineError>
     where
         I: Iterator<Item = M>,
         M: Borrow<crate::operation::OperationFrame<F>>,
@@ -263,7 +261,7 @@ impl EngineTestCluster {
     pub fn tick_pending_synchronizer(
         &mut self,
         node_idx: usize,
-    ) -> Result<SyncContext, crate::engine::Error> {
+    ) -> Result<SyncContext, crate::engine::EngineError> {
         let mut sync_context = self.get_sync_context(node_idx);
         self.pending_stores_synchronizer[node_idx]
             .tick(&mut sync_context, &self.pending_stores[node_idx])?;
@@ -275,7 +273,7 @@ impl EngineTestCluster {
     pub fn tick_chain_synchronizer(
         &mut self,
         node_idx: usize,
-    ) -> Result<SyncContext, crate::engine::Error> {
+    ) -> Result<SyncContext, crate::engine::EngineError> {
         let mut sync_context = self.get_sync_context(node_idx);
         self.chains_synchronizer[node_idx].tick(&mut sync_context, &self.chains[node_idx])?;
         self.apply_sync_state(node_idx, &sync_context);
@@ -286,7 +284,7 @@ impl EngineTestCluster {
     pub fn tick_commit_manager(
         &mut self,
         node_idx: usize,
-    ) -> Result<SyncContext, crate::engine::Error> {
+    ) -> Result<SyncContext, crate::engine::EngineError> {
         let mut sync_context = self.get_sync_context(node_idx);
         self.commit_managers[node_idx].tick(
             &mut sync_context,

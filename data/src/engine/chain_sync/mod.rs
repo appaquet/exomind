@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-
+use super::{EngineError, Event, SyncContext};
+use crate::block::{Block, BlockOffset, BlockRef};
+use crate::chain::ChainStore;
 use capnp::traits::ToU16;
-
 use exocore_core::capnp;
 use exocore_core::cell::{Cell, CellNodes, CellNodesOwned};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
@@ -11,20 +11,17 @@ use exocore_core::protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
 };
 use exocore_core::time::Clock;
+use std::collections::HashMap;
 
-use crate::block::{Block, BlockOffset, BlockRef};
-use crate::chain::ChainStore;
-
-use super::{Error, Event, SyncContext};
-
-mod config;
 pub use config::ChainSyncConfig;
-mod node_info;
-use node_info::*;
-mod error;
 pub use error::ChainSyncError;
-mod block;
+use node_info::{NodeStatus, NodeSyncInfo};
+
+mod node_info;
 use block::BlockMeta;
+mod block;
+mod config;
+mod error;
 #[cfg(test)]
 mod tests;
 
@@ -80,7 +77,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     /// the current synchronization status, we could be asking for more
     /// details about remote nodes' chain, or could be asking for blocks
     /// data from the lead node.
-    pub fn tick(&mut self, sync_context: &mut SyncContext, store: &CS) -> Result<(), Error> {
+    pub fn tick(&mut self, sync_context: &mut SyncContext, store: &CS) -> Result<(), EngineError> {
         let status_start = self.status;
         let nodes = self.cell.nodes().to_owned();
 
@@ -188,7 +185,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_node: &Node,
         store: &mut CS,
         request: TypedCapnpFrame<F, chain_sync_request::Owned>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let request_reader: chain_sync_request::Reader = request.get_reader()?;
         let (from_offset, to_offset) = (
             request_reader.get_from_offset(),
@@ -257,7 +254,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_node: &Node,
         store: &mut CS,
         response: TypedCapnpFrame<R, chain_sync_response::Owned>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let response_reader: chain_sync_response::Reader = response.get_reader()?;
         if response_reader.has_blocks() {
             debug!("Got blocks response from node {}", from_node.id());
@@ -302,7 +299,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         &mut self,
         sync_context: &mut SyncContext,
         nodes: &CellNodesOwned,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         for node in nodes.iter().all_except_local() {
             let node_info = self.get_or_create_node_info_mut(node.id());
 
@@ -326,7 +323,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         sync_context: &mut SyncContext,
         store: &CS,
         nodes: &CellNodesOwned,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let node_id = self.cell.local_node().id().clone();
 
         // check if we're leader, and return right away if we are
@@ -402,7 +399,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         node_info: &NodeSyncInfo,
         requested_details: RequestedDetails,
         to_offset: Option<BlockOffset>,
-    ) -> Result<CapnpFrameBuilder<chain_sync_request::Owned>, Error> {
+    ) -> Result<CapnpFrameBuilder<chain_sync_request::Owned>, EngineError> {
         let mut frame_builder = CapnpFrameBuilder::new();
         let mut request_builder: chain_sync_request::Builder = frame_builder.get_builder();
 
@@ -438,7 +435,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_offset: BlockOffset,
         to_offset: BlockOffset,
         headers: Vec<BlockMeta>,
-    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, Error> {
+    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, EngineError> {
         let mut frame_builder = CapnpFrameBuilder::new();
         let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder();
         response_builder.set_from_offset(from_offset);
@@ -466,7 +463,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_offset: BlockOffset,
         to_offset: BlockOffset,
         blocks_iter: I,
-    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, Error> {
+    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, EngineError> {
         let mut frame_builder = CapnpFrameBuilder::new();
         let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder();
         response_builder.set_from_offset(from_offset);
@@ -516,7 +513,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_node: &Node,
         store: &mut CS,
         response_reader: chain_sync_response::Reader,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let from_node_info = self.get_or_create_node_info_mut(&from_node.id());
 
         let headers_reader = response_reader.get_headers()?;
@@ -609,10 +606,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_node: &Node,
         store: &mut CS,
         response_reader: chain_sync_response::Reader,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         if !self.is_leader(from_node.id()) {
             warn!("Got data from a non-lead node {}", from_node.id());
-            return Err(Error::Other(format!(
+            return Err(EngineError::Other(format!(
                 "Got data from a non-lead node {}",
                 from_node.id()
             )));
@@ -707,7 +704,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         (nodes_metadata_sync, nodes_total)
     }
 
-    fn find_leader_node(&mut self, store: &CS) -> Result<(), Error> {
+    fn find_leader_node(&mut self, store: &CS) -> Result<(), EngineError> {
         let local_node_id = self.cell.local_node().id().clone();
         let maybe_leader = self
             .nodes_info

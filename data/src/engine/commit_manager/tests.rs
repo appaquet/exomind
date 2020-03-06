@@ -538,7 +538,7 @@ fn cleanup_dangling_operations() -> Result<(), failure::Error> {
 fn append_new_operation(
     cluster: &mut EngineTestCluster,
     data: &[u8],
-) -> Result<OperationId, Error> {
+) -> Result<OperationId, EngineError> {
     let op_id = cluster.consistent_timestamp(0).into();
 
     for node in cluster.nodes.iter() {
@@ -554,7 +554,7 @@ fn append_new_operation(
 fn append_block_proposal_from_operations(
     cluster: &mut EngineTestCluster,
     op_ids: Vec<OperationId>,
-) -> Result<OperationId, Error> {
+) -> Result<OperationId, EngineError> {
     let node = &cluster.nodes[0];
 
     let previous_block = cluster.chains[0].get_last_block()?.unwrap();
@@ -574,7 +574,7 @@ fn append_block_proposal_from_operations(
         block_operations,
     )?;
     let block_proposal_frame_builder =
-        operation::OperationBuilder::new_block_proposal(block_operation_id, node.id(), &block)?;
+        OperationBuilder::new_block_proposal(block_operation_id, node.id(), &block)?;
     let operation = block_proposal_frame_builder.sign_and_build(node)?;
 
     cluster.pending_stores[0].put_operation(operation)?;
@@ -582,7 +582,7 @@ fn append_block_proposal_from_operations(
     Ok(block_operation_id)
 }
 
-fn get_pending_blocks(cluster: &EngineTestCluster) -> Result<PendingBlocks, Error> {
+fn get_pending_blocks(cluster: &EngineTestCluster) -> Result<PendingBlocks, EngineError> {
     PendingBlocks::new(
         &cluster.commit_managers[0].config,
         &cluster.clocks[0],

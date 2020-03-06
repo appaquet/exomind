@@ -1,4 +1,4 @@
-use super::{Error, Inner};
+use super::{EngineError, Inner};
 use crate::block::{Block, BlockHeight, BlockOffset, BlockRef};
 use crate::operation::{OperationBuilder, OperationId};
 use crate::pending;
@@ -35,8 +35,8 @@ where
         self.handle.on_set_started()
     }
 
-    pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationId, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    pub fn write_entry_operation(&self, data: &[u8]) -> Result<OperationId, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
 
         let my_node = unlocked_inner.cell.local_node();
@@ -50,8 +50,8 @@ where
         Ok(operation_id)
     }
 
-    pub fn get_chain_segments(&self) -> Result<Vec<chain::Segment>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    pub fn get_chain_segments(&self) -> Result<Vec<chain::Segment>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
         Ok(unlocked_inner.chain_store.segments())
     }
@@ -60,8 +60,8 @@ where
         &self,
         block_offset: BlockOffset,
         operation_id: OperationId,
-    ) -> Result<Option<EngineOperation>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    ) -> Result<Option<EngineOperation>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
 
         let block = unlocked_inner.chain_store.get_block(block_offset)?;
@@ -75,8 +75,8 @@ where
         ChainOperationsIterator::new(self.inner.clone(), from_offset)
     }
 
-    pub fn get_chain_last_block(&self) -> Result<Option<(BlockOffset, BlockHeight)>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    pub fn get_chain_last_block(&self) -> Result<Option<(BlockOffset, BlockHeight)>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
         let last_block = unlocked_inner.chain_store.get_last_block()?;
 
@@ -91,8 +91,8 @@ where
     pub fn get_chain_block_info(
         &self,
         offset: BlockOffset,
-    ) -> Result<Option<(BlockOffset, BlockHeight)>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    ) -> Result<Option<(BlockOffset, BlockHeight)>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
         let block = unlocked_inner.chain_store.get_block(offset).ok();
 
@@ -107,8 +107,8 @@ where
     pub fn get_pending_operation(
         &self,
         operation_id: OperationId,
-    ) -> Result<Option<EngineOperation>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    ) -> Result<Option<EngineOperation>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
 
         let operation = unlocked_inner
@@ -122,8 +122,8 @@ where
     pub fn get_pending_operations<R: RangeBounds<OperationId>>(
         &self,
         operations_range: R,
-    ) -> Result<Vec<EngineOperation>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    ) -> Result<Vec<EngineOperation>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
 
         let operations = unlocked_inner
@@ -137,8 +137,8 @@ where
     pub fn get_operation(
         &self,
         operation_id: OperationId,
-    ) -> Result<Option<EngineOperation>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    ) -> Result<Option<EngineOperation>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
 
         // first check if it's in pending store with a clear commit status
@@ -173,8 +173,8 @@ where
     /// This stream is bounded and consumptions should be non-blocking to
     /// prevent losing events. Calling the engine on every call should be
     /// throttled in the case of a big read amplification.
-    pub fn take_events_stream(&mut self) -> Result<impl Stream<Item = Event>, Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    pub fn take_events_stream(&mut self) -> Result<impl Stream<Item = Event>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let mut unlocked_inner = inner.write()?;
 
         let stream = unlocked_inner.get_new_events_stream(self.handle.id());
@@ -258,7 +258,7 @@ impl EngineOperation {
     fn from_chain(
         block: BlockRef,
         operation_id: OperationId,
-    ) -> Result<Option<EngineOperation>, Error> {
+    ) -> Result<Option<EngineOperation>, EngineError> {
         if let Some(operation) = block.get_operation(operation_id)? {
             let height = block.get_height()?;
             return Ok(Some(EngineOperation {
@@ -320,8 +320,8 @@ where
         }
     }
 
-    fn fetch_next_block(&mut self) -> Result<(), Error> {
-        let inner = self.inner.upgrade().ok_or(Error::InnerUpgrade)?;
+    fn fetch_next_block(&mut self) -> Result<(), EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let inner = inner.read()?;
 
         // since a block may not contain operations (ex: genesis), we need to loop until
@@ -359,7 +359,9 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_operations.is_empty() {
-            if let Err(Error::ChainStore(chain::Error::OutOfBound(_))) = self.fetch_next_block() {
+            if let Err(EngineError::ChainStore(chain::Error::OutOfBound(_))) =
+                self.fetch_next_block()
+            {
                 return None;
             }
         }

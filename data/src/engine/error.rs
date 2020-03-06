@@ -5,7 +5,7 @@ use exocore_transport::Error as TransportError;
 
 /// Engine errors
 #[derive(Clone, Debug, Fail)]
-pub enum Error {
+pub enum EngineError {
     #[fail(display = "Error in transport: {:?}", _0)]
     Transport(#[fail(cause)] TransportError),
     #[fail(display = "Error in pending store: {:?}", _0)]
@@ -42,17 +42,20 @@ pub enum Error {
     Other(String),
 }
 
-impl Error {
+impl EngineError {
     pub fn is_fatal(&self) -> bool {
         match self {
-            Error::ChainStore(inner) => inner.is_fatal(),
-            Error::ChainSync(inner) => inner.is_fatal(),
-            Error::MyNodeNotFound | Error::InnerUpgrade | Error::Poisoned | Error::Fatal(_) => true,
+            EngineError::ChainStore(inner) => inner.is_fatal(),
+            EngineError::ChainSync(inner) => inner.is_fatal(),
+            EngineError::MyNodeNotFound
+            | EngineError::InnerUpgrade
+            | EngineError::Poisoned
+            | EngineError::Fatal(_) => true,
             _ => false,
         }
     }
 
-    pub fn recover_non_fatal_error(self) -> Result<(), Error> {
+    pub fn recover_non_fatal_error(self) -> Result<(), EngineError> {
         if !self.is_fatal() {
             Ok(())
         } else {
@@ -61,68 +64,68 @@ impl Error {
     }
 }
 
-impl From<TransportError> for Error {
+impl From<TransportError> for EngineError {
     fn from(err: TransportError) -> Self {
-        Error::Transport(err)
+        EngineError::Transport(err)
     }
 }
 
-impl From<pending::Error> for Error {
+impl From<pending::Error> for EngineError {
     fn from(err: pending::Error) -> Self {
-        Error::PendingStore(err)
+        EngineError::PendingStore(err)
     }
 }
 
-impl From<chain::Error> for Error {
+impl From<chain::Error> for EngineError {
     fn from(err: chain::Error) -> Self {
-        Error::ChainStore(err)
+        EngineError::ChainStore(err)
     }
 }
 
-impl From<pending_sync::PendingSyncError> for Error {
+impl From<pending_sync::PendingSyncError> for EngineError {
     fn from(err: pending_sync::PendingSyncError) -> Self {
-        Error::PendingSync(err)
+        EngineError::PendingSync(err)
     }
 }
 
-impl From<chain_sync::ChainSyncError> for Error {
+impl From<chain_sync::ChainSyncError> for EngineError {
     fn from(err: chain_sync::ChainSyncError) -> Self {
-        Error::ChainSync(err)
+        EngineError::ChainSync(err)
     }
 }
 
-impl From<commit_manager::CommitManagerError> for Error {
+impl From<commit_manager::CommitManagerError> for EngineError {
     fn from(err: commit_manager::CommitManagerError) -> Self {
-        Error::CommitManager(err)
+        EngineError::CommitManager(err)
     }
 }
 
-impl From<block::Error> for Error {
+impl From<block::Error> for EngineError {
     fn from(err: block::Error) -> Self {
-        Error::Block(err)
+        EngineError::Block(err)
     }
 }
 
-impl From<operation::Error> for Error {
+impl From<operation::Error> for EngineError {
     fn from(err: operation::Error) -> Self {
-        Error::Operation(err)
+        EngineError::Operation(err)
     }
 }
 
-impl<T> From<std::sync::PoisonError<T>> for Error {
+impl<T> From<std::sync::PoisonError<T>> for EngineError {
     fn from(_err: std::sync::PoisonError<T>) -> Self {
-        Error::Poisoned
+        EngineError::Poisoned
     }
 }
 
-impl From<capnp::Error> for Error {
+impl From<capnp::Error> for EngineError {
     fn from(err: capnp::Error) -> Self {
-        Error::Serialization(err.kind, err.description)
+        EngineError::Serialization(err.kind, err.description)
     }
 }
 
-impl From<capnp::NotInSchema> for Error {
+impl From<capnp::NotInSchema> for EngineError {
     fn from(err: capnp::NotInSchema) -> Self {
-        Error::SerializationNotInSchema(err.0)
+        EngineError::SerializationNotInSchema(err.0)
     }
 }

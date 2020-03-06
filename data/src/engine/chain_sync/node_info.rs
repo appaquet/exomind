@@ -3,7 +3,7 @@ use exocore_core::time::Clock;
 
 use crate::block::{Block, BlockHeight};
 use crate::chain::ChainStore;
-use crate::engine::error::Error;
+use crate::engine::error::EngineError;
 use crate::engine::request_tracker::RequestTracker;
 
 use super::BlockMeta;
@@ -77,7 +77,7 @@ impl NodeSyncInfo {
     /// Check if what we know of the remote node's chain is considered
     /// divergent. A divergent chain is a forked chain, in which we have a
     /// common ancestor, but different subsequent blocks.
-    pub fn is_divergent<CS: ChainStore>(&self, local_store: &CS) -> Result<bool, Error> {
+    pub fn is_divergent<CS: ChainStore>(&self, local_store: &CS) -> Result<bool, EngineError> {
         if let Some(last_common_block) = &self.last_common_block {
             let last_known_block = if let Some(last_known_block) = self.last_known_block.as_ref() {
                 last_known_block
@@ -86,7 +86,7 @@ impl NodeSyncInfo {
             };
 
             let last_local_block = local_store.get_last_block()?.ok_or_else(|| {
-                Error::Other(String::from(
+                EngineError::Other(String::from(
                     "Expected a common block to be in stored since it had previously been",
                 ))
             })?;

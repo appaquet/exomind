@@ -1,9 +1,7 @@
 use crate::block::{Block, BlockOperations, BlockOwned, BlockSignature, BlockSignatures};
 use crate::chain;
-use crate::engine::{pending_sync, Error, Event, SyncContext};
-use crate::operation;
-use crate::operation::OperationId;
-use crate::operation::{Operation, OperationType};
+use crate::engine::{pending_sync, EngineError, Event, SyncContext};
+use crate::operation::{Operation, OperationBuilder, OperationId, OperationType};
 use crate::pending;
 use crate::pending::CommitStatus;
 use exocore_core::cell::{Cell, CellNodes, CellNodesRead};
@@ -11,13 +9,13 @@ use exocore_core::node::NodeId;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use itertools::Itertools;
 
-mod block;
 use block::{BlockStatus, PendingBlock, PendingBlockRefusal, PendingBlockSignature, PendingBlocks};
-mod config;
 pub use config::CommitManagerConfig;
-mod error;
 pub use error::CommitManagerError;
 
+mod block;
+mod config;
+mod error;
 #[cfg(test)]
 mod tests;
 
@@ -56,7 +54,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
         chain_store: &mut CS,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         // find all blocks (proposed, committed, refused, etc.) in pending store
         let mut pending_blocks = PendingBlocks::new(
             &self.config,
@@ -158,7 +156,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_blocks: &PendingBlocks,
         chain_store: &CS,
         pending_store: &PS,
-    ) -> Result<bool, Error> {
+    ) -> Result<bool, EngineError> {
         let block = pending_blocks.get_block(&block_id);
         let block_frame = block.proposal.get_block()?;
 
@@ -220,11 +218,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
         next_block: &mut PendingBlock,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let local_node = self.cell.local_node();
 
         let operation_id = self.clock.consistent_time(&local_node);
-        let signature_frame_builder = operation::OperationBuilder::new_signature_for_block(
+        let signature_frame_builder = OperationBuilder::new_signature_for_block(
             next_block.group_id,
             operation_id.into(),
             local_node.id(),
@@ -258,12 +256,12 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
         next_block: &mut PendingBlock,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let local_node = self.cell.local_node();
 
         let operation_id = self.clock.consistent_time(&local_node);
 
-        let refusal_builder = operation::OperationBuilder::new_refusal(
+        let refusal_builder = OperationBuilder::new_refusal(
             next_block.group_id,
             operation_id.into(),
             local_node.id(),
@@ -290,7 +288,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         &self,
         chain_store: &CS,
         pending_blocks: &PendingBlocks,
-    ) -> Result<bool, Error> {
+    ) -> Result<bool, EngineError> {
         let local_node = self.cell.local_node();
         if !local_node.has_full_access() {
             return Ok(false);
@@ -316,7 +314,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             } else {
                 let previous_block = chain_store
                     .get_last_block()?
-                    .ok_or(Error::UninitializedChain)?;
+                    .ok_or(EngineError::UninitializedChain)?;
                 let prev_block_op_id = previous_block.get_proposed_operation_id()?;
                 let prev_block_time = ConsistentTimestamp::from(prev_block_op_id);
                 let previous_block_elapsed = if let Some(elapsed) = now - prev_block_time {
@@ -348,11 +346,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
         chain_store: &mut CS,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let local_node = self.cell.local_node();
         let previous_block = chain_store
             .get_last_block()?
-            .ok_or(Error::UninitializedChain)?;
+            .ok_or(EngineError::UninitializedChain)?;
 
         let block_operations = pending_store
             .operations_iter(..)?
@@ -396,7 +394,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             return Ok(());
         }
 
-        let block_proposal_frame_builder = operation::OperationBuilder::new_block_proposal(
+        let block_proposal_frame_builder = OperationBuilder::new_block_proposal(
             block_operation_id.into(),
             local_node.id(),
             &block,
@@ -425,7 +423,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         next_block: &PendingBlock,
         pending_store: &mut PS,
         chain_store: &mut CS,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let block_frame = next_block.proposal.get_block()?;
         let block_header_reader = block_frame.get_reader()?;
 
@@ -441,7 +439,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // didn't match
         let block_operations = BlockOperations::from_operations(block_operations)?;
         if block_operations.multihash_bytes() != block_header_reader.get_operations_hash()? {
-            return Err(Error::Fatal(
+            return Err(EngineError::Fatal(
                 "Block hash for local entries didn't match block hash, but was previously signed"
                     .to_string(),
             ));
@@ -496,7 +494,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     fn get_block_operations(
         next_block: &PendingBlock,
         pending_store: &PS,
-    ) -> Result<impl Iterator<Item = pending::StoredOperation>, Error> {
+    ) -> Result<impl Iterator<Item = pending::StoredOperation>, EngineError> {
         let operations = next_block
             .operations
             .iter()
@@ -508,7 +506,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                         op.ok_or_else(|| CommitManagerError::MissingOperation(*operation).into())
                     })
             })
-            .collect::<Result<Vec<_>, Error>>()? // collect automatically flatten result into Result<Vec<_>>
+            .collect::<Result<Vec<_>, EngineError>>()? // collect automatically flatten result into Result<Vec<_>>
             .into_iter()
             .sorted_by_key(|operation| operation.operation_id);
 
@@ -524,10 +522,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         pending_blocks: &PendingBlocks,
         pending_store: &mut PS,
         chain_store: &CS,
-    ) -> Result<(), Error> {
+    ) -> Result<(), EngineError> {
         let last_stored_block = chain_store
             .get_last_block()?
-            .ok_or(Error::UninitializedChain)?;
+            .ok_or(EngineError::UninitializedChain)?;
         let last_stored_block_height = last_stored_block.get_height()?;
 
         // cleanup all blocks and their operations that are committed or refused with
@@ -619,7 +617,7 @@ fn is_node_commit_turn(
     my_node_id: &NodeId,
     now: ConsistentTimestamp,
     config: &CommitManagerConfig,
-) -> Result<bool, Error> {
+) -> Result<bool, EngineError> {
     let nodes_iter = nodes.iter();
     let sorted_nodes = nodes_iter
         .all()
@@ -628,7 +626,7 @@ fn is_node_commit_turn(
     let my_node_position = sorted_nodes
         .iter()
         .position(|node| node.id() == my_node_id)
-        .ok_or(Error::MyNodeNotFound)? as u64;
+        .ok_or(EngineError::MyNodeNotFound)? as u64;
 
     let commit_interval = config.commit_maximum_interval.as_nanos() as f64;
     let epoch = (now.0 as f64 / commit_interval as f64).floor() as u64;

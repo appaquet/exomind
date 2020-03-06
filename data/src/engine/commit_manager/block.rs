@@ -1,5 +1,5 @@
 use crate::block::{Block, BlockOffset};
-use crate::engine::Error;
+use crate::engine::EngineError;
 use crate::operation::{GroupId, OperationId, OperationType};
 use crate::{chain, pending, CommitManagerConfig};
 use exocore_core::cell::{Cell, CellNodes};
@@ -29,13 +29,13 @@ impl PendingBlocks {
         cell: &Cell,
         pending_store: &PS,
         chain_store: &CS,
-    ) -> Result<PendingBlocks, Error> {
+    ) -> Result<PendingBlocks, EngineError> {
         let local_node = cell.local_node();
         let now = clock.consistent_time(local_node.node());
 
         let last_stored_block = chain_store
             .get_last_block()?
-            .ok_or(Error::UninitializedChain)?;
+            .ok_or(EngineError::UninitializedChain)?;
         let next_offset = last_stored_block.next_offset();
 
         // first pass to fetch all groups proposal
@@ -309,14 +309,14 @@ pub struct PendingBlockProposal {
 }
 
 impl PendingBlockProposal {
-    pub fn get_block(&self) -> Result<crate::block::BlockHeaderFrame<&[u8]>, Error> {
+    pub fn get_block(&self) -> Result<crate::block::BlockHeaderFrame<&[u8]>, EngineError> {
         let operation_reader = self.operation.frame.get_reader()?;
         let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
             chain_operation::operation::Which::BlockPropose(block_prop) => {
                 Ok(crate::block::read_header_frame(block_prop?.get_block()?)?)
             }
-            _ => Err(Error::Other(
+            _ => Err(EngineError::Other(
                 "Expected block sign pending op to create block signature, but got something else"
                     .to_string(),
             )),
@@ -337,17 +337,17 @@ pub struct PendingBlockRefusal {
 impl PendingBlockRefusal {
     pub fn from_operation(
         operation_reader: chain_operation::Reader,
-    ) -> Result<PendingBlockRefusal, Error> {
+    ) -> Result<PendingBlockRefusal, EngineError> {
         let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
             chain_operation::operation::Which::BlockRefuse(_sig) => {
                 let node_id_str = operation_reader.get_node_id()?;
                 let node_id = NodeId::from_str(node_id_str).map_err(|_| {
-                    Error::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
+                    EngineError::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
                 })?;
                 Ok(PendingBlockRefusal { node_id })
             }
-            _ => Err(Error::Other(
+            _ => Err(EngineError::Other(
                 "Expected block refuse pending op to create block refusal, but got something else"
                     .to_string(),
             )),
@@ -364,7 +364,7 @@ pub struct PendingBlockSignature {
 impl PendingBlockSignature {
     pub fn from_operation(
         operation_reader: chain_operation::Reader,
-    ) -> Result<PendingBlockSignature, Error> {
+    ) -> Result<PendingBlockSignature, EngineError> {
         let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
             chain_operation::operation::Which::BlockSign(sig) => {
@@ -373,13 +373,13 @@ impl PendingBlockSignature {
 
                 let node_id_str = operation_reader.get_node_id()?;
                 let node_id = NodeId::from_str(node_id_str).map_err(|_| {
-                    Error::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
+                    EngineError::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
                 })?;
                 let signature = Signature::from_bytes(signature_reader.get_node_signature()?);
 
                 Ok(PendingBlockSignature { node_id, signature })
             }
-            _ => Err(Error::Other(
+            _ => Err(EngineError::Other(
                 "Expected block sign pending op to create block signature, but got something else"
                     .to_string(),
             )),

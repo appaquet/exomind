@@ -248,7 +248,7 @@ fn sync_fully_divergent_node1_to_full_node2() -> Result<(), failure::Error> {
     }
 
     match run_sync_1_to_1(&mut cluster, 0, 1).err() {
-        Some(Error::ChainSync(ChainSyncError::Diverged(_))) => {}
+        Some(EngineError::ChainSync(ChainSyncError::Diverged(_))) => {}
         other => panic!("Expected a diverged error, got {:?}", other),
     }
 
@@ -311,7 +311,7 @@ fn cannot_sync_all_divergent() -> Result<(), failure::Error> {
 
     run_sync_1_to_n(&mut cluster, 0)?;
     match run_sync_1_to_n(&mut cluster, 0).err() {
-        Some(Error::ChainSync(ChainSyncError::Diverged(_))) => {}
+        Some(EngineError::ChainSync(ChainSyncError::Diverged(_))) => {}
         other => panic!("Expected a diverged error, got {:?}", other),
     }
 
@@ -348,7 +348,7 @@ fn sync_half_divergent_node1_to_full_node2() -> Result<(), failure::Error> {
     }
 
     match run_sync_1_to_1(&mut cluster, 0, 1).err() {
-        Some(Error::ChainSync(ChainSyncError::Diverged(_))) => {}
+        Some(EngineError::ChainSync(ChainSyncError::Diverged(_))) => {}
         other => panic!("Expected a diverged error, got {:?}", other),
     }
 
@@ -520,7 +520,7 @@ fn run_sync_1_to_1(
     cluster: &mut EngineTestCluster,
     node_id_a: usize,
     node_id_b: usize,
-) -> Result<(usize, usize), Error> {
+) -> Result<(usize, usize), EngineError> {
     let sync_context = cluster.tick_chain_synchronizer(node_id_a)?;
     if sync_context.messages.is_empty() {
         return Ok((0, 0));
@@ -532,7 +532,10 @@ fn run_sync_1_to_1(
     run_sync_1_to_1_with_request(cluster, node_id_a, node_id_b, message)
 }
 
-fn run_sync_1_to_n(cluster: &mut EngineTestCluster, node_id_from: usize) -> Result<(), Error> {
+fn run_sync_1_to_n(
+    cluster: &mut EngineTestCluster,
+    node_id_from: usize,
+) -> Result<(), EngineError> {
     let sync_context = cluster.tick_chain_synchronizer(node_id_from)?;
     for sync_message in sync_context.messages {
         if let SyncContextMessage::ChainSyncRequest(to_node, req) = sync_message {
@@ -550,7 +553,7 @@ fn run_sync_1_to_1_with_request(
     node_id_a: usize,
     node_id_b: usize,
     first_request: TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned>,
-) -> Result<(usize, usize), Error> {
+) -> Result<(usize, usize), EngineError> {
     let node1 = cluster.get_node(node_id_a);
     let node2 = cluster.get_node(node_id_b);
 

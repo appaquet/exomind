@@ -1,7 +1,7 @@
 use super::ChainSyncError;
 use crate::block::{Block, BlockHeight, BlockOffset, BlockSignaturesSize};
 use crate::chain;
-use crate::engine::Error;
+use crate::engine::EngineError;
 use exocore_core::framing::FrameReader;
 use exocore_core::protos::generated::data_chain_capnp::{block_header, block_partial_header};
 
@@ -35,7 +35,7 @@ impl BlockMeta {
         begin_count: BlockOffset,
         end_count: BlockOffset,
         sampled_count: BlockOffset,
-    ) -> Result<Vec<BlockMeta>, Error> {
+    ) -> Result<Vec<BlockMeta>, EngineError> {
         let mut headers = Vec::new();
 
         let segments_range = store.segments();
@@ -100,7 +100,7 @@ impl BlockMeta {
         Ok(headers)
     }
 
-    pub fn from_stored_block<B: Block>(stored_block: B) -> Result<BlockMeta, Error> {
+    pub fn from_stored_block<B: Block>(stored_block: B) -> Result<BlockMeta, EngineError> {
         let block_header_reader: block_header::Reader = stored_block.header().get_reader()?;
         let block_signature = stored_block.header().inner().inner().multihash_bytes();
 
@@ -119,7 +119,7 @@ impl BlockMeta {
 
     pub fn from_block_partial_header_reader(
         block_partial_header_reader: block_partial_header::Reader,
-    ) -> Result<BlockMeta, Error> {
+    ) -> Result<BlockMeta, EngineError> {
         Ok(BlockMeta {
             offset: block_partial_header_reader.get_offset(),
             height: block_partial_header_reader.get_height(),
