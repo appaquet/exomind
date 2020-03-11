@@ -1,4 +1,4 @@
-use exocore_core::node::NodeId;
+use exocore_core::cell::NodeId;
 use exocore_core::time::Clock;
 
 use crate::block::{Block, BlockHeight};

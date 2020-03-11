@@ -428,7 +428,7 @@ mod tests {
 
     use super::*;
     use exocore_core::cell::FullCell;
-    use exocore_core::node::LocalNode;
+    use exocore_core::cell::LocalNode;
 
     #[test]
     fn create_from_iterator() -> Result<(), failure::Error> {

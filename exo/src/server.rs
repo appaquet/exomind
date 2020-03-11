@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use failure::err_msg;
 
-use exocore_core::cell::FullCell;
+use exocore_core::cell::{FullCell, NodeConfig};
 use exocore_core::futures::Runtime;
 use exocore_core::protos::registry::Registry;
 use exocore_core::time::Clock;
@@ -15,7 +15,6 @@ use exocore_index::remote::server::Server;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 
-use crate::config::NodeConfig;
 use crate::options;
 
 /// Starts servers based on given command line options
@@ -23,7 +22,7 @@ pub fn start(
     _opts: &options::Options,
     server_opts: &options::ServerOptions,
 ) -> Result<(), failure::Error> {
-    let config = NodeConfig::from_file(&server_opts.config)?;
+    let config = NodeConfig::from_yaml_file(&server_opts.config)?;
     let mut rt = Runtime::new()?;
 
     let local_node = config.create_local_node()?;

@@ -1,4 +1,4 @@
-use exocore_core::node::Node;
+use exocore_core::cell::Node;
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::protos::generated::MessageType;
 

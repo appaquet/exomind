@@ -447,8 +447,8 @@ pub mod tests {
     use itertools::Itertools;
     use tempdir;
 
-    use exocore_core::node::LocalNode;
-    use exocore_core::range;
+    use exocore_core::cell::LocalNode;
+    use exocore_core::utils::range;
 
     use crate::block::{Block, BlockOperations, BlockOwned};
 

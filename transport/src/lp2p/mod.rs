@@ -14,8 +14,8 @@ use libp2p::swarm::Swarm;
 
 use behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage};
 use exocore_core::cell::{Cell, CellId, CellNodes};
+use exocore_core::cell::{LocalNode, Node, NodeId};
 use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
-use exocore_core::node::{LocalNode, Node, NodeId};
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
 
@@ -441,9 +441,9 @@ mod tests {
     use futures::{SinkExt, StreamExt};
 
     use exocore_core::cell::FullCell;
+    use exocore_core::cell::Node;
     use exocore_core::framing::CapnpFrameBuilder;
     use exocore_core::futures::Runtime;
-    use exocore_core::node::Node;
     use exocore_core::protos::generated::data_chain_capnp::block_operation_header;
     use exocore_core::tests_utils::expect_eventually;
     use exocore_core::time::{ConsistentTimestamp, Instant};

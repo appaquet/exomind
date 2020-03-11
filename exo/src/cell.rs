@@ -1,5 +1,5 @@
-use crate::config::NodeConfig;
 use crate::options;
+use exocore_core::cell::NodeConfig;
 use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_data::block::Block;
 use exocore_data::chain::ChainStore;
@@ -9,7 +9,7 @@ pub fn create_genesis_block(
     _opt: &options::Options,
     cell_opts: &options::CellOptions,
 ) -> Result<(), failure::Error> {
-    let config = NodeConfig::from_file(&cell_opts.config)?;
+    let config = NodeConfig::from_yaml_file(&cell_opts.config)?;
     let local_node = config.create_local_node()?;
 
     let cell_config = config
@@ -41,7 +41,7 @@ pub fn check_chain(
     _opt: &options::Options,
     cell_opts: &options::CellOptions,
 ) -> Result<(), failure::Error> {
-    let config = NodeConfig::from_file(&cell_opts.config)?;
+    let config = NodeConfig::from_yaml_file(&cell_opts.config)?;
     let cell_config = config
         .cells
         .iter()

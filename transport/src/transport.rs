@@ -1,5 +1,5 @@
 use crate::{Error, InMessage, OutMessage};
-use exocore_core::node::NodeId;
+use exocore_core::cell::NodeId;
 use futures::channel::mpsc;
 use futures::channel::mpsc::SendError;
 use futures::prelude::*;

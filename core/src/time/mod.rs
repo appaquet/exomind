@@ -1,4 +1,4 @@
-use crate::node::Node;
+use crate::cell::Node;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
@@ -171,7 +171,7 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
-    use crate::node::LocalNode;
+    use crate::cell::LocalNode;
 
     #[test]
     fn non_mocked_clock() {

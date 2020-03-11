@@ -5,9 +5,9 @@ use prost::Message;
 use wasm_bindgen::prelude::*;
 
 use exocore_core::cell::Cell;
+use exocore_core::cell::{LocalNode, Node};
 use exocore_core::crypto::keys::{Keypair, PublicKey};
 use exocore_core::futures::spawn_future_non_send;
-use exocore_core::node::{LocalNode, Node};
 use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_core::time::Clock;
 use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};

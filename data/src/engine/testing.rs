@@ -11,11 +11,11 @@ use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, Opera
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
 use exocore_core::cell::FullCell;
+use exocore_core::cell::{LocalNode, Node, NodeId};
 use exocore_core::crypto::hash::Sha3_256;
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
 };
-use exocore_core::node::{LocalNode, Node, NodeId};
 use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use std::borrow::Borrow;

@@ -1,8 +1,8 @@
 use crate::error::Error;
 use crate::transport::TransportHandleOnStart;
 use crate::{InEvent, OutEvent, TransportHandle};
+use exocore_core::cell::NodeId;
 use exocore_core::futures::OwnedSpawnSet;
-use exocore_core::node::NodeId;
 use futures::channel::mpsc;
 use futures::prelude::*;
 use futures::{Future, FutureExt, Sink, SinkExt, Stream, StreamExt};
@@ -241,8 +241,8 @@ mod tests {
     use super::*;
     use crate::mock::{MockTransport, TestableTransportHandle};
     use crate::TransportLayer::Index;
+    use exocore_core::cell::LocalNode;
     use exocore_core::futures::Runtime;
-    use exocore_core::node::LocalNode;
     use exocore_core::tests_utils::{expect_result, result_assert_false, result_assert_true};
 
     #[test]

@@ -1,5 +1,6 @@
 use crate::operation::OperationId;
 use exocore_core::capnp;
+use exocore_core::cell::NodeId;
 use exocore_core::cell::{Cell, FullCell};
 use exocore_core::crypto::hash::{Digest, Multihash, MultihashDigest, Sha3_256};
 use exocore_core::crypto::signature::Signature;
@@ -7,7 +8,6 @@ use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
     PaddedFrame, PaddedFrameBuilder, SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
 };
-use exocore_core::node::NodeId;
 use exocore_core::protos::generated::data_chain_capnp::{
     block_header, block_operation_header, block_signature, block_signatures,
 };
@@ -776,8 +776,8 @@ mod tests {
     use crate::block::{Block, BlockOperations, BlockOwned, BlockRef};
     use crate::operation::OperationBuilder;
     use exocore_core::cell::FullCell;
+    use exocore_core::cell::LocalNode;
     use exocore_core::framing::FrameReader;
-    use exocore_core::node::LocalNode;
 
     #[test]
     fn block_create_and_read() -> Result<(), failure::Error> {

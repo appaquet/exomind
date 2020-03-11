@@ -4,8 +4,7 @@ node_public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
 
 listen_addresses:
   - /ip4/0.0.0.0/tcp/3330
-
-websocket_listen_address: 127.0.0.1:3340
+  - /ip4/0.0.0.0/tcp/3341/ws
 
 cells:
    - public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ

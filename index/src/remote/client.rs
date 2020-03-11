@@ -8,9 +8,9 @@ use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
 use exocore_core::cell::Cell;
+use exocore_core::cell::Node;
 use exocore_core::framing::CapnpFrameBuilder;
 use exocore_core::futures::interval;
-use exocore_core::node::Node;
 use exocore_core::protos::generated::exocore_index::{
     EntityMutation, EntityQuery, EntityResults, MutationResult,
 };

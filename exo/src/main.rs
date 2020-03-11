@@ -1,7 +1,6 @@
 #![deny(bare_trait_objects)]
 
 mod cell;
-mod config;
 mod logging;
 mod options;
 mod server;

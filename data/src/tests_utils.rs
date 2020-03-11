@@ -8,8 +8,8 @@ use futures::prelude::*;
 use itertools::Itertools;
 use tempdir;
 
+use exocore_core::cell::LocalNode;
 use exocore_core::futures::Runtime;
-use exocore_core::node::LocalNode;
 use exocore_core::tests_utils::expect_result;
 use exocore_core::time::Clock;
 

@@ -4,8 +4,8 @@ use crate::chain::ChainStore;
 use capnp::traits::ToU16;
 use exocore_core::capnp;
 use exocore_core::cell::{Cell, CellNodes, CellNodesOwned};
+use exocore_core::cell::{Node, NodeId};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_core::node::{Node, NodeId};
 use exocore_core::protos::generated::data_chain_capnp::block_partial_header;
 use exocore_core::protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,

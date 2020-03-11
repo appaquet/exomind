@@ -11,9 +11,9 @@ use libc;
 use prost::Message;
 
 use exocore_core::cell::Cell;
+use exocore_core::cell::{LocalNode, Node};
 use exocore_core::crypto::keys::{Keypair, PublicKey};
 use exocore_core::futures::Runtime;
-use exocore_core::node::{LocalNode, Node};
 use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_core::protos::prost::ProstMessageExt;
 use exocore_core::time::{Clock, ConsistentTimestamp};

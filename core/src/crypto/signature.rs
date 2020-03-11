@@ -1,4 +1,4 @@
-use crate::node::Node;
+use crate::cell::Node;
 
 // TODO: Most of the signature logic to be implemented in ticket: https://github.com/appaquet/exocore/issues/46
 

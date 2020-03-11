@@ -4,8 +4,8 @@ use crate::engine::{pending_sync, EngineError, Event, SyncContext};
 use crate::operation::{Operation, OperationBuilder, OperationId, OperationType};
 use crate::pending;
 use crate::pending::CommitStatus;
+use exocore_core::cell::NodeId;
 use exocore_core::cell::{Cell, CellNodes, CellNodesRead};
-use exocore_core::node::NodeId;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use itertools::Itertools;
 

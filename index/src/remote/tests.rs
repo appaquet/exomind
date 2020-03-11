@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use futures::executor::block_on_stream;
 
-use exocore_core::node::LocalNode;
+use exocore_core::cell::LocalNode;
 use exocore_core::protos::generated::exocore_index::{
     EntityMutation, EntityQuery, EntityResults, MutationResult,
 };

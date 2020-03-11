@@ -814,9 +814,6 @@ dependencies = [
  "futures 0.3.4",
  "log",
  "log4rs",
- "serde",
- "serde_derive",
- "serde_yaml",
  "structopt",
 ]
 
@@ -898,6 +895,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "serde_yaml",
  "sha3",
  "tempdir",
  "tokio",
