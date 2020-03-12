@@ -36,7 +36,7 @@ bytes = "0.5"
 uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
 
 # tests_utils
-log4rs = { version = "0.10", optional = true }
+log4rs = { version = "0.11", optional = true }
 
 [target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue
@@ -48,7 +48,7 @@ prost-build = "0.6"
 
 [dev-dependencies]
 tempdir = "0.3"
-log4rs = "0.10"
+log4rs = "0.11"
 criterion_bencher_compat = "0.3"
 
 [[bench]]
