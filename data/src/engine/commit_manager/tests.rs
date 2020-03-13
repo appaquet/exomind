@@ -25,7 +25,7 @@ fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
 
     // shouldn't have signature yet
     let blocks = get_pending_blocks(&cluster)?;
-    assert!(!blocks.blocks.iter().nth(0).unwrap().1.has_my_signature);
+    assert!(!blocks.blocks.iter().next().unwrap().1.has_my_signature);
 
     // this should sign + commit block to chain
     cluster.tick_commit_manager(0)?;
@@ -33,7 +33,7 @@ fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
 
     let blocks = get_pending_blocks(&cluster)?;
     assert_eq!(
-        blocks.blocks.iter().nth(0).unwrap().1.status,
+        blocks.blocks.iter().next().unwrap().1.status,
         BlockStatus::PastCommitted
     );
     let last_block = cluster.chains[0].get_last_block()?.unwrap();

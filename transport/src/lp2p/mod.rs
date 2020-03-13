@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::pin::Pin;
 use std::sync::{Arc, RwLock, Weak};
 use std::task::{Context, Poll};
@@ -358,12 +358,12 @@ struct Handles {
 }
 
 impl Handles {
-    fn all_peers(&self) -> HashSet<(PeerId, Vec<Multiaddr>)> {
-        let mut peers = HashSet::new();
+    fn all_peers(&self) -> Vec<(PeerId, Vec<Multiaddr>)> {
+        let mut peers = Vec::new();
         for inner_layer in self.handles.values() {
             for cell_node in inner_layer.cell.nodes().iter().all() {
                 let node = cell_node.node();
-                peers.insert((node.peer_id().clone(), node.addresses()));
+                peers.push((node.peer_id().clone(), node.addresses()));
             }
         }
         peers
