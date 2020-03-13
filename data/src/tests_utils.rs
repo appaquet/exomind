@@ -8,7 +8,7 @@ use futures::prelude::*;
 use itertools::Itertools;
 use tempdir;
 
-use exocore_core::cell::LocalNode;
+use exocore_core::cell::{CellNode, CellNodeRole, LocalNode};
 use exocore_core::futures::Runtime;
 use exocore_core::tests_utils::expect_result;
 use exocore_core::time::Clock;
@@ -39,6 +39,11 @@ pub struct DataTestCluster {
 
     pub events_receiver: Vec<Option<mpsc::Receiver<Event>>>,
     pub events_received: Vec<Option<Arc<Mutex<Vec<Event>>>>>,
+}
+
+pub struct ClusterSpec {
+    pub full_data_nodes: usize,
+    pub data_nodes: usize,
 }
 
 impl DataTestCluster {
@@ -94,17 +99,25 @@ impl DataTestCluster {
             events_received.push(None);
         }
 
-        // add each node to all other nodes' cell
+        // Add each node to all other nodes' cell
+        // All nodes have full data access
         for cell in &cells {
-            for other_node in &nodes {
-                if cell.local_node().id() != other_node.id() {
-                    let mut cell_nodes = cell.nodes_mut();
-                    cell_nodes.add(other_node.node().clone());
+            let mut cell_nodes = cell.nodes_mut();
+
+            for node in &nodes {
+                if cell.local_node().id() != node.id() {
+                    let mut cell_node = CellNode::new(node.node().clone());
+                    cell_node.add_role(CellNodeRole::DataFull);
+                    cell_nodes.add_cell_node(cell_node);
+                } else {
+                    cell_nodes
+                        .local_cell_node_mut()
+                        .add_role(CellNodeRole::DataFull);
                 }
             }
         }
 
-        Ok(DataTestCluster {
+        let mut cluster = DataTestCluster {
             tempdir,
             runtime,
             nodes,
@@ -119,7 +132,13 @@ impl DataTestCluster {
 
             events_receiver,
             events_received,
-        })
+        };
+
+        for i in 0..count {
+            cluster.add_node_role(i, CellNodeRole::DataFull);
+        }
+
+        Ok(cluster)
     }
 
     pub fn new_single_and_start() -> Result<DataTestCluster, failure::Error> {
@@ -168,6 +187,24 @@ impl DataTestCluster {
             .unwrap()
             .write_block(&block)
             .unwrap();
+    }
+
+    pub fn add_node_role(&mut self, node_idx: usize, role: CellNodeRole) {
+        let node_id = self.nodes[node_idx].id().clone();
+        for cell in &mut self.cells {
+            let mut nodes = cell.nodes_mut();
+            let node = nodes.get_mut(&node_id).unwrap();
+            node.add_role(role);
+        }
+    }
+
+    pub fn remove_node_role(&mut self, node_idx: usize, role: CellNodeRole) {
+        let node_id = self.nodes[node_idx].id().clone();
+        for cell in &mut self.cells {
+            let mut nodes = cell.nodes_mut();
+            let node = nodes.get_mut(&node_id).unwrap();
+            node.remove_role(role);
+        }
     }
 
     pub fn start_engine(&mut self, node_idx: usize) {

@@ -73,8 +73,8 @@ pub enum SyncContextMessage {
 impl SyncContextMessage {
     pub fn into_out_message(self, cell: &Cell) -> Result<OutMessage, EngineError> {
         let cell_nodes = cell.nodes();
-        let to_nodes = if let Some(node) = cell_nodes.get(self.to_node()) {
-            vec![node.clone()]
+        let to_nodes = if let Some(cell_node) = cell_nodes.get(self.to_node()) {
+            vec![cell_node.node().clone()]
         } else {
             vec![]
         };

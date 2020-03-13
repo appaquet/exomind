@@ -306,7 +306,7 @@ impl Libp2pTransport {
         let cell_nodes = cell.nodes();
 
         if let Some(source_node) = cell_nodes.get(&node_id) {
-            Ok(source_node.clone())
+            Ok(source_node.node().clone())
         } else {
             Err(Error::Other(format!(
                 "Couldn't find node with id {} in local nodes",
@@ -361,7 +361,8 @@ impl Handles {
     fn all_peers(&self) -> HashSet<(PeerId, Vec<Multiaddr>)> {
         let mut peers = HashSet::new();
         for inner_layer in self.handles.values() {
-            for node in inner_layer.cell.nodes().iter().all() {
+            for cell_node in inner_layer.cell.nodes().iter().all() {
+                let node = cell_node.node();
                 peers.insert((node.peer_id().clone(), node.addresses()));
             }
         }

@@ -47,6 +47,27 @@ fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
 }
 
 #[test]
+fn should_not_propose_block_if_not_data_full() -> Result<(), failure::Error> {
+    let mut cluster = EngineTestCluster::new(1);
+    cluster.remove_node_role(0, CellNodeRole::DataFull);
+
+    cluster.chain_add_genesis_block(0);
+    cluster.tick_chain_synchronizer(0)?;
+
+    cluster.tick_commit_manager(0)?;
+
+    // append new operation
+    append_new_operation(&mut cluster, b"hello world")?;
+
+    // this should have create a block proposal if node could commit
+    // but there should still be only 1 operation
+    cluster.tick_commit_manager(0)?;
+    assert_eq!(1, cluster.pending_stores[0].operations_count()); // operation
+
+    Ok(())
+}
+
+#[test]
 fn only_one_node_at_time_should_commit() -> Result<(), failure::Error> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_add_genesis_block(0);
@@ -314,15 +335,15 @@ fn proposal_should_expire_after_timeout() -> Result<(), failure::Error> {
 
 #[test]
 fn test_is_node_commit_turn() -> Result<(), failure::Error> {
-    let cluster = EngineTestCluster::new(2);
+    let mut cluster = EngineTestCluster::new(2);
     let node1 = cluster.get_node(0);
     let node2 = cluster.get_node(1);
 
     // we use node id to sort nodes
-    let (first_node, sec_node) = if node1.id().to_str() < node2.id().to_str() {
-        (&node1, &node2)
+    let (first_node, sec_node, sec_node_idx) = if node1.id().to_str() < node2.id().to_str() {
+        (&node1, &node2, 1)
     } else {
-        (&node2, &node1)
+        (&node2, &node1, 0)
     };
 
     let config = CommitManagerConfig {
@@ -330,22 +351,46 @@ fn test_is_node_commit_turn() -> Result<(), failure::Error> {
         ..CommitManagerConfig::default()
     };
 
-    let nodes = cluster.cells[0].nodes();
-    let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));
-    assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
-    assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
+    {
+        // test normal with all nodes being full data
+        let nodes = cluster.cells[0].nodes();
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));
+        assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
+        assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-    let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(1999));
-    assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
-    assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(1999));
+        assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
+        assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-    let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(2000));
-    assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
-    assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(2000));
+        assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
+        assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
 
-    let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(3999));
-    assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
-    assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(3999));
+        assert!(!is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
+        assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
+    }
+
+    {
+        // only node 0 is full data
+        cluster.remove_node_role(sec_node_idx, CellNodeRole::DataFull);
+
+        let nodes = cluster.cells[0].nodes();
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));
+        assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
+
+        // second node can't commit
+        assert!(is_node_commit_turn(&nodes, sec_node.id(), now, &config).is_err());
+
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(1999));
+        assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
+
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(2000));
+        assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
+
+        let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(3999));
+        assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
+    }
 
     Ok(())
 }

@@ -430,8 +430,10 @@ where
     /// tombstone in the in-memory will be used to remove it from
     /// the results.
     fn index_chain_new_blocks(&mut self) -> Result<(), Error> {
-        let (_last_chain_block_offset, last_chain_block_height) =
-            self.data_handle.get_chain_last_block()?.ok_or_else(|| {
+        let (_last_chain_block_offset, last_chain_block_height) = self
+            .data_handle
+            .get_chain_last_block_info()?
+            .ok_or_else(|| {
                 Error::Other("Tried to index chain, but it had no blocks in it".to_string())
             })?;
 

@@ -3,6 +3,7 @@ use itertools::Itertools;
 
 use exocore_core::tests_utils::expect_result;
 
+use exocore_core::cell::CellNodeRole;
 use exocore_data::operation::Operation;
 use exocore_data::tests_utils::*;
 use exocore_data::*;
@@ -38,7 +39,7 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
 
     // check if we really created a block
     let (chain_last_offset, chain_last_height) =
-        cluster.get_handle(0).get_chain_last_block()?.unwrap();
+        cluster.get_handle(0).get_chain_last_block_info()?.unwrap();
     assert!(chain_last_offset >= *first_block_offset);
     assert!(chain_last_height >= 1);
 
@@ -216,6 +217,43 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
 
         Ok(())
     });
+
+    Ok(())
+}
+
+#[test]
+fn two_nodes_one_node_full() -> Result<(), failure::Error> {
+    let mut cluster = DataTestCluster::new(2)?;
+    cluster.create_node(0)?;
+    cluster.create_node(1)?;
+
+    let node0_id = cluster.nodes[0].id().to_string();
+
+    // 2nd node can't propose
+    cluster.remove_node_role(1, CellNodeRole::DataFull);
+
+    cluster.create_chain_genesis_block(0);
+
+    cluster.start_engine(0);
+    cluster.start_engine(1);
+    cluster.wait_started(0);
+    cluster.wait_started(1);
+
+    // Add operations to each node one by one, wait for a block and make sure it's been proposed by node 0
+    for i in 0..3 {
+        let op = cluster
+            .get_handle_mut(i % 2)
+            .write_entry_operation(b"i love rust")?;
+        cluster.wait_operations_committed(0, &[op]);
+        cluster.wait_operations_committed(1, &[op]);
+
+        // make sure the block was proposed by node0
+        let handle = cluster.get_handle_mut(0);
+        let (offset, _height) = handle.get_chain_last_block_info()?.unwrap();
+        let block = handle.get_chain_block(offset)?.unwrap();
+        let block_header_reader = block.header.get_reader()?;
+        assert_eq!(node0_id, block_header_reader.get_proposed_node_id()?);
+    }
 
     Ok(())
 }

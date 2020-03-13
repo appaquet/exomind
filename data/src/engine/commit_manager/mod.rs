@@ -5,7 +5,7 @@ use crate::operation::{Operation, OperationBuilder, OperationId, OperationType};
 use crate::pending;
 use crate::pending::CommitStatus;
 use exocore_core::cell::NodeId;
-use exocore_core::cell::{Cell, CellNodes, CellNodesRead};
+use exocore_core::cell::{Cell, CellNodeRole, CellNodes, CellNodesRead};
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use itertools::Itertools;
 
@@ -289,11 +289,11 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         chain_store: &CS,
         pending_blocks: &PendingBlocks,
     ) -> Result<bool, EngineError> {
-        let local_node = self.cell.local_node();
-        if !local_node.has_full_access() {
+        if !self.cell.local_node_has_role(CellNodeRole::DataFull) {
             return Ok(false);
         }
 
+        let local_node = self.cell.local_node();
         let nodes = self.cell.nodes();
         let now = self.clock.consistent_time(local_node);
         if is_node_commit_turn(&nodes, local_node.id(), now, &self.config)? {
@@ -620,12 +620,12 @@ fn is_node_commit_turn(
 ) -> Result<bool, EngineError> {
     let nodes_iter = nodes.iter();
     let sorted_nodes = nodes_iter
-        .all()
-        .sorted_by_key(|node| node.id().to_str())
+        .with_role(CellNodeRole::DataFull)
+        .sorted_by_key(|cell_node| cell_node.node().id().to_str())
         .collect_vec();
     let my_node_position = sorted_nodes
         .iter()
-        .position(|node| node.id() == my_node_id)
+        .position(|cell_node| cell_node.node().id() == my_node_id)
         .ok_or(EngineError::MyNodeNotFound)? as u64;
 
     let commit_interval = config.commit_maximum_interval.as_nanos() as f64;

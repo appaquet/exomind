@@ -136,8 +136,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         if self.status != Status::Synchronized && majority_nodes_metadata_sync {
             let mut nb_non_divergent = 1;
 
-            for node in nodes.iter().all_except_local() {
-                let node_info = self.get_or_create_node_info_mut(node.id());
+            for cell_node in nodes.iter().all_except_local() {
+                let node_info = self.get_or_create_node_info_mut(cell_node.node().id());
                 if !node_info.is_divergent(store)? {
                     nb_non_divergent += 1;
                 }
@@ -300,7 +300,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         sync_context: &mut SyncContext,
         nodes: &CellNodesOwned,
     ) -> Result<(), EngineError> {
-        for node in nodes.iter().all_except_local() {
+        for cell_node in nodes.iter().all_except_local() {
+            let node = cell_node.node();
+
             let node_info = self.get_or_create_node_info_mut(node.id());
 
             if node_info.request_tracker.can_send_request() {
@@ -364,12 +366,15 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         }
 
         if leader_node_info.request_tracker.can_send_request() {
-            let leader_node = nodes.get(&leader_node_id).ok_or_else(|| {
-                ChainSyncError::Other(format!(
-                    "Couldn't find leader node {} in nodes list",
-                    node_id
-                ))
-            })?;
+            let leader_node = nodes
+                .get(&leader_node_id)
+                .ok_or_else(|| {
+                    ChainSyncError::Other(format!(
+                        "Couldn't find leader node {} in nodes list",
+                        node_id
+                    ))
+                })?
+                .node();
 
             debug!(
                 "Initiating chain download with leader: last_common_block={:?} last_known_block={:?}",
@@ -687,7 +692,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     fn check_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
         let mut nodes_total = 0;
         let mut nodes_metadata_sync = 0;
-        for node in nodes.iter().all() {
+        for cell_node in nodes.iter().all() {
+            let node = cell_node.node();
+
             nodes_total += 1;
 
             if node.id() == self.cell.local_node().id() {

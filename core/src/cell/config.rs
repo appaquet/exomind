@@ -1,5 +1,6 @@
 use super::Error;
 use super::{Cell, FullCell, LocalNode, Node};
+use crate::cell::CellNode;
 use crate::crypto::keys::{Keypair, PublicKey};
 use serde_derive::{Deserialize, Serialize};
 use std::fs::OpenOptions;
@@ -88,7 +89,14 @@ impl CellConfig {
                     })?);
                 }
 
-                cell_nodes.add(node);
+                let mut cell_node = CellNode::new(node);
+                for node_role in &nodes_config.roles {
+                    cell_node.add_role(node_role.parse().map_err(|err| {
+                        Error::ConfigOther(format!("Couldn't parse node role: {}", err))
+                    })?);
+                }
+
+                cell_nodes.add_cell_node(cell_node);
             }
         }
 
@@ -100,4 +108,91 @@ impl CellConfig {
 pub struct CellConfigNode {
     pub public_key: String,
     pub addresses: Vec<String>,
+    pub roles: Vec<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::CellNodes;
+    use super::*;
+    use crate::cell::nodes::CellNodeRole;
+
+    #[test]
+    pub fn parse_node_config_from_file_full_cell() -> Result<(), failure::Error> {
+        // hacky way of getting the files as the test execution may not be done in the same dir
+        let config = NodeConfig::from_yaml_file("./examples/config.yaml")
+            .or_else(|_| NodeConfig::from_yaml_file("../examples/config.yaml"))
+            .or_else(|_| NodeConfig::from_yaml_file("../../examples/config.yaml"))?;
+
+        let node = config.create_local_node()?;
+        assert_eq!(2, node.addresses().len());
+
+        let (full_cell, _cell) = config.cells.first().unwrap().create_cell(&node)?;
+        let full_cell = full_cell.expect("Expected the cell to be a full cell");
+
+        {
+            let nodes = full_cell.nodes();
+            assert_eq!(1, nodes.len());
+
+            let nodes_iter = nodes.iter();
+            let node = nodes_iter.all().next().unwrap();
+            assert_eq!(2, node.roles().len());
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn parse_node_config_from_str_read_cell() -> Result<(), failure::Error> {
+        let yaml = r#"
+node_keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
+node_public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+
+listen_addresses:
+  - /ip4/0.0.0.0/tcp/3330
+  - /ip4/0.0.0.0/tcp/3341/ws
+
+cells:
+   - public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
+     data_directory: target/data/cell1
+     nodes:
+       - public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+         addresses:
+           - /ip4/192.168.2.67/tcp/3330
+         roles:
+           - data
+"#;
+
+        let config = NodeConfig::from_yaml_reader(yaml.as_bytes())?;
+        let node = config.create_local_node()?;
+
+        let (full_cell, cell) = config.cells[0].create_cell(&node)?;
+        assert!(full_cell.is_none());
+
+        {
+            let nodes = cell.nodes();
+            assert_eq!(1, nodes.len());
+
+            let nodes_iter = nodes.iter();
+            let node = nodes_iter.all().next().unwrap();
+
+            assert_eq!(
+                "peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP",
+                node.node().public_key().encode_base58_string()
+            );
+
+            // libp2p's PeerId
+            assert_eq!(
+                "QmQCewLJsDyEyubzHF67LsFFtChBdRdumeQyPwMhDVqLzk",
+                node.node().id().to_string()
+            );
+        }
+
+        {
+            assert!(cell.local_node_has_role(CellNodeRole::Data));
+            assert!(!cell.local_node_has_role(CellNodeRole::IndexStore));
+        }
+
+        Ok(())
+    }
 }

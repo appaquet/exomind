@@ -1,15 +1,24 @@
 use super::{Cell, LocalNode, Node, NodeId};
 use std::collections::HashMap;
+use std::collections::HashSet;
+use std::str::FromStr;
 use std::sync::{RwLockReadGuard, RwLockWriteGuard};
 
 /// Common methods collection of nodes of a `Cell`
 pub trait CellNodes {
     fn cell(&self) -> &Cell;
-    fn nodes_map(&self) -> &HashMap<NodeId, Node>;
+    fn nodes_map(&self) -> &HashMap<NodeId, CellNode>;
 
     #[inline]
     fn local_node(&self) -> &LocalNode {
         self.cell().local_node()
+    }
+
+    fn local_cell_node(&self) -> &CellNode {
+        let local_node = self.cell().local_node();
+        self.nodes_map()
+            .get(local_node.id())
+            .expect("Local node couldn't be found in cell nodes")
     }
 
     #[inline]
@@ -23,7 +32,7 @@ pub trait CellNodes {
     }
 
     #[inline]
-    fn get(&self, node_id: &NodeId) -> Option<&Node> {
+    fn get(&self, node_id: &NodeId) -> Option<&CellNode> {
         self.nodes_map().get(node_id)
     }
 
@@ -47,6 +56,43 @@ pub trait CellNodes {
     }
 }
 
+/// Node that is part of a cell.
+#[derive(Clone)]
+pub struct CellNode {
+    node: Node,
+    roles: HashSet<CellNodeRole>,
+}
+
+impl CellNode {
+    pub fn new(node: Node) -> CellNode {
+        CellNode {
+            node,
+            roles: HashSet::new(),
+        }
+    }
+
+    #[inline]
+    pub fn node(&self) -> &Node {
+        &self.node
+    }
+
+    pub fn add_role(&mut self, role: CellNodeRole) {
+        self.roles.insert(role);
+    }
+
+    pub fn remove_role(&mut self, role: CellNodeRole) {
+        self.roles.remove(&role);
+    }
+
+    pub fn roles(&self) -> Vec<CellNodeRole> {
+        self.roles.iter().cloned().collect()
+    }
+
+    pub fn has_role(&self, role: CellNodeRole) -> bool {
+        self.roles.contains(&role)
+    }
+}
+
 /// Wraps a `CellNodes` to expose iterator methods. This is needed because of
 /// the complexity of return types of iterators which require `impl` to be used,
 /// but cannot be used in traits.
@@ -55,27 +101,37 @@ pub struct CellNodesIter<'cn, N: CellNodes> {
 }
 
 impl<'cn, N: CellNodes> CellNodesIter<'cn, N> {
-    pub fn all(&self) -> impl Iterator<Item = &Node> {
+    pub fn all(&self) -> impl Iterator<Item = &CellNode> {
         self.nodes.nodes_map().values()
     }
 
-    pub fn all_except<'a>(&'a self, node_id: &'a NodeId) -> impl Iterator<Item = &'a Node> + 'a {
+    pub fn all_except<'a>(
+        &'a self,
+        node_id: &'a NodeId,
+    ) -> impl Iterator<Item = &'a CellNode> + 'a {
         self.nodes
             .nodes_map()
             .values()
-            .filter(move |n| n.id() != node_id)
+            .filter(move |n| n.node.id() != node_id)
     }
 
-    pub fn all_except_local<'a>(&'a self) -> impl Iterator<Item = &'a Node> + 'a {
+    pub fn all_except_local<'a>(&'a self) -> impl Iterator<Item = &'a CellNode> + 'a {
         let local_node = self.nodes.cell().local_node();
         self.all_except(local_node.id())
+    }
+
+    pub fn with_role<'a>(&'a self, role: CellNodeRole) -> impl Iterator<Item = &'a CellNode> + 'a {
+        self.nodes
+            .nodes_map()
+            .values()
+            .filter(move |cn| cn.has_role(role))
     }
 }
 
 /// Read reference to nodes of a `Cell`
 pub struct CellNodesRead<'cell> {
     pub(crate) cell: &'cell Cell,
-    pub(crate) nodes: RwLockReadGuard<'cell, HashMap<NodeId, Node>>,
+    pub(crate) nodes: RwLockReadGuard<'cell, HashMap<NodeId, CellNode>>,
 }
 
 impl<'cell> CellNodesRead<'cell> {
@@ -91,7 +147,7 @@ impl<'cell> CellNodes for CellNodesRead<'cell> {
     }
 
     #[inline]
-    fn nodes_map(&self) -> &HashMap<NodeId, Node> {
+    fn nodes_map(&self) -> &HashMap<NodeId, CellNode> {
         &self.nodes
     }
 }
@@ -99,7 +155,7 @@ impl<'cell> CellNodes for CellNodesRead<'cell> {
 /// Write reference to nodes of a `Cell`
 pub struct CellNodesWrite<'cell> {
     pub(crate) cell: &'cell Cell,
-    pub(crate) nodes: RwLockWriteGuard<'cell, HashMap<NodeId, Node>>,
+    pub(crate) nodes: RwLockWriteGuard<'cell, HashMap<NodeId, CellNode>>,
 }
 
 impl<'cell> CellNodesWrite<'cell> {
@@ -108,7 +164,29 @@ impl<'cell> CellNodesWrite<'cell> {
     }
 
     pub fn add(&mut self, node: Node) {
-        self.nodes.insert(node.id().clone(), node);
+        self.add_cell_node(CellNode {
+            node,
+            roles: HashSet::new(),
+        });
+    }
+
+    pub fn add_cell_node(&mut self, cell_node: CellNode) {
+        self.nodes.insert(cell_node.node.id().clone(), cell_node);
+    }
+
+    #[inline]
+    pub fn get_mut(&mut self, node_id: &NodeId) -> Option<&mut CellNode> {
+        self.nodes.get_mut(node_id)
+    }
+
+    pub fn local_cell_node_mut(&mut self) -> &mut CellNode {
+        let id = {
+            let local_node = self.cell().local_node();
+            local_node.id().clone()
+        };
+        self.nodes
+            .get_mut(&id)
+            .expect("Local node couldn't be found in cell nodes")
     }
 }
 
@@ -119,7 +197,7 @@ impl<'cell> CellNodes for CellNodesWrite<'cell> {
     }
 
     #[inline]
-    fn nodes_map(&self) -> &HashMap<NodeId, Node> {
+    fn nodes_map(&self) -> &HashMap<NodeId, CellNode> {
         &self.nodes
     }
 }
@@ -127,7 +205,7 @@ impl<'cell> CellNodes for CellNodesWrite<'cell> {
 /// Owned copy of nodes of a `Cell`
 pub struct CellNodesOwned {
     pub(crate) cell: Cell,
-    pub(crate) nodes: HashMap<NodeId, Node>,
+    pub(crate) nodes: HashMap<NodeId, CellNode>,
 }
 
 impl CellNodesOwned {
@@ -143,8 +221,34 @@ impl CellNodes for CellNodesOwned {
     }
 
     #[inline]
-    fn nodes_map(&self) -> &HashMap<NodeId, Node> {
+    fn nodes_map(&self) -> &HashMap<NodeId, CellNode> {
         &self.nodes
+    }
+}
+
+/// Role of node in a cell, indicating the capabilities of a node in the cell.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum CellNodeRole {
+    /// Indicates that the node participates in the data layer replication.
+    Data,
+
+    /// Indicates that the node participates in the data later block proposition and validation.
+    DataFull,
+
+    /// Indicates that the node is running a full index with entities store.
+    IndexStore,
+}
+
+impl FromStr for CellNodeRole {
+    type Err = super::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "data" => Ok(CellNodeRole::Data),
+            "data_full" => Ok(CellNodeRole::DataFull),
+            "index_store" => Ok(CellNodeRole::IndexStore),
+            o => Err(super::Error::Other(format!("Invalid role name: {}", o))),
+        }
     }
 }
 
@@ -177,7 +281,7 @@ mod tests {
             assert_eq!(nodes.iter().all().count(), 2);
             assert_eq!(nodes.iter().all_except(local_node.id()).count(), 1);
             assert_ne!(
-                nodes.iter().all_except_local().next().unwrap().id(),
+                nodes.iter().all_except_local().next().unwrap().node.id(),
                 local_node.id()
             );
 

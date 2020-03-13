@@ -616,8 +616,8 @@ impl BlockSignatures {
         let signatures = nodes
             .iter()
             .all()
-            .map(|node| BlockSignature {
-                node_id: node.id().clone(),
+            .map(|cell_node| BlockSignature {
+                node_id: cell_node.node().id().clone(),
                 signature: Signature::empty(),
             })
             .collect();

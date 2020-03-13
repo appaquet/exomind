@@ -1,5 +1,5 @@
 use super::{EngineError, Inner};
-use crate::block::{Block, BlockHeight, BlockOffset, BlockRef};
+use crate::block::{Block, BlockHeight, BlockOffset, BlockOwned, BlockRef};
 use crate::operation::{OperationBuilder, OperationId};
 use crate::pending;
 use crate::pending::CommitStatus;
@@ -75,7 +75,9 @@ where
         ChainOperationsIterator::new(self.inner.clone(), from_offset)
     }
 
-    pub fn get_chain_last_block(&self) -> Result<Option<(BlockOffset, BlockHeight)>, EngineError> {
+    pub fn get_chain_last_block_info(
+        &self,
+    ) -> Result<Option<(BlockOffset, BlockHeight)>, EngineError> {
         let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
         let last_block = unlocked_inner.chain_store.get_last_block()?;
@@ -99,6 +101,18 @@ where
         if let Some(block) = block {
             let height = block.get_height()?;
             Ok(Some((block.offset, height)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn get_chain_block(&self, offset: BlockOffset) -> Result<Option<BlockOwned>, EngineError> {
+        let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
+        let unlocked_inner = inner.read()?;
+        let block = unlocked_inner.chain_store.get_block(offset).ok();
+
+        if let Some(block) = block {
+            Ok(Some(block.to_owned()))
         } else {
             Ok(None)
         }

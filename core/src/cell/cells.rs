@@ -1,5 +1,6 @@
 use super::{CellNodesRead, CellNodesWrite};
-use crate::cell::{LocalNode, Node, NodeId};
+use crate::cell::nodes::{CellNode, CellNodeRole};
+use crate::cell::{CellNodes, LocalNode, NodeId};
 use crate::crypto::keys::{Keypair, PublicKey};
 use libp2p_core::PeerId;
 use std::collections::HashMap;
@@ -13,15 +14,16 @@ pub struct Cell {
     public_key: Arc<PublicKey>,
     cell_id: CellId,
     local_node: LocalNode,
-    nodes: Arc<RwLock<HashMap<NodeId, Node>>>,
+    nodes: Arc<RwLock<HashMap<NodeId, CellNode>>>,
 }
 
 impl Cell {
     pub fn new(public_key: PublicKey, local_node: LocalNode) -> Cell {
         let cell_id = CellId::from_public_key(&public_key);
 
-        let mut nodes_map: HashMap<NodeId, Node> = HashMap::new();
-        nodes_map.insert(local_node.id().clone(), local_node.node().clone());
+        let mut nodes_map = HashMap::new();
+        let local_cell_node = CellNode::new(local_node.node().clone());
+        nodes_map.insert(local_node.id().clone(), local_cell_node);
 
         Cell {
             public_key: Arc::new(public_key),
@@ -39,6 +41,16 @@ impl Cell {
     #[inline]
     pub fn local_node(&self) -> &LocalNode {
         &self.local_node
+    }
+
+    #[inline]
+    pub fn local_node_has_role(&self, role: CellNodeRole) -> bool {
+        let nodes = self.nodes();
+        if let Some(cn) = nodes.get(self.local_node.id()) {
+            cn.has_role(role)
+        } else {
+            false
+        }
     }
 
     #[inline]

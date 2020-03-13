@@ -10,7 +10,7 @@ use crate::chain::ChainStore;
 use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, OperationId};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
-use exocore_core::cell::FullCell;
+use exocore_core::cell::{CellNodeRole, FullCell};
 use exocore_core::cell::{LocalNode, Node, NodeId};
 use exocore_core::crypto::hash::Sha3_256;
 use exocore_core::framing::{
@@ -102,17 +102,17 @@ impl EngineTestCluster {
             temp_dirs.push(tempdir);
         }
 
-        // add each node to all other nodes' cell
+        // Add each node to all other nodes' cell
         for cell in &cells {
-            for other_node in &nodes {
-                if cell.local_node().id() != other_node.id() {
-                    let mut cell_nodes = cell.nodes_mut();
-                    cell_nodes.add(other_node.node().clone());
+            let mut cell_nodes = cell.nodes_mut();
+            for node in &nodes {
+                if cell.local_node().id() != node.id() {
+                    cell_nodes.add(node.node().clone());
                 }
             }
         }
 
-        EngineTestCluster {
+        let mut cluster = EngineTestCluster {
             cells,
             nodes,
             nodes_index,
@@ -126,7 +126,13 @@ impl EngineTestCluster {
             commit_managers,
 
             sync_states,
+        };
+
+        for i in 0..count {
+            cluster.add_node_role(i, CellNodeRole::DataFull);
         }
+
+        cluster
     }
 
     pub fn get_node(&self, node_idx: usize) -> Node {
@@ -143,6 +149,24 @@ impl EngineTestCluster {
 
     pub fn chain_generate_dummy(&mut self, node_idx: usize, count: usize, seed: u64) {
         self.chain_generate_dummy_from_offset(node_idx, 0, 0, count, seed);
+    }
+
+    pub fn add_node_role(&mut self, node_idx: usize, role: CellNodeRole) {
+        let node_id = self.nodes[node_idx].id().clone();
+        for cell in &mut self.cells {
+            let mut nodes = cell.nodes_mut();
+            let node = nodes.get_mut(&node_id).unwrap();
+            node.add_role(role);
+        }
+    }
+
+    pub fn remove_node_role(&mut self, node_idx: usize, role: CellNodeRole) {
+        let node_id = self.nodes[node_idx].id().clone();
+        for cell in &mut self.cells {
+            let mut nodes = cell.nodes_mut();
+            let node = nodes.get_mut(&node_id).unwrap();
+            node.remove_role(role);
+        }
     }
 
     pub fn chain_append_dummy(&mut self, node_idx: usize, count: usize, seed: u64) {

@@ -82,6 +82,11 @@ impl Node {
     }
 
     #[inline]
+    pub fn public_key(&self) -> &PublicKey {
+        &self.public_key
+    }
+
+    #[inline]
     pub fn peer_id(&self) -> &PeerId {
         &self.peer_id
     }
@@ -89,12 +94,6 @@ impl Node {
     #[inline]
     pub fn consistent_clock_id(&self) -> u16 {
         self.consistent_clock_id
-    }
-
-    pub fn has_full_access(&self) -> bool {
-        // TODO: This should return if the node has access to the cell's private key
-        //        Probably in https://github.com/appaquet/exocore/issues/46
-        true
     }
 
     pub fn addresses(&self) -> Vec<Multiaddr> {
@@ -236,7 +235,7 @@ impl std::fmt::Display for NodeId {
     }
 }
 
-impl std::str::FromStr for NodeId {
+impl FromStr for NodeId {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

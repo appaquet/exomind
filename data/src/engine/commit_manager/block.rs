@@ -242,8 +242,8 @@ impl PendingBlock {
 
     pub fn validate_signature(&self, cell: &Cell, signature: &PendingBlockSignature) -> bool {
         let nodes = cell.nodes();
-        let node = if let Some(node) = nodes.get(&signature.node_id) {
-            node
+        let node = if let Some(cell_node) = nodes.get(&signature.node_id) {
+            cell_node.node()
         } else {
             return false;
         };

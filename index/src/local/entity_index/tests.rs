@@ -177,7 +177,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
     let (chain_last_offset, _) = test_index
         .cluster
         .get_handle(0)
-        .get_chain_last_block()?
+        .get_chain_last_block_info()?
         .unwrap();
     test_index
         .index

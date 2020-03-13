@@ -68,7 +68,9 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         debug!("Sync tick begins");
 
         let nodes = self.cell.nodes().to_owned();
-        for node in nodes.iter().all_except_local() {
+        for cell_node in nodes.iter().all_except_local() {
+            let node = cell_node.node();
+
             let sync_info = self.get_or_create_node_info_mut(node.id());
             if sync_info.request_tracker.can_send_request() {
                 sync_info.request_tracker.set_last_send_now();
@@ -100,7 +102,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         // create a sync request for which we send full detail for new op, but none for
         // other ops
         let nodes = self.cell.nodes();
-        for node in nodes.iter().all_except_local() {
+        for cell_node in nodes.iter().all_except_local() {
             let request =
                 self.create_sync_request_for_range(sync_context, store, operation_id.., |op| {
                     if op.operation_id == operation_id {
@@ -109,7 +111,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                         OperationDetailsLevel::None
                     }
                 })?;
-            sync_context.push_pending_sync_request(node.id().clone(), request);
+            sync_context.push_pending_sync_request(cell_node.node().id().clone(), request);
         }
 
         Ok(())
