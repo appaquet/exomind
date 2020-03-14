@@ -22,13 +22,21 @@ pub trait CellNodes {
     }
 
     #[inline]
-    fn len(&self) -> usize {
+    fn count(&self) -> usize {
         self.nodes_map().len()
     }
 
     #[inline]
+    fn count_with_role(&self, role: CellNodeRole) -> usize {
+        self.nodes_map()
+            .values()
+            .filter(|cn| cn.has_role(role))
+            .count()
+    }
+
+    #[inline]
     fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.count() == 0
     }
 
     #[inline]
@@ -36,15 +44,21 @@ pub trait CellNodes {
         self.nodes_map().get(node_id)
     }
 
-    fn is_quorum(&self, count: usize) -> bool {
-        if self.is_empty() {
+    fn is_quorum(&self, count: usize, role: Option<CellNodeRole>) -> bool {
+        let nb_nodes = if let Some(role) = role {
+            self.count_with_role(role)
+        } else {
+            self.count()
+        };
+
+        if nb_nodes == 0 {
             false
-        } else if self.len() == 1 {
+        } else if nb_nodes == 1 {
             count == 1
-        } else if self.len() == 2 {
+        } else if nb_nodes == 2 {
             count == 2
         } else {
-            count > self.len() / 2
+            count > nb_nodes / 2
         }
     }
 
@@ -232,9 +246,6 @@ pub enum CellNodeRole {
     /// Indicates that the node participates in the data layer replication.
     Data,
 
-    /// Indicates that the node participates in the data later block proposition and validation.
-    DataFull,
-
     /// Indicates that the node is running a full index with entities store.
     IndexStore,
 }
@@ -245,7 +256,6 @@ impl FromStr for CellNodeRole {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "data" => Ok(CellNodeRole::Data),
-            "data_full" => Ok(CellNodeRole::DataFull),
             "index_store" => Ok(CellNodeRole::IndexStore),
             o => Err(super::Error::Other(format!("Invalid role name: {}", o))),
         }
@@ -265,19 +275,19 @@ mod tests {
         {
             let nodes = cell.nodes();
             assert!(!nodes.is_empty());
-            assert_eq!(nodes.len(), 1); // self
+            assert_eq!(nodes.count(), 1); // self
         }
 
         {
             let mut nodes = cell.nodes_mut();
             nodes.add(Node::generate_temporary());
-            assert_eq!(nodes.len(), 2);
+            assert_eq!(nodes.count(), 2);
             assert_eq!(nodes.iter().all().count(), 2);
         }
 
         {
             let nodes = cell.nodes();
-            assert_eq!(nodes.len(), 2);
+            assert_eq!(nodes.count(), 2);
             assert_eq!(nodes.iter().all().count(), 2);
             assert_eq!(nodes.iter().all_except(local_node.id()).count(), 1);
             assert_ne!(
@@ -298,24 +308,44 @@ mod tests {
         let cell = FullCell::generate(local_node);
 
         {
-            // only have 1 node (local_node)
+            // 1 node
             let nodes = cell.nodes();
-            assert!(!nodes.is_quorum(0));
-            assert!(nodes.is_quorum(1));
+            assert!(!nodes.is_quorum(0, None));
+            assert!(nodes.is_quorum(1, None));
+            assert!(!nodes.is_quorum(0, Some(CellNodeRole::Data)));
+            assert!(!nodes.is_quorum(1, Some(CellNodeRole::Data)));
         }
 
         {
+            // 2 nodes
             let mut nodes = cell.nodes_mut();
             nodes.add(Node::generate_temporary());
-            assert!(!nodes.is_quorum(1));
-            assert!(nodes.is_quorum(2));
+            assert!(!nodes.is_quorum(1, None));
+            assert!(nodes.is_quorum(2, None));
         }
 
         {
+            // 3 nodes
             let mut nodes = cell.nodes_mut();
             nodes.add(Node::generate_temporary());
-            assert!(!nodes.is_quorum(1));
-            assert!(nodes.is_quorum(2));
+            assert!(!nodes.is_quorum(1, None));
+            assert!(nodes.is_quorum(2, None));
+        }
+
+        {
+            // 3 nodes with roles
+            let mut nodes = cell.nodes_mut();
+            let ids = nodes
+                .iter()
+                .all()
+                .map(|n| n.node.id())
+                .cloned()
+                .collect::<Vec<_>>();
+            nodes.get_mut(&ids[0]).unwrap().add_role(CellNodeRole::Data);
+            nodes.get_mut(&ids[1]).unwrap().add_role(CellNodeRole::Data);
+
+            assert!(!nodes.is_quorum(1, Some(CellNodeRole::Data)));
+            assert!(nodes.is_quorum(2, Some(CellNodeRole::Data)));
         }
     }
 }

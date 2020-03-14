@@ -1,7 +1,7 @@
 use crate::operation::OperationId;
 use exocore_core::capnp;
-use exocore_core::cell::NodeId;
 use exocore_core::cell::{Cell, FullCell};
+use exocore_core::cell::{CellNodeRole, NodeId};
 use exocore_core::crypto::hash::{Digest, Multihash, MultihashDigest, Sha3_256};
 use exocore_core::crypto::signature::Signature;
 use exocore_core::framing::{
@@ -616,6 +616,7 @@ impl BlockSignatures {
         let signatures = nodes
             .iter()
             .all()
+            .filter(|cn| cn.has_role(CellNodeRole::Data))
             .map(|cell_node| BlockSignature {
                 node_id: cell_node.node().id().clone(),
                 signature: Signature::empty(),
@@ -775,14 +776,25 @@ mod tests {
     use super::*;
     use crate::block::{Block, BlockOperations, BlockOwned, BlockRef};
     use crate::operation::OperationBuilder;
-    use exocore_core::cell::FullCell;
     use exocore_core::cell::LocalNode;
+    use exocore_core::cell::{FullCell, Node};
     use exocore_core::framing::FrameReader;
 
     #[test]
     fn block_create_and_read() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node.clone());
+
+        {
+            // local node is data node
+            let mut nodes = cell.nodes_mut();
+            let local_cell_node = nodes.get_mut(local_node.id()).unwrap();
+            local_cell_node.add_role(CellNodeRole::Data);
+
+            // second node is not data node
+            nodes.add(Node::generate_temporary());
+        }
+
         let genesis = BlockOwned::new_genesis(&cell)?;
 
         let operations = vec![
@@ -828,6 +840,7 @@ mod tests {
             second_block.operations_data.len() as u32
         );
 
+        // 1 signature only since only our nodes is data node
         let signatures = signatures_reader.get_signatures()?;
         assert_eq!(signatures.len(), 1);
 
@@ -864,16 +877,34 @@ mod tests {
     #[test]
     fn should_allocate_signatures_space_for_nodes() -> Result<(), failure::Error> {
         let local_node = LocalNode::generate();
-        let full_cell = FullCell::generate(local_node);
+        let full_cell = FullCell::generate(local_node.clone());
         let cell = full_cell.cell();
+
+        let node2 = {
+            // local node is data node
+            let mut nodes = cell.nodes_mut();
+            let local_cell_node = nodes.get_mut(local_node.id()).unwrap();
+            local_cell_node.add_role(CellNodeRole::Data);
+
+            // second node is not data node
+            let node2 = Node::generate_temporary();
+            nodes.add(node2.clone());
+            node2
+        };
+
         let genesis_block = BlockOwned::new_genesis(&full_cell)?;
 
+        // only first node is data node
         let block_ops = BlockOperations::empty();
         let block1 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;
         assert!(block1.signatures.whole_data_size() > 100);
 
-        let node2 = LocalNode::generate();
-        full_cell.nodes_mut().add(node2.node().clone());
+        // make second node data node, should now have more signature size
+        {
+            let mut nodes = cell.nodes_mut();
+            let cell_node_2 = nodes.get_mut(node2.id()).unwrap();
+            cell_node_2.add_role(CellNodeRole::Data);
+        }
 
         let block_ops = BlockOperations::empty();
         let block2 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;

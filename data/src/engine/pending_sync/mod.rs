@@ -2,7 +2,7 @@ use crate::block::BlockHeight;
 use crate::engine::{request_tracker, EngineError, Event, SyncContext};
 use crate::operation::{NewOperation, Operation, OperationId};
 use crate::pending::{CommitStatus, PendingStore, StoredOperation};
-use exocore_core::cell::{Cell, CellNodes};
+use exocore_core::cell::{Cell, CellNodeRole, CellNodes};
 use exocore_core::cell::{Node, NodeId};
 use exocore_core::crypto::hash::{Digest, MultihashDigest, Sha3_256};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
@@ -68,7 +68,11 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         debug!("Sync tick begins");
 
         let nodes = self.cell.nodes().to_owned();
-        for cell_node in nodes.iter().all_except_local() {
+        for cell_node in nodes
+            .iter()
+            .all_except_local()
+            .filter(|cn| cn.has_role(CellNodeRole::Data))
+        {
             let node = cell_node.node();
 
             let sync_info = self.get_or_create_node_info_mut(node.id());
@@ -102,7 +106,11 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         // create a sync request for which we send full detail for new op, but none for
         // other ops
         let nodes = self.cell.nodes();
-        for cell_node in nodes.iter().all_except_local() {
+        for cell_node in nodes
+            .iter()
+            .all_except_local()
+            .filter(|cn| cn.has_role(CellNodeRole::Data))
+        {
             let request =
                 self.create_sync_request_for_range(sync_context, store, operation_id.., |op| {
                     if op.operation_id == operation_id {

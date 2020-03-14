@@ -107,12 +107,12 @@ impl DataTestCluster {
             for node in &nodes {
                 if cell.local_node().id() != node.id() {
                     let mut cell_node = CellNode::new(node.node().clone());
-                    cell_node.add_role(CellNodeRole::DataFull);
+                    cell_node.add_role(CellNodeRole::Data);
                     cell_nodes.add_cell_node(cell_node);
                 } else {
                     cell_nodes
                         .local_cell_node_mut()
-                        .add_role(CellNodeRole::DataFull);
+                        .add_role(CellNodeRole::Data);
                 }
             }
         }
@@ -135,7 +135,7 @@ impl DataTestCluster {
         };
 
         for i in 0..count {
-            cluster.add_node_role(i, CellNodeRole::DataFull);
+            cluster.add_node_role(i, CellNodeRole::Data);
         }
 
         Ok(cluster)

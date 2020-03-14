@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use failure::err_msg;
 
-use exocore_core::cell::{FullCell, NodeConfig};
+use exocore_core::cell::{CellNodeRole, FullCell, NodeConfig};
 use exocore_core::futures::Runtime;
 use exocore_core::protos::registry::Registry;
 use exocore_core::time::Clock;
@@ -36,71 +36,82 @@ pub fn start(
         let (opt_full_cell, cell) = cell_config.create_cell(&local_node)?;
         let clock = Clock::new();
 
-        // make sure data directory exists
-        let mut chain_dir = cell_config.data_directory.clone();
-        chain_dir.push("chain");
-        std::fs::create_dir_all(&chain_dir)?;
+        if cell.local_node_has_role(CellNodeRole::Data) {
+            // make sure data directory exists
+            let mut chain_dir = cell_config.data_directory.clone();
+            chain_dir.push("chain");
+            std::fs::create_dir_all(&chain_dir)?;
 
-        // create chain store
-        let chain_config = DirectoryChainStoreConfig::default();
-        let chain_store = DirectoryChainStore::create_or_open(chain_config, &chain_dir)?;
-        let pending_store = MemoryPendingStore::new();
+            // create chain store
+            let chain_config = DirectoryChainStoreConfig::default();
+            let chain_store = DirectoryChainStore::create_or_open(chain_config, &chain_dir)?;
+            let pending_store = MemoryPendingStore::new();
 
-        // create the engine
-        let data_transport = transport.get_handle(cell.clone(), TransportLayer::Data)?;
-        let engine_config = EngineConfig::default();
-        let mut engine = Engine::new(
-            engine_config,
-            clock.clone(),
-            data_transport,
-            chain_store,
-            pending_store,
-            cell.clone(),
-        );
+            // create the engine
+            let data_transport = transport.get_handle(cell.clone(), TransportLayer::Data)?;
+            let engine_config = EngineConfig::default();
+            let mut engine = Engine::new(
+                engine_config,
+                clock.clone(),
+                data_transport,
+                chain_store,
+                pending_store,
+                cell.clone(),
+            );
 
-        // we keep a handle of the engine, otherwise the engine will not start since it
-        // will get dropped
-        let engine_handle = engine.get_handle();
-        engines_handle.push(engine_handle);
-        let index_engine_handle = engine.get_handle();
+            // we keep a handle of the engine, otherwise the engine will not start since it
+            // will get dropped
+            let engine_handle = engine.get_handle();
+            engines_handle.push(engine_handle);
+            let index_engine_handle = engine.get_handle();
 
-        // start the engine
-        rt.spawn(async {
-            let res = engine.run().await;
-            info!("Engine is done: {:?}", res);
-        });
+            // start the engine
+            let cell_id = cell.id().clone();
+            rt.spawn(async move {
+                let res = engine.run().await;
+                info!("{}: Engine is done: {:?}", cell_id, res);
+            });
 
-        // start an local store index if needed
-        if server_opts.index_node {
-            let full_cell = opt_full_cell.ok_or_else(|| {
-                err_msg("Tried to start a local index, but node doesn't have full cell access (not private key)")
-            })?;
-            let registry = Arc::new(Registry::new_with_exocore_types());
+            // start an local store index if needed
+            if cell.local_node_has_role(CellNodeRole::IndexStore) {
+                let full_cell = opt_full_cell.ok_or_else(|| {
+                    err_msg("Tried to start a local index, but node doesn't have full cell access (not private key)")
+                })?;
+                let registry = Arc::new(Registry::new_with_exocore_types());
 
-            let mut index_dir = cell_config.data_directory.clone();
-            index_dir.push("index");
-            std::fs::create_dir_all(&index_dir)?;
+                let mut index_dir = cell_config.data_directory.clone();
+                index_dir.push("index");
+                std::fs::create_dir_all(&index_dir)?;
 
-            let entities_index_config = EntityIndexConfig::default();
-            let entities_index = EntityIndex::open_or_create(
-                &index_dir,
-                entities_index_config,
-                registry.clone(),
-                index_engine_handle.clone(),
-            )?;
+                let entities_index_config = EntityIndexConfig::default();
+                let entities_index = EntityIndex::open_or_create(
+                    &index_dir,
+                    entities_index_config,
+                    registry.clone(),
+                    index_engine_handle.clone(),
+                )?;
 
-            // if we have a WebSocket handle, we create a combined transport
-            let transport_handle = transport.get_handle(cell.clone(), TransportLayer::Index)?;
-            create_local_store(
-                &mut rt,
-                transport_handle,
-                index_engine_handle,
-                full_cell,
-                clock,
-                entities_index,
-            )?;
+                // if we have a WebSocket handle, we create a combined transport
+                let transport_handle = transport.get_handle(cell.clone(), TransportLayer::Index)?;
+                create_local_store(
+                    &mut rt,
+                    transport_handle,
+                    index_engine_handle,
+                    full_cell,
+                    clock,
+                    entities_index,
+                )?;
+            } else {
+                info!(
+                    "{}: Local node doesn't have index role. Not starting local store index.",
+                    cell.id()
+                )
+            }
         } else {
-            info!("Local node is not an index node. Not starting local store index.")
+            info!(
+                "{}: Local node doesn't have data role. Not starting data engine.",
+                cell.id()
+            )
         }
     }
 

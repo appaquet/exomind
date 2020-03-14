@@ -132,7 +132,7 @@ mod tests {
 
         {
             let nodes = full_cell.nodes();
-            assert_eq!(1, nodes.len());
+            assert_eq!(1, nodes.count());
 
             let nodes_iter = nodes.iter();
             let node = nodes_iter.all().next().unwrap();
@@ -171,7 +171,7 @@ cells:
 
         {
             let nodes = cell.nodes();
-            assert_eq!(1, nodes.len());
+            assert_eq!(1, nodes.count());
 
             let nodes_iter = nodes.iter();
             let node = nodes_iter.all().next().unwrap();

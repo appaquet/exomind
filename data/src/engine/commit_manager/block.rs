@@ -2,8 +2,8 @@ use crate::block::{Block, BlockOffset};
 use crate::engine::EngineError;
 use crate::operation::{GroupId, OperationId, OperationType};
 use crate::{chain, pending, CommitManagerConfig};
-use exocore_core::cell::NodeId;
 use exocore_core::cell::{Cell, CellNodes};
+use exocore_core::cell::{CellNodeRole, NodeId};
 use exocore_core::crypto::signature::Signature;
 use exocore_core::protos::generated::data_chain_capnp::chain_operation;
 use exocore_core::time::{Clock, ConsistentTimestamp};
@@ -120,7 +120,9 @@ impl PendingBlocks {
                     if proposal.offset < next_offset {
                         // means it was a proposed block for a diverged chain
                         BlockStatus::PastRefused
-                    } else if nodes.is_quorum(refusals.len()) || has_my_refusal {
+                    } else if nodes.is_quorum(refusals.len(), Some(CellNodeRole::Data))
+                        || has_my_refusal
+                    {
                         BlockStatus::NextRefused
                     } else if has_expired {
                         BlockStatus::NextExpired

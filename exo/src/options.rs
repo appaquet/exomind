@@ -26,8 +26,6 @@ pub enum SubCommand {
 
 #[derive(StructOpt)]
 pub struct ServerOptions {
-    #[structopt(long, short = "i")]
-    pub index_node: bool,
     #[structopt(long, short = "c", default_value = "config.yaml")]
     pub config: PathBuf,
     #[structopt(subcommand)]

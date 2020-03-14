@@ -47,9 +47,9 @@ fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn should_not_propose_block_if_not_data_full() -> Result<(), failure::Error> {
+fn should_not_propose_block_if_not_data() -> Result<(), failure::Error> {
     let mut cluster = EngineTestCluster::new(1);
-    cluster.remove_node_role(0, CellNodeRole::DataFull);
+    cluster.remove_node_role(0, CellNodeRole::Data);
 
     cluster.chain_add_genesis_block(0);
     cluster.tick_chain_synchronizer(0)?;
@@ -373,7 +373,7 @@ fn test_is_node_commit_turn() -> Result<(), failure::Error> {
 
     {
         // only node 0 is full data
-        cluster.remove_node_role(sec_node_idx, CellNodeRole::DataFull);
+        cluster.remove_node_role(sec_node_idx, CellNodeRole::Data);
 
         let nodes = cluster.cells[0].nodes();
         let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));

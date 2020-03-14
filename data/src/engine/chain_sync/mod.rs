@@ -3,7 +3,7 @@ use crate::block::{Block, BlockOffset, BlockRef};
 use crate::chain::ChainStore;
 use capnp::traits::ToU16;
 use exocore_core::capnp;
-use exocore_core::cell::{Cell, CellNodes, CellNodesOwned};
+use exocore_core::cell::{Cell, CellNodeRole, CellNodes, CellNodesOwned};
 use exocore_core::cell::{Node, NodeId};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::data_chain_capnp::block_partial_header;
@@ -82,7 +82,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let nodes = self.cell.nodes().to_owned();
 
         let (nb_nodes_metadata_sync, nb_nodes) = self.check_nodes_status(&nodes);
-        let majority_nodes_metadata_sync = nodes.is_quorum(usize::from(nb_nodes_metadata_sync));
+        let majority_nodes_metadata_sync = nodes.is_quorum(
+            usize::from(nb_nodes_metadata_sync),
+            Some(CellNodeRole::Data),
+        );
 
         let last_block_offset = store.get_last_block()?.map(|b| b.offset);
         debug!(
@@ -135,15 +138,21 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // check if we can elect a leader and download the chain from it
         if self.status != Status::Synchronized && majority_nodes_metadata_sync {
             let mut nb_non_divergent = 1;
+            let mut nb_total = 1;
 
-            for cell_node in nodes.iter().all_except_local() {
+            for cell_node in nodes
+                .iter()
+                .all_except_local()
+                .filter(|cn| cn.has_role(CellNodeRole::Data))
+            {
+                nb_total += 1;
                 let node_info = self.get_or_create_node_info_mut(cell_node.node().id());
                 if !node_info.is_divergent(store)? {
                     nb_non_divergent += 1;
                 }
             }
 
-            if nodes.is_quorum(nb_non_divergent) {
+            if nodes.is_quorum(nb_non_divergent, Some(CellNodeRole::Data)) {
                 if self.leader.is_none() {
                     self.find_leader_node(store)?;
 
@@ -161,7 +170,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 return Err(ChainSyncError::Diverged(format!(
                     "Our local chain is divergent with a majority of nodes (only {} non divergents out of {})",
                     nb_non_divergent,
-                    nodes.len()
+                    nb_total,
                 ))
                     .into());
             }
@@ -300,7 +309,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         sync_context: &mut SyncContext,
         nodes: &CellNodesOwned,
     ) -> Result<(), EngineError> {
-        for cell_node in nodes.iter().all_except_local() {
+        for cell_node in nodes
+            .iter()
+            .all_except_local()
+            .filter(|cn| cn.has_role(CellNodeRole::Data))
+        {
             let node = cell_node.node();
 
             let node_info = self.get_or_create_node_info_mut(node.id());
@@ -692,7 +705,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     fn check_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
         let mut nodes_total = 0;
         let mut nodes_metadata_sync = 0;
-        for cell_node in nodes.iter().all() {
+        for cell_node in nodes.iter().with_role(CellNodeRole::Data) {
             let node = cell_node.node();
 
             nodes_total += 1;
