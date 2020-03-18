@@ -7,7 +7,7 @@ pub enum Error {
     ConfigDeserialization(serde_yaml::Error),
 
     #[fail(display = "Configuration error: {}", _0)]
-    ConfigOther(String),
+    Config(String),
 
     #[fail(display = "Key error: {}", _0)]
     Key(crate::crypto::keys::Error),

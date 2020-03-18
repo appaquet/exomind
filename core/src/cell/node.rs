@@ -1,5 +1,7 @@
+use super::error::Error;
 use crate::crypto::keys::{Keypair, PublicKey};
 use crate::crypto::signature::Signature;
+use crate::protos::generated::exocore_core::{LocalNodeConfig, NodeConfig};
 use libp2p_core::{Multiaddr, PeerId};
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -48,6 +50,15 @@ impl Node {
                 addresses: HashSet::new(),
             })),
         }
+    }
+
+    pub fn new_from_config(config: NodeConfig) -> Result<Node, Error> {
+        let public_key = PublicKey::decode_base58_string(&config.public_key)
+            .map_err(|err| Error::Config(format!("Couldn't decode node public key: {}", err)))?;
+
+        let node = Self::new_from_public_key(public_key);
+
+        Ok(node)
     }
 
     pub fn generate_temporary() -> Node {
@@ -141,6 +152,22 @@ impl LocalNode {
             node: Node::new_from_public_key(keypair.public()),
             keypair: Arc::new(keypair),
         }
+    }
+
+    pub fn new_from_config(config: LocalNodeConfig) -> Result<Self, Error> {
+        let keypair = Keypair::decode_base58_string(&config.keypair)
+            .map_err(|err| Error::Config(format!("Couldn't decode local node keypair: {}", err)))?;
+
+        let node = Self::new_from_keypair(keypair);
+
+        for addr in config.listen_addresses {
+            let maddr = addr.parse().map_err(|err| {
+                Error::Config(format!("Couldn't parse local node address: {}", err))
+            })?;
+            node.add_address(maddr);
+        }
+
+        Ok(node)
     }
 
     pub fn generate() -> LocalNode {

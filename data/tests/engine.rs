@@ -3,6 +3,7 @@ use itertools::Itertools;
 
 use exocore_core::tests_utils::expect_result;
 
+use exocore_core::cell::CellNodeRole;
 use exocore_data::operation::Operation;
 use exocore_data::tests_utils::*;
 use exocore_data::*;
@@ -216,6 +217,42 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
 
         Ok(())
     });
+
+    Ok(())
+}
+
+#[test]
+fn two_nodes_one_data_node() -> Result<(), failure::Error> {
+    let mut cluster = DataTestCluster::new(2)?;
+    cluster.create_node(0)?;
+    cluster.create_node(1)?;
+
+    let node0_id = cluster.nodes[0].id().to_string();
+
+    // 2nd node doesn't have data layer role
+    cluster.remove_node_role(1, CellNodeRole::Data);
+
+    cluster.create_chain_genesis_block(0);
+
+    cluster.start_engine(0);
+    cluster.start_engine(1);
+    cluster.wait_started(0);
+    cluster.wait_started(1);
+
+    // Node 0 should still be able to advance even if second node is not part of data nodes
+    for _i in 0..3 {
+        let op = cluster
+            .get_handle_mut(0)
+            .write_entry_operation(b"i love rust")?;
+        cluster.wait_operations_committed(0, &[op]);
+
+        // make sure the block was proposed by node0
+        let handle = cluster.get_handle_mut(0);
+        let (offset, _height) = handle.get_chain_last_block_info()?.unwrap();
+        let block = handle.get_chain_block(offset)?.unwrap();
+        let block_header_reader = block.header.get_reader()?;
+        assert_eq!(node0_id, block_header_reader.get_proposed_node_id()?);
+    }
 
     Ok(())
 }

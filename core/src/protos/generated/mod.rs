@@ -7,6 +7,7 @@ pub mod types;
 pub use types::*;
 
 // Protobuf
+pub mod exocore_core;
 pub mod exocore_index;
 pub mod exocore_test;
 pub const INDEX_FDSET: &[u8] = include_bytes!("./exocore_index.fd");

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package exocore.core;
+
+message LocalNodeConfig {
+    string keypair = 1;
+
+    string public_key = 2;
+
+    repeated CellConfig cells = 3;
+
+    repeated string listen_addresses = 4;
+}
+
+message NodeConfig {
+    string public_key = 1;
+
+    repeated string addresses = 2;
+}
+
+message CellConfig {
+    string public_key = 1;
+
+    string keypair = 2;
+
+    string data_directory = 3;
+
+    repeated CellNodeConfig nodes = 4;
+}
+
+message CellNodeConfig {
+    NodeConfig node = 1;
+
+    repeated Role roles = 2;
+
+    enum Role {
+        INVALID_ROLE = 0;
+        DATA_ROLE = 1;
+        INDEX_STORE_ROLE = 2;
+    }
+}

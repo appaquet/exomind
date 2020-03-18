@@ -1,4 +1,5 @@
-use super::{Cell, LocalNode, Node, NodeId};
+use super::{Cell, Error, LocalNode, Node, NodeId};
+use crate::protos::generated::exocore_core::cell_node_config;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::str::FromStr;
@@ -248,6 +249,16 @@ pub enum CellNodeRole {
 
     /// Indicates that the node is running a full index with entities store.
     IndexStore,
+}
+
+impl CellNodeRole {
+    pub fn from_config(config: cell_node_config::Role) -> Result<CellNodeRole, Error> {
+        match config {
+            cell_node_config::Role::DataRole => Ok(CellNodeRole::Data),
+            cell_node_config::Role::IndexStoreRole => Ok(CellNodeRole::IndexStore),
+            v => Err(Error::Config(format!("Invalid cell node role: {:?}", v))),
+        }
+    }
 }
 
 impl FromStr for CellNodeRole {

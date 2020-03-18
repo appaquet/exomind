@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use failure::err_msg;
 
-use exocore_core::cell::{CellNodeRole, FullCell, NodeConfig};
+use exocore_core::cell::{Cell, CellNodeRole, EitherCell, FullCell, LocalNode};
 use exocore_core::futures::Runtime;
 use exocore_core::protos::registry::Registry;
 use exocore_core::time::Clock;
@@ -14,6 +14,7 @@ use exocore_index::local::{EntityIndex, EntityIndexConfig, Store};
 use exocore_index::remote::server::Server;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
+use std::path::PathBuf;
 
 use crate::options;
 
@@ -22,10 +23,10 @@ pub fn start(
     _opts: &options::Options,
     server_opts: &options::ServerOptions,
 ) -> Result<(), failure::Error> {
-    let config = NodeConfig::from_yaml_file(&server_opts.config)?;
+    let config = exocore_core::cell::node_config_from_yaml_file(&server_opts.config)?;
     let mut rt = Runtime::new()?;
 
-    let local_node = config.create_local_node()?;
+    let local_node = LocalNode::new_from_config(config.clone())?;
     let mut engines_handle = Vec::new();
 
     // create transport
@@ -33,12 +34,13 @@ pub fn start(
     let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);
 
     for cell_config in &config.cells {
-        let (opt_full_cell, cell) = cell_config.create_cell(&local_node)?;
+        let either_cell = Cell::new_from_config(cell_config.clone(), local_node.clone())?;
         let clock = Clock::new();
 
+        let cell = either_cell.cell();
         if cell.local_node_has_role(CellNodeRole::Data) {
             // make sure data directory exists
-            let mut chain_dir = cell_config.data_directory.clone();
+            let mut chain_dir = PathBuf::from(cell_config.data_directory.clone());
             chain_dir.push("chain");
             std::fs::create_dir_all(&chain_dir)?;
 
@@ -74,12 +76,17 @@ pub fn start(
 
             // start an local store index if needed
             if cell.local_node_has_role(CellNodeRole::IndexStore) {
-                let full_cell = opt_full_cell.ok_or_else(|| {
-                    err_msg("Tried to start a local index, but node doesn't have full cell access (not private key)")
-                })?;
+                let full_cell = match &either_cell {
+                    EitherCell::Full(cell) => cell.as_ref().clone(),
+                    _ => {
+                        return Err(err_msg(
+                            "Cannot have IndexStore role on cell without keypair",
+                        ))
+                    }
+                };
                 let registry = Arc::new(Registry::new_with_exocore_types());
 
-                let mut index_dir = cell_config.data_directory.clone();
+                let mut index_dir = PathBuf::from(&cell_config.data_directory);
                 index_dir.push("index");
                 std::fs::create_dir_all(&index_dir)?;
 

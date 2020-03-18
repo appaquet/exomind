@@ -22,5 +22,14 @@ fn main() {
             "protos/exocore/test/test.proto",
         ];
         prost_build::compile_protos(&prost_protos_file, &["protos/"]).expect("prost error");
+
+        // generate config protos with serde's annotation for yaml/json deserialization
+        // trick from https://github.com/danburkert/prost/issues/75
+        let prost_protos_file = vec!["protos/exocore/core/config.proto"];
+        let mut config = prost_build::Config::new();
+        config.type_attribute(".", "#[derive(Serialize, Deserialize)]");
+        config
+            .compile_protos(&prost_protos_file, &["protos/"])
+            .expect("prost error");
     }
 }

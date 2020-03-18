@@ -1,7 +1,9 @@
-use super::{CellNodesRead, CellNodesWrite};
-use crate::cell::nodes::{CellNode, CellNodeRole};
-use crate::cell::{CellNodes, LocalNode, NodeId};
+use super::{
+    CellNode, CellNodeRole, CellNodes, CellNodesRead, CellNodesWrite, Error, LocalNode, Node,
+    NodeId,
+};
 use crate::crypto::keys::{Keypair, PublicKey};
+use crate::protos::generated::exocore_core::CellConfig;
 use libp2p_core::PeerId;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -31,6 +33,41 @@ impl Cell {
             local_node,
             nodes: Arc::new(RwLock::new(nodes_map)),
         }
+    }
+
+    pub fn new_from_config(config: CellConfig, local_node: LocalNode) -> Result<EitherCell, Error> {
+        let either_cell = if !config.keypair.is_empty() {
+            let keypair = Keypair::decode_base58_string(&config.keypair)
+                .map_err(|err| Error::Config(format!("Couldn't parse cell keypair: {}", err)))?;
+
+            let full_cell = FullCell::from_keypair(keypair, local_node);
+            EitherCell::Full(Box::new(full_cell))
+        } else {
+            let public_key = PublicKey::decode_base58_string(&config.public_key)
+                .map_err(|err| Error::Config(format!("Couldn't parse cell public key: {}", err)))?;
+
+            let cell = Cell::new(public_key, local_node);
+            EitherCell::Cell(Box::new(cell))
+        };
+
+        {
+            let mut nodes = either_cell.nodes_mut();
+            for node_config in &config.nodes {
+                let node = Node::new_from_config(node_config.node.clone().ok_or_else(|| {
+                    Error::Config("Cell node config node is not defined".to_string())
+                })?)?;
+
+                let mut cell_node = CellNode::new(node);
+
+                for role in node_config.roles() {
+                    cell_node.add_role(CellNodeRole::from_config(role)?);
+                }
+
+                nodes.add_cell_node(cell_node);
+            }
+        }
+
+        Ok(either_cell)
     }
 
     #[inline]
@@ -155,5 +192,48 @@ impl Deref for FullCell {
 
     fn deref(&self) -> &Self::Target {
         &self.cell
+    }
+}
+
+/// Enum wrapping a full or non-full cell
+pub enum EitherCell {
+    Full(Box<FullCell>),
+    Cell(Box<Cell>),
+}
+
+impl EitherCell {
+    pub fn nodes(&self) -> CellNodesRead {
+        match self {
+            EitherCell::Full(cell) => cell.nodes(),
+            EitherCell::Cell(cell) => cell.nodes(),
+        }
+    }
+
+    pub fn nodes_mut(&self) -> CellNodesWrite {
+        match self {
+            EitherCell::Full(cell) => cell.nodes_mut(),
+            EitherCell::Cell(cell) => cell.nodes_mut(),
+        }
+    }
+
+    pub fn cell(&self) -> &Cell {
+        match self {
+            EitherCell::Full(cell) => cell.cell(),
+            EitherCell::Cell(cell) => cell,
+        }
+    }
+
+    pub fn unwrap_full(self) -> FullCell {
+        match self {
+            EitherCell::Full(cell) => cell.as_ref().clone(),
+            _ => panic!("Tried to unwrap EitherCell into Full, but wasn't"),
+        }
+    }
+
+    pub fn unwrap_cell(self) -> Cell {
+        match self {
+            EitherCell::Cell(cell) => cell.as_ref().clone(),
+            _ => panic!("Tried to unwrap EitherCell into Cell, but wasn't"),
+        }
     }
 }

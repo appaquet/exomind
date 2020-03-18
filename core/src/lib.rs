@@ -4,6 +4,9 @@
 extern crate failure;
 #[macro_use]
 extern crate log;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 pub extern crate capnp;
 pub mod protos;

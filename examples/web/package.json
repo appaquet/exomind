@@ -12,24 +12,24 @@
     "create-rust-webpack": ".bin/create-rust-webpack.js"
   },
   "devDependencies": {
-    "@babel/core": "^7.8.4",
+    "@babel/core": "^7.8.7",
     "@babel/plugin-syntax-async-generators": "^7.2.0",
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
-    "@babel/preset-env": "^7.8.4",
+    "@babel/preset-env": "^7.8.7",
     "@babel/preset-react": "^7.0.0",
     "@wasm-tool/wasm-pack-plugin": "1.1.0",
     "babel-loader": "^8.0.6",
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "html-webpack-plugin": "^3.2.0",
-    "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10",
-    "webpack-dev-server": "^3.10.2"
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
     "core-js": "^3.2.1",
     "exocore": "file:./../../clients/wasm",
-    "react": "^16.10.2",
-    "react-dom": "^16.10.2",
-    "regenerator-runtime": "^0.13.3"
+    "react": "^16.13.0",
+    "react-dom": "^16.13.0",
+    "regenerator-runtime": "^0.13.5"
   }
 }
