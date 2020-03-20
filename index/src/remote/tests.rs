@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use futures::executor::block_on_stream;
 
-use exocore_core::cell::LocalNode;
+use exocore_core::cell::{CellNodeRole, LocalNode};
 use exocore_core::protos::generated::exocore_index::{
     EntityMutation, EntityQuery, EntityResults, MutationResult,
 };
@@ -301,7 +301,11 @@ impl TestRemoteStore {
         server_config: ServerConfiguration,
         client_config: ClientConfiguration,
     ) -> Result<TestRemoteStore, failure::Error> {
-        let local_store = TestStore::new()?;
+        let mut local_store = TestStore::new()?;
+
+        local_store
+            .cluster
+            .add_node_role(0, CellNodeRole::IndexStore);
 
         let local_node = LocalNode::generate();
         let store_client = Client::new(
@@ -312,7 +316,6 @@ impl TestRemoteStore {
                 .cluster
                 .transport_hub
                 .get_transport(local_node, TransportLayer::Index),
-            local_store.cluster.nodes[0].node().clone(),
         )?;
         let client_handle = store_client.get_handle();
 

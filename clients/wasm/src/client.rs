@@ -56,16 +56,6 @@ impl ExocoreClient {
         let cell = Cell::new(cell_pk, local_node);
         let clock = Clock::new();
 
-        let remote_node_pk =
-            PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
-                .expect("Couldn't decode cell publickey");
-        let remote_node = Node::new_from_public_key(remote_node_pk);
-        let remote_addr = maddr.parse().expect("Couldn't parse remote node addr");
-        remote_node.add_address(remote_addr);
-        {
-            cell.nodes_mut().add(remote_node.clone());
-        }
-
         let index_handle = transport
             .get_handle(cell.clone(), TransportLayer::Index)
             .unwrap();
@@ -74,7 +64,6 @@ impl ExocoreClient {
             cell.clone(),
             clock,
             index_handle,
-            remote_node,
         )
         .expect("Couldn't create index");
 

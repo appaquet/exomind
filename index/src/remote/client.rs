@@ -7,8 +7,8 @@ use std::time::Duration;
 use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
-use exocore_core::cell::Cell;
 use exocore_core::cell::Node;
+use exocore_core::cell::{Cell, CellNodeRole};
 use exocore_core::framing::CapnpFrameBuilder;
 use exocore_core::futures::interval;
 use exocore_core::protos::generated::exocore_index::{
@@ -49,8 +49,21 @@ where
         cell: Cell,
         clock: Clock,
         transport_handle: T,
-        index_node: Node,
     ) -> Result<Client<T>, Error> {
+        let index_node = {
+            let cell_nodes = cell.nodes();
+            let cell_nodes_iter = cell_nodes.iter();
+
+            let index_node = cell_nodes_iter.with_role(CellNodeRole::IndexStore).next();
+
+            index_node
+                .ok_or_else(|| {
+                    Error::Other("Cell doesn't have any index store configured".to_string())
+                })?
+                .node()
+                .clone()
+        };
+
         let inner = Arc::new(RwLock::new(Inner {
             config,
             cell,

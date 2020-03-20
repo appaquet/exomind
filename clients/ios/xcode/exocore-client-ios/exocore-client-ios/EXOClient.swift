@@ -1,12 +1,39 @@
 import UIKit
 
+public enum EXOConfigFormat {
+    case protobuf
+    case yaml
+}
+
 public class EXOClient {
     fileprivate var context: OpaquePointer?
 
-    public init() {
-        let res = exocore_context_new();
-        if res.status == UInt8(ExocoreQueryStatus_Success.rawValue) {
-            self.context = res.context
+    public init(config: Exocore_Core_LocalNodeConfig) throws {
+        let configData = try config.serializedData()
+
+        self.context = try EXOClient.contextFromConfig(configData: configData, format: UInt8(ExocoreConfigFormat_Protobuf.rawValue))
+    }
+
+    public init(yamlConfig: String) throws {
+        guard let configData = yamlConfig.data(using: .utf8) else {
+            print("EXOClient > Couldn't get data from yaml string")
+            throw EXOError.initialization
+        }
+
+        self.context = try EXOClient.contextFromConfig(configData: configData, format: UInt8(ExocoreConfigFormat_Yaml.rawValue))
+    }
+
+    public static func contextFromConfig(configData: Data, format: UInt8) throws -> OpaquePointer {
+        try configData.withUnsafeBytes { (ptr) -> OpaquePointer in
+            let addr = ptr.bindMemory(to: UInt8.self).baseAddress
+
+            let res = exocore_context_new(addr, UInt(configData.count), format);
+
+            if res.status == UInt8(ExocoreQueryStatus_Success.rawValue) {
+                return res.context
+            } else {
+                throw EXOError.initialization
+            }
         }
     }
 
@@ -97,11 +124,17 @@ public class EXOClient {
     }
 
     deinit {
-        print("EXOClient > Deinit start...")
-        // free context, which will trigger all query to fail and get freed
-        exocore_context_free(self.context)
-        print("EXOClient > Deinit done")
+        if self.context != nil {
+            print("EXOClient > Deinit start...")
+            // free context, which will trigger all query to fail and get freed
+            exocore_context_free(self.context)
+            print("EXOClient > Deinit done")
+        }
     }
+}
+
+public enum EXOError: Error {
+    case initialization
 }
 
 public class EXOQueryCallback {

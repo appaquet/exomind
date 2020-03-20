@@ -5,6 +5,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+enum ExocoreConfigFormat {
+  ExocoreConfigFormat_Protobuf = 0,
+  ExocoreConfigFormat_Yaml,
+};
+typedef uint8_t ExocoreConfigFormat;
+
 enum ExocoreContextStatus {
   ExocoreContextStatus_Success = 0,
   ExocoreContextStatus_Error,
@@ -54,7 +60,9 @@ typedef struct ExocoreQueryStreamHandle {
 
 void exocore_context_free(ExocoreContext *ctx);
 
-ExocoreContextResult exocore_context_new(void);
+ExocoreContextResult exocore_context_new(const unsigned char *config_bytes,
+                                         uintptr_t config_size,
+                                         ExocoreConfigFormat config_format);
 
 void exocore_free_string(char *ptr);
 

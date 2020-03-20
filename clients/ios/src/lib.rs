@@ -3,6 +3,7 @@
 #[macro_use]
 extern crate log;
 
+use std::ffi::{CStr, CString};
 use std::os::raw::c_void;
 use std::sync::{Arc, Once};
 
@@ -11,9 +12,9 @@ use libc;
 use prost::Message;
 
 use exocore_core::cell::Cell;
-use exocore_core::cell::{LocalNode, Node};
-use exocore_core::crypto::keys::{Keypair, PublicKey};
+use exocore_core::cell::LocalNode;
 use exocore_core::futures::Runtime;
+use exocore_core::protos::generated::exocore_core::LocalNodeConfig;
 use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_core::protos::prost::ProstMessageExt;
 use exocore_core::time::{Clock, ConsistentTimestamp};
@@ -21,7 +22,6 @@ use exocore_core::utils::id::{generate_id, generate_prefixed_id};
 use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
-use std::ffi::{CStr, CString};
 
 mod context;
 mod logging;
@@ -34,57 +34,66 @@ pub struct Context {
 }
 
 impl Context {
-    fn new() -> Result<Context, ContextStatus> {
+    fn new(
+        config_bytes: *const libc::c_uchar,
+        config_size: usize,
+        config_format: ConfigFormat,
+    ) -> Result<Context, ContextStatus> {
         INIT.call_once(|| {
             logging::setup(Some(log::LevelFilter::Debug));
         });
 
-        let mut runtime = Runtime::new().expect("Couldn't start runtime");
+        let config_bytes = unsafe { std::slice::from_raw_parts(config_bytes, config_size) };
+        let config = match config_format {
+            ConfigFormat::Protobuf => LocalNodeConfig::decode(config_bytes).map_err(|err| {
+                error!("Couldn't decode node config from Protobuf: {}", err);
+                ContextStatus::Error
+            })?,
+            ConfigFormat::Yaml => exocore_core::cell::node_config_from_yaml_reader(config_bytes)
+                .map_err(|err| {
+                    error!("Couldn't parse node config from YAML: {}", err);
+                    ContextStatus::Error
+                })?,
+        };
 
-        // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
-        let local_node = LocalNode::new_from_keypair(
-            Keypair::decode_base58_string(
-                "ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP",
-            )
-            .unwrap(),
-        );
-        let local_addr = "/ip4/0.0.0.0/tcp/0"
-            .parse()
-            .expect("Couldn't parse local node");
-        local_node.add_address(local_addr);
+        let local_node = LocalNode::new_from_config(config.clone()).map_err(|err| {
+            error!("Error creating local node: {}", err);
+            ContextStatus::Error
+        })?;
+
+        let mut runtime = Runtime::new().map_err(|err| {
+            error!("Couldn't start Runtime: {}", err);
+            ContextStatus::Error
+        })?;
 
         let transport_config = Libp2pTransportConfig::default();
         let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);
 
-        let cell_pk =
-            PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
-                .expect("Couldn't decode cell publickey");
-        let cell = Cell::new(cell_pk, local_node);
+        let cell_config = config.cells.first().ok_or_else(|| {
+            error!("Configuration doesn't have any cell config");
+            ContextStatus::Error
+        })?;
+
+        let either_cell =
+            Cell::new_from_config(cell_config.clone(), local_node).map_err(|err| {
+                error!("Error creating cell: {}", err);
+                ContextStatus::Error
+            })?;
+
         let clock = Clock::new();
 
-        let remote_node_pk =
-            PublicKey::decode_base58_string("peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP")
-                .expect("Couldn't decode cell publickey");
-        let remote_node = Node::new_from_public_key(remote_node_pk);
-        let remote_addr = "/ip4/192.168.1.64/tcp/3330"
-            .parse()
-            .expect("Couldn't parse remote node addr");
-        remote_node.add_address(remote_addr);
-        {
-            cell.nodes_mut().add(remote_node.clone());
-        }
-
         let store_transport = transport
-            .get_handle(cell.clone(), TransportLayer::Index)
-            .expect("Couldn't get transport handle for remote index");
+            .get_handle(either_cell.cell().clone(), TransportLayer::Index)
+            .map_err(|err| {
+                error!("Couldn't get transport handle for remote index: {}", err);
+                ContextStatus::Error
+            })?;
         let remote_store_config = ClientConfiguration::default();
-
         let remote_store_client = Client::new(
             remote_store_config,
-            cell.clone(),
+            either_cell.cell().clone(),
             clock,
             store_transport,
-            remote_node,
         )
         .map_err(|err| {
             error!("Couldn't create remote store client: {}", err);
@@ -93,7 +102,7 @@ impl Context {
 
         let store_handle = Arc::new(remote_store_client.get_handle());
         let management_transport_handle = transport
-            .get_handle(cell, TransportLayer::None)
+            .get_handle(either_cell.cell().clone(), TransportLayer::None)
             .map_err(|err| {
                 error!("Couldn't get transport handle: {}", err);
                 ContextStatus::Error
@@ -296,6 +305,12 @@ unsafe impl Send for CallbackContext {}
 unsafe impl Sync for CallbackContext {}
 
 #[repr(u8)]
+pub enum ConfigFormat {
+    Protobuf = 0,
+    Yaml,
+}
+
+#[repr(u8)]
 pub enum QueryStatus {
     Success = 0,
     Done = 1,
@@ -333,8 +348,12 @@ pub struct MutationHandle {
 }
 
 #[no_mangle]
-pub extern "C" fn exocore_context_new() -> ContextResult {
-    let context = match Context::new() {
+pub extern "C" fn exocore_context_new(
+    config_bytes: *const libc::c_uchar,
+    config_size: usize,
+    config_format: ConfigFormat,
+) -> ContextResult {
+    let context = match Context::new(config_bytes, config_size, config_format) {
         Ok(context) => context,
         Err(err) => {
             return ContextResult {

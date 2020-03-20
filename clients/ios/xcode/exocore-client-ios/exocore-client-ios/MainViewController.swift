@@ -60,7 +60,32 @@ class MyList: ObservableObject {
 
     func watch() {
         if self.client == nil {
-            self.client = EXOClient()
+            let config = """
+                         keypair: ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP
+                         public_key: pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb
+
+                         listen_addresses:
+                           - /ip4/0.0.0.0/tcp/0
+
+                         cells:
+                           - public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
+                             keypair: ae55Nfv11ppyFVxCDaYovcxTcaTDaSzSFjiVoiC3VwGARfEuaqGcgoJUdVpqfwKQVDN4rvGKUvt4yqQc6w7it7PCpG
+                             data_directory: target/data/cell1
+                             nodes:
+                               - node:
+                                   public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+                                   addresses:
+                                     - /ip4/192.168.2.13/tcp/3330
+                                 roles:
+                                   - 1 # data
+                                   - 2 # index store
+                               - node:
+                                   public_key: pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb
+                                   addresses: []
+                                 roles: []
+                         """
+
+            self.client = try? EXOClient(yamlConfig: config)
         }
 
         let query = EXOQueryBuilder.withTrait(message: Exocore_Test_TestMessage())

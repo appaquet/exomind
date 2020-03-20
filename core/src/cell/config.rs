@@ -134,6 +134,8 @@ cells:
                 "QmQCewLJsDyEyubzHF67LsFFtChBdRdumeQyPwMhDVqLzk",
                 node.node().id().to_string()
             );
+
+            assert_eq!(1, node.node().addresses().len());
         }
 
         {

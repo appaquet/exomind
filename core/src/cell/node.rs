@@ -58,6 +58,13 @@ impl Node {
 
         let node = Self::new_from_public_key(public_key);
 
+        for addr in config.addresses {
+            let maddr = addr
+                .parse()
+                .map_err(|err| Error::Config(format!("Couldn't parse multi-address: {}", err)))?;
+            node.add_address(maddr);
+        }
+
         Ok(node)
     }
 
