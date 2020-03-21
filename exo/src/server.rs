@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use failure::err_msg;
 
-use exocore_core::cell::{Cell, CellNodeRole, EitherCell, FullCell, LocalNode};
+use exocore_core::cell::{Cell, CellNodeRole, EitherCell, FullCell};
 use exocore_core::futures::Runtime;
 use exocore_core::protos::registry::Registry;
 use exocore_core::time::Clock;
@@ -26,15 +26,15 @@ pub fn start(
     let config = exocore_core::cell::node_config_from_yaml_file(&server_opts.config)?;
     let mut rt = Runtime::new()?;
 
-    let local_node = LocalNode::new_from_config(config.clone())?;
+    let (either_cells, local_node) = Cell::new_from_local_node_config(config.clone())?;
+
     let mut engines_handle = Vec::new();
 
     // create transport
     let transport_config = Libp2pTransportConfig::default();
-    let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);
+    let mut transport = Libp2pTransport::new(local_node, transport_config);
 
-    for cell_config in &config.cells {
-        let either_cell = Cell::new_from_config(cell_config.clone(), local_node.clone())?;
+    for (cell_config, either_cell) in config.cells.iter().zip(either_cells.iter()) {
         let clock = Clock::new();
 
         let cell = either_cell.cell();

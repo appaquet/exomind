@@ -3,7 +3,7 @@ use super::{
     NodeId,
 };
 use crate::crypto::keys::{Keypair, PublicKey};
-use crate::protos::generated::exocore_core::CellConfig;
+use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
 use libp2p_core::PeerId;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -68,6 +68,20 @@ impl Cell {
         }
 
         Ok(either_cell)
+    }
+
+    pub fn new_from_local_node_config(
+        config: LocalNodeConfig,
+    ) -> Result<(Vec<EitherCell>, LocalNode), Error> {
+        let local_node = LocalNode::new_from_config(config.clone())?;
+
+        let mut either_cells = Vec::new();
+        for cell_config in config.cells {
+            let either_cell = Cell::new_from_config(cell_config.clone(), local_node.clone())?;
+            either_cells.push(either_cell);
+        }
+
+        Ok((either_cells, local_node))
     }
 
     #[inline]
@@ -196,6 +210,7 @@ impl Deref for FullCell {
 }
 
 /// Enum wrapping a full or non-full cell
+#[derive(Clone)]
 pub enum EitherCell {
     Full(Box<FullCell>),
     Cell(Box<Cell>),

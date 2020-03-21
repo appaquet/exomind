@@ -1,5 +1,6 @@
 
 # Node's keypair and public key
+name: Node Name
 public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
 
@@ -15,9 +16,11 @@ cells:
     data_directory: target/data
     nodes:
       - node:
+          name: Node Name
           public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
           addresses:
             - /ip4/127.0.0.1/tcp/3330
+            - /ip4/127.0.0.1/tcp/3341/ws
 
         # Role of the node
         # Data = 1

@@ -7,6 +7,8 @@ message LocalNodeConfig {
 
     string public_key = 2;
 
+    string name = 5;
+
     repeated CellConfig cells = 3;
 
     repeated string listen_addresses = 4;
@@ -16,6 +18,8 @@ message NodeConfig {
     string public_key = 1;
 
     repeated string addresses = 2;
+
+    string name = 3;
 }
 
 message CellConfig {

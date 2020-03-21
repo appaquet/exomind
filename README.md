@@ -56,8 +56,7 @@ A cell consists of:
 
 ## Usage & configuration
 * CLI:
-  * Using Cargo: `cargo run --package exo -- <cli option>`
-  * Using the latest Docker image: `docker run --rm -it -v "$PWD:/volume" docker.pkg.github.com/appaquet/exocore/cli <cli options>`
+  * `./utils/install.sh` or `cd exo && cargo install --path .`
 
 * Configuration
     * Most command requires a `config.yaml` file, for which an example can be found in here: [`./examples/config.yaml`]
@@ -69,17 +68,17 @@ A cell consists of:
 * `cp ./examples/config.yaml node1.yaml`
 * `cp ./examples/config.yaml node2.yaml`
 * For each node's config:
-    * Generate keypair for the node: `./utils/cli.sh keys generate`
+    * Generate keypair for the node: `exo keys generate`
     * Change the `node_keypair` and `node_public_key` config with this keypair.
     * Change `listen_addresses` with unique port per node.
     * Change `data_dir` with unique data directory per node. 
     * Put the other node `public_key` and `addresses` in the `cells/nodes` section.
-* Generate keypair for the cell: `./utils/cli.sh keys generate` 
+* Generate keypair for the cell: `exo keys generate` 
 * Add this keypair in both `node1.yaml` and `node2.yaml` in the `cells` section.
-* Initialize chain one first node: `./utils/cli.sh cell --config node1.yaml --public_key <cell_public_key> create_genesis_block`
+* Initialize chain one first node: `exo cell --config node1.yaml --public_key <cell_public_key> create_genesis_block`
 * Start both nodes:
-    * Node 1: `./utils/cli.sh server --config ./node1.yaml start`
-    * Node 2: `./utils/cli.sh server --config ./node2.yaml start`
+    * Node 1: `exo server --config ./node1.yaml start`
+    * Node 2: `exo server --config ./node2.yaml start`
 
 ### Launch sample web project
 * Run the [web example](./examples/web):

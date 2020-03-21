@@ -22,6 +22,7 @@ pub enum SubCommand {
     server(ServerOptions),
     keys(KeysOptions),
     cell(CellOptions),
+    config(ConfigOptions),
 }
 
 #[derive(StructOpt)]
@@ -84,4 +85,35 @@ pub struct CellOptions {
 pub enum CellCommand {
     create_genesis_block,
     check_chain,
+}
+
+/// Configs related options
+#[derive(StructOpt)]
+pub struct ConfigOptions {
+    #[structopt(subcommand)]
+    pub command: ConfigCommand,
+}
+
+#[derive(StructOpt)]
+pub enum ConfigCommand {
+    /// Validate a configuration
+    validate(ValidateOpts),
+
+    /// Convert a configuration to another format
+    convert(ConvertOpts),
+}
+
+#[derive(StructOpt)]
+pub struct ValidateOpts {
+    /// Path to configuration
+    pub config: PathBuf,
+}
+
+#[derive(StructOpt)]
+pub struct ConvertOpts {
+    /// Path to configuration
+    pub config: PathBuf,
+
+    #[structopt(default_value = "json")]
+    pub format: String,
 }

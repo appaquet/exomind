@@ -6,7 +6,7 @@ export {
 }
 
 export class Client {
-    static create(url: string, status_change_callback?: any): Promise<Client>;
+    static create(config: object, status_change_callback?: any): Promise<Client>;
 
     mutate(mutation: proto.exocore.index.EntityMutation): Promise<proto.exocore.index.MutationResult>;
 

@@ -1,5 +1,5 @@
 use super::Error;
-use crate::protos::generated::exocore_core::LocalNodeConfig;
+use crate::protos::generated::exocore_core::{CellNodeConfig, LocalNodeConfig};
 use std::fs::OpenOptions;
 use std::path::Path;
 
@@ -12,10 +12,24 @@ pub fn node_config_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<LocalNodeCo
         .map_err(Error::ConfigIO)
         .map_err(|err| Error::Config(format!("Couldn't open YAML node file: {}", err)))?;
 
-    node_config_from_yaml_reader(file)
+    node_config_from_yaml(file)
 }
 
-pub fn node_config_from_yaml_reader<R: std::io::Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
+pub fn node_config_from_yaml<R: std::io::Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
+    let config = serde_yaml::from_reader(bytes)
+        .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
+
+    Ok(config)
+}
+
+pub fn node_config_from_json<R: std::io::Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
+    let config = serde_json::from_reader(bytes)
+        .map_err(|err| Error::Config(format!("Couldn't decode JSON node config: {}", err)))?;
+
+    Ok(config)
+}
+
+pub fn cell_config_from_yaml<R: std::io::Read>(bytes: R) -> Result<CellNodeConfig, Error> {
     let config = serde_yaml::from_reader(bytes)
         .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
 
@@ -24,18 +38,19 @@ pub fn node_config_from_yaml_reader<R: std::io::Read>(bytes: R) -> Result<LocalN
 
 #[cfg(test)]
 mod tests {
-    use super::super::{Cell, CellNodes, LocalNode};
+    use super::super::{Cell, CellNodeRole, CellNodes};
     use super::*;
-    use crate::cell::cell_nodes::CellNodeRole;
     use crate::protos::generated::exocore_core::{
         cell_node_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeConfig,
     };
+    use crate::tests_utils::root_test_fixtures_path;
 
     #[test]
     fn parse_node_config_yaml_ser_deser() -> Result<(), failure::Error> {
         let conf_ser = LocalNodeConfig {
             keypair: "keypair".to_string(),
-            public_key: "".to_string(),
+            public_key: "pk".to_string(),
+            name: "node_name".to_string(),
             cells: vec![CellConfig {
                 public_key: "pk".to_string(),
                 keypair: "kp".to_string(),
@@ -43,6 +58,7 @@ mod tests {
                 nodes: vec![CellNodeConfig {
                     node: Some(NodeConfig {
                         public_key: "pk".to_string(),
+                        name: "node_name".to_string(),
                         addresses: vec!["maddr".to_string()],
                     }),
                     roles: vec![cell_node_config::Role::InvalidRole.into()],
@@ -54,7 +70,7 @@ mod tests {
         let yaml = serde_yaml::to_string(&conf_ser)?;
         // println!("{}", yaml);
 
-        let conf_deser = node_config_from_yaml_reader(yaml.as_bytes())?;
+        let conf_deser = node_config_from_yaml(yaml.as_bytes())?;
 
         assert_eq!(conf_ser, conf_deser);
 
@@ -62,17 +78,15 @@ mod tests {
     }
 
     #[test]
-    fn parse_node_config_example_file() -> Result<(), failure::Error> {
-        // hacky way of getting the files as the test execution may not be done in the same dir
-        let config = node_config_from_yaml_file("./examples/config.yaml")
-            .or_else(|_| node_config_from_yaml_file("../examples/config.yaml"))
-            .or_else(|_| node_config_from_yaml_file("../../examples/config.yaml"))?;
+    fn parse_node_config_example_yaml_file() -> Result<(), failure::Error> {
+        let config_path = root_test_fixtures_path("examples/config.yaml");
+        let config = node_config_from_yaml_file(config_path)?;
 
-        let node = LocalNode::new_from_config(config.clone())?;
+        let (cells, node) = Cell::new_from_local_node_config(config)?;
+        assert_eq!(1, cells.len());
         assert_eq!(2, node.addresses().len());
 
-        let cell_config = config.cells.first().unwrap().clone();
-        let full_cell = Cell::new_from_config(cell_config, node)?.unwrap_full();
+        let full_cell = cells.first().cloned().unwrap().unwrap_full();
 
         {
             let nodes = full_cell.nodes();
@@ -87,8 +101,9 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_node_config_from_str_read_cell() -> Result<(), failure::Error> {
+    pub fn parse_node_config_from_yaml() -> Result<(), failure::Error> {
         let yaml = r#"
+name: node name
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
 public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
 
@@ -102,6 +117,7 @@ cells:
      data_directory: target/data/cell1
      nodes:
        - node:
+             name: node name
              public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
              addresses:
                 - /ip4/192.168.2.67/tcp/3330
@@ -109,13 +125,13 @@ cells:
            - 1
 "#;
 
-        let config = node_config_from_yaml_reader(yaml.as_bytes())?;
+        let config = node_config_from_yaml(yaml.as_bytes())?;
 
-        let node = LocalNode::new_from_config(config.clone())?;
+        let (cells, node) = Cell::new_from_local_node_config(config)?;
+        assert_eq!(1, cells.len());
         assert_eq!(2, node.addresses().len());
 
-        let cell_config = config.cells.first().unwrap().clone();
-        let cell = Cell::new_from_config(cell_config, node)?.unwrap_cell();
+        let cell = cells.first().cloned().unwrap().unwrap_cell();
 
         {
             let nodes = cell.nodes();

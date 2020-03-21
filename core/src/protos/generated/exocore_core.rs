@@ -4,6 +4,8 @@ pub struct LocalNodeConfig {
     pub keypair: std::string::String,
     #[prost(string, tag = "2")]
     pub public_key: std::string::String,
+    #[prost(string, tag = "5")]
+    pub name: std::string::String,
     #[prost(message, repeated, tag = "3")]
     pub cells: ::std::vec::Vec<CellConfig>,
     #[prost(string, repeated, tag = "4")]
@@ -15,6 +17,8 @@ pub struct NodeConfig {
     pub public_key: std::string::String,
     #[prost(string, repeated, tag = "2")]
     pub addresses: ::std::vec::Vec<std::string::String>,
+    #[prost(string, tag = "3")]
+    pub name: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
 pub struct CellConfig {

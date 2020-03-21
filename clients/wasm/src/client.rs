@@ -5,8 +5,6 @@ use prost::Message;
 use wasm_bindgen::prelude::*;
 
 use exocore_core::cell::Cell;
-use exocore_core::cell::{LocalNode, Node};
-use exocore_core::crypto::keys::{Keypair, PublicKey};
 use exocore_core::futures::spawn_future_non_send;
 use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
 use exocore_core::time::Clock;
@@ -33,27 +31,37 @@ struct Inner {
 impl ExocoreClient {
     #[wasm_bindgen(constructor)]
     pub fn new(
-        maddr: &str,
+        node_config_bytes: js_sys::Uint8Array,
+        node_config_format: JsValue,
         status_change_callback: Option<js_sys::Function>,
     ) -> Result<ExocoreClient, JsValue> {
         wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-        // TODO: To be cleaned up when cell management will be ironed out: https://github.com/appaquet/exocore/issues/80
-        let local_node = LocalNode::new_from_keypair(
-            Keypair::decode_base58_string(
-                "ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP",
-            )
-            .unwrap(),
-        );
+        let config_bytes = Self::js_bytes_to_vec(node_config_bytes);
+        let node_config_format = node_config_format.as_string();
+        let node_config_format = node_config_format.as_deref();
+
+        let config = match node_config_format {
+            Some("json") => exocore_core::cell::node_config_from_json(config_bytes.as_slice()),
+            Some("yaml") => exocore_core::cell::node_config_from_yaml(config_bytes.as_slice()),
+            other => panic!("Invalid config format: {:?}", other),
+        }
+        .expect("Couldn't decode config");
+
+        let (either_cells, local_node) =
+            Cell::new_from_local_node_config(config).expect("Couldn't create cell");
+
+        let either_cell = either_cells
+            .first()
+            .cloned()
+            .expect("Couldn't find any cell");
+
+        let cell = either_cell.cell().clone();
 
         let transport_config = Libp2pTransportConfig::default();
-        let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);
+        let mut transport = Libp2pTransport::new(local_node, transport_config);
 
-        let cell_pk =
-            PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
-                .expect("Couldn't decode cell publickey");
-        let cell = Cell::new(cell_pk, local_node);
         let clock = Clock::new();
 
         let index_handle = transport
@@ -128,9 +136,8 @@ impl ExocoreClient {
     }
 
     #[wasm_bindgen]
-    pub fn mutate(&self, mutation_bytes: js_sys::Uint8Array) -> js_sys::Promise {
-        let mut bytes = vec![0u8; mutation_bytes.length() as usize];
-        mutation_bytes.copy_to(&mut bytes);
+    pub fn mutate(&self, mutation_proto_bytes: js_sys::Uint8Array) -> js_sys::Promise {
+        let bytes = Self::js_bytes_to_vec(mutation_proto_bytes);
         let entity_mutation =
             EntityMutation::decode(bytes.as_ref()).expect("Couldn't encode query");
 
@@ -149,9 +156,8 @@ impl ExocoreClient {
     }
 
     #[wasm_bindgen]
-    pub fn query(&self, query_bytes: js_sys::Uint8Array) -> js_sys::Promise {
-        let mut bytes = vec![0u8; query_bytes.length() as usize];
-        query_bytes.copy_to(&mut bytes);
+    pub fn query(&self, query_proto_bytes: js_sys::Uint8Array) -> js_sys::Promise {
+        let bytes = Self::js_bytes_to_vec(query_proto_bytes);
         let entity_query = EntityQuery::decode(bytes.as_ref()).expect("Couldn't encode query");
 
         let store_handle = self.store_handle.clone();
@@ -169,12 +175,17 @@ impl ExocoreClient {
     }
 
     #[wasm_bindgen]
-    pub fn watched_query(&self, query_bytes: js_sys::Uint8Array) -> WatchedQuery {
-        let mut bytes = vec![0u8; query_bytes.length() as usize];
-        query_bytes.copy_to(&mut bytes);
+    pub fn watched_query(&self, query_proto_bytes: js_sys::Uint8Array) -> WatchedQuery {
+        let bytes = Self::js_bytes_to_vec(query_proto_bytes);
         let entity_query = EntityQuery::decode(bytes.as_ref()).expect("Couldn't encode query");
 
         WatchedQuery::new(self.store_handle.clone(), entity_query)
+    }
+
+    fn js_bytes_to_vec(js_bytes: js_sys::Uint8Array) -> Vec<u8> {
+        let mut bytes = vec![0u8; js_bytes.length() as usize];
+        js_bytes.copy_to(&mut bytes);
+        bytes
     }
 }
 

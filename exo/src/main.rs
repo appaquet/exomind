@@ -1,6 +1,7 @@
 #![deny(bare_trait_objects)]
 
 mod cell;
+mod config;
 mod logging;
 mod options;
 mod server;
@@ -17,7 +18,7 @@ fn main() -> Result<(), failure::Error> {
     let opt: options::Options = options::Options::from_args();
     logging::setup(Some(LevelFilter::from_str(&opt.logging_level)?));
 
-    use options::{CellCommand, KeysCommand, ServerCommand, SubCommand};
+    use options::{CellCommand, ConfigCommand, KeysCommand, ServerCommand, SubCommand};
     let result = match &opt.subcommand {
         SubCommand::server(server_opts) => match server_opts.command {
             ServerCommand::start => server::start(&opt, server_opts),
@@ -28,6 +29,14 @@ fn main() -> Result<(), failure::Error> {
         SubCommand::cell(cell_opts) => match cell_opts.command {
             CellCommand::create_genesis_block => cell::create_genesis_block(&opt, cell_opts),
             CellCommand::check_chain => cell::check_chain(&opt, cell_opts),
+        },
+        SubCommand::config(config_opts) => match &config_opts.command {
+            ConfigCommand::validate(validate_opts) => {
+                config::validate(&opt, config_opts, validate_opts)
+            }
+            ConfigCommand::convert(convert_opts) => {
+                config::convert(&opt, config_opts, convert_opts)
+            }
         },
     };
 

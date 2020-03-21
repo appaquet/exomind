@@ -12,7 +12,6 @@ use libc;
 use prost::Message;
 
 use exocore_core::cell::Cell;
-use exocore_core::cell::LocalNode;
 use exocore_core::futures::Runtime;
 use exocore_core::protos::generated::exocore_core::LocalNodeConfig;
 use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
@@ -49,17 +48,26 @@ impl Context {
                 error!("Couldn't decode node config from Protobuf: {}", err);
                 ContextStatus::Error
             })?,
-            ConfigFormat::Yaml => exocore_core::cell::node_config_from_yaml_reader(config_bytes)
-                .map_err(|err| {
+            ConfigFormat::Yaml => {
+                exocore_core::cell::node_config_from_yaml(config_bytes).map_err(|err| {
                     error!("Couldn't parse node config from YAML: {}", err);
                     ContextStatus::Error
-                })?,
+                })?
+            }
         };
 
-        let local_node = LocalNode::new_from_config(config.clone()).map_err(|err| {
-            error!("Error creating local node: {}", err);
+        let (either_cells, local_node) =
+            Cell::new_from_local_node_config(config).map_err(|err| {
+                error!("Error creating cell: {}", err);
+                ContextStatus::Error
+            })?;
+
+        let either_cell = either_cells.first().cloned().ok_or_else(|| {
+            error!("Configuration doesn't have any cell config");
             ContextStatus::Error
         })?;
+
+        let cell = either_cell.cell().clone();
 
         let mut runtime = Runtime::new().map_err(|err| {
             error!("Couldn't start Runtime: {}", err);
@@ -67,42 +75,28 @@ impl Context {
         })?;
 
         let transport_config = Libp2pTransportConfig::default();
-        let mut transport = Libp2pTransport::new(local_node.clone(), transport_config);
-
-        let cell_config = config.cells.first().ok_or_else(|| {
-            error!("Configuration doesn't have any cell config");
-            ContextStatus::Error
-        })?;
-
-        let either_cell =
-            Cell::new_from_config(cell_config.clone(), local_node).map_err(|err| {
-                error!("Error creating cell: {}", err);
-                ContextStatus::Error
-            })?;
+        let mut transport = Libp2pTransport::new(local_node, transport_config);
 
         let clock = Clock::new();
 
         let store_transport = transport
-            .get_handle(either_cell.cell().clone(), TransportLayer::Index)
+            .get_handle(cell.clone(), TransportLayer::Index)
             .map_err(|err| {
                 error!("Couldn't get transport handle for remote index: {}", err);
                 ContextStatus::Error
             })?;
         let remote_store_config = ClientConfiguration::default();
-        let remote_store_client = Client::new(
-            remote_store_config,
-            either_cell.cell().clone(),
-            clock,
-            store_transport,
-        )
-        .map_err(|err| {
-            error!("Couldn't create remote store client: {}", err);
-            ContextStatus::Error
-        })?;
+        let remote_store_client =
+            Client::new(remote_store_config, cell.clone(), clock, store_transport).map_err(
+                |err| {
+                    error!("Couldn't create remote store client: {}", err);
+                    ContextStatus::Error
+                },
+            )?;
 
         let store_handle = Arc::new(remote_store_client.get_handle());
         let management_transport_handle = transport
-            .get_handle(either_cell.cell().clone(), TransportLayer::None)
+            .get_handle(cell, TransportLayer::None)
             .map_err(|err| {
                 error!("Couldn't get transport handle: {}", err);
                 ContextStatus::Error
