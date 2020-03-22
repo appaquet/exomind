@@ -2402,9 +2402,9 @@ dependencies = [
 
 [[package]]
 name = "petname"
-version = "1.0.11"
+version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "334efc0047162bc18932016c464193c403a01d3500d3f054dc1580c077b0187c"
+checksum = "a7ef16cdbe161283c2f5c9ca74c5422b805aea3c5793e17cd6e0067a059f3825"
 dependencies = [
  "clap",
  "itertools 0.9.0",
@@ -2495,9 +2495,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-hack"
-version = "0.5.13"
+version = "0.5.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed27b3093c0440c350cb2f4c985621e738ae3c50df770a7a9b08b449e6ac83bb"
+checksum = "fcfdefadc3d57ca21cf17990a28ef4c0f7c61383a28cb7604cf4a18e6ede1420"
 
 [[package]]
 name = "proc-macro-nested"
