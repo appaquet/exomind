@@ -134,10 +134,7 @@ impl PendingBlocks {
 
             debug!(
                 "{}: Found pending store's block: offset={} group_id={} status={:?}",
-                cell.local_node().id(),
-                proposal.offset,
-                group_id,
-                status
+                cell, proposal.offset, group_id, status
             );
             let pending_block = PendingBlock {
                 group_id: *group_id,

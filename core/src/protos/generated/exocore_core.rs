@@ -26,6 +26,8 @@ pub struct CellConfig {
     pub public_key: std::string::String,
     #[prost(string, tag = "2")]
     pub keypair: std::string::String,
+    #[prost(string, tag = "5")]
+    pub name: std::string::String,
     #[prost(string, tag = "3")]
     pub data_directory: std::string::String,
     #[prost(message, repeated, tag = "4")]

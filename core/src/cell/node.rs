@@ -4,7 +4,7 @@ use crate::crypto::signature::Signature;
 use crate::protos::generated::exocore_core::{LocalNodeConfig, NodeConfig};
 use libp2p_core::{Multiaddr, PeerId};
 use std::collections::HashSet;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::{Arc, RwLock};
@@ -19,6 +19,7 @@ pub struct Node {
     peer_id: PeerId,
     consistent_clock_id: u16,
     public_key: PublicKey,
+    name: String,
     inner: Arc<RwLock<SharedInner>>,
 }
 
@@ -41,11 +42,15 @@ impl Node {
             node_id_bytes[node_id_bytes_len - 2],
         ]);
 
+        // generate a deterministic random name for the node
+        let name = public_key.generate_name();
+
         Node {
             node_id,
             peer_id,
             consistent_clock_id,
             public_key,
+            name,
             inner: Arc::new(RwLock::new(SharedInner {
                 addresses: HashSet::new(),
             })),
@@ -56,7 +61,11 @@ impl Node {
         let public_key = PublicKey::decode_base58_string(&config.public_key)
             .map_err(|err| Error::Config(format!("Couldn't decode node public key: {}", err)))?;
 
-        let node = Self::new_from_public_key(public_key);
+        let mut node = Self::new_from_public_key(public_key);
+
+        if !config.name.is_empty() {
+            node.name = config.name;
+        }
 
         for addr in config.addresses {
             let maddr = addr
@@ -68,30 +77,10 @@ impl Node {
         Ok(node)
     }
 
+    #[cfg(any(test, feature = "tests_utils"))]
     pub fn generate_temporary() -> Node {
         let keypair = Keypair::generate_ed25519();
-        let node_id = NodeId::from_public_key(&keypair.public());
-        let peer_id = node_id
-            .to_peer_id()
-            .expect("Couldn't convert node_id to peer_id");
-
-        // TODO: used for consistent time and to be fixed for real in https://github.com/appaquet/exocore/issues/6
-        let node_id_bytes = node_id.0.as_bytes();
-        let node_id_bytes_len = node_id_bytes.len();
-        let consistent_clock_id = u16::from_le_bytes([
-            node_id_bytes[node_id_bytes_len - 1],
-            node_id_bytes[node_id_bytes_len - 2],
-        ]);
-
-        Node {
-            node_id,
-            peer_id,
-            consistent_clock_id,
-            public_key: keypair.public(),
-            inner: Arc::new(RwLock::new(SharedInner {
-                addresses: HashSet::new(),
-            })),
-        }
+        Self::new_from_public_key(keypair.public())
     }
 
     #[inline]
@@ -107,6 +96,11 @@ impl Node {
     #[inline]
     pub fn peer_id(&self) -> &PeerId {
         &self.peer_id
+    }
+
+    #[inline]
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     #[inline]
@@ -137,10 +131,19 @@ impl Debug for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let inner = self.inner.read().expect("Couldn't get inner lock");
         f.debug_struct("Node")
+            .field("name", &self.name)
             .field("node_id", &self.node_id)
-            .field("peer_id", &self.peer_id)
+            .field("public_key", &self.public_key.encode_base58_string())
             .field("addresses", &inner.addresses)
             .finish()
+    }
+}
+
+impl Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str("Node[")?;
+        f.write_str(&self.name)?;
+        f.write_str("]")
     }
 }
 
@@ -220,6 +223,14 @@ impl Debug for LocalNode {
     }
 }
 
+impl Display for LocalNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str("LocalNode[")?;
+        f.write_str(&self.name)?;
+        f.write_str("]")
+    }
+}
+
 /// Unique identifier of a node, which is built by hashing the public key of the
 /// node.
 ///
@@ -289,5 +300,14 @@ mod tests {
         assert_eq!(node1, node1);
         assert_eq!(node1, node1.clone());
         assert_ne!(node1, node2);
+    }
+
+    #[test]
+    fn node_deterministic_random_name() {
+        let pk = PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
+            .unwrap();
+        let node = Node::new_from_public_key(pk);
+        assert_eq!("early-settled-ram", node.name);
+        assert_eq!("Node[early-settled-ram]", node.to_string());
     }
 }

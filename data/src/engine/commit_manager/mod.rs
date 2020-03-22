@@ -70,9 +70,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let best_potential_next_block = potential_next_blocks.first().map(|b| b.group_id);
         debug!(
             "{}: Tick begins. potential_next_blocks={:?} best_next_block={:?}",
-            self.cell.local_node().id(),
-            potential_next_blocks,
-            best_potential_next_block
+            self.cell, potential_next_blocks, best_potential_next_block
         );
 
         // if we have a next block, we check if we can sign it and commit it
@@ -120,15 +118,12 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             {
                 debug!(
                     "{}: Block has enough signatures, we should commit",
-                    self.cell.local_node().id(),
+                    self.cell,
                 );
                 self.commit_block(sync_context, next_block, pending_store, chain_store)?;
             }
         } else if self.should_propose_block(chain_store, &pending_blocks)? {
-            debug!(
-                "{}: No current block, and we can propose one",
-                self.cell.local_node().id(),
-            );
+            debug!("{}: No current block, and we can propose one", self.cell,);
             self.propose_block(
                 sync_context,
                 &pending_blocks,
@@ -176,7 +171,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 if *op_block == BlockStatus::PastCommitted {
                     info!(
                         "{}: Refusing block {:?} because there is already a committed block at this offset",
-                        self.cell.local_node().id(),
+                        self.cell,
                         block
                     );
                     return Ok(false);
@@ -188,7 +183,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 if operation_in_chain {
                     info!(
                         "{}: Refusing block {:?} because it contains operation_id={} already in chain",
-                        self.cell.local_node().id(),
+                        self.cell,
                         block,
                         operation_id
                     );
@@ -204,7 +199,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         if operations_hash.as_bytes() != block_header_reader.get_operations_hash()? {
             info!(
                 "{}: Refusing block {:?} because entries hash didn't match our local hash for block",
-                self.cell.local_node().id(),
+                self.cell,
                 block
             );
             return Ok(false);
@@ -235,11 +230,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         let signature_reader = signature_operation.get_operation_reader()?;
         let pending_signature = PendingBlockSignature::from_operation(signature_reader)?;
-        debug!(
-            "{}: Signing block {:?}",
-            self.cell.local_node().id(),
-            next_block,
-        );
+        debug!("{}: Signing block {:?}", self.cell, next_block,);
         next_block.add_my_signature(pending_signature);
 
         pending_synchronizer.handle_new_operation(
@@ -308,7 +299,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             if approx_non_committed_operations >= self.config.commit_maximum_pending_store_count {
                 debug!(
                     "{}: Enough operations ({} >= {}) to commit & it's my turn. Proposing one.",
-                    local_node.id(),
+                    local_node,
                     approx_non_committed_operations,
                     self.config.commit_maximum_pending_store_count
                 );
@@ -328,7 +319,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 if previous_block_elapsed >= self.config.commit_maximum_interval {
                     debug!(
                         "{}: Enough operations to commit & it's my turn. Will propose a block.",
-                        local_node.id()
+                        local_node
                     );
                     Ok(true)
                 } else {
@@ -405,7 +396,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         debug!(
             "{}: Proposed block at offset={} operation_id={:?}",
-            self.cell.local_node().id(),
+            self.cell,
             previous_block.next_offset(),
             block_operation_id,
         );
@@ -476,8 +467,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         debug!(
             "{}: Writing new block to chain: {:?}",
-            self.cell.local_node().id(),
-            next_block
+            self.cell, next_block
         );
         chain_store.write_block(&block)?;
         for operation_id in block_operations.operations_id() {

@@ -16,6 +16,7 @@ pub struct Cell {
     public_key: Arc<PublicKey>,
     cell_id: CellId,
     local_node: LocalNode,
+    name: String,
     nodes: Arc<RwLock<HashMap<NodeId, CellNode>>>,
 }
 
@@ -27,10 +28,14 @@ impl Cell {
         let local_cell_node = CellNode::new(local_node.node().clone());
         nodes_map.insert(local_node.id().clone(), local_cell_node);
 
+        // generate a deterministic random name for the cell
+        let name = public_key.generate_name();
+
         Cell {
             public_key: Arc::new(public_key),
             cell_id,
             local_node,
+            name,
             nodes: Arc::new(RwLock::new(nodes_map)),
         }
     }
@@ -40,13 +45,23 @@ impl Cell {
             let keypair = Keypair::decode_base58_string(&config.keypair)
                 .map_err(|err| Error::Config(format!("Couldn't parse cell keypair: {}", err)))?;
 
-            let full_cell = FullCell::from_keypair(keypair, local_node);
+            let mut full_cell = FullCell::from_keypair(keypair, local_node);
+
+            if config.name != "" {
+                full_cell.cell.name = config.name;
+            }
+
             EitherCell::Full(Box::new(full_cell))
         } else {
             let public_key = PublicKey::decode_base58_string(&config.public_key)
                 .map_err(|err| Error::Config(format!("Couldn't parse cell public key: {}", err)))?;
 
-            let cell = Cell::new(public_key, local_node);
+            let mut cell = Cell::new(public_key, local_node);
+
+            if config.name != "" {
+                cell.name = config.name;
+            }
+
             EitherCell::Cell(Box::new(cell))
         };
 
@@ -89,6 +104,10 @@ impl Cell {
         &self.cell_id
     }
 
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
     #[inline]
     pub fn local_node(&self) -> &LocalNode {
         &self.local_node
@@ -123,6 +142,14 @@ impl Cell {
             .write()
             .expect("Couldn't acquire write lock on nodes");
         CellNodesWrite { cell: self, nodes }
+    }
+}
+
+impl std::fmt::Display for Cell {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str("Cell[")?;
+        f.write_str(&self.name)?;
+        f.write_str("]")
     }
 }
 

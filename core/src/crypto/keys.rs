@@ -1,6 +1,7 @@
 use libp2p_core::identity::{
     ed25519 as libp2p_ed25519, Keypair as libp2p_Keypair, PublicKey as libp2p_PublicKey,
 };
+use rand::SeedableRng;
 
 const ENCODE_KEYPAIR_CODE: u8 = b'a';
 const ENCODE_PUBLIC_KEY_CODE: u8 = b'p';
@@ -150,9 +151,7 @@ impl PublicKey {
                 let pk = libp2p_ed25519::PublicKey::decode(&bytes[2..])
                     .map_err(|err| Error::Libp2pDecode(err.to_string()))?;
 
-                Ok(PublicKey {
-                    key: libp2p_PublicKey::Ed25519(pk),
-                })
+                Ok(PublicKey::from_libp2p(libp2p_PublicKey::Ed25519(pk)))
             }
             _ => unimplemented!(),
         }
@@ -162,6 +161,24 @@ impl PublicKey {
     pub fn decode_base58_string(input: &str) -> Result<PublicKey, Error> {
         let bytes = decode_base58(input)?;
         Self::decode(&bytes)
+    }
+
+    /// Generates a deterministic random name from this public key
+    pub fn generate_name(&self) -> String {
+        let bytes = self.encode();
+        let bytes_len = bytes.len();
+
+        let mut rng = rand::prelude::StdRng::seed_from_u64(u64::from_le_bytes([
+            bytes[bytes_len - 1],
+            bytes[bytes_len - 2],
+            bytes[bytes_len - 3],
+            bytes[bytes_len - 4],
+            bytes[bytes_len - 5],
+            bytes[bytes_len - 6],
+            bytes[bytes_len - 7],
+            bytes[bytes_len - 8],
+        ]));
+        petname::Petnames::default().generate(&mut rng, 3, "-")
     }
 }
 

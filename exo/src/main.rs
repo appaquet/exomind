@@ -9,6 +9,7 @@ mod server;
 #[macro_use]
 extern crate log;
 
+use exocore_core::cell::Node;
 use exocore_core::crypto::keys::Keypair;
 use log::LevelFilter;
 use std::str::FromStr;
@@ -62,6 +63,10 @@ fn keys_generate(
 
     println!("Keypair: {}", keypair.encode_base58_string());
     println!("Public key: {}", keypair.public().encode_base58_string());
+    println!(
+        "Generated name: {}",
+        Node::new_from_public_key(keypair.public()).name()
+    );
 
     Ok(())
 }

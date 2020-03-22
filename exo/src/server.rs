@@ -68,10 +68,10 @@ pub fn start(
             let index_engine_handle = engine.get_handle();
 
             // start the engine
-            let cell_id = cell.id().clone();
+            let cell_name = cell.name().to_string();
             rt.spawn(async move {
                 let res = engine.run().await;
-                info!("{}: Engine is done: {:?}", cell_id, res);
+                info!("{}: Engine is done: {:?}", cell_name, res);
             });
 
             // start an local store index if needed
@@ -111,13 +111,13 @@ pub fn start(
             } else {
                 info!(
                     "{}: Local node doesn't have index role. Not starting local store index.",
-                    cell.id()
+                    cell
                 )
             }
         } else {
             info!(
                 "{}: Local node doesn't have data role. Not starting data engine.",
-                cell.id()
+                cell
             )
         }
     }

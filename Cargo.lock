@@ -880,10 +880,12 @@ dependencies = [
  "log",
  "log4rs",
  "parity-multihash",
+ "petname",
  "prost",
  "prost-build",
  "prost-types",
  "protobuf",
+ "rand 0.7.3",
  "serde",
  "serde_derive",
  "serde_json",
@@ -2399,6 +2401,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "petname"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "334efc0047162bc18932016c464193c403a01d3500d3f054dc1580c077b0187c"
+dependencies = [
+ "clap",
+ "itertools 0.9.0",
+ "rand 0.7.3",
+]
+
+[[package]]
 name = "pin-project"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2482,14 +2495,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-hack"
-version = "0.5.12"
+version = "0.5.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f918f2b601f93baa836c1c2945faef682ba5b6d4828ecb45eeb7cc3c71b811b4"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
+checksum = "ed27b3093c0440c350cb2f4c985621e738ae3c50df770a7a9b08b449e6ac83bb"
 
 [[package]]
 name = "proc-macro-nested"

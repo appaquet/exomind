@@ -27,6 +27,8 @@ message CellConfig {
 
     string keypair = 2;
 
+    string name = 5;
+
     string data_directory = 3;
 
     repeated CellNodeConfig nodes = 4;

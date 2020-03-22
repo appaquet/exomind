@@ -54,6 +54,7 @@ mod tests {
             cells: vec![CellConfig {
                 public_key: "pk".to_string(),
                 keypair: "kp".to_string(),
+                name: "cell_name".to_string(),
                 data_directory: "data".to_string(),
                 nodes: vec![CellNodeConfig {
                     node: Some(NodeConfig {
@@ -114,6 +115,7 @@ listen_addresses:
 cells:
    - public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
      keypair: ""
+     name: ""
      data_directory: target/data/cell1
      nodes:
        - node:
