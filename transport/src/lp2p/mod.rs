@@ -76,8 +76,7 @@ impl Libp2pTransport {
         };
         info!(
             "Registering transport for cell {} and layer {:?}",
-            cell.id(),
-            layer
+            cell, layer
         );
         let key = (cell.id().clone(), layer);
         handles.handles.insert(key, inner_layer);
@@ -136,8 +135,8 @@ impl Libp2pTransport {
         // Add initial nodes to swarm
         {
             let inner = self.handles.read()?;
-            for (peer_id, addresses) in inner.all_peers() {
-                swarm.add_peer(peer_id, addresses);
+            for node in inner.all_peer_nodes().values() {
+                swarm.add_node_peer(node);
             }
         }
 
@@ -149,8 +148,8 @@ impl Libp2pTransport {
         let swarm_task = future::poll_fn(move |cx: &mut Context| -> Poll<()> {
             if let Poll::Ready(_) = nodes_update_interval.poll_next_unpin(cx) {
                 if let Ok(inner) = inner.read() {
-                    for (peer_id, addresses) in inner.all_peers() {
-                        swarm.add_peer(peer_id, addresses);
+                    for node in inner.all_peer_nodes().values() {
+                        swarm.add_node_peer(node);
                     }
                 }
             }
@@ -193,8 +192,6 @@ impl Libp2pTransport {
                         }
                     }
                     ExocoreBehaviourEvent::PeerStatus(peer_id, status) => {
-                        debug!("Peer status {} changed to {:?}", peer_id, status);
-
                         if let Err(err) = Self::dispatch_node_status(&inner, peer_id, status) {
                             warn!("Couldn't dispatch node status: {}", err);
                         }
@@ -358,15 +355,15 @@ struct Handles {
 }
 
 impl Handles {
-    fn all_peers(&self) -> Vec<(PeerId, Vec<Multiaddr>)> {
-        let mut peers = Vec::new();
+    fn all_peer_nodes(&self) -> HashMap<NodeId, Node> {
+        let mut nodes = HashMap::new();
         for inner_layer in self.handles.values() {
             for cell_node in inner_layer.cell.nodes().iter().all() {
-                let node = cell_node.node();
-                peers.push((node.peer_id().clone(), node.addresses()));
+                let node = cell_node.node().clone();
+                nodes.insert(node.id().clone(), node);
             }
         }
-        peers
+        nodes
     }
 
     fn remove_handle(&mut self, cell_id: &CellId, layer: TransportLayer) {

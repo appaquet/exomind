@@ -7,6 +7,7 @@ use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
 use exocore_core::time::Instant;
 
 use crate::lp2p::protocol::{ExocoreProtoHandler, ExocoreProtoMessage};
+use exocore_core::cell::Node;
 use std::time::Duration;
 
 const MAX_PEER_QUEUE: usize = 20;
@@ -19,7 +20,6 @@ const DEFAULT_DIALING_MESSAGE_TIMEOUT: Duration = Duration::from_secs(5);
 ///   * Incoming messages from the protocol handler, to be dispatched via Exocore's transport.
 ///   * Outgoing messages from Exocore's transport to be dispatched to the protocol handler.
 pub struct ExocoreBehaviour {
-    local_node: PeerId,
     actions: VecDeque<BehaviourAction>,
     peers: HashMap<PeerId, Peer>,
 }
@@ -29,7 +29,6 @@ type BehaviourAction = NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehavi
 impl ExocoreBehaviour {
     pub fn new() -> ExocoreBehaviour {
         ExocoreBehaviour {
-            local_node: PeerId::random(),
             actions: VecDeque::new(),
             peers: HashMap::new(),
         }
@@ -48,7 +47,7 @@ impl ExocoreBehaviour {
                 let expiration =
                     expiration.unwrap_or_else(|| Instant::now() + DEFAULT_DIALING_MESSAGE_TIMEOUT);
 
-                debug!("Peer {} not connected. Queuing message.", peer_id);
+                debug!("Peer {} not connected. Queuing message.", peer.node);
                 // Node is disconnected, push the event to a queue and try to connect
                 peer.temp_queue.push_back(QueuedPeerEvent {
                     event,
@@ -65,7 +64,10 @@ impl ExocoreBehaviour {
         }
     }
 
-    pub fn add_peer(&mut self, peer_id: PeerId, addresses: Vec<Multiaddr>) {
+    pub fn add_node_peer(&mut self, node: &Node) {
+        let peer_id = node.peer_id().clone();
+        let addresses = node.addresses();
+
         if let Some(current_peer) = self.peers.get(&peer_id) {
             if current_peer.addresses == addresses {
                 // no need to update, peer already exist with same addr
@@ -77,6 +79,7 @@ impl ExocoreBehaviour {
             peer_id.clone(),
             Peer {
                 addresses,
+                node: node.clone(),
                 temp_queue: VecDeque::new(),
                 status: PeerStatus::Disconnected,
             },
@@ -115,9 +118,9 @@ impl NetworkBehaviour for ExocoreBehaviour {
     }
 
     fn inject_connected(&mut self, peer_id: PeerId, _endpoint: ConnectedPoint) {
-        debug!("{}: Connected to {}", self.local_node, peer_id,);
-
         if let Some(peer) = self.peers.get_mut(&peer_id) {
+            debug!("Connected to {}", peer.node);
+
             peer.status = PeerStatus::Connected;
 
             self.actions
@@ -136,9 +139,9 @@ impl NetworkBehaviour for ExocoreBehaviour {
     }
 
     fn inject_disconnected(&mut self, peer_id: &PeerId, _endpoint: ConnectedPoint) {
-        debug!("{}: Disconnected from {}", self.local_node, peer_id,);
-
         if let Some(peer) = self.peers.get_mut(peer_id) {
+            debug!("Disconnected from {}", peer.node);
+
             peer.status = PeerStatus::Disconnected;
 
             self.actions
@@ -155,19 +158,23 @@ impl NetworkBehaviour for ExocoreBehaviour {
     }
 
     fn inject_node_event(&mut self, peer_id: PeerId, msg: ExocoreProtoMessage) {
-        trace!("{}: Received message from {}", self.local_node, peer_id);
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            trace!("Received message from {}", peer.node);
 
-        self.actions
-            .push_back(NetworkBehaviourAction::GenerateEvent(
-                ExocoreBehaviourEvent::Message(ExocoreBehaviourMessage {
-                    source: peer_id,
-                    data: msg.data,
-                }),
-            ));
+            self.actions
+                .push_back(NetworkBehaviourAction::GenerateEvent(
+                    ExocoreBehaviourEvent::Message(ExocoreBehaviourMessage {
+                        source: peer_id,
+                        data: msg.data,
+                    }),
+                ));
+        }
     }
 
     fn inject_dial_failure(&mut self, peer_id: &PeerId) {
-        debug!("{}: Failed to connect to {}", self.local_node, peer_id);
+        if let Some(peer) = self.peers.get_mut(peer_id) {
+            debug!("Failed to connect to {}", peer.node);
+        }
     }
 
     fn poll(
@@ -187,6 +194,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
 /// The behaviour manages messages sent and received to these peers.
 struct Peer {
     addresses: Vec<Multiaddr>,
+    node: Node,
     temp_queue: VecDeque<QueuedPeerEvent>,
     status: PeerStatus,
 }

@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Once};
 
 use futures::StreamExt;
 use prost::Message;
@@ -16,6 +16,8 @@ use crate::js::into_js_error;
 use crate::watched_query::WatchedQuery;
 use exocore_core::protos::prost::ProstMessageExt;
 use exocore_transport::lp2p::Libp2pTransportConfig;
+
+static INIT: Once = Once::new();
 
 #[wasm_bindgen]
 pub struct ExocoreClient {
@@ -35,8 +37,10 @@ impl ExocoreClient {
         node_config_format: JsValue,
         status_change_callback: Option<js_sys::Function>,
     ) -> Result<ExocoreClient, JsValue> {
-        wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
-        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+        INIT.call_once(|| {
+            wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
+            std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+        });
 
         let config_bytes = Self::js_bytes_to_vec(node_config_bytes);
         let node_config_format = node_config_format.as_string();
