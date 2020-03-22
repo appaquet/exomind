@@ -141,9 +141,9 @@ impl Debug for Node {
 
 impl Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.write_str("Node[")?;
+        f.write_str("Node{")?;
         f.write_str(&self.name)?;
-        f.write_str("]")
+        f.write_str("}")
     }
 }
 
@@ -225,9 +225,9 @@ impl Debug for LocalNode {
 
 impl Display for LocalNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.write_str("LocalNode[")?;
+        f.write_str("LocalNode{")?;
         f.write_str(&self.name)?;
-        f.write_str("]")
+        f.write_str("}")
     }
 }
 
@@ -308,6 +308,6 @@ mod tests {
             .unwrap();
         let node = Node::new_from_public_key(pk);
         assert_eq!("early-settled-ram", node.name);
-        assert_eq!("Node[early-settled-ram]", node.to_string());
+        assert_eq!("Node{early-settled-ram}", node.to_string());
     }
 }

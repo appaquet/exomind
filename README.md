@@ -75,6 +75,7 @@ A cell consists of:
     * Put the other node `public_key` and `addresses` in the `cells/nodes` section.
 * Generate keypair for the cell: `exo keys generate` 
 * Add this keypair in both `node1.yaml` and `node2.yaml` in the `cells` section.
+* Validate config with `exo config validate <config file>`
 * Initialize chain one first node: `exo cell --config node1.yaml --public_key <cell_public_key> create_genesis_block`
 * Start both nodes:
     * Node 1: `exo server --config ./node1.yaml start`
@@ -82,13 +83,15 @@ A cell consists of:
 
 ### Launch sample web project
 * Run the [web example](./examples/web):
+  * Build WASM client
+    * `cd ./clients/wasm && wasm-pack build && npm install`
+    * This will create a NPM module at ./clients/wasm/pkg
   * Start development server which will watch files and rebuild automatically:
     * `cd ./examples/web && npm install && npm run start`
+  * Generate cell configuration for web:
+    * Convert config to JSON: `exo config convert <config file>`
   * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
+    * Paste JSON config and save
   
-* Or build manually: 
-    * `cd ./clients/wasm && wasm-pack build`
-    * This will create a NPM module at ./clients/wasm/pkg
-
 ## Documentation
 * [Replication](data/replication.md)

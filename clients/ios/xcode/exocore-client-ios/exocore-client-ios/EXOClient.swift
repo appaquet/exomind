@@ -16,7 +16,7 @@ public class EXOClient {
 
     public init(yamlConfig: String) throws {
         guard let configData = yamlConfig.data(using: .utf8) else {
-            print("EXOClient > Couldn't get data from yaml string")
+            print("EXOClient > Couldn't get data from YAML string")
             throw EXOError.initialization
         }
 

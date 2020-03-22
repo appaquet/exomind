@@ -147,9 +147,9 @@ impl Cell {
 
 impl std::fmt::Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.write_str("Cell[")?;
+        f.write_str("Cell{")?;
         f.write_str(&self.name)?;
-        f.write_str("]")
+        f.write_str("}")
     }
 }
 
