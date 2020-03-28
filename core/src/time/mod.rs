@@ -36,10 +36,9 @@ impl Clock {
 
     #[cfg(any(test, feature = "tests_utils"))]
     pub fn new_fixed_mocked(instant: Instant) -> Clock {
-        Clock {
-            source: Source::Mocked(std::sync::Arc::new(std::sync::RwLock::new(Some(instant)))),
-            consistent_counter: Arc::new(AtomicUsize::new(0)),
-        }
+        let clock = Self::new_mocked();
+        clock.set_fixed_instant(instant);
+        clock
     }
 
     #[inline]
@@ -49,8 +48,8 @@ impl Clock {
             #[cfg(any(test, feature = "tests_utils"))]
             Source::Mocked(time) => {
                 let mocked_instant = time.read().expect("Couldn't acquire read lock");
-                if let Some(instant) = *mocked_instant {
-                    instant
+                if let Some((fixed_instant, _fixed_unix_elaps)) = *mocked_instant {
+                    fixed_instant
                 } else {
                     Instant::now()
                 }
@@ -78,32 +77,31 @@ impl Clock {
             }
         };
 
-        let now_system = SystemTime::now();
-        #[cfg(any(test, feature = "tests_utils"))]
-        let now_instant = Instant::now();
-        let unix_elapsed = now_system.duration_since(wasm_timer::UNIX_EPOCH).unwrap();
-
         match &self.source {
-            Source::System => ConsistentTimestamp::from_context(
-                unix_elapsed,
-                counter as u64,
-                node.consistent_clock_id(),
-            ),
+            Source::System => {
+                let now_system = SystemTime::now();
+                let unix_elapsed = now_system.duration_since(wasm_timer::UNIX_EPOCH).unwrap();
+                ConsistentTimestamp::from_context(
+                    unix_elapsed,
+                    counter as u64,
+                    node.consistent_clock_id(),
+                )
+            }
             #[cfg(any(test, feature = "tests_utils"))]
             Source::Mocked(time) => {
                 let mocked_instant = time.read().expect("Couldn't acquire read lock");
-                let unix_elapsed_offset = if let Some(instant) = *mocked_instant {
-                    if now_instant > instant {
-                        unix_elapsed - (now_instant - instant)
-                    } else {
-                        unix_elapsed + (instant - now_instant)
-                    }
+
+                let unix_elapsed = if let Some((_fixed_instant, fixed_unix_elaps)) = *mocked_instant
+                {
+                    fixed_unix_elaps
                 } else {
-                    unix_elapsed
+                    SystemTime::now()
+                        .duration_since(wasm_timer::UNIX_EPOCH)
+                        .unwrap()
                 };
 
                 ConsistentTimestamp::from_context(
-                    unix_elapsed_offset,
+                    unix_elapsed,
                     counter as u64,
                     node.consistent_clock_id(),
                 )
@@ -112,10 +110,21 @@ impl Clock {
     }
 
     #[cfg(any(test, feature = "tests_utils"))]
-    pub fn set_fixed_instant(&self, current_time: Instant) {
+    pub fn set_fixed_instant(&self, fixed_instant: Instant) {
         if let Source::Mocked(mocked_instant) = &self.source {
             let mut mocked_instant = mocked_instant.write().expect("Couldn't acquire write lock");
-            *mocked_instant = Some(current_time);
+
+            let now_system = SystemTime::now();
+            let unix_elapsed = now_system.duration_since(wasm_timer::UNIX_EPOCH).unwrap();
+            let now_instant = Instant::now();
+
+            let fixed_unix_elaps = if now_instant > fixed_instant {
+                unix_elapsed - (now_instant - fixed_instant)
+            } else {
+                unix_elapsed + (fixed_instant - now_instant)
+            };
+
+            *mocked_instant = Some((fixed_instant, fixed_unix_elaps));
         } else {
             panic!("Called set_time, but clock source is system");
         }
@@ -125,8 +134,8 @@ impl Clock {
     pub fn add_fixed_instant_duration(&self, duration: Duration) {
         if let Source::Mocked(mocked_instant) = &self.source {
             let mut mocked_instant = mocked_instant.write().expect("Couldn't acquire write lock");
-            if let Some(current_instant) = *mocked_instant {
-                *mocked_instant = Some(current_instant + duration)
+            if let Some((current_instant, unix_elapsed)) = *mocked_instant {
+                *mocked_instant = Some((current_instant + duration, unix_elapsed + duration))
             }
         } else {
             panic!("Called set_time, but clock source is system");
@@ -154,7 +163,7 @@ impl Default for Clock {
 enum Source {
     System,
     #[cfg(any(test, feature = "tests_utils"))]
-    Mocked(std::sync::Arc<std::sync::RwLock<Option<Instant>>>),
+    Mocked(std::sync::Arc<std::sync::RwLock<Option<(Instant, Duration)>>>),
 }
 
 pub fn timestamp_parts_to_datetime(secs: i64, nanos: i32) -> chrono::DateTime<chrono::Utc> {

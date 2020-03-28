@@ -3,62 +3,92 @@ name: Push tester
 on: [push]
 
 jobs:
-  test_and_check:
+  checks:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v1
-      - name: Install Rust & Tools
-        run: |
-          set -e
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+      - name: Check formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - name: Clippy & check
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
 
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -c rustfmt clippy
-          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
-          rustup update
-          rustc --version && cargo --version
+  linux_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+      - name: Tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all --all-features
 
-      - name: Check & test
-        run: |
-          set -e
-          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
-          export RUST_BACKTRACE=1
+  macos_tests:
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+      - name: Tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all --all-features
 
-          cargo fmt --all -- --check
-          cargo check --all
-          cargo clean -p exocore-core
-          cargo clippy --all -- -D clippy::all
-
-          cargo test --all --all-features
+  windows_tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+      - name: Tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all --all-features
 
   wasm_build:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:19.04 # required for clang with wasm
-
     steps:
-      - uses: actions/checkout@v1
-
-      - name: Install Rust & Tools
+      - uses: actions/checkout@v2
+      - name: Install build dependencies
         run: |
           set -e
-
           apt update && apt install -y clang curl pkg-config libssl-dev
-
           curl -sL https://deb.nodesource.com/setup_13.x | bash -
           apt-get install -y nodejs
-
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -t wasm32-unknown-unknown
-          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
-          rustup update
-          rustc --version && cargo --version
-
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: |
+          set -e
           cargo install wasm-pack --locked
-
       - name: Build client & example
         run: |
           set -e
-          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
-          export RUST_BACKTRACE=1
 
           cd $GITHUB_WORKSPACE/clients/wasm
           wasm-pack build
@@ -72,29 +102,22 @@ jobs:
     runs-on: macOS-latest
 
     steps:
-      - uses: actions/checkout@v1
-
-      - name: Install Rust & Tools
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+      - name: Install cargo-lipo
         run: |
           set -e
-
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
-          rustup update
-          rustc --version && cargo --version
-
-          rustup target add aarch64-apple-ios
-          rustup target add x86_64-apple-ios
-
+          # actions-rs don't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
+          rustup target add aarch64-apple-ios x86_64-apple-ios
           cargo install cargo-lipo
-
       - name: Force Xcode 11.3
         run: sudo xcode-select -switch /Applications/Xcode_11.3.app
-
       - name: Build ios lib
         run: |
           set -e
-          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
           export RUST_BACKTRACE=1
 
           cd $GITHUB_WORKSPACE/clients/ios
@@ -106,23 +129,16 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v1
-      - name: Install Rust & Dependencies
-        run: |
-          set -e
-
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -c rustfmt clippy
-          export PATH=$PATH:$HOME/.cargo/bin:/usr/local/cargo/bin
-          rustup update
-          rustc --version && cargo --version
-          rustup toolchain install nightly-2020-02-06 # if changed, change in coverage.sh
-
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2020-02-06
+          profile: minimal
       - name: Test coverage
         run: |
           set -e
-          curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+          curl -L https://github.com/mozilla/grcov/releases/download/v0.5.9/grcov-linux-x86_64.tar.bz2 | tar jxf -
           export PATH=$PATH:`pwd`
           export RUST_BACKTRACE=1
 

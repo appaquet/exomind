@@ -311,6 +311,20 @@ impl SegmentFile {
     }
 
     fn set_len(&mut self, new_size: u64) -> Result<(), Error> {
+        // On Windows, we can't resize a file while it's currently being mapped. We close the mmap first by replacing it
+        // by an anonymous mmmap.
+        if cfg!(target_os = "windows") {
+            self.mmap = memmap::MmapOptions::new()
+                .len(1)
+                .map_anon()
+                .map_err(|err| {
+                    Error::IO(
+                        err.kind(),
+                        format!("Error creating anonymous mmap: {}", err),
+                    )
+                })?;
+        }
+
         self.file.set_len(new_size).map_err(|err| {
             Error::IO(
                 err.kind(),
@@ -415,7 +429,7 @@ mod tests {
             assert!(DirectorySegment::open_with_first_offset(
                 Default::default(),
                 &segment_path,
-                100
+                100,
             )
             .is_err());
         }
