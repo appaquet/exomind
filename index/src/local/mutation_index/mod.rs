@@ -51,7 +51,7 @@ pub struct MutationIndex {
     index: TantivyIndex,
     index_reader: IndexReader,
     index_writer: Mutex<IndexWriter>,
-    registry: Arc<Registry>,
+    schemas: Arc<Registry>,
     fields: Fields,
 }
 
@@ -59,10 +59,10 @@ impl MutationIndex {
     /// Creates or opens a disk persisted index.
     pub fn open_or_create_mmap(
         config: MutationIndexConfig,
-        registry: Arc<Registry>,
+        schemas: Arc<Registry>,
         directory: &Path,
     ) -> Result<MutationIndex, Error> {
-        let (tantivy_schema, fields) = Self::build_tantivy_schema(registry.as_ref());
+        let (tantivy_schema, fields) = Self::build_tantivy_schema(schemas.as_ref());
         let directory = MmapDirectory::open(directory)?;
         let index = TantivyIndex::open_or_create(directory, tantivy_schema)?;
         let index_reader = index.reader()?;
@@ -77,7 +77,7 @@ impl MutationIndex {
             index,
             index_reader,
             index_writer: Mutex::new(index_writer),
-            registry,
+            schemas,
             fields,
         })
     }
@@ -85,9 +85,9 @@ impl MutationIndex {
     /// Creates or opens a in-memory index.
     pub fn create_in_memory(
         config: MutationIndexConfig,
-        registry: Arc<Registry>,
+        schemas: Arc<Registry>,
     ) -> Result<MutationIndex, Error> {
-        let (tantivy_schema, fields) = Self::build_tantivy_schema(registry.as_ref());
+        let (tantivy_schema, fields) = Self::build_tantivy_schema(schemas.as_ref());
         let index = TantivyIndex::create_in_ram(tantivy_schema);
         let index_reader = index.reader()?;
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
@@ -101,7 +101,7 @@ impl MutationIndex {
             index,
             index_reader,
             index_writer: Mutex::new(index_writer),
-            registry,
+            schemas,
             fields,
         })
     }
@@ -235,7 +235,7 @@ impl MutationIndex {
             .as_ref()
             .ok_or_else(|| Error::ProtoFieldExpected("Trait message"))?;
         let dyn_message =
-            reflect::from_prost_any(self.registry.as_ref(), message).map_err(Error::Proto)?;
+            reflect::from_prost_any(self.schemas.as_ref(), message).map_err(Error::Proto)?;
 
         let mut doc = Document::default();
         doc.add_text(self.fields.trait_type, dyn_message.full_name());

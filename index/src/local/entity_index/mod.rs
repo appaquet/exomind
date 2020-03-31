@@ -1,11 +1,12 @@
 use std::collections::HashSet;
 use std::hash::Hasher;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use itertools::Itertools;
 use prost::Message;
 
+use exocore_core::cell::FullCell;
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
     Entity, EntityMutation, EntityQuery, EntityResult, EntityResultSource, EntityResults, Paging,
@@ -28,6 +29,7 @@ mod config;
 pub use config::*;
 mod entity_mutations;
 pub use entity_mutations::*;
+
 #[cfg(test)]
 mod test_index;
 #[cfg(test)]
@@ -52,7 +54,7 @@ where
     chain_index_dir: PathBuf,
     chain_index: MutationIndex,
     chain_index_last_block: Option<BlockOffset>,
-    registry: Arc<Registry>,
+    cell: FullCell,
     data_handle: EngineHandle<CS, PS>,
 }
 
@@ -63,22 +65,23 @@ where
 {
     /// Opens or create an entities index
     pub fn open_or_create(
-        data_dir: &Path,
+        cell: FullCell,
         config: EntityIndexConfig,
-        registry: Arc<Registry>,
         data_handle: EngineHandle<CS, PS>,
     ) -> Result<EntityIndex<CS, PS>, Error> {
         let pending_index =
-            MutationIndex::create_in_memory(config.pending_index_config, registry.clone())?;
+            MutationIndex::create_in_memory(config.pending_index_config, cell.schemas().clone())?;
 
         // make sure directories are created
-        let mut chain_index_dir = data_dir.to_path_buf();
+        let mut chain_index_dir = cell
+            .index_directory()
+            .ok_or_else(|| Error::Other("Cell doesn't have an path configured".to_string()))?;
         chain_index_dir.push("chain");
         if std::fs::metadata(&chain_index_dir).is_err() {
             std::fs::create_dir_all(&chain_index_dir)?;
         }
 
-        let chain_index = Self::create_chain_index(config, &registry, &chain_index_dir)?;
+        let chain_index = Self::create_chain_index(config, cell.schemas(), &chain_index_dir)?;
 
         let mut index = EntityIndex {
             config,
@@ -86,7 +89,7 @@ where
             chain_index_dir,
             chain_index,
             chain_index_last_block: None,
-            registry,
+            cell,
             data_handle,
         };
 
@@ -320,17 +323,17 @@ where
     /// Create the chain index based on configuration.
     fn create_chain_index(
         config: EntityIndexConfig,
-        registry: &Arc<Registry>,
+        schemas: &Arc<Registry>,
         chain_index_dir: &PathBuf,
     ) -> Result<MutationIndex, Error> {
         if !config.chain_index_in_memory {
             MutationIndex::open_or_create_mmap(
                 config.chain_index_config,
-                registry.clone(),
+                schemas.clone(),
                 &chain_index_dir,
             )
         } else {
-            MutationIndex::create_in_memory(config.chain_index_config, registry.clone())
+            MutationIndex::create_in_memory(config.chain_index_config, schemas.clone())
         }
     }
 
@@ -340,7 +343,7 @@ where
     fn reindex_pending(&mut self) -> Result<(), Error> {
         self.pending_index = MutationIndex::create_in_memory(
             self.config.pending_index_config,
-            self.registry.clone(),
+            self.cell.schemas().clone(),
         )?;
 
         let last_chain_indexed_offset = self
@@ -401,7 +404,7 @@ where
         // create temporary in-memory to wipe directory
         self.chain_index = MutationIndex::create_in_memory(
             self.config.pending_index_config,
-            self.registry.clone(),
+            self.cell.schemas().clone(),
         )?;
 
         // remove and re-create data dir
@@ -410,7 +413,7 @@ where
 
         // re-create index, and force re-index of chain
         self.chain_index =
-            Self::create_chain_index(self.config, &self.registry, &self.chain_index_dir)?;
+            Self::create_chain_index(self.config, self.cell.schemas(), &self.chain_index_dir)?;
         self.index_chain_new_blocks()?;
 
         self.reindex_pending()?;

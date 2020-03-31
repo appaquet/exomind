@@ -9,18 +9,20 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
-// TODO: Encryption/signature ticket: https://github.com/appaquet/exocore/issues/46
-
 /// Represents a machine / process on which Exocore runs. A node can host
 /// multiple `Cell`.
 #[derive(Clone)]
 pub struct Node {
+    identity: Arc<Identity>,
+    inner: Arc<RwLock<SharedInner>>,
+}
+
+struct Identity {
     node_id: NodeId,
     peer_id: PeerId,
     consistent_clock_id: u16,
     public_key: PublicKey,
     name: String,
-    inner: Arc<RwLock<SharedInner>>,
 }
 
 struct SharedInner {
@@ -29,48 +31,25 @@ struct SharedInner {
 
 impl Node {
     pub fn new_from_public_key(public_key: PublicKey) -> Node {
-        let node_id = NodeId::from_public_key(&public_key);
-        let peer_id = node_id
-            .to_peer_id()
-            .expect("Couldn't convert node_id to peer_id");
-
-        // TODO: used for consistent time and to be fixed for real in https://github.com/appaquet/exocore/issues/6
-        let node_id_bytes = node_id.0.as_bytes();
-        let node_id_bytes_len = node_id_bytes.len();
-        let consistent_clock_id = u16::from_le_bytes([
-            node_id_bytes[node_id_bytes_len - 1],
-            node_id_bytes[node_id_bytes_len - 2],
-        ]);
-
-        // generate a deterministic random name for the node
-        let name = public_key.generate_name();
-
-        Node {
-            node_id,
-            peer_id,
-            consistent_clock_id,
-            public_key,
-            name,
-            inner: Arc::new(RwLock::new(SharedInner {
-                addresses: HashSet::new(),
-            })),
-        }
+        Self::build(public_key, None)
     }
 
     pub fn new_from_config(config: NodeConfig) -> Result<Node, Error> {
         let public_key = PublicKey::decode_base58_string(&config.public_key)
-            .map_err(|err| Error::Config(format!("Couldn't decode node public key: {}", err)))?;
+            .map_err(|err| Error::Cell(format!("Couldn't decode node public key: {}", err)))?;
 
-        let mut node = Self::new_from_public_key(public_key);
+        let name = if !config.name.is_empty() {
+            Some(config.name)
+        } else {
+            None
+        };
 
-        if !config.name.is_empty() {
-            node.name = config.name;
-        }
+        let node = Self::build(public_key, name);
 
         for addr in config.addresses {
             let maddr = addr
                 .parse()
-                .map_err(|err| Error::Config(format!("Couldn't parse multi-address: {}", err)))?;
+                .map_err(|err| Error::Cell(format!("Couldn't parse multi-address: {}", err)))?;
             node.add_address(maddr);
         }
 
@@ -80,32 +59,56 @@ impl Node {
     #[cfg(any(test, feature = "tests_utils"))]
     pub fn generate_temporary() -> Node {
         let keypair = Keypair::generate_ed25519();
-        Self::new_from_public_key(keypair.public())
+        Self::build(keypair.public(), None)
     }
 
-    #[inline]
+    fn build(public_key: PublicKey, name: Option<String>) -> Node {
+        let node_id = NodeId::from_public_key(&public_key);
+        let peer_id = node_id
+            .to_peer_id()
+            .expect("Couldn't convert node_id to peer_id");
+
+        let node_id_bytes = node_id.0.as_bytes();
+        let node_id_bytes_len = node_id_bytes.len();
+        let consistent_clock_id = u16::from_le_bytes([
+            node_id_bytes[node_id_bytes_len - 1],
+            node_id_bytes[node_id_bytes_len - 2],
+        ]);
+
+        let name = name.unwrap_or_else(|| public_key.generate_name());
+
+        Node {
+            identity: Arc::new(Identity {
+                node_id,
+                peer_id,
+                consistent_clock_id,
+                public_key,
+                name,
+            }),
+            inner: Arc::new(RwLock::new(SharedInner {
+                addresses: HashSet::new(),
+            })),
+        }
+    }
+
     pub fn id(&self) -> &NodeId {
-        &self.node_id
+        &self.identity.node_id
     }
 
-    #[inline]
     pub fn public_key(&self) -> &PublicKey {
-        &self.public_key
+        &self.identity.public_key
     }
 
-    #[inline]
     pub fn peer_id(&self) -> &PeerId {
-        &self.peer_id
+        &self.identity.peer_id
     }
 
-    #[inline]
     pub fn name(&self) -> &str {
-        &self.name
+        &self.identity.name
     }
 
-    #[inline]
     pub fn consistent_clock_id(&self) -> u16 {
-        self.consistent_clock_id
+        self.identity.consistent_clock_id
     }
 
     pub fn addresses(&self) -> Vec<Multiaddr> {
@@ -121,7 +124,7 @@ impl Node {
 
 impl PartialEq for Node {
     fn eq(&self, other: &Self) -> bool {
-        self.node_id.eq(&other.node_id)
+        self.identity.node_id.eq(&other.identity.node_id)
     }
 }
 
@@ -131,9 +134,12 @@ impl Debug for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let inner = self.inner.read().expect("Couldn't get inner lock");
         f.debug_struct("Node")
-            .field("name", &self.name)
-            .field("node_id", &self.node_id)
-            .field("public_key", &self.public_key.encode_base58_string())
+            .field("name", &self.identity.name)
+            .field("node_id", &self.identity.node_id)
+            .field(
+                "public_key",
+                &self.identity.public_key.encode_base58_string(),
+            )
             .field("addresses", &inner.addresses)
             .finish()
     }
@@ -142,7 +148,7 @@ impl Debug for Node {
 impl Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_str("Node{")?;
-        f.write_str(&self.name)?;
+        f.write_str(&self.identity.name)?;
         f.write_str("}")
     }
 }
@@ -166,13 +172,13 @@ impl LocalNode {
 
     pub fn new_from_config(config: LocalNodeConfig) -> Result<Self, Error> {
         let keypair = Keypair::decode_base58_string(&config.keypair)
-            .map_err(|err| Error::Config(format!("Couldn't decode local node keypair: {}", err)))?;
+            .map_err(|err| Error::Cell(format!("Couldn't decode local node keypair: {}", err)))?;
 
         let node = Self::new_from_keypair(keypair);
 
         for addr in config.listen_addresses {
             let maddr = addr.parse().map_err(|err| {
-                Error::Config(format!("Couldn't parse local node address: {}", err))
+                Error::Cell(format!("Couldn't parse local node address: {}", err))
             })?;
             node.add_address(maddr);
         }
@@ -226,7 +232,7 @@ impl Debug for LocalNode {
 impl Display for LocalNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_str("LocalNode{")?;
-        f.write_str(&self.name)?;
+        f.write_str(&self.identity.name)?;
         f.write_str("}")
     }
 }
@@ -307,7 +313,7 @@ mod tests {
         let pk = PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
             .unwrap();
         let node = Node::new_from_public_key(pk);
-        assert_eq!("early-settled-ram", node.name);
+        assert_eq!("early-settled-ram", node.identity.name);
         assert_eq!("Node{early-settled-ram}", node.to_string());
     }
 }

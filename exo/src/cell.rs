@@ -1,28 +1,25 @@
 use crate::options;
-use exocore_core::cell::{Cell, LocalNode};
+use exocore_core::cell::Cell;
 use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_data::block::Block;
 use exocore_data::chain::ChainStore;
 use exocore_data::{DirectoryChainStore, DirectoryChainStoreConfig};
-use std::path::PathBuf;
 
 pub fn create_genesis_block(
     _opt: &options::Options,
     cell_opts: &options::CellOptions,
 ) -> Result<(), failure::Error> {
     let config = exocore_core::cell::node_config_from_yaml_file(&cell_opts.config)?;
-    let local_node = LocalNode::new_from_config(config.clone())?;
+    let (either_cells, _local_node) = Cell::new_from_local_node_config(config)?;
+    let full_cell = either_cells
+        .into_iter()
+        .find(|c| c.cell().public_key().encode_base58_string() == cell_opts.public_key)
+        .expect("Couldn't find cell with given public key")
+        .unwrap_full();
 
-    let cell_config = config
-        .cells
-        .iter()
-        .find(|config| config.public_key == cell_opts.public_key)
-        .expect("Couldn't find cell with given public key");
-
-    let full_cell = Cell::new_from_config(cell_config.clone(), local_node)?.unwrap_full();
-
-    let mut chain_dir = PathBuf::from(&cell_config.data_directory);
-    chain_dir.push("chain");
+    let chain_dir = full_cell
+        .chain_directory()
+        .expect("Cell doesn't have a path configured");
     std::fs::create_dir_all(&chain_dir)?;
 
     let mut chain_store =
@@ -42,14 +39,16 @@ pub fn check_chain(
     cell_opts: &options::CellOptions,
 ) -> Result<(), failure::Error> {
     let config = exocore_core::cell::node_config_from_yaml_file(&cell_opts.config)?;
-    let cell_config = config
-        .cells
-        .iter()
-        .find(|config| config.public_key == cell_opts.public_key)
-        .expect("Couldn't find cell with given public key");
+    let (either_cells, _local_node) = Cell::new_from_local_node_config(config)?;
+    let cell = either_cells
+        .into_iter()
+        .find(|c| c.cell().public_key().encode_base58_string() == cell_opts.public_key)
+        .expect("Couldn't find cell with given public key")
+        .unwrap_cell();
 
-    let mut chain_dir = PathBuf::from(&cell_config.data_directory);
-    chain_dir.push("chain");
+    let chain_dir = cell
+        .chain_directory()
+        .expect("Cell doesn't have a path configured");
     std::fs::create_dir_all(&chain_dir)?;
 
     let chain_store =

@@ -24,21 +24,32 @@ impl Registry {
     pub fn new_with_exocore_types() -> Registry {
         let reg = Registry::new();
 
-        let fd = protobuf::parse_from_bytes(super::generated::INDEX_FDSET)
-            .expect("Couldn't parse exocore_index FileDescriptorProto");
-        reg.register_file_descriptor_set(fd);
+        reg.register_file_descriptor_set_bytes(super::generated::INDEX_FDSET)
+            .expect("Couldn't register exocore_index FileDescriptorProto");
 
-        let fd = protobuf::parse_from_bytes(super::generated::TEST_FDSET)
-            .expect("Couldn't parse reflect FileDescriptorProto");
-        reg.register_file_descriptor_set(fd);
+        reg.register_file_descriptor_set_bytes(super::generated::TEST_FDSET)
+            .expect("Couldn't register exocore_test FileDescriptorProto");
 
         reg
     }
 
-    pub fn register_file_descriptor_set(&self, fd_set: FileDescriptorSet) {
+    pub fn register_file_descriptor_set(&self, fd_set: &FileDescriptorSet) {
         for fd in fd_set.get_file() {
             self.register_file_descriptor(fd.clone());
         }
+    }
+
+    pub fn register_file_descriptor_set_bytes<R: std::io::Read>(
+        &self,
+        fd_set_bytes: R,
+    ) -> Result<(), Error> {
+        let mut bytes = fd_set_bytes;
+        let fd_set = protobuf::parse_from_reader(&mut bytes)
+            .map_err(|err| Error::StepanProtobuf(Arc::new(err)))?;
+
+        self.register_file_descriptor_set(&fd_set);
+
+        Ok(())
     }
 
     pub fn register_file_descriptor(&self, file_descriptor: FileDescriptorProto) {

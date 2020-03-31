@@ -131,14 +131,17 @@ where
 
         match parsed_message {
             IncomingMessage::Mutation(mutation) => {
-                Self::handle_incoming_mutation_message(weak_inner, in_message, mutation)?;
+                Self::handle_incoming_mutation_message(weak_inner, in_message.as_ref(), mutation)?;
             }
             IncomingMessage::Query(query) => {
                 Self::handle_incoming_query_message(weak_inner, spawn_set, in_message, query)?;
             }
             IncomingMessage::WatchedQuery(query) => {
                 Self::handle_incoming_watched_query_message(
-                    weak_inner, spawn_set, in_message, query,
+                    weak_inner,
+                    spawn_set,
+                    in_message.as_ref(),
+                    query,
                 )?;
             }
             IncomingMessage::UnwatchQuery(token) => {
@@ -192,7 +195,7 @@ where
     fn handle_incoming_watched_query_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
-        in_message: Box<InMessage>,
+        in_message: &InMessage,
         query: EntityQuery,
     ) -> Result<(), Error> {
         let watch_token = query.watch_token;
@@ -265,7 +268,7 @@ where
 
     fn handle_incoming_mutation_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        in_message: Box<InMessage>,
+        in_message: &InMessage,
         entity_mutation: EntityMutation,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;

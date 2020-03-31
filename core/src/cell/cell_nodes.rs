@@ -10,7 +10,6 @@ pub trait CellNodes {
     fn cell(&self) -> &Cell;
     fn nodes_map(&self) -> &HashMap<NodeId, CellNode>;
 
-    #[inline]
     fn local_node(&self) -> &LocalNode {
         self.cell().local_node()
     }
@@ -22,12 +21,10 @@ pub trait CellNodes {
             .expect("Local node couldn't be found in cell nodes")
     }
 
-    #[inline]
     fn count(&self) -> usize {
         self.nodes_map().len()
     }
 
-    #[inline]
     fn count_with_role(&self, role: CellNodeRole) -> usize {
         self.nodes_map()
             .values()
@@ -35,12 +32,10 @@ pub trait CellNodes {
             .count()
     }
 
-    #[inline]
     fn is_empty(&self) -> bool {
         self.count() == 0
     }
 
-    #[inline]
     fn get(&self, node_id: &NodeId) -> Option<&CellNode> {
         self.nodes_map().get(node_id)
     }
@@ -86,7 +81,6 @@ impl CellNode {
         }
     }
 
-    #[inline]
     pub fn node(&self) -> &Node {
         &self.node
     }
@@ -156,12 +150,10 @@ impl<'cell> CellNodesRead<'cell> {
 }
 
 impl<'cell> CellNodes for CellNodesRead<'cell> {
-    #[inline]
     fn cell(&self) -> &Cell {
         &self.cell
     }
 
-    #[inline]
     fn nodes_map(&self) -> &HashMap<NodeId, CellNode> {
         &self.nodes
     }
@@ -189,7 +181,6 @@ impl<'cell> CellNodesWrite<'cell> {
         self.nodes.insert(cell_node.node.id().clone(), cell_node);
     }
 
-    #[inline]
     pub fn get_mut(&mut self, node_id: &NodeId) -> Option<&mut CellNode> {
         self.nodes.get_mut(node_id)
     }
@@ -206,12 +197,10 @@ impl<'cell> CellNodesWrite<'cell> {
 }
 
 impl<'cell> CellNodes for CellNodesWrite<'cell> {
-    #[inline]
     fn cell(&self) -> &Cell {
         &self.cell
     }
 
-    #[inline]
     fn nodes_map(&self) -> &HashMap<NodeId, CellNode> {
         &self.nodes
     }
@@ -230,12 +219,10 @@ impl CellNodesOwned {
 }
 
 impl CellNodes for CellNodesOwned {
-    #[inline]
     fn cell(&self) -> &Cell {
         &self.cell
     }
 
-    #[inline]
     fn nodes_map(&self) -> &HashMap<NodeId, CellNode> {
         &self.nodes
     }
@@ -256,7 +243,7 @@ impl CellNodeRole {
         match config {
             cell_node_config::Role::DataRole => Ok(CellNodeRole::Data),
             cell_node_config::Role::IndexStoreRole => Ok(CellNodeRole::IndexStore),
-            v => Err(Error::Config(format!("Invalid cell node role: {:?}", v))),
+            v => Err(Error::Cell(format!("Invalid cell node role: {:?}", v))),
         }
     }
 }
@@ -268,7 +255,7 @@ impl FromStr for CellNodeRole {
         match s.to_lowercase().as_str() {
             "data" => Ok(CellNodeRole::Data),
             "index_store" => Ok(CellNodeRole::IndexStore),
-            o => Err(super::Error::Other(format!("Invalid role name: {}", o))),
+            o => Err(super::Error::Node(format!("Invalid role name: {}", o))),
         }
     }
 }

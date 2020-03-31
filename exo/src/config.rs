@@ -14,12 +14,13 @@ pub fn validate(
     Ok(())
 }
 
-pub fn convert(
+pub fn standalone(
     _opts: &options::Options,
     _conf_opts: &options::ConfigOptions,
-    convert_opts: &options::ConvertOpts,
+    convert_opts: &options::StandaloneOpts,
 ) -> Result<(), failure::Error> {
     let config = exocore_core::cell::node_config_from_yaml_file(&convert_opts.config)?;
+    let config = exocore_core::cell::node_config_to_standalone(config)?;
 
     println!("{}", serde_json::to_string_pretty(&config)?);
 

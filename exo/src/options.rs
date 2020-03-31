@@ -99,8 +99,8 @@ pub enum ConfigCommand {
     /// Validate a configuration
     validate(ValidateOpts),
 
-    /// Convert a configuration to another format
-    convert(ConvertOpts),
+    /// Convert a configuration to a standalone configuration
+    standalone(StandaloneOpts),
 }
 
 #[derive(StructOpt)]
@@ -110,7 +110,7 @@ pub struct ValidateOpts {
 }
 
 #[derive(StructOpt)]
-pub struct ConvertOpts {
+pub struct StandaloneOpts {
     /// Path to configuration
     pub config: PathBuf,
 

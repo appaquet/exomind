@@ -35,8 +35,8 @@ fn main() -> Result<(), failure::Error> {
             ConfigCommand::validate(validate_opts) => {
                 config::validate(&opt, config_opts, validate_opts)
             }
-            ConfigCommand::convert(convert_opts) => {
-                config::convert(&opt, config_opts, convert_opts)
+            ConfigCommand::standalone(standalone_opts) => {
+                config::standalone(&opt, config_opts, standalone_opts)
             }
         },
     };

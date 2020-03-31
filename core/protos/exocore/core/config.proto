@@ -2,24 +2,27 @@ syntax = "proto3";
 
 package exocore.core;
 
+import "exocore/apps/manifest.proto";
+
 message LocalNodeConfig {
     string keypair = 1;
 
     string public_key = 2;
 
-    string name = 5;
+    string name = 3;
 
-    repeated CellConfig cells = 3;
+    string path = 4;
 
-    repeated string listen_addresses = 4;
+    repeated string listen_addresses = 5;
+
+    repeated NodeCellConfig cells = 6;
 }
 
-message NodeConfig {
-    string public_key = 1;
-
-    repeated string addresses = 2;
-
-    string name = 3;
+message NodeCellConfig {
+    oneof location {
+       CellConfig instance = 1;
+       string directory = 2;
+    }
 }
 
 message CellConfig {
@@ -27,11 +30,13 @@ message CellConfig {
 
     string keypair = 2;
 
-    string name = 5;
+    string name = 3;
 
-    string data_directory = 3;
+    string path = 4;
 
-    repeated CellNodeConfig nodes = 4;
+    repeated CellNodeConfig nodes = 5;
+
+    repeated CellApplicationConfig apps = 6;
 }
 
 message CellNodeConfig {
@@ -43,5 +48,20 @@ message CellNodeConfig {
         INVALID_ROLE = 0;
         DATA_ROLE = 1;
         INDEX_STORE_ROLE = 2;
+    }
+}
+
+message NodeConfig {
+    string public_key = 1;
+
+    repeated string addresses = 2;
+
+    string name = 3;
+}
+
+message CellApplicationConfig {
+    oneof location {
+        exocore.apps.Manifest instance = 1;
+        string directory = 2;
     }
 }

@@ -65,9 +65,10 @@ impl DataTestCluster {
         let mut events_receiver = Vec::new();
         let mut events_received = Vec::new();
 
-        for _node_idx in 0..count {
+        for node_idx in 0..count {
             let local_node = LocalNode::generate();
-            let cell = FullCell::generate(local_node.clone());
+            let cell = FullCell::generate(local_node.clone())
+                .with_path(tempdir.path().join(format!("{}", node_idx)));
             nodes.push(local_node);
             cells.push(cell);
 

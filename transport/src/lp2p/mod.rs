@@ -460,7 +460,7 @@ mod tests {
 
         let node2 = LocalNode::generate();
         node2.add_address("/ip4/127.0.0.1/tcp/3004".parse().unwrap());
-        let node2_cell = node1_cell.clone_for_local_node(node2.clone());
+        let node2_cell = node1_cell.clone().with_local_node(node2.clone());
 
         node1_cell.nodes_mut().add(node2.node().clone());
         node2_cell.nodes_mut().add(node1.node().clone());
@@ -554,7 +554,7 @@ mod tests {
 
         let node2 = LocalNode::generate();
         node2.add_address("/ip4/127.0.0.1/tcp/3006".parse().unwrap());
-        let node2_cell = node1_cell.clone_for_local_node(node2.clone());
+        let node2_cell = node1_cell.clone().with_local_node(node2.clone());
 
         node1_cell.nodes_mut().add(node2.node().clone());
         node2_cell.nodes_mut().add(node1.node().clone());

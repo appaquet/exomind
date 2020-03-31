@@ -48,9 +48,8 @@ impl TestStore {
             ..EntityIndexConfig::default()
         };
         let index = EntityIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
-            temp_dir.path(),
+            cluster.cells[0].clone(),
             index_config,
-            registry.clone(),
             cluster.get_handle(0).clone(),
         )?;
 

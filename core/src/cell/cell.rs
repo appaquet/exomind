@@ -1,75 +1,87 @@
+use super::config::to_absolute_from_parent_path;
 use super::{
-    CellNode, CellNodeRole, CellNodes, CellNodesRead, CellNodesWrite, Error, LocalNode, Node,
-    NodeId,
+    CellApplications, CellNode, CellNodeRole, CellNodes, CellNodesRead, CellNodesWrite, Error,
+    LocalNode, Node, NodeId,
 };
+use crate::cell::cell_config_from_node_cell;
+use crate::cell::config::cell_config_from_yaml_file;
 use crate::crypto::keys::{Keypair, PublicKey};
 use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
+use crate::protos::registry::Registry;
 use libp2p_core::PeerId;
 use std::collections::HashMap;
 use std::ops::Deref;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 /// A Cell represents a private enclosure in which the data and applications of
 /// a user are hosted. A Cell resides on multiple nodes.
 #[derive(Clone)]
 pub struct Cell {
-    public_key: Arc<PublicKey>,
+    identity: Arc<Identity>,
+    nodes: Arc<RwLock<HashMap<NodeId, CellNode>>>,
+    apps: CellApplications,
+    schemas: Arc<Registry>,
+}
+
+struct Identity {
+    public_key: PublicKey,
     cell_id: CellId,
     local_node: LocalNode,
     name: String,
-    nodes: Arc<RwLock<HashMap<NodeId, CellNode>>>,
+    path: Option<PathBuf>,
 }
 
 impl Cell {
     pub fn new(public_key: PublicKey, local_node: LocalNode) -> Cell {
-        let cell_id = CellId::from_public_key(&public_key);
-
-        let mut nodes_map = HashMap::new();
-        let local_cell_node = CellNode::new(local_node.node().clone());
-        nodes_map.insert(local_node.id().clone(), local_cell_node);
-
-        // generate a deterministic random name for the cell
-        let name = public_key.generate_name();
-
-        Cell {
-            public_key: Arc::new(public_key),
-            cell_id,
-            local_node,
-            name,
-            nodes: Arc::new(RwLock::new(nodes_map)),
-        }
+        Self::build(public_key, local_node, None, None)
     }
 
     pub fn new_from_config(config: CellConfig, local_node: LocalNode) -> Result<EitherCell, Error> {
         let either_cell = if !config.keypair.is_empty() {
             let keypair = Keypair::decode_base58_string(&config.keypair)
-                .map_err(|err| Error::Config(format!("Couldn't parse cell keypair: {}", err)))?;
+                .map_err(|err| Error::Cell(format!("Couldn't parse cell keypair: {}", err)))?;
 
-            let mut full_cell = FullCell::from_keypair(keypair, local_node);
+            let name = if config.name != "" {
+                Some(config.name.clone())
+            } else {
+                None
+            };
 
-            if config.name != "" {
-                full_cell.cell.name = config.name;
-            }
+            let path = if !config.path.is_empty() {
+                Some(PathBuf::from(config.path.clone()))
+            } else {
+                None
+            };
 
+            let full_cell = FullCell::build(keypair, local_node, name, path);
             EitherCell::Full(Box::new(full_cell))
         } else {
             let public_key = PublicKey::decode_base58_string(&config.public_key)
-                .map_err(|err| Error::Config(format!("Couldn't parse cell public key: {}", err)))?;
+                .map_err(|err| Error::Cell(format!("Couldn't parse cell public key: {}", err)))?;
 
-            let mut cell = Cell::new(public_key, local_node);
+            let name = if config.name != "" {
+                Some(config.name.clone())
+            } else {
+                None
+            };
 
-            if config.name != "" {
-                cell.name = config.name;
-            }
+            let path = if !config.path.is_empty() {
+                Some(PathBuf::from(config.path.clone()))
+            } else {
+                None
+            };
 
+            let cell = Cell::build(public_key, local_node, name, path);
             EitherCell::Cell(Box::new(cell))
         };
 
         {
+            // load nodes from config
             let mut nodes = either_cell.nodes_mut();
             for node_config in &config.nodes {
                 let node = Node::new_from_config(node_config.node.clone().ok_or_else(|| {
-                    Error::Config("Cell node config node is not defined".to_string())
+                    Error::Cell("Cell node config node is not defined".to_string())
                 })?)?;
 
                 let mut cell_node = CellNode::new(node);
@@ -82,7 +94,26 @@ impl Cell {
             }
         }
 
+        {
+            // load apps from config
+            let cell = either_cell.cell();
+            cell.apps
+                .load_from_cell_applications_config(&config, config.apps.iter())?;
+        }
+
         Ok(either_cell)
+    }
+
+    pub fn new_from_directory<P: AsRef<Path>>(
+        directory: P,
+        local_node: LocalNode,
+    ) -> Result<EitherCell, Error> {
+        let mut config_path = directory.as_ref().to_path_buf();
+        config_path.push("config.yaml");
+
+        let cell_config = cell_config_from_yaml_file(config_path)?;
+
+        Self::new_from_config(cell_config, local_node)
     }
 
     pub fn new_from_local_node_config(
@@ -91,41 +122,74 @@ impl Cell {
         let local_node = LocalNode::new_from_config(config.clone())?;
 
         let mut either_cells = Vec::new();
-        for cell_config in config.cells {
-            let either_cell = Cell::new_from_config(cell_config.clone(), local_node.clone())?;
+        for node_cell_config in &config.cells {
+            let mut cell_config = cell_config_from_node_cell(node_cell_config)?;
+
+            if cell_config.path.is_empty() {
+                let cell_path = to_absolute_from_parent_path(&config.path, &cell_config.path);
+                cell_config.path = cell_path.to_string_lossy().to_string();
+            }
+
+            let either_cell = Self::new_from_config(cell_config, local_node.clone())?;
             either_cells.push(either_cell);
         }
 
         Ok((either_cells, local_node))
     }
 
-    #[inline]
+    fn build(
+        public_key: PublicKey,
+        local_node: LocalNode,
+        name: Option<String>,
+        path: Option<PathBuf>,
+    ) -> Cell {
+        let cell_id = CellId::from_public_key(&public_key);
+
+        let mut nodes_map = HashMap::new();
+        let local_cell_node = CellNode::new(local_node.node().clone());
+        nodes_map.insert(local_node.id().clone(), local_cell_node);
+
+        let name = name.unwrap_or_else(|| public_key.generate_name());
+
+        let schemas = Arc::new(Registry::new_with_exocore_types());
+
+        Cell {
+            identity: Arc::new(Identity {
+                public_key,
+                cell_id,
+                local_node,
+                name,
+                path,
+            }),
+            apps: CellApplications::new(schemas.clone()),
+            nodes: Arc::new(RwLock::new(nodes_map)),
+            schemas,
+        }
+    }
+
     pub fn id(&self) -> &CellId {
-        &self.cell_id
+        &self.identity.cell_id
     }
 
     pub fn name(&self) -> &str {
-        &self.name
+        &self.identity.name
     }
 
-    #[inline]
     pub fn local_node(&self) -> &LocalNode {
-        &self.local_node
+        &self.identity.local_node
     }
 
-    #[inline]
     pub fn local_node_has_role(&self, role: CellNodeRole) -> bool {
         let nodes = self.nodes();
-        if let Some(cn) = nodes.get(self.local_node.id()) {
+        if let Some(cn) = nodes.get(self.identity.local_node.id()) {
             cn.has_role(role)
         } else {
             false
         }
     }
 
-    #[inline]
     pub fn public_key(&self) -> &PublicKey {
-        &self.public_key
+        &self.identity.public_key
     }
 
     pub fn nodes(&self) -> CellNodesRead {
@@ -143,12 +207,40 @@ impl Cell {
             .expect("Couldn't acquire write lock on nodes");
         CellNodesWrite { cell: self, nodes }
     }
+
+    pub fn schemas(&self) -> &Arc<Registry> {
+        &self.schemas
+    }
+
+    pub fn applications(&self) -> &CellApplications {
+        &self.apps
+    }
+
+    pub fn chain_directory(&self) -> Option<PathBuf> {
+        if let Some(path) = &self.identity.path {
+            let mut chain_dir = PathBuf::from(path);
+            chain_dir.push("chain");
+            Some(chain_dir)
+        } else {
+            None
+        }
+    }
+
+    pub fn index_directory(&self) -> Option<PathBuf> {
+        if let Some(path) = &self.identity.path {
+            let mut index_dir = PathBuf::from(path);
+            index_dir.push("index");
+            Some(index_dir)
+        } else {
+            None
+        }
+    }
 }
 
 impl std::fmt::Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_str("Cell{")?;
-        f.write_str(&self.name)?;
+        f.write_str(&self.identity.name)?;
         f.write_str("}")
     }
 }
@@ -203,15 +295,24 @@ pub struct FullCell {
 
 impl FullCell {
     pub fn from_keypair(keypair: Keypair, local_node: LocalNode) -> FullCell {
-        FullCell {
-            cell: Cell::new(keypair.public(), local_node),
-            keypair,
-        }
+        Self::build(keypair, local_node, None, None)
     }
 
     pub fn generate(local_node: LocalNode) -> FullCell {
         let cell_keypair = Keypair::generate_ed25519();
-        Self::from_keypair(cell_keypair, local_node)
+        Self::build(cell_keypair, local_node, None, None)
+    }
+
+    fn build(
+        keypair: Keypair,
+        local_node: LocalNode,
+        name: Option<String>,
+        path: Option<PathBuf>,
+    ) -> FullCell {
+        FullCell {
+            cell: Cell::build(keypair.public(), local_node, name, path),
+            keypair,
+        }
     }
 
     pub fn keypair(&self) -> &Keypair {
@@ -223,8 +324,18 @@ impl FullCell {
     }
 
     #[cfg(any(test, feature = "tests_utils"))]
-    pub fn clone_for_local_node(&self, local_node: LocalNode) -> FullCell {
-        FullCell::from_keypair(self.keypair.clone(), local_node)
+    pub fn with_local_node(self, local_node: LocalNode) -> FullCell {
+        FullCell::from_keypair(self.keypair, local_node)
+    }
+
+    #[cfg(any(test, feature = "tests_utils"))]
+    pub fn with_path(self, path: PathBuf) -> FullCell {
+        Self::build(
+            self.keypair,
+            self.cell.local_node().clone(),
+            None,
+            Some(path),
+        )
     }
 }
 

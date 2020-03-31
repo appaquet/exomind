@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package exocore.example_app;
+
+message Task {
+    string name = 1;
+}

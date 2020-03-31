@@ -1,10 +1,7 @@
-use std::sync::Arc;
-
 use failure::err_msg;
 
 use exocore_core::cell::{Cell, CellNodeRole, EitherCell, FullCell};
 use exocore_core::futures::Runtime;
-use exocore_core::protos::registry::Registry;
 use exocore_core::time::Clock;
 use exocore_data::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
@@ -14,7 +11,6 @@ use exocore_index::local::{EntityIndex, EntityIndexConfig, Store};
 use exocore_index::remote::server::Server;
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
-use std::path::PathBuf;
 
 use crate::options;
 
@@ -24,24 +20,29 @@ pub fn start(
     server_opts: &options::ServerOptions,
 ) -> Result<(), failure::Error> {
     let config = exocore_core::cell::node_config_from_yaml_file(&server_opts.config)?;
+    let (either_cells, local_node) = Cell::new_from_local_node_config(config)?;
+
     let mut rt = Runtime::new()?;
-
-    let (either_cells, local_node) = Cell::new_from_local_node_config(config.clone())?;
-
     let mut engines_handle = Vec::new();
 
     // create transport
     let transport_config = Libp2pTransportConfig::default();
     let mut transport = Libp2pTransport::new(local_node, transport_config);
 
-    for (cell_config, either_cell) in config.cells.iter().zip(either_cells.iter()) {
+    for either_cell in either_cells.iter() {
         let clock = Clock::new();
 
         let cell = either_cell.cell();
         if cell.local_node_has_role(CellNodeRole::Data) {
+            let cell_name = cell.name().to_string();
+
             // make sure data directory exists
-            let mut chain_dir = PathBuf::from(cell_config.data_directory.clone());
-            chain_dir.push("chain");
+            let chain_dir = cell.chain_directory().ok_or_else(|| {
+                err_msg(format!(
+                    "{}: Cell doesn't have a directory configured",
+                    cell_name
+                ))
+            })?;
             std::fs::create_dir_all(&chain_dir)?;
 
             // create chain store
@@ -68,7 +69,6 @@ pub fn start(
             let index_engine_handle = engine.get_handle();
 
             // start the engine
-            let cell_name = cell.name().to_string();
             rt.spawn(async move {
                 let res = engine.run().await;
                 info!("{}: Engine is done: {:?}", cell_name, res);
@@ -81,20 +81,14 @@ pub fn start(
                     _ => {
                         return Err(err_msg(
                             "Cannot have IndexStore role on cell without keypair",
-                        ))
+                        ));
                     }
                 };
-                let registry = Arc::new(Registry::new_with_exocore_types());
-
-                let mut index_dir = PathBuf::from(&cell_config.data_directory);
-                index_dir.push("index");
-                std::fs::create_dir_all(&index_dir)?;
 
                 let entities_index_config = EntityIndexConfig::default();
                 let entities_index = EntityIndex::open_or_create(
-                    &index_dir,
+                    full_cell.clone(),
                     entities_index_config,
-                    registry.clone(),
                     index_engine_handle.clone(),
                 )?;
 

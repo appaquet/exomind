@@ -6,19 +6,14 @@ use crate::mutation::MutationBuilder;
 use exocore_core::protos::generated::exocore_index::{EntityMutation, Trait};
 use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstMessageExt};
-use exocore_core::protos::registry::Registry;
 use exocore_data::engine::Event;
 use exocore_data::operation::OperationId;
 use exocore_data::tests_utils::DataTestCluster;
 use exocore_data::{DirectoryChainStore, MemoryPendingStore};
-use std::sync::Arc;
-use tempdir::TempDir;
 
 /// Utility to test entities index
 pub struct TestEntityIndex {
-    pub registry: Arc<Registry>,
     pub config: EntityIndexConfig,
-    pub temp_dir: TempDir,
     pub cluster: DataTestCluster,
     pub index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
 }
@@ -29,21 +24,15 @@ impl TestEntityIndex {
     }
 
     pub fn new_with_config(config: EntityIndexConfig) -> Result<TestEntityIndex, failure::Error> {
-        let registry = Arc::new(Registry::new_with_exocore_types());
         let cluster = DataTestCluster::new_single_and_start()?;
 
-        let temp_dir = tempdir::TempDir::new("entities_index")?;
-
         let data_handle = cluster.get_handle(0).clone();
-        let index =
-            EntityIndex::open_or_create(temp_dir.path(), config, registry.clone(), data_handle)?;
+        let index = EntityIndex::open_or_create(cluster.cells[0].clone(), config, data_handle)?;
 
         Ok(TestEntityIndex {
-            registry,
             cluster,
             config,
             index,
-            temp_dir,
         })
     }
 
@@ -51,29 +40,24 @@ impl TestEntityIndex {
         // deconstruct so that we can drop index and close the index properly before
         // reopening
         let TestEntityIndex {
-            registry,
             mut cluster,
             config,
             index,
-            temp_dir,
         } = self;
         drop(index);
 
         cluster.restart_node(0)?;
 
         let index = EntityIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
-            temp_dir.path(),
+            cluster.cells[0].clone(),
             config,
-            registry.clone(),
             cluster.get_handle(0).clone(),
         )?;
 
         Ok(TestEntityIndex {
-            registry,
             cluster,
             config,
             index,
-            temp_dir,
         })
     }
 
