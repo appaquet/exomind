@@ -805,7 +805,6 @@ dependencies = [
  "futures 0.3.4",
  "log",
  "log4rs",
- "serde_json",
  "structopt",
 ]
 

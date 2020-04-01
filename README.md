@@ -22,8 +22,8 @@ A cell consists of:
 * **Index layer:** Proof of concept
 * **SDKs**: In development
 * **Security**: In development
-* **Applications layer**: Not yet started
-* **Cell management layer**: Not yet started
+* **Applications**: In development
+* **Cell management**: Not yet started
 * **Nodes discovery**: Not yet started
 * **Blob storage (IPFS)**: Not yet started
 

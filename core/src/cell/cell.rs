@@ -81,7 +81,7 @@ impl Cell {
             let mut nodes = either_cell.nodes_mut();
             for node_config in &config.nodes {
                 let node = Node::new_from_config(node_config.node.clone().ok_or_else(|| {
-                    Error::Cell("Cell node config node is not defined".to_string())
+                    Error::Config("Cell node config node is not defined".to_string())
                 })?)?;
 
                 let mut cell_node = CellNode::new(node);
@@ -123,7 +123,7 @@ impl Cell {
 
         let mut either_cells = Vec::new();
         for node_cell_config in &config.cells {
-            let mut cell_config = cell_config_from_node_cell(node_cell_config)?;
+            let mut cell_config = cell_config_from_node_cell(node_cell_config, &config)?;
 
             if cell_config.path.is_empty() {
                 let cell_path = to_absolute_from_parent_path(&config.path, &cell_config.path);

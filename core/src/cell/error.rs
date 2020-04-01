@@ -1,5 +1,8 @@
 #[derive(Debug, Fail)]
 pub enum Error {
+    #[fail(display = "Configuration error: {}", _0)]
+    Config(String),
+
     #[fail(display = "Cell error: {}", _0)]
     Cell(String),
 

@@ -29,8 +29,8 @@ for proto_path in `ls $CUR_DIR/../target/debug/build/exocore-core-*/out/*.*.rs`;
 done
 
 # Descriptors
-protoc -I"$CUR_DIR/../core/protos/" $CUR_DIR/../core/protos/exocore/index/*.proto -o "$CUR_DIR/../core/src/protos/generated/exocore_index.fd"
-protoc -I"$CUR_DIR/../core/protos/" $CUR_DIR/../core/protos/exocore/test/*.proto -o "$CUR_DIR/../core/src/protos/generated/exocore_test.fd"
+protoc -I"$CUR_DIR/../protos/" $CUR_DIR/../protos/exocore/index/*.proto -o "$CUR_DIR/../core/src/protos/generated/exocore_index.fd"
+protoc -I"$CUR_DIR/../protos/" $CUR_DIR/../protos/exocore/test/*.proto -o "$CUR_DIR/../core/src/protos/generated/exocore_test.fd"
 
 cargo fmt --all
 cargo test --all

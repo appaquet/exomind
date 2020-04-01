@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		392335996C51C8466DA8087F /* Pods_exocore_client_ios.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A802B6DAB9619719E52A645B /* Pods_exocore_client_ios.framework */; };
 		45B6B40DA0CC854ABCB7BAC3 /* config.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B843FD6B188B538A56B2 /* config.pb.swift */; };
+		45B6B8BD61912180C355C014 /* manifest.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6BB3712CB0A25C37EFD52 /* manifest.pb.swift */; };
 		6D0367D22399D6AB0087A80B /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0367D12399D6AB0087A80B /* MainViewController.swift */; };
 		6D07425D23DC9FE000BF1545 /* test.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D07425723DC9FE000BF1545 /* test.pb.swift */; };
 		6D07425E23DC9FE000BF1545 /* query.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D07425923DC9FE000BF1545 /* query.pb.swift */; };
@@ -27,6 +28,7 @@
 /* Begin PBXFileReference section */
 		0D27A425AEE4671302E001E1 /* Pods-exocore-client-ios.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exocore-client-ios.debug.xcconfig"; path = "Target Support Files/Pods-exocore-client-ios/Pods-exocore-client-ios.debug.xcconfig"; sourceTree = "<group>"; };
 		45B6B843FD6B188B538A56B2 /* config.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = config.pb.swift; sourceTree = "<group>"; };
+		45B6BB3712CB0A25C37EFD52 /* manifest.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = manifest.pb.swift; sourceTree = "<group>"; };
 		6D0367D12399D6AB0087A80B /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		6D0367D32399DFB60087A80B /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		6D07425723DC9FE000BF1545 /* test.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = test.pb.swift; sourceTree = "<group>"; };
@@ -69,6 +71,14 @@
 			path = core;
 			sourceTree = "<group>";
 		};
+		45B6B527F2F4644241E67538 /* apps */ = {
+			isa = PBXGroup;
+			children = (
+				45B6BB3712CB0A25C37EFD52 /* manifest.pb.swift */,
+			);
+			path = apps;
+			sourceTree = "<group>";
+		};
 		6D07425423DC9FE000BF1545 /* proto */ = {
 			isa = PBXGroup;
 			children = (
@@ -83,6 +93,7 @@
 				6D07425623DC9FE000BF1545 /* test */,
 				6D07425823DC9FE000BF1545 /* index */,
 				45B6B0A4440DA4BE8306BA71 /* core */,
+				45B6B527F2F4644241E67538 /* apps */,
 			);
 			path = exocore;
 			sourceTree = "<group>";
@@ -286,6 +297,7 @@
 				6D5878AD23ECEA6400B59601 /* EXOMutationBuilder.swift in Sources */,
 				6D07425F23DC9FE000BF1545 /* entity.pb.swift in Sources */,
 				45B6B40DA0CC854ABCB7BAC3 /* config.pb.swift in Sources */,
+				45B6B8BD61912180C355C014 /* manifest.pb.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

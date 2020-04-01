@@ -28,27 +28,65 @@ public struct Exocore_Core_LocalNodeConfig {
 
   public var publicKey: String = String()
 
-  public var cells: [Exocore_Core_CellConfig] = []
+  public var name: String = String()
+
+  public var path: String = String()
 
   public var listenAddresses: [String] = []
+
+  public var cells: [Exocore_Core_NodeCellConfig] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
 
-public struct Exocore_Core_NodeConfig {
+public struct Exocore_Core_NodeCellConfig {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var publicKey: String = String()
+  public var location: OneOf_Location? {
+    get {return _storage._location}
+    set {_uniqueStorage()._location = newValue}
+  }
 
-  public var addresses: [String] = []
+  public var instance: Exocore_Core_CellConfig {
+    get {
+      if case .instance(let v)? = _storage._location {return v}
+      return Exocore_Core_CellConfig()
+    }
+    set {_uniqueStorage()._location = .instance(newValue)}
+  }
+
+  public var directory: String {
+    get {
+      if case .directory(let v)? = _storage._location {return v}
+      return String()
+    }
+    set {_uniqueStorage()._location = .directory(newValue)}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
+  public enum OneOf_Location: Equatable {
+    case instance(Exocore_Core_CellConfig)
+    case directory(String)
+
+  #if !swift(>=4.1)
+    public static func ==(lhs: Exocore_Core_NodeCellConfig.OneOf_Location, rhs: Exocore_Core_NodeCellConfig.OneOf_Location) -> Bool {
+      switch (lhs, rhs) {
+      case (.instance(let l), .instance(let r)): return l == r
+      case (.directory(let l), .directory(let r)): return l == r
+      default: return false
+      }
+    }
+  #endif
+  }
+
   public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 public struct Exocore_Core_CellConfig {
@@ -60,9 +98,13 @@ public struct Exocore_Core_CellConfig {
 
   public var keypair: String = String()
 
-  public var dataDirectory: String = String()
+  public var name: String = String()
+
+  public var path: String = String()
 
   public var nodes: [Exocore_Core_CellNodeConfig] = []
+
+  public var apps: [Exocore_Core_CellApplicationConfig] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -139,6 +181,70 @@ extension Exocore_Core_CellNodeConfig.Role: CaseIterable {
 
 #endif  // swift(>=4.2)
 
+public struct Exocore_Core_NodeConfig {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var publicKey: String = String()
+
+  public var addresses: [String] = []
+
+  public var name: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Exocore_Core_CellApplicationConfig {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var location: OneOf_Location? {
+    get {return _storage._location}
+    set {_uniqueStorage()._location = newValue}
+  }
+
+  public var instance: Exocore_Apps_Manifest {
+    get {
+      if case .instance(let v)? = _storage._location {return v}
+      return Exocore_Apps_Manifest()
+    }
+    set {_uniqueStorage()._location = .instance(newValue)}
+  }
+
+  public var directory: String {
+    get {
+      if case .directory(let v)? = _storage._location {return v}
+      return String()
+    }
+    set {_uniqueStorage()._location = .directory(newValue)}
+  }
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public enum OneOf_Location: Equatable {
+    case instance(Exocore_Apps_Manifest)
+    case directory(String)
+
+  #if !swift(>=4.1)
+    public static func ==(lhs: Exocore_Core_CellApplicationConfig.OneOf_Location, rhs: Exocore_Core_CellApplicationConfig.OneOf_Location) -> Bool {
+      switch (lhs, rhs) {
+      case (.instance(let l), .instance(let r)): return l == r
+      case (.directory(let l), .directory(let r)): return l == r
+      default: return false
+      }
+    }
+  #endif
+  }
+
+  public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "exocore.core"
@@ -148,8 +254,10 @@ extension Exocore_Core_LocalNodeConfig: SwiftProtobuf.Message, SwiftProtobuf._Me
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "keypair"),
     2: .standard(proto: "public_key"),
-    3: .same(proto: "cells"),
-    4: .standard(proto: "listen_addresses"),
+    3: .same(proto: "name"),
+    4: .same(proto: "path"),
+    5: .standard(proto: "listen_addresses"),
+    6: .same(proto: "cells"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -157,8 +265,10 @@ extension Exocore_Core_LocalNodeConfig: SwiftProtobuf.Message, SwiftProtobuf._Me
       switch fieldNumber {
       case 1: try decoder.decodeSingularStringField(value: &self.keypair)
       case 2: try decoder.decodeSingularStringField(value: &self.publicKey)
-      case 3: try decoder.decodeRepeatedMessageField(value: &self.cells)
-      case 4: try decoder.decodeRepeatedStringField(value: &self.listenAddresses)
+      case 3: try decoder.decodeSingularStringField(value: &self.name)
+      case 4: try decoder.decodeSingularStringField(value: &self.path)
+      case 5: try decoder.decodeRepeatedStringField(value: &self.listenAddresses)
+      case 6: try decoder.decodeRepeatedMessageField(value: &self.cells)
       default: break
       }
     }
@@ -171,11 +281,17 @@ extension Exocore_Core_LocalNodeConfig: SwiftProtobuf.Message, SwiftProtobuf._Me
     if !self.publicKey.isEmpty {
       try visitor.visitSingularStringField(value: self.publicKey, fieldNumber: 2)
     }
-    if !self.cells.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.cells, fieldNumber: 3)
+    if !self.name.isEmpty {
+      try visitor.visitSingularStringField(value: self.name, fieldNumber: 3)
+    }
+    if !self.path.isEmpty {
+      try visitor.visitSingularStringField(value: self.path, fieldNumber: 4)
     }
     if !self.listenAddresses.isEmpty {
-      try visitor.visitRepeatedStringField(value: self.listenAddresses, fieldNumber: 4)
+      try visitor.visitRepeatedStringField(value: self.listenAddresses, fieldNumber: 5)
+    }
+    if !self.cells.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.cells, fieldNumber: 6)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -183,43 +299,88 @@ extension Exocore_Core_LocalNodeConfig: SwiftProtobuf.Message, SwiftProtobuf._Me
   public static func ==(lhs: Exocore_Core_LocalNodeConfig, rhs: Exocore_Core_LocalNodeConfig) -> Bool {
     if lhs.keypair != rhs.keypair {return false}
     if lhs.publicKey != rhs.publicKey {return false}
-    if lhs.cells != rhs.cells {return false}
+    if lhs.name != rhs.name {return false}
+    if lhs.path != rhs.path {return false}
     if lhs.listenAddresses != rhs.listenAddresses {return false}
+    if lhs.cells != rhs.cells {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Exocore_Core_NodeConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".NodeConfig"
+extension Exocore_Core_NodeCellConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".NodeCellConfig"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "public_key"),
-    2: .same(proto: "addresses"),
+    1: .same(proto: "instance"),
+    2: .same(proto: "directory"),
   ]
 
+  fileprivate class _StorageClass {
+    var _location: Exocore_Core_NodeCellConfig.OneOf_Location?
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _location = source._location
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.publicKey)
-      case 2: try decoder.decodeRepeatedStringField(value: &self.addresses)
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        switch fieldNumber {
+        case 1:
+          var v: Exocore_Core_CellConfig?
+          if let current = _storage._location {
+            try decoder.handleConflictingOneOf()
+            if case .instance(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._location = .instance(v)}
+        case 2:
+          if _storage._location != nil {try decoder.handleConflictingOneOf()}
+          var v: String?
+          try decoder.decodeSingularStringField(value: &v)
+          if let v = v {_storage._location = .directory(v)}
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.publicKey.isEmpty {
-      try visitor.visitSingularStringField(value: self.publicKey, fieldNumber: 1)
-    }
-    if !self.addresses.isEmpty {
-      try visitor.visitRepeatedStringField(value: self.addresses, fieldNumber: 2)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      switch _storage._location {
+      case .instance(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      case .directory(let v)?:
+        try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+      case nil: break
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Exocore_Core_NodeConfig, rhs: Exocore_Core_NodeConfig) -> Bool {
-    if lhs.publicKey != rhs.publicKey {return false}
-    if lhs.addresses != rhs.addresses {return false}
+  public static func ==(lhs: Exocore_Core_NodeCellConfig, rhs: Exocore_Core_NodeCellConfig) -> Bool {
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._location != rhs_storage._location {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -230,8 +391,10 @@ extension Exocore_Core_CellConfig: SwiftProtobuf.Message, SwiftProtobuf._Message
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "public_key"),
     2: .same(proto: "keypair"),
-    3: .standard(proto: "data_directory"),
-    4: .same(proto: "nodes"),
+    3: .same(proto: "name"),
+    4: .same(proto: "path"),
+    5: .same(proto: "nodes"),
+    6: .same(proto: "apps"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -239,8 +402,10 @@ extension Exocore_Core_CellConfig: SwiftProtobuf.Message, SwiftProtobuf._Message
       switch fieldNumber {
       case 1: try decoder.decodeSingularStringField(value: &self.publicKey)
       case 2: try decoder.decodeSingularStringField(value: &self.keypair)
-      case 3: try decoder.decodeSingularStringField(value: &self.dataDirectory)
-      case 4: try decoder.decodeRepeatedMessageField(value: &self.nodes)
+      case 3: try decoder.decodeSingularStringField(value: &self.name)
+      case 4: try decoder.decodeSingularStringField(value: &self.path)
+      case 5: try decoder.decodeRepeatedMessageField(value: &self.nodes)
+      case 6: try decoder.decodeRepeatedMessageField(value: &self.apps)
       default: break
       }
     }
@@ -253,11 +418,17 @@ extension Exocore_Core_CellConfig: SwiftProtobuf.Message, SwiftProtobuf._Message
     if !self.keypair.isEmpty {
       try visitor.visitSingularStringField(value: self.keypair, fieldNumber: 2)
     }
-    if !self.dataDirectory.isEmpty {
-      try visitor.visitSingularStringField(value: self.dataDirectory, fieldNumber: 3)
+    if !self.name.isEmpty {
+      try visitor.visitSingularStringField(value: self.name, fieldNumber: 3)
+    }
+    if !self.path.isEmpty {
+      try visitor.visitSingularStringField(value: self.path, fieldNumber: 4)
     }
     if !self.nodes.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.nodes, fieldNumber: 4)
+      try visitor.visitRepeatedMessageField(value: self.nodes, fieldNumber: 5)
+    }
+    if !self.apps.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.apps, fieldNumber: 6)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -265,8 +436,10 @@ extension Exocore_Core_CellConfig: SwiftProtobuf.Message, SwiftProtobuf._Message
   public static func ==(lhs: Exocore_Core_CellConfig, rhs: Exocore_Core_CellConfig) -> Bool {
     if lhs.publicKey != rhs.publicKey {return false}
     if lhs.keypair != rhs.keypair {return false}
-    if lhs.dataDirectory != rhs.dataDirectory {return false}
+    if lhs.name != rhs.name {return false}
+    if lhs.path != rhs.path {return false}
     if lhs.nodes != rhs.nodes {return false}
+    if lhs.apps != rhs.apps {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -347,4 +520,123 @@ extension Exocore_Core_CellNodeConfig.Role: SwiftProtobuf._ProtoNameProviding {
     1: .same(proto: "DATA_ROLE"),
     2: .same(proto: "INDEX_STORE_ROLE"),
   ]
+}
+
+extension Exocore_Core_NodeConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".NodeConfig"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "public_key"),
+    2: .same(proto: "addresses"),
+    3: .same(proto: "name"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeSingularStringField(value: &self.publicKey)
+      case 2: try decoder.decodeRepeatedStringField(value: &self.addresses)
+      case 3: try decoder.decodeSingularStringField(value: &self.name)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.publicKey.isEmpty {
+      try visitor.visitSingularStringField(value: self.publicKey, fieldNumber: 1)
+    }
+    if !self.addresses.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.addresses, fieldNumber: 2)
+    }
+    if !self.name.isEmpty {
+      try visitor.visitSingularStringField(value: self.name, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Core_NodeConfig, rhs: Exocore_Core_NodeConfig) -> Bool {
+    if lhs.publicKey != rhs.publicKey {return false}
+    if lhs.addresses != rhs.addresses {return false}
+    if lhs.name != rhs.name {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exocore_Core_CellApplicationConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CellApplicationConfig"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "instance"),
+    2: .same(proto: "directory"),
+  ]
+
+  fileprivate class _StorageClass {
+    var _location: Exocore_Core_CellApplicationConfig.OneOf_Location?
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _location = source._location
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        switch fieldNumber {
+        case 1:
+          var v: Exocore_Apps_Manifest?
+          if let current = _storage._location {
+            try decoder.handleConflictingOneOf()
+            if case .instance(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._location = .instance(v)}
+        case 2:
+          if _storage._location != nil {try decoder.handleConflictingOneOf()}
+          var v: String?
+          try decoder.decodeSingularStringField(value: &v)
+          if let v = v {_storage._location = .directory(v)}
+        default: break
+        }
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      switch _storage._location {
+      case .instance(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      case .directory(let v)?:
+        try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+      case nil: break
+      }
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Core_CellApplicationConfig, rhs: Exocore_Core_CellApplicationConfig) -> Bool {
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._location != rhs_storage._location {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
 }

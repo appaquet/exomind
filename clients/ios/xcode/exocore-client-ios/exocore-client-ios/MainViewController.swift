@@ -63,26 +63,40 @@ class MyList: ObservableObject {
             let config = """
                          keypair: ae4WbDdfhv3416xs8S2tQgczBarmR8HKABvPCmRcNMujdVpDzuCJVQADVeqkqwvDmqYUUjLqv7kcChyCYn8R9BNgXP
                          public_key: pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb
-
+                         name: ios
+                         path: ""
                          listen_addresses:
                            - /ip4/0.0.0.0/tcp/0
-
                          cells:
-                           - public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
-                             keypair: ae55Nfv11ppyFVxCDaYovcxTcaTDaSzSFjiVoiC3VwGARfEuaqGcgoJUdVpqfwKQVDN4rvGKUvt4yqQc6w7it7PCpG
-                             data_directory: target/data/cell1
-                             nodes:
-                               - node:
-                                   public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
-                                   addresses:
-                                     - /ip4/192.168.2.13/tcp/3330
-                                 roles:
-                                   - 1 # data
-                                   - 2 # index store
-                               - node:
-                                   public_key: pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb
-                                   addresses: []
-                                 roles: []
+                           - location:
+                               Instance:
+                                 public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
+                                 keypair: ae55Nfv11ppyFVxCDaYovcxTcaTDaSzSFjiVoiC3VwGARfEuaqGcgoJUdVpqfwKQVDN4rvGKUvt4yqQc6w7it7PCpG
+                                 name: ""
+                                 path: "./cell"
+                                 nodes:
+                                   - node:
+                                       public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+                                       addresses:
+                                         - /ip4/192.168.2.13/tcp/3330
+                                         - /ip4/192.168.2.16/tcp/3330
+                                         - /ip4/192.168.2.19/tcp/3330
+                                       name: server
+                                     roles:
+                                       - 1
+                                       - 2
+                                   - node:
+                                       public_key: pe5ZG43uAcfLxYSGaQgj1w8hQT4GBchEVg5mS2b1EfXcMb
+                                       addresses: []
+                                       name: ios
+                                     roles: []
+                                   - node:
+                                       public_key: peDEpWCwRyMA6QVtz1wBdfKWx8xTYC8CVerF7pSTUsxfxc
+                                       addresses: []
+                                       name: web
+                                     roles: []
+                                 apps: []
+
                          """
 
             self.client = try? EXOClient(yamlConfig: config)

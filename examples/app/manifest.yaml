@@ -3,7 +3,7 @@ name: Some Application
 public_key: peVpKYaERNKGhHRm7jEC1XXe4CUBWGv8g1QuDyDr76U1q
 
 # Schema of the app.
-# Use `protoc -I ../../core/protos -I . schema.proto -o schema.fd` to generate from proto
+# Use `protoc -I ../../protos -I . schema.proto -o schema.fd` to generate from proto
 schemas:
   - source:
       File: schema.fd

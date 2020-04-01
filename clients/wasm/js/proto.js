@@ -534,6 +534,9 @@ export const exocore = $root.exocore = (() => {
              * @property {string|null} [entityId] EntityMutation entityId
              * @property {exocore.index.IPutTraitMutation|null} [putTrait] EntityMutation putTrait
              * @property {exocore.index.IDeleteTraitMutation|null} [deleteTrait] EntityMutation deleteTrait
+             * @property {exocore.index.IDeleteEntityMutation|null} [deleteEntity] EntityMutation deleteEntity
+             * @property {exocore.index.IUpdateTraitMutation|null} [updateTrait] EntityMutation updateTrait
+             * @property {exocore.index.ICompactTraitMutation|null} [compactTrait] EntityMutation compactTrait
              * @property {exocore.index.ITestMutation|null} [test] EntityMutation test
              */
 
@@ -577,6 +580,30 @@ export const exocore = $root.exocore = (() => {
             EntityMutation.prototype.deleteTrait = null;
 
             /**
+             * EntityMutation deleteEntity.
+             * @member {exocore.index.IDeleteEntityMutation|null|undefined} deleteEntity
+             * @memberof exocore.index.EntityMutation
+             * @instance
+             */
+            EntityMutation.prototype.deleteEntity = null;
+
+            /**
+             * EntityMutation updateTrait.
+             * @member {exocore.index.IUpdateTraitMutation|null|undefined} updateTrait
+             * @memberof exocore.index.EntityMutation
+             * @instance
+             */
+            EntityMutation.prototype.updateTrait = null;
+
+            /**
+             * EntityMutation compactTrait.
+             * @member {exocore.index.ICompactTraitMutation|null|undefined} compactTrait
+             * @memberof exocore.index.EntityMutation
+             * @instance
+             */
+            EntityMutation.prototype.compactTrait = null;
+
+            /**
              * EntityMutation test.
              * @member {exocore.index.ITestMutation|null|undefined} test
              * @memberof exocore.index.EntityMutation
@@ -589,12 +616,12 @@ export const exocore = $root.exocore = (() => {
 
             /**
              * EntityMutation mutation.
-             * @member {"putTrait"|"deleteTrait"|"test"|undefined} mutation
+             * @member {"putTrait"|"deleteTrait"|"deleteEntity"|"updateTrait"|"compactTrait"|"test"|undefined} mutation
              * @memberof exocore.index.EntityMutation
              * @instance
              */
             Object.defineProperty(EntityMutation.prototype, "mutation", {
-                get: $util.oneOfGetter($oneOfFields = ["putTrait", "deleteTrait", "test"]),
+                get: $util.oneOfGetter($oneOfFields = ["putTrait", "deleteTrait", "deleteEntity", "updateTrait", "compactTrait", "test"]),
                 set: $util.oneOfSetter($oneOfFields)
             });
 
@@ -628,6 +655,12 @@ export const exocore = $root.exocore = (() => {
                     $root.exocore.index.PutTraitMutation.encode(message.putTrait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 if (message.deleteTrait != null && message.hasOwnProperty("deleteTrait"))
                     $root.exocore.index.DeleteTraitMutation.encode(message.deleteTrait, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+                if (message.deleteEntity != null && message.hasOwnProperty("deleteEntity"))
+                    $root.exocore.index.DeleteEntityMutation.encode(message.deleteEntity, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+                if (message.updateTrait != null && message.hasOwnProperty("updateTrait"))
+                    $root.exocore.index.UpdateTraitMutation.encode(message.updateTrait, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+                if (message.compactTrait != null && message.hasOwnProperty("compactTrait"))
+                    $root.exocore.index.CompactTraitMutation.encode(message.compactTrait, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
                 if (message.test != null && message.hasOwnProperty("test"))
                     $root.exocore.index.TestMutation.encode(message.test, writer.uint32(/* id 99, wireType 2 =*/794).fork()).ldelim();
                 return writer;
@@ -672,6 +705,15 @@ export const exocore = $root.exocore = (() => {
                         break;
                     case 3:
                         message.deleteTrait = $root.exocore.index.DeleteTraitMutation.decode(reader, reader.uint32());
+                        break;
+                    case 4:
+                        message.deleteEntity = $root.exocore.index.DeleteEntityMutation.decode(reader, reader.uint32());
+                        break;
+                    case 5:
+                        message.updateTrait = $root.exocore.index.UpdateTraitMutation.decode(reader, reader.uint32());
+                        break;
+                    case 6:
+                        message.compactTrait = $root.exocore.index.CompactTraitMutation.decode(reader, reader.uint32());
                         break;
                     case 99:
                         message.test = $root.exocore.index.TestMutation.decode(reader, reader.uint32());
@@ -733,6 +775,36 @@ export const exocore = $root.exocore = (() => {
                             return "deleteTrait." + error;
                     }
                 }
+                if (message.deleteEntity != null && message.hasOwnProperty("deleteEntity")) {
+                    if (properties.mutation === 1)
+                        return "mutation: multiple values";
+                    properties.mutation = 1;
+                    {
+                        let error = $root.exocore.index.DeleteEntityMutation.verify(message.deleteEntity);
+                        if (error)
+                            return "deleteEntity." + error;
+                    }
+                }
+                if (message.updateTrait != null && message.hasOwnProperty("updateTrait")) {
+                    if (properties.mutation === 1)
+                        return "mutation: multiple values";
+                    properties.mutation = 1;
+                    {
+                        let error = $root.exocore.index.UpdateTraitMutation.verify(message.updateTrait);
+                        if (error)
+                            return "updateTrait." + error;
+                    }
+                }
+                if (message.compactTrait != null && message.hasOwnProperty("compactTrait")) {
+                    if (properties.mutation === 1)
+                        return "mutation: multiple values";
+                    properties.mutation = 1;
+                    {
+                        let error = $root.exocore.index.CompactTraitMutation.verify(message.compactTrait);
+                        if (error)
+                            return "compactTrait." + error;
+                    }
+                }
                 if (message.test != null && message.hasOwnProperty("test")) {
                     if (properties.mutation === 1)
                         return "mutation: multiple values";
@@ -770,6 +842,21 @@ export const exocore = $root.exocore = (() => {
                         throw TypeError(".exocore.index.EntityMutation.deleteTrait: object expected");
                     message.deleteTrait = $root.exocore.index.DeleteTraitMutation.fromObject(object.deleteTrait);
                 }
+                if (object.deleteEntity != null) {
+                    if (typeof object.deleteEntity !== "object")
+                        throw TypeError(".exocore.index.EntityMutation.deleteEntity: object expected");
+                    message.deleteEntity = $root.exocore.index.DeleteEntityMutation.fromObject(object.deleteEntity);
+                }
+                if (object.updateTrait != null) {
+                    if (typeof object.updateTrait !== "object")
+                        throw TypeError(".exocore.index.EntityMutation.updateTrait: object expected");
+                    message.updateTrait = $root.exocore.index.UpdateTraitMutation.fromObject(object.updateTrait);
+                }
+                if (object.compactTrait != null) {
+                    if (typeof object.compactTrait !== "object")
+                        throw TypeError(".exocore.index.EntityMutation.compactTrait: object expected");
+                    message.compactTrait = $root.exocore.index.CompactTraitMutation.fromObject(object.compactTrait);
+                }
                 if (object.test != null) {
                     if (typeof object.test !== "object")
                         throw TypeError(".exocore.index.EntityMutation.test: object expected");
@@ -804,6 +891,21 @@ export const exocore = $root.exocore = (() => {
                     object.deleteTrait = $root.exocore.index.DeleteTraitMutation.toObject(message.deleteTrait, options);
                     if (options.oneofs)
                         object.mutation = "deleteTrait";
+                }
+                if (message.deleteEntity != null && message.hasOwnProperty("deleteEntity")) {
+                    object.deleteEntity = $root.exocore.index.DeleteEntityMutation.toObject(message.deleteEntity, options);
+                    if (options.oneofs)
+                        object.mutation = "deleteEntity";
+                }
+                if (message.updateTrait != null && message.hasOwnProperty("updateTrait")) {
+                    object.updateTrait = $root.exocore.index.UpdateTraitMutation.toObject(message.updateTrait, options);
+                    if (options.oneofs)
+                        object.mutation = "updateTrait";
+                }
+                if (message.compactTrait != null && message.hasOwnProperty("compactTrait")) {
+                    object.compactTrait = $root.exocore.index.CompactTraitMutation.toObject(message.compactTrait, options);
+                    if (options.oneofs)
+                        object.mutation = "compactTrait";
                 }
                 if (message.test != null && message.hasOwnProperty("test")) {
                     object.test = $root.exocore.index.TestMutation.toObject(message.test, options);
@@ -1204,6 +1306,881 @@ export const exocore = $root.exocore = (() => {
             };
 
             return DeleteTraitMutation;
+        })();
+
+        index.DeleteEntityMutation = (function() {
+
+            /**
+             * Properties of a DeleteEntityMutation.
+             * @memberof exocore.index
+             * @interface IDeleteEntityMutation
+             */
+
+            /**
+             * Constructs a new DeleteEntityMutation.
+             * @memberof exocore.index
+             * @classdesc Represents a DeleteEntityMutation.
+             * @implements IDeleteEntityMutation
+             * @constructor
+             * @param {exocore.index.IDeleteEntityMutation=} [properties] Properties to set
+             */
+            function DeleteEntityMutation(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Creates a new DeleteEntityMutation instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.DeleteEntityMutation
+             * @static
+             * @param {exocore.index.IDeleteEntityMutation=} [properties] Properties to set
+             * @returns {exocore.index.DeleteEntityMutation} DeleteEntityMutation instance
+             */
+            DeleteEntityMutation.create = function create(properties) {
+                return new DeleteEntityMutation(properties);
+            };
+
+            /**
+             * Encodes the specified DeleteEntityMutation message. Does not implicitly {@link exocore.index.DeleteEntityMutation.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.DeleteEntityMutation
+             * @static
+             * @param {exocore.index.IDeleteEntityMutation} message DeleteEntityMutation message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            DeleteEntityMutation.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                return writer;
+            };
+
+            /**
+             * Encodes the specified DeleteEntityMutation message, length delimited. Does not implicitly {@link exocore.index.DeleteEntityMutation.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.DeleteEntityMutation
+             * @static
+             * @param {exocore.index.IDeleteEntityMutation} message DeleteEntityMutation message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            DeleteEntityMutation.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a DeleteEntityMutation message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.DeleteEntityMutation
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.DeleteEntityMutation} DeleteEntityMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            DeleteEntityMutation.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.DeleteEntityMutation();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a DeleteEntityMutation message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.DeleteEntityMutation
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.DeleteEntityMutation} DeleteEntityMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            DeleteEntityMutation.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a DeleteEntityMutation message.
+             * @function verify
+             * @memberof exocore.index.DeleteEntityMutation
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            DeleteEntityMutation.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                return null;
+            };
+
+            /**
+             * Creates a DeleteEntityMutation message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.DeleteEntityMutation
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.DeleteEntityMutation} DeleteEntityMutation
+             */
+            DeleteEntityMutation.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.DeleteEntityMutation)
+                    return object;
+                return new $root.exocore.index.DeleteEntityMutation();
+            };
+
+            /**
+             * Creates a plain object from a DeleteEntityMutation message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.DeleteEntityMutation
+             * @static
+             * @param {exocore.index.DeleteEntityMutation} message DeleteEntityMutation
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            DeleteEntityMutation.toObject = function toObject() {
+                return {};
+            };
+
+            /**
+             * Converts this DeleteEntityMutation to JSON.
+             * @function toJSON
+             * @memberof exocore.index.DeleteEntityMutation
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            DeleteEntityMutation.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return DeleteEntityMutation;
+        })();
+
+        index.UpdateTraitMutation = (function() {
+
+            /**
+             * Properties of an UpdateTraitMutation.
+             * @memberof exocore.index
+             * @interface IUpdateTraitMutation
+             * @property {string|null} [traitId] UpdateTraitMutation traitId
+             * @property {exocore.index.ITrait|null} [trait] UpdateTraitMutation trait
+             * @property {google.protobuf.IFieldMask|null} [fieldMask] UpdateTraitMutation fieldMask
+             * @property {number|Long|null} [ifLastOperationId] UpdateTraitMutation ifLastOperationId
+             */
+
+            /**
+             * Constructs a new UpdateTraitMutation.
+             * @memberof exocore.index
+             * @classdesc Represents an UpdateTraitMutation.
+             * @implements IUpdateTraitMutation
+             * @constructor
+             * @param {exocore.index.IUpdateTraitMutation=} [properties] Properties to set
+             */
+            function UpdateTraitMutation(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * UpdateTraitMutation traitId.
+             * @member {string} traitId
+             * @memberof exocore.index.UpdateTraitMutation
+             * @instance
+             */
+            UpdateTraitMutation.prototype.traitId = "";
+
+            /**
+             * UpdateTraitMutation trait.
+             * @member {exocore.index.ITrait|null|undefined} trait
+             * @memberof exocore.index.UpdateTraitMutation
+             * @instance
+             */
+            UpdateTraitMutation.prototype.trait = null;
+
+            /**
+             * UpdateTraitMutation fieldMask.
+             * @member {google.protobuf.IFieldMask|null|undefined} fieldMask
+             * @memberof exocore.index.UpdateTraitMutation
+             * @instance
+             */
+            UpdateTraitMutation.prototype.fieldMask = null;
+
+            /**
+             * UpdateTraitMutation ifLastOperationId.
+             * @member {number|Long} ifLastOperationId
+             * @memberof exocore.index.UpdateTraitMutation
+             * @instance
+             */
+            UpdateTraitMutation.prototype.ifLastOperationId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * Creates a new UpdateTraitMutation instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.UpdateTraitMutation
+             * @static
+             * @param {exocore.index.IUpdateTraitMutation=} [properties] Properties to set
+             * @returns {exocore.index.UpdateTraitMutation} UpdateTraitMutation instance
+             */
+            UpdateTraitMutation.create = function create(properties) {
+                return new UpdateTraitMutation(properties);
+            };
+
+            /**
+             * Encodes the specified UpdateTraitMutation message. Does not implicitly {@link exocore.index.UpdateTraitMutation.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.UpdateTraitMutation
+             * @static
+             * @param {exocore.index.IUpdateTraitMutation} message UpdateTraitMutation message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            UpdateTraitMutation.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.traitId);
+                if (message.trait != null && message.hasOwnProperty("trait"))
+                    $root.exocore.index.Trait.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+                if (message.fieldMask != null && message.hasOwnProperty("fieldMask"))
+                    $root.google.protobuf.FieldMask.encode(message.fieldMask, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+                if (message.ifLastOperationId != null && message.hasOwnProperty("ifLastOperationId"))
+                    writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.ifLastOperationId);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified UpdateTraitMutation message, length delimited. Does not implicitly {@link exocore.index.UpdateTraitMutation.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.UpdateTraitMutation
+             * @static
+             * @param {exocore.index.IUpdateTraitMutation} message UpdateTraitMutation message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            UpdateTraitMutation.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes an UpdateTraitMutation message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.UpdateTraitMutation
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.UpdateTraitMutation} UpdateTraitMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            UpdateTraitMutation.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.UpdateTraitMutation();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.traitId = reader.string();
+                        break;
+                    case 2:
+                        message.trait = $root.exocore.index.Trait.decode(reader, reader.uint32());
+                        break;
+                    case 3:
+                        message.fieldMask = $root.google.protobuf.FieldMask.decode(reader, reader.uint32());
+                        break;
+                    case 4:
+                        message.ifLastOperationId = reader.uint64();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes an UpdateTraitMutation message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.UpdateTraitMutation
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.UpdateTraitMutation} UpdateTraitMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            UpdateTraitMutation.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies an UpdateTraitMutation message.
+             * @function verify
+             * @memberof exocore.index.UpdateTraitMutation
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            UpdateTraitMutation.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    if (!$util.isString(message.traitId))
+                        return "traitId: string expected";
+                if (message.trait != null && message.hasOwnProperty("trait")) {
+                    let error = $root.exocore.index.Trait.verify(message.trait);
+                    if (error)
+                        return "trait." + error;
+                }
+                if (message.fieldMask != null && message.hasOwnProperty("fieldMask")) {
+                    let error = $root.google.protobuf.FieldMask.verify(message.fieldMask);
+                    if (error)
+                        return "fieldMask." + error;
+                }
+                if (message.ifLastOperationId != null && message.hasOwnProperty("ifLastOperationId"))
+                    if (!$util.isInteger(message.ifLastOperationId) && !(message.ifLastOperationId && $util.isInteger(message.ifLastOperationId.low) && $util.isInteger(message.ifLastOperationId.high)))
+                        return "ifLastOperationId: integer|Long expected";
+                return null;
+            };
+
+            /**
+             * Creates an UpdateTraitMutation message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.UpdateTraitMutation
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.UpdateTraitMutation} UpdateTraitMutation
+             */
+            UpdateTraitMutation.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.UpdateTraitMutation)
+                    return object;
+                let message = new $root.exocore.index.UpdateTraitMutation();
+                if (object.traitId != null)
+                    message.traitId = String(object.traitId);
+                if (object.trait != null) {
+                    if (typeof object.trait !== "object")
+                        throw TypeError(".exocore.index.UpdateTraitMutation.trait: object expected");
+                    message.trait = $root.exocore.index.Trait.fromObject(object.trait);
+                }
+                if (object.fieldMask != null) {
+                    if (typeof object.fieldMask !== "object")
+                        throw TypeError(".exocore.index.UpdateTraitMutation.fieldMask: object expected");
+                    message.fieldMask = $root.google.protobuf.FieldMask.fromObject(object.fieldMask);
+                }
+                if (object.ifLastOperationId != null)
+                    if ($util.Long)
+                        (message.ifLastOperationId = $util.Long.fromValue(object.ifLastOperationId)).unsigned = true;
+                    else if (typeof object.ifLastOperationId === "string")
+                        message.ifLastOperationId = parseInt(object.ifLastOperationId, 10);
+                    else if (typeof object.ifLastOperationId === "number")
+                        message.ifLastOperationId = object.ifLastOperationId;
+                    else if (typeof object.ifLastOperationId === "object")
+                        message.ifLastOperationId = new $util.LongBits(object.ifLastOperationId.low >>> 0, object.ifLastOperationId.high >>> 0).toNumber(true);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from an UpdateTraitMutation message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.UpdateTraitMutation
+             * @static
+             * @param {exocore.index.UpdateTraitMutation} message UpdateTraitMutation
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            UpdateTraitMutation.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.traitId = "";
+                    object.trait = null;
+                    object.fieldMask = null;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.ifLastOperationId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.ifLastOperationId = options.longs === String ? "0" : 0;
+                }
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    object.traitId = message.traitId;
+                if (message.trait != null && message.hasOwnProperty("trait"))
+                    object.trait = $root.exocore.index.Trait.toObject(message.trait, options);
+                if (message.fieldMask != null && message.hasOwnProperty("fieldMask"))
+                    object.fieldMask = $root.google.protobuf.FieldMask.toObject(message.fieldMask, options);
+                if (message.ifLastOperationId != null && message.hasOwnProperty("ifLastOperationId"))
+                    if (typeof message.ifLastOperationId === "number")
+                        object.ifLastOperationId = options.longs === String ? String(message.ifLastOperationId) : message.ifLastOperationId;
+                    else
+                        object.ifLastOperationId = options.longs === String ? $util.Long.prototype.toString.call(message.ifLastOperationId) : options.longs === Number ? new $util.LongBits(message.ifLastOperationId.low >>> 0, message.ifLastOperationId.high >>> 0).toNumber(true) : message.ifLastOperationId;
+                return object;
+            };
+
+            /**
+             * Converts this UpdateTraitMutation to JSON.
+             * @function toJSON
+             * @memberof exocore.index.UpdateTraitMutation
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            UpdateTraitMutation.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return UpdateTraitMutation;
+        })();
+
+        index.CompactTraitMutation = (function() {
+
+            /**
+             * Properties of a CompactTraitMutation.
+             * @memberof exocore.index
+             * @interface ICompactTraitMutation
+             * @property {Array.<exocore.index.CompactTraitMutation.IOperation>|null} [compactedOperations] CompactTraitMutation compactedOperations
+             * @property {exocore.index.ITrait|null} [trait] CompactTraitMutation trait
+             */
+
+            /**
+             * Constructs a new CompactTraitMutation.
+             * @memberof exocore.index
+             * @classdesc Represents a CompactTraitMutation.
+             * @implements ICompactTraitMutation
+             * @constructor
+             * @param {exocore.index.ICompactTraitMutation=} [properties] Properties to set
+             */
+            function CompactTraitMutation(properties) {
+                this.compactedOperations = [];
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * CompactTraitMutation compactedOperations.
+             * @member {Array.<exocore.index.CompactTraitMutation.IOperation>} compactedOperations
+             * @memberof exocore.index.CompactTraitMutation
+             * @instance
+             */
+            CompactTraitMutation.prototype.compactedOperations = $util.emptyArray;
+
+            /**
+             * CompactTraitMutation trait.
+             * @member {exocore.index.ITrait|null|undefined} trait
+             * @memberof exocore.index.CompactTraitMutation
+             * @instance
+             */
+            CompactTraitMutation.prototype.trait = null;
+
+            /**
+             * Creates a new CompactTraitMutation instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.CompactTraitMutation
+             * @static
+             * @param {exocore.index.ICompactTraitMutation=} [properties] Properties to set
+             * @returns {exocore.index.CompactTraitMutation} CompactTraitMutation instance
+             */
+            CompactTraitMutation.create = function create(properties) {
+                return new CompactTraitMutation(properties);
+            };
+
+            /**
+             * Encodes the specified CompactTraitMutation message. Does not implicitly {@link exocore.index.CompactTraitMutation.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.CompactTraitMutation
+             * @static
+             * @param {exocore.index.ICompactTraitMutation} message CompactTraitMutation message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            CompactTraitMutation.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.compactedOperations != null && message.compactedOperations.length)
+                    for (let i = 0; i < message.compactedOperations.length; ++i)
+                        $root.exocore.index.CompactTraitMutation.Operation.encode(message.compactedOperations[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                if (message.trait != null && message.hasOwnProperty("trait"))
+                    $root.exocore.index.Trait.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+                return writer;
+            };
+
+            /**
+             * Encodes the specified CompactTraitMutation message, length delimited. Does not implicitly {@link exocore.index.CompactTraitMutation.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.CompactTraitMutation
+             * @static
+             * @param {exocore.index.ICompactTraitMutation} message CompactTraitMutation message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            CompactTraitMutation.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a CompactTraitMutation message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.CompactTraitMutation
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.CompactTraitMutation} CompactTraitMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            CompactTraitMutation.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.CompactTraitMutation();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        if (!(message.compactedOperations && message.compactedOperations.length))
+                            message.compactedOperations = [];
+                        message.compactedOperations.push($root.exocore.index.CompactTraitMutation.Operation.decode(reader, reader.uint32()));
+                        break;
+                    case 2:
+                        message.trait = $root.exocore.index.Trait.decode(reader, reader.uint32());
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a CompactTraitMutation message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.CompactTraitMutation
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.CompactTraitMutation} CompactTraitMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            CompactTraitMutation.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a CompactTraitMutation message.
+             * @function verify
+             * @memberof exocore.index.CompactTraitMutation
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            CompactTraitMutation.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.compactedOperations != null && message.hasOwnProperty("compactedOperations")) {
+                    if (!Array.isArray(message.compactedOperations))
+                        return "compactedOperations: array expected";
+                    for (let i = 0; i < message.compactedOperations.length; ++i) {
+                        let error = $root.exocore.index.CompactTraitMutation.Operation.verify(message.compactedOperations[i]);
+                        if (error)
+                            return "compactedOperations." + error;
+                    }
+                }
+                if (message.trait != null && message.hasOwnProperty("trait")) {
+                    let error = $root.exocore.index.Trait.verify(message.trait);
+                    if (error)
+                        return "trait." + error;
+                }
+                return null;
+            };
+
+            /**
+             * Creates a CompactTraitMutation message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.CompactTraitMutation
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.CompactTraitMutation} CompactTraitMutation
+             */
+            CompactTraitMutation.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.CompactTraitMutation)
+                    return object;
+                let message = new $root.exocore.index.CompactTraitMutation();
+                if (object.compactedOperations) {
+                    if (!Array.isArray(object.compactedOperations))
+                        throw TypeError(".exocore.index.CompactTraitMutation.compactedOperations: array expected");
+                    message.compactedOperations = [];
+                    for (let i = 0; i < object.compactedOperations.length; ++i) {
+                        if (typeof object.compactedOperations[i] !== "object")
+                            throw TypeError(".exocore.index.CompactTraitMutation.compactedOperations: object expected");
+                        message.compactedOperations[i] = $root.exocore.index.CompactTraitMutation.Operation.fromObject(object.compactedOperations[i]);
+                    }
+                }
+                if (object.trait != null) {
+                    if (typeof object.trait !== "object")
+                        throw TypeError(".exocore.index.CompactTraitMutation.trait: object expected");
+                    message.trait = $root.exocore.index.Trait.fromObject(object.trait);
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a CompactTraitMutation message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.CompactTraitMutation
+             * @static
+             * @param {exocore.index.CompactTraitMutation} message CompactTraitMutation
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            CompactTraitMutation.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.arrays || options.defaults)
+                    object.compactedOperations = [];
+                if (options.defaults)
+                    object.trait = null;
+                if (message.compactedOperations && message.compactedOperations.length) {
+                    object.compactedOperations = [];
+                    for (let j = 0; j < message.compactedOperations.length; ++j)
+                        object.compactedOperations[j] = $root.exocore.index.CompactTraitMutation.Operation.toObject(message.compactedOperations[j], options);
+                }
+                if (message.trait != null && message.hasOwnProperty("trait"))
+                    object.trait = $root.exocore.index.Trait.toObject(message.trait, options);
+                return object;
+            };
+
+            /**
+             * Converts this CompactTraitMutation to JSON.
+             * @function toJSON
+             * @memberof exocore.index.CompactTraitMutation
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            CompactTraitMutation.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            CompactTraitMutation.Operation = (function() {
+
+                /**
+                 * Properties of an Operation.
+                 * @memberof exocore.index.CompactTraitMutation
+                 * @interface IOperation
+                 * @property {number|Long|null} [operationId] Operation operationId
+                 */
+
+                /**
+                 * Constructs a new Operation.
+                 * @memberof exocore.index.CompactTraitMutation
+                 * @classdesc Represents an Operation.
+                 * @implements IOperation
+                 * @constructor
+                 * @param {exocore.index.CompactTraitMutation.IOperation=} [properties] Properties to set
+                 */
+                function Operation(properties) {
+                    if (properties)
+                        for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                            if (properties[keys[i]] != null)
+                                this[keys[i]] = properties[keys[i]];
+                }
+
+                /**
+                 * Operation operationId.
+                 * @member {number|Long} operationId
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @instance
+                 */
+                Operation.prototype.operationId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+                /**
+                 * Creates a new Operation instance using the specified properties.
+                 * @function create
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @static
+                 * @param {exocore.index.CompactTraitMutation.IOperation=} [properties] Properties to set
+                 * @returns {exocore.index.CompactTraitMutation.Operation} Operation instance
+                 */
+                Operation.create = function create(properties) {
+                    return new Operation(properties);
+                };
+
+                /**
+                 * Encodes the specified Operation message. Does not implicitly {@link exocore.index.CompactTraitMutation.Operation.verify|verify} messages.
+                 * @function encode
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @static
+                 * @param {exocore.index.CompactTraitMutation.IOperation} message Operation message or plain object to encode
+                 * @param {$protobuf.Writer} [writer] Writer to encode to
+                 * @returns {$protobuf.Writer} Writer
+                 */
+                Operation.encode = function encode(message, writer) {
+                    if (!writer)
+                        writer = $Writer.create();
+                    if (message.operationId != null && message.hasOwnProperty("operationId"))
+                        writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.operationId);
+                    return writer;
+                };
+
+                /**
+                 * Encodes the specified Operation message, length delimited. Does not implicitly {@link exocore.index.CompactTraitMutation.Operation.verify|verify} messages.
+                 * @function encodeDelimited
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @static
+                 * @param {exocore.index.CompactTraitMutation.IOperation} message Operation message or plain object to encode
+                 * @param {$protobuf.Writer} [writer] Writer to encode to
+                 * @returns {$protobuf.Writer} Writer
+                 */
+                Operation.encodeDelimited = function encodeDelimited(message, writer) {
+                    return this.encode(message, writer).ldelim();
+                };
+
+                /**
+                 * Decodes an Operation message from the specified reader or buffer.
+                 * @function decode
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @static
+                 * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+                 * @param {number} [length] Message length if known beforehand
+                 * @returns {exocore.index.CompactTraitMutation.Operation} Operation
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                Operation.decode = function decode(reader, length) {
+                    if (!(reader instanceof $Reader))
+                        reader = $Reader.create(reader);
+                    let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.CompactTraitMutation.Operation();
+                    while (reader.pos < end) {
+                        let tag = reader.uint32();
+                        switch (tag >>> 3) {
+                        case 1:
+                            message.operationId = reader.uint64();
+                            break;
+                        default:
+                            reader.skipType(tag & 7);
+                            break;
+                        }
+                    }
+                    return message;
+                };
+
+                /**
+                 * Decodes an Operation message from the specified reader or buffer, length delimited.
+                 * @function decodeDelimited
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @static
+                 * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+                 * @returns {exocore.index.CompactTraitMutation.Operation} Operation
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                Operation.decodeDelimited = function decodeDelimited(reader) {
+                    if (!(reader instanceof $Reader))
+                        reader = new $Reader(reader);
+                    return this.decode(reader, reader.uint32());
+                };
+
+                /**
+                 * Verifies an Operation message.
+                 * @function verify
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @static
+                 * @param {Object.<string,*>} message Plain object to verify
+                 * @returns {string|null} `null` if valid, otherwise the reason why it is not
+                 */
+                Operation.verify = function verify(message) {
+                    if (typeof message !== "object" || message === null)
+                        return "object expected";
+                    if (message.operationId != null && message.hasOwnProperty("operationId"))
+                        if (!$util.isInteger(message.operationId) && !(message.operationId && $util.isInteger(message.operationId.low) && $util.isInteger(message.operationId.high)))
+                            return "operationId: integer|Long expected";
+                    return null;
+                };
+
+                /**
+                 * Creates an Operation message from a plain object. Also converts values to their respective internal types.
+                 * @function fromObject
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @static
+                 * @param {Object.<string,*>} object Plain object
+                 * @returns {exocore.index.CompactTraitMutation.Operation} Operation
+                 */
+                Operation.fromObject = function fromObject(object) {
+                    if (object instanceof $root.exocore.index.CompactTraitMutation.Operation)
+                        return object;
+                    let message = new $root.exocore.index.CompactTraitMutation.Operation();
+                    if (object.operationId != null)
+                        if ($util.Long)
+                            (message.operationId = $util.Long.fromValue(object.operationId)).unsigned = true;
+                        else if (typeof object.operationId === "string")
+                            message.operationId = parseInt(object.operationId, 10);
+                        else if (typeof object.operationId === "number")
+                            message.operationId = object.operationId;
+                        else if (typeof object.operationId === "object")
+                            message.operationId = new $util.LongBits(object.operationId.low >>> 0, object.operationId.high >>> 0).toNumber(true);
+                    return message;
+                };
+
+                /**
+                 * Creates a plain object from an Operation message. Also converts values to other types if specified.
+                 * @function toObject
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @static
+                 * @param {exocore.index.CompactTraitMutation.Operation} message Operation
+                 * @param {$protobuf.IConversionOptions} [options] Conversion options
+                 * @returns {Object.<string,*>} Plain object
+                 */
+                Operation.toObject = function toObject(message, options) {
+                    if (!options)
+                        options = {};
+                    let object = {};
+                    if (options.defaults)
+                        if ($util.Long) {
+                            let long = new $util.Long(0, 0, true);
+                            object.operationId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                        } else
+                            object.operationId = options.longs === String ? "0" : 0;
+                    if (message.operationId != null && message.hasOwnProperty("operationId"))
+                        if (typeof message.operationId === "number")
+                            object.operationId = options.longs === String ? String(message.operationId) : message.operationId;
+                        else
+                            object.operationId = options.longs === String ? $util.Long.prototype.toString.call(message.operationId) : options.longs === Number ? new $util.LongBits(message.operationId.low >>> 0, message.operationId.high >>> 0).toNumber(true) : message.operationId;
+                    return object;
+                };
+
+                /**
+                 * Converts this Operation to JSON.
+                 * @function toJSON
+                 * @memberof exocore.index.CompactTraitMutation.Operation
+                 * @instance
+                 * @returns {Object.<string,*>} JSON object
+                 */
+                Operation.prototype.toJSON = function toJSON() {
+                    return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                return Operation;
+            })();
+
+            return CompactTraitMutation;
         })();
 
         index.TestMutation = (function() {
@@ -5091,6 +6068,209 @@ export const google = $root.google = (() => {
             };
 
             return Any;
+        })();
+
+        protobuf.FieldMask = (function() {
+
+            /**
+             * Properties of a FieldMask.
+             * @memberof google.protobuf
+             * @interface IFieldMask
+             * @property {Array.<string>|null} [paths] FieldMask paths
+             */
+
+            /**
+             * Constructs a new FieldMask.
+             * @memberof google.protobuf
+             * @classdesc Represents a FieldMask.
+             * @implements IFieldMask
+             * @constructor
+             * @param {google.protobuf.IFieldMask=} [properties] Properties to set
+             */
+            function FieldMask(properties) {
+                this.paths = [];
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * FieldMask paths.
+             * @member {Array.<string>} paths
+             * @memberof google.protobuf.FieldMask
+             * @instance
+             */
+            FieldMask.prototype.paths = $util.emptyArray;
+
+            /**
+             * Creates a new FieldMask instance using the specified properties.
+             * @function create
+             * @memberof google.protobuf.FieldMask
+             * @static
+             * @param {google.protobuf.IFieldMask=} [properties] Properties to set
+             * @returns {google.protobuf.FieldMask} FieldMask instance
+             */
+            FieldMask.create = function create(properties) {
+                return new FieldMask(properties);
+            };
+
+            /**
+             * Encodes the specified FieldMask message. Does not implicitly {@link google.protobuf.FieldMask.verify|verify} messages.
+             * @function encode
+             * @memberof google.protobuf.FieldMask
+             * @static
+             * @param {google.protobuf.IFieldMask} message FieldMask message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            FieldMask.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.paths != null && message.paths.length)
+                    for (let i = 0; i < message.paths.length; ++i)
+                        writer.uint32(/* id 1, wireType 2 =*/10).string(message.paths[i]);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified FieldMask message, length delimited. Does not implicitly {@link google.protobuf.FieldMask.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof google.protobuf.FieldMask
+             * @static
+             * @param {google.protobuf.IFieldMask} message FieldMask message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            FieldMask.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a FieldMask message from the specified reader or buffer.
+             * @function decode
+             * @memberof google.protobuf.FieldMask
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {google.protobuf.FieldMask} FieldMask
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            FieldMask.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.FieldMask();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        if (!(message.paths && message.paths.length))
+                            message.paths = [];
+                        message.paths.push(reader.string());
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a FieldMask message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof google.protobuf.FieldMask
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {google.protobuf.FieldMask} FieldMask
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            FieldMask.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a FieldMask message.
+             * @function verify
+             * @memberof google.protobuf.FieldMask
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            FieldMask.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.paths != null && message.hasOwnProperty("paths")) {
+                    if (!Array.isArray(message.paths))
+                        return "paths: array expected";
+                    for (let i = 0; i < message.paths.length; ++i)
+                        if (!$util.isString(message.paths[i]))
+                            return "paths: string[] expected";
+                }
+                return null;
+            };
+
+            /**
+             * Creates a FieldMask message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof google.protobuf.FieldMask
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {google.protobuf.FieldMask} FieldMask
+             */
+            FieldMask.fromObject = function fromObject(object) {
+                if (object instanceof $root.google.protobuf.FieldMask)
+                    return object;
+                let message = new $root.google.protobuf.FieldMask();
+                if (object.paths) {
+                    if (!Array.isArray(object.paths))
+                        throw TypeError(".google.protobuf.FieldMask.paths: array expected");
+                    message.paths = [];
+                    for (let i = 0; i < object.paths.length; ++i)
+                        message.paths[i] = String(object.paths[i]);
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a FieldMask message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof google.protobuf.FieldMask
+             * @static
+             * @param {google.protobuf.FieldMask} message FieldMask
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            FieldMask.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.arrays || options.defaults)
+                    object.paths = [];
+                if (message.paths && message.paths.length) {
+                    object.paths = [];
+                    for (let j = 0; j < message.paths.length; ++j)
+                        object.paths[j] = message.paths[j];
+                }
+                return object;
+            };
+
+            /**
+             * Converts this FieldMask to JSON.
+             * @function toJSON
+             * @memberof google.protobuf.FieldMask
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            FieldMask.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return FieldMask;
         })();
 
         protobuf.FileDescriptorSet = (function() {

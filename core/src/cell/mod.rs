@@ -16,8 +16,8 @@ pub use cell_nodes::{
 };
 pub use config::{
     app_manifest_from_yaml_file, cell_config_from_node_cell, cell_config_from_yaml,
-    node_config_from_json, node_config_from_yaml, node_config_from_yaml_file,
-    node_config_to_standalone,
+    node_config_from_json, node_config_from_yaml, node_config_from_yaml_file, node_config_to_json,
+    node_config_to_standalone, node_config_to_yaml,
 };
 pub use error::Error;
 pub use node::{LocalNode, Node, NodeId};

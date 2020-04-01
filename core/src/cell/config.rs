@@ -8,8 +8,13 @@ use std::path::Path;
 use std::path::PathBuf;
 
 pub fn node_config_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<LocalNodeConfig, Error> {
-    let file = File::open(path.as_ref())
-        .map_err(|err| Error::Cell(format!("Couldn't open YAML node file: {}", err)))?;
+    let file = File::open(path.as_ref()).map_err(|err| {
+        Error::Config(format!(
+            "Couldn't open YAML node file at path '{:?}': {}",
+            path.as_ref(),
+            err
+        ))
+    })?;
 
     let mut config = node_config_from_yaml(file)?;
 
@@ -24,8 +29,8 @@ pub fn node_config_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<LocalNodeCo
 
 pub fn node_config_to_standalone(mut config: LocalNodeConfig) -> Result<LocalNodeConfig, Error> {
     let mut cells = Vec::new();
-    for node_cell_config in config.cells {
-        let cell_config = cell_config_from_node_cell(&node_cell_config)?;
+    for node_cell_config in &config.cells {
+        let cell_config = cell_config_from_node_cell(node_cell_config, &config)?;
 
         let mut node_cell_config = node_cell_config.clone();
         node_cell_config.location = Some(node_cell_config::Location::Instance(cell_config));
@@ -40,24 +45,39 @@ pub fn node_config_to_standalone(mut config: LocalNodeConfig) -> Result<LocalNod
 
 pub fn node_config_from_yaml<R: std::io::Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
     let config = serde_yaml::from_reader(bytes)
-        .map_err(|err| Error::Cell(format!("Couldn't decode YAML node config: {}", err)))?;
+        .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
 
     Ok(config)
+}
+
+pub fn node_config_to_yaml(config: &LocalNodeConfig) -> Result<String, Error> {
+    serde_yaml::to_string(config)
+        .map_err(|err| Error::Config(format!("Couldn't encode node config to YAML: {}", err)))
 }
 
 pub fn node_config_from_json<R: std::io::Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
     let config = serde_json::from_reader(bytes)
-        .map_err(|err| Error::Cell(format!("Couldn't decode JSON node config: {}", err)))?;
+        .map_err(|err| Error::Config(format!("Couldn't decode JSON node config: {}", err)))?;
 
     Ok(config)
 }
 
+pub fn node_config_to_json(config: &LocalNodeConfig) -> Result<String, Error> {
+    serde_json::to_string_pretty(config)
+        .map_err(|err| Error::Config(format!("Couldn't encode node config to JSON: {}", err)))
+}
+
 pub fn cell_config_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<CellConfig, Error> {
-    let file = File::open(path.as_ref())
-        .map_err(|err| Error::Cell(format!("Couldn't open YAML node file: {}", err)))?;
+    let file = File::open(path.as_ref()).map_err(|err| {
+        Error::Config(format!(
+            "Couldn't open YAML cell config at path '{:?}': {}",
+            path.as_ref(),
+            err
+        ))
+    })?;
 
     let mut config: CellConfig = serde_yaml::from_reader(file)
-        .map_err(|err| Error::Cell(format!("Couldn't decode YAML node config: {}", err)))?;
+        .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
 
     if config.path.is_empty() {
         let mut node_path = path.as_ref().to_path_buf();
@@ -68,16 +88,19 @@ pub fn cell_config_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<CellConfig,
     Ok(config)
 }
 
-pub fn cell_config_from_node_cell(config: &NodeCellConfig) -> Result<CellConfig, Error> {
+pub fn cell_config_from_node_cell(
+    config: &NodeCellConfig,
+    node_config: &LocalNodeConfig,
+) -> Result<CellConfig, Error> {
     match &config.location {
         Some(node_cell_config::Location::Instance(cell_config)) => Ok(cell_config.clone()),
         Some(node_cell_config::Location::Directory(directory)) => {
-            let mut config_path = PathBuf::from(directory);
+            let mut config_path = to_absolute_from_parent_path(&node_config.path, directory);
             config_path.push("config.yaml");
 
             cell_config_from_yaml_file(config_path)
         }
-        other => Err(Error::Cell(format!(
+        other => Err(Error::Config(format!(
             "Invalid cell instance config: {:?}",
             other
         ))),
@@ -86,7 +109,7 @@ pub fn cell_config_from_node_cell(config: &NodeCellConfig) -> Result<CellConfig,
 
 pub fn cell_config_from_yaml<R: std::io::Read>(bytes: R) -> Result<CellNodeConfig, Error> {
     let config = serde_yaml::from_reader(bytes)
-        .map_err(|err| Error::Cell(format!("Couldn't decode YAML node config: {}", err)))?;
+        .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
 
     Ok(config)
 }
@@ -98,7 +121,7 @@ pub fn app_manifest_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, 
         Error::Application(
             String::new(),
             format!(
-                "Couldn't open application manifest at path {:?}: {}",
+                "Couldn't open application manifest at path '{:?}': {}",
                 path, err
             ),
         )

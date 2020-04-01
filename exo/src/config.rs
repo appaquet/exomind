@@ -22,7 +22,11 @@ pub fn standalone(
     let config = exocore_core::cell::node_config_from_yaml_file(&convert_opts.config)?;
     let config = exocore_core::cell::node_config_to_standalone(config)?;
 
-    println!("{}", serde_json::to_string_pretty(&config)?);
+    if convert_opts.format == "json" {
+        println!("{}", exocore_core::cell::node_config_to_json(&config)?);
+    } else {
+        println!("{}", exocore_core::cell::node_config_to_yaml(&config)?);
+    }
 
     Ok(())
 }

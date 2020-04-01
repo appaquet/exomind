@@ -221,6 +221,15 @@ export namespace exocore {
             /** EntityMutation deleteTrait */
             deleteTrait?: (exocore.index.IDeleteTraitMutation|null);
 
+            /** EntityMutation deleteEntity */
+            deleteEntity?: (exocore.index.IDeleteEntityMutation|null);
+
+            /** EntityMutation updateTrait */
+            updateTrait?: (exocore.index.IUpdateTraitMutation|null);
+
+            /** EntityMutation compactTrait */
+            compactTrait?: (exocore.index.ICompactTraitMutation|null);
+
             /** EntityMutation test */
             test?: (exocore.index.ITestMutation|null);
         }
@@ -243,11 +252,20 @@ export namespace exocore {
             /** EntityMutation deleteTrait. */
             public deleteTrait?: (exocore.index.IDeleteTraitMutation|null);
 
+            /** EntityMutation deleteEntity. */
+            public deleteEntity?: (exocore.index.IDeleteEntityMutation|null);
+
+            /** EntityMutation updateTrait. */
+            public updateTrait?: (exocore.index.IUpdateTraitMutation|null);
+
+            /** EntityMutation compactTrait. */
+            public compactTrait?: (exocore.index.ICompactTraitMutation|null);
+
             /** EntityMutation test. */
             public test?: (exocore.index.ITestMutation|null);
 
             /** EntityMutation mutation. */
-            public mutation?: ("putTrait"|"deleteTrait"|"test");
+            public mutation?: ("putTrait"|"deleteTrait"|"deleteEntity"|"updateTrait"|"compactTrait"|"test");
 
             /**
              * Creates a new EntityMutation instance using the specified properties.
@@ -498,6 +516,387 @@ export namespace exocore {
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of a DeleteEntityMutation. */
+        interface IDeleteEntityMutation {
+        }
+
+        /** Represents a DeleteEntityMutation. */
+        class DeleteEntityMutation implements IDeleteEntityMutation {
+
+            /**
+             * Constructs a new DeleteEntityMutation.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.IDeleteEntityMutation);
+
+            /**
+             * Creates a new DeleteEntityMutation instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns DeleteEntityMutation instance
+             */
+            public static create(properties?: exocore.index.IDeleteEntityMutation): exocore.index.DeleteEntityMutation;
+
+            /**
+             * Encodes the specified DeleteEntityMutation message. Does not implicitly {@link exocore.index.DeleteEntityMutation.verify|verify} messages.
+             * @param message DeleteEntityMutation message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.IDeleteEntityMutation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified DeleteEntityMutation message, length delimited. Does not implicitly {@link exocore.index.DeleteEntityMutation.verify|verify} messages.
+             * @param message DeleteEntityMutation message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.IDeleteEntityMutation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a DeleteEntityMutation message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns DeleteEntityMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.DeleteEntityMutation;
+
+            /**
+             * Decodes a DeleteEntityMutation message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns DeleteEntityMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.DeleteEntityMutation;
+
+            /**
+             * Verifies a DeleteEntityMutation message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a DeleteEntityMutation message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns DeleteEntityMutation
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.DeleteEntityMutation;
+
+            /**
+             * Creates a plain object from a DeleteEntityMutation message. Also converts values to other types if specified.
+             * @param message DeleteEntityMutation
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.DeleteEntityMutation, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this DeleteEntityMutation to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of an UpdateTraitMutation. */
+        interface IUpdateTraitMutation {
+
+            /** UpdateTraitMutation traitId */
+            traitId?: (string|null);
+
+            /** UpdateTraitMutation trait */
+            trait?: (exocore.index.ITrait|null);
+
+            /** UpdateTraitMutation fieldMask */
+            fieldMask?: (google.protobuf.IFieldMask|null);
+
+            /** UpdateTraitMutation ifLastOperationId */
+            ifLastOperationId?: (number|Long|null);
+        }
+
+        /** Represents an UpdateTraitMutation. */
+        class UpdateTraitMutation implements IUpdateTraitMutation {
+
+            /**
+             * Constructs a new UpdateTraitMutation.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.IUpdateTraitMutation);
+
+            /** UpdateTraitMutation traitId. */
+            public traitId: string;
+
+            /** UpdateTraitMutation trait. */
+            public trait?: (exocore.index.ITrait|null);
+
+            /** UpdateTraitMutation fieldMask. */
+            public fieldMask?: (google.protobuf.IFieldMask|null);
+
+            /** UpdateTraitMutation ifLastOperationId. */
+            public ifLastOperationId: (number|Long);
+
+            /**
+             * Creates a new UpdateTraitMutation instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns UpdateTraitMutation instance
+             */
+            public static create(properties?: exocore.index.IUpdateTraitMutation): exocore.index.UpdateTraitMutation;
+
+            /**
+             * Encodes the specified UpdateTraitMutation message. Does not implicitly {@link exocore.index.UpdateTraitMutation.verify|verify} messages.
+             * @param message UpdateTraitMutation message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.IUpdateTraitMutation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified UpdateTraitMutation message, length delimited. Does not implicitly {@link exocore.index.UpdateTraitMutation.verify|verify} messages.
+             * @param message UpdateTraitMutation message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.IUpdateTraitMutation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes an UpdateTraitMutation message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns UpdateTraitMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.UpdateTraitMutation;
+
+            /**
+             * Decodes an UpdateTraitMutation message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns UpdateTraitMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.UpdateTraitMutation;
+
+            /**
+             * Verifies an UpdateTraitMutation message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates an UpdateTraitMutation message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns UpdateTraitMutation
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.UpdateTraitMutation;
+
+            /**
+             * Creates a plain object from an UpdateTraitMutation message. Also converts values to other types if specified.
+             * @param message UpdateTraitMutation
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.UpdateTraitMutation, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this UpdateTraitMutation to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of a CompactTraitMutation. */
+        interface ICompactTraitMutation {
+
+            /** CompactTraitMutation compactedOperations */
+            compactedOperations?: (exocore.index.CompactTraitMutation.IOperation[]|null);
+
+            /** CompactTraitMutation trait */
+            trait?: (exocore.index.ITrait|null);
+        }
+
+        /** Represents a CompactTraitMutation. */
+        class CompactTraitMutation implements ICompactTraitMutation {
+
+            /**
+             * Constructs a new CompactTraitMutation.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.ICompactTraitMutation);
+
+            /** CompactTraitMutation compactedOperations. */
+            public compactedOperations: exocore.index.CompactTraitMutation.IOperation[];
+
+            /** CompactTraitMutation trait. */
+            public trait?: (exocore.index.ITrait|null);
+
+            /**
+             * Creates a new CompactTraitMutation instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns CompactTraitMutation instance
+             */
+            public static create(properties?: exocore.index.ICompactTraitMutation): exocore.index.CompactTraitMutation;
+
+            /**
+             * Encodes the specified CompactTraitMutation message. Does not implicitly {@link exocore.index.CompactTraitMutation.verify|verify} messages.
+             * @param message CompactTraitMutation message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.ICompactTraitMutation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified CompactTraitMutation message, length delimited. Does not implicitly {@link exocore.index.CompactTraitMutation.verify|verify} messages.
+             * @param message CompactTraitMutation message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.ICompactTraitMutation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a CompactTraitMutation message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns CompactTraitMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.CompactTraitMutation;
+
+            /**
+             * Decodes a CompactTraitMutation message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns CompactTraitMutation
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.CompactTraitMutation;
+
+            /**
+             * Verifies a CompactTraitMutation message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a CompactTraitMutation message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns CompactTraitMutation
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.CompactTraitMutation;
+
+            /**
+             * Creates a plain object from a CompactTraitMutation message. Also converts values to other types if specified.
+             * @param message CompactTraitMutation
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.CompactTraitMutation, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this CompactTraitMutation to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        namespace CompactTraitMutation {
+
+            /** Properties of an Operation. */
+            interface IOperation {
+
+                /** Operation operationId */
+                operationId?: (number|Long|null);
+            }
+
+            /** Represents an Operation. */
+            class Operation implements IOperation {
+
+                /**
+                 * Constructs a new Operation.
+                 * @param [properties] Properties to set
+                 */
+                constructor(properties?: exocore.index.CompactTraitMutation.IOperation);
+
+                /** Operation operationId. */
+                public operationId: (number|Long);
+
+                /**
+                 * Creates a new Operation instance using the specified properties.
+                 * @param [properties] Properties to set
+                 * @returns Operation instance
+                 */
+                public static create(properties?: exocore.index.CompactTraitMutation.IOperation): exocore.index.CompactTraitMutation.Operation;
+
+                /**
+                 * Encodes the specified Operation message. Does not implicitly {@link exocore.index.CompactTraitMutation.Operation.verify|verify} messages.
+                 * @param message Operation message or plain object to encode
+                 * @param [writer] Writer to encode to
+                 * @returns Writer
+                 */
+                public static encode(message: exocore.index.CompactTraitMutation.IOperation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+                /**
+                 * Encodes the specified Operation message, length delimited. Does not implicitly {@link exocore.index.CompactTraitMutation.Operation.verify|verify} messages.
+                 * @param message Operation message or plain object to encode
+                 * @param [writer] Writer to encode to
+                 * @returns Writer
+                 */
+                public static encodeDelimited(message: exocore.index.CompactTraitMutation.IOperation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+                /**
+                 * Decodes an Operation message from the specified reader or buffer.
+                 * @param reader Reader or buffer to decode from
+                 * @param [length] Message length if known beforehand
+                 * @returns Operation
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.CompactTraitMutation.Operation;
+
+                /**
+                 * Decodes an Operation message from the specified reader or buffer, length delimited.
+                 * @param reader Reader or buffer to decode from
+                 * @returns Operation
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.CompactTraitMutation.Operation;
+
+                /**
+                 * Verifies an Operation message.
+                 * @param message Plain object to verify
+                 * @returns `null` if valid, otherwise the reason why it is not
+                 */
+                public static verify(message: { [k: string]: any }): (string|null);
+
+                /**
+                 * Creates an Operation message from a plain object. Also converts values to their respective internal types.
+                 * @param object Plain object
+                 * @returns Operation
+                 */
+                public static fromObject(object: { [k: string]: any }): exocore.index.CompactTraitMutation.Operation;
+
+                /**
+                 * Creates a plain object from an Operation message. Also converts values to other types if specified.
+                 * @param message Operation
+                 * @param [options] Conversion options
+                 * @returns Plain object
+                 */
+                public static toObject(message: exocore.index.CompactTraitMutation.Operation, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+                /**
+                 * Converts this Operation to JSON.
+                 * @returns JSON object
+                 */
+                public toJSON(): { [k: string]: any };
+            }
         }
 
         /** Properties of a TestMutation. */
@@ -2122,6 +2521,96 @@ export namespace google {
 
             /**
              * Converts this Any to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of a FieldMask. */
+        interface IFieldMask {
+
+            /** FieldMask paths */
+            paths?: (string[]|null);
+        }
+
+        /** Represents a FieldMask. */
+        class FieldMask implements IFieldMask {
+
+            /**
+             * Constructs a new FieldMask.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: google.protobuf.IFieldMask);
+
+            /** FieldMask paths. */
+            public paths: string[];
+
+            /**
+             * Creates a new FieldMask instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns FieldMask instance
+             */
+            public static create(properties?: google.protobuf.IFieldMask): google.protobuf.FieldMask;
+
+            /**
+             * Encodes the specified FieldMask message. Does not implicitly {@link google.protobuf.FieldMask.verify|verify} messages.
+             * @param message FieldMask message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: google.protobuf.IFieldMask, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified FieldMask message, length delimited. Does not implicitly {@link google.protobuf.FieldMask.verify|verify} messages.
+             * @param message FieldMask message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: google.protobuf.IFieldMask, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a FieldMask message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns FieldMask
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): google.protobuf.FieldMask;
+
+            /**
+             * Decodes a FieldMask message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns FieldMask
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): google.protobuf.FieldMask;
+
+            /**
+             * Verifies a FieldMask message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a FieldMask message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns FieldMask
+             */
+            public static fromObject(object: { [k: string]: any }): google.protobuf.FieldMask;
+
+            /**
+             * Creates a plain object from a FieldMask message. Also converts values to other types if specified.
+             * @param message FieldMask
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: google.protobuf.FieldMask, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this FieldMask to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
