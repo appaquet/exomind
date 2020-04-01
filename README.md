@@ -56,7 +56,7 @@ A cell consists of:
 
 ## Usage & configuration
 * CLI:
-  * `./utils/install.sh` or `cd exo && cargo install --path .`
+  * `./tools/install.sh` or `cd exo && cargo install --path .`
 
 * Configuration
     * Most command requires a `config.yaml` file, for which an example can be found in here: [`./examples/config.yaml`]

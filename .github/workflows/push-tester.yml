@@ -143,4 +143,4 @@ jobs:
           export RUST_BACKTRACE=1
 
           export CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
-          ./utils/coverage.sh codecov_io
+          ./tools/coverage.sh codecov_io
