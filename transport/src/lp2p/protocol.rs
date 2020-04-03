@@ -242,6 +242,7 @@ where
 
 /// Wire message sent and receive over the streams managed by
 /// `ExocoreProtoHandler`
+#[derive(Clone)]
 pub struct ExocoreProtoMessage {
     pub(crate) data: Vec<u8>,
 }

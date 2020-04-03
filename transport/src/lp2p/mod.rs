@@ -95,11 +95,11 @@ impl Libp2pTransport {
     pub async fn run(self) -> Result<(), Error> {
         let behaviour = ExocoreBehaviour::new();
 
-        #[cfg(all(feature = "libp2p_websocket", target_arch = "wasm32"))]
+        #[cfg(all(feature = "libp2p_wasm", target_arch = "wasm32"))]
         let mut swarm = {
             use libp2p::Transport;
             let transport =
-                libp2p_wasm_ext::ExtTransport::new(libp2p_wasm_ext::ffi::websocket_transport())
+                libp2p::wasm_ext::ExtTransport::new(libp2p::wasm_ext::ffi::websocket_transport())
                     .upgrade(libp2p::core::upgrade::Version::V1)
                     .authenticate(libp2p::secio::SecioConfig::new(
                         self.local_node.keypair().to_libp2p().clone(),
@@ -114,7 +114,7 @@ impl Libp2pTransport {
             Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
         };
 
-        #[cfg(not(all(feature = "libp2p_websocket", target_arch = "wasm32")))]
+        #[cfg(not(all(feature = "libp2p_wasm", target_arch = "wasm32")))]
         let mut swarm = {
             let transport = libp2p::build_tcp_ws_secio_mplex_yamux(
                 self.local_node.keypair().to_libp2p().clone(),

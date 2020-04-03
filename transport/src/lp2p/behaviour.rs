@@ -1,8 +1,10 @@
 use std::collections::{HashMap, VecDeque};
 
 use futures::task::{Context, Poll};
-use libp2p::core::{ConnectedPoint, Multiaddr, PeerId};
-use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
+use libp2p::core::{connection::ConnectionId, Multiaddr, PeerId};
+use libp2p::swarm::{
+    DialPeerCondition, NetworkBehaviour, NetworkBehaviourAction, NotifyHandler, PollParameters,
+};
 
 use exocore_core::time::Instant;
 
@@ -35,8 +37,9 @@ impl ExocoreBehaviour {
     }
 
     pub fn send_message(&mut self, peer_id: PeerId, expiration: Option<Instant>, data: Vec<u8>) {
-        let event = NetworkBehaviourAction::SendEvent {
+        let event = NetworkBehaviourAction::NotifyHandler {
             peer_id: peer_id.clone(),
+            handler: NotifyHandler::Any,
             event: ExocoreProtoMessage { data },
         };
 
@@ -89,8 +92,10 @@ impl ExocoreBehaviour {
     }
 
     fn dial_peer(&mut self, peer_id: PeerId) {
-        self.actions
-            .push_back(NetworkBehaviourAction::DialPeer { peer_id });
+        self.actions.push_back(NetworkBehaviourAction::DialPeer {
+            peer_id,
+            condition: DialPeerCondition::Disconnected,
+        });
     }
 }
 
@@ -117,8 +122,8 @@ impl NetworkBehaviour for ExocoreBehaviour {
             .unwrap_or_else(Vec::new)
     }
 
-    fn inject_connected(&mut self, peer_id: PeerId, _endpoint: ConnectedPoint) {
-        if let Some(peer) = self.peers.get_mut(&peer_id) {
+    fn inject_connected(&mut self, peer_id: &PeerId) {
+        if let Some(peer) = self.peers.get_mut(peer_id) {
             debug!("Connected to {}", peer.node);
 
             peer.status = PeerStatus::Connected;
@@ -138,7 +143,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
         }
     }
 
-    fn inject_disconnected(&mut self, peer_id: &PeerId, _endpoint: ConnectedPoint) {
+    fn inject_disconnected(&mut self, peer_id: &PeerId) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             debug!("Disconnected from {}", peer.node);
 
@@ -157,7 +162,12 @@ impl NetworkBehaviour for ExocoreBehaviour {
         }
     }
 
-    fn inject_node_event(&mut self, peer_id: PeerId, msg: ExocoreProtoMessage) {
+    fn inject_event(
+        &mut self,
+        peer_id: PeerId,
+        _connection: ConnectionId,
+        msg: ExocoreProtoMessage,
+    ) {
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             trace!("Received message from {}", peer.node);
 

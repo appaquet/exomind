@@ -74,7 +74,7 @@ jobs:
       - name: Install build dependencies
         run: |
           set -e
-          apt update && apt install -y clang curl pkg-config libssl-dev
+          apt update && apt install -y clang curl pkg-config libssl-dev openssl
           curl -sL https://deb.nodesource.com/setup_13.x | bash -
           apt-get install -y nodejs
       - uses: actions-rs/toolchain@v1
@@ -82,10 +82,10 @@ jobs:
           toolchain: stable
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Install wasm-pack
-        run: |
-          set -e
-          cargo install wasm-pack --locked
+      - uses: actions-rs/install@v0.1
+        with:
+          crate: wasm-pack
+          version: latest
       - name: Build client & example
         run: |
           set -e

@@ -8,7 +8,7 @@ use crate::cell::config::cell_config_from_yaml_file;
 use crate::crypto::keys::{Keypair, PublicKey};
 use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
 use crate::protos::registry::Registry;
-use libp2p_core::PeerId;
+use libp2p::core::PeerId;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};

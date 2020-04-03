@@ -2,7 +2,7 @@ use super::error::Error;
 use crate::crypto::keys::{Keypair, PublicKey};
 use crate::crypto::signature::Signature;
 use crate::protos::generated::exocore_core::{LocalNodeConfig, NodeConfig};
-use libp2p_core::{Multiaddr, PeerId};
+use libp2p::core::{Multiaddr, PeerId};
 use std::collections::HashSet;
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
