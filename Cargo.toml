@@ -25,7 +25,7 @@ members = [
   "data",
   "core",
   "transport",
-  "clients/wasm",
+  "clients/web",
   "clients/android",
   "clients/ios"
 ]

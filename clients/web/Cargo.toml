@@ -1,5 +1,5 @@
 [package]
-name = "exocore-client-wasm"
+name = "exocore-client-web"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"

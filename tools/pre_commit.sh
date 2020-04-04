@@ -17,8 +17,8 @@ cargo test --all --all-features
 echo "Running clippy..."
 ./clippy.sh
 
-echo "Validating wasm compilation for exocore-client-wasm"
-pushd $CUR_DIR/../clients/wasm
+echo "Validating web compilation for exocore-client-web"
+pushd $CUR_DIR/../clients/web
 cargo clippy --target "wasm32-unknown-unknown"
 popd
 

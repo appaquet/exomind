@@ -1,4 +1,4 @@
-# WASM build
+# Web WASM build
 
 * Install Rust's WASM target
     * `rustup target add wasm32-unknown-unknown`

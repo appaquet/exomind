@@ -20,7 +20,7 @@ export class Client {
             return Promise.resolve(new Client(innerClient));
 
         } else {
-            return import("exocore-client-wasm").then((module) => {
+            return import("exocore-client-web").then((module) => {
                 _exocore_wasm = module;
 
                 console.log("Exocore WASM client loaded");

@@ -1,6 +1,5 @@
 # Exocore
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
-[![dependency status](https://deps.rs/repo/github/appaquet/exocore/status.svg)](https://deps.rs/repo/github/appaquet/exocore)
 
 **Warning: Exocore is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
 
@@ -45,8 +44,8 @@ A cell consists of:
     * On MacOS: `brew install protobuf` 
     * On Ubuntu: `snap install protobuf` 
     
-### WASM (optional)
-* See [WASM client README](./clients/wasm/README.md)
+### Web (optional)
+* See [Web WASM client README](./clients/web/README.md)
 
 ### Android (optional)
 * See [Android client README](./clients/android/README.md)
@@ -69,10 +68,10 @@ A cell consists of:
 * `cp ./examples/config.yaml node2.yaml`
 * For each node's config:
     * Generate keypair for the node: `exo keys generate`
-    * Change the `node_keypair` and `node_public_key` config with this keypair.
+    * Change the node's `keypair` and `public_key` config with the generated keypair.
     * Change `listen_addresses` with unique port per node.
-    * Change `data_dir` with unique data directory per node. 
-    * Put the other node `public_key` and `addresses` in the `cells/nodes` section.
+    * Change cell's `data_directory` with unique data directory per node. 
+    * Put the other node `public_key` and `addresses` in the cell's nodes section.
 * Generate keypair for the cell: `exo keys generate` 
 * Add this keypair in both `node1.yaml` and `node2.yaml` in the `cells` section.
 * Validate config with `exo config validate <config file>`
@@ -84,12 +83,11 @@ A cell consists of:
 ### Launch sample web project
 * Run the [web example](./examples/web):
   * Build WASM client
-    * `cd ./clients/wasm && wasm-pack build && npm install`
-    * This will create a NPM module at ./clients/wasm/pkg
+    * `cd ./clients/web && wasm-pack build && npm install`
   * Start development server which will watch files and rebuild automatically:
     * `cd ./examples/web && npm install && npm run start`
   * Generate cell configuration for web:
-    * Convert config to JSON: `exo config convert <config file>`
+    * Convert config to JSON: `exo config standalone <config file>`
   * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
     * Paste JSON config and save
   

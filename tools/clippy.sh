@@ -14,7 +14,7 @@ cargo clean  \
     -p exocore-data \
     -p exocore-core \
     -p exocore-transport \
-    -p exocore-client-wasm \
+    -p exocore-client-web \
     -p exocore-client-android \
     -p exocore-client-ios
 
