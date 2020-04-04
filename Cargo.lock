@@ -726,8 +726,8 @@ dependencies = [
 name = "exo"
 version = "0.1.0"
 dependencies = [
+ "exocore-chain",
  "exocore-core",
- "exocore-data",
  "exocore-index",
  "exocore-transport",
  "failure",
@@ -741,10 +741,28 @@ dependencies = [
 name = "exocore"
 version = "0.1.0"
 dependencies = [
+ "exocore-chain",
  "exocore-core",
- "exocore-data",
  "exocore-index",
  "exocore-transport",
+]
+
+[[package]]
+name = "exocore-chain"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "exocore-core",
+ "exocore-transport",
+ "extindex",
+ "failure",
+ "futures 0.3.4",
+ "itertools 0.9.0",
+ "log",
+ "memmap",
+ "serde",
+ "serde_derive",
+ "tempdir",
 ]
 
 [[package]]
@@ -828,32 +846,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "exocore-data"
-version = "0.1.0"
-dependencies = [
- "byteorder",
- "exocore-core",
- "exocore-transport",
- "extindex",
- "failure",
- "futures 0.3.4",
- "itertools 0.9.0",
- "log",
- "memmap",
- "serde",
- "serde_derive",
- "tempdir",
-]
-
-[[package]]
 name = "exocore-index"
 version = "0.1.0"
 dependencies = [
  "bytes",
  "chrono",
  "crc",
+ "exocore-chain",
  "exocore-core",
- "exocore-data",
  "exocore-transport",
  "failure",
  "futures 0.3.4",

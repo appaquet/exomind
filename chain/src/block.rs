@@ -616,7 +616,7 @@ impl BlockSignatures {
         let signatures = nodes
             .iter()
             .all()
-            .filter(|cn| cn.has_role(CellNodeRole::Data))
+            .filter(|cn| cn.has_role(CellNodeRole::Chain))
             .map(|cell_node| BlockSignature {
                 node_id: cell_node.node().id().clone(),
                 signature: Signature::empty(),
@@ -786,12 +786,12 @@ mod tests {
         let cell = FullCell::generate(local_node.clone());
 
         {
-            // local node is data node
+            // local node is chain node
             let mut nodes = cell.nodes_mut();
             let local_cell_node = nodes.get_mut(local_node.id()).unwrap();
-            local_cell_node.add_role(CellNodeRole::Data);
+            local_cell_node.add_role(CellNodeRole::Chain);
 
-            // second node is not data node
+            // second node is not chain node
             nodes.add(Node::generate_temporary());
         }
 
@@ -840,7 +840,7 @@ mod tests {
             second_block.operations_data.len() as u32
         );
 
-        // 1 signature only since only our nodes is data node
+        // 1 signature only since only our nodes is chain node
         let signatures = signatures_reader.get_signatures()?;
         assert_eq!(signatures.len(), 1);
 
@@ -881,12 +881,12 @@ mod tests {
         let cell = full_cell.cell();
 
         let node2 = {
-            // local node is data node
+            // local node is chain node
             let mut nodes = cell.nodes_mut();
             let local_cell_node = nodes.get_mut(local_node.id()).unwrap();
-            local_cell_node.add_role(CellNodeRole::Data);
+            local_cell_node.add_role(CellNodeRole::Chain);
 
-            // second node is not data node
+            // second node is not chain node
             let node2 = Node::generate_temporary();
             nodes.add(node2.clone());
             node2
@@ -894,16 +894,16 @@ mod tests {
 
         let genesis_block = BlockOwned::new_genesis(&full_cell)?;
 
-        // only first node is data node
+        // only first node is chain node
         let block_ops = BlockOperations::empty();
         let block1 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;
         assert!(block1.signatures.whole_data_size() > 100);
 
-        // make second node data node, should now have more signature size
+        // make second node chain node, should now have more signature size
         {
             let mut nodes = cell.nodes_mut();
             let cell_node_2 = nodes.get_mut(node2.id()).unwrap();
-            cell_node_2.add_role(CellNodeRole::Data);
+            cell_node_2.add_role(CellNodeRole::Chain);
         }
 
         let block_ops = BlockOperations::empty();

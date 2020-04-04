@@ -71,7 +71,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         for cell_node in nodes
             .iter()
             .all_except_local()
-            .filter(|cn| cn.has_role(CellNodeRole::Data))
+            .filter(|cn| cn.has_role(CellNodeRole::Chain))
         {
             let node = cell_node.node();
 
@@ -109,7 +109,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         for cell_node in nodes
             .iter()
             .all_except_local()
-            .filter(|cn| cn.has_role(CellNodeRole::Data))
+            .filter(|cn| cn.has_role(CellNodeRole::Chain))
         {
             let request =
                 self.create_sync_request_for_range(sync_context, store, operation_id.., |op| {

@@ -22,8 +22,8 @@ use exocore_core::cell::FullCell;
 use exocore_transport::mock::MockTransport;
 use exocore_transport::TransportLayer;
 
-/// exocore-data testing utility
-pub struct DataTestCluster {
+/// exocore-chain testing utility
+pub struct TestChainCluster {
     pub tempdir: tempdir::TempDir,
     pub runtime: Runtime,
     pub transport_hub: MockTransport,
@@ -42,12 +42,12 @@ pub struct DataTestCluster {
 }
 
 pub struct ClusterSpec {
-    pub full_data_nodes: usize,
-    pub data_nodes: usize,
+    pub full_chain_nodes: usize,
+    pub chain_nodes: usize,
 }
 
-impl DataTestCluster {
-    pub fn new(count: usize) -> Result<DataTestCluster, failure::Error> {
+impl TestChainCluster {
+    pub fn new(count: usize) -> Result<TestChainCluster, failure::Error> {
         let tempdir = tempdir::TempDir::new("engine_tests")?;
 
         let runtime = Runtime::new()?;
@@ -101,24 +101,24 @@ impl DataTestCluster {
         }
 
         // Add each node to all other nodes' cell
-        // All nodes have full data access
+        // All nodes have full chain access
         for cell in &cells {
             let mut cell_nodes = cell.nodes_mut();
 
             for node in &nodes {
                 if cell.local_node().id() != node.id() {
                     let mut cell_node = CellNode::new(node.node().clone());
-                    cell_node.add_role(CellNodeRole::Data);
+                    cell_node.add_role(CellNodeRole::Chain);
                     cell_nodes.add_cell_node(cell_node);
                 } else {
                     cell_nodes
                         .local_cell_node_mut()
-                        .add_role(CellNodeRole::Data);
+                        .add_role(CellNodeRole::Chain);
                 }
             }
         }
 
-        let mut cluster = DataTestCluster {
+        let mut cluster = TestChainCluster {
             tempdir,
             runtime,
             nodes,
@@ -136,14 +136,14 @@ impl DataTestCluster {
         };
 
         for i in 0..count {
-            cluster.add_node_role(i, CellNodeRole::Data);
+            cluster.add_node_role(i, CellNodeRole::Chain);
         }
 
         Ok(cluster)
     }
 
-    pub fn new_single_and_start() -> Result<DataTestCluster, failure::Error> {
-        let mut cluster = DataTestCluster::new(1)?;
+    pub fn new_single_and_start() -> Result<TestChainCluster, failure::Error> {
+        let mut cluster = TestChainCluster::new(1)?;
 
         cluster.create_node(0)?;
         cluster.create_chain_genesis_block(0);
@@ -211,7 +211,7 @@ impl DataTestCluster {
     pub fn start_engine(&mut self, node_idx: usize) {
         let transport = self
             .transport_hub
-            .get_transport(self.nodes[node_idx].clone(), TransportLayer::Data);
+            .get_transport(self.nodes[node_idx].clone(), TransportLayer::Chain);
 
         let mut engine = Engine::new(
             self.engines_config[node_idx],

@@ -19,8 +19,8 @@ use crate::query::WatchToken;
 
 pub struct Server<CS, PS, T>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
     T: TransportHandle,
 {
     config: ServerConfiguration,
@@ -31,8 +31,8 @@ where
 
 impl<CS, PS, T> Server<CS, PS, T>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
     T: TransportHandle,
 {
     pub fn new(
@@ -338,8 +338,8 @@ impl Default for ServerConfiguration {
 
 struct Inner<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     config: ServerConfiguration,
     cell: Cell,
@@ -350,8 +350,8 @@ where
 
 impl<CS, PS> Inner<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     fn send_message(&self, message: OutMessage) -> Result<(), Error> {
         self.transport_out_sender

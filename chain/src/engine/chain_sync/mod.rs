@@ -84,7 +84,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let (nb_nodes_metadata_sync, nb_nodes) = self.check_nodes_status(&nodes);
         let majority_nodes_metadata_sync = nodes.is_quorum(
             usize::from(nb_nodes_metadata_sync),
-            Some(CellNodeRole::Data),
+            Some(CellNodeRole::Chain),
         );
 
         let last_block_offset = store.get_last_block()?.map(|b| b.offset);
@@ -143,7 +143,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             for cell_node in nodes
                 .iter()
                 .all_except_local()
-                .filter(|cn| cn.has_role(CellNodeRole::Data))
+                .filter(|cn| cn.has_role(CellNodeRole::Chain))
             {
                 nb_total += 1;
                 let node_info = self.get_or_create_node_info_mut(cell_node.node().id());
@@ -152,7 +152,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 }
             }
 
-            if nodes.is_quorum(nb_non_divergent, Some(CellNodeRole::Data)) {
+            if nodes.is_quorum(nb_non_divergent, Some(CellNodeRole::Chain)) {
                 if self.leader.is_none() {
                     self.find_leader_node(store)?;
 
@@ -312,7 +312,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         for cell_node in nodes
             .iter()
             .all_except_local()
-            .filter(|cn| cn.has_role(CellNodeRole::Data))
+            .filter(|cn| cn.has_role(CellNodeRole::Chain))
         {
             let node = cell_node.node();
 
@@ -705,7 +705,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     fn check_nodes_status(&mut self, nodes: &CellNodesOwned) -> (u16, u16) {
         let mut nodes_total = 0;
         let mut nodes_metadata_sync = 0;
-        for cell_node in nodes.iter().with_role(CellNodeRole::Data) {
+        for cell_node in nodes.iter().with_role(CellNodeRole::Chain) {
             let node = cell_node.node();
 
             nodes_total += 1;

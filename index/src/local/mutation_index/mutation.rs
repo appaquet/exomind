@@ -1,9 +1,9 @@
 use crate::entity::{EntityId, TraitId};
+use exocore_chain::block::BlockOffset;
+use exocore_chain::engine::EngineOperation;
+use exocore_chain::operation::{Operation, OperationId};
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{EntityMutation, Trait};
-use exocore_data::block::BlockOffset;
-use exocore_data::engine::EngineOperation;
-use exocore_data::operation::{Operation, OperationId};
 use prost::Message;
 use smallvec::SmallVec;
 
@@ -43,7 +43,7 @@ pub struct PutEntityTombstone {
 }
 
 impl IndexMutation {
-    /// Creates an index mutation from an engine operation stored in the pending store of the data layer
+    /// Creates an index mutation from an engine operation stored in the pending store of the chain layer
     pub fn from_pending_engine_operation(
         operation: EngineOperation,
     ) -> SmallVec<[IndexMutation; 1]> {
@@ -112,7 +112,7 @@ impl IndexMutation {
         }
     }
 
-    /// Creates an index mutation from an engine operation store in the chain of the data layer
+    /// Creates an index mutation from an engine operation store in the chain of the chain layer
     pub fn from_chain_engine_operation(
         operation: EngineOperation,
         block_offset: BlockOffset,

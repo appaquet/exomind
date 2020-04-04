@@ -29,7 +29,7 @@ fn index_full_pending_to_chain() -> Result<(), failure::Error> {
     let chain_res = count_results_source(&res, EntityResultSource::Chain);
     assert_eq!(pending_res + chain_res, 5);
 
-    // index a few traits, wait for first block ot be committed
+    // index a few traits, wait for first block to be committed
     let second_ops_id = test_index.put_test_traits(5..=9)?;
     test_index.wait_operations_emitted(&second_ops_id);
     test_index.wait_operations_committed(&first_ops_id);
@@ -136,7 +136,7 @@ fn reindex_pending_on_discontinuity() -> Result<(), failure::Error> {
     // trigger discontinuity, which should force reindex
     test_index
         .index
-        .handle_data_engine_event(Event::StreamDiscontinuity)?;
+        .handle_chain_engine_event(Event::StreamDiscontinuity)?;
 
     // pending is indexed
     let res = test_index
@@ -167,7 +167,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
     // divergence without anything in index will trigger re-indexation
     test_index
         .index
-        .handle_data_engine_event(Event::ChainDiverged(0))?;
+        .handle_chain_engine_event(Event::ChainDiverged(0))?;
     let res = test_index
         .index
         .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
@@ -181,7 +181,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
         .unwrap();
     test_index
         .index
-        .handle_data_engine_event(Event::ChainDiverged(chain_last_offset + 1))?;
+        .handle_chain_engine_event(Event::ChainDiverged(chain_last_offset + 1))?;
     let res = test_index
         .index
         .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
@@ -190,7 +190,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
     // divergence at an offset indexed in chain index will fail
     let res = test_index
         .index
-        .handle_data_engine_event(Event::ChainDiverged(0));
+        .handle_chain_engine_event(Event::ChainDiverged(0));
     assert!(res.is_err());
 
     Ok(())

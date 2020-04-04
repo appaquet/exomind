@@ -24,13 +24,13 @@ use super::entity_index::EntityIndex;
 /// Locally persisted entities store allowing mutation and queries on entities
 /// and their traits.
 ///
-/// It forwards mutation requests to the data engine, receives back data events
+/// It forwards mutation requests to the chain engine, receives back chain events
 /// that get indexed by the entities index. Queries are executed by the entities
 /// index.
 pub struct Store<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     config: StoreConfig,
     handle_set: HandleSet,
@@ -40,14 +40,14 @@ where
 
 impl<CS, PS> Store<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     pub fn new(
         config: StoreConfig,
         cell: Cell,
         clock: Clock,
-        data_handle: exocore_data::engine::EngineHandle<CS, PS>,
+        chain_handle: exocore_chain::engine::EngineHandle<CS, PS>,
         index: EntityIndex<CS, PS>,
     ) -> Result<Store<CS, PS>, Error> {
         let (incoming_queries_sender, incoming_queries_receiver) =
@@ -59,7 +59,7 @@ where
             index,
             watched_queries: WatchedQueries::new(),
             incoming_queries_sender,
-            data_handle,
+            chain_handle,
         }));
 
         Ok(Store {
@@ -133,20 +133,20 @@ where
             Ok::<(), Error>(())
         };
 
-        // schedule data engine events stream
+        // schedule chain engine events stream
         let mut events_stream = {
             let mut inner = self.inner.write()?;
-            let events = inner.data_handle.take_events_stream()?;
+            let events = inner.chain_handle.take_events_stream()?;
 
             // batching stream consumes all available events from stream without waiting
             BatchingStream::new(events, config.handle_watch_query_channel_size)
         };
         let (mut watch_check_sender, mut watch_check_receiver) = mpsc::channel(2);
         let weak_inner = Arc::downgrade(&self.inner);
-        let data_events_handler = async move {
+        let chain_events_handler = async move {
             while let Some(events) = events_stream.next().await {
-                if let Err(err) = Inner::handle_data_engine_events(&weak_inner, events).await {
-                    error!("Error handling data engine event: {}", err);
+                if let Err(err) = Inner::handle_chain_engine_events(&weak_inner, events).await {
+                    error!("Error handling chain engine event: {}", err);
                     if err.is_fatal() {
                         return Err(err);
                     }
@@ -193,7 +193,7 @@ where
         futures::select! {
             _ = self.handle_set.on_handles_dropped().fuse() => (),
             _ = queries_executor.fuse() => (),
-            _ = data_events_handler.fuse() => (),
+            _ = chain_events_handler.fuse() => (),
             _ = watched_queries_checker.fuse() => (),
         }
 
@@ -207,7 +207,7 @@ pub struct StoreConfig {
     pub query_channel_size: usize,
     pub query_parallelism: usize,
     pub handle_watch_query_channel_size: usize,
-    pub data_events_batch_size: usize,
+    pub chain_events_batch_size: usize,
 }
 
 impl Default for StoreConfig {
@@ -216,28 +216,28 @@ impl Default for StoreConfig {
             query_channel_size: 1000,
             query_parallelism: 4,
             handle_watch_query_channel_size: 1000,
-            data_events_batch_size: 50,
+            chain_events_batch_size: 50,
         }
     }
 }
 
 struct Inner<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     cell: Cell,
     clock: Clock,
     index: EntityIndex<CS, PS>,
     watched_queries: WatchedQueries,
     incoming_queries_sender: mpsc::Sender<QueryRequest>,
-    data_handle: exocore_data::engine::EngineHandle<CS, PS>,
+    chain_handle: exocore_chain::engine::EngineHandle<CS, PS>,
 }
 
 impl<CS, PS> Inner<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     fn write_mutation_weak(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
@@ -254,7 +254,7 @@ where
         }
 
         let buf = entity_mutation.encode_to_vec()?;
-        let operation_id = self.data_handle.write_entry_operation(&buf)?;
+        let operation_id = self.chain_handle.write_entry_operation(&buf)?;
 
         Ok(MutationResult { operation_id })
     }
@@ -274,15 +274,15 @@ where
         result.map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
     }
 
-    async fn handle_data_engine_events(
+    async fn handle_chain_engine_events(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        events: Vec<exocore_data::engine::Event>,
+        events: Vec<exocore_chain::engine::Event>,
     ) -> Result<(), Error> {
         let weak_inner = weak_inner.clone();
         let result = spawn_blocking(move || -> Result<(), Error> {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let mut inner = inner.write()?;
-            inner.index.handle_data_engine_events(events.into_iter())
+            inner.index.handle_chain_engine_events(events.into_iter())
         })
         .await;
 
@@ -293,8 +293,8 @@ where
 /// Handle to the store, allowing communication to the store asynchronously
 pub struct StoreHandle<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     config: StoreConfig,
     handle: Handle,
@@ -303,8 +303,8 @@ where
 
 impl<CS, PS> StoreHandle<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     pub async fn on_start(&self) {
         self.handle.on_set_started().await
@@ -381,8 +381,8 @@ where
 /// results.
 pub struct WatchedQueryStream<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     watch_token: WatchToken,
     inner: Weak<RwLock<Inner<CS, PS>>>,
@@ -391,8 +391,8 @@ where
 
 impl<CS, PS> futures::Stream for WatchedQueryStream<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     type Item = Result<EntityResults, Error>;
 
@@ -403,8 +403,8 @@ where
 
 impl<CS, PS> Drop for WatchedQueryStream<CS, PS>
 where
-    CS: exocore_data::chain::ChainStore,
-    PS: exocore_data::pending::PendingStore,
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
 {
     fn drop(&mut self) {
         if let Some(inner) = self.inner.upgrade() {

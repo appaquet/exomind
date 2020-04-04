@@ -1,5 +1,5 @@
 use crate::local::mutation_index::MutationIndexConfig;
-use exocore_data::block::BlockHeight;
+use exocore_chain::block::BlockHeight;
 
 /// Configuration of the entities index
 #[derive(Clone, Copy, Debug)]

@@ -3,16 +3,16 @@ use itertools::Itertools;
 
 use exocore_core::tests_utils::expect_result;
 
+use exocore_chain::operation::Operation;
+use exocore_chain::tests_utils::*;
+use exocore_chain::*;
 use exocore_core::cell::CellNodeRole;
-use exocore_data::operation::Operation;
-use exocore_data::tests_utils::*;
-use exocore_data::*;
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
 
 #[test]
 fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
-    let mut cluster = DataTestCluster::new(1)?;
+    let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
     cluster.start_engine(0);
@@ -75,7 +75,7 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
 
 #[test]
 fn single_node_chain_iteration() -> Result<(), failure::Error> {
-    let mut cluster = DataTestCluster::new(1)?;
+    let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
     cluster.start_engine(0);
@@ -107,7 +107,7 @@ fn single_node_chain_iteration() -> Result<(), failure::Error> {
 
 #[test]
 fn single_node_restart() -> Result<(), failure::Error> {
-    let mut cluster = DataTestCluster::new(1)?;
+    let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
     cluster.start_engine(0);
@@ -138,7 +138,7 @@ fn single_node_restart() -> Result<(), failure::Error> {
 
 #[test]
 fn two_nodes_full_replication() -> Result<(), failure::Error> {
-    let mut cluster = DataTestCluster::new(2)?;
+    let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;
 
@@ -172,7 +172,7 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
 
 #[test]
 fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
-    let mut cluster = DataTestCluster::new(2)?;
+    let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;
 
@@ -223,14 +223,14 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
 
 #[test]
 fn two_nodes_one_data_node() -> Result<(), failure::Error> {
-    let mut cluster = DataTestCluster::new(2)?;
+    let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;
 
     let node0_id = cluster.nodes[0].id().to_string();
 
-    // 2nd node doesn't have data layer role
-    cluster.remove_node_role(1, CellNodeRole::Data);
+    // 2nd node doesn't have chain role
+    cluster.remove_node_role(1, CellNodeRole::Chain);
 
     cluster.create_chain_genesis_block(0);
 
@@ -239,7 +239,7 @@ fn two_nodes_one_data_node() -> Result<(), failure::Error> {
     cluster.wait_started(0);
     cluster.wait_started(1);
 
-    // Node 0 should still be able to advance even if second node is not part of data nodes
+    // Node 0 should still be able to advance even if second node is not part of chain nodes
     for _i in 0..3 {
         let op = cluster
             .get_handle_mut(0)

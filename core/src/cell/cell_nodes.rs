@@ -231,8 +231,8 @@ impl CellNodes for CellNodesOwned {
 /// Role of node in a cell, indicating the capabilities of a node in the cell.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CellNodeRole {
-    /// Indicates that the node participates in the data layer replication.
-    Data,
+    /// Indicates that the node participates in the chain storage & replication.
+    Chain,
 
     /// Indicates that the node is running a full index with entities store.
     IndexStore,
@@ -241,7 +241,7 @@ pub enum CellNodeRole {
 impl CellNodeRole {
     pub fn from_config(config: cell_node_config::Role) -> Result<CellNodeRole, Error> {
         match config {
-            cell_node_config::Role::DataRole => Ok(CellNodeRole::Data),
+            cell_node_config::Role::ChainRole => Ok(CellNodeRole::Chain),
             cell_node_config::Role::IndexStoreRole => Ok(CellNodeRole::IndexStore),
             v => Err(Error::Cell(format!("Invalid cell node role: {:?}", v))),
         }
@@ -253,7 +253,7 @@ impl FromStr for CellNodeRole {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "data" => Ok(CellNodeRole::Data),
+            "chain" => Ok(CellNodeRole::Chain),
             "index_store" => Ok(CellNodeRole::IndexStore),
             o => Err(super::Error::Node(format!("Invalid role name: {}", o))),
         }
@@ -310,8 +310,8 @@ mod tests {
             let nodes = cell.nodes();
             assert!(!nodes.is_quorum(0, None));
             assert!(nodes.is_quorum(1, None));
-            assert!(!nodes.is_quorum(0, Some(CellNodeRole::Data)));
-            assert!(!nodes.is_quorum(1, Some(CellNodeRole::Data)));
+            assert!(!nodes.is_quorum(0, Some(CellNodeRole::Chain)));
+            assert!(!nodes.is_quorum(1, Some(CellNodeRole::Chain)));
         }
 
         {
@@ -339,11 +339,17 @@ mod tests {
                 .map(|n| n.node.id())
                 .cloned()
                 .collect::<Vec<_>>();
-            nodes.get_mut(&ids[0]).unwrap().add_role(CellNodeRole::Data);
-            nodes.get_mut(&ids[1]).unwrap().add_role(CellNodeRole::Data);
+            nodes
+                .get_mut(&ids[0])
+                .unwrap()
+                .add_role(CellNodeRole::Chain);
+            nodes
+                .get_mut(&ids[1])
+                .unwrap()
+                .add_role(CellNodeRole::Chain);
 
-            assert!(!nodes.is_quorum(1, Some(CellNodeRole::Data)));
-            assert!(nodes.is_quorum(2, Some(CellNodeRole::Data)));
+            assert!(!nodes.is_quorum(1, Some(CellNodeRole::Chain)));
+            assert!(nodes.is_quorum(2, Some(CellNodeRole::Chain)));
         }
     }
 }

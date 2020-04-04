@@ -6,6 +6,11 @@ use std::sync::Arc;
 use itertools::Itertools;
 use prost::Message;
 
+use exocore_chain::block::{BlockHeight, BlockOffset};
+use exocore_chain::engine::Event;
+use exocore_chain::operation::{Operation, OperationId};
+use exocore_chain::{chain, pending};
+use exocore_chain::{EngineHandle, EngineOperationStatus};
 use exocore_core::cell::FullCell;
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
@@ -13,11 +18,6 @@ use exocore_core::protos::generated::exocore_index::{
     Trait,
 };
 use exocore_core::protos::registry::Registry;
-use exocore_data::block::{BlockHeight, BlockOffset};
-use exocore_data::engine::Event;
-use exocore_data::operation::{Operation, OperationId};
-use exocore_data::{chain, pending};
-use exocore_data::{EngineHandle, EngineOperationStatus};
 
 use super::mutation_index::{IndexMutation, MutationIndex, MutationMetadataType};
 use super::top_results::RescoredTopResultsIterable;
@@ -36,7 +36,7 @@ mod test_index;
 mod tests;
 
 /// Manages and index entities and their traits stored in the chain and pending
-/// store of the data layer. The index accepts mutation from the data layer
+/// store of the chain layer. The index accepts mutation from the chain layer
 /// through its event stream, and manages both indices to be consistent.
 ///
 /// The chain index is persisted on disk, while the pending store index is an
@@ -55,7 +55,7 @@ where
     chain_index: MutationIndex,
     chain_index_last_block: Option<BlockOffset>,
     cell: FullCell,
-    data_handle: EngineHandle<CS, PS>,
+    chain_handle: EngineHandle<CS, PS>,
 }
 
 impl<CS, PS> EntityIndex<CS, PS>
@@ -67,7 +67,7 @@ where
     pub fn open_or_create(
         cell: FullCell,
         config: EntityIndexConfig,
-        data_handle: EngineHandle<CS, PS>,
+        chain_handle: EngineHandle<CS, PS>,
     ) -> Result<EntityIndex<CS, PS>, Error> {
         let pending_index =
             MutationIndex::create_in_memory(config.pending_index_config, cell.schemas().clone())?;
@@ -90,7 +90,7 @@ where
             chain_index,
             chain_index_last_block: None,
             cell,
-            data_handle,
+            chain_handle,
         };
 
         index.reindex_pending()?;
@@ -98,19 +98,19 @@ where
         Ok(index)
     }
 
-    pub fn handle_data_engine_event(&mut self, event: Event) -> Result<(), Error> {
-        self.handle_data_engine_events(std::iter::once(event))
+    pub fn handle_chain_engine_event(&mut self, event: Event) -> Result<(), Error> {
+        self.handle_chain_engine_events(std::iter::once(event))
     }
 
-    /// Handle events coming from the data layer. These events allow keeping the
-    /// index consistent with the data layer, up to the consistency
+    /// Handle events coming from the chain layer. These events allow keeping the
+    /// index consistent with the chain layer, up to the consistency
     /// guarantees that the layer offers.
 
     /// Since the events stream is buffered, we may receive a discontinuity if
-    /// the data layer couldn't send us an event. In that case, we re-index
+    /// the chain layer couldn't send us an event. In that case, we re-index
     /// the pending index since we can't guarantee that we didn't lose an
     /// event.
-    pub fn handle_data_engine_events<E>(&mut self, events: E) -> Result<(), Error>
+    pub fn handle_chain_engine_events<E>(&mut self, events: E) -> Result<(), Error>
     where
         E: Iterator<Item = Event>,
     {
@@ -124,12 +124,12 @@ where
                 continue;
             } else if !pending_operations.is_empty() {
                 let current_operations = std::mem::replace(&mut pending_operations, Vec::new());
-                self.handle_data_engine_event_pending_operations(current_operations.into_iter())?;
+                self.handle_chain_engine_event_pending_operations(current_operations.into_iter())?;
             }
 
             match event {
                 Event::Started => {
-                    info!("Data engine is ready, indexing pending store & chain");
+                    info!("Chain engine is ready, indexing pending store & chain");
                     self.index_chain_new_blocks()?;
                     self.reindex_pending()?;
                 }
@@ -184,7 +184,7 @@ where
         }
 
         if !pending_operations.is_empty() {
-            self.handle_data_engine_event_pending_operations(pending_operations.into_iter())?;
+            self.handle_chain_engine_event_pending_operations(pending_operations.into_iter())?;
         }
 
         Ok(())
@@ -359,7 +359,7 @@ where
         // create an iterator over operations in pending store that aren't in chain
         // index
         let pending_iter = self
-            .data_handle
+            .chain_handle
             .get_pending_operations(..)?
             .into_iter()
             .filter(|op| match op.status {
@@ -377,7 +377,7 @@ where
 
             // take operations from chain that have not been indexed to the chain index yet
             let chain_iter = self
-                .data_handle
+                .chain_handle
                 .get_chain_operations(Some(last_chain_indexed_offset))
                 .filter(move |op| {
                     if let EngineOperationStatus::Committed(offset, _height) = op.status {
@@ -434,7 +434,7 @@ where
     /// the results.
     fn index_chain_new_blocks(&mut self) -> Result<(), Error> {
         let (_last_chain_block_offset, last_chain_block_height) = self
-            .data_handle
+            .chain_handle
             .get_chain_last_block_info()?
             .ok_or_else(|| {
                 Error::Other("Tried to index chain, but it had no blocks in it".to_string())
@@ -456,7 +456,7 @@ where
         let mut pending_index_mutations = Vec::new();
         let mut new_highest_block_offset: Option<BlockOffset> = None;
 
-        let operations = self.data_handle.get_chain_operations(offset_from);
+        let operations = self.chain_handle.get_chain_operations(offset_from);
         let chain_index_mutations = operations
             .flat_map(|operation| {
                 if let EngineOperationStatus::Committed(offset, height) = operation.status {
@@ -511,13 +511,13 @@ where
         }
 
         Ok(last_indexed_offset
-            .and_then(|offset| self.data_handle.get_chain_block_info(offset).ok())
+            .and_then(|offset| self.chain_handle.get_chain_block_info(offset).ok())
             .and_then(|opt| opt))
     }
 
-    /// Handle new pending store operations events from the data layer by
+    /// Handle new pending store operations events from the chain layer by
     /// indexing them into the pending index.
-    fn handle_data_engine_event_pending_operations<O>(
+    fn handle_chain_engine_event_pending_operations<O>(
         &mut self,
         operations_id: O,
     ) -> Result<(), Error>
@@ -525,18 +525,18 @@ where
         O: Iterator<Item = OperationId>,
     {
         let mutations = operations_id
-            .flat_map(|op_id| match self.data_handle.get_pending_operation(op_id) {
+            .flat_map(|op_id| match self.chain_handle.get_pending_operation(op_id) {
                 Ok(Some(op)) => IndexMutation::from_pending_engine_operation(op),
                 Ok(None) => {
                     error!(
-                        "An event from data layer contained a pending operation that wasn't found: operation_id={}",
+                        "An event from chain layer contained a pending operation that wasn't found: operation_id={}",
                         op_id
                     );
                     smallvec![]
                 }
                 Err(err) => {
                     error!(
-                        "An event from data layer contained that couldn't be fetched from pending operation: {}",
+                        "An event from chain layer contained that couldn't be fetched from pending operation: {}",
                         err
                     );
                     smallvec![]
@@ -547,7 +547,7 @@ where
         self.pending_index.apply_mutations(mutations.into_iter())
     }
 
-    /// Fetch an entity and all its traits from indices and the data layer.
+    /// Fetch an entity and all its traits from indices and the chain layer.
     /// Traits returned follow mutations in order of operation id.
     #[cfg(test)]
     fn fetch_entity(&self, entity_id: &str) -> Result<Entity, Error> {
@@ -574,7 +574,7 @@ where
     }
 
     /// Populate traits in the EntityResult by fetching each entity's traits
-    /// from the data layer.
+    /// from the chain layer.
     fn fetch_entities_results_full_traits(
         &self,
         entities_results: &mut Vec<EntityResult>,
@@ -591,7 +591,7 @@ where
         }
     }
 
-    /// Fetch traits data from data layer.
+    /// Fetch traits data from chain layer.
     fn fetch_entity_traits_data(&self, results: EntityMutations) -> Vec<Trait> {
         results
             .traits
@@ -635,7 +635,7 @@ where
             .collect()
     }
 
-    /// Fetch an operation from the data layer by the given operation id and
+    /// Fetch an operation from the chain layer by the given operation id and
     /// optional block offset.
     fn fetch_trait_mutation_operation(
         &self,
@@ -643,10 +643,10 @@ where
         block_offset: Option<BlockOffset>,
     ) -> Result<Option<EntityMutation>, Error> {
         let operation = if let Some(block_offset) = block_offset {
-            self.data_handle
+            self.chain_handle
                 .get_chain_operation(block_offset, operation_id)?
         } else {
-            self.data_handle.get_operation(operation_id)?
+            self.chain_handle.get_operation(operation_id)?
         };
 
         let operation = if let Some(operation) = operation {

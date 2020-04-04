@@ -27,7 +27,7 @@ cells:
                 - /ip4/127.0.0.1/tcp/3341/ws
 
             # Role of the node
-            # Data = 1
+            # Chain = 1
             # Index store = 2
             roles:
               - 1

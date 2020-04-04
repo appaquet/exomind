@@ -2,9 +2,9 @@ use super::{MutationIndex, QueryPaging};
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
 use chrono::{DateTime, Utc};
+use exocore_chain::block::BlockOffset;
+use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_index::EntityQuery;
-use exocore_data::block::BlockOffset;
-use exocore_data::operation::OperationId;
 
 /// Iterates through all results matching a given initial query using the
 /// next_page score when a page got emptied.

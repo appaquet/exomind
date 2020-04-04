@@ -1,5 +1,5 @@
 [package]
-name = "exocore-data"
+name = "exocore-chain"
 description = "Distributed applications framework"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]

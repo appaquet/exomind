@@ -1,5 +1,6 @@
 # Exocore
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
+![Build](https://github.com/appaquet/exocore/workflows/Push%20tester/badge.svg)
 
 **Warning: Exocore is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
 
@@ -10,13 +11,13 @@ failures, allow offline usage (ex: on mobile). Exocore exposes SDKs for web/WebA
 The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data. 
 
 A cell consists of:
-* Data nodes managing replication and storage by using a blockchain data structure.
-* Index nodes managing indexation, querying and mutation of the data (collocated with data node).
+* Chain nodes managing replication and storage by using a blockchain data structure.
+* Index nodes managing indexation, querying and mutation of the data (collocated with chain node).
 * Applications nodes run applications written in WebAssembly (that can be collocated with index nodes)
 * Clients (fat or thin) that can also act as index, data and partially run applications' WebAssembly.
 
 ## Development status
-* **Data storage and replication layer**: Proof of concept
+* **Chain storage and replication layer**: Proof of concept
 * **Transport layer**: Proof of concept
 * **Index layer:** Proof of concept
 * **SDKs**: In development
@@ -92,4 +93,4 @@ A cell consists of:
     * Paste JSON config and save
   
 ## Documentation
-* [Replication](data/replication.md)
+* [Replication](chain/replication.md)

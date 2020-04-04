@@ -114,7 +114,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
             let nodes = self.cell.nodes();
             if next_block.has_my_signature
-                && nodes.is_quorum(valid_signatures.count(), Some(CellNodeRole::Data))
+                && nodes.is_quorum(valid_signatures.count(), Some(CellNodeRole::Chain))
             {
                 debug!(
                     "{}: Block has enough signatures, we should commit",
@@ -282,7 +282,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         chain_store: &CS,
         pending_blocks: &PendingBlocks,
     ) -> Result<bool, EngineError> {
-        if !self.cell.local_node_has_role(CellNodeRole::Data) {
+        if !self.cell.local_node_has_role(CellNodeRole::Chain) {
             return Ok(false);
         }
 
@@ -612,7 +612,7 @@ fn is_node_commit_turn(
 ) -> Result<bool, EngineError> {
     let nodes_iter = nodes.iter();
     let sorted_nodes = nodes_iter
-        .with_role(CellNodeRole::Data)
+        .with_role(CellNodeRole::Chain)
         .sorted_by_key(|cell_node| cell_node.node().id().to_str())
         .collect_vec();
     let my_node_position = sorted_nodes

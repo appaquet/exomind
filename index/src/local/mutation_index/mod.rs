@@ -16,12 +16,12 @@ use tantivy::{
     Term,
 };
 
+use exocore_chain::block::BlockOffset;
 use exocore_core::protos::generated::exocore_index::{entity_query::Predicate, EntityQuery};
 use exocore_core::protos::prost::ProstTimestampExt;
 use exocore_core::protos::reflect;
 use exocore_core::protos::reflect::{FieldType, FieldValue, ReflectMessage};
 use exocore_core::protos::registry::Registry;
-use exocore_data::block::BlockOffset;
 
 use crate::error::Error;
 
@@ -39,7 +39,7 @@ const SCORE_TO_U64_MULTIPLIER: f32 = 10_000_000_000.0;
 const UNIQUE_SORT_TO_U64_DIVIDER: f32 = 100_000_000.0;
 const SEARCH_ENTITY_ID_LIMIT: usize = 1_000_000;
 
-/// Index (full-text & fields) for entities & traits mutations stored in the data layer. Each
+/// Index (full-text & fields) for entities & traits mutations stored in the chain layer. Each
 /// mutation is individually indexed as a single document.
 ///
 /// This index is used to index both the chain, and the pending store mutations. The chain

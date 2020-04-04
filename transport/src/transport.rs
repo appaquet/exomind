@@ -22,13 +22,13 @@ pub trait TransportHandle: Future<Output = ()> + Send + Unpin + 'static {
 }
 
 /// Layer of the Exocore architecture to which a message is intented /
-/// originating. Ex: Data layer
+/// originating. Ex: Chain layer
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum TransportLayer {
     None = 0,
     Meta = 1,
     Common = 2,
-    Data = 3,
+    Chain = 3,
     Index = 4,
     Client = 5,
 }
@@ -39,7 +39,7 @@ impl TransportLayer {
             0 => Some(TransportLayer::None),
             1 => Some(TransportLayer::Meta),
             2 => Some(TransportLayer::Common),
-            3 => Some(TransportLayer::Data),
+            3 => Some(TransportLayer::Chain),
             4 => Some(TransportLayer::Index),
             5 => Some(TransportLayer::Client),
             _ => None,

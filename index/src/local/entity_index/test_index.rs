@@ -3,18 +3,18 @@ use crate::error::Error;
 use crate::local::mutation_index::MutationIndexConfig;
 use crate::local::{EntityIndex, EntityIndexConfig};
 use crate::mutation::MutationBuilder;
+use exocore_chain::engine::Event;
+use exocore_chain::operation::OperationId;
+use exocore_chain::tests_utils::TestChainCluster;
+use exocore_chain::{DirectoryChainStore, MemoryPendingStore};
 use exocore_core::protos::generated::exocore_index::{EntityMutation, Trait};
 use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstMessageExt};
-use exocore_data::engine::Event;
-use exocore_data::operation::OperationId;
-use exocore_data::tests_utils::DataTestCluster;
-use exocore_data::{DirectoryChainStore, MemoryPendingStore};
 
 /// Utility to test entities index
 pub struct TestEntityIndex {
     pub config: EntityIndexConfig,
-    pub cluster: DataTestCluster,
+    pub cluster: TestChainCluster,
     pub index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
 }
 
@@ -24,7 +24,7 @@ impl TestEntityIndex {
     }
 
     pub fn new_with_config(config: EntityIndexConfig) -> Result<TestEntityIndex, failure::Error> {
-        let cluster = DataTestCluster::new_single_and_start()?;
+        let cluster = TestChainCluster::new_single_and_start()?;
 
         let data_handle = cluster.get_handle(0).clone();
         let index = EntityIndex::open_or_create(cluster.cells[0].clone(), config, data_handle)?;
@@ -79,7 +79,7 @@ impl TestEntityIndex {
     pub fn handle_engine_events(&mut self) -> Result<(), Error> {
         let events = self.cluster.drain_received_events(0);
         if !events.is_empty() {
-            self.index.handle_data_engine_events(events.into_iter())?;
+            self.index.handle_chain_engine_events(events.into_iter())?;
         }
 
         Ok(())

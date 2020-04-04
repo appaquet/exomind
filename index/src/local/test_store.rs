@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use tempdir::TempDir;
 
-use exocore_data::tests_utils::DataTestCluster;
-use exocore_data::{DirectoryChainStore, MemoryPendingStore};
+use exocore_chain::tests_utils::TestChainCluster;
+use exocore_chain::{DirectoryChainStore, MemoryPendingStore};
 
 use crate::local::mutation_index::MutationIndexConfig;
 use crate::local::store::StoreHandle;
@@ -21,7 +21,7 @@ use exocore_core::protos::registry::Registry;
 
 /// Utility to test store
 pub struct TestStore {
-    pub cluster: DataTestCluster,
+    pub cluster: TestChainCluster,
     pub registry: Arc<Registry>,
 
     pub store: Option<Store<DirectoryChainStore, MemoryPendingStore>>,
@@ -31,7 +31,7 @@ pub struct TestStore {
 
 impl TestStore {
     pub fn new() -> Result<TestStore, failure::Error> {
-        let cluster = DataTestCluster::new_single_and_start()?;
+        let cluster = TestChainCluster::new_single_and_start()?;
 
         let temp_dir = tempdir::TempDir::new("store")?;
         let registry = Arc::new(Registry::new_with_exocore_types());

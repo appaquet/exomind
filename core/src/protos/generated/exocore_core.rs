@@ -62,7 +62,7 @@ pub mod cell_node_config {
     #[derive(Serialize, Deserialize)]
     pub enum Role {
         InvalidRole = 0,
-        DataRole = 1,
+        ChainRole = 1,
         IndexStoreRole = 2,
     }
 }

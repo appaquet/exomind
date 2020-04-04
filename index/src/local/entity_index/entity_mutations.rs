@@ -3,14 +3,14 @@ use super::result_hasher;
 use crate::entity::TraitId;
 use crate::error::Error;
 use crate::query::ResultHash;
+use exocore_chain::operation::OperationId;
 use exocore_core::time::ConsistentTimestamp;
-use exocore_data::operation::OperationId;
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hasher;
 
 /// Traits metadata of an entity as retrieved from the traits index, as opposed
-/// as being complete from the data layer.
+/// as being complete from the chain layer.
 pub struct EntityMutations {
     // final traits of the entity once all mutations were aggregated
     pub traits: HashMap<TraitId, MutationMetadata>,

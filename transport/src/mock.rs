@@ -214,7 +214,7 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
         let mut envelope_builder = CapnpFrameBuilder::<envelope::Owned>::new();
         let mut builder = envelope_builder.get_builder();
         builder.set_type(type_id);
-        builder.set_layer(TransportLayer::Data.to_code());
+        builder.set_layer(TransportLayer::Chain.to_code());
 
         let out_message = OutMessage {
             to: vec![to.clone()],
@@ -278,11 +278,11 @@ mod test {
         let node0 = LocalNode::generate();
         let node1 = LocalNode::generate();
 
-        let transport0 = hub.get_transport(node0.clone(), TransportLayer::Data);
+        let transport0 = hub.get_transport(node0.clone(), TransportLayer::Chain);
         let mut transport0_test = transport0.into_testable();
         transport0_test.start(&mut rt);
 
-        let transport1 = hub.get_transport(node1.clone(), TransportLayer::Data);
+        let transport1 = hub.get_transport(node1.clone(), TransportLayer::Chain);
         let mut transport1_test = transport1.into_testable();
         transport1_test.start(&mut rt);
 

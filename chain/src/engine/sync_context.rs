@@ -81,15 +81,15 @@ impl SyncContextMessage {
 
         let message = match self {
             SyncContextMessage::PendingSyncRequest(_, request_builder) => {
-                OutMessage::from_framed_message(cell, TransportLayer::Data, request_builder)?
+                OutMessage::from_framed_message(cell, TransportLayer::Chain, request_builder)?
                     .with_to_nodes(to_nodes)
             }
             SyncContextMessage::ChainSyncRequest(_, request_builder) => {
-                OutMessage::from_framed_message(cell, TransportLayer::Data, request_builder)?
+                OutMessage::from_framed_message(cell, TransportLayer::Chain, request_builder)?
                     .with_to_nodes(to_nodes)
             }
             SyncContextMessage::ChainSyncResponse(_, response_builder) => {
-                OutMessage::from_framed_message(cell, TransportLayer::Data, response_builder)?
+                OutMessage::from_framed_message(cell, TransportLayer::Chain, response_builder)?
                     .with_to_nodes(to_nodes)
             }
         };

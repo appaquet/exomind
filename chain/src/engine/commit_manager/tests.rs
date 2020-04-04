@@ -49,7 +49,7 @@ fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
 #[test]
 fn should_not_propose_block_if_not_data() -> Result<(), failure::Error> {
     let mut cluster = EngineTestCluster::new(1);
-    cluster.remove_node_role(0, CellNodeRole::Data);
+    cluster.remove_node_role(0, CellNodeRole::Chain);
 
     cluster.chain_add_genesis_block(0);
     cluster.tick_chain_synchronizer(0)?;
@@ -352,7 +352,7 @@ fn test_is_node_commit_turn() -> Result<(), failure::Error> {
     };
 
     {
-        // test normal with all nodes being full data
+        // test normal with all nodes having full chain
         let nodes = cluster.cells[0].nodes();
         let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
@@ -372,8 +372,8 @@ fn test_is_node_commit_turn() -> Result<(), failure::Error> {
     }
 
     {
-        // only node 0 is full data
-        cluster.remove_node_role(sec_node_idx, CellNodeRole::Data);
+        // only node 0 has full chain
+        cluster.remove_node_role(sec_node_idx, CellNodeRole::Chain);
 
         let nodes = cluster.cells[0].nodes();
         let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));

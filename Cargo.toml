@@ -13,7 +13,7 @@ license = "MIT"
 exocore-core = { version = "0.1.0", path = "./core" }
 exocore-transport = { version = "0.1.0", path = "./transport" }
 exocore-index = { version = "0.1.0", path = "./index" }
-exocore-data = { version = "0.1.0", path = "./data" }
+exocore-chain = { version = "0.1.0", path = "./chain" }
 
 [dev-dependencies]
 exocore-core = { version = "0.1.0", path = "./core", features = ["tests_utils"] }
@@ -22,7 +22,7 @@ exocore-core = { version = "0.1.0", path = "./core", features = ["tests_utils"] 
 members = [
   "exo",
   "index",
-  "data",
+  "chain",
   "core",
   "transport",
   "clients/web",

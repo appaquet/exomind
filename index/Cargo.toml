@@ -11,10 +11,10 @@ license = "MIT"
 
 [features]
 default = ["local_store"]
-local_store = ["tantivy", "exocore-data/engine", "crc"]
+local_store = ["tantivy", "exocore-chain/engine", "crc"]
 
 [dependencies]
-exocore-data = { path = "../data", default-features = false }
+exocore-chain = { path = "../chain", default-features = false }
 exocore-transport = { path = "../transport", default-features = false }
 exocore-core = { path = "../core" }
 failure = "0.1"
@@ -32,5 +32,5 @@ crc = { version = "1.8", optional = true }
 
 [dev-dependencies]
 tempdir = "0.3"
-exocore-data = { path = "../data", features = ["tests_utils"] }
+exocore-chain = { path = "../chain", features = ["tests_utils"] }
 exocore-core = { path = "../core", features = ["tests_utils"] }

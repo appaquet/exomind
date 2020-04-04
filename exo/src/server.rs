@@ -1,12 +1,12 @@
 use failure::err_msg;
 
-use exocore_core::cell::{Cell, CellNodeRole, EitherCell, FullCell};
-use exocore_core::futures::Runtime;
-use exocore_core::time::Clock;
-use exocore_data::{
+use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
 };
+use exocore_core::cell::{Cell, CellNodeRole, EitherCell, FullCell};
+use exocore_core::futures::Runtime;
+use exocore_core::time::Clock;
 use exocore_index::local::{EntityIndex, EntityIndexConfig, Store};
 use exocore_index::remote::server::Server;
 use exocore_transport::lp2p::Libp2pTransportConfig;
@@ -33,7 +33,7 @@ pub fn start(
         let clock = Clock::new();
 
         let cell = either_cell.cell();
-        if cell.local_node_has_role(CellNodeRole::Data) {
+        if cell.local_node_has_role(CellNodeRole::Chain) {
             let cell_name = cell.name().to_string();
 
             // make sure data directory exists
@@ -51,12 +51,12 @@ pub fn start(
             let pending_store = MemoryPendingStore::new();
 
             // create the engine
-            let data_transport = transport.get_handle(cell.clone(), TransportLayer::Data)?;
+            let chain_transport = transport.get_handle(cell.clone(), TransportLayer::Chain)?;
             let engine_config = EngineConfig::default();
             let mut engine = Engine::new(
                 engine_config,
                 clock.clone(),
-                data_transport,
+                chain_transport,
                 chain_store,
                 pending_store,
                 cell.clone(),
@@ -110,7 +110,7 @@ pub fn start(
             }
         } else {
             info!(
-                "{}: Local node doesn't have data role. Not starting data engine.",
+                "{}: Local node doesn't have chain role. Not starting chain engine.",
                 cell
             )
         }

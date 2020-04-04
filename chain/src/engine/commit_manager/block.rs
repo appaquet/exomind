@@ -120,7 +120,7 @@ impl PendingBlocks {
                     if proposal.offset < next_offset {
                         // means it was a proposed block for a diverged chain
                         BlockStatus::PastRefused
-                    } else if nodes.is_quorum(refusals.len(), Some(CellNodeRole::Data))
+                    } else if nodes.is_quorum(refusals.len(), Some(CellNodeRole::Chain))
                         || has_my_refusal
                     {
                         BlockStatus::NextRefused

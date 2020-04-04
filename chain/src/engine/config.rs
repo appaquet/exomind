@@ -1,7 +1,7 @@
 use super::{ChainSyncConfig, CommitManagerConfig, PendingSyncConfig};
 use std::time::Duration;
 
-/// Data engine's configuration
+/// Chain engine's configuration
 #[derive(Copy, Clone)]
 pub struct EngineConfig {
     pub chain_sync_config: ChainSyncConfig,

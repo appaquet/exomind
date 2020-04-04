@@ -129,7 +129,7 @@ impl EngineTestCluster {
         };
 
         for i in 0..count {
-            cluster.add_node_role(i, CellNodeRole::Data);
+            cluster.add_node_role(i, CellNodeRole::Chain);
         }
 
         cluster

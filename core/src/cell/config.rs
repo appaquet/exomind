@@ -290,7 +290,7 @@ cells:
         }
 
         {
-            assert!(cell.local_node_has_role(CellNodeRole::Data));
+            assert!(cell.local_node_has_role(CellNodeRole::Chain));
             assert!(!cell.local_node_has_role(CellNodeRole::IndexStore));
         }
 

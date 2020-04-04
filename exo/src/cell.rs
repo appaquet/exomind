@@ -1,9 +1,9 @@
 use crate::options;
+use exocore_chain::block::Block;
+use exocore_chain::chain::ChainStore;
+use exocore_chain::{DirectoryChainStore, DirectoryChainStoreConfig};
 use exocore_core::cell::Cell;
 use exocore_core::protos::generated::data_chain_capnp::block_header;
-use exocore_data::block::Block;
-use exocore_data::chain::ChainStore;
-use exocore_data::{DirectoryChainStore, DirectoryChainStoreConfig};
 
 pub fn create_genesis_block(
     _opt: &options::Options,
@@ -28,7 +28,7 @@ pub fn create_genesis_block(
         panic!("Chain is already initialized");
     }
 
-    let genesis_block = exocore_data::block::BlockOwned::new_genesis(&full_cell)?;
+    let genesis_block = exocore_chain::block::BlockOwned::new_genesis(&full_cell)?;
     chain_store.write_block(&genesis_block)?;
 
     Ok(())

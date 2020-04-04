@@ -20,8 +20,8 @@ pub enum Error {
     TantitvyQueryParsing(std::sync::Arc<tantivy::query::QueryParserError>),
 
     #[cfg(feature = "local_store")]
-    #[fail(display = "Data engine error: {}", _0)]
-    DataEngine(#[fail(cause)] exocore_data::engine::EngineError),
+    #[fail(display = "Chain engine error: {}", _0)]
+    ChainEngine(#[fail(cause)] exocore_chain::engine::EngineError),
 
     #[fail(display = "Transport error: {}", _0)]
     Transport(#[fail(cause)] exocore_transport::Error),
@@ -69,7 +69,7 @@ impl Error {
             Error::TantivyOpenDirectoryError(_) => true,
 
             #[cfg(feature = "local_store")]
-            Error::DataEngine(err) if err.is_fatal() => true,
+            Error::ChainEngine(err) if err.is_fatal() => true,
 
             _ => false,
         }
@@ -116,9 +116,9 @@ impl From<exocore_core::protos::Error> for Error {
 }
 
 #[cfg(feature = "local_store")]
-impl From<exocore_data::engine::EngineError> for Error {
-    fn from(err: exocore_data::engine::EngineError) -> Self {
-        Error::DataEngine(err)
+impl From<exocore_chain::engine::EngineError> for Error {
+    fn from(err: exocore_chain::engine::EngineError) -> Self {
+        Error::ChainEngine(err)
     }
 }
 

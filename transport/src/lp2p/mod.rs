@@ -466,7 +466,7 @@ mod tests {
         node2_cell.nodes_mut().add(node1.node().clone());
 
         let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
-        let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
+        let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Chain)?;
         let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell);
         rt.spawn(async {
             let res = transport1.run().await;
@@ -475,7 +475,7 @@ mod tests {
         handle1_tester.start_handle(&mut rt);
 
         let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
-        let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
+        let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Chain)?;
         let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
         rt.spawn(async {
             let res = transport2.run().await;
@@ -516,10 +516,10 @@ mod tests {
         let inner_weak = Arc::downgrade(&transport.handles);
 
         // we create 2 handles
-        let handle1 = transport.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
+        let handle1 = transport.get_handle(node1_cell.cell().clone(), TransportLayer::Chain)?;
         let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell);
 
-        let handle2 = transport.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
+        let handle2 = transport.get_handle(node2_cell.cell().clone(), TransportLayer::Chain)?;
         let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
 
         rt.spawn(async {
@@ -560,7 +560,7 @@ mod tests {
         node2_cell.nodes_mut().add(node1.node().clone());
 
         let mut transport1 = Libp2pTransport::new(node1, Libp2pTransportConfig::default());
-        let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Data)?;
+        let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Chain)?;
         let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
         rt.spawn(async {
             let res = transport1.run().await;
@@ -574,11 +574,12 @@ mod tests {
         // send 1 to 2, but with expired message, which shouldn't be delivered
         let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
         let _builder = frame_builder.get_builder();
-        let msg = OutMessage::from_framed_message(&node1_cell, TransportLayer::Data, frame_builder)
-            .unwrap()
-            .with_expiration(Some(Instant::now() - Duration::from_secs(5)))
-            .with_rendez_vous_id(ConsistentTimestamp(2))
-            .with_to_nodes(vec![node2.node().clone()]);
+        let msg =
+            OutMessage::from_framed_message(&node1_cell, TransportLayer::Chain, frame_builder)
+                .unwrap()
+                .with_expiration(Some(Instant::now() - Duration::from_secs(5)))
+                .with_rendez_vous_id(ConsistentTimestamp(2))
+                .with_to_nodes(vec![node2.node().clone()]);
         handle1_tester.send_message(msg);
 
         // leave some time for first messages to arrive
@@ -586,7 +587,7 @@ mod tests {
 
         // we create second node
         let mut transport2 = Libp2pTransport::new(node2.clone(), Libp2pTransportConfig::default());
-        let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Data)?;
+        let handle2 = transport2.get_handle(node2_cell.cell().clone(), TransportLayer::Chain)?;
         let handle2_tester = TransportHandleTester::new(&mut rt, handle2, node2_cell);
         rt.spawn(async {
             let res = transport2.run().await;
@@ -661,7 +662,7 @@ mod tests {
             let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
             let _builder = frame_builder.get_builder();
             let msg =
-                OutMessage::from_framed_message(&self.cell, TransportLayer::Data, frame_builder)
+                OutMessage::from_framed_message(&self.cell, TransportLayer::Chain, frame_builder)
                     .unwrap()
                     .with_rendez_vous_id(ConsistentTimestamp(memo))
                     .with_to_nodes(to_nodes);

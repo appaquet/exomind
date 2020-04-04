@@ -53,7 +53,7 @@ impl<'a> MessageType<'a> for super::data_chain_capnp::block_operation_header::Ow
     const MESSAGE_TYPE: u16 = 133;
 }
 
-/// Messages related to transport / messaging between nodes on data layer
+/// Messages related to transport / messaging between nodes on chain layer
 impl<'a> MessageType<'a> for super::data_transport_capnp::pending_sync_request::Owned {
     const MESSAGE_TYPE: u16 = 200;
 }

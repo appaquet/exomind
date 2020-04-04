@@ -11,7 +11,7 @@ use exocore_core::protos::prost::ProstMessageExt;
 
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
-use exocore_data::operation::OperationId;
+use exocore_chain::operation::OperationId;
 
 pub struct MutationBuilder;
 

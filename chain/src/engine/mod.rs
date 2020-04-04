@@ -37,7 +37,7 @@ mod sync_context;
 #[cfg(test)]
 pub(crate) mod testing;
 
-/// The data engine manages storage and replication of data among the nodes of
+/// The chain engine manages storage and replication of data among the nodes of
 /// the cell.
 ///
 /// It contains 2 stores:

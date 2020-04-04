@@ -11,7 +11,7 @@ cargo check --tests --all
 cargo clean  \
     -p exo \
     -p exocore-index \
-    -p exocore-data \
+    -p exocore-chain \
     -p exocore-core \
     -p exocore-transport \
     -p exocore-client-web \
