@@ -23,7 +23,7 @@ struct Identity {
 impl Application {
     pub fn new_from_directory<P: AsRef<Path>>(dir: P) -> Result<Application, Error> {
         let mut manifest_path = dir.as_ref().to_path_buf();
-        manifest_path.push("manifest.yaml");
+        manifest_path.push("app.yaml");
 
         let mut manifest = app_manifest_from_yaml_file(manifest_path)?;
         manifest.path = dir.as_ref().to_string_lossy().to_string();

@@ -16,7 +16,7 @@ pub mod cell;
 pub mod crypto;
 pub mod framing;
 pub mod futures;
-#[cfg(feature = "console_logger")]
+#[cfg(feature = "logger")]
 pub mod logging;
 pub mod simple_store;
 #[cfg(any(test, feature = "tests_utils"))]

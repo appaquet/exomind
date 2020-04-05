@@ -10,10 +10,10 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [features]
-default = ["libp2p_transport"]
+default = ["lp2p"]
 tests_utils = ["exocore-core/tests_utils"]
-libp2p_transport = ["libp2p"]
-libp2p_wasm = ["libp2p/wasm-ext", "libp2p-wasm-ext"]
+web = ["libp2p/wasm-ext", "libp2p-wasm-ext", "lp2p"]
+lp2p = ["libp2p"]
 
 [dependencies]
 exocore-core = { path = "../core" }
@@ -22,9 +22,9 @@ failure = "0.1"
 futures = { version = "0.3", features = ["compat"] }
 pin-project = "0.4"
 byteorder = "1.3"
-
-# libp2p_transport
 libp2p = { version = "0.17", optional = true, default-features = false, features = [ "dns", "mplex", "secio", "tcp", "wasm-ext", "websocket", "yamux" ] }
+
+[target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]
 libp2p-wasm-ext = { version = "0.17", features = ["websocket"], optional = true }
 
 [dev-dependencies]

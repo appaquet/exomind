@@ -53,17 +53,14 @@ fn keys_generate(
     keys_opts: &options::KeysOptions,
 ) -> Result<(), failure::Error> {
     let keypair = match keys_opts.algorithm {
-        options::KeyAlgorithm::Ed25519 => {
-            println!("Type: ED25519");
-            Keypair::generate_ed25519()
-        }
+        options::KeyAlgorithm::Ed25519 => Keypair::generate_ed25519(),
         options::KeyAlgorithm::Rsa => unimplemented!(),
     };
 
-    println!("Keypair: {}", keypair.encode_base58_string());
-    println!("Public key: {}", keypair.public().encode_base58_string());
+    println!("keypair: {}", keypair.encode_base58_string());
+    println!("public_key: {}", keypair.public().encode_base58_string());
     println!(
-        "Generated name: {}",
+        "name: {}",
         Node::new_from_public_key(keypair.public()).name()
     );
 

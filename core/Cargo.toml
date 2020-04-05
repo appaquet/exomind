@@ -10,9 +10,9 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [features]
-tests_utils = ["runtime", "console_logger"]
+tests_utils = ["runtime", "logger"]
 runtime = ["tokio/full"]
-console_logger = ["log4rs"]
+logger = ["log4rs"]
 
 [dependencies]
 log = "0.4"

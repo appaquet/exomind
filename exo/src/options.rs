@@ -61,10 +61,10 @@ pub enum KeyAlgorithm {
 
 impl FromStr for KeyAlgorithm {
     type Err = failure::Error;
-    fn from_str(day: &str) -> Result<Self, Self::Err> {
-        match day {
+    fn from_str(k: &str) -> Result<Self, Self::Err> {
+        match k {
             "ed25519" => Ok(KeyAlgorithm::Ed25519),
-            _ => Err(err_msg("Invalid key type")),
+            _ => Err(err_msg("Unsupported key type")),
         }
     }
 }

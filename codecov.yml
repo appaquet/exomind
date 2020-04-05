@@ -11,8 +11,7 @@ coverage:
 
     patch:
       default:
-        target: 70%
-        threshold: 1%
+        enabled: no
 
 ignore:
   - "**/main.rs"

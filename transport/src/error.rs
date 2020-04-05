@@ -1,18 +1,14 @@
 use exocore_core::capnp;
 
-#[cfg(any(feature = "libp2p_transport", feature = "websocket_transport"))]
+#[cfg(any(feature = "lp2p"))]
 use std::sync::Arc;
 
 /// Transport related error
 #[derive(Debug, Fail, Clone)]
 pub enum Error {
-    #[cfg(feature = "libp2p_transport")]
+    #[cfg(feature = "lp2p")]
     #[fail(display = "libp2p transport error: {:?}", _0)]
     Libp2pTransport(Arc<dyn std::error::Error + Send + Sync + 'static>),
-
-    #[cfg(feature = "websocket_transport")]
-    #[fail(display = "Websocket transport error: {:?}", _0)]
-    WebsocketTransport(Arc<crate::ws::WebSocketError>),
 
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
@@ -33,20 +29,13 @@ pub enum Error {
     Other(String),
 }
 
-#[cfg(feature = "libp2p_transport")]
+#[cfg(feature = "lp2p")]
 impl<Terr> From<libp2p::core::transport::TransportError<Terr>> for Error
 where
     Terr: std::error::Error + Send + Sync + 'static,
 {
     fn from(err: libp2p::core::transport::TransportError<Terr>) -> Self {
         Error::Libp2pTransport(Arc::new(err))
-    }
-}
-
-#[cfg(feature = "websocket_transport")]
-impl From<crate::ws::WebSocketError> for Error {
-    fn from(err: crate::ws::WebSocketError) -> Self {
-        Error::WebsocketTransport(Arc::new(err))
     }
 }
 

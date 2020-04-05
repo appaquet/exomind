@@ -109,7 +109,7 @@ impl Cell {
         local_node: LocalNode,
     ) -> Result<EitherCell, Error> {
         let mut config_path = directory.as_ref().to_path_buf();
-        config_path.push("config.yaml");
+        config_path.push("cell.yaml");
 
         let cell_config = cell_config_from_yaml_file(config_path)?;
 

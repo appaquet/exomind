@@ -96,7 +96,7 @@ pub fn cell_config_from_node_cell(
         Some(node_cell_config::Location::Instance(cell_config)) => Ok(cell_config.clone()),
         Some(node_cell_config::Location::Directory(directory)) => {
             let mut config_path = to_absolute_from_parent_path(&node_config.path, directory);
-            config_path.push("config.yaml");
+            config_path.push("cell.yaml");
 
             cell_config_from_yaml_file(config_path)
         }

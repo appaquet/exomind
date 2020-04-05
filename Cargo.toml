@@ -9,11 +9,28 @@ categories = ["database-implementations", "command-line-interface", "wasm", "web
 repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
+[features]
+default = ["core_runtime", "core_logger", "transport_libp2p", "index_local_store", "chain_engine", "chain_directory_chain", "chain_memory_pending"]
+tests_utils = ["exocore-core/tests_utils", "exocore-transport/tests_utils"]
+
+client = ["core_runtime", "transport_libp2p"]
+web = ["transport_web"]
+logger = ["core_logger"]
+
+core_runtime = ["exocore-core/runtime"]
+core_logger = ["exocore-core/logger"]
+transport_libp2p = ["exocore-transport/lp2p"]
+transport_web = ["exocore-transport/web"]
+index_local_store = ["exocore-index/local_store"]
+chain_engine = ["exocore-chain/engine"]
+chain_directory_chain = ["exocore-chain/directory_chain"]
+chain_memory_pending = ["exocore-chain/memory_pending"]
+
 [dependencies]
-exocore-core = { version = "0.1.0", path = "./core" }
-exocore-transport = { version = "0.1.0", path = "./transport" }
-exocore-index = { version = "0.1.0", path = "./index" }
-exocore-chain = { version = "0.1.0", path = "./chain" }
+exocore-core = { version = "0.1.0", path = "./core", default-features = false }
+exocore-transport = { version = "0.1.0", path = "./transport", default-features = false }
+exocore-index = { version = "0.1.0", path = "./index", default-features = false }
+exocore-chain = { version = "0.1.0", path = "./chain", default-features = false }
 
 [dev-dependencies]
 exocore-core = { version = "0.1.0", path = "./core", features = ["tests_utils"] }
