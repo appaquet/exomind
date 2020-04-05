@@ -8,7 +8,7 @@ edition = "2018"
 crate-type = ["staticlib"]
 
 [dependencies]
-exocore-core = { path = "../../core", features = ["runtime"] }
+exocore-core = { path = "../../core", features = ["runtime", "console_logger"] }
 exocore-transport = { path = "../../transport", features = ["libp2p_transport"] }
 exocore-index = { path = "../../index", default-features = false }
 libc = "0.2"

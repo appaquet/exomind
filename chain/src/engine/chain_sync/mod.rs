@@ -103,18 +103,20 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // make sure we are still in sync with the leader
         if self.status == Status::Synchronized && !self.im_leader() {
             if let Some(leader_node_id) = self.leader.clone() {
+                let leader_node = nodes.get(&leader_node_id).map(|cn| cn.node());
+
                 let leader_node_info = self.get_or_create_node_info_mut(&leader_node_id);
                 let common_block_delta = leader_node_info.common_blocks_height_delta().unwrap_or(0);
                 let sync_status = leader_node_info.status();
 
                 let lost_leadership = if sync_status != NodeStatus::Synchronized {
                     info!(
-                        "Node {} lost leadership status because it isn't sync anymore",
-                        leader_node_id
+                        "Node {:?} lost leadership status because it isn't sync anymore",
+                        leader_node,
                     );
                     true
                 } else if common_block_delta > self.config.max_leader_common_block_height_delta {
-                    info!("Node {} lost leadership status because of common block height delta is too high (height {} > height {})", leader_node_id, common_block_delta, self.config.max_leader_common_block_height_delta);
+                    info!("Node {:?} lost leadership status because of common block height delta is too high (height {} > height {})", leader_node, common_block_delta, self.config.max_leader_common_block_height_delta);
                     true
                 } else {
                     false
@@ -130,8 +132,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // if we lost synchronization, we reset request trackers to allow quicker
         // resynchronization by not waiting for request interval
         if status_start == Status::Synchronized && self.status != Status::Synchronized {
-            for node in self.nodes_info.values_mut() {
-                node.request_tracker.reset();
+            for sync_info in self.nodes_info.values_mut() {
+                sync_info.request_tracker.reset();
             }
         }
 
@@ -159,7 +161,8 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     if self.im_leader() {
                         info!("I'm the leader");
                     } else if let Some(leader_node_id) = self.leader.clone() {
-                        info!("Our leader node is {}", leader_node_id);
+                        let leader_node = nodes.get(&leader_node_id).map(|cn| cn.node());
+                        info!("Our leader node is {:?}", leader_node);
                     } else {
                         warn!("Couldn't find any leader node");
                     }

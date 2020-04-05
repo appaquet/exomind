@@ -10,8 +10,9 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [features]
-tests_utils = ["log4rs", "runtime"]
+tests_utils = ["runtime", "console_logger"]
 runtime = ["tokio/full"]
+console_logger = ["log4rs"]
 
 [dependencies]
 log = "0.4"
@@ -38,7 +39,7 @@ uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
 petname = "1.0"
 rand = "0.7"
 
-# tests_utils
+# console_logger
 log4rs = { version = "0.11", optional = true }
 
 [target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]

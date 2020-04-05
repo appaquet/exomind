@@ -1,28 +1,6 @@
-use self::log4rs::config::Logger;
 use failure::err_msg;
 use std::fmt::Debug;
 use std::time::{Duration, Instant};
-
-extern crate log4rs;
-
-pub fn setup_logging() {
-    use log::LevelFilter;
-    use log4rs::append::console::ConsoleAppender;
-    use log4rs::config::{Appender, Config, Root};
-
-    let stdout = ConsoleAppender::builder().build();
-
-    // see https://docs.rs/log4rs/*/log4rs/
-    let config = Config::builder()
-        .appender(Appender::builder().build("stdout", Box::new(stdout)))
-        .logger(Logger::builder().build("tokio_reactor", LevelFilter::Info))
-        .logger(Logger::builder().build("tantivy", LevelFilter::Error))
-        .logger(Logger::builder().build("exocore_chain", LevelFilter::Info))
-        .build(Root::builder().appender("stdout").build(LevelFilter::Debug))
-        .unwrap();
-
-    log4rs::init_config(config).unwrap();
-}
 
 pub fn expect_eventually<F>(cb: F)
 where

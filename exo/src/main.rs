@@ -2,7 +2,6 @@
 
 mod cell;
 mod config;
-mod logging;
 mod options;
 mod server;
 
@@ -17,7 +16,7 @@ use structopt::StructOpt;
 
 fn main() -> Result<(), failure::Error> {
     let opt: options::Options = options::Options::from_args();
-    logging::setup(Some(LevelFilter::from_str(&opt.logging_level)?));
+    exocore_core::logging::setup(Some(LevelFilter::from_str(&opt.logging_level)?));
 
     use options::{CellCommand, ConfigCommand, KeysCommand, ServerCommand, SubCommand};
     let result = match &opt.subcommand {

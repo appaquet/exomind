@@ -5,7 +5,7 @@ extern crate log;
 
 use std::ffi::{CStr, CString};
 use std::os::raw::c_void;
-use std::sync::{Arc, Once};
+use std::sync::Arc;
 
 use futures::StreamExt;
 use libc;
@@ -23,9 +23,6 @@ use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 
 mod context;
-mod logging;
-
-static INIT: Once = Once::new();
 
 pub struct Context {
     _runtime: Runtime,
@@ -38,9 +35,7 @@ impl Context {
         config_size: usize,
         config_format: ConfigFormat,
     ) -> Result<Context, ContextStatus> {
-        INIT.call_once(|| {
-            logging::setup(Some(log::LevelFilter::Debug));
-        });
+        exocore_core::logging::setup(Some(log::LevelFilter::Debug));
 
         let config_bytes = unsafe { std::slice::from_raw_parts(config_bytes, config_size) };
         let config = match config_format {
