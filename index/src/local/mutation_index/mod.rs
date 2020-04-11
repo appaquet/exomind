@@ -229,16 +229,16 @@ impl MutationIndex {
 
     /// Converts a trait put / update to Tantivy document
     fn trait_put_to_document(&self, mutation: &PutTraitMutation) -> Result<Document, Error> {
-        let message = mutation
+        let message_any = mutation
             .trt
             .message
             .as_ref()
             .ok_or_else(|| Error::ProtoFieldExpected("Trait message"))?;
-        let dyn_message =
-            reflect::from_prost_any(self.schemas.as_ref(), message).map_err(Error::Proto)?;
 
         let mut doc = Document::default();
-        doc.add_text(self.fields.trait_type, dyn_message.full_name());
+
+        let message_full_name = reflect::any_url_to_full_name(&message_any.type_url);
+        doc.add_text(self.fields.trait_type, &message_full_name);
         doc.add_text(self.fields.trait_id, &mutation.trt.id);
         doc.add_text(self.fields.entity_id, &mutation.entity_id);
         doc.add_text(
@@ -278,21 +278,30 @@ impl MutationIndex {
             MutationMetadataType::TRAIT_PUT_ID,
         );
 
-        for field in dyn_message.fields() {
-            if !field.indexed_flag {
-                continue;
-            }
+        match reflect::from_prost_any(self.schemas.as_ref(), message_any) {
+            Ok(message_dyn) => {
+                for field in message_dyn.fields() {
+                    if !field.indexed_flag {
+                        continue;
+                    }
 
-            match &field.field_type {
-                FieldType::String => {
-                    if let Ok(FieldValue::String(val)) = dyn_message.get_field_value(field) {
-                        doc.add_text(self.fields.text, &val);
+                    match &field.field_type {
+                        FieldType::String => {
+                            if let Ok(FieldValue::String(val)) = message_dyn.get_field_value(field)
+                            {
+                                doc.add_text(self.fields.text, &val);
+                            }
+                        }
+                        ft => {
+                            warn!("Unsupported indexed field type: {:?}", ft);
+                        }
                     }
                 }
-                ft => {
-                    warn!("Unsupported indexed field type: {:?}", ft);
-                }
             }
+            Err(err) => error!(
+                "Error reflecting message of type '{}'. No fields will be indexed. Error: {}",
+                message_full_name, err
+            ),
         }
 
         Ok(doc)

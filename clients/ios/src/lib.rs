@@ -22,8 +22,6 @@ use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::lp2p::Libp2pTransportConfig;
 use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 
-mod context;
-
 pub struct Context {
     _runtime: Runtime,
     store_handle: Arc<ClientHandle>,

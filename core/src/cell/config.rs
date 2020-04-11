@@ -200,7 +200,7 @@ mod tests {
         let config = node_config_from_yaml_file(config_path)?;
 
         let (cells, node) = Cell::new_from_local_node_config(config)?;
-        assert_eq!(1, cells.len());
+        assert_eq!(2, cells.len());
         assert_eq!(2, node.addresses().len());
 
         let full_cell = cells.first().cloned().unwrap().unwrap_full();

@@ -2,7 +2,6 @@ use super::{Cell, Error, LocalNode, Node, NodeId};
 use crate::protos::generated::exocore_core::cell_node_config;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::str::FromStr;
 use std::sync::{RwLockReadGuard, RwLockWriteGuard};
 
 /// Common methods collection of nodes of a `Cell`
@@ -248,18 +247,6 @@ impl CellNodeRole {
     }
 }
 
-impl FromStr for CellNodeRole {
-    type Err = super::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "chain" => Ok(CellNodeRole::Chain),
-            "index_store" => Ok(CellNodeRole::IndexStore),
-            o => Err(super::Error::Node(format!("Invalid role name: {}", o))),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::super::FullCell;
@@ -297,6 +284,11 @@ mod tests {
 
             let other_node = Node::generate_temporary();
             assert!(nodes.get(other_node.id()).is_none());
+        }
+
+        {
+            let nodes = cell.nodes().to_owned();
+            assert_eq!(nodes.count(), 2);
         }
     }
 

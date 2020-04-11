@@ -103,7 +103,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // make sure we are still in sync with the leader
         if self.status == Status::Synchronized && !self.im_leader() {
             if let Some(leader_node_id) = self.leader.clone() {
-                let leader_node = nodes.get(&leader_node_id).map(|cn| cn.node());
+                let leader_node_disp = nodes
+                    .get(&leader_node_id)
+                    .map(|cn| cn.node().to_string())
+                    .unwrap_or_else(|| String::from("NOT_FOUND"));
 
                 let leader_node_info = self.get_or_create_node_info_mut(&leader_node_id);
                 let common_block_delta = leader_node_info.common_blocks_height_delta().unwrap_or(0);
@@ -111,12 +114,12 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
                 let lost_leadership = if sync_status != NodeStatus::Synchronized {
                     info!(
-                        "Node {:?} lost leadership status because it isn't sync anymore",
-                        leader_node,
+                        "Node {} lost leadership status because it isn't sync anymore",
+                        leader_node_disp,
                     );
                     true
                 } else if common_block_delta > self.config.max_leader_common_block_height_delta {
-                    info!("Node {:?} lost leadership status because of common block height delta is too high (height {} > height {})", leader_node, common_block_delta, self.config.max_leader_common_block_height_delta);
+                    info!("Node {} lost leadership status because of common block height delta is too high (height {} > height {})", leader_node_disp, common_block_delta, self.config.max_leader_common_block_height_delta);
                     true
                 } else {
                     false
@@ -161,8 +164,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     if self.im_leader() {
                         info!("I'm the leader");
                     } else if let Some(leader_node_id) = self.leader.clone() {
-                        let leader_node = nodes.get(&leader_node_id).map(|cn| cn.node());
-                        info!("Our leader node is {:?}", leader_node);
+                        let leader_node_disp = nodes
+                            .get(&leader_node_id)
+                            .map(|cn| cn.node().to_string())
+                            .unwrap_or_else(|| String::from("NOT_FOUND"));
+                        info!("Our leader node is {}", leader_node_disp);
                     } else {
                         warn!("Couldn't find any leader node");
                     }
@@ -206,7 +212,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let requested_details = request_reader.get_requested_details()?;
         debug!(
             "Got request from node {} for offset from {} to offset {} requested_details={}",
-            from_node.id(),
+            from_node,
             from_offset,
             to_offset,
             requested_details.to_u16()
@@ -269,15 +275,15 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     ) -> Result<(), EngineError> {
         let response_reader: chain_sync_response::Reader = response.get_reader()?;
         if response_reader.has_blocks() {
-            debug!("Got blocks response from node {}", from_node.id());
+            debug!("Got blocks response from node {}", from_node);
             self.handle_sync_response_blocks(sync_context, from_node, store, response_reader)?;
         } else if response_reader.has_headers() {
-            debug!("Got headers response from node {}", from_node.id());
+            debug!("Got headers response from node {}", from_node);
             self.handle_sync_response_headers(sync_context, from_node, store, response_reader)?;
         } else {
             warn!(
                 "Got a response without headers and blocks from node {}",
-                from_node.id()
+                from_node
             );
         }
 
@@ -322,7 +328,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             let node_info = self.get_or_create_node_info_mut(node.id());
 
             if node_info.request_tracker.can_send_request() {
-                debug!("Sending metadata sync request to {}", node.id());
+                debug!("Sending metadata sync request to {}", node);
                 let request =
                     Self::create_sync_request(node_info, RequestedDetails::Headers, None)?;
                 sync_context.push_chain_sync_request(node.id().clone(), request);

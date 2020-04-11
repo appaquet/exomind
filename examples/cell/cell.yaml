@@ -1,0 +1,26 @@
+keypair: ae4cDx4QxczCi3SAn2f9Wve1Gb4eJrNA68VGEnRMyYKVVkT4rfRR8dVATQxJGapmiSa49qLm8SbVFqj4BBJYNdqgo3
+public_key: pe4joYLBR7R48zZfbLBqHLNvZ97eXAz1zE3pY29h25fGr5
+name: vigorously-emerging-elk
+data_directory: ./data
+nodes:
+  - node:
+      name: Optional Node Name
+      public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+      addresses:
+        - /ip4/127.0.0.1/tcp/3330
+        - /ip4/127.0.0.1/tcp/3341/ws
+
+    # Role of the node
+    # Chain = 1
+    # Index store = 2
+    roles:
+      - 1
+      - 2
+
+  - node:
+      name: Some Client Node
+      public_key: peHdrwp1ZXicF1v7RQRRC4ursqgE1oM9nuVijCmrf74n7E
+
+apps:
+  - location:
+      Directory: ../app

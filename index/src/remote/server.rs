@@ -257,7 +257,7 @@ where
             futures::select! {
                 _ = stream_consumer.fuse() => (),
                 _ = drop_receiver.fuse() => {
-                    info!("Registered query with token {:?} got dropped", watch_token);
+                    debug!("Registered query with token {:?} got dropped", watch_token);
                    let _ = send_response(Err(Error::Dropped));
                 },
             };

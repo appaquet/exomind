@@ -43,10 +43,10 @@ pub fn check_chain(
     let cell = either_cells
         .into_iter()
         .find(|c| c.cell().public_key().encode_base58_string() == cell_opts.public_key)
-        .expect("Couldn't find cell with given public key")
-        .unwrap_cell();
+        .expect("Couldn't find cell with given public key");
 
     let chain_dir = cell
+        .cell()
         .chain_directory()
         .expect("Cell doesn't have a path configured");
     std::fs::create_dir_all(&chain_dir)?;
@@ -54,7 +54,9 @@ pub fn check_chain(
     let chain_store =
         DirectoryChainStore::create_or_open(DirectoryChainStoreConfig::default(), &chain_dir)?;
 
+    let mut block_count = 0;
     for block in chain_store.blocks_iter(0)? {
+        block_count += 1;
         if let Err(err) = block.validate() {
             let block_header_reader = block.header().get_reader();
             let block_height = block_header_reader
@@ -70,6 +72,8 @@ pub fn check_chain(
             return Ok(());
         }
     }
+
+    info!("Chain is valid. Analyzed {} blocks.", block_count);
 
     Ok(())
 }

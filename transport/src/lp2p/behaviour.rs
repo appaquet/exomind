@@ -50,7 +50,7 @@ impl ExocoreBehaviour {
                 let expiration =
                     expiration.unwrap_or_else(|| Instant::now() + DEFAULT_DIALING_MESSAGE_TIMEOUT);
 
-                debug!("Peer {} not connected. Queuing message.", peer.node);
+                info!("Got new message for peer {}, but not connected. Queuing message while dialing.", peer.node);
                 // Node is disconnected, push the event to a queue and try to connect
                 peer.temp_queue.push_back(QueuedPeerEvent {
                     event,
@@ -124,7 +124,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
 
     fn inject_connected(&mut self, peer_id: &PeerId) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
-            debug!("Connected to {}", peer.node);
+            info!("Connected to peer {}", peer.node);
 
             peer.status = PeerStatus::Connected;
 
@@ -140,12 +140,14 @@ impl NetworkBehaviour for ExocoreBehaviour {
                     self.actions.push_back(event.event);
                 }
             }
+        } else {
+            warn!("Got connection from unknown peer {}", peer_id);
         }
     }
 
     fn inject_disconnected(&mut self, peer_id: &PeerId) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
-            debug!("Disconnected from {}", peer.node);
+            info!("Disconnected from peer {}", peer.node);
 
             peer.status = PeerStatus::Disconnected;
 
@@ -183,7 +185,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
 
     fn inject_dial_failure(&mut self, peer_id: &PeerId) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
-            debug!("Failed to connect to {}", peer.node);
+            info!("Failed to connect to peer {}", peer.node);
         }
     }
 

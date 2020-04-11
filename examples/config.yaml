@@ -12,6 +12,7 @@ listen_addresses:
 # Cells that the node is part of
 # Use `exo keys generate` to generate cell's keys
 cells:
+  # Cell defined inline
   - location:
       Instance:
         public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
@@ -40,3 +41,7 @@ cells:
         apps:
           - location:
               Directory: ./app
+
+  # Cell defined in a directory
+  - location:
+      Directory: ./cell

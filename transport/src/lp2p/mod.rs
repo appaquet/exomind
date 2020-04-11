@@ -358,7 +358,7 @@ impl Handles {
     fn all_peer_nodes(&self) -> HashMap<NodeId, Node> {
         let mut nodes = HashMap::new();
         for inner_layer in self.handles.values() {
-            for cell_node in inner_layer.cell.nodes().iter().all() {
+            for cell_node in inner_layer.cell.nodes().iter().all_except_local() {
                 let node = cell_node.node().clone();
                 nodes.insert(node.id().clone(), node);
             }

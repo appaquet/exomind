@@ -3,7 +3,7 @@ use itertools::Itertools;
 
 use exocore_core::protos::generated::exocore_index::Trait;
 use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
-use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
+use exocore_core::protos::prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt};
 
 use crate::query::QueryBuilder;
 
@@ -489,6 +489,34 @@ fn highest_indexed_block() -> Result<(), failure::Error> {
         },
     }))?;
     assert_eq!(index.highest_indexed_block()?, Some(9999));
+
+    Ok(())
+}
+
+#[test]
+fn put_unregistered_trait() -> Result<(), failure::Error> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let mut index = MutationIndex::create_in_memory(config, registry)?;
+
+    assert_eq!(index.highest_indexed_block()?, None);
+
+    index.apply_mutation(IndexMutation::PutTrait(PutTraitMutation {
+        block_offset: Some(1234),
+        operation_id: 1,
+        entity_id: "et1".to_string(),
+        trt: Trait {
+            id: "trt1".to_string(),
+            message: Some(Any {
+                type_url: "type.googleapis.com/not.registered.Message".to_string(),
+                value: Vec::new(),
+            }),
+            ..Default::default()
+        },
+    }))?;
+
+    let results = index.search_with_trait("not.registered.Message", None)?;
+    assert_eq!(results.results.len(), 1);
 
     Ok(())
 }

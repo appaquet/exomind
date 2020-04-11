@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, Fail)]
 pub enum Error {
-    #[fail(display = "Message type is not in registry")]
-    NotInRegistry,
+    #[fail(display = "Message type is not in registry: {}", _0)]
+    NotInRegistry(String),
     #[fail(display = "Field doesn't exist")]
     NoSuchField,
     #[fail(display = "Invalid field type")]

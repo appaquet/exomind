@@ -213,7 +213,7 @@ pub fn from_any_url_and_data(
     url: &str,
     data: &[u8],
 ) -> Result<DynamicMessage, Error> {
-    let full_name = url.replace("type.googleapis.com/", "");
+    let full_name = any_url_to_full_name(url);
 
     let descriptor = registry.get_message_descriptor(&full_name)?;
     let message = protobuf::parse_from_bytes::<Empty>(data)?;
@@ -222,6 +222,10 @@ pub fn from_any_url_and_data(
         message,
         descriptor,
     })
+}
+
+pub fn any_url_to_full_name(url: &str) -> String {
+    url.replace("type.googleapis.com/", "")
 }
 
 #[cfg(test)]

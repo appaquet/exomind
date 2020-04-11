@@ -124,7 +124,7 @@ impl Registry {
         message_descriptors
             .get(full_name)
             .cloned()
-            .ok_or(Error::NotInRegistry)
+            .ok_or_else(|| Error::NotInRegistry(full_name.to_string()))
     }
 
     pub fn get_or_register_generated_descriptor<M: Message>(

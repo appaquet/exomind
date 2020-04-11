@@ -1,7 +1,7 @@
 use super::Error;
 use crate::protos::generated::exocore_test::{TestMessage, TestMessage2};
 use prost::Message;
-use prost_types::{Any, Timestamp};
+pub use prost_types::{Any, Timestamp};
 
 pub trait ProstTimestampExt {
     fn to_chrono_datetime(&self) -> chrono::DateTime<chrono::Utc>;
