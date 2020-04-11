@@ -163,17 +163,20 @@ mod tests {
             keypair: "keypair".to_string(),
             public_key: "pk".to_string(),
             name: "node_name".to_string(),
+            id: String::new(),
             path: "path".to_string(),
             cells: vec![NodeCellConfig {
                 location: Some(node_cell_config::Location::Instance(CellConfig {
                     public_key: "pk".to_string(),
                     keypair: "kp".to_string(),
                     name: "cell_name".to_string(),
+                    id: String::new(),
                     path: "path".to_string(),
                     nodes: vec![CellNodeConfig {
                         node: Some(NodeConfig {
                             public_key: "pk".to_string(),
                             name: "node_name".to_string(),
+                            id: String::new(),
                             addresses: vec!["maddr".to_string()],
                         }),
                         roles: vec![cell_node_config::Role::InvalidRole.into()],

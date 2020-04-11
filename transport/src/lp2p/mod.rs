@@ -263,7 +263,7 @@ impl Libp2pTransport {
             )));
         };
 
-        let source_node = Self::get_node_by_peer(&handle_channels.cell, &message.source)?;
+        let source_node = Self::get_node_by_peer(&handle_channels.cell, message.source.clone())?;
         let msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
         handle_channels
             .in_sender
@@ -285,7 +285,7 @@ impl Libp2pTransport {
         };
 
         for handle in inner.handles.values_mut() {
-            if let Ok(node) = Self::get_node_by_peer(&handle.cell, &peer_id) {
+            if let Ok(node) = Self::get_node_by_peer(&handle.cell, peer_id.clone()) {
                 handle
                     .in_sender
                     .try_send(InEvent::NodeStatus(node.id().clone(), status))
@@ -298,7 +298,7 @@ impl Libp2pTransport {
         Ok(())
     }
 
-    fn get_node_by_peer(cell: &Cell, peer_id: &PeerId) -> Result<Node, Error> {
+    fn get_node_by_peer(cell: &Cell, peer_id: PeerId) -> Result<Node, Error> {
         let node_id = NodeId::from_peer_id(peer_id);
         let cell_nodes = cell.nodes();
 

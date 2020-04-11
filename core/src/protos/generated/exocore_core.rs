@@ -9,10 +9,13 @@ pub struct LocalNodeConfig {
     pub name: std::string::String,
     #[prost(string, tag = "4")]
     #[serde(default)]
+    pub id: std::string::String,
+    #[prost(string, tag = "5")]
+    #[serde(default)]
     pub path: std::string::String,
-    #[prost(string, repeated, tag = "5")]
+    #[prost(string, repeated, tag = "6")]
     pub listen_addresses: ::std::vec::Vec<std::string::String>,
-    #[prost(message, repeated, tag = "6")]
+    #[prost(message, repeated, tag = "7")]
     pub cells: ::std::vec::Vec<NodeCellConfig>,
 }
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
@@ -41,10 +44,13 @@ pub struct CellConfig {
     pub name: std::string::String,
     #[prost(string, tag = "4")]
     #[serde(default)]
+    pub id: std::string::String,
+    #[prost(string, tag = "5")]
+    #[serde(default)]
     pub path: std::string::String,
-    #[prost(message, repeated, tag = "5")]
-    pub nodes: ::std::vec::Vec<CellNodeConfig>,
     #[prost(message, repeated, tag = "6")]
+    pub nodes: ::std::vec::Vec<CellNodeConfig>,
+    #[prost(message, repeated, tag = "7")]
     #[serde(default)]
     pub apps: ::std::vec::Vec<CellApplicationConfig>,
 }
@@ -70,12 +76,15 @@ pub mod cell_node_config {
 pub struct NodeConfig {
     #[prost(string, tag = "1")]
     pub public_key: std::string::String,
-    #[prost(string, repeated, tag = "2")]
-    #[serde(default)]
-    pub addresses: ::std::vec::Vec<std::string::String>,
-    #[prost(string, tag = "3")]
+    #[prost(string, tag = "2")]
     #[serde(default)]
     pub name: std::string::String,
+    #[prost(string, tag = "3")]
+    #[serde(default)]
+    pub id: std::string::String,
+    #[prost(string, repeated, tag = "4")]
+    #[serde(default)]
+    pub addresses: ::std::vec::Vec<std::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
 pub struct CellApplicationConfig {

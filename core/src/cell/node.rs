@@ -64,9 +64,7 @@ impl Node {
 
     fn build(public_key: PublicKey, name: Option<String>) -> Node {
         let node_id = NodeId::from_public_key(&public_key);
-        let peer_id = node_id
-            .to_peer_id()
-            .expect("Couldn't convert node_id to peer_id");
+        let peer_id = node_id.to_peer_id().clone();
 
         let node_id_bytes = node_id.0.as_bytes();
         let node_id_bytes_len = node_id_bytes.len();
@@ -243,39 +241,22 @@ impl Display for LocalNode {
 /// For now, it has a one to one correspondence with libp2p's PeerId, which is a
 /// base58 encoded version of the public key of the node encoded in protobuf.
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
-pub struct NodeId(String);
+pub struct NodeId(PeerId);
 
 impl NodeId {
     /// Create a Node ID from a public key by using libp2p method to support
     /// compatibility with PeerId
     pub fn from_public_key(public_key: &PublicKey) -> NodeId {
         let peer_id = PeerId::from_public_key(public_key.to_libp2p().clone());
-        NodeId::from_peer_id(&peer_id)
+        NodeId(peer_id)
     }
 
-    pub fn from_string(string: String) -> NodeId {
-        NodeId(string)
+    pub fn from_peer_id(peer_id: PeerId) -> NodeId {
+        NodeId(peer_id)
     }
 
-    pub fn from_peer_id(peer_id: &PeerId) -> NodeId {
-        NodeId(peer_id.to_base58())
-    }
-
-    pub fn from_bytes(id: &[u8]) -> NodeId {
-        NodeId(String::from_utf8_lossy(id).to_string())
-    }
-
-    pub fn to_peer_id(&self) -> Result<PeerId, ()> {
-        PeerId::from_str(&self.0).map_err(|_| ())
-    }
-
-    pub fn to_str(&self) -> &str {
+    pub fn to_peer_id(&self) -> &PeerId {
         &self.0
-    }
-
-    #[inline]
-    pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
     }
 }
 
@@ -290,7 +271,8 @@ impl FromStr for NodeId {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(NodeId(s.to_string()))
+        let peer_id = PeerId::from_str(s).map_err(|_| ())?;
+        Ok(NodeId(peer_id))
     }
 }
 

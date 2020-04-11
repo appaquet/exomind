@@ -74,7 +74,7 @@ impl OperationBuilder {
         let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(operation_id);
-        operation_builder.set_node_id(node_id.to_str());
+        operation_builder.set_node_id(&node_id.to_string());
 
         let inner_operation_builder = operation_builder.init_operation();
 
@@ -94,7 +94,7 @@ impl OperationBuilder {
         let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(operation_id);
-        operation_builder.set_node_id(node_id.to_str());
+        operation_builder.set_node_id(&node_id.to_string());
 
         let inner_operation_builder = operation_builder.init_operation();
         let mut new_block_builder = inner_operation_builder.init_block_propose();
@@ -114,7 +114,7 @@ impl OperationBuilder {
         let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(group_id);
-        operation_builder.set_node_id(node_id.to_str());
+        operation_builder.set_node_id(&node_id.to_string());
 
         let inner_operation_builder = operation_builder.init_operation();
         let new_sig_builder = inner_operation_builder.init_block_sign();
@@ -124,7 +124,7 @@ impl OperationBuilder {
         let signature = Signature::empty();
 
         let mut sig_builder: block_signature::Builder = new_sig_builder.init_signature();
-        sig_builder.set_node_id(node_id.to_str());
+        sig_builder.set_node_id(&node_id.to_string());
         sig_builder.set_node_signature(signature.get_bytes());
 
         Ok(OperationBuilder { frame_builder })
@@ -140,7 +140,7 @@ impl OperationBuilder {
         let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
         operation_builder.set_operation_id(operation_id);
         operation_builder.set_group_id(group_id);
-        operation_builder.set_node_id(node_id.to_str());
+        operation_builder.set_node_id(&node_id.to_string());
 
         let inner_operation_builder = operation_builder.init_operation();
         let _new_refuse_builder = inner_operation_builder.init_block_refuse();

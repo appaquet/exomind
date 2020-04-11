@@ -340,7 +340,7 @@ fn test_is_node_commit_turn() -> Result<(), failure::Error> {
     let node2 = cluster.get_node(1);
 
     // we use node id to sort nodes
-    let (first_node, sec_node, sec_node_idx) = if node1.id().to_str() < node2.id().to_str() {
+    let (first_node, sec_node, sec_node_idx) = if node1.id().to_string() < node2.id().to_string() {
         (&node1, &node2, 1)
     } else {
         (&node2, &node1, 0)

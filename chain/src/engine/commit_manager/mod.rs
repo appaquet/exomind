@@ -613,7 +613,7 @@ fn is_node_commit_turn(
     let nodes_iter = nodes.iter();
     let sorted_nodes = nodes_iter
         .with_role(CellNodeRole::Chain)
-        .sorted_by_key(|cell_node| cell_node.node().id().to_str())
+        .sorted_by_key(|cell_node| cell_node.node().id().to_string())
         .collect_vec();
     let my_node_position = sorted_nodes
         .iter()

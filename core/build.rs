@@ -40,11 +40,14 @@ fn main() {
             // default fields
             config
                 .field_attribute("LocalNodeConfig.name", "#[serde(default)]")
+                .field_attribute("LocalNodeConfig.id", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.path", "#[serde(default)]")
                 .field_attribute("NodeConfig.name", "#[serde(default)]")
+                .field_attribute("NodeConfig.id", "#[serde(default)]")
                 .field_attribute("NodeConfig.addresses", "#[serde(default)]")
                 .field_attribute("CellConfig.name", "#[serde(default)]")
                 .field_attribute("CellConfig.keypair", "#[serde(default)]")
+                .field_attribute("CellConfig.id", "#[serde(default)]")
                 .field_attribute("CellConfig.path", "#[serde(default)]")
                 .field_attribute("CellConfig.apps", "#[serde(default)]")
                 .field_attribute("CellNodeConfig.roles", "#[serde(default)]")

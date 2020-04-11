@@ -156,7 +156,9 @@ impl TestChainCluster {
     }
 
     pub fn node_data_dir(&self, node_idx: usize) -> PathBuf {
-        self.tempdir.path().join(self.nodes[node_idx].id().to_str())
+        self.tempdir
+            .path()
+            .join(self.nodes[node_idx].id().to_string())
     }
 
     pub fn create_node(&mut self, node_idx: usize) -> Result<(), failure::Error> {

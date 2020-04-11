@@ -11,11 +11,13 @@ message LocalNodeConfig {
 
     string name = 3;
 
-    string path = 4;
+    string id = 4;
 
-    repeated string listen_addresses = 5;
+    string path = 5;
 
-    repeated NodeCellConfig cells = 6;
+    repeated string listen_addresses = 6;
+
+    repeated NodeCellConfig cells = 7;
 }
 
 message NodeCellConfig {
@@ -32,11 +34,13 @@ message CellConfig {
 
     string name = 3;
 
-    string path = 4;
+    string id = 4;
 
-    repeated CellNodeConfig nodes = 5;
+    string path = 5;
 
-    repeated CellApplicationConfig apps = 6;
+    repeated CellNodeConfig nodes = 6;
+
+    repeated CellApplicationConfig apps = 7;
 }
 
 message CellNodeConfig {
@@ -54,9 +58,12 @@ message CellNodeConfig {
 message NodeConfig {
     string public_key = 1;
 
-    repeated string addresses = 2;
+    string name = 2;
 
-    string name = 3;
+    string id = 3;
+
+    repeated string addresses = 4;
+
 }
 
 message CellApplicationConfig {
