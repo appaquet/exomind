@@ -9,6 +9,8 @@ message EntityQuery {
         MatchPredicate match = 1;
         TraitPredicate trait = 2;
         IdPredicate id = 3;
+        ReferencePredicate ref = 4;
+
         TestPredicate test = 99;
     }
 
@@ -43,6 +45,14 @@ message TraitPredicate {
 }
 
 message TraitQuery {
+}
+
+message ReferencePredicate {
+    // Entity id the reference points to
+    string entity_id = 1;
+
+    // Optional trait id the reference points to
+    string trait_id = 2;
 }
 
 message Paging {

@@ -3,12 +3,15 @@ syntax = "proto3";
 package exocore.test;
 
 import "exocore/index/options.proto";
+import "exocore/index/entity.proto";
 import "google/protobuf/timestamp.proto";
 
 message TestMessage {
-    string string1 = 1 [(exocore.indexed) = true];
+    string string1 = 1 [(exocore.text) = true];
 
-    string string2 = 2 [(exocore.indexed) = false];
+    string string2 = 2 [(exocore.text) = false];
+
+    string string3 = 12 [(exocore.indexed) = true];
 
     TestStruct struct1 = 3;
 
@@ -24,6 +27,10 @@ message TestMessage {
     uint32 int1 = 10 [(exocore.indexed) = true];
 
     uint32 int2 = 11 [(exocore.indexed) = false];
+
+    exocore.index.Reference ref1 = 13 [(exocore.indexed) = true];
+
+    exocore.index.Reference ref2 = 14;
 }
 
 message TestStruct {
@@ -31,7 +38,7 @@ message TestStruct {
 }
 
 message TestMessage2 {
-    string string1 = 1 [(exocore.indexed) = true];
+    string string1 = 1 [(exocore.text) = true];
 
-    string string2 = 2 [(exocore.indexed) = false];
+    string string2 = 2 [(exocore.text) = false];
 }

@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use itertools::Itertools;
 
-use exocore_core::protos::generated::exocore_index::Trait;
+use exocore_core::protos::generated::exocore_index::{Reference, Trait};
 use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
 use exocore_core::protos::prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt};
 
@@ -317,12 +317,21 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
 
     index.apply_mutations(vec![trait4, trait3, trait2, trait1].into_iter())?;
 
-    let results = index.search_with_trait("exocore.test.TestMessage", None)?;
+    let pred1 = TraitPredicate {
+        trait_name: "exocore.test.TestMessage".to_string(),
+        query: None,
+    };
+    let pred2 = TraitPredicate {
+        trait_name: "exocore.test.TestMessage2".to_string(),
+        query: None,
+    };
+
+    let results = index.search_with_trait(&pred1, None)?;
     assert_eq!(results.results.len(), 1);
     assert!(find_put_trait(&results, "trt1").is_some());
 
     // ordering of multiple traits is operation id
-    let results = index.search_with_trait("exocore.test.TestMessage2", None)?;
+    let results = index.search_with_trait(&pred2, None)?;
     assert_eq!(
         extract_traits_id(results),
         vec!["trait4", "trait3", "trait2"]
@@ -334,7 +343,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         before_score: None,
         count: 1,
     };
-    let results = index.search_with_trait("exocore.test.TestMessage2", Some(paging))?;
+    let results = index.search_with_trait(&pred2, Some(paging))?;
     assert_eq!(results.results.len(), 1);
 
     // only results after given modification date
@@ -343,7 +352,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         before_score: None,
         count: 10,
     };
-    let results = index.search_with_trait("exocore.test.TestMessage2", Some(paging))?;
+    let results = index.search_with_trait(&pred2, Some(paging))?;
     assert_eq!(extract_traits_id(results), vec!["trait4", "trait3"]);
 
     // only results before given modification date
@@ -352,7 +361,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         before_score: Some(3),
         count: 10,
     };
-    let results = index.search_with_trait("exocore.test.TestMessage2", Some(paging))?;
+    let results = index.search_with_trait(&pred2, Some(paging))?;
     assert_eq!(extract_traits_id(results), vec!["trait2"]);
 
     Ok(())
@@ -391,27 +400,26 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
         count: 10,
     };
 
-    let results1 = index.search_with_trait("exocore.test.TestMessage", Some(paging))?;
+    let pred1 = TraitPredicate {
+        trait_name: "exocore.test.TestMessage".to_string(),
+        query: None,
+    };
+
+    let results1 = index.search_with_trait(&pred1, Some(paging))?;
     assert_eq!(results1.total_results, 30);
     assert_eq!(results1.remaining_results, 20);
     assert_eq!(results1.results.len(), 10);
     find_put_trait(&results1, "id29");
     find_put_trait(&results1, "id20");
 
-    let results2 = index.search_with_trait(
-        "exocore.test.TestMessage",
-        Some(results1.next_page.clone().unwrap()),
-    )?;
+    let results2 = index.search_with_trait(&pred1, Some(results1.next_page.clone().unwrap()))?;
     assert_eq!(results2.total_results, 30);
     assert_eq!(results2.remaining_results, 10);
     assert_eq!(results2.results.len(), 10);
     find_put_trait(&results1, "id19");
     find_put_trait(&results1, "id10");
 
-    let results3 = index.search_with_trait(
-        "exocore.test.TestMessage",
-        Some(results2.next_page.unwrap()),
-    )?;
+    let results3 = index.search_with_trait(&pred1, Some(results2.next_page.unwrap()))?;
     assert_eq!(results3.total_results, 30);
     assert_eq!(results3.remaining_results, 0);
     assert_eq!(results3.results.len(), 10);
@@ -424,6 +432,90 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
     assert_eq!(iter.total_results, 30);
     let results = iter.collect_vec();
     assert_eq!(results.len(), 30);
+
+    Ok(())
+}
+
+#[test]
+fn search_by_reference() -> Result<(), failure::Error> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let mut index = MutationIndex::create_in_memory(config, registry)?;
+
+    let et1 = IndexMutation::PutTrait(PutTraitMutation {
+        block_offset: None,
+        operation_id: 1,
+        entity_id: "et1".to_string(),
+        trt: Trait {
+            id: "trt1".to_string(),
+            message: Some(
+                TestMessage {
+                    string1: "Foo Bar".to_string(),
+                    ref1: Some(Reference {
+                        entity_id: "et2".to_string(),
+                        trait_id: "".to_string(),
+                    }),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    let et2 = IndexMutation::PutTrait(PutTraitMutation {
+        block_offset: None,
+        operation_id: 1,
+        entity_id: "et2".to_string(),
+        trt: Trait {
+            id: "trt2".to_string(),
+            message: Some(
+                TestMessage {
+                    string1: "Hello World".to_string(),
+                    ref1: Some(Reference {
+                        entity_id: "et1".to_string(),
+                        trait_id: "trt1".to_string(),
+                    }),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    index.apply_mutations(vec![et1, et2].into_iter())?;
+
+    let search = |entity: &str, trt: &str| {
+        index
+            .search_reference(
+                &ReferencePredicate {
+                    entity_id: entity.to_string(),
+                    trait_id: trt.to_string(),
+                },
+                None,
+            )
+            .unwrap()
+    };
+
+    let results = search("et1", "");
+    assert_eq!(results.results.len(), 1);
+    find_put_trait(&results, "trt1");
+
+    let results = search("et1", "trt1");
+    assert_eq!(results.results.len(), 1);
+    find_put_trait(&results, "trt1");
+
+    let results = search("et1", "trt2");
+    assert_eq!(results.results.len(), 0);
+
+    let results = search("trt1", "");
+    assert_eq!(results.results.len(), 0);
+
+    let results = search("et0", "trt1");
+    assert_eq!(results.results.len(), 0);
+
+    let results = search("et2", "");
+    assert_eq!(results.results.len(), 1);
+    find_put_trait(&results, "trt2");
 
     Ok(())
 }
@@ -515,7 +607,11 @@ fn put_unregistered_trait() -> Result<(), failure::Error> {
         },
     }))?;
 
-    let results = index.search_with_trait("not.registered.Message", None)?;
+    let pred = TraitPredicate {
+        trait_name: "not.registered.Message".to_string(),
+        query: None,
+    };
+    let results = index.search_with_trait(&pred, None)?;
     assert_eq!(results.results.len(), 1);
 
     Ok(())

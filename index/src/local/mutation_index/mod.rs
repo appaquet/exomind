@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use chrono::{TimeZone, Utc};
 use tantivy::collector::{Collector, TopDocs};
 use tantivy::directory::MmapDirectory;
-use tantivy::query::{AllQuery, QueryParser, TermQuery};
+use tantivy::query::{AllQuery, PhraseQuery, QueryParser, TermQuery};
 use tantivy::schema::{
     Field, IndexRecordOption, Schema, SchemaBuilder, FAST, INDEXED, STORED, STRING, TEXT,
 };
@@ -17,8 +17,10 @@ use tantivy::{
 };
 
 use exocore_chain::block::BlockOffset;
-use exocore_core::protos::generated::exocore_index::{entity_query::Predicate, EntityQuery};
-use exocore_core::protos::prost::ProstTimestampExt;
+use exocore_core::protos::generated::exocore_index::{
+    entity_query::Predicate, EntityQuery, ReferencePredicate, TraitPredicate,
+};
+use exocore_core::protos::prost::{Any, ProstTimestampExt};
 use exocore_core::protos::reflect;
 use exocore_core::protos::reflect::{FieldType, FieldValue, ReflectMessage};
 use exocore_core::protos::registry::Registry;
@@ -34,10 +36,12 @@ mod tests;
 pub use config::*;
 pub use mutation::*;
 pub use results::*;
+use std::collections::HashMap;
 
 const SCORE_TO_U64_MULTIPLIER: f32 = 10_000_000_000.0;
 const UNIQUE_SORT_TO_U64_DIVIDER: f32 = 100_000_000.0;
 const SEARCH_ENTITY_ID_LIMIT: usize = 1_000_000;
+const DYNAMIC_FIELDS_COUNT: usize = 4;
 
 /// Index (full-text & fields) for entities & traits mutations stored in the chain layer. Each
 /// mutation is individually indexed as a single document.
@@ -203,9 +207,10 @@ impl MutationIndex {
             .ok_or(Error::ProtoFieldExpected("predicate"))?;
 
         match predicate {
-            Predicate::Trait(inner) => self.search_with_trait(&inner.trait_name, paging),
+            Predicate::Trait(inner) => self.search_with_trait(inner, paging),
             Predicate::Match(inner) => self.search_matches(&inner.query, paging),
             Predicate::Id(inner) => self.search_entity_id(&inner.id),
+            Predicate::Ref(inner) => self.search_reference(inner, paging),
             Predicate::Test(_inner) => Err(Error::Other("Query failed for tests".to_string())),
         }
     }
@@ -224,6 +229,163 @@ impl MutationIndex {
             total_results: results.total_results,
             current_results: results.results.into_iter(),
             next_page: results.next_page,
+        })
+    }
+
+    /// Execute a search by trait type query and return traits in operations id descending order.
+    pub fn search_with_trait(
+        &self,
+        predicate: &TraitPredicate,
+        paging: Option<QueryPaging>,
+    ) -> Result<MutationResults, Error> {
+        let searcher = self.index_reader.searcher();
+        let paging = paging.unwrap_or_else(|| QueryPaging {
+            after_score: None,
+            before_score: None,
+            count: self.config.iterator_page_size,
+        });
+
+        let term = Term::from_field_text(self.fields.trait_type, &predicate.trait_name);
+        let query = TermQuery::new(term, IndexRecordOption::Basic);
+
+        let sort_field = self.fields.operation_id;
+        let (total_count, matching_count, top_collector, rescorer) =
+            Self::sorted_field_collector(&paging, sort_field);
+
+        let results = self.execute_tantivy_query(searcher, &query, &top_collector, rescorer)?;
+        let total_results = total_count.load(Ordering::Relaxed);
+        let remaining_results = matching_count
+            .load(Ordering::Relaxed)
+            .saturating_sub(results.len());
+        let next_page = if remaining_results > 0 {
+            Some(Self::extract_next_page(&paging, &results))
+        } else {
+            None
+        };
+
+        Ok(MutationResults {
+            results,
+            total_results,
+            remaining_results,
+            next_page,
+        })
+    }
+
+    /// Execute a search by text query
+    pub fn search_matches(
+        &self,
+        query: &str,
+        paging: Option<QueryPaging>,
+    ) -> Result<MutationResults, Error> {
+        let searcher = self.index_reader.searcher();
+        let paging = paging.unwrap_or_else(|| QueryPaging {
+            after_score: None,
+            before_score: None,
+            count: self.config.iterator_page_size,
+        });
+
+        let query_parser = QueryParser::for_index(&self.index, vec![self.fields.all_text]);
+        let query = query_parser.parse_query(query)?;
+
+        let (total_count, matching_count, top_collector, rescorer) =
+            self.match_score_collector(&paging);
+
+        let results = self.execute_tantivy_query(searcher, &query, &top_collector, rescorer)?;
+        let total_results = total_count.load(Ordering::Relaxed);
+        let remaining_results = matching_count
+            .load(Ordering::Relaxed)
+            .saturating_sub(results.len());
+        let next_page = if remaining_results > 0 {
+            Some(Self::extract_next_page(&paging, &results))
+        } else {
+            None
+        };
+
+        Ok(MutationResults {
+            results,
+            total_results,
+            remaining_results,
+            next_page,
+        })
+    }
+
+    /// Execute a search by entity id query
+    pub fn search_entity_id(&self, entity_id: &str) -> Result<MutationResults, Error> {
+        let searcher = self.index_reader.searcher();
+
+        let term = Term::from_field_text(self.fields.entity_id, &entity_id);
+        let query = TermQuery::new(term, IndexRecordOption::Basic);
+        let top_collector = TopDocs::with_limit(SEARCH_ENTITY_ID_LIMIT);
+        let rescorer = |score| Some(score_to_u64(score));
+
+        let results = self.execute_tantivy_query(searcher, &query, &top_collector, rescorer)?;
+        let total_results = results.len();
+
+        Ok(MutationResults {
+            results,
+            total_results,
+            remaining_results: 0,
+            next_page: None,
+        })
+    }
+
+    /// Executes a search for traits that have the given reference to another entity and optionally trait.
+    pub fn search_reference(
+        &self,
+        predicate: &ReferencePredicate,
+        paging: Option<QueryPaging>,
+    ) -> Result<MutationResults, Error> {
+        let searcher = self.index_reader.searcher();
+        let paging = paging.unwrap_or_else(|| QueryPaging {
+            after_score: None,
+            before_score: None,
+            count: self.config.iterator_page_size,
+        });
+
+        let query: Box<dyn tantivy::query::Query> = if !predicate.trait_id.is_empty() {
+            let terms = vec![
+                Term::from_field_text(
+                    self.fields.all_refs,
+                    &format!("entity{}", predicate.entity_id),
+                ),
+                Term::from_field_text(
+                    self.fields.all_refs,
+                    &format!("trait{}", predicate.trait_id),
+                ),
+            ];
+            Box::new(PhraseQuery::new(terms))
+        } else {
+            Box::new(TermQuery::new(
+                Term::from_field_text(
+                    self.fields.all_refs,
+                    &format!("entity{}", predicate.entity_id),
+                ),
+                IndexRecordOption::Basic,
+            ))
+        };
+
+        info!("Executing {:?}", query);
+
+        let sort_field = self.fields.operation_id;
+        let (total_count, matching_count, top_collector, rescorer) =
+            Self::sorted_field_collector(&paging, sort_field);
+
+        let results = self.execute_tantivy_query(searcher, &query, &top_collector, rescorer)?;
+        let total_results = total_count.load(Ordering::Relaxed);
+        let remaining_results = matching_count
+            .load(Ordering::Relaxed)
+            .saturating_sub(results.len());
+        let next_page = if remaining_results > 0 {
+            Some(Self::extract_next_page(&paging, &results))
+        } else {
+            None
+        };
+
+        Ok(MutationResults {
+            results,
+            total_results,
+            remaining_results,
+            next_page,
         })
     }
 
@@ -278,33 +440,83 @@ impl MutationIndex {
             MutationMetadataType::TRAIT_PUT_ID,
         );
 
-        match reflect::from_prost_any(self.schemas.as_ref(), message_any) {
-            Ok(message_dyn) => {
-                for field in message_dyn.fields() {
-                    if !field.indexed_flag {
-                        continue;
-                    }
-
-                    match &field.field_type {
-                        FieldType::String => {
-                            if let Ok(FieldValue::String(val)) = message_dyn.get_field_value(field)
-                            {
-                                doc.add_text(self.fields.text, &val);
-                            }
-                        }
-                        ft => {
-                            warn!("Unsupported indexed field type: {:?}", ft);
-                        }
-                    }
-                }
-            }
-            Err(err) => error!(
-                "Error reflecting message of type '{}'. No fields will be indexed. Error: {}",
-                message_full_name, err
-            ),
-        }
+        self.trait_message_to_document(&mut doc, message_any, message_full_name);
 
         Ok(doc)
+    }
+
+    /// Fills a Tantivy document to be indexed with indexable/sortable fields of the given registered message.
+    fn trait_message_to_document(
+        &self,
+        doc: &mut Document,
+        message_any: &Any,
+        message_full_name: String,
+    ) {
+        let message_dyn = match reflect::from_prost_any(self.schemas.as_ref(), message_any) {
+            Ok(message_dyn) => message_dyn,
+            Err(err) => {
+                error!(
+                    "Error reflecting message of type '{}'. No fields will be indexed. Error: {}",
+                    message_full_name, err
+                );
+                return;
+            }
+        };
+
+        let message_mappings = self.fields.dynamic_mappings.get(message_dyn.full_name());
+
+        for field in message_dyn.fields() {
+            let field_value = match message_dyn.get_field_value(field) {
+                Ok(fv) => fv,
+                Err(err) => {
+                    debug!("Couldn't get value of field {:?}: {}", field, err);
+                    continue;
+                }
+            };
+            let field_mapping = message_mappings.and_then(|m| m.get(&field.id));
+
+            match (field_value, field_mapping) {
+                (FieldValue::String(value), Some(fm)) if field.text_flag => {
+                    doc.add_text(*fm, &value);
+                    doc.add_text(self.fields.all_text, &value);
+                }
+                (FieldValue::String(value), Some(fm)) if field.indexed_flag => {
+                    doc.add_text(*fm, &value);
+                }
+                (FieldValue::Reference(value), Some(fm)) if field.indexed_flag => {
+                    let ref_value = format!("entity{} trait{}", value.entity_id, value.trait_id);
+                    doc.add_text(*fm, &ref_value);
+                    doc.add_text(self.fields.all_refs, &ref_value);
+                }
+                (FieldValue::DateTime(value), Some(fm))
+                    if field.indexed_flag || field.sorted_flag =>
+                {
+                    doc.add_u64(*fm, value.timestamp_nanos() as u64);
+                }
+                (FieldValue::Int64(value), Some(fm)) if field.indexed_flag || field.sorted_flag => {
+                    doc.add_i64(*fm, value);
+                }
+                (FieldValue::Int32(value), Some(fm)) if field.indexed_flag || field.sorted_flag => {
+                    doc.add_i64(*fm, i64::from(value));
+                }
+                (FieldValue::Uint64(value), Some(fm))
+                    if field.indexed_flag || field.sorted_flag =>
+                {
+                    doc.add_u64(*fm, value);
+                }
+                (FieldValue::Uint32(value), Some(fm))
+                    if field.indexed_flag || field.sorted_flag =>
+                {
+                    doc.add_u64(*fm, u64::from(value));
+                }
+                other => {
+                    warn!(
+                        "Unsupported indexed field type / value: type={:?} value={:?} mapping={:?}",
+                        field.field_type, other, field_mapping
+                    );
+                }
+            }
+        }
     }
 
     /// Converts a trait tombstone mutation to Tantivy document
@@ -350,48 +562,43 @@ impl MutationIndex {
         doc
     }
 
-    /// Execute a search by trait type query and return traits in operations id descending order.
-    pub fn search_with_trait(
-        &self,
-        trait_name: &str,
-        paging: Option<QueryPaging>,
-    ) -> Result<MutationResults, Error> {
-        let searcher = self.index_reader.searcher();
-        let paging = paging.unwrap_or_else(|| QueryPaging {
-            after_score: None,
-            before_score: None,
-            count: self.config.iterator_page_size,
-        });
-
-        let term = Term::from_field_text(self.fields.trait_type, trait_name);
-        let query = TermQuery::new(term, IndexRecordOption::Basic);
-
-        let after_op = paging.after_score.unwrap_or(0);
-        let before_op = paging.before_score.unwrap_or(std::u64::MAX);
+    /// Creates a Tantivy top document collectors that sort by the given fast field and limits the result
+    /// by the requested paging.
+    fn sorted_field_collector(
+        paging: &QueryPaging,
+        sort_field: Field,
+    ) -> (
+        Arc<AtomicUsize>,
+        Arc<AtomicUsize>,
+        impl Collector<Fruit = Vec<(u64, DocAddress)>>,
+        impl Fn(u64) -> Option<u64>,
+    ) {
+        let after_sort_value = paging.after_score.unwrap_or(0);
+        let before_sort_value = paging.before_score.unwrap_or(std::u64::MAX);
 
         let total_count = Arc::new(AtomicUsize::new(0));
         let matching_count = Arc::new(AtomicUsize::new(0));
+
         let top_collector = {
             let total_count = total_count.clone();
             let matching_count = matching_count.clone();
-            let op_id_field = self.fields.operation_id;
 
             TopDocs::with_limit(paging.count as usize).custom_score(
                 move |segment_reader: &SegmentReader| {
                     let total_docs = total_count.clone();
                     let remaining_count = matching_count.clone();
 
-                    let op_id_fast_field = segment_reader
+                    let sort_fast_field = segment_reader
                         .fast_fields()
-                        .u64(op_id_field)
+                        .u64(sort_field)
                         .expect("Field requested is not a i64/u64 fast field.");
                     move |doc_id| {
-                        let op_id = op_id_fast_field.get(doc_id);
+                        let sort_value = sort_fast_field.get(doc_id);
 
                         total_docs.fetch_add(1, Ordering::SeqCst);
-                        if op_id > after_op && op_id < before_op {
+                        if sort_value > after_sort_value && sort_value < before_sort_value {
                             remaining_count.fetch_add(1, Ordering::SeqCst);
-                            op_id
+                            sort_value
                         } else {
                             0
                         }
@@ -400,51 +607,29 @@ impl MutationIndex {
             )
         };
 
-        let rescorer = |op_id| {
-            if op_id > 0 {
-                Some(op_id)
+        let rescorer = |score| {
+            if score > 0 {
+                Some(score)
             } else {
                 None
             }
         };
 
-        let results = self.execute_tantivy_query(searcher, &query, &top_collector, rescorer)?;
-        let total_results = total_count.load(Ordering::Relaxed);
-        let remaining_results = matching_count
-            .load(Ordering::Relaxed)
-            .saturating_sub(results.len());
-        let next_page = if remaining_results > 0 {
-            Some(Self::extract_next_page(&paging, &results))
-        } else {
-            None
-        };
-
-        Ok(MutationResults {
-            results,
-            total_results,
-            remaining_results,
-            next_page,
-        })
+        (total_count, matching_count, top_collector, rescorer)
     }
 
-    /// Execute a search by text query
-    pub fn search_matches(
+    /// Creates a Tantivy top document collectors that sort by full text matching score and limits the result
+    /// by the requested paging.
+    fn match_score_collector(
         &self,
-        query: &str,
-        paging: Option<QueryPaging>,
-    ) -> Result<MutationResults, Error> {
-        let searcher = self.index_reader.searcher();
-        let paging = paging.unwrap_or_else(|| QueryPaging {
-            after_score: None,
-            before_score: None,
-            count: self.config.iterator_page_size,
-        });
-
-        let query_parser = QueryParser::for_index(&self.index, vec![self.fields.text]);
-        let query = query_parser.parse_query(query)?;
-
+        paging: &QueryPaging,
+    ) -> (
+        Arc<AtomicUsize>,
+        Arc<AtomicUsize>,
+        impl Collector<Fruit = Vec<(f32, DocAddress)>>,
+        impl Fn(f32) -> Option<u64>,
+    ) {
         let after_score = paging.after_score.map(score_from_u64).unwrap_or(0.0);
-
         let before_score = paging
             .before_score
             .map(score_from_u64)
@@ -452,6 +637,7 @@ impl MutationIndex {
 
         let total_count = Arc::new(AtomicUsize::new(0));
         let matching_count = Arc::new(AtomicUsize::new(0));
+
         let top_collector = {
             let total_count = total_count.clone();
             let matching_count = matching_count.clone();
@@ -494,43 +680,7 @@ impl MutationIndex {
             }
         };
 
-        let results = self.execute_tantivy_query(searcher, &query, &top_collector, rescorer)?;
-        let total_results = total_count.load(Ordering::Relaxed);
-        let remaining_results = matching_count
-            .load(Ordering::Relaxed)
-            .saturating_sub(results.len());
-        let next_page = if remaining_results > 0 {
-            Some(Self::extract_next_page(&paging, &results))
-        } else {
-            None
-        };
-
-        Ok(MutationResults {
-            results,
-            total_results,
-            remaining_results,
-            next_page,
-        })
-    }
-
-    /// Execute a search by entity id query
-    pub fn search_entity_id(&self, entity_id: &str) -> Result<MutationResults, Error> {
-        let searcher = self.index_reader.searcher();
-
-        let term = Term::from_field_text(self.fields.entity_id, &entity_id);
-        let query = TermQuery::new(term, IndexRecordOption::Basic);
-        let top_collector = TopDocs::with_limit(SEARCH_ENTITY_ID_LIMIT);
-        let rescorer = |score| Some(score_to_u64(score));
-
-        let results = self.execute_tantivy_query(searcher, &query, &top_collector, rescorer)?;
-        let total_results = results.len();
-
-        Ok(MutationResults {
-            results,
-            total_results,
-            remaining_results: 0,
-            next_page: None,
-        })
+        (total_count, matching_count, top_collector, rescorer)
     }
 
     /// Execute query on Tantivy index and build mutations result
@@ -593,38 +743,156 @@ impl MutationIndex {
         }
     }
 
-    /// Builds Tantivy schema based on the domain schema
-    fn build_tantivy_schema(_registry: &Registry) -> (Schema, Fields) {
+    /// Builds Tantivy schema required for mutations related queries and registered messages fields.
+    ///
+    /// Tantivy doesn't support dynamic schema yet: https://github.com/tantivy-search/tantivy/issues/301
+    /// Because of this, we need to pre-allocate fields that will be used sequentially by fields of each
+    /// registered messages. This means that we only support a limited amount of indexed/sorted fields
+    /// per message.
+    fn build_tantivy_schema(registry: &Registry) -> (Schema, Fields) {
         let mut schema_builder = SchemaBuilder::default();
-        schema_builder.add_text_field("trait_type", STRING | STORED);
-        schema_builder.add_text_field("entity_id", STRING | STORED);
-        schema_builder.add_text_field("trait_id", STRING | STORED);
-        schema_builder.add_text_field("entity_trait_id", STRING);
-        schema_builder.add_u64_field("sort_tie_breaker", STORED | FAST);
-        schema_builder.add_u64_field("creation_date", STORED);
-        schema_builder.add_u64_field("modification_date", STORED);
-        schema_builder.add_u64_field("block_offset", STORED | FAST);
-        schema_builder.add_u64_field("operation_id", INDEXED | STORED | FAST);
-        schema_builder.add_u64_field("document_type", STORED);
-        schema_builder.add_text_field("text", TEXT);
+        let trait_type = schema_builder.add_text_field("trait_type", STRING | STORED);
+        let entity_id = schema_builder.add_text_field("entity_id", STRING | STORED);
+        let trait_id = schema_builder.add_text_field("trait_id", STRING | STORED);
+        let entity_trait_id = schema_builder.add_text_field("entity_trait_id", STRING);
+        let sort_tie_breaker = schema_builder.add_u64_field("sort_tie_breaker", STORED | FAST);
+        let creation_date = schema_builder.add_u64_field("creation_date", STORED);
+        let modification_date = schema_builder.add_u64_field("modification_date", STORED);
+        let block_offset = schema_builder.add_u64_field("block_offset", STORED | FAST);
+        let operation_id = schema_builder.add_u64_field("operation_id", INDEXED | STORED | FAST);
+        let document_type = schema_builder.add_u64_field("document_type", STORED);
+
+        let all_text = schema_builder.add_text_field("all_text", TEXT);
+        let all_refs = schema_builder.add_text_field("all_refs", TEXT);
+
+        let (dynamic_fields, dynamic_mappings) =
+            Self::build_dynamic_fields_tantivy_schema(registry, &mut schema_builder);
 
         let schema = schema_builder.build();
 
         let fields = Fields {
-            trait_type: schema.get_field("trait_type").unwrap(),
-            entity_id: schema.get_field("entity_id").unwrap(),
-            trait_id: schema.get_field("trait_id").unwrap(),
-            entity_trait_id: schema.get_field("entity_trait_id").unwrap(),
-            sort_tie_breaker: schema.get_field("sort_tie_breaker").unwrap(),
-            creation_date: schema.get_field("creation_date").unwrap(),
-            modification_date: schema.get_field("modification_date").unwrap(),
-            block_offset: schema.get_field("block_offset").unwrap(),
-            operation_id: schema.get_field("operation_id").unwrap(),
-            document_type: schema.get_field("document_type").unwrap(),
-            text: schema.get_field("text").unwrap(),
+            trait_type,
+            entity_id,
+            trait_id,
+            entity_trait_id,
+            sort_tie_breaker,
+            creation_date,
+            modification_date,
+            block_offset,
+            operation_id,
+            document_type,
+
+            all_text,
+            all_refs,
+
+            _dynamic_fields: dynamic_fields,
+            dynamic_mappings,
         };
 
         (schema, fields)
+    }
+
+    /// Adds all dynamic fields to the tantivy schema based on the registered messages and creates
+    /// a mapping of registered messages' fields to dynamic fields.
+    fn build_dynamic_fields_tantivy_schema(
+        registry: &Registry,
+        builder: &mut SchemaBuilder,
+    ) -> (DynamicFields, DynamicFieldsMapping) {
+        let mut dyn_fields = DynamicFields::default();
+
+        // create dynamic fields that will be usable by defined messages
+        for i in 0..DYNAMIC_FIELDS_COUNT {
+            dyn_fields
+                .reference
+                .push(builder.add_text_field(&format!("references_{}", i), TEXT));
+            dyn_fields
+                .text
+                .push(builder.add_text_field(&format!("text_{}", i), TEXT));
+            dyn_fields
+                .string
+                .push(builder.add_text_field(&format!("string_{}", i), STRING));
+            dyn_fields
+                .i64
+                .push(builder.add_u64_field(&format!("i64_{}", i), STORED));
+            dyn_fields
+                .i64_fast
+                .push(builder.add_u64_field(&format!("i64_fast_{}", i), STORED | FAST));
+            dyn_fields
+                .u64
+                .push(builder.add_u64_field(&format!("u64_{}", i), STORED));
+            dyn_fields
+                .u64_fast
+                .push(builder.add_u64_field(&format!("u64_fast_{}", i), STORED | FAST));
+        }
+
+        // map fields of each message in registry that need to be indexed / sortable to dynamic fields
+        let mut dyn_mappings = HashMap::new();
+        let message_descriptors = registry.message_descriptors();
+        for message_descriptor in message_descriptors {
+            let mut ref_fields_count = 0;
+            let mut text_fields_count = 0;
+            let mut string_fields_count = 0;
+            let mut i64_fields_count = 0;
+            let mut i64_fast_fields_count = 0;
+            let mut u64_fields_count = 0;
+            let mut u64_fast_fields_count = 0;
+            let mut field_mapping = HashMap::new();
+
+            for field in &message_descriptor.fields {
+                if !field.indexed_flag && !field.text_flag && !field.sorted_flag {
+                    continue;
+                }
+
+                let ft = field.field_type.clone();
+                if ft == FieldType::Uint64 || ft == FieldType::Uint32 || ft == FieldType::DateTime {
+                    if field.sorted_flag && u64_fast_fields_count < dyn_fields.u64_fast.len() {
+                        field_mapping.insert(field.id, dyn_fields.u64_fast[u64_fast_fields_count]);
+                        u64_fast_fields_count += 1;
+                        continue;
+                    } else if field.indexed_flag && u64_fields_count < dyn_fields.u64.len() {
+                        field_mapping.insert(field.id, dyn_fields.u64[u64_fields_count]);
+                        u64_fields_count += 1;
+                        continue;
+                    }
+                } else if ft == FieldType::Int64 || ft == FieldType::Int32 {
+                    if field.sorted_flag && i64_fast_fields_count < dyn_fields.i64_fast.len() {
+                        field_mapping.insert(field.id, dyn_fields.i64_fast[i64_fast_fields_count]);
+                        i64_fast_fields_count += 1;
+                        continue;
+                    } else if field.indexed_flag && i64_fields_count < dyn_fields.i64.len() {
+                        field_mapping.insert(field.id, dyn_fields.i64[i64_fields_count]);
+                        i64_fields_count += 1;
+                        continue;
+                    }
+                } else if ft == FieldType::Reference {
+                    if field.indexed_flag && ref_fields_count < dyn_fields.reference.len() {
+                        field_mapping.insert(field.id, dyn_fields.reference[ref_fields_count]);
+                        ref_fields_count += 1;
+                        continue;
+                    }
+                } else if ft == FieldType::String {
+                    if field.text_flag && text_fields_count < dyn_fields.text.len() {
+                        field_mapping.insert(field.id, dyn_fields.text[text_fields_count]);
+                        text_fields_count += 1;
+                        continue;
+                    } else if field.indexed_flag && string_fields_count < dyn_fields.string.len() {
+                        field_mapping.insert(field.id, dyn_fields.string[string_fields_count]);
+                        string_fields_count += 1;
+                        continue;
+                    }
+                }
+
+                error!(
+                    "Invalid index option / type for field {:?} of message {} or ran out of fields",
+                    field, message_descriptor.name
+                );
+            }
+
+            if !field_mapping.is_empty() {
+                dyn_mappings.insert(message_descriptor.name.clone(), field_mapping);
+            }
+        }
+        (dyn_fields, dyn_mappings)
     }
 }
 
@@ -640,7 +908,27 @@ struct Fields {
     block_offset: Field,
     operation_id: Field,
     document_type: Field,
-    text: Field,
+
+    all_text: Field,
+    all_refs: Field,
+
+    // mapping for indexed/sorted fields of messages in registry
+    // message_type -> proto_field_id -> tantivy field
+    _dynamic_fields: DynamicFields,
+    dynamic_mappings: DynamicFieldsMapping,
+}
+
+type DynamicFieldsMapping = HashMap<String, HashMap<u32, Field>>;
+
+#[derive(Default)]
+struct DynamicFields {
+    reference: Vec<Field>,
+    text: Vec<Field>,
+    string: Vec<Field>,
+    i64: Vec<Field>,
+    i64_fast: Vec<Field>,
+    u64: Vec<Field>,
+    u64_fast: Vec<Field>,
 }
 
 /// Paging information for mutations querying.

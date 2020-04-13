@@ -17,6 +17,13 @@ pub struct Trait {
     pub modification_date: ::std::option::Option<::prost_types::Timestamp>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Reference {
+    #[prost(string, tag = "1")]
+    pub entity_id: std::string::String,
+    #[prost(string, tag = "2")]
+    pub trait_id: std::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityQuery {
     #[prost(message, optional, tag = "5")]
     pub paging: ::std::option::Option<Paging>,
@@ -29,7 +36,7 @@ pub struct EntityQuery {
     //// If specified, if results from server matches this hash, only a summary will be returned.
     #[prost(uint64, tag = "8")]
     pub result_hash: u64,
-    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 99")]
+    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4, 99")]
     pub predicate: ::std::option::Option<entity_query::Predicate>,
 }
 pub mod entity_query {
@@ -41,6 +48,8 @@ pub mod entity_query {
         Trait(super::TraitPredicate),
         #[prost(message, tag = "3")]
         Id(super::IdPredicate),
+        #[prost(message, tag = "4")]
+        Ref(super::ReferencePredicate),
         #[prost(message, tag = "99")]
         Test(super::TestPredicate),
     }
@@ -69,6 +78,15 @@ pub struct TraitPredicate {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitQuery {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReferencePredicate {
+    /// Entity id the reference points to
+    #[prost(string, tag = "1")]
+    pub entity_id: std::string::String,
+    /// Optional trait id the reference points to
+    #[prost(string, tag = "2")]
+    pub trait_id: std::string::String,
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Paging {
     //// Returns results after token.

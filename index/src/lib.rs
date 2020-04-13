@@ -4,6 +4,8 @@
 extern crate failure;
 #[macro_use]
 extern crate log;
+
+#[cfg(feature = "local_store")]
 #[macro_use]
 extern crate smallvec;
 
