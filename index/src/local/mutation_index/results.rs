@@ -49,7 +49,7 @@ pub struct MutationResults {
 }
 
 /// Indexed trait / entity mutation metadata returned as a result of a query.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct MutationMetadata {
     pub operation_id: OperationId,
     pub block_offset: Option<BlockOffset>,
@@ -58,14 +58,14 @@ pub struct MutationMetadata {
     pub mutation_type: MutationMetadataType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum MutationMetadataType {
     TraitPut(PutTraitMetadata),
     TraitTombstone(TraitId),
     EntityTombstone,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PutTraitMetadata {
     pub trait_id: TraitId,
     pub creation_date: Option<DateTime<Utc>>,

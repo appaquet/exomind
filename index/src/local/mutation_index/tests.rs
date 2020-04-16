@@ -15,6 +15,7 @@ use exocore_chain::operation::OperationId;
 // TODO: Trait inner query support
 //       -> Sort by field, ascending, descending
 // TODO: SortToken check if it's too cloned
+// TODO: Top docs collector could use references ?
 
 #[test]
 fn search_by_entity_id() -> Result<(), failure::Error> {
