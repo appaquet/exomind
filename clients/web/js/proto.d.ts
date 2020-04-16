@@ -209,6 +209,102 @@ export namespace exocore {
             public toJSON(): { [k: string]: any };
         }
 
+        /** Properties of a Reference. */
+        interface IReference {
+
+            /** Reference entityId */
+            entityId?: (string|null);
+
+            /** Reference traitId */
+            traitId?: (string|null);
+        }
+
+        /** Represents a Reference. */
+        class Reference implements IReference {
+
+            /**
+             * Constructs a new Reference.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.IReference);
+
+            /** Reference entityId. */
+            public entityId: string;
+
+            /** Reference traitId. */
+            public traitId: string;
+
+            /**
+             * Creates a new Reference instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns Reference instance
+             */
+            public static create(properties?: exocore.index.IReference): exocore.index.Reference;
+
+            /**
+             * Encodes the specified Reference message. Does not implicitly {@link exocore.index.Reference.verify|verify} messages.
+             * @param message Reference message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.IReference, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified Reference message, length delimited. Does not implicitly {@link exocore.index.Reference.verify|verify} messages.
+             * @param message Reference message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.IReference, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a Reference message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns Reference
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.Reference;
+
+            /**
+             * Decodes a Reference message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns Reference
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.Reference;
+
+            /**
+             * Verifies a Reference message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a Reference message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns Reference
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.Reference;
+
+            /**
+             * Creates a plain object from a Reference message. Also converts values to other types if specified.
+             * @param message Reference
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.Reference, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this Reference to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
         /** Properties of an EntityMutation. */
         interface IEntityMutation {
 
@@ -1091,11 +1187,17 @@ export namespace exocore {
             /** EntityQuery id */
             id?: (exocore.index.IIdPredicate|null);
 
+            /** EntityQuery reference */
+            reference?: (exocore.index.IReferencePredicate|null);
+
             /** EntityQuery test */
             test?: (exocore.index.ITestPredicate|null);
 
-            /** EntityQuery paging */
+            /** Query paging requested */
             paging?: (exocore.index.IPaging|null);
+
+            /** Query sorting */
+            sorting?: (exocore.index.ISorting|null);
 
             /** If true, only return summary */
             summary?: (boolean|null);
@@ -1125,11 +1227,17 @@ export namespace exocore {
             /** EntityQuery id. */
             public id?: (exocore.index.IIdPredicate|null);
 
+            /** EntityQuery reference. */
+            public reference?: (exocore.index.IReferencePredicate|null);
+
             /** EntityQuery test. */
             public test?: (exocore.index.ITestPredicate|null);
 
-            /** EntityQuery paging. */
+            /** Query paging requested */
             public paging?: (exocore.index.IPaging|null);
+
+            /** Query sorting */
+            public sorting?: (exocore.index.ISorting|null);
 
             /** If true, only return summary */
             public summary: boolean;
@@ -1141,7 +1249,7 @@ export namespace exocore {
             public resultHash: (number|Long);
 
             /** EntityQuery predicate. */
-            public predicate?: ("match"|"trait"|"id"|"test");
+            public predicate?: ("match"|"trait"|"id"|"reference"|"test");
 
             /**
              * Creates a new EntityQuery instance using the specified properties.
@@ -1582,6 +1690,15 @@ export namespace exocore {
 
         /** Properties of a TraitQuery. */
         interface ITraitQuery {
+
+            /** TraitQuery reference */
+            reference?: (exocore.index.IReferencePredicate|null);
+
+            /** TraitQuery match */
+            match?: (exocore.index.IMatchPredicate|null);
+
+            /** TraitQuery field */
+            field?: (exocore.index.ITraitFieldPredicate|null);
         }
 
         /** Represents a TraitQuery. */
@@ -1592,6 +1709,18 @@ export namespace exocore {
              * @param [properties] Properties to set
              */
             constructor(properties?: exocore.index.ITraitQuery);
+
+            /** TraitQuery reference. */
+            public reference?: (exocore.index.IReferencePredicate|null);
+
+            /** TraitQuery match. */
+            public match?: (exocore.index.IMatchPredicate|null);
+
+            /** TraitQuery field. */
+            public field?: (exocore.index.ITraitFieldPredicate|null);
+
+            /** TraitQuery query. */
+            public query?: ("reference"|"match"|"field");
 
             /**
              * Creates a new TraitQuery instance using the specified properties.
@@ -1659,6 +1788,237 @@ export namespace exocore {
 
             /**
              * Converts this TraitQuery to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of a TraitFieldPredicate. */
+        interface ITraitFieldPredicate {
+
+            /** TraitFieldPredicate field */
+            field?: (string|null);
+
+            /** TraitFieldPredicate string */
+            string?: (string|null);
+
+            /** TraitFieldPredicate int64 */
+            int64?: (number|Long|null);
+
+            /** TraitFieldPredicate uint64 */
+            uint64?: (number|Long|null);
+
+            /** TraitFieldPredicate date */
+            date?: (google.protobuf.ITimestamp|null);
+
+            /** TraitFieldPredicate operatior */
+            operatior?: (exocore.index.TraitFieldPredicate.Operator|null);
+        }
+
+        /** Represents a TraitFieldPredicate. */
+        class TraitFieldPredicate implements ITraitFieldPredicate {
+
+            /**
+             * Constructs a new TraitFieldPredicate.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.ITraitFieldPredicate);
+
+            /** TraitFieldPredicate field. */
+            public field: string;
+
+            /** TraitFieldPredicate string. */
+            public string: string;
+
+            /** TraitFieldPredicate int64. */
+            public int64: (number|Long);
+
+            /** TraitFieldPredicate uint64. */
+            public uint64: (number|Long);
+
+            /** TraitFieldPredicate date. */
+            public date?: (google.protobuf.ITimestamp|null);
+
+            /** TraitFieldPredicate operatior. */
+            public operatior: exocore.index.TraitFieldPredicate.Operator;
+
+            /** TraitFieldPredicate value. */
+            public value?: ("string"|"int64"|"uint64"|"date");
+
+            /**
+             * Creates a new TraitFieldPredicate instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns TraitFieldPredicate instance
+             */
+            public static create(properties?: exocore.index.ITraitFieldPredicate): exocore.index.TraitFieldPredicate;
+
+            /**
+             * Encodes the specified TraitFieldPredicate message. Does not implicitly {@link exocore.index.TraitFieldPredicate.verify|verify} messages.
+             * @param message TraitFieldPredicate message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.ITraitFieldPredicate, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified TraitFieldPredicate message, length delimited. Does not implicitly {@link exocore.index.TraitFieldPredicate.verify|verify} messages.
+             * @param message TraitFieldPredicate message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.ITraitFieldPredicate, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a TraitFieldPredicate message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns TraitFieldPredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.TraitFieldPredicate;
+
+            /**
+             * Decodes a TraitFieldPredicate message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns TraitFieldPredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.TraitFieldPredicate;
+
+            /**
+             * Verifies a TraitFieldPredicate message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a TraitFieldPredicate message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns TraitFieldPredicate
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.TraitFieldPredicate;
+
+            /**
+             * Creates a plain object from a TraitFieldPredicate message. Also converts values to other types if specified.
+             * @param message TraitFieldPredicate
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.TraitFieldPredicate, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this TraitFieldPredicate to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        namespace TraitFieldPredicate {
+
+            /** Operator enum. */
+            enum Operator {
+                EQUAL = 0,
+                GT = 1,
+                GTE = 2,
+                LT = 3,
+                LTE = 4
+            }
+        }
+
+        /** Properties of a ReferencePredicate. */
+        interface IReferencePredicate {
+
+            /** ReferencePredicate entityId */
+            entityId?: (string|null);
+
+            /** ReferencePredicate traitId */
+            traitId?: (string|null);
+        }
+
+        /** Represents a ReferencePredicate. */
+        class ReferencePredicate implements IReferencePredicate {
+
+            /**
+             * Constructs a new ReferencePredicate.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.IReferencePredicate);
+
+            /** ReferencePredicate entityId. */
+            public entityId: string;
+
+            /** ReferencePredicate traitId. */
+            public traitId: string;
+
+            /**
+             * Creates a new ReferencePredicate instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns ReferencePredicate instance
+             */
+            public static create(properties?: exocore.index.IReferencePredicate): exocore.index.ReferencePredicate;
+
+            /**
+             * Encodes the specified ReferencePredicate message. Does not implicitly {@link exocore.index.ReferencePredicate.verify|verify} messages.
+             * @param message ReferencePredicate message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.IReferencePredicate, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified ReferencePredicate message, length delimited. Does not implicitly {@link exocore.index.ReferencePredicate.verify|verify} messages.
+             * @param message ReferencePredicate message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.IReferencePredicate, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a ReferencePredicate message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns ReferencePredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.ReferencePredicate;
+
+            /**
+             * Decodes a ReferencePredicate message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns ReferencePredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.ReferencePredicate;
+
+            /**
+             * Verifies a ReferencePredicate message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a ReferencePredicate message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns ReferencePredicate
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.ReferencePredicate;
+
+            /**
+             * Creates a plain object from a ReferencePredicate message. Also converts values to other types if specified.
+             * @param message ReferencePredicate
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.ReferencePredicate, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this ReferencePredicate to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
@@ -1761,6 +2121,117 @@ export namespace exocore {
 
             /**
              * Converts this Paging to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of a Sorting. */
+        interface ISorting {
+
+            /** Sorting score */
+            score?: (boolean|null);
+
+            /** Sorting operationId */
+            operationId?: (boolean|null);
+
+            /** Sorting field */
+            field?: (string|null);
+
+            /** Sorting ascending */
+            ascending?: (boolean|null);
+        }
+
+        /** Represents a Sorting. */
+        class Sorting implements ISorting {
+
+            /**
+             * Constructs a new Sorting.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.ISorting);
+
+            /** Sorting score. */
+            public score: boolean;
+
+            /** Sorting operationId. */
+            public operationId: boolean;
+
+            /** Sorting field. */
+            public field: string;
+
+            /** Sorting ascending. */
+            public ascending: boolean;
+
+            /** Sorting value. */
+            public value?: ("score"|"operationId"|"field");
+
+            /**
+             * Creates a new Sorting instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns Sorting instance
+             */
+            public static create(properties?: exocore.index.ISorting): exocore.index.Sorting;
+
+            /**
+             * Encodes the specified Sorting message. Does not implicitly {@link exocore.index.Sorting.verify|verify} messages.
+             * @param message Sorting message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.ISorting, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified Sorting message, length delimited. Does not implicitly {@link exocore.index.Sorting.verify|verify} messages.
+             * @param message Sorting message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.ISorting, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a Sorting message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns Sorting
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.Sorting;
+
+            /**
+             * Decodes a Sorting message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns Sorting
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.Sorting;
+
+            /**
+             * Verifies a Sorting message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a Sorting message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns Sorting
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.Sorting;
+
+            /**
+             * Creates a plain object from a Sorting message. Also converts values to other types if specified.
+             * @param message Sorting
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.Sorting, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this Sorting to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
@@ -2008,6 +2479,9 @@ export namespace exocore {
             /** TestMessage string2 */
             string2?: (string|null);
 
+            /** TestMessage string3 */
+            string3?: (string|null);
+
             /** TestMessage struct1 */
             struct1?: (exocore.test.ITestStruct|null);
 
@@ -2028,6 +2502,12 @@ export namespace exocore {
 
             /** TestMessage int2 */
             int2?: (number|null);
+
+            /** TestMessage ref1 */
+            ref1?: (exocore.index.IReference|null);
+
+            /** TestMessage ref2 */
+            ref2?: (exocore.index.IReference|null);
         }
 
         /** Represents a TestMessage. */
@@ -2044,6 +2524,9 @@ export namespace exocore {
 
             /** TestMessage string2. */
             public string2: string;
+
+            /** TestMessage string3. */
+            public string3: string;
 
             /** TestMessage struct1. */
             public struct1?: (exocore.test.ITestStruct|null);
@@ -2065,6 +2548,12 @@ export namespace exocore {
 
             /** TestMessage int2. */
             public int2: number;
+
+            /** TestMessage ref1. */
+            public ref1?: (exocore.index.IReference|null);
+
+            /** TestMessage ref2. */
+            public ref2?: (exocore.index.IReference|null);
 
             /** TestMessage fields. */
             public fields?: ("oneofString1"|"oneofInt1");
@@ -4223,6 +4712,12 @@ export namespace google {
 
             /** FieldOptions .exocore.indexed */
             ".exocore.indexed"?: (boolean|null);
+
+            /** FieldOptions .exocore.sorted */
+            ".exocore.sorted"?: (boolean|null);
+
+            /** FieldOptions .exocore.text */
+            ".exocore.text"?: (boolean|null);
         }
 
         /** Represents a FieldOptions. */

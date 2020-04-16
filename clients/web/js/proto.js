@@ -525,6 +525,216 @@ export const exocore = $root.exocore = (() => {
             return Trait;
         })();
 
+        index.Reference = (function() {
+
+            /**
+             * Properties of a Reference.
+             * @memberof exocore.index
+             * @interface IReference
+             * @property {string|null} [entityId] Reference entityId
+             * @property {string|null} [traitId] Reference traitId
+             */
+
+            /**
+             * Constructs a new Reference.
+             * @memberof exocore.index
+             * @classdesc Represents a Reference.
+             * @implements IReference
+             * @constructor
+             * @param {exocore.index.IReference=} [properties] Properties to set
+             */
+            function Reference(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Reference entityId.
+             * @member {string} entityId
+             * @memberof exocore.index.Reference
+             * @instance
+             */
+            Reference.prototype.entityId = "";
+
+            /**
+             * Reference traitId.
+             * @member {string} traitId
+             * @memberof exocore.index.Reference
+             * @instance
+             */
+            Reference.prototype.traitId = "";
+
+            /**
+             * Creates a new Reference instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.Reference
+             * @static
+             * @param {exocore.index.IReference=} [properties] Properties to set
+             * @returns {exocore.index.Reference} Reference instance
+             */
+            Reference.create = function create(properties) {
+                return new Reference(properties);
+            };
+
+            /**
+             * Encodes the specified Reference message. Does not implicitly {@link exocore.index.Reference.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.Reference
+             * @static
+             * @param {exocore.index.IReference} message Reference message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Reference.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.entityId);
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.traitId);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified Reference message, length delimited. Does not implicitly {@link exocore.index.Reference.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.Reference
+             * @static
+             * @param {exocore.index.IReference} message Reference message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Reference.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a Reference message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.Reference
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.Reference} Reference
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Reference.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.Reference();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.entityId = reader.string();
+                        break;
+                    case 2:
+                        message.traitId = reader.string();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a Reference message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.Reference
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.Reference} Reference
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Reference.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a Reference message.
+             * @function verify
+             * @memberof exocore.index.Reference
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            Reference.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                    if (!$util.isString(message.entityId))
+                        return "entityId: string expected";
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    if (!$util.isString(message.traitId))
+                        return "traitId: string expected";
+                return null;
+            };
+
+            /**
+             * Creates a Reference message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.Reference
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.Reference} Reference
+             */
+            Reference.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.Reference)
+                    return object;
+                let message = new $root.exocore.index.Reference();
+                if (object.entityId != null)
+                    message.entityId = String(object.entityId);
+                if (object.traitId != null)
+                    message.traitId = String(object.traitId);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a Reference message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.Reference
+             * @static
+             * @param {exocore.index.Reference} message Reference
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Reference.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.entityId = "";
+                    object.traitId = "";
+                }
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                    object.entityId = message.entityId;
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    object.traitId = message.traitId;
+                return object;
+            };
+
+            /**
+             * Converts this Reference to JSON.
+             * @function toJSON
+             * @memberof exocore.index.Reference
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            Reference.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return Reference;
+        })();
+
         index.EntityMutation = (function() {
 
             /**
@@ -2580,8 +2790,10 @@ export const exocore = $root.exocore = (() => {
              * @property {exocore.index.IMatchPredicate|null} [match] EntityQuery match
              * @property {exocore.index.ITraitPredicate|null} [trait] EntityQuery trait
              * @property {exocore.index.IIdPredicate|null} [id] EntityQuery id
+             * @property {exocore.index.IReferencePredicate|null} [reference] EntityQuery reference
              * @property {exocore.index.ITestPredicate|null} [test] EntityQuery test
-             * @property {exocore.index.IPaging|null} [paging] EntityQuery paging
+             * @property {exocore.index.IPaging|null} [paging] Query paging requested
+             * @property {exocore.index.ISorting|null} [sorting] Query sorting
              * @property {boolean|null} [summary] If true, only return summary
              * @property {number|Long|null} [watchToken] Optional watch token if this query is to be used for watching.
              * @property {number|Long|null} [resultHash] If specified, if results from server matches this hash, only a summary will be returned.
@@ -2627,6 +2839,14 @@ export const exocore = $root.exocore = (() => {
             EntityQuery.prototype.id = null;
 
             /**
+             * EntityQuery reference.
+             * @member {exocore.index.IReferencePredicate|null|undefined} reference
+             * @memberof exocore.index.EntityQuery
+             * @instance
+             */
+            EntityQuery.prototype.reference = null;
+
+            /**
              * EntityQuery test.
              * @member {exocore.index.ITestPredicate|null|undefined} test
              * @memberof exocore.index.EntityQuery
@@ -2635,12 +2855,20 @@ export const exocore = $root.exocore = (() => {
             EntityQuery.prototype.test = null;
 
             /**
-             * EntityQuery paging.
+             * Query paging requested
              * @member {exocore.index.IPaging|null|undefined} paging
              * @memberof exocore.index.EntityQuery
              * @instance
              */
             EntityQuery.prototype.paging = null;
+
+            /**
+             * Query sorting
+             * @member {exocore.index.ISorting|null|undefined} sorting
+             * @memberof exocore.index.EntityQuery
+             * @instance
+             */
+            EntityQuery.prototype.sorting = null;
 
             /**
              * If true, only return summary
@@ -2671,12 +2899,12 @@ export const exocore = $root.exocore = (() => {
 
             /**
              * EntityQuery predicate.
-             * @member {"match"|"trait"|"id"|"test"|undefined} predicate
+             * @member {"match"|"trait"|"id"|"reference"|"test"|undefined} predicate
              * @memberof exocore.index.EntityQuery
              * @instance
              */
             Object.defineProperty(EntityQuery.prototype, "predicate", {
-                get: $util.oneOfGetter($oneOfFields = ["match", "trait", "id", "test"]),
+                get: $util.oneOfGetter($oneOfFields = ["match", "trait", "id", "reference", "test"]),
                 set: $util.oneOfSetter($oneOfFields)
             });
 
@@ -2710,14 +2938,18 @@ export const exocore = $root.exocore = (() => {
                     $root.exocore.index.TraitPredicate.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 if (message.id != null && message.hasOwnProperty("id"))
                     $root.exocore.index.IdPredicate.encode(message.id, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+                if (message.reference != null && message.hasOwnProperty("reference"))
+                    $root.exocore.index.ReferencePredicate.encode(message.reference, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
                 if (message.paging != null && message.hasOwnProperty("paging"))
                     $root.exocore.index.Paging.encode(message.paging, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+                if (message.sorting != null && message.hasOwnProperty("sorting"))
+                    $root.exocore.index.Sorting.encode(message.sorting, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
                 if (message.summary != null && message.hasOwnProperty("summary"))
-                    writer.uint32(/* id 6, wireType 0 =*/48).bool(message.summary);
+                    writer.uint32(/* id 7, wireType 0 =*/56).bool(message.summary);
                 if (message.watchToken != null && message.hasOwnProperty("watchToken"))
-                    writer.uint32(/* id 7, wireType 0 =*/56).uint64(message.watchToken);
+                    writer.uint32(/* id 8, wireType 0 =*/64).uint64(message.watchToken);
                 if (message.resultHash != null && message.hasOwnProperty("resultHash"))
-                    writer.uint32(/* id 8, wireType 0 =*/64).uint64(message.resultHash);
+                    writer.uint32(/* id 9, wireType 0 =*/72).uint64(message.resultHash);
                 if (message.test != null && message.hasOwnProperty("test"))
                     $root.exocore.index.TestPredicate.encode(message.test, writer.uint32(/* id 99, wireType 2 =*/794).fork()).ldelim();
                 return writer;
@@ -2763,6 +2995,9 @@ export const exocore = $root.exocore = (() => {
                     case 3:
                         message.id = $root.exocore.index.IdPredicate.decode(reader, reader.uint32());
                         break;
+                    case 4:
+                        message.reference = $root.exocore.index.ReferencePredicate.decode(reader, reader.uint32());
+                        break;
                     case 99:
                         message.test = $root.exocore.index.TestPredicate.decode(reader, reader.uint32());
                         break;
@@ -2770,12 +3005,15 @@ export const exocore = $root.exocore = (() => {
                         message.paging = $root.exocore.index.Paging.decode(reader, reader.uint32());
                         break;
                     case 6:
-                        message.summary = reader.bool();
+                        message.sorting = $root.exocore.index.Sorting.decode(reader, reader.uint32());
                         break;
                     case 7:
-                        message.watchToken = reader.uint64();
+                        message.summary = reader.bool();
                         break;
                     case 8:
+                        message.watchToken = reader.uint64();
+                        break;
+                    case 9:
                         message.resultHash = reader.uint64();
                         break;
                     default:
@@ -2842,6 +3080,16 @@ export const exocore = $root.exocore = (() => {
                             return "id." + error;
                     }
                 }
+                if (message.reference != null && message.hasOwnProperty("reference")) {
+                    if (properties.predicate === 1)
+                        return "predicate: multiple values";
+                    properties.predicate = 1;
+                    {
+                        let error = $root.exocore.index.ReferencePredicate.verify(message.reference);
+                        if (error)
+                            return "reference." + error;
+                    }
+                }
                 if (message.test != null && message.hasOwnProperty("test")) {
                     if (properties.predicate === 1)
                         return "predicate: multiple values";
@@ -2856,6 +3104,11 @@ export const exocore = $root.exocore = (() => {
                     let error = $root.exocore.index.Paging.verify(message.paging);
                     if (error)
                         return "paging." + error;
+                }
+                if (message.sorting != null && message.hasOwnProperty("sorting")) {
+                    let error = $root.exocore.index.Sorting.verify(message.sorting);
+                    if (error)
+                        return "sorting." + error;
                 }
                 if (message.summary != null && message.hasOwnProperty("summary"))
                     if (typeof message.summary !== "boolean")
@@ -2896,6 +3149,11 @@ export const exocore = $root.exocore = (() => {
                         throw TypeError(".exocore.index.EntityQuery.id: object expected");
                     message.id = $root.exocore.index.IdPredicate.fromObject(object.id);
                 }
+                if (object.reference != null) {
+                    if (typeof object.reference !== "object")
+                        throw TypeError(".exocore.index.EntityQuery.reference: object expected");
+                    message.reference = $root.exocore.index.ReferencePredicate.fromObject(object.reference);
+                }
                 if (object.test != null) {
                     if (typeof object.test !== "object")
                         throw TypeError(".exocore.index.EntityQuery.test: object expected");
@@ -2905,6 +3163,11 @@ export const exocore = $root.exocore = (() => {
                     if (typeof object.paging !== "object")
                         throw TypeError(".exocore.index.EntityQuery.paging: object expected");
                     message.paging = $root.exocore.index.Paging.fromObject(object.paging);
+                }
+                if (object.sorting != null) {
+                    if (typeof object.sorting !== "object")
+                        throw TypeError(".exocore.index.EntityQuery.sorting: object expected");
+                    message.sorting = $root.exocore.index.Sorting.fromObject(object.sorting);
                 }
                 if (object.summary != null)
                     message.summary = Boolean(object.summary);
@@ -2944,6 +3207,7 @@ export const exocore = $root.exocore = (() => {
                 let object = {};
                 if (options.defaults) {
                     object.paging = null;
+                    object.sorting = null;
                     object.summary = false;
                     if ($util.Long) {
                         let long = new $util.Long(0, 0, true);
@@ -2971,8 +3235,15 @@ export const exocore = $root.exocore = (() => {
                     if (options.oneofs)
                         object.predicate = "id";
                 }
+                if (message.reference != null && message.hasOwnProperty("reference")) {
+                    object.reference = $root.exocore.index.ReferencePredicate.toObject(message.reference, options);
+                    if (options.oneofs)
+                        object.predicate = "reference";
+                }
                 if (message.paging != null && message.hasOwnProperty("paging"))
                     object.paging = $root.exocore.index.Paging.toObject(message.paging, options);
+                if (message.sorting != null && message.hasOwnProperty("sorting"))
+                    object.sorting = $root.exocore.index.Sorting.toObject(message.sorting, options);
                 if (message.summary != null && message.hasOwnProperty("summary"))
                     object.summary = message.summary;
                 if (message.watchToken != null && message.hasOwnProperty("watchToken"))
@@ -3789,6 +4060,9 @@ export const exocore = $root.exocore = (() => {
              * Properties of a TraitQuery.
              * @memberof exocore.index
              * @interface ITraitQuery
+             * @property {exocore.index.IReferencePredicate|null} [reference] TraitQuery reference
+             * @property {exocore.index.IMatchPredicate|null} [match] TraitQuery match
+             * @property {exocore.index.ITraitFieldPredicate|null} [field] TraitQuery field
              */
 
             /**
@@ -3805,6 +4079,44 @@ export const exocore = $root.exocore = (() => {
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
+
+            /**
+             * TraitQuery reference.
+             * @member {exocore.index.IReferencePredicate|null|undefined} reference
+             * @memberof exocore.index.TraitQuery
+             * @instance
+             */
+            TraitQuery.prototype.reference = null;
+
+            /**
+             * TraitQuery match.
+             * @member {exocore.index.IMatchPredicate|null|undefined} match
+             * @memberof exocore.index.TraitQuery
+             * @instance
+             */
+            TraitQuery.prototype.match = null;
+
+            /**
+             * TraitQuery field.
+             * @member {exocore.index.ITraitFieldPredicate|null|undefined} field
+             * @memberof exocore.index.TraitQuery
+             * @instance
+             */
+            TraitQuery.prototype.field = null;
+
+            // OneOf field names bound to virtual getters and setters
+            let $oneOfFields;
+
+            /**
+             * TraitQuery query.
+             * @member {"reference"|"match"|"field"|undefined} query
+             * @memberof exocore.index.TraitQuery
+             * @instance
+             */
+            Object.defineProperty(TraitQuery.prototype, "query", {
+                get: $util.oneOfGetter($oneOfFields = ["reference", "match", "field"]),
+                set: $util.oneOfSetter($oneOfFields)
+            });
 
             /**
              * Creates a new TraitQuery instance using the specified properties.
@@ -3830,6 +4142,12 @@ export const exocore = $root.exocore = (() => {
             TraitQuery.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
+                if (message.reference != null && message.hasOwnProperty("reference"))
+                    $root.exocore.index.ReferencePredicate.encode(message.reference, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                if (message.match != null && message.hasOwnProperty("match"))
+                    $root.exocore.index.MatchPredicate.encode(message.match, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+                if (message.field != null && message.hasOwnProperty("field"))
+                    $root.exocore.index.TraitFieldPredicate.encode(message.field, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
 
@@ -3864,6 +4182,15 @@ export const exocore = $root.exocore = (() => {
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
+                    case 1:
+                        message.reference = $root.exocore.index.ReferencePredicate.decode(reader, reader.uint32());
+                        break;
+                    case 2:
+                        message.match = $root.exocore.index.MatchPredicate.decode(reader, reader.uint32());
+                        break;
+                    case 3:
+                        message.field = $root.exocore.index.TraitFieldPredicate.decode(reader, reader.uint32());
+                        break;
                     default:
                         reader.skipType(tag & 7);
                         break;
@@ -3899,6 +4226,35 @@ export const exocore = $root.exocore = (() => {
             TraitQuery.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                let properties = {};
+                if (message.reference != null && message.hasOwnProperty("reference")) {
+                    properties.query = 1;
+                    {
+                        let error = $root.exocore.index.ReferencePredicate.verify(message.reference);
+                        if (error)
+                            return "reference." + error;
+                    }
+                }
+                if (message.match != null && message.hasOwnProperty("match")) {
+                    if (properties.query === 1)
+                        return "query: multiple values";
+                    properties.query = 1;
+                    {
+                        let error = $root.exocore.index.MatchPredicate.verify(message.match);
+                        if (error)
+                            return "match." + error;
+                    }
+                }
+                if (message.field != null && message.hasOwnProperty("field")) {
+                    if (properties.query === 1)
+                        return "query: multiple values";
+                    properties.query = 1;
+                    {
+                        let error = $root.exocore.index.TraitFieldPredicate.verify(message.field);
+                        if (error)
+                            return "field." + error;
+                    }
+                }
                 return null;
             };
 
@@ -3913,7 +4269,23 @@ export const exocore = $root.exocore = (() => {
             TraitQuery.fromObject = function fromObject(object) {
                 if (object instanceof $root.exocore.index.TraitQuery)
                     return object;
-                return new $root.exocore.index.TraitQuery();
+                let message = new $root.exocore.index.TraitQuery();
+                if (object.reference != null) {
+                    if (typeof object.reference !== "object")
+                        throw TypeError(".exocore.index.TraitQuery.reference: object expected");
+                    message.reference = $root.exocore.index.ReferencePredicate.fromObject(object.reference);
+                }
+                if (object.match != null) {
+                    if (typeof object.match !== "object")
+                        throw TypeError(".exocore.index.TraitQuery.match: object expected");
+                    message.match = $root.exocore.index.MatchPredicate.fromObject(object.match);
+                }
+                if (object.field != null) {
+                    if (typeof object.field !== "object")
+                        throw TypeError(".exocore.index.TraitQuery.field: object expected");
+                    message.field = $root.exocore.index.TraitFieldPredicate.fromObject(object.field);
+                }
+                return message;
             };
 
             /**
@@ -3925,8 +4297,26 @@ export const exocore = $root.exocore = (() => {
              * @param {$protobuf.IConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
-            TraitQuery.toObject = function toObject() {
-                return {};
+            TraitQuery.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (message.reference != null && message.hasOwnProperty("reference")) {
+                    object.reference = $root.exocore.index.ReferencePredicate.toObject(message.reference, options);
+                    if (options.oneofs)
+                        object.query = "reference";
+                }
+                if (message.match != null && message.hasOwnProperty("match")) {
+                    object.match = $root.exocore.index.MatchPredicate.toObject(message.match, options);
+                    if (options.oneofs)
+                        object.query = "match";
+                }
+                if (message.field != null && message.hasOwnProperty("field")) {
+                    object.field = $root.exocore.index.TraitFieldPredicate.toObject(message.field, options);
+                    if (options.oneofs)
+                        object.query = "field";
+                }
+                return object;
             };
 
             /**
@@ -3941,6 +4331,625 @@ export const exocore = $root.exocore = (() => {
             };
 
             return TraitQuery;
+        })();
+
+        index.TraitFieldPredicate = (function() {
+
+            /**
+             * Properties of a TraitFieldPredicate.
+             * @memberof exocore.index
+             * @interface ITraitFieldPredicate
+             * @property {string|null} [field] TraitFieldPredicate field
+             * @property {string|null} [string] TraitFieldPredicate string
+             * @property {number|Long|null} [int64] TraitFieldPredicate int64
+             * @property {number|Long|null} [uint64] TraitFieldPredicate uint64
+             * @property {google.protobuf.ITimestamp|null} [date] TraitFieldPredicate date
+             * @property {exocore.index.TraitFieldPredicate.Operator|null} [operatior] TraitFieldPredicate operatior
+             */
+
+            /**
+             * Constructs a new TraitFieldPredicate.
+             * @memberof exocore.index
+             * @classdesc Represents a TraitFieldPredicate.
+             * @implements ITraitFieldPredicate
+             * @constructor
+             * @param {exocore.index.ITraitFieldPredicate=} [properties] Properties to set
+             */
+            function TraitFieldPredicate(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * TraitFieldPredicate field.
+             * @member {string} field
+             * @memberof exocore.index.TraitFieldPredicate
+             * @instance
+             */
+            TraitFieldPredicate.prototype.field = "";
+
+            /**
+             * TraitFieldPredicate string.
+             * @member {string} string
+             * @memberof exocore.index.TraitFieldPredicate
+             * @instance
+             */
+            TraitFieldPredicate.prototype.string = "";
+
+            /**
+             * TraitFieldPredicate int64.
+             * @member {number|Long} int64
+             * @memberof exocore.index.TraitFieldPredicate
+             * @instance
+             */
+            TraitFieldPredicate.prototype.int64 = $util.Long ? $util.Long.fromBits(0,0,false) : 0;
+
+            /**
+             * TraitFieldPredicate uint64.
+             * @member {number|Long} uint64
+             * @memberof exocore.index.TraitFieldPredicate
+             * @instance
+             */
+            TraitFieldPredicate.prototype.uint64 = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * TraitFieldPredicate date.
+             * @member {google.protobuf.ITimestamp|null|undefined} date
+             * @memberof exocore.index.TraitFieldPredicate
+             * @instance
+             */
+            TraitFieldPredicate.prototype.date = null;
+
+            /**
+             * TraitFieldPredicate operatior.
+             * @member {exocore.index.TraitFieldPredicate.Operator} operatior
+             * @memberof exocore.index.TraitFieldPredicate
+             * @instance
+             */
+            TraitFieldPredicate.prototype.operatior = 0;
+
+            // OneOf field names bound to virtual getters and setters
+            let $oneOfFields;
+
+            /**
+             * TraitFieldPredicate value.
+             * @member {"string"|"int64"|"uint64"|"date"|undefined} value
+             * @memberof exocore.index.TraitFieldPredicate
+             * @instance
+             */
+            Object.defineProperty(TraitFieldPredicate.prototype, "value", {
+                get: $util.oneOfGetter($oneOfFields = ["string", "int64", "uint64", "date"]),
+                set: $util.oneOfSetter($oneOfFields)
+            });
+
+            /**
+             * Creates a new TraitFieldPredicate instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.TraitFieldPredicate
+             * @static
+             * @param {exocore.index.ITraitFieldPredicate=} [properties] Properties to set
+             * @returns {exocore.index.TraitFieldPredicate} TraitFieldPredicate instance
+             */
+            TraitFieldPredicate.create = function create(properties) {
+                return new TraitFieldPredicate(properties);
+            };
+
+            /**
+             * Encodes the specified TraitFieldPredicate message. Does not implicitly {@link exocore.index.TraitFieldPredicate.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.TraitFieldPredicate
+             * @static
+             * @param {exocore.index.ITraitFieldPredicate} message TraitFieldPredicate message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            TraitFieldPredicate.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.field != null && message.hasOwnProperty("field"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.field);
+                if (message.string != null && message.hasOwnProperty("string"))
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.string);
+                if (message.int64 != null && message.hasOwnProperty("int64"))
+                    writer.uint32(/* id 3, wireType 0 =*/24).int64(message.int64);
+                if (message.uint64 != null && message.hasOwnProperty("uint64"))
+                    writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.uint64);
+                if (message.date != null && message.hasOwnProperty("date"))
+                    $root.google.protobuf.Timestamp.encode(message.date, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+                if (message.operatior != null && message.hasOwnProperty("operatior"))
+                    writer.uint32(/* id 6, wireType 0 =*/48).int32(message.operatior);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified TraitFieldPredicate message, length delimited. Does not implicitly {@link exocore.index.TraitFieldPredicate.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.TraitFieldPredicate
+             * @static
+             * @param {exocore.index.ITraitFieldPredicate} message TraitFieldPredicate message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            TraitFieldPredicate.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a TraitFieldPredicate message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.TraitFieldPredicate
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.TraitFieldPredicate} TraitFieldPredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            TraitFieldPredicate.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.TraitFieldPredicate();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.field = reader.string();
+                        break;
+                    case 2:
+                        message.string = reader.string();
+                        break;
+                    case 3:
+                        message.int64 = reader.int64();
+                        break;
+                    case 4:
+                        message.uint64 = reader.uint64();
+                        break;
+                    case 5:
+                        message.date = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                        break;
+                    case 6:
+                        message.operatior = reader.int32();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a TraitFieldPredicate message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.TraitFieldPredicate
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.TraitFieldPredicate} TraitFieldPredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            TraitFieldPredicate.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a TraitFieldPredicate message.
+             * @function verify
+             * @memberof exocore.index.TraitFieldPredicate
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            TraitFieldPredicate.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                let properties = {};
+                if (message.field != null && message.hasOwnProperty("field"))
+                    if (!$util.isString(message.field))
+                        return "field: string expected";
+                if (message.string != null && message.hasOwnProperty("string")) {
+                    properties.value = 1;
+                    if (!$util.isString(message.string))
+                        return "string: string expected";
+                }
+                if (message.int64 != null && message.hasOwnProperty("int64")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    if (!$util.isInteger(message.int64) && !(message.int64 && $util.isInteger(message.int64.low) && $util.isInteger(message.int64.high)))
+                        return "int64: integer|Long expected";
+                }
+                if (message.uint64 != null && message.hasOwnProperty("uint64")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    if (!$util.isInteger(message.uint64) && !(message.uint64 && $util.isInteger(message.uint64.low) && $util.isInteger(message.uint64.high)))
+                        return "uint64: integer|Long expected";
+                }
+                if (message.date != null && message.hasOwnProperty("date")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    {
+                        let error = $root.google.protobuf.Timestamp.verify(message.date);
+                        if (error)
+                            return "date." + error;
+                    }
+                }
+                if (message.operatior != null && message.hasOwnProperty("operatior"))
+                    switch (message.operatior) {
+                    default:
+                        return "operatior: enum value expected";
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                        break;
+                    }
+                return null;
+            };
+
+            /**
+             * Creates a TraitFieldPredicate message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.TraitFieldPredicate
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.TraitFieldPredicate} TraitFieldPredicate
+             */
+            TraitFieldPredicate.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.TraitFieldPredicate)
+                    return object;
+                let message = new $root.exocore.index.TraitFieldPredicate();
+                if (object.field != null)
+                    message.field = String(object.field);
+                if (object.string != null)
+                    message.string = String(object.string);
+                if (object.int64 != null)
+                    if ($util.Long)
+                        (message.int64 = $util.Long.fromValue(object.int64)).unsigned = false;
+                    else if (typeof object.int64 === "string")
+                        message.int64 = parseInt(object.int64, 10);
+                    else if (typeof object.int64 === "number")
+                        message.int64 = object.int64;
+                    else if (typeof object.int64 === "object")
+                        message.int64 = new $util.LongBits(object.int64.low >>> 0, object.int64.high >>> 0).toNumber();
+                if (object.uint64 != null)
+                    if ($util.Long)
+                        (message.uint64 = $util.Long.fromValue(object.uint64)).unsigned = true;
+                    else if (typeof object.uint64 === "string")
+                        message.uint64 = parseInt(object.uint64, 10);
+                    else if (typeof object.uint64 === "number")
+                        message.uint64 = object.uint64;
+                    else if (typeof object.uint64 === "object")
+                        message.uint64 = new $util.LongBits(object.uint64.low >>> 0, object.uint64.high >>> 0).toNumber(true);
+                if (object.date != null) {
+                    if (typeof object.date !== "object")
+                        throw TypeError(".exocore.index.TraitFieldPredicate.date: object expected");
+                    message.date = $root.google.protobuf.Timestamp.fromObject(object.date);
+                }
+                switch (object.operatior) {
+                case "EQUAL":
+                case 0:
+                    message.operatior = 0;
+                    break;
+                case "GT":
+                case 1:
+                    message.operatior = 1;
+                    break;
+                case "GTE":
+                case 2:
+                    message.operatior = 2;
+                    break;
+                case "LT":
+                case 3:
+                    message.operatior = 3;
+                    break;
+                case "LTE":
+                case 4:
+                    message.operatior = 4;
+                    break;
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a TraitFieldPredicate message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.TraitFieldPredicate
+             * @static
+             * @param {exocore.index.TraitFieldPredicate} message TraitFieldPredicate
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            TraitFieldPredicate.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.field = "";
+                    object.operatior = options.enums === String ? "EQUAL" : 0;
+                }
+                if (message.field != null && message.hasOwnProperty("field"))
+                    object.field = message.field;
+                if (message.string != null && message.hasOwnProperty("string")) {
+                    object.string = message.string;
+                    if (options.oneofs)
+                        object.value = "string";
+                }
+                if (message.int64 != null && message.hasOwnProperty("int64")) {
+                    if (typeof message.int64 === "number")
+                        object.int64 = options.longs === String ? String(message.int64) : message.int64;
+                    else
+                        object.int64 = options.longs === String ? $util.Long.prototype.toString.call(message.int64) : options.longs === Number ? new $util.LongBits(message.int64.low >>> 0, message.int64.high >>> 0).toNumber() : message.int64;
+                    if (options.oneofs)
+                        object.value = "int64";
+                }
+                if (message.uint64 != null && message.hasOwnProperty("uint64")) {
+                    if (typeof message.uint64 === "number")
+                        object.uint64 = options.longs === String ? String(message.uint64) : message.uint64;
+                    else
+                        object.uint64 = options.longs === String ? $util.Long.prototype.toString.call(message.uint64) : options.longs === Number ? new $util.LongBits(message.uint64.low >>> 0, message.uint64.high >>> 0).toNumber(true) : message.uint64;
+                    if (options.oneofs)
+                        object.value = "uint64";
+                }
+                if (message.date != null && message.hasOwnProperty("date")) {
+                    object.date = $root.google.protobuf.Timestamp.toObject(message.date, options);
+                    if (options.oneofs)
+                        object.value = "date";
+                }
+                if (message.operatior != null && message.hasOwnProperty("operatior"))
+                    object.operatior = options.enums === String ? $root.exocore.index.TraitFieldPredicate.Operator[message.operatior] : message.operatior;
+                return object;
+            };
+
+            /**
+             * Converts this TraitFieldPredicate to JSON.
+             * @function toJSON
+             * @memberof exocore.index.TraitFieldPredicate
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            TraitFieldPredicate.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * Operator enum.
+             * @name exocore.index.TraitFieldPredicate.Operator
+             * @enum {string}
+             * @property {number} EQUAL=0 EQUAL value
+             * @property {number} GT=1 GT value
+             * @property {number} GTE=2 GTE value
+             * @property {number} LT=3 LT value
+             * @property {number} LTE=4 LTE value
+             */
+            TraitFieldPredicate.Operator = (function() {
+                const valuesById = {}, values = Object.create(valuesById);
+                values[valuesById[0] = "EQUAL"] = 0;
+                values[valuesById[1] = "GT"] = 1;
+                values[valuesById[2] = "GTE"] = 2;
+                values[valuesById[3] = "LT"] = 3;
+                values[valuesById[4] = "LTE"] = 4;
+                return values;
+            })();
+
+            return TraitFieldPredicate;
+        })();
+
+        index.ReferencePredicate = (function() {
+
+            /**
+             * Properties of a ReferencePredicate.
+             * @memberof exocore.index
+             * @interface IReferencePredicate
+             * @property {string|null} [entityId] ReferencePredicate entityId
+             * @property {string|null} [traitId] ReferencePredicate traitId
+             */
+
+            /**
+             * Constructs a new ReferencePredicate.
+             * @memberof exocore.index
+             * @classdesc Represents a ReferencePredicate.
+             * @implements IReferencePredicate
+             * @constructor
+             * @param {exocore.index.IReferencePredicate=} [properties] Properties to set
+             */
+            function ReferencePredicate(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * ReferencePredicate entityId.
+             * @member {string} entityId
+             * @memberof exocore.index.ReferencePredicate
+             * @instance
+             */
+            ReferencePredicate.prototype.entityId = "";
+
+            /**
+             * ReferencePredicate traitId.
+             * @member {string} traitId
+             * @memberof exocore.index.ReferencePredicate
+             * @instance
+             */
+            ReferencePredicate.prototype.traitId = "";
+
+            /**
+             * Creates a new ReferencePredicate instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.ReferencePredicate
+             * @static
+             * @param {exocore.index.IReferencePredicate=} [properties] Properties to set
+             * @returns {exocore.index.ReferencePredicate} ReferencePredicate instance
+             */
+            ReferencePredicate.create = function create(properties) {
+                return new ReferencePredicate(properties);
+            };
+
+            /**
+             * Encodes the specified ReferencePredicate message. Does not implicitly {@link exocore.index.ReferencePredicate.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.ReferencePredicate
+             * @static
+             * @param {exocore.index.IReferencePredicate} message ReferencePredicate message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            ReferencePredicate.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.entityId);
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.traitId);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified ReferencePredicate message, length delimited. Does not implicitly {@link exocore.index.ReferencePredicate.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.ReferencePredicate
+             * @static
+             * @param {exocore.index.IReferencePredicate} message ReferencePredicate message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            ReferencePredicate.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a ReferencePredicate message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.ReferencePredicate
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.ReferencePredicate} ReferencePredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            ReferencePredicate.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.ReferencePredicate();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.entityId = reader.string();
+                        break;
+                    case 2:
+                        message.traitId = reader.string();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a ReferencePredicate message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.ReferencePredicate
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.ReferencePredicate} ReferencePredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            ReferencePredicate.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a ReferencePredicate message.
+             * @function verify
+             * @memberof exocore.index.ReferencePredicate
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            ReferencePredicate.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                    if (!$util.isString(message.entityId))
+                        return "entityId: string expected";
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    if (!$util.isString(message.traitId))
+                        return "traitId: string expected";
+                return null;
+            };
+
+            /**
+             * Creates a ReferencePredicate message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.ReferencePredicate
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.ReferencePredicate} ReferencePredicate
+             */
+            ReferencePredicate.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.ReferencePredicate)
+                    return object;
+                let message = new $root.exocore.index.ReferencePredicate();
+                if (object.entityId != null)
+                    message.entityId = String(object.entityId);
+                if (object.traitId != null)
+                    message.traitId = String(object.traitId);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a ReferencePredicate message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.ReferencePredicate
+             * @static
+             * @param {exocore.index.ReferencePredicate} message ReferencePredicate
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            ReferencePredicate.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.entityId = "";
+                    object.traitId = "";
+                }
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                    object.entityId = message.entityId;
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                    object.traitId = message.traitId;
+                return object;
+            };
+
+            /**
+             * Converts this ReferencePredicate to JSON.
+             * @function toJSON
+             * @memberof exocore.index.ReferencePredicate
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            ReferencePredicate.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return ReferencePredicate;
         })();
 
         index.Paging = (function() {
@@ -4173,6 +5182,290 @@ export const exocore = $root.exocore = (() => {
             };
 
             return Paging;
+        })();
+
+        index.Sorting = (function() {
+
+            /**
+             * Properties of a Sorting.
+             * @memberof exocore.index
+             * @interface ISorting
+             * @property {boolean|null} [score] Sorting score
+             * @property {boolean|null} [operationId] Sorting operationId
+             * @property {string|null} [field] Sorting field
+             * @property {boolean|null} [ascending] Sorting ascending
+             */
+
+            /**
+             * Constructs a new Sorting.
+             * @memberof exocore.index
+             * @classdesc Represents a Sorting.
+             * @implements ISorting
+             * @constructor
+             * @param {exocore.index.ISorting=} [properties] Properties to set
+             */
+            function Sorting(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Sorting score.
+             * @member {boolean} score
+             * @memberof exocore.index.Sorting
+             * @instance
+             */
+            Sorting.prototype.score = false;
+
+            /**
+             * Sorting operationId.
+             * @member {boolean} operationId
+             * @memberof exocore.index.Sorting
+             * @instance
+             */
+            Sorting.prototype.operationId = false;
+
+            /**
+             * Sorting field.
+             * @member {string} field
+             * @memberof exocore.index.Sorting
+             * @instance
+             */
+            Sorting.prototype.field = "";
+
+            /**
+             * Sorting ascending.
+             * @member {boolean} ascending
+             * @memberof exocore.index.Sorting
+             * @instance
+             */
+            Sorting.prototype.ascending = false;
+
+            // OneOf field names bound to virtual getters and setters
+            let $oneOfFields;
+
+            /**
+             * Sorting value.
+             * @member {"score"|"operationId"|"field"|undefined} value
+             * @memberof exocore.index.Sorting
+             * @instance
+             */
+            Object.defineProperty(Sorting.prototype, "value", {
+                get: $util.oneOfGetter($oneOfFields = ["score", "operationId", "field"]),
+                set: $util.oneOfSetter($oneOfFields)
+            });
+
+            /**
+             * Creates a new Sorting instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.Sorting
+             * @static
+             * @param {exocore.index.ISorting=} [properties] Properties to set
+             * @returns {exocore.index.Sorting} Sorting instance
+             */
+            Sorting.create = function create(properties) {
+                return new Sorting(properties);
+            };
+
+            /**
+             * Encodes the specified Sorting message. Does not implicitly {@link exocore.index.Sorting.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.Sorting
+             * @static
+             * @param {exocore.index.ISorting} message Sorting message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Sorting.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.score != null && message.hasOwnProperty("score"))
+                    writer.uint32(/* id 1, wireType 0 =*/8).bool(message.score);
+                if (message.operationId != null && message.hasOwnProperty("operationId"))
+                    writer.uint32(/* id 2, wireType 0 =*/16).bool(message.operationId);
+                if (message.field != null && message.hasOwnProperty("field"))
+                    writer.uint32(/* id 3, wireType 2 =*/26).string(message.field);
+                if (message.ascending != null && message.hasOwnProperty("ascending"))
+                    writer.uint32(/* id 4, wireType 0 =*/32).bool(message.ascending);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified Sorting message, length delimited. Does not implicitly {@link exocore.index.Sorting.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.Sorting
+             * @static
+             * @param {exocore.index.ISorting} message Sorting message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Sorting.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a Sorting message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.Sorting
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.Sorting} Sorting
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Sorting.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.Sorting();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.score = reader.bool();
+                        break;
+                    case 2:
+                        message.operationId = reader.bool();
+                        break;
+                    case 3:
+                        message.field = reader.string();
+                        break;
+                    case 4:
+                        message.ascending = reader.bool();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a Sorting message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.Sorting
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.Sorting} Sorting
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Sorting.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a Sorting message.
+             * @function verify
+             * @memberof exocore.index.Sorting
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            Sorting.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                let properties = {};
+                if (message.score != null && message.hasOwnProperty("score")) {
+                    properties.value = 1;
+                    if (typeof message.score !== "boolean")
+                        return "score: boolean expected";
+                }
+                if (message.operationId != null && message.hasOwnProperty("operationId")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    if (typeof message.operationId !== "boolean")
+                        return "operationId: boolean expected";
+                }
+                if (message.field != null && message.hasOwnProperty("field")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    if (!$util.isString(message.field))
+                        return "field: string expected";
+                }
+                if (message.ascending != null && message.hasOwnProperty("ascending"))
+                    if (typeof message.ascending !== "boolean")
+                        return "ascending: boolean expected";
+                return null;
+            };
+
+            /**
+             * Creates a Sorting message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.Sorting
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.Sorting} Sorting
+             */
+            Sorting.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.Sorting)
+                    return object;
+                let message = new $root.exocore.index.Sorting();
+                if (object.score != null)
+                    message.score = Boolean(object.score);
+                if (object.operationId != null)
+                    message.operationId = Boolean(object.operationId);
+                if (object.field != null)
+                    message.field = String(object.field);
+                if (object.ascending != null)
+                    message.ascending = Boolean(object.ascending);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a Sorting message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.Sorting
+             * @static
+             * @param {exocore.index.Sorting} message Sorting
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Sorting.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults)
+                    object.ascending = false;
+                if (message.score != null && message.hasOwnProperty("score")) {
+                    object.score = message.score;
+                    if (options.oneofs)
+                        object.value = "score";
+                }
+                if (message.operationId != null && message.hasOwnProperty("operationId")) {
+                    object.operationId = message.operationId;
+                    if (options.oneofs)
+                        object.value = "operationId";
+                }
+                if (message.field != null && message.hasOwnProperty("field")) {
+                    object.field = message.field;
+                    if (options.oneofs)
+                        object.value = "field";
+                }
+                if (message.ascending != null && message.hasOwnProperty("ascending"))
+                    object.ascending = message.ascending;
+                return object;
+            };
+
+            /**
+             * Converts this Sorting to JSON.
+             * @function toJSON
+             * @memberof exocore.index.Sorting
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            Sorting.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return Sorting;
         })();
 
         index.EntityResults = (function() {
@@ -4810,6 +6103,7 @@ export const exocore = $root.exocore = (() => {
              * @interface ITestMessage
              * @property {string|null} [string1] TestMessage string1
              * @property {string|null} [string2] TestMessage string2
+             * @property {string|null} [string3] TestMessage string3
              * @property {exocore.test.ITestStruct|null} [struct1] TestMessage struct1
              * @property {string|null} [oneofString1] TestMessage oneofString1
              * @property {number|null} [oneofInt1] TestMessage oneofInt1
@@ -4817,6 +6111,8 @@ export const exocore = $root.exocore = (() => {
              * @property {google.protobuf.ITimestamp|null} [date2] TestMessage date2
              * @property {number|null} [int1] TestMessage int1
              * @property {number|null} [int2] TestMessage int2
+             * @property {exocore.index.IReference|null} [ref1] TestMessage ref1
+             * @property {exocore.index.IReference|null} [ref2] TestMessage ref2
              */
 
             /**
@@ -4849,6 +6145,14 @@ export const exocore = $root.exocore = (() => {
              * @instance
              */
             TestMessage.prototype.string2 = "";
+
+            /**
+             * TestMessage string3.
+             * @member {string} string3
+             * @memberof exocore.test.TestMessage
+             * @instance
+             */
+            TestMessage.prototype.string3 = "";
 
             /**
              * TestMessage struct1.
@@ -4906,6 +6210,22 @@ export const exocore = $root.exocore = (() => {
              */
             TestMessage.prototype.int2 = 0;
 
+            /**
+             * TestMessage ref1.
+             * @member {exocore.index.IReference|null|undefined} ref1
+             * @memberof exocore.test.TestMessage
+             * @instance
+             */
+            TestMessage.prototype.ref1 = null;
+
+            /**
+             * TestMessage ref2.
+             * @member {exocore.index.IReference|null|undefined} ref2
+             * @memberof exocore.test.TestMessage
+             * @instance
+             */
+            TestMessage.prototype.ref2 = null;
+
             // OneOf field names bound to virtual getters and setters
             let $oneOfFields;
 
@@ -4962,6 +6282,12 @@ export const exocore = $root.exocore = (() => {
                     writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.int1);
                 if (message.int2 != null && message.hasOwnProperty("int2"))
                     writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.int2);
+                if (message.string3 != null && message.hasOwnProperty("string3"))
+                    writer.uint32(/* id 12, wireType 2 =*/98).string(message.string3);
+                if (message.ref1 != null && message.hasOwnProperty("ref1"))
+                    $root.exocore.index.Reference.encode(message.ref1, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
+                if (message.ref2 != null && message.hasOwnProperty("ref2"))
+                    $root.exocore.index.Reference.encode(message.ref2, writer.uint32(/* id 14, wireType 2 =*/114).fork()).ldelim();
                 return writer;
             };
 
@@ -5002,6 +6328,9 @@ export const exocore = $root.exocore = (() => {
                     case 2:
                         message.string2 = reader.string();
                         break;
+                    case 12:
+                        message.string3 = reader.string();
+                        break;
                     case 3:
                         message.struct1 = $root.exocore.test.TestStruct.decode(reader, reader.uint32());
                         break;
@@ -5022,6 +6351,12 @@ export const exocore = $root.exocore = (() => {
                         break;
                     case 11:
                         message.int2 = reader.uint32();
+                        break;
+                    case 13:
+                        message.ref1 = $root.exocore.index.Reference.decode(reader, reader.uint32());
+                        break;
+                    case 14:
+                        message.ref2 = $root.exocore.index.Reference.decode(reader, reader.uint32());
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -5065,6 +6400,9 @@ export const exocore = $root.exocore = (() => {
                 if (message.string2 != null && message.hasOwnProperty("string2"))
                     if (!$util.isString(message.string2))
                         return "string2: string expected";
+                if (message.string3 != null && message.hasOwnProperty("string3"))
+                    if (!$util.isString(message.string3))
+                        return "string3: string expected";
                 if (message.struct1 != null && message.hasOwnProperty("struct1")) {
                     let error = $root.exocore.test.TestStruct.verify(message.struct1);
                     if (error)
@@ -5098,6 +6436,16 @@ export const exocore = $root.exocore = (() => {
                 if (message.int2 != null && message.hasOwnProperty("int2"))
                     if (!$util.isInteger(message.int2))
                         return "int2: integer expected";
+                if (message.ref1 != null && message.hasOwnProperty("ref1")) {
+                    let error = $root.exocore.index.Reference.verify(message.ref1);
+                    if (error)
+                        return "ref1." + error;
+                }
+                if (message.ref2 != null && message.hasOwnProperty("ref2")) {
+                    let error = $root.exocore.index.Reference.verify(message.ref2);
+                    if (error)
+                        return "ref2." + error;
+                }
                 return null;
             };
 
@@ -5117,6 +6465,8 @@ export const exocore = $root.exocore = (() => {
                     message.string1 = String(object.string1);
                 if (object.string2 != null)
                     message.string2 = String(object.string2);
+                if (object.string3 != null)
+                    message.string3 = String(object.string3);
                 if (object.struct1 != null) {
                     if (typeof object.struct1 !== "object")
                         throw TypeError(".exocore.test.TestMessage.struct1: object expected");
@@ -5140,6 +6490,16 @@ export const exocore = $root.exocore = (() => {
                     message.int1 = object.int1 >>> 0;
                 if (object.int2 != null)
                     message.int2 = object.int2 >>> 0;
+                if (object.ref1 != null) {
+                    if (typeof object.ref1 !== "object")
+                        throw TypeError(".exocore.test.TestMessage.ref1: object expected");
+                    message.ref1 = $root.exocore.index.Reference.fromObject(object.ref1);
+                }
+                if (object.ref2 != null) {
+                    if (typeof object.ref2 !== "object")
+                        throw TypeError(".exocore.test.TestMessage.ref2: object expected");
+                    message.ref2 = $root.exocore.index.Reference.fromObject(object.ref2);
+                }
                 return message;
             };
 
@@ -5164,6 +6524,9 @@ export const exocore = $root.exocore = (() => {
                     object.date2 = null;
                     object.int1 = 0;
                     object.int2 = 0;
+                    object.string3 = "";
+                    object.ref1 = null;
+                    object.ref2 = null;
                 }
                 if (message.string1 != null && message.hasOwnProperty("string1"))
                     object.string1 = message.string1;
@@ -5189,6 +6552,12 @@ export const exocore = $root.exocore = (() => {
                     object.int1 = message.int1;
                 if (message.int2 != null && message.hasOwnProperty("int2"))
                     object.int2 = message.int2;
+                if (message.string3 != null && message.hasOwnProperty("string3"))
+                    object.string3 = message.string3;
+                if (message.ref1 != null && message.hasOwnProperty("ref1"))
+                    object.ref1 = $root.exocore.index.Reference.toObject(message.ref1, options);
+                if (message.ref2 != null && message.hasOwnProperty("ref2"))
+                    object.ref2 = $root.exocore.index.Reference.toObject(message.ref2, options);
                 return object;
             };
 
@@ -10742,6 +12111,8 @@ export const google = $root.google = (() => {
              * @property {boolean|null} [weak] FieldOptions weak
              * @property {Array.<google.protobuf.IUninterpretedOption>|null} [uninterpretedOption] FieldOptions uninterpretedOption
              * @property {boolean|null} [".exocore.indexed"] FieldOptions .exocore.indexed
+             * @property {boolean|null} [".exocore.sorted"] FieldOptions .exocore.sorted
+             * @property {boolean|null} [".exocore.text"] FieldOptions .exocore.text
              */
 
             /**
@@ -10825,6 +12196,22 @@ export const google = $root.google = (() => {
             FieldOptions.prototype[".exocore.indexed"] = false;
 
             /**
+             * FieldOptions .exocore.sorted.
+             * @member {boolean} .exocore.sorted
+             * @memberof google.protobuf.FieldOptions
+             * @instance
+             */
+            FieldOptions.prototype[".exocore.sorted"] = false;
+
+            /**
+             * FieldOptions .exocore.text.
+             * @member {boolean} .exocore.text
+             * @memberof google.protobuf.FieldOptions
+             * @instance
+             */
+            FieldOptions.prototype[".exocore.text"] = false;
+
+            /**
              * Creates a new FieldOptions instance using the specified properties.
              * @function create
              * @memberof google.protobuf.FieldOptions
@@ -10864,7 +12251,11 @@ export const google = $root.google = (() => {
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
                         $root.google.protobuf.UninterpretedOption.encode(message.uninterpretedOption[i], writer.uint32(/* id 999, wireType 2 =*/7994).fork()).ldelim();
                 if (message[".exocore.indexed"] != null && message.hasOwnProperty(".exocore.indexed"))
-                    writer.uint32(/* id 1000, wireType 0 =*/8000).bool(message[".exocore.indexed"]);
+                    writer.uint32(/* id 1373, wireType 0 =*/10984).bool(message[".exocore.indexed"]);
+                if (message[".exocore.sorted"] != null && message.hasOwnProperty(".exocore.sorted"))
+                    writer.uint32(/* id 1374, wireType 0 =*/10992).bool(message[".exocore.sorted"]);
+                if (message[".exocore.text"] != null && message.hasOwnProperty(".exocore.text"))
+                    writer.uint32(/* id 1375, wireType 0 =*/11000).bool(message[".exocore.text"]);
                 return writer;
             };
 
@@ -10922,8 +12313,14 @@ export const google = $root.google = (() => {
                             message.uninterpretedOption = [];
                         message.uninterpretedOption.push($root.google.protobuf.UninterpretedOption.decode(reader, reader.uint32()));
                         break;
-                    case 1000:
+                    case 1373:
                         message[".exocore.indexed"] = reader.bool();
+                        break;
+                    case 1374:
+                        message[".exocore.sorted"] = reader.bool();
+                        break;
+                    case 1375:
+                        message[".exocore.text"] = reader.bool();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -11002,6 +12399,12 @@ export const google = $root.google = (() => {
                 if (message[".exocore.indexed"] != null && message.hasOwnProperty(".exocore.indexed"))
                     if (typeof message[".exocore.indexed"] !== "boolean")
                         return ".exocore.indexed: boolean expected";
+                if (message[".exocore.sorted"] != null && message.hasOwnProperty(".exocore.sorted"))
+                    if (typeof message[".exocore.sorted"] !== "boolean")
+                        return ".exocore.sorted: boolean expected";
+                if (message[".exocore.text"] != null && message.hasOwnProperty(".exocore.text"))
+                    if (typeof message[".exocore.text"] !== "boolean")
+                        return ".exocore.text: boolean expected";
                 return null;
             };
 
@@ -11065,6 +12468,10 @@ export const google = $root.google = (() => {
                 }
                 if (object[".exocore.indexed"] != null)
                     message[".exocore.indexed"] = Boolean(object[".exocore.indexed"]);
+                if (object[".exocore.sorted"] != null)
+                    message[".exocore.sorted"] = Boolean(object[".exocore.sorted"]);
+                if (object[".exocore.text"] != null)
+                    message[".exocore.text"] = Boolean(object[".exocore.text"]);
                 return message;
             };
 
@@ -11091,6 +12498,8 @@ export const google = $root.google = (() => {
                     object.jstype = options.enums === String ? "JS_NORMAL" : 0;
                     object.weak = false;
                     object[".exocore.indexed"] = false;
+                    object[".exocore.sorted"] = false;
+                    object[".exocore.text"] = false;
                 }
                 if (message.ctype != null && message.hasOwnProperty("ctype"))
                     object.ctype = options.enums === String ? $root.google.protobuf.FieldOptions.CType[message.ctype] : message.ctype;
@@ -11111,6 +12520,10 @@ export const google = $root.google = (() => {
                 }
                 if (message[".exocore.indexed"] != null && message.hasOwnProperty(".exocore.indexed"))
                     object[".exocore.indexed"] = message[".exocore.indexed"];
+                if (message[".exocore.sorted"] != null && message.hasOwnProperty(".exocore.sorted"))
+                    object[".exocore.sorted"] = message[".exocore.sorted"];
+                if (message[".exocore.text"] != null && message.hasOwnProperty(".exocore.text"))
+                    object[".exocore.text"] = message[".exocore.text"];
                 return object;
             };
 

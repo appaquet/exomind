@@ -3,8 +3,8 @@ use prost::Message;
 
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::{
-    entity_query, EntityQuery, EntityResults, IdPredicate, MatchPredicate, Paging, TestPredicate,
-    TraitPredicate,
+    entity_query, EntityQuery, EntityResults, IdPredicate, MatchPredicate, Paging, Sorting,
+    TestPredicate, TraitPredicate,
 };
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
 use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
@@ -101,6 +101,19 @@ impl QueryBuilder {
 
     pub fn with_watch_token(mut self, token: WatchToken) -> Self {
         self.query.watch_token = token;
+        self
+    }
+
+    pub fn order(mut self, ascending: bool) -> Self {
+        if let Some(sorting) = self.query.sorting.as_mut() {
+            sorting.ascending = ascending;
+        } else {
+            self.query.sorting = Some(Sorting {
+                ascending,
+                value: None,
+            });
+        }
+
         self
     }
 

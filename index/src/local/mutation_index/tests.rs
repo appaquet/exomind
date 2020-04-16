@@ -8,6 +8,14 @@ use exocore_core::protos::prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt}
 use crate::query::QueryBuilder;
 
 use super::*;
+use exocore_chain::operation::OperationId;
+
+// TODO: Ascending/descending sorting by wrapping into something that reverses
+// TODO: Sort by operation, ascending, descending
+// TODO: Sort by match, acending, descending
+// TODO: Trait inner query support
+//       -> Sort by field, ascending, descending
+// TODO: Replace paging by one from proto (string based)
 
 #[test]
 fn search_by_entity_id() -> Result<(), failure::Error> {
@@ -130,11 +138,15 @@ fn search_query_matches() -> Result<(), failure::Error> {
     });
     index.apply_mutations(vec![trait1, trait2].into_iter())?;
 
-    let results = index.search_matches("foo", None)?;
+    let predicate = |text: &str| MatchPredicate {
+        query: text.to_string(),
+    };
+
+    let results = index.search_matches(&predicate("foo"), None, None)?;
     assert_eq!(results.results.len(), 2);
     assert_eq!(results.results[0].entity_id, "entity_id1"); // foo is repeated in entity 1
 
-    let results = index.search_matches("bar", None)?;
+    let results = index.search_matches(&predicate("bar"), None, None)?;
     assert_eq!(results.results.len(), 2);
     assert!(results.results[0].score > score_to_u64(0.30));
     assert!(results.results[1].score > score_to_u64(0.18));
@@ -146,7 +158,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
         before_score: None,
         count: 1,
     };
-    let results = index.search_matches("foo", Some(paging))?;
+    let results = index.search_matches(&predicate("foo"), Some(paging), None)?;
     assert_eq!(results.results.len(), 1);
     assert_eq!(results.remaining_results, 1);
     assert_eq!(results.total_results, 2);
@@ -157,7 +169,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
         before_score: None,
         count: 10,
     };
-    let results = index.search_matches("bar", Some(paging))?;
+    let results = index.search_matches(&predicate("bar"), Some(paging), None)?;
     assert_eq!(results.results.len(), 1);
     assert_eq!(results.remaining_results, 0);
     assert_eq!(results.total_results, 2);
@@ -169,7 +181,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
         before_score: Some(score_to_u64(0.30)),
         count: 10,
     };
-    let results = index.search_matches("bar", Some(paging))?;
+    let results = index.search_matches(&predicate("bar"), Some(paging), None)?;
     assert_eq!(results.results.len(), 1);
     assert_eq!(results.remaining_results, 0);
     assert_eq!(results.total_results, 2);
@@ -185,15 +197,17 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
     let traits = (0..30).map(|i| {
+        let text = "foo ".repeat((i + 1) as usize);
+
         IndexMutation::PutTrait(PutTraitMutation {
             block_offset: Some(i),
             operation_id: i,
             entity_id: format!("entity_id{}", i),
             trt: Trait {
-                id: format!("entity_id{}", i),
+                id: format!("id{}", i),
                 message: Some(
                     TestMessage {
-                        string1: "Foo Bar".to_string(),
+                        string1: text,
                         ..Default::default()
                     }
                     .pack_to_any()
@@ -210,33 +224,53 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
         before_score: None,
         count: 10,
     };
-    let results1 = index.search_matches("foo", Some(paging))?;
+
+    let query = QueryBuilder::match_text("foo").build();
+    let results1 = index.search(&query, Some(paging))?;
+    let results1_next_page = results1.next_page.clone().unwrap();
     assert_eq!(results1.total_results, 30);
     assert_eq!(results1.results.len(), 10);
     assert_eq!(results1.remaining_results, 20);
-    find_put_trait(&results1, "id29");
-    find_put_trait(&results1, "id20");
+    let ids = extract_traits_id(results1);
+    assert_eq!(ids[0], "id29");
+    assert_eq!(ids[9], "id20");
 
-    let results2 = index.search_matches("foo", Some(results1.next_page.clone().unwrap()))?;
+    let query = QueryBuilder::match_text("foo").build();
+    let results2 = index.search(&query, Some(results1_next_page))?;
+    let results2_next_page = results2.next_page.clone().unwrap();
     assert_eq!(results2.total_results, 30);
     assert_eq!(results2.results.len(), 10);
     assert_eq!(results2.remaining_results, 10);
-    find_put_trait(&results1, "id19");
-    find_put_trait(&results1, "id10");
+    let ids = extract_traits_id(results2);
+    assert_eq!(ids[0], "id19");
+    assert_eq!(ids[9], "id10");
 
-    let results3 = index.search_matches("foo", Some(results2.next_page.unwrap()))?;
+    let query = QueryBuilder::match_text("foo").build();
+    let results3 = index.search(&query, Some(results2_next_page))?;
     assert_eq!(results3.total_results, 30);
     assert_eq!(results3.results.len(), 10);
     assert_eq!(results3.remaining_results, 0);
-    find_put_trait(&results1, "id9");
-    find_put_trait(&results1, "id0");
+    let ids = extract_traits_id(results3);
+    assert_eq!(ids[0], "id9");
+    assert_eq!(ids[9], "id0");
 
     // search all should return an iterator over all results
     let query = QueryBuilder::match_text("foo").build();
     let iter = index.search_all(&query)?;
     assert_eq!(iter.total_results, 30);
-    let results = iter.collect_vec();
-    assert_eq!(results.len(), 30);
+    let ops: Vec<OperationId> = iter.map(|r| r.operation_id).collect();
+    assert_eq!(ops.len(), 30);
+    assert_eq!(ops[0], 29);
+    assert_eq!(ops[29], 0);
+
+    // reversed order
+    let query = QueryBuilder::match_text("foo").order(true).build();
+    let iter = index.search_all(&query)?;
+    assert_eq!(iter.total_results, 30);
+    let ops: Vec<OperationId> = iter.map(|r| r.operation_id).collect();
+    assert_eq!(ops.len(), 30);
+    assert_eq!(ops[0], 0);
+    assert_eq!(ops[29], 29);
 
     Ok(())
 }
@@ -326,12 +360,12 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         query: None,
     };
 
-    let results = index.search_with_trait(&pred1, None)?;
+    let results = index.search_with_trait(&pred1, None, None)?;
     assert_eq!(results.results.len(), 1);
     assert!(find_put_trait(&results, "trt1").is_some());
 
     // ordering of multiple traits is operation id
-    let results = index.search_with_trait(&pred2, None)?;
+    let results = index.search_with_trait(&pred2, None, None)?;
     assert_eq!(
         extract_traits_id(results),
         vec!["trait4", "trait3", "trait2"]
@@ -343,7 +377,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         before_score: None,
         count: 1,
     };
-    let results = index.search_with_trait(&pred2, Some(paging))?;
+    let results = index.search_with_trait(&pred2, Some(paging), None)?;
     assert_eq!(results.results.len(), 1);
 
     // only results after given modification date
@@ -352,7 +386,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         before_score: None,
         count: 10,
     };
-    let results = index.search_with_trait(&pred2, Some(paging))?;
+    let results = index.search_with_trait(&pred2, Some(paging), None)?;
     assert_eq!(extract_traits_id(results), vec!["trait4", "trait3"]);
 
     // only results before given modification date
@@ -361,7 +395,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         before_score: Some(3),
         count: 10,
     };
-    let results = index.search_with_trait(&pred2, Some(paging))?;
+    let results = index.search_with_trait(&pred2, Some(paging), None)?;
     assert_eq!(extract_traits_id(results), vec!["trait2"]);
 
     Ok(())
@@ -405,21 +439,22 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
         query: None,
     };
 
-    let results1 = index.search_with_trait(&pred1, Some(paging))?;
+    let results1 = index.search_with_trait(&pred1, Some(paging), None)?;
     assert_eq!(results1.total_results, 30);
     assert_eq!(results1.remaining_results, 20);
     assert_eq!(results1.results.len(), 10);
     find_put_trait(&results1, "id29");
     find_put_trait(&results1, "id20");
 
-    let results2 = index.search_with_trait(&pred1, Some(results1.next_page.clone().unwrap()))?;
+    let results2 =
+        index.search_with_trait(&pred1, Some(results1.next_page.clone().unwrap()), None)?;
     assert_eq!(results2.total_results, 30);
     assert_eq!(results2.remaining_results, 10);
     assert_eq!(results2.results.len(), 10);
     find_put_trait(&results1, "id19");
     find_put_trait(&results1, "id10");
 
-    let results3 = index.search_with_trait(&pred1, Some(results2.next_page.unwrap()))?;
+    let results3 = index.search_with_trait(&pred1, Some(results2.next_page.unwrap()), None)?;
     assert_eq!(results3.total_results, 30);
     assert_eq!(results3.remaining_results, 0);
     assert_eq!(results3.results.len(), 10);
@@ -491,6 +526,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
                     entity_id: entity.to_string(),
                     trait_id: trt.to_string(),
                 },
+                None,
                 None,
             )
             .unwrap()
@@ -611,7 +647,7 @@ fn put_unregistered_trait() -> Result<(), failure::Error> {
         trait_name: "not.registered.Message".to_string(),
         query: None,
     };
-    let results = index.search_with_trait(&pred, None)?;
+    let results = index.search_with_trait(&pred, None, None)?;
     assert_eq!(results.results.len(), 1);
 
     Ok(())
@@ -641,11 +677,16 @@ fn delete_operation_id_mutation() -> Result<(), failure::Error> {
     });
     index.apply_mutation(trait1)?;
 
-    assert_eq!(index.search_matches("foo", None)?.results.len(), 1);
+    let predicate = MatchPredicate {
+        query: "foo".to_string(),
+    };
+    let results = index.search_matches(&predicate, None, None)?;
+    assert_eq!(results.results.len(), 1);
 
     index.apply_mutation(IndexMutation::DeleteOperation(1234))?;
 
-    assert_eq!(index.search_matches("foo", None)?.results.len(), 0);
+    let results = index.search_matches(&predicate, None, None)?;
+    assert_eq!(results.results.len(), 0);
 
     Ok(())
 }

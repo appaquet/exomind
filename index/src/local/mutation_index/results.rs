@@ -95,3 +95,51 @@ impl MutationMetadataType {
         }
     }
 }
+
+/// Wraps a sortable value so that it can be easily reversed when required or ignored if it's outside
+/// of the requested paging.
+#[derive(Clone)]
+pub struct ResultScore<O: PartialOrd + PartialEq> {
+    pub score: O,
+    pub reverse: bool,
+    pub operation_id: u64,
+
+    // means that this result should not be returned (probably because it's not withing paging)
+    // and should match less than any other non-ignored result
+    pub ignore: bool,
+}
+
+impl<O: PartialOrd + PartialEq> PartialOrd for ResultScore<O> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        // an ignored result should be always be less, unless they are both
+        if self.ignore && other.ignore {
+            return Some(std::cmp::Ordering::Equal);
+        } else if self.ignore {
+            return Some(std::cmp::Ordering::Less);
+        } else if other.ignore {
+            return Some(std::cmp::Ordering::Greater);
+        }
+
+        let cmp = self.score.partial_cmp(&other.score);
+
+        // if both are equal, we tie break using operation id to make sort stable
+        let cmp = if cmp == Some(std::cmp::Ordering::Equal) {
+            Some(self.operation_id.cmp(&other.operation_id))
+        } else {
+            cmp
+        };
+
+        // reverse if needed
+        if self.reverse {
+            cmp.map(|o| o.reverse())
+        } else {
+            cmp
+        }
+    }
+}
+
+impl<O: PartialOrd + PartialEq> PartialEq for ResultScore<O> {
+    fn eq(&self, other: &Self) -> bool {
+        self.score.eq(&other.score)
+    }
+}

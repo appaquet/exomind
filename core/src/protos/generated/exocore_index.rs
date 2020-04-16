@@ -25,16 +25,20 @@ pub struct Reference {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityQuery {
+    //// Query paging requested
     #[prost(message, optional, tag = "5")]
     pub paging: ::std::option::Option<Paging>,
+    //// Query sorting
+    #[prost(message, optional, tag = "6")]
+    pub sorting: ::std::option::Option<Sorting>,
     //// If true, only return summary
-    #[prost(bool, tag = "6")]
+    #[prost(bool, tag = "7")]
     pub summary: bool,
     //// Optional watch token if this query is to be used for watching.
-    #[prost(uint64, tag = "7")]
+    #[prost(uint64, tag = "8")]
     pub watch_token: u64,
     //// If specified, if results from server matches this hash, only a summary will be returned.
-    #[prost(uint64, tag = "8")]
+    #[prost(uint64, tag = "9")]
     pub result_hash: u64,
     #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4, 99")]
     pub predicate: ::std::option::Option<entity_query::Predicate>,
@@ -49,7 +53,7 @@ pub mod entity_query {
         #[prost(message, tag = "3")]
         Id(super::IdPredicate),
         #[prost(message, tag = "4")]
-        Ref(super::ReferencePredicate),
+        Reference(super::ReferencePredicate),
         #[prost(message, tag = "99")]
         Test(super::TestPredicate),
     }
@@ -77,7 +81,52 @@ pub struct TraitPredicate {
     pub query: ::std::option::Option<TraitQuery>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct TraitQuery {}
+pub struct TraitQuery {
+    #[prost(oneof = "trait_query::Query", tags = "1, 2, 3")]
+    pub query: ::std::option::Option<trait_query::Query>,
+}
+pub mod trait_query {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Query {
+        #[prost(message, tag = "1")]
+        Reference(super::ReferencePredicate),
+        #[prost(message, tag = "2")]
+        Match(super::MatchPredicate),
+        #[prost(message, tag = "3")]
+        Field(super::TraitFieldPredicate),
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TraitFieldPredicate {
+    #[prost(string, tag = "1")]
+    pub field: std::string::String,
+    #[prost(enumeration = "trait_field_predicate::Operator", tag = "6")]
+    pub operatior: i32,
+    #[prost(oneof = "trait_field_predicate::Value", tags = "2, 3, 4, 5")]
+    pub value: ::std::option::Option<trait_field_predicate::Value>,
+}
+pub mod trait_field_predicate {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[repr(i32)]
+    pub enum Operator {
+        Equal = 0,
+        Gt = 1,
+        Gte = 2,
+        Lt = 3,
+        Lte = 4,
+    }
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Value {
+        #[prost(string, tag = "2")]
+        String(std::string::String),
+        #[prost(int64, tag = "3")]
+        Int64(i64),
+        #[prost(uint64, tag = "4")]
+        Uint64(u64),
+        #[prost(message, tag = "5")]
+        Date(::prost_types::Timestamp),
+    }
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReferencePredicate {
     /// Entity id the reference points to
@@ -98,6 +147,24 @@ pub struct Paging {
     //// Desired results count. Default if 0.
     #[prost(uint32, tag = "3")]
     pub count: u32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Sorting {
+    #[prost(bool, tag = "4")]
+    pub ascending: bool,
+    #[prost(oneof = "sorting::Value", tags = "1, 2, 3")]
+    pub value: ::std::option::Option<sorting::Value>,
+}
+pub mod sorting {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Value {
+        #[prost(bool, tag = "1")]
+        Score(bool),
+        #[prost(bool, tag = "2")]
+        OperationId(bool),
+        #[prost(string, tag = "3")]
+        Field(std::string::String),
+    }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityResults {
