@@ -156,12 +156,12 @@ where
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
         in_message: Box<InMessage>,
-        query: EntityQuery,
+        query: Box<EntityQuery>,
     ) -> Result<(), Error> {
         let future_result = {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
-            inner.store_handle.query(query)?
+            inner.store_handle.query(query.as_ref().clone())?
         };
 
         let weak_inner = weak_inner.clone();
@@ -196,7 +196,7 @@ where
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
         in_message: &InMessage,
-        query: EntityQuery,
+        query: Box<EntityQuery>,
     ) -> Result<(), Error> {
         let watch_token = query.watch_token;
 
@@ -220,7 +220,7 @@ where
                 .watched_queries
                 .insert(watch_token, registered_watched_query);
 
-            let result_stream = inner.store_handle.watched_query(query)?;
+            let result_stream = inner.store_handle.watched_query(query.as_ref().clone())?;
 
             (result_stream, drop_receiver)
         };
@@ -269,11 +269,11 @@ where
     fn handle_incoming_mutation_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         in_message: &InMessage,
-        entity_mutation: EntityMutation,
+        entity_mutation: Box<EntityMutation>,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let inner = inner.read()?;
-        let result = inner.store_handle.mutate(entity_mutation);
+        let result = inner.store_handle.mutate(entity_mutation.as_ref().clone());
 
         if let Err(err) = &result {
             error!("Returning error executing incoming mutation: {}", err);
@@ -367,9 +367,9 @@ where
 }
 
 enum IncomingMessage {
-    Mutation(EntityMutation),
-    Query(EntityQuery),
-    WatchedQuery(EntityQuery),
+    Mutation(Box<EntityMutation>),
+    Query(Box<EntityQuery>),
+    WatchedQuery(Box<EntityQuery>),
     UnwatchQuery(WatchToken),
 }
 
@@ -379,17 +379,17 @@ impl IncomingMessage {
             <mutation_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
                 let mutation = crate::mutation::mutation_from_request_frame(frame)?;
-                Ok(IncomingMessage::Mutation(mutation))
+                Ok(IncomingMessage::Mutation(Box::new(mutation)))
             }
             <query_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
                 let query = crate::query::query_from_request_frame(frame)?;
-                Ok(IncomingMessage::Query(query))
+                Ok(IncomingMessage::Query(Box::new(query)))
             }
             <watched_query_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
                 let query = crate::query::query_from_request_frame(frame)?;
-                Ok(IncomingMessage::WatchedQuery(query))
+                Ok(IncomingMessage::WatchedQuery(Box::new(query)))
             }
             <unwatch_query_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame =

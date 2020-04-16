@@ -2,7 +2,7 @@ use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::prost::ProstTimestampExt;
 
 use crate::mutation::MutationBuilder;
-use crate::query::QueryBuilder;
+use crate::query::{QueryBuilder, SortToken};
 
 use super::*;
 use crate::local::mutation_index::MutationResults;

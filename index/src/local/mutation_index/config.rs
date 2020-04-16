@@ -3,7 +3,7 @@
 pub struct MutationIndexConfig {
     pub indexer_num_threads: Option<usize>,
     pub indexer_heap_size_bytes: usize,
-    pub iterator_page_size: usize,
+    pub iterator_page_size: u32,
 }
 
 impl Default for MutationIndexConfig {

@@ -22,7 +22,6 @@ use exocore_core::protos::registry::Registry;
 use super::mutation_index::{IndexMutation, MutationIndex, MutationMetadataType};
 use super::top_results::RescoredTopResultsIterable;
 use crate::error::Error;
-use crate::query::SortToken;
 use exocore_core::protos::prost::ProstDateTimeExt;
 
 mod config;
@@ -212,7 +211,7 @@ where
         let pending_results = pending_results.map(|res| (res, EntityResultSource::Pending));
         let combined_results = chain_results
             .merge_by(pending_results, |(res1, _src1), (res2, _src2)| {
-                res1.score >= res2.score
+                res1.sort_token >= res2.sort_token
             });
 
         let mut hasher = result_hasher();
@@ -252,8 +251,7 @@ where
                 matched_entities.insert(trait_meta.entity_id.clone());
 
                 // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
-                let score = trait_meta.score;
-                let sort_token = SortToken::from_u64(score);
+                let sort_token = trait_meta.sort_token.clone();
                 if sort_token.is_within_page_bound(&current_page) {
                     Some((trait_meta, traits_meta, source, sort_token))
                 } else {
@@ -266,7 +264,10 @@ where
             .top_negatively_rescored_results(
                 current_page.count as usize,
                 |(trait_result, _traits, _source, _sort_token)| {
-                    (trait_result.score, trait_result.score)
+                    (
+                        trait_result.sort_token.clone(),
+                        trait_result.sort_token.clone(),
+                    )
                 },
             )
             // accumulate results
@@ -283,7 +284,7 @@ where
                     entities_results.push(EntityResult {
                         entity: Some(entity),
                         source: source.into(),
-                        sort_token: sort_token.0,
+                        sort_token: sort_token.into(),
                     });
 
                     all_traits_results.push(traits_results);

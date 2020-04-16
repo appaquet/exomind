@@ -217,7 +217,7 @@ where
 }
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
-pub struct SortToken(pub String);
+pub struct SortToken(String);
 
 impl SortToken {
     pub fn from_u64(value: u64) -> SortToken {

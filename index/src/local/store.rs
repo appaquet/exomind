@@ -168,7 +168,7 @@ where
 
                 for watched_query in inner.watched_queries.queries() {
                     let send_result = inner.incoming_queries_sender.try_send(QueryRequest {
-                        query: watched_query.query.as_ref().clone(),
+                        query: Box::new(watched_query.query.as_ref().clone()),
                         sender: QueryRequestSender::Stream(
                             watched_query.sender.clone(),
                             watched_query.token,
@@ -261,7 +261,7 @@ where
 
     async fn execute_query_async(
         weak_inner: Weak<RwLock<Inner<CS, PS>>>,
-        query: EntityQuery,
+        query: Box<EntityQuery>,
     ) -> Result<EntityResults, Error> {
         let result = spawn_blocking(move || {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
@@ -339,7 +339,7 @@ where
         // ok to dismiss send as sender end will be dropped in case of an error and
         // consumer will be notified by channel being closed
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
-            query,
+            query: Box::new(query),
             sender: QueryRequestSender::Future(sender),
         });
 
@@ -364,7 +364,7 @@ where
         // ok to dismiss send as sender end will be dropped in case of an error and
         // consumer will be notified by channel being closed
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
-            query,
+            query: Box::new(query),
             sender: QueryRequestSender::Stream(Arc::new(Mutex::new(sender)), watch_token),
         });
 
@@ -418,7 +418,7 @@ where
 /// Incoming query to be executed, or re-scheduled watched query to be
 /// re-executed.
 struct QueryRequest {
-    query: EntityQuery,
+    query: Box<EntityQuery>,
     sender: QueryRequestSender,
 }
 

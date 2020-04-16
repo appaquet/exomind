@@ -10,12 +10,11 @@ use crate::query::QueryBuilder;
 use super::*;
 use exocore_chain::operation::OperationId;
 
-// TODO: Ascending/descending sorting by wrapping into something that reverses
 // TODO: Sort by operation, ascending, descending
 // TODO: Sort by match, acending, descending
 // TODO: Trait inner query support
 //       -> Sort by field, ascending, descending
-// TODO: Replace paging by one from proto (string based)
+// TODO: SortToken check if it's too cloned
 
 #[test]
 fn search_by_entity_id() -> Result<(), failure::Error> {
@@ -148,14 +147,15 @@ fn search_query_matches() -> Result<(), failure::Error> {
 
     let results = index.search_matches(&predicate("bar"), None, None)?;
     assert_eq!(results.results.len(), 2);
-    assert!(results.results[0].score > score_to_u64(0.30));
-    assert!(results.results[1].score > score_to_u64(0.18));
+
+    assert!(results.results[0].sort_token > SortToken::from_f32(0.30));
+    assert!(results.results[1].sort_token > SortToken::from_f32(0.18));
     assert_eq!(results.results[0].entity_id, "entity_id2"); // foo is repeated in entity 2
 
     // with limit
-    let paging = QueryPaging {
-        after_score: None,
-        before_score: None,
+    let paging = Paging {
+        after_token: String::new(),
+        before_token: String::new(),
         count: 1,
     };
     let results = index.search_matches(&predicate("foo"), Some(paging), None)?;
@@ -164,9 +164,9 @@ fn search_query_matches() -> Result<(), failure::Error> {
     assert_eq!(results.total_results, 2);
 
     // only results from given score
-    let paging = QueryPaging {
-        after_score: Some(score_to_u64(0.30)),
-        before_score: None,
+    let paging = Paging {
+        after_token: SortToken::from_f32(0.30).into(),
+        before_token: String::new(),
         count: 10,
     };
     let results = index.search_matches(&predicate("bar"), Some(paging), None)?;
@@ -176,9 +176,9 @@ fn search_query_matches() -> Result<(), failure::Error> {
     assert_eq!(results.results[0].entity_id, "entity_id2");
 
     // only results before given score
-    let paging = QueryPaging {
-        after_score: None,
-        before_score: Some(score_to_u64(0.30)),
+    let paging = Paging {
+        after_token: String::new(),
+        before_token: SortToken::from_f32(0.30).into(),
         count: 10,
     };
     let results = index.search_matches(&predicate("bar"), Some(paging), None)?;
@@ -219,14 +219,14 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     });
     index.apply_mutations(traits)?;
 
-    let paging = QueryPaging {
-        after_score: None,
-        before_score: None,
+    let paging = Paging {
+        after_token: String::new(),
+        before_token: String::new(),
         count: 10,
     };
 
-    let query = QueryBuilder::match_text("foo").build();
-    let results1 = index.search(&query, Some(paging))?;
+    let query = QueryBuilder::match_text("foo").with_paging(paging).build();
+    let results1 = index.search(&query)?;
     let results1_next_page = results1.next_page.clone().unwrap();
     assert_eq!(results1.total_results, 30);
     assert_eq!(results1.results.len(), 10);
@@ -235,8 +235,10 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(ids[0], "id29");
     assert_eq!(ids[9], "id20");
 
-    let query = QueryBuilder::match_text("foo").build();
-    let results2 = index.search(&query, Some(results1_next_page))?;
+    let query = QueryBuilder::match_text("foo")
+        .with_paging(results1_next_page)
+        .build();
+    let results2 = index.search(&query)?;
     let results2_next_page = results2.next_page.clone().unwrap();
     assert_eq!(results2.total_results, 30);
     assert_eq!(results2.results.len(), 10);
@@ -245,8 +247,10 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(ids[0], "id19");
     assert_eq!(ids[9], "id10");
 
-    let query = QueryBuilder::match_text("foo").build();
-    let results3 = index.search(&query, Some(results2_next_page))?;
+    let query = QueryBuilder::match_text("foo")
+        .with_paging(results2_next_page)
+        .build();
+    let results3 = index.search(&query)?;
     assert_eq!(results3.total_results, 30);
     assert_eq!(results3.results.len(), 10);
     assert_eq!(results3.remaining_results, 0);
@@ -372,27 +376,27 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
     );
 
     // with limit
-    let paging = QueryPaging {
-        after_score: None,
-        before_score: None,
+    let paging = Paging {
+        after_token: String::new(),
+        before_token: String::new(),
         count: 1,
     };
     let results = index.search_with_trait(&pred2, Some(paging), None)?;
     assert_eq!(results.results.len(), 1);
 
     // only results after given modification date
-    let paging = QueryPaging {
-        after_score: Some(2),
-        before_score: None,
+    let paging = Paging {
+        after_token: SortToken::from_u64(2).into(),
+        before_token: String::new(),
         count: 10,
     };
     let results = index.search_with_trait(&pred2, Some(paging), None)?;
     assert_eq!(extract_traits_id(results), vec!["trait4", "trait3"]);
 
     // only results before given modification date
-    let paging = QueryPaging {
-        after_score: None,
-        before_score: Some(3),
+    let paging = Paging {
+        after_token: String::new(),
+        before_token: SortToken::from_u64(3).into(),
         count: 10,
     };
     let results = index.search_with_trait(&pred2, Some(paging), None)?;
@@ -428,9 +432,9 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
     });
     index.apply_mutations(traits)?;
 
-    let paging = QueryPaging {
-        after_score: None,
-        before_score: None,
+    let paging = Paging {
+        after_token: String::new(),
+        before_token: String::new(),
         count: 10,
     };
 
@@ -499,7 +503,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
     });
     let et2 = IndexMutation::PutTrait(PutTraitMutation {
         block_offset: None,
-        operation_id: 1,
+        operation_id: 2,
         entity_id: "et2".to_string(),
         trt: Trait {
             id: "trt2".to_string(),

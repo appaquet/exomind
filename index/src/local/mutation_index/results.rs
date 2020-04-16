@@ -1,10 +1,11 @@
-use super::{MutationIndex, QueryPaging};
+use super::MutationIndex;
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
+use crate::query::SortToken;
 use chrono::{DateTime, Utc};
 use exocore_chain::block::BlockOffset;
 use exocore_chain::operation::OperationId;
-use exocore_core::protos::generated::exocore_index::EntityQuery;
+use exocore_core::protos::generated::exocore_index::{EntityQuery, Paging};
 
 /// Iterates through all results matching a given initial query using the
 /// next_page score when a page got emptied.
@@ -13,7 +14,7 @@ pub struct ResultsIterator<'i, 'q> {
     pub query: &'q EntityQuery,
     pub total_results: usize,
     pub current_results: std::vec::IntoIter<MutationMetadata>,
-    pub next_page: Option<QueryPaging>,
+    pub next_page: Option<Paging>,
 }
 
 impl<'i, 'q> Iterator for ResultsIterator<'i, 'q> {
@@ -24,10 +25,12 @@ impl<'i, 'q> Iterator for ResultsIterator<'i, 'q> {
         if let Some(next_result) = next_result {
             Some(next_result)
         } else {
-            let next_page = self.next_page.clone()?;
+            let mut query = self.query.clone();
+            query.paging = Some(self.next_page.clone()?);
+
             let results = self
                 .index
-                .search(self.query, Some(next_page))
+                .search(&query)
                 .expect("Couldn't get another page from initial iterator query");
             self.next_page = results.next_page;
             self.current_results = results.results.into_iter();
@@ -42,7 +45,7 @@ pub struct MutationResults {
     pub results: Vec<MutationMetadata>,
     pub total_results: usize,
     pub remaining_results: usize,
-    pub next_page: Option<QueryPaging>,
+    pub next_page: Option<Paging>,
 }
 
 /// Indexed trait / entity mutation metadata returned as a result of a query.
@@ -51,7 +54,7 @@ pub struct MutationMetadata {
     pub operation_id: OperationId,
     pub block_offset: Option<BlockOffset>,
     pub entity_id: EntityId,
-    pub score: u64,
+    pub sort_token: SortToken,
     pub mutation_type: MutationMetadataType,
 }
 
@@ -99,7 +102,7 @@ impl MutationMetadataType {
 /// Wraps a sortable value so that it can be easily reversed when required or ignored if it's outside
 /// of the requested paging.
 #[derive(Clone)]
-pub struct ResultScore<O: PartialOrd + PartialEq> {
+pub struct ResultScore<O: ScoreValue> {
     pub score: O,
     pub reverse: bool,
     pub operation_id: u64,
@@ -109,7 +112,7 @@ pub struct ResultScore<O: PartialOrd + PartialEq> {
     pub ignore: bool,
 }
 
-impl<O: PartialOrd + PartialEq> PartialOrd for ResultScore<O> {
+impl<O: ScoreValue> PartialOrd for ResultScore<O> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         // an ignored result should be always be less, unless they are both
         if self.ignore && other.ignore {
@@ -138,8 +141,24 @@ impl<O: PartialOrd + PartialEq> PartialOrd for ResultScore<O> {
     }
 }
 
-impl<O: PartialOrd + PartialEq> PartialEq for ResultScore<O> {
+impl<O: ScoreValue> PartialEq for ResultScore<O> {
     fn eq(&self, other: &Self) -> bool {
         self.score.eq(&other.score)
+    }
+}
+
+pub trait ScoreValue: PartialOrd + PartialEq {
+    fn to_sort_token(&self) -> SortToken;
+}
+
+impl ScoreValue for u64 {
+    fn to_sort_token(&self) -> SortToken {
+        SortToken::from_u64(*self)
+    }
+}
+
+impl ScoreValue for f32 {
+    fn to_sort_token(&self) -> SortToken {
+        SortToken::from_f32(*self)
     }
 }

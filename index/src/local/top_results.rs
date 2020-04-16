@@ -7,7 +7,7 @@ use std::collections::{BinaryHeap, LinkedList};
 pub struct RescoredTopResultsIterator<I, E, F, S>
 where
     I: Iterator<Item = E>,
-    S: Ord + Copy,
+    S: Ord,
     F: Fn(&E) -> (S, S),
 {
     count: usize,
@@ -19,7 +19,7 @@ where
 impl<I, E, F, S> Iterator for RescoredTopResultsIterator<I, E, F, S>
 where
     I: Iterator<Item = E>,
-    S: Ord + Copy,
+    S: Ord,
     F: Fn(&E) -> (S, S),
 {
     type Item = E;
@@ -44,7 +44,7 @@ where
                 // if we find items in reserve that have higher score than the original score of
                 // current item, it means we can add these reserve items since we will never
                 // find any new results with higher score
-                while is_reserve_peek_higher(&mut reserve, score)
+                while is_reserve_peek_higher(&mut reserve, &score)
                     && self.top_results.len() < self.count
                 {
                     self.top_results.push_back(reserve.pop().unwrap().item);
@@ -72,37 +72,37 @@ where
     }
 }
 
-struct ReserveItem<E, S: Ord + Copy> {
+struct ReserveItem<E, S: Ord> {
     item: E,
     penalized_score: S,
 }
 
-impl<E, S: Ord + Copy> PartialOrd for ReserveItem<E, S> {
+impl<E, S: Ord> PartialOrd for ReserveItem<E, S> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.penalized_score.partial_cmp(&other.penalized_score)
     }
 }
 
-impl<E, S: Ord + Copy> Ord for ReserveItem<E, S> {
+impl<E, S: Ord> Ord for ReserveItem<E, S> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.penalized_score.cmp(&other.penalized_score)
     }
 }
 
-impl<E, S: Ord + Copy> PartialEq for ReserveItem<E, S> {
+impl<E, S: Ord> PartialEq for ReserveItem<E, S> {
     fn eq(&self, other: &Self) -> bool {
         self.penalized_score == other.penalized_score
     }
 }
 
-impl<E, S: Ord + Copy> Eq for ReserveItem<E, S> {}
+impl<E, S: Ord> Eq for ReserveItem<E, S> {}
 
-fn is_reserve_peek_higher<E, S: Ord + Copy>(
+fn is_reserve_peek_higher<E, S: Ord>(
     reserve: &mut BinaryHeap<ReserveItem<E, S>>,
-    score: S,
+    score: &S,
 ) -> bool {
     if let Some(first_reserve) = reserve.peek() {
-        first_reserve.penalized_score >= score
+        first_reserve.penalized_score >= *score
     } else {
         false
     }
@@ -122,7 +122,7 @@ pub trait RescoredTopResultsIterable: Iterator {
     ) -> RescoredTopResultsIterator<Self, Self::Item, F, S>
     where
         Self: Sized,
-        S: Ord + Copy,
+        S: Ord,
         F: Fn(&Self::Item) -> (S, S),
     {
         RescoredTopResultsIterator {
