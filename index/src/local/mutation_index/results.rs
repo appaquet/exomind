@@ -1,11 +1,12 @@
 use super::MutationIndex;
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
-use crate::query::SortToken;
+use crate::sorting::SortingValueWrapper;
 use chrono::{DateTime, Utc};
 use exocore_chain::block::BlockOffset;
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_index::{EntityQuery, Paging};
+use std::rc::Rc;
 
 /// Iterates through all results matching a given initial query using the
 /// next_page score when a page got emptied.
@@ -33,7 +34,7 @@ impl<'i, 'q> Iterator for ResultsIterator<'i, 'q> {
                 .search(&query)
                 .expect("Couldn't get another page from initial iterator query");
             self.next_page = results.next_page;
-            self.current_results = results.results.into_iter();
+            self.current_results = results.mutations.into_iter();
 
             self.current_results.next()
         }
@@ -42,9 +43,9 @@ impl<'i, 'q> Iterator for ResultsIterator<'i, 'q> {
 
 /// Collection of `MutationMetadata`
 pub struct MutationResults {
-    pub results: Vec<MutationMetadata>,
-    pub total_results: usize,
-    pub remaining_results: usize,
+    pub mutations: Vec<MutationMetadata>,
+    pub total: usize,
+    pub remaining: usize,
     pub next_page: Option<Paging>,
 }
 
@@ -54,12 +55,12 @@ pub struct MutationMetadata {
     pub operation_id: OperationId,
     pub block_offset: Option<BlockOffset>,
     pub entity_id: EntityId,
-    pub sort_token: SortToken,
-    pub mutation_type: MutationMetadataType,
+    pub mutation_type: MutationType,
+    pub sort_value: Rc<SortingValueWrapper>,
 }
 
 #[derive(Debug)]
-pub enum MutationMetadataType {
+pub enum MutationType {
     TraitPut(PutTraitMetadata),
     TraitTombstone(TraitId),
     EntityTombstone,
@@ -72,7 +73,7 @@ pub struct PutTraitMetadata {
     pub modification_date: Option<DateTime<Utc>>,
 }
 
-impl MutationMetadataType {
+impl MutationType {
     pub const TRAIT_TOMBSTONE_ID: u64 = 0;
     pub const TRAIT_PUT_ID: u64 = 1;
     pub const ENTITY_TOMBSTONE_ID: u64 = 2;
@@ -80,85 +81,19 @@ impl MutationMetadataType {
     pub fn new(
         document_type_id: u64,
         opt_trait_id: Option<TraitId>,
-    ) -> Result<MutationMetadataType, Error> {
+    ) -> Result<MutationType, Error> {
         match document_type_id {
-            Self::TRAIT_TOMBSTONE_ID => {
-                Ok(MutationMetadataType::TraitTombstone(opt_trait_id.unwrap()))
-            }
-            Self::TRAIT_PUT_ID => Ok(MutationMetadataType::TraitPut(PutTraitMetadata {
+            Self::TRAIT_TOMBSTONE_ID => Ok(MutationType::TraitTombstone(opt_trait_id.unwrap())),
+            Self::TRAIT_PUT_ID => Ok(MutationType::TraitPut(PutTraitMetadata {
                 trait_id: opt_trait_id.unwrap(),
                 creation_date: None,
                 modification_date: None,
             })),
-            Self::ENTITY_TOMBSTONE_ID => Ok(MutationMetadataType::EntityTombstone),
+            Self::ENTITY_TOMBSTONE_ID => Ok(MutationType::EntityTombstone),
             _ => Err(Error::Fatal(format!(
                 "Invalid document type id {}",
                 document_type_id
             ))),
         }
-    }
-}
-
-/// Wraps a sortable value so that it can be easily reversed when required or ignored if it's outside
-/// of the requested paging.
-#[derive(Clone)]
-pub struct ResultScore<O: ScoreValue> {
-    pub score: O,
-    pub reverse: bool,
-    pub operation_id: u64,
-
-    // means that this result should not be returned (probably because it's not withing paging)
-    // and should match less than any other non-ignored result
-    pub ignore: bool,
-}
-
-impl<O: ScoreValue> PartialOrd for ResultScore<O> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        // an ignored result should be always be less, unless they are both
-        if self.ignore && other.ignore {
-            return Some(std::cmp::Ordering::Equal);
-        } else if self.ignore {
-            return Some(std::cmp::Ordering::Less);
-        } else if other.ignore {
-            return Some(std::cmp::Ordering::Greater);
-        }
-
-        let cmp = self.score.partial_cmp(&other.score);
-
-        // if both are equal, we tie break using operation id to make sort stable
-        let cmp = if cmp == Some(std::cmp::Ordering::Equal) {
-            Some(self.operation_id.cmp(&other.operation_id))
-        } else {
-            cmp
-        };
-
-        // reverse if needed
-        if self.reverse {
-            cmp.map(|o| o.reverse())
-        } else {
-            cmp
-        }
-    }
-}
-
-impl<O: ScoreValue> PartialEq for ResultScore<O> {
-    fn eq(&self, other: &Self) -> bool {
-        self.score.eq(&other.score)
-    }
-}
-
-pub trait ScoreValue: PartialOrd + PartialEq {
-    fn to_sort_token(&self) -> SortToken;
-}
-
-impl ScoreValue for u64 {
-    fn to_sort_token(&self) -> SortToken {
-        SortToken::from_u64(*self)
-    }
-}
-
-impl ScoreValue for f32 {
-    fn to_sort_token(&self) -> SortToken {
-        SortToken::from_f32(*self)
     }
 }

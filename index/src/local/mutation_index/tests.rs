@@ -8,14 +8,15 @@ use exocore_core::protos::prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt}
 use crate::query::QueryBuilder;
 
 use super::*;
+use crate::sorting::{value_from_f32, value_from_u64, SortingValueExt};
 use exocore_chain::operation::OperationId;
 
 // TODO: Sort by operation, ascending, descending
 // TODO: Sort by match, acending, descending
 // TODO: Trait inner query support
 //       -> Sort by field, ascending, descending
-// TODO: SortToken check if it's too cloned
-// TODO: Top docs collector could use references ?
+// TODO: Tests in EntitiesIndex
+// TODO: Rename most of the _trait_ stuff in EntitiesIndex to mutations
 
 #[test]
 fn search_by_entity_id() -> Result<(), failure::Error> {
@@ -76,14 +77,14 @@ fn search_by_entity_id() -> Result<(), failure::Error> {
     index.apply_mutations(vec![trait1, trait2, trait3].into_iter())?;
 
     let results = index.search_entity_id("entity_id1")?;
-    assert_eq!(results.results.len(), 1);
-    assert_eq!(results.results[0].block_offset, Some(1));
-    assert_eq!(results.results[0].operation_id, 10);
-    assert_eq!(results.results[0].entity_id, "entity_id1");
-    assert_is_put_trait(&results.results[0].mutation_type, "foo1");
+    assert_eq!(results.mutations.len(), 1);
+    assert_eq!(results.mutations[0].block_offset, Some(1));
+    assert_eq!(results.mutations[0].operation_id, 10);
+    assert_eq!(results.mutations[0].entity_id, "entity_id1");
+    assert_is_put_trait(&results.mutations[0].mutation_type, "foo1");
 
     let results = index.search_entity_id("entity_id2")?;
-    assert_eq!(results.results.len(), 2);
+    assert_eq!(results.mutations.len(), 2);
     find_put_trait(&results, "foo2");
     find_put_trait(&results, "foo3");
 
@@ -143,50 +144,56 @@ fn search_query_matches() -> Result<(), failure::Error> {
     };
 
     let results = index.search_matches(&predicate("foo"), None, None)?;
-    assert_eq!(results.results.len(), 2);
-    assert_eq!(results.results[0].entity_id, "entity_id1"); // foo is repeated in entity 1
+    assert_eq!(results.mutations.len(), 2);
+    assert_eq!(results.mutations[0].entity_id, "entity_id1"); // foo is repeated in entity 1
 
     let results = index.search_matches(&predicate("bar"), None, None)?;
-    assert_eq!(results.results.len(), 2);
+    assert_eq!(results.mutations.len(), 2);
 
-    assert!(results.results[0].sort_token > SortToken::from_f32(0.30));
-    assert!(results.results[1].sort_token > SortToken::from_f32(0.18));
-    assert_eq!(results.results[0].entity_id, "entity_id2"); // foo is repeated in entity 2
+    assert!(results.mutations[0]
+        .sort_value
+        .value
+        .is_after(&value_from_f32(0.30, 0)));
+    assert!(results.mutations[1]
+        .sort_value
+        .value
+        .is_after(&value_from_f32(0.18, 0)));
+    assert_eq!(results.mutations[0].entity_id, "entity_id2"); // foo is repeated in entity 2
 
     // with limit
     let paging = Paging {
-        after_token: String::new(),
-        before_token: String::new(),
+        after_sort_value: None,
+        before_sort_value: None,
         count: 1,
     };
-    let results = index.search_matches(&predicate("foo"), Some(paging), None)?;
-    assert_eq!(results.results.len(), 1);
-    assert_eq!(results.remaining_results, 1);
-    assert_eq!(results.total_results, 2);
+    let results = index.search_matches(&predicate("foo"), Some(&paging), None)?;
+    assert_eq!(results.mutations.len(), 1);
+    assert_eq!(results.remaining, 1);
+    assert_eq!(results.total, 2);
 
     // only results from given score
     let paging = Paging {
-        after_token: SortToken::from_f32(0.30).into(),
-        before_token: String::new(),
+        after_sort_value: Some(value_from_f32(0.30, 0)),
+        before_sort_value: None,
         count: 10,
     };
-    let results = index.search_matches(&predicate("bar"), Some(paging), None)?;
-    assert_eq!(results.results.len(), 1);
-    assert_eq!(results.remaining_results, 0);
-    assert_eq!(results.total_results, 2);
-    assert_eq!(results.results[0].entity_id, "entity_id2");
+    let results = index.search_matches(&predicate("bar"), Some(&paging), None)?;
+    assert_eq!(results.mutations.len(), 1);
+    assert_eq!(results.remaining, 0);
+    assert_eq!(results.total, 2);
+    assert_eq!(results.mutations[0].entity_id, "entity_id2");
 
     // only results before given score
     let paging = Paging {
-        after_token: String::new(),
-        before_token: SortToken::from_f32(0.30).into(),
+        after_sort_value: None,
+        before_sort_value: Some(value_from_f32(0.30, 0)),
         count: 10,
     };
-    let results = index.search_matches(&predicate("bar"), Some(paging), None)?;
-    assert_eq!(results.results.len(), 1);
-    assert_eq!(results.remaining_results, 0);
-    assert_eq!(results.total_results, 2);
-    assert_eq!(results.results[0].entity_id, "entity_id1");
+    let results = index.search_matches(&predicate("bar"), Some(&paging), None)?;
+    assert_eq!(results.mutations.len(), 1);
+    assert_eq!(results.remaining, 0);
+    assert_eq!(results.total, 2);
+    assert_eq!(results.mutations[0].entity_id, "entity_id1");
 
     Ok(())
 }
@@ -220,18 +227,12 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     });
     index.apply_mutations(traits)?;
 
-    let paging = Paging {
-        after_token: String::new(),
-        before_token: String::new(),
-        count: 10,
-    };
-
-    let query = QueryBuilder::match_text("foo").with_paging(paging).build();
+    let query = QueryBuilder::match_text("foo").with_count(10).build();
     let results1 = index.search(&query)?;
     let results1_next_page = results1.next_page.clone().unwrap();
-    assert_eq!(results1.total_results, 30);
-    assert_eq!(results1.results.len(), 10);
-    assert_eq!(results1.remaining_results, 20);
+    assert_eq!(results1.total, 30);
+    assert_eq!(results1.mutations.len(), 10);
+    assert_eq!(results1.remaining, 20);
     let ids = extract_traits_id(results1);
     assert_eq!(ids[0], "id29");
     assert_eq!(ids[9], "id20");
@@ -241,9 +242,9 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
         .build();
     let results2 = index.search(&query)?;
     let results2_next_page = results2.next_page.clone().unwrap();
-    assert_eq!(results2.total_results, 30);
-    assert_eq!(results2.results.len(), 10);
-    assert_eq!(results2.remaining_results, 10);
+    assert_eq!(results2.total, 30);
+    assert_eq!(results2.mutations.len(), 10);
+    assert_eq!(results2.remaining, 10);
     let ids = extract_traits_id(results2);
     assert_eq!(ids[0], "id19");
     assert_eq!(ids[9], "id10");
@@ -252,9 +253,9 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
         .with_paging(results2_next_page)
         .build();
     let results3 = index.search(&query)?;
-    assert_eq!(results3.total_results, 30);
-    assert_eq!(results3.results.len(), 10);
-    assert_eq!(results3.remaining_results, 0);
+    assert_eq!(results3.total, 30);
+    assert_eq!(results3.mutations.len(), 10);
+    assert_eq!(results3.remaining, 0);
     let ids = extract_traits_id(results3);
     assert_eq!(ids[0], "id9");
     assert_eq!(ids[9], "id0");
@@ -366,7 +367,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
     };
 
     let results = index.search_with_trait(&pred1, None, None)?;
-    assert_eq!(results.results.len(), 1);
+    assert_eq!(results.mutations.len(), 1);
     assert!(find_put_trait(&results, "trt1").is_some());
 
     // ordering of multiple traits is operation id
@@ -378,29 +379,29 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
 
     // with limit
     let paging = Paging {
-        after_token: String::new(),
-        before_token: String::new(),
+        after_sort_value: None,
+        before_sort_value: None,
         count: 1,
     };
-    let results = index.search_with_trait(&pred2, Some(paging), None)?;
-    assert_eq!(results.results.len(), 1);
+    let results = index.search_with_trait(&pred2, Some(&paging), None)?;
+    assert_eq!(results.mutations.len(), 1);
 
     // only results after given modification date
     let paging = Paging {
-        after_token: SortToken::from_u64(2).into(),
-        before_token: String::new(),
+        after_sort_value: Some(value_from_u64(2, u64::max_value())),
+        before_sort_value: None,
         count: 10,
     };
-    let results = index.search_with_trait(&pred2, Some(paging), None)?;
+    let results = index.search_with_trait(&pred2, Some(&paging), None)?;
     assert_eq!(extract_traits_id(results), vec!["trait4", "trait3"]);
 
     // only results before given modification date
     let paging = Paging {
-        after_token: String::new(),
-        before_token: SortToken::from_u64(3).into(),
+        after_sort_value: None,
+        before_sort_value: Some(value_from_u64(3, 0)),
         count: 10,
     };
-    let results = index.search_with_trait(&pred2, Some(paging), None)?;
+    let results = index.search_with_trait(&pred2, Some(&paging), None)?;
     assert_eq!(extract_traits_id(results), vec!["trait2"]);
 
     Ok(())
@@ -434,8 +435,8 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
     index.apply_mutations(traits)?;
 
     let paging = Paging {
-        after_token: String::new(),
-        before_token: String::new(),
+        after_sort_value: None,
+        before_sort_value: None,
         count: 10,
     };
 
@@ -444,25 +445,25 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
         query: None,
     };
 
-    let results1 = index.search_with_trait(&pred1, Some(paging), None)?;
-    assert_eq!(results1.total_results, 30);
-    assert_eq!(results1.remaining_results, 20);
-    assert_eq!(results1.results.len(), 10);
+    let results1 = index.search_with_trait(&pred1, Some(&paging), None)?;
+    assert_eq!(results1.total, 30);
+    assert_eq!(results1.remaining, 20);
+    assert_eq!(results1.mutations.len(), 10);
     find_put_trait(&results1, "id29");
     find_put_trait(&results1, "id20");
 
     let results2 =
-        index.search_with_trait(&pred1, Some(results1.next_page.clone().unwrap()), None)?;
-    assert_eq!(results2.total_results, 30);
-    assert_eq!(results2.remaining_results, 10);
-    assert_eq!(results2.results.len(), 10);
+        index.search_with_trait(&pred1, Some(&results1.next_page.clone().unwrap()), None)?;
+    assert_eq!(results2.total, 30);
+    assert_eq!(results2.remaining, 10);
+    assert_eq!(results2.mutations.len(), 10);
     find_put_trait(&results1, "id19");
     find_put_trait(&results1, "id10");
 
-    let results3 = index.search_with_trait(&pred1, Some(results2.next_page.unwrap()), None)?;
-    assert_eq!(results3.total_results, 30);
-    assert_eq!(results3.remaining_results, 0);
-    assert_eq!(results3.results.len(), 10);
+    let results3 = index.search_with_trait(&pred1, Some(&results2.next_page.unwrap()), None)?;
+    assert_eq!(results3.total, 30);
+    assert_eq!(results3.remaining, 0);
+    assert_eq!(results3.mutations.len(), 10);
     find_put_trait(&results1, "id9");
     find_put_trait(&results1, "id0");
 
@@ -538,24 +539,24 @@ fn search_by_reference() -> Result<(), failure::Error> {
     };
 
     let results = search("et1", "");
-    assert_eq!(results.results.len(), 1);
+    assert_eq!(results.mutations.len(), 1);
     find_put_trait(&results, "trt1");
 
     let results = search("et1", "trt1");
-    assert_eq!(results.results.len(), 1);
+    assert_eq!(results.mutations.len(), 1);
     find_put_trait(&results, "trt1");
 
     let results = search("et1", "trt2");
-    assert_eq!(results.results.len(), 0);
+    assert_eq!(results.mutations.len(), 0);
 
     let results = search("trt1", "");
-    assert_eq!(results.results.len(), 0);
+    assert_eq!(results.mutations.len(), 0);
 
     let results = search("et0", "trt1");
-    assert_eq!(results.results.len(), 0);
+    assert_eq!(results.mutations.len(), 0);
 
     let results = search("et2", "");
-    assert_eq!(results.results.len(), 1);
+    assert_eq!(results.mutations.len(), 1);
     find_put_trait(&results, "trt2");
 
     Ok(())
@@ -653,7 +654,7 @@ fn put_unregistered_trait() -> Result<(), failure::Error> {
         query: None,
     };
     let results = index.search_with_trait(&pred, None, None)?;
-    assert_eq!(results.results.len(), 1);
+    assert_eq!(results.mutations.len(), 1);
 
     Ok(())
 }
@@ -686,12 +687,12 @@ fn delete_operation_id_mutation() -> Result<(), failure::Error> {
         query: "foo".to_string(),
     };
     let results = index.search_matches(&predicate, None, None)?;
-    assert_eq!(results.results.len(), 1);
+    assert_eq!(results.mutations.len(), 1);
 
     index.apply_mutation(IndexMutation::DeleteOperation(1234))?;
 
     let results = index.search_matches(&predicate, None, None)?;
-    assert_eq!(results.results.len(), 0);
+    assert_eq!(results.mutations.len(), 0);
 
     Ok(())
 }
@@ -729,10 +730,10 @@ fn put_trait_tombstone() -> Result<(), failure::Error> {
     index.apply_mutation(trait1)?;
 
     let res = index.search_entity_id("entity_id1")?;
-    assert_is_trait_tombstone(&res.results.first().unwrap().mutation_type, "foo1");
+    assert_is_trait_tombstone(&res.mutations.first().unwrap().mutation_type, "foo1");
 
     let res = index.search_entity_id("entity_id2")?;
-    assert_is_put_trait(&res.results.first().unwrap().mutation_type, "foo2");
+    assert_is_put_trait(&res.mutations.first().unwrap().mutation_type, "foo2");
 
     Ok(())
 }
@@ -751,7 +752,7 @@ fn put_entity_tombstone() -> Result<(), failure::Error> {
     index.apply_mutation(trait1)?;
 
     let res = index.search_entity_id("entity_id1")?;
-    assert_is_entity_tombstone(&res.results.first().unwrap().mutation_type);
+    assert_is_entity_tombstone(&res.mutations.first().unwrap().mutation_type);
 
     Ok(())
 }
@@ -804,42 +805,42 @@ fn find_put_trait<'r>(
     results: &'r MutationResults,
     trait_id: &str,
 ) -> Option<&'r MutationMetadata> {
-    results.results.iter().find(|t| match &t.mutation_type {
-        MutationMetadataType::TraitPut(put_trait) if put_trait.trait_id == trait_id => true,
+    results.mutations.iter().find(|t| match &t.mutation_type {
+        MutationType::TraitPut(put_trait) if put_trait.trait_id == trait_id => true,
         _ => false,
     })
 }
 
 fn assert_is_put_trait<'r>(
-    document_type: &'r MutationMetadataType,
+    document_type: &'r MutationType,
     trait_id: &str,
 ) -> &'r PutTraitMetadata {
     match document_type {
-        MutationMetadataType::TraitPut(put_trait) if put_trait.trait_id == trait_id => put_trait,
+        MutationType::TraitPut(put_trait) if put_trait.trait_id == trait_id => put_trait,
         other => panic!("Expected TraitPut type, but got {:?}", other),
     }
 }
 
-fn assert_is_trait_tombstone(document_type: &MutationMetadataType, trait_id: &str) {
+fn assert_is_trait_tombstone(document_type: &MutationType, trait_id: &str) {
     match document_type {
-        MutationMetadataType::TraitTombstone(trt_id) if trt_id == trait_id => {}
+        MutationType::TraitTombstone(trt_id) if trt_id == trait_id => {}
         other => panic!("Expected TraitTombstone type, but got {:?}", other),
     }
 }
 
-fn assert_is_entity_tombstone(document_type: &MutationMetadataType) {
+fn assert_is_entity_tombstone(document_type: &MutationType) {
     match document_type {
-        MutationMetadataType::EntityTombstone => {}
+        MutationType::EntityTombstone => {}
         other => panic!("Expected EntityTombstone type, but got {:?}", other),
     }
 }
 
 fn extract_traits_id(results: MutationResults) -> Vec<String> {
     results
-        .results
+        .mutations
         .iter()
         .map(|res| match &res.mutation_type {
-            MutationMetadataType::TraitPut(put_trait) => put_trait.trait_id.clone(),
+            MutationType::TraitPut(put_trait) => put_trait.trait_id.clone(),
             other => panic!("Expected trait put, got something else: {:?}", other),
         })
         .collect()

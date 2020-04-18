@@ -14,25 +14,25 @@ use exocore_chain::{EngineHandle, EngineOperationStatus};
 use exocore_core::cell::FullCell;
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
-    Entity, EntityMutation, EntityQuery, EntityResult, EntityResultSource, EntityResults, Paging,
-    Trait,
+    Entity, EntityMutation, EntityQuery, EntityResult, EntityResultSource, EntityResults, Trait,
 };
+use exocore_core::protos::prost::ProstDateTimeExt;
 use exocore_core::protos::registry::Registry;
 
-use super::mutation_index::{IndexMutation, MutationIndex, MutationMetadataType};
-use super::top_results::RescoredTopResultsIterable;
 use crate::error::Error;
-use exocore_core::protos::prost::ProstDateTimeExt;
+use crate::sorting::SortingValueExt;
+
+use super::mutation_index::{IndexMutation, MutationIndex, MutationType};
+use super::top_results::RescoredTopResultsIterable;
 
 mod config;
-pub use config::*;
 mod entity_mutations;
-pub use entity_mutations::*;
-
 #[cfg(test)]
 mod test_index;
 #[cfg(test)]
 mod tests;
+pub use config::*;
+pub use entity_mutations::*;
 
 /// Manages and index entities and their traits stored in the chain and pending
 /// store of the chain layer. The index accepts mutation from the chain layer
@@ -211,7 +211,7 @@ where
         let pending_results = pending_results.map(|res| (res, EntityResultSource::Pending));
         let combined_results = chain_results
             .merge_by(pending_results, |(res1, _src1), (res2, _src2)| {
-                res1.sort_token >= res2.sort_token
+                res1.sort_value >= res2.sort_value
             });
 
         let mut hasher = result_hasher();
@@ -251,8 +251,9 @@ where
                 matched_entities.insert(trait_meta.entity_id.clone());
 
                 // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
-                let sort_token = trait_meta.sort_token.clone();
-                if sort_token.is_within_page_bound(&current_page) {
+                // wraps sort token in Rc since it may get cloned a few times in rescoring
+                let sort_token = trait_meta.sort_value.clone();
+                if sort_token.value.is_within_page_bound(&current_page) {
                     Some((trait_meta, traits_meta, source, sort_token))
                 } else {
                     None
@@ -263,11 +264,8 @@ where
             // other traits
             .top_negatively_rescored_results(
                 current_page.count as usize,
-                |(trait_result, _traits, _source, _sort_token)| {
-                    (
-                        trait_result.sort_token.clone(),
-                        trait_result.sort_token.clone(),
-                    )
+                |(_trait_result, _traits, _source, sort_token)| {
+                    (sort_token.clone(), sort_token.clone())
                 },
             )
             // accumulate results
@@ -284,7 +282,7 @@ where
                     entities_results.push(EntityResult {
                         entity: Some(entity),
                         source: source.into(),
-                        sort_token: sort_token.into(),
+                        sorting_value: Some(sort_token.value.clone()),
                     });
 
                     all_traits_results.push(traits_results);
@@ -294,10 +292,14 @@ where
             );
 
         let next_page = if let Some(last_result) = entities_results.last() {
-            let new_page = Paging {
-                before_token: last_result.sort_token.clone(),
-                ..current_page.clone()
-            };
+            let mut new_page = current_page.clone();
+
+            let ascending = query.sorting.as_ref().map(|s| s.ascending).unwrap_or(false);
+            if !ascending {
+                new_page.before_sort_value = last_result.sorting_value.clone();
+            } else {
+                new_page.after_sort_value = last_result.sorting_value.clone();
+            }
 
             Some(new_page)
         } else {
@@ -567,9 +569,9 @@ where
         let pending_results = self.pending_index.search_entity_id(entity_id)?;
         let chain_results = self.chain_index.search_entity_id(entity_id)?;
         let ordered_traits_metadata = pending_results
-            .results
+            .mutations
             .into_iter()
-            .chain(chain_results.results.into_iter());
+            .chain(chain_results.mutations.into_iter());
 
         EntityMutations::new(ordered_traits_metadata)
     }
@@ -624,7 +626,7 @@ where
 
                 // update the trait with creation & modification date that got merged from
                 // metadata
-                if let MutationMetadataType::TraitPut(put_mut) = &merged_metadata.mutation_type {
+                if let MutationType::TraitPut(put_mut) = &merged_metadata.mutation_type {
                     trait_instance.creation_date =
                         put_mut.creation_date.map(|d| d.to_proto_timestamp());
                     trait_instance.modification_date =

@@ -1,13 +1,14 @@
+use exocore_core::protos::generated::exocore_index::Paging;
 use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::prost::ProstTimestampExt;
+use test_index::*;
 
+use crate::local::mutation_index::MutationResults;
 use crate::mutation::MutationBuilder;
-use crate::query::{QueryBuilder, SortToken};
+use crate::query::QueryBuilder;
+use crate::sorting::{value_from_u64, value_max};
 
 use super::*;
-use crate::local::mutation_index::MutationResults;
-
-use test_index::*;
 
 #[test]
 fn index_full_pending_to_chain() -> Result<(), failure::Error> {
@@ -220,10 +221,13 @@ fn delete_entity_trait() -> Result<(), failure::Error> {
     assert_eq!(entity.traits.len(), 1);
 
     let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
-    assert!(pending_res.results.iter().any(|r| match &r.mutation_type {
-        MutationMetadataType::TraitTombstone(_) => true,
-        _ => false,
-    }));
+    assert!(pending_res
+        .mutations
+        .iter()
+        .any(|r| match &r.mutation_type {
+            MutationType::TraitTombstone(_) => true,
+            _ => false,
+        }));
 
     // now bury the deletion under 1 block, which should delete for real the trait
     let op_id = test_index.put_test_trait("entity2", "trait2", "name1")?;
@@ -435,7 +439,7 @@ fn query_paging() -> Result<(), failure::Error> {
     // test explicit after token
     let paging = Paging {
         count: 10,
-        after_token: SortToken::from_u64(0).into(),
+        after_sort_value: Some(value_from_u64(0, 0)),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
@@ -444,7 +448,7 @@ fn query_paging() -> Result<(), failure::Error> {
 
     let paging = Paging {
         count: 10,
-        after_token: SortToken::from_u64(std::u64::MAX).into(),
+        after_sort_value: Some(value_max()),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
@@ -454,7 +458,7 @@ fn query_paging() -> Result<(), failure::Error> {
     // test explicit before token
     let paging = Paging {
         count: 10,
-        before_token: SortToken::from_u64(0).into(),
+        before_sort_value: Some(value_from_u64(0, 0)),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
@@ -463,12 +467,58 @@ fn query_paging() -> Result<(), failure::Error> {
 
     let paging = Paging {
         count: 10,
-        before_token: SortToken::from_u64(std::u64::MAX).into(),
+        before_sort_value: Some(value_max()),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
     let res = test_index.index.search(&query_builder.build())?;
     assert_eq!(res.entities.len(), 10);
+
+    Ok(())
+}
+
+#[test]
+fn query_sorting() -> Result<(), failure::Error> {
+    let config = TestEntityIndex::create_test_config();
+    let mut test_index = TestEntityIndex::new_with_config(config)?;
+
+    let ops_id = test_index.put_test_traits(0..10)?;
+    test_index.wait_operations_emitted(&ops_id);
+    test_index.handle_engine_events()?;
+    test_index.wait_operations_committed(&ops_id[0..10]);
+
+    // descending
+    let qb = QueryBuilder::match_text("common").order(false);
+    let res = test_index.index.search(&qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(10, ids.len());
+    assert_eq!("entity9", ids[0]);
+    assert_eq!("entity0", ids[9]);
+
+    // ascending
+    let qb = QueryBuilder::match_text("common").order(true);
+    let res = test_index.index.search(&qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(10, ids.len());
+    assert_eq!("entity0", ids[0]);
+    assert_eq!("entity9", ids[9]);
+
+    // ascending paged
+    let qb = QueryBuilder::match_text("common").order(true).with_count(5);
+    let res = test_index.index.search(&qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(5, ids.len());
+    assert_eq!("entity0", ids[0]);
+    assert_eq!("entity4", ids[4]);
+
+    let qb = QueryBuilder::match_text("common")
+        .order(true)
+        .with_paging(res.next_page.unwrap());
+    let res = test_index.index.search(&qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(5, ids.len());
+    assert_eq!("entity5", ids[0]);
+    assert_eq!("entity9", ids[4]);
 
     Ok(())
 }
@@ -528,7 +578,7 @@ fn extract_result_messages(res: &EntityResult) -> Vec<(Trait, TestMessage)> {
 }
 
 fn extract_indexed_operations_id(res: MutationResults) -> Vec<OperationId> {
-    res.results
+    res.mutations
         .iter()
         .map(|r| r.operation_id)
         .unique()

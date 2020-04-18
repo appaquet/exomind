@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use prost::Message;
 
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
@@ -213,86 +212,5 @@ where
         let data = reader.get_response()?;
         let res = EntityResults::decode(data)?;
         Ok(res)
-    }
-}
-
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
-pub struct SortToken(String);
-
-impl SortToken {
-    pub fn from_u64(value: u64) -> SortToken {
-        format!("{:0>32x}", value).into()
-    }
-
-    pub fn to_u64(&self) -> Result<u64, Error> {
-        let trimmed = self.0.trim_start_matches('0');
-        if trimmed.is_empty() {
-            Ok(0)
-        } else {
-            u64::from_str_radix(&self.0, 16).map_err(|err| {
-                Error::QueryParsing(format!("Couldn't parse sort token from radix 36: {}", err))
-            })
-        }
-    }
-
-    pub fn from_datetime(value: DateTime<Utc>) -> SortToken {
-        Self::from_u64(value.timestamp_nanos() as u64)
-    }
-
-    pub fn from_f32(value: f32) -> SortToken {
-        format!("{}", value).into()
-    }
-
-    pub fn to_f32(&self) -> Result<f32, Error> {
-        self.0.parse::<f32>().map_err(|err| {
-            Error::QueryParsing(format!("Couldn't parse sort token to f32: {}", err))
-        })
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    pub fn is_within_page_bound(&self, page: &Paging) -> bool {
-        if !page.after_token.is_empty() && self.0 <= page.after_token {
-            return false;
-        }
-
-        if !page.before_token.is_empty() && self.0 >= page.before_token {
-            return false;
-        }
-
-        true
-    }
-}
-
-impl From<String> for SortToken {
-    fn from(value: String) -> Self {
-        SortToken(value)
-    }
-}
-
-impl Into<String> for SortToken {
-    fn into(self) -> String {
-        self.0
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn sort_token_score_conversation() -> Result<(), failure::Error> {
-        assert_eq!(
-            SortToken::from_u64(1).as_str(),
-            "00000000000000000000000000000001"
-        );
-        assert_eq!(SortToken::from_u64(0).to_u64()?, 0);
-        assert_eq!(SortToken::from_u64(1234).to_u64()?, 1234);
-
-        assert!(SortToken::from_f32(2.233_112).to_f32()? - 2.233_112 < std::f32::EPSILON);
-
-        Ok(())
     }
 }

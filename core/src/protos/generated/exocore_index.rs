@@ -138,24 +138,27 @@ pub struct ReferencePredicate {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Paging {
-    //// Returns results after token.
-    #[prost(string, tag = "1")]
-    pub after_token: std::string::String,
-    //// Returns results before token.
-    #[prost(string, tag = "2")]
-    pub before_token: std::string::String,
+    //// Returns results after this given sorting value.
+    #[prost(message, optional, tag = "1")]
+    pub after_sort_value: ::std::option::Option<SortingValue>,
+    //// Returns results before this given sorting value.
+    #[prost(message, optional, tag = "2")]
+    pub before_sort_value: ::std::option::Option<SortingValue>,
     //// Desired results count. Default if 0.
     #[prost(uint32, tag = "3")]
     pub count: u32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Sorting {
+    //// Order of the results.
     #[prost(bool, tag = "4")]
     pub ascending: bool,
+    //// Value by which we want results to be sorted.
     #[prost(oneof = "sorting::Value", tags = "1, 2, 3")]
     pub value: ::std::option::Option<sorting::Value>,
 }
 pub mod sorting {
+    //// Value by which we want results to be sorted.
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         #[prost(bool, tag = "1")]
@@ -164,6 +167,29 @@ pub mod sorting {
         OperationId(bool),
         #[prost(string, tag = "3")]
         Field(std::string::String),
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SortingValue {
+    //// ID operation used to tie break equal results
+    #[prost(uint64, tag = "6")]
+    pub operation_id: u64,
+    #[prost(oneof = "sorting_value::Value", tags = "1, 2, 3, 4, 5")]
+    pub value: ::std::option::Option<sorting_value::Value>,
+}
+pub mod sorting_value {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Value {
+        #[prost(float, tag = "1")]
+        Float(f32),
+        #[prost(uint64, tag = "2")]
+        Uint64(u64),
+        #[prost(message, tag = "3")]
+        Date(::prost_types::Timestamp),
+        #[prost(bool, tag = "4")]
+        Min(bool),
+        #[prost(bool, tag = "5")]
+        Max(bool),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -187,8 +213,8 @@ pub struct EntityResult {
     pub entity: ::std::option::Option<Entity>,
     #[prost(enumeration = "EntityResultSource", tag = "2")]
     pub source: i32,
-    #[prost(string, tag = "3")]
-    pub sort_token: std::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub sorting_value: ::std::option::Option<SortingValue>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]

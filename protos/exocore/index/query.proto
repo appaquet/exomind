@@ -87,28 +87,42 @@ message ReferencePredicate {
 }
 
 message Paging {
-    /// Returns results after token.
-    string after_token = 1;
+    /// Returns results after this given sorting value.
+    SortingValue after_sort_value = 1;
 
-    /// Returns results before token.
-    string before_token = 2;
+    /// Returns results before this given sorting value.
+    SortingValue before_sort_value = 2;
 
     /// Desired results count. Default if 0.
     uint32 count = 3;
 }
 
 message Sorting {
+    /// Value by which we want results to be sorted.
     oneof value {
         bool score = 1;
         bool operation_id = 2;
         string field = 3;
     }
 
+    /// Order of the results.
     bool ascending = 4;
 }
 
-message EntityResults {
+message SortingValue {
+    oneof value {
+        float float = 1;
+        uint64 uint64 = 2;
+        google.protobuf.Timestamp date = 3;
+        bool min = 4;
+        bool max = 5;
+    }
 
+    /// ID operation used to tie break equal results
+    uint64 operation_id = 6;
+}
+
+message EntityResults {
     repeated EntityResult entities = 1;
 
     bool summary = 2;
@@ -120,7 +134,6 @@ message EntityResults {
     Paging next_page = 5;
 
     uint64 hash = 6;
-
 }
 
 message EntityResult {
@@ -128,7 +141,7 @@ message EntityResult {
 
     EntityResultSource source = 2;
 
-    string sort_token = 3;
+    SortingValue sorting_value = 3;
 }
 
 enum EntityResultSource {

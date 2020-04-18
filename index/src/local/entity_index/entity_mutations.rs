@@ -1,4 +1,4 @@
-use super::super::mutation_index::{MutationMetadata, MutationMetadataType, PutTraitMetadata};
+use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetadata};
 use super::result_hasher;
 use crate::entity::TraitId;
 use crate::error::Error;
@@ -41,7 +41,7 @@ impl EntityMutations {
             hasher.write_u64(trait_metadata.operation_id);
 
             match &mut trait_metadata.mutation_type {
-                MutationMetadataType::TraitPut(put_trait) => {
+                MutationType::TraitPut(put_trait) => {
                     let opt_prev_trait = traits.get(&put_trait.trait_id);
                     if let Some(prev_trait) = opt_prev_trait {
                         active_operations_id.remove(&prev_trait.operation_id);
@@ -56,14 +56,14 @@ impl EntityMutations {
                     active_operations_id.insert(trait_metadata.operation_id);
                     traits.insert(put_trait.trait_id.clone(), trait_metadata);
                 }
-                MutationMetadataType::TraitTombstone(trait_id) => {
+                MutationType::TraitTombstone(trait_id) => {
                     if let Some(prev_trait) = traits.get(trait_id) {
                         active_operations_id.remove(&prev_trait.operation_id);
                     }
                     active_operations_id.insert(trait_metadata.operation_id);
                     traits.remove(trait_id);
                 }
-                MutationMetadataType::EntityTombstone => {
+                MutationType::EntityTombstone => {
                     active_operations_id.clear();
                     active_operations_id.insert(trait_metadata.operation_id);
                     traits.clear();
@@ -104,7 +104,7 @@ impl EntityMutations {
         // modifications dates so that creation date is the oldest date and
         // modification is the newest
         if let Some(prev_trait) = opt_prev_trait {
-            if let MutationMetadataType::TraitPut(prev_trait) = &prev_trait.mutation_type {
+            if let MutationType::TraitPut(prev_trait) = &prev_trait.mutation_type {
                 if modification_date.is_none() {
                     modification_date = Some(op_time);
                 }
