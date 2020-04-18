@@ -1,22 +1,19 @@
 use chrono::{DateTime, Utc};
 use itertools::Itertools;
 
+use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_index::{Reference, Trait};
 use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
 use exocore_core::protos::prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt};
 
 use crate::query::QueryBuilder;
+use crate::sorting::{value_from_f32, value_from_u64, SortingValueExt};
 
 use super::*;
-use crate::sorting::{value_from_f32, value_from_u64, SortingValueExt};
-use exocore_chain::operation::OperationId;
 
-// TODO: Sort by operation, ascending, descending
-// TODO: Sort by match, acending, descending
 // TODO: Trait inner query support
 //       -> Sort by field, ascending, descending
 // TODO: Tests in EntitiesIndex
-// TODO: Rename most of the _trait_ stuff in EntitiesIndex to mutations
 
 #[test]
 fn search_by_entity_id() -> Result<(), failure::Error> {
@@ -24,7 +21,7 @@ fn search_by_entity_id() -> Result<(), failure::Error> {
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
-    let trait1 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(1),
         operation_id: 10,
         entity_id: "entity_id1".to_string(),
@@ -41,7 +38,7 @@ fn search_by_entity_id() -> Result<(), failure::Error> {
         },
     });
 
-    let trait2 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait2 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(2),
         operation_id: 20,
         entity_id: "entity_id2".to_string(),
@@ -58,7 +55,7 @@ fn search_by_entity_id() -> Result<(), failure::Error> {
         },
     });
 
-    let trait3 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait3 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(3),
         operation_id: 21,
         entity_id: "entity_id2".to_string(),
@@ -74,7 +71,7 @@ fn search_by_entity_id() -> Result<(), failure::Error> {
             ..Default::default()
         },
     });
-    index.apply_mutations(vec![trait1, trait2, trait3].into_iter())?;
+    index.apply_operations(vec![trait1, trait2, trait3].into_iter())?;
 
     let results = index.search_entity_id("entity_id1")?;
     assert_eq!(results.mutations.len(), 1);
@@ -104,7 +101,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
-    let trait1 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(1),
         operation_id: 10,
         entity_id: "entity_id1".to_string(),
@@ -121,7 +118,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
         },
     });
 
-    let trait2 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait2 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(2),
         operation_id: 20,
         entity_id: "entity_id2".to_string(),
@@ -137,7 +134,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
             ..Default::default()
         },
     });
-    index.apply_mutations(vec![trait1, trait2].into_iter())?;
+    index.apply_operations(vec![trait1, trait2].into_iter())?;
 
     let predicate = |text: &str| MatchPredicate {
         query: text.to_string(),
@@ -207,7 +204,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     let traits = (0..30).map(|i| {
         let text = "foo ".repeat((i + 1) as usize);
 
-        IndexMutation::PutTrait(PutTraitMutation {
+        IndexOperation::PutTrait(PutTraitMutation {
             block_offset: Some(i),
             operation_id: i,
             entity_id: format!("entity_id{}", i),
@@ -225,7 +222,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
             },
         })
     });
-    index.apply_mutations(traits)?;
+    index.apply_operations(traits)?;
 
     let query = QueryBuilder::match_text("foo").with_count(10).build();
     let results1 = index.search(&query)?;
@@ -287,7 +284,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
-    let trait1 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
         operation_id: 1,
         entity_id: "entity_id1".to_string(),
@@ -304,7 +301,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         },
     });
 
-    let trait2 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait2 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
         operation_id: 2,
         entity_id: "entity_id2".to_string(),
@@ -321,7 +318,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         },
     });
 
-    let trait3 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait3 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
         operation_id: 3,
         entity_id: "entity_id3".to_string(),
@@ -338,7 +335,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         },
     });
 
-    let trait4 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait4 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
         operation_id: 4,
         entity_id: "entity_id4".to_string(),
@@ -355,7 +352,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         },
     });
 
-    index.apply_mutations(vec![trait4, trait3, trait2, trait1].into_iter())?;
+    index.apply_operations(vec![trait4, trait3, trait2, trait1].into_iter())?;
 
     let pred1 = TraitPredicate {
         trait_name: "exocore.test.TestMessage".to_string(),
@@ -414,7 +411,7 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
     let traits = (0..30).map(|i| {
-        IndexMutation::PutTrait(PutTraitMutation {
+        IndexOperation::PutTrait(PutTraitMutation {
             block_offset: Some(i),
             operation_id: 30 - i,
             entity_id: format!("entity_id{}", i),
@@ -432,7 +429,7 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
             },
         })
     });
-    index.apply_mutations(traits)?;
+    index.apply_operations(traits)?;
 
     let paging = Paging {
         after_sort_value: None,
@@ -483,7 +480,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
-    let et1 = IndexMutation::PutTrait(PutTraitMutation {
+    let et1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
         operation_id: 1,
         entity_id: "et1".to_string(),
@@ -503,7 +500,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
             ..Default::default()
         },
     });
-    let et2 = IndexMutation::PutTrait(PutTraitMutation {
+    let et2 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
         operation_id: 2,
         entity_id: "et2".to_string(),
@@ -523,7 +520,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
             ..Default::default()
         },
     });
-    index.apply_mutations(vec![et1, et2].into_iter())?;
+    index.apply_operations(vec![et1, et2].into_iter())?;
 
     let search = |entity: &str, trt: &str| {
         index
@@ -570,7 +567,7 @@ fn highest_indexed_block() -> Result<(), failure::Error> {
 
     assert_eq!(index.highest_indexed_block()?, None);
 
-    index.apply_mutation(IndexMutation::PutTrait(PutTraitMutation {
+    index.apply_operation(IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(1234),
         operation_id: 1,
         entity_id: "et1".to_string(),
@@ -588,7 +585,7 @@ fn highest_indexed_block() -> Result<(), failure::Error> {
     }))?;
     assert_eq!(index.highest_indexed_block()?, Some(1234));
 
-    index.apply_mutation(IndexMutation::PutTrait(PutTraitMutation {
+    index.apply_operation(IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(120),
         operation_id: 2,
         entity_id: "et1".to_string(),
@@ -606,7 +603,7 @@ fn highest_indexed_block() -> Result<(), failure::Error> {
     }))?;
     assert_eq!(index.highest_indexed_block()?, Some(1234));
 
-    index.apply_mutation(IndexMutation::PutTrait(PutTraitMutation {
+    index.apply_operation(IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(9999),
         operation_id: 3,
         entity_id: "et1".to_string(),
@@ -635,7 +632,7 @@ fn put_unregistered_trait() -> Result<(), failure::Error> {
 
     assert_eq!(index.highest_indexed_block()?, None);
 
-    index.apply_mutation(IndexMutation::PutTrait(PutTraitMutation {
+    index.apply_operation(IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(1234),
         operation_id: 1,
         entity_id: "et1".to_string(),
@@ -665,7 +662,7 @@ fn delete_operation_id_mutation() -> Result<(), failure::Error> {
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
-    let trait1 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
         operation_id: 1234,
         entity_id: "entity_id1".to_string(),
@@ -681,7 +678,7 @@ fn delete_operation_id_mutation() -> Result<(), failure::Error> {
             ..Default::default()
         },
     });
-    index.apply_mutation(trait1)?;
+    index.apply_operation(trait1)?;
 
     let predicate = MatchPredicate {
         query: "foo".to_string(),
@@ -689,7 +686,7 @@ fn delete_operation_id_mutation() -> Result<(), failure::Error> {
     let results = index.search_matches(&predicate, None, None)?;
     assert_eq!(results.mutations.len(), 1);
 
-    index.apply_mutation(IndexMutation::DeleteOperation(1234))?;
+    index.apply_operation(IndexOperation::DeleteOperation(1234))?;
 
     let results = index.search_matches(&predicate, None, None)?;
     assert_eq!(results.mutations.len(), 0);
@@ -703,15 +700,15 @@ fn put_trait_tombstone() -> Result<(), failure::Error> {
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
-    let contact_mutation = IndexMutation::PutTraitTombstone(PutTraitTombstone {
+    let contact_mutation = IndexOperation::PutTraitTombstone(PutTraitTombstoneMutation {
         block_offset: None,
         operation_id: 1234,
         entity_id: "entity_id1".to_string(),
         trait_id: "foo1".to_string(),
     });
-    index.apply_mutation(contact_mutation)?;
+    index.apply_operation(contact_mutation)?;
 
-    let trait1 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
         operation_id: 2345,
         entity_id: "entity_id2".to_string(),
@@ -727,7 +724,7 @@ fn put_trait_tombstone() -> Result<(), failure::Error> {
             ..Default::default()
         },
     });
-    index.apply_mutation(trait1)?;
+    index.apply_operation(trait1)?;
 
     let res = index.search_entity_id("entity_id1")?;
     assert_is_trait_tombstone(&res.mutations.first().unwrap().mutation_type, "foo1");
@@ -744,12 +741,12 @@ fn put_entity_tombstone() -> Result<(), failure::Error> {
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
-    let trait1 = IndexMutation::PutEntityTombstone(PutEntityTombstone {
+    let trait1 = IndexOperation::PutEntityTombstone(PutEntityTombstoneMutation {
         block_offset: None,
         operation_id: 1234,
         entity_id: "entity_id1".to_string(),
     });
-    index.apply_mutation(trait1)?;
+    index.apply_operation(trait1)?;
 
     let res = index.search_entity_id("entity_id1")?;
     assert_is_entity_tombstone(&res.mutations.first().unwrap().mutation_type);
@@ -766,7 +763,7 @@ fn trait_dates() -> Result<(), failure::Error> {
     let creation_date = "2019-08-01T12:00:00Z".parse::<DateTime<Utc>>()?;
     let modification_date = "2019-12-03T12:00:00Z".parse::<DateTime<Utc>>()?;
 
-    let trait1 = IndexMutation::PutTrait(PutTraitMutation {
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(1),
         operation_id: 10,
         entity_id: "entity_id1".to_string(),
@@ -783,7 +780,7 @@ fn trait_dates() -> Result<(), failure::Error> {
             modification_date: Some(modification_date.to_proto_timestamp()),
         },
     });
-    index.apply_mutation(trait1)?;
+    index.apply_operation(trait1)?;
 
     let res = index.search_entity_id("entity_id1")?;
     let trait_meta = find_put_trait(&res, "foo1").unwrap();

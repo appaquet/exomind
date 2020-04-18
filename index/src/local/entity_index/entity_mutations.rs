@@ -9,7 +9,7 @@ use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hasher;
 
-/// Traits metadata of an entity as retrieved from the traits index, as opposed
+/// Mutations metadata of an entity as retrieved from the mutations index, as opposed
 /// as being complete from the chain layer.
 pub struct EntityMutations {
     // final traits of the entity once all mutations were aggregated
@@ -31,6 +31,7 @@ impl EntityMutations {
             mutations_metadata.sorted_by_key(|result| result.operation_id);
 
         let mut hasher = result_hasher();
+
         // only keep last operation for each trait, and remove trait if it's a tombstone
         // we keep last operations id that have affected current traits / entities
         let mut traits = HashMap::<TraitId, MutationMetadata>::new();

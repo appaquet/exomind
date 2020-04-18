@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 /// Iterates through all results matching a given initial query using the
 /// next_page score when a page got emptied.
-pub struct ResultsIterator<'i, 'q> {
+pub struct MutationResultsIterator<'i, 'q> {
     pub index: &'i MutationIndex,
     pub query: &'q EntityQuery,
     pub total_results: usize,
@@ -18,7 +18,7 @@ pub struct ResultsIterator<'i, 'q> {
     pub next_page: Option<Paging>,
 }
 
-impl<'i, 'q> Iterator for ResultsIterator<'i, 'q> {
+impl<'i, 'q> Iterator for MutationResultsIterator<'i, 'q> {
     type Item = MutationMetadata;
 
     fn next(&mut self) -> Option<Self::Item> {

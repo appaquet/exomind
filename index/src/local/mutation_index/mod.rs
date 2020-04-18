@@ -25,14 +25,14 @@ use exocore_core::protos::prost::{Any, ProstTimestampExt};
 use exocore_core::protos::reflect;
 use exocore_core::protos::reflect::{FieldValue, ReflectMessage};
 use exocore_core::protos::registry::Registry;
-pub use mutation::*;
+pub use operations::*;
 pub use results::*;
 
 use crate::error::Error;
 use crate::sorting::SortingValueWrapper;
 
 mod config;
-mod mutation;
+mod operations;
 mod results;
 mod schema;
 #[cfg(test)]
@@ -107,29 +107,28 @@ impl MutationIndex {
         })
     }
 
-    /// Apply a single mutation. A costly commit & refresh is done at each
-    /// mutation, so `apply_mutations` should be used for multiple
-    /// mutations.
+    /// Apply a single operation on the index. A costly commit & refresh is done at each
+    /// operation, so `apply_operations` should be used for multiple operations.
     #[cfg(test)]
-    fn apply_mutation(&mut self, mutation: IndexMutation) -> Result<(), Error> {
-        self.apply_mutations(Some(mutation).into_iter())
+    fn apply_operation(&mut self, operation: IndexOperation) -> Result<(), Error> {
+        self.apply_operations(Some(operation).into_iter())
     }
 
-    /// Apply an iterator of mutations, with a single atomic commit at the end
+    /// Apply an iterator of operations on the index, with a single atomic commit at the end
     /// of the iteration.
-    pub fn apply_mutations<T>(&mut self, mutations: T) -> Result<(), Error>
+    pub fn apply_operations<T>(&mut self, operations: T) -> Result<(), Error>
     where
-        T: Iterator<Item = IndexMutation>,
+        T: Iterator<Item = IndexOperation>,
     {
         let mut index_writer = self.index_writer.lock()?;
 
-        debug!("Starting applying mutations to index...");
-        let mut nb_mutations = 0;
-        for mutation in mutations {
-            nb_mutations += 1;
+        debug!("Starting applying operations to index...");
+        let mut nb_operations = 0;
+        for operation in operations {
+            nb_operations += 1;
 
-            match mutation {
-                IndexMutation::PutTrait(trait_put) => {
+            match operation {
+                IndexOperation::PutTrait(trait_put) => {
                     let entity_trait_id = format!("{}_{}", trait_put.entity_id, trait_put.trt.id);
                     trace!(
                         "Putting trait {} with op {}",
@@ -139,7 +138,7 @@ impl MutationIndex {
                     let doc = self.trait_put_to_document(&trait_put)?;
                     index_writer.add_document(doc);
                 }
-                IndexMutation::PutTraitTombstone(trait_tombstone) => {
+                IndexOperation::PutTraitTombstone(trait_tombstone) => {
                     trace!(
                         "Putting tombstone for trait {}_{} with op {}",
                         trait_tombstone.entity_id,
@@ -149,7 +148,7 @@ impl MutationIndex {
                     let doc = self.trait_tombstone_to_document(&trait_tombstone);
                     index_writer.add_document(doc);
                 }
-                IndexMutation::PutEntityTombstone(entity_tombstone) => {
+                IndexOperation::PutEntityTombstone(entity_tombstone) => {
                     trace!(
                         "Putting tombstone for entity {} with op {}",
                         entity_tombstone.entity_id,
@@ -158,7 +157,7 @@ impl MutationIndex {
                     let doc = self.entity_tombstone_to_document(&entity_tombstone);
                     index_writer.add_document(doc);
                 }
-                IndexMutation::DeleteOperation(operation_id) => {
+                IndexOperation::DeleteOperation(operation_id) => {
                     trace!("Deleting op from index {}", operation_id);
                     index_writer
                         .delete_term(Term::from_field_u64(self.fields.operation_id, operation_id));
@@ -166,8 +165,8 @@ impl MutationIndex {
             }
         }
 
-        if nb_mutations > 0 {
-            debug!("Applied {} mutations, now committing", nb_mutations);
+        if nb_operations > 0 {
+            debug!("Applied {} operations, now committing", nb_operations);
             index_writer.commit()?;
             // it may take milliseconds for reader to see committed changes, so we force
             // reload
@@ -218,10 +217,10 @@ impl MutationIndex {
     pub fn search_all<'i, 'q>(
         &'i self,
         query: &'q EntityQuery,
-    ) -> Result<ResultsIterator<'i, 'q>, Error> {
+    ) -> Result<MutationResultsIterator<'i, 'q>, Error> {
         let results = self.search(query)?;
 
-        Ok(ResultsIterator {
+        Ok(MutationResultsIterator {
             index: self,
             query,
             total_results: results.total,
@@ -296,12 +295,12 @@ impl MutationIndex {
             },
         );
 
-        let results = self.execute_mutations_tantity_query(searcher, &query, &top_collector)?;
-        let total_results = results.len();
+        let mutations = self.execute_mutations_tantity_query(searcher, &query, &top_collector)?;
+        let total = mutations.len();
 
         Ok(MutationResults {
-            mutations: results,
-            total: total_results,
+            mutations,
+            total,
             remaining: 0,
             next_page: None,
         })
@@ -327,8 +326,8 @@ impl MutationIndex {
     }
 
     /// Converts a trait put / update to Tantivy document
-    fn trait_put_to_document(&self, mutation: &PutTraitMutation) -> Result<Document, Error> {
-        let message_any = mutation
+    fn trait_put_to_document(&self, operation: &PutTraitMutation) -> Result<Document, Error> {
+        let message_any = operation
             .trt
             .message
             .as_ref()
@@ -338,25 +337,25 @@ impl MutationIndex {
 
         let message_full_name = reflect::any_url_to_full_name(&message_any.type_url);
         doc.add_text(self.fields.trait_type, &message_full_name);
-        doc.add_text(self.fields.trait_id, &mutation.trt.id);
-        doc.add_text(self.fields.entity_id, &mutation.entity_id);
+        doc.add_text(self.fields.trait_id, &operation.trt.id);
+        doc.add_text(self.fields.entity_id, &operation.entity_id);
         doc.add_text(
             self.fields.entity_trait_id,
-            &format!("{}_{}", mutation.entity_id, &mutation.trt.id),
+            &format!("{}_{}", operation.entity_id, &operation.trt.id),
         );
 
-        doc.add_u64(self.fields.operation_id, mutation.operation_id);
-        if let Some(block_offset) = mutation.block_offset {
+        doc.add_u64(self.fields.operation_id, operation.operation_id);
+        if let Some(block_offset) = operation.block_offset {
             doc.add_u64(self.fields.block_offset, block_offset);
         }
 
-        if let Some(creation_date) = &mutation.trt.creation_date {
+        if let Some(creation_date) = &operation.trt.creation_date {
             doc.add_u64(
                 self.fields.creation_date,
                 creation_date.to_timestamp_nanos(),
             );
         }
-        if let Some(modification_date) = &mutation.trt.modification_date {
+        if let Some(modification_date) = &operation.trt.modification_date {
             doc.add_u64(
                 self.fields.modification_date,
                 modification_date.to_timestamp_nanos(),
@@ -445,18 +444,18 @@ impl MutationIndex {
     }
 
     /// Converts a trait tombstone mutation to Tantivy document
-    fn trait_tombstone_to_document(&self, mutation: &PutTraitTombstone) -> Document {
+    fn trait_tombstone_to_document(&self, operation: &PutTraitTombstoneMutation) -> Document {
         let mut doc = Document::default();
 
-        doc.add_text(self.fields.trait_id, &mutation.trait_id);
-        doc.add_text(self.fields.entity_id, &mutation.entity_id);
+        doc.add_text(self.fields.trait_id, &operation.trait_id);
+        doc.add_text(self.fields.entity_id, &operation.entity_id);
         doc.add_text(
             self.fields.entity_trait_id,
-            &format!("{}_{}", mutation.entity_id, mutation.trait_id),
+            &format!("{}_{}", operation.entity_id, operation.trait_id),
         );
-        doc.add_u64(self.fields.operation_id, mutation.operation_id);
+        doc.add_u64(self.fields.operation_id, operation.operation_id);
 
-        if let Some(block_offset) = mutation.block_offset {
+        if let Some(block_offset) = operation.block_offset {
             doc.add_u64(self.fields.block_offset, block_offset);
         }
 
@@ -466,13 +465,13 @@ impl MutationIndex {
     }
 
     /// Converts an entity tombstone mutation to Tantivy document
-    fn entity_tombstone_to_document(&self, mutation: &PutEntityTombstone) -> Document {
+    fn entity_tombstone_to_document(&self, operation: &PutEntityTombstoneMutation) -> Document {
         let mut doc = Document::default();
 
-        doc.add_text(self.fields.entity_id, &mutation.entity_id);
-        doc.add_u64(self.fields.operation_id, mutation.operation_id);
+        doc.add_text(self.fields.entity_id, &operation.entity_id);
+        doc.add_u64(self.fields.operation_id, operation.operation_id);
 
-        if let Some(block_offset) = mutation.block_offset {
+        if let Some(block_offset) = operation.block_offset {
             doc.add_u64(self.fields.block_offset, block_offset);
         }
 
@@ -535,7 +534,7 @@ impl MutationIndex {
         let sorting_value = sorting
             .value
             .ok_or_else(|| Error::ProtoFieldExpected("sorting.value"))?;
-        let results = match sorting_value {
+        let mutations = match sorting_value {
             sorting::Value::Score(_) => {
                 let collector = self.match_score_collector(
                     total_count.clone(),
@@ -597,10 +596,10 @@ impl MutationIndex {
         let total_results = total_count.load(Ordering::Relaxed);
         let remaining_results = matching_count
             .load(Ordering::Relaxed)
-            .saturating_sub(results.len());
+            .saturating_sub(mutations.len());
 
         let next_page = if remaining_results > 0 {
-            let last_result = results.last().expect("Should had results, but got none");
+            let last_result = mutations.last().expect("Should had results, but got none");
             let mut next_page = Paging {
                 before_sort_value: None,
                 after_sort_value: None,
@@ -619,7 +618,7 @@ impl MutationIndex {
         };
 
         Ok(MutationResults {
-            mutations: results,
+            mutations,
             total: total_results,
             remaining: remaining_results,
             next_page,
@@ -641,6 +640,7 @@ impl MutationIndex {
 
         let mut results = Vec::new();
         for (sort_wrapper, doc_addr) in search_results {
+            // ignored results were out of the requested paging
             if !sort_wrapper.ignore {
                 let doc = searcher.doc(doc_addr)?;
                 let block_offset = schema::get_doc_opt_u64_value(&doc, self.fields.block_offset);
@@ -733,6 +733,7 @@ impl MutationIndex {
                         ignore: false,
                     };
 
+                    // we ignore the result if it's out of the requested pages
                     if sort_value_wrapper.is_within_bound(&after_sort_value, &before_sort_value) {
                         remaining_count.fetch_add(1, Ordering::SeqCst);
                     } else {
@@ -800,6 +801,7 @@ impl MutationIndex {
                         ignore: false,
                     };
 
+                    // we ignore the result if it's out of the requested pages
                     if sort_value_wrapper.is_within_bound(&after_score, &before_score) {
                         remaining_count.fetch_add(1, Ordering::SeqCst);
                     } else {

@@ -22,7 +22,7 @@ use exocore_core::protos::registry::Registry;
 use crate::error::Error;
 use crate::sorting::SortingValueExt;
 
-use super::mutation_index::{IndexMutation, MutationIndex, MutationType};
+use super::mutation_index::{IndexOperation, MutationIndex, MutationType};
 use super::top_results::RescoredTopResultsIterable;
 
 mod config;
@@ -228,7 +228,7 @@ where
                 }
 
                 let traits_meta = self
-                    .fetch_entity_traits_metadata(&trait_meta.entity_id)
+                    .fetch_entity_mutations_metadata(&trait_meta.entity_id)
                     .map_err(|err| {
                         error!(
                             "Error fetching traits for entity_id={} from indices: {}",
@@ -310,7 +310,7 @@ where
         let results_hash = hasher.finish();
         let only_summary = query.summary || results_hash == query.result_hash;
         if !only_summary {
-            self.fetch_entities_results_full_traits(&mut entities_results, traits_results);
+            self.fetch_mutations_results_traits(&mut entities_results, traits_results);
         }
 
         Ok(EntityResults {
@@ -394,8 +394,8 @@ where
         };
 
         let mutations_iter =
-            pending_and_chain_iter.flat_map(IndexMutation::from_pending_engine_operation);
-        self.pending_index.apply_mutations(mutations_iter)?;
+            pending_and_chain_iter.flat_map(IndexOperation::from_pending_engine_operation);
+        self.pending_index.apply_operations(mutations_iter)?;
 
         Ok(())
     }
@@ -477,7 +477,7 @@ where
             .flat_map(|(offset, _height, engine_operation)| {
                 // for every mutation we index in the chain index, we delete it from the pending
                 // index
-                pending_index_mutations.push(IndexMutation::DeleteOperation(
+                pending_index_mutations.push(IndexOperation::DeleteOperation(
                     engine_operation.operation_id,
                 ));
 
@@ -486,17 +486,17 @@ where
                     new_highest_block_offset = Some(offset);
                 }
 
-                IndexMutation::from_chain_engine_operation(engine_operation, offset)
+                IndexOperation::from_chain_engine_operation(engine_operation, offset)
             });
 
-        self.chain_index.apply_mutations(chain_index_mutations)?;
+        self.chain_index.apply_operations(chain_index_mutations)?;
         info!(
             "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
             pending_index_mutations.len(),
             new_highest_block_offset
         );
         self.pending_index
-            .apply_mutations(pending_index_mutations.into_iter())?;
+            .apply_operations(pending_index_mutations.into_iter())?;
 
         if let Some(new_highest_block_offset) = new_highest_block_offset {
             self.chain_index_last_block = Some(new_highest_block_offset);
@@ -529,7 +529,7 @@ where
     {
         let mutations = operations_id
             .flat_map(|op_id| match self.chain_handle.get_pending_operation(op_id) {
-                Ok(Some(op)) => IndexMutation::from_pending_engine_operation(op),
+                Ok(Some(op)) => IndexOperation::from_pending_engine_operation(op),
                 Ok(None) => {
                     error!(
                         "An event from chain layer contained a pending operation that wasn't found: operation_id={}",
@@ -547,15 +547,15 @@ where
             })
             .collect::<Vec<_>>();
 
-        self.pending_index.apply_mutations(mutations.into_iter())
+        self.pending_index.apply_operations(mutations.into_iter())
     }
 
     /// Fetch an entity and all its traits from indices and the chain layer.
     /// Traits returned follow mutations in order of operation id.
     #[cfg(test)]
     fn fetch_entity(&self, entity_id: &str) -> Result<Entity, Error> {
-        let traits_metadata = self.fetch_entity_traits_metadata(entity_id)?;
-        let traits = self.fetch_entity_traits_data(traits_metadata);
+        let traits_metadata = self.fetch_entity_mutations_metadata(entity_id)?;
+        let traits = self.fetch_entity_traits(traits_metadata);
 
         Ok(Entity {
             id: entity_id.to_string(),
@@ -563,9 +563,9 @@ where
         })
     }
 
-    /// Fetch indexed traits metadata from pending and chain indices for this
+    /// Fetch indexed mutations metadata from pending and chain indices for this
     /// entity id, and merge them.
-    fn fetch_entity_traits_metadata(&self, entity_id: &str) -> Result<EntityMutations, Error> {
+    fn fetch_entity_mutations_metadata(&self, entity_id: &str) -> Result<EntityMutations, Error> {
         let pending_results = self.pending_index.search_entity_id(entity_id)?;
         let chain_results = self.chain_index.search_entity_id(entity_id)?;
         let ordered_traits_metadata = pending_results
@@ -578,7 +578,7 @@ where
 
     /// Populate traits in the EntityResult by fetching each entity's traits
     /// from the chain layer.
-    fn fetch_entities_results_full_traits(
+    fn fetch_mutations_results_traits(
         &self,
         entities_results: &mut Vec<EntityResult>,
         entities_traits_results: Vec<EntityMutations>,
@@ -587,7 +587,7 @@ where
             .iter_mut()
             .zip(entities_traits_results.into_iter())
         {
-            let traits = self.fetch_entity_traits_data(traits_results);
+            let traits = self.fetch_entity_traits(traits_results);
             if let Some(entity) = entity_result.entity.as_mut() {
                 entity.traits = traits;
             }
@@ -595,12 +595,12 @@ where
     }
 
     /// Fetch traits data from chain layer.
-    fn fetch_entity_traits_data(&self, results: EntityMutations) -> Vec<Trait> {
+    fn fetch_entity_traits(&self, results: EntityMutations) -> Vec<Trait> {
         results
             .traits
             .values()
             .flat_map(|merged_metadata| {
-                let mutation = self.fetch_trait_mutation_operation(
+                let mutation = self.fetch_mutation_operation(
                     merged_metadata.operation_id,
                     merged_metadata.block_offset,
                 );
@@ -640,7 +640,7 @@ where
 
     /// Fetch an operation from the chain layer by the given operation id and
     /// optional block offset.
-    fn fetch_trait_mutation_operation(
+    fn fetch_mutation_operation(
         &self,
         operation_id: OperationId,
         block_offset: Option<BlockOffset>,
