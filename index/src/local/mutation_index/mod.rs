@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 use chrono::{TimeZone, Utc};
 use tantivy::collector::{Collector, TopDocs};
 use tantivy::directory::MmapDirectory;
-use tantivy::query::{AllQuery, PhraseQuery, QueryParser, TermQuery};
+use tantivy::query::{AllQuery, BooleanQuery, Occur, PhraseQuery, Query, QueryParser, TermQuery};
 use tantivy::schema::{Field, IndexRecordOption};
 use tantivy::{
     DocAddress, Document, Index as TantivyIndex, IndexReader, IndexWriter, Searcher, SegmentReader,
@@ -18,8 +18,8 @@ use tantivy::{
 pub use config::*;
 use exocore_chain::block::BlockOffset;
 use exocore_core::protos::generated::exocore_index::{
-    entity_query::Predicate, sorting, sorting_value, EntityQuery, MatchPredicate, Paging,
-    ReferencePredicate, Sorting, SortingValue, TraitPredicate,
+    entity_query::Predicate, sorting, sorting_value, trait_query, EntityQuery, MatchPredicate,
+    Paging, ReferencePredicate, Sorting, SortingValue, TraitPredicate,
 };
 use exocore_core::protos::prost::{Any, ProstTimestampExt};
 use exocore_core::protos::reflect;
@@ -238,14 +238,27 @@ impl MutationIndex {
     ) -> Result<MutationResults, Error> {
         let searcher = self.index_reader.searcher();
 
-        let term = Term::from_field_text(self.fields.trait_type, &predicate.trait_name);
-        let query = TermQuery::new(term, IndexRecordOption::Basic);
-
         let mut sorting = sorting.cloned().unwrap_or_else(Sorting::default);
         if sorting.value.is_none() {
             sorting.value = Some(sorting::Value::OperationId(true));
         }
 
+        let mut queries: Vec<(Occur, Box<dyn Query>)> = Vec::new();
+
+        let trait_type = Term::from_field_text(self.fields.trait_type, &predicate.trait_name);
+        let trait_type_query = TermQuery::new(trait_type, IndexRecordOption::Basic);
+        queries.push((Occur::Must, Box::new(trait_type_query)));
+
+        if let Some(trait_query) = &predicate.query {
+            match &trait_query.predicate {
+                Some(trait_query::Predicate::Match(match_pred)) => {
+                    queries.push((Occur::Must, self.match_predicate_to_query(match_pred)?));
+                }
+                None => {}
+            }
+        }
+
+        let query = BooleanQuery::from(queries);
         self.execute_results_tantivy_query(
             searcher,
             &query,
@@ -264,14 +277,12 @@ impl MutationIndex {
     ) -> Result<MutationResults, Error> {
         let searcher = self.index_reader.searcher();
 
-        let query_parser = QueryParser::for_index(&self.index, vec![self.fields.all_text]);
-        let query = query_parser.parse_query(&predicate.query)?;
-
         let mut sorting = sorting.cloned().unwrap_or_else(Sorting::default);
         if sorting.value.is_none() {
             sorting.value = Some(sorting::Value::Score(true));
         }
 
+        let query = self.match_predicate_to_query(predicate)?;
         self.execute_results_tantivy_query(searcher, &query, paging, sorting, None)
     }
 
@@ -478,6 +489,17 @@ impl MutationIndex {
         doc.add_u64(self.fields.document_type, MutationType::ENTITY_TOMBSTONE_ID);
 
         doc
+    }
+
+    /// Transforms a text match predicate to Tantivy query.
+    fn match_predicate_to_query(
+        &self,
+        predicate: &MatchPredicate,
+    ) -> Result<Box<dyn tantivy::query::Query>, Error> {
+        let query_parser = QueryParser::for_index(&self.index, vec![self.fields.all_text]);
+        let query = query_parser.parse_query(&predicate.query)?;
+
+        Ok(query)
     }
 
     /// Transforms a reference predicate to Tantivy query.

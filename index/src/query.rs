@@ -2,8 +2,8 @@ use prost::Message;
 
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::{
-    entity_query, EntityQuery, EntityResults, IdPredicate, MatchPredicate, Paging, Sorting,
-    TestPredicate, TraitPredicate,
+    entity_query, sorting, trait_query, EntityQuery, EntityResults, IdPredicate, MatchPredicate,
+    Paging, Sorting, TestPredicate, TraitPredicate, TraitQuery,
 };
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
 use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
@@ -37,6 +37,18 @@ impl QueryBuilder {
                 predicate: Some(entity_query::Predicate::Trait(TraitPredicate {
                     trait_name: trait_name.into(),
                     ..Default::default()
+                })),
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn with_trait_query<S: Into<String>>(trait_name: S, query: TraitQuery) -> QueryBuilder {
+        QueryBuilder {
+            query: EntityQuery {
+                predicate: Some(entity_query::Predicate::Trait(TraitPredicate {
+                    trait_name: trait_name.into(),
+                    query: Some(query),
                 })),
                 ..Default::default()
             },
@@ -103,7 +115,15 @@ impl QueryBuilder {
         self
     }
 
-    pub fn order(mut self, ascending: bool) -> Self {
+    pub fn sort_by_field<S: Into<String>>(mut self, field: S) -> Self {
+        self.query.sorting = Some(Sorting {
+            value: Some(sorting::Value::Field(field.into())),
+            ..Default::default()
+        });
+        self
+    }
+
+    pub fn sort_ascending(mut self, ascending: bool) -> Self {
         if let Some(sorting) = self.query.sorting.as_mut() {
             sorting.ascending = ascending;
         } else {
@@ -117,6 +137,26 @@ impl QueryBuilder {
     }
 
     pub fn build(self) -> EntityQuery {
+        self.query
+    }
+}
+
+pub struct TraitQueryBuilder {
+    query: TraitQuery,
+}
+
+impl TraitQueryBuilder {
+    pub fn match_text<S: Into<String>>(query: S) -> TraitQueryBuilder {
+        TraitQueryBuilder {
+            query: TraitQuery {
+                predicate: Some(trait_query::Predicate::Match(MatchPredicate {
+                    query: query.into(),
+                })),
+            },
+        }
+    }
+
+    pub fn build(self) -> TraitQuery {
         self.query
     }
 }

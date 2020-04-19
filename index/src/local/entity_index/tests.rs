@@ -355,7 +355,10 @@ fn traits_compaction() -> Result<(), failure::Error> {
             .to_timestamp_nanos()
     );
 
-    let new_trait = TestEntityIndex::new_test_trait("trait1", "op4")?;
+    // push a compaction operation
+    let mut new_trait = TestEntityIndex::new_test_trait("trait1", "op4")?;
+    new_trait.creation_date = traits_msgs[0].0.creation_date.clone();
+    new_trait.modification_date = traits_msgs[0].0.modification_date.clone();
     let op_id = test_index.write_mutation(MutationBuilder::compact_traits(
         "entity1",
         new_trait,
@@ -364,24 +367,35 @@ fn traits_compaction() -> Result<(), failure::Error> {
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
 
-    // dates should still be the same even if we compacted the traits
+    // make sure compaction gets indexed by appending another op
+    let op4 = test_index.put_test_trait("entity_other", "trait1", "op3")?;
+    test_index.wait_operations_committed(&[op4]);
+    test_index.handle_engine_events()?;
+
+    // re-query, dates should still be the same even if we compacted the traits
+    let query = QueryBuilder::with_entity_id("entity1").build();
+    let res = test_index.index.search(&query)?;
+    assert_eq!(res.entities.len(), 1);
+    let traits_msgs = extract_result_messages(&res.entities[0]);
+    assert_eq!(traits_msgs.len(), 1);
+
     assert_eq!(
-        op1,
         traits_msgs[0]
             .0
             .creation_date
             .as_ref()
             .unwrap()
-            .to_timestamp_nanos()
+            .to_timestamp_nanos(),
+        op1,
     );
     assert_eq!(
-        op3,
         traits_msgs[0]
             .0
             .modification_date
             .as_ref()
             .unwrap()
-            .to_timestamp_nanos()
+            .to_timestamp_nanos(),
+        op3,
     );
 
     Ok(())
@@ -488,7 +502,7 @@ fn query_sorting() -> Result<(), failure::Error> {
     test_index.wait_operations_committed(&ops_id[0..10]);
 
     // descending
-    let qb = QueryBuilder::match_text("common").order(false);
+    let qb = QueryBuilder::match_text("common").sort_ascending(false);
     let res = test_index.index.search(&qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(10, ids.len());
@@ -496,7 +510,7 @@ fn query_sorting() -> Result<(), failure::Error> {
     assert_eq!("entity0", ids[9]);
 
     // ascending
-    let qb = QueryBuilder::match_text("common").order(true);
+    let qb = QueryBuilder::match_text("common").sort_ascending(true);
     let res = test_index.index.search(&qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(10, ids.len());
@@ -504,7 +518,9 @@ fn query_sorting() -> Result<(), failure::Error> {
     assert_eq!("entity9", ids[9]);
 
     // ascending paged
-    let qb = QueryBuilder::match_text("common").order(true).with_count(5);
+    let qb = QueryBuilder::match_text("common")
+        .sort_ascending(true)
+        .with_count(5);
     let res = test_index.index.search(&qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(5, ids.len());
@@ -512,7 +528,7 @@ fn query_sorting() -> Result<(), failure::Error> {
     assert_eq!("entity4", ids[4]);
 
     let qb = QueryBuilder::match_text("common")
-        .order(true)
+        .sort_ascending(true)
         .with_paging(res.next_page.unwrap());
     let res = test_index.index.search(&qb.build())?;
     let ids = extract_results_entities_id(&res);

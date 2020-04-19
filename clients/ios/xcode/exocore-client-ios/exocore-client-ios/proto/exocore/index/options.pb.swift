@@ -38,6 +38,36 @@ extension SwiftProtobuf.Google_Protobuf_FieldOptions {
     clearExtensionValue(ext: Exocore_Extensions_indexed)
   }
 
+  public var Exocore_sorted: Bool {
+    get {return getExtensionValue(ext: Exocore_Extensions_sorted) ?? false}
+    set {setExtensionValue(ext: Exocore_Extensions_sorted, value: newValue)}
+  }
+  /// Returns true if extension `Exocore_Extensions_sorted`
+  /// has been explicitly set.
+  public var hasExocore_sorted: Bool {
+    return hasExtensionValue(ext: Exocore_Extensions_sorted)
+  }
+  /// Clears the value of extension `Exocore_Extensions_sorted`.
+  /// Subsequent reads from it will return its default value.
+  public mutating func clearExocore_sorted() {
+    clearExtensionValue(ext: Exocore_Extensions_sorted)
+  }
+
+  public var Exocore_text: Bool {
+    get {return getExtensionValue(ext: Exocore_Extensions_text) ?? false}
+    set {setExtensionValue(ext: Exocore_Extensions_text, value: newValue)}
+  }
+  /// Returns true if extension `Exocore_Extensions_text`
+  /// has been explicitly set.
+  public var hasExocore_text: Bool {
+    return hasExtensionValue(ext: Exocore_Extensions_text)
+  }
+  /// Clears the value of extension `Exocore_Extensions_text`.
+  /// Subsequent reads from it will return its default value.
+  public mutating func clearExocore_text() {
+    clearExtensionValue(ext: Exocore_Extensions_text)
+  }
+
 }
 
 /// A `SwiftProtobuf.SimpleExtensionMap` that includes all of the extensions defined by
@@ -45,10 +75,22 @@ extension SwiftProtobuf.Google_Protobuf_FieldOptions {
 /// in parsing, or it can be combined with other `SwiftProtobuf.SimpleExtensionMap`s to create
 /// a larger `SwiftProtobuf.SimpleExtensionMap`.
 public let Exocore_Options_Extensions: SwiftProtobuf.SimpleExtensionMap = [
-  Exocore_Extensions_indexed
+  Exocore_Extensions_indexed,
+  Exocore_Extensions_sorted,
+  Exocore_Extensions_text
 ]
 
 let Exocore_Extensions_indexed = SwiftProtobuf.MessageExtension<SwiftProtobuf.OptionalExtensionField<SwiftProtobuf.ProtobufBool>, SwiftProtobuf.Google_Protobuf_FieldOptions>(
-  _protobuf_fieldNumber: 1000,
+  _protobuf_fieldNumber: 1373,
   fieldName: "exocore.indexed"
+)
+
+let Exocore_Extensions_sorted = SwiftProtobuf.MessageExtension<SwiftProtobuf.OptionalExtensionField<SwiftProtobuf.ProtobufBool>, SwiftProtobuf.Google_Protobuf_FieldOptions>(
+  _protobuf_fieldNumber: 1374,
+  fieldName: "exocore.sorted"
+)
+
+let Exocore_Extensions_text = SwiftProtobuf.MessageExtension<SwiftProtobuf.OptionalExtensionField<SwiftProtobuf.ProtobufBool>, SwiftProtobuf.Google_Protobuf_FieldOptions>(
+  _protobuf_fieldNumber: 1375,
+  fieldName: "exocore.text"
 )

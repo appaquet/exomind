@@ -82,18 +82,16 @@ pub struct TraitPredicate {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitQuery {
-    #[prost(oneof = "trait_query::Query", tags = "1, 2, 3")]
-    pub query: ::std::option::Option<trait_query::Query>,
+    #[prost(oneof = "trait_query::Predicate", tags = "1")]
+    pub predicate: ::std::option::Option<trait_query::Predicate>,
 }
 pub mod trait_query {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
-    pub enum Query {
+    pub enum Predicate {
+        ///TODO: ReferencePredicate reference = 1;
+        ///TODO: TraitFieldPredicate field = 3;
         #[prost(message, tag = "1")]
-        Reference(super::ReferencePredicate),
-        #[prost(message, tag = "2")]
         Match(super::MatchPredicate),
-        #[prost(message, tag = "3")]
-        Field(super::TraitFieldPredicate),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]

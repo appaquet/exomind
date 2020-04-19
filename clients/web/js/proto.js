@@ -4958,8 +4958,8 @@ export const exocore = $root.exocore = (() => {
              * Properties of a Paging.
              * @memberof exocore.index
              * @interface IPaging
-             * @property {string|null} [afterToken] Returns results after token.
-             * @property {string|null} [beforeToken] Returns results before token.
+             * @property {exocore.index.ISortingValue|null} [afterSortValue] Returns results after this given sorting value.
+             * @property {exocore.index.ISortingValue|null} [beforeSortValue] Returns results before this given sorting value.
              * @property {number|null} [count] Desired results count. Default if 0.
              */
 
@@ -4979,20 +4979,20 @@ export const exocore = $root.exocore = (() => {
             }
 
             /**
-             * Returns results after token.
-             * @member {string} afterToken
+             * Returns results after this given sorting value.
+             * @member {exocore.index.ISortingValue|null|undefined} afterSortValue
              * @memberof exocore.index.Paging
              * @instance
              */
-            Paging.prototype.afterToken = "";
+            Paging.prototype.afterSortValue = null;
 
             /**
-             * Returns results before token.
-             * @member {string} beforeToken
+             * Returns results before this given sorting value.
+             * @member {exocore.index.ISortingValue|null|undefined} beforeSortValue
              * @memberof exocore.index.Paging
              * @instance
              */
-            Paging.prototype.beforeToken = "";
+            Paging.prototype.beforeSortValue = null;
 
             /**
              * Desired results count. Default if 0.
@@ -5026,10 +5026,10 @@ export const exocore = $root.exocore = (() => {
             Paging.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.afterToken != null && message.hasOwnProperty("afterToken"))
-                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.afterToken);
-                if (message.beforeToken != null && message.hasOwnProperty("beforeToken"))
-                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.beforeToken);
+                if (message.afterSortValue != null && message.hasOwnProperty("afterSortValue"))
+                    $root.exocore.index.SortingValue.encode(message.afterSortValue, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                if (message.beforeSortValue != null && message.hasOwnProperty("beforeSortValue"))
+                    $root.exocore.index.SortingValue.encode(message.beforeSortValue, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 if (message.count != null && message.hasOwnProperty("count"))
                     writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.count);
                 return writer;
@@ -5067,10 +5067,10 @@ export const exocore = $root.exocore = (() => {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
-                        message.afterToken = reader.string();
+                        message.afterSortValue = $root.exocore.index.SortingValue.decode(reader, reader.uint32());
                         break;
                     case 2:
-                        message.beforeToken = reader.string();
+                        message.beforeSortValue = $root.exocore.index.SortingValue.decode(reader, reader.uint32());
                         break;
                     case 3:
                         message.count = reader.uint32();
@@ -5110,12 +5110,16 @@ export const exocore = $root.exocore = (() => {
             Paging.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.afterToken != null && message.hasOwnProperty("afterToken"))
-                    if (!$util.isString(message.afterToken))
-                        return "afterToken: string expected";
-                if (message.beforeToken != null && message.hasOwnProperty("beforeToken"))
-                    if (!$util.isString(message.beforeToken))
-                        return "beforeToken: string expected";
+                if (message.afterSortValue != null && message.hasOwnProperty("afterSortValue")) {
+                    let error = $root.exocore.index.SortingValue.verify(message.afterSortValue);
+                    if (error)
+                        return "afterSortValue." + error;
+                }
+                if (message.beforeSortValue != null && message.hasOwnProperty("beforeSortValue")) {
+                    let error = $root.exocore.index.SortingValue.verify(message.beforeSortValue);
+                    if (error)
+                        return "beforeSortValue." + error;
+                }
                 if (message.count != null && message.hasOwnProperty("count"))
                     if (!$util.isInteger(message.count))
                         return "count: integer expected";
@@ -5134,10 +5138,16 @@ export const exocore = $root.exocore = (() => {
                 if (object instanceof $root.exocore.index.Paging)
                     return object;
                 let message = new $root.exocore.index.Paging();
-                if (object.afterToken != null)
-                    message.afterToken = String(object.afterToken);
-                if (object.beforeToken != null)
-                    message.beforeToken = String(object.beforeToken);
+                if (object.afterSortValue != null) {
+                    if (typeof object.afterSortValue !== "object")
+                        throw TypeError(".exocore.index.Paging.afterSortValue: object expected");
+                    message.afterSortValue = $root.exocore.index.SortingValue.fromObject(object.afterSortValue);
+                }
+                if (object.beforeSortValue != null) {
+                    if (typeof object.beforeSortValue !== "object")
+                        throw TypeError(".exocore.index.Paging.beforeSortValue: object expected");
+                    message.beforeSortValue = $root.exocore.index.SortingValue.fromObject(object.beforeSortValue);
+                }
                 if (object.count != null)
                     message.count = object.count >>> 0;
                 return message;
@@ -5157,14 +5167,14 @@ export const exocore = $root.exocore = (() => {
                     options = {};
                 let object = {};
                 if (options.defaults) {
-                    object.afterToken = "";
-                    object.beforeToken = "";
+                    object.afterSortValue = null;
+                    object.beforeSortValue = null;
                     object.count = 0;
                 }
-                if (message.afterToken != null && message.hasOwnProperty("afterToken"))
-                    object.afterToken = message.afterToken;
-                if (message.beforeToken != null && message.hasOwnProperty("beforeToken"))
-                    object.beforeToken = message.beforeToken;
+                if (message.afterSortValue != null && message.hasOwnProperty("afterSortValue"))
+                    object.afterSortValue = $root.exocore.index.SortingValue.toObject(message.afterSortValue, options);
+                if (message.beforeSortValue != null && message.hasOwnProperty("beforeSortValue"))
+                    object.beforeSortValue = $root.exocore.index.SortingValue.toObject(message.beforeSortValue, options);
                 if (message.count != null && message.hasOwnProperty("count"))
                     object.count = message.count;
                 return object;
@@ -5193,7 +5203,7 @@ export const exocore = $root.exocore = (() => {
              * @property {boolean|null} [score] Sorting score
              * @property {boolean|null} [operationId] Sorting operationId
              * @property {string|null} [field] Sorting field
-             * @property {boolean|null} [ascending] Sorting ascending
+             * @property {boolean|null} [ascending] Order of the results.
              */
 
             /**
@@ -5236,7 +5246,7 @@ export const exocore = $root.exocore = (() => {
             Sorting.prototype.field = "";
 
             /**
-             * Sorting ascending.
+             * Order of the results.
              * @member {boolean} ascending
              * @memberof exocore.index.Sorting
              * @instance
@@ -5247,7 +5257,7 @@ export const exocore = $root.exocore = (() => {
             let $oneOfFields;
 
             /**
-             * Sorting value.
+             * Value by which we want results to be sorted.
              * @member {"score"|"operationId"|"field"|undefined} value
              * @memberof exocore.index.Sorting
              * @instance
@@ -5466,6 +5476,376 @@ export const exocore = $root.exocore = (() => {
             };
 
             return Sorting;
+        })();
+
+        index.SortingValue = (function() {
+
+            /**
+             * Properties of a SortingValue.
+             * @memberof exocore.index
+             * @interface ISortingValue
+             * @property {number|null} [float] SortingValue float
+             * @property {number|Long|null} [uint64] SortingValue uint64
+             * @property {google.protobuf.ITimestamp|null} [date] SortingValue date
+             * @property {boolean|null} [min] SortingValue min
+             * @property {boolean|null} [max] SortingValue max
+             * @property {number|Long|null} [operationId] ID operation used to tie break equal results
+             */
+
+            /**
+             * Constructs a new SortingValue.
+             * @memberof exocore.index
+             * @classdesc Represents a SortingValue.
+             * @implements ISortingValue
+             * @constructor
+             * @param {exocore.index.ISortingValue=} [properties] Properties to set
+             */
+            function SortingValue(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * SortingValue float.
+             * @member {number} float
+             * @memberof exocore.index.SortingValue
+             * @instance
+             */
+            SortingValue.prototype.float = 0;
+
+            /**
+             * SortingValue uint64.
+             * @member {number|Long} uint64
+             * @memberof exocore.index.SortingValue
+             * @instance
+             */
+            SortingValue.prototype.uint64 = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * SortingValue date.
+             * @member {google.protobuf.ITimestamp|null|undefined} date
+             * @memberof exocore.index.SortingValue
+             * @instance
+             */
+            SortingValue.prototype.date = null;
+
+            /**
+             * SortingValue min.
+             * @member {boolean} min
+             * @memberof exocore.index.SortingValue
+             * @instance
+             */
+            SortingValue.prototype.min = false;
+
+            /**
+             * SortingValue max.
+             * @member {boolean} max
+             * @memberof exocore.index.SortingValue
+             * @instance
+             */
+            SortingValue.prototype.max = false;
+
+            /**
+             * ID operation used to tie break equal results
+             * @member {number|Long} operationId
+             * @memberof exocore.index.SortingValue
+             * @instance
+             */
+            SortingValue.prototype.operationId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            // OneOf field names bound to virtual getters and setters
+            let $oneOfFields;
+
+            /**
+             * SortingValue value.
+             * @member {"float"|"uint64"|"date"|"min"|"max"|undefined} value
+             * @memberof exocore.index.SortingValue
+             * @instance
+             */
+            Object.defineProperty(SortingValue.prototype, "value", {
+                get: $util.oneOfGetter($oneOfFields = ["float", "uint64", "date", "min", "max"]),
+                set: $util.oneOfSetter($oneOfFields)
+            });
+
+            /**
+             * Creates a new SortingValue instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.SortingValue
+             * @static
+             * @param {exocore.index.ISortingValue=} [properties] Properties to set
+             * @returns {exocore.index.SortingValue} SortingValue instance
+             */
+            SortingValue.create = function create(properties) {
+                return new SortingValue(properties);
+            };
+
+            /**
+             * Encodes the specified SortingValue message. Does not implicitly {@link exocore.index.SortingValue.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.SortingValue
+             * @static
+             * @param {exocore.index.ISortingValue} message SortingValue message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            SortingValue.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.float != null && message.hasOwnProperty("float"))
+                    writer.uint32(/* id 1, wireType 5 =*/13).float(message.float);
+                if (message.uint64 != null && message.hasOwnProperty("uint64"))
+                    writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.uint64);
+                if (message.date != null && message.hasOwnProperty("date"))
+                    $root.google.protobuf.Timestamp.encode(message.date, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+                if (message.min != null && message.hasOwnProperty("min"))
+                    writer.uint32(/* id 4, wireType 0 =*/32).bool(message.min);
+                if (message.max != null && message.hasOwnProperty("max"))
+                    writer.uint32(/* id 5, wireType 0 =*/40).bool(message.max);
+                if (message.operationId != null && message.hasOwnProperty("operationId"))
+                    writer.uint32(/* id 6, wireType 0 =*/48).uint64(message.operationId);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified SortingValue message, length delimited. Does not implicitly {@link exocore.index.SortingValue.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.SortingValue
+             * @static
+             * @param {exocore.index.ISortingValue} message SortingValue message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            SortingValue.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a SortingValue message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.SortingValue
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.SortingValue} SortingValue
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            SortingValue.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.SortingValue();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.float = reader.float();
+                        break;
+                    case 2:
+                        message.uint64 = reader.uint64();
+                        break;
+                    case 3:
+                        message.date = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                        break;
+                    case 4:
+                        message.min = reader.bool();
+                        break;
+                    case 5:
+                        message.max = reader.bool();
+                        break;
+                    case 6:
+                        message.operationId = reader.uint64();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a SortingValue message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.SortingValue
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.SortingValue} SortingValue
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            SortingValue.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a SortingValue message.
+             * @function verify
+             * @memberof exocore.index.SortingValue
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            SortingValue.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                let properties = {};
+                if (message.float != null && message.hasOwnProperty("float")) {
+                    properties.value = 1;
+                    if (typeof message.float !== "number")
+                        return "float: number expected";
+                }
+                if (message.uint64 != null && message.hasOwnProperty("uint64")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    if (!$util.isInteger(message.uint64) && !(message.uint64 && $util.isInteger(message.uint64.low) && $util.isInteger(message.uint64.high)))
+                        return "uint64: integer|Long expected";
+                }
+                if (message.date != null && message.hasOwnProperty("date")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    {
+                        let error = $root.google.protobuf.Timestamp.verify(message.date);
+                        if (error)
+                            return "date." + error;
+                    }
+                }
+                if (message.min != null && message.hasOwnProperty("min")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    if (typeof message.min !== "boolean")
+                        return "min: boolean expected";
+                }
+                if (message.max != null && message.hasOwnProperty("max")) {
+                    if (properties.value === 1)
+                        return "value: multiple values";
+                    properties.value = 1;
+                    if (typeof message.max !== "boolean")
+                        return "max: boolean expected";
+                }
+                if (message.operationId != null && message.hasOwnProperty("operationId"))
+                    if (!$util.isInteger(message.operationId) && !(message.operationId && $util.isInteger(message.operationId.low) && $util.isInteger(message.operationId.high)))
+                        return "operationId: integer|Long expected";
+                return null;
+            };
+
+            /**
+             * Creates a SortingValue message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.SortingValue
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.SortingValue} SortingValue
+             */
+            SortingValue.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.SortingValue)
+                    return object;
+                let message = new $root.exocore.index.SortingValue();
+                if (object.float != null)
+                    message.float = Number(object.float);
+                if (object.uint64 != null)
+                    if ($util.Long)
+                        (message.uint64 = $util.Long.fromValue(object.uint64)).unsigned = true;
+                    else if (typeof object.uint64 === "string")
+                        message.uint64 = parseInt(object.uint64, 10);
+                    else if (typeof object.uint64 === "number")
+                        message.uint64 = object.uint64;
+                    else if (typeof object.uint64 === "object")
+                        message.uint64 = new $util.LongBits(object.uint64.low >>> 0, object.uint64.high >>> 0).toNumber(true);
+                if (object.date != null) {
+                    if (typeof object.date !== "object")
+                        throw TypeError(".exocore.index.SortingValue.date: object expected");
+                    message.date = $root.google.protobuf.Timestamp.fromObject(object.date);
+                }
+                if (object.min != null)
+                    message.min = Boolean(object.min);
+                if (object.max != null)
+                    message.max = Boolean(object.max);
+                if (object.operationId != null)
+                    if ($util.Long)
+                        (message.operationId = $util.Long.fromValue(object.operationId)).unsigned = true;
+                    else if (typeof object.operationId === "string")
+                        message.operationId = parseInt(object.operationId, 10);
+                    else if (typeof object.operationId === "number")
+                        message.operationId = object.operationId;
+                    else if (typeof object.operationId === "object")
+                        message.operationId = new $util.LongBits(object.operationId.low >>> 0, object.operationId.high >>> 0).toNumber(true);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a SortingValue message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.SortingValue
+             * @static
+             * @param {exocore.index.SortingValue} message SortingValue
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            SortingValue.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults)
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.operationId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.operationId = options.longs === String ? "0" : 0;
+                if (message.float != null && message.hasOwnProperty("float")) {
+                    object.float = options.json && !isFinite(message.float) ? String(message.float) : message.float;
+                    if (options.oneofs)
+                        object.value = "float";
+                }
+                if (message.uint64 != null && message.hasOwnProperty("uint64")) {
+                    if (typeof message.uint64 === "number")
+                        object.uint64 = options.longs === String ? String(message.uint64) : message.uint64;
+                    else
+                        object.uint64 = options.longs === String ? $util.Long.prototype.toString.call(message.uint64) : options.longs === Number ? new $util.LongBits(message.uint64.low >>> 0, message.uint64.high >>> 0).toNumber(true) : message.uint64;
+                    if (options.oneofs)
+                        object.value = "uint64";
+                }
+                if (message.date != null && message.hasOwnProperty("date")) {
+                    object.date = $root.google.protobuf.Timestamp.toObject(message.date, options);
+                    if (options.oneofs)
+                        object.value = "date";
+                }
+                if (message.min != null && message.hasOwnProperty("min")) {
+                    object.min = message.min;
+                    if (options.oneofs)
+                        object.value = "min";
+                }
+                if (message.max != null && message.hasOwnProperty("max")) {
+                    object.max = message.max;
+                    if (options.oneofs)
+                        object.value = "max";
+                }
+                if (message.operationId != null && message.hasOwnProperty("operationId"))
+                    if (typeof message.operationId === "number")
+                        object.operationId = options.longs === String ? String(message.operationId) : message.operationId;
+                    else
+                        object.operationId = options.longs === String ? $util.Long.prototype.toString.call(message.operationId) : options.longs === Number ? new $util.LongBits(message.operationId.low >>> 0, message.operationId.high >>> 0).toNumber(true) : message.operationId;
+                return object;
+            };
+
+            /**
+             * Converts this SortingValue to JSON.
+             * @function toJSON
+             * @memberof exocore.index.SortingValue
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            SortingValue.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return SortingValue;
         })();
 
         index.EntityResults = (function() {
@@ -5820,7 +6200,7 @@ export const exocore = $root.exocore = (() => {
              * @interface IEntityResult
              * @property {exocore.index.IEntity|null} [entity] EntityResult entity
              * @property {exocore.index.EntityResultSource|null} [source] EntityResult source
-             * @property {string|null} [sortToken] EntityResult sortToken
+             * @property {exocore.index.ISortingValue|null} [sortingValue] EntityResult sortingValue
              */
 
             /**
@@ -5855,12 +6235,12 @@ export const exocore = $root.exocore = (() => {
             EntityResult.prototype.source = 0;
 
             /**
-             * EntityResult sortToken.
-             * @member {string} sortToken
+             * EntityResult sortingValue.
+             * @member {exocore.index.ISortingValue|null|undefined} sortingValue
              * @memberof exocore.index.EntityResult
              * @instance
              */
-            EntityResult.prototype.sortToken = "";
+            EntityResult.prototype.sortingValue = null;
 
             /**
              * Creates a new EntityResult instance using the specified properties.
@@ -5890,8 +6270,8 @@ export const exocore = $root.exocore = (() => {
                     $root.exocore.index.Entity.encode(message.entity, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 if (message.source != null && message.hasOwnProperty("source"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.source);
-                if (message.sortToken != null && message.hasOwnProperty("sortToken"))
-                    writer.uint32(/* id 3, wireType 2 =*/26).string(message.sortToken);
+                if (message.sortingValue != null && message.hasOwnProperty("sortingValue"))
+                    $root.exocore.index.SortingValue.encode(message.sortingValue, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
 
@@ -5933,7 +6313,7 @@ export const exocore = $root.exocore = (() => {
                         message.source = reader.int32();
                         break;
                     case 3:
-                        message.sortToken = reader.string();
+                        message.sortingValue = $root.exocore.index.SortingValue.decode(reader, reader.uint32());
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -5984,9 +6364,11 @@ export const exocore = $root.exocore = (() => {
                     case 2:
                         break;
                     }
-                if (message.sortToken != null && message.hasOwnProperty("sortToken"))
-                    if (!$util.isString(message.sortToken))
-                        return "sortToken: string expected";
+                if (message.sortingValue != null && message.hasOwnProperty("sortingValue")) {
+                    let error = $root.exocore.index.SortingValue.verify(message.sortingValue);
+                    if (error)
+                        return "sortingValue." + error;
+                }
                 return null;
             };
 
@@ -6021,8 +6403,11 @@ export const exocore = $root.exocore = (() => {
                     message.source = 2;
                     break;
                 }
-                if (object.sortToken != null)
-                    message.sortToken = String(object.sortToken);
+                if (object.sortingValue != null) {
+                    if (typeof object.sortingValue !== "object")
+                        throw TypeError(".exocore.index.EntityResult.sortingValue: object expected");
+                    message.sortingValue = $root.exocore.index.SortingValue.fromObject(object.sortingValue);
+                }
                 return message;
             };
 
@@ -6042,14 +6427,14 @@ export const exocore = $root.exocore = (() => {
                 if (options.defaults) {
                     object.entity = null;
                     object.source = options.enums === String ? "UNKNOWN" : 0;
-                    object.sortToken = "";
+                    object.sortingValue = null;
                 }
                 if (message.entity != null && message.hasOwnProperty("entity"))
                     object.entity = $root.exocore.index.Entity.toObject(message.entity, options);
                 if (message.source != null && message.hasOwnProperty("source"))
                     object.source = options.enums === String ? $root.exocore.index.EntityResultSource[message.source] : message.source;
-                if (message.sortToken != null && message.hasOwnProperty("sortToken"))
-                    object.sortToken = message.sortToken;
+                if (message.sortingValue != null && message.hasOwnProperty("sortingValue"))
+                    object.sortingValue = $root.exocore.index.SortingValue.toObject(message.sortingValue, options);
                 return object;
             };
 

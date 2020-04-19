@@ -50,10 +50,10 @@ message TraitPredicate {
 }
 
 message TraitQuery {
-    oneof query {
-        ReferencePredicate reference = 1;
-        MatchPredicate match = 2;
-        TraitFieldPredicate field = 3;
+    oneof predicate {
+        MatchPredicate match = 1;
+        //TODO: ReferencePredicate reference = 1;
+        //TODO: TraitFieldPredicate field = 3;
     }
 }
 

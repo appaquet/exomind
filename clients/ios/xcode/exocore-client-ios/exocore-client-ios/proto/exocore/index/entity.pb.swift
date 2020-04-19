@@ -77,6 +77,20 @@ public struct Exocore_Index_Trait {
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
+public struct Exocore_Index_Reference {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var entityID: String = String()
+
+  public var traitID: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "exocore.index"
@@ -196,6 +210,41 @@ extension Exocore_Index_Trait: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       }
       if !storagesAreEqual {return false}
     }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exocore_Index_Reference: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Reference"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "entity_id"),
+    2: .standard(proto: "trait_id"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeSingularStringField(value: &self.entityID)
+      case 2: try decoder.decodeSingularStringField(value: &self.traitID)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.entityID.isEmpty {
+      try visitor.visitSingularStringField(value: self.entityID, fieldNumber: 1)
+    }
+    if !self.traitID.isEmpty {
+      try visitor.visitSingularStringField(value: self.traitID, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Index_Reference, rhs: Exocore_Index_Reference) -> Bool {
+    if lhs.entityID != rhs.entityID {return false}
+    if lhs.traitID != rhs.traitID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

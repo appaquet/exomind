@@ -24,9 +24,19 @@ message TestMessage {
 
     google.protobuf.Timestamp date2 = 9 [(exocore.indexed) = false];
 
-    uint32 int1 = 10 [(exocore.indexed) = true];
+    google.protobuf.Timestamp date3 = 17 [(exocore.indexed) = true, (exocore.sorted) = true];
 
-    uint32 int2 = 11 [(exocore.indexed) = false];
+    uint32 uint1 = 10 [(exocore.indexed) = true];
+
+    uint32 uint2 = 11 [(exocore.indexed) = false];
+
+    uint32 uint3 = 18 [(exocore.indexed) = true, (exocore.sorted) = true];
+
+    int32 int1 = 15 [(exocore.indexed) = true];
+
+    int32 int2 = 16 [(exocore.indexed) = false];
+
+    int32 int3 = 19 [(exocore.indexed) = true, (exocore.sorted) = true];
 
     exocore.index.Reference ref1 = 13 [(exocore.indexed) = true];
 

@@ -6,7 +6,7 @@ use exocore_core::protos::generated::exocore_index::{Reference, Trait};
 use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
 use exocore_core::protos::prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt};
 
-use crate::query::QueryBuilder;
+use crate::query::{QueryBuilder, TraitQueryBuilder};
 use crate::sorting::{value_from_f32, value_from_u64, SortingValueExt};
 
 use super::*;
@@ -230,7 +230,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(results1.total, 30);
     assert_eq!(results1.mutations.len(), 10);
     assert_eq!(results1.remaining, 20);
-    let ids = extract_traits_id(results1);
+    let ids = extract_traits_id(&results1);
     assert_eq!(ids[0], "id29");
     assert_eq!(ids[9], "id20");
 
@@ -242,7 +242,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(results2.total, 30);
     assert_eq!(results2.mutations.len(), 10);
     assert_eq!(results2.remaining, 10);
-    let ids = extract_traits_id(results2);
+    let ids = extract_traits_id(&results2);
     assert_eq!(ids[0], "id19");
     assert_eq!(ids[9], "id10");
 
@@ -253,7 +253,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(results3.total, 30);
     assert_eq!(results3.mutations.len(), 10);
     assert_eq!(results3.remaining, 0);
-    let ids = extract_traits_id(results3);
+    let ids = extract_traits_id(&results3);
     assert_eq!(ids[0], "id9");
     assert_eq!(ids[9], "id0");
 
@@ -267,7 +267,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(ops[29], 0);
 
     // reversed order
-    let query = QueryBuilder::match_text("foo").order(true).build();
+    let query = QueryBuilder::match_text("foo").sort_ascending(true).build();
     let iter = index.search_all(&query)?;
     assert_eq!(iter.total_results, 30);
     let ops: Vec<OperationId> = iter.map(|r| r.operation_id).collect();
@@ -370,7 +370,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
     // ordering of multiple traits is operation id
     let results = index.search_with_trait(&pred2, None, None)?;
     assert_eq!(
-        extract_traits_id(results),
+        extract_traits_id(&results),
         vec!["trait4", "trait3", "trait2"]
     );
 
@@ -390,7 +390,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         count: 10,
     };
     let results = index.search_with_trait(&pred2, Some(&paging), None)?;
-    assert_eq!(extract_traits_id(results), vec!["trait4", "trait3"]);
+    assert_eq!(extract_traits_id(&results), vec!["trait4", "trait3"]);
 
     // only results before given modification date
     let paging = Paging {
@@ -399,7 +399,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         count: 10,
     };
     let results = index.search_with_trait(&pred2, Some(&paging), None)?;
-    assert_eq!(extract_traits_id(results), vec!["trait2"]);
+    assert_eq!(extract_traits_id(&results), vec!["trait2"]);
 
     Ok(())
 }
@@ -470,6 +470,60 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
     assert_eq!(iter.total_results, 30);
     let results = iter.collect_vec();
     assert_eq!(results.len(), 30);
+
+    Ok(())
+}
+
+#[test]
+fn sort_by_field() -> Result<(), failure::Error> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let mut index = MutationIndex::create_in_memory(config, registry)?;
+
+    let traits = (0..20).map(|i| {
+        IndexOperation::PutTrait(PutTraitMutation {
+            block_offset: Some(i),
+            operation_id: 20 - i,
+            entity_id: format!("entity_id{}", i),
+            trt: Trait {
+                id: format!("trait{}", i),
+                message: Some(
+                    TestMessage {
+                        string1: "Some Subject".to_string(),
+                        uint3: i as u32,
+                        ..Default::default()
+                    }
+                    .pack_to_any()
+                    .unwrap(),
+                ),
+                ..Default::default()
+            },
+        })
+    });
+    index.apply_operations(traits)?;
+
+    let q1 = QueryBuilder::with_trait_query(
+        "exocore.test.TestMessage",
+        TraitQueryBuilder::match_text("subject").build(),
+    )
+    .sort_by_field("uint3")
+    .with_count(10);
+    let res1 = index.search(&q1.clone().build())?;
+    let trt1 = extract_traits_id(&res1);
+    assert_eq!(trt1[0], "trait19");
+    assert_eq!(trt1[9], "trait10");
+
+    let q2 = q1.clone().with_paging(res1.next_page.unwrap());
+    let res2 = index.search(&q2.build())?;
+    let trt2 = extract_traits_id(&res2);
+    assert_eq!(trt2[0], "trait9");
+    assert_eq!(trt2[9], "trait0");
+
+    let q3 = q1.with_count(20).sort_ascending(true);
+    let res3 = index.search(&q3.build())?;
+    let trt3 = extract_traits_id(&res3);
+    assert_eq!(trt3[0], "trait0");
+    assert_eq!(trt3[19], "trait19");
 
     Ok(())
 }
@@ -832,7 +886,7 @@ fn assert_is_entity_tombstone(document_type: &MutationType) {
     }
 }
 
-fn extract_traits_id(results: MutationResults) -> Vec<String> {
+fn extract_traits_id(results: &MutationResults) -> Vec<String> {
     results
         .mutations
         .iter()

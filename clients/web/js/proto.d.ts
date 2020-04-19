@@ -2027,11 +2027,11 @@ export namespace exocore {
         /** Properties of a Paging. */
         interface IPaging {
 
-            /** Returns results after token. */
-            afterToken?: (string|null);
+            /** Returns results after this given sorting value. */
+            afterSortValue?: (exocore.index.ISortingValue|null);
 
-            /** Returns results before token. */
-            beforeToken?: (string|null);
+            /** Returns results before this given sorting value. */
+            beforeSortValue?: (exocore.index.ISortingValue|null);
 
             /** Desired results count. Default if 0. */
             count?: (number|null);
@@ -2046,11 +2046,11 @@ export namespace exocore {
              */
             constructor(properties?: exocore.index.IPaging);
 
-            /** Returns results after token. */
-            public afterToken: string;
+            /** Returns results after this given sorting value. */
+            public afterSortValue?: (exocore.index.ISortingValue|null);
 
-            /** Returns results before token. */
-            public beforeToken: string;
+            /** Returns results before this given sorting value. */
+            public beforeSortValue?: (exocore.index.ISortingValue|null);
 
             /** Desired results count. Default if 0. */
             public count: number;
@@ -2138,7 +2138,7 @@ export namespace exocore {
             /** Sorting field */
             field?: (string|null);
 
-            /** Sorting ascending */
+            /** Order of the results. */
             ascending?: (boolean|null);
         }
 
@@ -2160,10 +2160,10 @@ export namespace exocore {
             /** Sorting field. */
             public field: string;
 
-            /** Sorting ascending. */
+            /** Order of the results. */
             public ascending: boolean;
 
-            /** Sorting value. */
+            /** Value by which we want results to be sorted. */
             public value?: ("score"|"operationId"|"field");
 
             /**
@@ -2232,6 +2232,129 @@ export namespace exocore {
 
             /**
              * Converts this Sorting to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of a SortingValue. */
+        interface ISortingValue {
+
+            /** SortingValue float */
+            float?: (number|null);
+
+            /** SortingValue uint64 */
+            uint64?: (number|Long|null);
+
+            /** SortingValue date */
+            date?: (google.protobuf.ITimestamp|null);
+
+            /** SortingValue min */
+            min?: (boolean|null);
+
+            /** SortingValue max */
+            max?: (boolean|null);
+
+            /** ID operation used to tie break equal results */
+            operationId?: (number|Long|null);
+        }
+
+        /** Represents a SortingValue. */
+        class SortingValue implements ISortingValue {
+
+            /**
+             * Constructs a new SortingValue.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.ISortingValue);
+
+            /** SortingValue float. */
+            public float: number;
+
+            /** SortingValue uint64. */
+            public uint64: (number|Long);
+
+            /** SortingValue date. */
+            public date?: (google.protobuf.ITimestamp|null);
+
+            /** SortingValue min. */
+            public min: boolean;
+
+            /** SortingValue max. */
+            public max: boolean;
+
+            /** ID operation used to tie break equal results */
+            public operationId: (number|Long);
+
+            /** SortingValue value. */
+            public value?: ("float"|"uint64"|"date"|"min"|"max");
+
+            /**
+             * Creates a new SortingValue instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns SortingValue instance
+             */
+            public static create(properties?: exocore.index.ISortingValue): exocore.index.SortingValue;
+
+            /**
+             * Encodes the specified SortingValue message. Does not implicitly {@link exocore.index.SortingValue.verify|verify} messages.
+             * @param message SortingValue message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.ISortingValue, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified SortingValue message, length delimited. Does not implicitly {@link exocore.index.SortingValue.verify|verify} messages.
+             * @param message SortingValue message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.ISortingValue, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a SortingValue message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns SortingValue
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.SortingValue;
+
+            /**
+             * Decodes a SortingValue message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns SortingValue
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.SortingValue;
+
+            /**
+             * Verifies a SortingValue message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a SortingValue message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns SortingValue
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.SortingValue;
+
+            /**
+             * Creates a plain object from a SortingValue message. Also converts values to other types if specified.
+             * @param message SortingValue
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.SortingValue, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this SortingValue to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
@@ -2366,8 +2489,8 @@ export namespace exocore {
             /** EntityResult source */
             source?: (exocore.index.EntityResultSource|null);
 
-            /** EntityResult sortToken */
-            sortToken?: (string|null);
+            /** EntityResult sortingValue */
+            sortingValue?: (exocore.index.ISortingValue|null);
         }
 
         /** Represents an EntityResult. */
@@ -2385,8 +2508,8 @@ export namespace exocore {
             /** EntityResult source. */
             public source: exocore.index.EntityResultSource;
 
-            /** EntityResult sortToken. */
-            public sortToken: string;
+            /** EntityResult sortingValue. */
+            public sortingValue?: (exocore.index.ISortingValue|null);
 
             /**
              * Creates a new EntityResult instance using the specified properties.

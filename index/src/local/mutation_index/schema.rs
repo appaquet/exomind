@@ -54,6 +54,7 @@ pub(crate) struct MappedDynamicField {
 /// per message.
 pub(crate) fn build_tantivy_schema(registry: &Registry) -> (Schema, Fields) {
     let mut schema_builder = SchemaBuilder::default();
+
     let trait_type = schema_builder.add_text_field("trait_type", STRING | STORED);
     let entity_id = schema_builder.add_text_field("entity_id", STRING | STORED);
     let trait_id = schema_builder.add_text_field("trait_id", STRING | STORED);

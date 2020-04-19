@@ -12,10 +12,20 @@ pub struct TestMessage {
     pub date1: ::std::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "9")]
     pub date2: ::std::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "17")]
+    pub date3: ::std::option::Option<::prost_types::Timestamp>,
     #[prost(uint32, tag = "10")]
-    pub int1: u32,
+    pub uint1: u32,
     #[prost(uint32, tag = "11")]
-    pub int2: u32,
+    pub uint2: u32,
+    #[prost(uint32, tag = "18")]
+    pub uint3: u32,
+    #[prost(int32, tag = "15")]
+    pub int1: i32,
+    #[prost(int32, tag = "16")]
+    pub int2: i32,
+    #[prost(int32, tag = "19")]
+    pub int3: i32,
     #[prost(message, optional, tag = "13")]
     pub ref1: ::std::option::Option<super::index::Reference>,
     #[prost(message, optional, tag = "14")]
