@@ -25,7 +25,7 @@ fn index_full_pending_to_chain() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(&QueryBuilder::with_trait_name("exocore.test.TestMessage").build())?;
     let pending_res = count_results_source(&res, EntityResultSource::Pending);
     let chain_res = count_results_source(&res, EntityResultSource::Chain);
     assert_eq!(pending_res + chain_res, 5);
@@ -37,7 +37,7 @@ fn index_full_pending_to_chain() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(&QueryBuilder::with_trait_name("exocore.test.TestMessage").build())?;
     let pending_res = count_results_source(&res, EntityResultSource::Pending);
     let chain_res = count_results_source(&res, EntityResultSource::Chain);
     assert_eq!(pending_res + chain_res, 10);
@@ -48,7 +48,7 @@ fn index_full_pending_to_chain() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(&QueryBuilder::with_trait_name("exocore.test.TestMessage").build())?;
     let pending_res = count_results_source(&res, EntityResultSource::Pending);
     let chain_res = count_results_source(&res, EntityResultSource::Chain);
     assert!(chain_res >= 5, "was equal to {}", chain_res);
@@ -77,7 +77,7 @@ fn reopen_chain_index() -> Result<(), failure::Error> {
     // traits should still be indexed
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(&QueryBuilder::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 10);
 
     Ok(())
@@ -92,7 +92,7 @@ fn reopen_chain_and_pending_transition() -> Result<(), failure::Error> {
     };
 
     let mut test_index = TestEntityIndex::new_with_config(config)?;
-    let query = QueryBuilder::with_trait("exocore.test.TestMessage")
+    let query = QueryBuilder::with_trait_name("exocore.test.TestMessage")
         .with_count(100)
         .build();
 
@@ -131,7 +131,7 @@ fn reindex_pending_on_discontinuity() -> Result<(), failure::Error> {
 
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(&QueryBuilder::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 0);
 
     // trigger discontinuity, which should force reindex
@@ -142,7 +142,7 @@ fn reindex_pending_on_discontinuity() -> Result<(), failure::Error> {
     // pending is indexed
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(&QueryBuilder::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 6);
 
     Ok(())
@@ -171,7 +171,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
         .handle_chain_engine_event(Event::ChainDiverged(0))?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(&QueryBuilder::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 10);
 
     // divergence at an offset not indexed yet will just re-index pending
@@ -185,7 +185,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
         .handle_chain_engine_event(Event::ChainDiverged(chain_last_offset + 1))?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(&QueryBuilder::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 10);
 
     // divergence at an offset indexed in chain index will fail
@@ -421,7 +421,7 @@ fn query_paging() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
 
     // first page
-    let query_builder = QueryBuilder::with_trait("exocore.test.TestMessage").with_count(10);
+    let query_builder = QueryBuilder::with_trait_name("exocore.test.TestMessage").with_count(10);
     let res = test_index.index.search(&query_builder.clone().build())?;
     let entities_id = extract_results_entities_id(&res);
 
@@ -502,7 +502,7 @@ fn query_sorting() -> Result<(), failure::Error> {
     test_index.wait_operations_committed(&ops_id[0..10]);
 
     // descending
-    let qb = QueryBuilder::match_text("common").sort_ascending(false);
+    let qb = QueryBuilder::matches("common").sort_ascending(false);
     let res = test_index.index.search(&qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(10, ids.len());
@@ -510,7 +510,7 @@ fn query_sorting() -> Result<(), failure::Error> {
     assert_eq!("entity0", ids[9]);
 
     // ascending
-    let qb = QueryBuilder::match_text("common").sort_ascending(true);
+    let qb = QueryBuilder::matches("common").sort_ascending(true);
     let res = test_index.index.search(&qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(10, ids.len());
@@ -518,7 +518,7 @@ fn query_sorting() -> Result<(), failure::Error> {
     assert_eq!("entity9", ids[9]);
 
     // ascending paged
-    let qb = QueryBuilder::match_text("common")
+    let qb = QueryBuilder::matches("common")
         .sort_ascending(true)
         .with_count(5);
     let res = test_index.index.search(&qb.build())?;
@@ -527,7 +527,7 @@ fn query_sorting() -> Result<(), failure::Error> {
     assert_eq!("entity0", ids[0]);
     assert_eq!("entity4", ids[4]);
 
-    let qb = QueryBuilder::match_text("common")
+    let qb = QueryBuilder::matches("common")
         .sort_ascending(true)
         .with_paging(res.next_page.unwrap());
     let res = test_index.index.search(&qb.build())?;
@@ -549,16 +549,16 @@ fn summary_query() -> Result<(), failure::Error> {
     test_index.wait_operations_committed(&[op1, op2]);
     test_index.handle_engine_events()?;
 
-    let query = QueryBuilder::match_text("name").only_summary().build();
+    let query = QueryBuilder::matches("name").only_summary().build();
     let res = test_index.index.search(&query)?;
     assert!(res.summary);
     assert!(res.entities[0].entity.as_ref().unwrap().traits.is_empty());
 
-    let query = QueryBuilder::match_text("name").build();
+    let query = QueryBuilder::matches("name").build();
     let res = test_index.index.search(&query)?;
     assert!(!res.summary);
 
-    let query = QueryBuilder::match_text("name")
+    let query = QueryBuilder::matches("name")
         .only_summary_if_equals(res.hash)
         .build();
     let res = test_index.index.search(&query)?;

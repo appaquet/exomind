@@ -1,13 +1,14 @@
+use super::MutationIndexConfig;
+use crate::error::Error;
 use exocore_core::protos::reflect::FieldType;
 use exocore_core::protos::registry::Registry;
 use std::collections::HashMap;
 use tantivy::schema::{Field, Schema, SchemaBuilder, FAST, INDEXED, STORED, STRING, TEXT};
 use tantivy::Document;
 
-const DYNAMIC_FIELDS_COUNT: usize = 4;
-
 /// Tantitvy schema fields
 pub(crate) struct Fields {
+    pub config: MutationIndexConfig,
     pub trait_type: Field,
     pub entity_id: Field,
     pub trait_id: Field,
@@ -27,6 +28,30 @@ pub(crate) struct Fields {
     pub dynamic_mappings: DynamicFieldsMapping,
 }
 
+impl Fields {
+    pub fn get_dynamic_trait_field(
+        &self,
+        trait_name: &str,
+        field_name: &str,
+    ) -> Result<&MappedDynamicField, Error> {
+        let fields_mapping = self.dynamic_mappings.get(trait_name).ok_or_else(|| {
+            Error::QueryParsing(format!(
+                "Trait '{}' doesn\'t have any dynamic fields",
+                trait_name
+            ))
+        })?;
+
+        let field = fields_mapping.get(field_name).ok_or_else(|| {
+            Error::QueryParsing(format!(
+                "Trait '{}' doesn\'t have any dynamic field with name '{}",
+                trait_name, field_name
+            ))
+        })?;
+
+        Ok(field)
+    }
+}
+
 pub(crate) type DynamicFieldsMapping = HashMap<String, HashMap<String, MappedDynamicField>>;
 
 #[derive(Default)]
@@ -43,6 +68,7 @@ pub(crate) struct DynamicFields {
 #[derive(Debug)]
 pub(crate) struct MappedDynamicField {
     pub field: Field,
+    pub field_type: FieldType,
     pub is_fast_field: bool,
 }
 
@@ -52,7 +78,10 @@ pub(crate) struct MappedDynamicField {
 /// Because of this, we need to pre-allocate fields that will be used sequentially by fields of each
 /// registered messages. This means that we only support a limited amount of indexed/sorted fields
 /// per message.
-pub(crate) fn build_tantivy_schema(registry: &Registry) -> (Schema, Fields) {
+pub(crate) fn build_tantivy_schema(
+    config: MutationIndexConfig,
+    registry: &Registry,
+) -> (Schema, Fields) {
     let mut schema_builder = SchemaBuilder::default();
 
     let trait_type = schema_builder.add_text_field("trait_type", STRING | STORED);
@@ -69,11 +98,12 @@ pub(crate) fn build_tantivy_schema(registry: &Registry) -> (Schema, Fields) {
     let all_refs = schema_builder.add_text_field("all_refs", TEXT);
 
     let (dynamic_fields, dynamic_mappings) =
-        build_dynamic_fields_tantivy_schema(registry, &mut schema_builder);
+        build_dynamic_fields_tantivy_schema(&config, registry, &mut schema_builder);
 
     let schema = schema_builder.build();
 
     let fields = Fields {
+        config,
         trait_type,
         entity_id,
         trait_id,
@@ -97,31 +127,44 @@ pub(crate) fn build_tantivy_schema(registry: &Registry) -> (Schema, Fields) {
 /// Adds all dynamic fields to the tantivy schema based on the registered messages and creates
 /// a mapping of registered messages' fields to dynamic fields.
 fn build_dynamic_fields_tantivy_schema(
+    config: &MutationIndexConfig,
     registry: &Registry,
     builder: &mut SchemaBuilder,
 ) -> (DynamicFields, DynamicFieldsMapping) {
     let mut dyn_fields = DynamicFields::default();
 
     // create dynamic fields that will be usable by defined messages
-    for i in 0..DYNAMIC_FIELDS_COUNT {
+    for i in 0..config.dynamic_reference_fields {
         dyn_fields
             .reference
             .push(builder.add_text_field(&format!("references_{}", i), TEXT));
+    }
+    for i in 0..config.dynamic_text_fields {
         dyn_fields
             .text
             .push(builder.add_text_field(&format!("text_{}", i), TEXT));
+    }
+    for i in 0..config.dynamic_string_fields {
         dyn_fields
             .string
             .push(builder.add_text_field(&format!("string_{}", i), STRING));
+    }
+    for i in 0..config.dynamic_i64_fields {
         dyn_fields
             .i64
-            .push(builder.add_u64_field(&format!("i64_{}", i), STORED));
+            .push(builder.add_i64_field(&format!("i64_{}", i), STORED));
+    }
+    for i in 0..config.dynamic_i64_sortable_fields {
         dyn_fields
             .i64_fast
-            .push(builder.add_u64_field(&format!("i64_fast_{}", i), STORED | FAST));
+            .push(builder.add_i64_field(&format!("i64_fast_{}", i), STORED | FAST));
+    }
+    for i in 0..config.dynamic_u64_fields {
         dyn_fields
             .u64
             .push(builder.add_u64_field(&format!("u64_{}", i), STORED));
+    }
+    for i in 0..config.dynamic_u64_sortable_fields {
         dyn_fields
             .u64_fast
             .push(builder.add_u64_field(&format!("u64_fast_{}", i), STORED | FAST));
@@ -150,6 +193,7 @@ fn build_dynamic_fields_tantivy_schema(
                 if field.sorted_flag && u64_fast_fields_count < dyn_fields.u64_fast.len() {
                     let mapped_field = MappedDynamicField {
                         field: dyn_fields.u64_fast[u64_fast_fields_count],
+                        field_type: ft,
                         is_fast_field: true,
                     };
                     field_mapping.insert(field.name.clone(), mapped_field);
@@ -158,6 +202,7 @@ fn build_dynamic_fields_tantivy_schema(
                 } else if field.indexed_flag && u64_fields_count < dyn_fields.u64.len() {
                     let mapped_field = MappedDynamicField {
                         field: dyn_fields.u64[u64_fields_count],
+                        field_type: ft,
                         is_fast_field: false,
                     };
                     field_mapping.insert(field.name.clone(), mapped_field);
@@ -168,6 +213,7 @@ fn build_dynamic_fields_tantivy_schema(
                 if field.sorted_flag && i64_fast_fields_count < dyn_fields.i64_fast.len() {
                     let mapped_field = MappedDynamicField {
                         field: dyn_fields.i64_fast[i64_fast_fields_count],
+                        field_type: ft,
                         is_fast_field: true,
                     };
                     field_mapping.insert(field.name.clone(), mapped_field);
@@ -176,6 +222,7 @@ fn build_dynamic_fields_tantivy_schema(
                 } else if field.indexed_flag && i64_fields_count < dyn_fields.i64.len() {
                     let mapped_field = MappedDynamicField {
                         field: dyn_fields.i64[i64_fields_count],
+                        field_type: ft,
                         is_fast_field: false,
                     };
                     field_mapping.insert(field.name.clone(), mapped_field);
@@ -186,6 +233,7 @@ fn build_dynamic_fields_tantivy_schema(
                 if field.indexed_flag && ref_fields_count < dyn_fields.reference.len() {
                     let mapped_field = MappedDynamicField {
                         field: dyn_fields.reference[ref_fields_count],
+                        field_type: ft,
                         is_fast_field: false,
                     };
                     field_mapping.insert(field.name.clone(), mapped_field);
@@ -196,6 +244,7 @@ fn build_dynamic_fields_tantivy_schema(
                 if field.text_flag && text_fields_count < dyn_fields.text.len() {
                     let mapped_field = MappedDynamicField {
                         field: dyn_fields.text[text_fields_count],
+                        field_type: ft,
                         is_fast_field: false,
                     };
                     field_mapping.insert(field.name.clone(), mapped_field);
@@ -204,6 +253,7 @@ fn build_dynamic_fields_tantivy_schema(
                 } else if field.indexed_flag && string_fields_count < dyn_fields.string.len() {
                     let mapped_field = MappedDynamicField {
                         field: dyn_fields.string[string_fields_count],
+                        field_type: ft,
                         is_fast_field: false,
                     };
                     field_mapping.insert(field.name.clone(), mapped_field);

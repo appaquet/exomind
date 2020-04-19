@@ -18,8 +18,9 @@ use tantivy::{
 pub use config::*;
 use exocore_chain::block::BlockOffset;
 use exocore_core::protos::generated::exocore_index::{
-    entity_query::Predicate, sorting, sorting_value, trait_query, EntityQuery, MatchPredicate,
-    Paging, ReferencePredicate, Sorting, SortingValue, TraitPredicate,
+    entity_query::Predicate, sorting, sorting_value, trait_field_predicate, trait_query,
+    EntityQuery, MatchPredicate, Paging, ReferencePredicate, Sorting, SortingValue,
+    TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate,
 };
 use exocore_core::protos::prost::{Any, ProstTimestampExt};
 use exocore_core::protos::reflect;
@@ -63,7 +64,7 @@ impl MutationIndex {
         schemas: Arc<Registry>,
         directory: &Path,
     ) -> Result<MutationIndex, Error> {
-        let (tantivy_schema, fields) = schema::build_tantivy_schema(schemas.as_ref());
+        let (tantivy_schema, fields) = schema::build_tantivy_schema(config, schemas.as_ref());
         let directory = MmapDirectory::open(directory)?;
         let index = TantivyIndex::open_or_create(directory, tantivy_schema)?;
         let index_reader = index.reader()?;
@@ -88,7 +89,7 @@ impl MutationIndex {
         config: MutationIndexConfig,
         schemas: Arc<Registry>,
     ) -> Result<MutationIndex, Error> {
-        let (tantivy_schema, fields) = schema::build_tantivy_schema(schemas.as_ref());
+        let (tantivy_schema, fields) = schema::build_tantivy_schema(config, schemas.as_ref());
         let index = TantivyIndex::create_in_ram(tantivy_schema);
         let index_reader = index.reader()?;
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
@@ -251,8 +252,23 @@ impl MutationIndex {
 
         if let Some(trait_query) = &predicate.query {
             match &trait_query.predicate {
-                Some(trait_query::Predicate::Match(match_pred)) => {
-                    queries.push((Occur::Must, self.match_predicate_to_query(match_pred)?));
+                Some(trait_query::Predicate::Match(trait_pred)) => {
+                    queries.push((Occur::Must, self.match_predicate_to_query(trait_pred)?));
+                }
+                Some(trait_query::Predicate::Field(trait_pred)) => {
+                    queries.push((
+                        Occur::Must,
+                        self.trait_field_predicate_to_query(&predicate.trait_name, trait_pred)?,
+                    ));
+                }
+                Some(trait_query::Predicate::Reference(trait_pred)) => {
+                    queries.push((
+                        Occur::Must,
+                        self.trait_field_reference_predicate_to_query(
+                            &predicate.trait_name,
+                            trait_pred,
+                        )?,
+                    ));
                 }
                 None => {}
             }
@@ -326,7 +342,7 @@ impl MutationIndex {
     ) -> Result<MutationResults, Error> {
         let searcher = self.index_reader.searcher();
 
-        let query = self.reference_predicate_to_query(predicate);
+        let query = self.reference_predicate_to_query(self.fields.all_refs, predicate);
 
         let mut sorting = sorting.cloned().unwrap_or_else(Sorting::default);
         if sorting.value.is_none() {
@@ -502,29 +518,71 @@ impl MutationIndex {
         Ok(query)
     }
 
+    /// Transforms a trait's field predicate to Tantivy query.
+    fn trait_field_predicate_to_query(
+        &self,
+        trait_name: &str,
+        predicate: &TraitFieldPredicate,
+    ) -> Result<Box<dyn tantivy::query::Query>, Error> {
+        let field = self
+            .fields
+            .get_dynamic_trait_field(trait_name, &predicate.field)?;
+
+        use reflect::FieldType as FT;
+        use trait_field_predicate::Value as PV;
+        match (&field.field_type, &predicate.value) {
+            (FT::String, Some(PV::String(value))) => {
+                let term = Term::from_field_text(field.field, &value);
+                Ok(Box::new(TermQuery::new(term, IndexRecordOption::Basic)))
+            }
+            (ft, pv) => {
+                Err(
+                    Error::QueryParsing(
+                        format!(
+                            "Incompatible field type vs field value in predicate: trait_name={} field={}, field_type={:?}, value={:?}",
+                            trait_name,
+                            predicate.field,
+                            ft,
+                            pv,
+                        ))
+                )
+            }
+        }
+    }
+
+    /// Transforms a trait's field reference predicate to Tantivy query.
+    fn trait_field_reference_predicate_to_query(
+        &self,
+        trait_name: &str,
+        predicate: &TraitFieldReferencePredicate,
+    ) -> Result<Box<dyn tantivy::query::Query>, Error> {
+        let field = self
+            .fields
+            .get_dynamic_trait_field(trait_name, &predicate.field)?;
+
+        let reference = predicate
+            .reference
+            .as_ref()
+            .ok_or_else(|| Error::ProtoFieldExpected("reference"))?;
+
+        Ok(self.reference_predicate_to_query(field.field, reference))
+    }
+
     /// Transforms a reference predicate to Tantivy query.
     fn reference_predicate_to_query(
         &self,
+        field: Field,
         predicate: &ReferencePredicate,
     ) -> Box<dyn tantivy::query::Query> {
         let query: Box<dyn tantivy::query::Query> = if !predicate.trait_id.is_empty() {
             let terms = vec![
-                Term::from_field_text(
-                    self.fields.all_refs,
-                    &format!("entity{}", predicate.entity_id),
-                ),
-                Term::from_field_text(
-                    self.fields.all_refs,
-                    &format!("trait{}", predicate.trait_id),
-                ),
+                Term::from_field_text(field, &format!("entity{}", predicate.entity_id)),
+                Term::from_field_text(field, &format!("trait{}", predicate.trait_id)),
             ];
             Box::new(PhraseQuery::new(terms))
         } else {
             Box::new(TermQuery::new(
-                Term::from_field_text(
-                    self.fields.all_refs,
-                    &format!("entity{}", predicate.entity_id),
-                ),
+                Term::from_field_text(field, &format!("entity{}", predicate.entity_id)),
                 IndexRecordOption::Basic,
             ))
         };
@@ -584,25 +642,15 @@ impl MutationIndex {
                     ))
                 })?;
 
-                let fields_mapping =
-                    self.fields
-                        .dynamic_mappings
-                        .get(trait_name)
-                        .ok_or_else(|| {
-                            Error::QueryParsing(String::from(
-                            "Sorting by field only supported in trait query with a sortable field",
-                        ))
-                        })?;
-
-                let sort_field = fields_mapping
-                    .get(&field_name)
-                    .filter(|p| p.is_fast_field)
-                    .ok_or_else(|| {
-                        Error::QueryParsing(format!(
-                            "Cannot sort by field {} as it's not sortable",
-                            field_name
-                        ))
-                    })?;
+                let sort_field = self
+                    .fields
+                    .get_dynamic_trait_field(trait_name, &field_name)?;
+                if !sort_field.is_fast_field {
+                    return Err(Error::QueryParsing(format!(
+                        "Cannot sort by field '{}' as it's not sortable in  trait '{}'",
+                        field_name, trait_name,
+                    )));
+                }
 
                 let collector = self.sorted_field_collector(
                     total_count.clone(),

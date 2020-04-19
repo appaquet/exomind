@@ -53,14 +53,14 @@ pub trait ProstAnyPackMessageExt {
 
 impl<M> ProstAnyPackMessageExt for M
 where
-    M: Message + PackableMessage,
+    M: Message + NamedMessage,
 {
     fn pack_to_any(&self) -> Result<Any, Error> {
         let mut buf = Vec::new();
         self.encode(&mut buf)?;
 
         Ok(Any {
-            type_url: format!("type.googleapis.com/{}", self.full_name()),
+            type_url: format!("type.googleapis.com/{}", M::full_name()),
             value: buf,
         })
     }
@@ -76,18 +76,18 @@ where
     }
 }
 
-pub trait PackableMessage {
-    fn full_name(&self) -> &str;
+pub trait NamedMessage {
+    fn full_name() -> &'static str;
 }
 
-impl PackableMessage for TestMessage {
-    fn full_name(&self) -> &str {
+impl NamedMessage for TestMessage {
+    fn full_name() -> &'static str {
         "exocore.test.TestMessage"
     }
 }
 
-impl PackableMessage for TestMessage2 {
-    fn full_name(&self) -> &str {
+impl NamedMessage for TestMessage2 {
+    fn full_name() -> &'static str {
         "exocore.test.TestMessage2"
     }
 }

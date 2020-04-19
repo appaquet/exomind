@@ -2,13 +2,15 @@ use prost::Message;
 
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::{
-    entity_query, sorting, trait_query, EntityQuery, EntityResults, IdPredicate, MatchPredicate,
-    Paging, Sorting, TestPredicate, TraitPredicate, TraitQuery,
+    entity_query, sorting, trait_field_predicate, trait_query, EntityQuery, EntityResults,
+    IdPredicate, MatchPredicate, Paging, ReferencePredicate, Sorting, TestPredicate,
+    TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate, TraitQuery,
 };
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
 use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
-use exocore_core::protos::prost::ProstMessageExt;
+use exocore_core::protos::prost::{NamedMessage, ProstMessageExt};
 
+use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
 
 pub type WatchToken = u64;
@@ -20,7 +22,7 @@ pub struct QueryBuilder {
 }
 
 impl QueryBuilder {
-    pub fn match_text<S: Into<String>>(query: S) -> QueryBuilder {
+    pub fn matches<T: Into<String>>(query: T) -> QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Match(MatchPredicate {
@@ -31,7 +33,16 @@ impl QueryBuilder {
         }
     }
 
-    pub fn with_trait<S: Into<String>>(trait_name: S) -> QueryBuilder {
+    pub fn references<T: Into<ReferencePredicateWrapper>>(reference: T) -> QueryBuilder {
+        QueryBuilder {
+            query: EntityQuery {
+                predicate: Some(entity_query::Predicate::Reference(reference.into().0)),
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn with_trait_name<T: Into<String>>(trait_name: T) -> QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Trait(TraitPredicate {
@@ -43,7 +54,22 @@ impl QueryBuilder {
         }
     }
 
-    pub fn with_trait_query<S: Into<String>>(trait_name: S, query: TraitQuery) -> QueryBuilder {
+    pub fn with_trait<T: NamedMessage>() -> QueryBuilder {
+        QueryBuilder {
+            query: EntityQuery {
+                predicate: Some(entity_query::Predicate::Trait(TraitPredicate {
+                    trait_name: T::full_name().to_string(),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn with_trait_name_query<T: Into<String>>(
+        trait_name: T,
+        query: TraitQuery,
+    ) -> QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Trait(TraitPredicate {
@@ -55,7 +81,19 @@ impl QueryBuilder {
         }
     }
 
-    pub fn with_entity_id<S: Into<String>>(entity_id: S) -> QueryBuilder {
+    pub fn with_trait_query<T: NamedMessage>(query: TraitQuery) -> QueryBuilder {
+        QueryBuilder {
+            query: EntityQuery {
+                predicate: Some(entity_query::Predicate::Trait(TraitPredicate {
+                    trait_name: T::full_name().into(),
+                    query: Some(query),
+                })),
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn with_entity_id<E: Into<String>>(entity_id: E) -> QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Id(IdPredicate {
@@ -115,7 +153,7 @@ impl QueryBuilder {
         self
     }
 
-    pub fn sort_by_field<S: Into<String>>(mut self, field: S) -> Self {
+    pub fn sort_by_field<F: Into<String>>(mut self, field: F) -> Self {
         self.query.sorting = Some(Sorting {
             value: Some(sorting::Value::Field(field.into())),
             ..Default::default()
@@ -146,7 +184,7 @@ pub struct TraitQueryBuilder {
 }
 
 impl TraitQueryBuilder {
-    pub fn match_text<S: Into<String>>(query: S) -> TraitQueryBuilder {
+    pub fn matches<S: Into<String>>(query: S) -> TraitQueryBuilder {
         TraitQueryBuilder {
             query: TraitQuery {
                 predicate: Some(trait_query::Predicate::Match(MatchPredicate {
@@ -156,8 +194,91 @@ impl TraitQueryBuilder {
         }
     }
 
+    pub fn field_equals<F: Into<String>, V: Into<FieldPredicateValueWrapper>>(
+        field: F,
+        value: V,
+    ) -> TraitQueryBuilder {
+        TraitQueryBuilder {
+            query: TraitQuery {
+                predicate: Some(trait_query::Predicate::Field(TraitFieldPredicate {
+                    field: field.into(),
+                    value: Some(value.into().0),
+                    operator: trait_field_predicate::Operator::Equal.into(),
+                })),
+            },
+        }
+    }
+
+    pub fn field_references<F: Into<String>, V: Into<ReferencePredicateWrapper>>(
+        field: F,
+        reference: V,
+    ) -> TraitQueryBuilder {
+        TraitQueryBuilder {
+            query: TraitQuery {
+                predicate: Some(trait_query::Predicate::Reference(
+                    TraitFieldReferencePredicate {
+                        field: field.into(),
+                        reference: Some(reference.into().0),
+                    },
+                )),
+            },
+        }
+    }
+
     pub fn build(self) -> TraitQuery {
         self.query
+    }
+}
+
+pub struct FieldPredicateValueWrapper(trait_field_predicate::Value);
+
+impl Into<FieldPredicateValueWrapper> for EntityId {
+    fn into(self) -> FieldPredicateValueWrapper {
+        FieldPredicateValueWrapper(trait_field_predicate::Value::String(self))
+    }
+}
+
+impl Into<FieldPredicateValueWrapper> for &str {
+    fn into(self) -> FieldPredicateValueWrapper {
+        FieldPredicateValueWrapper(trait_field_predicate::Value::String(self.to_string()))
+    }
+}
+
+pub struct ReferencePredicateWrapper(ReferencePredicate);
+
+impl Into<ReferencePredicateWrapper> for EntityId {
+    fn into(self) -> ReferencePredicateWrapper {
+        ReferencePredicateWrapper(ReferencePredicate {
+            entity_id: self,
+            trait_id: String::new(),
+        })
+    }
+}
+
+impl Into<ReferencePredicateWrapper> for (EntityId, TraitId) {
+    fn into(self) -> ReferencePredicateWrapper {
+        ReferencePredicateWrapper(ReferencePredicate {
+            entity_id: self.0,
+            trait_id: self.1,
+        })
+    }
+}
+
+impl Into<ReferencePredicateWrapper> for &str {
+    fn into(self) -> ReferencePredicateWrapper {
+        ReferencePredicateWrapper(ReferencePredicate {
+            entity_id: self.to_string(),
+            trait_id: String::new(),
+        })
+    }
+}
+
+impl Into<ReferencePredicateWrapper> for (&str, &str) {
+    fn into(self) -> ReferencePredicateWrapper {
+        ReferencePredicateWrapper(ReferencePredicate {
+            entity_id: self.0.to_string(),
+            trait_id: self.1.to_string(),
+        })
     }
 }
 

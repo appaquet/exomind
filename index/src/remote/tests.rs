@@ -30,7 +30,7 @@ fn mutation_and_query() -> Result<(), failure::Error> {
     test_remote_store.send_and_await_mutation(mutation)?;
 
     expect_eventually(|| {
-        let query = QueryBuilder::match_text("hello").build();
+        let query = QueryBuilder::matches("hello").build();
         let results = test_remote_store.send_and_await_query(query).unwrap();
         results.entities.len() == 1
     });
@@ -82,7 +82,7 @@ fn query_timeout() -> Result<(), failure::Error> {
     // only start remote, so local won't answer and it should timeout
     test_remote_store.start_client()?;
 
-    let query = QueryBuilder::match_text("hello").build();
+    let query = QueryBuilder::matches("hello").build();
     let result = test_remote_store.send_and_await_query(query);
     assert!(result.is_err());
 
@@ -122,7 +122,7 @@ fn watched_query() -> Result<(), failure::Error> {
         .create_put_contact_mutation("entity1", "trait1", "hello");
     test_remote_store.send_and_await_mutation(mutation)?;
 
-    let query = QueryBuilder::match_text("hello").build();
+    let query = QueryBuilder::matches("hello").build();
     let mut stream = block_on_stream(test_remote_store.client_handle.watched_query(query));
 
     let results = stream.next().unwrap().unwrap();
@@ -182,7 +182,7 @@ fn watched_query_timeout() -> Result<(), failure::Error> {
         .create_put_contact_mutation("entity1", "trait1", "hello");
     test_remote_store.send_and_await_mutation(mutation)?;
 
-    let query = QueryBuilder::match_text("hello").build();
+    let query = QueryBuilder::matches("hello").build();
     let mut stream = block_on_stream(test_remote_store.client_handle.watched_query(query));
 
     let results = stream.next().unwrap().unwrap();
@@ -212,7 +212,7 @@ fn watched_drop_unregisters() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let query = QueryBuilder::match_text("hello").build();
+    let query = QueryBuilder::matches("hello").build();
     let stream = test_remote_store.client_handle.watched_query(query);
 
     // wait for watched query to registered
@@ -239,7 +239,7 @@ fn watched_cancel() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let query = QueryBuilder::match_text("hello").build();
+    let query = QueryBuilder::matches("hello").build();
     let stream = test_remote_store.client_handle.watched_query(query);
     let query_id = stream.query_id();
 
@@ -266,7 +266,7 @@ fn client_drop_stops_watched_stream() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let query = QueryBuilder::match_text("hello").build();
+    let query = QueryBuilder::matches("hello").build();
     let mut stream = block_on_stream(test_remote_store.client_handle.watched_query(query));
 
     let results = stream.next().unwrap();

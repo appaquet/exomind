@@ -52,8 +52,8 @@ message TraitPredicate {
 message TraitQuery {
     oneof predicate {
         MatchPredicate match = 1;
-        //TODO: ReferencePredicate reference = 1;
-        //TODO: TraitFieldPredicate field = 3;
+        TraitFieldPredicate field = 2;
+        TraitFieldReferencePredicate reference = 3;
     }
 }
 
@@ -67,7 +67,7 @@ message TraitFieldPredicate {
         google.protobuf.Timestamp date = 5;
     }
 
-    Operator operatior = 6;
+    Operator operator = 6;
 
     enum Operator {
         EQUAL = 0;
@@ -76,6 +76,12 @@ message TraitFieldPredicate {
         LT = 3;
         LTE = 4;
     }
+}
+
+message TraitFieldReferencePredicate {
+    string field = 1;
+
+    ReferencePredicate reference = 2;
 }
 
 message ReferencePredicate {

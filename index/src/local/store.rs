@@ -470,7 +470,7 @@ pub mod tests {
             .cluster
             .wait_operation_committed(0, response.operation_id);
 
-        let query = QueryBuilder::match_text("hello").build();
+        let query = QueryBuilder::matches("hello").build();
         let results = test_store.query(query)?;
         assert_eq!(results.entities.len(), 1);
 
@@ -504,7 +504,7 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let query = QueryBuilder::match_text("hello").build();
+        let query = QueryBuilder::matches("hello").build();
         let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
 
         let result = stream.next().unwrap();
