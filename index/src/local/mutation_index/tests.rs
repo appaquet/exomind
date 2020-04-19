@@ -70,7 +70,7 @@ fn search_by_entity_id() -> Result<(), failure::Error> {
     index.apply_operations(vec![trait1, trait2, trait3].into_iter())?;
 
     let query = Q::with_entity_id("entity_id1").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.mutations[0].block_offset, Some(1));
     assert_eq!(res.mutations[0].operation_id, 10);
@@ -78,14 +78,14 @@ fn search_by_entity_id() -> Result<(), failure::Error> {
     assert_is_put_trait(&res.mutations[0].mutation_type, "foo1");
 
     let query = Q::with_entity_id("entity_id2").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 2);
     find_put_trait(&res, "foo2");
     find_put_trait(&res, "foo3");
 
     // search all should return an iterator all results
     let query = Q::with_entity_id("entity_id2").build();
-    let iter = index.search_all(&query)?;
+    let iter = index.search_all(query)?;
     assert_eq!(iter.total_results, 2);
     let results = iter.collect_vec();
     assert_eq!(results.len(), 2);
@@ -135,12 +135,12 @@ fn search_query_matches() -> Result<(), failure::Error> {
     index.apply_operations(vec![trait1, trait2].into_iter())?;
 
     let query = Q::matches("foo").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 2);
     assert_eq!(res.mutations[0].entity_id, "entity_id1"); // foo is repeated in entity 1
 
     let query = Q::matches("bar").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 2);
     assert!(res.mutations[0]
         .sort_value
@@ -154,7 +154,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
 
     // with limit
     let query = Q::matches("foo").with_count(1).build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.remaining, 1);
     assert_eq!(res.total, 2);
@@ -166,7 +166,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
         count: 10,
     };
     let query = Q::matches("bar").with_paging(paging).build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.remaining, 0);
     assert_eq!(res.total, 2);
@@ -179,7 +179,7 @@ fn search_query_matches() -> Result<(), failure::Error> {
         count: 10,
     };
     let query = Q::matches("bar").with_paging(paging).build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.remaining, 0);
     assert_eq!(res.total, 2);
@@ -218,7 +218,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     index.apply_operations(traits)?;
 
     let query = Q::matches("foo").with_count(10).build();
-    let res1 = index.search(&query)?;
+    let res1 = index.search(query)?;
     let res1_next_page = res1.next_page.clone().unwrap();
     assert_eq!(res1.total, 30);
     assert_eq!(res1.mutations.len(), 10);
@@ -228,7 +228,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(ids[9], "id20");
 
     let query = Q::matches("foo").with_paging(res1_next_page).build();
-    let res2 = index.search(&query)?;
+    let res2 = index.search(query)?;
     let res2_next_page = res2.next_page.clone().unwrap();
     assert_eq!(res2.total, 30);
     assert_eq!(res2.mutations.len(), 10);
@@ -238,7 +238,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(ids[9], "id10");
 
     let query = Q::matches("foo").with_paging(res2_next_page).build();
-    let res3 = index.search(&query)?;
+    let res3 = index.search(query)?;
     assert_eq!(res3.total, 30);
     assert_eq!(res3.mutations.len(), 10);
     assert_eq!(res3.remaining, 0);
@@ -248,7 +248,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
 
     // search all should return an iterator over all results
     let query = Q::matches("foo").build();
-    let iter = index.search_all(&query)?;
+    let iter = index.search_all(query)?;
     assert_eq!(iter.total_results, 30);
     let ops: Vec<OperationId> = iter.map(|r| r.operation_id).collect();
     assert_eq!(ops.len(), 30);
@@ -257,7 +257,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
 
     // reversed order
     let query = Q::matches("foo").sort_ascending(true).build();
-    let iter = index.search_all(&query)?;
+    let iter = index.search_all(query)?;
     assert_eq!(iter.total_results, 30);
     let ops: Vec<OperationId> = iter.map(|r| r.operation_id).collect();
     assert_eq!(ops.len(), 30);
@@ -344,18 +344,18 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
     index.apply_operations(vec![trait4, trait3, trait2, trait1].into_iter())?;
 
     let query = Q::with_trait::<TestMessage>().build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
     assert!(find_put_trait(&res, "trt1").is_some());
 
     // ordering of multiple traits is operation id
     let query = Q::with_trait::<TestMessage2>().build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(extract_traits_id(&res), vec!["trait4", "trait3", "trait2"]);
 
     // with limit
     let query = Q::with_trait::<TestMessage2>().with_count(1).build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
 
     // only results after given modification date
@@ -365,7 +365,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         count: 10,
     };
     let query = Q::with_trait::<TestMessage2>().with_paging(paging).build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(extract_traits_id(&res), vec!["trait4", "trait3"]);
 
     // only results before given modification date
@@ -375,7 +375,7 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
         count: 10,
     };
     let query = Q::with_trait::<TestMessage2>().with_paging(paging).build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(extract_traits_id(&res), vec!["trait2"]);
 
     Ok(())
@@ -409,7 +409,7 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
     index.apply_operations(traits)?;
 
     let query = Q::with_trait::<TestMessage>().with_count(10).build();
-    let res1 = index.search(&query)?;
+    let res1 = index.search(query)?;
     assert_eq!(res1.total, 30);
     assert_eq!(res1.remaining, 20);
     assert_eq!(res1.mutations.len(), 10);
@@ -419,7 +419,7 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
     let query = Q::with_trait::<TestMessage>()
         .with_paging(res1.next_page.unwrap())
         .build();
-    let res2 = index.search(&query)?;
+    let res2 = index.search(query)?;
     assert_eq!(res2.total, 30);
     assert_eq!(res2.remaining, 10);
     assert_eq!(res2.mutations.len(), 10);
@@ -429,7 +429,7 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
     let query = Q::with_trait::<TestMessage>()
         .with_paging(res2.next_page.unwrap())
         .build();
-    let res3 = index.search(&query)?;
+    let res3 = index.search(query)?;
     assert_eq!(res3.total, 30);
     assert_eq!(res3.remaining, 0);
     assert_eq!(res3.mutations.len(), 10);
@@ -438,7 +438,7 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
 
     // search all should return an iterator over all results
     let query = Q::with_trait::<TestMessage>().build();
-    let iter = index.search_all(&query)?;
+    let iter = index.search_all(query)?;
     assert_eq!(iter.total_results, 30);
     let results = iter.collect_vec();
     assert_eq!(results.len(), 30);
@@ -547,7 +547,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
 
     let search = |entity: &str, trt: &str| {
         let query = Q::references((entity, trt)).build();
-        index.search(&query).unwrap()
+        index.search(query).unwrap()
     };
 
     {
@@ -580,7 +580,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
             "exocore.test.TestMessage",
             TQ::field_references("ref1", "et1").build(),
         );
-        let res = index.search(&query.build())?;
+        let res = index.search(query.build())?;
         assert_eq!(res.mutations.len(), 1);
         find_put_trait(&res, "trt1");
 
@@ -588,7 +588,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
             "exocore.test.TestMessage",
             TQ::field_references("ref1", ("et1", "trt1")).build(),
         );
-        let res = index.search(&query.build())?;
+        let res = index.search(query.build())?;
         assert_eq!(res.mutations.len(), 1);
         find_put_trait(&res, "trt1");
 
@@ -596,7 +596,7 @@ fn search_by_reference() -> Result<(), failure::Error> {
             "exocore.test.TestMessage",
             TQ::field_references("ref1", ("et1", "trt2")).build(),
         );
-        let res = index.search(&query.build())?;
+        let res = index.search(query.build())?;
         assert_eq!(res.mutations.len(), 0);
     }
 
@@ -647,7 +647,7 @@ fn search_by_trait_field() -> Result<(), failure::Error> {
         "exocore.test.TestMessage",
         TQ::field_equals("string3", "foo").build(),
     );
-    let res = index.search(&query.build())?;
+    let res = index.search(query.build())?;
     assert_eq!(res.mutations.len(), 1);
     find_put_trait(&res, "trt1");
 
@@ -655,7 +655,7 @@ fn search_by_trait_field() -> Result<(), failure::Error> {
         "exocore.test.TestMessage",
         TQ::field_equals("string3", "bar").build(),
     );
-    let res = index.search(&query.build())?;
+    let res = index.search(query.build())?;
     assert_eq!(res.mutations.len(), 1);
     find_put_trait(&res, "trt2");
 
@@ -750,7 +750,7 @@ fn put_unregistered_trait() -> Result<(), failure::Error> {
     }))?;
 
     let query = Q::with_trait_name("not.registered.Message").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
 
     Ok(())
@@ -781,13 +781,13 @@ fn delete_operation_id_mutation() -> Result<(), failure::Error> {
     index.apply_operation(trait1)?;
 
     let query = Q::matches("foo").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
 
     index.apply_operation(IndexOperation::DeleteOperation(1234))?;
 
     let query = Q::matches("foo").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 0);
 
     Ok(())
@@ -826,11 +826,11 @@ fn put_trait_tombstone() -> Result<(), failure::Error> {
     index.apply_operation(trait1)?;
 
     let query = Q::with_entity_id("entity_id1").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_is_trait_tombstone(&res.mutations.first().unwrap().mutation_type, "foo1");
 
     let query = Q::with_entity_id("entity_id2").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_is_put_trait(&res.mutations.first().unwrap().mutation_type, "foo2");
 
     Ok(())
@@ -850,7 +850,7 @@ fn put_entity_tombstone() -> Result<(), failure::Error> {
     index.apply_operation(trait1)?;
 
     let query = Q::with_entity_id("entity_id1").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     assert_is_entity_tombstone(&res.mutations.first().unwrap().mutation_type);
 
     Ok(())
@@ -885,7 +885,7 @@ fn trait_dates() -> Result<(), failure::Error> {
     index.apply_operation(trait1)?;
 
     let query = Q::with_entity_id("entity_id1").build();
-    let res = index.search(&query)?;
+    let res = index.search(query)?;
     let trait_meta = find_put_trait(&res, "foo1").unwrap();
     let trait_put = assert_is_put_trait(&trait_meta.mutation_type, "foo1");
     assert_eq!(creation_date, trait_put.creation_date.unwrap());

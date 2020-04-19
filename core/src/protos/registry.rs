@@ -96,9 +96,10 @@ impl Registry {
                 id: field.get_number() as u32,
                 name: field.get_name().to_string(),
                 field_type,
-                indexed_flag: Registry::field_has_options(field, 1373), // see exocore/index/options.proto
-                sorted_flag: Registry::field_has_options(field, 1374),
-                text_flag: Registry::field_has_options(field, 1375),
+                indexed_flag: Registry::field_has_option(field, 1373), /* see exocore/index/
+                                                                        * options.proto */
+                sorted_flag: Registry::field_has_option(field, 1374),
+                text_flag: Registry::field_has_option(field, 1375),
             })
         }
 
@@ -149,8 +150,8 @@ impl Registry {
         message_descriptors.values().cloned().collect()
     }
 
-    fn field_has_options(field: &FieldDescriptorProto, field_id: u32) -> bool {
-        if let Some(indexed_value) = field.get_options().unknown_fields.get(field_id) {
+    fn field_has_option(field: &FieldDescriptorProto, option_field_id: u32) -> bool {
+        if let Some(indexed_value) = field.get_options().unknown_fields.get(option_field_id) {
             ProtobufTypeBool::get_from_unknown(indexed_value).unwrap_or(false)
         } else {
             false

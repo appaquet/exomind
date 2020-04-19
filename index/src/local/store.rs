@@ -24,9 +24,9 @@ use super::entity_index::EntityIndex;
 /// Locally persisted entities store allowing mutation and queries on entities
 /// and their traits.
 ///
-/// It forwards mutation requests to the chain engine, receives back chain events
-/// that get indexed by the entities index. Queries are executed by the entities
-/// index.
+/// It forwards mutation requests to the chain engine, receives back chain
+/// events that get indexed by the entities index. Queries are executed by the
+/// entities index.
 pub struct Store<CS, PS>
 where
     CS: exocore_chain::chain::ChainStore,
@@ -267,7 +267,7 @@ where
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
-            inner.index.search(&query)
+            inner.index.search(query)
         })
         .await;
 

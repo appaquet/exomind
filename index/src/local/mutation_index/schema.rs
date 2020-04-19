@@ -72,12 +72,13 @@ pub(crate) struct MappedDynamicField {
     pub is_fast_field: bool,
 }
 
-/// Builds Tantivy schema required for mutations related queries and registered messages fields.
+/// Builds Tantivy schema required for mutations related queries and registered
+/// messages fields.
 ///
 /// Tantivy doesn't support dynamic schema yet: https://github.com/tantivy-search/tantivy/issues/301
-/// Because of this, we need to pre-allocate fields that will be used sequentially by fields of each
-/// registered messages. This means that we only support a limited amount of indexed/sorted fields
-/// per message.
+/// Because of this, we need to pre-allocate fields that will be used
+/// sequentially by fields of each registered messages. This means that we only
+/// support a limited amount of indexed/sorted fields per message.
 pub(crate) fn build_tantivy_schema(
     config: MutationIndexConfig,
     registry: &Registry,
@@ -124,8 +125,9 @@ pub(crate) fn build_tantivy_schema(
     (schema, fields)
 }
 
-/// Adds all dynamic fields to the tantivy schema based on the registered messages and creates
-/// a mapping of registered messages' fields to dynamic fields.
+/// Adds all dynamic fields to the tantivy schema based on the registered
+/// messages and creates a mapping of registered messages' fields to dynamic
+/// fields.
 fn build_dynamic_fields_tantivy_schema(
     config: &MutationIndexConfig,
     registry: &Registry,
@@ -170,7 +172,8 @@ fn build_dynamic_fields_tantivy_schema(
             .push(builder.add_u64_field(&format!("u64_fast_{}", i), STORED | FAST));
     }
 
-    // map fields of each message in registry that need to be indexed / sortable to dynamic fields
+    // map fields of each message in registry that need to be indexed / sortable to
+    // dynamic fields
     let mut dyn_mappings = HashMap::new();
     let message_descriptors = registry.message_descriptors();
     for message_descriptor in message_descriptors {

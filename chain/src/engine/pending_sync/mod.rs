@@ -177,8 +177,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
     /// For each range, actions include:
     ///   * Doing nothing if both remote and local are equals
-    ///   * Sending full operations if remote is empty while we have operations locally
-    ///   * Sending headers operations if we differences without any headers to compared with
+    ///   * Sending full operations if remote is empty while we have operations
+    ///     locally
+    ///   * Sending headers operations if we differences without any headers to
+    ///     compared with
     ///   * Diffing our headers vs remote headers if headers are included.
 
     /// In any case, if the range includes operations, we always apply them

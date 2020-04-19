@@ -26,13 +26,15 @@ use super::mutation_index::{IndexOperation, MutationIndex, MutationType};
 use super::top_results::RescoredTopResultsIterable;
 
 mod config;
+pub use config::*;
 mod entity_mutations;
+pub use entity_mutations::*;
+use std::borrow::Borrow;
+
 #[cfg(test)]
 mod test_index;
 #[cfg(test)]
 mod tests;
-pub use config::*;
-pub use entity_mutations::*;
 
 /// Manages and index entities and their traits stored in the chain and pending
 /// store of the chain layer. The index accepts mutation from the chain layer
@@ -101,8 +103,8 @@ where
         self.handle_chain_engine_events(std::iter::once(event))
     }
 
-    /// Handle events coming from the chain layer. These events allow keeping the
-    /// index consistent with the chain layer, up to the consistency
+    /// Handle events coming from the chain layer. These events allow keeping
+    /// the index consistent with the chain layer, up to the consistency
     /// guarantees that the layer offers.
 
     /// Since the events stream is buffered, we may receive a discontinuity if
@@ -191,7 +193,8 @@ where
 
     /// Execute a search query on the indices, and returning all entities
     /// matching the query.
-    pub fn search(&self, query: &EntityQuery) -> Result<EntityResults, Error> {
+    pub fn search<Q: Borrow<EntityQuery>>(&self, query: Q) -> Result<EntityResults, Error> {
+        let query = query.borrow();
         let current_page = query
             .paging
             .clone()
@@ -251,10 +254,9 @@ where
                 matched_entities.insert(trait_meta.entity_id.clone());
 
                 // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
-                // wraps sort token in Rc since it may get cloned a few times in rescoring
-                let sort_token = trait_meta.sort_value.clone();
-                if sort_token.value.is_within_page_bound(&current_page) {
-                    Some((trait_meta, traits_meta, source, sort_token))
+                let sort_value = trait_meta.sort_value.clone();
+                if sort_value.value.is_within_page_bound(&current_page) {
+                    Some((trait_meta, traits_meta, source, sort_value))
                 } else {
                     None
                 }
@@ -264,15 +266,15 @@ where
             // other traits
             .top_negatively_rescored_results(
                 current_page.count as usize,
-                |(_trait_result, _traits, _source, sort_token)| {
-                    (sort_token.clone(), sort_token.clone())
+                |(_trait_result, _traits, _source, sort_value)| {
+                    (sort_value.clone(), sort_value.clone())
                 },
             )
             // accumulate results
             .fold(
                 (Vec::new(), Vec::new()),
                 |(mut entities_results, mut all_traits_results),
-                 (trait_result, traits_results, source, sort_token)| {
+                 (trait_result, traits_results, source, sort_value)| {
                     hasher.write_u64(traits_results.hash);
                     let entity = Entity {
                         id: trait_result.entity_id,
@@ -282,7 +284,7 @@ where
                     entities_results.push(EntityResult {
                         entity: Some(entity),
                         source: source.into(),
-                        sorting_value: Some(sort_token.value.clone()),
+                        sorting_value: Some(sort_value.value.clone()),
                     });
 
                     all_traits_results.push(traits_results);

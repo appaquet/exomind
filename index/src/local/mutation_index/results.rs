@@ -6,19 +6,20 @@ use chrono::{DateTime, Utc};
 use exocore_chain::block::BlockOffset;
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_index::{EntityQuery, Paging};
+use std::borrow::Borrow;
 use std::rc::Rc;
 
 /// Iterates through all results matching a given initial query using the
 /// next_page score when a page got emptied.
-pub struct MutationResultsIterator<'i, 'q> {
+pub struct MutationResultsIterator<'i, Q: Borrow<EntityQuery>> {
     pub index: &'i MutationIndex,
-    pub query: &'q EntityQuery,
+    pub query: Q,
     pub total_results: usize,
     pub current_results: std::vec::IntoIter<MutationMetadata>,
     pub next_page: Option<Paging>,
 }
 
-impl<'i, 'q> Iterator for MutationResultsIterator<'i, 'q> {
+impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultsIterator<'i, Q> {
     type Item = MutationMetadata;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -26,7 +27,7 @@ impl<'i, 'q> Iterator for MutationResultsIterator<'i, 'q> {
         if let Some(next_result) = next_result {
             Some(next_result)
         } else {
-            let mut query = self.query.clone();
+            let mut query = self.query.borrow().clone();
             query.paging = Some(self.next_page.clone()?);
 
             let results = self

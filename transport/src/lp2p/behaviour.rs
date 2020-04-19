@@ -19,8 +19,10 @@ const DEFAULT_DIALING_MESSAGE_TIMEOUT: Duration = Duration::from_secs(5);
 ///
 /// This manages:
 ///   * Peers that we want to be connected to.
-///   * Incoming messages from the protocol handler, to be dispatched via Exocore's transport.
-///   * Outgoing messages from Exocore's transport to be dispatched to the protocol handler.
+///   * Incoming messages from the protocol handler, to be dispatched via
+///     Exocore's transport.
+///   * Outgoing messages from Exocore's transport to be dispatched to the
+///     protocol handler.
 pub struct ExocoreBehaviour {
     actions: VecDeque<BehaviourAction>,
     peers: HashMap<PeerId, Peer>,

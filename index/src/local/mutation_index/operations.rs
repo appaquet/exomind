@@ -9,7 +9,8 @@ use smallvec::SmallVec;
 
 /// Operation to be executed on the entities mutations index.
 pub enum IndexOperation {
-    /// Mutation that puts a new version of a trait at a new position in chain or pending
+    /// Mutation that puts a new version of a trait at a new position in chain
+    /// or pending
     PutTrait(PutTraitMutation),
 
     /// Mutation that marks a trait has being deleted without deleting it.
@@ -43,7 +44,8 @@ pub struct PutEntityTombstoneMutation {
 }
 
 impl IndexOperation {
-    /// Creates an index operation from an engine operation stored in the pending store of the chain layer.
+    /// Creates an index operation from an engine operation stored in the
+    /// pending store of the chain layer.
     pub fn from_pending_engine_operation(
         operation: EngineOperation,
     ) -> SmallVec<[IndexOperation; 1]> {
@@ -112,7 +114,8 @@ impl IndexOperation {
         }
     }
 
-    /// Creates an index operation from an engine operation store in the chain of the chain layer
+    /// Creates an index operation from an engine operation store in the chain
+    /// of the chain layer
     pub fn from_chain_engine_operation(
         operation: EngineOperation,
         block_offset: BlockOffset,

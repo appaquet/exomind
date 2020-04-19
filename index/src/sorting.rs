@@ -2,8 +2,9 @@ use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_index::{sorting_value, Paging, SortingValue};
 use std::cmp::Ordering;
 
-/// Wraps a trait or entities search result's sorting value so that it can be easily reversed when required
-/// or ignored if it's outside of the requested paging.
+/// Wraps a trait or entities search result's sorting value so that it can be
+/// easily reversed when required or ignored if it's outside of the requested
+/// paging.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SortingValueWrapper {
     pub value: SortingValue,

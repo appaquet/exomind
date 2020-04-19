@@ -9,8 +9,8 @@ use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hasher;
 
-/// Mutations metadata of an entity as retrieved from the mutations index, as opposed
-/// as being complete from the chain layer.
+/// Mutations metadata of an entity as retrieved from the mutations index, as
+/// opposed as being complete from the chain layer.
 pub struct EntityMutations {
     // final traits of the entity once all mutations were aggregated
     pub traits: HashMap<TraitId, MutationMetadata>,

@@ -31,6 +31,7 @@ pub use results::*;
 
 use crate::error::Error;
 use crate::sorting::SortingValueWrapper;
+use failure::_core::borrow::Borrow;
 
 mod config;
 mod operations;
@@ -41,13 +42,13 @@ mod tests;
 
 const SEARCH_ENTITY_ID_LIMIT: usize = 1_000_000;
 
-/// Index (full-text & fields) for entities & traits mutations stored in the chain. Each
-/// mutation is individually indexed as a single document.
+/// Index (full-text & fields) for entities & traits mutations stored in the
+/// chain. Each mutation is individually indexed as a single document.
 ///
-/// This index is used to index both the chain, and the pending store mutations. The chain
-/// index is stored on disk, while the pending is stored in-memory. Deletions are handled
-/// by using tombstones that are eventually compacted by the store once the number of mutations
-/// is too high on an entity.
+/// This index is used to index both the chain, and the pending store mutations.
+/// The chain index is stored on disk, while the pending is stored in-memory.
+/// Deletions are handled by using tombstones that are eventually compacted by
+/// the store once the number of mutations is too high on an entity.
 pub struct MutationIndex {
     config: MutationIndexConfig,
     index: TantivyIndex,
@@ -108,15 +109,16 @@ impl MutationIndex {
         })
     }
 
-    /// Apply a single operation on the index. A costly commit & refresh is done at each
-    /// operation, so `apply_operations` should be used for multiple operations.
+    /// Apply a single operation on the index. A costly commit & refresh is done
+    /// at each operation, so `apply_operations` should be used for multiple
+    /// operations.
     #[cfg(test)]
     fn apply_operation(&mut self, operation: IndexOperation) -> Result<(), Error> {
         self.apply_operations(Some(operation).into_iter())
     }
 
-    /// Apply an iterator of operations on the index, with a single atomic commit at the end
-    /// of the iteration.
+    /// Apply an iterator of operations on the index, with a single atomic
+    /// commit at the end of the iteration.
     pub fn apply_operations<T>(&mut self, operations: T) -> Result<(), Error>
     where
         T: Iterator<Item = IndexOperation>,
@@ -193,7 +195,8 @@ impl MutationIndex {
 
     /// Execute a query on the index and return a page of mutations matching the
     /// query.
-    pub fn search(&self, query: &EntityQuery) -> Result<MutationResults, Error> {
+    pub fn search<Q: Borrow<EntityQuery>>(&self, query: Q) -> Result<MutationResults, Error> {
+        let query = query.borrow();
         let predicate = query
             .predicate
             .as_ref()
@@ -215,11 +218,11 @@ impl MutationIndex {
 
     /// Execute a query on the index and return an iterator over all matching
     /// mutations.
-    pub fn search_all<'i, 'q>(
-        &'i self,
-        query: &'q EntityQuery,
-    ) -> Result<MutationResultsIterator<'i, 'q>, Error> {
-        let results = self.search(query)?;
+    pub fn search_all<Q: Borrow<EntityQuery>>(
+        &self,
+        query: Q,
+    ) -> Result<MutationResultsIterator<Q>, Error> {
+        let results = self.search(query.borrow())?;
 
         Ok(MutationResultsIterator {
             index: self,
@@ -230,8 +233,9 @@ impl MutationIndex {
         })
     }
 
-    /// Execute a search by trait type query and return traits in operations id descending order.
-    pub fn search_with_trait(
+    /// Execute a search by trait type query and return traits in operations id
+    /// descending order.
+    fn search_with_trait(
         &self,
         predicate: &TraitPredicate,
         paging: Option<&Paging>,
@@ -285,7 +289,7 @@ impl MutationIndex {
     }
 
     /// Execute a search by text query
-    pub fn search_matches(
+    fn search_matches(
         &self,
         predicate: &MatchPredicate,
         paging: Option<&Paging>,
@@ -333,8 +337,9 @@ impl MutationIndex {
         })
     }
 
-    /// Executes a search for traits that have the given reference to another entity and optionally trait.
-    pub fn search_reference(
+    /// Executes a search for traits that have the given reference to another
+    /// entity and optionally trait.
+    fn search_reference(
         &self,
         predicate: &ReferencePredicate,
         paging: Option<&Paging>,
@@ -396,7 +401,8 @@ impl MutationIndex {
         Ok(doc)
     }
 
-    /// Fills a Tantivy document to be indexed with indexable/sortable fields of the given registered message.
+    /// Fills a Tantivy document to be indexed with indexable/sortable fields of
+    /// the given registered message.
     fn trait_message_to_document(
         &self,
         doc: &mut Document,
@@ -589,8 +595,8 @@ impl MutationIndex {
         query
     }
 
-    /// Execute query on Tantivy index by taking paging, sorting into consideration and
-    /// returns paged results.
+    /// Execute query on Tantivy index by taking paging, sorting into
+    /// consideration and returns paged results.
     fn execute_results_tantivy_query<S>(
         &self,
         searcher: S,
@@ -743,8 +749,8 @@ impl MutationIndex {
         Ok(results)
     }
 
-    /// Creates a Tantivy top document collectors that sort by the given fast field and limits the result
-    /// by the requested paging.
+    /// Creates a Tantivy top document collectors that sort by the given fast
+    /// field and limits the result by the requested paging.
     fn sorted_field_collector(
         &self,
         total_count: Arc<AtomicUsize>,
@@ -816,8 +822,8 @@ impl MutationIndex {
         )
     }
 
-    /// Creates a Tantivy top document collectors that sort by full text matching score and limits the result
-    /// by the requested paging.
+    /// Creates a Tantivy top document collectors that sort by full text
+    /// matching score and limits the result by the requested paging.
     fn match_score_collector(
         &self,
         total_count: Arc<AtomicUsize>,
