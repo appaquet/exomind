@@ -1,13 +1,14 @@
+use exocore_core::protos::generated::exocore_index::Paging;
 use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::prost::ProstTimestampExt;
+use test_index::*;
 
+use crate::local::mutation_index::MutationResults;
 use crate::mutation::MutationBuilder;
-use crate::query::QueryBuilder;
+use crate::query::QueryBuilder as Q;
+use crate::sorting::{value_from_u64, value_max};
 
 use super::*;
-use crate::local::mutation_index::MutationResults;
-
-use test_index::*;
 
 #[test]
 fn index_full_pending_to_chain() -> Result<(), failure::Error> {
@@ -24,7 +25,7 @@ fn index_full_pending_to_chain() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(Q::with_trait_name("exocore.test.TestMessage").build())?;
     let pending_res = count_results_source(&res, EntityResultSource::Pending);
     let chain_res = count_results_source(&res, EntityResultSource::Chain);
     assert_eq!(pending_res + chain_res, 5);
@@ -36,7 +37,7 @@ fn index_full_pending_to_chain() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(Q::with_trait_name("exocore.test.TestMessage").build())?;
     let pending_res = count_results_source(&res, EntityResultSource::Pending);
     let chain_res = count_results_source(&res, EntityResultSource::Chain);
     assert_eq!(pending_res + chain_res, 10);
@@ -47,7 +48,7 @@ fn index_full_pending_to_chain() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(Q::with_trait_name("exocore.test.TestMessage").build())?;
     let pending_res = count_results_source(&res, EntityResultSource::Pending);
     let chain_res = count_results_source(&res, EntityResultSource::Chain);
     assert!(chain_res >= 5, "was equal to {}", chain_res);
@@ -76,7 +77,7 @@ fn reopen_chain_index() -> Result<(), failure::Error> {
     // traits should still be indexed
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(Q::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 10);
 
     Ok(())
@@ -91,7 +92,7 @@ fn reopen_chain_and_pending_transition() -> Result<(), failure::Error> {
     };
 
     let mut test_index = TestEntityIndex::new_with_config(config)?;
-    let query = QueryBuilder::with_trait("exocore.test.TestMessage")
+    let query = Q::with_trait_name("exocore.test.TestMessage")
         .with_count(100)
         .build();
 
@@ -130,7 +131,7 @@ fn reindex_pending_on_discontinuity() -> Result<(), failure::Error> {
 
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(Q::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 0);
 
     // trigger discontinuity, which should force reindex
@@ -141,7 +142,7 @@ fn reindex_pending_on_discontinuity() -> Result<(), failure::Error> {
     // pending is indexed
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(Q::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 6);
 
     Ok(())
@@ -170,7 +171,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
         .handle_chain_engine_event(Event::ChainDiverged(0))?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(Q::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 10);
 
     // divergence at an offset not indexed yet will just re-index pending
@@ -184,7 +185,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
         .handle_chain_engine_event(Event::ChainDiverged(chain_last_offset + 1))?;
     let res = test_index
         .index
-        .search(&QueryBuilder::with_trait("exocore.test.TestMessage").build())?;
+        .search(Q::with_trait_name("exocore.test.TestMessage").build())?;
     assert_eq!(res.entities.len(), 10);
 
     // divergence at an offset indexed in chain index will fail
@@ -220,10 +221,13 @@ fn delete_entity_trait() -> Result<(), failure::Error> {
     assert_eq!(entity.traits.len(), 1);
 
     let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
-    assert!(pending_res.results.iter().any(|r| match &r.mutation_type {
-        MutationMetadataType::TraitTombstone(_) => true,
-        _ => false,
-    }));
+    assert!(pending_res
+        .mutations
+        .iter()
+        .any(|r| match &r.mutation_type {
+            MutationType::TraitTombstone(_) => true,
+            _ => false,
+        }));
 
     // now bury the deletion under 1 block, which should delete for real the trait
     let op_id = test_index.put_test_trait("entity2", "trait2", "name1")?;
@@ -243,24 +247,24 @@ fn delete_all_entity_traits() -> Result<(), failure::Error> {
     test_index.wait_operations_committed(&[op1, op2]);
     test_index.handle_engine_events()?;
 
-    let query = QueryBuilder::with_entity_id("entity1").build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::with_entity_id("entity1").build();
+    let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
     let op_id = test_index.delete_trait("entity1", "trait1")?;
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
 
-    let query = QueryBuilder::with_entity_id("entity1").build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::with_entity_id("entity1").build();
+    let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
     let op_id = test_index.delete_trait("entity1", "trait2")?;
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
 
-    let query = QueryBuilder::with_entity_id("entity1").build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::with_entity_id("entity1").build();
+    let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
 
     Ok(())
@@ -279,15 +283,15 @@ fn delete_entity() -> Result<(), failure::Error> {
     test_index.wait_operations_committed(&[op1, op2]);
     test_index.handle_engine_events()?;
 
-    let query = QueryBuilder::with_entity_id("entity1").build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::with_entity_id("entity1").build();
+    let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
     let op_id = test_index.write_mutation(MutationBuilder::delete_entity("entity1"))?;
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
-    let query = QueryBuilder::with_entity_id("entity1").build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::with_entity_id("entity1").build();
+    let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
 
     // now bury the deletion under 1 block, which should delete for real the trait
@@ -296,8 +300,8 @@ fn delete_entity() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
 
     // should still be deleted
-    let query = QueryBuilder::with_entity_id("entity1").build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::with_entity_id("entity1").build();
+    let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
 
     Ok(())
@@ -323,8 +327,8 @@ fn traits_compaction() -> Result<(), failure::Error> {
     assert_eq!(vec![op1, op2, op3], ops);
 
     // mut entity has only 1 trait since all ops are on same trait
-    let query = QueryBuilder::with_entity_id("entity1").build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::with_entity_id("entity1").build();
+    let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
     let traits_msgs = extract_result_messages(&res.entities[0]);
     assert_eq!(traits_msgs.len(), 1);
@@ -351,7 +355,10 @@ fn traits_compaction() -> Result<(), failure::Error> {
             .to_timestamp_nanos()
     );
 
-    let new_trait = TestEntityIndex::new_test_trait("trait1", "op4")?;
+    // push a compaction operation
+    let mut new_trait = TestEntityIndex::new_test_trait("trait1", "op4")?;
+    new_trait.creation_date = traits_msgs[0].0.creation_date.clone();
+    new_trait.modification_date = traits_msgs[0].0.modification_date.clone();
     let op_id = test_index.write_mutation(MutationBuilder::compact_traits(
         "entity1",
         new_trait,
@@ -360,24 +367,35 @@ fn traits_compaction() -> Result<(), failure::Error> {
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
 
-    // dates should still be the same even if we compacted the traits
+    // make sure compaction gets indexed by appending another op
+    let op4 = test_index.put_test_trait("entity_other", "trait1", "op3")?;
+    test_index.wait_operations_committed(&[op4]);
+    test_index.handle_engine_events()?;
+
+    // re-query, dates should still be the same even if we compacted the traits
+    let query = Q::with_entity_id("entity1").build();
+    let res = test_index.index.search(query)?;
+    assert_eq!(res.entities.len(), 1);
+    let traits_msgs = extract_result_messages(&res.entities[0]);
+    assert_eq!(traits_msgs.len(), 1);
+
     assert_eq!(
-        op1,
         traits_msgs[0]
             .0
             .creation_date
             .as_ref()
             .unwrap()
-            .to_timestamp_nanos()
+            .to_timestamp_nanos(),
+        op1,
     );
     assert_eq!(
-        op3,
         traits_msgs[0]
             .0
             .modification_date
             .as_ref()
             .unwrap()
-            .to_timestamp_nanos()
+            .to_timestamp_nanos(),
+        op3,
     );
 
     Ok(())
@@ -403,8 +421,8 @@ fn query_paging() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
 
     // first page
-    let query_builder = QueryBuilder::with_trait("exocore.test.TestMessage").with_count(10);
-    let res = test_index.index.search(&query_builder.clone().build())?;
+    let query_builder = Q::with_trait_name("exocore.test.TestMessage").with_count(10);
+    let res = test_index.index.search(query_builder.clone().build())?;
     let entities_id = extract_results_entities_id(&res);
 
     // estimated, since it may be in pending and chain store
@@ -414,61 +432,107 @@ fn query_paging() -> Result<(), failure::Error> {
 
     // second page
     let query_builder = query_builder.with_paging(res.next_page.unwrap());
-    let res = test_index.index.search(&query_builder.clone().build())?;
+    let res = test_index.index.search(query_builder.clone().build())?;
     let entities_id = extract_results_entities_id(&res);
     assert!(entities_id.contains(&"entity19"));
     assert!(entities_id.contains(&"entity10"));
 
     // third page
     let query_builder = query_builder.with_paging(res.next_page.unwrap());
-    let res = test_index.index.search(&query_builder.clone().build())?;
+    let res = test_index.index.search(query_builder.clone().build())?;
     let entities_id = extract_results_entities_id(&res);
     assert!(entities_id.contains(&"entity9"));
     assert!(entities_id.contains(&"entity0"));
 
     // fourth page (empty)
     let query_builder = query_builder.with_paging(res.next_page.unwrap());
-    let res = test_index.index.search(&query_builder.clone().build())?;
+    let res = test_index.index.search(query_builder.clone().build())?;
     assert_eq!(res.entities.len(), 0);
     assert!(res.next_page.is_none());
 
     // test explicit after token
     let paging = Paging {
         count: 10,
-        after_token: SortToken::from_u64(0).into(),
+        after_sort_value: Some(value_from_u64(0, 0)),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
-    let res = test_index.index.search(&query_builder.clone().build())?;
+    let res = test_index.index.search(query_builder.clone().build())?;
     assert_eq!(res.entities.len(), 10);
 
     let paging = Paging {
         count: 10,
-        after_token: SortToken::from_u64(std::u64::MAX).into(),
+        after_sort_value: Some(value_max()),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
-    let res = test_index.index.search(&query_builder.clone().build())?;
+    let res = test_index.index.search(query_builder.clone().build())?;
     assert_eq!(res.entities.len(), 0);
 
     // test explicit before token
     let paging = Paging {
         count: 10,
-        before_token: SortToken::from_u64(0).into(),
+        before_sort_value: Some(value_from_u64(0, 0)),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
-    let res = test_index.index.search(&query_builder.clone().build())?;
+    let res = test_index.index.search(query_builder.clone().build())?;
     assert_eq!(res.entities.len(), 0);
 
     let paging = Paging {
         count: 10,
-        before_token: SortToken::from_u64(std::u64::MAX).into(),
+        before_sort_value: Some(value_max()),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
-    let res = test_index.index.search(&query_builder.build())?;
+    let res = test_index.index.search(query_builder.build())?;
     assert_eq!(res.entities.len(), 10);
+
+    Ok(())
+}
+
+#[test]
+fn query_sorting() -> Result<(), failure::Error> {
+    let config = TestEntityIndex::create_test_config();
+    let mut test_index = TestEntityIndex::new_with_config(config)?;
+
+    let ops_id = test_index.put_test_traits(0..10)?;
+    test_index.wait_operations_emitted(&ops_id);
+    test_index.handle_engine_events()?;
+    test_index.wait_operations_committed(&ops_id[0..10]);
+
+    // descending
+    let qb = Q::matches("common").sort_ascending(false);
+    let res = test_index.index.search(qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(10, ids.len());
+    assert_eq!("entity9", ids[0]);
+    assert_eq!("entity0", ids[9]);
+
+    // ascending
+    let qb = Q::matches("common").sort_ascending(true);
+    let res = test_index.index.search(qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(10, ids.len());
+    assert_eq!("entity0", ids[0]);
+    assert_eq!("entity9", ids[9]);
+
+    // ascending paged
+    let qb = Q::matches("common").sort_ascending(true).with_count(5);
+    let res = test_index.index.search(qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(5, ids.len());
+    assert_eq!("entity0", ids[0]);
+    assert_eq!("entity4", ids[4]);
+
+    let qb = Q::matches("common")
+        .sort_ascending(true)
+        .with_paging(res.next_page.unwrap());
+    let res = test_index.index.search(qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(5, ids.len());
+    assert_eq!("entity5", ids[0]);
+    assert_eq!("entity9", ids[4]);
 
     Ok(())
 }
@@ -483,19 +547,17 @@ fn summary_query() -> Result<(), failure::Error> {
     test_index.wait_operations_committed(&[op1, op2]);
     test_index.handle_engine_events()?;
 
-    let query = QueryBuilder::match_text("name").only_summary().build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::matches("name").only_summary().build();
+    let res = test_index.index.search(query)?;
     assert!(res.summary);
     assert!(res.entities[0].entity.as_ref().unwrap().traits.is_empty());
 
-    let query = QueryBuilder::match_text("name").build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::matches("name").build();
+    let res = test_index.index.search(query)?;
     assert!(!res.summary);
 
-    let query = QueryBuilder::match_text("name")
-        .only_summary_if_equals(res.hash)
-        .build();
-    let res = test_index.index.search(&query)?;
+    let query = Q::matches("name").only_summary_if_equals(res.hash).build();
+    let res = test_index.index.search(query)?;
     assert!(res.summary);
 
     Ok(())
@@ -528,7 +590,7 @@ fn extract_result_messages(res: &EntityResult) -> Vec<(Trait, TestMessage)> {
 }
 
 fn extract_indexed_operations_id(res: MutationResults) -> Vec<OperationId> {
-    res.results
+    res.mutations
         .iter()
         .map(|r| r.operation_id)
         .unique()

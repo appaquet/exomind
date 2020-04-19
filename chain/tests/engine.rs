@@ -239,7 +239,8 @@ fn two_nodes_one_data_node() -> Result<(), failure::Error> {
     cluster.wait_started(0);
     cluster.wait_started(1);
 
-    // Node 0 should still be able to advance even if second node is not part of chain nodes
+    // Node 0 should still be able to advance even if second node is not part of
+    // chain nodes
     for _i in 0..3 {
         let op = cluster
             .get_handle_mut(0)

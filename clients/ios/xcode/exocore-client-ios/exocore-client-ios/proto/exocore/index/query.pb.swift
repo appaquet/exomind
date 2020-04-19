@@ -97,6 +97,14 @@ public struct Exocore_Index_EntityQuery {
     set {_uniqueStorage()._predicate = .id(newValue)}
   }
 
+  public var reference: Exocore_Index_ReferencePredicate {
+    get {
+      if case .reference(let v)? = _storage._predicate {return v}
+      return Exocore_Index_ReferencePredicate()
+    }
+    set {_uniqueStorage()._predicate = .reference(newValue)}
+  }
+
   public var test: Exocore_Index_TestPredicate {
     get {
       if case .test(let v)? = _storage._predicate {return v}
@@ -105,6 +113,7 @@ public struct Exocore_Index_EntityQuery {
     set {_uniqueStorage()._predicate = .test(newValue)}
   }
 
+  //// Query paging requested
   public var paging: Exocore_Index_Paging {
     get {return _storage._paging ?? Exocore_Index_Paging()}
     set {_uniqueStorage()._paging = newValue}
@@ -113,6 +122,16 @@ public struct Exocore_Index_EntityQuery {
   public var hasPaging: Bool {return _storage._paging != nil}
   /// Clears the value of `paging`. Subsequent reads from it will return its default value.
   public mutating func clearPaging() {_uniqueStorage()._paging = nil}
+
+  //// Query sorting
+  public var sorting: Exocore_Index_Sorting {
+    get {return _storage._sorting ?? Exocore_Index_Sorting()}
+    set {_uniqueStorage()._sorting = newValue}
+  }
+  /// Returns true if `sorting` has been explicitly set.
+  public var hasSorting: Bool {return _storage._sorting != nil}
+  /// Clears the value of `sorting`. Subsequent reads from it will return its default value.
+  public mutating func clearSorting() {_uniqueStorage()._sorting = nil}
 
   //// If true, only return summary
   public var summary: Bool {
@@ -138,6 +157,7 @@ public struct Exocore_Index_EntityQuery {
     case match(Exocore_Index_MatchPredicate)
     case trait(Exocore_Index_TraitPredicate)
     case id(Exocore_Index_IdPredicate)
+    case reference(Exocore_Index_ReferencePredicate)
     case test(Exocore_Index_TestPredicate)
 
   #if !swift(>=4.1)
@@ -146,6 +166,7 @@ public struct Exocore_Index_EntityQuery {
       case (.match(let l), .match(let r)): return l == r
       case (.trait(let l), .trait(let r)): return l == r
       case (.id(let l), .id(let r)): return l == r
+      case (.reference(let l), .reference(let r)): return l == r
       case (.test(let l), .test(let r)): return l == r
       default: return false
       }
@@ -225,6 +246,200 @@ public struct Exocore_Index_TraitQuery {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  public var query: OneOf_Query? {
+    get {return _storage._query}
+    set {_uniqueStorage()._query = newValue}
+  }
+
+  public var reference: Exocore_Index_ReferencePredicate {
+    get {
+      if case .reference(let v)? = _storage._query {return v}
+      return Exocore_Index_ReferencePredicate()
+    }
+    set {_uniqueStorage()._query = .reference(newValue)}
+  }
+
+  public var match: Exocore_Index_MatchPredicate {
+    get {
+      if case .match(let v)? = _storage._query {return v}
+      return Exocore_Index_MatchPredicate()
+    }
+    set {_uniqueStorage()._query = .match(newValue)}
+  }
+
+  public var field: Exocore_Index_TraitFieldPredicate {
+    get {
+      if case .field(let v)? = _storage._query {return v}
+      return Exocore_Index_TraitFieldPredicate()
+    }
+    set {_uniqueStorage()._query = .field(newValue)}
+  }
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public enum OneOf_Query: Equatable {
+    case reference(Exocore_Index_ReferencePredicate)
+    case match(Exocore_Index_MatchPredicate)
+    case field(Exocore_Index_TraitFieldPredicate)
+
+  #if !swift(>=4.1)
+    public static func ==(lhs: Exocore_Index_TraitQuery.OneOf_Query, rhs: Exocore_Index_TraitQuery.OneOf_Query) -> Bool {
+      switch (lhs, rhs) {
+      case (.reference(let l), .reference(let r)): return l == r
+      case (.match(let l), .match(let r)): return l == r
+      case (.field(let l), .field(let r)): return l == r
+      default: return false
+      }
+    }
+  #endif
+  }
+
+  public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
+}
+
+public struct Exocore_Index_TraitFieldPredicate {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var field: String {
+    get {return _storage._field}
+    set {_uniqueStorage()._field = newValue}
+  }
+
+  public var value: OneOf_Value? {
+    get {return _storage._value}
+    set {_uniqueStorage()._value = newValue}
+  }
+
+  public var string: String {
+    get {
+      if case .string(let v)? = _storage._value {return v}
+      return String()
+    }
+    set {_uniqueStorage()._value = .string(newValue)}
+  }
+
+  public var int64: Int64 {
+    get {
+      if case .int64(let v)? = _storage._value {return v}
+      return 0
+    }
+    set {_uniqueStorage()._value = .int64(newValue)}
+  }
+
+  public var uint64: UInt64 {
+    get {
+      if case .uint64(let v)? = _storage._value {return v}
+      return 0
+    }
+    set {_uniqueStorage()._value = .uint64(newValue)}
+  }
+
+  public var date: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {
+      if case .date(let v)? = _storage._value {return v}
+      return SwiftProtobuf.Google_Protobuf_Timestamp()
+    }
+    set {_uniqueStorage()._value = .date(newValue)}
+  }
+
+  public var operatior: Exocore_Index_TraitFieldPredicate.Operator {
+    get {return _storage._operatior}
+    set {_uniqueStorage()._operatior = newValue}
+  }
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public enum OneOf_Value: Equatable {
+    case string(String)
+    case int64(Int64)
+    case uint64(UInt64)
+    case date(SwiftProtobuf.Google_Protobuf_Timestamp)
+
+  #if !swift(>=4.1)
+    public static func ==(lhs: Exocore_Index_TraitFieldPredicate.OneOf_Value, rhs: Exocore_Index_TraitFieldPredicate.OneOf_Value) -> Bool {
+      switch (lhs, rhs) {
+      case (.string(let l), .string(let r)): return l == r
+      case (.int64(let l), .int64(let r)): return l == r
+      case (.uint64(let l), .uint64(let r)): return l == r
+      case (.date(let l), .date(let r)): return l == r
+      default: return false
+      }
+    }
+  #endif
+  }
+
+  public enum Operator: SwiftProtobuf.Enum {
+    public typealias RawValue = Int
+    case equal // = 0
+    case gt // = 1
+    case gte // = 2
+    case lt // = 3
+    case lte // = 4
+    case UNRECOGNIZED(Int)
+
+    public init() {
+      self = .equal
+    }
+
+    public init?(rawValue: Int) {
+      switch rawValue {
+      case 0: self = .equal
+      case 1: self = .gt
+      case 2: self = .gte
+      case 3: self = .lt
+      case 4: self = .lte
+      default: self = .UNRECOGNIZED(rawValue)
+      }
+    }
+
+    public var rawValue: Int {
+      switch self {
+      case .equal: return 0
+      case .gt: return 1
+      case .gte: return 2
+      case .lt: return 3
+      case .lte: return 4
+      case .UNRECOGNIZED(let i): return i
+      }
+    }
+
+  }
+
+  public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
+}
+
+#if swift(>=4.2)
+
+extension Exocore_Index_TraitFieldPredicate.Operator: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Exocore_Index_TraitFieldPredicate.Operator] = [
+    .equal,
+    .gt,
+    .gte,
+    .lt,
+    .lte,
+  ]
+}
+
+#endif  // swift(>=4.2)
+
+public struct Exocore_Index_ReferencePredicate {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Entity id the reference points to
+  public var entityID: String = String()
+
+  /// Optional trait id the reference points to
+  public var traitID: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -235,18 +450,179 @@ public struct Exocore_Index_Paging {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// Returns results after token.
-  public var afterToken: String = String()
+  //// Returns results after this given sorting value.
+  public var afterSortValue: Exocore_Index_SortingValue {
+    get {return _storage._afterSortValue ?? Exocore_Index_SortingValue()}
+    set {_uniqueStorage()._afterSortValue = newValue}
+  }
+  /// Returns true if `afterSortValue` has been explicitly set.
+  public var hasAfterSortValue: Bool {return _storage._afterSortValue != nil}
+  /// Clears the value of `afterSortValue`. Subsequent reads from it will return its default value.
+  public mutating func clearAfterSortValue() {_uniqueStorage()._afterSortValue = nil}
 
-  //// Returns results before token.
-  public var beforeToken: String = String()
+  //// Returns results before this given sorting value.
+  public var beforeSortValue: Exocore_Index_SortingValue {
+    get {return _storage._beforeSortValue ?? Exocore_Index_SortingValue()}
+    set {_uniqueStorage()._beforeSortValue = newValue}
+  }
+  /// Returns true if `beforeSortValue` has been explicitly set.
+  public var hasBeforeSortValue: Bool {return _storage._beforeSortValue != nil}
+  /// Clears the value of `beforeSortValue`. Subsequent reads from it will return its default value.
+  public mutating func clearBeforeSortValue() {_uniqueStorage()._beforeSortValue = nil}
 
   //// Desired results count. Default if 0.
-  public var count: UInt32 = 0
+  public var count: UInt32 {
+    get {return _storage._count}
+    set {_uniqueStorage()._count = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
+}
+
+public struct Exocore_Index_Sorting {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// Value by which we want results to be sorted.
+  public var value: Exocore_Index_Sorting.OneOf_Value? = nil
+
+  public var score: Bool {
+    get {
+      if case .score(let v)? = value {return v}
+      return false
+    }
+    set {value = .score(newValue)}
+  }
+
+  public var operationID: Bool {
+    get {
+      if case .operationID(let v)? = value {return v}
+      return false
+    }
+    set {value = .operationID(newValue)}
+  }
+
+  public var field: String {
+    get {
+      if case .field(let v)? = value {return v}
+      return String()
+    }
+    set {value = .field(newValue)}
+  }
+
+  //// Order of the results.
+  public var ascending: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  //// Value by which we want results to be sorted.
+  public enum OneOf_Value: Equatable {
+    case score(Bool)
+    case operationID(Bool)
+    case field(String)
+
+  #if !swift(>=4.1)
+    public static func ==(lhs: Exocore_Index_Sorting.OneOf_Value, rhs: Exocore_Index_Sorting.OneOf_Value) -> Bool {
+      switch (lhs, rhs) {
+      case (.score(let l), .score(let r)): return l == r
+      case (.operationID(let l), .operationID(let r)): return l == r
+      case (.field(let l), .field(let r)): return l == r
+      default: return false
+      }
+    }
+  #endif
+  }
+
+  public init() {}
+}
+
+public struct Exocore_Index_SortingValue {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var value: OneOf_Value? {
+    get {return _storage._value}
+    set {_uniqueStorage()._value = newValue}
+  }
+
+  public var float: Float {
+    get {
+      if case .float(let v)? = _storage._value {return v}
+      return 0
+    }
+    set {_uniqueStorage()._value = .float(newValue)}
+  }
+
+  public var uint64: UInt64 {
+    get {
+      if case .uint64(let v)? = _storage._value {return v}
+      return 0
+    }
+    set {_uniqueStorage()._value = .uint64(newValue)}
+  }
+
+  public var date: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {
+      if case .date(let v)? = _storage._value {return v}
+      return SwiftProtobuf.Google_Protobuf_Timestamp()
+    }
+    set {_uniqueStorage()._value = .date(newValue)}
+  }
+
+  public var min: Bool {
+    get {
+      if case .min(let v)? = _storage._value {return v}
+      return false
+    }
+    set {_uniqueStorage()._value = .min(newValue)}
+  }
+
+  public var max: Bool {
+    get {
+      if case .max(let v)? = _storage._value {return v}
+      return false
+    }
+    set {_uniqueStorage()._value = .max(newValue)}
+  }
+
+  //// ID operation used to tie break equal results
+  public var operationID: UInt64 {
+    get {return _storage._operationID}
+    set {_uniqueStorage()._operationID = newValue}
+  }
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public enum OneOf_Value: Equatable {
+    case float(Float)
+    case uint64(UInt64)
+    case date(SwiftProtobuf.Google_Protobuf_Timestamp)
+    case min(Bool)
+    case max(Bool)
+
+  #if !swift(>=4.1)
+    public static func ==(lhs: Exocore_Index_SortingValue.OneOf_Value, rhs: Exocore_Index_SortingValue.OneOf_Value) -> Bool {
+      switch (lhs, rhs) {
+      case (.float(let l), .float(let r)): return l == r
+      case (.uint64(let l), .uint64(let r)): return l == r
+      case (.date(let l), .date(let r)): return l == r
+      case (.min(let l), .min(let r)): return l == r
+      case (.max(let l), .max(let r)): return l == r
+      default: return false
+      }
+    }
+  #endif
+  }
+
+  public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 public struct Exocore_Index_EntityResults {
@@ -318,10 +694,14 @@ public struct Exocore_Index_EntityResult {
     set {_uniqueStorage()._source = newValue}
   }
 
-  public var sortToken: String {
-    get {return _storage._sortToken}
-    set {_uniqueStorage()._sortToken = newValue}
+  public var sortingValue: Exocore_Index_SortingValue {
+    get {return _storage._sortingValue ?? Exocore_Index_SortingValue()}
+    set {_uniqueStorage()._sortingValue = newValue}
   }
+  /// Returns true if `sortingValue` has been explicitly set.
+  public var hasSortingValue: Bool {return _storage._sortingValue != nil}
+  /// Clears the value of `sortingValue`. Subsequent reads from it will return its default value.
+  public mutating func clearSortingValue() {_uniqueStorage()._sortingValue = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -348,16 +728,19 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
     1: .same(proto: "match"),
     2: .same(proto: "trait"),
     3: .same(proto: "id"),
+    4: .same(proto: "reference"),
     99: .same(proto: "test"),
     5: .same(proto: "paging"),
-    6: .same(proto: "summary"),
-    7: .standard(proto: "watch_token"),
-    8: .standard(proto: "result_hash"),
+    6: .same(proto: "sorting"),
+    7: .same(proto: "summary"),
+    8: .standard(proto: "watch_token"),
+    9: .standard(proto: "result_hash"),
   ]
 
   fileprivate class _StorageClass {
     var _predicate: Exocore_Index_EntityQuery.OneOf_Predicate?
     var _paging: Exocore_Index_Paging? = nil
+    var _sorting: Exocore_Index_Sorting? = nil
     var _summary: Bool = false
     var _watchToken: UInt64 = 0
     var _resultHash: UInt64 = 0
@@ -369,6 +752,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
     init(copying source: _StorageClass) {
       _predicate = source._predicate
       _paging = source._paging
+      _sorting = source._sorting
       _summary = source._summary
       _watchToken = source._watchToken
       _resultHash = source._resultHash
@@ -411,10 +795,19 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
           }
           try decoder.decodeSingularMessageField(value: &v)
           if let v = v {_storage._predicate = .id(v)}
+        case 4:
+          var v: Exocore_Index_ReferencePredicate?
+          if let current = _storage._predicate {
+            try decoder.handleConflictingOneOf()
+            if case .reference(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._predicate = .reference(v)}
         case 5: try decoder.decodeSingularMessageField(value: &_storage._paging)
-        case 6: try decoder.decodeSingularBoolField(value: &_storage._summary)
-        case 7: try decoder.decodeSingularUInt64Field(value: &_storage._watchToken)
-        case 8: try decoder.decodeSingularUInt64Field(value: &_storage._resultHash)
+        case 6: try decoder.decodeSingularMessageField(value: &_storage._sorting)
+        case 7: try decoder.decodeSingularBoolField(value: &_storage._summary)
+        case 8: try decoder.decodeSingularUInt64Field(value: &_storage._watchToken)
+        case 9: try decoder.decodeSingularUInt64Field(value: &_storage._resultHash)
         case 99:
           var v: Exocore_Index_TestPredicate?
           if let current = _storage._predicate {
@@ -438,20 +831,25 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
         try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
       case .id(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      case .reference(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
       case nil: break
       default: break
       }
       if let v = _storage._paging {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
       }
+      if let v = _storage._sorting {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+      }
       if _storage._summary != false {
-        try visitor.visitSingularBoolField(value: _storage._summary, fieldNumber: 6)
+        try visitor.visitSingularBoolField(value: _storage._summary, fieldNumber: 7)
       }
       if _storage._watchToken != 0 {
-        try visitor.visitSingularUInt64Field(value: _storage._watchToken, fieldNumber: 7)
+        try visitor.visitSingularUInt64Field(value: _storage._watchToken, fieldNumber: 8)
       }
       if _storage._resultHash != 0 {
-        try visitor.visitSingularUInt64Field(value: _storage._resultHash, fieldNumber: 8)
+        try visitor.visitSingularUInt64Field(value: _storage._resultHash, fieldNumber: 9)
       }
       if case .test(let v)? = _storage._predicate {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 99)
@@ -467,6 +865,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
         let rhs_storage = _args.1
         if _storage._predicate != rhs_storage._predicate {return false}
         if _storage._paging != rhs_storage._paging {return false}
+        if _storage._sorting != rhs_storage._sorting {return false}
         if _storage._summary != rhs_storage._summary {return false}
         if _storage._watchToken != rhs_storage._watchToken {return false}
         if _storage._resultHash != rhs_storage._resultHash {return false}
@@ -637,18 +1036,246 @@ extension Exocore_Index_TraitPredicate: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 extension Exocore_Index_TraitQuery: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TraitQuery"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "reference"),
+    2: .same(proto: "match"),
+    3: .same(proto: "field"),
+  ]
+
+  fileprivate class _StorageClass {
+    var _query: Exocore_Index_TraitQuery.OneOf_Query?
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _query = source._query
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let _ = try decoder.nextFieldNumber() {
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        switch fieldNumber {
+        case 1:
+          var v: Exocore_Index_ReferencePredicate?
+          if let current = _storage._query {
+            try decoder.handleConflictingOneOf()
+            if case .reference(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._query = .reference(v)}
+        case 2:
+          var v: Exocore_Index_MatchPredicate?
+          if let current = _storage._query {
+            try decoder.handleConflictingOneOf()
+            if case .match(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._query = .match(v)}
+        case 3:
+          var v: Exocore_Index_TraitFieldPredicate?
+          if let current = _storage._query {
+            try decoder.handleConflictingOneOf()
+            if case .field(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._query = .field(v)}
+        default: break
+        }
+      }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      switch _storage._query {
+      case .reference(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      case .match(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      case .field(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      case nil: break
+      }
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Exocore_Index_TraitQuery, rhs: Exocore_Index_TraitQuery) -> Bool {
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._query != rhs_storage._query {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exocore_Index_TraitFieldPredicate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TraitFieldPredicate"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "field"),
+    2: .same(proto: "string"),
+    3: .same(proto: "int64"),
+    4: .same(proto: "uint64"),
+    5: .same(proto: "date"),
+    6: .same(proto: "operatior"),
+  ]
+
+  fileprivate class _StorageClass {
+    var _field: String = String()
+    var _value: Exocore_Index_TraitFieldPredicate.OneOf_Value?
+    var _operatior: Exocore_Index_TraitFieldPredicate.Operator = .equal
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _field = source._field
+      _value = source._value
+      _operatior = source._operatior
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        switch fieldNumber {
+        case 1: try decoder.decodeSingularStringField(value: &_storage._field)
+        case 2:
+          if _storage._value != nil {try decoder.handleConflictingOneOf()}
+          var v: String?
+          try decoder.decodeSingularStringField(value: &v)
+          if let v = v {_storage._value = .string(v)}
+        case 3:
+          if _storage._value != nil {try decoder.handleConflictingOneOf()}
+          var v: Int64?
+          try decoder.decodeSingularInt64Field(value: &v)
+          if let v = v {_storage._value = .int64(v)}
+        case 4:
+          if _storage._value != nil {try decoder.handleConflictingOneOf()}
+          var v: UInt64?
+          try decoder.decodeSingularUInt64Field(value: &v)
+          if let v = v {_storage._value = .uint64(v)}
+        case 5:
+          var v: SwiftProtobuf.Google_Protobuf_Timestamp?
+          if let current = _storage._value {
+            try decoder.handleConflictingOneOf()
+            if case .date(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._value = .date(v)}
+        case 6: try decoder.decodeSingularEnumField(value: &_storage._operatior)
+        default: break
+        }
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if !_storage._field.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._field, fieldNumber: 1)
+      }
+      switch _storage._value {
+      case .string(let v)?:
+        try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+      case .int64(let v)?:
+        try visitor.visitSingularInt64Field(value: v, fieldNumber: 3)
+      case .uint64(let v)?:
+        try visitor.visitSingularUInt64Field(value: v, fieldNumber: 4)
+      case .date(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+      case nil: break
+      }
+      if _storage._operatior != .equal {
+        try visitor.visitSingularEnumField(value: _storage._operatior, fieldNumber: 6)
+      }
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Index_TraitFieldPredicate, rhs: Exocore_Index_TraitFieldPredicate) -> Bool {
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._field != rhs_storage._field {return false}
+        if _storage._value != rhs_storage._value {return false}
+        if _storage._operatior != rhs_storage._operatior {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exocore_Index_TraitFieldPredicate.Operator: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "EQUAL"),
+    1: .same(proto: "GT"),
+    2: .same(proto: "GTE"),
+    3: .same(proto: "LT"),
+    4: .same(proto: "LTE"),
+  ]
+}
+
+extension Exocore_Index_ReferencePredicate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ReferencePredicate"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "entity_id"),
+    2: .standard(proto: "trait_id"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeSingularStringField(value: &self.entityID)
+      case 2: try decoder.decodeSingularStringField(value: &self.traitID)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.entityID.isEmpty {
+      try visitor.visitSingularStringField(value: self.entityID, fieldNumber: 1)
+    }
+    if !self.traitID.isEmpty {
+      try visitor.visitSingularStringField(value: self.traitID, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Index_ReferencePredicate, rhs: Exocore_Index_ReferencePredicate) -> Bool {
+    if lhs.entityID != rhs.entityID {return false}
+    if lhs.traitID != rhs.traitID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -657,39 +1284,242 @@ extension Exocore_Index_TraitQuery: SwiftProtobuf.Message, SwiftProtobuf._Messag
 extension Exocore_Index_Paging: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Paging"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "after_token"),
-    2: .standard(proto: "before_token"),
+    1: .standard(proto: "after_sort_value"),
+    2: .standard(proto: "before_sort_value"),
     3: .same(proto: "count"),
+  ]
+
+  fileprivate class _StorageClass {
+    var _afterSortValue: Exocore_Index_SortingValue? = nil
+    var _beforeSortValue: Exocore_Index_SortingValue? = nil
+    var _count: UInt32 = 0
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _afterSortValue = source._afterSortValue
+      _beforeSortValue = source._beforeSortValue
+      _count = source._count
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        switch fieldNumber {
+        case 1: try decoder.decodeSingularMessageField(value: &_storage._afterSortValue)
+        case 2: try decoder.decodeSingularMessageField(value: &_storage._beforeSortValue)
+        case 3: try decoder.decodeSingularUInt32Field(value: &_storage._count)
+        default: break
+        }
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if let v = _storage._afterSortValue {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      }
+      if let v = _storage._beforeSortValue {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      }
+      if _storage._count != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._count, fieldNumber: 3)
+      }
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Index_Paging, rhs: Exocore_Index_Paging) -> Bool {
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._afterSortValue != rhs_storage._afterSortValue {return false}
+        if _storage._beforeSortValue != rhs_storage._beforeSortValue {return false}
+        if _storage._count != rhs_storage._count {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exocore_Index_Sorting: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Sorting"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "score"),
+    2: .standard(proto: "operation_id"),
+    3: .same(proto: "field"),
+    4: .same(proto: "ascending"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.afterToken)
-      case 2: try decoder.decodeSingularStringField(value: &self.beforeToken)
-      case 3: try decoder.decodeSingularUInt32Field(value: &self.count)
+      case 1:
+        if self.value != nil {try decoder.handleConflictingOneOf()}
+        var v: Bool?
+        try decoder.decodeSingularBoolField(value: &v)
+        if let v = v {self.value = .score(v)}
+      case 2:
+        if self.value != nil {try decoder.handleConflictingOneOf()}
+        var v: Bool?
+        try decoder.decodeSingularBoolField(value: &v)
+        if let v = v {self.value = .operationID(v)}
+      case 3:
+        if self.value != nil {try decoder.handleConflictingOneOf()}
+        var v: String?
+        try decoder.decodeSingularStringField(value: &v)
+        if let v = v {self.value = .field(v)}
+      case 4: try decoder.decodeSingularBoolField(value: &self.ascending)
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.afterToken.isEmpty {
-      try visitor.visitSingularStringField(value: self.afterToken, fieldNumber: 1)
+    switch self.value {
+    case .score(let v)?:
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 1)
+    case .operationID(let v)?:
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 2)
+    case .field(let v)?:
+      try visitor.visitSingularStringField(value: v, fieldNumber: 3)
+    case nil: break
     }
-    if !self.beforeToken.isEmpty {
-      try visitor.visitSingularStringField(value: self.beforeToken, fieldNumber: 2)
-    }
-    if self.count != 0 {
-      try visitor.visitSingularUInt32Field(value: self.count, fieldNumber: 3)
+    if self.ascending != false {
+      try visitor.visitSingularBoolField(value: self.ascending, fieldNumber: 4)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Exocore_Index_Paging, rhs: Exocore_Index_Paging) -> Bool {
-    if lhs.afterToken != rhs.afterToken {return false}
-    if lhs.beforeToken != rhs.beforeToken {return false}
-    if lhs.count != rhs.count {return false}
+  public static func ==(lhs: Exocore_Index_Sorting, rhs: Exocore_Index_Sorting) -> Bool {
+    if lhs.value != rhs.value {return false}
+    if lhs.ascending != rhs.ascending {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exocore_Index_SortingValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SortingValue"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "float"),
+    2: .same(proto: "uint64"),
+    3: .same(proto: "date"),
+    4: .same(proto: "min"),
+    5: .same(proto: "max"),
+    6: .standard(proto: "operation_id"),
+  ]
+
+  fileprivate class _StorageClass {
+    var _value: Exocore_Index_SortingValue.OneOf_Value?
+    var _operationID: UInt64 = 0
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _value = source._value
+      _operationID = source._operationID
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        switch fieldNumber {
+        case 1:
+          if _storage._value != nil {try decoder.handleConflictingOneOf()}
+          var v: Float?
+          try decoder.decodeSingularFloatField(value: &v)
+          if let v = v {_storage._value = .float(v)}
+        case 2:
+          if _storage._value != nil {try decoder.handleConflictingOneOf()}
+          var v: UInt64?
+          try decoder.decodeSingularUInt64Field(value: &v)
+          if let v = v {_storage._value = .uint64(v)}
+        case 3:
+          var v: SwiftProtobuf.Google_Protobuf_Timestamp?
+          if let current = _storage._value {
+            try decoder.handleConflictingOneOf()
+            if case .date(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._value = .date(v)}
+        case 4:
+          if _storage._value != nil {try decoder.handleConflictingOneOf()}
+          var v: Bool?
+          try decoder.decodeSingularBoolField(value: &v)
+          if let v = v {_storage._value = .min(v)}
+        case 5:
+          if _storage._value != nil {try decoder.handleConflictingOneOf()}
+          var v: Bool?
+          try decoder.decodeSingularBoolField(value: &v)
+          if let v = v {_storage._value = .max(v)}
+        case 6: try decoder.decodeSingularUInt64Field(value: &_storage._operationID)
+        default: break
+        }
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      switch _storage._value {
+      case .float(let v)?:
+        try visitor.visitSingularFloatField(value: v, fieldNumber: 1)
+      case .uint64(let v)?:
+        try visitor.visitSingularUInt64Field(value: v, fieldNumber: 2)
+      case .date(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      case .min(let v)?:
+        try visitor.visitSingularBoolField(value: v, fieldNumber: 4)
+      case .max(let v)?:
+        try visitor.visitSingularBoolField(value: v, fieldNumber: 5)
+      case nil: break
+      }
+      if _storage._operationID != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._operationID, fieldNumber: 6)
+      }
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Index_SortingValue, rhs: Exocore_Index_SortingValue) -> Bool {
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._value != rhs_storage._value {return false}
+        if _storage._operationID != rhs_storage._operationID {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -801,13 +1631,13 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "entity"),
     2: .same(proto: "source"),
-    3: .standard(proto: "sort_token"),
+    3: .standard(proto: "sorting_value"),
   ]
 
   fileprivate class _StorageClass {
     var _entity: Exocore_Index_Entity? = nil
     var _source: Exocore_Index_EntityResultSource = .unknown
-    var _sortToken: String = String()
+    var _sortingValue: Exocore_Index_SortingValue? = nil
 
     static let defaultInstance = _StorageClass()
 
@@ -816,7 +1646,7 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
     init(copying source: _StorageClass) {
       _entity = source._entity
       _source = source._source
-      _sortToken = source._sortToken
+      _sortingValue = source._sortingValue
     }
   }
 
@@ -834,7 +1664,7 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
         switch fieldNumber {
         case 1: try decoder.decodeSingularMessageField(value: &_storage._entity)
         case 2: try decoder.decodeSingularEnumField(value: &_storage._source)
-        case 3: try decoder.decodeSingularStringField(value: &_storage._sortToken)
+        case 3: try decoder.decodeSingularMessageField(value: &_storage._sortingValue)
         default: break
         }
       }
@@ -849,8 +1679,8 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
       if _storage._source != .unknown {
         try visitor.visitSingularEnumField(value: _storage._source, fieldNumber: 2)
       }
-      if !_storage._sortToken.isEmpty {
-        try visitor.visitSingularStringField(value: _storage._sortToken, fieldNumber: 3)
+      if let v = _storage._sortingValue {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
       }
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -863,7 +1693,7 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
         let rhs_storage = _args.1
         if _storage._entity != rhs_storage._entity {return false}
         if _storage._source != rhs_storage._source {return false}
-        if _storage._sortToken != rhs_storage._sortToken {return false}
+        if _storage._sortingValue != rhs_storage._sortingValue {return false}
         return true
       }
       if !storagesAreEqual {return false}

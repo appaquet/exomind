@@ -1,5 +1,6 @@
 use super::registry::Registry;
 use super::Error;
+use crate::protos::generated::exocore_index::Reference;
 use protobuf;
 use protobuf::descriptor::DescriptorProto;
 use protobuf::types::{
@@ -12,7 +13,7 @@ use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-pub trait ReflectMessage {
+pub trait ReflectMessage: Debug {
     fn descriptor(&self) -> &ReflectMessageDescriptor;
 
     fn full_name(&self) -> &str {
@@ -26,12 +27,12 @@ pub trait ReflectMessage {
     fn get_field_value(&self, field: &FieldDescriptor) -> Result<FieldValue, Error>;
 }
 
-pub struct GeneratedMessage<T: Message> {
+pub struct StepanMessage<T: Message> {
     message: T,
     descriptor: Arc<ReflectMessageDescriptor>,
 }
 
-impl<T: Message> ReflectMessage for GeneratedMessage<T> {
+impl<T: Message> ReflectMessage for StepanMessage<T> {
     fn descriptor(&self) -> &ReflectMessageDescriptor {
         self.descriptor.as_ref()
     }
@@ -67,8 +68,33 @@ impl<T: Message> ReflectMessage for GeneratedMessage<T> {
                     crate::time::timestamp_parts_to_datetime(secs, nanos),
                 ))
             }
+            FieldType::Reference => {
+                let value = value.get_message(&self.message);
+                let entity_id = value
+                    .descriptor()
+                    .field_by_number(1)
+                    .get_str(value)
+                    .to_string();
+                let trait_id = value
+                    .descriptor()
+                    .field_by_number(2)
+                    .get_str(value)
+                    .to_string();
+                Ok(FieldValue::Reference(Reference {
+                    entity_id,
+                    trait_id,
+                }))
+            }
             FieldType::Message(_full_name) => Err(Error::InvalidFieldType),
         }
+    }
+}
+
+impl<T: Message> Debug for StepanMessage<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("StepanMessage")
+            .field("full_name", &self.descriptor.name)
+            .finish()
     }
 }
 
@@ -120,8 +146,37 @@ impl ReflectMessage for DynamicMessage {
                     crate::time::timestamp_parts_to_datetime(value.seconds, value.nanos),
                 ))
             }
+            FieldType::Reference => {
+                let ref_msg = ProtobufTypeMessage::<Empty>::get_from_unknown(value)
+                    .ok_or(Error::NoSuchField)?;
+
+                let entity_id_value = ref_msg
+                    .unknown_fields
+                    .get(1)
+                    .and_then(ProtobufTypeString::get_from_unknown);
+                let entity_id = entity_id_value.unwrap_or_default();
+
+                let trait_id_value = ref_msg
+                    .unknown_fields
+                    .get(2)
+                    .and_then(ProtobufTypeString::get_from_unknown);
+                let trait_id = trait_id_value.unwrap_or_default();
+
+                Ok(FieldValue::Reference(Reference {
+                    entity_id,
+                    trait_id,
+                }))
+            }
             _ => Err(Error::NoSuchField),
         }
+    }
+}
+
+impl Debug for DynamicMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("DynamicMessage")
+            .field("full_name", &self.descriptor.name)
+            .finish()
     }
 }
 
@@ -131,11 +186,14 @@ pub struct ReflectMessageDescriptor {
     pub message: DescriptorProto,
 }
 
+#[derive(Debug)]
 pub struct FieldDescriptor {
     pub id: u32,
     pub name: String,
     pub field_type: FieldType,
     pub indexed_flag: bool,
+    pub sorted_flag: bool,
+    pub text_flag: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -146,15 +204,18 @@ pub enum FieldType {
     Int64,
     Uint64,
     DateTime,
+    Reference,
     Message(String),
 }
 
+#[derive(Debug)]
 pub enum FieldValue {
     String(String),
     Int32(i32),
     Uint32(u32),
     Int64(i64),
     Uint64(u64),
+    Reference(Reference),
     DateTime(chrono::DateTime<chrono::Utc>),
     Message(Box<dyn ReflectMessage>),
 }
@@ -175,6 +236,14 @@ impl FieldValue {
             Err(Error::InvalidFieldType)
         }
     }
+
+    pub fn as_reference(&self) -> Result<&Reference, Error> {
+        if let FieldValue::Reference(value) = self {
+            Ok(value)
+        } else {
+            Err(Error::InvalidFieldType)
+        }
+    }
 }
 
 impl<'s> TryFrom<&'s FieldValue> for &'s str {
@@ -188,10 +257,10 @@ impl<'s> TryFrom<&'s FieldValue> for &'s str {
     }
 }
 
-pub fn from_generated<T: Message>(registry: &Registry, message: T) -> GeneratedMessage<T> {
+pub fn from_generated<T: Message>(registry: &Registry, message: T) -> StepanMessage<T> {
     let descriptor = registry.get_or_register_generated_descriptor(&message);
 
-    GeneratedMessage {
+    StepanMessage {
         message,
         descriptor,
     }
@@ -243,6 +312,14 @@ mod tests {
         let msg = TestMessage {
             string1: "val1".to_string(),
             date1: Some(now.to_proto_timestamp()),
+            ref1: Some(Reference {
+                entity_id: "et1".to_string(),
+                trait_id: "trt1".to_string(),
+            }),
+            ref2: Some(Reference {
+                entity_id: "et2".to_string(),
+                trait_id: String::new(),
+            }),
             ..Default::default()
         };
         let msg_any = msg.pack_to_stepan_any()?;
@@ -251,18 +328,30 @@ mod tests {
 
         assert_eq!("exocore.test.TestMessage", dyn_msg.full_name());
 
-        assert_eq!(dyn_msg.fields().len(), 9);
+        assert!(dyn_msg.fields().len() > 10);
 
-        let field1dyn = &dyn_msg.fields()[0];
-        assert!(field1dyn.indexed_flag);
-        assert_eq!(dyn_msg.get_field_value(field1dyn)?.as_str()?, "val1");
+        let field1 = &dyn_msg.fields().iter().find(|f| f.id == 1).unwrap();
+        assert!(field1.text_flag);
+        assert_eq!(dyn_msg.get_field_value(field1)?.as_str()?, "val1");
 
-        let field2 = &dyn_msg.fields()[2];
-        assert!(!field2.indexed_flag);
+        let field2 = &dyn_msg.fields().iter().find(|f| f.id == 2).unwrap();
+        assert!(!field2.text_flag);
 
-        let field5 = &dyn_msg.fields()[5];
-        assert_eq!(dyn_msg.get_field_value(field5)?.as_datetime()?, &now);
-        assert!(field5.indexed_flag);
+        let field8 = &dyn_msg.fields().iter().find(|f| f.id == 8).unwrap();
+        assert_eq!(dyn_msg.get_field_value(field8)?.as_datetime()?, &now);
+        assert!(field8.indexed_flag);
+
+        let field13 = &dyn_msg.fields().iter().find(|f| f.id == 13).unwrap();
+        let field_value = dyn_msg.get_field_value(field13)?;
+        let value_ref = field_value.as_reference()?;
+        assert_eq!(value_ref.entity_id, "et1");
+        assert_eq!(value_ref.trait_id, "trt1");
+
+        let field14 = &dyn_msg.fields().iter().find(|f| f.id == 14).unwrap();
+        let field_value = dyn_msg.get_field_value(field14)?;
+        let value_ref = field_value.as_reference()?;
+        assert_eq!(value_ref.entity_id, "et2");
+        assert_eq!(value_ref.trait_id, "");
 
         Ok(())
     }

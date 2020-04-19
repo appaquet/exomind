@@ -2,7 +2,8 @@ use super::reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor};
 use super::Error;
 use protobuf;
 use protobuf::descriptor::{
-    DescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto, FileDescriptorSet,
+    DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto,
+    FileDescriptorSet,
 };
 use protobuf::types::{ProtobufType, ProtobufTypeBool};
 use protobuf::Message;
@@ -10,8 +11,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
+type MessageDescriptorsMap = HashMap<String, Arc<ReflectMessageDescriptor>>;
+
 pub struct Registry {
-    message_descriptors: RwLock<HashMap<String, Arc<ReflectMessageDescriptor>>>,
+    message_descriptors: RwLock<MessageDescriptorsMap>,
 }
 
 impl Registry {
@@ -79,28 +82,24 @@ impl Registry {
                 FieldDescriptorProto_Type::TYPE_INT64 => FieldType::Int64,
                 FieldDescriptorProto_Type::TYPE_UINT64 => FieldType::Uint64,
                 FieldDescriptorProto_Type::TYPE_MESSAGE => {
-                    let typ = field.get_type_name().trim_start_matches('.').to_string();
-                    if typ == "google.protobuf.Timestamp" {
-                        FieldType::DateTime
-                    } else {
-                        FieldType::Message(typ)
+                    let typ = field.get_type_name().trim_start_matches('.');
+                    match typ {
+                        "google.protobuf.Timestamp" => FieldType::DateTime,
+                        "exocore.index.Reference" => FieldType::Reference,
+                        _ => FieldType::Message(typ.to_string()),
                     }
                 }
                 _ => continue,
             };
 
-            let indexed_flag =
-                if let Some(indexed_value) = field.get_options().unknown_fields.get(1000) {
-                    ProtobufTypeBool::get_from_unknown(indexed_value).unwrap_or(false)
-                } else {
-                    false
-                };
-
             fields.push(FieldDescriptor {
                 id: field.get_number() as u32,
                 name: field.get_name().to_string(),
                 field_type,
-                indexed_flag,
+                indexed_flag: Registry::field_has_option(field, 1373), /* see exocore/index/
+                                                                        * options.proto */
+                sorted_flag: Registry::field_has_option(field, 1374),
+                text_flag: Registry::field_has_option(field, 1375),
             })
         }
 
@@ -145,6 +144,19 @@ impl Registry {
             message.descriptor().get_proto().clone(),
         )
     }
+
+    pub fn message_descriptors(&self) -> Vec<Arc<ReflectMessageDescriptor>> {
+        let message_descriptors = self.message_descriptors.read().unwrap();
+        message_descriptors.values().cloned().collect()
+    }
+
+    fn field_has_option(field: &FieldDescriptorProto, option_field_id: u32) -> bool {
+        if let Some(indexed_value) = field.get_options().unknown_fields.get(option_field_id) {
+            ProtobufTypeBool::get_from_unknown(indexed_value).unwrap_or(false)
+        } else {
+            false
+        }
+    }
 }
 
 impl Default for Registry {
@@ -163,5 +175,8 @@ mod tests {
         let entity = reg.get_message_descriptor("exocore.index.Entity").unwrap();
         assert_eq!(entity.name, "exocore.index.Entity");
         assert!(!entity.fields.is_empty());
+
+        let desc = reg.message_descriptors();
+        assert!(desc.len() > 20);
     }
 }

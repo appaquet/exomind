@@ -30,15 +30,17 @@ type OutboundStreamFuture =
 ///
 /// It handles:
 ///   * Outgoing message requests from the behaviour.
-///   * If we don't have any outgoing streams, we request one from libp2p, which then upgrade a
-///     stream for us using `ExocoreProtoConfig`
-///   * When an outgoing stream is open, it writes the outgoing messages to it. Since this is
-///     asynchronous, we keep the futures and poll to completion.
-///   * When an incoming stream is open to us, it reads the incoming message from it. Since this is
-///     asynchronous, we keep the futures and poll to completion.
+///   * If we don't have any outgoing streams, we request one from libp2p, which
+///     then upgrade a stream for us using `ExocoreProtoConfig`
+///   * When an outgoing stream is open, it writes the outgoing messages to it.
+///     Since this is asynchronous, we keep the futures and poll to completion.
+///   * When an incoming stream is open to us, it reads the incoming message
+///     from it. Since this is asynchronous, we keep the futures and poll to
+///     completion.
 ///
 /// Note:
-///   * Streams are not mapped 1:1 to sockets as the transport may be multiplexed.
+///   * Streams are not mapped 1:1 to sockets as the transport may be
+///     multiplexed.
 pub struct ExocoreProtoHandler {
     listen_protocol: SubstreamProtocol<ExocoreProtoConfig>,
     inbound_stream_futures: Vec<InboundStreamFuture>,

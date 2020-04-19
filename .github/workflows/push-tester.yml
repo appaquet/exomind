@@ -68,14 +68,14 @@ jobs:
   wasm_build:
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:19.04 # required for clang with wasm
+      image: ubuntu:19.10 # required for clang with wasm
     steps:
       - uses: actions/checkout@v2
       - name: Install build dependencies
         run: |
           set -e
 
-          apt update && apt install -y clang curl pkg-config libssl-dev openssl
+          apt update && DEBIAN_FRONTEND=noninteractive  apt install -y clang curl pkg-config libssl-dev openssl
 
           curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.9.1/wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz | tar zxf -
           mv wasm-pack*/wasm-pack .

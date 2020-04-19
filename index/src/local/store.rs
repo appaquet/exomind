@@ -24,9 +24,9 @@ use super::entity_index::EntityIndex;
 /// Locally persisted entities store allowing mutation and queries on entities
 /// and their traits.
 ///
-/// It forwards mutation requests to the chain engine, receives back chain events
-/// that get indexed by the entities index. Queries are executed by the entities
-/// index.
+/// It forwards mutation requests to the chain engine, receives back chain
+/// events that get indexed by the entities index. Queries are executed by the
+/// entities index.
 pub struct Store<CS, PS>
 where
     CS: exocore_chain::chain::ChainStore,
@@ -168,7 +168,7 @@ where
 
                 for watched_query in inner.watched_queries.queries() {
                     let send_result = inner.incoming_queries_sender.try_send(QueryRequest {
-                        query: watched_query.query.as_ref().clone(),
+                        query: Box::new(watched_query.query.as_ref().clone()),
                         sender: QueryRequestSender::Stream(
                             watched_query.sender.clone(),
                             watched_query.token,
@@ -261,13 +261,13 @@ where
 
     async fn execute_query_async(
         weak_inner: Weak<RwLock<Inner<CS, PS>>>,
-        query: EntityQuery,
+        query: Box<EntityQuery>,
     ) -> Result<EntityResults, Error> {
         let result = spawn_blocking(move || {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
-            inner.index.search(&query)
+            inner.index.search(query)
         })
         .await;
 
@@ -339,7 +339,7 @@ where
         // ok to dismiss send as sender end will be dropped in case of an error and
         // consumer will be notified by channel being closed
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
-            query,
+            query: Box::new(query),
             sender: QueryRequestSender::Future(sender),
         });
 
@@ -364,7 +364,7 @@ where
         // ok to dismiss send as sender end will be dropped in case of an error and
         // consumer will be notified by channel being closed
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
-            query,
+            query: Box::new(query),
             sender: QueryRequestSender::Stream(Arc::new(Mutex::new(sender)), watch_token),
         });
 
@@ -418,7 +418,7 @@ where
 /// Incoming query to be executed, or re-scheduled watched query to be
 /// re-executed.
 struct QueryRequest {
-    query: EntityQuery,
+    query: Box<EntityQuery>,
     sender: QueryRequestSender,
 }
 
@@ -470,7 +470,7 @@ pub mod tests {
             .cluster
             .wait_operation_committed(0, response.operation_id);
 
-        let query = QueryBuilder::match_text("hello").build();
+        let query = QueryBuilder::matches("hello").build();
         let results = test_store.query(query)?;
         assert_eq!(results.entities.len(), 1);
 
@@ -504,7 +504,7 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let query = QueryBuilder::match_text("hello").build();
+        let query = QueryBuilder::matches("hello").build();
         let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
 
         let result = stream.next().unwrap();

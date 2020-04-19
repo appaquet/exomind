@@ -3,25 +3,32 @@ syntax = "proto3";
 package exocore.index;
 
 import "exocore/index/entity.proto";
+import "google/protobuf/timestamp.proto";
 
 message EntityQuery {
     oneof predicate {
         MatchPredicate match = 1;
         TraitPredicate trait = 2;
         IdPredicate id = 3;
+        ReferencePredicate reference = 4;
+
         TestPredicate test = 99;
     }
 
+    /// Query paging requested
     Paging paging = 5;
 
+    /// Query sorting
+    Sorting sorting = 6;
+
     /// If true, only return summary
-    bool summary = 6;
+    bool summary = 7;
 
     /// Optional watch token if this query is to be used for watching.
-    uint64 watch_token = 7;
+    uint64 watch_token = 8;
 
     /// If specified, if results from server matches this hash, only a summary will be returned.
-    uint64 result_hash = 8;
+    uint64 result_hash = 9;
 }
 
 message MatchPredicate {
@@ -43,21 +50,85 @@ message TraitPredicate {
 }
 
 message TraitQuery {
+    oneof predicate {
+        MatchPredicate match = 1;
+        TraitFieldPredicate field = 2;
+        TraitFieldReferencePredicate reference = 3;
+    }
+}
+
+message TraitFieldPredicate {
+    string field = 1;
+
+    oneof value {
+        string string = 2;
+        int64 int64 = 3;
+        uint64 uint64 = 4;
+        google.protobuf.Timestamp date = 5;
+    }
+
+    Operator operator = 6;
+
+    enum Operator {
+        EQUAL = 0;
+        GT = 1;
+        GTE = 2;
+        LT = 3;
+        LTE = 4;
+    }
+}
+
+message TraitFieldReferencePredicate {
+    string field = 1;
+
+    ReferencePredicate reference = 2;
+}
+
+message ReferencePredicate {
+    // Entity id the reference points to
+    string entity_id = 1;
+
+    // Optional trait id the reference points to
+    string trait_id = 2;
 }
 
 message Paging {
-    /// Returns results after token.
-    string after_token = 1;
+    /// Returns results after this given sorting value.
+    SortingValue after_sort_value = 1;
 
-    /// Returns results before token.
-    string before_token = 2;
+    /// Returns results before this given sorting value.
+    SortingValue before_sort_value = 2;
 
     /// Desired results count. Default if 0.
     uint32 count = 3;
 }
 
-message EntityResults {
+message Sorting {
+    /// Value by which we want results to be sorted.
+    oneof value {
+        bool score = 1;
+        bool operation_id = 2;
+        string field = 3;
+    }
 
+    /// Order of the results.
+    bool ascending = 4;
+}
+
+message SortingValue {
+    oneof value {
+        float float = 1;
+        uint64 uint64 = 2;
+        google.protobuf.Timestamp date = 3;
+        bool min = 4;
+        bool max = 5;
+    }
+
+    /// ID operation used to tie break equal results
+    uint64 operation_id = 6;
+}
+
+message EntityResults {
     repeated EntityResult entities = 1;
 
     bool summary = 2;
@@ -69,7 +140,6 @@ message EntityResults {
     Paging next_page = 5;
 
     uint64 hash = 6;
-
 }
 
 message EntityResult {
@@ -77,7 +147,7 @@ message EntityResult {
 
     EntityResultSource source = 2;
 
-    string sort_token = 3;
+    SortingValue sorting_value = 3;
 }
 
 enum EntityResultSource {

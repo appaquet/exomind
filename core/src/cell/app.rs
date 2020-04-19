@@ -7,7 +7,8 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
 
-/// Application that extends the capability of the cell by providing schemas and WebAssembly logic.
+/// Application that extends the capability of the cell by providing schemas and
+/// WebAssembly logic.
 #[derive(Clone)]
 pub struct Application {
     identity: Arc<Identity>,
@@ -108,7 +109,8 @@ impl Application {
     }
 }
 
-/// Unique identifier of an application, which is built by hashing the public key
+/// Unique identifier of an application, which is built by hashing the public
+/// key
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct ApplicationId(String);
 

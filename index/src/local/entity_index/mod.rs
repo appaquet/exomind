@@ -14,21 +14,22 @@ use exocore_chain::{EngineHandle, EngineOperationStatus};
 use exocore_core::cell::FullCell;
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
-    Entity, EntityMutation, EntityQuery, EntityResult, EntityResultSource, EntityResults, Paging,
-    Trait,
+    Entity, EntityMutation, EntityQuery, EntityResult, EntityResultSource, EntityResults, Trait,
 };
+use exocore_core::protos::prost::ProstDateTimeExt;
 use exocore_core::protos::registry::Registry;
 
-use super::mutation_index::{IndexMutation, MutationIndex, MutationMetadataType};
-use super::top_results::RescoredTopResultsIterable;
 use crate::error::Error;
-use crate::query::SortToken;
-use exocore_core::protos::prost::ProstDateTimeExt;
+use crate::sorting::SortingValueExt;
+
+use super::mutation_index::{IndexOperation, MutationIndex, MutationType};
+use super::top_results::RescoredTopResultsIterable;
 
 mod config;
 pub use config::*;
 mod entity_mutations;
 pub use entity_mutations::*;
+use std::borrow::Borrow;
 
 #[cfg(test)]
 mod test_index;
@@ -102,8 +103,8 @@ where
         self.handle_chain_engine_events(std::iter::once(event))
     }
 
-    /// Handle events coming from the chain layer. These events allow keeping the
-    /// index consistent with the chain layer, up to the consistency
+    /// Handle events coming from the chain layer. These events allow keeping
+    /// the index consistent with the chain layer, up to the consistency
     /// guarantees that the layer offers.
 
     /// Since the events stream is buffered, we may receive a discontinuity if
@@ -192,7 +193,8 @@ where
 
     /// Execute a search query on the indices, and returning all entities
     /// matching the query.
-    pub fn search(&self, query: &EntityQuery) -> Result<EntityResults, Error> {
+    pub fn search<Q: Borrow<EntityQuery>>(&self, query: Q) -> Result<EntityResults, Error> {
+        let query = query.borrow();
         let current_page = query
             .paging
             .clone()
@@ -212,7 +214,7 @@ where
         let pending_results = pending_results.map(|res| (res, EntityResultSource::Pending));
         let combined_results = chain_results
             .merge_by(pending_results, |(res1, _src1), (res2, _src2)| {
-                res1.score >= res2.score
+                res1.sort_value >= res2.sort_value
             });
 
         let mut hasher = result_hasher();
@@ -229,7 +231,7 @@ where
                 }
 
                 let traits_meta = self
-                    .fetch_entity_traits_metadata(&trait_meta.entity_id)
+                    .fetch_entity_mutations_metadata(&trait_meta.entity_id)
                     .map_err(|err| {
                         error!(
                             "Error fetching traits for entity_id={} from indices: {}",
@@ -252,10 +254,9 @@ where
                 matched_entities.insert(trait_meta.entity_id.clone());
 
                 // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
-                let score = trait_meta.score;
-                let sort_token = SortToken::from_u64(score);
-                if sort_token.is_within_page_bound(&current_page) {
-                    Some((trait_meta, traits_meta, source, sort_token))
+                let sort_value = trait_meta.sort_value.clone();
+                if sort_value.value.is_within_page_bound(&current_page) {
+                    Some((trait_meta, traits_meta, source, sort_value))
                 } else {
                     None
                 }
@@ -265,15 +266,15 @@ where
             // other traits
             .top_negatively_rescored_results(
                 current_page.count as usize,
-                |(trait_result, _traits, _source, _sort_token)| {
-                    (trait_result.score, trait_result.score)
+                |(_trait_result, _traits, _source, sort_value)| {
+                    (sort_value.clone(), sort_value.clone())
                 },
             )
             // accumulate results
             .fold(
                 (Vec::new(), Vec::new()),
                 |(mut entities_results, mut all_traits_results),
-                 (trait_result, traits_results, source, sort_token)| {
+                 (trait_result, traits_results, source, sort_value)| {
                     hasher.write_u64(traits_results.hash);
                     let entity = Entity {
                         id: trait_result.entity_id,
@@ -283,7 +284,7 @@ where
                     entities_results.push(EntityResult {
                         entity: Some(entity),
                         source: source.into(),
-                        sort_token: sort_token.0,
+                        sorting_value: Some(sort_value.value.clone()),
                     });
 
                     all_traits_results.push(traits_results);
@@ -293,10 +294,14 @@ where
             );
 
         let next_page = if let Some(last_result) = entities_results.last() {
-            let new_page = Paging {
-                before_token: last_result.sort_token.clone(),
-                ..current_page.clone()
-            };
+            let mut new_page = current_page.clone();
+
+            let ascending = query.sorting.as_ref().map(|s| s.ascending).unwrap_or(false);
+            if !ascending {
+                new_page.before_sort_value = last_result.sorting_value.clone();
+            } else {
+                new_page.after_sort_value = last_result.sorting_value.clone();
+            }
 
             Some(new_page)
         } else {
@@ -307,7 +312,7 @@ where
         let results_hash = hasher.finish();
         let only_summary = query.summary || results_hash == query.result_hash;
         if !only_summary {
-            self.fetch_entities_results_full_traits(&mut entities_results, traits_results);
+            self.fetch_mutations_results_traits(&mut entities_results, traits_results);
         }
 
         Ok(EntityResults {
@@ -391,8 +396,8 @@ where
         };
 
         let mutations_iter =
-            pending_and_chain_iter.flat_map(IndexMutation::from_pending_engine_operation);
-        self.pending_index.apply_mutations(mutations_iter)?;
+            pending_and_chain_iter.flat_map(IndexOperation::from_pending_engine_operation);
+        self.pending_index.apply_operations(mutations_iter)?;
 
         Ok(())
     }
@@ -474,7 +479,7 @@ where
             .flat_map(|(offset, _height, engine_operation)| {
                 // for every mutation we index in the chain index, we delete it from the pending
                 // index
-                pending_index_mutations.push(IndexMutation::DeleteOperation(
+                pending_index_mutations.push(IndexOperation::DeleteOperation(
                     engine_operation.operation_id,
                 ));
 
@@ -483,17 +488,17 @@ where
                     new_highest_block_offset = Some(offset);
                 }
 
-                IndexMutation::from_chain_engine_operation(engine_operation, offset)
+                IndexOperation::from_chain_engine_operation(engine_operation, offset)
             });
 
-        self.chain_index.apply_mutations(chain_index_mutations)?;
+        self.chain_index.apply_operations(chain_index_mutations)?;
         info!(
             "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
             pending_index_mutations.len(),
             new_highest_block_offset
         );
         self.pending_index
-            .apply_mutations(pending_index_mutations.into_iter())?;
+            .apply_operations(pending_index_mutations.into_iter())?;
 
         if let Some(new_highest_block_offset) = new_highest_block_offset {
             self.chain_index_last_block = Some(new_highest_block_offset);
@@ -526,7 +531,7 @@ where
     {
         let mutations = operations_id
             .flat_map(|op_id| match self.chain_handle.get_pending_operation(op_id) {
-                Ok(Some(op)) => IndexMutation::from_pending_engine_operation(op),
+                Ok(Some(op)) => IndexOperation::from_pending_engine_operation(op),
                 Ok(None) => {
                     error!(
                         "An event from chain layer contained a pending operation that wasn't found: operation_id={}",
@@ -544,15 +549,15 @@ where
             })
             .collect::<Vec<_>>();
 
-        self.pending_index.apply_mutations(mutations.into_iter())
+        self.pending_index.apply_operations(mutations.into_iter())
     }
 
     /// Fetch an entity and all its traits from indices and the chain layer.
     /// Traits returned follow mutations in order of operation id.
     #[cfg(test)]
     fn fetch_entity(&self, entity_id: &str) -> Result<Entity, Error> {
-        let traits_metadata = self.fetch_entity_traits_metadata(entity_id)?;
-        let traits = self.fetch_entity_traits_data(traits_metadata);
+        let traits_metadata = self.fetch_entity_mutations_metadata(entity_id)?;
+        let traits = self.fetch_entity_traits(traits_metadata);
 
         Ok(Entity {
             id: entity_id.to_string(),
@@ -560,22 +565,22 @@ where
         })
     }
 
-    /// Fetch indexed traits metadata from pending and chain indices for this
+    /// Fetch indexed mutations metadata from pending and chain indices for this
     /// entity id, and merge them.
-    fn fetch_entity_traits_metadata(&self, entity_id: &str) -> Result<EntityMutations, Error> {
+    fn fetch_entity_mutations_metadata(&self, entity_id: &str) -> Result<EntityMutations, Error> {
         let pending_results = self.pending_index.search_entity_id(entity_id)?;
         let chain_results = self.chain_index.search_entity_id(entity_id)?;
         let ordered_traits_metadata = pending_results
-            .results
+            .mutations
             .into_iter()
-            .chain(chain_results.results.into_iter());
+            .chain(chain_results.mutations.into_iter());
 
         EntityMutations::new(ordered_traits_metadata)
     }
 
     /// Populate traits in the EntityResult by fetching each entity's traits
     /// from the chain layer.
-    fn fetch_entities_results_full_traits(
+    fn fetch_mutations_results_traits(
         &self,
         entities_results: &mut Vec<EntityResult>,
         entities_traits_results: Vec<EntityMutations>,
@@ -584,7 +589,7 @@ where
             .iter_mut()
             .zip(entities_traits_results.into_iter())
         {
-            let traits = self.fetch_entity_traits_data(traits_results);
+            let traits = self.fetch_entity_traits(traits_results);
             if let Some(entity) = entity_result.entity.as_mut() {
                 entity.traits = traits;
             }
@@ -592,12 +597,12 @@ where
     }
 
     /// Fetch traits data from chain layer.
-    fn fetch_entity_traits_data(&self, results: EntityMutations) -> Vec<Trait> {
+    fn fetch_entity_traits(&self, results: EntityMutations) -> Vec<Trait> {
         results
             .traits
             .values()
             .flat_map(|merged_metadata| {
-                let mutation = self.fetch_trait_mutation_operation(
+                let mutation = self.fetch_mutation_operation(
                     merged_metadata.operation_id,
                     merged_metadata.block_offset,
                 );
@@ -623,7 +628,7 @@ where
 
                 // update the trait with creation & modification date that got merged from
                 // metadata
-                if let MutationMetadataType::TraitPut(put_mut) = &merged_metadata.mutation_type {
+                if let MutationType::TraitPut(put_mut) = &merged_metadata.mutation_type {
                     trait_instance.creation_date =
                         put_mut.creation_date.map(|d| d.to_proto_timestamp());
                     trait_instance.modification_date =
@@ -637,7 +642,7 @@ where
 
     /// Fetch an operation from the chain layer by the given operation id and
     /// optional block offset.
-    fn fetch_trait_mutation_operation(
+    fn fetch_mutation_operation(
         &self,
         operation_id: OperationId,
         block_offset: Option<BlockOffset>,

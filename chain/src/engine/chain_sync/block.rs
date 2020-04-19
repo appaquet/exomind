@@ -20,14 +20,14 @@ pub struct BlockMeta {
 }
 
 impl BlockMeta {
-    /// Samples the local chain and returns a collection of `BlockPartialHeader` at
-    /// different position in the asked range.
+    /// Samples the local chain and returns a collection of `BlockPartialHeader`
+    /// at different position in the asked range.
     ///
-    /// `from_offset` and `to_offset` are best efforts and fallback to begin/end of
-    /// chain if they don't exist. `begin_count` and `end_count` are number of
-    /// headers to include without sampling from beginning and end of range.
-    /// `sampled_count` is the approximate number of headers to return, excluding
-    /// the `begin_count` and `end_count`
+    /// `from_offset` and `to_offset` are best efforts and fallback to begin/end
+    /// of chain if they don't exist. `begin_count` and `end_count` are
+    /// number of headers to include without sampling from beginning and end
+    /// of range. `sampled_count` is the approximate number of headers to
+    /// return, excluding the `begin_count` and `end_count`
     pub fn from_sampled_chain_slice<CS: chain::ChainStore>(
         store: &CS,
         from_offset: BlockOffset,
