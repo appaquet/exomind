@@ -1,0 +1,20 @@
+[package]
+name = "exomind-integrations-gmail"
+version = "0.1.0"
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+google-gmail1 = { path = "../../../google-api-generated/gen/gmail/v1/lib" }
+google_api_auth = { git = "https://github.com/google-apis-rs/generator", features = ["with-yup-oauth2"] }
+yup-oauth2 ="4.1.0"
+tokio = "0.2"
+exocore = { path = "../../../exocore", features = ["client", "logger", "tests_utils"], default-features = false }
+log = "0.4"
+exomind = { path = "../../" }
+mailparse = "0.12"
+serde_json = "1.0"
+anyhow = "1.0"
+charset = "0.1"
+prost-types = "0.6"
+

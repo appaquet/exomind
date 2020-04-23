@@ -1,0 +1,19 @@
+[package]
+name = "exomind"
+version = "0.1.0"
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+prost = "0.6"
+prost-types = "0.6"
+exocore = { path = "../exocore", default-features = false, features = ["client"] }
+
+[build-dependencies]
+prost-build = "0.6"
+
+[workspace]
+members = [
+  "integrations/gmail",
+  "web"
+]

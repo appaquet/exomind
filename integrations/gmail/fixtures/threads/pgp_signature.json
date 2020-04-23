@@ -1,0 +1,159 @@
+{
+  "historyId": "32156967",
+  "id": "16b6b3ec8da7a586",
+  "messages": [
+    {
+      "historyId": "32156967",
+      "id": "16b6b3ec8da7a586",
+      "internalDate": "1560872205000",
+      "labelIds": [
+        "CATEGORY_FORUMS",
+        "INBOX"
+      ],
+      "payload": {
+        "body": {
+          "size": 0
+        },
+        "filename": "",
+        "headers": [
+          {
+            "name": "Delivered-To",
+            "value": "name@email.com"
+          },
+          {
+            "name": "Date",
+            "value": "Tue, 18 Jun 2019 08:36:45 -0700"
+          },
+          {
+            "name": "From",
+            "value": "Steve Langasek <steve.langasek@ubuntu.com>"
+          },
+          {
+            "name": "To",
+            "value": "ubuntu-devel-announce@lists.ubuntu.com, ubuntu-announce@lists.ubuntu.com"
+          },
+          {
+            "name": "Subject",
+            "value": "i386 architecture will be dropped starting with eoan (Ubuntu 19.10)"
+          },
+          {
+            "name": "MIME-Version",
+            "value": "1.0"
+          },
+          {
+            "name": "User-Agent",
+            "value": "Mutt/1.10.1 (2018-07-13)"
+          },
+          {
+            "name": "List-Id",
+            "value": "Ubuntu Announcements <ubuntu-announce.lists.ubuntu.com>"
+          },
+          {
+            "name": "Content-Type",
+            "value": "multipart/mixed; boundary=\"===============4342436375854290361==\""
+          },
+          {
+            "name": "Errors-To",
+            "value": "ubuntu-announce-bounces@lists.ubuntu.com"
+          },
+          {
+            "name": "Sender",
+            "value": "ubuntu-announce <ubuntu-announce-bounces@lists.ubuntu.com>"
+          }
+        ],
+        "mimeType": "multipart/mixed",
+        "partId": "",
+        "parts": [
+          {
+            "body": {
+              "size": 0
+            },
+            "filename": "",
+            "headers": [
+              {
+                "name": "Content-Type",
+                "value": "multipart/signed; micalg=pgp-sha512; protocol=\"application/pgp-signature\"; boundary=\"Fig2xvG2VGoz8o/s\""
+              },
+              {
+                "name": "Content-Disposition",
+                "value": "inline"
+              }
+            ],
+            "mimeType": "multipart/signed",
+            "partId": "0",
+            "parts": [
+              {
+                "body": {
+                  "data": "TGFzdCB5ZWFyLCB0aGUgVWJ1bnR1IGRldmVsb3BlciBjb21tdW5pdHkgY29uc2lkZXJlZCB0aGUgcXVlc3Rpb24gb2Ygd2hldGhlcg0KdG8gY29udGludWUgY2FycnlpbmcgZm9yd2FyZCB0aGUgaTM4NiBhcmNoaXRlY3R1cmUgaW4gdGhlIFVidW50dSBhcmNoaXZlIGZvcg0KZnV0dXJlIHJlbGVhc2VzLlsxXSDCoFRoZSBkaXNjdXNzaW9uIGF0IHRoZSB0aW1lIHdhcyBpbmNvbmNsdXNpdmUsIGJ1dCBpbg0KbGlnaHQgb2YgdGhlIHN0cm9uZyBwb3NzaWJpbGl0eSB0aGF0IHdlIG1pZ2h0IG5vdCBpbmNsdWRlIGkzODYgYXMgYSByZWxlYXNlDQphcmNoaXRlY3R1cmUgaW4gMjAuMDQgTFRTLCB3ZSB0b29rIHRoZSBwcm9hY3RpdmUgc3RlcCB0byBkaXNhYmxlIHVwZ3JhZGVzDQpmcm9tIDE4LjA0IHRvIDE4LjEwIGZvciBpMzg2IHN5c3RlbXNbMl0sIHRvIGF2b2lkIGFjY2lkZW50YWxseSBzdHJhbmRpbmcNCnVzZXJzIG9uIGFuIGludGVyaW0gcmVsZWFzZSB3aXRoIDkgbW9udGhzIG9mIHN1cHBvcnQgaW5zdGVhZCBvZiBsZXR0aW5nIHRoZW0NCmNvbnRpbnVlIHRvIHJ1biBVYnVudHUgMTguMDQgTFRTIHdpdGggaXRzIDUgeWVhcnMgb2Ygc3RhbmRhcmQgc3VwcG9ydC4NCg0KSW4gRmVicnVhcnkgb2YgdGhpcyB5ZWFyLCBJIGFsc28gcG9zdGVkIHRvIGNvbW11bmljYXRlIHRoZSB0aW1lbGluZSBpbiB3aGljaA0Kd2Ugd291bGQgdGFrZSBhIGZpbmFsIGRlY2lzaW9uIGFib3V0IGkzODYgc3VwcG9ydCBpbiAyMC4wNCBMVFNbM10sIG5hbWVseSwNCnRoYXQgd2Ugd291bGQgZGVjaWRlIGluIHRoZSBtaWRkbGUgb2YgMjAxOS4NCg0KVGhlIG1pZGRsZSBvZiAyMDE5IGhhcyBub3cgYXJyaXZlZC4gIMKgVGhlIFVidW50dSBlbmdpbmVlcmluZyB0ZWFtIGhhcw0KcmV2aWV3ZWQgdGhlIGZhY3RzIGJlZm9yZSB1cyBhbmQgY29uY2x1ZGVkIHRoYXQgd2Ugc2hvdWxkIG5vdCBjb250aW51ZSB0bw0KY2FycnkgaTM4NiBmb3J3YXJkIGFzIGFuIGFyY2hpdGVjdHVyZS4gIMKgQ29uc2VxdWVudGx5LCBpMzg2IHdpbGwgbm90IGJlDQppbmNsdWRlZCBhcyBhbiBhcmNoaXRlY3R1cmUgZm9yIHRoZSAxOS4xMCByZWxlYXNlLCBhbmQgd2Ugd2lsbCBzaG9ydGx5IGJlZ2luDQp0aGUgcHJvY2VzcyBvZiBkaXNhYmxpbmcgaXQgZm9yIHRoZSBlb2FuIHNlcmllcyBhY3Jvc3MgVWJ1bnR1DQppbmZyYXN0cnVjdHVyZS4NCg0KV2hpbGUgdGhpcyBtZWFucyB3ZSB3aWxsIG5vdCBwcm92aWRlIDMyLWJpdCBidWlsZHMgb2YgbmV3IHVwc3RyZWFtIHZlcnNpb25zDQpvZiBsaWJyYXJpZXMsIHRoZXJlIGFyZSBhIG51bWJlciBvZiB3YXlzIHRoYXQgMzItYml0IGFwcGxpY2F0aW9ucyBjYW4NCmNvbnRpbnVlIHRvIGJlIG1hZGUgYXZhaWxhYmxlIHRvIHVzZXJzIG9mIGxhdGVyIFVidW50dSByZWxlYXNlcywgYXMgZGV0YWlsZWQNCmluIFs0XS4gIMKgV2Ugd2lsbCBiZSB3b3JraW5nIHRvIHBvbGlzaCB0aGUgMzItYml0IHN1cHBvcnQgc3Rvcnkgb3ZlciB0aGUNCmNvdXJzZSBvZiB0aGUgMTkuMTAgZGV2ZWxvcG1lbnQgY3ljbGUuICBUbyBmb2xsb3cgdGhlIGV2b2x1dGlvbiBvZiB0aGlzDQpzdXBwb3J0LCB5b3UgY2FuIHBhcnRpY2lwYXRlIGluIHRoZSBkaXNjb3Vyc2UgdGhyZWFkIGF0IFs1XS4NCg0KWzFdIGh0dHBzOi8vbGlzdHMudWJ1bnR1LmNvbS9hcmNoaXZlcy91YnVudHUtZGV2ZWwvMjAxOC1NYXkvMDQwMzEwLmh0bWwNClsyXSBodHRwczovL2xhdW5jaHBhZC5uZXQvdWJ1bnR1Lytzb3VyY2UvdWJ1bnR1LXJlbGVhc2UtdXBncmFkZXIvMToxOC4xMC4xMA0KWzNdIGh0dHBzOi8vbGlzdHMudWJ1bnR1LmNvbS9hcmNoaXZlcy91YnVudHUtZGV2ZWwvMjAxOS1GZWJydWFyeS8wNDA1OTguaHRtbA0KWzRdIGh0dHBzOi8vbGlzdHMudWJ1bnR1LmNvbS9hcmNoaXZlcy91YnVudHUtZGV2ZWwvMjAxOC1NYXkvMDQwMzQ4Lmh0bWwNCls1XSBodHRwczovL2Rpc2NvdXJzZS51YnVudHUuY29tL3QvaTM4Ni1hcmNoaXRlY3R1cmUtd2lsbC1iZS1kcm9wcGVkLXN0YXJ0aW5nLXdpdGgtZW9hbi11YnVudHUtMTktMTAvMTEyNjMvMg0KDQotLSANClN0ZXZlIExhbmdhc2VrDQo=",
+                  "size": 2059
+                },
+                "filename": "",
+                "headers": [
+                  {
+                    "name": "Content-Type",
+                    "value": "text/plain; charset=iso-8859-1"
+                  },
+                  {
+                    "name": "Content-Disposition",
+                    "value": "inline"
+                  },
+                  {
+                    "name": "Content-Transfer-Encoding",
+                    "value": "quoted-printable"
+                  }
+                ],
+                "mimeType": "text/plain",
+                "partId": "0.0"
+              },
+              {
+                "body": {
+                  "attachmentId": "ANGjdJ-gAHEet4nO4D2JaGerkBHWkm7Hh80PWnCSDPLG5CqtKLzTgtXp6NMtTgQcUfJzWiAsySEt3WmE_y_aq097AcoKlDVz23PgG0PHeZ4iuwk3rRzZIWauA0h1RD3eMNrmhDHaGszDxma_dEDjKhYE3UtcCC54l-7AwUAXHUFJZ7pQDiVR7Btqr7qcbAmjiTGmNR60jY4h7ANqo94_w4XJ-k0R0507-lDiLAJszxT0M6LrjSwIzToU2VL4CMo88i7w_7H_9jfk5pJMv-R7rdKQ8uZPr7pKZPhOxgXIOsFAwKf63v3LZ2ju32pkvLGcxrfEBmeqxKNbr5b1PLO5JDDd96K9H0nNVT9IpyPrqFrQJ-edfGqQidUH3_a8TGA",
+                  "size": 849
+                },
+                "filename": "signature.asc",
+                "headers": [
+                  {
+                    "name": "Content-Type",
+                    "value": "application/pgp-signature; name=\"signature.asc\""
+                  }
+                ],
+                "mimeType": "application/pgp-signature",
+                "partId": "0.1"
+              }
+            ]
+          },
+          {
+            "body": {
+              "data": "LS0gCnVidW50dS1hbm5vdW5jZSBtYWlsaW5nIGxpc3QKdWJ1bnR1LWFubm91bmNlQGxpc3RzLnVidW50dS5jb20KTW9kaWZ5IHNldHRpbmdzIG9yIHVuc3Vic2NyaWJlIGF0OiBodHRwczovL2xpc3RzLnVidW50dS5jb20vbWFpbG1hbi9saXN0aW5mby91YnVudHUtYW5ub3VuY2UK",
+              "size": 159
+            },
+            "filename": "",
+            "headers": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain; charset=\"utf-8\""
+              },
+              {
+                "name": "MIME-Version",
+                "value": "1.0"
+              },
+              {
+                "name": "Content-Transfer-Encoding",
+                "value": "base64"
+              },
+              {
+                "name": "Content-Disposition",
+                "value": "inline"
+              }
+            ],
+            "mimeType": "text/plain",
+            "partId": "1"
+          }
+        ]
+      },
+      "sizeEstimate": 9891,
+      "snippet": "Last year, the Ubuntu developer community considered the question of whether to continue carrying forward the i386 architecture in the Ubuntu archive for future releases.[1] The discussion at the time",
+      "threadId": "16b6b3ec8da7a586"
+    }
+  ]
+}

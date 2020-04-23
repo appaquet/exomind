@@ -1,0 +1,65 @@
+
+û
+exomind/base.protoexomind.baseexocore/index/options.protoexocore/index/entity.protogoogle/protobuf/timestamp.proto" 
+
+Collection
+name (	Rname"£
+CollectionChild=
+
+collection (2.exocore.index.ReferenceBËUR
+collection9
+
+added_date (2.google.protobuf.TimestampR	addedDate
+weight (Rweight"x
+	Postponed0
+entity (2.exocore.index.ReferenceRentity9
+
+until_date (2.google.protobuf.TimestampR	untilDate"ù
+Account
+key (	Rkey
+name (	Rname3
+data (2.exomind.base.Account.DataEntryRdata7
+	DataEntry
+key (	Rkey
+value (	Rvalue:8"è
+EmailThread-
+source (2.exomind.base.AccountRsource
+	source_id (	RsourceId)
+from (2.exomind.base.ContactRfrom
+subject (	B¯URsubject
+snippet (	B¯URsnippet7
+
+last_email (2.exocore.index.ReferenceR	lastEmail
+read (Rread"‰
+Email-
+source (2.exomind.base.AccountRsource
+	source_id (	RsourceId)
+from (2.exomind.base.ContactRfrom?
+received_date (2.google.protobuf.TimestampRreceivedDate%
+to (2.exomind.base.ContactRto%
+cc (2.exomind.base.ContactRcc'
+bcc (2.exomind.base.ContactRbcc
+subject	 (	B¯URsubject
+snippet
+ (	B¯URsnippet-
+parts (2.exomind.base.EmailPartRparts?
+attachments (2.exomind.base.EmailAttachmentRattachments"<
+	EmailPart
+	mime_type (	RmimeType
+body (	Rbody"ç
+EmailAttachment
+key (	Rkey
+name (	Rname
+	mime_type (	RmimeType
+size (Rsize-
+inline_placeholder (	RinlinePlaceholder;
+data (2'.exomind.base.EmailAttachment.DataEntryRdata7
+	DataEntry
+key (	Rkey
+value (	Rvalue:8":
+Note
+title (	B¯URtitle
+body (	B¯URbody"3
+Contact
+name (	Rname
+email (	Remailbproto3

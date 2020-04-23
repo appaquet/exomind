@@ -1,0 +1,96 @@
+{
+  "historyId": "32151898",
+  "id": "1719ef6b5604e33e",
+  "messages": [
+    {
+      "historyId": "32151898",
+      "id": "1719ef6b5604e33e",
+      "internalDate": "1587509676000",
+      "labelIds": [
+        "CATEGORY_UPDATES",
+        "INBOX"
+      ],
+      "payload": {
+        "body": {
+          "size": 0
+        },
+        "filename": "",
+        "headers": [
+          {
+            "name": "Subject",
+            "value": "Most Americans think anti-quarantine protesters are idiots, poll shows"
+          },
+          {
+            "name": "From",
+            "value": "Futurism <contact@futurism.com>"
+          },
+          {
+            "name": "Reply-To",
+            "value": "Futurism <contact@futurism.com>"
+          },
+          {
+            "name": "To",
+            "value": "<name@email.com>"
+          },
+          {
+            "name": "Date",
+            "value": "Tue, 21 Apr 2020 22:54:36 +0000"
+          },
+          {
+            "name": "Content-Type",
+            "value": "multipart/alternative; boundary=\"_----------=_MCPart_1291278001\""
+          },
+          {
+            "name": "MIME-Version",
+            "value": "1.0"
+          }
+        ],
+        "mimeType": "multipart/alternative",
+        "partId": "",
+        "parts": [
+          {
+            "body": {
+              "data": "c29tZSB0ZXh0Cg==",
+              "size": 6888
+            },
+            "filename": "",
+            "headers": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain; charset=\"utf-8\"; format=\"fixed\""
+              },
+              {
+                "name": "Content-Transfer-Encoding",
+                "value": "quoted-printable"
+              }
+            ],
+            "mimeType": "text/plain",
+            "partId": "0"
+          },
+          {
+            "body": {
+              "data": "PGh0bWw-c29tZSBodG1sPC9odG1sPgo=",
+              "size": 58254
+            },
+            "filename": "",
+            "headers": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=\"utf-8\""
+              },
+              {
+                "name": "Content-Transfer-Encoding",
+                "value": "quoted-printable"
+              }
+            ],
+            "mimeType": "text/html",
+            "partId": "1"
+          }
+        ]
+      },
+      "sizeEstimate": 77118,
+      "snippet": "This grad student wrote his papers using an AI | Read this and more of today&#39;s top science and tech news from Futurism ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌",
+      "threadId": "1719ef6b5604e33e"
+    }
+  ]
+}

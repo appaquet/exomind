@@ -1,0 +1,299 @@
+use charset::Charset;
+use exomind::protos::base::{Contact, Email, EmailAttachment, EmailPart, EmailThread};
+
+#[derive(Default)]
+pub struct ParsedThread {
+    thread: EmailThread,
+    emails: Vec<Email>,
+    labels: Vec<String>,
+}
+
+pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThread, anyhow::Error> {
+    let mut parsed_thread = ParsedThread::default();
+    parsed_thread.thread.source_id = thread.id.unwrap_or_default();
+
+    if let Some(last_message) = thread.messages.as_ref().and_then(|m| m.last()) {
+        if let Some(ids) = &last_message.label_ids {
+            parsed_thread.labels = ids.clone();
+        }
+    }
+
+    let mut messages = thread.messages.unwrap_or_else(Vec::new);
+    messages.sort_by_key(|m| m.internal_date.unwrap_or(0));
+
+    for message in messages {
+        if let Some(part) = message.payload {
+            let mut email: exomind::protos::base::Email = exomind::protos::base::Email::default();
+            email.snippet = message.snippet.clone().unwrap_or_default();
+            email.source_id = message.id.clone().unwrap_or_default();
+
+            match parse_part(&part, &mut email) {
+                Ok(()) => {
+                    parsed_thread.emails.push(email);
+                }
+                Err(err) => {
+                    error!(
+                        "Error parsing email in thread {:?}: {}",
+                        parsed_thread.thread.source_id, err
+                    );
+                }
+            }
+        }
+    }
+
+    if let Some(last_email) = parsed_thread.emails.last() {
+        parsed_thread.thread.snippet = last_email.snippet.clone();
+        parsed_thread.thread.subject = last_email.subject.clone();
+    }
+
+    Ok(parsed_thread)
+}
+
+fn parse_part(part: &google_gmail1::schemas::MessagePart, email: &mut Email) -> anyhow::Result<()> {
+    parse_part_headers(part, email)?;
+
+    let mime_type = part
+        .mime_type
+        .as_deref()
+        .ok_or_else(|| anyhow!("Part has no mime-type"))?;
+
+    let content_type = get_part_header(part, "Content-Type").unwrap_or("UTF-8");
+
+    if let Some(filename) = part.filename.as_deref().filter(|f| !f.is_empty()) {
+        parse_attachment(part, email, mime_type, filename);
+
+        return Ok(());
+    }
+
+    match mime_type {
+        "text/html" | "text/plain" => {
+            let body_bytes = part
+                .body
+                .as_ref()
+                .and_then(|b| b.data.as_ref())
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Expected the part to have a body, but got none. Mime:{}",
+                        mime_type
+                    )
+                })?
+                .as_ref();
+
+            let encoding = mailparse::parse_content_type(content_type);
+            let charset = Charset::for_label(encoding.charset.as_bytes())
+                .unwrap_or_else(|| Charset::for_label(b"UTF-8").unwrap());
+            let (decoded, _detected_charset, had_errors) = charset.decode(body_bytes);
+
+            if had_errors {
+                warn!(
+                    "Error decoding body: content_type={} body={}",
+                    content_type,
+                    String::from_utf8_lossy(body_bytes)
+                );
+            }
+
+            email.parts.push(EmailPart {
+                mime_type: mime_type.to_string(),
+                body: decoded.to_string(),
+            });
+        }
+        "multipart/mixed" | "multipart/alternative" | "multipart/related" | "multipart/signed" => {
+            let empty_parts = Vec::new();
+            let sub_parts = part.parts.as_ref().unwrap_or_else(|| &empty_parts);
+            for sub_part in sub_parts {
+                parse_part(sub_part, email)?;
+            }
+        }
+        other => {
+            warn!("Unhandled mime-type: {}", other);
+        }
+    }
+
+    Ok(())
+}
+
+fn parse_attachment(part: &google_gmail1::schemas::MessagePart, email: &mut Email, mime_type: &str, filename: &str) {
+    let attachment_id = get_part_header(part, "Content-Id")
+        .or_else(|| get_part_header(part, "X-Attachment-Id"))
+        .map(|s| s.to_string());
+
+    let key = attachment_id
+        .clone()
+        .unwrap_or_else(|| filename.to_string());
+
+    let size = part
+        .body
+        .as_ref()
+        .and_then(|b| b.size)
+        .map(|size| size as u64)
+        .unwrap_or_default();
+
+    email.attachments.push(EmailAttachment {
+        key: key.to_string(),
+        name: filename.to_string(),
+        mime_type: mime_type.to_string(),
+        inline_placeholder: attachment_id.unwrap_or_default(),
+        size,
+        ..Default::default()
+    });
+}
+
+fn parse_part_headers(
+    part: &google_gmail1::schemas::MessagePart,
+    email: &mut Email,
+) -> anyhow::Result<()> {
+    let empty_headers = Vec::new();
+    let headers = part.headers.as_ref().unwrap_or_else(|| &empty_headers);
+
+    for header in headers {
+        let name = if let Some(name) = &header.name {
+            name.to_lowercase()
+        } else {
+            continue;
+        };
+
+        let value = if let Some(value) = &header.value {
+            value.as_str()
+        } else {
+            continue;
+        };
+
+        match name.as_str() {
+            "subject" => email.subject = value.to_string(),
+            "from" => {
+                email.from = parse_contacts(value)?.into_iter().next();
+            }
+            "to" => {
+                email.to = parse_contacts(value)?;
+            }
+            "cc" => {
+                email.cc = parse_contacts(value)?;
+            }
+            "bcc" => {
+                email.bcc = parse_contacts(value)?;
+            }
+            "date" => {
+                let ts = mailparse::dateparse(value)?;
+                email.received_date = Some(prost_types::Timestamp {
+                    seconds: ts,
+                    nanos: 0,
+                });
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
+}
+
+fn get_part_header<'p>(
+    part: &'p google_gmail1::schemas::MessagePart,
+    key: &str,
+) -> Option<&'p str> {
+    let headers = part.headers.as_ref()?;
+
+    headers
+        .iter()
+        .find(|h| h.name.as_deref() == Some(key))
+        .and_then(|h| h.value.as_deref())
+}
+
+fn parse_contacts(value: &str) -> anyhow::Result<Vec<Contact>> {
+    let addrs = mailparse::addrparse(value)?;
+    let mut contacts = Vec::new();
+
+    for addr in addrs.iter() {
+        match addr {
+            mailparse::MailAddr::Single(single) => {
+                contacts.push(Contact {
+                    name: single.display_name.clone().unwrap_or_default(),
+                    email: single.addr.clone(),
+                });
+            }
+            mailparse::MailAddr::Group(group) => {
+                for single in group.addrs.iter() {
+                    contacts.push(Contact {
+                        name: single
+                            .display_name
+                            .clone()
+                            .unwrap_or_else(|| group.group_name.clone()),
+                        email: single.addr.clone(),
+                    });
+                }
+            }
+        }
+    }
+
+    Ok(contacts)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use exocore::core::tests_utils::root_test_fixtures_path;
+
+    #[test]
+    fn parse_html_simple() -> anyhow::Result<()> {
+        let thread = read_thread_fixture("html_simple")?;
+        let parsed = parse_thread(thread)?;
+        assert_eq!("17199eb1b9ffdc7b", parsed.thread.source_id);
+        assert_eq!("Some snippet", parsed.thread.snippet);
+        assert_eq!("Some subject", parsed.thread.subject);
+        assert_eq!(vec!["UNREAD", "CATEGORY_UPDATES", "INBOX"], parsed.labels);
+        assert!(!parsed.thread.read);
+
+        assert_eq!(Some(Contact {
+            name: "From Someone".to_string(),
+            email: "some@email.com".to_string(),
+        }), parsed.emails[0].from);
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_multipart_plain_and_html() {
+        let thread = read_thread_fixture("multipart_plain_and_html").unwrap();
+        let parsed = parse_thread(thread).unwrap();
+
+        assert_eq!(1, parsed.emails.len());
+        assert_eq!(2, parsed.emails[0].parts.len());
+    }
+
+    #[test]
+    fn parse_multiple_messages() {
+        let thread = read_thread_fixture("multiple_messages").unwrap();
+        let parsed = parse_thread(thread).unwrap();
+
+        assert_eq!(2, parsed.emails.len());
+    }
+
+    #[test]
+    fn parse_pgp_signature() {
+        let thread = read_thread_fixture("pgp_signature").unwrap();
+        let parsed = parse_thread(thread).unwrap();
+
+        assert_eq!(1, parsed.emails.len());
+        assert_eq!(2, parsed.emails[0].parts.len());
+
+        assert_eq!(1, parsed.emails[0].attachments.len());
+        assert_eq!(
+            vec![EmailAttachment {
+                key: "signature.asc".to_string(),
+                name: "signature.asc".to_string(),
+                mime_type: "application/pgp-signature".to_string(),
+                size: 849,
+                ..Default::default()
+            }],
+            parsed.emails[0].attachments
+        );
+    }
+
+    fn read_thread_fixture(file: &str) -> Result<google_gmail1::schemas::Thread, anyhow::Error> {
+        let path = root_test_fixtures_path(&format!(
+            "integrations/gmail/fixtures/threads/{}.json",
+            file
+        ));
+        let mut file = std::fs::File::open(path)?;
+        Ok(serde_json::from_reader(&mut file)?)
+    }
+}

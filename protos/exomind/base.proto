@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package exomind.base;
+
+import "exocore/index/options.proto";
+import "exocore/index/entity.proto";
+import "google/protobuf/timestamp.proto";
+
+message Collection {
+    string name = 1;
+}
+
+message CollectionChild {
+    exocore.index.Reference collection = 1 [(exocore.indexed) = true];
+    google.protobuf.Timestamp added_date = 2;
+    uint64 weight = 3;
+}
+
+message Postponed {
+    exocore.index.Reference entity = 1;
+    google.protobuf.Timestamp until_date = 2;
+}
+
+message Account {
+    string key = 1;
+    string name = 2;
+    map<string, string> data = 3;
+}
+
+message EmailThread {
+    Account source = 1;
+    string source_id = 2;
+
+    Contact from = 3;
+    string subject = 4 [(exocore.text) = true];
+    string snippet = 5 [(exocore.text) = true];
+
+    exocore.index.Reference last_email = 6;
+    bool read = 7;
+}
+
+message Email {
+    Account source = 1;
+    string source_id = 2;
+
+    Contact from = 3;
+    google.protobuf.Timestamp received_date = 4;
+    repeated Contact to = 6;
+    repeated Contact cc = 7;
+    repeated Contact bcc = 8;
+
+    string subject = 9 [(exocore.text) = true];
+    string snippet = 10 [(exocore.text) = true];
+    repeated EmailPart parts = 11;
+    repeated EmailAttachment attachments = 12;
+}
+
+message EmailPart {
+    string mime_type = 1;
+    string body = 2;
+}
+
+message EmailAttachment {
+    string key = 1;
+    string name = 2;
+    string mime_type = 3;
+    uint64 size = 4;
+    string inline_placeholder = 5;
+    map<string, string> data = 6;
+}
+
+message Note {
+    string title = 1 [(exocore.text) = true];
+    string body = 2 [(exocore.text) = true];
+}
+
+message Contact {
+    string name = 1;
+    string email = 2;
+}
