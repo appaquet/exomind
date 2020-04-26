@@ -1,11 +1,7 @@
-use std;
+use super::*;
 use std::fs::OpenOptions;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
-
-use serde_json;
-
-use super::*;
 
 pub struct JsonDiskStore<T: Serialize + DeserializeOwned> {
     path: PathBuf,

@@ -1,7 +1,6 @@
 use super::registry::Registry;
 use super::Error;
 use crate::protos::generated::exocore_index::Reference;
-use protobuf;
 use protobuf::descriptor::DescriptorProto;
 use protobuf::types::{
     ProtobufType, ProtobufTypeInt32, ProtobufTypeInt64, ProtobufTypeMessage, ProtobufTypeString,

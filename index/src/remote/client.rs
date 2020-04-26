@@ -596,8 +596,7 @@ impl Future for QueryFuture {
             Err(err) => Poll::Ready(Err(err.clone())),
             Ok(receiver) => receiver
                 .poll_unpin(cx)
-                .map(|res| res.map_err(|_| Error::Cancelled).and_then(|res| res))
-                .map_err(|_err| Error::Cancelled),
+                .map(|res| res.map_err(|_| Error::Cancelled).and_then(|res| res)),
         }
     }
 }

@@ -4,7 +4,6 @@ use crate::operation::{OperationBuilder, OperationId};
 use crate::pending;
 use crate::pending::CommitStatus;
 use crate::{chain, operation};
-use exocore_core;
 use exocore_core::protos::generated::data_chain_capnp::chain_operation;
 use exocore_core::utils::handle_set::Handle;
 use futures::prelude::*;

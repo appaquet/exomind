@@ -1,4 +1,3 @@
-use std;
 use std::ops::Range;
 
 pub fn are_continuous<'a, I, T: 'a + Ord + Copy + Eq>(iter: I) -> bool

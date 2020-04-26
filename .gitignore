@@ -1,7 +1,7 @@
 
 # Project specific
 3rd 
-local
+local_conf
 
 # Rust
 **/target/**

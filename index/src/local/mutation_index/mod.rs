@@ -430,41 +430,42 @@ impl MutationIndex {
                     continue;
                 }
             };
-            let field_mapping = message_mappings.and_then(|m| m.get(&field.name));
 
-            match (field_value, field_mapping) {
-                (FieldValue::String(value), Some(fm)) if field.text_flag => {
-                    doc.add_text(fm.field, &value);
+            let field_mapping =
+                if let Some(field_mapping) = message_mappings.and_then(|m| m.get(&field.name)) {
+                    field_mapping
+                } else {
+                    // field is not indexed if we don't have a mapping for it
+                    continue;
+                };
+
+            match field_value {
+                FieldValue::String(value) if field.text_flag => {
+                    doc.add_text(field_mapping.field, &value);
                     doc.add_text(self.fields.all_text, &value);
                 }
-                (FieldValue::String(value), Some(fm)) if field.indexed_flag => {
-                    doc.add_text(fm.field, &value);
+                FieldValue::String(value) if field.indexed_flag => {
+                    doc.add_text(field_mapping.field, &value);
                 }
-                (FieldValue::Reference(value), Some(fm)) if field.indexed_flag => {
+                FieldValue::Reference(value) if field.indexed_flag => {
                     let ref_value = format!("entity{} trait{}", value.entity_id, value.trait_id);
-                    doc.add_text(fm.field, &ref_value);
+                    doc.add_text(field_mapping.field, &ref_value);
                     doc.add_text(self.fields.all_refs, &ref_value);
                 }
-                (FieldValue::DateTime(value), Some(fm))
-                    if field.indexed_flag || field.sorted_flag =>
-                {
-                    doc.add_u64(fm.field, value.timestamp_nanos() as u64);
+                FieldValue::DateTime(value) if field.indexed_flag || field.sorted_flag => {
+                    doc.add_u64(field_mapping.field, value.timestamp_nanos() as u64);
                 }
-                (FieldValue::Int64(value), Some(fm)) if field.indexed_flag || field.sorted_flag => {
-                    doc.add_i64(fm.field, value);
+                FieldValue::Int64(value) if field.indexed_flag || field.sorted_flag => {
+                    doc.add_i64(field_mapping.field, value);
                 }
-                (FieldValue::Int32(value), Some(fm)) if field.indexed_flag || field.sorted_flag => {
-                    doc.add_i64(fm.field, i64::from(value));
+                FieldValue::Int32(value) if field.indexed_flag || field.sorted_flag => {
+                    doc.add_i64(field_mapping.field, i64::from(value));
                 }
-                (FieldValue::Uint64(value), Some(fm))
-                    if field.indexed_flag || field.sorted_flag =>
-                {
-                    doc.add_u64(fm.field, value);
+                FieldValue::Uint64(value) if field.indexed_flag || field.sorted_flag => {
+                    doc.add_u64(field_mapping.field, value);
                 }
-                (FieldValue::Uint32(value), Some(fm))
-                    if field.indexed_flag || field.sorted_flag =>
-                {
-                    doc.add_u64(fm.field, u64::from(value));
+                FieldValue::Uint32(value) if field.indexed_flag || field.sorted_flag => {
+                    doc.add_u64(field_mapping.field, u64::from(value));
                 }
                 other => {
                     warn!(

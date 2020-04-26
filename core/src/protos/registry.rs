@@ -1,6 +1,5 @@
 use super::reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor};
 use super::Error;
-use protobuf;
 use protobuf::descriptor::{
     DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto,
     FileDescriptorSet,
