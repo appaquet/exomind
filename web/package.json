@@ -1,0 +1,15 @@
+{
+  "author": "Andre-Philippe Paquet <appaquet@gmail.com>",
+  "name": "exomind-core-web",
+  "version": "0.1.0",
+  "repository": "https://github.com/appaquet/exomind",
+  "license": "(MIT OR Apache-2.0)",
+  "scripts": {},
+  "main": "js/index.js",
+  "types": "js/index.d.ts",
+  "devDependencies": {},
+  "dependencies": {
+    "exocore": "file:../../exocore/clients/web",
+    "protobufjs": "^6.8.9"
+  }
+}

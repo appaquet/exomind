@@ -3,9 +3,9 @@ use exomind::protos::base::{Contact, Email, EmailAttachment, EmailPart, EmailThr
 
 #[derive(Default)]
 pub struct ParsedThread {
-    thread: EmailThread,
-    emails: Vec<Email>,
-    labels: Vec<String>,
+    pub thread: EmailThread,
+    pub emails: Vec<Email>,
+    pub labels: Vec<String>,
 }
 
 pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThread, anyhow::Error> {
@@ -112,7 +112,12 @@ fn parse_part(part: &google_gmail1::schemas::MessagePart, email: &mut Email) -> 
     Ok(())
 }
 
-fn parse_attachment(part: &google_gmail1::schemas::MessagePart, email: &mut Email, mime_type: &str, filename: &str) {
+fn parse_attachment(
+    part: &google_gmail1::schemas::MessagePart,
+    email: &mut Email,
+    mime_type: &str,
+    filename: &str,
+) {
     let attachment_id = get_part_header(part, "Content-Id")
         .or_else(|| get_part_header(part, "X-Attachment-Id"))
         .map(|s| s.to_string());
@@ -242,10 +247,13 @@ mod tests {
         assert_eq!(vec!["UNREAD", "CATEGORY_UPDATES", "INBOX"], parsed.labels);
         assert!(!parsed.thread.read);
 
-        assert_eq!(Some(Contact {
-            name: "From Someone".to_string(),
-            email: "some@email.com".to_string(),
-        }), parsed.emails[0].from);
+        assert_eq!(
+            Some(Contact {
+                name: "From Someone".to_string(),
+                email: "some@email.com".to_string(),
+            }),
+            parsed.emails[0].from
+        );
 
         Ok(())
     }

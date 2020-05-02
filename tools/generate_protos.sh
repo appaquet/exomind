@@ -3,7 +3,7 @@ set -e
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "$EXOCORE_REPO" == "" ]]; then
-  echo "EXOCORE_REPO envionment variable needs to be defined"
+  echo "EXOCORE_REPO environment variable needs to be defined"
   exit 1
 fi
 
