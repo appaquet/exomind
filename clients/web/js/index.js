@@ -52,12 +52,29 @@ export class Client {
 
     watched_query(query) {
         const encoded = proto.exocore.index.EntityQuery.encode(query).finish();
-
-        return this.innerClient.watched_query(encoded);
+        return new WatchedQuery(this.innerClient.watched_query(encoded));
     }
 
     generate_id(prefix = '') {
         return _exocore_wasm.generate_id(prefix);
+    }
+}
+
+export class WatchedQuery {
+    constructor(inner) {
+        this.inner = inner;
+    }
+
+    onChange(cb) {
+        this.inner.on_change(() => {
+            const resultsData = this.inner.get();
+            const res = proto.exocore.index.EntityResults.decode(resultsData);
+            cb(res);
+        })
+    }
+
+    free() {
+        this.inner.free();
     }
 }
 
@@ -170,8 +187,16 @@ export class QueryBuilder {
 
     static matching(query) {
         let builder = new QueryBuilder();
-        builder.query.trait = new proto.exocore.index.MatchPredicate({
+        builder.query.match = new proto.exocore.index.MatchPredicate({
             query: query
+        });
+        return builder;
+    }
+
+    static withId(id) {
+        let builder = new QueryBuilder();
+        builder.query.id = new proto.exocore.index.IdPredicate({
+            id: id,
         });
         return builder;
     }

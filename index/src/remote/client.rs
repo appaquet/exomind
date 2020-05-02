@@ -171,7 +171,7 @@ impl Default for ClientConfiguration {
             query_timeout: Duration::from_secs(10),
             mutation_timeout: Duration::from_secs(5),
             watched_queries_register_interval: Duration::from_secs(10),
-            management_interval: Duration::from_millis(100),
+            management_interval: Duration::from_secs(1),
             watched_query_channel_size: 1000,
         }
     }

@@ -8,7 +8,6 @@ use std::os::raw::c_void;
 use std::sync::Arc;
 
 use futures::StreamExt;
-use libc;
 use prost::Message;
 
 use exocore_core::cell::Cell;

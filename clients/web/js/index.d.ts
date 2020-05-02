@@ -1,9 +1,6 @@
-import {WatchedQuery} from "exocore-client-wasm";
 import * as proto from './proto';
 
-export {
-    proto
-}
+export {proto}
 
 export class Client {
     static create(config: object, status_change_callback?: any): Promise<Client>;
@@ -17,14 +14,20 @@ export class Client {
     generate_id(prefix?: string): string;
 }
 
+export class WatchedQuery {
+    onChange(cb: (results: proto.exocore.index.EntityResults)=>void): void;
+
+    free(): void;
+}
+
 export class Registry {
-    static registerMessage(message: any, fullName: string);
+    static registerMessage(message: any, fullName: string): any;
 
     static messageFullName(message: any): string;
 
-    static packToAny(message: any): proto.google.protobuf.Any;
+    static packToAny(message: any): proto.google.protobuf.IAny;
 
-    static unpackAny(any: proto.google.protobuf.Any): any;
+    static unpackAny(any: proto.google.protobuf.IAny): any;
 }
 
 export class MutationBuilder {
@@ -44,13 +47,15 @@ export class QueryBuilder {
 
     static matching(query: string): QueryBuilder;
 
+    static withId(id: string): QueryBuilder;
+
     count(count: number): QueryBuilder;
 
     build(): proto.exocore.index.EntityQuery;
 }
 
-export function toProtoTimestamp(date: Date): proto.google.protobuf.Timestamp;
+export function toProtoTimestamp(date: Date): proto.google.protobuf.ITimestamp;
 
-export function fromProtoTimestamp(ts: proto.google.protobuf.Timestamp): Date;
+export function fromProtoTimestamp(ts: proto.google.protobuf.ITimestamp): Date;
 
-export function matchTrait(trait: proto.exocore.index.Trait, matchMap): proto.google.protobuf.Any;
+export function matchTrait(trait: proto.exocore.index.ITrait, matchMap: any): proto.google.protobuf.IAny;

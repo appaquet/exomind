@@ -6,7 +6,6 @@ use std::time::Duration;
 use failure::err_msg;
 use futures::prelude::*;
 use itertools::Itertools;
-use tempdir;
 
 use exocore_core::cell::{CellNode, CellNodeRole, LocalNode};
 use exocore_core::futures::Runtime;

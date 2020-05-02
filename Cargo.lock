@@ -868,6 +868,7 @@ dependencies = [
  "libp2p-wasm-ext",
  "log",
  "pin-project",
+ "wasm-bindgen",
 ]
 
 [[package]]
