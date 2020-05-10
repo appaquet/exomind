@@ -2,6 +2,7 @@ extern crate log4rs;
 
 use self::log4rs::append::console::ConsoleAppender;
 use self::log4rs::config::{Appender, Config, Logger, Root};
+use self::log4rs::encode::pattern::PatternEncoder;
 use log::LevelFilter;
 use std::sync::Once;
 
@@ -9,11 +10,15 @@ static INIT: Once = Once::new();
 
 pub fn setup(level: Option<LevelFilter>) {
     INIT.call_once(|| {
-        let appender = Box::new(ConsoleAppender::builder().build());
+        let appender = ConsoleAppender::builder()
+            .encoder(Box::new(PatternEncoder::new(
+                "{d} - {h({l})} - {t} - {m}{n}",
+            )))
+            .build();
         let level = level.unwrap_or(LevelFilter::Info);
 
-        let mut config =
-            Config::builder().appender(Appender::builder().build("default_output", appender));
+        let mut config = Config::builder()
+            .appender(Appender::builder().build("default_output", Box::new(appender)));
 
         if level < LevelFilter::Debug {
             config = config

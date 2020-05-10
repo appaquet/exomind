@@ -113,12 +113,6 @@ impl EntityMutations {
                 if prev_trait.creation_date.is_some() && creation_date > prev_trait.creation_date {
                     creation_date = prev_trait.creation_date
                 }
-
-                if prev_trait.modification_date.is_some()
-                    && modification_date < prev_trait.modification_date
-                {
-                    modification_date = prev_trait.modification_date;
-                }
             }
         }
 

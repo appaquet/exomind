@@ -28,6 +28,8 @@ export class Registry {
     static packToAny(message: any): proto.google.protobuf.IAny;
 
     static unpackAny(any: proto.google.protobuf.IAny): any;
+
+    static canonicalFullName(name: string): string;
 }
 
 export class MutationBuilder {

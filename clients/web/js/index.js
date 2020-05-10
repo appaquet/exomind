@@ -92,13 +92,13 @@ export class Registry {
 
     static messageFullName(message) {
         let fullName = message._exocore_proto_full_name;
-        if (!fullName) {
+        if (!fullName && message.prototype) {
             fullName = message.prototype._exocore_proto_full_name;
         }
 
         const info = _registeredMessages[fullName];
         if (!info) {
-            console.log('Tried to get full name for an unregistered message', message);
+            console.error('Tried to get full name for an unregistered message', message);
             throw 'Tried to pack an unregistered message';
         }
 
@@ -119,14 +119,18 @@ export class Registry {
     }
 
     static unpackAny(any) {
-        const fullName = any.type_url.replace('type.googleapis.com/', '');
+        const fullName = Registry.canonicalFullName(any.type_url);
         const info = _registeredMessages[fullName];
         if (!info) {
-            console.log('Tried to unpack any any with unregistered type', fullName);
+            console.error('Tried to unpack any any with unregistered type', fullName);
             throw 'Tried to pack an unregistered message';
         }
 
         return info.message.decode(any.value);
+    }
+
+    static canonicalFullName(name) {
+        return name.replace('type.googleapis.com/', '');
     }
 }
 
@@ -228,11 +232,10 @@ export function fromProtoTimestamp(ts) {
 }
 
 export function matchTrait(trait, matchMap) {
-    const fullName = trait.message.type_url.replace('type.googleapis.com/', '');
+    const fullName = Registry.canonicalFullName(trait.message.type_url);
 
-    if (matchMap[fullName]) {
+    if (fullName in matchMap) {
         const message = Registry.unpackAny(trait.message);
-
         return matchMap[fullName](message);
     } else {
         return [];
