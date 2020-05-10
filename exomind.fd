@@ -1,5 +1,5 @@
 
-ž
+í
 exomind/base.protoexomind.baseexocore/index/options.protoexocore/index/entity.protogoogle/protobuf/timestamp.proto" 
 
 Collection
@@ -43,7 +43,20 @@ last_email (2.exocore.index.ReferenceR	lastEmail
 snippet
  (	BøURsnippet-
 parts (2.exomind.base.EmailPartRparts?
-attachments (2.exomind.base.EmailAttachmentRattachments"<
+attachments (2.exomind.base.EmailAttachmentRattachments"ê
+
+DraftEmail8
+in_reply_to (2.exocore.index.ReferenceR	inReplyTo)
+from (2.exomind.base.AccountRfrom%
+to (2.exomind.base.ContactRto%
+cc (2.exomind.base.ContactRcc'
+bcc (2.exomind.base.ContactRbcc
+subject (	Rsubject-
+parts (2.exomind.base.EmailPartRparts?
+attachments (2.exomind.base.EmailAttachmentRattachments=
+sending_date	 (2.google.protobuf.TimestampRsendingDate7
+	sent_date
+ (2.google.protobuf.TimestampRsentDate"<
 	EmailPart
 	mime_type (	RmimeType
 body (	Rbody"
@@ -59,7 +72,12 @@ last_email (2.exocore.index.ReferenceR	lastEmail
 value (	Rvalue:8":
 Note
 title (	BøURtitle
-body (	BøURbody"3
-Contact
-name (	Rname
-email (	Remailbproto3
+body (	BøURbody"8
+Contact
+name (	BøURname
+email (	Remail"!
+Task
+title (	BøURtitle"8
+Link
+url (	BøURurl
+title (	BøURtitlebproto3

@@ -21,7 +21,7 @@ extern crate anyhow;
 
 #[tokio::main]
 async fn main() {
-    exocore::core::logging::setup(Some(LevelFilter::Debug));
+    exocore::core::logging::setup(None);
 
     // TODO: Save tokens into account by persisting to a temp file and save to exocore when changed
     let account = Account {

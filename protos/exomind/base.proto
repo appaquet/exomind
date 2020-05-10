@@ -55,6 +55,22 @@ message Email {
     repeated EmailAttachment attachments = 12;
 }
 
+message DraftEmail {
+    exocore.index.Reference in_reply_to = 1;
+    Account from = 2;
+
+    repeated Contact to = 3;
+    repeated Contact cc = 4;
+    repeated Contact bcc = 5;
+
+    string subject = 6;
+    repeated EmailPart parts = 7;
+    repeated EmailAttachment attachments = 8;
+
+    google.protobuf.Timestamp sending_date = 9;
+    google.protobuf.Timestamp sent_date = 10;
+}
+
 message EmailPart {
     string mime_type = 1;
     string body = 2;
@@ -75,6 +91,15 @@ message Note {
 }
 
 message Contact {
-    string name = 1;
+    string name = 1 [(exocore.text) = true];
     string email = 2;
+}
+
+message Task {
+    string title = 1 [(exocore.text) = true];
+}
+
+message Link {
+    string url = 1 [(exocore.text) = true];
+    string title = 2 [(exocore.text) = true];
 }

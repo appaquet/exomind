@@ -12,3 +12,4 @@ protoc \
   -I"$EXOCORE_REPO/protos/" \
   $CUR_DIR/../protos/exomind/*.proto \
   -o "$CUR_DIR/../exomind.fd"
+

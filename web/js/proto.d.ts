@@ -671,6 +671,150 @@ export namespace exomind {
             public toJSON(): { [k: string]: any };
         }
 
+        /** Properties of a DraftEmail. */
+        interface IDraftEmail {
+
+            /** DraftEmail inReplyTo */
+            inReplyTo?: (exocore.index.IReference|null);
+
+            /** DraftEmail from */
+            from?: (exomind.base.IAccount|null);
+
+            /** DraftEmail to */
+            to?: (exomind.base.IContact[]|null);
+
+            /** DraftEmail cc */
+            cc?: (exomind.base.IContact[]|null);
+
+            /** DraftEmail bcc */
+            bcc?: (exomind.base.IContact[]|null);
+
+            /** DraftEmail subject */
+            subject?: (string|null);
+
+            /** DraftEmail parts */
+            parts?: (exomind.base.IEmailPart[]|null);
+
+            /** DraftEmail attachments */
+            attachments?: (exomind.base.IEmailAttachment[]|null);
+
+            /** DraftEmail sendingDate */
+            sendingDate?: (google.protobuf.ITimestamp|null);
+
+            /** DraftEmail sentDate */
+            sentDate?: (google.protobuf.ITimestamp|null);
+        }
+
+        /** Represents a DraftEmail. */
+        class DraftEmail implements IDraftEmail {
+
+            /**
+             * Constructs a new DraftEmail.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exomind.base.IDraftEmail);
+
+            /** DraftEmail inReplyTo. */
+            public inReplyTo?: (exocore.index.IReference|null);
+
+            /** DraftEmail from. */
+            public from?: (exomind.base.IAccount|null);
+
+            /** DraftEmail to. */
+            public to: exomind.base.IContact[];
+
+            /** DraftEmail cc. */
+            public cc: exomind.base.IContact[];
+
+            /** DraftEmail bcc. */
+            public bcc: exomind.base.IContact[];
+
+            /** DraftEmail subject. */
+            public subject: string;
+
+            /** DraftEmail parts. */
+            public parts: exomind.base.IEmailPart[];
+
+            /** DraftEmail attachments. */
+            public attachments: exomind.base.IEmailAttachment[];
+
+            /** DraftEmail sendingDate. */
+            public sendingDate?: (google.protobuf.ITimestamp|null);
+
+            /** DraftEmail sentDate. */
+            public sentDate?: (google.protobuf.ITimestamp|null);
+
+            /**
+             * Creates a new DraftEmail instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns DraftEmail instance
+             */
+            public static create(properties?: exomind.base.IDraftEmail): exomind.base.DraftEmail;
+
+            /**
+             * Encodes the specified DraftEmail message. Does not implicitly {@link exomind.base.DraftEmail.verify|verify} messages.
+             * @param message DraftEmail message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exomind.base.IDraftEmail, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified DraftEmail message, length delimited. Does not implicitly {@link exomind.base.DraftEmail.verify|verify} messages.
+             * @param message DraftEmail message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exomind.base.IDraftEmail, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a DraftEmail message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns DraftEmail
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exomind.base.DraftEmail;
+
+            /**
+             * Decodes a DraftEmail message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns DraftEmail
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exomind.base.DraftEmail;
+
+            /**
+             * Verifies a DraftEmail message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a DraftEmail message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns DraftEmail
+             */
+            public static fromObject(object: { [k: string]: any }): exomind.base.DraftEmail;
+
+            /**
+             * Creates a plain object from a DraftEmail message. Also converts values to other types if specified.
+             * @param message DraftEmail
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exomind.base.DraftEmail, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this DraftEmail to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
         /** Properties of an EmailPart. */
         interface IEmailPart {
 
@@ -1074,6 +1218,192 @@ export namespace exomind {
 
             /**
              * Converts this Contact to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of a Task. */
+        interface ITask {
+
+            /** Task title */
+            title?: (string|null);
+        }
+
+        /** Represents a Task. */
+        class Task implements ITask {
+
+            /**
+             * Constructs a new Task.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exomind.base.ITask);
+
+            /** Task title. */
+            public title: string;
+
+            /**
+             * Creates a new Task instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns Task instance
+             */
+            public static create(properties?: exomind.base.ITask): exomind.base.Task;
+
+            /**
+             * Encodes the specified Task message. Does not implicitly {@link exomind.base.Task.verify|verify} messages.
+             * @param message Task message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exomind.base.ITask, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified Task message, length delimited. Does not implicitly {@link exomind.base.Task.verify|verify} messages.
+             * @param message Task message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exomind.base.ITask, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a Task message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns Task
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exomind.base.Task;
+
+            /**
+             * Decodes a Task message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns Task
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exomind.base.Task;
+
+            /**
+             * Verifies a Task message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a Task message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns Task
+             */
+            public static fromObject(object: { [k: string]: any }): exomind.base.Task;
+
+            /**
+             * Creates a plain object from a Task message. Also converts values to other types if specified.
+             * @param message Task
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exomind.base.Task, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this Task to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of a Link. */
+        interface ILink {
+
+            /** Link url */
+            url?: (string|null);
+
+            /** Link title */
+            title?: (string|null);
+        }
+
+        /** Represents a Link. */
+        class Link implements ILink {
+
+            /**
+             * Constructs a new Link.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exomind.base.ILink);
+
+            /** Link url. */
+            public url: string;
+
+            /** Link title. */
+            public title: string;
+
+            /**
+             * Creates a new Link instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns Link instance
+             */
+            public static create(properties?: exomind.base.ILink): exomind.base.Link;
+
+            /**
+             * Encodes the specified Link message. Does not implicitly {@link exomind.base.Link.verify|verify} messages.
+             * @param message Link message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exomind.base.ILink, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified Link message, length delimited. Does not implicitly {@link exomind.base.Link.verify|verify} messages.
+             * @param message Link message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exomind.base.ILink, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a Link message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns Link
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exomind.base.Link;
+
+            /**
+             * Decodes a Link message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns Link
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exomind.base.Link;
+
+            /**
+             * Verifies a Link message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a Link message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns Link
+             */
+            public static fromObject(object: { [k: string]: any }): exomind.base.Link;
+
+            /**
+             * Creates a plain object from a Link message. Also converts values to other types if specified.
+             * @param message Link
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exomind.base.Link, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this Link to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };

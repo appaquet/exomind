@@ -1807,6 +1807,519 @@ export const exomind = $root.exomind = (() => {
             return Email;
         })();
 
+        base.DraftEmail = (function() {
+
+            /**
+             * Properties of a DraftEmail.
+             * @memberof exomind.base
+             * @interface IDraftEmail
+             * @property {exocore.index.IReference|null} [inReplyTo] DraftEmail inReplyTo
+             * @property {exomind.base.IAccount|null} [from] DraftEmail from
+             * @property {Array.<exomind.base.IContact>|null} [to] DraftEmail to
+             * @property {Array.<exomind.base.IContact>|null} [cc] DraftEmail cc
+             * @property {Array.<exomind.base.IContact>|null} [bcc] DraftEmail bcc
+             * @property {string|null} [subject] DraftEmail subject
+             * @property {Array.<exomind.base.IEmailPart>|null} [parts] DraftEmail parts
+             * @property {Array.<exomind.base.IEmailAttachment>|null} [attachments] DraftEmail attachments
+             * @property {google.protobuf.ITimestamp|null} [sendingDate] DraftEmail sendingDate
+             * @property {google.protobuf.ITimestamp|null} [sentDate] DraftEmail sentDate
+             */
+
+            /**
+             * Constructs a new DraftEmail.
+             * @memberof exomind.base
+             * @classdesc Represents a DraftEmail.
+             * @implements IDraftEmail
+             * @constructor
+             * @param {exomind.base.IDraftEmail=} [properties] Properties to set
+             */
+            function DraftEmail(properties) {
+                this.to = [];
+                this.cc = [];
+                this.bcc = [];
+                this.parts = [];
+                this.attachments = [];
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * DraftEmail inReplyTo.
+             * @member {exocore.index.IReference|null|undefined} inReplyTo
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.inReplyTo = null;
+
+            /**
+             * DraftEmail from.
+             * @member {exomind.base.IAccount|null|undefined} from
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.from = null;
+
+            /**
+             * DraftEmail to.
+             * @member {Array.<exomind.base.IContact>} to
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.to = $util.emptyArray;
+
+            /**
+             * DraftEmail cc.
+             * @member {Array.<exomind.base.IContact>} cc
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.cc = $util.emptyArray;
+
+            /**
+             * DraftEmail bcc.
+             * @member {Array.<exomind.base.IContact>} bcc
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.bcc = $util.emptyArray;
+
+            /**
+             * DraftEmail subject.
+             * @member {string} subject
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.subject = "";
+
+            /**
+             * DraftEmail parts.
+             * @member {Array.<exomind.base.IEmailPart>} parts
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.parts = $util.emptyArray;
+
+            /**
+             * DraftEmail attachments.
+             * @member {Array.<exomind.base.IEmailAttachment>} attachments
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.attachments = $util.emptyArray;
+
+            /**
+             * DraftEmail sendingDate.
+             * @member {google.protobuf.ITimestamp|null|undefined} sendingDate
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.sendingDate = null;
+
+            /**
+             * DraftEmail sentDate.
+             * @member {google.protobuf.ITimestamp|null|undefined} sentDate
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             */
+            DraftEmail.prototype.sentDate = null;
+
+            /**
+             * Creates a new DraftEmail instance using the specified properties.
+             * @function create
+             * @memberof exomind.base.DraftEmail
+             * @static
+             * @param {exomind.base.IDraftEmail=} [properties] Properties to set
+             * @returns {exomind.base.DraftEmail} DraftEmail instance
+             */
+            DraftEmail.create = function create(properties) {
+                return new DraftEmail(properties);
+            };
+
+            /**
+             * Encodes the specified DraftEmail message. Does not implicitly {@link exomind.base.DraftEmail.verify|verify} messages.
+             * @function encode
+             * @memberof exomind.base.DraftEmail
+             * @static
+             * @param {exomind.base.IDraftEmail} message DraftEmail message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            DraftEmail.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.inReplyTo != null && Object.hasOwnProperty.call(message, "inReplyTo"))
+                    $root.exocore.index.Reference.encode(message.inReplyTo, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                if (message.from != null && Object.hasOwnProperty.call(message, "from"))
+                    $root.exomind.base.Account.encode(message.from, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+                if (message.to != null && message.to.length)
+                    for (let i = 0; i < message.to.length; ++i)
+                        $root.exomind.base.Contact.encode(message.to[i], writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+                if (message.cc != null && message.cc.length)
+                    for (let i = 0; i < message.cc.length; ++i)
+                        $root.exomind.base.Contact.encode(message.cc[i], writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+                if (message.bcc != null && message.bcc.length)
+                    for (let i = 0; i < message.bcc.length; ++i)
+                        $root.exomind.base.Contact.encode(message.bcc[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+                if (message.subject != null && Object.hasOwnProperty.call(message, "subject"))
+                    writer.uint32(/* id 6, wireType 2 =*/50).string(message.subject);
+                if (message.parts != null && message.parts.length)
+                    for (let i = 0; i < message.parts.length; ++i)
+                        $root.exomind.base.EmailPart.encode(message.parts[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+                if (message.attachments != null && message.attachments.length)
+                    for (let i = 0; i < message.attachments.length; ++i)
+                        $root.exomind.base.EmailAttachment.encode(message.attachments[i], writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
+                if (message.sendingDate != null && Object.hasOwnProperty.call(message, "sendingDate"))
+                    $root.google.protobuf.Timestamp.encode(message.sendingDate, writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
+                if (message.sentDate != null && Object.hasOwnProperty.call(message, "sentDate"))
+                    $root.google.protobuf.Timestamp.encode(message.sentDate, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+                return writer;
+            };
+
+            /**
+             * Encodes the specified DraftEmail message, length delimited. Does not implicitly {@link exomind.base.DraftEmail.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exomind.base.DraftEmail
+             * @static
+             * @param {exomind.base.IDraftEmail} message DraftEmail message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            DraftEmail.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a DraftEmail message from the specified reader or buffer.
+             * @function decode
+             * @memberof exomind.base.DraftEmail
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exomind.base.DraftEmail} DraftEmail
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            DraftEmail.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.DraftEmail();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.inReplyTo = $root.exocore.index.Reference.decode(reader, reader.uint32());
+                        break;
+                    case 2:
+                        message.from = $root.exomind.base.Account.decode(reader, reader.uint32());
+                        break;
+                    case 3:
+                        if (!(message.to && message.to.length))
+                            message.to = [];
+                        message.to.push($root.exomind.base.Contact.decode(reader, reader.uint32()));
+                        break;
+                    case 4:
+                        if (!(message.cc && message.cc.length))
+                            message.cc = [];
+                        message.cc.push($root.exomind.base.Contact.decode(reader, reader.uint32()));
+                        break;
+                    case 5:
+                        if (!(message.bcc && message.bcc.length))
+                            message.bcc = [];
+                        message.bcc.push($root.exomind.base.Contact.decode(reader, reader.uint32()));
+                        break;
+                    case 6:
+                        message.subject = reader.string();
+                        break;
+                    case 7:
+                        if (!(message.parts && message.parts.length))
+                            message.parts = [];
+                        message.parts.push($root.exomind.base.EmailPart.decode(reader, reader.uint32()));
+                        break;
+                    case 8:
+                        if (!(message.attachments && message.attachments.length))
+                            message.attachments = [];
+                        message.attachments.push($root.exomind.base.EmailAttachment.decode(reader, reader.uint32()));
+                        break;
+                    case 9:
+                        message.sendingDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                        break;
+                    case 10:
+                        message.sentDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a DraftEmail message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exomind.base.DraftEmail
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exomind.base.DraftEmail} DraftEmail
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            DraftEmail.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a DraftEmail message.
+             * @function verify
+             * @memberof exomind.base.DraftEmail
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            DraftEmail.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.inReplyTo != null && message.hasOwnProperty("inReplyTo")) {
+                    let error = $root.exocore.index.Reference.verify(message.inReplyTo);
+                    if (error)
+                        return "inReplyTo." + error;
+                }
+                if (message.from != null && message.hasOwnProperty("from")) {
+                    let error = $root.exomind.base.Account.verify(message.from);
+                    if (error)
+                        return "from." + error;
+                }
+                if (message.to != null && message.hasOwnProperty("to")) {
+                    if (!Array.isArray(message.to))
+                        return "to: array expected";
+                    for (let i = 0; i < message.to.length; ++i) {
+                        let error = $root.exomind.base.Contact.verify(message.to[i]);
+                        if (error)
+                            return "to." + error;
+                    }
+                }
+                if (message.cc != null && message.hasOwnProperty("cc")) {
+                    if (!Array.isArray(message.cc))
+                        return "cc: array expected";
+                    for (let i = 0; i < message.cc.length; ++i) {
+                        let error = $root.exomind.base.Contact.verify(message.cc[i]);
+                        if (error)
+                            return "cc." + error;
+                    }
+                }
+                if (message.bcc != null && message.hasOwnProperty("bcc")) {
+                    if (!Array.isArray(message.bcc))
+                        return "bcc: array expected";
+                    for (let i = 0; i < message.bcc.length; ++i) {
+                        let error = $root.exomind.base.Contact.verify(message.bcc[i]);
+                        if (error)
+                            return "bcc." + error;
+                    }
+                }
+                if (message.subject != null && message.hasOwnProperty("subject"))
+                    if (!$util.isString(message.subject))
+                        return "subject: string expected";
+                if (message.parts != null && message.hasOwnProperty("parts")) {
+                    if (!Array.isArray(message.parts))
+                        return "parts: array expected";
+                    for (let i = 0; i < message.parts.length; ++i) {
+                        let error = $root.exomind.base.EmailPart.verify(message.parts[i]);
+                        if (error)
+                            return "parts." + error;
+                    }
+                }
+                if (message.attachments != null && message.hasOwnProperty("attachments")) {
+                    if (!Array.isArray(message.attachments))
+                        return "attachments: array expected";
+                    for (let i = 0; i < message.attachments.length; ++i) {
+                        let error = $root.exomind.base.EmailAttachment.verify(message.attachments[i]);
+                        if (error)
+                            return "attachments." + error;
+                    }
+                }
+                if (message.sendingDate != null && message.hasOwnProperty("sendingDate")) {
+                    let error = $root.google.protobuf.Timestamp.verify(message.sendingDate);
+                    if (error)
+                        return "sendingDate." + error;
+                }
+                if (message.sentDate != null && message.hasOwnProperty("sentDate")) {
+                    let error = $root.google.protobuf.Timestamp.verify(message.sentDate);
+                    if (error)
+                        return "sentDate." + error;
+                }
+                return null;
+            };
+
+            /**
+             * Creates a DraftEmail message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exomind.base.DraftEmail
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exomind.base.DraftEmail} DraftEmail
+             */
+            DraftEmail.fromObject = function fromObject(object) {
+                if (object instanceof $root.exomind.base.DraftEmail)
+                    return object;
+                let message = new $root.exomind.base.DraftEmail();
+                if (object.inReplyTo != null) {
+                    if (typeof object.inReplyTo !== "object")
+                        throw TypeError(".exomind.base.DraftEmail.inReplyTo: object expected");
+                    message.inReplyTo = $root.exocore.index.Reference.fromObject(object.inReplyTo);
+                }
+                if (object.from != null) {
+                    if (typeof object.from !== "object")
+                        throw TypeError(".exomind.base.DraftEmail.from: object expected");
+                    message.from = $root.exomind.base.Account.fromObject(object.from);
+                }
+                if (object.to) {
+                    if (!Array.isArray(object.to))
+                        throw TypeError(".exomind.base.DraftEmail.to: array expected");
+                    message.to = [];
+                    for (let i = 0; i < object.to.length; ++i) {
+                        if (typeof object.to[i] !== "object")
+                            throw TypeError(".exomind.base.DraftEmail.to: object expected");
+                        message.to[i] = $root.exomind.base.Contact.fromObject(object.to[i]);
+                    }
+                }
+                if (object.cc) {
+                    if (!Array.isArray(object.cc))
+                        throw TypeError(".exomind.base.DraftEmail.cc: array expected");
+                    message.cc = [];
+                    for (let i = 0; i < object.cc.length; ++i) {
+                        if (typeof object.cc[i] !== "object")
+                            throw TypeError(".exomind.base.DraftEmail.cc: object expected");
+                        message.cc[i] = $root.exomind.base.Contact.fromObject(object.cc[i]);
+                    }
+                }
+                if (object.bcc) {
+                    if (!Array.isArray(object.bcc))
+                        throw TypeError(".exomind.base.DraftEmail.bcc: array expected");
+                    message.bcc = [];
+                    for (let i = 0; i < object.bcc.length; ++i) {
+                        if (typeof object.bcc[i] !== "object")
+                            throw TypeError(".exomind.base.DraftEmail.bcc: object expected");
+                        message.bcc[i] = $root.exomind.base.Contact.fromObject(object.bcc[i]);
+                    }
+                }
+                if (object.subject != null)
+                    message.subject = String(object.subject);
+                if (object.parts) {
+                    if (!Array.isArray(object.parts))
+                        throw TypeError(".exomind.base.DraftEmail.parts: array expected");
+                    message.parts = [];
+                    for (let i = 0; i < object.parts.length; ++i) {
+                        if (typeof object.parts[i] !== "object")
+                            throw TypeError(".exomind.base.DraftEmail.parts: object expected");
+                        message.parts[i] = $root.exomind.base.EmailPart.fromObject(object.parts[i]);
+                    }
+                }
+                if (object.attachments) {
+                    if (!Array.isArray(object.attachments))
+                        throw TypeError(".exomind.base.DraftEmail.attachments: array expected");
+                    message.attachments = [];
+                    for (let i = 0; i < object.attachments.length; ++i) {
+                        if (typeof object.attachments[i] !== "object")
+                            throw TypeError(".exomind.base.DraftEmail.attachments: object expected");
+                        message.attachments[i] = $root.exomind.base.EmailAttachment.fromObject(object.attachments[i]);
+                    }
+                }
+                if (object.sendingDate != null) {
+                    if (typeof object.sendingDate !== "object")
+                        throw TypeError(".exomind.base.DraftEmail.sendingDate: object expected");
+                    message.sendingDate = $root.google.protobuf.Timestamp.fromObject(object.sendingDate);
+                }
+                if (object.sentDate != null) {
+                    if (typeof object.sentDate !== "object")
+                        throw TypeError(".exomind.base.DraftEmail.sentDate: object expected");
+                    message.sentDate = $root.google.protobuf.Timestamp.fromObject(object.sentDate);
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a DraftEmail message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exomind.base.DraftEmail
+             * @static
+             * @param {exomind.base.DraftEmail} message DraftEmail
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            DraftEmail.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.arrays || options.defaults) {
+                    object.to = [];
+                    object.cc = [];
+                    object.bcc = [];
+                    object.parts = [];
+                    object.attachments = [];
+                }
+                if (options.defaults) {
+                    object.inReplyTo = null;
+                    object.from = null;
+                    object.subject = "";
+                    object.sendingDate = null;
+                    object.sentDate = null;
+                }
+                if (message.inReplyTo != null && message.hasOwnProperty("inReplyTo"))
+                    object.inReplyTo = $root.exocore.index.Reference.toObject(message.inReplyTo, options);
+                if (message.from != null && message.hasOwnProperty("from"))
+                    object.from = $root.exomind.base.Account.toObject(message.from, options);
+                if (message.to && message.to.length) {
+                    object.to = [];
+                    for (let j = 0; j < message.to.length; ++j)
+                        object.to[j] = $root.exomind.base.Contact.toObject(message.to[j], options);
+                }
+                if (message.cc && message.cc.length) {
+                    object.cc = [];
+                    for (let j = 0; j < message.cc.length; ++j)
+                        object.cc[j] = $root.exomind.base.Contact.toObject(message.cc[j], options);
+                }
+                if (message.bcc && message.bcc.length) {
+                    object.bcc = [];
+                    for (let j = 0; j < message.bcc.length; ++j)
+                        object.bcc[j] = $root.exomind.base.Contact.toObject(message.bcc[j], options);
+                }
+                if (message.subject != null && message.hasOwnProperty("subject"))
+                    object.subject = message.subject;
+                if (message.parts && message.parts.length) {
+                    object.parts = [];
+                    for (let j = 0; j < message.parts.length; ++j)
+                        object.parts[j] = $root.exomind.base.EmailPart.toObject(message.parts[j], options);
+                }
+                if (message.attachments && message.attachments.length) {
+                    object.attachments = [];
+                    for (let j = 0; j < message.attachments.length; ++j)
+                        object.attachments[j] = $root.exomind.base.EmailAttachment.toObject(message.attachments[j], options);
+                }
+                if (message.sendingDate != null && message.hasOwnProperty("sendingDate"))
+                    object.sendingDate = $root.google.protobuf.Timestamp.toObject(message.sendingDate, options);
+                if (message.sentDate != null && message.hasOwnProperty("sentDate"))
+                    object.sentDate = $root.google.protobuf.Timestamp.toObject(message.sentDate, options);
+                return object;
+            };
+
+            /**
+             * Converts this DraftEmail to JSON.
+             * @function toJSON
+             * @memberof exomind.base.DraftEmail
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            DraftEmail.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return DraftEmail;
+        })();
+
         base.EmailPart = (function() {
 
             /**
@@ -2769,6 +3282,403 @@ export const exomind = $root.exomind = (() => {
             };
 
             return Contact;
+        })();
+
+        base.Task = (function() {
+
+            /**
+             * Properties of a Task.
+             * @memberof exomind.base
+             * @interface ITask
+             * @property {string|null} [title] Task title
+             */
+
+            /**
+             * Constructs a new Task.
+             * @memberof exomind.base
+             * @classdesc Represents a Task.
+             * @implements ITask
+             * @constructor
+             * @param {exomind.base.ITask=} [properties] Properties to set
+             */
+            function Task(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Task title.
+             * @member {string} title
+             * @memberof exomind.base.Task
+             * @instance
+             */
+            Task.prototype.title = "";
+
+            /**
+             * Creates a new Task instance using the specified properties.
+             * @function create
+             * @memberof exomind.base.Task
+             * @static
+             * @param {exomind.base.ITask=} [properties] Properties to set
+             * @returns {exomind.base.Task} Task instance
+             */
+            Task.create = function create(properties) {
+                return new Task(properties);
+            };
+
+            /**
+             * Encodes the specified Task message. Does not implicitly {@link exomind.base.Task.verify|verify} messages.
+             * @function encode
+             * @memberof exomind.base.Task
+             * @static
+             * @param {exomind.base.ITask} message Task message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Task.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.title != null && Object.hasOwnProperty.call(message, "title"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.title);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified Task message, length delimited. Does not implicitly {@link exomind.base.Task.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exomind.base.Task
+             * @static
+             * @param {exomind.base.ITask} message Task message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Task.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a Task message from the specified reader or buffer.
+             * @function decode
+             * @memberof exomind.base.Task
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exomind.base.Task} Task
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Task.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.Task();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.title = reader.string();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a Task message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exomind.base.Task
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exomind.base.Task} Task
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Task.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a Task message.
+             * @function verify
+             * @memberof exomind.base.Task
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            Task.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.title != null && message.hasOwnProperty("title"))
+                    if (!$util.isString(message.title))
+                        return "title: string expected";
+                return null;
+            };
+
+            /**
+             * Creates a Task message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exomind.base.Task
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exomind.base.Task} Task
+             */
+            Task.fromObject = function fromObject(object) {
+                if (object instanceof $root.exomind.base.Task)
+                    return object;
+                let message = new $root.exomind.base.Task();
+                if (object.title != null)
+                    message.title = String(object.title);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a Task message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exomind.base.Task
+             * @static
+             * @param {exomind.base.Task} message Task
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Task.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults)
+                    object.title = "";
+                if (message.title != null && message.hasOwnProperty("title"))
+                    object.title = message.title;
+                return object;
+            };
+
+            /**
+             * Converts this Task to JSON.
+             * @function toJSON
+             * @memberof exomind.base.Task
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            Task.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return Task;
+        })();
+
+        base.Link = (function() {
+
+            /**
+             * Properties of a Link.
+             * @memberof exomind.base
+             * @interface ILink
+             * @property {string|null} [url] Link url
+             * @property {string|null} [title] Link title
+             */
+
+            /**
+             * Constructs a new Link.
+             * @memberof exomind.base
+             * @classdesc Represents a Link.
+             * @implements ILink
+             * @constructor
+             * @param {exomind.base.ILink=} [properties] Properties to set
+             */
+            function Link(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Link url.
+             * @member {string} url
+             * @memberof exomind.base.Link
+             * @instance
+             */
+            Link.prototype.url = "";
+
+            /**
+             * Link title.
+             * @member {string} title
+             * @memberof exomind.base.Link
+             * @instance
+             */
+            Link.prototype.title = "";
+
+            /**
+             * Creates a new Link instance using the specified properties.
+             * @function create
+             * @memberof exomind.base.Link
+             * @static
+             * @param {exomind.base.ILink=} [properties] Properties to set
+             * @returns {exomind.base.Link} Link instance
+             */
+            Link.create = function create(properties) {
+                return new Link(properties);
+            };
+
+            /**
+             * Encodes the specified Link message. Does not implicitly {@link exomind.base.Link.verify|verify} messages.
+             * @function encode
+             * @memberof exomind.base.Link
+             * @static
+             * @param {exomind.base.ILink} message Link message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Link.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.url != null && Object.hasOwnProperty.call(message, "url"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.url);
+                if (message.title != null && Object.hasOwnProperty.call(message, "title"))
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.title);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified Link message, length delimited. Does not implicitly {@link exomind.base.Link.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exomind.base.Link
+             * @static
+             * @param {exomind.base.ILink} message Link message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            Link.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a Link message from the specified reader or buffer.
+             * @function decode
+             * @memberof exomind.base.Link
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exomind.base.Link} Link
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Link.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.Link();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.url = reader.string();
+                        break;
+                    case 2:
+                        message.title = reader.string();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a Link message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exomind.base.Link
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exomind.base.Link} Link
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            Link.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a Link message.
+             * @function verify
+             * @memberof exomind.base.Link
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            Link.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.url != null && message.hasOwnProperty("url"))
+                    if (!$util.isString(message.url))
+                        return "url: string expected";
+                if (message.title != null && message.hasOwnProperty("title"))
+                    if (!$util.isString(message.title))
+                        return "title: string expected";
+                return null;
+            };
+
+            /**
+             * Creates a Link message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exomind.base.Link
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exomind.base.Link} Link
+             */
+            Link.fromObject = function fromObject(object) {
+                if (object instanceof $root.exomind.base.Link)
+                    return object;
+                let message = new $root.exomind.base.Link();
+                if (object.url != null)
+                    message.url = String(object.url);
+                if (object.title != null)
+                    message.title = String(object.title);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a Link message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exomind.base.Link
+             * @static
+             * @param {exomind.base.Link} message Link
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Link.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.url = "";
+                    object.title = "";
+                }
+                if (message.url != null && message.hasOwnProperty("url"))
+                    object.url = message.url;
+                if (message.title != null && message.hasOwnProperty("title"))
+                    object.title = message.title;
+                return object;
+            };
+
+            /**
+             * Converts this Link to JSON.
+             * @function toJSON
+             * @memberof exomind.base.Link
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            Link.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return Link;
         })();
 
         return base;
