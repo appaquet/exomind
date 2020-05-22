@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hasher;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -26,10 +26,14 @@ use super::mutation_index::{IndexOperation, MutationIndex, MutationType};
 use super::top_results::RescoredTopResultsIterable;
 
 mod config;
+
 pub use config::*;
+
 mod entity_mutations;
+
 pub use entity_mutations::*;
 use std::borrow::Borrow;
+use std::rc::Rc;
 
 #[cfg(test)]
 mod test_index;
@@ -219,6 +223,8 @@ where
 
         let mut hasher = result_hasher();
 
+        let mut mutations_metadata_cache = HashMap::<String, Rc<EntityMutations>>::new();
+
         // iterate through results and returning the first N entities
         let mut matched_entities = HashSet::new();
         let (mut entities_results, traits_results) = combined_results
@@ -230,16 +236,30 @@ where
                     return None;
                 }
 
-                let traits_meta = self
-                    .fetch_entity_mutations_metadata(&trait_meta.entity_id)
-                    .map_err(|err| {
-                        error!(
-                            "Error fetching traits for entity_id={} from indices: {}",
-                            trait_meta.entity_id, err
-                        );
-                        err
-                    })
-                    .ok()?;
+                // fetch all entity mutations and cache them since we may have multiple hits for
+                // same entity for traits that may have been removed since
+                let traits_meta = if let Some(traits_meta) =
+                    mutations_metadata_cache.get(&trait_meta.entity_id)
+                {
+                    traits_meta.clone()
+                } else {
+                    let traits_meta = self
+                        .fetch_entity_mutations_metadata(&trait_meta.entity_id)
+                        .map_err(|err| {
+                            error!(
+                                "Error fetching traits for entity_id={} from indices: {}",
+                                trait_meta.entity_id, err
+                            );
+                            err
+                        })
+                        .ok()?;
+
+                    mutations_metadata_cache
+                        .insert(trait_meta.entity_id.clone(), traits_meta.clone());
+
+                    traits_meta
+                };
+
                 let operation_is_active = traits_meta
                     .active_operations_id
                     .contains(&trait_meta.operation_id);
@@ -567,7 +587,10 @@ where
 
     /// Fetch indexed mutations metadata from pending and chain indices for this
     /// entity id, and merge them.
-    fn fetch_entity_mutations_metadata(&self, entity_id: &str) -> Result<EntityMutations, Error> {
+    fn fetch_entity_mutations_metadata(
+        &self,
+        entity_id: &str,
+    ) -> Result<Rc<EntityMutations>, Error> {
         let pending_results = self.pending_index.search_entity_id(entity_id)?;
         let chain_results = self.chain_index.search_entity_id(entity_id)?;
         let ordered_traits_metadata = pending_results
@@ -575,7 +598,7 @@ where
             .into_iter()
             .chain(chain_results.mutations.into_iter());
 
-        EntityMutations::new(ordered_traits_metadata)
+        EntityMutations::new(ordered_traits_metadata).map(Rc::new)
     }
 
     /// Populate traits in the EntityResult by fetching each entity's traits
@@ -583,7 +606,7 @@ where
     fn fetch_mutations_results_traits(
         &self,
         entities_results: &mut Vec<EntityResult>,
-        entities_traits_results: Vec<EntityMutations>,
+        entities_traits_results: Vec<Rc<EntityMutations>>,
     ) {
         for (entity_result, traits_results) in entities_results
             .iter_mut()
@@ -597,7 +620,7 @@ where
     }
 
     /// Fetch traits data from chain layer.
-    fn fetch_entity_traits(&self, results: EntityMutations) -> Vec<Trait> {
+    fn fetch_entity_traits(&self, results: Rc<EntityMutations>) -> Vec<Trait> {
         results
             .traits
             .values()
