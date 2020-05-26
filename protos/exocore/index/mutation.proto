@@ -5,6 +5,25 @@ package exocore.index;
 import "exocore/index/entity.proto";
 import "google/protobuf/field_mask.proto";
 
+message MutationRequest {
+    /// Mutations to apply.
+    repeated EntityMutation mutations = 1;
+
+    /// Waits for mutation to be indexed.
+    bool wait_indexed = 1;
+
+    /// Waits for mutation to be indexed and returns the mutated entities.
+    bool return_entity = 2;
+}
+
+message MutationResult {
+    /// Unique operation ids for each mutations.
+    repeated uint64 operation_ids = 1;
+
+    /// Mutated entity if requested.
+    Entity entity = 2;
+}
+
 message EntityMutation {
     string entity_id = 1;
 
@@ -55,8 +74,4 @@ message CompactTraitMutation {
 
 message TestMutation {
     bool success = 1;
-}
-
-message MutationResult {
-    uint64 operation_id = 1;
 }

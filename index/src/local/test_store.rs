@@ -86,13 +86,16 @@ impl TestStore {
     }
 
     pub fn mutate(&mut self, mutation: EntityMutation) -> Result<MutationResult, failure::Error> {
-        self.store_handle.mutate(mutation).map_err(|err| err.into())
+        self.cluster
+            .runtime
+            .block_on(self.store_handle.mutate(mutation))
+            .map_err(|err| err.into())
     }
 
     pub fn query(&mut self, query: EntityQuery) -> Result<EntityResults, failure::Error> {
         self.cluster
             .runtime
-            .block_on(self.store_handle.query(query)?)
+            .block_on(self.store_handle.query(query))
             .map_err(|err| err.into())
     }
 

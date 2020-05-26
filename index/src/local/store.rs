@@ -9,7 +9,7 @@ use exocore_core::cell::Cell;
 use exocore_core::futures::{spawn_blocking, BatchingStream};
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
-    EntityMutation, EntityQuery, EntityResults, MutationResult,
+    EntityMutation, EntityQuery, EntityResults, MutationRequest, MutationResult,
 };
 use exocore_core::protos::prost::ProstMessageExt;
 use exocore_core::time::Clock;
@@ -20,6 +20,7 @@ use crate::local::watched_queries::WatchedQueries;
 use crate::query::WatchToken;
 
 use super::entity_index::EntityIndex;
+use crate::local::tracked_mutations::TrackedMutations;
 
 /// Locally persisted entities store allowing mutation and queries on entities
 /// and their traits.
@@ -58,6 +59,7 @@ where
             clock,
             index,
             watched_queries: WatchedQueries::new(),
+            tracked_mutations: TrackedMutations::new(),
             incoming_queries_sender,
             chain_handle,
         }));
@@ -108,7 +110,7 @@ where
                 }
 
                 let should_reply = match (&query_request.sender, &result) {
-                    (QueryRequestSender::Stream(sender, watch_token), Ok(result)) => {
+                    (QueryRequestSender::WatchedQuery(sender, watch_token), Ok(result)) => {
                         inner.watched_queries.update_query_results(
                             *watch_token,
                             &query_request.query,
@@ -117,12 +119,12 @@ where
                         )
                     }
 
-                    (QueryRequestSender::Stream(_, watch_token), Err(_err)) => {
+                    (QueryRequestSender::WatchedQuery(_, watch_token), Err(_err)) => {
                         inner.watched_queries.unwatch_query(*watch_token);
                         true
                     }
 
-                    (QueryRequestSender::Future(_), _result) => true,
+                    (QueryRequestSender::Query(_), _result) => true,
                 };
 
                 if should_reply {
@@ -169,7 +171,7 @@ where
                 for watched_query in inner.watched_queries.queries() {
                     let send_result = inner.incoming_queries_sender.try_send(QueryRequest {
                         query: Box::new(watched_query.query.as_ref().clone()),
-                        sender: QueryRequestSender::Stream(
+                        sender: QueryRequestSender::WatchedQuery(
                             watched_query.sender.clone(),
                             watched_query.token,
                         ),
@@ -230,6 +232,7 @@ where
     clock: Clock,
     index: EntityIndex<CS, PS>,
     watched_queries: WatchedQueries,
+    tracked_mutations: TrackedMutations,
     incoming_queries_sender: mpsc::Sender<QueryRequest>,
     chain_handle: exocore_chain::engine::EngineHandle<CS, PS>,
 }
@@ -239,24 +242,35 @@ where
     CS: exocore_chain::chain::ChainStore,
     PS: exocore_chain::pending::PendingStore,
 {
-    fn write_mutation_weak(
-        weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        entity_mutation: EntityMutation,
-    ) -> Result<MutationResult, Error> {
-        let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
-        let inner = inner.read()?;
-        inner.write_mutation(entity_mutation)
-    }
+    fn handle_mutation_request(
+        &self,
+        request: MutationRequest,
+    ) -> Result<oneshot::Receiver<Result<MutationResult, Error>>, Error> {
+        let (sender, receiver) = oneshot::channel();
 
-    fn write_mutation(&self, entity_mutation: EntityMutation) -> Result<MutationResult, Error> {
-        if let Some(Mutation::Test(_mutation)) = entity_mutation.mutation {
-            return Err(Error::Other("TestFail mutation".to_string()));
+        let mut operation_ids = Vec::new();
+        for mutation in &request.mutations {
+            if let Some(Mutation::Test(_mutation)) = &mutation.mutation {
+                return Err(Error::ProtoFieldExpected("mutation"));
+            }
+
+            let encoded = mutation.encode_to_vec()?;
+            let operation_id = self.chain_handle.write_entry_operation(&encoded)?;
+
+            operation_ids.push(operation_id);
         }
 
-        let buf = entity_mutation.encode_to_vec()?;
-        let operation_id = self.chain_handle.write_entry_operation(&buf)?;
+        if request.return_entity && !request.mutations.is_empty() {
+            self.tracked_mutations
+                .track_request(operation_ids, sender)?;
+        } else {
+            let _ = sender.send(Ok(MutationResult {
+                operation_ids,
+                entity: None,
+            }));
+        }
 
-        Ok(MutationResult { operation_id })
+        Ok(receiver)
     }
 
     async fn execute_query_async(
@@ -323,27 +337,42 @@ where
         tokens
     }
 
-    pub fn mutate(&self, mutation: EntityMutation) -> Result<MutationResult, Error> {
-        Inner::write_mutation_weak(&self.inner, mutation)
+    pub async fn mutate(&self, entity_mutation: EntityMutation) -> Result<MutationResult, Error> {
+        let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
+
+        let receiver = {
+            let inner = inner.write().map_err(|_| Error::Dropped)?;
+
+            // TODO: wait mutation
+            // TODO: wait entity
+
+            inner.handle_mutation_request(MutationRequest {
+                mutations: vec![entity_mutation],
+                return_entity: false,
+            })?
+        };
+
+        receiver.await.map_err(|_err| Error::Cancelled)?
     }
 
-    pub fn query(
-        &self,
-        query: EntityQuery,
-    ) -> Result<impl Future<Output = Result<EntityResults, Error>>, Error> {
+    pub async fn query(&self, query: EntityQuery) -> Result<EntityResults, Error> {
         let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
-        let mut inner = inner.write().map_err(|_| Error::Dropped)?;
 
-        let (sender, receiver) = oneshot::channel();
+        let receiver = {
+            let mut inner = inner.write().map_err(|_| Error::Dropped)?;
 
-        // ok to dismiss send as sender end will be dropped in case of an error and
-        // consumer will be notified by channel being closed
-        let _ = inner.incoming_queries_sender.try_send(QueryRequest {
-            query: Box::new(query),
-            sender: QueryRequestSender::Future(sender),
-        });
+            // ok to dismiss send as sender end will be dropped in case of an error and
+            // consumer will be notified by channel being closed
+            let (sender, receiver) = oneshot::channel();
+            let _ = inner.incoming_queries_sender.try_send(QueryRequest {
+                query: Box::new(query),
+                sender: QueryRequestSender::Query(sender),
+            });
 
-        Ok(async move { receiver.await.map_err(|_err| Error::Cancelled)? })
+            receiver
+        };
+
+        receiver.await.map_err(|_err| Error::Cancelled)?
     }
 
     pub fn watched_query(
@@ -359,13 +388,12 @@ where
             query.watch_token = watch_token;
         }
 
-        let (sender, receiver) = mpsc::channel(self.config.handle_watch_query_channel_size);
-
         // ok to dismiss send as sender end will be dropped in case of an error and
         // consumer will be notified by channel being closed
+        let (sender, receiver) = mpsc::channel(self.config.handle_watch_query_channel_size);
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
             query: Box::new(query),
-            sender: QueryRequestSender::Stream(Arc::new(Mutex::new(sender)), watch_token),
+            sender: QueryRequestSender::WatchedQuery(Arc::new(Mutex::new(sender)), watch_token),
         });
 
         Ok(WatchedQueryStream {
@@ -373,6 +401,20 @@ where
             inner: self.inner.clone(),
             receiver,
         })
+    }
+}
+
+impl<CS, PS> Clone for StoreHandle<CS, PS>
+where
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
+{
+    fn clone(&self) -> StoreHandle<CS, PS> {
+        StoreHandle {
+            config: self.config,
+            handle: self.handle.clone(),
+            inner: self.inner.clone(),
+        }
     }
 }
 
@@ -417,26 +459,26 @@ where
 
 /// Incoming query to be executed, or re-scheduled watched query to be
 /// re-executed.
-struct QueryRequest {
-    query: Box<EntityQuery>,
-    sender: QueryRequestSender,
+pub(crate) struct QueryRequest {
+    pub query: Box<EntityQuery>,
+    pub sender: QueryRequestSender,
 }
 
-enum QueryRequestSender {
-    Stream(
+pub(crate) enum QueryRequestSender {
+    Query(oneshot::Sender<Result<EntityResults, Error>>),
+    WatchedQuery(
         Arc<Mutex<mpsc::Sender<Result<EntityResults, Error>>>>,
         WatchToken,
     ),
-    Future(oneshot::Sender<Result<EntityResults, Error>>),
 }
 
 impl QueryRequest {
     fn reply(mut self, result: Result<EntityResults, Error>) {
         match self.sender {
-            QueryRequestSender::Future(sender) => {
+            QueryRequestSender::Query(sender) => {
                 let _ = sender.send(result);
             }
-            QueryRequestSender::Stream(ref mut sender, _token) => {
+            QueryRequestSender::WatchedQuery(ref mut sender, _token) => {
                 if let Ok(mut sender) = sender.lock() {
                     let _ = sender.try_send(result);
                 }
@@ -468,7 +510,7 @@ pub mod tests {
         let response = test_store.mutate(mutation)?;
         test_store
             .cluster
-            .wait_operation_committed(0, response.operation_id);
+            .wait_operation_committed(0, response.operation_ids[0]);
 
         let query = QueryBuilder::matches("hello").build();
         let results = test_store.query(query)?;
@@ -514,7 +556,7 @@ pub mod tests {
         let response = test_store.mutate(mutation)?;
         test_store
             .cluster
-            .wait_operation_committed(0, response.operation_id);
+            .wait_operation_committed(0, response.operation_ids[0]);
 
         let result = stream.next().unwrap();
         assert_eq!(result.unwrap().entities.len(), 1);
@@ -524,7 +566,7 @@ pub mod tests {
         let response = test_store.mutate(mutation)?;
         test_store
             .cluster
-            .wait_operation_committed(0, response.operation_id);
+            .wait_operation_committed(0, response.operation_ids[0]);
 
         test_store.cluster.runtime.block_on(async move {
             let mut stream = stream.into_inner();

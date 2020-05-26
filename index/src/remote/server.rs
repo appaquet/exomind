@@ -5,7 +5,7 @@ use futures::channel::{mpsc, oneshot};
 use futures::{FutureExt, SinkExt, StreamExt};
 
 use exocore_core::cell::Cell;
-use exocore_core::futures::{interval, OwnedSpawnSet};
+use exocore_core::futures::{block_on, interval, OwnedSpawnSet};
 use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery, EntityResults};
 use exocore_core::protos::generated::index_transport_capnp::{
     mutation_request, query_request, unwatch_query_request, watched_query_request,
@@ -158,10 +158,15 @@ where
         in_message: Box<InMessage>,
         query: Box<EntityQuery>,
     ) -> Result<(), Error> {
+        let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+
         let future_result = {
-            let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
-            inner.store_handle.query(query.as_ref().clone())?
+            let store_handle = inner.store_handle.clone();
+
+            async move {
+                store_handle.query(query.as_ref().clone()).await
+            }
         };
 
         let weak_inner = weak_inner.clone();
@@ -273,7 +278,11 @@ where
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let inner = inner.read()?;
-        let result = inner.store_handle.mutate(entity_mutation.as_ref().clone());
+        let result = block_on(
+            inner
+                .store_handle
+                .mutate(entity_mutation.as_ref().clone()),
+        ); // TODO: Fix
 
         if let Err(err) = &result {
             error!("Returning error executing incoming mutation: {}", err);

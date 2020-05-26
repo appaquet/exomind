@@ -36,12 +36,12 @@ impl EntityMutations {
         // we keep last operations id that have affected current traits / entities
         let mut traits = HashMap::<TraitId, MutationMetadata>::new();
         let mut active_operations_id = HashSet::<OperationId>::new();
-        for mut trait_metadata in ordered_mutations_metadata {
+        for mut mutation_metadata in ordered_mutations_metadata {
             // hashing operations instead of traits content allow invalidating results as
             // soon as one operation is made since we can't guarantee anything
-            hasher.write_u64(trait_metadata.operation_id);
+            hasher.write_u64(mutation_metadata.operation_id);
 
-            match &mut trait_metadata.mutation_type {
+            match &mut mutation_metadata.mutation_type {
                 MutationType::TraitPut(put_trait) => {
                     let opt_prev_trait = traits.get(&put_trait.trait_id);
                     if let Some(prev_trait) = opt_prev_trait {
@@ -49,24 +49,24 @@ impl EntityMutations {
                     }
 
                     Self::merge_trait_metadata_dates(
-                        trait_metadata.operation_id,
+                        mutation_metadata.operation_id,
                         put_trait,
                         opt_prev_trait,
                     );
 
-                    active_operations_id.insert(trait_metadata.operation_id);
-                    traits.insert(put_trait.trait_id.clone(), trait_metadata);
+                    active_operations_id.insert(mutation_metadata.operation_id);
+                    traits.insert(put_trait.trait_id.clone(), mutation_metadata);
                 }
                 MutationType::TraitTombstone(trait_id) => {
                     if let Some(prev_trait) = traits.get(trait_id) {
                         active_operations_id.remove(&prev_trait.operation_id);
                     }
-                    active_operations_id.insert(trait_metadata.operation_id);
+                    active_operations_id.insert(mutation_metadata.operation_id);
                     traits.remove(trait_id);
                 }
                 MutationType::EntityTombstone => {
                     active_operations_id.clear();
-                    active_operations_id.insert(trait_metadata.operation_id);
+                    active_operations_id.insert(mutation_metadata.operation_id);
                     traits.clear();
                 }
             }

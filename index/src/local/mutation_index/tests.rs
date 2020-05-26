@@ -604,6 +604,84 @@ fn search_by_reference() -> Result<(), failure::Error> {
 }
 
 #[test]
+fn search_by_operations() -> Result<(), failure::Error> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let mut index = MutationIndex::create_in_memory(config, registry)?;
+
+    let et1 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: None,
+        operation_id: 1,
+        entity_id: "et1".to_string(),
+        trt: Trait {
+            id: "trt1".to_string(),
+            message: Some(
+                TestMessage {
+                    string1: "Foo Bar".to_string(),
+                    ref1: Some(Reference {
+                        entity_id: "et2".to_string(),
+                        trait_id: "".to_string(),
+                    }),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    let et2 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: None,
+        operation_id: 2,
+        entity_id: "et2".to_string(),
+        trt: Trait {
+            id: "trt2".to_string(),
+            message: Some(
+                TestMessage {
+                    string1: "Hello World".to_string(),
+                    ref1: Some(Reference {
+                        entity_id: "et1".to_string(),
+                        trait_id: "trt1".to_string(),
+                    }),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    index.apply_operations(vec![et1, et2].into_iter())?;
+
+    let search = |operations: Vec<OperationId>| {
+        let query = Q::operations(operations).build();
+        index.search(query).unwrap()
+    };
+
+    {
+        let res = search(vec![1]);
+        assert_eq!(res.mutations.len(), 1);
+        find_put_trait(&res, "trt1");
+
+        let res = search(vec![2]);
+        assert_eq!(res.mutations.len(), 1);
+        find_put_trait(&res, "trt2");
+
+        let res = search(vec![1, 2]);
+        assert_eq!(res.mutations.len(), 2);
+        find_put_trait(&res, "trt1");
+        find_put_trait(&res, "trt2");
+
+        let res = search(vec![3]);
+        assert_eq!(res.mutations.len(), 0);
+
+        let res = search(vec![1, 3]);
+        assert_eq!(res.mutations.len(), 1);
+        find_put_trait(&res, "trt1");
+    }
+
+    Ok(())
+}
+
+#[test]
 fn search_by_trait_field() -> Result<(), failure::Error> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();

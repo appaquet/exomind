@@ -19,8 +19,8 @@ pub use config::*;
 use exocore_chain::block::BlockOffset;
 use exocore_core::protos::generated::exocore_index::{
     entity_query::Predicate, sorting, sorting_value, trait_field_predicate, trait_query,
-    EntityQuery, MatchPredicate, Paging, ReferencePredicate, Sorting, SortingValue,
-    TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate,
+    EntityQuery, MatchPredicate, OperationsPredicate, Paging, ReferencePredicate, Sorting,
+    SortingValue, TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate,
 };
 use exocore_core::protos::prost::{Any, ProstTimestampExt};
 use exocore_core::protos::reflect;
@@ -40,7 +40,7 @@ mod schema;
 #[cfg(test)]
 mod tests;
 
-const SEARCH_ENTITY_ID_LIMIT: usize = 1_000_000;
+const ENTITY_MAX_TRAITS: u32 = 1_000_000;
 
 /// Index (full-text & fields) for entities & traits mutations stored in the
 /// chain. Each mutation is individually indexed as a single document.
@@ -210,6 +210,7 @@ impl MutationIndex {
             Predicate::Match(inner) => self.search_matches(inner, paging, sorting),
             Predicate::Id(inner) => self.search_entity_id(&inner.id),
             Predicate::Reference(inner) => self.search_reference(inner, paging, sorting),
+            Predicate::Operations(inner) => self.search_operations(inner),
             Predicate::Test(_inner) => Err(Error::Other("Query failed for tests".to_string())),
         }?;
 
@@ -217,7 +218,7 @@ impl MutationIndex {
     }
 
     /// Execute a query on the index and return an iterator over all matching
-    /// mutations.
+    /// mutations
     pub fn search_all<Q: Borrow<EntityQuery>>(
         &self,
         query: Q,
@@ -279,7 +280,7 @@ impl MutationIndex {
         }
 
         let query = BooleanQuery::from(queries);
-        self.execute_results_tantivy_query(
+        self.execute_tantivy_with_paging(
             searcher,
             &query,
             paging,
@@ -303,7 +304,7 @@ impl MutationIndex {
         }
 
         let query = self.match_predicate_to_query(predicate)?;
-        self.execute_results_tantivy_query(searcher, &query, paging, sorting, None)
+        self.execute_tantivy_with_paging(searcher, &query, paging, sorting, None)
     }
 
     /// Execute a search by entity id query
@@ -313,28 +314,42 @@ impl MutationIndex {
         let term = Term::from_field_text(self.fields.entity_id, &entity_id);
         let query = TermQuery::new(term, IndexRecordOption::Basic);
 
-        let top_collector = TopDocs::with_limit(SEARCH_ENTITY_ID_LIMIT).tweak_score(
-            move |_segment_reader: &SegmentReader| {
-                move |_doc_id, score| SortingValueWrapper {
-                    value: SortingValue {
-                        value: Some(sorting_value::Value::Float(score)),
-                        operation_id: 0,
-                    },
-                    reverse: false,
-                    ignore: false,
-                }
-            },
-        );
+        let sorting = Sorting {
+            ascending: true,
+            value: Some(sorting::Value::OperationId(true)),
+        };
+        let paging = Paging {
+            count: ENTITY_MAX_TRAITS,
+            ..Default::default()
+        };
 
-        let mutations = self.execute_mutations_tantity_query(searcher, &query, &top_collector)?;
-        let total = mutations.len();
+        self.execute_tantivy_with_paging(searcher, &query, Some(&paging), sorting, None)
+    }
 
-        Ok(MutationResults {
-            mutations,
-            total,
-            remaining: 0,
-            next_page: None,
-        })
+    pub fn search_operations(
+        &self,
+        predicate: &OperationsPredicate,
+    ) -> Result<MutationResults, Error> {
+        let searcher = self.index_reader.searcher();
+
+        let mut queries: Vec<(Occur, Box<dyn Query>)> = Vec::new();
+        for operation_id in &predicate.operation_ids {
+            let op_term = Term::from_field_u64(self.fields.operation_id, *operation_id);
+            let op_query = TermQuery::new(op_term, IndexRecordOption::Basic);
+            queries.push((Occur::Should, Box::new(op_query)));
+        }
+        let query = BooleanQuery::from(queries);
+
+        let sorting = Sorting {
+            ascending: true,
+            value: Some(sorting::Value::OperationId(true)),
+        };
+        let paging = Paging {
+            count: ENTITY_MAX_TRAITS,
+            ..Default::default()
+        };
+
+        self.execute_tantivy_with_paging(searcher, &query, Some(&paging), sorting, None)
     }
 
     /// Executes a search for traits that have the given reference to another
@@ -354,7 +369,7 @@ impl MutationIndex {
             sorting.value = Some(sorting::Value::OperationId(true));
         }
 
-        self.execute_results_tantivy_query(searcher, &query, paging, sorting, None)
+        self.execute_tantivy_with_paging(searcher, &query, paging, sorting, None)
     }
 
     /// Converts a trait put / update to Tantivy document
@@ -598,7 +613,7 @@ impl MutationIndex {
 
     /// Execute query on Tantivy index by taking paging, sorting into
     /// consideration and returns paged results.
-    fn execute_results_tantivy_query<S>(
+    fn execute_tantivy_with_paging<S>(
         &self,
         searcher: S,
         query: &dyn tantivy::query::Query,
@@ -629,7 +644,7 @@ impl MutationIndex {
                     &paging,
                     sorting.ascending,
                 );
-                self.execute_mutations_tantity_query(searcher, query, &collector)?
+                self.execute_tantity_query_with_collector(searcher, query, &collector)?
             }
             sorting::Value::OperationId(_) => {
                 let sort_field = self.fields.operation_id;
@@ -640,7 +655,7 @@ impl MutationIndex {
                     sort_field,
                     sorting.ascending,
                 );
-                self.execute_mutations_tantity_query(searcher, query, &collector)?
+                self.execute_tantity_query_with_collector(searcher, query, &collector)?
             }
             sorting::Value::Field(field_name) => {
                 let trait_name = trait_name.ok_or_else(|| {
@@ -666,7 +681,7 @@ impl MutationIndex {
                     sort_field.field,
                     sorting.ascending,
                 );
-                self.execute_mutations_tantity_query(searcher, query, &collector)?
+                self.execute_tantity_query_with_collector(searcher, query, &collector)?
             }
         };
 
@@ -703,7 +718,7 @@ impl MutationIndex {
     }
 
     /// Execute query on Tantivy index and build mutations metadata results.
-    fn execute_mutations_tantity_query<S, C>(
+    fn execute_tantity_query_with_collector<S, C>(
         &self,
         searcher: S,
         query: &dyn tantivy::query::Query,

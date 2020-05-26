@@ -1,5 +1,6 @@
 use prost::Message;
 
+use exocore_chain::operation::OperationId;
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::{
     entity_query, sorting, trait_field_predicate, trait_query, EntityQuery, EntityResults,
@@ -8,7 +9,10 @@ use exocore_core::protos::generated::exocore_index::{
 };
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
 use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
-use exocore_core::protos::prost::{NamedMessage, ProstMessageExt};
+use exocore_core::protos::{
+    index::OperationsPredicate,
+    prost::{NamedMessage, ProstMessageExt},
+};
 
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
@@ -37,6 +41,17 @@ impl QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Reference(reference.into().0)),
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn operations(operation_ids: Vec<OperationId>) -> QueryBuilder {
+        QueryBuilder {
+            query: EntityQuery {
+                predicate: Some(entity_query::Predicate::Operations(OperationsPredicate {
+                    operation_ids,
+                })),
                 ..Default::default()
             },
         }

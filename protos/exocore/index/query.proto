@@ -11,6 +11,7 @@ message EntityQuery {
         TraitPredicate trait = 2;
         IdPredicate id = 3;
         ReferencePredicate reference = 4;
+        OperationsPredicate operations = 10;
 
         TestPredicate test = 99;
     }
@@ -31,12 +32,20 @@ message EntityQuery {
     uint64 result_hash = 9;
 }
 
+/// Text match query on all indexed fields across all traits.
 message MatchPredicate {
     string query = 1;
 }
 
+/// Entity ID query.
 message IdPredicate {
     string id = 1;
+}
+
+/// Entity that have the list operation ids.
+/// Used to return entities on which mutations with these operation ids were applied and indexed.
+message OperationsPredicate {
+    repeated uint64 operation_ids = 1;
 }
 
 message TestPredicate {

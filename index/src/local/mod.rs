@@ -2,6 +2,7 @@ mod entity_index;
 mod mutation_index;
 mod store;
 mod top_results;
+mod tracked_mutations;
 mod watched_queries;
 
 #[cfg(feature = "local_store")]
