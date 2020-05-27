@@ -164,9 +164,7 @@ where
             let inner = inner.read()?;
             let store_handle = inner.store_handle.clone();
 
-            async move {
-                store_handle.query(query.as_ref().clone()).await
-            }
+            async move { store_handle.query(query.as_ref().clone()).await }
         };
 
         let weak_inner = weak_inner.clone();
@@ -278,11 +276,7 @@ where
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let inner = inner.read()?;
-        let result = block_on(
-            inner
-                .store_handle
-                .mutate(entity_mutation.as_ref().clone()),
-        ); // TODO: Fix
+        let result = block_on(inner.store_handle.mutate(entity_mutation.as_ref().clone())); // TODO: Fix
 
         if let Err(err) = &result {
             error!("Returning error executing incoming mutation: {}", err);

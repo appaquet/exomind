@@ -1,6 +1,9 @@
 use std::pin::Pin;
 use std::sync::{Arc, Mutex, RwLock, Weak};
-use std::task::{Context, Poll};
+use std::{
+    task::{Context, Poll},
+    time::Duration,
+};
 
 use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
@@ -20,7 +23,7 @@ use crate::local::watched_queries::WatchedQueries;
 use crate::query::WatchToken;
 
 use super::entity_index::EntityIndex;
-use crate::local::tracked_mutations::TrackedMutations;
+use crate::local::watched_mutations::WatchedMutations;
 
 /// Locally persisted entities store allowing mutation and queries on entities
 /// and their traits.
@@ -59,7 +62,7 @@ where
             clock,
             index,
             watched_queries: WatchedQueries::new(),
-            tracked_mutations: TrackedMutations::new(),
+            watched_mutations: WatchedMutations::new(config),
             incoming_queries_sender,
             chain_handle,
         }));
@@ -210,6 +213,7 @@ pub struct StoreConfig {
     pub query_parallelism: usize,
     pub handle_watch_query_channel_size: usize,
     pub chain_events_batch_size: usize,
+    pub watched_mutations_timeout: Duration,
 }
 
 impl Default for StoreConfig {
@@ -219,6 +223,7 @@ impl Default for StoreConfig {
             query_parallelism: 4,
             handle_watch_query_channel_size: 1000,
             chain_events_batch_size: 50,
+            watched_mutations_timeout: Duration::from_secs(5),
         }
     }
 }
@@ -232,7 +237,7 @@ where
     clock: Clock,
     index: EntityIndex<CS, PS>,
     watched_queries: WatchedQueries,
-    tracked_mutations: TrackedMutations,
+    watched_mutations: WatchedMutations,
     incoming_queries_sender: mpsc::Sender<QueryRequest>,
     chain_handle: exocore_chain::engine::EngineHandle<CS, PS>,
 }
@@ -261,7 +266,7 @@ where
         }
 
         if request.return_entity && !request.mutations.is_empty() {
-            self.tracked_mutations
+            self.watched_mutations
                 .track_request(operation_ids, sender)?;
         } else {
             let _ = sender.send(Ok(MutationResult {
@@ -293,14 +298,22 @@ where
         events: Vec<exocore_chain::engine::Event>,
     ) -> Result<(), Error> {
         let weak_inner = weak_inner.clone();
-        let result = spawn_blocking(move || -> Result<(), Error> {
+        let affected_operation_ids = spawn_blocking(move || -> Result<(), Error> {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let mut inner = inner.write()?;
-            inner.index.handle_chain_engine_events(events.into_iter())
+
+            let affected_operations = inner.index.handle_chain_engine_events(events.into_iter())?;
+
+            inner
+                .watched_mutations
+                .handle_indexed_operations(affected_operations.as_slice());
+
+            Ok(())
         })
         .await;
 
-        result.map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
+        affected_operation_ids
+            .map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
     }
 }
 
