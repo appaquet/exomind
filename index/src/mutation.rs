@@ -106,6 +106,12 @@ impl MutationBuilder {
     }
 }
 
+impl Default for MutationBuilder {
+    fn default() -> Self {
+        MutationBuilder::new()
+    }
+}
+
 pub struct MutationRequestLike(pub MutationRequest);
 
 impl From<MutationRequest> for MutationRequestLike {

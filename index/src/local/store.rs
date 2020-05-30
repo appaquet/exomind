@@ -370,7 +370,6 @@ where
                 .query(EntityQuery {
                     predicate: Some(entity_query::Predicate::Operations(OperationsPredicate {
                         operation_ids: mutation_result.operation_ids.clone(),
-                        ..Default::default()
                     })),
                     ..Default::default()
                 })

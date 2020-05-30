@@ -109,12 +109,7 @@ struct Inner {
 
 impl Inner {
     fn remove_request(&mut self, request_id: RequestId) -> Option<WatchedMutationRequest> {
-        let request = if let Some(request) = self.requests.remove(&request_id) {
-            request
-        } else {
-            return None;
-        };
-
+        let request = self.requests.remove(&request_id)?;
         for operation_id in &request.operation_ids {
             if let Some(op_reqs) = self.operations_requests.get_mut(operation_id) {
                 op_reqs.remove(&request_id);
