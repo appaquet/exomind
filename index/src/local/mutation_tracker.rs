@@ -10,13 +10,19 @@ use std::sync::Mutex;
 
 type RequestId = usize;
 
-pub(crate) struct WatchedMutations {
+/// Tracks mutations for which the user requested to be notified when they have been indexed and
+/// are reflected in the store.
+///
+/// This tracks operation ids that have been indexed, and sends completion signal via the provided
+/// oneshot channel.
+pub(crate) struct MutationTracker {
     inner: Mutex<Inner>,
 }
 
-impl WatchedMutations {
-    pub fn new(config: StoreConfig) -> WatchedMutations {
-        WatchedMutations {
+impl MutationTracker {
+    /// Creates a new mutation tracker.
+    pub fn new(config: StoreConfig) -> MutationTracker {
+        MutationTracker {
             inner: Mutex::new(Inner {
                 config,
                 next_request_id: 0,
@@ -26,11 +32,13 @@ impl WatchedMutations {
         }
     }
 
+    /// Track the indexation status of the given operation ids and notify they indexation completion or timeout
+    /// via the given channel.
     pub fn track_request(
         &self,
         operation_ids: Vec<OperationId>,
         response_channel: oneshot::Sender<Result<MutationResult, Error>>,
-    ) -> Result<(), Error> {
+    ) {
         let mut inner = self.inner.lock().unwrap();
 
         let request_id = inner.next_request_id;
@@ -53,10 +61,9 @@ impl WatchedMutations {
                 .or_insert_with(HashSet::new);
             entry.insert(request_id);
         }
-
-        Ok(())
     }
 
+    /// Notifies that the given operation ids were indexed and available through the store.
     pub fn handle_indexed_operations(&self, operation_ids: &[OperationId]) {
         let mut inner = self.inner.lock().unwrap();
 
@@ -120,17 +127,33 @@ impl Inner {
     fn cleanup_expired(&mut self) {
         let mut expired_requests = Vec::new();
         for (request_id, request) in &self.requests {
-            if request.received_time.elapsed() > self.config.watched_mutations_timeout {
+            if request.received_time.elapsed() > self.config.mutation_tracker_timeout {
                 warn!(
-                    "Tracked mutations for operations {:?} timed out",
-                    request.operation_ids
+                    "Tracked mutations for operations {:?} timed out after {:?}",
+                    request.operation_ids,
+                    request.received_time.elapsed(),
                 );
                 expired_requests.push(*request_id);
             }
         }
 
+        if expired_requests.is_empty() {
+            return;
+        }
+
         for request_id in expired_requests {
             self.remove_request(request_id);
+        }
+
+        let mut orphan_operations = Vec::new();
+        for (operation_id, requests) in &self.operations_requests {
+            if requests.is_empty() {
+                orphan_operations.push(*operation_id);
+            }
+        }
+
+        for operation_id in orphan_operations {
+            self.operations_requests.remove(&operation_id);
         }
     }
 }
@@ -145,7 +168,71 @@ pub struct WatchedMutationRequest {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::time::Duration;
 
     #[test]
-    fn test_track_request() {}
+    fn golden_path() {
+        let tracker = MutationTracker::new(Default::default());
+
+        let (sender, mut receiver) = oneshot::channel();
+        tracker.track_request(vec![1, 2, 3], sender);
+        tracker.handle_indexed_operations(&[1, 2, 3]);
+        assert!(receiver.try_recv().unwrap().is_some());
+
+        let (sender, mut receiver) = oneshot::channel();
+        tracker.track_request(vec![4, 5, 6], sender);
+        tracker.handle_indexed_operations(&[4, 5]);
+        assert!(receiver.try_recv().unwrap().is_none());
+        tracker.handle_indexed_operations(&[6, 7]);
+        assert!(receiver.try_recv().unwrap().is_some());
+
+        {
+            let inner = tracker.inner.lock().unwrap();
+            assert_eq!(inner.operations_requests.len(), 0);
+            assert_eq!(inner.requests.len(), 0);
+        }
+    }
+
+    #[test]
+    fn tracking_timeout() {
+        let mutation_tracker_timeout = Duration::from_millis(1);
+        let tracker = MutationTracker::new(StoreConfig {
+            mutation_tracker_timeout,
+            ..Default::default()
+        });
+
+        let (sender, mut receiver) = oneshot::channel();
+        tracker.track_request(vec![1, 2, 3], sender);
+
+        std::thread::sleep(mutation_tracker_timeout);
+        tracker.handle_indexed_operations(&[]);
+
+        assert!(receiver.try_recv().is_err());
+
+        {
+            let inner = tracker.inner.lock().unwrap();
+            assert_eq!(inner.operations_requests.len(), 0);
+            assert_eq!(inner.requests.len(), 0);
+        }
+    }
+
+    #[test]
+    fn multiple_requests_same_operation() {
+        let tracker = MutationTracker::new(Default::default());
+
+        let (sender1, mut receiver1) = oneshot::channel();
+        tracker.track_request(vec![1, 2, 3], sender1);
+
+        let (sender2, mut receiver2) = oneshot::channel();
+        tracker.track_request(vec![1, 2, 3, 4], sender2);
+
+        tracker.handle_indexed_operations(&[1, 2, 3]);
+
+        assert!(receiver1.try_recv().unwrap().is_some());
+        assert!(receiver2.try_recv().unwrap().is_none());
+
+        tracker.handle_indexed_operations(&[4, 5]);
+
+        assert!(receiver2.try_recv().unwrap().is_some());
+    }
 }

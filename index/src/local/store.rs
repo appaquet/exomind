@@ -23,7 +23,7 @@ use crate::local::watched_queries::WatchedQueries;
 use crate::query::WatchToken;
 
 use super::entity_index::EntityIndex;
-use crate::local::watched_mutations::WatchedMutations;
+use crate::local::mutation_tracker::MutationTracker;
 
 /// Locally persisted entities store allowing mutation and queries on entities
 /// and their traits.
@@ -62,7 +62,7 @@ where
             clock,
             index,
             watched_queries: WatchedQueries::new(),
-            watched_mutations: WatchedMutations::new(config),
+            mutation_tracker: MutationTracker::new(config),
             incoming_queries_sender,
             chain_handle,
         }));
@@ -213,7 +213,7 @@ pub struct StoreConfig {
     pub query_parallelism: usize,
     pub handle_watch_query_channel_size: usize,
     pub chain_events_batch_size: usize,
-    pub watched_mutations_timeout: Duration,
+    pub mutation_tracker_timeout: Duration,
 }
 
 impl Default for StoreConfig {
@@ -223,7 +223,7 @@ impl Default for StoreConfig {
             query_parallelism: 4,
             handle_watch_query_channel_size: 1000,
             chain_events_batch_size: 50,
-            watched_mutations_timeout: Duration::from_secs(5),
+            mutation_tracker_timeout: Duration::from_secs(5),
         }
     }
 }
@@ -237,7 +237,7 @@ where
     clock: Clock,
     index: EntityIndex<CS, PS>,
     watched_queries: WatchedQueries,
-    watched_mutations: WatchedMutations,
+    mutation_tracker: MutationTracker,
     incoming_queries_sender: mpsc::Sender<QueryRequest>,
     chain_handle: exocore_chain::engine::EngineHandle<CS, PS>,
 }
@@ -266,8 +266,7 @@ where
         }
 
         if request.return_entity && !request.mutations.is_empty() {
-            self.watched_mutations
-                .track_request(operation_ids, sender)?;
+            self.mutation_tracker.track_request(operation_ids, sender);
         } else {
             let _ = sender.send(Ok(MutationResult {
                 operation_ids,
@@ -305,7 +304,7 @@ where
             let affected_operations = inner.index.handle_chain_engine_events(events.into_iter())?;
 
             inner
-                .watched_mutations
+                .mutation_tracker
                 .handle_indexed_operations(affected_operations.as_slice());
 
             Ok(())
@@ -355,15 +354,14 @@ where
 
         let receiver = {
             let inner = inner.write().map_err(|_| Error::Dropped)?;
-
-            // TODO: wait mutation
-            // TODO: wait entity
-
             inner.handle_mutation_request(MutationRequest {
                 mutations: vec![entity_mutation],
                 return_entity: false,
             })?
         };
+
+        // TODO: wait mutation
+        // TODO: wait entity
 
         receiver.await.map_err(|_err| Error::Cancelled)?
     }

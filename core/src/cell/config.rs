@@ -285,7 +285,7 @@ cells:
 
             // libp2p's PeerId
             assert_eq!(
-                "QmQCewLJsDyEyubzHF67LsFFtChBdRdumeQyPwMhDVqLzk",
+                "12D3KooWQSm3A1DZBMHmWVu3g7NonTMTenGQccmY9bUWtVjWTQ5K",
                 node.node().id().to_string()
             );
 
