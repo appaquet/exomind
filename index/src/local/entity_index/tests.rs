@@ -287,7 +287,7 @@ fn delete_entity() -> Result<(), failure::Error> {
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
-    let op_id = test_index.write_mutation(MutationBuilder::delete_entity("entity1"))?;
+    let op_id = test_index.write_mutation(MutationBuilder::new().delete_entity("entity1"))?;
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
     let query = Q::with_entity_id("entity1").build();
@@ -359,7 +359,7 @@ fn traits_compaction() -> Result<(), failure::Error> {
     let mut new_trait = TestEntityIndex::new_test_trait("trait1", "op4")?;
     new_trait.creation_date = traits_msgs[0].0.creation_date.clone();
     new_trait.modification_date = traits_msgs[0].0.modification_date.clone();
-    let op_id = test_index.write_mutation(MutationBuilder::compact_traits(
+    let op_id = test_index.write_mutation(MutationBuilder::new().compact_traits(
         "entity1",
         new_trait,
         vec![op1, op2, op3],

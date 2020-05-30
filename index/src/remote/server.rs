@@ -5,12 +5,12 @@ use futures::channel::{mpsc, oneshot};
 use futures::{FutureExt, SinkExt, StreamExt};
 
 use exocore_core::cell::Cell;
-use exocore_core::futures::{block_on, interval, OwnedSpawnSet};
-use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery, EntityResults};
+use exocore_core::futures::{interval, OwnedSpawnSet};
+use exocore_core::protos::generated::exocore_index::{EntityQuery, EntityResults, MutationRequest};
 use exocore_core::protos::generated::index_transport_capnp::{
     mutation_request, query_request, unwatch_query_request, watched_query_request,
 };
-use exocore_core::protos::generated::MessageType;
+use exocore_core::protos::{generated::MessageType, index::MutationResult};
 use exocore_core::time::{Duration, Instant};
 use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandle};
 
@@ -131,7 +131,9 @@ where
 
         match parsed_message {
             IncomingMessage::Mutation(mutation) => {
-                Self::handle_incoming_mutation_message(weak_inner, in_message.as_ref(), mutation)?;
+                Self::handle_incoming_mutation_message(
+                    weak_inner, spawn_set, in_message, mutation,
+                )?;
             }
             IncomingMessage::Query(query) => {
                 Self::handle_incoming_query_message(weak_inner, spawn_set, in_message, query)?;
@@ -271,20 +273,43 @@ where
 
     fn handle_incoming_mutation_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
-        in_message: &InMessage,
-        entity_mutation: Box<EntityMutation>,
+        spawn_set: &mut OwnedSpawnSet<()>,
+        in_message: Box<InMessage>,
+        request: Box<MutationRequest>,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
-        let inner = inner.read()?;
-        let result = block_on(inner.store_handle.mutate(entity_mutation.as_ref().clone())); // TODO: Fix
 
-        if let Err(err) = &result {
-            error!("Returning error executing incoming mutation: {}", err);
-        }
+        let future_result = {
+            let inner = inner.read()?;
+            let store_handle = inner.store_handle.clone();
 
-        let resp_frame = crate::mutation::mutation_result_to_response_frame(result)?;
-        let message = in_message.to_response_message(&inner.cell, resp_frame)?;
-        inner.send_message(message)?;
+            async move { store_handle.mutate(request.as_ref().clone()).await }
+        };
+
+        let weak_inner = weak_inner.clone();
+        let send_response = move |result: Result<MutationResult, Error>| -> Result<(), Error> {
+            let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+            let inner = inner.read()?;
+
+            let resp_frame = crate::mutation::mutation_result_to_response_frame(result)?;
+            let message = in_message.to_response_message(&inner.cell, resp_frame)?;
+
+            inner.send_message(message)?;
+
+            Ok(())
+        };
+
+        spawn_set.spawn(async move {
+            let result = future_result.await;
+
+            if let Err(err) = &result {
+                error!("Returning error executing incoming mutation: {}", err);
+            }
+
+            if let Err(err) = send_response(result) {
+                error!("Error sending response for incoming mutation: {}", err);
+            }
+        });
 
         Ok(())
     }
@@ -370,7 +395,7 @@ where
 }
 
 enum IncomingMessage {
-    Mutation(Box<EntityMutation>),
+    Mutation(Box<MutationRequest>),
     Query(Box<EntityQuery>),
     WatchedQuery(Box<EntityQuery>),
     UnwatchQuery(WatchToken),

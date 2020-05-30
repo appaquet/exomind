@@ -12,9 +12,9 @@ use exocore_core::cell::Cell;
 use exocore_core::futures::{spawn_blocking, BatchingStream};
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
-    EntityMutation, EntityQuery, EntityResults, MutationRequest, MutationResult,
+    entity_query, EntityQuery, EntityResults, MutationRequest, MutationResult,
 };
-use exocore_core::protos::prost::ProstMessageExt;
+use exocore_core::protos::{index::OperationsPredicate, prost::ProstMessageExt};
 use exocore_core::time::Clock;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
 
@@ -23,7 +23,7 @@ use crate::local::watched_queries::WatchedQueries;
 use crate::query::WatchToken;
 
 use super::entity_index::EntityIndex;
-use crate::local::mutation_tracker::MutationTracker;
+use crate::{local::mutation_tracker::MutationTracker, mutation::MutationRequestLike};
 
 /// Locally persisted entities store allowing mutation and queries on entities
 /// and their traits.
@@ -265,12 +265,12 @@ where
             operation_ids.push(operation_id);
         }
 
-        if request.return_entity && !request.mutations.is_empty() {
+        if request.wait_indexed && !request.mutations.is_empty() {
             self.mutation_tracker.track_request(operation_ids, sender);
         } else {
             let _ = sender.send(Ok(MutationResult {
                 operation_ids,
-                entity: None,
+                ..Default::default()
             }));
         }
 
@@ -349,21 +349,41 @@ where
         tokens
     }
 
-    pub async fn mutate(&self, entity_mutation: EntityMutation) -> Result<MutationResult, Error> {
+    pub async fn mutate<M: Into<MutationRequestLike>>(
+        &self,
+        request: M,
+    ) -> Result<MutationResult, Error> {
         let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
 
-        let receiver = {
-            let inner = inner.write().map_err(|_| Error::Dropped)?;
-            inner.handle_mutation_request(MutationRequest {
-                mutations: vec![entity_mutation],
-                return_entity: false,
-            })?
+        let request = request.into().0;
+        let return_entity = request.return_entity;
+
+        let mutation_future = {
+            let inner = inner.read().map_err(|_| Error::Dropped)?;
+            inner.handle_mutation_request(request)?
         };
 
-        // TODO: wait mutation
-        // TODO: wait entity
+        let mut mutation_result = mutation_future.await.map_err(|_err| Error::Cancelled)??;
 
-        receiver.await.map_err(|_err| Error::Cancelled)?
+        if return_entity {
+            let query_result = self
+                .query(EntityQuery {
+                    predicate: Some(entity_query::Predicate::Operations(OperationsPredicate {
+                        operation_ids: mutation_result.operation_ids.clone(),
+                        ..Default::default()
+                    })),
+                    ..Default::default()
+                })
+                .await?;
+
+            mutation_result.entities = query_result
+                .entities
+                .into_iter()
+                .flat_map(|e| e.entity)
+                .collect();
+        }
+
+        Ok(mutation_result)
     }
 
     pub async fn query(&self, query: EntityQuery) -> Result<EntityResults, Error> {
@@ -518,14 +538,32 @@ pub mod tests {
         test_store.start_store()?;
 
         let mutation = test_store.create_put_contact_mutation("entry1", "contact1", "Hello World");
-        let response = test_store.mutate(mutation)?;
+        let result = test_store.mutate(mutation)?;
+        assert_eq!(result.entities.len(), 0);
         test_store
             .cluster
-            .wait_operation_committed(0, response.operation_ids[0]);
+            .wait_operation_committed(0, result.operation_ids[0]);
 
         let query = QueryBuilder::matches("hello").build();
         let results = test_store.query(query)?;
         assert_eq!(results.entities.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn store_mutate_return_entities() -> Result<(), failure::Error> {
+        let mut test_store = TestStore::new()?;
+        test_store.start_store()?;
+
+        let mutation = test_store
+            .create_put_contact_mutation("entry1", "contact1", "Hello World")
+            .return_entities();
+        let result = test_store.mutate(mutation)?;
+        assert_eq!(result.entities.len(), 1);
+
+        let entity = &result.entities[0];
+        assert_eq!(entity.id, "entry1");
 
         Ok(())
     }
@@ -546,7 +584,7 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let mutation = MutationBuilder::fail_mutation("entity_id".to_string());
+        let mutation = MutationBuilder::new().fail_mutation("entity_id".to_string());
         assert!(test_store.mutate(mutation).is_err());
 
         Ok(())

@@ -8,12 +8,12 @@ use exocore_chain::{DirectoryChainStore, MemoryPendingStore};
 use crate::local::mutation_index::MutationIndexConfig;
 use crate::local::store::StoreHandle;
 use crate::local::EntityIndexConfig;
-use crate::mutation::MutationBuilder;
+use crate::mutation::{MutationBuilder, MutationRequestLike};
 
 use super::*;
 use chrono::Utc;
 use exocore_core::protos::generated::exocore_index::{
-    EntityMutation, EntityQuery, EntityResults, MutationResult, Trait,
+    EntityQuery, EntityResults, MutationResult, Trait,
 };
 use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
@@ -85,10 +85,13 @@ impl TestStore {
         Ok(())
     }
 
-    pub fn mutate(&mut self, mutation: EntityMutation) -> Result<MutationResult, failure::Error> {
+    pub fn mutate<M: Into<MutationRequestLike>>(
+        &mut self,
+        request: M,
+    ) -> Result<MutationResult, failure::Error> {
         self.cluster
             .runtime
-            .block_on(self.store_handle.mutate(mutation))
+            .block_on(self.store_handle.mutate(request))
             .map_err(|err| err.into())
     }
 
@@ -104,8 +107,8 @@ impl TestStore {
         entity_id: E,
         trait_id: T,
         name: N,
-    ) -> EntityMutation {
-        MutationBuilder::put_trait(
+    ) -> MutationBuilder {
+        MutationBuilder::new().put_trait(
             entity_id,
             Trait {
                 id: trait_id.into(),

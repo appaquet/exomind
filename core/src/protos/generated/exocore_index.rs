@@ -246,8 +246,11 @@ pub struct MutationRequest {
     //// Mutations to apply.
     #[prost(message, repeated, tag = "1")]
     pub mutations: ::std::vec::Vec<EntityMutation>,
-    //// Waits for mutation to be indexed and returns the mutated entities.
+    //// Waits for mutation to be indexed.
     #[prost(bool, tag = "2")]
+    pub wait_indexed: bool,
+    //// Waits for mutation to be indexed and returns the mutated entities.
+    #[prost(bool, tag = "3")]
     pub return_entity: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -255,9 +258,9 @@ pub struct MutationResult {
     //// Unique operation ids for each mutations.
     #[prost(uint64, repeated, tag = "1")]
     pub operation_ids: ::std::vec::Vec<u64>,
-    //// Mutated entity if requested.
-    #[prost(message, optional, tag = "2")]
-    pub entity: ::std::option::Option<Entity>,
+    //// Mutated entities if requested.
+    #[prost(message, repeated, tag = "2")]
+    pub entities: ::std::vec::Vec<Entity>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityMutation {

@@ -87,7 +87,7 @@ impl MutationTracker {
                 let operation_ids = Vec::from_iter(request.operation_ids.iter().cloned());
                 let res = request.response_channel.send(Ok(MutationResult {
                     operation_ids,
-                    entity: None,
+                    ..Default::default()
                 }));
 
                 if res.is_err() {

@@ -10,18 +10,18 @@ message MutationRequest {
     repeated EntityMutation mutations = 1;
 
     /// Waits for mutation to be indexed.
-    bool wait_indexed = 1;
+    bool wait_indexed = 2;
 
     /// Waits for mutation to be indexed and returns the mutated entities.
-    bool return_entity = 2;
+    bool return_entity = 3;
 }
 
 message MutationResult {
     /// Unique operation ids for each mutations.
     repeated uint64 operation_ids = 1;
 
-    /// Mutated entity if requested.
-    Entity entity = 2;
+    /// Mutated entities if requested.
+    repeated Entity entities = 2;
 }
 
 message EntityMutation {
