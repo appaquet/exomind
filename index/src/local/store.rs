@@ -265,7 +265,7 @@ where
             operation_ids.push(operation_id);
         }
 
-        if request.wait_indexed && !request.mutations.is_empty() {
+        if (request.wait_indexed || request.return_entity) && !request.mutations.is_empty() {
             self.mutation_tracker.track_request(operation_ids, sender);
         } else {
             let _ = sender.send(Ok(MutationResult {
@@ -303,6 +303,7 @@ where
 
             let affected_operations = inner.index.handle_chain_engine_events(events.into_iter())?;
 
+            info!("Affected operations: {:?}", affected_operations);
             inner
                 .mutation_tracker
                 .handle_indexed_operations(affected_operations.as_slice());

@@ -44,6 +44,8 @@ impl MutationTracker {
         let request_id = inner.next_request_id;
         inner.next_request_id += 1;
 
+        info!("Tracking request {}", request_id);
+
         inner.requests.insert(
             request_id,
             WatchedMutationRequest {
@@ -84,6 +86,7 @@ impl MutationTracker {
 
         for request_id in completed_requests {
             if let Some(request) = inner.remove_request(request_id) {
+                info!("Request completed {}", request_id);
                 let operation_ids = Vec::from_iter(request.operation_ids.iter().cloned());
                 let res = request.response_channel.send(Ok(MutationResult {
                     operation_ids,
