@@ -5,7 +5,7 @@ export {proto}
 export class Client {
     static create(config: object, status_change_callback?: any): Promise<Client>;
 
-    mutate(mutation: proto.exocore.index.EntityMutation): Promise<proto.exocore.index.MutationResult>;
+    mutate(mutation: proto.exocore.index.MutationRequest): Promise<proto.exocore.index.MutationResult>;
 
     query(query: proto.exocore.index.EntityQuery): Promise<proto.exocore.index.EntityResults>;
 
@@ -41,7 +41,7 @@ export class MutationBuilder {
 
     deleteTrait(traitId: string): MutationBuilder;
 
-    build(): proto.exocore.index.EntityMutation;
+    build(): proto.exocore.index.MutationRequest;
 }
 
 export class QueryBuilder {

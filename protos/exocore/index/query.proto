@@ -32,26 +32,28 @@ message EntityQuery {
     uint64 result_hash = 9;
 }
 
-/// Text match query on all indexed fields across all traits.
+/// Query entities by text match on all indexed fields across all traits.
 message MatchPredicate {
     string query = 1;
 }
 
-/// Entity ID query.
+/// Query entity by ID.
 message IdPredicate {
     string id = 1;
 }
 
-/// Entity that have the list operation ids.
+/// Query entities by mutations' operation ids.
 /// Used to return entities on which mutations with these operation ids were applied and indexed.
 message OperationsPredicate {
     repeated uint64 operation_ids = 1;
 }
 
+/// Used for tests.
 message TestPredicate {
     bool success = 1;
 }
 
+/// Query entities that have a specified trait and optionally matching a trait query.
 message TraitPredicate {
     string trait_name = 1;
 

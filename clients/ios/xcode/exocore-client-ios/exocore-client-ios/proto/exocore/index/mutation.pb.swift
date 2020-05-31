@@ -19,6 +19,41 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+public struct Exocore_Index_MutationRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// Mutations to apply.
+  public var mutations: [Exocore_Index_EntityMutation] = []
+
+  //// Waits for mutation to be indexed.
+  public var waitIndexed: Bool = false
+
+  //// Waits for mutation to be indexed and returns the mutated entities.
+  public var returnEntity: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Exocore_Index_MutationResult {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// Unique operation ids for each mutations.
+  public var operationIds: [UInt64] = []
+
+  //// Mutated entities if requested.
+  public var entities: [Exocore_Index_Entity] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Exocore_Index_EntityMutation {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -249,21 +284,85 @@ public struct Exocore_Index_TestMutation {
   public init() {}
 }
 
-public struct Exocore_Index_MutationResult {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  public var operationID: UInt64 = 0
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-}
-
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "exocore.index"
+
+extension Exocore_Index_MutationRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".MutationRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "mutations"),
+    2: .standard(proto: "wait_indexed"),
+    3: .standard(proto: "return_entity"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.mutations)
+      case 2: try decoder.decodeSingularBoolField(value: &self.waitIndexed)
+      case 3: try decoder.decodeSingularBoolField(value: &self.returnEntity)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.mutations.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.mutations, fieldNumber: 1)
+    }
+    if self.waitIndexed != false {
+      try visitor.visitSingularBoolField(value: self.waitIndexed, fieldNumber: 2)
+    }
+    if self.returnEntity != false {
+      try visitor.visitSingularBoolField(value: self.returnEntity, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Index_MutationRequest, rhs: Exocore_Index_MutationRequest) -> Bool {
+    if lhs.mutations != rhs.mutations {return false}
+    if lhs.waitIndexed != rhs.waitIndexed {return false}
+    if lhs.returnEntity != rhs.returnEntity {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exocore_Index_MutationResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".MutationResult"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "operation_ids"),
+    2: .same(proto: "entities"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedUInt64Field(value: &self.operationIds)
+      case 2: try decoder.decodeRepeatedMessageField(value: &self.entities)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.operationIds.isEmpty {
+      try visitor.visitPackedUInt64Field(value: self.operationIds, fieldNumber: 1)
+    }
+    if !self.entities.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.entities, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Index_MutationResult, rhs: Exocore_Index_MutationResult) -> Bool {
+    if lhs.operationIds != rhs.operationIds {return false}
+    if lhs.entities != rhs.entities {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
 
 extension Exocore_Index_EntityMutation: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".EntityMutation"
@@ -714,35 +813,6 @@ extension Exocore_Index_TestMutation: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
   public static func ==(lhs: Exocore_Index_TestMutation, rhs: Exocore_Index_TestMutation) -> Bool {
     if lhs.success != rhs.success {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension Exocore_Index_MutationResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".MutationResult"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "operation_id"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeSingularUInt64Field(value: &self.operationID)
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.operationID != 0 {
-      try visitor.visitSingularUInt64Field(value: self.operationID, fieldNumber: 1)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Exocore_Index_MutationResult, rhs: Exocore_Index_MutationResult) -> Bool {
-    if lhs.operationID != rhs.operationID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

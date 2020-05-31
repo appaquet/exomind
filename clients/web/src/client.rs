@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 
 use exocore_core::cell::Cell;
 use exocore_core::futures::spawn_future_non_send;
-use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
+use exocore_core::protos::generated::exocore_index::EntityQuery;
 use exocore_core::time::Clock;
 use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::transport::ConnectionStatus;
@@ -14,7 +14,7 @@ use exocore_transport::{InEvent, Libp2pTransport, TransportHandle, TransportLaye
 
 use crate::js::into_js_error;
 use crate::watched_query::WatchedQuery;
-use exocore_core::protos::prost::ProstMessageExt;
+use exocore_core::protos::{index::MutationRequest, prost::ProstMessageExt};
 use exocore_transport::lp2p::Libp2pTransportConfig;
 
 static INIT: Once = Once::new();
@@ -143,7 +143,7 @@ impl ExocoreClient {
     pub fn mutate(&self, mutation_proto_bytes: js_sys::Uint8Array) -> js_sys::Promise {
         let bytes = Self::js_bytes_to_vec(mutation_proto_bytes);
         let entity_mutation =
-            EntityMutation::decode(bytes.as_ref()).expect("Couldn't encode query");
+            MutationRequest::decode(bytes.as_ref()).expect("Couldn't encode query");
 
         let store_handle = self.store_handle.clone();
         let fut_results = async move {

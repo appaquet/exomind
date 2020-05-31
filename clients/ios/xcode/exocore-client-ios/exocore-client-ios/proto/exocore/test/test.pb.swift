@@ -87,14 +87,43 @@ public struct Exocore_Test_TestMessage {
   /// Clears the value of `date2`. Subsequent reads from it will return its default value.
   public mutating func clearDate2() {_uniqueStorage()._date2 = nil}
 
-  public var int1: UInt32 {
+  public var date3: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {return _storage._date3 ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._date3 = newValue}
+  }
+  /// Returns true if `date3` has been explicitly set.
+  public var hasDate3: Bool {return _storage._date3 != nil}
+  /// Clears the value of `date3`. Subsequent reads from it will return its default value.
+  public mutating func clearDate3() {_uniqueStorage()._date3 = nil}
+
+  public var uint1: UInt32 {
+    get {return _storage._uint1}
+    set {_uniqueStorage()._uint1 = newValue}
+  }
+
+  public var uint2: UInt32 {
+    get {return _storage._uint2}
+    set {_uniqueStorage()._uint2 = newValue}
+  }
+
+  public var uint3: UInt32 {
+    get {return _storage._uint3}
+    set {_uniqueStorage()._uint3 = newValue}
+  }
+
+  public var int1: Int32 {
     get {return _storage._int1}
     set {_uniqueStorage()._int1 = newValue}
   }
 
-  public var int2: UInt32 {
+  public var int2: Int32 {
     get {return _storage._int2}
     set {_uniqueStorage()._int2 = newValue}
+  }
+
+  public var int3: Int32 {
+    get {return _storage._int3}
+    set {_uniqueStorage()._int3 = newValue}
   }
 
   public var ref1: Exocore_Index_Reference {
@@ -178,8 +207,13 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
     5: .standard(proto: "oneof_int1"),
     8: .same(proto: "date1"),
     9: .same(proto: "date2"),
-    10: .same(proto: "int1"),
-    11: .same(proto: "int2"),
+    17: .same(proto: "date3"),
+    10: .same(proto: "uint1"),
+    11: .same(proto: "uint2"),
+    18: .same(proto: "uint3"),
+    15: .same(proto: "int1"),
+    16: .same(proto: "int2"),
+    19: .same(proto: "int3"),
     13: .same(proto: "ref1"),
     14: .same(proto: "ref2"),
   ]
@@ -192,8 +226,13 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
     var _fields: Exocore_Test_TestMessage.OneOf_Fields?
     var _date1: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _date2: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-    var _int1: UInt32 = 0
-    var _int2: UInt32 = 0
+    var _date3: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _uint1: UInt32 = 0
+    var _uint2: UInt32 = 0
+    var _uint3: UInt32 = 0
+    var _int1: Int32 = 0
+    var _int2: Int32 = 0
+    var _int3: Int32 = 0
     var _ref1: Exocore_Index_Reference? = nil
     var _ref2: Exocore_Index_Reference? = nil
 
@@ -209,8 +248,13 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
       _fields = source._fields
       _date1 = source._date1
       _date2 = source._date2
+      _date3 = source._date3
+      _uint1 = source._uint1
+      _uint2 = source._uint2
+      _uint3 = source._uint3
       _int1 = source._int1
       _int2 = source._int2
+      _int3 = source._int3
       _ref1 = source._ref1
       _ref2 = source._ref2
     }
@@ -243,11 +287,16 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
           if let v = v {_storage._fields = .oneofInt1(v)}
         case 8: try decoder.decodeSingularMessageField(value: &_storage._date1)
         case 9: try decoder.decodeSingularMessageField(value: &_storage._date2)
-        case 10: try decoder.decodeSingularUInt32Field(value: &_storage._int1)
-        case 11: try decoder.decodeSingularUInt32Field(value: &_storage._int2)
+        case 10: try decoder.decodeSingularUInt32Field(value: &_storage._uint1)
+        case 11: try decoder.decodeSingularUInt32Field(value: &_storage._uint2)
         case 12: try decoder.decodeSingularStringField(value: &_storage._string3)
         case 13: try decoder.decodeSingularMessageField(value: &_storage._ref1)
         case 14: try decoder.decodeSingularMessageField(value: &_storage._ref2)
+        case 15: try decoder.decodeSingularInt32Field(value: &_storage._int1)
+        case 16: try decoder.decodeSingularInt32Field(value: &_storage._int2)
+        case 17: try decoder.decodeSingularMessageField(value: &_storage._date3)
+        case 18: try decoder.decodeSingularUInt32Field(value: &_storage._uint3)
+        case 19: try decoder.decodeSingularInt32Field(value: &_storage._int3)
         default: break
         }
       }
@@ -278,11 +327,11 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
       if let v = _storage._date2 {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
       }
-      if _storage._int1 != 0 {
-        try visitor.visitSingularUInt32Field(value: _storage._int1, fieldNumber: 10)
+      if _storage._uint1 != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._uint1, fieldNumber: 10)
       }
-      if _storage._int2 != 0 {
-        try visitor.visitSingularUInt32Field(value: _storage._int2, fieldNumber: 11)
+      if _storage._uint2 != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._uint2, fieldNumber: 11)
       }
       if !_storage._string3.isEmpty {
         try visitor.visitSingularStringField(value: _storage._string3, fieldNumber: 12)
@@ -292,6 +341,21 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
       }
       if let v = _storage._ref2 {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 14)
+      }
+      if _storage._int1 != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._int1, fieldNumber: 15)
+      }
+      if _storage._int2 != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._int2, fieldNumber: 16)
+      }
+      if let v = _storage._date3 {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 17)
+      }
+      if _storage._uint3 != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._uint3, fieldNumber: 18)
+      }
+      if _storage._int3 != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._int3, fieldNumber: 19)
       }
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -309,8 +373,13 @@ extension Exocore_Test_TestMessage: SwiftProtobuf.Message, SwiftProtobuf._Messag
         if _storage._fields != rhs_storage._fields {return false}
         if _storage._date1 != rhs_storage._date1 {return false}
         if _storage._date2 != rhs_storage._date2 {return false}
+        if _storage._date3 != rhs_storage._date3 {return false}
+        if _storage._uint1 != rhs_storage._uint1 {return false}
+        if _storage._uint2 != rhs_storage._uint2 {return false}
+        if _storage._uint3 != rhs_storage._uint3 {return false}
         if _storage._int1 != rhs_storage._int1 {return false}
         if _storage._int2 != rhs_storage._int2 {return false}
+        if _storage._int3 != rhs_storage._int3 {return false}
         if _storage._ref1 != rhs_storage._ref1 {return false}
         if _storage._ref2 != rhs_storage._ref2 {return false}
         return true
