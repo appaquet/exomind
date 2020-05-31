@@ -302,8 +302,6 @@ where
             let mut inner = inner.write()?;
 
             let affected_operations = inner.index.handle_chain_engine_events(events.into_iter())?;
-
-            info!("Affected operations: {:?}", affected_operations);
             inner
                 .mutation_tracker
                 .handle_indexed_operations(affected_operations.as_slice());

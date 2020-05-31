@@ -3,7 +3,7 @@ set -e
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 export GENERATE_PROTOS=1
-#cargo clean -p exocore-core
+cargo clean -p exocore-core
 cargo build -p exocore-core
 
 # Capnp files
