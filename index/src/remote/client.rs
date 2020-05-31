@@ -12,7 +12,7 @@ use exocore_core::cell::{Cell, CellNodeRole};
 use exocore_core::framing::CapnpFrameBuilder;
 use exocore_core::futures::interval;
 use exocore_core::protos::generated::exocore_index::{
-    EntityMutation, EntityQuery, EntityResults, MutationResult,
+    EntityQuery, EntityResults, MutationRequest, MutationResult,
 };
 use exocore_core::protos::generated::index_transport_capnp::{
     mutation_response, query_response, unwatch_query_request, watched_query_response,
@@ -26,7 +26,7 @@ use exocore_transport::{
 };
 
 use crate::error::Error;
-use crate::query::WatchToken;
+use crate::{mutation::MutationRequestLike, query::WatchToken};
 
 /// This implementation of the AsyncStore allow sending all queries and
 /// mutations to a remote node's local store running the `Server` component.
@@ -259,12 +259,12 @@ impl Inner {
 
     fn send_mutation(
         &mut self,
-        entity_mutation: EntityMutation,
+        request: MutationRequest,
     ) -> Result<oneshot::Receiver<Result<MutationResult, Error>>, Error> {
         let (result_sender, receiver) = oneshot::channel();
 
         let request_id = self.clock.consistent_time(self.cell.local_node());
-        let request_frame = crate::mutation::mutation_to_request_frame(entity_mutation)?;
+        let request_frame = crate::mutation::mutation_to_request_frame(request)?;
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
                 .with_to_node(self.index_node.clone())
@@ -478,7 +478,10 @@ impl ClientHandle {
         self.handle.on_set_started().await;
     }
 
-    pub async fn mutate(&self, mutation: EntityMutation) -> Result<MutationResult, Error> {
+    pub async fn mutate<M: Into<MutationRequestLike>>(
+        &self,
+        request: M,
+    ) -> Result<MutationResult, Error> {
         let result = {
             let inner = match self.inner.upgrade() {
                 Some(inner) => inner,
@@ -489,7 +492,7 @@ impl ClientHandle {
                 Err(err) => return Err(err.into()),
             };
 
-            inner.send_mutation(mutation)?
+            inner.send_mutation(request.into().0)?
         };
 
         result.await.map_err(|_err| Error::Cancelled)?

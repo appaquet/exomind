@@ -31,7 +31,7 @@ export class Client {
     }
 
     mutate(mutation) {
-        const encoded = proto.exocore.index.EntityMutation.encode(mutation).finish();
+        const encoded = proto.exocore.index.MutationRequest.encode(mutation).finish();
 
         return this.innerClient
             .mutate(encoded)
@@ -136,8 +136,9 @@ export class Registry {
 
 export class MutationBuilder {
     constructor(entityId) {
-        this.mutation = new proto.exocore.index.EntityMutation({
-            entityId: entityId,
+        this.entityId = entityId;
+        this.request = new proto.exocore.index.MutationRequest({
+            mutations
         });
     }
 
@@ -154,25 +155,33 @@ export class MutationBuilder {
     }
 
     putTrait(message, traitId = null) {
-        this.mutation.putTrait = new proto.exocore.index.PutTraitMutation({
-            trait: new proto.exocore.index.Trait({
-                id: traitId,
-                creationDate: toProtoTimestamp(new Date()),
-                message: Registry.packToAny(message),
+        this.request.mutations.push(new proto.exocore.index.EntityMutation({
+            entityId: this.entityId,
+            putTrait: new proto.exocore.index.PutTraitMutation({
+                trait: new proto.exocore.index.Trait({
+                    id: traitId,
+                    creationDate: toProtoTimestamp(new Date()),
+                    message: Registry.packToAny(message),
+                })
             })
-        });
+        }));
+
         return this;
     }
 
     deleteTrait(traitId) {
-        this.mutation.deleteTrait = new proto.exocore.index.DeleteTraitMutation({
-            traitId: traitId,
-        });
+        this.request.mutations.push(new proto.exocore.index.EntityMutation({
+            entityId: this.entityId,
+            deleteTrait: new proto.exocore.index.DeleteTraitMutation({
+                traitId: traitId,
+            })
+        }));
+
         return this;
     }
 
     build() {
-        return this.mutation;
+        return this.request;
     }
 }
 

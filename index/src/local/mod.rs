@@ -1,5 +1,6 @@
 mod entity_index;
 mod mutation_index;
+mod mutation_tracker;
 mod store;
 mod top_results;
 mod watched_queries;

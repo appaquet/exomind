@@ -87,7 +87,6 @@ where
         }
 
         let chain_index = Self::create_chain_index(config, cell.schemas(), &chain_index_dir)?;
-
         let mut index = EntityIndex {
             config,
             pending_index,
@@ -103,7 +102,7 @@ where
         Ok(index)
     }
 
-    pub fn handle_chain_engine_event(&mut self, event: Event) -> Result<(), Error> {
+    pub fn handle_chain_engine_event(&mut self, event: Event) -> Result<Vec<OperationId>, Error> {
         self.handle_chain_engine_events(std::iter::once(event))
     }
 
@@ -115,10 +114,12 @@ where
     /// the chain layer couldn't send us an event. In that case, we re-index
     /// the pending index since we can't guarantee that we didn't lose an
     /// event.
-    pub fn handle_chain_engine_events<E>(&mut self, events: E) -> Result<(), Error>
+    pub fn handle_chain_engine_events<E>(&mut self, events: E) -> Result<Vec<OperationId>, Error>
     where
         E: Iterator<Item = Event>,
     {
+        let mut indexed_operations = Vec::new();
+
         let mut pending_operations = Vec::new();
         for event in events {
             // We collect new pending operations so that we can apply them in batch. As soon
@@ -126,6 +127,7 @@ where
             // once and then continue.
             if let Event::NewPendingOperation(op_id) = event {
                 pending_operations.push(op_id);
+                indexed_operations.push(op_id);
                 continue;
             } else if !pending_operations.is_empty() {
                 let current_operations = std::mem::replace(&mut pending_operations, Vec::new());
@@ -135,7 +137,7 @@ where
             match event {
                 Event::Started => {
                     info!("Chain engine is ready, indexing pending store & chain");
-                    self.index_chain_new_blocks()?;
+                    self.index_chain_new_blocks(Some(&mut indexed_operations))?;
                     self.reindex_pending()?;
                 }
                 Event::StreamDiscontinuity => {
@@ -147,7 +149,7 @@ where
                         "Got new block at offset {}, checking if we can index a new block",
                         block_offset
                     );
-                    self.index_chain_new_blocks()?;
+                    self.index_chain_new_blocks(Some(&mut indexed_operations))?;
                 }
                 Event::ChainDiverged(diverged_block_offset) => {
                     let highest_indexed_block = self.chain_index.highest_indexed_block()?;
@@ -192,7 +194,7 @@ where
             self.handle_chain_engine_event_pending_operations(pending_operations.into_iter())?;
         }
 
-        Ok(())
+        Ok(indexed_operations)
     }
 
     /// Execute a search query on the indices, and returning all entities
@@ -439,7 +441,7 @@ where
         // re-create index, and force re-index of chain
         self.chain_index =
             Self::create_chain_index(self.config, self.cell.schemas(), &self.chain_index_dir)?;
-        self.index_chain_new_blocks()?;
+        self.index_chain_new_blocks(None)?;
 
         self.reindex_pending()?;
 
@@ -451,13 +453,16 @@ where
     /// don't need to revert them from the chain index since their wouldn't
     /// be "easy" way to revert them from the chain index (Tantivy don't
     /// support deletion revert).
-
+    ///
     /// The latest blocks that aren't considered definitive are kept in the
     /// pending store, and deletion are actually implemented using tombstone
     /// in the pending store. If a trait gets deleted from the chain, the
     /// tombstone in the in-memory will be used to remove it from
     /// the results.
-    fn index_chain_new_blocks(&mut self) -> Result<(), Error> {
+    fn index_chain_new_blocks(
+        &mut self,
+        affected_operations: Option<&mut Vec<OperationId>>,
+    ) -> Result<(), Error> {
         let (_last_chain_block_offset, last_chain_block_height) = self
             .chain_handle
             .get_chain_last_block_info()?
@@ -480,10 +485,15 @@ where
 
         let mut pending_index_mutations = Vec::new();
         let mut new_highest_block_offset: Option<BlockOffset> = None;
+        let mut affected_operations_ref = affected_operations;
 
         let operations = self.chain_handle.get_chain_operations(offset_from);
         let chain_index_mutations = operations
             .flat_map(|operation| {
+                if let Some(affected_operations) = affected_operations_ref.as_mut() {
+                    affected_operations.push(operation.operation_id);
+                }
+
                 if let EngineOperationStatus::Committed(offset, height) = operation.status {
                     Some((offset, height, operation))
                 } else {

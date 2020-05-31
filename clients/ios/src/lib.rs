@@ -13,8 +13,8 @@ use prost::Message;
 use exocore_core::cell::Cell;
 use exocore_core::futures::Runtime;
 use exocore_core::protos::generated::exocore_core::LocalNodeConfig;
-use exocore_core::protos::generated::exocore_index::{EntityMutation, EntityQuery};
-use exocore_core::protos::prost::ProstMessageExt;
+use exocore_core::protos::generated::exocore_index::EntityQuery;
+use exocore_core::protos::{index::MutationRequest, prost::ProstMessageExt};
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use exocore_core::utils::id::{generate_id, generate_prefixed_id};
 use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};
@@ -120,7 +120,8 @@ impl Context {
         callback_ctx: *const c_void,
     ) -> Result<MutationHandle, MutationStatus> {
         let mutation_bytes = unsafe { std::slice::from_raw_parts(mutation_bytes, mutation_size) };
-        let mutation = EntityMutation::decode(mutation_bytes).map_err(|_| MutationStatus::Error)?;
+        let mutation =
+            MutationRequest::decode(mutation_bytes).map_err(|_| MutationStatus::Error)?;
 
         let store_handle = self.store_handle.clone();
 

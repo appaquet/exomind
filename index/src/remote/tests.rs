@@ -3,16 +3,14 @@ use std::time::Duration;
 use futures::executor::block_on_stream;
 
 use exocore_core::cell::{CellNodeRole, LocalNode};
-use exocore_core::protos::generated::exocore_index::{
-    EntityMutation, EntityQuery, EntityResults, MutationResult,
-};
+use exocore_core::protos::generated::exocore_index::{EntityQuery, EntityResults, MutationResult};
 use exocore_core::tests_utils::expect_eventually;
 use exocore_transport::mock::MockTransportHandle;
 use exocore_transport::TransportLayer;
 
 use crate::error::Error;
 use crate::local::TestStore;
-use crate::mutation::MutationBuilder;
+use crate::mutation::{MutationBuilder, MutationRequestLike};
 use crate::query::QueryBuilder;
 use crate::remote::server::{Server, ServerConfiguration};
 
@@ -44,7 +42,7 @@ fn mutation_error_propagation() -> Result<(), failure::Error> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let mutation = MutationBuilder::fail_mutation("entity1");
+    let mutation = MutationBuilder::new().fail_mutation("entity1");
     let result = test_remote_store.send_and_await_mutation(mutation);
     assert!(result.is_err());
 
@@ -359,11 +357,11 @@ impl TestRemoteStore {
         Ok(())
     }
 
-    fn send_and_await_mutation(
+    fn send_and_await_mutation<M: Into<MutationRequestLike>>(
         &mut self,
-        mutation: EntityMutation,
+        request: M,
     ) -> Result<MutationResult, Error> {
-        futures::executor::block_on(self.client_handle.mutate(mutation))
+        futures::executor::block_on(self.client_handle.mutate(request))
     }
 
     fn send_and_await_query(&mut self, query: EntityQuery) -> Result<EntityResults, Error> {

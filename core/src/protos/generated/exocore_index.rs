@@ -40,7 +40,7 @@ pub struct EntityQuery {
     //// If specified, if results from server matches this hash, only a summary will be returned.
     #[prost(uint64, tag = "9")]
     pub result_hash: u64,
-    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4, 99")]
+    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4, 10, 99")]
     pub predicate: ::std::option::Option<entity_query::Predicate>,
 }
 pub mod entity_query {
@@ -54,19 +54,30 @@ pub mod entity_query {
         Id(super::IdPredicate),
         #[prost(message, tag = "4")]
         Reference(super::ReferencePredicate),
+        #[prost(message, tag = "10")]
+        Operations(super::OperationsPredicate),
         #[prost(message, tag = "99")]
         Test(super::TestPredicate),
     }
 }
+//// Text match query on all indexed fields across all traits.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MatchPredicate {
     #[prost(string, tag = "1")]
     pub query: std::string::String,
 }
+//// Entity ID query.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct IdPredicate {
     #[prost(string, tag = "1")]
     pub id: std::string::String,
+}
+//// Entity that have the list operation ids.
+//// Used to return entities on which mutations with these operation ids were applied and indexed.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct OperationsPredicate {
+    #[prost(uint64, repeated, tag = "1")]
+    pub operation_ids: ::std::vec::Vec<u64>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestPredicate {
@@ -231,6 +242,27 @@ pub enum EntityResultSource {
     Chain = 2,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MutationRequest {
+    //// Mutations to apply.
+    #[prost(message, repeated, tag = "1")]
+    pub mutations: ::std::vec::Vec<EntityMutation>,
+    //// Waits for mutation to be indexed.
+    #[prost(bool, tag = "2")]
+    pub wait_indexed: bool,
+    //// Waits for mutation to be indexed and returns the mutated entities.
+    #[prost(bool, tag = "3")]
+    pub return_entity: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MutationResult {
+    //// Unique operation ids for each mutations.
+    #[prost(uint64, repeated, tag = "1")]
+    pub operation_ids: ::std::vec::Vec<u64>,
+    //// Mutated entities if requested.
+    #[prost(message, repeated, tag = "2")]
+    pub entities: ::std::vec::Vec<Entity>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityMutation {
     #[prost(string, tag = "1")]
     pub entity_id: std::string::String,
@@ -274,16 +306,14 @@ pub struct UpdateTraitMutation {
     pub r#trait: ::std::option::Option<Trait>,
     #[prost(message, optional, tag = "3")]
     pub field_mask: ::std::option::Option<::prost_types::FieldMask>,
-    /// Updates is only valid if the last mutation operation on trait this given
-    /// operation id.
+    /// Updates is only valid if the last mutation operation on trait this given operation id.
     #[prost(uint64, tag = "4")]
     pub if_last_operation_id: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompactTraitMutation {
-    /// List of operations that are compacted by this compaction. The compaction
-    /// will only succeed if there were no operations between these
-    /// operations and the compaction's operation itself.
+    /// List of operations that are compacted by this compaction. The compaction will only succeed
+    /// if there were no operations between these operations and the compaction's operation itself.
     #[prost(message, repeated, tag = "1")]
     pub compacted_operations: ::std::vec::Vec<compact_trait_mutation::Operation>,
     /// Trait with merged values from compacted operations
@@ -301,9 +331,4 @@ pub mod compact_trait_mutation {
 pub struct TestMutation {
     #[prost(bool, tag = "1")]
     pub success: bool,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct MutationResult {
-    #[prost(uint64, tag = "1")]
-    pub operation_id: u64,
 }

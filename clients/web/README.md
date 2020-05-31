@@ -29,3 +29,8 @@
 * Launch the [sample project](../../examples/web) 
     * `cd ../../examples/web && npm install && npm run start`
     * Navigate to [http://localhost:8080](http://localhost:8080)
+
+# Notes
+* Connection can only be via localhost or https since WebCrypto used in libp2p's secio implementation only works over secure code.
+  * See https://www.fxsitecompat.dev/en-CA/docs/2020/web-crypto-api-is-no-longer-available-on-insecure-sites/ and
+        https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto

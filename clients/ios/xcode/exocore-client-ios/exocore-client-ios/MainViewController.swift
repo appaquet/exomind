@@ -78,9 +78,9 @@ class MyList: ObservableObject {
                                    - node:
                                        public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
                                        addresses:
-                                         - /ip4/192.168.2.13/tcp/3330
                                          - /ip4/192.168.2.16/tcp/3330
                                          - /ip4/192.168.2.19/tcp/3330
+                                         - /ip4/192.168.2.13/tcp/3330
                                        name: server
                                      roles:
                                        - 1

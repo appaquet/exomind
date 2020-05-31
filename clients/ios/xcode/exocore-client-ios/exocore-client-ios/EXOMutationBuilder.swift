@@ -2,26 +2,28 @@ import Foundation
 import SwiftProtobuf
 
 public class EXOMutationBuilder {
-    private var inner: Exocore_Index_EntityMutation
+    private var entityId: String;
+    private var inner: Exocore_Index_MutationRequest
 
-    init() {
-        self.inner = Exocore_Index_EntityMutation()
+    init(entityId: String) {
+        self.entityId = entityId
+        self.inner = Exocore_Index_MutationRequest()
     }
 
     public static func createEntity(entityId: String? = nil) -> EXOMutationBuilder {
-        let builder = EXOMutationBuilder()
+        var finalEntityId: String
         if let someEntityId = entityId {
-            builder.inner.entityID = someEntityId
+            finalEntityId = someEntityId
         } else {
-            builder.inner.entityID = EXOGenerateId(prefix: "entity")
+            finalEntityId = EXOGenerateId(prefix: "entity")
         }
+
+        let builder = EXOMutationBuilder(entityId: finalEntityId)
         return builder
     }
 
     public static func updateEntity(entityId: String) -> EXOMutationBuilder {
-        let builder = EXOMutationBuilder()
-        builder.inner.entityID = entityId
-        return builder
+        EXOMutationBuilder(entityId: entityId)
     }
 
     public func putTrait(trait: Message, traitId: String? = nil) throws -> EXOMutationBuilder {
@@ -32,7 +34,10 @@ public class EXOMutationBuilder {
         }
         putTrait.trait.creationDate = Google_Protobuf_Timestamp(date: Date())
         putTrait.trait.message = try Google_Protobuf_Any(message: trait)
-        self.inner.putTrait = putTrait
+
+        var et = Exocore_Index_EntityMutation()
+        et.putTrait = putTrait
+        self.inner.mutations.append(et)
 
         return self
     }
@@ -40,12 +45,15 @@ public class EXOMutationBuilder {
     public func deleteTrait(traitId: String) -> EXOMutationBuilder {
         var deleteTrait = Exocore_Index_DeleteTraitMutation()
         deleteTrait.traitID = traitId
-        self.inner.deleteTrait = deleteTrait
+
+        var et = Exocore_Index_EntityMutation()
+        et.deleteTrait = deleteTrait
+        self.inner.mutations.append(et)
 
         return self
     }
 
-    public func build() -> Exocore_Index_EntityMutation {
-        return self.inner
+    public func build() -> Exocore_Index_MutationRequest {
+        self.inner
     }
 }

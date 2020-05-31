@@ -4,7 +4,7 @@ use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_index::{
     compact_trait_mutation, CompactTraitMutation, DeleteEntityMutation, DeleteTraitMutation,
-    EntityMutation, MutationResult, PutTraitMutation, Trait,
+    EntityMutation, MutationRequest, MutationResult, PutTraitMutation, Trait,
 };
 use exocore_core::protos::generated::index_transport_capnp::{mutation_request, mutation_response};
 use exocore_core::protos::prost::ProstMessageExt;
@@ -13,73 +13,143 @@ use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
 use exocore_chain::operation::OperationId;
 
-pub struct MutationBuilder;
+pub struct MutationBuilder {
+    request: MutationRequest,
+}
 
 impl MutationBuilder {
-    pub fn put_trait<E: Into<EntityId>>(entity_id: E, trt: Trait) -> EntityMutation {
-        EntityMutation {
-            entity_id: entity_id.into(),
-            mutation: Some(Mutation::PutTrait(PutTraitMutation { r#trait: Some(trt) })),
+    pub fn new() -> MutationBuilder {
+        MutationBuilder {
+            request: MutationRequest {
+                mutations: vec![],
+                wait_indexed: false,
+                return_entity: false,
+            },
         }
     }
 
+    pub fn put_trait<E: Into<EntityId>>(mut self, entity_id: E, trt: Trait) -> MutationBuilder {
+        self.request.mutations.push(EntityMutation {
+            entity_id: entity_id.into(),
+            mutation: Some(Mutation::PutTrait(PutTraitMutation { r#trait: Some(trt) })),
+        });
+
+        self
+    }
+
     pub fn delete_trait<E: Into<EntityId>, T: Into<TraitId>>(
+        mut self,
         entity_id: E,
         trait_id: T,
-    ) -> EntityMutation {
-        EntityMutation {
+    ) -> MutationBuilder {
+        self.request.mutations.push(EntityMutation {
             entity_id: entity_id.into(),
             mutation: Some(Mutation::DeleteTrait(DeleteTraitMutation {
                 trait_id: trait_id.into(),
             })),
-        }
+        });
+
+        self
     }
 
-    pub fn delete_entity<E: Into<EntityId>>(entity_id: E) -> EntityMutation {
-        EntityMutation {
+    pub fn delete_entity<E: Into<EntityId>>(mut self, entity_id: E) -> MutationBuilder {
+        self.request.mutations.push(EntityMutation {
             entity_id: entity_id.into(),
             mutation: Some(Mutation::DeleteEntity(DeleteEntityMutation {})),
-        }
+        });
+
+        self
+    }
+
+    pub fn return_entities(mut self) -> MutationBuilder {
+        self.request.return_entity = true;
+        self
     }
 
     #[allow(unused)]
     pub(crate) fn compact_traits<E: Into<TraitId>>(
+        mut self,
         entity_id: E,
         trt: Trait,
         compacted_operations: Vec<OperationId>,
-    ) -> EntityMutation {
+    ) -> MutationBuilder {
         let operations = compacted_operations
             .iter()
             .map(|id| compact_trait_mutation::Operation { operation_id: *id })
             .collect();
 
-        EntityMutation {
+        self.request.mutations.push(EntityMutation {
             entity_id: entity_id.into(),
             mutation: Some(Mutation::CompactTrait(CompactTraitMutation {
                 r#trait: Some(trt),
                 compacted_operations: operations,
             })),
-        }
+        });
+
+        self
     }
 
     #[cfg(test)]
-    pub(crate) fn fail_mutation<E: Into<EntityId>>(entity_id: E) -> EntityMutation {
-        EntityMutation {
+    pub(crate) fn fail_mutation<E: Into<EntityId>>(mut self, entity_id: E) -> MutationBuilder {
+        self.request.mutations.push(EntityMutation {
             entity_id: entity_id.into(),
             mutation: Some(Mutation::Test(
                 exocore_core::protos::generated::exocore_index::TestMutation { success: false },
             )),
-        }
+        });
+
+        self
+    }
+
+    pub fn build(self) -> MutationRequest {
+        self.request
+    }
+}
+
+impl Default for MutationBuilder {
+    fn default() -> Self {
+        MutationBuilder::new()
+    }
+}
+
+pub struct MutationRequestLike(pub MutationRequest);
+
+impl From<MutationRequest> for MutationRequestLike {
+    fn from(req: MutationRequest) -> Self {
+        MutationRequestLike(req)
+    }
+}
+
+impl From<EntityMutation> for MutationRequestLike {
+    fn from(mutation: EntityMutation) -> Self {
+        MutationRequestLike(MutationRequest {
+            mutations: vec![mutation],
+            ..Default::default()
+        })
+    }
+}
+
+impl From<MutationBuilder> for MutationRequestLike {
+    fn from(builder: MutationBuilder) -> Self {
+        MutationRequestLike(builder.build())
+    }
+}
+
+impl std::ops::Deref for MutationRequestLike {
+    type Target = MutationRequest;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
 pub fn mutation_to_request_frame(
-    entity_mutation: EntityMutation,
+    request: MutationRequest,
 ) -> Result<CapnpFrameBuilder<mutation_request::Owned>, Error> {
     let mut frame_builder = CapnpFrameBuilder::<mutation_request::Owned>::new();
     let mut msg_builder = frame_builder.get_builder();
 
-    let buf = entity_mutation.encode_to_vec()?;
+    let buf = request.encode_to_vec()?;
     msg_builder.set_request(&buf);
 
     Ok(frame_builder)
@@ -87,16 +157,13 @@ pub fn mutation_to_request_frame(
 
 pub fn mutation_from_request_frame<I>(
     frame: TypedCapnpFrame<I, mutation_request::Owned>,
-) -> Result<EntityMutation, Error>
+) -> Result<MutationRequest, Error>
 where
     I: FrameReader,
 {
     let reader = frame.get_reader()?;
     let data = reader.get_request()?;
-
-    let entity_mutation = EntityMutation::decode(data)?;
-
-    Ok(entity_mutation)
+    Ok(MutationRequest::decode(data)?)
 }
 
 pub fn mutation_result_to_response_frame(
@@ -129,8 +196,6 @@ where
         Err(Error::Remote(reader.get_error()?.to_owned()))
     } else {
         let data = reader.get_response()?;
-        let mutation_result = MutationResult::decode(data)?;
-
-        Ok(mutation_result)
+        Ok(MutationResult::decode(data)?)
     }
 }

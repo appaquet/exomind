@@ -2,12 +2,12 @@ use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
 use crate::local::mutation_index::MutationIndexConfig;
 use crate::local::{EntityIndex, EntityIndexConfig};
-use crate::mutation::MutationBuilder;
+use crate::mutation::{MutationBuilder, MutationRequestLike};
 use exocore_chain::engine::Event;
 use exocore_chain::operation::OperationId;
 use exocore_chain::tests_utils::TestChainCluster;
 use exocore_chain::{DirectoryChainStore, MemoryPendingStore};
-use exocore_core::protos::generated::exocore_index::{EntityMutation, Trait};
+use exocore_core::protos::generated::exocore_index::Trait;
 use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstMessageExt};
 
@@ -124,7 +124,7 @@ impl TestEntityIndex {
         name: N,
     ) -> Result<OperationId, failure::Error> {
         let trt = Self::new_test_trait(trait_id, name)?;
-        let mutation = MutationBuilder::put_trait(entity_id.into(), trt);
+        let mutation = MutationBuilder::new().put_trait(entity_id.into(), trt);
         self.write_mutation(mutation)
     }
 
@@ -133,15 +133,16 @@ impl TestEntityIndex {
         entity_id: E,
         trait_id: T,
     ) -> Result<OperationId, failure::Error> {
-        let mutation = MutationBuilder::delete_trait(entity_id.into(), trait_id.into());
+        let mutation = MutationBuilder::new().delete_trait(entity_id.into(), trait_id.into());
         self.write_mutation(mutation)
     }
 
-    pub fn write_mutation(
+    pub fn write_mutation<M: Into<MutationRequestLike>>(
         &mut self,
-        mutation: EntityMutation,
+        mutation: M,
     ) -> Result<OperationId, failure::Error> {
-        let buf = mutation.encode_to_vec()?;
+        let request = mutation.into();
+        let buf = request.mutations[0].encode_to_vec()?;
         let op_id = self.cluster.get_handle(0).write_entry_operation(&buf)?;
         Ok(op_id)
     }

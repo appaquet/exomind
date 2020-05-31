@@ -37,7 +37,7 @@ public class EXOClient {
         }
     }
 
-    public func mutate(mutation: Exocore_Index_EntityMutation, onCompletion: @escaping (EXOMutationStatus, Exocore_Index_MutationResult?) -> Void) -> EXOMutationResult {
+    public func mutate(mutation: Exocore_Index_MutationRequest, onCompletion: @escaping (EXOMutationStatus, Exocore_Index_MutationResult?) -> Void) -> EXOMutationResult {
         let cb = EXOMutationCallback(cb: onCompletion)
         let observer = UnsafeRawPointer(Unmanaged.passRetained(cb).toOpaque())
 
