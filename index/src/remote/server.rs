@@ -104,7 +104,7 @@ where
         let management_timer_interval = self.config.management_timer_interval;
         let management_timer = async move {
             let mut interval = interval(management_timer_interval);
-            while let Some(_) = interval.next().await {
+            while interval.next().await.is_some() {
                 Self::management_timer_process(&weak_inner)?;
             }
             Ok::<(), Error>(())

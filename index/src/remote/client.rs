@@ -137,7 +137,7 @@ where
         let management_timer = async move {
             let mut timer = interval(management_interval);
 
-            while let Some(_) = timer.next().await {
+            while timer.next().await.is_some() {
                 Inner::management_timer_process(&weak_inner)?;
             }
 

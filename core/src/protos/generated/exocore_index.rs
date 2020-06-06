@@ -60,30 +60,32 @@ pub mod entity_query {
         Test(super::TestPredicate),
     }
 }
-//// Text match query on all indexed fields across all traits.
+//// Query entities by text match on all indexed fields across all traits.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MatchPredicate {
     #[prost(string, tag = "1")]
     pub query: std::string::String,
 }
-//// Entity ID query.
+//// Query entity by ID.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct IdPredicate {
     #[prost(string, tag = "1")]
     pub id: std::string::String,
 }
-//// Entity that have the list operation ids.
+//// Query entities by mutations' operation ids.
 //// Used to return entities on which mutations with these operation ids were applied and indexed.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OperationsPredicate {
     #[prost(uint64, repeated, tag = "1")]
     pub operation_ids: ::std::vec::Vec<u64>,
 }
+//// Used for tests.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestPredicate {
     #[prost(bool, tag = "1")]
     pub success: bool,
 }
+//// Query entities that have a specified trait and optionally matching a trait query.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitPredicate {
     #[prost(string, tag = "1")]
@@ -251,7 +253,7 @@ pub struct MutationRequest {
     pub wait_indexed: bool,
     //// Waits for mutation to be indexed and returns the mutated entities.
     #[prost(bool, tag = "3")]
-    pub return_entity: bool,
+    pub return_entities: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MutationResult {

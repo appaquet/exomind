@@ -260,7 +260,7 @@ impl Libp2pTransport {
             )));
         };
 
-        let source_node = Self::get_node_by_peer(&handle_channels.cell, message.source.clone())?;
+        let source_node = Self::get_node_by_peer(&handle_channels.cell, message.source)?;
         let msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
         handle_channels
             .in_sender

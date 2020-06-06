@@ -23,7 +23,7 @@ impl MutationBuilder {
             request: MutationRequest {
                 mutations: vec![],
                 wait_indexed: false,
-                return_entity: false,
+                return_entities: false,
             },
         }
     }
@@ -62,7 +62,7 @@ impl MutationBuilder {
     }
 
     pub fn return_entities(mut self) -> MutationBuilder {
-        self.request.return_entity = true;
+        self.request.return_entities = true;
         self
     }
 

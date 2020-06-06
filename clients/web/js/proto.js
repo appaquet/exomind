@@ -743,7 +743,7 @@ export const exocore = $root.exocore = (() => {
              * @interface IMutationRequest
              * @property {Array.<exocore.index.IEntityMutation>|null} [mutations] Mutations to apply.
              * @property {boolean|null} [waitIndexed] Waits for mutation to be indexed.
-             * @property {boolean|null} [returnEntity] Waits for mutation to be indexed and returns the mutated entities.
+             * @property {boolean|null} [returnEntities] Waits for mutation to be indexed and returns the mutated entities.
              */
 
             /**
@@ -780,11 +780,11 @@ export const exocore = $root.exocore = (() => {
 
             /**
              * Waits for mutation to be indexed and returns the mutated entities.
-             * @member {boolean} returnEntity
+             * @member {boolean} returnEntities
              * @memberof exocore.index.MutationRequest
              * @instance
              */
-            MutationRequest.prototype.returnEntity = false;
+            MutationRequest.prototype.returnEntities = false;
 
             /**
              * Creates a new MutationRequest instance using the specified properties.
@@ -815,8 +815,8 @@ export const exocore = $root.exocore = (() => {
                         $root.exocore.index.EntityMutation.encode(message.mutations[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 if (message.waitIndexed != null && message.hasOwnProperty("waitIndexed"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.waitIndexed);
-                if (message.returnEntity != null && message.hasOwnProperty("returnEntity"))
-                    writer.uint32(/* id 3, wireType 0 =*/24).bool(message.returnEntity);
+                if (message.returnEntities != null && message.hasOwnProperty("returnEntities"))
+                    writer.uint32(/* id 3, wireType 0 =*/24).bool(message.returnEntities);
                 return writer;
             };
 
@@ -860,7 +860,7 @@ export const exocore = $root.exocore = (() => {
                         message.waitIndexed = reader.bool();
                         break;
                     case 3:
-                        message.returnEntity = reader.bool();
+                        message.returnEntities = reader.bool();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -909,9 +909,9 @@ export const exocore = $root.exocore = (() => {
                 if (message.waitIndexed != null && message.hasOwnProperty("waitIndexed"))
                     if (typeof message.waitIndexed !== "boolean")
                         return "waitIndexed: boolean expected";
-                if (message.returnEntity != null && message.hasOwnProperty("returnEntity"))
-                    if (typeof message.returnEntity !== "boolean")
-                        return "returnEntity: boolean expected";
+                if (message.returnEntities != null && message.hasOwnProperty("returnEntities"))
+                    if (typeof message.returnEntities !== "boolean")
+                        return "returnEntities: boolean expected";
                 return null;
             };
 
@@ -939,8 +939,8 @@ export const exocore = $root.exocore = (() => {
                 }
                 if (object.waitIndexed != null)
                     message.waitIndexed = Boolean(object.waitIndexed);
-                if (object.returnEntity != null)
-                    message.returnEntity = Boolean(object.returnEntity);
+                if (object.returnEntities != null)
+                    message.returnEntities = Boolean(object.returnEntities);
                 return message;
             };
 
@@ -961,7 +961,7 @@ export const exocore = $root.exocore = (() => {
                     object.mutations = [];
                 if (options.defaults) {
                     object.waitIndexed = false;
-                    object.returnEntity = false;
+                    object.returnEntities = false;
                 }
                 if (message.mutations && message.mutations.length) {
                     object.mutations = [];
@@ -970,8 +970,8 @@ export const exocore = $root.exocore = (() => {
                 }
                 if (message.waitIndexed != null && message.hasOwnProperty("waitIndexed"))
                     object.waitIndexed = message.waitIndexed;
-                if (message.returnEntity != null && message.hasOwnProperty("returnEntity"))
-                    object.returnEntity = message.returnEntity;
+                if (message.returnEntities != null && message.hasOwnProperty("returnEntities"))
+                    object.returnEntities = message.returnEntities;
                 return object;
             };
 

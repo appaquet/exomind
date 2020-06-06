@@ -13,7 +13,7 @@ message MutationRequest {
     bool wait_indexed = 2;
 
     /// Waits for mutation to be indexed and returns the mutated entities.
-    bool return_entity = 3;
+    bool return_entities = 3;
 }
 
 message MutationResult {

@@ -543,7 +543,29 @@ fn search_by_reference() -> Result<(), failure::Error> {
             ..Default::default()
         },
     });
-    index.apply_operations(vec![et1, et2].into_iter())?;
+
+    let long_id = "a".repeat(50);
+    let et3 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: None,
+        operation_id: 3,
+        entity_id: long_id.clone(),
+        trt: Trait {
+            id: "trt3".to_string(),
+            message: Some(
+                TestMessage {
+                    string1: "Hello World".to_string(),
+                    ref1: Some(Reference {
+                        entity_id: long_id.clone(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    index.apply_operations(vec![et1, et2, et3].into_iter())?;
 
     let search = |entity: &str, trt: &str| {
         let query = Q::references((entity, trt)).build();
@@ -598,6 +620,17 @@ fn search_by_reference() -> Result<(), failure::Error> {
         );
         let res = index.search(query.build())?;
         assert_eq!(res.mutations.len(), 0);
+    }
+
+    {
+        // search for long ids (tantivy default text is length 40 max)
+        let query = Q::with_trait_name_query(
+            "exocore.test.TestMessage",
+            TQ::field_references("ref1", long_id).build(),
+        );
+        let res = index.search(query.build())?;
+        assert_eq!(res.mutations.len(), 1);
+        find_put_trait(&res, "trt3");
     }
 
     Ok(())

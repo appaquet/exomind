@@ -3,12 +3,14 @@ use crate::error::Error;
 use exocore_core::protos::reflect::FieldType;
 use exocore_core::protos::registry::Registry;
 use std::collections::HashMap;
-use tantivy::schema::{Field, Schema, SchemaBuilder, FAST, INDEXED, STORED, STRING, TEXT};
+use tantivy::schema::*;
+use tantivy::tokenizer::*;
 use tantivy::Document;
 
 /// Tantitvy schema fields
 pub(crate) struct Fields {
     pub config: MutationIndexConfig,
+
     pub trait_type: Field,
     pub entity_id: Field,
     pub trait_id: Field,
@@ -26,6 +28,8 @@ pub(crate) struct Fields {
     // message type -> field name -> tantivy field
     pub _dynamic_fields: DynamicFields,
     pub dynamic_mappings: DynamicFieldsMapping,
+
+    pub references_tokenizer: TextAnalyzer,
 }
 
 impl Fields {
@@ -43,12 +47,18 @@ impl Fields {
 
         let field = fields_mapping.get(field_name).ok_or_else(|| {
             Error::QueryParsing(format!(
-                "Trait '{}' doesn\'t have any dynamic field with name '{}",
+                "Trait '{}' doesn\'t have any dynamic field with name '{}'",
                 trait_name, field_name
             ))
         })?;
 
         Ok(field)
+    }
+
+    pub fn register_tokenizers(&self, index: &tantivy::Index) {
+        index
+            .tokenizers()
+            .register("references", self.references_tokenizer.clone());
     }
 }
 
@@ -95,11 +105,25 @@ pub(crate) fn build_tantivy_schema(
     let operation_id = schema_builder.add_u64_field("operation_id", INDEXED | STORED | FAST);
     let document_type = schema_builder.add_u64_field("document_type", STORED);
 
-    let all_text = schema_builder.add_text_field("all_text", TEXT);
-    let all_refs = schema_builder.add_text_field("all_refs", TEXT);
+    // Tokenize references by space, but no stemming, case folding or length limit
+    let references_tokenizer = TextAnalyzer::from(SimpleTokenizer);
+    let references_options = TextOptions::default()
+        .set_indexing_options(
+            TextFieldIndexing::default()
+                .set_tokenizer("references")
+                .set_index_option(IndexRecordOption::WithFreqsAndPositions),
+        )
+        .set_stored();
 
-    let (dynamic_fields, dynamic_mappings) =
-        build_dynamic_fields_tantivy_schema(&config, registry, &mut schema_builder);
+    let all_text = schema_builder.add_text_field("all_text", TEXT);
+    let all_refs = schema_builder.add_text_field("all_refs", references_options.clone());
+
+    let (dynamic_fields, dynamic_mappings) = build_dynamic_fields_tantivy_schema(
+        &config,
+        registry,
+        &mut schema_builder,
+        references_options,
+    );
 
     let schema = schema_builder.build();
 
@@ -120,6 +144,8 @@ pub(crate) fn build_tantivy_schema(
 
         _dynamic_fields: dynamic_fields,
         dynamic_mappings,
+
+        references_tokenizer,
     };
 
     (schema, fields)
@@ -132,6 +158,7 @@ fn build_dynamic_fields_tantivy_schema(
     config: &MutationIndexConfig,
     registry: &Registry,
     builder: &mut SchemaBuilder,
+    references_options: TextOptions,
 ) -> (DynamicFields, DynamicFieldsMapping) {
     let mut dyn_fields = DynamicFields::default();
 
@@ -139,7 +166,7 @@ fn build_dynamic_fields_tantivy_schema(
     for i in 0..config.dynamic_reference_fields {
         dyn_fields
             .reference
-            .push(builder.add_text_field(&format!("references_{}", i), TEXT));
+            .push(builder.add_text_field(&format!("references_{}", i), references_options.clone()));
     }
     for i in 0..config.dynamic_text_fields {
         dyn_fields

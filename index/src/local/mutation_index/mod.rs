@@ -66,8 +66,12 @@ impl MutationIndex {
         directory: &Path,
     ) -> Result<MutationIndex, Error> {
         let (tantivy_schema, fields) = schema::build_tantivy_schema(config, schemas.as_ref());
+
         let directory = MmapDirectory::open(directory)?;
         let index = TantivyIndex::open_or_create(directory, tantivy_schema)?;
+
+        fields.register_tokenizers(&index);
+
         let index_reader = index.reader()?;
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
             index.writer_with_num_threads(nb_threads, config.indexer_heap_size_bytes)?
@@ -91,7 +95,10 @@ impl MutationIndex {
         schemas: Arc<Registry>,
     ) -> Result<MutationIndex, Error> {
         let (tantivy_schema, fields) = schema::build_tantivy_schema(config, schemas.as_ref());
+
         let index = TantivyIndex::create_in_ram(tantivy_schema);
+        fields.register_tokenizers(&index);
+
         let index_reader = index.reader()?;
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
             index.writer_with_num_threads(nb_threads, config.indexer_heap_size_bytes)?
@@ -326,6 +333,7 @@ impl MutationIndex {
         self.execute_tantivy_with_paging(searcher, &query, Some(&paging), sorting, None)
     }
 
+    /// Executes a search for mutations with the given operations ids.
     pub fn search_operations(
         &self,
         predicate: &OperationsPredicate,

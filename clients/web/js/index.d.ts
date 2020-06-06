@@ -9,9 +9,9 @@ export class Client {
 
     query(query: proto.exocore.index.EntityQuery): Promise<proto.exocore.index.EntityResults>;
 
-    watched_query(query: proto.exocore.index.EntityQuery): WatchedQuery;
+    watchedQuery(query: proto.exocore.index.EntityQuery): WatchedQuery;
 
-    generate_id(prefix?: string): string;
+    generateId(prefix?: string): string;
 }
 
 export class WatchedQuery {
@@ -37,15 +37,21 @@ export class MutationBuilder {
 
     static updateEntity(entityId: string): MutationBuilder;
 
+    andUpdateEntity(entityId: string): MutationBuilder;
+
+    andCreateEntity(entityId?: string | null): MutationBuilder;
+
     putTrait(message: any, traitId?: string): MutationBuilder;
 
     deleteTrait(traitId: string): MutationBuilder;
+
+    returnEntities(): MutationBuilder;
 
     build(): proto.exocore.index.MutationRequest;
 }
 
 export class QueryBuilder {
-    static withTrait(message: any): QueryBuilder;
+    static withTrait(message: any, traitQuery?: proto.exocore.index.ITraitQuery): QueryBuilder;
 
     static matching(query: string): QueryBuilder;
 
@@ -53,7 +59,15 @@ export class QueryBuilder {
 
     count(count: number): QueryBuilder;
 
+    orderByField(field: string, ascending?: boolean): QueryBuilder;
+
     build(): proto.exocore.index.EntityQuery;
+}
+
+export class TraitQueryBuilder {
+    static refersTo(entityId: string, traitId?: string): TraitQueryBuilder;
+
+    build(): proto.exocore.index.TraitQuery;
 }
 
 export function toProtoTimestamp(date: Date): proto.google.protobuf.ITimestamp;

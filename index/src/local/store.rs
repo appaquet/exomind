@@ -167,7 +167,7 @@ where
         // checks if watched queries have their results changed
         let weak_inner = Arc::downgrade(&self.inner);
         let watched_queries_checker = async move {
-            while let Some(_) = watch_check_receiver.next().await {
+            while watch_check_receiver.next().await.is_some() {
                 let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
                 let mut inner = inner.write()?;
 
@@ -265,7 +265,7 @@ where
             operation_ids.push(operation_id);
         }
 
-        if (request.wait_indexed || request.return_entity) && !request.mutations.is_empty() {
+        if (request.wait_indexed || request.return_entities) && !request.mutations.is_empty() {
             self.mutation_tracker.track_request(operation_ids, sender);
         } else {
             let _ = sender.send(Ok(MutationResult {
@@ -355,7 +355,7 @@ where
         let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
 
         let request = request.into().0;
-        let return_entity = request.return_entity;
+        let return_entities = request.return_entities;
 
         let mutation_future = {
             let inner = inner.read().map_err(|_| Error::Dropped)?;
@@ -364,7 +364,7 @@ where
 
         let mut mutation_result = mutation_future.await.map_err(|_err| Error::Cancelled)??;
 
-        if return_entity {
+        if return_entities {
             let query_result = self
                 .query(EntityQuery {
                     predicate: Some(entity_query::Predicate::Operations(OperationsPredicate {

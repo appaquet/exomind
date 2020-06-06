@@ -50,12 +50,12 @@ export class Client {
             });
     }
 
-    watched_query(query) {
+    watchedQuery(query) {
         const encoded = proto.exocore.index.EntityQuery.encode(query).finish();
         return new WatchedQuery(this.innerClient.watched_query(encoded));
     }
 
-    generate_id(prefix = '') {
+    generateId(prefix = '') {
         return _exocore_wasm.generate_id(prefix);
     }
 }
@@ -137,14 +137,12 @@ export class Registry {
 export class MutationBuilder {
     constructor(entityId) {
         this.entityId = entityId;
-        this.request = new proto.exocore.index.MutationRequest({
-            mutations
-        });
+        this.request = new proto.exocore.index.MutationRequest();
     }
 
     static createEntity(entityId = null) {
         if (!entityId) {
-            entityId = _exocore_wasm.generate_id("entity")
+            entityId = _exocore_wasm.generate_id('et')
         }
 
         return new MutationBuilder(entityId);
@@ -154,7 +152,27 @@ export class MutationBuilder {
         return new MutationBuilder(entityId);
     }
 
+    andUpdateEntity(entityId) {
+        this.entityId = entityId;
+
+        return this;
+    }
+
+    andCreateEntity(entityId = null) {
+        if (!entityId) {
+            entityId = _exocore_wasm.generate_id('et')
+        }
+
+        this.entityId = entityId;
+
+        return this;
+    }
+
     putTrait(message, traitId = null) {
+        if (!traitId) {
+            traitId = _exocore_wasm.generate_id('trt');
+        }
+
         this.request.mutations.push(new proto.exocore.index.EntityMutation({
             entityId: this.entityId,
             putTrait: new proto.exocore.index.PutTraitMutation({
@@ -180,6 +198,12 @@ export class MutationBuilder {
         return this;
     }
 
+    returnEntities() {
+        this.request.returnEntities = true;
+
+        return this;
+    }
+
     build() {
         return this.request;
     }
@@ -187,13 +211,14 @@ export class MutationBuilder {
 
 export class QueryBuilder {
     constructor() {
-        this.query = new proto.exocore.index.EntityQuery({});
+        this.query = new proto.exocore.index.EntityQuery();
     }
 
-    static withTrait(message) {
+    static withTrait(message, traitQuery = null) {
         let builder = new QueryBuilder();
         builder.query.trait = new proto.exocore.index.TraitPredicate({
             traitName: Registry.messageFullName(message),
+            query: traitQuery,
         });
         return builder;
     }
@@ -219,6 +244,37 @@ export class QueryBuilder {
             count: count,
         });
         return this;
+    }
+
+    orderByField(field, ascending) {
+        this.query.sorting = new proto.exocore.index.Sorting({
+            ascending: ascending === true,
+            field: field,
+        });
+        return this;
+    }
+
+    build() {
+        return this.query;
+    }
+}
+
+export class TraitQueryBuilder {
+    constructor() {
+        this.query = new proto.exocore.index.TraitQuery();
+    }
+
+    static refersTo(field, entityId, traitId = null) {
+        let builder = new TraitQueryBuilder();
+        builder.query.reference = new proto.exocore.index.TraitFieldReferencePredicate({
+            field: field,
+            reference: new proto.exocore.index.Reference({
+                entityId: entityId,
+                traitId: traitId,
+            })
+        });
+
+        return builder;
     }
 
     build() {

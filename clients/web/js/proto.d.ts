@@ -315,7 +315,7 @@ export namespace exocore {
             waitIndexed?: (boolean|null);
 
             /** Waits for mutation to be indexed and returns the mutated entities. */
-            returnEntity?: (boolean|null);
+            returnEntities?: (boolean|null);
         }
 
         /** Represents a MutationRequest. */
@@ -334,7 +334,7 @@ export namespace exocore {
             public waitIndexed: boolean;
 
             /** Waits for mutation to be indexed and returns the mutated entities. */
-            public returnEntity: boolean;
+            public returnEntities: boolean;
 
             /**
              * Creates a new MutationRequest instance using the specified properties.
