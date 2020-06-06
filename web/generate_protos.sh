@@ -5,6 +5,12 @@ cd "$CUR_DIR"
 
 EXOMIND_ROOT=$CUR_DIR/../
 
+if [[ "$EXOCORE_REPO" == "" ]]; then
+  if [[ -d "$EXOMIND_ROOT/../exocore" ]]; then
+    EXOCORE_REPO="$EXOMIND_ROOT/../exocore"
+  fi
+fi
+
 if [[ ! -d "$EXOCORE_REPO/protos" ]]; then
   echo "EXOCORE_REPO environment variable needs to be defined"
   exit 1

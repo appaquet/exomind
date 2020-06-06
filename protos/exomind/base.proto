@@ -13,7 +13,7 @@ message Collection {
 message CollectionChild {
     exocore.index.Reference collection = 1 [(exocore.indexed) = true];
     google.protobuf.Timestamp added_date = 2;
-    uint64 weight = 3;
+    uint64 weight = 3 [(exocore.sorted) = true];
 }
 
 message Postponed {

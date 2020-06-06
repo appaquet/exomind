@@ -46,7 +46,7 @@ async fn main() {
             ),
             ..Default::default()
         };
-        let mutation = MutationBuilder::put_trait("inbox".to_string(), inbox_trait);
+        let mutation = MutationBuilder::new().put_trait("inbox".to_string(), inbox_trait);
         let _ = exocore_client.mutate(mutation).await.unwrap();
     }
 
@@ -111,7 +111,7 @@ async fn main() {
                 creation_date: thread_create_date,
                 modification_date: thread_modification_date,
             };
-            let mutation = MutationBuilder::put_trait(thread_entity_id.clone(), thread_trait);
+            let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), thread_trait);
             let _ = exocore_client.mutate(mutation).await.unwrap();
         }
 
@@ -123,7 +123,7 @@ async fn main() {
                 creation_date,
                 modification_date: None,
             };
-            let mutation = MutationBuilder::put_trait(thread_entity_id.clone(), email_trait);
+            let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), email_trait);
             let _ = exocore_client.mutate(mutation).await.unwrap();
         }
 
@@ -143,7 +143,7 @@ async fn main() {
                 ),
                 ..Default::default()
             };
-            let mutation = MutationBuilder::put_trait(thread_entity_id.clone(), child_trait);
+            let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), child_trait);
             let _ = exocore_client.mutate(mutation).await.unwrap();
         }
     }

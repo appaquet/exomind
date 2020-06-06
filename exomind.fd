@@ -1,16 +1,16 @@
 
-í
+ò
 exomind/base.protoexomind.baseexocore/index/options.protoexocore/index/entity.protogoogle/protobuf/timestamp.proto" 
 
 Collection
-name (	Rname"£
+name (	Rname"¨
 CollectionChild=
 
 collection (2.exocore.index.ReferenceBèUR
 collection9
 
-added_date (2.google.protobuf.TimestampR	addedDate
-weight (Rweight"x
+added_date (2.google.protobuf.TimestampR	addedDate
+weight (BðURweight"x
 	Postponed0
 entity (2.exocore.index.ReferenceRentity9
 
