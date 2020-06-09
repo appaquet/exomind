@@ -5,11 +5,11 @@ export {proto}
 export class Client {
     static create(config: object, status_change_callback?: any): Promise<Client>;
 
-    mutate(mutation: proto.exocore.index.MutationRequest): Promise<proto.exocore.index.MutationResult>;
+    mutate(mutation: proto.exocore.index.IMutationRequest): Promise<proto.exocore.index.MutationResult>;
 
-    query(query: proto.exocore.index.EntityQuery): Promise<proto.exocore.index.EntityResults>;
+    query(query: proto.exocore.index.IEntityQuery): Promise<proto.exocore.index.EntityResults>;
 
-    watchedQuery(query: proto.exocore.index.EntityQuery): WatchedQuery;
+    watchedQuery(query: proto.exocore.index.IEntityQuery): WatchedQuery;
 
     generateId(prefix?: string): string;
 }
@@ -66,6 +66,8 @@ export class QueryBuilder {
 
 export class TraitQueryBuilder {
     static refersTo(entityId: string, traitId?: string): TraitQueryBuilder;
+
+    static matching(query: string): TraitQueryBuilder;
 
     build(): proto.exocore.index.TraitQuery;
 }

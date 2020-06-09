@@ -304,6 +304,12 @@ pub fn default_paging() -> Paging {
     }
 }
 
+pub fn validate_paging(paging: &mut Paging) {
+    if paging.count == 0 {
+        paging.count = 10;
+    }
+}
+
 pub fn query_to_request_frame(
     query: &EntityQuery,
 ) -> Result<CapnpFrameBuilder<query_request::Owned>, Error> {

@@ -277,6 +277,15 @@ export class TraitQueryBuilder {
         return builder;
     }
 
+    static matching(query) {
+        let builder = new TraitQueryBuilder();
+        builder.query.match = new proto.exocore.index.MatchPredicate({
+            query: query,
+        });
+
+        return builder;
+    }
+
     build() {
         return this.query;
     }

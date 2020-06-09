@@ -201,10 +201,11 @@ where
     /// matching the query.
     pub fn search<Q: Borrow<EntityQuery>>(&self, query: Q) -> Result<EntityResults, Error> {
         let query = query.borrow();
-        let current_page = query
+        let mut current_page = query
             .paging
             .clone()
             .unwrap_or_else(crate::query::default_paging);
+        crate::query::validate_paging(&mut current_page);
 
         let chain_results = self.chain_index.search_all(query)?;
         let pending_results = self.pending_index.search_all(query)?;
