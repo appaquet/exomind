@@ -220,7 +220,10 @@ fn delete_entity_trait() -> Result<(), failure::Error> {
     let entity = test_index.index.fetch_entity("entity1")?;
     assert_eq!(entity.traits.len(), 1);
 
-    let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
+    let pending_res = test_index
+        .index
+        .pending_index
+        .fetch_entity_mutations("entity1")?;
     assert!(pending_res
         .mutations
         .iter()
@@ -322,7 +325,10 @@ fn traits_compaction() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
 
     // we have 3 mutations on same trait
-    let pending_res = test_index.index.pending_index.search_entity_id("entity1")?;
+    let pending_res = test_index
+        .index
+        .pending_index
+        .fetch_entity_mutations("entity1")?;
     let ops = extract_indexed_operations_id(pending_res);
     assert_eq!(vec![op1, op2, op3], ops);
 

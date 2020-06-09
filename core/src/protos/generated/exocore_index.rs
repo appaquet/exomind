@@ -51,7 +51,7 @@ pub mod entity_query {
         #[prost(message, tag = "2")]
         Trait(super::TraitPredicate),
         #[prost(message, tag = "3")]
-        Id(super::IdPredicate),
+        Ids(super::IdsPredicate),
         #[prost(message, tag = "4")]
         Reference(super::ReferencePredicate),
         #[prost(message, tag = "10")]
@@ -66,11 +66,11 @@ pub struct MatchPredicate {
     #[prost(string, tag = "1")]
     pub query: std::string::String,
 }
-//// Query entity by ID.
+//// Query entities by IDs.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct IdPredicate {
-    #[prost(string, tag = "1")]
-    pub id: std::string::String,
+pub struct IdsPredicate {
+    #[prost(string, repeated, tag = "1")]
+    pub ids: ::std::vec::Vec<std::string::String>,
 }
 //// Query entities by mutations' operation ids.
 //// Used to return entities on which mutations with these operation ids were applied and indexed.

@@ -55,7 +55,7 @@ export class QueryBuilder {
 
     static matching(query: string): QueryBuilder;
 
-    static withId(id: string): QueryBuilder;
+    static withIds(ids: string | string[]): QueryBuilder;
 
     count(count: number): QueryBuilder;
 

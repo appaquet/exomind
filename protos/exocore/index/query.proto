@@ -9,7 +9,7 @@ message EntityQuery {
     oneof predicate {
         MatchPredicate match = 1;
         TraitPredicate trait = 2;
-        IdPredicate id = 3;
+        IdsPredicate ids = 3;
         ReferencePredicate reference = 4;
         OperationsPredicate operations = 10;
 
@@ -37,9 +37,9 @@ message MatchPredicate {
     string query = 1;
 }
 
-/// Query entity by ID.
-message IdPredicate {
-    string id = 1;
+/// Query entities by IDs.
+message IdsPredicate {
+    repeated string ids = 1;
 }
 
 /// Query entities by mutations' operation ids.

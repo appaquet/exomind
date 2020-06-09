@@ -1292,8 +1292,8 @@ export namespace exocore {
             /** EntityQuery trait */
             trait?: (exocore.index.ITraitPredicate|null);
 
-            /** EntityQuery id */
-            id?: (exocore.index.IIdPredicate|null);
+            /** EntityQuery ids */
+            ids?: (exocore.index.IIdsPredicate|null);
 
             /** EntityQuery reference */
             reference?: (exocore.index.IReferencePredicate|null);
@@ -1335,8 +1335,8 @@ export namespace exocore {
             /** EntityQuery trait. */
             public trait?: (exocore.index.ITraitPredicate|null);
 
-            /** EntityQuery id. */
-            public id?: (exocore.index.IIdPredicate|null);
+            /** EntityQuery ids. */
+            public ids?: (exocore.index.IIdsPredicate|null);
 
             /** EntityQuery reference. */
             public reference?: (exocore.index.IReferencePredicate|null);
@@ -1363,7 +1363,7 @@ export namespace exocore {
             public resultHash: (number|Long);
 
             /** EntityQuery predicate. */
-            public predicate?: ("match"|"trait"|"id"|"reference"|"operations"|"test");
+            public predicate?: ("match"|"trait"|"ids"|"reference"|"operations"|"test");
 
             /**
              * Creates a new EntityQuery instance using the specified properties.
@@ -1526,91 +1526,91 @@ export namespace exocore {
             public toJSON(): { [k: string]: any };
         }
 
-        /** Properties of an IdPredicate. */
-        interface IIdPredicate {
+        /** Properties of an IdsPredicate. */
+        interface IIdsPredicate {
 
-            /** IdPredicate id */
-            id?: (string|null);
+            /** IdsPredicate ids */
+            ids?: (string[]|null);
         }
 
-        /** Query entity by ID. */
-        class IdPredicate implements IIdPredicate {
+        /** Query entities by IDs. */
+        class IdsPredicate implements IIdsPredicate {
 
             /**
-             * Constructs a new IdPredicate.
+             * Constructs a new IdsPredicate.
              * @param [properties] Properties to set
              */
-            constructor(properties?: exocore.index.IIdPredicate);
+            constructor(properties?: exocore.index.IIdsPredicate);
 
-            /** IdPredicate id. */
-            public id: string;
+            /** IdsPredicate ids. */
+            public ids: string[];
 
             /**
-             * Creates a new IdPredicate instance using the specified properties.
+             * Creates a new IdsPredicate instance using the specified properties.
              * @param [properties] Properties to set
-             * @returns IdPredicate instance
+             * @returns IdsPredicate instance
              */
-            public static create(properties?: exocore.index.IIdPredicate): exocore.index.IdPredicate;
+            public static create(properties?: exocore.index.IIdsPredicate): exocore.index.IdsPredicate;
 
             /**
-             * Encodes the specified IdPredicate message. Does not implicitly {@link exocore.index.IdPredicate.verify|verify} messages.
-             * @param message IdPredicate message or plain object to encode
+             * Encodes the specified IdsPredicate message. Does not implicitly {@link exocore.index.IdsPredicate.verify|verify} messages.
+             * @param message IdsPredicate message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encode(message: exocore.index.IIdPredicate, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encode(message: exocore.index.IIdsPredicate, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Encodes the specified IdPredicate message, length delimited. Does not implicitly {@link exocore.index.IdPredicate.verify|verify} messages.
-             * @param message IdPredicate message or plain object to encode
+             * Encodes the specified IdsPredicate message, length delimited. Does not implicitly {@link exocore.index.IdsPredicate.verify|verify} messages.
+             * @param message IdsPredicate message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encodeDelimited(message: exocore.index.IIdPredicate, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encodeDelimited(message: exocore.index.IIdsPredicate, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Decodes an IdPredicate message from the specified reader or buffer.
+             * Decodes an IdsPredicate message from the specified reader or buffer.
              * @param reader Reader or buffer to decode from
              * @param [length] Message length if known beforehand
-             * @returns IdPredicate
+             * @returns IdsPredicate
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.IdPredicate;
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.IdsPredicate;
 
             /**
-             * Decodes an IdPredicate message from the specified reader or buffer, length delimited.
+             * Decodes an IdsPredicate message from the specified reader or buffer, length delimited.
              * @param reader Reader or buffer to decode from
-             * @returns IdPredicate
+             * @returns IdsPredicate
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.IdPredicate;
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.IdsPredicate;
 
             /**
-             * Verifies an IdPredicate message.
+             * Verifies an IdsPredicate message.
              * @param message Plain object to verify
              * @returns `null` if valid, otherwise the reason why it is not
              */
             public static verify(message: { [k: string]: any }): (string|null);
 
             /**
-             * Creates an IdPredicate message from a plain object. Also converts values to their respective internal types.
+             * Creates an IdsPredicate message from a plain object. Also converts values to their respective internal types.
              * @param object Plain object
-             * @returns IdPredicate
+             * @returns IdsPredicate
              */
-            public static fromObject(object: { [k: string]: any }): exocore.index.IdPredicate;
+            public static fromObject(object: { [k: string]: any }): exocore.index.IdsPredicate;
 
             /**
-             * Creates a plain object from an IdPredicate message. Also converts values to other types if specified.
-             * @param message IdPredicate
+             * Creates a plain object from an IdsPredicate message. Also converts values to other types if specified.
+             * @param message IdsPredicate
              * @param [options] Conversion options
              * @returns Plain object
              */
-            public static toObject(message: exocore.index.IdPredicate, options?: $protobuf.IConversionOptions): { [k: string]: any };
+            public static toObject(message: exocore.index.IdsPredicate, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
             /**
-             * Converts this IdPredicate to JSON.
+             * Converts this IdsPredicate to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };

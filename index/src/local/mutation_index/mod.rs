@@ -19,8 +19,8 @@ pub use config::*;
 use exocore_chain::block::BlockOffset;
 use exocore_core::protos::generated::exocore_index::{
     entity_query::Predicate, sorting, sorting_value, trait_field_predicate, trait_query,
-    EntityQuery, MatchPredicate, OperationsPredicate, Paging, ReferencePredicate, Sorting,
-    SortingValue, TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate,
+    EntityQuery, IdsPredicate, MatchPredicate, OperationsPredicate, Paging, ReferencePredicate,
+    Sorting, SortingValue, TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate,
 };
 use exocore_core::protos::prost::{Any, ProstTimestampExt};
 use exocore_core::protos::reflect;
@@ -215,9 +215,9 @@ impl MutationIndex {
         let results = match predicate {
             Predicate::Trait(inner) => self.search_with_trait(inner, paging, sorting),
             Predicate::Match(inner) => self.search_matches(inner, paging, sorting),
-            Predicate::Id(inner) => self.search_entity_id(&inner.id),
+            Predicate::Ids(inner) => self.search_entity_ids(inner, paging, sorting),
             Predicate::Reference(inner) => self.search_reference(inner, paging, sorting),
-            Predicate::Operations(inner) => self.search_operations(inner),
+            Predicate::Operations(inner) => self.search_operations(inner, paging, sorting),
             Predicate::Test(_inner) => Err(Error::Other("Query failed for tests".to_string())),
         }?;
 
@@ -239,6 +239,25 @@ impl MutationIndex {
             current_results: results.mutations.into_iter(),
             next_page: results.next_page,
         })
+    }
+
+    /// Fetch all mutations for a given entity id.
+    pub fn fetch_entity_mutations(&self, entity_id: &str) -> Result<MutationResults, Error> {
+        let searcher = self.index_reader.searcher();
+
+        let term = Term::from_field_text(self.fields.entity_id, &entity_id);
+        let query = TermQuery::new(term, IndexRecordOption::Basic);
+
+        let sorting = Sorting {
+            ascending: true,
+            value: Some(sorting::Value::OperationId(true)),
+        };
+        let paging = Paging {
+            count: ENTITY_MAX_TRAITS,
+            ..Default::default()
+        };
+
+        self.execute_tantivy_with_paging(searcher, &query, Some(&paging), sorting, None)
     }
 
     /// Execute a search by trait type query and return traits in operations id
@@ -314,29 +333,12 @@ impl MutationIndex {
         self.execute_tantivy_with_paging(searcher, &query, paging, sorting, None)
     }
 
-    /// Execute a search by entity id query
-    pub fn search_entity_id(&self, entity_id: &str) -> Result<MutationResults, Error> {
-        let searcher = self.index_reader.searcher();
-
-        let term = Term::from_field_text(self.fields.entity_id, &entity_id);
-        let query = TermQuery::new(term, IndexRecordOption::Basic);
-
-        let sorting = Sorting {
-            ascending: true,
-            value: Some(sorting::Value::OperationId(true)),
-        };
-        let paging = Paging {
-            count: ENTITY_MAX_TRAITS,
-            ..Default::default()
-        };
-
-        self.execute_tantivy_with_paging(searcher, &query, Some(&paging), sorting, None)
-    }
-
     /// Executes a search for mutations with the given operations ids.
     pub fn search_operations(
         &self,
         predicate: &OperationsPredicate,
+        paging: Option<&Paging>,
+        sorting: Option<&Sorting>,
     ) -> Result<MutationResults, Error> {
         let searcher = self.index_reader.searcher();
 
@@ -348,16 +350,38 @@ impl MutationIndex {
         }
         let query = BooleanQuery::from(queries);
 
-        let sorting = Sorting {
-            ascending: true,
-            value: Some(sorting::Value::OperationId(true)),
-        };
-        let paging = Paging {
-            count: ENTITY_MAX_TRAITS,
-            ..Default::default()
-        };
+        let mut sorting = sorting.cloned().unwrap_or_else(Sorting::default);
+        if sorting.value.is_none() {
+            sorting.value = Some(sorting::Value::OperationId(true));
+            sorting.ascending = true;
+        }
 
-        self.execute_tantivy_with_paging(searcher, &query, Some(&paging), sorting, None)
+        self.execute_tantivy_with_paging(searcher, &query, paging, sorting, None)
+    }
+
+    /// Executes a search for mutations on the given entities ids.
+    pub fn search_entity_ids(
+        &self,
+        predicate: &IdsPredicate,
+        paging: Option<&Paging>,
+        sorting: Option<&Sorting>,
+    ) -> Result<MutationResults, Error> {
+        let searcher = self.index_reader.searcher();
+
+        let mut queries: Vec<(Occur, Box<dyn Query>)> = Vec::new();
+        for entity_id in &predicate.ids {
+            let term = Term::from_field_text(self.fields.entity_id, entity_id);
+            let query = TermQuery::new(term, IndexRecordOption::Basic);
+            queries.push((Occur::Should, Box::new(query)));
+        }
+        let query = BooleanQuery::from(queries);
+
+        let mut sorting = sorting.cloned().unwrap_or_else(Sorting::default);
+        if sorting.value.is_none() {
+            sorting.value = Some(sorting::Value::OperationId(true));
+        }
+
+        self.execute_tantivy_with_paging(searcher, &query, paging, sorting, None)
     }
 
     /// Executes a search for traits that have the given reference to another

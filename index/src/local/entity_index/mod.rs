@@ -602,8 +602,8 @@ where
         &self,
         entity_id: &str,
     ) -> Result<Rc<EntityMutations>, Error> {
-        let pending_results = self.pending_index.search_entity_id(entity_id)?;
-        let chain_results = self.chain_index.search_entity_id(entity_id)?;
+        let pending_results = self.pending_index.fetch_entity_mutations(entity_id)?;
+        let chain_results = self.chain_index.fetch_entity_mutations(entity_id)?;
         let ordered_traits_metadata = pending_results
             .mutations
             .into_iter()

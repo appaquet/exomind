@@ -231,10 +231,14 @@ export class QueryBuilder {
         return builder;
     }
 
-    static withId(id) {
+    static withIds(ids) {
+        if (!Array.isArray(ids)) {
+            ids = [ids];
+        }
+
         let builder = new QueryBuilder();
-        builder.query.id = new proto.exocore.index.IdPredicate({
-            id: id,
+        builder.query.ids = new proto.exocore.index.IdsPredicate({
+            ids: ids,
         });
         return builder;
     }

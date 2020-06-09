@@ -4,13 +4,13 @@ use exocore_chain::operation::OperationId;
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::{
     entity_query, sorting, trait_field_predicate, trait_query, EntityQuery, EntityResults,
-    IdPredicate, MatchPredicate, Paging, ReferencePredicate, Sorting, TestPredicate,
-    TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate, TraitQuery,
+    MatchPredicate, Paging, ReferencePredicate, Sorting, TestPredicate, TraitFieldPredicate,
+    TraitFieldReferencePredicate, TraitPredicate, TraitQuery,
 };
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
 use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
 use exocore_core::protos::{
-    index::OperationsPredicate,
+    index::{IdsPredicate, OperationsPredicate},
     prost::{NamedMessage, ProstMessageExt},
 };
 
@@ -46,7 +46,7 @@ impl QueryBuilder {
         }
     }
 
-    pub fn operations(operation_ids: Vec<OperationId>) -> QueryBuilder {
+    pub fn with_operations(operation_ids: Vec<OperationId>) -> QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Operations(OperationsPredicate {
@@ -108,11 +108,26 @@ impl QueryBuilder {
         }
     }
 
-    pub fn with_entity_id<E: Into<String>>(entity_id: E) -> QueryBuilder {
+    pub fn with_entity_id<E: Into<String>>(id: E) -> QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
-                predicate: Some(entity_query::Predicate::Id(IdPredicate {
-                    id: entity_id.into(),
+                predicate: Some(entity_query::Predicate::Ids(IdsPredicate {
+                    ids: vec![id.into()],
+                })),
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn with_entity_ids<I, E>(ids: I) -> QueryBuilder
+    where
+        I: Iterator<Item = E>,
+        E: Into<String>,
+    {
+        QueryBuilder {
+            query: EntityQuery {
+                predicate: Some(entity_query::Predicate::Ids(IdsPredicate {
+                    ids: ids.map(|i| i.into()).collect(),
                 })),
                 ..Default::default()
             },
