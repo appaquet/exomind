@@ -31,7 +31,7 @@ public struct Exocore_Index_MutationRequest {
   public var waitIndexed: Bool = false
 
   //// Waits for mutation to be indexed and returns the mutated entities.
-  public var returnEntity: Bool = false
+  public var returnEntities: Bool = false
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -293,7 +293,7 @@ extension Exocore_Index_MutationRequest: SwiftProtobuf.Message, SwiftProtobuf._M
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "mutations"),
     2: .standard(proto: "wait_indexed"),
-    3: .standard(proto: "return_entity"),
+    3: .standard(proto: "return_entities"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -301,7 +301,7 @@ extension Exocore_Index_MutationRequest: SwiftProtobuf.Message, SwiftProtobuf._M
       switch fieldNumber {
       case 1: try decoder.decodeRepeatedMessageField(value: &self.mutations)
       case 2: try decoder.decodeSingularBoolField(value: &self.waitIndexed)
-      case 3: try decoder.decodeSingularBoolField(value: &self.returnEntity)
+      case 3: try decoder.decodeSingularBoolField(value: &self.returnEntities)
       default: break
       }
     }
@@ -314,8 +314,8 @@ extension Exocore_Index_MutationRequest: SwiftProtobuf.Message, SwiftProtobuf._M
     if self.waitIndexed != false {
       try visitor.visitSingularBoolField(value: self.waitIndexed, fieldNumber: 2)
     }
-    if self.returnEntity != false {
-      try visitor.visitSingularBoolField(value: self.returnEntity, fieldNumber: 3)
+    if self.returnEntities != false {
+      try visitor.visitSingularBoolField(value: self.returnEntities, fieldNumber: 3)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -323,7 +323,7 @@ extension Exocore_Index_MutationRequest: SwiftProtobuf.Message, SwiftProtobuf._M
   public static func ==(lhs: Exocore_Index_MutationRequest, rhs: Exocore_Index_MutationRequest) -> Bool {
     if lhs.mutations != rhs.mutations {return false}
     if lhs.waitIndexed != rhs.waitIndexed {return false}
-    if lhs.returnEntity != rhs.returnEntity {return false}
+    if lhs.returnEntities != rhs.returnEntities {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

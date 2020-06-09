@@ -89,12 +89,12 @@ public struct Exocore_Index_EntityQuery {
     set {_uniqueStorage()._predicate = .trait(newValue)}
   }
 
-  public var id: Exocore_Index_IdPredicate {
+  public var ids: Exocore_Index_IdsPredicate {
     get {
-      if case .id(let v)? = _storage._predicate {return v}
-      return Exocore_Index_IdPredicate()
+      if case .ids(let v)? = _storage._predicate {return v}
+      return Exocore_Index_IdsPredicate()
     }
-    set {_uniqueStorage()._predicate = .id(newValue)}
+    set {_uniqueStorage()._predicate = .ids(newValue)}
   }
 
   public var reference: Exocore_Index_ReferencePredicate {
@@ -164,7 +164,7 @@ public struct Exocore_Index_EntityQuery {
   public enum OneOf_Predicate: Equatable {
     case match(Exocore_Index_MatchPredicate)
     case trait(Exocore_Index_TraitPredicate)
-    case id(Exocore_Index_IdPredicate)
+    case ids(Exocore_Index_IdsPredicate)
     case reference(Exocore_Index_ReferencePredicate)
     case operations(Exocore_Index_OperationsPredicate)
     case test(Exocore_Index_TestPredicate)
@@ -174,7 +174,7 @@ public struct Exocore_Index_EntityQuery {
       switch (lhs, rhs) {
       case (.match(let l), .match(let r)): return l == r
       case (.trait(let l), .trait(let r)): return l == r
-      case (.id(let l), .id(let r)): return l == r
+      case (.ids(let l), .ids(let r)): return l == r
       case (.reference(let l), .reference(let r)): return l == r
       case (.operations(let l), .operations(let r)): return l == r
       case (.test(let l), .test(let r)): return l == r
@@ -202,13 +202,13 @@ public struct Exocore_Index_MatchPredicate {
   public init() {}
 }
 
-//// Query entity by ID.
-public struct Exocore_Index_IdPredicate {
+//// Query entities by IDs.
+public struct Exocore_Index_IdsPredicate {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  public var ids: [String] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -781,7 +781,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "match"),
     2: .same(proto: "trait"),
-    3: .same(proto: "id"),
+    3: .same(proto: "ids"),
     4: .same(proto: "reference"),
     10: .same(proto: "operations"),
     99: .same(proto: "test"),
@@ -843,13 +843,13 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
           try decoder.decodeSingularMessageField(value: &v)
           if let v = v {_storage._predicate = .trait(v)}
         case 3:
-          var v: Exocore_Index_IdPredicate?
+          var v: Exocore_Index_IdsPredicate?
           if let current = _storage._predicate {
             try decoder.handleConflictingOneOf()
-            if case .id(let m) = current {v = m}
+            if case .ids(let m) = current {v = m}
           }
           try decoder.decodeSingularMessageField(value: &v)
-          if let v = v {_storage._predicate = .id(v)}
+          if let v = v {_storage._predicate = .ids(v)}
         case 4:
           var v: Exocore_Index_ReferencePredicate?
           if let current = _storage._predicate {
@@ -892,7 +892,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
         try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
       case .trait(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-      case .id(let v)?:
+      case .ids(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
       case .reference(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
@@ -975,30 +975,30 @@ extension Exocore_Index_MatchPredicate: SwiftProtobuf.Message, SwiftProtobuf._Me
   }
 }
 
-extension Exocore_Index_IdPredicate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".IdPredicate"
+extension Exocore_Index_IdsPredicate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".IdsPredicate"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "id"),
+    1: .same(proto: "ids"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.id)
+      case 1: try decoder.decodeRepeatedStringField(value: &self.ids)
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.id.isEmpty {
-      try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
+    if !self.ids.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.ids, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Exocore_Index_IdPredicate, rhs: Exocore_Index_IdPredicate) -> Bool {
-    if lhs.id != rhs.id {return false}
+  public static func ==(lhs: Exocore_Index_IdsPredicate, rhs: Exocore_Index_IdsPredicate) -> Bool {
+    if lhs.ids != rhs.ids {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
