@@ -68,10 +68,6 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // select the best next block
         let potential_next_blocks = pending_blocks.potential_next_blocks();
         let best_potential_next_block = potential_next_blocks.first().map(|b| b.group_id);
-        debug!(
-            "{}: Tick begins. potential_next_blocks={:?} best_next_block={:?}",
-            self.cell, potential_next_blocks, best_potential_next_block
-        );
 
         // if we have a next block, we check if we can sign it and commit it
         if let Some(next_block_id) = best_potential_next_block {
@@ -465,7 +461,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             signatures_frame,
         );
 
-        debug!(
+        info!(
             "{}: Writing new block to chain: {:?}",
             self.cell, next_block
         );

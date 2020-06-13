@@ -188,10 +188,18 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // synchronize chain state with nodes
         self.synchronize_nodes_metadata(sync_context, &nodes)?;
 
-        debug!(
-            "Sync tick ended. start_start={:?} status_end={:?}",
-            status_start, self.status
-        );
+        if status_start != self.status {
+            info!(
+                "Sync tick ended with new status. start_start={:?} status_end={:?}",
+                status_start, self.status
+            );
+        } else {
+            debug!(
+                "Sync tick ended. start_start={:?} status_end={:?}",
+                status_start, self.status
+            );
+        }
+
         Ok(())
     }
 

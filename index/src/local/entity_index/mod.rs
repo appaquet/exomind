@@ -523,16 +523,20 @@ where
             });
 
         self.chain_index.apply_operations(chain_index_mutations)?;
-        info!(
-            "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
-            pending_index_mutations.len(),
-            new_highest_block_offset
-        );
-        self.pending_index
-            .apply_operations(pending_index_mutations.into_iter())?;
 
-        if let Some(new_highest_block_offset) = new_highest_block_offset {
-            self.chain_index_last_block = Some(new_highest_block_offset);
+        if pending_index_mutations.len() > 0 {
+            info!(
+                "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
+                pending_index_mutations.len(),
+                new_highest_block_offset
+            );
+
+            self.pending_index
+                .apply_operations(pending_index_mutations.into_iter())?;
+
+            if let Some(new_highest_block_offset) = new_highest_block_offset {
+                self.chain_index_last_block = Some(new_highest_block_offset);
+            }
         }
 
         Ok(())

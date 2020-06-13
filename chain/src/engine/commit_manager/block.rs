@@ -2,7 +2,7 @@ use crate::block::{Block, BlockOffset};
 use crate::engine::EngineError;
 use crate::operation::{GroupId, OperationId, OperationType};
 use crate::{chain, pending, CommitManagerConfig};
-use exocore_core::cell::{Cell, CellNodes};
+use exocore_core::cell::{Cell, CellNodes, Node};
 use exocore_core::cell::{CellNodeRole, NodeId};
 use exocore_core::crypto::signature::Signature;
 use exocore_core::protos::generated::data_chain_capnp::chain_operation;
@@ -32,11 +32,16 @@ impl PendingBlocks {
     ) -> Result<PendingBlocks, EngineError> {
         let local_node = cell.local_node();
         let now = clock.consistent_time(local_node.node());
-
         let last_stored_block = chain_store
             .get_last_block()?
             .ok_or(EngineError::UninitializedChain)?;
-        let next_offset = last_stored_block.next_offset();
+
+        debug!(
+            "{}: Checking for pending blocks. last_block_offset={} next_offset={}",
+            cell,
+            last_stored_block.offset(),
+            last_stored_block.next_offset(),
+        );
 
         // first pass to fetch all groups proposal
         let mut groups_id = Vec::new();
@@ -84,7 +89,17 @@ impl PendingBlocks {
                             operations.push(operation_header.get_operation_id());
                         }
 
+                        let node_id_str = operation_reader.get_node_id()?;
+                        let node_id = NodeId::from_str(node_id_str).map_err(|_| {
+                            EngineError::Other(format!(
+                                "Couldn't convert to NodeID: {}",
+                                node_id_str
+                            ))
+                        })?;
+                        let node = cell.nodes().get(&node_id).map(|cn| cn.node().clone());
+
                         proposal = Some(PendingBlockProposal {
+                            node,
                             offset: block_header_reader.get_offset(),
                             operation,
                         })
@@ -117,7 +132,7 @@ impl PendingBlocks {
                 }
                 None => {
                     let nodes = cell.nodes();
-                    if proposal.offset < next_offset {
+                    if proposal.offset < last_stored_block.next_offset() {
                         // means it was a proposed block for a diverged chain
                         BlockStatus::PastRefused
                     } else if nodes.is_quorum(refusals.len(), Some(CellNodeRole::Chain))
@@ -132,10 +147,6 @@ impl PendingBlocks {
                 }
             };
 
-            debug!(
-                "{}: Found pending store's block: offset={} group_id={} status={:?}",
-                cell, proposal.offset, group_id, status
-            );
             let pending_block = PendingBlock {
                 group_id: *group_id,
                 status,
@@ -149,6 +160,8 @@ impl PendingBlocks {
 
                 operations,
             };
+
+            debug!("{}: Found new pending block: {:?}", cell, pending_block);
             blocks.insert(*group_id, pending_block);
         }
 
@@ -288,6 +301,7 @@ impl std::fmt::Debug for PendingBlock {
             .field("nb_signatures", &self.signatures.len())
             .field("has_my_signature", &self.has_my_signature)
             .field("has_my_refusal", &self.has_my_refusal)
+            .field("node", &self.proposal.node)
             .finish()
     }
 }
@@ -303,6 +317,7 @@ pub enum BlockStatus {
 
 /// Block proposal wrapper
 pub struct PendingBlockProposal {
+    pub node: Option<Node>,
     pub offset: BlockOffset,
     pub operation: pending::StoredOperation,
 }
