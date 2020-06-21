@@ -61,7 +61,6 @@ impl<T: Serialize + DeserializeOwned> SimpleStore<T> for JsonDiskStore<T> {
 #[cfg(test)]
 mod test {
     use serde_derive::{Deserialize, Serialize};
-    use tempdir;
 
     use super::*;
 

@@ -52,7 +52,8 @@ impl ExocoreBehaviour {
                 let expiration =
                     expiration.unwrap_or_else(|| Instant::now() + DEFAULT_DIALING_MESSAGE_TIMEOUT);
 
-                info!("Got new message for peer {}, but not connected. Queuing message while dialing.", peer.node);
+                debug!("Got new message for peer {}, but not connected. Queuing message while dialing.", peer.node);
+
                 // Node is disconnected, push the event to a queue and try to connect
                 peer.temp_queue.push_back(QueuedPeerEvent {
                     event,

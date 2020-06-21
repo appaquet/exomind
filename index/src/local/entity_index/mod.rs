@@ -524,7 +524,7 @@ where
 
         self.chain_index.apply_operations(chain_index_mutations)?;
 
-        if pending_index_mutations.len() > 0 {
+        if !pending_index_mutations.is_empty() {
             info!(
                 "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
                 pending_index_mutations.len(),
