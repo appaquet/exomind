@@ -350,8 +350,6 @@ impl SegmentFile {
 
 #[cfg(test)]
 mod tests {
-    use tempdir;
-
     use super::super::tests::create_block;
     use super::*;
     use exocore_core::cell::FullCell;

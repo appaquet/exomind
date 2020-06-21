@@ -6,8 +6,8 @@ use exocore_core::protos::generated::exocore_index::{Reference, Trait};
 use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
 use exocore_core::protos::prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt};
 
+use crate::ordering::{value_from_f32, value_from_u64, OrderingValueExt};
 use crate::query::{QueryBuilder as Q, TraitQueryBuilder as TQ};
-use crate::sorting::{value_from_f32, value_from_u64, SortingValueExt};
 
 use super::*;
 
@@ -161,8 +161,8 @@ fn search_query_matches() -> Result<(), failure::Error> {
 
     // only results from given score
     let paging = Paging {
-        after_sort_value: Some(value_from_f32(0.30, 0)),
-        before_sort_value: None,
+        after_ordering_value: Some(value_from_f32(0.30, 0)),
+        before_ordering_value: None,
         count: 10,
     };
     let query = Q::matches("bar").with_paging(paging).build();
@@ -174,8 +174,8 @@ fn search_query_matches() -> Result<(), failure::Error> {
 
     // only results before given score
     let paging = Paging {
-        after_sort_value: None,
-        before_sort_value: Some(value_from_f32(0.30, 0)),
+        after_ordering_value: None,
+        before_ordering_value: Some(value_from_f32(0.30, 0)),
         count: 10,
     };
     let query = Q::matches("bar").with_paging(paging).build();
@@ -360,8 +360,8 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
 
     // only results after given modification date
     let paging = Paging {
-        after_sort_value: Some(value_from_u64(2, u64::max_value())),
-        before_sort_value: None,
+        after_ordering_value: Some(value_from_u64(2, u64::max_value())),
+        before_ordering_value: None,
         count: 10,
     };
     let query = Q::with_trait::<TestMessage2>().with_paging(paging).build();
@@ -370,8 +370,8 @@ fn search_query_by_trait_type() -> Result<(), failure::Error> {
 
     // only results before given modification date
     let paging = Paging {
-        after_sort_value: None,
-        before_sort_value: Some(value_from_u64(3, 0)),
+        after_ordering_value: None,
+        before_ordering_value: Some(value_from_u64(3, 0)),
         count: 10,
     };
     let query = Q::with_trait::<TestMessage2>().with_paging(paging).build();

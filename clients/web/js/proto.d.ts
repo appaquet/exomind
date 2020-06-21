@@ -1307,8 +1307,8 @@ export namespace exocore {
             /** Query paging requested */
             paging?: (exocore.index.IPaging|null);
 
-            /** Query sorting */
-            sorting?: (exocore.index.ISorting|null);
+            /** Query ordering */
+            ordering?: (exocore.index.IOrdering|null);
 
             /** If true, only return summary */
             summary?: (boolean|null);
@@ -1350,8 +1350,8 @@ export namespace exocore {
             /** Query paging requested */
             public paging?: (exocore.index.IPaging|null);
 
-            /** Query sorting */
-            public sorting?: (exocore.index.ISorting|null);
+            /** Query ordering */
+            public ordering?: (exocore.index.IOrdering|null);
 
             /** If true, only return summary */
             public summary: boolean;
@@ -2327,11 +2327,11 @@ export namespace exocore {
         /** Properties of a Paging. */
         interface IPaging {
 
-            /** Returns results after this given sorting value. */
-            afterSortValue?: (exocore.index.ISortingValue|null);
+            /** Returns results after this given ordering value. */
+            afterOrderingValue?: (exocore.index.IOrderingValue|null);
 
-            /** Returns results before this given sorting value. */
-            beforeSortValue?: (exocore.index.ISortingValue|null);
+            /** Returns results before this given ordering value. */
+            beforeOrderingValue?: (exocore.index.IOrderingValue|null);
 
             /** Desired results count. Default if 0. */
             count?: (number|null);
@@ -2346,11 +2346,11 @@ export namespace exocore {
              */
             constructor(properties?: exocore.index.IPaging);
 
-            /** Returns results after this given sorting value. */
-            public afterSortValue?: (exocore.index.ISortingValue|null);
+            /** Returns results after this given ordering value. */
+            public afterOrderingValue?: (exocore.index.IOrderingValue|null);
 
-            /** Returns results before this given sorting value. */
-            public beforeSortValue?: (exocore.index.ISortingValue|null);
+            /** Returns results before this given ordering value. */
+            public beforeOrderingValue?: (exocore.index.IOrderingValue|null);
 
             /** Desired results count. Default if 0. */
             public count: number;
@@ -2426,235 +2426,235 @@ export namespace exocore {
             public toJSON(): { [k: string]: any };
         }
 
-        /** Properties of a Sorting. */
-        interface ISorting {
+        /** Properties of an Ordering. */
+        interface IOrdering {
 
-            /** Sorting score */
+            /** Ordering score */
             score?: (boolean|null);
 
-            /** Sorting operationId */
+            /** Ordering operationId */
             operationId?: (boolean|null);
 
-            /** Sorting field */
+            /** Ordering field */
             field?: (string|null);
 
-            /** Order of the results. */
+            /** Direction of ordering. */
             ascending?: (boolean|null);
         }
 
-        /** Represents a Sorting. */
-        class Sorting implements ISorting {
+        /** Represents an Ordering. */
+        class Ordering implements IOrdering {
 
             /**
-             * Constructs a new Sorting.
+             * Constructs a new Ordering.
              * @param [properties] Properties to set
              */
-            constructor(properties?: exocore.index.ISorting);
+            constructor(properties?: exocore.index.IOrdering);
 
-            /** Sorting score. */
+            /** Ordering score. */
             public score: boolean;
 
-            /** Sorting operationId. */
+            /** Ordering operationId. */
             public operationId: boolean;
 
-            /** Sorting field. */
+            /** Ordering field. */
             public field: string;
 
-            /** Order of the results. */
+            /** Direction of ordering. */
             public ascending: boolean;
 
-            /** Value by which we want results to be sorted. */
+            /** Value by which we want results to be ordered. */
             public value?: ("score"|"operationId"|"field");
 
             /**
-             * Creates a new Sorting instance using the specified properties.
+             * Creates a new Ordering instance using the specified properties.
              * @param [properties] Properties to set
-             * @returns Sorting instance
+             * @returns Ordering instance
              */
-            public static create(properties?: exocore.index.ISorting): exocore.index.Sorting;
+            public static create(properties?: exocore.index.IOrdering): exocore.index.Ordering;
 
             /**
-             * Encodes the specified Sorting message. Does not implicitly {@link exocore.index.Sorting.verify|verify} messages.
-             * @param message Sorting message or plain object to encode
+             * Encodes the specified Ordering message. Does not implicitly {@link exocore.index.Ordering.verify|verify} messages.
+             * @param message Ordering message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encode(message: exocore.index.ISorting, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encode(message: exocore.index.IOrdering, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Encodes the specified Sorting message, length delimited. Does not implicitly {@link exocore.index.Sorting.verify|verify} messages.
-             * @param message Sorting message or plain object to encode
+             * Encodes the specified Ordering message, length delimited. Does not implicitly {@link exocore.index.Ordering.verify|verify} messages.
+             * @param message Ordering message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encodeDelimited(message: exocore.index.ISorting, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encodeDelimited(message: exocore.index.IOrdering, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Decodes a Sorting message from the specified reader or buffer.
+             * Decodes an Ordering message from the specified reader or buffer.
              * @param reader Reader or buffer to decode from
              * @param [length] Message length if known beforehand
-             * @returns Sorting
+             * @returns Ordering
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.Sorting;
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.Ordering;
 
             /**
-             * Decodes a Sorting message from the specified reader or buffer, length delimited.
+             * Decodes an Ordering message from the specified reader or buffer, length delimited.
              * @param reader Reader or buffer to decode from
-             * @returns Sorting
+             * @returns Ordering
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.Sorting;
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.Ordering;
 
             /**
-             * Verifies a Sorting message.
+             * Verifies an Ordering message.
              * @param message Plain object to verify
              * @returns `null` if valid, otherwise the reason why it is not
              */
             public static verify(message: { [k: string]: any }): (string|null);
 
             /**
-             * Creates a Sorting message from a plain object. Also converts values to their respective internal types.
+             * Creates an Ordering message from a plain object. Also converts values to their respective internal types.
              * @param object Plain object
-             * @returns Sorting
+             * @returns Ordering
              */
-            public static fromObject(object: { [k: string]: any }): exocore.index.Sorting;
+            public static fromObject(object: { [k: string]: any }): exocore.index.Ordering;
 
             /**
-             * Creates a plain object from a Sorting message. Also converts values to other types if specified.
-             * @param message Sorting
+             * Creates a plain object from an Ordering message. Also converts values to other types if specified.
+             * @param message Ordering
              * @param [options] Conversion options
              * @returns Plain object
              */
-            public static toObject(message: exocore.index.Sorting, options?: $protobuf.IConversionOptions): { [k: string]: any };
+            public static toObject(message: exocore.index.Ordering, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
             /**
-             * Converts this Sorting to JSON.
+             * Converts this Ordering to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
         }
 
-        /** Properties of a SortingValue. */
-        interface ISortingValue {
+        /** Properties of an OrderingValue. */
+        interface IOrderingValue {
 
-            /** SortingValue float */
+            /** OrderingValue float */
             float?: (number|null);
 
-            /** SortingValue uint64 */
+            /** OrderingValue uint64 */
             uint64?: (number|Long|null);
 
-            /** SortingValue date */
+            /** OrderingValue date */
             date?: (google.protobuf.ITimestamp|null);
 
-            /** SortingValue min */
+            /** OrderingValue min */
             min?: (boolean|null);
 
-            /** SortingValue max */
+            /** OrderingValue max */
             max?: (boolean|null);
 
             /** ID operation used to tie break equal results */
             operationId?: (number|Long|null);
         }
 
-        /** Represents a SortingValue. */
-        class SortingValue implements ISortingValue {
+        /** Represents an OrderingValue. */
+        class OrderingValue implements IOrderingValue {
 
             /**
-             * Constructs a new SortingValue.
+             * Constructs a new OrderingValue.
              * @param [properties] Properties to set
              */
-            constructor(properties?: exocore.index.ISortingValue);
+            constructor(properties?: exocore.index.IOrderingValue);
 
-            /** SortingValue float. */
+            /** OrderingValue float. */
             public float: number;
 
-            /** SortingValue uint64. */
+            /** OrderingValue uint64. */
             public uint64: (number|Long);
 
-            /** SortingValue date. */
+            /** OrderingValue date. */
             public date?: (google.protobuf.ITimestamp|null);
 
-            /** SortingValue min. */
+            /** OrderingValue min. */
             public min: boolean;
 
-            /** SortingValue max. */
+            /** OrderingValue max. */
             public max: boolean;
 
             /** ID operation used to tie break equal results */
             public operationId: (number|Long);
 
-            /** SortingValue value. */
+            /** OrderingValue value. */
             public value?: ("float"|"uint64"|"date"|"min"|"max");
 
             /**
-             * Creates a new SortingValue instance using the specified properties.
+             * Creates a new OrderingValue instance using the specified properties.
              * @param [properties] Properties to set
-             * @returns SortingValue instance
+             * @returns OrderingValue instance
              */
-            public static create(properties?: exocore.index.ISortingValue): exocore.index.SortingValue;
+            public static create(properties?: exocore.index.IOrderingValue): exocore.index.OrderingValue;
 
             /**
-             * Encodes the specified SortingValue message. Does not implicitly {@link exocore.index.SortingValue.verify|verify} messages.
-             * @param message SortingValue message or plain object to encode
+             * Encodes the specified OrderingValue message. Does not implicitly {@link exocore.index.OrderingValue.verify|verify} messages.
+             * @param message OrderingValue message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encode(message: exocore.index.ISortingValue, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encode(message: exocore.index.IOrderingValue, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Encodes the specified SortingValue message, length delimited. Does not implicitly {@link exocore.index.SortingValue.verify|verify} messages.
-             * @param message SortingValue message or plain object to encode
+             * Encodes the specified OrderingValue message, length delimited. Does not implicitly {@link exocore.index.OrderingValue.verify|verify} messages.
+             * @param message OrderingValue message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encodeDelimited(message: exocore.index.ISortingValue, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encodeDelimited(message: exocore.index.IOrderingValue, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Decodes a SortingValue message from the specified reader or buffer.
+             * Decodes an OrderingValue message from the specified reader or buffer.
              * @param reader Reader or buffer to decode from
              * @param [length] Message length if known beforehand
-             * @returns SortingValue
+             * @returns OrderingValue
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.SortingValue;
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.OrderingValue;
 
             /**
-             * Decodes a SortingValue message from the specified reader or buffer, length delimited.
+             * Decodes an OrderingValue message from the specified reader or buffer, length delimited.
              * @param reader Reader or buffer to decode from
-             * @returns SortingValue
+             * @returns OrderingValue
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.SortingValue;
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.OrderingValue;
 
             /**
-             * Verifies a SortingValue message.
+             * Verifies an OrderingValue message.
              * @param message Plain object to verify
              * @returns `null` if valid, otherwise the reason why it is not
              */
             public static verify(message: { [k: string]: any }): (string|null);
 
             /**
-             * Creates a SortingValue message from a plain object. Also converts values to their respective internal types.
+             * Creates an OrderingValue message from a plain object. Also converts values to their respective internal types.
              * @param object Plain object
-             * @returns SortingValue
+             * @returns OrderingValue
              */
-            public static fromObject(object: { [k: string]: any }): exocore.index.SortingValue;
+            public static fromObject(object: { [k: string]: any }): exocore.index.OrderingValue;
 
             /**
-             * Creates a plain object from a SortingValue message. Also converts values to other types if specified.
-             * @param message SortingValue
+             * Creates a plain object from an OrderingValue message. Also converts values to other types if specified.
+             * @param message OrderingValue
              * @param [options] Conversion options
              * @returns Plain object
              */
-            public static toObject(message: exocore.index.SortingValue, options?: $protobuf.IConversionOptions): { [k: string]: any };
+            public static toObject(message: exocore.index.OrderingValue, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
             /**
-             * Converts this SortingValue to JSON.
+             * Converts this OrderingValue to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
@@ -2789,8 +2789,8 @@ export namespace exocore {
             /** EntityResult source */
             source?: (exocore.index.EntityResultSource|null);
 
-            /** EntityResult sortingValue */
-            sortingValue?: (exocore.index.ISortingValue|null);
+            /** EntityResult orderingValue */
+            orderingValue?: (exocore.index.IOrderingValue|null);
         }
 
         /** Represents an EntityResult. */
@@ -2808,8 +2808,8 @@ export namespace exocore {
             /** EntityResult source. */
             public source: exocore.index.EntityResultSource;
 
-            /** EntityResult sortingValue. */
-            public sortingValue?: (exocore.index.ISortingValue|null);
+            /** EntityResult orderingValue. */
+            public orderingValue?: (exocore.index.IOrderingValue|null);
 
             /**
              * Creates a new EntityResult instance using the specified properties.

@@ -131,15 +131,15 @@ public struct Exocore_Index_EntityQuery {
   /// Clears the value of `paging`. Subsequent reads from it will return its default value.
   public mutating func clearPaging() {_uniqueStorage()._paging = nil}
 
-  //// Query sorting
-  public var sorting: Exocore_Index_Sorting {
-    get {return _storage._sorting ?? Exocore_Index_Sorting()}
-    set {_uniqueStorage()._sorting = newValue}
+  //// Query ordering
+  public var ordering: Exocore_Index_Ordering {
+    get {return _storage._ordering ?? Exocore_Index_Ordering()}
+    set {_uniqueStorage()._ordering = newValue}
   }
-  /// Returns true if `sorting` has been explicitly set.
-  public var hasSorting: Bool {return _storage._sorting != nil}
-  /// Clears the value of `sorting`. Subsequent reads from it will return its default value.
-  public mutating func clearSorting() {_uniqueStorage()._sorting = nil}
+  /// Returns true if `ordering` has been explicitly set.
+  public var hasOrdering: Bool {return _storage._ordering != nil}
+  /// Clears the value of `ordering`. Subsequent reads from it will return its default value.
+  public mutating func clearOrdering() {_uniqueStorage()._ordering = nil}
 
   //// If true, only return summary
   public var summary: Bool {
@@ -504,25 +504,25 @@ public struct Exocore_Index_Paging {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// Returns results after this given sorting value.
-  public var afterSortValue: Exocore_Index_SortingValue {
-    get {return _storage._afterSortValue ?? Exocore_Index_SortingValue()}
-    set {_uniqueStorage()._afterSortValue = newValue}
+  //// Returns results after this given ordering value.
+  public var afterOrderingValue: Exocore_Index_OrderingValue {
+    get {return _storage._afterOrderingValue ?? Exocore_Index_OrderingValue()}
+    set {_uniqueStorage()._afterOrderingValue = newValue}
   }
-  /// Returns true if `afterSortValue` has been explicitly set.
-  public var hasAfterSortValue: Bool {return _storage._afterSortValue != nil}
-  /// Clears the value of `afterSortValue`. Subsequent reads from it will return its default value.
-  public mutating func clearAfterSortValue() {_uniqueStorage()._afterSortValue = nil}
+  /// Returns true if `afterOrderingValue` has been explicitly set.
+  public var hasAfterOrderingValue: Bool {return _storage._afterOrderingValue != nil}
+  /// Clears the value of `afterOrderingValue`. Subsequent reads from it will return its default value.
+  public mutating func clearAfterOrderingValue() {_uniqueStorage()._afterOrderingValue = nil}
 
-  //// Returns results before this given sorting value.
-  public var beforeSortValue: Exocore_Index_SortingValue {
-    get {return _storage._beforeSortValue ?? Exocore_Index_SortingValue()}
-    set {_uniqueStorage()._beforeSortValue = newValue}
+  //// Returns results before this given ordering value.
+  public var beforeOrderingValue: Exocore_Index_OrderingValue {
+    get {return _storage._beforeOrderingValue ?? Exocore_Index_OrderingValue()}
+    set {_uniqueStorage()._beforeOrderingValue = newValue}
   }
-  /// Returns true if `beforeSortValue` has been explicitly set.
-  public var hasBeforeSortValue: Bool {return _storage._beforeSortValue != nil}
-  /// Clears the value of `beforeSortValue`. Subsequent reads from it will return its default value.
-  public mutating func clearBeforeSortValue() {_uniqueStorage()._beforeSortValue = nil}
+  /// Returns true if `beforeOrderingValue` has been explicitly set.
+  public var hasBeforeOrderingValue: Bool {return _storage._beforeOrderingValue != nil}
+  /// Clears the value of `beforeOrderingValue`. Subsequent reads from it will return its default value.
+  public mutating func clearBeforeOrderingValue() {_uniqueStorage()._beforeOrderingValue = nil}
 
   //// Desired results count. Default if 0.
   public var count: UInt32 {
@@ -537,13 +537,13 @@ public struct Exocore_Index_Paging {
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
-public struct Exocore_Index_Sorting {
+public struct Exocore_Index_Ordering {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// Value by which we want results to be sorted.
-  public var value: Exocore_Index_Sorting.OneOf_Value? = nil
+  //// Value by which we want results to be ordered.
+  public var value: Exocore_Index_Ordering.OneOf_Value? = nil
 
   public var score: Bool {
     get {
@@ -569,19 +569,19 @@ public struct Exocore_Index_Sorting {
     set {value = .field(newValue)}
   }
 
-  //// Order of the results.
+  //// Direction of ordering.
   public var ascending: Bool = false
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  //// Value by which we want results to be sorted.
+  //// Value by which we want results to be ordered.
   public enum OneOf_Value: Equatable {
     case score(Bool)
     case operationID(Bool)
     case field(String)
 
   #if !swift(>=4.1)
-    public static func ==(lhs: Exocore_Index_Sorting.OneOf_Value, rhs: Exocore_Index_Sorting.OneOf_Value) -> Bool {
+    public static func ==(lhs: Exocore_Index_Ordering.OneOf_Value, rhs: Exocore_Index_Ordering.OneOf_Value) -> Bool {
       switch (lhs, rhs) {
       case (.score(let l), .score(let r)): return l == r
       case (.operationID(let l), .operationID(let r)): return l == r
@@ -595,7 +595,7 @@ public struct Exocore_Index_Sorting {
   public init() {}
 }
 
-public struct Exocore_Index_SortingValue {
+public struct Exocore_Index_OrderingValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -661,7 +661,7 @@ public struct Exocore_Index_SortingValue {
     case max(Bool)
 
   #if !swift(>=4.1)
-    public static func ==(lhs: Exocore_Index_SortingValue.OneOf_Value, rhs: Exocore_Index_SortingValue.OneOf_Value) -> Bool {
+    public static func ==(lhs: Exocore_Index_OrderingValue.OneOf_Value, rhs: Exocore_Index_OrderingValue.OneOf_Value) -> Bool {
       switch (lhs, rhs) {
       case (.float(let l), .float(let r)): return l == r
       case (.uint64(let l), .uint64(let r)): return l == r
@@ -748,14 +748,14 @@ public struct Exocore_Index_EntityResult {
     set {_uniqueStorage()._source = newValue}
   }
 
-  public var sortingValue: Exocore_Index_SortingValue {
-    get {return _storage._sortingValue ?? Exocore_Index_SortingValue()}
-    set {_uniqueStorage()._sortingValue = newValue}
+  public var orderingValue: Exocore_Index_OrderingValue {
+    get {return _storage._orderingValue ?? Exocore_Index_OrderingValue()}
+    set {_uniqueStorage()._orderingValue = newValue}
   }
-  /// Returns true if `sortingValue` has been explicitly set.
-  public var hasSortingValue: Bool {return _storage._sortingValue != nil}
-  /// Clears the value of `sortingValue`. Subsequent reads from it will return its default value.
-  public mutating func clearSortingValue() {_uniqueStorage()._sortingValue = nil}
+  /// Returns true if `orderingValue` has been explicitly set.
+  public var hasOrderingValue: Bool {return _storage._orderingValue != nil}
+  /// Clears the value of `orderingValue`. Subsequent reads from it will return its default value.
+  public mutating func clearOrderingValue() {_uniqueStorage()._orderingValue = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -786,7 +786,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
     10: .same(proto: "operations"),
     99: .same(proto: "test"),
     5: .same(proto: "paging"),
-    6: .same(proto: "sorting"),
+    6: .same(proto: "ordering"),
     7: .same(proto: "summary"),
     8: .standard(proto: "watch_token"),
     9: .standard(proto: "result_hash"),
@@ -795,7 +795,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
   fileprivate class _StorageClass {
     var _predicate: Exocore_Index_EntityQuery.OneOf_Predicate?
     var _paging: Exocore_Index_Paging? = nil
-    var _sorting: Exocore_Index_Sorting? = nil
+    var _ordering: Exocore_Index_Ordering? = nil
     var _summary: Bool = false
     var _watchToken: UInt64 = 0
     var _resultHash: UInt64 = 0
@@ -807,7 +807,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
     init(copying source: _StorageClass) {
       _predicate = source._predicate
       _paging = source._paging
-      _sorting = source._sorting
+      _ordering = source._ordering
       _summary = source._summary
       _watchToken = source._watchToken
       _resultHash = source._resultHash
@@ -859,7 +859,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
           try decoder.decodeSingularMessageField(value: &v)
           if let v = v {_storage._predicate = .reference(v)}
         case 5: try decoder.decodeSingularMessageField(value: &_storage._paging)
-        case 6: try decoder.decodeSingularMessageField(value: &_storage._sorting)
+        case 6: try decoder.decodeSingularMessageField(value: &_storage._ordering)
         case 7: try decoder.decodeSingularBoolField(value: &_storage._summary)
         case 8: try decoder.decodeSingularUInt64Field(value: &_storage._watchToken)
         case 9: try decoder.decodeSingularUInt64Field(value: &_storage._resultHash)
@@ -902,7 +902,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
       if let v = _storage._paging {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
       }
-      if let v = _storage._sorting {
+      if let v = _storage._ordering {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
       }
       if _storage._summary != false {
@@ -933,7 +933,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
         let rhs_storage = _args.1
         if _storage._predicate != rhs_storage._predicate {return false}
         if _storage._paging != rhs_storage._paging {return false}
-        if _storage._sorting != rhs_storage._sorting {return false}
+        if _storage._ordering != rhs_storage._ordering {return false}
         if _storage._summary != rhs_storage._summary {return false}
         if _storage._watchToken != rhs_storage._watchToken {return false}
         if _storage._resultHash != rhs_storage._resultHash {return false}
@@ -1450,14 +1450,14 @@ extension Exocore_Index_ReferencePredicate: SwiftProtobuf.Message, SwiftProtobuf
 extension Exocore_Index_Paging: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Paging"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "after_sort_value"),
-    2: .standard(proto: "before_sort_value"),
+    1: .standard(proto: "after_ordering_value"),
+    2: .standard(proto: "before_ordering_value"),
     3: .same(proto: "count"),
   ]
 
   fileprivate class _StorageClass {
-    var _afterSortValue: Exocore_Index_SortingValue? = nil
-    var _beforeSortValue: Exocore_Index_SortingValue? = nil
+    var _afterOrderingValue: Exocore_Index_OrderingValue? = nil
+    var _beforeOrderingValue: Exocore_Index_OrderingValue? = nil
     var _count: UInt32 = 0
 
     static let defaultInstance = _StorageClass()
@@ -1465,8 +1465,8 @@ extension Exocore_Index_Paging: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     private init() {}
 
     init(copying source: _StorageClass) {
-      _afterSortValue = source._afterSortValue
-      _beforeSortValue = source._beforeSortValue
+      _afterOrderingValue = source._afterOrderingValue
+      _beforeOrderingValue = source._beforeOrderingValue
       _count = source._count
     }
   }
@@ -1483,8 +1483,8 @@ extension Exocore_Index_Paging: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
         switch fieldNumber {
-        case 1: try decoder.decodeSingularMessageField(value: &_storage._afterSortValue)
-        case 2: try decoder.decodeSingularMessageField(value: &_storage._beforeSortValue)
+        case 1: try decoder.decodeSingularMessageField(value: &_storage._afterOrderingValue)
+        case 2: try decoder.decodeSingularMessageField(value: &_storage._beforeOrderingValue)
         case 3: try decoder.decodeSingularUInt32Field(value: &_storage._count)
         default: break
         }
@@ -1494,10 +1494,10 @@ extension Exocore_Index_Paging: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      if let v = _storage._afterSortValue {
+      if let v = _storage._afterOrderingValue {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
       }
-      if let v = _storage._beforeSortValue {
+      if let v = _storage._beforeOrderingValue {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
       }
       if _storage._count != 0 {
@@ -1512,8 +1512,8 @@ extension Exocore_Index_Paging: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
         let rhs_storage = _args.1
-        if _storage._afterSortValue != rhs_storage._afterSortValue {return false}
-        if _storage._beforeSortValue != rhs_storage._beforeSortValue {return false}
+        if _storage._afterOrderingValue != rhs_storage._afterOrderingValue {return false}
+        if _storage._beforeOrderingValue != rhs_storage._beforeOrderingValue {return false}
         if _storage._count != rhs_storage._count {return false}
         return true
       }
@@ -1524,8 +1524,8 @@ extension Exocore_Index_Paging: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
   }
 }
 
-extension Exocore_Index_Sorting: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Sorting"
+extension Exocore_Index_Ordering: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Ordering"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "score"),
     2: .standard(proto: "operation_id"),
@@ -1573,7 +1573,7 @@ extension Exocore_Index_Sorting: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Exocore_Index_Sorting, rhs: Exocore_Index_Sorting) -> Bool {
+  public static func ==(lhs: Exocore_Index_Ordering, rhs: Exocore_Index_Ordering) -> Bool {
     if lhs.value != rhs.value {return false}
     if lhs.ascending != rhs.ascending {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1581,8 +1581,8 @@ extension Exocore_Index_Sorting: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
   }
 }
 
-extension Exocore_Index_SortingValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".SortingValue"
+extension Exocore_Index_OrderingValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".OrderingValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "float"),
     2: .same(proto: "uint64"),
@@ -1593,7 +1593,7 @@ extension Exocore_Index_SortingValue: SwiftProtobuf.Message, SwiftProtobuf._Mess
   ]
 
   fileprivate class _StorageClass {
-    var _value: Exocore_Index_SortingValue.OneOf_Value?
+    var _value: Exocore_Index_OrderingValue.OneOf_Value?
     var _operationID: UInt64 = 0
 
     static let defaultInstance = _StorageClass()
@@ -1675,7 +1675,7 @@ extension Exocore_Index_SortingValue: SwiftProtobuf.Message, SwiftProtobuf._Mess
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Exocore_Index_SortingValue, rhs: Exocore_Index_SortingValue) -> Bool {
+  public static func ==(lhs: Exocore_Index_OrderingValue, rhs: Exocore_Index_OrderingValue) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
@@ -1797,13 +1797,13 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "entity"),
     2: .same(proto: "source"),
-    3: .standard(proto: "sorting_value"),
+    3: .standard(proto: "ordering_value"),
   ]
 
   fileprivate class _StorageClass {
     var _entity: Exocore_Index_Entity? = nil
     var _source: Exocore_Index_EntityResultSource = .unknown
-    var _sortingValue: Exocore_Index_SortingValue? = nil
+    var _orderingValue: Exocore_Index_OrderingValue? = nil
 
     static let defaultInstance = _StorageClass()
 
@@ -1812,7 +1812,7 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
     init(copying source: _StorageClass) {
       _entity = source._entity
       _source = source._source
-      _sortingValue = source._sortingValue
+      _orderingValue = source._orderingValue
     }
   }
 
@@ -1830,7 +1830,7 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
         switch fieldNumber {
         case 1: try decoder.decodeSingularMessageField(value: &_storage._entity)
         case 2: try decoder.decodeSingularEnumField(value: &_storage._source)
-        case 3: try decoder.decodeSingularMessageField(value: &_storage._sortingValue)
+        case 3: try decoder.decodeSingularMessageField(value: &_storage._orderingValue)
         default: break
         }
       }
@@ -1845,7 +1845,7 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
       if _storage._source != .unknown {
         try visitor.visitSingularEnumField(value: _storage._source, fieldNumber: 2)
       }
-      if let v = _storage._sortingValue {
+      if let v = _storage._orderingValue {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
       }
     }
@@ -1859,7 +1859,7 @@ extension Exocore_Index_EntityResult: SwiftProtobuf.Message, SwiftProtobuf._Mess
         let rhs_storage = _args.1
         if _storage._entity != rhs_storage._entity {return false}
         if _storage._source != rhs_storage._source {return false}
-        if _storage._sortingValue != rhs_storage._sortingValue {return false}
+        if _storage._orderingValue != rhs_storage._orderingValue {return false}
         return true
       }
       if !storagesAreEqual {return false}

@@ -444,11 +444,9 @@ pub enum DirectoryError {
 
 #[cfg(test)]
 pub mod tests {
-    use itertools::Itertools;
-    use tempdir;
-
     use exocore_core::cell::LocalNode;
     use exocore_core::utils::range;
+    use itertools::Itertools;
 
     use crate::block::{Block, BlockOperations, BlockOwned};
 

@@ -28,9 +28,9 @@ pub struct EntityQuery {
     //// Query paging requested
     #[prost(message, optional, tag = "5")]
     pub paging: ::std::option::Option<Paging>,
-    //// Query sorting
+    //// Query ordering
     #[prost(message, optional, tag = "6")]
-    pub sorting: ::std::option::Option<Sorting>,
+    pub ordering: ::std::option::Option<Ordering>,
     //// If true, only return summary
     #[prost(bool, tag = "7")]
     pub summary: bool,
@@ -158,27 +158,27 @@ pub struct ReferencePredicate {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Paging {
-    //// Returns results after this given sorting value.
+    //// Returns results after this given ordering value.
     #[prost(message, optional, tag = "1")]
-    pub after_sort_value: ::std::option::Option<SortingValue>,
-    //// Returns results before this given sorting value.
+    pub after_ordering_value: ::std::option::Option<OrderingValue>,
+    //// Returns results before this given ordering value.
     #[prost(message, optional, tag = "2")]
-    pub before_sort_value: ::std::option::Option<SortingValue>,
+    pub before_ordering_value: ::std::option::Option<OrderingValue>,
     //// Desired results count. Default if 0.
     #[prost(uint32, tag = "3")]
     pub count: u32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Sorting {
-    //// Order of the results.
+pub struct Ordering {
+    //// Direction of ordering.
     #[prost(bool, tag = "4")]
     pub ascending: bool,
-    //// Value by which we want results to be sorted.
-    #[prost(oneof = "sorting::Value", tags = "1, 2, 3")]
-    pub value: ::std::option::Option<sorting::Value>,
+    //// Value by which we want results to be ordered.
+    #[prost(oneof = "ordering::Value", tags = "1, 2, 3")]
+    pub value: ::std::option::Option<ordering::Value>,
 }
-pub mod sorting {
-    //// Value by which we want results to be sorted.
+pub mod ordering {
+    //// Value by which we want results to be ordered.
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         #[prost(bool, tag = "1")]
@@ -190,14 +190,14 @@ pub mod sorting {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SortingValue {
+pub struct OrderingValue {
     //// ID operation used to tie break equal results
     #[prost(uint64, tag = "6")]
     pub operation_id: u64,
-    #[prost(oneof = "sorting_value::Value", tags = "1, 2, 3, 4, 5")]
-    pub value: ::std::option::Option<sorting_value::Value>,
+    #[prost(oneof = "ordering_value::Value", tags = "1, 2, 3, 4, 5")]
+    pub value: ::std::option::Option<ordering_value::Value>,
 }
-pub mod sorting_value {
+pub mod ordering_value {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         #[prost(float, tag = "1")]
@@ -234,7 +234,7 @@ pub struct EntityResult {
     #[prost(enumeration = "EntityResultSource", tag = "2")]
     pub source: i32,
     #[prost(message, optional, tag = "3")]
-    pub sorting_value: ::std::option::Option<SortingValue>,
+    pub ordering_value: ::std::option::Option<OrderingValue>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]

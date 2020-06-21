@@ -1,13 +1,13 @@
 use exocore_chain::operation::OperationId;
-use exocore_core::protos::generated::exocore_index::{sorting_value, Paging, SortingValue};
+use exocore_core::protos::generated::exocore_index::{ordering_value, OrderingValue, Paging};
 use std::cmp::Ordering;
 
-/// Wraps a trait or entities search result's sorting value so that it can be
+/// Wraps a trait or entities search result's ordering value so that it can be
 /// easily reversed when required or ignored if it's outside of the requested
 /// paging.
 #[derive(Clone, Debug, PartialEq)]
-pub struct SortingValueWrapper {
-    pub value: SortingValue,
+pub struct OrderingValueWrapper {
+    pub value: OrderingValue,
     pub reverse: bool,
 
     // means that this result should not be returned (probably because it's not withing paging)
@@ -15,7 +15,7 @@ pub struct SortingValueWrapper {
     pub ignore: bool,
 }
 
-impl PartialOrd for SortingValueWrapper {
+impl PartialOrd for OrderingValueWrapper {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         // an ignored result should be always be less, unless they are both
         if self.ignore && other.ignore {
@@ -37,35 +37,35 @@ impl PartialOrd for SortingValueWrapper {
     }
 }
 
-impl Ord for SortingValueWrapper {
+impl Ord for OrderingValueWrapper {
     fn cmp(&self, other: &Self) -> Ordering {
         self.partial_cmp(other).unwrap()
     }
 }
 
-impl Eq for SortingValueWrapper {}
+impl Eq for OrderingValueWrapper {}
 
-impl SortingValueWrapper {
-    pub fn is_within_bound(&self, lower: &SortingValue, higher: &SortingValue) -> bool {
+impl OrderingValueWrapper {
+    pub fn is_within_bound(&self, lower: &OrderingValue, higher: &OrderingValue) -> bool {
         self.value.is_after(lower) && self.value.is_before(higher)
     }
 }
 
-/// Extensions of sorting value to add comparison methods.
-pub trait SortingValueExt {
+/// Extensions of ordering value to add comparison methods.
+pub trait OrderingValueExt {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering>;
     fn is_after(&self, other: &Self) -> bool;
     fn is_before(&self, other: &Self) -> bool;
     fn is_within_page_bound(&self, page: &Paging) -> bool;
 }
 
-impl SortingValueExt for SortingValue {
+impl OrderingValueExt for OrderingValue {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.value == other.value {
             return self.operation_id.partial_cmp(&other.operation_id);
         }
 
-        use sorting_value::Value as V;
+        use ordering_value::Value as V;
         use std::cmp::Ordering as O;
         match (self.value.as_ref(), other.value.as_ref()) {
             (Some(V::Min(_)), _) => Some(O::Less),
@@ -102,13 +102,13 @@ impl SortingValueExt for SortingValue {
     }
 
     fn is_within_page_bound(&self, page: &Paging) -> bool {
-        if let Some(before) = page.before_sort_value.as_ref() {
+        if let Some(before) = page.before_ordering_value.as_ref() {
             if !self.is_before(before) {
                 return false;
             }
         }
 
-        if let Some(after) = page.after_sort_value.as_ref() {
+        if let Some(after) = page.after_ordering_value.as_ref() {
             if !self.is_after(after) {
                 return false;
             }
@@ -118,30 +118,30 @@ impl SortingValueExt for SortingValue {
     }
 }
 
-pub fn value_from_u64(value: u64, operation_id: OperationId) -> SortingValue {
-    SortingValue {
-        value: Some(sorting_value::Value::Uint64(value)),
+pub fn value_from_u64(value: u64, operation_id: OperationId) -> OrderingValue {
+    OrderingValue {
+        value: Some(ordering_value::Value::Uint64(value)),
         operation_id,
     }
 }
 
-pub fn value_from_f32(value: f32, operation_id: OperationId) -> SortingValue {
-    SortingValue {
-        value: Some(sorting_value::Value::Float(value)),
+pub fn value_from_f32(value: f32, operation_id: OperationId) -> OrderingValue {
+    OrderingValue {
+        value: Some(ordering_value::Value::Float(value)),
         operation_id,
     }
 }
 
-pub fn value_max() -> SortingValue {
-    SortingValue {
-        value: Some(sorting_value::Value::Max(true)),
+pub fn value_max() -> OrderingValue {
+    OrderingValue {
+        value: Some(ordering_value::Value::Max(true)),
         operation_id: 0,
     }
 }
 
-pub fn value_min() -> SortingValue {
-    SortingValue {
-        value: Some(sorting_value::Value::Min(true)),
+pub fn value_min() -> OrderingValue {
+    OrderingValue {
+        value: Some(ordering_value::Value::Min(true)),
         operation_id: 0,
     }
 }

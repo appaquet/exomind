@@ -91,7 +91,7 @@ export const exocore = $root.exocore = (() => {
             Entity.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                if (message.id != null && message.hasOwnProperty("id"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
                 if (message.traits != null && message.traits.length)
                     for (let i = 0; i < message.traits.length; ++i)
@@ -339,13 +339,13 @@ export const exocore = $root.exocore = (() => {
             Trait.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                if (message.id != null && message.hasOwnProperty("id"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
-                if (message.message != null && Object.hasOwnProperty.call(message, "message"))
+                if (message.message != null && message.hasOwnProperty("message"))
                     $root.google.protobuf.Any.encode(message.message, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.creationDate != null && Object.hasOwnProperty.call(message, "creationDate"))
+                if (message.creationDate != null && message.hasOwnProperty("creationDate"))
                     $root.google.protobuf.Timestamp.encode(message.creationDate, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.modificationDate != null && Object.hasOwnProperty.call(message, "modificationDate"))
+                if (message.modificationDate != null && message.hasOwnProperty("modificationDate"))
                     $root.google.protobuf.Timestamp.encode(message.modificationDate, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
                 return writer;
             };
@@ -590,9 +590,9 @@ export const exocore = $root.exocore = (() => {
             Reference.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entityId != null && Object.hasOwnProperty.call(message, "entityId"))
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.entityId);
-                if (message.traitId != null && Object.hasOwnProperty.call(message, "traitId"))
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.traitId);
                 return writer;
             };
@@ -813,9 +813,9 @@ export const exocore = $root.exocore = (() => {
                 if (message.mutations != null && message.mutations.length)
                     for (let i = 0; i < message.mutations.length; ++i)
                         $root.exocore.index.EntityMutation.encode(message.mutations[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.waitIndexed != null && Object.hasOwnProperty.call(message, "waitIndexed"))
+                if (message.waitIndexed != null && message.hasOwnProperty("waitIndexed"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.waitIndexed);
-                if (message.returnEntities != null && Object.hasOwnProperty.call(message, "returnEntities"))
+                if (message.returnEntities != null && message.hasOwnProperty("returnEntities"))
                     writer.uint32(/* id 3, wireType 0 =*/24).bool(message.returnEntities);
                 return writer;
             };
@@ -1378,19 +1378,19 @@ export const exocore = $root.exocore = (() => {
             EntityMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entityId != null && Object.hasOwnProperty.call(message, "entityId"))
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.entityId);
-                if (message.putTrait != null && Object.hasOwnProperty.call(message, "putTrait"))
+                if (message.putTrait != null && message.hasOwnProperty("putTrait"))
                     $root.exocore.index.PutTraitMutation.encode(message.putTrait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.deleteTrait != null && Object.hasOwnProperty.call(message, "deleteTrait"))
+                if (message.deleteTrait != null && message.hasOwnProperty("deleteTrait"))
                     $root.exocore.index.DeleteTraitMutation.encode(message.deleteTrait, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.deleteEntity != null && Object.hasOwnProperty.call(message, "deleteEntity"))
+                if (message.deleteEntity != null && message.hasOwnProperty("deleteEntity"))
                     $root.exocore.index.DeleteEntityMutation.encode(message.deleteEntity, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.updateTrait != null && Object.hasOwnProperty.call(message, "updateTrait"))
+                if (message.updateTrait != null && message.hasOwnProperty("updateTrait"))
                     $root.exocore.index.UpdateTraitMutation.encode(message.updateTrait, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.compactTrait != null && Object.hasOwnProperty.call(message, "compactTrait"))
+                if (message.compactTrait != null && message.hasOwnProperty("compactTrait"))
                     $root.exocore.index.CompactTraitMutation.encode(message.compactTrait, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-                if (message.test != null && Object.hasOwnProperty.call(message, "test"))
+                if (message.test != null && message.hasOwnProperty("test"))
                     $root.exocore.index.TestMutation.encode(message.test, writer.uint32(/* id 99, wireType 2 =*/794).fork()).ldelim();
                 return writer;
             };
@@ -1714,7 +1714,7 @@ export const exocore = $root.exocore = (() => {
             PutTraitMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.trait != null && Object.hasOwnProperty.call(message, "trait"))
+                if (message.trait != null && message.hasOwnProperty("trait"))
                     $root.exocore.index.Trait.encode(message.trait, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 return writer;
             };
@@ -1906,7 +1906,7 @@ export const exocore = $root.exocore = (() => {
             DeleteTraitMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.traitId != null && Object.hasOwnProperty.call(message, "traitId"))
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.traitId);
                 return writer;
             };
@@ -2280,13 +2280,13 @@ export const exocore = $root.exocore = (() => {
             UpdateTraitMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.traitId != null && Object.hasOwnProperty.call(message, "traitId"))
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.traitId);
-                if (message.trait != null && Object.hasOwnProperty.call(message, "trait"))
+                if (message.trait != null && message.hasOwnProperty("trait"))
                     $root.exocore.index.Trait.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.fieldMask != null && Object.hasOwnProperty.call(message, "fieldMask"))
+                if (message.fieldMask != null && message.hasOwnProperty("fieldMask"))
                     $root.google.protobuf.FieldMask.encode(message.fieldMask, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.ifLastOperationId != null && Object.hasOwnProperty.call(message, "ifLastOperationId"))
+                if (message.ifLastOperationId != null && message.hasOwnProperty("ifLastOperationId"))
                     writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.ifLastOperationId);
                 return writer;
             };
@@ -2544,7 +2544,7 @@ export const exocore = $root.exocore = (() => {
                 if (message.compactedOperations != null && message.compactedOperations.length)
                     for (let i = 0; i < message.compactedOperations.length; ++i)
                         $root.exocore.index.CompactTraitMutation.Operation.encode(message.compactedOperations[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.trait != null && Object.hasOwnProperty.call(message, "trait"))
+                if (message.trait != null && message.hasOwnProperty("trait"))
                     $root.exocore.index.Trait.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -2764,7 +2764,7 @@ export const exocore = $root.exocore = (() => {
                 Operation.encode = function encode(message, writer) {
                     if (!writer)
                         writer = $Writer.create();
-                    if (message.operationId != null && Object.hasOwnProperty.call(message, "operationId"))
+                    if (message.operationId != null && message.hasOwnProperty("operationId"))
                         writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.operationId);
                     return writer;
                 };
@@ -2968,7 +2968,7 @@ export const exocore = $root.exocore = (() => {
             TestMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.success != null && Object.hasOwnProperty.call(message, "success"))
+                if (message.success != null && message.hasOwnProperty("success"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.success);
                 return writer;
             };
@@ -3112,7 +3112,7 @@ export const exocore = $root.exocore = (() => {
              * @property {exocore.index.IOperationsPredicate|null} [operations] EntityQuery operations
              * @property {exocore.index.ITestPredicate|null} [test] EntityQuery test
              * @property {exocore.index.IPaging|null} [paging] Query paging requested
-             * @property {exocore.index.ISorting|null} [sorting] Query sorting
+             * @property {exocore.index.IOrdering|null} [ordering] Query ordering
              * @property {boolean|null} [summary] If true, only return summary
              * @property {number|Long|null} [watchToken] Optional watch token if this query is to be used for watching.
              * @property {number|Long|null} [resultHash] If specified, if results from server matches this hash, only a summary will be returned.
@@ -3190,12 +3190,12 @@ export const exocore = $root.exocore = (() => {
             EntityQuery.prototype.paging = null;
 
             /**
-             * Query sorting
-             * @member {exocore.index.ISorting|null|undefined} sorting
+             * Query ordering
+             * @member {exocore.index.IOrdering|null|undefined} ordering
              * @memberof exocore.index.EntityQuery
              * @instance
              */
-            EntityQuery.prototype.sorting = null;
+            EntityQuery.prototype.ordering = null;
 
             /**
              * If true, only return summary
@@ -3259,27 +3259,27 @@ export const exocore = $root.exocore = (() => {
             EntityQuery.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.match != null && Object.hasOwnProperty.call(message, "match"))
+                if (message.match != null && message.hasOwnProperty("match"))
                     $root.exocore.index.MatchPredicate.encode(message.match, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.trait != null && Object.hasOwnProperty.call(message, "trait"))
+                if (message.trait != null && message.hasOwnProperty("trait"))
                     $root.exocore.index.TraitPredicate.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.ids != null && Object.hasOwnProperty.call(message, "ids"))
+                if (message.ids != null && message.hasOwnProperty("ids"))
                     $root.exocore.index.IdsPredicate.encode(message.ids, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.reference != null && Object.hasOwnProperty.call(message, "reference"))
+                if (message.reference != null && message.hasOwnProperty("reference"))
                     $root.exocore.index.ReferencePredicate.encode(message.reference, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.paging != null && Object.hasOwnProperty.call(message, "paging"))
+                if (message.paging != null && message.hasOwnProperty("paging"))
                     $root.exocore.index.Paging.encode(message.paging, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.sorting != null && Object.hasOwnProperty.call(message, "sorting"))
-                    $root.exocore.index.Sorting.encode(message.sorting, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-                if (message.summary != null && Object.hasOwnProperty.call(message, "summary"))
+                if (message.ordering != null && message.hasOwnProperty("ordering"))
+                    $root.exocore.index.Ordering.encode(message.ordering, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+                if (message.summary != null && message.hasOwnProperty("summary"))
                     writer.uint32(/* id 7, wireType 0 =*/56).bool(message.summary);
-                if (message.watchToken != null && Object.hasOwnProperty.call(message, "watchToken"))
+                if (message.watchToken != null && message.hasOwnProperty("watchToken"))
                     writer.uint32(/* id 8, wireType 0 =*/64).uint64(message.watchToken);
-                if (message.resultHash != null && Object.hasOwnProperty.call(message, "resultHash"))
+                if (message.resultHash != null && message.hasOwnProperty("resultHash"))
                     writer.uint32(/* id 9, wireType 0 =*/72).uint64(message.resultHash);
-                if (message.operations != null && Object.hasOwnProperty.call(message, "operations"))
+                if (message.operations != null && message.hasOwnProperty("operations"))
                     $root.exocore.index.OperationsPredicate.encode(message.operations, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
-                if (message.test != null && Object.hasOwnProperty.call(message, "test"))
+                if (message.test != null && message.hasOwnProperty("test"))
                     $root.exocore.index.TestPredicate.encode(message.test, writer.uint32(/* id 99, wireType 2 =*/794).fork()).ldelim();
                 return writer;
             };
@@ -3337,7 +3337,7 @@ export const exocore = $root.exocore = (() => {
                         message.paging = $root.exocore.index.Paging.decode(reader, reader.uint32());
                         break;
                     case 6:
-                        message.sorting = $root.exocore.index.Sorting.decode(reader, reader.uint32());
+                        message.ordering = $root.exocore.index.Ordering.decode(reader, reader.uint32());
                         break;
                     case 7:
                         message.summary = reader.bool();
@@ -3447,10 +3447,10 @@ export const exocore = $root.exocore = (() => {
                     if (error)
                         return "paging." + error;
                 }
-                if (message.sorting != null && message.hasOwnProperty("sorting")) {
-                    let error = $root.exocore.index.Sorting.verify(message.sorting);
+                if (message.ordering != null && message.hasOwnProperty("ordering")) {
+                    let error = $root.exocore.index.Ordering.verify(message.ordering);
                     if (error)
-                        return "sorting." + error;
+                        return "ordering." + error;
                 }
                 if (message.summary != null && message.hasOwnProperty("summary"))
                     if (typeof message.summary !== "boolean")
@@ -3511,10 +3511,10 @@ export const exocore = $root.exocore = (() => {
                         throw TypeError(".exocore.index.EntityQuery.paging: object expected");
                     message.paging = $root.exocore.index.Paging.fromObject(object.paging);
                 }
-                if (object.sorting != null) {
-                    if (typeof object.sorting !== "object")
-                        throw TypeError(".exocore.index.EntityQuery.sorting: object expected");
-                    message.sorting = $root.exocore.index.Sorting.fromObject(object.sorting);
+                if (object.ordering != null) {
+                    if (typeof object.ordering !== "object")
+                        throw TypeError(".exocore.index.EntityQuery.ordering: object expected");
+                    message.ordering = $root.exocore.index.Ordering.fromObject(object.ordering);
                 }
                 if (object.summary != null)
                     message.summary = Boolean(object.summary);
@@ -3554,7 +3554,7 @@ export const exocore = $root.exocore = (() => {
                 let object = {};
                 if (options.defaults) {
                     object.paging = null;
-                    object.sorting = null;
+                    object.ordering = null;
                     object.summary = false;
                     if ($util.Long) {
                         let long = new $util.Long(0, 0, true);
@@ -3589,8 +3589,8 @@ export const exocore = $root.exocore = (() => {
                 }
                 if (message.paging != null && message.hasOwnProperty("paging"))
                     object.paging = $root.exocore.index.Paging.toObject(message.paging, options);
-                if (message.sorting != null && message.hasOwnProperty("sorting"))
-                    object.sorting = $root.exocore.index.Sorting.toObject(message.sorting, options);
+                if (message.ordering != null && message.hasOwnProperty("ordering"))
+                    object.ordering = $root.exocore.index.Ordering.toObject(message.ordering, options);
                 if (message.summary != null && message.hasOwnProperty("summary"))
                     object.summary = message.summary;
                 if (message.watchToken != null && message.hasOwnProperty("watchToken"))
@@ -3686,7 +3686,7 @@ export const exocore = $root.exocore = (() => {
             MatchPredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.query != null && Object.hasOwnProperty.call(message, "query"))
+                if (message.query != null && message.hasOwnProperty("query"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.query);
                 return writer;
             };
@@ -4297,7 +4297,7 @@ export const exocore = $root.exocore = (() => {
             TestPredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.success != null && Object.hasOwnProperty.call(message, "success"))
+                if (message.success != null && message.hasOwnProperty("success"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.success);
                 return writer;
             };
@@ -4493,9 +4493,9 @@ export const exocore = $root.exocore = (() => {
             TraitPredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.traitName != null && Object.hasOwnProperty.call(message, "traitName"))
+                if (message.traitName != null && message.hasOwnProperty("traitName"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.traitName);
-                if (message.query != null && Object.hasOwnProperty.call(message, "query"))
+                if (message.query != null && message.hasOwnProperty("query"))
                     $root.exocore.index.TraitQuery.encode(message.query, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -4731,11 +4731,11 @@ export const exocore = $root.exocore = (() => {
             TraitQuery.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.match != null && Object.hasOwnProperty.call(message, "match"))
+                if (message.match != null && message.hasOwnProperty("match"))
                     $root.exocore.index.MatchPredicate.encode(message.match, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.field != null && Object.hasOwnProperty.call(message, "field"))
+                if (message.field != null && message.hasOwnProperty("field"))
                     $root.exocore.index.TraitFieldPredicate.encode(message.field, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.reference != null && Object.hasOwnProperty.call(message, "reference"))
+                if (message.reference != null && message.hasOwnProperty("reference"))
                     $root.exocore.index.TraitFieldReferencePredicate.encode(message.reference, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -5037,17 +5037,17 @@ export const exocore = $root.exocore = (() => {
             TraitFieldPredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.field != null && Object.hasOwnProperty.call(message, "field"))
+                if (message.field != null && message.hasOwnProperty("field"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.field);
-                if (message.string != null && Object.hasOwnProperty.call(message, "string"))
+                if (message.string != null && message.hasOwnProperty("string"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.string);
-                if (message.int64 != null && Object.hasOwnProperty.call(message, "int64"))
+                if (message.int64 != null && message.hasOwnProperty("int64"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int64(message.int64);
-                if (message.uint64 != null && Object.hasOwnProperty.call(message, "uint64"))
+                if (message.uint64 != null && message.hasOwnProperty("uint64"))
                     writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.uint64);
-                if (message.date != null && Object.hasOwnProperty.call(message, "date"))
+                if (message.date != null && message.hasOwnProperty("date"))
                     $root.google.protobuf.Timestamp.encode(message.date, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.operator != null && Object.hasOwnProperty.call(message, "operator"))
+                if (message.operator != null && message.hasOwnProperty("operator"))
                     writer.uint32(/* id 6, wireType 0 =*/48).int32(message.operator);
                 return writer;
             };
@@ -5311,7 +5311,7 @@ export const exocore = $root.exocore = (() => {
             /**
              * Operator enum.
              * @name exocore.index.TraitFieldPredicate.Operator
-             * @enum {number}
+             * @enum {string}
              * @property {number} EQUAL=0 EQUAL value
              * @property {number} GT=1 GT value
              * @property {number} GTE=2 GTE value
@@ -5396,9 +5396,9 @@ export const exocore = $root.exocore = (() => {
             TraitFieldReferencePredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.field != null && Object.hasOwnProperty.call(message, "field"))
+                if (message.field != null && message.hasOwnProperty("field"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.field);
-                if (message.reference != null && Object.hasOwnProperty.call(message, "reference"))
+                if (message.reference != null && message.hasOwnProperty("reference"))
                     $root.exocore.index.ReferencePredicate.encode(message.reference, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -5611,9 +5611,9 @@ export const exocore = $root.exocore = (() => {
             ReferencePredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entityId != null && Object.hasOwnProperty.call(message, "entityId"))
+                if (message.entityId != null && message.hasOwnProperty("entityId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.entityId);
-                if (message.traitId != null && Object.hasOwnProperty.call(message, "traitId"))
+                if (message.traitId != null && message.hasOwnProperty("traitId"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.traitId);
                 return writer;
             };
@@ -5762,8 +5762,8 @@ export const exocore = $root.exocore = (() => {
              * Properties of a Paging.
              * @memberof exocore.index
              * @interface IPaging
-             * @property {exocore.index.ISortingValue|null} [afterSortValue] Returns results after this given sorting value.
-             * @property {exocore.index.ISortingValue|null} [beforeSortValue] Returns results before this given sorting value.
+             * @property {exocore.index.IOrderingValue|null} [afterOrderingValue] Returns results after this given ordering value.
+             * @property {exocore.index.IOrderingValue|null} [beforeOrderingValue] Returns results before this given ordering value.
              * @property {number|null} [count] Desired results count. Default if 0.
              */
 
@@ -5783,20 +5783,20 @@ export const exocore = $root.exocore = (() => {
             }
 
             /**
-             * Returns results after this given sorting value.
-             * @member {exocore.index.ISortingValue|null|undefined} afterSortValue
+             * Returns results after this given ordering value.
+             * @member {exocore.index.IOrderingValue|null|undefined} afterOrderingValue
              * @memberof exocore.index.Paging
              * @instance
              */
-            Paging.prototype.afterSortValue = null;
+            Paging.prototype.afterOrderingValue = null;
 
             /**
-             * Returns results before this given sorting value.
-             * @member {exocore.index.ISortingValue|null|undefined} beforeSortValue
+             * Returns results before this given ordering value.
+             * @member {exocore.index.IOrderingValue|null|undefined} beforeOrderingValue
              * @memberof exocore.index.Paging
              * @instance
              */
-            Paging.prototype.beforeSortValue = null;
+            Paging.prototype.beforeOrderingValue = null;
 
             /**
              * Desired results count. Default if 0.
@@ -5830,11 +5830,11 @@ export const exocore = $root.exocore = (() => {
             Paging.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.afterSortValue != null && Object.hasOwnProperty.call(message, "afterSortValue"))
-                    $root.exocore.index.SortingValue.encode(message.afterSortValue, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.beforeSortValue != null && Object.hasOwnProperty.call(message, "beforeSortValue"))
-                    $root.exocore.index.SortingValue.encode(message.beforeSortValue, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.count != null && Object.hasOwnProperty.call(message, "count"))
+                if (message.afterOrderingValue != null && message.hasOwnProperty("afterOrderingValue"))
+                    $root.exocore.index.OrderingValue.encode(message.afterOrderingValue, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                if (message.beforeOrderingValue != null && message.hasOwnProperty("beforeOrderingValue"))
+                    $root.exocore.index.OrderingValue.encode(message.beforeOrderingValue, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+                if (message.count != null && message.hasOwnProperty("count"))
                     writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.count);
                 return writer;
             };
@@ -5871,10 +5871,10 @@ export const exocore = $root.exocore = (() => {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
-                        message.afterSortValue = $root.exocore.index.SortingValue.decode(reader, reader.uint32());
+                        message.afterOrderingValue = $root.exocore.index.OrderingValue.decode(reader, reader.uint32());
                         break;
                     case 2:
-                        message.beforeSortValue = $root.exocore.index.SortingValue.decode(reader, reader.uint32());
+                        message.beforeOrderingValue = $root.exocore.index.OrderingValue.decode(reader, reader.uint32());
                         break;
                     case 3:
                         message.count = reader.uint32();
@@ -5914,15 +5914,15 @@ export const exocore = $root.exocore = (() => {
             Paging.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.afterSortValue != null && message.hasOwnProperty("afterSortValue")) {
-                    let error = $root.exocore.index.SortingValue.verify(message.afterSortValue);
+                if (message.afterOrderingValue != null && message.hasOwnProperty("afterOrderingValue")) {
+                    let error = $root.exocore.index.OrderingValue.verify(message.afterOrderingValue);
                     if (error)
-                        return "afterSortValue." + error;
+                        return "afterOrderingValue." + error;
                 }
-                if (message.beforeSortValue != null && message.hasOwnProperty("beforeSortValue")) {
-                    let error = $root.exocore.index.SortingValue.verify(message.beforeSortValue);
+                if (message.beforeOrderingValue != null && message.hasOwnProperty("beforeOrderingValue")) {
+                    let error = $root.exocore.index.OrderingValue.verify(message.beforeOrderingValue);
                     if (error)
-                        return "beforeSortValue." + error;
+                        return "beforeOrderingValue." + error;
                 }
                 if (message.count != null && message.hasOwnProperty("count"))
                     if (!$util.isInteger(message.count))
@@ -5942,15 +5942,15 @@ export const exocore = $root.exocore = (() => {
                 if (object instanceof $root.exocore.index.Paging)
                     return object;
                 let message = new $root.exocore.index.Paging();
-                if (object.afterSortValue != null) {
-                    if (typeof object.afterSortValue !== "object")
-                        throw TypeError(".exocore.index.Paging.afterSortValue: object expected");
-                    message.afterSortValue = $root.exocore.index.SortingValue.fromObject(object.afterSortValue);
+                if (object.afterOrderingValue != null) {
+                    if (typeof object.afterOrderingValue !== "object")
+                        throw TypeError(".exocore.index.Paging.afterOrderingValue: object expected");
+                    message.afterOrderingValue = $root.exocore.index.OrderingValue.fromObject(object.afterOrderingValue);
                 }
-                if (object.beforeSortValue != null) {
-                    if (typeof object.beforeSortValue !== "object")
-                        throw TypeError(".exocore.index.Paging.beforeSortValue: object expected");
-                    message.beforeSortValue = $root.exocore.index.SortingValue.fromObject(object.beforeSortValue);
+                if (object.beforeOrderingValue != null) {
+                    if (typeof object.beforeOrderingValue !== "object")
+                        throw TypeError(".exocore.index.Paging.beforeOrderingValue: object expected");
+                    message.beforeOrderingValue = $root.exocore.index.OrderingValue.fromObject(object.beforeOrderingValue);
                 }
                 if (object.count != null)
                     message.count = object.count >>> 0;
@@ -5971,14 +5971,14 @@ export const exocore = $root.exocore = (() => {
                     options = {};
                 let object = {};
                 if (options.defaults) {
-                    object.afterSortValue = null;
-                    object.beforeSortValue = null;
+                    object.afterOrderingValue = null;
+                    object.beforeOrderingValue = null;
                     object.count = 0;
                 }
-                if (message.afterSortValue != null && message.hasOwnProperty("afterSortValue"))
-                    object.afterSortValue = $root.exocore.index.SortingValue.toObject(message.afterSortValue, options);
-                if (message.beforeSortValue != null && message.hasOwnProperty("beforeSortValue"))
-                    object.beforeSortValue = $root.exocore.index.SortingValue.toObject(message.beforeSortValue, options);
+                if (message.afterOrderingValue != null && message.hasOwnProperty("afterOrderingValue"))
+                    object.afterOrderingValue = $root.exocore.index.OrderingValue.toObject(message.afterOrderingValue, options);
+                if (message.beforeOrderingValue != null && message.hasOwnProperty("beforeOrderingValue"))
+                    object.beforeOrderingValue = $root.exocore.index.OrderingValue.toObject(message.beforeOrderingValue, options);
                 if (message.count != null && message.hasOwnProperty("count"))
                     object.count = message.count;
                 return object;
@@ -5998,27 +5998,27 @@ export const exocore = $root.exocore = (() => {
             return Paging;
         })();
 
-        index.Sorting = (function() {
+        index.Ordering = (function() {
 
             /**
-             * Properties of a Sorting.
+             * Properties of an Ordering.
              * @memberof exocore.index
-             * @interface ISorting
-             * @property {boolean|null} [score] Sorting score
-             * @property {boolean|null} [operationId] Sorting operationId
-             * @property {string|null} [field] Sorting field
-             * @property {boolean|null} [ascending] Order of the results.
+             * @interface IOrdering
+             * @property {boolean|null} [score] Ordering score
+             * @property {boolean|null} [operationId] Ordering operationId
+             * @property {string|null} [field] Ordering field
+             * @property {boolean|null} [ascending] Direction of ordering.
              */
 
             /**
-             * Constructs a new Sorting.
+             * Constructs a new Ordering.
              * @memberof exocore.index
-             * @classdesc Represents a Sorting.
-             * @implements ISorting
+             * @classdesc Represents an Ordering.
+             * @implements IOrdering
              * @constructor
-             * @param {exocore.index.ISorting=} [properties] Properties to set
+             * @param {exocore.index.IOrdering=} [properties] Properties to set
              */
-            function Sorting(properties) {
+            function Ordering(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -6026,114 +6026,114 @@ export const exocore = $root.exocore = (() => {
             }
 
             /**
-             * Sorting score.
+             * Ordering score.
              * @member {boolean} score
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @instance
              */
-            Sorting.prototype.score = false;
+            Ordering.prototype.score = false;
 
             /**
-             * Sorting operationId.
+             * Ordering operationId.
              * @member {boolean} operationId
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @instance
              */
-            Sorting.prototype.operationId = false;
+            Ordering.prototype.operationId = false;
 
             /**
-             * Sorting field.
+             * Ordering field.
              * @member {string} field
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @instance
              */
-            Sorting.prototype.field = "";
+            Ordering.prototype.field = "";
 
             /**
-             * Order of the results.
+             * Direction of ordering.
              * @member {boolean} ascending
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @instance
              */
-            Sorting.prototype.ascending = false;
+            Ordering.prototype.ascending = false;
 
             // OneOf field names bound to virtual getters and setters
             let $oneOfFields;
 
             /**
-             * Value by which we want results to be sorted.
+             * Value by which we want results to be ordered.
              * @member {"score"|"operationId"|"field"|undefined} value
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @instance
              */
-            Object.defineProperty(Sorting.prototype, "value", {
+            Object.defineProperty(Ordering.prototype, "value", {
                 get: $util.oneOfGetter($oneOfFields = ["score", "operationId", "field"]),
                 set: $util.oneOfSetter($oneOfFields)
             });
 
             /**
-             * Creates a new Sorting instance using the specified properties.
+             * Creates a new Ordering instance using the specified properties.
              * @function create
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @static
-             * @param {exocore.index.ISorting=} [properties] Properties to set
-             * @returns {exocore.index.Sorting} Sorting instance
+             * @param {exocore.index.IOrdering=} [properties] Properties to set
+             * @returns {exocore.index.Ordering} Ordering instance
              */
-            Sorting.create = function create(properties) {
-                return new Sorting(properties);
+            Ordering.create = function create(properties) {
+                return new Ordering(properties);
             };
 
             /**
-             * Encodes the specified Sorting message. Does not implicitly {@link exocore.index.Sorting.verify|verify} messages.
+             * Encodes the specified Ordering message. Does not implicitly {@link exocore.index.Ordering.verify|verify} messages.
              * @function encode
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @static
-             * @param {exocore.index.ISorting} message Sorting message or plain object to encode
+             * @param {exocore.index.IOrdering} message Ordering message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
-            Sorting.encode = function encode(message, writer) {
+            Ordering.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.score != null && Object.hasOwnProperty.call(message, "score"))
+                if (message.score != null && message.hasOwnProperty("score"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.score);
-                if (message.operationId != null && Object.hasOwnProperty.call(message, "operationId"))
+                if (message.operationId != null && message.hasOwnProperty("operationId"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.operationId);
-                if (message.field != null && Object.hasOwnProperty.call(message, "field"))
+                if (message.field != null && message.hasOwnProperty("field"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.field);
-                if (message.ascending != null && Object.hasOwnProperty.call(message, "ascending"))
+                if (message.ascending != null && message.hasOwnProperty("ascending"))
                     writer.uint32(/* id 4, wireType 0 =*/32).bool(message.ascending);
                 return writer;
             };
 
             /**
-             * Encodes the specified Sorting message, length delimited. Does not implicitly {@link exocore.index.Sorting.verify|verify} messages.
+             * Encodes the specified Ordering message, length delimited. Does not implicitly {@link exocore.index.Ordering.verify|verify} messages.
              * @function encodeDelimited
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @static
-             * @param {exocore.index.ISorting} message Sorting message or plain object to encode
+             * @param {exocore.index.IOrdering} message Ordering message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
-            Sorting.encodeDelimited = function encodeDelimited(message, writer) {
+            Ordering.encodeDelimited = function encodeDelimited(message, writer) {
                 return this.encode(message, writer).ldelim();
             };
 
             /**
-             * Decodes a Sorting message from the specified reader or buffer.
+             * Decodes an Ordering message from the specified reader or buffer.
              * @function decode
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
-             * @returns {exocore.index.Sorting} Sorting
+             * @returns {exocore.index.Ordering} Ordering
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Sorting.decode = function decode(reader, length) {
+            Ordering.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.Sorting();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.Ordering();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
@@ -6158,30 +6158,30 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Decodes a Sorting message from the specified reader or buffer, length delimited.
+             * Decodes an Ordering message from the specified reader or buffer, length delimited.
              * @function decodeDelimited
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {exocore.index.Sorting} Sorting
+             * @returns {exocore.index.Ordering} Ordering
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Sorting.decodeDelimited = function decodeDelimited(reader) {
+            Ordering.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
                     reader = new $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
-             * Verifies a Sorting message.
+             * Verifies an Ordering message.
              * @function verify
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @static
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            Sorting.verify = function verify(message) {
+            Ordering.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 let properties = {};
@@ -6211,17 +6211,17 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Creates a Sorting message from a plain object. Also converts values to their respective internal types.
+             * Creates an Ordering message from a plain object. Also converts values to their respective internal types.
              * @function fromObject
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @static
              * @param {Object.<string,*>} object Plain object
-             * @returns {exocore.index.Sorting} Sorting
+             * @returns {exocore.index.Ordering} Ordering
              */
-            Sorting.fromObject = function fromObject(object) {
-                if (object instanceof $root.exocore.index.Sorting)
+            Ordering.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.Ordering)
                     return object;
-                let message = new $root.exocore.index.Sorting();
+                let message = new $root.exocore.index.Ordering();
                 if (object.score != null)
                     message.score = Boolean(object.score);
                 if (object.operationId != null)
@@ -6234,15 +6234,15 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Creates a plain object from a Sorting message. Also converts values to other types if specified.
+             * Creates a plain object from an Ordering message. Also converts values to other types if specified.
              * @function toObject
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @static
-             * @param {exocore.index.Sorting} message Sorting
+             * @param {exocore.index.Ordering} message Ordering
              * @param {$protobuf.IConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
-            Sorting.toObject = function toObject(message, options) {
+            Ordering.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
                 let object = {};
@@ -6269,42 +6269,42 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Converts this Sorting to JSON.
+             * Converts this Ordering to JSON.
              * @function toJSON
-             * @memberof exocore.index.Sorting
+             * @memberof exocore.index.Ordering
              * @instance
              * @returns {Object.<string,*>} JSON object
              */
-            Sorting.prototype.toJSON = function toJSON() {
+            Ordering.prototype.toJSON = function toJSON() {
                 return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
             };
 
-            return Sorting;
+            return Ordering;
         })();
 
-        index.SortingValue = (function() {
+        index.OrderingValue = (function() {
 
             /**
-             * Properties of a SortingValue.
+             * Properties of an OrderingValue.
              * @memberof exocore.index
-             * @interface ISortingValue
-             * @property {number|null} [float] SortingValue float
-             * @property {number|Long|null} [uint64] SortingValue uint64
-             * @property {google.protobuf.ITimestamp|null} [date] SortingValue date
-             * @property {boolean|null} [min] SortingValue min
-             * @property {boolean|null} [max] SortingValue max
+             * @interface IOrderingValue
+             * @property {number|null} [float] OrderingValue float
+             * @property {number|Long|null} [uint64] OrderingValue uint64
+             * @property {google.protobuf.ITimestamp|null} [date] OrderingValue date
+             * @property {boolean|null} [min] OrderingValue min
+             * @property {boolean|null} [max] OrderingValue max
              * @property {number|Long|null} [operationId] ID operation used to tie break equal results
              */
 
             /**
-             * Constructs a new SortingValue.
+             * Constructs a new OrderingValue.
              * @memberof exocore.index
-             * @classdesc Represents a SortingValue.
-             * @implements ISortingValue
+             * @classdesc Represents an OrderingValue.
+             * @implements IOrderingValue
              * @constructor
-             * @param {exocore.index.ISortingValue=} [properties] Properties to set
+             * @param {exocore.index.IOrderingValue=} [properties] Properties to set
              */
-            function SortingValue(properties) {
+            function OrderingValue(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -6312,134 +6312,134 @@ export const exocore = $root.exocore = (() => {
             }
 
             /**
-             * SortingValue float.
+             * OrderingValue float.
              * @member {number} float
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @instance
              */
-            SortingValue.prototype.float = 0;
+            OrderingValue.prototype.float = 0;
 
             /**
-             * SortingValue uint64.
+             * OrderingValue uint64.
              * @member {number|Long} uint64
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @instance
              */
-            SortingValue.prototype.uint64 = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+            OrderingValue.prototype.uint64 = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
             /**
-             * SortingValue date.
+             * OrderingValue date.
              * @member {google.protobuf.ITimestamp|null|undefined} date
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @instance
              */
-            SortingValue.prototype.date = null;
+            OrderingValue.prototype.date = null;
 
             /**
-             * SortingValue min.
+             * OrderingValue min.
              * @member {boolean} min
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @instance
              */
-            SortingValue.prototype.min = false;
+            OrderingValue.prototype.min = false;
 
             /**
-             * SortingValue max.
+             * OrderingValue max.
              * @member {boolean} max
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @instance
              */
-            SortingValue.prototype.max = false;
+            OrderingValue.prototype.max = false;
 
             /**
              * ID operation used to tie break equal results
              * @member {number|Long} operationId
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @instance
              */
-            SortingValue.prototype.operationId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+            OrderingValue.prototype.operationId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
             // OneOf field names bound to virtual getters and setters
             let $oneOfFields;
 
             /**
-             * SortingValue value.
+             * OrderingValue value.
              * @member {"float"|"uint64"|"date"|"min"|"max"|undefined} value
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @instance
              */
-            Object.defineProperty(SortingValue.prototype, "value", {
+            Object.defineProperty(OrderingValue.prototype, "value", {
                 get: $util.oneOfGetter($oneOfFields = ["float", "uint64", "date", "min", "max"]),
                 set: $util.oneOfSetter($oneOfFields)
             });
 
             /**
-             * Creates a new SortingValue instance using the specified properties.
+             * Creates a new OrderingValue instance using the specified properties.
              * @function create
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @static
-             * @param {exocore.index.ISortingValue=} [properties] Properties to set
-             * @returns {exocore.index.SortingValue} SortingValue instance
+             * @param {exocore.index.IOrderingValue=} [properties] Properties to set
+             * @returns {exocore.index.OrderingValue} OrderingValue instance
              */
-            SortingValue.create = function create(properties) {
-                return new SortingValue(properties);
+            OrderingValue.create = function create(properties) {
+                return new OrderingValue(properties);
             };
 
             /**
-             * Encodes the specified SortingValue message. Does not implicitly {@link exocore.index.SortingValue.verify|verify} messages.
+             * Encodes the specified OrderingValue message. Does not implicitly {@link exocore.index.OrderingValue.verify|verify} messages.
              * @function encode
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @static
-             * @param {exocore.index.ISortingValue} message SortingValue message or plain object to encode
+             * @param {exocore.index.IOrderingValue} message OrderingValue message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
-            SortingValue.encode = function encode(message, writer) {
+            OrderingValue.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.float != null && Object.hasOwnProperty.call(message, "float"))
+                if (message.float != null && message.hasOwnProperty("float"))
                     writer.uint32(/* id 1, wireType 5 =*/13).float(message.float);
-                if (message.uint64 != null && Object.hasOwnProperty.call(message, "uint64"))
+                if (message.uint64 != null && message.hasOwnProperty("uint64"))
                     writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.uint64);
-                if (message.date != null && Object.hasOwnProperty.call(message, "date"))
+                if (message.date != null && message.hasOwnProperty("date"))
                     $root.google.protobuf.Timestamp.encode(message.date, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.min != null && Object.hasOwnProperty.call(message, "min"))
+                if (message.min != null && message.hasOwnProperty("min"))
                     writer.uint32(/* id 4, wireType 0 =*/32).bool(message.min);
-                if (message.max != null && Object.hasOwnProperty.call(message, "max"))
+                if (message.max != null && message.hasOwnProperty("max"))
                     writer.uint32(/* id 5, wireType 0 =*/40).bool(message.max);
-                if (message.operationId != null && Object.hasOwnProperty.call(message, "operationId"))
+                if (message.operationId != null && message.hasOwnProperty("operationId"))
                     writer.uint32(/* id 6, wireType 0 =*/48).uint64(message.operationId);
                 return writer;
             };
 
             /**
-             * Encodes the specified SortingValue message, length delimited. Does not implicitly {@link exocore.index.SortingValue.verify|verify} messages.
+             * Encodes the specified OrderingValue message, length delimited. Does not implicitly {@link exocore.index.OrderingValue.verify|verify} messages.
              * @function encodeDelimited
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @static
-             * @param {exocore.index.ISortingValue} message SortingValue message or plain object to encode
+             * @param {exocore.index.IOrderingValue} message OrderingValue message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
-            SortingValue.encodeDelimited = function encodeDelimited(message, writer) {
+            OrderingValue.encodeDelimited = function encodeDelimited(message, writer) {
                 return this.encode(message, writer).ldelim();
             };
 
             /**
-             * Decodes a SortingValue message from the specified reader or buffer.
+             * Decodes an OrderingValue message from the specified reader or buffer.
              * @function decode
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
-             * @returns {exocore.index.SortingValue} SortingValue
+             * @returns {exocore.index.OrderingValue} OrderingValue
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            SortingValue.decode = function decode(reader, length) {
+            OrderingValue.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.SortingValue();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.OrderingValue();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
@@ -6470,30 +6470,30 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Decodes a SortingValue message from the specified reader or buffer, length delimited.
+             * Decodes an OrderingValue message from the specified reader or buffer, length delimited.
              * @function decodeDelimited
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {exocore.index.SortingValue} SortingValue
+             * @returns {exocore.index.OrderingValue} OrderingValue
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            SortingValue.decodeDelimited = function decodeDelimited(reader) {
+            OrderingValue.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
                     reader = new $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
-             * Verifies a SortingValue message.
+             * Verifies an OrderingValue message.
              * @function verify
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @static
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            SortingValue.verify = function verify(message) {
+            OrderingValue.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 let properties = {};
@@ -6540,17 +6540,17 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Creates a SortingValue message from a plain object. Also converts values to their respective internal types.
+             * Creates an OrderingValue message from a plain object. Also converts values to their respective internal types.
              * @function fromObject
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @static
              * @param {Object.<string,*>} object Plain object
-             * @returns {exocore.index.SortingValue} SortingValue
+             * @returns {exocore.index.OrderingValue} OrderingValue
              */
-            SortingValue.fromObject = function fromObject(object) {
-                if (object instanceof $root.exocore.index.SortingValue)
+            OrderingValue.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.OrderingValue)
                     return object;
-                let message = new $root.exocore.index.SortingValue();
+                let message = new $root.exocore.index.OrderingValue();
                 if (object.float != null)
                     message.float = Number(object.float);
                 if (object.uint64 != null)
@@ -6564,7 +6564,7 @@ export const exocore = $root.exocore = (() => {
                         message.uint64 = new $util.LongBits(object.uint64.low >>> 0, object.uint64.high >>> 0).toNumber(true);
                 if (object.date != null) {
                     if (typeof object.date !== "object")
-                        throw TypeError(".exocore.index.SortingValue.date: object expected");
+                        throw TypeError(".exocore.index.OrderingValue.date: object expected");
                     message.date = $root.google.protobuf.Timestamp.fromObject(object.date);
                 }
                 if (object.min != null)
@@ -6584,15 +6584,15 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Creates a plain object from a SortingValue message. Also converts values to other types if specified.
+             * Creates a plain object from an OrderingValue message. Also converts values to other types if specified.
              * @function toObject
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @static
-             * @param {exocore.index.SortingValue} message SortingValue
+             * @param {exocore.index.OrderingValue} message OrderingValue
              * @param {$protobuf.IConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
-            SortingValue.toObject = function toObject(message, options) {
+            OrderingValue.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
                 let object = {};
@@ -6639,17 +6639,17 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Converts this SortingValue to JSON.
+             * Converts this OrderingValue to JSON.
              * @function toJSON
-             * @memberof exocore.index.SortingValue
+             * @memberof exocore.index.OrderingValue
              * @instance
              * @returns {Object.<string,*>} JSON object
              */
-            SortingValue.prototype.toJSON = function toJSON() {
+            OrderingValue.prototype.toJSON = function toJSON() {
                 return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
             };
 
-            return SortingValue;
+            return OrderingValue;
         })();
 
         index.EntityResults = (function() {
@@ -6757,15 +6757,15 @@ export const exocore = $root.exocore = (() => {
                 if (message.entities != null && message.entities.length)
                     for (let i = 0; i < message.entities.length; ++i)
                         $root.exocore.index.EntityResult.encode(message.entities[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.summary != null && Object.hasOwnProperty.call(message, "summary"))
+                if (message.summary != null && message.hasOwnProperty("summary"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.summary);
-                if (message.estimatedCount != null && Object.hasOwnProperty.call(message, "estimatedCount"))
+                if (message.estimatedCount != null && message.hasOwnProperty("estimatedCount"))
                     writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.estimatedCount);
-                if (message.currentPage != null && Object.hasOwnProperty.call(message, "currentPage"))
+                if (message.currentPage != null && message.hasOwnProperty("currentPage"))
                     $root.exocore.index.Paging.encode(message.currentPage, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.nextPage != null && Object.hasOwnProperty.call(message, "nextPage"))
+                if (message.nextPage != null && message.hasOwnProperty("nextPage"))
                     $root.exocore.index.Paging.encode(message.nextPage, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.hash != null && Object.hasOwnProperty.call(message, "hash"))
+                if (message.hash != null && message.hasOwnProperty("hash"))
                     writer.uint32(/* id 6, wireType 0 =*/48).uint64(message.hash);
                 return writer;
             };
@@ -7004,7 +7004,7 @@ export const exocore = $root.exocore = (() => {
              * @interface IEntityResult
              * @property {exocore.index.IEntity|null} [entity] EntityResult entity
              * @property {exocore.index.EntityResultSource|null} [source] EntityResult source
-             * @property {exocore.index.ISortingValue|null} [sortingValue] EntityResult sortingValue
+             * @property {exocore.index.IOrderingValue|null} [orderingValue] EntityResult orderingValue
              */
 
             /**
@@ -7039,12 +7039,12 @@ export const exocore = $root.exocore = (() => {
             EntityResult.prototype.source = 0;
 
             /**
-             * EntityResult sortingValue.
-             * @member {exocore.index.ISortingValue|null|undefined} sortingValue
+             * EntityResult orderingValue.
+             * @member {exocore.index.IOrderingValue|null|undefined} orderingValue
              * @memberof exocore.index.EntityResult
              * @instance
              */
-            EntityResult.prototype.sortingValue = null;
+            EntityResult.prototype.orderingValue = null;
 
             /**
              * Creates a new EntityResult instance using the specified properties.
@@ -7070,12 +7070,12 @@ export const exocore = $root.exocore = (() => {
             EntityResult.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entity != null && Object.hasOwnProperty.call(message, "entity"))
+                if (message.entity != null && message.hasOwnProperty("entity"))
                     $root.exocore.index.Entity.encode(message.entity, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.source != null && Object.hasOwnProperty.call(message, "source"))
+                if (message.source != null && message.hasOwnProperty("source"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.source);
-                if (message.sortingValue != null && Object.hasOwnProperty.call(message, "sortingValue"))
-                    $root.exocore.index.SortingValue.encode(message.sortingValue, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+                if (message.orderingValue != null && message.hasOwnProperty("orderingValue"))
+                    $root.exocore.index.OrderingValue.encode(message.orderingValue, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
 
@@ -7117,7 +7117,7 @@ export const exocore = $root.exocore = (() => {
                         message.source = reader.int32();
                         break;
                     case 3:
-                        message.sortingValue = $root.exocore.index.SortingValue.decode(reader, reader.uint32());
+                        message.orderingValue = $root.exocore.index.OrderingValue.decode(reader, reader.uint32());
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -7168,10 +7168,10 @@ export const exocore = $root.exocore = (() => {
                     case 2:
                         break;
                     }
-                if (message.sortingValue != null && message.hasOwnProperty("sortingValue")) {
-                    let error = $root.exocore.index.SortingValue.verify(message.sortingValue);
+                if (message.orderingValue != null && message.hasOwnProperty("orderingValue")) {
+                    let error = $root.exocore.index.OrderingValue.verify(message.orderingValue);
                     if (error)
-                        return "sortingValue." + error;
+                        return "orderingValue." + error;
                 }
                 return null;
             };
@@ -7207,10 +7207,10 @@ export const exocore = $root.exocore = (() => {
                     message.source = 2;
                     break;
                 }
-                if (object.sortingValue != null) {
-                    if (typeof object.sortingValue !== "object")
-                        throw TypeError(".exocore.index.EntityResult.sortingValue: object expected");
-                    message.sortingValue = $root.exocore.index.SortingValue.fromObject(object.sortingValue);
+                if (object.orderingValue != null) {
+                    if (typeof object.orderingValue !== "object")
+                        throw TypeError(".exocore.index.EntityResult.orderingValue: object expected");
+                    message.orderingValue = $root.exocore.index.OrderingValue.fromObject(object.orderingValue);
                 }
                 return message;
             };
@@ -7231,14 +7231,14 @@ export const exocore = $root.exocore = (() => {
                 if (options.defaults) {
                     object.entity = null;
                     object.source = options.enums === String ? "UNKNOWN" : 0;
-                    object.sortingValue = null;
+                    object.orderingValue = null;
                 }
                 if (message.entity != null && message.hasOwnProperty("entity"))
                     object.entity = $root.exocore.index.Entity.toObject(message.entity, options);
                 if (message.source != null && message.hasOwnProperty("source"))
                     object.source = options.enums === String ? $root.exocore.index.EntityResultSource[message.source] : message.source;
-                if (message.sortingValue != null && message.hasOwnProperty("sortingValue"))
-                    object.sortingValue = $root.exocore.index.SortingValue.toObject(message.sortingValue, options);
+                if (message.orderingValue != null && message.hasOwnProperty("orderingValue"))
+                    object.orderingValue = $root.exocore.index.OrderingValue.toObject(message.orderingValue, options);
                 return object;
             };
 
@@ -7259,7 +7259,7 @@ export const exocore = $root.exocore = (() => {
         /**
          * EntityResultSource enum.
          * @name exocore.index.EntityResultSource
-         * @enum {number}
+         * @enum {string}
          * @property {number} UNKNOWN=0 UNKNOWN value
          * @property {number} PENDING=1 PENDING value
          * @property {number} CHAIN=2 CHAIN value
@@ -7498,39 +7498,39 @@ export const exocore = $root.exocore = (() => {
             TestMessage.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.string1 != null && Object.hasOwnProperty.call(message, "string1"))
+                if (message.string1 != null && message.hasOwnProperty("string1"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.string1);
-                if (message.string2 != null && Object.hasOwnProperty.call(message, "string2"))
+                if (message.string2 != null && message.hasOwnProperty("string2"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.string2);
-                if (message.struct1 != null && Object.hasOwnProperty.call(message, "struct1"))
+                if (message.struct1 != null && message.hasOwnProperty("struct1"))
                     $root.exocore.test.TestStruct.encode(message.struct1, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.oneofString1 != null && Object.hasOwnProperty.call(message, "oneofString1"))
+                if (message.oneofString1 != null && message.hasOwnProperty("oneofString1"))
                     writer.uint32(/* id 4, wireType 2 =*/34).string(message.oneofString1);
-                if (message.oneofInt1 != null && Object.hasOwnProperty.call(message, "oneofInt1"))
+                if (message.oneofInt1 != null && message.hasOwnProperty("oneofInt1"))
                     writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.oneofInt1);
-                if (message.date1 != null && Object.hasOwnProperty.call(message, "date1"))
+                if (message.date1 != null && message.hasOwnProperty("date1"))
                     $root.google.protobuf.Timestamp.encode(message.date1, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
-                if (message.date2 != null && Object.hasOwnProperty.call(message, "date2"))
+                if (message.date2 != null && message.hasOwnProperty("date2"))
                     $root.google.protobuf.Timestamp.encode(message.date2, writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
-                if (message.uint1 != null && Object.hasOwnProperty.call(message, "uint1"))
+                if (message.uint1 != null && message.hasOwnProperty("uint1"))
                     writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.uint1);
-                if (message.uint2 != null && Object.hasOwnProperty.call(message, "uint2"))
+                if (message.uint2 != null && message.hasOwnProperty("uint2"))
                     writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.uint2);
-                if (message.string3 != null && Object.hasOwnProperty.call(message, "string3"))
+                if (message.string3 != null && message.hasOwnProperty("string3"))
                     writer.uint32(/* id 12, wireType 2 =*/98).string(message.string3);
-                if (message.ref1 != null && Object.hasOwnProperty.call(message, "ref1"))
+                if (message.ref1 != null && message.hasOwnProperty("ref1"))
                     $root.exocore.index.Reference.encode(message.ref1, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
-                if (message.ref2 != null && Object.hasOwnProperty.call(message, "ref2"))
+                if (message.ref2 != null && message.hasOwnProperty("ref2"))
                     $root.exocore.index.Reference.encode(message.ref2, writer.uint32(/* id 14, wireType 2 =*/114).fork()).ldelim();
-                if (message.int1 != null && Object.hasOwnProperty.call(message, "int1"))
+                if (message.int1 != null && message.hasOwnProperty("int1"))
                     writer.uint32(/* id 15, wireType 0 =*/120).int32(message.int1);
-                if (message.int2 != null && Object.hasOwnProperty.call(message, "int2"))
+                if (message.int2 != null && message.hasOwnProperty("int2"))
                     writer.uint32(/* id 16, wireType 0 =*/128).int32(message.int2);
-                if (message.date3 != null && Object.hasOwnProperty.call(message, "date3"))
+                if (message.date3 != null && message.hasOwnProperty("date3"))
                     $root.google.protobuf.Timestamp.encode(message.date3, writer.uint32(/* id 17, wireType 2 =*/138).fork()).ldelim();
-                if (message.uint3 != null && Object.hasOwnProperty.call(message, "uint3"))
+                if (message.uint3 != null && message.hasOwnProperty("uint3"))
                     writer.uint32(/* id 18, wireType 0 =*/144).uint32(message.uint3);
-                if (message.int3 != null && Object.hasOwnProperty.call(message, "int3"))
+                if (message.int3 != null && message.hasOwnProperty("int3"))
                     writer.uint32(/* id 19, wireType 0 =*/152).int32(message.int3);
                 return writer;
             };
@@ -7935,7 +7935,7 @@ export const exocore = $root.exocore = (() => {
             TestStruct.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.string1 != null && Object.hasOwnProperty.call(message, "string1"))
+                if (message.string1 != null && message.hasOwnProperty("string1"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.string1);
                 return writer;
             };
@@ -8131,9 +8131,9 @@ export const exocore = $root.exocore = (() => {
             TestMessage2.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.string1 != null && Object.hasOwnProperty.call(message, "string1"))
+                if (message.string1 != null && message.hasOwnProperty("string1"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.string1);
-                if (message.string2 != null && Object.hasOwnProperty.call(message, "string2"))
+                if (message.string2 != null && message.hasOwnProperty("string2"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.string2);
                 return writer;
             };
@@ -8365,9 +8365,9 @@ export const google = $root.google = (() => {
             Timestamp.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.seconds != null && Object.hasOwnProperty.call(message, "seconds"))
+                if (message.seconds != null && message.hasOwnProperty("seconds"))
                     writer.uint32(/* id 1, wireType 0 =*/8).int64(message.seconds);
-                if (message.nanos != null && Object.hasOwnProperty.call(message, "nanos"))
+                if (message.nanos != null && message.hasOwnProperty("nanos"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.nanos);
                 return writer;
             };
@@ -8589,9 +8589,9 @@ export const google = $root.google = (() => {
             Any.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.type_url != null && Object.hasOwnProperty.call(message, "type_url"))
+                if (message.type_url != null && message.hasOwnProperty("type_url"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.type_url);
-                if (message.value != null && Object.hasOwnProperty.call(message, "value"))
+                if (message.value != null && message.hasOwnProperty("value"))
                     writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.value);
                 return writer;
             };
@@ -9316,9 +9316,9 @@ export const google = $root.google = (() => {
             FileDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message["package"] != null && Object.hasOwnProperty.call(message, "package"))
+                if (message["package"] != null && message.hasOwnProperty("package"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message["package"]);
                 if (message.dependency != null && message.dependency.length)
                     for (let i = 0; i < message.dependency.length; ++i)
@@ -9335,9 +9335,9 @@ export const google = $root.google = (() => {
                 if (message.extension != null && message.extension.length)
                     for (let i = 0; i < message.extension.length; ++i)
                         $root.google.protobuf.FieldDescriptorProto.encode(message.extension[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
-                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
+                if (message.options != null && message.hasOwnProperty("options"))
                     $root.google.protobuf.FileOptions.encode(message.options, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
-                if (message.sourceCodeInfo != null && Object.hasOwnProperty.call(message, "sourceCodeInfo"))
+                if (message.sourceCodeInfo != null && message.hasOwnProperty("sourceCodeInfo"))
                     $root.google.protobuf.SourceCodeInfo.encode(message.sourceCodeInfo, writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
                 if (message.publicDependency != null && message.publicDependency.length)
                     for (let i = 0; i < message.publicDependency.length; ++i)
@@ -9345,7 +9345,7 @@ export const google = $root.google = (() => {
                 if (message.weakDependency != null && message.weakDependency.length)
                     for (let i = 0; i < message.weakDependency.length; ++i)
                         writer.uint32(/* id 11, wireType 0 =*/88).int32(message.weakDependency[i]);
-                if (message.syntax != null && Object.hasOwnProperty.call(message, "syntax"))
+                if (message.syntax != null && message.hasOwnProperty("syntax"))
                     writer.uint32(/* id 12, wireType 2 =*/98).string(message.syntax);
                 return writer;
             };
@@ -9883,7 +9883,7 @@ export const google = $root.google = (() => {
             DescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
                 if (message.field != null && message.field.length)
                     for (let i = 0; i < message.field.length; ++i)
@@ -9900,7 +9900,7 @@ export const google = $root.google = (() => {
                 if (message.extension != null && message.extension.length)
                     for (let i = 0; i < message.extension.length; ++i)
                         $root.google.protobuf.FieldDescriptorProto.encode(message.extension[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
+                if (message.options != null && message.hasOwnProperty("options"))
                     $root.google.protobuf.MessageOptions.encode(message.options, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
                 if (message.oneofDecl != null && message.oneofDecl.length)
                     for (let i = 0; i < message.oneofDecl.length; ++i)
@@ -10356,9 +10356,9 @@ export const google = $root.google = (() => {
                 ExtensionRange.encode = function encode(message, writer) {
                     if (!writer)
                         writer = $Writer.create();
-                    if (message.start != null && Object.hasOwnProperty.call(message, "start"))
+                    if (message.start != null && message.hasOwnProperty("start"))
                         writer.uint32(/* id 1, wireType 0 =*/8).int32(message.start);
-                    if (message.end != null && Object.hasOwnProperty.call(message, "end"))
+                    if (message.end != null && message.hasOwnProperty("end"))
                         writer.uint32(/* id 2, wireType 0 =*/16).int32(message.end);
                     return writer;
                 };
@@ -10566,9 +10566,9 @@ export const google = $root.google = (() => {
                 ReservedRange.encode = function encode(message, writer) {
                     if (!writer)
                         writer = $Writer.create();
-                    if (message.start != null && Object.hasOwnProperty.call(message, "start"))
+                    if (message.start != null && message.hasOwnProperty("start"))
                         writer.uint32(/* id 1, wireType 0 =*/8).int32(message.start);
-                    if (message.end != null && Object.hasOwnProperty.call(message, "end"))
+                    if (message.end != null && message.hasOwnProperty("end"))
                         writer.uint32(/* id 2, wireType 0 =*/16).int32(message.end);
                     return writer;
                 };
@@ -10851,25 +10851,25 @@ export const google = $root.google = (() => {
             FieldDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.extendee != null && Object.hasOwnProperty.call(message, "extendee"))
+                if (message.extendee != null && message.hasOwnProperty("extendee"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.extendee);
-                if (message.number != null && Object.hasOwnProperty.call(message, "number"))
+                if (message.number != null && message.hasOwnProperty("number"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int32(message.number);
-                if (message.label != null && Object.hasOwnProperty.call(message, "label"))
+                if (message.label != null && message.hasOwnProperty("label"))
                     writer.uint32(/* id 4, wireType 0 =*/32).int32(message.label);
-                if (message.type != null && Object.hasOwnProperty.call(message, "type"))
+                if (message.type != null && message.hasOwnProperty("type"))
                     writer.uint32(/* id 5, wireType 0 =*/40).int32(message.type);
-                if (message.typeName != null && Object.hasOwnProperty.call(message, "typeName"))
+                if (message.typeName != null && message.hasOwnProperty("typeName"))
                     writer.uint32(/* id 6, wireType 2 =*/50).string(message.typeName);
-                if (message.defaultValue != null && Object.hasOwnProperty.call(message, "defaultValue"))
+                if (message.defaultValue != null && message.hasOwnProperty("defaultValue"))
                     writer.uint32(/* id 7, wireType 2 =*/58).string(message.defaultValue);
-                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
+                if (message.options != null && message.hasOwnProperty("options"))
                     $root.google.protobuf.FieldOptions.encode(message.options, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
-                if (message.oneofIndex != null && Object.hasOwnProperty.call(message, "oneofIndex"))
+                if (message.oneofIndex != null && message.hasOwnProperty("oneofIndex"))
                     writer.uint32(/* id 9, wireType 0 =*/72).int32(message.oneofIndex);
-                if (message.jsonName != null && Object.hasOwnProperty.call(message, "jsonName"))
+                if (message.jsonName != null && message.hasOwnProperty("jsonName"))
                     writer.uint32(/* id 10, wireType 2 =*/82).string(message.jsonName);
                 return writer;
             };
@@ -11216,7 +11216,7 @@ export const google = $root.google = (() => {
             /**
              * Type enum.
              * @name google.protobuf.FieldDescriptorProto.Type
-             * @enum {number}
+             * @enum {string}
              * @property {number} TYPE_DOUBLE=1 TYPE_DOUBLE value
              * @property {number} TYPE_FLOAT=2 TYPE_FLOAT value
              * @property {number} TYPE_INT64=3 TYPE_INT64 value
@@ -11262,7 +11262,7 @@ export const google = $root.google = (() => {
             /**
              * Label enum.
              * @name google.protobuf.FieldDescriptorProto.Label
-             * @enum {number}
+             * @enum {string}
              * @property {number} LABEL_OPTIONAL=1 LABEL_OPTIONAL value
              * @property {number} LABEL_REQUIRED=2 LABEL_REQUIRED value
              * @property {number} LABEL_REPEATED=3 LABEL_REPEATED value
@@ -11343,9 +11343,9 @@ export const google = $root.google = (() => {
             OneofDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
+                if (message.options != null && message.hasOwnProperty("options"))
                     $root.google.protobuf.OneofOptions.encode(message.options, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -11568,12 +11568,12 @@ export const google = $root.google = (() => {
             EnumDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
                 if (message.value != null && message.value.length)
                     for (let i = 0; i < message.value.length; ++i)
                         $root.google.protobuf.EnumValueDescriptorProto.encode(message.value[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
+                if (message.options != null && message.hasOwnProperty("options"))
                     $root.google.protobuf.EnumOptions.encode(message.options, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -11826,11 +11826,11 @@ export const google = $root.google = (() => {
             EnumValueDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.number != null && Object.hasOwnProperty.call(message, "number"))
+                if (message.number != null && message.hasOwnProperty("number"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.number);
-                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
+                if (message.options != null && message.hasOwnProperty("options"))
                     $root.google.protobuf.EnumValueOptions.encode(message.options, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -12064,12 +12064,12 @@ export const google = $root.google = (() => {
             ServiceDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
                 if (message.method != null && message.method.length)
                     for (let i = 0; i < message.method.length; ++i)
                         $root.google.protobuf.MethodDescriptorProto.encode(message.method[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
+                if (message.options != null && message.hasOwnProperty("options"))
                     $root.google.protobuf.ServiceOptions.encode(message.options, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -12349,17 +12349,17 @@ export const google = $root.google = (() => {
             MethodDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.inputType != null && Object.hasOwnProperty.call(message, "inputType"))
+                if (message.inputType != null && message.hasOwnProperty("inputType"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.inputType);
-                if (message.outputType != null && Object.hasOwnProperty.call(message, "outputType"))
+                if (message.outputType != null && message.hasOwnProperty("outputType"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.outputType);
-                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
+                if (message.options != null && message.hasOwnProperty("options"))
                     $root.google.protobuf.MethodOptions.encode(message.options, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.clientStreaming != null && Object.hasOwnProperty.call(message, "clientStreaming"))
+                if (message.clientStreaming != null && message.hasOwnProperty("clientStreaming"))
                     writer.uint32(/* id 5, wireType 0 =*/40).bool(message.clientStreaming);
-                if (message.serverStreaming != null && Object.hasOwnProperty.call(message, "serverStreaming"))
+                if (message.serverStreaming != null && message.hasOwnProperty("serverStreaming"))
                     writer.uint32(/* id 6, wireType 0 =*/48).bool(message.serverStreaming);
                 return writer;
             };
@@ -12734,33 +12734,33 @@ export const google = $root.google = (() => {
             FileOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.javaPackage != null && Object.hasOwnProperty.call(message, "javaPackage"))
+                if (message.javaPackage != null && message.hasOwnProperty("javaPackage"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.javaPackage);
-                if (message.javaOuterClassname != null && Object.hasOwnProperty.call(message, "javaOuterClassname"))
+                if (message.javaOuterClassname != null && message.hasOwnProperty("javaOuterClassname"))
                     writer.uint32(/* id 8, wireType 2 =*/66).string(message.javaOuterClassname);
-                if (message.optimizeFor != null && Object.hasOwnProperty.call(message, "optimizeFor"))
+                if (message.optimizeFor != null && message.hasOwnProperty("optimizeFor"))
                     writer.uint32(/* id 9, wireType 0 =*/72).int32(message.optimizeFor);
-                if (message.javaMultipleFiles != null && Object.hasOwnProperty.call(message, "javaMultipleFiles"))
+                if (message.javaMultipleFiles != null && message.hasOwnProperty("javaMultipleFiles"))
                     writer.uint32(/* id 10, wireType 0 =*/80).bool(message.javaMultipleFiles);
-                if (message.goPackage != null && Object.hasOwnProperty.call(message, "goPackage"))
+                if (message.goPackage != null && message.hasOwnProperty("goPackage"))
                     writer.uint32(/* id 11, wireType 2 =*/90).string(message.goPackage);
-                if (message.ccGenericServices != null && Object.hasOwnProperty.call(message, "ccGenericServices"))
+                if (message.ccGenericServices != null && message.hasOwnProperty("ccGenericServices"))
                     writer.uint32(/* id 16, wireType 0 =*/128).bool(message.ccGenericServices);
-                if (message.javaGenericServices != null && Object.hasOwnProperty.call(message, "javaGenericServices"))
+                if (message.javaGenericServices != null && message.hasOwnProperty("javaGenericServices"))
                     writer.uint32(/* id 17, wireType 0 =*/136).bool(message.javaGenericServices);
-                if (message.pyGenericServices != null && Object.hasOwnProperty.call(message, "pyGenericServices"))
+                if (message.pyGenericServices != null && message.hasOwnProperty("pyGenericServices"))
                     writer.uint32(/* id 18, wireType 0 =*/144).bool(message.pyGenericServices);
-                if (message.javaGenerateEqualsAndHash != null && Object.hasOwnProperty.call(message, "javaGenerateEqualsAndHash"))
+                if (message.javaGenerateEqualsAndHash != null && message.hasOwnProperty("javaGenerateEqualsAndHash"))
                     writer.uint32(/* id 20, wireType 0 =*/160).bool(message.javaGenerateEqualsAndHash);
-                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
+                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
                     writer.uint32(/* id 23, wireType 0 =*/184).bool(message.deprecated);
-                if (message.javaStringCheckUtf8 != null && Object.hasOwnProperty.call(message, "javaStringCheckUtf8"))
+                if (message.javaStringCheckUtf8 != null && message.hasOwnProperty("javaStringCheckUtf8"))
                     writer.uint32(/* id 27, wireType 0 =*/216).bool(message.javaStringCheckUtf8);
-                if (message.ccEnableArenas != null && Object.hasOwnProperty.call(message, "ccEnableArenas"))
+                if (message.ccEnableArenas != null && message.hasOwnProperty("ccEnableArenas"))
                     writer.uint32(/* id 31, wireType 0 =*/248).bool(message.ccEnableArenas);
-                if (message.objcClassPrefix != null && Object.hasOwnProperty.call(message, "objcClassPrefix"))
+                if (message.objcClassPrefix != null && message.hasOwnProperty("objcClassPrefix"))
                     writer.uint32(/* id 36, wireType 2 =*/290).string(message.objcClassPrefix);
-                if (message.csharpNamespace != null && Object.hasOwnProperty.call(message, "csharpNamespace"))
+                if (message.csharpNamespace != null && message.hasOwnProperty("csharpNamespace"))
                     writer.uint32(/* id 37, wireType 2 =*/298).string(message.csharpNamespace);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -13087,7 +13087,7 @@ export const google = $root.google = (() => {
             /**
              * OptimizeMode enum.
              * @name google.protobuf.FileOptions.OptimizeMode
-             * @enum {number}
+             * @enum {string}
              * @property {number} SPEED=1 SPEED value
              * @property {number} CODE_SIZE=2 CODE_SIZE value
              * @property {number} LITE_RUNTIME=3 LITE_RUNTIME value
@@ -13196,13 +13196,13 @@ export const google = $root.google = (() => {
             MessageOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.messageSetWireFormat != null && Object.hasOwnProperty.call(message, "messageSetWireFormat"))
+                if (message.messageSetWireFormat != null && message.hasOwnProperty("messageSetWireFormat"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.messageSetWireFormat);
-                if (message.noStandardDescriptorAccessor != null && Object.hasOwnProperty.call(message, "noStandardDescriptorAccessor"))
+                if (message.noStandardDescriptorAccessor != null && message.hasOwnProperty("noStandardDescriptorAccessor"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.noStandardDescriptorAccessor);
-                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
+                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
                     writer.uint32(/* id 3, wireType 0 =*/24).bool(message.deprecated);
-                if (message.mapEntry != null && Object.hasOwnProperty.call(message, "mapEntry"))
+                if (message.mapEntry != null && message.hasOwnProperty("mapEntry"))
                     writer.uint32(/* id 7, wireType 0 =*/56).bool(message.mapEntry);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -13539,26 +13539,26 @@ export const google = $root.google = (() => {
             FieldOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.ctype != null && Object.hasOwnProperty.call(message, "ctype"))
+                if (message.ctype != null && message.hasOwnProperty("ctype"))
                     writer.uint32(/* id 1, wireType 0 =*/8).int32(message.ctype);
-                if (message.packed != null && Object.hasOwnProperty.call(message, "packed"))
+                if (message.packed != null && message.hasOwnProperty("packed"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.packed);
-                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
+                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
                     writer.uint32(/* id 3, wireType 0 =*/24).bool(message.deprecated);
-                if (message.lazy != null && Object.hasOwnProperty.call(message, "lazy"))
+                if (message.lazy != null && message.hasOwnProperty("lazy"))
                     writer.uint32(/* id 5, wireType 0 =*/40).bool(message.lazy);
-                if (message.jstype != null && Object.hasOwnProperty.call(message, "jstype"))
+                if (message.jstype != null && message.hasOwnProperty("jstype"))
                     writer.uint32(/* id 6, wireType 0 =*/48).int32(message.jstype);
-                if (message.weak != null && Object.hasOwnProperty.call(message, "weak"))
+                if (message.weak != null && message.hasOwnProperty("weak"))
                     writer.uint32(/* id 10, wireType 0 =*/80).bool(message.weak);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
                         $root.google.protobuf.UninterpretedOption.encode(message.uninterpretedOption[i], writer.uint32(/* id 999, wireType 2 =*/7994).fork()).ldelim();
-                if (message[".exocore.indexed"] != null && Object.hasOwnProperty.call(message, ".exocore.indexed"))
+                if (message[".exocore.indexed"] != null && message.hasOwnProperty(".exocore.indexed"))
                     writer.uint32(/* id 1373, wireType 0 =*/10984).bool(message[".exocore.indexed"]);
-                if (message[".exocore.sorted"] != null && Object.hasOwnProperty.call(message, ".exocore.sorted"))
+                if (message[".exocore.sorted"] != null && message.hasOwnProperty(".exocore.sorted"))
                     writer.uint32(/* id 1374, wireType 0 =*/10992).bool(message[".exocore.sorted"]);
-                if (message[".exocore.text"] != null && Object.hasOwnProperty.call(message, ".exocore.text"))
+                if (message[".exocore.text"] != null && message.hasOwnProperty(".exocore.text"))
                     writer.uint32(/* id 1375, wireType 0 =*/11000).bool(message[".exocore.text"]);
                 return writer;
             };
@@ -13845,7 +13845,7 @@ export const google = $root.google = (() => {
             /**
              * CType enum.
              * @name google.protobuf.FieldOptions.CType
-             * @enum {number}
+             * @enum {string}
              * @property {number} STRING=0 STRING value
              * @property {number} CORD=1 CORD value
              * @property {number} STRING_PIECE=2 STRING_PIECE value
@@ -13861,7 +13861,7 @@ export const google = $root.google = (() => {
             /**
              * JSType enum.
              * @name google.protobuf.FieldOptions.JSType
-             * @enum {number}
+             * @enum {string}
              * @property {number} JS_NORMAL=0 JS_NORMAL value
              * @property {number} JS_STRING=1 JS_STRING value
              * @property {number} JS_NUMBER=2 JS_NUMBER value
@@ -14160,9 +14160,9 @@ export const google = $root.google = (() => {
             EnumOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.allowAlias != null && Object.hasOwnProperty.call(message, "allowAlias"))
+                if (message.allowAlias != null && message.hasOwnProperty("allowAlias"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.allowAlias);
-                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
+                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
                     writer.uint32(/* id 3, wireType 0 =*/24).bool(message.deprecated);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -14405,7 +14405,7 @@ export const google = $root.google = (() => {
             EnumValueOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
+                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.deprecated);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -14636,7 +14636,7 @@ export const google = $root.google = (() => {
             ServiceOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
+                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
                     writer.uint32(/* id 33, wireType 0 =*/264).bool(message.deprecated);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -14867,7 +14867,7 @@ export const google = $root.google = (() => {
             MethodOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
+                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
                     writer.uint32(/* id 33, wireType 0 =*/264).bool(message.deprecated);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -15146,17 +15146,17 @@ export const google = $root.google = (() => {
                 if (message.name != null && message.name.length)
                     for (let i = 0; i < message.name.length; ++i)
                         $root.google.protobuf.UninterpretedOption.NamePart.encode(message.name[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.identifierValue != null && Object.hasOwnProperty.call(message, "identifierValue"))
+                if (message.identifierValue != null && message.hasOwnProperty("identifierValue"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.identifierValue);
-                if (message.positiveIntValue != null && Object.hasOwnProperty.call(message, "positiveIntValue"))
+                if (message.positiveIntValue != null && message.hasOwnProperty("positiveIntValue"))
                     writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.positiveIntValue);
-                if (message.negativeIntValue != null && Object.hasOwnProperty.call(message, "negativeIntValue"))
+                if (message.negativeIntValue != null && message.hasOwnProperty("negativeIntValue"))
                     writer.uint32(/* id 5, wireType 0 =*/40).int64(message.negativeIntValue);
-                if (message.doubleValue != null && Object.hasOwnProperty.call(message, "doubleValue"))
+                if (message.doubleValue != null && message.hasOwnProperty("doubleValue"))
                     writer.uint32(/* id 6, wireType 1 =*/49).double(message.doubleValue);
-                if (message.stringValue != null && Object.hasOwnProperty.call(message, "stringValue"))
+                if (message.stringValue != null && message.hasOwnProperty("stringValue"))
                     writer.uint32(/* id 7, wireType 2 =*/58).bytes(message.stringValue);
-                if (message.aggregateValue != null && Object.hasOwnProperty.call(message, "aggregateValue"))
+                if (message.aggregateValue != null && message.hasOwnProperty("aggregateValue"))
                     writer.uint32(/* id 8, wireType 2 =*/66).string(message.aggregateValue);
                 return writer;
             };
@@ -15933,9 +15933,9 @@ export const google = $root.google = (() => {
                             writer.int32(message.span[i]);
                         writer.ldelim();
                     }
-                    if (message.leadingComments != null && Object.hasOwnProperty.call(message, "leadingComments"))
+                    if (message.leadingComments != null && message.hasOwnProperty("leadingComments"))
                         writer.uint32(/* id 3, wireType 2 =*/26).string(message.leadingComments);
-                    if (message.trailingComments != null && Object.hasOwnProperty.call(message, "trailingComments"))
+                    if (message.trailingComments != null && message.hasOwnProperty("trailingComments"))
                         writer.uint32(/* id 4, wireType 2 =*/34).string(message.trailingComments);
                     if (message.leadingDetachedComments != null && message.leadingDetachedComments.length)
                         for (let i = 0; i < message.leadingDetachedComments.length; ++i)
@@ -16466,11 +16466,11 @@ export const google = $root.google = (() => {
                             writer.int32(message.path[i]);
                         writer.ldelim();
                     }
-                    if (message.sourceFile != null && Object.hasOwnProperty.call(message, "sourceFile"))
+                    if (message.sourceFile != null && message.hasOwnProperty("sourceFile"))
                         writer.uint32(/* id 2, wireType 2 =*/18).string(message.sourceFile);
-                    if (message.begin != null && Object.hasOwnProperty.call(message, "begin"))
+                    if (message.begin != null && message.hasOwnProperty("begin"))
                         writer.uint32(/* id 3, wireType 0 =*/24).int32(message.begin);
-                    if (message.end != null && Object.hasOwnProperty.call(message, "end"))
+                    if (message.end != null && message.hasOwnProperty("end"))
                         writer.uint32(/* id 4, wireType 0 =*/32).int32(message.end);
                     return writer;
                 };

@@ -5,8 +5,8 @@ use test_index::*;
 
 use crate::local::mutation_index::MutationResults;
 use crate::mutation::MutationBuilder;
+use crate::ordering::{value_from_u64, value_max};
 use crate::query::QueryBuilder as Q;
-use crate::sorting::{value_from_u64, value_max};
 
 use super::*;
 
@@ -459,7 +459,7 @@ fn query_paging() -> Result<(), failure::Error> {
     // test explicit after token
     let paging = Paging {
         count: 10,
-        after_sort_value: Some(value_from_u64(0, 0)),
+        after_ordering_value: Some(value_from_u64(0, 0)),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
@@ -468,7 +468,7 @@ fn query_paging() -> Result<(), failure::Error> {
 
     let paging = Paging {
         count: 10,
-        after_sort_value: Some(value_max()),
+        after_ordering_value: Some(value_max()),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
@@ -478,7 +478,7 @@ fn query_paging() -> Result<(), failure::Error> {
     // test explicit before token
     let paging = Paging {
         count: 10,
-        before_sort_value: Some(value_from_u64(0, 0)),
+        before_ordering_value: Some(value_from_u64(0, 0)),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
@@ -487,7 +487,7 @@ fn query_paging() -> Result<(), failure::Error> {
 
     let paging = Paging {
         count: 10,
-        before_sort_value: Some(value_max()),
+        before_ordering_value: Some(value_max()),
         ..Default::default()
     };
     let query_builder = query_builder.with_paging(paging);
@@ -498,7 +498,7 @@ fn query_paging() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn query_sorting() -> Result<(), failure::Error> {
+fn query_ordering() -> Result<(), failure::Error> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config)?;
 

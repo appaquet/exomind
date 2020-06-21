@@ -3,8 +3,8 @@ use prost::Message;
 use exocore_chain::operation::OperationId;
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::{
-    entity_query, sorting, trait_field_predicate, trait_query, EntityQuery, EntityResults,
-    MatchPredicate, Paging, ReferencePredicate, Sorting, TestPredicate, TraitFieldPredicate,
+    entity_query, ordering, trait_field_predicate, trait_query, EntityQuery, EntityResults,
+    MatchPredicate, Ordering, Paging, ReferencePredicate, TestPredicate, TraitFieldPredicate,
     TraitFieldReferencePredicate, TraitPredicate, TraitQuery,
 };
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
@@ -184,18 +184,18 @@ impl QueryBuilder {
     }
 
     pub fn sort_by_field<F: Into<String>>(mut self, field: F) -> Self {
-        self.query.sorting = Some(Sorting {
-            value: Some(sorting::Value::Field(field.into())),
+        self.query.ordering = Some(Ordering {
+            value: Some(ordering::Value::Field(field.into())),
             ..Default::default()
         });
         self
     }
 
     pub fn sort_ascending(mut self, ascending: bool) -> Self {
-        if let Some(sorting) = self.query.sorting.as_mut() {
-            sorting.ascending = ascending;
+        if let Some(ordering) = self.query.ordering.as_mut() {
+            ordering.ascending = ascending;
         } else {
-            self.query.sorting = Some(Sorting {
+            self.query.ordering = Some(Ordering {
                 ascending,
                 value: None,
             });

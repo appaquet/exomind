@@ -1,7 +1,7 @@
 use super::MutationIndex;
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
-use crate::sorting::SortingValueWrapper;
+use crate::ordering::OrderingValueWrapper;
 use chrono::{DateTime, Utc};
 use exocore_chain::block::BlockOffset;
 use exocore_chain::operation::OperationId;
@@ -57,7 +57,7 @@ pub struct MutationMetadata {
     pub block_offset: Option<BlockOffset>,
     pub entity_id: EntityId,
     pub mutation_type: MutationType,
-    pub sort_value: Rc<SortingValueWrapper>,
+    pub sort_value: Rc<OrderingValueWrapper>,
 }
 
 #[derive(Debug)]

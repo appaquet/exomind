@@ -35,19 +35,19 @@ mod test {
 
     #[test]
     fn test_find_gaps() {
-        let a = 10..20;
-        let b = 30..40;
-        let c = 40..50;
-        let d = 80..100;
+        let r1 = 10..20;
+        let r2 = 30..40;
+        let r3 = 40..50;
+        let r4 = 80..100;
 
-        let ranges = vec![b, a, d, c];
+        let ranges = vec![r2, r1, r4, r3];
         let gaps = get_gaps(ranges.iter());
         assert_eq!(gaps, vec![20..30, 50..80]);
         assert!(!are_continuous(ranges.iter()));
 
-        let e = 30..40;
-        let f = 40..50;
-        let ranges = vec![e, f];
+        let r5 = 30..40;
+        let r6 = 40..50;
+        let ranges = vec![r5, r6];
         assert!(are_continuous(ranges.iter()));
     }
 }

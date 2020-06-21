@@ -19,8 +19,8 @@ message EntityQuery {
     /// Query paging requested
     Paging paging = 5;
 
-    /// Query sorting
-    Sorting sorting = 6;
+    /// Query ordering
+    Ordering ordering = 6;
 
     /// If true, only return summary
     bool summary = 7;
@@ -104,29 +104,29 @@ message ReferencePredicate {
 }
 
 message Paging {
-    /// Returns results after this given sorting value.
-    SortingValue after_sort_value = 1;
+    /// Returns results after this given ordering value.
+    OrderingValue after_ordering_value = 1;
 
-    /// Returns results before this given sorting value.
-    SortingValue before_sort_value = 2;
+    /// Returns results before this given ordering value.
+    OrderingValue before_ordering_value = 2;
 
     /// Desired results count. Default if 0.
     uint32 count = 3;
 }
 
-message Sorting {
-    /// Value by which we want results to be sorted.
+message Ordering {
+    /// Value by which we want results to be ordered.
     oneof value {
         bool score = 1;
         bool operation_id = 2;
         string field = 3;
     }
 
-    /// Order of the results.
+    /// Direction of ordering.
     bool ascending = 4;
 }
 
-message SortingValue {
+message OrderingValue {
     oneof value {
         float float = 1;
         uint64 uint64 = 2;
@@ -158,7 +158,7 @@ message EntityResult {
 
     EntityResultSource source = 2;
 
-    SortingValue sorting_value = 3;
+    OrderingValue ordering_value = 3;
 }
 
 enum EntityResultSource {

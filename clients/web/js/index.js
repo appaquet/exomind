@@ -251,7 +251,7 @@ export class QueryBuilder {
     }
 
     orderByField(field, ascending) {
-        this.query.sorting = new proto.exocore.index.Sorting({
+        this.query.ordering = new proto.exocore.index.Ordering({
             ascending: ascending === true,
             field: field,
         });

@@ -20,7 +20,7 @@ use exocore_core::protos::prost::ProstDateTimeExt;
 use exocore_core::protos::registry::Registry;
 
 use crate::error::Error;
-use crate::sorting::SortingValueExt;
+use crate::ordering::OrderingValueExt;
 
 use super::mutation_index::{IndexOperation, MutationIndex, MutationType};
 use super::top_results::RescoredTopResultsIterable;
@@ -307,7 +307,7 @@ where
                     entities_results.push(EntityResult {
                         entity: Some(entity),
                         source: source.into(),
-                        sorting_value: Some(sort_value.value.clone()),
+                        ordering_value: Some(sort_value.value.clone()),
                     });
 
                     all_traits_results.push(traits_results);
@@ -319,11 +319,15 @@ where
         let next_page = if let Some(last_result) = entities_results.last() {
             let mut new_page = current_page.clone();
 
-            let ascending = query.sorting.as_ref().map(|s| s.ascending).unwrap_or(false);
+            let ascending = query
+                .ordering
+                .as_ref()
+                .map(|s| s.ascending)
+                .unwrap_or(false);
             if !ascending {
-                new_page.before_sort_value = last_result.sorting_value.clone();
+                new_page.before_ordering_value = last_result.ordering_value.clone();
             } else {
-                new_page.after_sort_value = last_result.sorting_value.clone();
+                new_page.after_ordering_value = last_result.ordering_value.clone();
             }
 
             Some(new_page)
