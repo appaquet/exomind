@@ -334,13 +334,13 @@ checksum = "4964518bd3b4a8190e832886cdc0da9794f12e8e6c1613a9e90ff331c4c8724b"
 
 [[package]]
 name = "capnp"
-version = "0.10.3"
-source = "git+https://github.com/appaquet/capnproto-rust.git?branch=thread-safe-arena-readlimiter#849e1621a4998634cf5a4ab047991993822f1e97"
+version = "0.13.2"
+source = "git+https://github.com/appaquet/capnproto-rust.git?branch=thread-safe-arena-readlimiter#091a7f3e3991174599b2a831545b52d22ba2872e"
 
 [[package]]
 name = "capnpc"
-version = "0.10.1"
-source = "git+https://github.com/appaquet/capnproto-rust.git?branch=thread-safe-arena-readlimiter#849e1621a4998634cf5a4ab047991993822f1e97"
+version = "0.13.0"
+source = "git+https://github.com/appaquet/capnproto-rust.git?branch=thread-safe-arena-readlimiter#091a7f3e3991174599b2a831545b52d22ba2872e"
 dependencies = [
  "capnp",
 ]

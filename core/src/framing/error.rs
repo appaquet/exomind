@@ -8,10 +8,18 @@ pub enum Error {
     SourceTooSmall(usize, usize),
     #[fail(display = "Invalid offset subtraction ({} - {} < 0)", _0, _1)]
     OffsetSubtract(usize, usize),
+    #[fail(display = "Capnp serialization error: {}", _0)]
+    Capnp(capnp::Error),
 }
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Error::IO(err.kind(), err.to_string())
+    }
+}
+
+impl From<capnp::Error> for Error {
+    fn from(err: capnp::Error) -> Self {
+        Error::Capnp(err)
     }
 }

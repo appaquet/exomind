@@ -1,57 +1,21 @@
 use super::{check_into_size, Error, FrameBuilder, FrameReader};
 use crate::protos::generated::MessageType;
-use capnp::message::{Builder, HeapAllocator, Reader, ReaderSegments};
+use capnp::message::{Builder, HeapAllocator};
 use capnp::traits::Owned;
-use capnp::Word;
 use std::io;
 
 /// Frame that wraps a Capnproto message
 pub struct CapnpFrame<I: FrameReader> {
     inner: I,
-    segment_slices: Vec<(usize, usize)>,
-    offset: usize,
 }
 
 impl<I: FrameReader> CapnpFrame<I> {
     pub fn new(inner: I) -> Result<CapnpFrame<I>, capnp::Error> {
-        let mut data = inner.exposed_data();
-
-        let opts = capnp::message::ReaderOptions::new();
-        let (_total_words, segment_slices) = capnp::serialize::read_segment_table(&mut data, opts)?;
-
-        // read segment reads words that we don't want to return anymore.
-        // we calculate offset of cursor that we need to apply on get_segment
-        let offset = inner.exposed_data().len() - data.len();
-
-        Ok(CapnpFrame {
-            inner,
-            segment_slices,
-            offset,
-        })
+        Ok(CapnpFrame { inner })
     }
 
     pub fn inner(&self) -> &I {
         &self.inner
-    }
-}
-
-impl<I: FrameReader> ReaderSegments for CapnpFrame<I> {
-    fn get_segment(&self, id: u32) -> Option<&[Word]> {
-        // Unsafe because of https://github.com/capnproto/capnproto-rust/issues/101
-        let words = unsafe {
-            let bytes = self.inner.exposed_data();
-            Word::bytes_to_words(&bytes[self.offset..])
-        };
-        if id < self.segment_slices.len() as u32 {
-            let (a, b) = self.segment_slices[id as usize];
-            Some(&words[a..b])
-        } else {
-            None
-        }
-    }
-
-    fn len(&self) -> usize {
-        self.segment_slices.len()
     }
 }
 
@@ -76,8 +40,6 @@ impl<I: FrameReader + Clone> Clone for CapnpFrame<I> {
     fn clone(&self) -> Self {
         CapnpFrame {
             inner: self.inner.clone(),
-            segment_slices: self.segment_slices.clone(),
-            offset: self.offset,
         }
     }
 }
@@ -87,7 +49,8 @@ pub struct TypedCapnpFrame<I: FrameReader, T>
 where
     T: for<'a> MessageType<'a>,
 {
-    reader: Reader<CapnpFrame<I>>,
+    inner: CapnpFrame<I>,
+    reader: capnp::message::Reader<capnp::serialize::OwnedSegments>,
     phantom: std::marker::PhantomData<T>,
 }
 
@@ -97,21 +60,23 @@ where
 {
     pub fn new(data: I) -> Result<TypedCapnpFrame<I, T>, capnp::Error> {
         let frame = CapnpFrame::new(data)?;
-        Ok(Self::from_capnp(frame))
+        Self::from_capnp(frame)
     }
 
-    pub fn from_capnp(capnp_frame: CapnpFrame<I>) -> TypedCapnpFrame<I, T> {
+    pub fn from_capnp(capnp_frame: CapnpFrame<I>) -> Result<TypedCapnpFrame<I, T>, capnp::Error> {
         let opts = capnp::message::ReaderOptions::new();
-        let reader = Reader::new(capnp_frame, opts);
+        let mut data = capnp_frame.exposed_data();
+        let reader = capnp::serialize::read_message(&mut data, opts)?;
 
-        TypedCapnpFrame {
+        Ok(TypedCapnpFrame {
+            inner: capnp_frame,
             reader,
             phantom: std::marker::PhantomData,
-        }
+        })
     }
 
     pub fn inner(&self) -> &CapnpFrame<I> {
-        self.reader.get_segments()
+        &self.inner
     }
 
     pub fn get_reader(&self) -> Result<<T as Owned>::Reader, capnp::Error> {
@@ -119,9 +84,8 @@ where
     }
 
     pub fn to_owned(&self) -> TypedCapnpFrame<I::OwnedType, T> {
-        let inner = self.reader.get_segments();
-        let inner_owned = inner.to_owned_frame();
-        TypedCapnpFrame::from_capnp(inner_owned)
+        let inner_owned = self.inner.to_owned_frame();
+        TypedCapnpFrame::from_capnp(inner_owned).unwrap()
     }
 }
 
@@ -132,18 +96,15 @@ where
     type OwnedType = TypedCapnpFrame<CapnpFrame<I::OwnedType>, T>;
 
     fn exposed_data(&self) -> &[u8] {
-        let inner = self.reader.get_segments();
-        inner.exposed_data()
+        self.inner.exposed_data()
     }
 
     fn whole_data(&self) -> &[u8] {
-        let inner = self.reader.get_segments();
-        inner.whole_data()
+        self.inner.whole_data()
     }
 
     fn to_owned_frame(&self) -> Self::OwnedType {
-        let inner = self.reader.get_segments();
-        let owned_inner = inner.to_owned_frame();
+        let owned_inner = self.inner.to_owned_frame();
         TypedCapnpFrame::new(owned_inner).expect("Couldn't read owned version of self")
     }
 }
@@ -153,7 +114,7 @@ where
     T: for<'a> MessageType<'a>,
 {
     fn clone(&self) -> Self {
-        Self::from_capnp(self.reader.get_segments().clone())
+        Self::from_capnp(self.inner.clone()).unwrap()
     }
 }
 
