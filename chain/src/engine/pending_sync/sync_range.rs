@@ -2,7 +2,7 @@ use super::{OperationDetailsLevel, PendingSyncConfig};
 use crate::engine::EngineError;
 use crate::operation::OperationId;
 use crate::pending::StoredOperation;
-use exocore_core::crypto::hash::{Digest, MultihashDigest, Sha3_256};
+use exocore_core::crypto::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
 use exocore_core::framing::FrameReader;
 use exocore_core::protos::generated::data_transport_capnp::pending_sync_range;
 use std::ops::Bound;
@@ -104,7 +104,7 @@ impl SyncRangeBuilder {
             operations: Vec::new(),
             operations_headers: Vec::new(),
             operations_count: 0,
-            hasher: Some(Sha3_256::new()),
+            hasher: Some(Sha3_256::default()),
             hash: None,
         }
     }
@@ -210,7 +210,7 @@ impl SyncRangeBuilder {
                 range_msg_builder.set_operations_hash(&hash);
             }
             (_, Some(hasher)) => {
-                range_msg_builder.set_operations_hash(&hasher.into_multihash_bytes());
+                range_msg_builder.set_operations_hash(&hasher.result().into_bytes());
             }
             _ => {}
         }

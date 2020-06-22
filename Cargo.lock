@@ -218,18 +218,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "blake2"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94cb07b0da6a73955f8fb85d24c466778e70cda767a568229b104f0264089330"
-dependencies = [
- "byte-tools",
- "crypto-mac",
- "digest",
- "opaque-debug",
-]
-
-[[package]]
 name = "blake2b_simd"
 version = "0.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -821,7 +809,7 @@ dependencies = [
  "libp2p",
  "log",
  "log4rs",
- "parity-multihash",
+ "multihash",
  "petname",
  "prost",
  "prost-build",
@@ -832,7 +820,6 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_yaml",
- "sha3",
  "tempdir",
  "tokio",
  "uuid",
@@ -2059,21 +2046,6 @@ dependencies = [
  "static_assertions",
  "unsigned-varint",
  "url",
-]
-
-[[package]]
-name = "parity-multihash"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a1cd2ba02391b81367bec529fb209019d718684fdc8ad6a712c2b536e46f775"
-dependencies = [
- "blake2",
- "bytes",
- "rand 0.7.3",
- "sha-1",
- "sha2",
- "sha3",
- "unsigned-varint",
 ]
 
 [[package]]

@@ -2,7 +2,9 @@ use crate::operation::OperationId;
 use exocore_core::capnp;
 use exocore_core::cell::{Cell, FullCell};
 use exocore_core::cell::{CellNodeRole, NodeId};
-use exocore_core::crypto::hash::{Digest, Multihash, MultihashDigest, Sha3_256};
+use exocore_core::crypto::hash::{
+    Code, MultihashDigest, MultihashDigestExt, MultihashGeneric, Sha3_256,
+};
 use exocore_core::crypto::signature::Signature;
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
@@ -515,7 +517,7 @@ impl BlockOperations {
         M: Borrow<crate::operation::OperationFrame<F>>,
         F: FrameReader,
     {
-        let mut hasher = Sha3_256::new();
+        let mut hasher = Sha3_256::default();
         let mut headers = Vec::new();
         let mut data = Vec::new();
 
@@ -535,23 +537,23 @@ impl BlockOperations {
         }
 
         Ok(BlockOperations {
-            multihash_bytes: hasher.into_multihash_bytes(),
+            multihash_bytes: hasher.result().into_bytes(),
             headers,
             data,
         })
     }
 
-    pub fn hash_operations<I, M, F>(sorted_operations: I) -> Result<Multihash, Error>
+    pub fn hash_operations<I, M, F>(sorted_operations: I) -> Result<MultihashGeneric<Code>, Error>
     where
         I: Iterator<Item = M>,
         M: Borrow<crate::operation::OperationFrame<F>>,
         F: FrameReader,
     {
-        let mut hasher = Sha3_256::new();
+        let mut hasher = Sha3_256::default();
         for operation in sorted_operations {
             hasher.input_signed_frame(&operation.borrow().inner().inner());
         }
-        Ok(hasher.into_multihash())
+        Ok(hasher.result())
     }
 
     pub fn operations_count(&self) -> usize {

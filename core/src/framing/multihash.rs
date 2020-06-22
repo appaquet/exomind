@@ -1,16 +1,16 @@
 use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
-use crate::crypto::hash::MultihashDigest;
+use crate::crypto::hash::MultihashDigestExt;
 use std::io;
 
 /// Checksumed frame using a multihash encoded digest
-pub struct MultihashFrame<D: MultihashDigest, I: FrameReader> {
+pub struct MultihashFrame<D: MultihashDigestExt, I: FrameReader> {
     inner: I,
     phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: MultihashDigest, I: FrameReader> MultihashFrame<D, I> {
+impl<D: MultihashDigestExt, I: FrameReader> MultihashFrame<D, I> {
     pub fn new(inner: I) -> Result<MultihashFrame<D, I>, Error> {
-        check_from_size(D::multihash_output_size(), inner.exposed_data())?;
+        check_from_size(D::size(), inner.exposed_data())?;
         Ok(MultihashFrame {
             inner,
             phantom: std::marker::PhantomData,
@@ -18,9 +18,10 @@ impl<D: MultihashDigest, I: FrameReader> MultihashFrame<D, I> {
     }
 
     pub fn verify(&self) -> Result<bool, Error> {
-        let mut digest = D::new();
+        let mut digest = D::default();
         digest.input(self.exposed_data());
-        let digest_output = digest.into_multihash_bytes();
+        let digest_result = digest.result();
+        let digest_output = digest_result.as_bytes();
 
         let inner_exposed_data = self.inner.exposed_data();
         check_from_size(digest_output.len(), inner_exposed_data)?;
@@ -31,17 +32,17 @@ impl<D: MultihashDigest, I: FrameReader> MultihashFrame<D, I> {
     }
 
     pub fn multihash_bytes(&self) -> &[u8] {
-        let multihash_size = D::multihash_output_size();
+        let multihash_size = D::size();
         let inner_exposed_data = self.inner.exposed_data();
         &inner_exposed_data[inner_exposed_data.len() - multihash_size..]
     }
 }
 
-impl<D: MultihashDigest, I: FrameReader> FrameReader for MultihashFrame<D, I> {
+impl<D: MultihashDigestExt, I: FrameReader> FrameReader for MultihashFrame<D, I> {
     type OwnedType = MultihashFrame<D, I::OwnedType>;
 
     fn exposed_data(&self) -> &[u8] {
-        let multihash_size = D::multihash_output_size();
+        let multihash_size = D::size();
         let inner_exposed_data = self.inner.exposed_data();
         &inner_exposed_data[..inner_exposed_data.len() - multihash_size]
     }
@@ -58,7 +59,7 @@ impl<D: MultihashDigest, I: FrameReader> FrameReader for MultihashFrame<D, I> {
     }
 }
 
-impl<D: MultihashDigest, I: FrameReader + Clone> Clone for MultihashFrame<D, I> {
+impl<D: MultihashDigestExt, I: FrameReader + Clone> Clone for MultihashFrame<D, I> {
     fn clone(&self) -> Self {
         MultihashFrame {
             inner: self.inner.clone(),
@@ -68,12 +69,12 @@ impl<D: MultihashDigest, I: FrameReader + Clone> Clone for MultihashFrame<D, I> 
 }
 
 /// Multihash frame builder
-pub struct MultihashFrameBuilder<D: MultihashDigest, I: FrameBuilder> {
+pub struct MultihashFrameBuilder<D: MultihashDigestExt, I: FrameBuilder> {
     inner: I,
     phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: MultihashDigest, I: FrameBuilder> MultihashFrameBuilder<D, I> {
+impl<D: MultihashDigestExt, I: FrameBuilder> MultihashFrameBuilder<D, I> {
     pub fn new(inner: I) -> MultihashFrameBuilder<D, I> {
         MultihashFrameBuilder {
             inner,
@@ -86,7 +87,7 @@ impl<D: MultihashDigest, I: FrameBuilder> MultihashFrameBuilder<D, I> {
     }
 }
 
-impl<D: MultihashDigest, I: FrameBuilder> FrameBuilder for MultihashFrameBuilder<D, I> {
+impl<D: MultihashDigestExt, I: FrameBuilder> FrameBuilder for MultihashFrameBuilder<D, I> {
     type OwnedFrameType = MultihashFrame<D, Vec<u8>>;
 
     fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
@@ -95,24 +96,26 @@ impl<D: MultihashDigest, I: FrameBuilder> FrameBuilder for MultihashFrameBuilder
         self.inner.write_to(&mut buffer)?;
         writer.write_all(&buffer)?;
 
-        let mut digest = D::new();
+        let mut digest = D::default();
         digest.input(&buffer);
-        let multihash_bytes = digest.into_multihash_bytes();
-        writer.write_all(&multihash_bytes)?;
+        let digest_result = digest.result();
+        let digest_bytes = digest_result.as_bytes();
+        writer.write_all(&digest_bytes)?;
 
-        Ok(buffer.len() + multihash_bytes.len())
+        Ok(buffer.len() + digest_bytes.len())
     }
 
     fn write_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         let inner_size = self.inner.write_into(into)?;
 
-        let mut digest = D::new();
+        let mut digest = D::default();
         digest.input(&into[..inner_size]);
-        let multihash_bytes = digest.into_multihash_bytes();
-        let total_size = inner_size + multihash_bytes.len();
+        let digest_result = digest.result();
+        let digest_bytes = digest_result.as_bytes();
+        let total_size = inner_size + digest_bytes.len();
 
         check_into_size(total_size, into)?;
-        into[inner_size..total_size].copy_from_slice(&multihash_bytes);
+        into[inner_size..total_size].copy_from_slice(&digest_bytes);
 
         Ok(total_size)
     }
@@ -120,7 +123,7 @@ impl<D: MultihashDigest, I: FrameBuilder> FrameBuilder for MultihashFrameBuilder
     fn expected_size(&self) -> Option<usize> {
         self.inner
             .expected_size()
-            .map(|inner_size| inner_size + D::multihash_output_size())
+            .map(|inner_size| inner_size + D::size())
     }
 
     fn as_owned_frame(&self) -> Self::OwnedFrameType {
@@ -131,8 +134,8 @@ impl<D: MultihashDigest, I: FrameBuilder> FrameBuilder for MultihashFrameBuilder
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crypto::hash::Sha3_256;
     use crate::framing::assert_builder_equals;
-    use sha3::Sha3_256;
 
     #[test]
     fn can_build_and_read_multihash() -> Result<(), failure::Error> {

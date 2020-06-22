@@ -4,7 +4,7 @@ use crate::operation::{NewOperation, Operation, OperationId};
 use crate::pending::{CommitStatus, PendingStore, StoredOperation};
 use exocore_core::cell::{Cell, CellNodeRole, CellNodes};
 use exocore_core::cell::{Node, NodeId};
-use exocore_core::crypto::hash::{Digest, MultihashDigest, Sha3_256};
+use exocore_core::crypto::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::data_chain_capnp::chain_operation_header;
 use exocore_core::protos::generated::data_transport_capnp::{
@@ -348,7 +348,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     where
         R: RangeBounds<OperationId>,
     {
-        let mut frame_hasher = Sha3_256::new();
+        let mut frame_hasher = Sha3_256::default();
         let mut count = 0;
 
         let operations_iter =
@@ -358,7 +358,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             count += 1;
         }
 
-        Ok((frame_hasher.into_multihash_bytes(), count))
+        Ok((frame_hasher.result().into_bytes(), count))
     }
 
     /// Do a diff of the local and remote data based on the headers in the sync

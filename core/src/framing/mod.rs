@@ -8,8 +8,8 @@ pub mod padded;
 pub mod sized;
 
 pub use self::capnp::{CapnpFrame, CapnpFrameBuilder, TypedCapnpFrame};
+pub use self::multihash::{MultihashFrame, MultihashFrameBuilder};
 pub use error::Error;
-pub use multihash::{MultihashFrame, MultihashFrameBuilder};
 pub use padded::{PaddedFrame, PaddedFrameBuilder};
 pub use sized::{IteratedSizedFrame, SizedFrame, SizedFrameBuilder, SizedFrameIterator};
 
