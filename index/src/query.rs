@@ -10,7 +10,7 @@ use exocore_core::protos::generated::exocore_index::{
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
 use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
 use exocore_core::protos::{
-    index::{IdsPredicate, OperationsPredicate},
+    index::{AllPredicate, IdsPredicate, OperationsPredicate},
     prost::{NamedMessage, ProstMessageExt},
 };
 
@@ -134,6 +134,15 @@ impl QueryBuilder {
         }
     }
 
+    pub fn all() -> QueryBuilder {
+        QueryBuilder {
+            query: EntityQuery {
+                predicate: Some(entity_query::Predicate::All(AllPredicate {})),
+                ..Default::default()
+            },
+        }
+    }
+
     pub fn failed() -> QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
@@ -183,24 +192,46 @@ impl QueryBuilder {
         self
     }
 
-    pub fn sort_by_field<F: Into<String>>(mut self, field: F) -> Self {
-        self.query.ordering = Some(Ordering {
-            value: Some(ordering::Value::Field(field.into())),
-            ..Default::default()
-        });
+    pub fn order_by_field<F: Into<String>>(mut self, field: F, ascending: bool) -> Self {
+        if self.query.ordering.is_none() {
+            self.query.ordering = Some(Ordering::default());
+        }
+
+        if let Some(ordering) = self.query.ordering.as_mut() {
+            ordering.value = Some(ordering::Value::Field(field.into()));
+            ordering.ascending = ascending;
+        }
+
         self
     }
 
-    pub fn sort_ascending(mut self, ascending: bool) -> Self {
-        if let Some(ordering) = self.query.ordering.as_mut() {
-            ordering.ascending = ascending;
-        } else {
-            self.query.ordering = Some(Ordering {
-                ascending,
-                value: None,
-            });
+    pub fn order_by_operations(mut self, ascending: bool) -> Self {
+        if self.query.ordering.is_none() {
+            self.query.ordering = Some(Ordering::default());
         }
 
+        if let Some(ordering) = self.query.ordering.as_mut() {
+            ordering.value = Some(ordering::Value::OperationId(true));
+            ordering.ascending = ascending;
+        }
+
+        self
+    }
+
+    pub fn order_ascending(mut self, ascending: bool) -> Self {
+        if self.query.ordering.is_none() {
+            self.query.ordering = Some(Ordering::default());
+        }
+
+        if let Some(ordering) = self.query.ordering.as_mut() {
+            ordering.ascending = ascending;
+        }
+
+        self
+    }
+
+    pub fn include_deleted(mut self) -> Self {
+        self.query.include_deleted = true;
         self
     }
 

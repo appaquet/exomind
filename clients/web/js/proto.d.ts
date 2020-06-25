@@ -1301,6 +1301,9 @@ export namespace exocore {
             /** EntityQuery operations */
             operations?: (exocore.index.IOperationsPredicate|null);
 
+            /** EntityQuery all */
+            all?: (exocore.index.IAllPredicate|null);
+
             /** EntityQuery test */
             test?: (exocore.index.ITestPredicate|null);
 
@@ -1318,6 +1321,9 @@ export namespace exocore {
 
             /** If specified, if results from server matches this hash, only a summary will be returned. */
             resultHash?: (number|Long|null);
+
+            /** also include deletions. */
+            includeDeleted?: (boolean|null);
         }
 
         /** Represents an EntityQuery. */
@@ -1344,6 +1350,9 @@ export namespace exocore {
             /** EntityQuery operations. */
             public operations?: (exocore.index.IOperationsPredicate|null);
 
+            /** EntityQuery all. */
+            public all?: (exocore.index.IAllPredicate|null);
+
             /** EntityQuery test. */
             public test?: (exocore.index.ITestPredicate|null);
 
@@ -1362,8 +1371,11 @@ export namespace exocore {
             /** If specified, if results from server matches this hash, only a summary will be returned. */
             public resultHash: (number|Long);
 
+            /** also include deletions. */
+            public includeDeleted: boolean;
+
             /** EntityQuery predicate. */
-            public predicate?: ("match"|"trait"|"ids"|"reference"|"operations"|"test");
+            public predicate?: ("match"|"trait"|"ids"|"reference"|"operations"|"all"|"test");
 
             /**
              * Creates a new EntityQuery instance using the specified properties.
@@ -1701,6 +1713,90 @@ export namespace exocore {
 
             /**
              * Converts this OperationsPredicate to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of an AllPredicate. */
+        interface IAllPredicate {
+        }
+
+        /** Query all entities. */
+        class AllPredicate implements IAllPredicate {
+
+            /**
+             * Constructs a new AllPredicate.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: exocore.index.IAllPredicate);
+
+            /**
+             * Creates a new AllPredicate instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns AllPredicate instance
+             */
+            public static create(properties?: exocore.index.IAllPredicate): exocore.index.AllPredicate;
+
+            /**
+             * Encodes the specified AllPredicate message. Does not implicitly {@link exocore.index.AllPredicate.verify|verify} messages.
+             * @param message AllPredicate message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: exocore.index.IAllPredicate, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified AllPredicate message, length delimited. Does not implicitly {@link exocore.index.AllPredicate.verify|verify} messages.
+             * @param message AllPredicate message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: exocore.index.IAllPredicate, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes an AllPredicate message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns AllPredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.AllPredicate;
+
+            /**
+             * Decodes an AllPredicate message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns AllPredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.AllPredicate;
+
+            /**
+             * Verifies an AllPredicate message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates an AllPredicate message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns AllPredicate
+             */
+            public static fromObject(object: { [k: string]: any }): exocore.index.AllPredicate;
+
+            /**
+             * Creates a plain object from an AllPredicate message. Also converts values to other types if specified.
+             * @param message AllPredicate
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: exocore.index.AllPredicate, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this AllPredicate to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };

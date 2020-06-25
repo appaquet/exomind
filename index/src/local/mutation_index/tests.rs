@@ -85,7 +85,7 @@ fn fetch_entity_mutations() -> Result<(), failure::Error> {
 
     // search all should return an iterator all results
     let query = Q::with_entity_id("entity_id2").build();
-    let iter = index.search_all(query)?;
+    let iter = index.search_iter(query)?;
     assert_eq!(iter.total_results, 2);
     let results = iter.collect_vec();
     assert_eq!(results.len(), 2);
@@ -248,7 +248,7 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
 
     // search all should return an iterator over all results
     let query = Q::matches("foo").build();
-    let iter = index.search_all(query)?;
+    let iter = index.search_iter(query)?;
     assert_eq!(iter.total_results, 30);
     let ops: Vec<OperationId> = iter.map(|r| r.operation_id).collect();
     assert_eq!(ops.len(), 30);
@@ -256,8 +256,8 @@ fn search_query_matches_paging() -> Result<(), failure::Error> {
     assert_eq!(ops[29], 0);
 
     // reversed order
-    let query = Q::matches("foo").sort_ascending(true).build();
-    let iter = index.search_all(query)?;
+    let query = Q::matches("foo").order_ascending(true).build();
+    let iter = index.search_iter(query)?;
     assert_eq!(iter.total_results, 30);
     let ops: Vec<OperationId> = iter.map(|r| r.operation_id).collect();
     assert_eq!(ops.len(), 30);
@@ -438,7 +438,7 @@ fn search_query_by_trait_type_paging() -> Result<(), failure::Error> {
 
     // search all should return an iterator over all results
     let query = Q::with_trait::<TestMessage>().build();
-    let iter = index.search_all(query)?;
+    let iter = index.search_iter(query)?;
     assert_eq!(iter.total_results, 30);
     let results = iter.collect_vec();
     assert_eq!(results.len(), 30);
@@ -475,7 +475,7 @@ fn sort_by_field() -> Result<(), failure::Error> {
     index.apply_operations(traits)?;
 
     let q1 = Q::with_trait_query::<TestMessage>(TQ::matches("subject").build())
-        .sort_by_field("uint3")
+        .order_by_field("uint3", false)
         .with_count(10);
     let res1 = index.search(&q1.clone().build())?;
     let trt1 = extract_traits_id(&res1);
@@ -488,7 +488,7 @@ fn sort_by_field() -> Result<(), failure::Error> {
     assert_eq!(trt2[0], "trait9");
     assert_eq!(trt2[9], "trait0");
 
-    let q3 = q1.with_count(20).sort_ascending(true);
+    let q3 = q1.with_count(20).order_ascending(true);
     let res3 = index.search(&q3.build())?;
     let trt3 = extract_traits_id(&res3);
     assert_eq!(trt3[0], "trait0");
@@ -849,6 +849,50 @@ fn search_by_trait_field() -> Result<(), failure::Error> {
     let res = index.search(query.build())?;
     assert_eq!(res.mutations.len(), 1);
     find_put_trait(&res, "trt2");
+
+    Ok(())
+}
+
+#[test]
+fn search_all() -> Result<(), failure::Error> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let mut index = MutationIndex::create_in_memory(config, registry)?;
+
+    let mut mutations = Vec::new();
+    for i in 0..10 {
+        mutations.push(IndexOperation::PutTrait(PutTraitMutation {
+            block_offset: None,
+            operation_id: i,
+            entity_id: format!("et{}", i),
+            trt: Trait {
+                id: "trt1".to_string(),
+                message: Some(TestMessage::default().pack_to_any()?),
+                ..Default::default()
+            },
+        }));
+    }
+    index.apply_operations(mutations.into_iter())?;
+
+    let res = index.search(Q::all().build()).unwrap();
+    assert_eq!(res.total, 10);
+    assert_eq!(res.mutations.len(), 7);
+    assert_eq!(res.mutations[0].operation_id, 9);
+    assert_eq!(res.mutations[6].operation_id, 3);
+
+    let next_page = res.next_page.unwrap();
+    let res = index
+        .search(Q::all().with_paging(next_page).build())
+        .unwrap();
+    assert_eq!(res.mutations.len(), 3);
+    assert_eq!(res.mutations[0].operation_id, 2);
+    assert_eq!(res.mutations[2].operation_id, 0);
+
+    let res = index
+        .search(Q::all().order_by_operations(true).build())
+        .unwrap();
+    assert_eq!(res.mutations[0].operation_id, 0);
+    assert_eq!(res.mutations[1].operation_id, 1);
 
     Ok(())
 }

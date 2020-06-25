@@ -201,14 +201,21 @@ where
     /// matching the query.
     pub fn search<Q: Borrow<EntityQuery>>(&self, query: Q) -> Result<EntityResults, Error> {
         let query = query.borrow();
+        let query_include_deleted = query.include_deleted;
         let mut current_page = query
             .paging
             .clone()
             .unwrap_or_else(crate::query::default_paging);
         crate::query::validate_paging(&mut current_page);
 
-        let chain_results = self.chain_index.search_all(query)?;
-        let pending_results = self.pending_index.search_all(query)?;
+        // query pending & chain mutations index without original query paging since we need to do our own paging here since
+        // we are re-ranking results and that we may have more than one mutation match for each entity.
+        let mutations_query = EntityQuery {
+            paging: None,
+            ..query.clone()
+        };
+        let chain_results = self.chain_index.search_iter(&mutations_query)?;
+        let pending_results = self.pending_index.search_iter(&mutations_query)?;
 
         let total_estimated = chain_results.total_results + pending_results.total_results;
         debug!(
@@ -224,11 +231,9 @@ where
                 res1.sort_value >= res2.sort_value
             });
 
-        let mut hasher = result_hasher();
-
-        let mut mutations_metadata_cache = HashMap::<String, Rc<EntityMutations>>::new();
-
         // iterate through results and returning the first N entities
+        let mut hasher = result_hasher();
+        let mut mutations_metadata_cache = HashMap::<String, Rc<EntityMutations>>::new();
         let mut matched_entities = HashSet::new();
         let (mut entities_results, traits_results) = combined_results
             // iterate through results, starting with best scores
@@ -263,10 +268,12 @@ where
                     traits_meta
                 };
 
-                let operation_is_active = traits_meta
+                let operation_still_present = traits_meta
                     .active_operations_id
                     .contains(&trait_meta.operation_id);
-                if traits_meta.traits.is_empty() || !operation_is_active {
+                if (traits_meta.traits.is_empty() || !operation_still_present)
+                    && !query_include_deleted
+                {
                     // no traits remaining means that entity is now deleted
                     // if current operation is not active anymore, it means that it got overridden
                     // by another operation and should not be considered at this

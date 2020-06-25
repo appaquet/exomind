@@ -12,6 +12,7 @@ message EntityQuery {
         IdsPredicate ids = 3;
         ReferencePredicate reference = 4;
         OperationsPredicate operations = 10;
+        AllPredicate all = 11;
 
         TestPredicate test = 99;
     }
@@ -30,6 +31,10 @@ message EntityQuery {
 
     /// If specified, if results from server matches this hash, only a summary will be returned.
     uint64 result_hash = 9;
+
+    /// Include deleted mutations matches. Can be used to return recently modified entities that
+    /// also include deletions.
+    bool include_deleted = 12;
 }
 
 /// Query entities by text match on all indexed fields across all traits.
@@ -46,6 +51,10 @@ message IdsPredicate {
 /// Used to return entities on which mutations with these operation ids were applied and indexed.
 message OperationsPredicate {
     repeated uint64 operation_ids = 1;
+}
+
+/// Query all entities.
+message AllPredicate {
 }
 
 /// Used for tests.
