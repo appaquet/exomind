@@ -34,3 +34,19 @@ protoc -I"$CUR_DIR/../protos/" $CUR_DIR/../protos/exocore/test/*.proto -o "$CUR_
 
 cargo fmt --all
 cargo test --all
+
+# Generate web protos if possible
+pushd clients/web
+if [[ -d "node_modules" ]]; then
+  ./generate.sh
+fi
+popd
+
+# Generate iOS protos if possible
+pushd clients/ios
+if [[ -d "node_modules" ]]; then
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    ./generate.sh
+  fi
+fi
+popd

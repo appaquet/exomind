@@ -246,16 +246,16 @@ where
 
                 // fetch all entity mutations and cache them since we may have multiple hits for
                 // same entity for traits that may have been removed since
-                let traits_meta = if let Some(traits_meta) =
+                let mutations_metadata = if let Some(mutations_metadata) =
                     mutations_metadata_cache.get(&trait_meta.entity_id)
                 {
-                    traits_meta.clone()
+                    mutations_metadata.clone()
                 } else {
-                    let traits_meta = self
+                    let mutations_metadata = self
                         .fetch_entity_mutations_metadata(&trait_meta.entity_id)
                         .map_err(|err| {
                             error!(
-                                "Error fetching traits for entity_id={} from indices: {}",
+                                "Error fetching mutations for entity_id={} from indices: {}",
                                 trait_meta.entity_id, err
                             );
                             err
@@ -263,15 +263,15 @@ where
                         .ok()?;
 
                     mutations_metadata_cache
-                        .insert(trait_meta.entity_id.clone(), traits_meta.clone());
+                        .insert(trait_meta.entity_id.clone(), mutations_metadata.clone());
 
-                    traits_meta
+                    mutations_metadata
                 };
 
-                let operation_still_present = traits_meta
+                let operation_still_present = mutations_metadata
                     .active_operations_id
                     .contains(&trait_meta.operation_id);
-                if (traits_meta.traits.is_empty() || !operation_still_present)
+                if (mutations_metadata.traits.is_empty() || !operation_still_present)
                     && !query_include_deleted
                 {
                     // no traits remaining means that entity is now deleted
@@ -286,7 +286,7 @@ where
                 // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
                 let sort_value = trait_meta.sort_value.clone();
                 if sort_value.value.is_within_page_bound(&current_page) {
-                    Some((trait_meta, traits_meta, source, sort_value))
+                    Some((trait_meta, mutations_metadata, source, sort_value))
                 } else {
                     None
                 }

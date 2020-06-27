@@ -270,6 +270,7 @@ fn delete_all_entity_traits() -> Result<(), failure::Error> {
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
 
+    // if we request deleted, it should now be back
     let query = Q::with_entity_id("entity1").include_deleted().build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
@@ -522,7 +523,6 @@ fn query_multiple_mutations_paging() -> Result<(), failure::Error> {
     test_index.handle_engine_events()?;
 
     // override some items in first range, which will make them have 2 mutations, but should only
-
     // appear once in the results
     let ops_id = test_index.put_test_traits(5..7)?;
     test_index.wait_operations_emitted(&ops_id);
