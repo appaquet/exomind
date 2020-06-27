@@ -270,6 +270,11 @@ fn delete_all_entity_traits() -> Result<(), failure::Error> {
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
 
+    // if we request deleted, it should now be back
+    let query = Q::with_entity_id("entity1").include_deleted().build();
+    let res = test_index.index.search(query)?;
+    assert_eq!(res.entities.len(), 1);
+
     Ok(())
 }
 
@@ -306,6 +311,11 @@ fn delete_entity() -> Result<(), failure::Error> {
     let query = Q::with_entity_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
+
+    // if we request deleted, it should now be back
+    let query = Q::with_entity_id("entity1").include_deleted().build();
+    let res = test_index.index.search(query)?;
+    assert_eq!(res.entities.len(), 1);
 
     Ok(())
 }
@@ -498,6 +508,53 @@ fn query_paging() -> Result<(), failure::Error> {
 }
 
 #[test]
+fn query_multiple_mutations_paging() -> Result<(), failure::Error> {
+    let config = TestEntityIndex::create_test_config();
+    let mut test_index = TestEntityIndex::new_with_config(config)?;
+
+    // add traits in 2 batch so that we have pending & chain items
+    let ops_id = test_index.put_test_traits(0..10)?;
+    test_index.wait_operations_emitted(&ops_id);
+    test_index.handle_engine_events()?;
+    test_index.wait_operations_committed(&ops_id[0..10]);
+
+    let ops_id = test_index.put_test_traits(10..20)?;
+    test_index.wait_operations_emitted(&ops_id);
+    test_index.handle_engine_events()?;
+
+    // override some items in first range, which will make them have 2 mutations, but should only
+    // appear once in the results
+    let ops_id = test_index.put_test_traits(5..7)?;
+    test_index.wait_operations_emitted(&ops_id);
+    test_index.handle_engine_events()?;
+
+    // first page should contain the 2 just-modified entities
+    let query_builder = Q::with_trait_name("exocore.test.TestMessage")
+        .order_by_operations(false)
+        .include_deleted()
+        .with_count(10);
+    let res = test_index.index.search(query_builder.clone().build())?;
+    let page1 = extract_results_entities_id(&res);
+    assert_eq!(
+        &["entity6", "entity5", "entity19", "entity18"],
+        &page1[0..4]
+    );
+
+    // second page shouldn't contain just-modified entities
+    let query_builder = query_builder.with_paging(res.next_page.unwrap());
+    let res = test_index.index.search(query_builder.build())?;
+    let page2 = extract_results_entities_id(&res);
+    assert_eq!(
+        &["entity11", "entity10", "entity9", "entity8", "entity7", "entity4"],
+        &page2[0..6]
+    );
+    assert!(!page2.contains(&"entity5"));
+    assert!(!page2.contains(&"entity6"));
+
+    Ok(())
+}
+
+#[test]
 fn query_ordering() -> Result<(), failure::Error> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config)?;
@@ -508,7 +565,7 @@ fn query_ordering() -> Result<(), failure::Error> {
     test_index.wait_operations_committed(&ops_id[0..10]);
 
     // descending
-    let qb = Q::matches("common").sort_ascending(false);
+    let qb = Q::matches("common").order_ascending(false);
     let res = test_index.index.search(qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(10, ids.len());
@@ -516,7 +573,7 @@ fn query_ordering() -> Result<(), failure::Error> {
     assert_eq!("entity0", ids[9]);
 
     // ascending
-    let qb = Q::matches("common").sort_ascending(true);
+    let qb = Q::matches("common").order_ascending(true);
     let res = test_index.index.search(qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(10, ids.len());
@@ -524,7 +581,7 @@ fn query_ordering() -> Result<(), failure::Error> {
     assert_eq!("entity9", ids[9]);
 
     // ascending paged
-    let qb = Q::matches("common").sort_ascending(true).with_count(5);
+    let qb = Q::matches("common").order_ascending(true).with_count(5);
     let res = test_index.index.search(qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(5, ids.len());
@@ -532,7 +589,7 @@ fn query_ordering() -> Result<(), failure::Error> {
     assert_eq!("entity4", ids[4]);
 
     let qb = Q::matches("common")
-        .sort_ascending(true)
+        .order_ascending(true)
         .with_paging(res.next_page.unwrap());
     let res = test_index.index.search(qb.build())?;
     let ids = extract_results_entities_id(&res);

@@ -113,6 +113,14 @@ public struct Exocore_Index_EntityQuery {
     set {_uniqueStorage()._predicate = .operations(newValue)}
   }
 
+  public var all: Exocore_Index_AllPredicate {
+    get {
+      if case .all(let v)? = _storage._predicate {return v}
+      return Exocore_Index_AllPredicate()
+    }
+    set {_uniqueStorage()._predicate = .all(newValue)}
+  }
+
   public var test: Exocore_Index_TestPredicate {
     get {
       if case .test(let v)? = _storage._predicate {return v}
@@ -159,6 +167,13 @@ public struct Exocore_Index_EntityQuery {
     set {_uniqueStorage()._resultHash = newValue}
   }
 
+  //// Include deleted mutations matches. Can be used to return recently modified entities that
+  //// also include deletions.
+  public var includeDeleted: Bool {
+    get {return _storage._includeDeleted}
+    set {_uniqueStorage()._includeDeleted = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Predicate: Equatable {
@@ -167,6 +182,7 @@ public struct Exocore_Index_EntityQuery {
     case ids(Exocore_Index_IdsPredicate)
     case reference(Exocore_Index_ReferencePredicate)
     case operations(Exocore_Index_OperationsPredicate)
+    case all(Exocore_Index_AllPredicate)
     case test(Exocore_Index_TestPredicate)
 
   #if !swift(>=4.1)
@@ -177,6 +193,7 @@ public struct Exocore_Index_EntityQuery {
       case (.ids(let l), .ids(let r)): return l == r
       case (.reference(let l), .reference(let r)): return l == r
       case (.operations(let l), .operations(let r)): return l == r
+      case (.all(let l), .all(let r)): return l == r
       case (.test(let l), .test(let r)): return l == r
       default: return false
       }
@@ -223,6 +240,17 @@ public struct Exocore_Index_OperationsPredicate {
   // methods supported on all messages.
 
   public var operationIds: [UInt64] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+//// Query all entities.
+public struct Exocore_Index_AllPredicate {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -784,12 +812,14 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
     3: .same(proto: "ids"),
     4: .same(proto: "reference"),
     10: .same(proto: "operations"),
+    11: .same(proto: "all"),
     99: .same(proto: "test"),
     5: .same(proto: "paging"),
     6: .same(proto: "ordering"),
     7: .same(proto: "summary"),
     8: .standard(proto: "watch_token"),
     9: .standard(proto: "result_hash"),
+    12: .standard(proto: "include_deleted"),
   ]
 
   fileprivate class _StorageClass {
@@ -799,6 +829,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
     var _summary: Bool = false
     var _watchToken: UInt64 = 0
     var _resultHash: UInt64 = 0
+    var _includeDeleted: Bool = false
 
     static let defaultInstance = _StorageClass()
 
@@ -811,6 +842,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
       _summary = source._summary
       _watchToken = source._watchToken
       _resultHash = source._resultHash
+      _includeDeleted = source._includeDeleted
     }
   }
 
@@ -871,6 +903,15 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
           }
           try decoder.decodeSingularMessageField(value: &v)
           if let v = v {_storage._predicate = .operations(v)}
+        case 11:
+          var v: Exocore_Index_AllPredicate?
+          if let current = _storage._predicate {
+            try decoder.handleConflictingOneOf()
+            if case .all(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._predicate = .all(v)}
+        case 12: try decoder.decodeSingularBoolField(value: &_storage._includeDeleted)
         case 99:
           var v: Exocore_Index_TestPredicate?
           if let current = _storage._predicate {
@@ -917,10 +958,16 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
       switch _storage._predicate {
       case .operations(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
-      case .test(let v)?:
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 99)
+      case .all(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 11)
       case nil: break
       default: break
+      }
+      if _storage._includeDeleted != false {
+        try visitor.visitSingularBoolField(value: _storage._includeDeleted, fieldNumber: 12)
+      }
+      if case .test(let v)? = _storage._predicate {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 99)
       }
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -937,6 +984,7 @@ extension Exocore_Index_EntityQuery: SwiftProtobuf.Message, SwiftProtobuf._Messa
         if _storage._summary != rhs_storage._summary {return false}
         if _storage._watchToken != rhs_storage._watchToken {return false}
         if _storage._resultHash != rhs_storage._resultHash {return false}
+        if _storage._includeDeleted != rhs_storage._includeDeleted {return false}
         return true
       }
       if !storagesAreEqual {return false}
@@ -1028,6 +1076,25 @@ extension Exocore_Index_OperationsPredicate: SwiftProtobuf.Message, SwiftProtobu
 
   public static func ==(lhs: Exocore_Index_OperationsPredicate, rhs: Exocore_Index_OperationsPredicate) -> Bool {
     if lhs.operationIds != rhs.operationIds {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exocore_Index_AllPredicate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".AllPredicate"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Exocore_Index_AllPredicate, rhs: Exocore_Index_AllPredicate) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

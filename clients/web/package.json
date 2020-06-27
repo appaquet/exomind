@@ -3,7 +3,7 @@
   "name": "exocore",
   "version": "0.1.0",
   "repository": "https://github.com/appaquet/exocore",
-  "license": "(MIT OR Apache-2.0)",
+  "license": "MIT",
   "scripts": {},
   "main": "js/index.js",
   "types": "js/index.d.ts",

@@ -3110,12 +3110,14 @@ export const exocore = $root.exocore = (() => {
              * @property {exocore.index.IIdsPredicate|null} [ids] EntityQuery ids
              * @property {exocore.index.IReferencePredicate|null} [reference] EntityQuery reference
              * @property {exocore.index.IOperationsPredicate|null} [operations] EntityQuery operations
+             * @property {exocore.index.IAllPredicate|null} [all] EntityQuery all
              * @property {exocore.index.ITestPredicate|null} [test] EntityQuery test
              * @property {exocore.index.IPaging|null} [paging] Query paging requested
              * @property {exocore.index.IOrdering|null} [ordering] Query ordering
              * @property {boolean|null} [summary] If true, only return summary
              * @property {number|Long|null} [watchToken] Optional watch token if this query is to be used for watching.
              * @property {number|Long|null} [resultHash] If specified, if results from server matches this hash, only a summary will be returned.
+             * @property {boolean|null} [includeDeleted] also include deletions.
              */
 
             /**
@@ -3174,6 +3176,14 @@ export const exocore = $root.exocore = (() => {
             EntityQuery.prototype.operations = null;
 
             /**
+             * EntityQuery all.
+             * @member {exocore.index.IAllPredicate|null|undefined} all
+             * @memberof exocore.index.EntityQuery
+             * @instance
+             */
+            EntityQuery.prototype.all = null;
+
+            /**
              * EntityQuery test.
              * @member {exocore.index.ITestPredicate|null|undefined} test
              * @memberof exocore.index.EntityQuery
@@ -3221,17 +3231,25 @@ export const exocore = $root.exocore = (() => {
              */
             EntityQuery.prototype.resultHash = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
+            /**
+             * also include deletions.
+             * @member {boolean} includeDeleted
+             * @memberof exocore.index.EntityQuery
+             * @instance
+             */
+            EntityQuery.prototype.includeDeleted = false;
+
             // OneOf field names bound to virtual getters and setters
             let $oneOfFields;
 
             /**
              * EntityQuery predicate.
-             * @member {"match"|"trait"|"ids"|"reference"|"operations"|"test"|undefined} predicate
+             * @member {"match"|"trait"|"ids"|"reference"|"operations"|"all"|"test"|undefined} predicate
              * @memberof exocore.index.EntityQuery
              * @instance
              */
             Object.defineProperty(EntityQuery.prototype, "predicate", {
-                get: $util.oneOfGetter($oneOfFields = ["match", "trait", "ids", "reference", "operations", "test"]),
+                get: $util.oneOfGetter($oneOfFields = ["match", "trait", "ids", "reference", "operations", "all", "test"]),
                 set: $util.oneOfSetter($oneOfFields)
             });
 
@@ -3279,6 +3297,10 @@ export const exocore = $root.exocore = (() => {
                     writer.uint32(/* id 9, wireType 0 =*/72).uint64(message.resultHash);
                 if (message.operations != null && message.hasOwnProperty("operations"))
                     $root.exocore.index.OperationsPredicate.encode(message.operations, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+                if (message.all != null && message.hasOwnProperty("all"))
+                    $root.exocore.index.AllPredicate.encode(message.all, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+                if (message.includeDeleted != null && message.hasOwnProperty("includeDeleted"))
+                    writer.uint32(/* id 12, wireType 0 =*/96).bool(message.includeDeleted);
                 if (message.test != null && message.hasOwnProperty("test"))
                     $root.exocore.index.TestPredicate.encode(message.test, writer.uint32(/* id 99, wireType 2 =*/794).fork()).ldelim();
                 return writer;
@@ -3330,6 +3352,9 @@ export const exocore = $root.exocore = (() => {
                     case 10:
                         message.operations = $root.exocore.index.OperationsPredicate.decode(reader, reader.uint32());
                         break;
+                    case 11:
+                        message.all = $root.exocore.index.AllPredicate.decode(reader, reader.uint32());
+                        break;
                     case 99:
                         message.test = $root.exocore.index.TestPredicate.decode(reader, reader.uint32());
                         break;
@@ -3347,6 +3372,9 @@ export const exocore = $root.exocore = (() => {
                         break;
                     case 9:
                         message.resultHash = reader.uint64();
+                        break;
+                    case 12:
+                        message.includeDeleted = reader.bool();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -3432,6 +3460,16 @@ export const exocore = $root.exocore = (() => {
                             return "operations." + error;
                     }
                 }
+                if (message.all != null && message.hasOwnProperty("all")) {
+                    if (properties.predicate === 1)
+                        return "predicate: multiple values";
+                    properties.predicate = 1;
+                    {
+                        let error = $root.exocore.index.AllPredicate.verify(message.all);
+                        if (error)
+                            return "all." + error;
+                    }
+                }
                 if (message.test != null && message.hasOwnProperty("test")) {
                     if (properties.predicate === 1)
                         return "predicate: multiple values";
@@ -3461,6 +3499,9 @@ export const exocore = $root.exocore = (() => {
                 if (message.resultHash != null && message.hasOwnProperty("resultHash"))
                     if (!$util.isInteger(message.resultHash) && !(message.resultHash && $util.isInteger(message.resultHash.low) && $util.isInteger(message.resultHash.high)))
                         return "resultHash: integer|Long expected";
+                if (message.includeDeleted != null && message.hasOwnProperty("includeDeleted"))
+                    if (typeof message.includeDeleted !== "boolean")
+                        return "includeDeleted: boolean expected";
                 return null;
             };
 
@@ -3501,6 +3542,11 @@ export const exocore = $root.exocore = (() => {
                         throw TypeError(".exocore.index.EntityQuery.operations: object expected");
                     message.operations = $root.exocore.index.OperationsPredicate.fromObject(object.operations);
                 }
+                if (object.all != null) {
+                    if (typeof object.all !== "object")
+                        throw TypeError(".exocore.index.EntityQuery.all: object expected");
+                    message.all = $root.exocore.index.AllPredicate.fromObject(object.all);
+                }
                 if (object.test != null) {
                     if (typeof object.test !== "object")
                         throw TypeError(".exocore.index.EntityQuery.test: object expected");
@@ -3536,6 +3582,8 @@ export const exocore = $root.exocore = (() => {
                         message.resultHash = object.resultHash;
                     else if (typeof object.resultHash === "object")
                         message.resultHash = new $util.LongBits(object.resultHash.low >>> 0, object.resultHash.high >>> 0).toNumber(true);
+                if (object.includeDeleted != null)
+                    message.includeDeleted = Boolean(object.includeDeleted);
                 return message;
             };
 
@@ -3566,6 +3614,7 @@ export const exocore = $root.exocore = (() => {
                         object.resultHash = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                     } else
                         object.resultHash = options.longs === String ? "0" : 0;
+                    object.includeDeleted = false;
                 }
                 if (message.match != null && message.hasOwnProperty("match")) {
                     object.match = $root.exocore.index.MatchPredicate.toObject(message.match, options);
@@ -3608,6 +3657,13 @@ export const exocore = $root.exocore = (() => {
                     if (options.oneofs)
                         object.predicate = "operations";
                 }
+                if (message.all != null && message.hasOwnProperty("all")) {
+                    object.all = $root.exocore.index.AllPredicate.toObject(message.all, options);
+                    if (options.oneofs)
+                        object.predicate = "all";
+                }
+                if (message.includeDeleted != null && message.hasOwnProperty("includeDeleted"))
+                    object.includeDeleted = message.includeDeleted;
                 if (message.test != null && message.hasOwnProperty("test")) {
                     object.test = $root.exocore.index.TestPredicate.toObject(message.test, options);
                     if (options.oneofs)
@@ -4239,6 +4295,166 @@ export const exocore = $root.exocore = (() => {
             };
 
             return OperationsPredicate;
+        })();
+
+        index.AllPredicate = (function() {
+
+            /**
+             * Properties of an AllPredicate.
+             * @memberof exocore.index
+             * @interface IAllPredicate
+             */
+
+            /**
+             * Constructs a new AllPredicate.
+             * @memberof exocore.index
+             * @classdesc Query all entities.
+             * @implements IAllPredicate
+             * @constructor
+             * @param {exocore.index.IAllPredicate=} [properties] Properties to set
+             */
+            function AllPredicate(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * Creates a new AllPredicate instance using the specified properties.
+             * @function create
+             * @memberof exocore.index.AllPredicate
+             * @static
+             * @param {exocore.index.IAllPredicate=} [properties] Properties to set
+             * @returns {exocore.index.AllPredicate} AllPredicate instance
+             */
+            AllPredicate.create = function create(properties) {
+                return new AllPredicate(properties);
+            };
+
+            /**
+             * Encodes the specified AllPredicate message. Does not implicitly {@link exocore.index.AllPredicate.verify|verify} messages.
+             * @function encode
+             * @memberof exocore.index.AllPredicate
+             * @static
+             * @param {exocore.index.IAllPredicate} message AllPredicate message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            AllPredicate.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                return writer;
+            };
+
+            /**
+             * Encodes the specified AllPredicate message, length delimited. Does not implicitly {@link exocore.index.AllPredicate.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof exocore.index.AllPredicate
+             * @static
+             * @param {exocore.index.IAllPredicate} message AllPredicate message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            AllPredicate.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes an AllPredicate message from the specified reader or buffer.
+             * @function decode
+             * @memberof exocore.index.AllPredicate
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {exocore.index.AllPredicate} AllPredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            AllPredicate.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.AllPredicate();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes an AllPredicate message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof exocore.index.AllPredicate
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {exocore.index.AllPredicate} AllPredicate
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            AllPredicate.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies an AllPredicate message.
+             * @function verify
+             * @memberof exocore.index.AllPredicate
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            AllPredicate.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                return null;
+            };
+
+            /**
+             * Creates an AllPredicate message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof exocore.index.AllPredicate
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {exocore.index.AllPredicate} AllPredicate
+             */
+            AllPredicate.fromObject = function fromObject(object) {
+                if (object instanceof $root.exocore.index.AllPredicate)
+                    return object;
+                return new $root.exocore.index.AllPredicate();
+            };
+
+            /**
+             * Creates a plain object from an AllPredicate message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof exocore.index.AllPredicate
+             * @static
+             * @param {exocore.index.AllPredicate} message AllPredicate
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            AllPredicate.toObject = function toObject() {
+                return {};
+            };
+
+            /**
+             * Converts this AllPredicate to JSON.
+             * @function toJSON
+             * @memberof exocore.index.AllPredicate
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            AllPredicate.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return AllPredicate;
         })();
 
         index.TestPredicate = (function() {

@@ -25,7 +25,7 @@ use exocore_core::protos::generated::exocore_index::{
 use exocore_core::protos::prost::{Any, ProstTimestampExt};
 use exocore_core::protos::reflect;
 use exocore_core::protos::reflect::{FieldValue, ReflectMessage};
-use exocore_core::protos::registry::Registry;
+use exocore_core::protos::{index::AllPredicate, registry::Registry};
 pub use operations::*;
 pub use results::*;
 
@@ -218,6 +218,7 @@ impl MutationIndex {
             Predicate::Ids(inner) => self.search_entity_ids(inner, paging, ordering),
             Predicate::Reference(inner) => self.search_reference(inner, paging, ordering),
             Predicate::Operations(inner) => self.search_operations(inner, paging, ordering),
+            Predicate::All(inner) => self.search_all(inner, paging, ordering),
             Predicate::Test(_inner) => Err(Error::Other("Query failed for tests".to_string())),
         }?;
 
@@ -225,8 +226,8 @@ impl MutationIndex {
     }
 
     /// Execute a query on the index and return an iterator over all matching
-    /// mutations
-    pub fn search_all<Q: Borrow<EntityQuery>>(
+    /// mutations.
+    pub fn search_iter<Q: Borrow<EntityQuery>>(
         &self,
         query: Q,
     ) -> Result<MutationResultsIterator<Q>, Error> {
@@ -402,6 +403,24 @@ impl MutationIndex {
         }
 
         self.execute_tantivy_with_paging(searcher, &query, paging, ordering, None)
+    }
+
+    /// Returns all mutations.
+    pub fn search_all(
+        &self,
+        _predicate: &AllPredicate,
+        paging: Option<&Paging>,
+        ordering: Option<&Ordering>,
+    ) -> Result<MutationResults, Error> {
+        let searcher = self.index_reader.searcher();
+
+        let mut ordering = ordering.cloned().unwrap_or_else(Ordering::default);
+        if ordering.value.is_none() {
+            ordering.value = Some(ordering::Value::OperationId(true));
+            ordering.ascending = false;
+        }
+
+        self.execute_tantivy_with_paging(searcher, &AllQuery, paging, ordering, None)
     }
 
     /// Converts a trait put / update to Tantivy document

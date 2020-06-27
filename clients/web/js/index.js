@@ -11,22 +11,19 @@ export class Client {
         this.innerClient = innerClient;
     }
 
-    static create(config, statusChangeCallback) {
+    static async create(config, statusChangeCallback) {
         const configJson = JSON.stringify(config);
         const configBytes = new TextEncoder('utf-8').encode(configJson);
 
         if (_exocore_wasm != null) {
             const innerClient = new _exocore_wasm.ExocoreClient(configBytes, 'json', statusChangeCallback);
-            return Promise.resolve(new Client(innerClient));
+            return new Client(innerClient);
 
         } else {
-            return import("exocore-client-web").then((module) => {
-                _exocore_wasm = module;
-
-                console.log("Exocore WASM client loaded");
-                const innerClient = new _exocore_wasm.ExocoreClient(configBytes, 'json', statusChangeCallback);
-                return new Client(innerClient);
-            });
+            _exocore_wasm = await import("exocore-client-web");
+            console.log("Exocore WASM client loaded");
+            const innerClient = new _exocore_wasm.ExocoreClient(configBytes, 'json', statusChangeCallback);
+            return new Client(innerClient);
         }
     }
 
@@ -52,6 +49,7 @@ export class Client {
 
     watchedQuery(query) {
         const encoded = proto.exocore.index.EntityQuery.encode(query).finish();
+
         return new WatchedQuery(this.innerClient.watched_query(encoded));
     }
 
@@ -243,6 +241,12 @@ export class QueryBuilder {
         return builder;
     }
 
+    static all() {
+        let builder = new QueryBuilder();
+        builder.query.all = new proto.exocore.index.AllPredicate();
+        return builder;
+    }
+
     count(count) {
         this.query.paging = new proto.exocore.index.Paging({
             count: count,
@@ -255,6 +259,19 @@ export class QueryBuilder {
             ascending: ascending === true,
             field: field,
         });
+        return this;
+    }
+
+    orderByOperationIds(ascending) {
+        this.query.ordering = new proto.exocore.index.Ordering({
+            ascending: ascending === true,
+            operationId: true,
+        });
+        return this;
+    }
+
+    includeDeleted() {
+        this.query.includeDeleted = true;
         return this;
     }
 

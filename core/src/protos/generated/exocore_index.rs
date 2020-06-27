@@ -40,7 +40,11 @@ pub struct EntityQuery {
     //// If specified, if results from server matches this hash, only a summary will be returned.
     #[prost(uint64, tag = "9")]
     pub result_hash: u64,
-    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4, 10, 99")]
+    //// Include deleted mutations matches. Can be used to return recently modified entities that
+    //// also include deletions.
+    #[prost(bool, tag = "12")]
+    pub include_deleted: bool,
+    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4, 10, 11, 99")]
     pub predicate: ::std::option::Option<entity_query::Predicate>,
 }
 pub mod entity_query {
@@ -56,6 +60,8 @@ pub mod entity_query {
         Reference(super::ReferencePredicate),
         #[prost(message, tag = "10")]
         Operations(super::OperationsPredicate),
+        #[prost(message, tag = "11")]
+        All(super::AllPredicate),
         #[prost(message, tag = "99")]
         Test(super::TestPredicate),
     }
@@ -79,6 +85,9 @@ pub struct OperationsPredicate {
     #[prost(uint64, repeated, tag = "1")]
     pub operation_ids: ::std::vec::Vec<u64>,
 }
+//// Query all entities.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AllPredicate {}
 //// Used for tests.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestPredicate {
