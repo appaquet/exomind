@@ -9,11 +9,11 @@ OUT_DIR="./proto"
 ./node_modules/.bin/pbjs \
     -t static-module \
     -w corejs \
-    -o $CUR_DIR/js/proto.js \
+    -o $CUR_DIR/js/protos.js \
     -p "$CUR_DIR/../../protos/" \
     --es6 \
     $CUR_DIR/../../protos/exocore/index/*.proto \
     $CUR_DIR/../../protos/exocore/test/*.proto
 
 # Generate typescript definition for protos
-./node_modules/.bin/pbts $CUR_DIR/js/proto.js -o $CUR_DIR/js/proto.d.ts
+./node_modules/.bin/pbts $CUR_DIR/js/protos.js -o $CUR_DIR/js/protos.d.ts

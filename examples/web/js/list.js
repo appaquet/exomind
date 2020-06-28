@@ -1,11 +1,10 @@
+import { exocore, Exocore, matchTrait, MutationBuilder, QueryBuilder } from 'exocore';
 import React from 'react';
-import {proto, Registry, MutationBuilder, QueryBuilder, matchTrait} from 'exocore';
 
 export default class List extends React.Component {
     constructor(props) {
         super(props);
 
-        this.exocore = props.exocore;
         this.state = {entities: []};
 
         this.registerQuery();
@@ -29,19 +28,19 @@ export default class List extends React.Component {
         };
 
         return this.state.entities.map(res =>
-            <li key={res.entity.id}>{res.trait.string1} (<DeleteButton entity={res.entity} trait={res.trait}/>)</li>
+            <li key={res.entity.id}>{res.message.string1} (<DeleteButton entity={res.entity} trait={res.trait}/>)</li>
         );
     }
 
     async onAdd(text) {
         const mutation = MutationBuilder
             .createEntity()
-            .putTrait(new proto.exocore.test.TestMessage({
+            .putTrait(new exocore.test.TestMessage({
                 string1: text,
             }))
             .build();
 
-        await this.exocore.mutate(mutation);
+        await Exocore.store.mutate(mutation);
     }
 
     async onDelete(entityId, traitId) {
@@ -50,23 +49,20 @@ export default class List extends React.Component {
             .deleteTrait(traitId)
             .build();
 
-        await this.exocore.mutate(mutation);
+        await Exocore.store.mutate(mutation);
     }
 
     registerQuery() {
         const query = QueryBuilder
-            .withTrait(proto.exocore.test.TestMessage)
+            .withTrait(exocore.test.TestMessage)
             .count(100)
             .build();
 
-        this.watched_query = this.exocore.watched_query(query);
-        this.watched_query.on_change(() => {
-            const results = proto.exocore.index.EntityResults.decode(this.watched_query.get());
-
+        this.watched_query = Exocore.store.watchedQuery(query).onChange((results) => {
             let res = results.entities.flatMap((res) => {
                 return matchTrait(res.entity.traits[0], {
-                    [Registry.messageFullName(proto.exocore.test.TestMessage)]: (trait) => {
-                        return {entity: res.entity, trait: trait};
+                    [Exocore.registry.messageFullName(exocore.test.TestMessage)]: (trait, message) => {
+                        return {entity: res.entity, trait: trait, message: message};
                     }
                 })
             });
@@ -74,7 +70,7 @@ export default class List extends React.Component {
             this.setState({
                 entities: res
             })
-        })
+        });
     }
 
     componentWillUnmount() {

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "outDir": "./tsp/",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "declaration": true,
+    "module": "esnext",
+    "target": "es2017",
+    "allowJs": false,
+    "checkJs": false,
+    "moduleResolution": "node",
+    "lib": [
+      "es2017",
+      "esnext.array",
+      "dom"
+    ],
+  },
+  "exclude": [
+    "node_modules",
+    "tsp"
+  ]
+}

@@ -38,7 +38,7 @@ cargo test --all
 # Generate web protos if possible
 pushd clients/web
 if [[ -d "node_modules" ]]; then
-  ./generate.sh
+  ./generate_protos.sh
 fi
 popd
 

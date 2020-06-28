@@ -26,6 +26,9 @@
         * `cargo install wasm-pack`
     * Then `wasm-pack build --release`
 
+* Transpire Typescript:
+    * `npm run build`
+
 * Launch the [sample project](../../examples/web) 
     * `cd ../../examples/web && npm install && npm run start`
     * Navigate to [http://localhost:8080](http://localhost:8080)

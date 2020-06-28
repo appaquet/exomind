@@ -1,8 +1,7 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
-import {Client, Registry, proto} from "exocore";
-
+import { Exocore, exocore } from "exocore";
 import React from 'react';
 import ReactDOM from 'react-dom';
 import List from './list.js';
@@ -12,7 +11,8 @@ class App extends React.Component {
         super(props);
 
         this.state = {
-            exocore: null
+            status: 'disconnected',
+            config: null,
         };
 
         const configJson = localStorage.getItem('config');
@@ -20,21 +20,18 @@ class App extends React.Component {
             this.state.config = JSON.parse(configJson);
             this.connect(this.state.config);
         }
-
-        Registry.registerMessage(proto.exocore.test.TestMessage, 'exocore.test.TestMessage');
-        Registry.registerMessage(proto.exocore.test.TestMessage2, 'exocore.test.TestMessage2');
     }
 
     render() {
         if (!this.state.config) {
-            return <ConfigInput onSet={this.setConfig.bind(this)}/>;
+            return <ConfigInput onSet={this.setConfig.bind(this)} />;
         }
 
-        if (this.state.exocore && this.state.status === 'connected') {
+        if (this.state.status === 'connected') {
             return (<div>
                 <button onClick={this.disconnect.bind(this)}>Reset</button>
 
-                <List exocore={this.state.exocore}/>
+                <List />
             </div>);
         } else {
             return this.renderLoading();
@@ -50,7 +47,7 @@ class App extends React.Component {
     }
 
     disconnect() {
-        this.setState({exocore: null, config: null});
+        this.setState({ config: null });
         localStorage.clear();
     }
 
@@ -65,16 +62,13 @@ class App extends React.Component {
     }
 
     connect(config) {
-        Client.create(config, (status) => {
-            console.log('Status ' + status);
-            this.setState({
-                status: status,
-            });
+        Exocore.initialize(config).then((instance) => {
+            Exocore.registry.registerMessage(exocore.test.TestMessage, 'exocore.test.TestMessage');
+            Exocore.registry.registerMessage(exocore.test.TestMessage2, 'exocore.test.TestMessage2');
 
-        }).then((client) => {
-            this.setState({
-                exocore: client,
-            });
+            instance.onChange = () => {
+                this.setState({ status: Exocore.defaultInstance.status });
+            }
         });
     }
 }
@@ -97,7 +91,7 @@ class ConfigInput extends React.Component {
         return (
             <div>
                 <h3>Paste JSON node config</h3>
-                <div><textarea value={this.state.text} onChange={this.onTextChange.bind(this)} style={textStyle}/></div>
+                <div><textarea value={this.state.text} onChange={this.onTextChange.bind(this)} style={textStyle} /></div>
                 <button onClick={this.onAddClick.bind(this)}>Save</button>
             </div>
         )
@@ -119,7 +113,7 @@ class ConfigInput extends React.Component {
 
 
 ReactDOM.render(
-    <App/>,
+    <App />,
     document.getElementById('root')
 );
 

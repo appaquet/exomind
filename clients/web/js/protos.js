@@ -91,7 +91,7 @@ export const exocore = $root.exocore = (() => {
             Entity.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.id != null && message.hasOwnProperty("id"))
+                if (message.id != null && Object.hasOwnProperty.call(message, "id"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
                 if (message.traits != null && message.traits.length)
                     for (let i = 0; i < message.traits.length; ++i)
@@ -339,13 +339,13 @@ export const exocore = $root.exocore = (() => {
             Trait.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.id != null && message.hasOwnProperty("id"))
+                if (message.id != null && Object.hasOwnProperty.call(message, "id"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
-                if (message.message != null && message.hasOwnProperty("message"))
+                if (message.message != null && Object.hasOwnProperty.call(message, "message"))
                     $root.google.protobuf.Any.encode(message.message, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.creationDate != null && message.hasOwnProperty("creationDate"))
+                if (message.creationDate != null && Object.hasOwnProperty.call(message, "creationDate"))
                     $root.google.protobuf.Timestamp.encode(message.creationDate, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.modificationDate != null && message.hasOwnProperty("modificationDate"))
+                if (message.modificationDate != null && Object.hasOwnProperty.call(message, "modificationDate"))
                     $root.google.protobuf.Timestamp.encode(message.modificationDate, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
                 return writer;
             };
@@ -590,9 +590,9 @@ export const exocore = $root.exocore = (() => {
             Reference.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                if (message.entityId != null && Object.hasOwnProperty.call(message, "entityId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.entityId);
-                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                if (message.traitId != null && Object.hasOwnProperty.call(message, "traitId"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.traitId);
                 return writer;
             };
@@ -813,9 +813,9 @@ export const exocore = $root.exocore = (() => {
                 if (message.mutations != null && message.mutations.length)
                     for (let i = 0; i < message.mutations.length; ++i)
                         $root.exocore.index.EntityMutation.encode(message.mutations[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.waitIndexed != null && message.hasOwnProperty("waitIndexed"))
+                if (message.waitIndexed != null && Object.hasOwnProperty.call(message, "waitIndexed"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.waitIndexed);
-                if (message.returnEntities != null && message.hasOwnProperty("returnEntities"))
+                if (message.returnEntities != null && Object.hasOwnProperty.call(message, "returnEntities"))
                     writer.uint32(/* id 3, wireType 0 =*/24).bool(message.returnEntities);
                 return writer;
             };
@@ -1378,19 +1378,19 @@ export const exocore = $root.exocore = (() => {
             EntityMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                if (message.entityId != null && Object.hasOwnProperty.call(message, "entityId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.entityId);
-                if (message.putTrait != null && message.hasOwnProperty("putTrait"))
+                if (message.putTrait != null && Object.hasOwnProperty.call(message, "putTrait"))
                     $root.exocore.index.PutTraitMutation.encode(message.putTrait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.deleteTrait != null && message.hasOwnProperty("deleteTrait"))
+                if (message.deleteTrait != null && Object.hasOwnProperty.call(message, "deleteTrait"))
                     $root.exocore.index.DeleteTraitMutation.encode(message.deleteTrait, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.deleteEntity != null && message.hasOwnProperty("deleteEntity"))
+                if (message.deleteEntity != null && Object.hasOwnProperty.call(message, "deleteEntity"))
                     $root.exocore.index.DeleteEntityMutation.encode(message.deleteEntity, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.updateTrait != null && message.hasOwnProperty("updateTrait"))
+                if (message.updateTrait != null && Object.hasOwnProperty.call(message, "updateTrait"))
                     $root.exocore.index.UpdateTraitMutation.encode(message.updateTrait, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.compactTrait != null && message.hasOwnProperty("compactTrait"))
+                if (message.compactTrait != null && Object.hasOwnProperty.call(message, "compactTrait"))
                     $root.exocore.index.CompactTraitMutation.encode(message.compactTrait, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-                if (message.test != null && message.hasOwnProperty("test"))
+                if (message.test != null && Object.hasOwnProperty.call(message, "test"))
                     $root.exocore.index.TestMutation.encode(message.test, writer.uint32(/* id 99, wireType 2 =*/794).fork()).ldelim();
                 return writer;
             };
@@ -1714,7 +1714,7 @@ export const exocore = $root.exocore = (() => {
             PutTraitMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.trait != null && message.hasOwnProperty("trait"))
+                if (message.trait != null && Object.hasOwnProperty.call(message, "trait"))
                     $root.exocore.index.Trait.encode(message.trait, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 return writer;
             };
@@ -1906,7 +1906,7 @@ export const exocore = $root.exocore = (() => {
             DeleteTraitMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                if (message.traitId != null && Object.hasOwnProperty.call(message, "traitId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.traitId);
                 return writer;
             };
@@ -2280,13 +2280,13 @@ export const exocore = $root.exocore = (() => {
             UpdateTraitMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                if (message.traitId != null && Object.hasOwnProperty.call(message, "traitId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.traitId);
-                if (message.trait != null && message.hasOwnProperty("trait"))
+                if (message.trait != null && Object.hasOwnProperty.call(message, "trait"))
                     $root.exocore.index.Trait.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.fieldMask != null && message.hasOwnProperty("fieldMask"))
+                if (message.fieldMask != null && Object.hasOwnProperty.call(message, "fieldMask"))
                     $root.google.protobuf.FieldMask.encode(message.fieldMask, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.ifLastOperationId != null && message.hasOwnProperty("ifLastOperationId"))
+                if (message.ifLastOperationId != null && Object.hasOwnProperty.call(message, "ifLastOperationId"))
                     writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.ifLastOperationId);
                 return writer;
             };
@@ -2544,7 +2544,7 @@ export const exocore = $root.exocore = (() => {
                 if (message.compactedOperations != null && message.compactedOperations.length)
                     for (let i = 0; i < message.compactedOperations.length; ++i)
                         $root.exocore.index.CompactTraitMutation.Operation.encode(message.compactedOperations[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.trait != null && message.hasOwnProperty("trait"))
+                if (message.trait != null && Object.hasOwnProperty.call(message, "trait"))
                     $root.exocore.index.Trait.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -2764,7 +2764,7 @@ export const exocore = $root.exocore = (() => {
                 Operation.encode = function encode(message, writer) {
                     if (!writer)
                         writer = $Writer.create();
-                    if (message.operationId != null && message.hasOwnProperty("operationId"))
+                    if (message.operationId != null && Object.hasOwnProperty.call(message, "operationId"))
                         writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.operationId);
                     return writer;
                 };
@@ -2968,7 +2968,7 @@ export const exocore = $root.exocore = (() => {
             TestMutation.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.success != null && message.hasOwnProperty("success"))
+                if (message.success != null && Object.hasOwnProperty.call(message, "success"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.success);
                 return writer;
             };
@@ -3277,31 +3277,31 @@ export const exocore = $root.exocore = (() => {
             EntityQuery.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.match != null && message.hasOwnProperty("match"))
+                if (message.match != null && Object.hasOwnProperty.call(message, "match"))
                     $root.exocore.index.MatchPredicate.encode(message.match, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.trait != null && message.hasOwnProperty("trait"))
+                if (message.trait != null && Object.hasOwnProperty.call(message, "trait"))
                     $root.exocore.index.TraitPredicate.encode(message.trait, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.ids != null && message.hasOwnProperty("ids"))
+                if (message.ids != null && Object.hasOwnProperty.call(message, "ids"))
                     $root.exocore.index.IdsPredicate.encode(message.ids, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.reference != null && message.hasOwnProperty("reference"))
+                if (message.reference != null && Object.hasOwnProperty.call(message, "reference"))
                     $root.exocore.index.ReferencePredicate.encode(message.reference, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.paging != null && message.hasOwnProperty("paging"))
+                if (message.paging != null && Object.hasOwnProperty.call(message, "paging"))
                     $root.exocore.index.Paging.encode(message.paging, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.ordering != null && message.hasOwnProperty("ordering"))
+                if (message.ordering != null && Object.hasOwnProperty.call(message, "ordering"))
                     $root.exocore.index.Ordering.encode(message.ordering, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-                if (message.summary != null && message.hasOwnProperty("summary"))
+                if (message.summary != null && Object.hasOwnProperty.call(message, "summary"))
                     writer.uint32(/* id 7, wireType 0 =*/56).bool(message.summary);
-                if (message.watchToken != null && message.hasOwnProperty("watchToken"))
+                if (message.watchToken != null && Object.hasOwnProperty.call(message, "watchToken"))
                     writer.uint32(/* id 8, wireType 0 =*/64).uint64(message.watchToken);
-                if (message.resultHash != null && message.hasOwnProperty("resultHash"))
+                if (message.resultHash != null && Object.hasOwnProperty.call(message, "resultHash"))
                     writer.uint32(/* id 9, wireType 0 =*/72).uint64(message.resultHash);
-                if (message.operations != null && message.hasOwnProperty("operations"))
+                if (message.operations != null && Object.hasOwnProperty.call(message, "operations"))
                     $root.exocore.index.OperationsPredicate.encode(message.operations, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
-                if (message.all != null && message.hasOwnProperty("all"))
+                if (message.all != null && Object.hasOwnProperty.call(message, "all"))
                     $root.exocore.index.AllPredicate.encode(message.all, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
-                if (message.includeDeleted != null && message.hasOwnProperty("includeDeleted"))
+                if (message.includeDeleted != null && Object.hasOwnProperty.call(message, "includeDeleted"))
                     writer.uint32(/* id 12, wireType 0 =*/96).bool(message.includeDeleted);
-                if (message.test != null && message.hasOwnProperty("test"))
+                if (message.test != null && Object.hasOwnProperty.call(message, "test"))
                     $root.exocore.index.TestPredicate.encode(message.test, writer.uint32(/* id 99, wireType 2 =*/794).fork()).ldelim();
                 return writer;
             };
@@ -3742,7 +3742,7 @@ export const exocore = $root.exocore = (() => {
             MatchPredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.query != null && message.hasOwnProperty("query"))
+                if (message.query != null && Object.hasOwnProperty.call(message, "query"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.query);
                 return writer;
             };
@@ -4513,7 +4513,7 @@ export const exocore = $root.exocore = (() => {
             TestPredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.success != null && message.hasOwnProperty("success"))
+                if (message.success != null && Object.hasOwnProperty.call(message, "success"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.success);
                 return writer;
             };
@@ -4709,9 +4709,9 @@ export const exocore = $root.exocore = (() => {
             TraitPredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.traitName != null && message.hasOwnProperty("traitName"))
+                if (message.traitName != null && Object.hasOwnProperty.call(message, "traitName"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.traitName);
-                if (message.query != null && message.hasOwnProperty("query"))
+                if (message.query != null && Object.hasOwnProperty.call(message, "query"))
                     $root.exocore.index.TraitQuery.encode(message.query, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -4947,11 +4947,11 @@ export const exocore = $root.exocore = (() => {
             TraitQuery.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.match != null && message.hasOwnProperty("match"))
+                if (message.match != null && Object.hasOwnProperty.call(message, "match"))
                     $root.exocore.index.MatchPredicate.encode(message.match, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.field != null && message.hasOwnProperty("field"))
+                if (message.field != null && Object.hasOwnProperty.call(message, "field"))
                     $root.exocore.index.TraitFieldPredicate.encode(message.field, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.reference != null && message.hasOwnProperty("reference"))
+                if (message.reference != null && Object.hasOwnProperty.call(message, "reference"))
                     $root.exocore.index.TraitFieldReferencePredicate.encode(message.reference, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -5253,17 +5253,17 @@ export const exocore = $root.exocore = (() => {
             TraitFieldPredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.field != null && message.hasOwnProperty("field"))
+                if (message.field != null && Object.hasOwnProperty.call(message, "field"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.field);
-                if (message.string != null && message.hasOwnProperty("string"))
+                if (message.string != null && Object.hasOwnProperty.call(message, "string"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.string);
-                if (message.int64 != null && message.hasOwnProperty("int64"))
+                if (message.int64 != null && Object.hasOwnProperty.call(message, "int64"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int64(message.int64);
-                if (message.uint64 != null && message.hasOwnProperty("uint64"))
+                if (message.uint64 != null && Object.hasOwnProperty.call(message, "uint64"))
                     writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.uint64);
-                if (message.date != null && message.hasOwnProperty("date"))
+                if (message.date != null && Object.hasOwnProperty.call(message, "date"))
                     $root.google.protobuf.Timestamp.encode(message.date, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.operator != null && message.hasOwnProperty("operator"))
+                if (message.operator != null && Object.hasOwnProperty.call(message, "operator"))
                     writer.uint32(/* id 6, wireType 0 =*/48).int32(message.operator);
                 return writer;
             };
@@ -5527,7 +5527,7 @@ export const exocore = $root.exocore = (() => {
             /**
              * Operator enum.
              * @name exocore.index.TraitFieldPredicate.Operator
-             * @enum {string}
+             * @enum {number}
              * @property {number} EQUAL=0 EQUAL value
              * @property {number} GT=1 GT value
              * @property {number} GTE=2 GTE value
@@ -5612,9 +5612,9 @@ export const exocore = $root.exocore = (() => {
             TraitFieldReferencePredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.field != null && message.hasOwnProperty("field"))
+                if (message.field != null && Object.hasOwnProperty.call(message, "field"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.field);
-                if (message.reference != null && message.hasOwnProperty("reference"))
+                if (message.reference != null && Object.hasOwnProperty.call(message, "reference"))
                     $root.exocore.index.ReferencePredicate.encode(message.reference, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -5827,9 +5827,9 @@ export const exocore = $root.exocore = (() => {
             ReferencePredicate.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entityId != null && message.hasOwnProperty("entityId"))
+                if (message.entityId != null && Object.hasOwnProperty.call(message, "entityId"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.entityId);
-                if (message.traitId != null && message.hasOwnProperty("traitId"))
+                if (message.traitId != null && Object.hasOwnProperty.call(message, "traitId"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.traitId);
                 return writer;
             };
@@ -6046,11 +6046,11 @@ export const exocore = $root.exocore = (() => {
             Paging.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.afterOrderingValue != null && message.hasOwnProperty("afterOrderingValue"))
+                if (message.afterOrderingValue != null && Object.hasOwnProperty.call(message, "afterOrderingValue"))
                     $root.exocore.index.OrderingValue.encode(message.afterOrderingValue, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.beforeOrderingValue != null && message.hasOwnProperty("beforeOrderingValue"))
+                if (message.beforeOrderingValue != null && Object.hasOwnProperty.call(message, "beforeOrderingValue"))
                     $root.exocore.index.OrderingValue.encode(message.beforeOrderingValue, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.count != null && message.hasOwnProperty("count"))
+                if (message.count != null && Object.hasOwnProperty.call(message, "count"))
                     writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.count);
                 return writer;
             };
@@ -6311,13 +6311,13 @@ export const exocore = $root.exocore = (() => {
             Ordering.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.score != null && message.hasOwnProperty("score"))
+                if (message.score != null && Object.hasOwnProperty.call(message, "score"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.score);
-                if (message.operationId != null && message.hasOwnProperty("operationId"))
+                if (message.operationId != null && Object.hasOwnProperty.call(message, "operationId"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.operationId);
-                if (message.field != null && message.hasOwnProperty("field"))
+                if (message.field != null && Object.hasOwnProperty.call(message, "field"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.field);
-                if (message.ascending != null && message.hasOwnProperty("ascending"))
+                if (message.ascending != null && Object.hasOwnProperty.call(message, "ascending"))
                     writer.uint32(/* id 4, wireType 0 =*/32).bool(message.ascending);
                 return writer;
             };
@@ -6613,17 +6613,17 @@ export const exocore = $root.exocore = (() => {
             OrderingValue.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.float != null && message.hasOwnProperty("float"))
+                if (message.float != null && Object.hasOwnProperty.call(message, "float"))
                     writer.uint32(/* id 1, wireType 5 =*/13).float(message.float);
-                if (message.uint64 != null && message.hasOwnProperty("uint64"))
+                if (message.uint64 != null && Object.hasOwnProperty.call(message, "uint64"))
                     writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.uint64);
-                if (message.date != null && message.hasOwnProperty("date"))
+                if (message.date != null && Object.hasOwnProperty.call(message, "date"))
                     $root.google.protobuf.Timestamp.encode(message.date, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.min != null && message.hasOwnProperty("min"))
+                if (message.min != null && Object.hasOwnProperty.call(message, "min"))
                     writer.uint32(/* id 4, wireType 0 =*/32).bool(message.min);
-                if (message.max != null && message.hasOwnProperty("max"))
+                if (message.max != null && Object.hasOwnProperty.call(message, "max"))
                     writer.uint32(/* id 5, wireType 0 =*/40).bool(message.max);
-                if (message.operationId != null && message.hasOwnProperty("operationId"))
+                if (message.operationId != null && Object.hasOwnProperty.call(message, "operationId"))
                     writer.uint32(/* id 6, wireType 0 =*/48).uint64(message.operationId);
                 return writer;
             };
@@ -6973,15 +6973,15 @@ export const exocore = $root.exocore = (() => {
                 if (message.entities != null && message.entities.length)
                     for (let i = 0; i < message.entities.length; ++i)
                         $root.exocore.index.EntityResult.encode(message.entities[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.summary != null && message.hasOwnProperty("summary"))
+                if (message.summary != null && Object.hasOwnProperty.call(message, "summary"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.summary);
-                if (message.estimatedCount != null && message.hasOwnProperty("estimatedCount"))
+                if (message.estimatedCount != null && Object.hasOwnProperty.call(message, "estimatedCount"))
                     writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.estimatedCount);
-                if (message.currentPage != null && message.hasOwnProperty("currentPage"))
+                if (message.currentPage != null && Object.hasOwnProperty.call(message, "currentPage"))
                     $root.exocore.index.Paging.encode(message.currentPage, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.nextPage != null && message.hasOwnProperty("nextPage"))
+                if (message.nextPage != null && Object.hasOwnProperty.call(message, "nextPage"))
                     $root.exocore.index.Paging.encode(message.nextPage, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.hash != null && message.hasOwnProperty("hash"))
+                if (message.hash != null && Object.hasOwnProperty.call(message, "hash"))
                     writer.uint32(/* id 6, wireType 0 =*/48).uint64(message.hash);
                 return writer;
             };
@@ -7286,11 +7286,11 @@ export const exocore = $root.exocore = (() => {
             EntityResult.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entity != null && message.hasOwnProperty("entity"))
+                if (message.entity != null && Object.hasOwnProperty.call(message, "entity"))
                     $root.exocore.index.Entity.encode(message.entity, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.source != null && message.hasOwnProperty("source"))
+                if (message.source != null && Object.hasOwnProperty.call(message, "source"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.source);
-                if (message.orderingValue != null && message.hasOwnProperty("orderingValue"))
+                if (message.orderingValue != null && Object.hasOwnProperty.call(message, "orderingValue"))
                     $root.exocore.index.OrderingValue.encode(message.orderingValue, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -7475,7 +7475,7 @@ export const exocore = $root.exocore = (() => {
         /**
          * EntityResultSource enum.
          * @name exocore.index.EntityResultSource
-         * @enum {string}
+         * @enum {number}
          * @property {number} UNKNOWN=0 UNKNOWN value
          * @property {number} PENDING=1 PENDING value
          * @property {number} CHAIN=2 CHAIN value
@@ -7714,39 +7714,39 @@ export const exocore = $root.exocore = (() => {
             TestMessage.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.string1 != null && message.hasOwnProperty("string1"))
+                if (message.string1 != null && Object.hasOwnProperty.call(message, "string1"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.string1);
-                if (message.string2 != null && message.hasOwnProperty("string2"))
+                if (message.string2 != null && Object.hasOwnProperty.call(message, "string2"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.string2);
-                if (message.struct1 != null && message.hasOwnProperty("struct1"))
+                if (message.struct1 != null && Object.hasOwnProperty.call(message, "struct1"))
                     $root.exocore.test.TestStruct.encode(message.struct1, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-                if (message.oneofString1 != null && message.hasOwnProperty("oneofString1"))
+                if (message.oneofString1 != null && Object.hasOwnProperty.call(message, "oneofString1"))
                     writer.uint32(/* id 4, wireType 2 =*/34).string(message.oneofString1);
-                if (message.oneofInt1 != null && message.hasOwnProperty("oneofInt1"))
+                if (message.oneofInt1 != null && Object.hasOwnProperty.call(message, "oneofInt1"))
                     writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.oneofInt1);
-                if (message.date1 != null && message.hasOwnProperty("date1"))
+                if (message.date1 != null && Object.hasOwnProperty.call(message, "date1"))
                     $root.google.protobuf.Timestamp.encode(message.date1, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
-                if (message.date2 != null && message.hasOwnProperty("date2"))
+                if (message.date2 != null && Object.hasOwnProperty.call(message, "date2"))
                     $root.google.protobuf.Timestamp.encode(message.date2, writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
-                if (message.uint1 != null && message.hasOwnProperty("uint1"))
+                if (message.uint1 != null && Object.hasOwnProperty.call(message, "uint1"))
                     writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.uint1);
-                if (message.uint2 != null && message.hasOwnProperty("uint2"))
+                if (message.uint2 != null && Object.hasOwnProperty.call(message, "uint2"))
                     writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.uint2);
-                if (message.string3 != null && message.hasOwnProperty("string3"))
+                if (message.string3 != null && Object.hasOwnProperty.call(message, "string3"))
                     writer.uint32(/* id 12, wireType 2 =*/98).string(message.string3);
-                if (message.ref1 != null && message.hasOwnProperty("ref1"))
+                if (message.ref1 != null && Object.hasOwnProperty.call(message, "ref1"))
                     $root.exocore.index.Reference.encode(message.ref1, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
-                if (message.ref2 != null && message.hasOwnProperty("ref2"))
+                if (message.ref2 != null && Object.hasOwnProperty.call(message, "ref2"))
                     $root.exocore.index.Reference.encode(message.ref2, writer.uint32(/* id 14, wireType 2 =*/114).fork()).ldelim();
-                if (message.int1 != null && message.hasOwnProperty("int1"))
+                if (message.int1 != null && Object.hasOwnProperty.call(message, "int1"))
                     writer.uint32(/* id 15, wireType 0 =*/120).int32(message.int1);
-                if (message.int2 != null && message.hasOwnProperty("int2"))
+                if (message.int2 != null && Object.hasOwnProperty.call(message, "int2"))
                     writer.uint32(/* id 16, wireType 0 =*/128).int32(message.int2);
-                if (message.date3 != null && message.hasOwnProperty("date3"))
+                if (message.date3 != null && Object.hasOwnProperty.call(message, "date3"))
                     $root.google.protobuf.Timestamp.encode(message.date3, writer.uint32(/* id 17, wireType 2 =*/138).fork()).ldelim();
-                if (message.uint3 != null && message.hasOwnProperty("uint3"))
+                if (message.uint3 != null && Object.hasOwnProperty.call(message, "uint3"))
                     writer.uint32(/* id 18, wireType 0 =*/144).uint32(message.uint3);
-                if (message.int3 != null && message.hasOwnProperty("int3"))
+                if (message.int3 != null && Object.hasOwnProperty.call(message, "int3"))
                     writer.uint32(/* id 19, wireType 0 =*/152).int32(message.int3);
                 return writer;
             };
@@ -8151,7 +8151,7 @@ export const exocore = $root.exocore = (() => {
             TestStruct.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.string1 != null && message.hasOwnProperty("string1"))
+                if (message.string1 != null && Object.hasOwnProperty.call(message, "string1"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.string1);
                 return writer;
             };
@@ -8347,9 +8347,9 @@ export const exocore = $root.exocore = (() => {
             TestMessage2.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.string1 != null && message.hasOwnProperty("string1"))
+                if (message.string1 != null && Object.hasOwnProperty.call(message, "string1"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.string1);
-                if (message.string2 != null && message.hasOwnProperty("string2"))
+                if (message.string2 != null && Object.hasOwnProperty.call(message, "string2"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.string2);
                 return writer;
             };
@@ -8581,9 +8581,9 @@ export const google = $root.google = (() => {
             Timestamp.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.seconds != null && message.hasOwnProperty("seconds"))
+                if (message.seconds != null && Object.hasOwnProperty.call(message, "seconds"))
                     writer.uint32(/* id 1, wireType 0 =*/8).int64(message.seconds);
-                if (message.nanos != null && message.hasOwnProperty("nanos"))
+                if (message.nanos != null && Object.hasOwnProperty.call(message, "nanos"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.nanos);
                 return writer;
             };
@@ -8805,9 +8805,9 @@ export const google = $root.google = (() => {
             Any.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.type_url != null && message.hasOwnProperty("type_url"))
+                if (message.type_url != null && Object.hasOwnProperty.call(message, "type_url"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.type_url);
-                if (message.value != null && message.hasOwnProperty("value"))
+                if (message.value != null && Object.hasOwnProperty.call(message, "value"))
                     writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.value);
                 return writer;
             };
@@ -9532,9 +9532,9 @@ export const google = $root.google = (() => {
             FileDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message["package"] != null && message.hasOwnProperty("package"))
+                if (message["package"] != null && Object.hasOwnProperty.call(message, "package"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message["package"]);
                 if (message.dependency != null && message.dependency.length)
                     for (let i = 0; i < message.dependency.length; ++i)
@@ -9551,9 +9551,9 @@ export const google = $root.google = (() => {
                 if (message.extension != null && message.extension.length)
                     for (let i = 0; i < message.extension.length; ++i)
                         $root.google.protobuf.FieldDescriptorProto.encode(message.extension[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
-                if (message.options != null && message.hasOwnProperty("options"))
+                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
                     $root.google.protobuf.FileOptions.encode(message.options, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
-                if (message.sourceCodeInfo != null && message.hasOwnProperty("sourceCodeInfo"))
+                if (message.sourceCodeInfo != null && Object.hasOwnProperty.call(message, "sourceCodeInfo"))
                     $root.google.protobuf.SourceCodeInfo.encode(message.sourceCodeInfo, writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
                 if (message.publicDependency != null && message.publicDependency.length)
                     for (let i = 0; i < message.publicDependency.length; ++i)
@@ -9561,7 +9561,7 @@ export const google = $root.google = (() => {
                 if (message.weakDependency != null && message.weakDependency.length)
                     for (let i = 0; i < message.weakDependency.length; ++i)
                         writer.uint32(/* id 11, wireType 0 =*/88).int32(message.weakDependency[i]);
-                if (message.syntax != null && message.hasOwnProperty("syntax"))
+                if (message.syntax != null && Object.hasOwnProperty.call(message, "syntax"))
                     writer.uint32(/* id 12, wireType 2 =*/98).string(message.syntax);
                 return writer;
             };
@@ -10099,7 +10099,7 @@ export const google = $root.google = (() => {
             DescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
                 if (message.field != null && message.field.length)
                     for (let i = 0; i < message.field.length; ++i)
@@ -10116,7 +10116,7 @@ export const google = $root.google = (() => {
                 if (message.extension != null && message.extension.length)
                     for (let i = 0; i < message.extension.length; ++i)
                         $root.google.protobuf.FieldDescriptorProto.encode(message.extension[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-                if (message.options != null && message.hasOwnProperty("options"))
+                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
                     $root.google.protobuf.MessageOptions.encode(message.options, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
                 if (message.oneofDecl != null && message.oneofDecl.length)
                     for (let i = 0; i < message.oneofDecl.length; ++i)
@@ -10572,9 +10572,9 @@ export const google = $root.google = (() => {
                 ExtensionRange.encode = function encode(message, writer) {
                     if (!writer)
                         writer = $Writer.create();
-                    if (message.start != null && message.hasOwnProperty("start"))
+                    if (message.start != null && Object.hasOwnProperty.call(message, "start"))
                         writer.uint32(/* id 1, wireType 0 =*/8).int32(message.start);
-                    if (message.end != null && message.hasOwnProperty("end"))
+                    if (message.end != null && Object.hasOwnProperty.call(message, "end"))
                         writer.uint32(/* id 2, wireType 0 =*/16).int32(message.end);
                     return writer;
                 };
@@ -10782,9 +10782,9 @@ export const google = $root.google = (() => {
                 ReservedRange.encode = function encode(message, writer) {
                     if (!writer)
                         writer = $Writer.create();
-                    if (message.start != null && message.hasOwnProperty("start"))
+                    if (message.start != null && Object.hasOwnProperty.call(message, "start"))
                         writer.uint32(/* id 1, wireType 0 =*/8).int32(message.start);
-                    if (message.end != null && message.hasOwnProperty("end"))
+                    if (message.end != null && Object.hasOwnProperty.call(message, "end"))
                         writer.uint32(/* id 2, wireType 0 =*/16).int32(message.end);
                     return writer;
                 };
@@ -11067,25 +11067,25 @@ export const google = $root.google = (() => {
             FieldDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.extendee != null && message.hasOwnProperty("extendee"))
+                if (message.extendee != null && Object.hasOwnProperty.call(message, "extendee"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.extendee);
-                if (message.number != null && message.hasOwnProperty("number"))
+                if (message.number != null && Object.hasOwnProperty.call(message, "number"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int32(message.number);
-                if (message.label != null && message.hasOwnProperty("label"))
+                if (message.label != null && Object.hasOwnProperty.call(message, "label"))
                     writer.uint32(/* id 4, wireType 0 =*/32).int32(message.label);
-                if (message.type != null && message.hasOwnProperty("type"))
+                if (message.type != null && Object.hasOwnProperty.call(message, "type"))
                     writer.uint32(/* id 5, wireType 0 =*/40).int32(message.type);
-                if (message.typeName != null && message.hasOwnProperty("typeName"))
+                if (message.typeName != null && Object.hasOwnProperty.call(message, "typeName"))
                     writer.uint32(/* id 6, wireType 2 =*/50).string(message.typeName);
-                if (message.defaultValue != null && message.hasOwnProperty("defaultValue"))
+                if (message.defaultValue != null && Object.hasOwnProperty.call(message, "defaultValue"))
                     writer.uint32(/* id 7, wireType 2 =*/58).string(message.defaultValue);
-                if (message.options != null && message.hasOwnProperty("options"))
+                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
                     $root.google.protobuf.FieldOptions.encode(message.options, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
-                if (message.oneofIndex != null && message.hasOwnProperty("oneofIndex"))
+                if (message.oneofIndex != null && Object.hasOwnProperty.call(message, "oneofIndex"))
                     writer.uint32(/* id 9, wireType 0 =*/72).int32(message.oneofIndex);
-                if (message.jsonName != null && message.hasOwnProperty("jsonName"))
+                if (message.jsonName != null && Object.hasOwnProperty.call(message, "jsonName"))
                     writer.uint32(/* id 10, wireType 2 =*/82).string(message.jsonName);
                 return writer;
             };
@@ -11432,7 +11432,7 @@ export const google = $root.google = (() => {
             /**
              * Type enum.
              * @name google.protobuf.FieldDescriptorProto.Type
-             * @enum {string}
+             * @enum {number}
              * @property {number} TYPE_DOUBLE=1 TYPE_DOUBLE value
              * @property {number} TYPE_FLOAT=2 TYPE_FLOAT value
              * @property {number} TYPE_INT64=3 TYPE_INT64 value
@@ -11478,7 +11478,7 @@ export const google = $root.google = (() => {
             /**
              * Label enum.
              * @name google.protobuf.FieldDescriptorProto.Label
-             * @enum {string}
+             * @enum {number}
              * @property {number} LABEL_OPTIONAL=1 LABEL_OPTIONAL value
              * @property {number} LABEL_REQUIRED=2 LABEL_REQUIRED value
              * @property {number} LABEL_REPEATED=3 LABEL_REPEATED value
@@ -11559,9 +11559,9 @@ export const google = $root.google = (() => {
             OneofDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.options != null && message.hasOwnProperty("options"))
+                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
                     $root.google.protobuf.OneofOptions.encode(message.options, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -11784,12 +11784,12 @@ export const google = $root.google = (() => {
             EnumDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
                 if (message.value != null && message.value.length)
                     for (let i = 0; i < message.value.length; ++i)
                         $root.google.protobuf.EnumValueDescriptorProto.encode(message.value[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.options != null && message.hasOwnProperty("options"))
+                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
                     $root.google.protobuf.EnumOptions.encode(message.options, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -12042,11 +12042,11 @@ export const google = $root.google = (() => {
             EnumValueDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.number != null && message.hasOwnProperty("number"))
+                if (message.number != null && Object.hasOwnProperty.call(message, "number"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.number);
-                if (message.options != null && message.hasOwnProperty("options"))
+                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
                     $root.google.protobuf.EnumValueOptions.encode(message.options, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -12280,12 +12280,12 @@ export const google = $root.google = (() => {
             ServiceDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
                 if (message.method != null && message.method.length)
                     for (let i = 0; i < message.method.length; ++i)
                         $root.google.protobuf.MethodDescriptorProto.encode(message.method[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.options != null && message.hasOwnProperty("options"))
+                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
                     $root.google.protobuf.ServiceOptions.encode(message.options, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
@@ -12565,17 +12565,17 @@ export const google = $root.google = (() => {
             MethodDescriptorProto.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.inputType != null && message.hasOwnProperty("inputType"))
+                if (message.inputType != null && Object.hasOwnProperty.call(message, "inputType"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.inputType);
-                if (message.outputType != null && message.hasOwnProperty("outputType"))
+                if (message.outputType != null && Object.hasOwnProperty.call(message, "outputType"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.outputType);
-                if (message.options != null && message.hasOwnProperty("options"))
+                if (message.options != null && Object.hasOwnProperty.call(message, "options"))
                     $root.google.protobuf.MethodOptions.encode(message.options, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.clientStreaming != null && message.hasOwnProperty("clientStreaming"))
+                if (message.clientStreaming != null && Object.hasOwnProperty.call(message, "clientStreaming"))
                     writer.uint32(/* id 5, wireType 0 =*/40).bool(message.clientStreaming);
-                if (message.serverStreaming != null && message.hasOwnProperty("serverStreaming"))
+                if (message.serverStreaming != null && Object.hasOwnProperty.call(message, "serverStreaming"))
                     writer.uint32(/* id 6, wireType 0 =*/48).bool(message.serverStreaming);
                 return writer;
             };
@@ -12950,33 +12950,33 @@ export const google = $root.google = (() => {
             FileOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.javaPackage != null && message.hasOwnProperty("javaPackage"))
+                if (message.javaPackage != null && Object.hasOwnProperty.call(message, "javaPackage"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.javaPackage);
-                if (message.javaOuterClassname != null && message.hasOwnProperty("javaOuterClassname"))
+                if (message.javaOuterClassname != null && Object.hasOwnProperty.call(message, "javaOuterClassname"))
                     writer.uint32(/* id 8, wireType 2 =*/66).string(message.javaOuterClassname);
-                if (message.optimizeFor != null && message.hasOwnProperty("optimizeFor"))
+                if (message.optimizeFor != null && Object.hasOwnProperty.call(message, "optimizeFor"))
                     writer.uint32(/* id 9, wireType 0 =*/72).int32(message.optimizeFor);
-                if (message.javaMultipleFiles != null && message.hasOwnProperty("javaMultipleFiles"))
+                if (message.javaMultipleFiles != null && Object.hasOwnProperty.call(message, "javaMultipleFiles"))
                     writer.uint32(/* id 10, wireType 0 =*/80).bool(message.javaMultipleFiles);
-                if (message.goPackage != null && message.hasOwnProperty("goPackage"))
+                if (message.goPackage != null && Object.hasOwnProperty.call(message, "goPackage"))
                     writer.uint32(/* id 11, wireType 2 =*/90).string(message.goPackage);
-                if (message.ccGenericServices != null && message.hasOwnProperty("ccGenericServices"))
+                if (message.ccGenericServices != null && Object.hasOwnProperty.call(message, "ccGenericServices"))
                     writer.uint32(/* id 16, wireType 0 =*/128).bool(message.ccGenericServices);
-                if (message.javaGenericServices != null && message.hasOwnProperty("javaGenericServices"))
+                if (message.javaGenericServices != null && Object.hasOwnProperty.call(message, "javaGenericServices"))
                     writer.uint32(/* id 17, wireType 0 =*/136).bool(message.javaGenericServices);
-                if (message.pyGenericServices != null && message.hasOwnProperty("pyGenericServices"))
+                if (message.pyGenericServices != null && Object.hasOwnProperty.call(message, "pyGenericServices"))
                     writer.uint32(/* id 18, wireType 0 =*/144).bool(message.pyGenericServices);
-                if (message.javaGenerateEqualsAndHash != null && message.hasOwnProperty("javaGenerateEqualsAndHash"))
+                if (message.javaGenerateEqualsAndHash != null && Object.hasOwnProperty.call(message, "javaGenerateEqualsAndHash"))
                     writer.uint32(/* id 20, wireType 0 =*/160).bool(message.javaGenerateEqualsAndHash);
-                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
+                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
                     writer.uint32(/* id 23, wireType 0 =*/184).bool(message.deprecated);
-                if (message.javaStringCheckUtf8 != null && message.hasOwnProperty("javaStringCheckUtf8"))
+                if (message.javaStringCheckUtf8 != null && Object.hasOwnProperty.call(message, "javaStringCheckUtf8"))
                     writer.uint32(/* id 27, wireType 0 =*/216).bool(message.javaStringCheckUtf8);
-                if (message.ccEnableArenas != null && message.hasOwnProperty("ccEnableArenas"))
+                if (message.ccEnableArenas != null && Object.hasOwnProperty.call(message, "ccEnableArenas"))
                     writer.uint32(/* id 31, wireType 0 =*/248).bool(message.ccEnableArenas);
-                if (message.objcClassPrefix != null && message.hasOwnProperty("objcClassPrefix"))
+                if (message.objcClassPrefix != null && Object.hasOwnProperty.call(message, "objcClassPrefix"))
                     writer.uint32(/* id 36, wireType 2 =*/290).string(message.objcClassPrefix);
-                if (message.csharpNamespace != null && message.hasOwnProperty("csharpNamespace"))
+                if (message.csharpNamespace != null && Object.hasOwnProperty.call(message, "csharpNamespace"))
                     writer.uint32(/* id 37, wireType 2 =*/298).string(message.csharpNamespace);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -13303,7 +13303,7 @@ export const google = $root.google = (() => {
             /**
              * OptimizeMode enum.
              * @name google.protobuf.FileOptions.OptimizeMode
-             * @enum {string}
+             * @enum {number}
              * @property {number} SPEED=1 SPEED value
              * @property {number} CODE_SIZE=2 CODE_SIZE value
              * @property {number} LITE_RUNTIME=3 LITE_RUNTIME value
@@ -13412,13 +13412,13 @@ export const google = $root.google = (() => {
             MessageOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.messageSetWireFormat != null && message.hasOwnProperty("messageSetWireFormat"))
+                if (message.messageSetWireFormat != null && Object.hasOwnProperty.call(message, "messageSetWireFormat"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.messageSetWireFormat);
-                if (message.noStandardDescriptorAccessor != null && message.hasOwnProperty("noStandardDescriptorAccessor"))
+                if (message.noStandardDescriptorAccessor != null && Object.hasOwnProperty.call(message, "noStandardDescriptorAccessor"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.noStandardDescriptorAccessor);
-                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
+                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
                     writer.uint32(/* id 3, wireType 0 =*/24).bool(message.deprecated);
-                if (message.mapEntry != null && message.hasOwnProperty("mapEntry"))
+                if (message.mapEntry != null && Object.hasOwnProperty.call(message, "mapEntry"))
                     writer.uint32(/* id 7, wireType 0 =*/56).bool(message.mapEntry);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -13755,26 +13755,26 @@ export const google = $root.google = (() => {
             FieldOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.ctype != null && message.hasOwnProperty("ctype"))
+                if (message.ctype != null && Object.hasOwnProperty.call(message, "ctype"))
                     writer.uint32(/* id 1, wireType 0 =*/8).int32(message.ctype);
-                if (message.packed != null && message.hasOwnProperty("packed"))
+                if (message.packed != null && Object.hasOwnProperty.call(message, "packed"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.packed);
-                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
+                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
                     writer.uint32(/* id 3, wireType 0 =*/24).bool(message.deprecated);
-                if (message.lazy != null && message.hasOwnProperty("lazy"))
+                if (message.lazy != null && Object.hasOwnProperty.call(message, "lazy"))
                     writer.uint32(/* id 5, wireType 0 =*/40).bool(message.lazy);
-                if (message.jstype != null && message.hasOwnProperty("jstype"))
+                if (message.jstype != null && Object.hasOwnProperty.call(message, "jstype"))
                     writer.uint32(/* id 6, wireType 0 =*/48).int32(message.jstype);
-                if (message.weak != null && message.hasOwnProperty("weak"))
+                if (message.weak != null && Object.hasOwnProperty.call(message, "weak"))
                     writer.uint32(/* id 10, wireType 0 =*/80).bool(message.weak);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
                         $root.google.protobuf.UninterpretedOption.encode(message.uninterpretedOption[i], writer.uint32(/* id 999, wireType 2 =*/7994).fork()).ldelim();
-                if (message[".exocore.indexed"] != null && message.hasOwnProperty(".exocore.indexed"))
+                if (message[".exocore.indexed"] != null && Object.hasOwnProperty.call(message, ".exocore.indexed"))
                     writer.uint32(/* id 1373, wireType 0 =*/10984).bool(message[".exocore.indexed"]);
-                if (message[".exocore.sorted"] != null && message.hasOwnProperty(".exocore.sorted"))
+                if (message[".exocore.sorted"] != null && Object.hasOwnProperty.call(message, ".exocore.sorted"))
                     writer.uint32(/* id 1374, wireType 0 =*/10992).bool(message[".exocore.sorted"]);
-                if (message[".exocore.text"] != null && message.hasOwnProperty(".exocore.text"))
+                if (message[".exocore.text"] != null && Object.hasOwnProperty.call(message, ".exocore.text"))
                     writer.uint32(/* id 1375, wireType 0 =*/11000).bool(message[".exocore.text"]);
                 return writer;
             };
@@ -14061,7 +14061,7 @@ export const google = $root.google = (() => {
             /**
              * CType enum.
              * @name google.protobuf.FieldOptions.CType
-             * @enum {string}
+             * @enum {number}
              * @property {number} STRING=0 STRING value
              * @property {number} CORD=1 CORD value
              * @property {number} STRING_PIECE=2 STRING_PIECE value
@@ -14077,7 +14077,7 @@ export const google = $root.google = (() => {
             /**
              * JSType enum.
              * @name google.protobuf.FieldOptions.JSType
-             * @enum {string}
+             * @enum {number}
              * @property {number} JS_NORMAL=0 JS_NORMAL value
              * @property {number} JS_STRING=1 JS_STRING value
              * @property {number} JS_NUMBER=2 JS_NUMBER value
@@ -14376,9 +14376,9 @@ export const google = $root.google = (() => {
             EnumOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.allowAlias != null && message.hasOwnProperty("allowAlias"))
+                if (message.allowAlias != null && Object.hasOwnProperty.call(message, "allowAlias"))
                     writer.uint32(/* id 2, wireType 0 =*/16).bool(message.allowAlias);
-                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
+                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
                     writer.uint32(/* id 3, wireType 0 =*/24).bool(message.deprecated);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -14621,7 +14621,7 @@ export const google = $root.google = (() => {
             EnumValueOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
+                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
                     writer.uint32(/* id 1, wireType 0 =*/8).bool(message.deprecated);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -14852,7 +14852,7 @@ export const google = $root.google = (() => {
             ServiceOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
+                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
                     writer.uint32(/* id 33, wireType 0 =*/264).bool(message.deprecated);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -15083,7 +15083,7 @@ export const google = $root.google = (() => {
             MethodOptions.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.deprecated != null && message.hasOwnProperty("deprecated"))
+                if (message.deprecated != null && Object.hasOwnProperty.call(message, "deprecated"))
                     writer.uint32(/* id 33, wireType 0 =*/264).bool(message.deprecated);
                 if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                     for (let i = 0; i < message.uninterpretedOption.length; ++i)
@@ -15362,17 +15362,17 @@ export const google = $root.google = (() => {
                 if (message.name != null && message.name.length)
                     for (let i = 0; i < message.name.length; ++i)
                         $root.google.protobuf.UninterpretedOption.NamePart.encode(message.name[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message.identifierValue != null && message.hasOwnProperty("identifierValue"))
+                if (message.identifierValue != null && Object.hasOwnProperty.call(message, "identifierValue"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.identifierValue);
-                if (message.positiveIntValue != null && message.hasOwnProperty("positiveIntValue"))
+                if (message.positiveIntValue != null && Object.hasOwnProperty.call(message, "positiveIntValue"))
                     writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.positiveIntValue);
-                if (message.negativeIntValue != null && message.hasOwnProperty("negativeIntValue"))
+                if (message.negativeIntValue != null && Object.hasOwnProperty.call(message, "negativeIntValue"))
                     writer.uint32(/* id 5, wireType 0 =*/40).int64(message.negativeIntValue);
-                if (message.doubleValue != null && message.hasOwnProperty("doubleValue"))
+                if (message.doubleValue != null && Object.hasOwnProperty.call(message, "doubleValue"))
                     writer.uint32(/* id 6, wireType 1 =*/49).double(message.doubleValue);
-                if (message.stringValue != null && message.hasOwnProperty("stringValue"))
+                if (message.stringValue != null && Object.hasOwnProperty.call(message, "stringValue"))
                     writer.uint32(/* id 7, wireType 2 =*/58).bytes(message.stringValue);
-                if (message.aggregateValue != null && message.hasOwnProperty("aggregateValue"))
+                if (message.aggregateValue != null && Object.hasOwnProperty.call(message, "aggregateValue"))
                     writer.uint32(/* id 8, wireType 2 =*/66).string(message.aggregateValue);
                 return writer;
             };
@@ -16149,9 +16149,9 @@ export const google = $root.google = (() => {
                             writer.int32(message.span[i]);
                         writer.ldelim();
                     }
-                    if (message.leadingComments != null && message.hasOwnProperty("leadingComments"))
+                    if (message.leadingComments != null && Object.hasOwnProperty.call(message, "leadingComments"))
                         writer.uint32(/* id 3, wireType 2 =*/26).string(message.leadingComments);
-                    if (message.trailingComments != null && message.hasOwnProperty("trailingComments"))
+                    if (message.trailingComments != null && Object.hasOwnProperty.call(message, "trailingComments"))
                         writer.uint32(/* id 4, wireType 2 =*/34).string(message.trailingComments);
                     if (message.leadingDetachedComments != null && message.leadingDetachedComments.length)
                         for (let i = 0; i < message.leadingDetachedComments.length; ++i)
@@ -16682,11 +16682,11 @@ export const google = $root.google = (() => {
                             writer.int32(message.path[i]);
                         writer.ldelim();
                     }
-                    if (message.sourceFile != null && message.hasOwnProperty("sourceFile"))
+                    if (message.sourceFile != null && Object.hasOwnProperty.call(message, "sourceFile"))
                         writer.uint32(/* id 2, wireType 2 =*/18).string(message.sourceFile);
-                    if (message.begin != null && message.hasOwnProperty("begin"))
+                    if (message.begin != null && Object.hasOwnProperty.call(message, "begin"))
                         writer.uint32(/* id 3, wireType 0 =*/24).int32(message.begin);
-                    if (message.end != null && message.hasOwnProperty("end"))
+                    if (message.end != null && Object.hasOwnProperty.call(message, "end"))
                         writer.uint32(/* id 4, wireType 0 =*/32).int32(message.end);
                     return writer;
                 };
