@@ -28,7 +28,7 @@ export class Exocore {
             instance = new ExocoreInstance(innerClient);
 
         } else {
-            _exocore_wasm = await import('exocore-client-web');
+            _exocore_wasm = await import('../pkg/exocore_client_web');
             console.log("Exocore WASM client loaded");
 
             const innerClient = new _exocore_wasm.ExocoreClient(configBytes, 'json', onStatusChange);

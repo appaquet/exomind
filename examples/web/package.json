@@ -3,14 +3,11 @@
   "name": "exocore-examples-web",
   "version": "0.1.0",
   "repository": "https://github.com/appaquet/exocore",
-  "license": "(MIT OR Apache-2.0)",
+  "license": "MIT",
   "scripts": {
     "start": "webpack-dev-server -d",
     "build": "webpack",
     "build_dev": "webpack --mode development"
-  },
-  "bin": {
-    "create-rust-webpack": ".bin/create-rust-webpack.js"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",
@@ -18,17 +15,21 @@
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
     "@babel/preset-env": "^7.9.0",
     "@babel/preset-react": "^7.9.4",
+    "@types/react": "^16.9.41",
+    "@types/react-dom": "^16.9.8",
     "@wasm-tool/wasm-pack-plugin": "1.1.0",
     "babel-loader": "^8.1.0",
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "html-webpack-plugin": "^3.2.0",
+    "ts-loader": "^7.0.4",
+    "typescript": "^3.9.5",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
     "core-js": "^3.2.1",
-    "exocore": "file:./../../clients/web",
+    "exocore": "file:./../..",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "regenerator-runtime": "^0.13.5"

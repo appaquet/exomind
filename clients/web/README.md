@@ -19,15 +19,10 @@
 
 * To generate proto: 
     * Make sure `protoc` is installed. See root's [README](../../README.md).
-    * Then `./generate.sh`
+    * Then `./generate_protos.sh`
 
-* To package WASM:
-    * Install [`wasm-pack`](https://github.com/rustwasm/wasm-pack) to build and package WASM as NPM package
-        * `cargo install wasm-pack`
-    * Then `wasm-pack build --release`
-
-* Transpire Typescript:
-    * `npm run build`
+* Build WASM & Typescript:
+    * `cd ../../ && npm run build`
 
 * Launch the [sample project](../../examples/web) 
     * `cd ../../examples/web && npm install && npm run start`

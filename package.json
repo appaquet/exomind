@@ -1,0 +1,27 @@
+{
+  "author": "Andre-Philippe Paquet <appaquet@gmail.com>",
+  "name": "exocore",
+  "version": "0.1.0",
+  "repository": "https://github.com/appaquet/exocore",
+  "license": "MIT",
+  "scripts": {
+    "prepare": "rm -f clients/web/pkg/package.json clients/web/pkg/.gitignore",
+    "build": "cd clients/web && wasm-pack build && tsc && rm pkg/package.json pkg/.gitignore",
+    "build_dev": "cd clients/web && wasm-pack build --dev && tsc && rm pkg/package.json pkg/.gitignore"
+  },
+  "main": "clients/web/tsp/index.js",
+  "types": "clients/web/tsp/index.d.ts",
+  "files": [
+    "clients/web/js/*",
+    "clients/web/ts/*",
+    "clients/web/tsp/*",
+    "clients/web/pkg/**",
+    "README.md"
+  ],
+  "devDependencies": {
+    "typescript": "^3.9.5"
+  },
+  "dependencies": {
+    "protobufjs": "^6.8.9"
+  }
+}

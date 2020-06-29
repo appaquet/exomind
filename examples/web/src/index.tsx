@@ -2,24 +2,32 @@ import "core-js/stable";
 import "regenerator-runtime/runtime";
 
 import { Exocore, exocore } from "exocore";
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 import ReactDOM from 'react-dom';
-import List from './list.js';
+import List from './list';
 
-class App extends React.Component {
-    constructor(props) {
+interface IAppProps { }
+
+interface IAppState {
+    status: string;
+    config?: any;
+}
+
+class App extends React.Component<IAppProps, IAppState> {
+    constructor(props: IAppProps) {
         super(props);
 
-        this.state = {
+        let state: IAppState = {
             status: 'disconnected',
-            config: null,
         };
 
         const configJson = localStorage.getItem('config');
         if (!!configJson) {
-            this.state.config = JSON.parse(configJson);
-            this.connect(this.state.config);
+            state.config = JSON.parse(configJson);
+            this.connect(state.config);
         }
+
+        this.state = state;
     }
 
     render() {
@@ -28,11 +36,13 @@ class App extends React.Component {
         }
 
         if (this.state.status === 'connected') {
-            return (<div>
-                <button onClick={this.disconnect.bind(this)}>Reset</button>
+            return (
+                <div>
+                    <button onClick={this.disconnect.bind(this)}>Reset</button>
 
-                <List />
-            </div>);
+                    <List />
+                </div>
+            );
         } else {
             return this.renderLoading();
         }
@@ -51,7 +61,7 @@ class App extends React.Component {
         localStorage.clear();
     }
 
-    setConfig(configJson) {
+    setConfig(configJson: string) {
         let config = JSON.parse(configJson);
         localStorage.setItem('config', configJson);
         this.setState({
@@ -61,7 +71,7 @@ class App extends React.Component {
         this.connect(config);
     }
 
-    connect(config) {
+    connect(config: any) {
         Exocore.initialize(config).then((instance) => {
             Exocore.registry.registerMessage(exocore.test.TestMessage, 'exocore.test.TestMessage');
             Exocore.registry.registerMessage(exocore.test.TestMessage2, 'exocore.test.TestMessage2');
@@ -73,8 +83,16 @@ class App extends React.Component {
     }
 }
 
-class ConfigInput extends React.Component {
-    constructor(props) {
+interface IConfigInputProps {
+    onSet: (text: string) => void;
+}
+
+interface IConfigInputState {
+    text: string;
+}
+
+class ConfigInput extends React.Component<IConfigInputProps, IConfigInputState> {
+    constructor(props: IConfigInputProps) {
         super(props);
 
         this.state = {
@@ -97,13 +115,13 @@ class ConfigInput extends React.Component {
         )
     }
 
-    onTextChange(e) {
+    onTextChange(e: ChangeEvent<HTMLInputElement>) {
         this.setState({
             text: e.target.value
         });
     }
 
-    onAddClick(e) {
+    onAddClick() {
         this.props.onSet(this.state.text);
         this.setState({
             text: ''
@@ -114,6 +132,7 @@ class ConfigInput extends React.Component {
 
 ReactDOM.render(
     <App />,
+
     document.getElementById('root')
 );
 

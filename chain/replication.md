@@ -11,15 +11,15 @@ There are 2 data structures to replicate:
     * Immutable collection of blocks that each contains operations. Operations are the same as in the pending store.
     * A chain structure is used to make replication easier between untrusted nodes.
 
-Synchronization for each structure is managed independently. The chain is synchronized by the [`Chain Synchronizer`](src/engine/chain_sync.rs),
-while the pending store is replicated by the [`Pending Store Synchronizer`](src/engine/pending_sync.rs).
+Synchronization for each structure is managed independently. The chain is synchronized by the [`Chain Synchronizer`](src/engine/chain_sync/mod.rs),
+while the pending store is replicated by the [`Pending Store Synchronizer`](src/engine/pending_sync/mod.rs).
 
-Once operations are stored in the pending store, the [`Commit manager`](src/engine/commit_manager.rs) proposes a block to be 
+Once operations are stored in the pending store, the [`Commit manager`](src/engine/commit_manager/mod.rs) proposes a block to be 
 added to a specific offset of the chain. This block can then be signed/voted by other nodes, or refused. If a proposed block
 receives enough signatures, it's then added to the local chain by each node.
 
 ## Pending store replication
-The pending store's replication is managed by the [`Pending Store Synchronizer`](src/engine/pending_sync.rs).
+The pending store's replication is managed by the [`Pending Store Synchronizer`](src/engine/pending_sync/mod.rs).
 
 ### Messages
 * `PendingSyncRequest(List<PendingSyncRange>)`
@@ -72,7 +72,7 @@ The pending store's replication is managed by the [`Pending Store Synchronizer`]
   store cleaning depth so that we don't revive operations that got cleaned up on another node.
 
 ## Chain replication
-The chain's replication is managed by the [`Chain Synchronizer`](src/engine/chain_sync.rs).
+The chain's replication is managed by the [`Chain Synchronizer`](src/engine/chain_sync/mod.rs).
 
 ### Messages
 * `ChainSyncRequest`
@@ -83,7 +83,7 @@ The chain's replication is managed by the [`Chain Synchronizer`](src/engine/chai
 
 
 ## Commit management
-At interval, the [`Commit Manager`](src/engine/commit_manager.src) on each node checks if new blocks could
+At interval, the [`Commit Manager`](src/engine/commit_manager/mod.rs) on each node checks if new blocks could
 be committed to the chain from uncommitted operations in the chain. Based on the consistent time, each node can
 turn by turn propose new blocks. This proposal is done via the operations stored in the pending store.
 

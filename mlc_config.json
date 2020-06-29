@@ -1,0 +1,10 @@
+{
+    "ignorePatterns": [
+        {
+            "pattern": "^http(s|)://(localhost|127.0.0.1)"
+        },
+        {
+            "pattern": "^https://developer.android.com"
+        }
+    ]
+}

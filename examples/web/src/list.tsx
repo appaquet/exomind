@@ -1,11 +1,26 @@
-import { exocore, Exocore, matchTrait, MutationBuilder, QueryBuilder } from 'exocore';
-import React from 'react';
+import { exocore, Exocore, matchTrait, MutationBuilder, QueryBuilder, WatchedQuery } from 'exocore';
+import React, { ChangeEvent } from 'react';
 
-export default class List extends React.Component {
-    constructor(props) {
+interface IListProps {
+}
+
+interface IListItem {
+    entity: exocore.index.IEntity;
+    trait: exocore.index.ITrait;
+    message: exocore.test.ITestMessage;
+}
+
+interface IListState {
+    items: IListItem[]
+}
+
+export default class List extends React.Component<IListProps, IListState> {
+    private watchedQuery: WatchedQuery;
+
+    constructor(props: IListProps) {
         super(props);
 
-        this.state = {entities: []};
+        this.state = {items: []};
 
         this.registerQuery();
     }
@@ -23,16 +38,16 @@ export default class List extends React.Component {
     }
 
     renderList() {
-        const DeleteButton = (props) => {
-            return <button onClick={this.onDelete.bind(this, props.entity.id, props.trait.id)}>Delete</button>
+        const DeleteButton = (props: {item: IListItem}) => {
+            return <button onClick={this.onDelete.bind(this, props.item)}>Delete</button>
         };
 
-        return this.state.entities.map(res =>
-            <li key={res.entity.id}>{res.message.string1} (<DeleteButton entity={res.entity} trait={res.trait}/>)</li>
+        return this.state.items.map(item =>
+            <li key={item.entity.id}>{item.message.string1} (<DeleteButton item={item}/>)</li>
         );
     }
 
-    async onAdd(text) {
+    async onAdd(text: string) {
         const mutation = MutationBuilder
             .createEntity()
             .putTrait(new exocore.test.TestMessage({
@@ -43,10 +58,10 @@ export default class List extends React.Component {
         await Exocore.store.mutate(mutation);
     }
 
-    async onDelete(entityId, traitId) {
+    async onDelete(item: IListItem) {
         const mutation = MutationBuilder
-            .updateEntity(entityId)
-            .deleteTrait(traitId)
+            .updateEntity(item.entity.id)
+            .deleteTrait(item.trait.id)
             .build();
 
         await Exocore.store.mutate(mutation);
@@ -58,7 +73,7 @@ export default class List extends React.Component {
             .count(100)
             .build();
 
-        this.watched_query = Exocore.store.watchedQuery(query).onChange((results) => {
+        this.watchedQuery = Exocore.store.watchedQuery(query).onChange((results) => {
             let res = results.entities.flatMap((res) => {
                 return matchTrait(res.entity.traits[0], {
                     [Exocore.registry.messageFullName(exocore.test.TestMessage)]: (trait, message) => {
@@ -68,18 +83,26 @@ export default class List extends React.Component {
             });
 
             this.setState({
-                entities: res
+                items: res
             })
         });
     }
 
     componentWillUnmount() {
-        this.watched_query.free();
+        this.watchedQuery.free();
     }
 }
 
-class Input extends React.Component {
-    constructor(props) {
+interface IInputProps {
+    onAdd: (text: string) => void;
+}
+
+interface IInputState {
+    text: string;
+}
+
+class Input extends React.Component<IInputProps, IInputState> {
+    constructor(props: IInputProps) {
         super(props);
 
         this.state = {
@@ -96,17 +119,17 @@ class Input extends React.Component {
         )
     }
 
-    onTextChange(e) {
+    onTextChange(e: ChangeEvent<HTMLInputElement>) {
         this.setState({
             text: e.target.value
         });
     }
 
-    onAddClick(e) {
+    onAddClick() {
         this.props.onAdd(this.state.text);
+
         this.setState({
             text: ''
         });
     }
 }
-

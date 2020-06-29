@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const dist = path.resolve(__dirname, "dist");
 
 module.exports = {
-    entry: "./js/index.js",
+    entry: "./src/index.tsx",
 
     output: {
         path: dist,
@@ -22,8 +22,18 @@ module.exports = {
                 use: {
                     loader: 'babel-loader'
                 }
-            }
+            },
+
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/
+            },
         ]
+    },
+
+    resolve: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx']
     },
 
     plugins: [

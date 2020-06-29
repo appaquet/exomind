@@ -1,4 +1,1 @@
-src
-lib
-*.sh
-Cargo*
+# Empty to prevent fallback to .gitignore

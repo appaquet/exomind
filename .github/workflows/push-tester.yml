@@ -3,7 +3,7 @@ name: Push tester
 on: [push]
 
 jobs:
-  checks:
+  rust_checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -23,7 +23,25 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
 
-  linux_tests:
+  rust_tests_coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2020-06-21
+          profile: minimal
+      - name: Test coverage
+        run: |
+          set -e
+          curl -L https://github.com/mozilla/grcov/releases/download/v0.5.9/grcov-linux-x86_64.tar.bz2 | tar jxf -
+          export PATH=$PATH:`pwd`
+          export RUST_BACKTRACE=1
+
+          export CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
+          ./tools/coverage.sh codecov_io
+
+  rust_linux_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -37,7 +55,7 @@ jobs:
           command: test
           args: --all --all-features
 
-  macos_tests:
+  rust_macos_tests:
     runs-on: macOS-latest
     steps:
       - uses: actions/checkout@v2
@@ -51,7 +69,7 @@ jobs:
           command: test
           args: --all --all-features
 
-  windows_tests:
+  rust_windows_tests:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -65,7 +83,7 @@ jobs:
           command: test
           args: --all --all-features
 
-  wasm_build:
+  web_client_build:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:19.10 # required for clang with wasm
@@ -92,15 +110,15 @@ jobs:
           set -e
           export PATH=$PATH:`pwd`
 
-          cd $GITHUB_WORKSPACE/clients/web
-          wasm-pack build --dev
+          cd $GITHUB_WORKSPACE/
           npm ci
+          npm run build_dev
 
           cd $GITHUB_WORKSPACE/examples/web
           npm ci
           npm run build_dev
 
-  ios_build:
+  ios_client_build:
     runs-on: macOS-latest
 
     steps:
@@ -129,20 +147,8 @@ jobs:
           pod install
           xcodebuild -workspace exocore-client-ios.xcworkspace -scheme exocore-client-ios -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
-  coverage:
+  markdown_links_check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2020-06-21
-          profile: minimal
-      - name: Test coverage
-        run: |
-          set -e
-          curl -L https://github.com/mozilla/grcov/releases/download/v0.5.9/grcov-linux-x86_64.tar.bz2 | tar jxf -
-          export PATH=$PATH:`pwd`
-          export RUST_BACKTRACE=1
-
-          export CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
-          ./tools/coverage.sh codecov_io
+    - uses: actions/checkout@master
+    - uses: gaurav-nelson/github-action-markdown-link-check@v1
