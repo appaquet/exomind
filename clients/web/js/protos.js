@@ -5,7 +5,7 @@ import * as $protobuf from "protobufjs/minimal";
 const $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
 
 // Exported root namespace
-const $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
+const $root = $protobuf.roots["exocore-root"] || ($protobuf.roots["exocore-root"] = {});
 
 export const exocore = $root.exocore = (() => {
 
