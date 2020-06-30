@@ -11,7 +11,18 @@ license = "MIT"
 
 [features]
 tests-utils = ["runtime", "logger"]
-runtime = ["tokio/full"]
+runtime = [
+    "tokio/io-driver",
+    "tokio/io-util",
+    "tokio/io-std",
+    "tokio/tcp",
+    "tokio/rt-core",
+    "tokio/rt-util",
+    "tokio/rt-threaded",
+    "tokio/stream",
+    "tokio/sync",
+    "tokio/time"
+]
 logger = ["log4rs"]
 
 [dependencies]
