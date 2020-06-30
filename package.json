@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "prepare": "rm -f clients/web/pkg/package.json clients/web/pkg/.gitignore",
-    "build": "cd clients/web && wasm-pack build && tsc && rm pkg/package.json pkg/.gitignore",
+    "build": "cd clients/web && wasm-pack build && tsc && rm pkg/package.json pkg/.gitignore pkg/README.md",
     "build_dev": "cd clients/web && wasm-pack build --dev && tsc && rm pkg/package.json pkg/.gitignore"
   },
   "main": "clients/web/tsp/index.js",

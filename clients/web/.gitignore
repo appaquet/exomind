@@ -1,3 +1,4 @@
-pkg
 node_modules
-tsp
+pkg/README.md
+pkg/.gitignore
+pkg/package.json
