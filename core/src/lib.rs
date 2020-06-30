@@ -19,7 +19,7 @@ pub mod futures;
 #[cfg(feature = "logger")]
 pub mod logging;
 pub mod simple_store;
-#[cfg(any(test, feature = "tests_utils"))]
+#[cfg(any(test, feature = "tests-utils"))]
 pub mod tests_utils;
 pub mod time;
 pub mod utils;

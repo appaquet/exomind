@@ -56,7 +56,7 @@ impl Node {
         Ok(node)
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     pub fn generate_temporary() -> Node {
         let keypair = Keypair::generate_ed25519();
         Self::build(keypair.public(), None)

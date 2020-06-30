@@ -10,21 +10,21 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [features]
-default = ["core_runtime", "core_logger", "transport_libp2p", "index_local_store", "chain_engine", "chain_directory_chain", "chain_memory_pending"]
-tests_utils = ["exocore-core/tests_utils", "exocore-transport/tests_utils"]
+default = ["core-runtime", "core-logger", "transport-libp2p", "index-local-store", "chain-engine", "chain-directory-chain", "chain-memory-pending"]
+tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils"]
+logger = ["core-logger"]
 
-client = ["core_runtime", "transport_libp2p"]
-web = ["transport_web"]
-logger = ["core_logger"]
+client = ["core-runtime", "transport-libp2p"]
+web = ["transport-libp2p-web"]
 
-core_runtime = ["exocore-core/runtime"]
-core_logger = ["exocore-core/logger"]
-transport_libp2p = ["exocore-transport/lp2p"]
-transport_web = ["exocore-transport/web"]
-index_local_store = ["exocore-index/local_store"]
-chain_engine = ["exocore-chain/engine"]
-chain_directory_chain = ["exocore-chain/directory_chain"]
-chain_memory_pending = ["exocore-chain/memory_pending"]
+core-runtime = ["exocore-core/runtime"]
+core-logger = ["exocore-core/logger"]
+transport-libp2p = ["exocore-transport/libp2p-full"]
+transport-libp2p-web = ["exocore-transport/libp2p-web"]
+index-local-store = ["exocore-index/local-store"]
+chain-engine = ["exocore-chain/engine"]
+chain-directory-chain = ["exocore-chain/directory-chain"]
+chain-memory-pending = ["exocore-chain/memory-pending"]
 
 [dependencies]
 exocore-core = { version = "0.1.0", path = "./core", default-features = false }
@@ -33,7 +33,7 @@ exocore-index = { version = "0.1.0", path = "./index", default-features = false 
 exocore-chain = { version = "0.1.0", path = "./chain", default-features = false }
 
 [dev-dependencies]
-exocore-core = { version = "0.1.0", path = "./core", features = ["tests_utils"] }
+exocore-core = { version = "0.1.0", path = "./core", features = ["tests-utils"] }
 
 [workspace]
 members = [

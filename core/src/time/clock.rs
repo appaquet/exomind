@@ -21,7 +21,7 @@ impl Clock {
         }
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     pub fn new_mocked() -> Clock {
         Clock {
             source: Source::Mocked(std::sync::Arc::new(std::sync::RwLock::new(None))),
@@ -29,7 +29,7 @@ impl Clock {
         }
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     pub fn new_fixed_mocked(instant: Instant) -> Clock {
         let clock = Self::new_mocked();
         clock.set_fixed_instant(instant);
@@ -40,7 +40,7 @@ impl Clock {
     pub fn instant(&self) -> Instant {
         match &self.source {
             Source::System => Instant::now(),
-            #[cfg(any(test, feature = "tests_utils"))]
+            #[cfg(any(test, feature = "tests-utils"))]
             Source::Mocked(time) => {
                 let mocked_instant = time.read().expect("Couldn't acquire read lock");
                 if let Some((fixed_instant, _fixed_unix_elaps)) = *mocked_instant {
@@ -80,7 +80,7 @@ impl Clock {
                     node.consistent_clock_id(),
                 )
             }
-            #[cfg(any(test, feature = "tests_utils"))]
+            #[cfg(any(test, feature = "tests-utils"))]
             Source::Mocked(time) => {
                 let mocked_instant = time.read().expect("Couldn't acquire read lock");
 
@@ -102,7 +102,7 @@ impl Clock {
         }
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     pub fn set_fixed_instant(&self, fixed_instant: Instant) {
         if let Source::Mocked(mocked_instant) = &self.source {
             let mut mocked_instant = mocked_instant.write().expect("Couldn't acquire write lock");
@@ -123,7 +123,7 @@ impl Clock {
         }
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     pub fn add_fixed_instant_duration(&self, duration: super::Duration) {
         if let Source::Mocked(mocked_instant) = &self.source {
             let mut mocked_instant = mocked_instant.write().expect("Couldn't acquire write lock");
@@ -135,7 +135,7 @@ impl Clock {
         }
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     pub fn reset_fixed_instant(&self) {
         if let Source::Mocked(mocked_instant) = &self.source {
             let mut mocked_instant = mocked_instant.write().expect("Couldn't acquire write lock");
@@ -155,7 +155,7 @@ impl Default for Clock {
 #[derive(Clone)]
 enum Source {
     System,
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     Mocked(std::sync::Arc<std::sync::RwLock<Option<(Instant, super::Duration)>>>),
 }
 

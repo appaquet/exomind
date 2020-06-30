@@ -5,7 +5,7 @@ extern crate failure;
 #[macro_use]
 extern crate log;
 
-#[cfg(feature = "local_store")]
+#[cfg(feature = "local-store")]
 #[macro_use]
 extern crate smallvec;
 
@@ -15,6 +15,6 @@ pub mod mutation;
 pub mod ordering;
 pub mod query;
 
-#[cfg(feature = "local_store")]
+#[cfg(feature = "local-store")]
 pub mod local;
 pub mod remote;

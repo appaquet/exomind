@@ -10,8 +10,8 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [features]
-default = ["local_store"]
-local_store = ["tantivy", "exocore-chain/engine", "crc"]
+default = ["local-store"]
+local-store = ["tantivy", "exocore-chain/engine", "crc"]
 
 [dependencies]
 exocore-chain = { path = "../chain", default-features = false }
@@ -32,5 +32,5 @@ crc = { version = "1.8", optional = true }
 
 [dev-dependencies]
 tempdir = "0.3"
-exocore-chain = { path = "../chain", features = ["tests_utils"] }
-exocore-core = { path = "../core", features = ["tests_utils"] }
+exocore-chain = { path = "../chain", features = ["tests-utils"] }
+exocore-core = { path = "../core", features = ["tests-utils"] }

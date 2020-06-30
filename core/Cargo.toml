@@ -10,7 +10,7 @@ repository = "https://github.com/appaquet/exocore"
 license = "MIT"
 
 [features]
-tests_utils = ["runtime", "logger"]
+tests-utils = ["runtime", "logger"]
 runtime = ["tokio/full"]
 logger = ["log4rs"]
 

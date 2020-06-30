@@ -26,6 +26,3 @@ echo "Validating exo compilation"
 pushd $CUR_DIR/../exo
 cargo check
 popd
-
-echo "Validating release build..."
-cargo build --release

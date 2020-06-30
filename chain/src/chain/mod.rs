@@ -3,7 +3,7 @@ use std::ops::Range;
 use crate::block::{Block, BlockOffset, BlockRef};
 use crate::operation::OperationId;
 
-#[cfg(feature = "directory_chain")]
+#[cfg(feature = "directory-chain")]
 pub mod directory;
 
 pub mod error;

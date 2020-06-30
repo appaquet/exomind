@@ -1,14 +1,11 @@
 use exocore_core::capnp;
 
-#[cfg(any(feature = "lp2p"))]
-use std::sync::Arc;
-
 /// Transport related error
 #[derive(Debug, Fail, Clone)]
 pub enum Error {
-    #[cfg(feature = "lp2p")]
+    #[cfg(feature = "libp2p-base")]
     #[fail(display = "libp2p transport error: {:?}", _0)]
-    Libp2pTransport(Arc<dyn std::error::Error + Send + Sync + 'static>),
+    Libp2pTransport(std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>),
 
     #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
     Serialization(capnp::ErrorKind, String),
@@ -29,13 +26,13 @@ pub enum Error {
     Other(String),
 }
 
-#[cfg(feature = "lp2p")]
+#[cfg(feature = "libp2p-base")]
 impl<Terr> From<libp2p::core::transport::TransportError<Terr>> for Error
 where
     Terr: std::error::Error + Send + Sync + 'static,
 {
     fn from(err: libp2p::core::transport::TransportError<Terr>) -> Self {
-        Error::Libp2pTransport(Arc::new(err))
+        Error::Libp2pTransport(std::sync::Arc::new(err))
     }
 }
 

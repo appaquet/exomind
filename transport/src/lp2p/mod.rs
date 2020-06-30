@@ -95,7 +95,7 @@ impl Libp2pTransport {
     pub async fn run(self) -> Result<(), Error> {
         let behaviour = ExocoreBehaviour::new();
 
-        #[cfg(all(feature = "web", target_arch = "wasm32"))]
+        #[cfg(all(feature = "libp2p-web", target_arch = "wasm32"))]
         let mut swarm = {
             use libp2p::Transport;
             let transport = libp2p::wasm_ext::ExtTransport::new(ffi::websocket_transport())
@@ -111,12 +111,28 @@ impl Libp2pTransport {
             Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
         };
 
-        #[cfg(not(all(feature = "web", target_arch = "wasm32")))]
+        #[cfg(feature = "libp2p-full")]
         let mut swarm = {
             let transport = libp2p::build_tcp_ws_secio_mplex_yamux(
                 self.local_node.keypair().to_libp2p().clone(),
             )?;
-            Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
+
+            // Create our own libp2p executor since by default it spawns its own thread pool to spawn
+            // tcp related futures, but Tokio requires to be spawn from within its runtime.
+            struct CoreExecutor;
+            impl libp2p::core::Executor for CoreExecutor {
+                fn exec(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) {
+                    exocore_core::futures::spawn_future(f)
+                }
+            }
+
+            libp2p::swarm::SwarmBuilder::new(
+                transport,
+                behaviour,
+                self.local_node.peer_id().clone(),
+            )
+            .executor(Box::new(CoreExecutor))
+            .build()
         };
 
         let listen_addresses = self.config.listen_addresses(&self.local_node)?;
@@ -449,7 +465,10 @@ mod tests {
 
     #[test]
     fn test_integration() -> Result<(), failure::Error> {
-        let mut rt = Runtime::new()?;
+        let mut rt = exocore_core::futures::Builder::new()
+            .threaded_scheduler()
+            .enable_all()
+            .build()?;
 
         let node1 = LocalNode::generate();
         node1.add_address("/ip4/127.0.0.1/tcp/3003".parse().unwrap());
@@ -725,11 +744,11 @@ mod tests {
 /// reliability of the transport and prefer performance.
 ///
 /// Doing this change brought down latency from ~100-200ms on messages sent to ~1-2ms.
-#[cfg(all(feature = "web", target_arch = "wasm32"))]
+#[cfg(all(feature = "libp2p-web", target_arch = "wasm32"))]
 mod ffi {
     use wasm_bindgen::prelude::*;
 
-    #[cfg(all(feature = "web", target_arch = "wasm32"))]
+    #[cfg(all(feature = "libp2p-web", target_arch = "wasm32"))]
     #[wasm_bindgen(module = "/src/lp2p/websockets.js")]
     extern "C" {
         /// Returns a `Transport` implemented using websockets.

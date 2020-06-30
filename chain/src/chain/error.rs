@@ -24,7 +24,7 @@ pub enum Error {
     #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
     IO(std::io::ErrorKind, String),
 
-    #[cfg(feature = "directory_chain")]
+    #[cfg(feature = "directory-chain")]
     #[fail(display = "Error in directory chain store: {}", _0)]
     DirectoryError(#[fail(cause)] super::directory::DirectoryError),
 
@@ -56,7 +56,7 @@ impl<T> From<std::sync::PoisonError<T>> for Error {
     }
 }
 
-#[cfg(feature = "directory_chain")]
+#[cfg(feature = "directory-chain")]
 impl From<super::directory::DirectoryError> for Error {
     fn from(err: super::directory::DirectoryError) -> Self {
         Error::DirectoryError(err)

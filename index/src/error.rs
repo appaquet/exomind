@@ -7,19 +7,19 @@ pub enum Error {
     #[fail(display = "Query parsing error: {}", _0)]
     QueryParsing(String),
 
-    #[cfg(feature = "local_store")]
+    #[cfg(feature = "local-store")]
     #[fail(display = "Error in Tantivy: {}", _0)]
     Tantivy(std::sync::Arc<tantivy::TantivyError>),
 
-    #[cfg(feature = "local_store")]
+    #[cfg(feature = "local-store")]
     #[fail(display = "Error opening Tantivy directory: {:?}", _0)]
     TantivyOpenDirectoryError(std::sync::Arc<tantivy::directory::error::OpenDirectoryError>),
 
-    #[cfg(feature = "local_store")]
+    #[cfg(feature = "local-store")]
     #[fail(display = "Error parsing Tantivy query: {:?}", _0)]
     TantitvyQueryParsing(std::sync::Arc<tantivy::query::QueryParserError>),
 
-    #[cfg(feature = "local_store")]
+    #[cfg(feature = "local-store")]
     #[fail(display = "Chain engine error: {}", _0)]
     ChainEngine(#[fail(cause)] exocore_chain::engine::EngineError),
 
@@ -65,10 +65,10 @@ impl Error {
         match self {
             Error::Fatal(_) | Error::Poisoned | Error::Dropped | Error::IO(_, _) => true,
 
-            #[cfg(feature = "local_store")]
+            #[cfg(feature = "local-store")]
             Error::TantivyOpenDirectoryError(_) => true,
 
-            #[cfg(feature = "local_store")]
+            #[cfg(feature = "local-store")]
             Error::ChainEngine(err) if err.is_fatal() => true,
 
             _ => false,
@@ -76,21 +76,21 @@ impl Error {
     }
 }
 
-#[cfg(feature = "local_store")]
+#[cfg(feature = "local-store")]
 impl From<tantivy::TantivyError> for Error {
     fn from(err: tantivy::TantivyError) -> Self {
         Error::Tantivy(std::sync::Arc::new(err))
     }
 }
 
-#[cfg(feature = "local_store")]
+#[cfg(feature = "local-store")]
 impl From<tantivy::query::QueryParserError> for Error {
     fn from(err: tantivy::query::QueryParserError) -> Self {
         Error::TantitvyQueryParsing(std::sync::Arc::new(err))
     }
 }
 
-#[cfg(feature = "local_store")]
+#[cfg(feature = "local-store")]
 impl From<tantivy::directory::error::OpenDirectoryError> for Error {
     fn from(err: tantivy::directory::error::OpenDirectoryError) -> Self {
         Error::TantivyOpenDirectoryError(std::sync::Arc::new(err))
@@ -115,7 +115,7 @@ impl From<exocore_core::protos::Error> for Error {
     }
 }
 
-#[cfg(feature = "local_store")]
+#[cfg(feature = "local-store")]
 impl From<exocore_chain::engine::EngineError> for Error {
     fn from(err: exocore_chain::engine::EngineError) -> Self {
         Error::ChainEngine(err)

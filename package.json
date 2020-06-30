@@ -12,9 +12,9 @@
   "main": "clients/web/tsp/index.js",
   "types": "clients/web/tsp/index.d.ts",
   "files": [
-    "clients/web/js/*",
-    "clients/web/ts/*",
-    "clients/web/tsp/*",
+    "clients/web/js/**",
+    "clients/web/ts/**",
+    "clients/web/tsp/**",
     "clients/web/pkg/**",
     "README.md"
   ],

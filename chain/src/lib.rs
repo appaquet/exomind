@@ -15,16 +15,16 @@ pub mod engine;
 pub mod operation;
 pub mod pending;
 
-#[cfg(feature = "tests_utils")]
+#[cfg(feature = "tests-utils")]
 pub mod tests_utils;
 
 /// Re-exports
-#[cfg(feature = "directory_chain")]
+#[cfg(feature = "directory-chain")]
 pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
 #[cfg(feature = "engine")]
 pub use crate::engine::{
     ChainSyncConfig, CommitManagerConfig, Engine, EngineConfig, EngineHandle,
     EngineOperationStatus, PendingSyncConfig,
 };
-#[cfg(feature = "memory_pending")]
+#[cfg(feature = "memory-pending")]
 pub use crate::pending::memory::MemoryPendingStore;

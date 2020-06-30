@@ -323,12 +323,12 @@ impl FullCell {
         &self.cell
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     pub fn with_local_node(self, local_node: LocalNode) -> FullCell {
         FullCell::from_keypair(self.keypair, local_node)
     }
 
-    #[cfg(any(test, feature = "tests_utils"))]
+    #[cfg(any(test, feature = "tests-utils"))]
     pub fn with_path(self, path: PathBuf) -> FullCell {
         Self::build(
             self.keypair,

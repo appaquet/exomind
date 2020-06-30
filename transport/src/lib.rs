@@ -11,17 +11,17 @@ pub mod error;
 pub mod messages;
 pub mod transport;
 
-#[cfg(feature = "lp2p")]
+#[cfg(feature = "libp2p-base")]
 #[macro_use]
 pub mod lp2p;
 
-#[cfg(feature = "lp2p")]
+#[cfg(feature = "libp2p-base")]
 pub use lp2p::{Libp2pTransport, Libp2pTransportHandle};
 
-#[cfg(any(test, feature = "tests_utils"))]
+#[cfg(any(test, feature = "tests-utils"))]
 pub mod mock;
 
-#[cfg(any(test, feature = "lp2p"))]
+#[cfg(feature = "libp2p-base")]
 pub mod either;
 
 pub use error::Error;

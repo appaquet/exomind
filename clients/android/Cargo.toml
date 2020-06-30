@@ -9,6 +9,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 exocore-core = { path = "../../core", features = ["runtime", "logger"] }
-exocore-transport = { path = "../../transport", features = ["lp2p"] }
+exocore-transport = { path = "../../transport", features = ["libp2p-full"] }
 exocore-index = { path = "../../index" }
 failure = "0.1"
