@@ -116,4 +116,7 @@ pub struct StandaloneOpts {
 
     #[structopt(default_value = "json")]
     pub format: String,
+
+    #[structopt(long)]
+    pub exclude_app_schemas: bool,
 }

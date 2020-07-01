@@ -522,8 +522,8 @@ fn query_multiple_mutations_paging() -> Result<(), failure::Error> {
     test_index.wait_operations_emitted(&ops_id);
     test_index.handle_engine_events()?;
 
-    // override some items in first range, which will make them have 2 mutations, but should only
-    // appear once in the results
+    // override some items in first range, which will make them have 2 mutations,
+    // but should only appear once in the results
     let ops_id = test_index.put_test_traits(5..7)?;
     test_index.wait_operations_emitted(&ops_id);
     test_index.handle_engine_events()?;

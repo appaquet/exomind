@@ -208,8 +208,9 @@ where
             .unwrap_or_else(crate::query::default_paging);
         crate::query::validate_paging(&mut current_page);
 
-        // query pending & chain mutations index without original query paging since we need to do our own paging here since
-        // we are re-ranking results and that we may have more than one mutation match for each entity.
+        // query pending & chain mutations index without original query paging since we
+        // need to do our own paging here since we are re-ranking results and
+        // that we may have more than one mutation match for each entity.
         let mutations_query = EntityQuery {
             paging: None,
             ..query.clone()

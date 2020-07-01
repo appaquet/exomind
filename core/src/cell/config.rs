@@ -4,6 +4,7 @@ use crate::protos::generated::exocore_core::{
     node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
 };
 use std::fs::File;
+use std::io::prelude::*;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -31,6 +32,7 @@ pub fn node_config_to_standalone(mut config: LocalNodeConfig) -> Result<LocalNod
     let mut cells = Vec::new();
     for node_cell_config in &config.cells {
         let cell_config = cell_config_from_node_cell(node_cell_config, &config)?;
+        let cell_config = cell_config_to_standalone(cell_config)?;
 
         let mut node_cell_config = node_cell_config.clone();
         node_cell_config.location = Some(node_cell_config::Location::Instance(cell_config));
@@ -105,6 +107,81 @@ pub fn cell_config_from_node_cell(
             other
         ))),
     }
+}
+
+pub fn cell_config_to_standalone(mut config: CellConfig) -> Result<CellConfig, Error> {
+    for app in config.apps.iter_mut() {
+        let mut final_manifest = match app.location.take() {
+            Some(crate::protos::core::cell_application_config::Location::Directory(dir)) => {
+                let absolute_path = to_absolute_from_parent_path(&config.path, &dir)
+                    .to_string_lossy()
+                    .to_string();
+
+                let mut manifest_path = PathBuf::from(&absolute_path);
+                manifest_path.push("app.yaml");
+                let mut manifest = app_manifest_from_yaml_file(manifest_path)?;
+                manifest.path = absolute_path;
+                manifest
+            }
+            Some(crate::protos::core::cell_application_config::Location::Instance(manifest)) => {
+                manifest
+            }
+            other => {
+                return Err(Error::Application(
+                    String::new(),
+                    format!("Unsupported application location: {:?}", other),
+                ));
+            }
+        };
+
+        let app_name = final_manifest.name.clone();
+
+        for schema in final_manifest.schemas.iter_mut() {
+            let final_source = match schema.source.take() {
+                Some(crate::protos::apps::manifest_schema::Source::File(schema_path)) => {
+                    let abs_schema_path =
+                        to_absolute_from_parent_path(&final_manifest.path, &schema_path)
+                            .to_string_lossy()
+                            .to_string();
+                    let mut file = File::open(&abs_schema_path).map_err(|err| {
+                        Error::Application(
+                            app_name.clone(),
+                            format!(
+                                "Couldn't open application schema at path '{:?}': {}",
+                                abs_schema_path, err
+                            ),
+                        )
+                    })?;
+
+                    let mut content = vec![];
+                    file.read_to_end(&mut content).map_err(|err| {
+                        Error::Application(
+                            app_name.clone(),
+                            format!(
+                                "Couldn't read application schema at path '{:?}': {}",
+                                abs_schema_path, err
+                            ),
+                        )
+                    })?;
+                    crate::protos::apps::manifest_schema::Source::Bytes(content)
+                }
+                Some(src @ crate::protos::apps::manifest_schema::Source::Bytes(_)) => src,
+                other => {
+                    return Err(Error::Application(
+                        config.name.clone(),
+                        format!("Unsupported application schema type: {:?}", other),
+                    ));
+                }
+            };
+
+            schema.source = Some(final_source);
+        }
+
+        app.location =
+            Some(crate::protos::core::cell_application_config::Location::Instance(final_manifest));
+    }
+
+    Ok(config)
 }
 
 pub fn cell_config_from_yaml<R: std::io::Read>(bytes: R) -> Result<CellNodeConfig, Error> {

@@ -1,4 +1,5 @@
 use crate::options;
+use exocore_core::protos::core::{cell_application_config, node_cell_config};
 
 pub fn validate(
     _opts: &options::Options,
@@ -20,7 +21,21 @@ pub fn standalone(
     convert_opts: &options::StandaloneOpts,
 ) -> Result<(), failure::Error> {
     let config = exocore_core::cell::node_config_from_yaml_file(&convert_opts.config)?;
-    let config = exocore_core::cell::node_config_to_standalone(config)?;
+    let mut config = exocore_core::cell::node_config_to_standalone(config)?;
+
+    if convert_opts.exclude_app_schemas {
+        for cell in &mut config.cells {
+            if let Some(node_cell_config::Location::Instance(cell_config)) = &mut cell.location {
+                for app in &mut cell_config.apps {
+                    if let Some(cell_application_config::Location::Instance(app_manifest)) =
+                        &mut app.location
+                    {
+                        app_manifest.schemas.clear();
+                    }
+                }
+            }
+        }
+    }
 
     if convert_opts.format == "json" {
         println!("{}", exocore_core::cell::node_config_to_json(&config)?);

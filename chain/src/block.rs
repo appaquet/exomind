@@ -687,7 +687,8 @@ impl BlockSignatures {
         // we build the frame and re-read it
         let signatures_frame = Self::read_frame(frame_builder.as_bytes())?;
 
-        // make sure that the signatures frame size is the same as the one in block header
+        // make sure that the signatures frame size is the same as the one in block
+        // header
         if signatures_frame.whole_data_size() != expected_signatures_size {
             return Err(Error::Integrity(format!(
                 "Block local signatures isn't the same size as expected (got={} expected={})",

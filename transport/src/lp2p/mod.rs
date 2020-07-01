@@ -117,8 +117,9 @@ impl Libp2pTransport {
                 self.local_node.keypair().to_libp2p().clone(),
             )?;
 
-            // Create our own libp2p executor since by default it spawns its own thread pool to spawn
-            // tcp related futures, but Tokio requires to be spawn from within its runtime.
+            // Create our own libp2p executor since by default it spawns its own thread pool
+            // to spawn tcp related futures, but Tokio requires to be spawn from
+            // within its runtime.
             struct CoreExecutor;
             impl libp2p::core::Executor for CoreExecutor {
                 fn exec(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) {
@@ -739,11 +740,13 @@ mod tests {
 
 /// Modified version of libp2p's browser websocket implementation.
 ///
-/// The original version waits for messages to be fully sent before the promise returns. In our case,
-/// we use this implementation for client implementation and we don't really care as much about
-/// reliability of the transport and prefer performance.
+/// The original version waits for messages to be fully sent before the promise
+/// returns. In our case, we use this implementation for client implementation
+/// and we don't really care as much about reliability of the transport and
+/// prefer performance.
 ///
-/// Doing this change brought down latency from ~100-200ms on messages sent to ~1-2ms.
+/// Doing this change brought down latency from ~100-200ms on messages sent to
+/// ~1-2ms.
 #[cfg(all(feature = "libp2p-web", target_arch = "wasm32"))]
 mod ffi {
     use wasm_bindgen::prelude::*;

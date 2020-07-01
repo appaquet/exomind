@@ -10,11 +10,11 @@ use std::sync::Mutex;
 
 type RequestId = usize;
 
-/// Tracks mutations for which the user requested to be notified when they have been indexed and
-/// are reflected in the store.
+/// Tracks mutations for which the user requested to be notified when they have
+/// been indexed and are reflected in the store.
 ///
-/// This tracks operation ids that have been indexed, and sends completion signal via the provided
-/// oneshot channel.
+/// This tracks operation ids that have been indexed, and sends completion
+/// signal via the provided oneshot channel.
 pub(crate) struct MutationTracker {
     inner: Mutex<Inner>,
 }
@@ -32,8 +32,8 @@ impl MutationTracker {
         }
     }
 
-    /// Track the indexation status of the given operation ids and notify they indexation completion or timeout
-    /// via the given channel.
+    /// Track the indexation status of the given operation ids and notify they
+    /// indexation completion or timeout via the given channel.
     pub fn track_request(
         &self,
         operation_ids: Vec<OperationId>,
@@ -68,7 +68,8 @@ impl MutationTracker {
         }
     }
 
-    /// Notifies that the given operation ids were indexed and available through the store.
+    /// Notifies that the given operation ids were indexed and available through
+    /// the store.
     pub fn handle_indexed_operations(&self, operation_ids: &[OperationId]) {
         let mut inner = self.inner.lock().unwrap();
 
