@@ -100,6 +100,7 @@ jobs:
 
           curl -sL https://deb.nodesource.com/setup_13.x | bash -
           apt-get install -y nodejs
+          npm install -g yarn
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -111,12 +112,12 @@ jobs:
           export PATH=$PATH:`pwd`
 
           cd $GITHUB_WORKSPACE/
-          npm ci
-          npm run build_dev
+          yarn install --frozen-lockfile
+          yarn build_dev
 
           cd $GITHUB_WORKSPACE/examples/web
-          npm ci
-          npm run build_dev
+          yarn install --frozen-lockfile
+          yarn build_dev
 
   ios_client_build:
     runs-on: macOS-latest

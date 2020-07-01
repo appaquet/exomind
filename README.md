@@ -84,9 +84,9 @@ A cell consists of:
 ### Launch sample web project
 * Run the [web example](./examples/web):
   * Build WASM client
-    * `cd ./clients/web && wasm-pack build && npm install`
+    * `yarn install && yarn build`
   * Start development server which will watch files and rebuild automatically:
-    * `cd ./examples/web && npm install && npm run start`
+    * `cd ./examples/web && yarn install && yarn start`
   * Generate cell configuration for web:
     * Convert config to JSON: `exo config standalone <config file>`
   * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)

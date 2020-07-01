@@ -22,10 +22,10 @@
     * Then `./generate_protos.sh`
 
 * Build WASM & Typescript:
-    * `cd ../../ && npm run build`
+    * `cd ../../ && yarn build`
 
 * Launch the [sample project](../../examples/web) 
-    * `cd ../../examples/web && npm install && npm run start`
+    * `cd ../../examples/web && yarn install && yarn start`
     * Navigate to [http://localhost:8080](http://localhost:8080)
 
 # Notes
