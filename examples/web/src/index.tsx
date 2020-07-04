@@ -1,6 +1,3 @@
-import "core-js/stable";
-import "regenerator-runtime/runtime";
-
 import { Exocore, exocore } from "exocore";
 import React, { ChangeEvent } from 'react';
 import ReactDOM from 'react-dom';
