@@ -1,4 +1,3 @@
-node_modules
-pkg/README.md
-pkg/.gitignore
-pkg/package.json
+wasm
+tsc
+protos

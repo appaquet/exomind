@@ -1,5 +1,5 @@
-import * as protos from '../js/protos';
-import { exocore } from '../js/protos';
+import * as protos from '../protos';
+import { exocore } from '../protos';
 export {
     protos,
     exocore,
@@ -14,26 +14,27 @@ export class Exocore {
         return Exocore.defaultInstance != null;
     }
 
+    static async ensureLoaded(): Promise<void> {
+        if (_exocore_wasm == null) {
+            _exocore_wasm = await import('../wasm/exocore_client_web');
+        }
+
+        return _exocore_wasm;
+    }
+
     static async initialize(config: object): Promise<ExocoreInstance> {
         const configJson = JSON.stringify(config);``
         const configBytes = new TextEncoder().encode(configJson);
+
+        await Exocore.ensureLoaded();
 
         let instance: ExocoreInstance;
         const onStatusChange = (status: string) => {
             instance._triggerStatusChange(status)
         }
 
-        if (_exocore_wasm != null) {
-            const innerClient = new _exocore_wasm.ExocoreClient(configBytes, 'json', onStatusChange);
-            instance = new ExocoreInstance(innerClient);
-
-        } else {
-            _exocore_wasm = await import('../pkg/exocore_client_web');
-            console.log("Exocore WASM client loaded");
-
-            const innerClient = new _exocore_wasm.ExocoreClient(configBytes, 'json', onStatusChange);
-            instance = new ExocoreInstance(innerClient);
-        }
+        const innerClient = new _exocore_wasm.ExocoreClient(configBytes, 'json', onStatusChange);
+        instance = new ExocoreInstance(innerClient);
 
         if (!Exocore.defaultInstance) {
             Exocore.defaultInstance = instance;
@@ -64,7 +65,7 @@ export class ExocoreInstance {
         this.registry = new Registry();
     }
 
-    _triggerStatusChange(status: string) {
+    _triggerStatusChange(status: string): void {
         this.status = status;
         if (this.onChange) {
             this.onChange();
@@ -121,7 +122,7 @@ export class WatchedQuery {
         return this;
     }
 
-    free() {
+    free(): void {
         this.inner.free();
     }
 }
@@ -365,7 +366,7 @@ export class TraitQueryBuilder {
         return builder;
     }
 
-    build() {
+    build(): exocore.index.ITraitQuery {
         return this.query;
     }
 }

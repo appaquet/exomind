@@ -12,4 +12,4 @@ for CRATE in "${CRATES[@]}"; do
 done
 
 echo "Publishing to npm..."
-npm publish
+yarn publish

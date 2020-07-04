@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "./tsp/",
+    "outDir": "./clients/web/tsc/",
     "sourceMap": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
@@ -16,8 +16,11 @@
       "dom"
     ],
   },
+  "include": [
+    "clients/web/ts/*"
+  ],
   "exclude": [
     "node_modules",
-    "tsp"
+    "clients/web/tsc"
   ]
 }

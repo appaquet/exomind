@@ -1,6 +1,10 @@
 name: Push tester
 
-on: [push]
+on:
+  push:
+    branches:    
+      - '**'
+      - '!releases/**' # releases handled by version workflow
 
 jobs:
   rust_checks:
@@ -98,8 +102,8 @@ jobs:
           curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.9.1/wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz | tar zxf -
           mv wasm-pack*/wasm-pack .
 
-          curl -sL https://deb.nodesource.com/setup_13.x | bash -
-          apt-get install -y nodejs
+          curl -sL https://deb.nodesource.com/setup_14.x | bash -
+          apt-get install -y nodejs protobuf-compiler
           npm install -g yarn
       - uses: actions-rs/toolchain@v1
         with:
@@ -111,13 +115,12 @@ jobs:
           set -e
           export PATH=$PATH:`pwd`
 
-          cd $GITHUB_WORKSPACE/
-          yarn install --frozen-lockfile
+          cd $GITHUB_WORKSPACE
           yarn build_dev
 
           cd $GITHUB_WORKSPACE/examples/web
-          yarn install --frozen-lockfile
-          yarn build_dev
+          yarn install
+          yarn build
 
   ios_client_build:
     runs-on: macOS-latest

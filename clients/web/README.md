@@ -1,5 +1,6 @@
-# Web WASM build
+# Web client
 
+## Dependencies
 * Install Rust's WASM target
     * `rustup target add wasm32-unknown-unknown`
     
@@ -15,16 +16,15 @@
                 * Bash `export PATH=/usr/local/opt/llvm/bin:$PATH`
                 * Fish `set -g fish_user_paths "/usr/local/opt/llvm/bin" $fish_user_paths`
 
-* Install [Node & NPM](https://github.com/nodesource/distributions/blob/master/README.md#debinstall)
+* Install Node & Yarn
+    * [Install Node](https://github.com/nodesource/distributions/blob/master/README.md#debinstall)
+    * Install yarn: `npm install -g yarn`
 
-* To generate proto: 
-    * Make sure `protoc` is installed. See root's [README](../../README.md).
-    * Then `./generate_protos.sh`
+## Building
+* Build:
+    * `./tools/build.sh`
 
-* Build WASM & Typescript:
-    * `cd ../../ && yarn build`
-
-* Launch the [sample project](../../examples/web) 
+* Launch the [sample project](../../examples/web):
     * `cd ../../examples/web && yarn install && yarn start`
     * Navigate to [http://localhost:8080](http://localhost:8080)
 

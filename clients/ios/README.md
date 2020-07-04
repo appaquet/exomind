@@ -1,4 +1,6 @@
-# iOS build
+# iOS client
+
+## Dependencies
 
 **You need to be on MacOS**
 
@@ -13,8 +15,10 @@
 * Install [Swift Protobuf Plugin](https://github.com/apple/swift-protobuf/)
     * `brew install swift-protobuf`
 
+## Building
+
 * Generate headers & protobuf
-    * `./generate.sh`
+    * `./tools/generate.sh`
 
 * Build the universal lib: `cargo lipo`
 

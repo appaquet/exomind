@@ -16,6 +16,7 @@ A cell consists of:
 * Applications nodes run applications written in WebAssembly (that can be collocated with index nodes)
 * Clients (fat or thin) that can also act as index, data and partially run applications' WebAssembly.
 
+
 ## Development status
 * **Chain storage and replication layer**: Proof of concept
 * **Transport layer**: Proof of concept
@@ -27,7 +28,9 @@ A cell consists of:
 * **Nodes discovery**: Not yet started
 * **Blob storage (IPFS)**: Not yet started
 
+
 ## Dependencies
+
 ### General
 * Build dependencies
     * On MacOS: Install Xcode and command lines tools
@@ -43,7 +46,7 @@ A cell consists of:
 
 * [Protobuf](https://developers.google.com/protocol-buffers/)
     * On MacOS: `brew install protobuf` 
-    * On Ubuntu: `snap install protobuf` 
+    * On Ubuntu: `apt install protobuf-compiler` 
     
 ### Web (optional)
 * See [Web WASM client README](./clients/web/README.md)
@@ -63,7 +66,9 @@ A cell consists of:
     * At minimum, the config requires 2 keypair: one for the node, one for the cell.
     * The node keypair is unique per server/node, while the cell keypair is shared among servers that host the cell.
     
+
 ## Quick start
+
 ### Create a Cell hosted on 2 nodes
 * `cp ./examples/config.yaml node1.yaml`
 * `cp ./examples/config.yaml node2.yaml`
@@ -84,7 +89,7 @@ A cell consists of:
 ### Launch sample web project
 * Run the [web example](./examples/web):
   * Build WASM client
-    * `yarn install && yarn build`
+    * `./clients/web/tools/build.sh`
   * Start development server which will watch files and rebuild automatically:
     * `cd ./examples/web && yarn install && yarn start`
   * Generate cell configuration for web:

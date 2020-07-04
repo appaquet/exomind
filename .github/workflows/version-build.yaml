@@ -1,0 +1,59 @@
+name: Version builder
+
+on:
+  push:
+    branches:    
+      - 'releases/**'
+
+jobs:
+  web_client_build:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:19.10 # required for clang with wasm
+    steps:
+      - name: Install build dependencies
+        run: |
+          set -e
+
+          apt update && DEBIAN_FRONTEND=noninteractive apt install -y clang curl pkg-config libssl-dev openssl git git-lfs
+
+          curl -sL https://deb.nodesource.com/setup_14.x | bash -
+          apt-get install -y nodejs protobuf-compiler
+          npm install -g yarn
+
+      - uses: actions/checkout@v2
+        with:
+          lfs: true
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: |
+          set -e
+
+          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.9.1/wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz | tar zxf -
+          mv wasm-pack*/wasm-pack .
+
+      - name: Build client
+        run: |
+          set -e
+          export PATH=$PATH:`pwd`
+
+          cd $GITHUB_WORKSPACE
+          yarn build
+
+      - name: Commit assets 
+        uses: EndBug/add-and-commit@v4
+        with:
+          add: 'wasm tsc protos'
+          author_name: Exocore bot
+          cwd: 'clients/web'
+          force: true
+          message: 'Assets'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

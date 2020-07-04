@@ -5,17 +5,16 @@
   "repository": "https://github.com/appaquet/exocore",
   "license": "MIT",
   "scripts": {
-    "prepare": "rm -f clients/web/pkg/package.json clients/web/pkg/.gitignore",
-    "build": "cd clients/web && wasm-pack build && tsc && rm pkg/package.json pkg/.gitignore pkg/README.md",
-    "build_dev": "cd clients/web && wasm-pack build --dev && tsc && rm pkg/package.json pkg/.gitignore"
+    "protos": "./clients/web/tools/generate_protos.sh",
+    "build": "./clients/web/tools/build.sh --release",
+    "build_dev": "./clients/web/tools/build.sh --dev"
   },
-  "main": "clients/web/tsp/index.js",
-  "types": "clients/web/tsp/index.d.ts",
+  "main": "clients/web/tsc/index.js",
+  "types": "clients/web/tsc/index.d.ts",
   "files": [
-    "clients/web/js/**",
-    "clients/web/ts/**",
-    "clients/web/tsp/**",
-    "clients/web/pkg/**",
+    "clients/web/tsc/**",
+    "clients/web/wasm/**",
+    "clients/web/protos/**",
     "README.md"
   ],
   "devDependencies": {
