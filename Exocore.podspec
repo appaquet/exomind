@@ -4,7 +4,7 @@ Pod::Spec.new do |spec|
     spec.license      = { :type => 'MIT' }
     spec.summary      = 'Distributed applications framework'
     spec.authors      = { 'Andre-Philippe Paquet' => 'appaquet@gmail.com' }
-    spec.source       = { :git => 'https://github.com/appaquet/exocore.git', :tag => 'v' +  s.version.to_s }
+    spec.source       = { :git => 'https://github.com/appaquet/exocore.git', :tag => 'v' +  spec.version.to_s }
     spec.homepage     = 'https://github.com/appaquet/exocore'
 
     spec.swift_version = '4.2'
