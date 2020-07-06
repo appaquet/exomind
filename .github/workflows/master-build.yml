@@ -8,9 +8,9 @@ on:
 jobs:
   docker_build:
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v1
+
     - name: Build & publish Docker
       run: |
         TAG=$(git rev-parse --short HEAD)

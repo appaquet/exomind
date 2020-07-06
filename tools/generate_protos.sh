@@ -38,14 +38,10 @@ cargo test --all
 
 # Generate web protos if possible
 if [[ -d "$EXOCORE_ROOT/node_modules" ]]; then
-  pushd $EXOCORE_ROOT/clients/web
-  ./tools/generate_protos.sh
-  popd
+  ./clients/web/tools/generate_protos.sh
 fi
 
 # Generate iOS protos if possible
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  pushd $EXOCORE_ROOT/clients/ios
-  ./generate.sh
-  popd
+  ./clients/ios/tools/generate.sh
 fi

@@ -12,6 +12,9 @@
     * `cargo install cargo-lipo`
     * `cargo install cbindgen`
 
+* Install Cocoapods
+    * `sudo gem install cocoapods`
+
 * Install [Swift Protobuf Plugin](https://github.com/apple/swift-protobuf/)
     * `brew install swift-protobuf`
 
@@ -22,4 +25,8 @@
 
 * Build the universal lib: `cargo lipo`
 
-* Open the [`xcode`](./xcode/exocore-client-ios) project in XCode / AppCode
+## Example project
+
+* `cd ../../examples/ios`
+* `pod install`
+* Open the project in XCode / AppCode

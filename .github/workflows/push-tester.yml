@@ -11,30 +11,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
           components: rustfmt, clippy
+
       - name: Check formatting
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
+
       - name: Clippy & check
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
 
+
   rust_tests_coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2020-06-21
           profile: minimal
+
       - name: Test coverage
         run: |
           set -e
@@ -45,47 +51,57 @@ jobs:
           export CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
           ./tools/coverage.sh codecov_io
 
+
   rust_linux_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
+
       - name: Tests
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all --all-features
+
 
   rust_macos_tests:
     runs-on: macOS-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
+
       - name: Tests
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all --all-features
 
+
   rust_windows_tests:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
+
       - name: Tests
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all --all-features
+
 
   web_client_build:
     runs-on: ubuntu-latest
@@ -93,10 +109,9 @@ jobs:
       image: ubuntu:19.10 # required for clang with wasm
     steps:
       - uses: actions/checkout@v2
+
       - name: Install build dependencies
         run: |
-          set -e
-
           apt update && DEBIAN_FRONTEND=noninteractive apt install -y clang curl pkg-config libssl-dev openssl
 
           curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.9.1/wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz | tar zxf -
@@ -105,51 +120,61 @@ jobs:
           curl -sL https://deb.nodesource.com/setup_14.x | bash -
           apt-get install -y nodejs protobuf-compiler
           npm install -g yarn
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Build client & example
+      - name: Build client
+
         run: |
-          set -e
           export PATH=$PATH:`pwd`
 
           cd $GITHUB_WORKSPACE
           yarn build_dev
 
+      - name: Build example project
+        run: |
           cd $GITHUB_WORKSPACE/examples/web
           yarn install
           yarn build
 
+
   ios_client_build:
     runs-on: macOS-latest
-
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
+
       - name: Install cargo-lipo
         run: |
-          set -e
-          # actions-rs don't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
-          rustup target add aarch64-apple-ios x86_64-apple-ios
+          brew install swift-protobuf
+          rustup target add aarch64-apple-ios x86_64-apple-ios # actions-rs don't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
           cargo install cargo-lipo
-      - name: Force Xcode 11.3
-        run: sudo xcode-select -switch /Applications/Xcode_11.3.app
-      - name: Build ios lib
+
+      - name: Force Xcode 11.5
+        run: sudo xcode-select -switch /Applications/Xcode_11.5.app
+
+      - name: Build client & pod
         run: |
-          set -e
-          export RUST_BACKTRACE=1
-
           cd $GITHUB_WORKSPACE/clients/ios
-          cargo lipo
+          ./tools/generate.sh
+          ./tools/build.sh
 
-          cd $GITHUB_WORKSPACE/clients/ios/xcode/exocore-client-ios
+          cd $GITHUB_WORKSPACE/
+          pod lib lint --verbose
+
+      - name: Build example project
+        run: |
+          cd $GITHUB_WORKSPACE/examples/ios
           pod install
-          xcodebuild -workspace exocore-client-ios.xcworkspace -scheme exocore-client-ios -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
+          xcodebuild -workspace ExamplesIos.xcworkspace -scheme ExamplesIos -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO 
+
 
   markdown_links_check:
     runs-on: ubuntu-latest

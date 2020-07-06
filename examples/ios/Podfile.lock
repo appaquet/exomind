@@ -1,0 +1,23 @@
+PODS:
+  - Exocore (0.1.0):
+    - SwiftProtobuf (~> 1.10)
+  - SwiftProtobuf (1.10.0)
+
+DEPENDENCIES:
+  - Exocore (from `../../`)
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - SwiftProtobuf
+
+EXTERNAL SOURCES:
+  Exocore:
+    :path: "../../"
+
+SPEC CHECKSUMS:
+  Exocore: 2c52cf0689a27815f08f8871e4484e0773770723
+  SwiftProtobuf: bfafffa9e26d1561c3bd0045e188c4fab5f527ae
+
+PODFILE CHECKSUM: e518b98aa706c58474dadb130078389830b421ba
+
+COCOAPODS: 1.7.5
