@@ -188,7 +188,13 @@ impl NetworkBehaviour for ExocoreBehaviour {
 
     fn inject_dial_failure(&mut self, peer_id: &PeerId) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
-            info!("Failed to connect to peer {}", peer.node);
+            if !peer.temp_queue.is_empty() {
+                warn!(
+                    "Failed to connect to peer {}. {} messages in queue for node.",
+                    peer.node,
+                    peer.temp_queue.len()
+                );
+            }
         }
     }
 

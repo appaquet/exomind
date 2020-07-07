@@ -346,9 +346,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.56"
+version = "1.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c1f1d60091c1b73e2b1f4560ab419204b178e625fa945ded7b660becd2bd46"
+checksum = "0fde55d2a2bfaa4c9668bbc63f531fbdeee3ffe188f4662511ce2c22b3eedebe"
 
 [[package]]
 name = "census"
@@ -364,9 +364,9 @@ checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
 name = "chrono"
-version = "0.4.12"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0fee792e164f78f5fe0c296cc2eb3688a2ca2b70cdff33040922d298203f0c4"
+checksum = "c74d84029116787153e02106bf53e66828452a4b325cc8652b788b5967c0a0b6"
 dependencies = [
  "num-integer",
  "num-traits",
@@ -821,7 +821,7 @@ dependencies = [
  "itertools 0.9.0",
  "log",
  "prost",
- "smallvec 1.4.0",
+ "smallvec 1.4.1",
  "tantivy",
  "tempdir",
 ]
@@ -1212,9 +1212,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.14"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9586eedd4ce6b3c498bc3b4dd92fc9f11166aa908a914071953768066c67909"
+checksum = "3deed196b6e7f9e44a2ae8d94225d80302d81208b1bb673fd21fe634645c85a9"
 dependencies = [
  "libc",
 ]
@@ -1415,7 +1415,7 @@ dependencies = [
  "parity-multiaddr",
  "parking_lot 0.10.2",
  "pin-project",
- "smallvec 1.4.0",
+ "smallvec 1.4.1",
  "wasm-timer",
 ]
 
@@ -1446,7 +1446,7 @@ dependencies = [
  "ring",
  "rw-stream-sink",
  "sha2",
- "smallvec 1.4.0",
+ "smallvec 1.4.1",
  "thiserror",
  "unsigned-varint 0.4.0",
  "void",
@@ -1530,7 +1530,7 @@ dependencies = [
  "libp2p-core",
  "log",
  "rand 0.7.3",
- "smallvec 1.4.0",
+ "smallvec 1.4.1",
  "void",
  "wasm-timer",
 ]
@@ -1553,9 +1553,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-wasm-ext"
-version = "0.20.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e2b3f0281c184af2e3481ad2463682735d491b2ceb8f73fa99dcd5d41e7afbf"
+checksum = "0feb99e32fea20ffb1bbf56a6fb2614bff7325ff44a515728385170b3420d2c3"
 dependencies = [
  "futures 0.3.5",
  "js-sys",
@@ -1723,9 +1723,9 @@ dependencies = [
 
 [[package]]
 name = "memoffset"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4fc2c02a7e374099d4ee95a193111f72d2110197fe200272371758f6c3643d8"
+checksum = "c198b026e1bbf08a937e94c6c60f9ec4a2267f5b0d2eec9c1b21b061ce2be55f"
 dependencies = [
  "autocfg 1.0.0",
 ]
@@ -1822,7 +1822,7 @@ dependencies = [
  "futures 0.3.5",
  "log",
  "pin-project",
- "smallvec 1.4.0",
+ "smallvec 1.4.1",
  "unsigned-varint 0.4.0",
 ]
 
@@ -2033,7 +2033,7 @@ dependencies = [
  "cloudabi",
  "libc",
  "redox_syscall",
- "smallvec 1.4.0",
+ "smallvec 1.4.1",
  "winapi 0.3.9",
 ]
 
@@ -2220,9 +2220,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.15.1"
+version = "2.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4951a8253c06334be9fe320bbcf73f14949fde62a0c8128d697eec1ff0fa8cd"
+checksum = "d883f78645c21b7281d21305181aa1f4dd9e9363e7cf2566c93121552cff003e"
 
 [[package]]
 name = "pulldown-cmark"
@@ -2754,9 +2754,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.4.0"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7cb5678e1615754284ec264d9bb5b4c27d2018577fd90ac0ceb578591ed5ee4"
+checksum = "3757cb9d89161a2f24e1cf78efa0c1fcff485d18e3f55e0aa3480824ddaa0f3f"
 
 [[package]]
 name = "snap"
@@ -2932,7 +2932,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "smallvec 1.4.0",
+ "smallvec 1.4.1",
  "snap",
  "stable_deref_trait",
  "tantivy-fst",

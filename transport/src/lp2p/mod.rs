@@ -97,8 +97,8 @@ impl Libp2pTransport {
 
         #[cfg(all(feature = "libp2p-web", target_arch = "wasm32"))]
         let mut swarm = {
-            use libp2p::Transport;
-            let transport = libp2p::wasm_ext::ExtTransport::new(ffi::websocket_transport())
+            use libp2p::{wasm_ext::ffi::websocket_transport, wasm_ext::ExtTransport, Transport};
+            let transport = ExtTransport::new(websocket_transport())
                 .upgrade(libp2p::core::upgrade::Version::V1)
                 .authenticate(libp2p::secio::SecioConfig::new(
                     self.local_node.keypair().to_libp2p().clone(),
@@ -735,26 +735,5 @@ mod tests {
                 InEvent::NodeStatus(_, _) => false,
             })
         }
-    }
-}
-
-/// Modified version of libp2p's browser websocket implementation.
-///
-/// The original version waits for messages to be fully sent before the promise
-/// returns. In our case, we use this implementation for client implementation
-/// and we don't really care as much about reliability of the transport and
-/// prefer performance.
-///
-/// Doing this change brought down latency from ~100-200ms on messages sent to
-/// ~1-2ms.
-#[cfg(all(feature = "libp2p-web", target_arch = "wasm32"))]
-mod ffi {
-    use wasm_bindgen::prelude::*;
-
-    #[cfg(all(feature = "libp2p-web", target_arch = "wasm32"))]
-    #[wasm_bindgen(module = "/src/lp2p/websockets.js")]
-    extern "C" {
-        /// Returns a `Transport` implemented using websockets.
-        pub fn websocket_transport() -> libp2p::wasm_ext::ffi::Transport;
     }
 }

@@ -26,7 +26,7 @@ byteorder = "1.3"
 libp2p = { version = "0.21", optional = true, default-features = false, features = [ "dns", "mplex", "secio", "websocket", "yamux" ] }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
-libp2p-wasm-ext = { version = "0.20", features = [], optional = true }
+libp2p-wasm-ext = { version = "0.20", features = ["websocket"], optional = true }
 wasm-bindgen = "0.2"
 
 [dev-dependencies]
