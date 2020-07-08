@@ -1,40 +1,11 @@
-import UIKit
 
-public enum EXOConfigFormat {
-    case protobuf
-    case yaml
-}
+import Foundation
 
-public class EXOClient {
-    fileprivate var context: OpaquePointer?
+public class EXOStore {
+    var client: ExocoreClient
 
-    public init(config: Exocore_Core_LocalNodeConfig) throws {
-        let configData = try config.serializedData()
-
-        self.context = try EXOClient.contextFromConfig(configData: configData, format: UInt8(ExocoreConfigFormat_Protobuf.rawValue))
-    }
-
-    public init(yamlConfig: String) throws {
-        guard let configData = yamlConfig.data(using: .utf8) else {
-            print("EXOClient > Couldn't get data from YAML string")
-            throw EXOError.initialization
-        }
-
-        self.context = try EXOClient.contextFromConfig(configData: configData, format: UInt8(ExocoreConfigFormat_Yaml.rawValue))
-    }
-
-    public static func contextFromConfig(configData: Data, format: UInt8) throws -> OpaquePointer {
-        try configData.withUnsafeBytes { (ptr) -> OpaquePointer in
-            let addr = ptr.bindMemory(to: UInt8.self).baseAddress
-
-            let res = exocore_context_new(addr, UInt(configData.count), format);
-
-            if res.status == UInt8(ExocoreQueryStatus_Success.rawValue) {
-                return res.context
-            } else {
-                throw EXOError.initialization
-            }
-        }
+    init(client: ExocoreClient) {
+        self.client = client
     }
 
     public func mutate(mutation: Exocore_Index_MutationRequest, onCompletion: @escaping (EXOMutationStatus, Exocore_Index_MutationResult?) -> Void) -> EXOMutationResult {
@@ -45,7 +16,7 @@ public class EXOClient {
         let handle = mutationData.withUnsafeBytes { (ptr) -> ExocoreMutationHandle in
             let addr = ptr.bindMemory(to: UInt8.self).baseAddress
 
-            return exocore_mutate(self.context, addr, UInt(mutationData.count), { (status, resultsPtr, resultsSize, observer) in
+            return exocore_mutate(self.client.context, addr, UInt(mutationData.count), { (status, resultsPtr, resultsSize, observer) in
                 let cb = Unmanaged<EXOMutationCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
 
                 if status == UInt8(ExocoreMutationStatus_Error.rawValue) {
@@ -61,7 +32,7 @@ public class EXOClient {
             }, observer)
         }
 
-        return EXOMutationResult(mutationHandle: handle, client: self)
+        return EXOMutationResult(mutationHandle: handle, client: self.client)
     }
 
     public func query(query: Exocore_Index_EntityQuery, onChange: @escaping (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void) -> EXOQueryHandle {
@@ -72,7 +43,7 @@ public class EXOClient {
         let handle = queryData.withUnsafeBytes { (ptr) -> ExocoreQueryHandle in
             let addr = ptr.bindMemory(to: UInt8.self).baseAddress
 
-            return exocore_query(self.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
+            return exocore_query(self.client.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
                 let cb = Unmanaged<EXOQueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
 
                 if status == UInt8(ExocoreQueryStatus_Error.rawValue) {
@@ -88,10 +59,10 @@ public class EXOClient {
             }, observer)
         }
 
-        return EXOQueryHandle(queryHandle: handle, client: self)
+        return EXOQueryHandle(queryHandle: handle, client: self.client)
     }
 
-    public func watched_query(query: Exocore_Index_EntityQuery, onChange: @escaping (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void) -> EXOQueryStreamHandle {
+    public func watchedQuery(query: Exocore_Index_EntityQuery, onChange: @escaping (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void) -> EXOQueryStreamHandle {
         let cb = EXOQueryCallback(cb: onChange)
         let observer = UnsafeRawPointer(Unmanaged.passRetained(cb).toOpaque())
 
@@ -99,7 +70,7 @@ public class EXOClient {
         let handle = queryData.withUnsafeBytes { (ptr) -> ExocoreQueryStreamHandle in
             let addr = ptr.bindMemory(to: UInt8.self).baseAddress
 
-            return exocore_watched_query(self.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
+            return exocore_watched_query(self.client.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
                 if status == UInt8(ExocoreQueryStreamStatus_Done.rawValue) {
                     let cb = Unmanaged<EXOQueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
                     cb.cb(.done, nil)
@@ -120,32 +91,7 @@ public class EXOClient {
             }, observer)
         }
 
-        return EXOQueryStreamHandle(queryHandle: handle, client: self)
-    }
-
-    deinit {
-        if self.context != nil {
-            print("EXOClient > Deinit start...")
-            // free context, which will trigger all query to fail and get freed
-            exocore_context_free(self.context)
-            print("EXOClient > Deinit done")
-        }
-    }
-}
-
-public enum EXOError: Error {
-    case initialization
-}
-
-public class EXOQueryCallback {
-    var cb: (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void
-
-    init(cb: @escaping (EXOQueryStatus, Exocore_Index_EntityResults?) -> Void) {
-        self.cb = cb
-    }
-
-    deinit {
-        print("EXOQueryCallback > Deinit")
+        return EXOQueryStreamHandle(queryHandle: handle, client: self.client)
     }
 }
 
@@ -157,9 +103,9 @@ public enum EXOQueryStatus {
 
 public class EXOQueryStreamHandle {
     var handle: ExocoreQueryStreamHandle
-    weak var client: EXOClient?
+    weak var client: ExocoreClient?
 
-    init(queryHandle: ExocoreQueryStreamHandle, client: EXOClient) {
+    init(queryHandle: ExocoreQueryStreamHandle, client: ExocoreClient) {
         self.handle = queryHandle
         self.client = client
     }
@@ -174,9 +120,9 @@ public class EXOQueryStreamHandle {
 
 public class EXOQueryHandle {
     var handle: ExocoreQueryHandle
-    weak var client: EXOClient?
+    weak var client: ExocoreClient?
 
-    init(queryHandle: ExocoreQueryHandle, client: EXOClient) {
+    init(queryHandle: ExocoreQueryHandle, client: ExocoreClient) {
         self.handle = queryHandle
         self.client = client
     }
@@ -208,9 +154,9 @@ public enum EXOMutationStatus {
 
 public class EXOMutationResult {
     var handle: ExocoreMutationHandle
-    weak var client: EXOClient?
+    weak var client: ExocoreClient?
 
-    init(mutationHandle: ExocoreMutationHandle, client: EXOClient) {
+    init(mutationHandle: ExocoreMutationHandle, client: ExocoreClient) {
         self.handle = mutationHandle
         self.client = client
     }
@@ -218,11 +164,4 @@ public class EXOMutationResult {
     deinit {
         print("EXOMutationResult > Deinit")
     }
-}
-
-public func EXOGenerateId(prefix: String? = nil) -> String {
-    let idPtr = exocore_generate_id(prefix)
-    let idStr = String(cString: idPtr!)
-    exocore_free_string(idPtr)
-    return idStr
 }

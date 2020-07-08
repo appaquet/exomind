@@ -3,5 +3,6 @@ use_frameworks!
 
 target 'ExamplesIos' do
   pod 'Exocore', :path => '../../'
+  pod 'KeychainSwift'
 end
 
