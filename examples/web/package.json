@@ -17,7 +17,7 @@
     "@types/react-dom": "^16.9.8",
     "babel-loader": "^8.1.0",
     "html-webpack-plugin": "^4.3.0",
-    "ts-loader": "^7.0.4",
+    "ts-loader": "^8.0.0",
     "typescript": "^3.9.5",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
