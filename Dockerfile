@@ -6,8 +6,8 @@ RUN apt-get update && \
 
 COPY . /opt/exocore/
 
-RUN cd /opt/exocore/exo && \
-    cargo install --path . && \
+RUN cd /opt/exocore && \
+    ./tools/install.sh && \
     rm -rf /opt/exocore/ && \
     rm -rf /usr/local/cargo/registry/
 
