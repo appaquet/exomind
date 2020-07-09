@@ -44,7 +44,7 @@ jobs:
           rm -rf clients/web/node_modules
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2.0.1
         with:
           name: web-artifacts
           path: clients/web
@@ -79,7 +79,7 @@ jobs:
           pod lib lint --verbose
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2.0.1
         with:
           name: ios-artifacts
           path: clients/ios
