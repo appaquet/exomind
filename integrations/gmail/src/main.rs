@@ -7,10 +7,10 @@ use exocore::index::mutation::MutationBuilder;
 use exocore::index::remote::{Client, ClientHandle};
 use exocore::transport::{Libp2pTransport, TransportLayer};
 use exomind;
-use exomind::protos::base::{Account, Collection, CollectionChild, Email, EmailThread};
-use log::LevelFilter;
+use exomind::protos::base::{
+    Account, AccountScope, AccountType, Collection, CollectionChild, Email, EmailThread,
+};
 use yup_oauth2::{AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
-use exocore::transport::TransportHandle;
 
 mod parsing;
 
@@ -24,16 +24,28 @@ async fn main() {
     exocore::core::logging::setup(None);
 
     // TODO: Save tokens into account by persisting to a temp file and save to exocore when changed
-    let account = Account {
-        key: "appaquet@gmail.com".to_string(),
-        name: "Personal".to_string(),
-        ..Default::default()
-    };
 
     let gmail_client = new_gmail_client().await;
     let exocore_client = new_exocore_client().await;
 
+    let me: google_gmail1::schemas::Profile =
+        gmail_client.users().get_profile("me").execute().unwrap();
+
+    let me_email = me.email_address.unwrap();
+    let account_ref = Reference {
+        entity_id: format!("exomind_{}", me_email),
+        trait_id: me_email.clone(),
+    };
+
     {
+        let account_trait = Account {
+            key: account_ref.trait_id.clone(),
+            name: format!("Gmail - {}", me_email),
+            r#type: AccountType::Gmail.into(),
+            scopes: vec![AccountScope::Email.into()],
+            ..Default::default()
+        };
+
         let inbox_trait = Trait {
             id: "inbox".to_string(),
             message: Some(
@@ -46,8 +58,31 @@ async fn main() {
             ),
             ..Default::default()
         };
-        let mutation = MutationBuilder::new().put_trait("inbox".to_string(), inbox_trait);
-        let _ = exocore_client.mutate(mutation).await.unwrap();
+        let fav_trait = Trait {
+            id: "favorites".to_string(),
+            message: Some(
+                Collection {
+                    name: "Favorites".to_string(),
+                    ..Default::default()
+                }
+                .pack_to_any()
+                .unwrap(),
+            ),
+            ..Default::default()
+        };
+        let mutations = MutationBuilder::new()
+            .put_trait("inbox", inbox_trait)
+            .put_trait("favorites", fav_trait)
+            .put_trait(
+                format!("exomind_{}", me_email),
+                Trait {
+                    id: me_email.clone(),
+                    message: Some(account_trait.pack_to_any().unwrap()),
+                    ..Default::default()
+                },
+            );
+
+        let _ = exocore_client.mutate(mutations).await.unwrap();
     }
 
     let list: google_gmail1::schemas::ListThreadsResponse = gmail_client
@@ -81,14 +116,14 @@ async fn main() {
         let parsing::ParsedThread {
             mut thread,
             mut emails,
-            labels,
+            labels: _,
         } = parsing::parse_thread(thread).unwrap();
 
         let thread_entity_id = thread_entity_id(&thread);
 
-        thread.source = Some(account.clone());
+        thread.account = Some(account_ref.clone());
         for email in &mut emails {
-            email.source = Some(account.clone());
+            email.account = Some(account_ref.clone());
         }
 
         if let Some(email) = emails.last() {
@@ -136,6 +171,10 @@ async fn main() {
                             entity_id: "inbox".to_string(),
                             ..Default::default()
                         }),
+                        weight: std::time::SystemTime::now()
+                            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                            .unwrap()
+                            .as_millis() as u64,
                         ..Default::default()
                     }
                     .pack_to_any()

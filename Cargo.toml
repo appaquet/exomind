@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 prost = "0.6"
 prost-types = "0.6"
-exocore = { path = "../exocore", default-features = false, features = ["client"] }
+exocore = { git = "https://github.com/appaquet/exocore.git", default-features = false, features = ["client"] }
 
 [build-dependencies]
 prost-build = "0.6"

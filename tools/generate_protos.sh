@@ -19,3 +19,10 @@ protoc \
   $CUR_DIR/../protos/exomind/*.proto \
   -o "$CUR_DIR/../exomind.fd"
 
+
+cargo clean -p exomind
+cargo build -p exomind
+
+pushd $CUR_DIR/../web/
+./generate_protos.sh
+popd

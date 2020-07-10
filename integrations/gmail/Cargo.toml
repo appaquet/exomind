@@ -5,11 +5,11 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-google-gmail1 = { path = "../../../google-api-generated/gen/gmail/v1/lib" }
+google-gmail1 = { git = "https://github.com/appaquet/generated.git", branch = "gmail-labels-fix" }
 google_api_auth = { git = "https://github.com/google-apis-rs/generator", features = ["with-yup-oauth2"] }
-yup-oauth2 ="4.1.0"
+yup-oauth2 ="4.1.2"
 tokio = "0.2"
-exocore = { path = "../../../exocore", features = ["client", "logger"], default-features = false }
+exocore = { git = "https://github.com/appaquet/exocore.git", default-features = false, features = ["client", "logger"] }
 log = "0.4"
 exomind = { path = "../../" }
 mailparse = "0.12"
@@ -19,4 +19,4 @@ charset = "0.1"
 prost-types = "0.6"
 
 [dev-dependencies]
-exocore = { path = "../../../exocore", features = ["tests_utils"] }
+exocore = { git = "https://github.com/appaquet/exocore.git", default-features = false, features = ["client", "logger", "tests-utils"] }

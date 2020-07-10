@@ -6,8 +6,10 @@ import "exocore/index/options.proto";
 import "exocore/index/entity.proto";
 import "google/protobuf/timestamp.proto";
 
+// TODO: Reset numbering before release
+
 message Collection {
-    string name = 1;
+    string name = 1 [(exocore.text) = true];
 }
 
 message CollectionChild {
@@ -21,14 +23,27 @@ message Postponed {
     google.protobuf.Timestamp until_date = 2;
 }
 
+
+enum AccountType {
+    ACCOUNT_TYPE_INVALID = 0;
+    ACCOUNT_TYPE_GMAIL = 1;
+}
+
+enum AccountScope {
+    ACCOUNT_SCOPE_INVALID = 0;
+    ACCOUNT_SCOPE_EMAIL = 1;
+}
+
 message Account {
     string key = 1;
     string name = 2;
-    map<string, string> data = 3;
+    AccountType type = 3;
+    repeated AccountScope scopes = 4;
+    map<string, string> data = 5;
 }
 
 message EmailThread {
-    Account source = 1;
+    exocore.index.Reference account = 8;
     string source_id = 2;
 
     Contact from = 3;
@@ -40,7 +55,7 @@ message EmailThread {
 }
 
 message Email {
-    Account source = 1;
+    exocore.index.Reference account = 13;
     string source_id = 2;
 
     Contact from = 3;
@@ -56,8 +71,8 @@ message Email {
 }
 
 message DraftEmail {
+    exocore.index.Reference account = 11;
     exocore.index.Reference in_reply_to = 1;
-    Account from = 2;
 
     repeated Contact to = 3;
     repeated Contact cc = 4;

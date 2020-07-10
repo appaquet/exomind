@@ -293,6 +293,18 @@ export namespace exomind {
             public toJSON(): { [k: string]: any };
         }
 
+        /** AccountType enum. */
+        enum AccountType {
+            ACCOUNT_TYPE_INVALID = 0,
+            ACCOUNT_TYPE_GMAIL = 1
+        }
+
+        /** AccountScope enum. */
+        enum AccountScope {
+            ACCOUNT_SCOPE_INVALID = 0,
+            ACCOUNT_SCOPE_EMAIL = 1
+        }
+
         /** Properties of an Account. */
         interface IAccount {
 
@@ -301,6 +313,12 @@ export namespace exomind {
 
             /** Account name */
             name?: (string|null);
+
+            /** Account type */
+            type?: (exomind.base.AccountType|null);
+
+            /** Account scopes */
+            scopes?: (exomind.base.AccountScope[]|null);
 
             /** Account data */
             data?: ({ [k: string]: string }|null);
@@ -320,6 +338,12 @@ export namespace exomind {
 
             /** Account name. */
             public name: string;
+
+            /** Account type. */
+            public type: exomind.base.AccountType;
+
+            /** Account scopes. */
+            public scopes: exomind.base.AccountScope[];
 
             /** Account data. */
             public data: { [k: string]: string };
@@ -398,8 +422,8 @@ export namespace exomind {
         /** Properties of an EmailThread. */
         interface IEmailThread {
 
-            /** EmailThread source */
-            source?: (exomind.base.IAccount|null);
+            /** EmailThread account */
+            account?: (exocore.index.IReference|null);
 
             /** EmailThread sourceId */
             sourceId?: (string|null);
@@ -429,8 +453,8 @@ export namespace exomind {
              */
             constructor(properties?: exomind.base.IEmailThread);
 
-            /** EmailThread source. */
-            public source?: (exomind.base.IAccount|null);
+            /** EmailThread account. */
+            public account?: (exocore.index.IReference|null);
 
             /** EmailThread sourceId. */
             public sourceId: string;
@@ -524,8 +548,8 @@ export namespace exomind {
         /** Properties of an Email. */
         interface IEmail {
 
-            /** Email source */
-            source?: (exomind.base.IAccount|null);
+            /** Email account */
+            account?: (exocore.index.IReference|null);
 
             /** Email sourceId */
             sourceId?: (string|null);
@@ -567,8 +591,8 @@ export namespace exomind {
              */
             constructor(properties?: exomind.base.IEmail);
 
-            /** Email source. */
-            public source?: (exomind.base.IAccount|null);
+            /** Email account. */
+            public account?: (exocore.index.IReference|null);
 
             /** Email sourceId. */
             public sourceId: string;
@@ -674,11 +698,11 @@ export namespace exomind {
         /** Properties of a DraftEmail. */
         interface IDraftEmail {
 
+            /** DraftEmail account */
+            account?: (exocore.index.IReference|null);
+
             /** DraftEmail inReplyTo */
             inReplyTo?: (exocore.index.IReference|null);
-
-            /** DraftEmail from */
-            from?: (exomind.base.IAccount|null);
 
             /** DraftEmail to */
             to?: (exomind.base.IContact[]|null);
@@ -714,11 +738,11 @@ export namespace exomind {
              */
             constructor(properties?: exomind.base.IDraftEmail);
 
+            /** DraftEmail account. */
+            public account?: (exocore.index.IReference|null);
+
             /** DraftEmail inReplyTo. */
             public inReplyTo?: (exocore.index.IReference|null);
-
-            /** DraftEmail from. */
-            public from?: (exomind.base.IAccount|null);
 
             /** DraftEmail to. */
             public to: exomind.base.IContact[];

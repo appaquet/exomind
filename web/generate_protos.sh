@@ -22,11 +22,12 @@ OUT_DIR="./proto"
 ./node_modules/.bin/pbjs \
     -t static-module \
     -w corejs \
-    -o $CUR_DIR/js/proto.js \
+    -o $CUR_DIR/protos/index.js \
     -p "$EXOCORE_REPO/protos/" \
     -p "$EXOMIND_ROOT/protos/" \
+    -r 'exomind-root' \
     --es6 \
     $EXOMIND_ROOT/protos/exomind/*.proto
 
 # Generate typescript definition for protos
-./node_modules/.bin/pbts $CUR_DIR/js/proto.js -o $CUR_DIR/js/proto.d.ts
+./node_modules/.bin/pbts $CUR_DIR/protos/index.js -o $CUR_DIR/protos/index.d.ts
