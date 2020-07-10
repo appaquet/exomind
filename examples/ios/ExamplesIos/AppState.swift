@@ -44,7 +44,7 @@ class AppState: ObservableObject {
     func configureExocore() {
         if let config = self.config {
             do {
-                try ExocoreClient.init(yamlConfig: config)
+                try ExocoreClient.initialize(yamlConfig: config)
                 self.configError = nil
             } catch {
                 print("Error loading client with given config: \(error)")

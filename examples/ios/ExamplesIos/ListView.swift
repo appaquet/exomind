@@ -56,7 +56,7 @@ struct ListView: View {
 }
 
 class MyList: ObservableObject {
-    var resultStream: EXOQueryStreamHandle?
+    var resultStream: QueryStreamHandle?
 
     @Published var items: [Item] = []
 
@@ -67,20 +67,17 @@ class MyList: ObservableObject {
     }
 
     func connect(appState: AppState) {
-        let query = EXOQueryBuilder.withTrait(message: Exocore_Test_TestMessage())
+        let query = QueryBuilder.withTrait(message: Exocore_Test_TestMessage())
                 .count(count: 100)
                 .build()
-        self.resultStream = ExocoreClient.defaultInstance!.store().watchedQuery(query: query, onChange: { [weak self] (status, results) in
+        self.resultStream = ExocoreClient.store.watchedQuery(query: query, onChange: { [weak self] (status, results) in
             DispatchQueue.main.async {
                 if let results = results {
                     self?.items = results.entities.map { (result: Exocore_Index_EntityResult) -> Item in
 
                         var title = "UNKNOWN"
-                        if let trait = result.entity.traits.first {
-                            if trait.message.isA(Exocore_Test_TestMessage.self) {
-                                let msg = try! Exocore_Test_TestMessage(unpackingAny: trait.message)
-                                title = msg.string1
-                            }
+                        if let trt = result.entity.traitOfType(Exocore_Test_TestMessage.self) {
+                            title = trt.message.string1
                         }
 
                         return Item(id: result.entity.id, text: title)
@@ -97,29 +94,27 @@ class MyList: ObservableObject {
         var msg = Exocore_Test_TestMessage()
         msg.string1 = text
 
-        let mutation = try! EXOMutationBuilder
+        let mutation = try! MutationBuilder
                 .createEntity()
                 .putTrait(trait: msg)
                 .build()
 
-        _ = ExocoreClient.defaultInstance!.store().mutate(mutation: mutation, onCompletion: { (status, res) in
-        })
+        ExocoreClient.store.mutate(mutation: mutation)
     }
 
     func remove(atOffsets: IndexSet) {
         let item = self.items[atOffsets.first!]
-
-        let mutation = EXOMutationBuilder
+        let mutation = MutationBuilder
                 .updateEntity(entityId: item.id)
-                .deleteTrait(traitId: "")
+                .deleteEntity()
                 .build()
 
-        _ = ExocoreClient.defaultInstance!.store().mutate(mutation: mutation, onCompletion: { (status, res) in
-        })
+        ExocoreClient.store.mutate(mutation: mutation)
     }
 
     func drop() {
         self.items = []
+        self.resultStream = nil
     }
 }
 
