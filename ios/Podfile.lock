@@ -37,7 +37,7 @@ DEPENDENCIES:
   - CLTokenInputView
   - Crashlytics
   - Dwifft (~> 0.9)
-  - Exocore (from `../../exocore`)
+  - Exocore (from `https://github.com/appaquet/exocore.git`, branch `releases/v0.1`)
   - Fabric
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
   - GoogleSignIn (~> 4.4)
@@ -70,13 +70,17 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   Exocore:
-    :path: "../../exocore"
+    :branch: releases/v0.1
+    :git: https://github.com/appaquet/exocore.git
   FontAwesome.swift:
     :git: https://github.com/thii/FontAwesome.swift.git
   SwiftWebSocket:
     :git: https://github.com/starxor/SwiftWebSocket.git
 
 CHECKOUT OPTIONS:
+  Exocore:
+    :commit: 950851b12ecc0f06b66c02b2b84c8938f0f8f387
+    :git: https://github.com/appaquet/exocore.git
   FontAwesome.swift:
     :commit: 2684b5bcde5bf712d45c14dac8f474917a65ec13
     :git: https://github.com/thii/FontAwesome.swift.git
@@ -104,6 +108,6 @@ SPEC CHECKSUMS:
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: 9424a9062b3dde940915d8e688d29654a43b9a3b
+PODFILE CHECKSUM: be791de29176bb3cf088d2309fdc82ba95f3c7ea
 
 COCOAPODS: 1.9.3
