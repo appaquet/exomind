@@ -1,0 +1,35 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '11.0'
+use_frameworks!
+
+target 'Exomind' do
+  pod 'SwiftyJSON', '~> 4.2'
+  pod 'Alamofire', '~> 4.8', :inhibit_warnings => true
+  pod 'SwiftWebSocket', :git => 'https://github.com/starxor/SwiftWebSocket.git', :inhibit_warnings => true #'~> 2.7.0'
+  pod 'FontAwesome.swift', :git => 'https://github.com/thii/FontAwesome.swift.git', :inhibit_warnings => true
+  pod 'UIColor_Hex_Swift', '~> 4.2.0', :inhibit_warnings => true
+  pod 'MCSwipeTableViewCell', :inhibit_warnings => true
+  pod 'Fabric'
+  pod 'GoogleSignIn', '~> 4.4'
+  pod 'Crashlytics'
+  pod 'CLTokenInputView', :inhibit_warnings => true
+  pod 'KeychainSwift', '~> 13.0'
+  pod 'HockeySDK'
+  pod 'SnapKit', '~> 4.2.0', :inhibit_warnings => true
+  pod 'Dwifft', '~> 0.9', :inhibit_warnings => true
+  pod 'SwiftProtobuf', '~> 1.10'
+  pod 'Exocore' , :path => '../../exocore'
+end
+
+target 'ExomindActionExt' do
+  pod 'Alamofire', '~> 4.8', :inhibit_warnings => true
+  pod 'KeychainSwift', '~> 13.0'
+  pod 'Exocore' , :path => '../../exocore'
+  pod 'SwiftProtobuf', '~> 1.10'
+end
+
+target 'ExomindTests' do
+  pod 'SwiftyJSON', '~> 4.2'
+  pod 'Exocore' , :path => '../../exocore'
+  pod 'SwiftProtobuf', '~> 1.10'
+end
