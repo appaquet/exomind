@@ -114,7 +114,7 @@ jobs:
       - name: Commit assets 
         uses: EndBug/add-and-commit@v4
         with:
-          add: 'web/wasm web/tsc web/protos ios/lib ios/swift/protos'
+          add: 'web/wasm web/tsc web/protos ios/lib ios/swift'
           author_name: Exocore bot
           cwd: 'clients'
           force: true
