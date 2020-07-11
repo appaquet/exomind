@@ -1,0 +1,60 @@
+@import (reference) "../../style/mixins.less";
+@import (reference) "../../style/font-awesome.less";
+
+.column > .header {
+  position: relative;
+  background: @entity-component-header-bg;
+  height: @entity-component-header-height;
+  border-bottom: @entity-component-header-border;
+  color: @entity-component-header-fg;
+  @icon-size: 14px;
+
+  .icon {
+    .center-vertical-element();
+    left: @entity-component-padding-side;
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+
+    span {
+      .center-element();
+      font-size: @icon-size;
+    }
+  }
+
+  .title {
+    .center-vertical-element();
+    .ellipsis-text-overflow();
+    font-weight: bold;
+    margin-left: @icon-size + @entity-component-padding-side*2;
+    font-size: 13px;
+    width: 70%;
+
+    // title edit input box
+    input {
+      width: 70%;
+    }
+  }
+
+  .right-actions {
+    .center-vertical-element();
+    right: @entity-component-padding-side + 5px;
+
+    ul {
+      .make-list();
+
+      li {
+        .make-list-item();
+        display: inline-block;
+        cursor: pointer;
+        margin-left: 10px;
+        color: @entity-component-header-actions-fg;
+        &:hover {
+          color: @entity-component-header-actions-hover-fg;
+        }
+      }
+    }
+  }
+}

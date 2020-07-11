@@ -1,0 +1,46 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+
+.entity-component.link {
+  @summary-height: 60px;
+
+  .object-summary {
+    height: @summary-height;
+  }
+
+  .title .field-content span {
+    display: inline-block;
+    width: 100%;
+  }
+
+  .object-body {
+    position: absolute;
+    top: @entity-component-header-height + @summary-height;
+    bottom: 0;
+    right: 0;
+    left: 0;
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .open {
+      .center-horizontal-element();
+      margin-top: 20px;
+
+      a {
+        display: inline-block;
+        padding: 5px 10px;
+        background: @exomind-green;
+        color: white;
+        font-weight: bold;
+      }
+      a:hover, a:active {
+        text-decoration: none;
+      }
+    }
+  }
+
+}

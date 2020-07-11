@@ -1,0 +1,12 @@
+@import "~font-awesome/less/font-awesome.less";
+
+/*
+ * Font awesome icons
+ */
+.icon-font-awesome(@icon) {
+  .fa;
+  &:before{
+    @name: "fa-var-@{icon}";
+    content: @@name;
+  }
+}

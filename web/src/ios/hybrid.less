@@ -1,0 +1,32 @@
+html {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #000000;
+    color: #ffffff;
+  }
+}
+
+#body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+// Fixes issue when input fields getting in focus inside the UIWebView flickering
+* {
+  outline: 0px solid transparent;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  -webkit-touch-callout: none;
+}

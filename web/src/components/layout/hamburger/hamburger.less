@@ -1,0 +1,70 @@
+@import (reference) "../../../style/variables.less";
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/icons.less";
+@import (reference) "../../../style/font-awesome.less";
+
+#hamburger {
+  overflow: hidden;
+  padding-top: 20px + @navbar-height;
+  background: @hamburger-bg;
+
+  & > ul {
+    .make-list();
+    min-width: 115px; // prevent from wrapping content when resizing
+
+    & > li {
+      .make-list-item();
+      margin: 0 10px;
+      overflow: hidden;
+      padding-left: 10px;
+      font-size: 13px;
+      color: @hamburger-items-text-color;
+      cursor: pointer;
+      user-select: none; // prevent text from being selectionable
+
+      .icon {
+        position: absolute;
+        margin-top: 1px;
+        font-size: 16px;
+      }
+      .text {
+        padding-left: 24px;
+      }
+
+      a, a:hover, a:active {
+        text-decoration: none;
+      }
+      a {
+        display: inline-block;
+        height: 35px;
+        padding-top: 10px;
+        padding-bottom: 30px;
+        width: 100%;
+        color: @hamburger-items-text-color;
+        outline: 0; // dotted border around active link
+      }
+      &:hover {
+        background: darken(@hamburger-bg, 2%);
+      }
+      &.active {
+        background: @hamburger-active-bg;
+        &:hover {
+          background: darken(@hamburger-active-bg, 2%);
+        }
+        color: @hamburger-active-fg;
+      }
+
+      &.sep {
+        height: 1px;
+        border-bottom: @hamburger-items-separator;
+        margin: 5px 0;
+
+        &:hover {
+          background: @hamburger-bg;
+        }
+      }
+
+    }
+
+  }
+}

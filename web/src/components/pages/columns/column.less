@@ -1,0 +1,28 @@
+@import (reference) "../../../style/mixins.less";
+
+.column {
+  border: @entity-component-border;
+  background: @entity-component-bg;
+  min-width: @entity-component-min-width;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  .shadow-z-1();
+
+  > .header {
+    position: absolute;
+    left:0; right:0; top:0;
+    z-index: 1000;
+  }
+
+  .entity-component, .inbox {
+    height: 100%;
+  }
+
+  > .empty {
+    padding: @entity-component-padding-between * 2 @entity-component-padding-side;
+    font-weight: bold;
+  }
+
+  padding-top:  @entity-component-header-height;
+}

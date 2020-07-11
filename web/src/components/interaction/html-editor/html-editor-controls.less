@@ -1,0 +1,51 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.html-editor-controls {
+  ul {
+    .make-list();
+
+    li {
+      .make-list-item();
+      display: inline-block;
+      padding: 2px 2px 2px 8px;
+      font-size: 10px;
+
+      &:hover {
+        cursor: pointer;
+        background: #f0f0f0;
+      }
+
+      .icon {
+        font-size: 14px !important;
+        color: #505050;
+
+        &.bold {
+          .icon-font-awesome('bold');
+        }
+        &.italic {
+          .icon-font-awesome('italic');
+        }
+        &.underline {
+          .icon-font-awesome('underline');
+        }
+        &.strikethrough {
+          .icon-font-awesome('strikethrough');
+        }
+        &.list-ul {
+          .icon-font-awesome('list-ul');
+        }
+        &.list-ol {
+          .icon-font-awesome('list-ol');
+        }
+        &.indent {
+          .icon-font-awesome('indent');
+        }
+        &.outdent {
+          .icon-font-awesome('outdent');
+        }
+      }
+    }
+  }
+}
+

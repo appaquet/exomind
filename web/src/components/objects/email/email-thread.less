@@ -1,0 +1,130 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.entity-component.email-thread {
+
+  .thread {
+    .make-list();
+    overflow: scroll;
+    padding-bottom: @entity-component-header-height; // make sure we have plenty of space bellow for scroll
+    height: 100%;
+
+    &>li {
+      @extra-padding-between: 5px;
+      padding: @entity-component-padding-between + @extra-padding-between @entity-component-padding-side;
+      border-bottom: @entity-component-list-separator-border;
+      position: relative;
+      display: block;
+
+      .preview-header {
+        position: relative;
+        overflow: hidden;
+        height: 20px;
+        cursor: pointer;
+        .from {
+          display: inline-block;
+        }
+        .snippet, .to {
+          font-weight: normal;
+          margin-left: 5px;
+          font-size: 0.9em;
+        }
+        .time {
+          position: absolute;
+          top: 0; right: 15px;
+          background: white;
+          padding-left: 10px;
+          padding-right: 5px;
+          font-size: 11px;
+        }
+        .header-controls {
+          position: absolute;
+          top: 1px; right: 0;
+          text-align: center;
+          display: block;
+          width: 15px;
+          background: white;
+          cursor: pointer;
+          .icon {
+            .icon-font-awesome('plus-square-o');
+            font-size: 14px;
+            color: #a0a0a0;
+          }
+        }
+      }
+
+      &.closed:hover {
+        background: @entity-component-bg-hover;
+        .time {
+          background: @entity-component-bg-hover;
+        }
+        .header-controls {
+          background: @entity-component-bg-hover;
+        }
+      }
+
+      &.closed {
+        background: @entity-component-bg-disabled;
+        .time {
+          background: @entity-component-bg-disabled;
+        }
+        .header-controls {
+          background: @entity-component-bg-disabled;
+        }
+      }
+
+      &.opened {
+        .preview-header {
+          border-bottom: 1px solid #f6f6f6;
+          font-weight: bold;
+          margin-bottom: 5px;
+        }
+        .object-body {
+          min-height: 100px;
+        }
+      }
+
+      &.collapsed {
+        padding: 5px 0;
+        background: @entity-component-bg-disabled;
+
+        .line {
+          width: 100%;
+          margin: 5px 0;
+          border: 1px solid darken(@entity-component-list-separator-border-color, 4%);
+          height: 0;
+        }
+
+        .count {
+          .center-vertical-element();
+          left: 20px;
+          background: #e0e0e0;
+          width: 20px;
+          height: 20px;
+          border-radius: 20px;
+          font-size: 10px;
+          text-align: center;
+        }
+      }
+
+
+      .object-body {
+        padding-bottom: 50px; // enough space for email controls to appear non awklardly
+
+        .more {
+          position: relative;
+          margin-top: 10px;
+          cursor: pointer;
+          width: 25px;
+          height: 15px;
+          border: 1px solid #d0d0d0;
+          .icon {
+            .icon-font-awesome('ellipsis-h');
+            .center-element();
+            color: #d0d0d0;
+          }
+        }
+      }
+    }
+  }
+}

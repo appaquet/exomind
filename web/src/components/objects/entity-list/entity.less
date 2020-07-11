@@ -1,0 +1,209 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.entity-list {
+  .item {
+    @item-min-height: 50px;
+
+    user-select: none;
+    cursor: default;
+    background: @entity-component-bg;
+
+    // Height is given to the swipe container so that it can swipes the whole height
+    // when swiped (done)
+    .swipe-container {
+      min-height: @item-min-height;
+      border-bottom: @entity-component-list-separator-border;
+      position: relative;
+      padding: 5px 5px;
+      display: block;
+    }
+
+    // Sets layout inside item container
+    .item-container {
+      position: relative;
+
+      &.with-picture {
+        .picture {
+          .center-vertical-element();
+          left: 0;
+          max-width: 45px;
+          padding-left: 5px;
+          margin-top: -(@entity-component-padding-between/2);
+        }
+        .content {
+          margin-left: 55px;
+        }
+      }
+      &.no-picture {
+        .picture {
+          display: none;
+        }
+        .content {
+        }
+      }
+    }
+
+    .item-container {
+      min-height: @item-min-height;
+
+      /**
+       * Picture
+       */
+      .picture {
+        .bubble {
+          border: 1px solid transparent;
+          width: 40px;
+          height: 40px;
+          border-radius: 40px;
+          position: relative;
+          font-size: 17px;
+          font-weight: bold;
+
+          .bubble-icon {
+            .center-element();
+            color: white;
+          }
+        }
+      }
+
+      .date {
+        position: absolute;
+        top: 0; right: 10px;
+        text-align: right;
+        background: @entity-component-bg;
+        padding-left: 5px;
+        font-size: 11px;
+        line-height: 14px; // align top
+        height: 14px;
+        color: #878787;
+        z-index: 1; // make sure times appear on top of titles
+      }
+
+      .content {
+        margin: @entity-component-padding-between @entity-component-padding-side;
+        overflow: hidden;
+        padding-right: 5px;
+
+        .title1, .title2 {
+          max-height: 20px; // prevent line wrapping
+          .ellipsis-text-overflow();
+          .icon {
+            margin-right: 3px;
+          }
+        }
+
+        .title1 {
+          .name, .handle, .subject {
+            display: inline-block;
+            line-height: 9px;
+            margin-right: 3px;
+            height: 15px;
+            vertical-align: middle;
+          }
+
+          .handle {
+            color: #d0d0d0;
+          }
+        }
+
+        .text {
+          overflow: hidden;
+          max-height: 60px;
+          color: #606060;
+          font-size: 0.9em;
+
+          &.single-line  {
+            max-height: 20px;
+          }
+        }
+      }
+
+      &.email.unread, &.email-thread.unread {
+        .title1, .title2 {
+          font-weight: bold;
+          .name, .handle, .subject {
+            height: 18px;
+          }
+        }
+      }
+
+      &.collection, &.note, &.task, &.default {
+        .content {
+          padding-top: 16px;
+          .title1 {
+            font-weight: bold;
+          }
+        }
+      }
+    }
+
+    // Background for hover and selected states
+    &.hover {
+      background: @entity-component-bg-hover;
+      .item-actions, .date {
+        background: @entity-component-bg-hover;
+      }
+    }
+
+    &.selected {
+      background: @entity-component-bg-selected;
+      .item-actions, .date {
+        background: @entity-component-bg-selected;
+      }
+    }
+
+    // When item is marked as done, we animate until it's removed
+    .swipe-container {
+      .transition(~"margin-left 0.1s ease-in");
+    }
+    &.done {
+      background: @entity-component-bg-done;
+      .swipe-container {
+        margin-left: 100%;
+        background: @entity-component-bg;
+      }
+      .item-actions, .date {
+        display: none;
+      }
+    }
+
+
+    // Item actions
+    .item-actions {
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 100px;
+      padding-top: 5px;
+      padding-right: 10px;
+      padding-left: 15px;
+      text-align: right;
+      opacity: 0.95;
+
+      ul {
+        .make-list();
+        .center-vertical-element();
+
+        li {
+          .make-list-item();
+          display: inline-block;
+          color: @entity-component-item-actions-icon-fg;
+          &:hover {
+            color: @entity-component-item-actions-icon-hover-fg;
+          }
+          .action-icon {
+            margin: 5px;
+            font-size: 15px;
+          }
+        }
+      }
+    }
+
+    // EntityList and time selector popup
+    .collection-selector, .time-selector {
+      right: 15px;
+      top: 50%;
+      .translate(0, 15px);
+    }
+  }
+}

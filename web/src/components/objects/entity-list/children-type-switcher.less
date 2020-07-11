@@ -1,0 +1,47 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.entity-list {
+  .children-type-switcher {
+    .make-list();
+    border: @entity-component-children-type-switcher-border;
+    border-radius: 5px;
+    overflow: hidden;
+
+    li {
+      .make-list-item();
+      display: inline-block;
+      text-align: center;
+      width: 30px;
+      height: 20px;
+
+      padding-left: 10px;
+      padding-right: 20px;
+      
+      border-right: @entity-component-children-type-switcher-border;
+      &:last-child {
+        border-right: none;
+      }
+
+      color: @entity-component-children-type-switcher-normal-fg;
+      &:hover {
+        background: @entity-component-children-type-switcher-hover-bg;
+        cursor: pointer;
+      }
+      &.active, &.active:hover {
+        background: @entity-component-children-type-switcher-active-bg;
+        color: @entity-component-children-type-switcher-active-fg;
+      }
+
+      &.old i {
+        .icon-font-awesome('check');
+      }
+      &.current i {
+        .icon-font-awesome('inbox');
+      }
+      &.future i {
+        .icon-font-awesome('clock-o');
+      }
+    }
+  }
+}

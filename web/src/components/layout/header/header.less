@@ -1,0 +1,66 @@
+@import (reference) "../../../style/mixins.less";
+
+#header {
+  background: @navbar-bg;
+  color: @navbar-fg;
+  .shadow-z-1();
+
+  .container-fluid {
+    .make-row();
+
+    .logo-col {
+      .make-xs-column(4);
+      .make-sm-column(3);
+      .make-md-column(2);
+      height: @navbar-height;
+
+      padding-top: 12px;
+      position: relative;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+
+      span {
+        display: inline;
+        vertical-align: middle;
+        letter-spacing: 3px;
+      }
+    }
+
+    .search-col {
+      .make-xs-column(8);
+      .make-sm-column(9);
+      .make-md-column(8);
+      margin-top: 8px;
+      margin-bottom: 0;
+
+      @media (min-width: @screen-md-min) {
+        padding-left: 35px; // since we add margin on the left for hamburger, we offset search box to center the first column
+      }
+
+      .input-group {
+        width: 100%;
+        position: relative;
+        background: fadeout(white, 80%);
+
+        .icon {
+          position: absolute;
+          color: #EFEFEF;
+          top: 4px;
+          left: -2px;
+          font-size: 13px;
+          border: none;
+          background: none;
+        }
+
+        input {
+          background: none;
+          border: none;
+          color: #EFEFEF;
+          padding-left: 30px;
+        }
+      }
+
+    }
+  }
+}

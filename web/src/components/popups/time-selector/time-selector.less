@@ -1,0 +1,81 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+@import "~@blen/react-bootstrap-datetimepicker/css/bootstrap-datetimepicker.css";
+
+.time-selector {
+  @time-selector-bg: @entity-component-header-bg;
+  @time-selector-header-bg: @entity-component-header-bg;
+  @time-selector-header-height: 20px;
+  @time-selector-list-bg: #fff;
+  @time-selector-list-margin: 5px;
+  @time-selector-item-border: 1px solid #ececec;
+  @time-selector-item-hover-bg: #e0e0e0;
+  @time-selector-box-size: 86px;
+
+  position: absolute;
+  max-width: 90%;
+  background: @time-selector-bg;
+  z-index: @zindex-popover;
+  .shadow-z-3();
+
+  padding-top: @time-selector-header-height;
+  .time-selector-header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: @time-selector-header-height;
+    font-weight: bold;
+    padding: 2px @time-selector-list-margin;
+    background: @time-selector-header-bg;
+  }
+
+  &.picker {
+    width: 500px;
+    height: 95px;
+    position: relative;
+
+    .field {
+      margin: 5px;
+    }
+    button.done {
+      .center-horizontal-element();
+    }
+  }
+
+  &.choices {
+    width: 300px;
+    height: 318px;
+
+    ul {
+      overflow: hidden;
+      @calc-minus: @time-selector-list-margin*2;
+      height: ~"calc(100% - @{calc-minus})";
+      margin: @time-selector-list-margin;
+      background: @time-selector-list-bg;
+      .make-list();
+
+      li {
+        .make-list-item();
+        display: inline-block;
+        vertical-align: top; // otherwise they are misaligned
+        width: @time-selector-box-size;
+        height: @time-selector-box-size;
+        cursor: pointer;
+        padding: 5px;
+        border: @time-selector-item-border;
+        margin: 5px;
+        font-size: 15px;
+        &:hover {
+          background: @time-selector-item-hover-bg;
+        }
+
+        // position text in middle
+        position: relative;
+        span {
+          position: absolute;
+          .center-element();
+          text-align: center;
+        }
+      }
+    }
+  }
+}

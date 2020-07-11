@@ -1,0 +1,30 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+
+.entity-component.note {
+  min-width: 500px;
+  min-height: 500px;
+  position: relative;
+
+  .object-summary {
+    height: 35px;
+  }
+
+  .title .field-content span {
+    display: inline-block;
+    width: 100%;
+  }
+
+  .object-body {
+    height: 90%;
+
+    .html-editor {
+      padding: 10px;
+    }
+    .html-editor-controls {
+      padding-left: 5px;
+      border-bottom: 1px solid #E3E3E3;
+      height: 30px;
+    }
+  }
+}

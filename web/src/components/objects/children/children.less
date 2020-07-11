@@ -1,0 +1,31 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.entity-component.children {
+  .entity-list {
+    height: 100%;
+  }
+
+  &.type-old {
+    .entity-list {
+      background: @entity-component-bg-old;
+      .item {
+        background: @entity-component-bg-old;
+        .item-actions, .date {
+          background: @entity-component-bg-old;
+        }
+      }
+    }
+  }
+  &.type-future {
+    .entity-list {
+      background: @entity-component-bg-future;
+      .item {
+        background: @entity-component-bg-future;
+        .item-actions, .date {
+          background: @entity-component-bg-future;
+        }
+      }
+    }
+  }
+}

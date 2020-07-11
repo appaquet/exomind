@@ -1,0 +1,37 @@
+@import (reference) "../../../style/variables.less";
+@import (reference) "../../../style/mixins.less";
+
+.settings {
+  .center-element();
+  background: white;
+  padding: 5px;
+
+  ul {
+    .make-list();
+    li {
+      .make-list-item();
+
+      a, a:hover, a:active {
+        display: inline-block;
+        color: black;
+        text-decoration: none;
+        padding: 10px;
+        width: 300px;
+
+        .fa {
+          margin-right: 5px;
+        }
+      }
+      a:hover {
+        background: #e0e0e0;
+      }
+
+      border-bottom: 1px solid #c0c0c0;
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+}
+

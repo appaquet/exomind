@@ -1,0 +1,40 @@
+@import "../../style/style.less";
+
+html {
+  height: 100%;
+}
+
+body {
+  font: 12px/20px "Helvetica neue", Helvetica, Arial, sans-serif;
+  font-weight: normal;
+  overflow: hidden;
+  overflow-y: auto;
+  height: 100%;
+}
+
+#body {
+  height: 100%;
+
+  #layout {
+    height: 100%;
+
+    #content {
+      padding-top: @navbar-height + 10px;
+      height: 100%;
+      margin-left: @hamburger-width;
+    }
+
+    &.fullscreen {
+      #content {
+        padding-top: 0;
+      }
+    }
+
+    #hamburger {
+      position: absolute;
+      left: 0;
+      width: @hamburger-width;
+      height: 100%;
+    }
+  }
+}
