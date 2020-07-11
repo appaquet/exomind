@@ -22,7 +22,7 @@
     "classnames": "^2.2.6",
     "core-js": "^3.2.1",
     "domhandler": "^3.0.0",
-    "domutils": "^1.5.1",
+    "domutils": "^2.1.0",
     "exocore": "https://github.com/appaquet/exocore.git#releases/v0.1",
     "fbemitter": "^2.1.1",
     "font-awesome": "^4.4.0",
