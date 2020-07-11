@@ -7,12 +7,10 @@ echo "Formatting..."
 ./format.sh
 
 echo "Cargo checking code, tests and benches"
-cargo check --all --all-features
-cargo check --tests --all --all-features
-cargo check --benches --all --all-features
+cargo check --workspace --tests --benches --all-features
 
 echo "Running tests..."
-cargo test --all --all-features
+cargo test --workspace --all-features
 
 echo "Running clippy..."
 ./clippy.sh
