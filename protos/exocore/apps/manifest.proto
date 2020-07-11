@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package exocore.apps;
+
+message Manifest {
+    string name = 1;
+
+    string public_key = 2;
+
+    string path = 3;
+
+    repeated ManifestSchema schemas = 4;
+}
+
+message ManifestSchema {
+    oneof source {
+        string file = 1;
+        bytes bytes = 2;
+    }
+}

@@ -40,18 +40,18 @@ jobs:
         node-version: [14.x]
 
     steps:
-    - uses: actions/checkout@v1
+      - uses: actions/checkout@v1
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name: build & test
-      run: |
-        cd web
-        yarn install --frozen-lockfile
-        yarn build
-        yarn test
-        yarn lint
+      - name: build & test
+        run: |
+          cd web
+          yarn install --frozen-lockfile
+          yarn build
+          yarn test
+          yarn lint
 

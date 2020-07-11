@@ -1,0 +1,177 @@
+syntax = "proto3";
+
+package exocore.index;
+
+import "exocore/index/entity.proto";
+import "google/protobuf/timestamp.proto";
+
+message EntityQuery {
+    oneof predicate {
+        MatchPredicate match = 1;
+        TraitPredicate trait = 2;
+        IdsPredicate ids = 3;
+        ReferencePredicate reference = 4;
+        OperationsPredicate operations = 10;
+        AllPredicate all = 11;
+
+        TestPredicate test = 99;
+    }
+
+    /// Query paging requested
+    Paging paging = 5;
+
+    /// Query ordering
+    Ordering ordering = 6;
+
+    /// If true, only return summary
+    bool summary = 7;
+
+    /// Optional watch token if this query is to be used for watching.
+    uint64 watch_token = 8;
+
+    /// If specified, if results from server matches this hash, only a summary will be returned.
+    uint64 result_hash = 9;
+
+    /// Include deleted mutations matches. Can be used to return recently modified entities that
+    /// also include deletions.
+    bool include_deleted = 12;
+}
+
+/// Query entities by text match on all indexed fields across all traits.
+message MatchPredicate {
+    string query = 1;
+}
+
+/// Query entities by IDs.
+message IdsPredicate {
+    repeated string ids = 1;
+}
+
+/// Query entities by mutations' operation ids.
+/// Used to return entities on which mutations with these operation ids were applied and indexed.
+message OperationsPredicate {
+    repeated uint64 operation_ids = 1;
+}
+
+/// Query all entities.
+message AllPredicate {
+}
+
+/// Used for tests.
+message TestPredicate {
+    bool success = 1;
+}
+
+/// Query entities that have a specified trait and optionally matching a trait query.
+message TraitPredicate {
+    string trait_name = 1;
+
+    TraitQuery query = 2;
+}
+
+message TraitQuery {
+    oneof predicate {
+        MatchPredicate match = 1;
+        TraitFieldPredicate field = 2;
+        TraitFieldReferencePredicate reference = 3;
+    }
+}
+
+message TraitFieldPredicate {
+    string field = 1;
+
+    oneof value {
+        string string = 2;
+        int64 int64 = 3;
+        uint64 uint64 = 4;
+        google.protobuf.Timestamp date = 5;
+    }
+
+    Operator operator = 6;
+
+    enum Operator {
+        EQUAL = 0;
+        GT = 1;
+        GTE = 2;
+        LT = 3;
+        LTE = 4;
+    }
+}
+
+message TraitFieldReferencePredicate {
+    string field = 1;
+
+    ReferencePredicate reference = 2;
+}
+
+message ReferencePredicate {
+    // Entity id the reference points to
+    string entity_id = 1;
+
+    // Optional trait id the reference points to
+    string trait_id = 2;
+}
+
+message Paging {
+    /// Returns results after this given ordering value.
+    OrderingValue after_ordering_value = 1;
+
+    /// Returns results before this given ordering value.
+    OrderingValue before_ordering_value = 2;
+
+    /// Desired results count. Default if 0.
+    uint32 count = 3;
+}
+
+message Ordering {
+    /// Value by which we want results to be ordered.
+    oneof value {
+        bool score = 1;
+        bool operation_id = 2;
+        string field = 3;
+    }
+
+    /// Direction of ordering.
+    bool ascending = 4;
+}
+
+message OrderingValue {
+    oneof value {
+        float float = 1;
+        uint64 uint64 = 2;
+        google.protobuf.Timestamp date = 3;
+        bool min = 4;
+        bool max = 5;
+    }
+
+    /// ID operation used to tie break equal results
+    uint64 operation_id = 6;
+}
+
+message EntityResults {
+    repeated EntityResult entities = 1;
+
+    bool summary = 2;
+
+    uint32 estimated_count = 3;
+
+    Paging current_page = 4;
+
+    Paging next_page = 5;
+
+    uint64 hash = 6;
+}
+
+message EntityResult {
+    Entity entity = 1;
+
+    EntityResultSource source = 2;
+
+    OrderingValue ordering_value = 3;
+}
+
+enum EntityResultSource {
+    UNKNOWN = 0;
+    PENDING = 1;
+    CHAIN = 2;
+}

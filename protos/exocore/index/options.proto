@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package exocore;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+    bool indexed = 1373;
+    bool sorted = 1374;
+    bool text = 1375;
+}
+

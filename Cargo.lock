@@ -11,9 +11,9 @@ dependencies = [
 
 [[package]]
 name = "adler"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccc9a9dd069569f212bc4330af9f17c4afb5e8ce185e83dbb14f1349dda18b10"
+checksum = "ee2a4ec343196209d6594e19543ae87a39f96d5534d7174822a3ad825dd6ed7e"
 
 [[package]]
 name = "aes-ctr"
@@ -574,7 +574,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#30e72050da554fb0863c2748d5c44d78a3058037"
+source = "git+https://github.com/appaquet/exocore.git#4b411e2c1315f8abdfdeb3ebcf64bd758282409d"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -585,7 +585,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#30e72050da554fb0863c2748d5c44d78a3058037"
+source = "git+https://github.com/appaquet/exocore.git#4b411e2c1315f8abdfdeb3ebcf64bd758282409d"
 dependencies = [
  "byteorder",
  "exocore-core",
@@ -601,7 +601,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#30e72050da554fb0863c2748d5c44d78a3058037"
+source = "git+https://github.com/appaquet/exocore.git#4b411e2c1315f8abdfdeb3ebcf64bd758282409d"
 dependencies = [
  "bs58",
  "byteorder",
@@ -635,7 +635,7 @@ dependencies = [
 [[package]]
 name = "exocore-index"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#30e72050da554fb0863c2748d5c44d78a3058037"
+source = "git+https://github.com/appaquet/exocore.git#4b411e2c1315f8abdfdeb3ebcf64bd758282409d"
 dependencies = [
  "bytes 0.5.5",
  "chrono",
@@ -653,7 +653,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#30e72050da554fb0863c2748d5c44d78a3058037"
+source = "git+https://github.com/appaquet/exocore.git#4b411e2c1315f8abdfdeb3ebcf64bd758282409d"
 dependencies = [
  "byteorder",
  "exocore-core",
@@ -2345,9 +2345,9 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.1.56"
+version = "0.1.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2439c63f3f6139d1b57529d16bc3b8bb855230c8efcc5d3a896c8bea7c3b1e84"
+checksum = "41cc0f7e4d5d4544e8861606a285bb08d3e70712ccc7d2b84d7c0ccfaf4b05ce"
 
 [[package]]
 name = "regex"
@@ -3094,9 +3094,9 @@ checksum = "efd1f82c56340fdf16f2a953d7bda4f8fdffba13d93b00844c25572110b26079"
 
 [[package]]
 name = "try-lock"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e604eb7b43c06650e854be16a2a03155743d3752dd1c943f6829e26b7a36e382"
+checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 
 [[package]]
 name = "try_from"

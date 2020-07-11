@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package exocore.transport;
+
+import "google/protobuf/any.proto";
+
+message Envelope {
+    bytes cell_id = 1;
+
+    bytes destination_node = 2;
+    bytes source_node = 3;
+
+    // if message require a response, id that will be used to match
+    // response back to callee
+    uint64 rendez_vous_id = 4;
+
+    // deadline of the message (consistent timestamp)
+    uint64 deadline = 5;
+
+    google.protobuf.Any data = 6;
+}
+
+enum Layer {
+    LAYER_INVALID = 0;
+    LAYER_META = 1;
+    LAYER_CORE = 3;
+    LAYER_CHAIN = 4;
+    LAYER_INDEX = 5;
+    LAYER_APP = 6;
+    LAYER_CLIENT = 7;
+}

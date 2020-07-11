@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package exocore.core;
+
+import "exocore/apps/manifest.proto";
+
+message LocalNodeConfig {
+    string keypair = 1;
+
+    string public_key = 2;
+
+    string name = 3;
+
+    string id = 4;
+
+    string path = 5;
+
+    repeated string listen_addresses = 6;
+
+    repeated NodeCellConfig cells = 7;
+}
+
+message NodeCellConfig {
+    oneof location {
+       CellConfig instance = 1;
+       string directory = 2;
+    }
+}
+
+message CellConfig {
+    string public_key = 1;
+
+    string keypair = 2;
+
+    string name = 3;
+
+    string id = 4;
+
+    string path = 5;
+
+    repeated CellNodeConfig nodes = 6;
+
+    repeated CellApplicationConfig apps = 7;
+}
+
+message CellNodeConfig {
+    NodeConfig node = 1;
+
+    repeated Role roles = 2;
+
+    enum Role {
+        INVALID_ROLE = 0;
+        CHAIN_ROLE = 1;
+        INDEX_STORE_ROLE = 2;
+    }
+}
+
+message NodeConfig {
+    string public_key = 1;
+
+    string name = 2;
+
+    string id = 3;
+
+    repeated string addresses = 4;
+
+}
+
+message CellApplicationConfig {
+    oneof location {
+        exocore.apps.Manifest instance = 1;
+        string directory = 2;
+    }
+}
