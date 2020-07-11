@@ -694,10 +694,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "exomind-web"
-version = "0.1.0"
-
-[[package]]
 name = "failure"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
