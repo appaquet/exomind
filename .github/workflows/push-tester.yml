@@ -43,11 +43,29 @@ jobs:
         with:
           node-version: 14.x
 
-      - name: build & test
+      - name: Build & test
         run: |
           cd web
           yarn install --frozen-lockfile
           yarn build
           yarn test
           yarn lint
+
+  ios_build:
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@v2.3.1
+
+      - name: Install dependencies
+        run: |
+          brew install swift-protobuf
+
+      - name: Force Xcode 11.5
+        run: sudo xcode-select -switch /Applications/Xcode_11.5.app
+
+      - name: Build 
+        run: |
+          cd $GITHUB_WORKSPACE/ios
+          pod install
+          xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO 
 
