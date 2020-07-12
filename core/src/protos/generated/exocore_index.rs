@@ -79,7 +79,8 @@ pub struct IdsPredicate {
     pub ids: ::std::vec::Vec<std::string::String>,
 }
 //// Query entities by mutations' operation ids.
-//// Used to return entities on which mutations with these operation ids were applied and indexed.
+//// Used to return entities on which mutations with these operation ids were
+//// applied and indexed.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OperationsPredicate {
     #[prost(uint64, repeated, tag = "1")]
@@ -94,7 +95,8 @@ pub struct TestPredicate {
     #[prost(bool, tag = "1")]
     pub success: bool,
 }
-//// Query entities that have a specified trait and optionally matching a trait query.
+//// Query entities that have a specified trait and optionally matching a trait
+//// query.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitPredicate {
     #[prost(string, tag = "1")]
@@ -317,14 +319,16 @@ pub struct UpdateTraitMutation {
     pub r#trait: ::std::option::Option<Trait>,
     #[prost(message, optional, tag = "3")]
     pub field_mask: ::std::option::Option<::prost_types::FieldMask>,
-    /// Updates is only valid if the last mutation operation on trait this given operation id.
+    /// Updates is only valid if the last mutation operation on trait this given
+    /// operation id.
     #[prost(uint64, tag = "4")]
     pub if_last_operation_id: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompactTraitMutation {
-    /// List of operations that are compacted by this compaction. The compaction will only succeed
-    /// if there were no operations between these operations and the compaction's operation itself.
+    /// List of operations that are compacted by this compaction. The compaction
+    /// will only succeed if there were no operations between these
+    /// operations and the compaction's operation itself.
     #[prost(message, repeated, tag = "1")]
     pub compacted_operations: ::std::vec::Vec<compact_trait_mutation::Operation>,
     /// Trait with merged values from compacted operations

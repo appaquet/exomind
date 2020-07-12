@@ -1,6 +1,8 @@
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hasher;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use itertools::Itertools;
@@ -26,14 +28,10 @@ use super::mutation_index::{IndexOperation, MutationIndex, MutationType};
 use super::top_results::RescoredTopResultsIterable;
 
 mod config;
-
 pub use config::*;
 
-mod entity_mutations;
-
-pub use entity_mutations::*;
-use std::borrow::Borrow;
-use std::rc::Rc;
+mod mutation_aggregator;
+pub use mutation_aggregator::*;
 
 #[cfg(test)]
 mod test_index;
@@ -234,7 +232,7 @@ where
 
         // iterate through results and returning the first N entities
         let mut hasher = result_hasher();
-        let mut mutations_metadata_cache = HashMap::<String, Rc<EntityMutations>>::new();
+        let mut mutations_metadata_cache = HashMap::<String, Rc<MutationAggregator>>::new();
         let mut matched_entities = HashSet::new();
         let (mut entities_results, traits_results) = combined_results
             // iterate through results, starting with best scores
@@ -270,7 +268,7 @@ where
                 };
 
                 let operation_still_present = mutations_metadata
-                    .active_operations_id
+                    .active_operations
                     .contains(&trait_meta.operation_id);
                 if (mutations_metadata.traits.is_empty() || !operation_still_present)
                     && !query_include_deleted
@@ -617,7 +615,7 @@ where
     fn fetch_entity_mutations_metadata(
         &self,
         entity_id: &str,
-    ) -> Result<Rc<EntityMutations>, Error> {
+    ) -> Result<Rc<MutationAggregator>, Error> {
         let pending_results = self.pending_index.fetch_entity_mutations(entity_id)?;
         let chain_results = self.chain_index.fetch_entity_mutations(entity_id)?;
         let ordered_traits_metadata = pending_results
@@ -625,7 +623,7 @@ where
             .into_iter()
             .chain(chain_results.mutations.into_iter());
 
-        EntityMutations::new(ordered_traits_metadata).map(Rc::new)
+        MutationAggregator::new(ordered_traits_metadata).map(Rc::new)
     }
 
     /// Populate traits in the EntityResult by fetching each entity's traits
@@ -633,7 +631,7 @@ where
     fn fetch_mutations_results_traits(
         &self,
         entities_results: &mut Vec<EntityResult>,
-        entities_traits_results: Vec<Rc<EntityMutations>>,
+        entities_traits_results: Vec<Rc<MutationAggregator>>,
     ) {
         for (entity_result, traits_results) in entities_results
             .iter_mut()
@@ -647,7 +645,7 @@ where
     }
 
     /// Fetch traits data from chain layer.
-    fn fetch_entity_traits(&self, results: Rc<EntityMutations>) -> Vec<Trait> {
+    fn fetch_entity_traits(&self, results: Rc<MutationAggregator>) -> Vec<Trait> {
         results
             .traits
             .values()
