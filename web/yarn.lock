@@ -3685,7 +3685,8 @@ exit@^0.1.2:
 
 "exocore@https://github.com/appaquet/exocore.git#releases/v0.1":
   version "0.1.0"
-  resolved "https://github.com/appaquet/exocore.git#5464e991a24a04abfcb478d1f9d7e201a9f2b309"
+  uid "950851b12ecc0f06b66c02b2b84c8938f0f8f387"
+  resolved "https://github.com/appaquet/exocore.git#950851b12ecc0f06b66c02b2b84c8938f0f8f387"
   dependencies:
     protobufjs "^6.8.9"
 
