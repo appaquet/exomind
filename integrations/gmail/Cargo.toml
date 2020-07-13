@@ -12,7 +12,7 @@ tokio = "0.2"
 exocore = { git = "https://github.com/appaquet/exocore.git", default-features = false, features = ["client", "logger"] }
 log = "0.4"
 exomind = { path = "../../" }
-mailparse = "0.12"
+mailparse = "0.13"
 serde_json = "1.0"
 anyhow = "1.0"
 charset = "0.1"
