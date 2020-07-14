@@ -1,4 +1,3 @@
-use failure::err_msg;
 use std::fmt::Debug;
 use std::time::{Duration, Instant};
 
@@ -55,27 +54,27 @@ where
 }
 
 #[inline]
-pub fn result_assert_equal<A: PartialEq + Debug>(left: A, right: A) -> Result<(), failure::Error> {
+pub fn result_assert_equal<A: PartialEq + Debug>(left: A, right: A) -> anyhow::Result<()> {
     if left != right {
-        Err(err_msg(format!("expected: {:?} got: {:?}", left, right)))
+        Err(anyhow!(format!("expected: {:?} got: {:?}", left, right)))
     } else {
         Ok(())
     }
 }
 
 #[inline]
-pub fn result_assert_true(value: bool) -> Result<(), failure::Error> {
+pub fn result_assert_true(value: bool) -> anyhow::Result<()> {
     if !value {
-        Err(err_msg("value is not true"))
+        Err(anyhow!("value is not true"))
     } else {
         Ok(())
     }
 }
 
 #[inline]
-pub fn result_assert_false(value: bool) -> Result<(), failure::Error> {
+pub fn result_assert_false(value: bool) -> anyhow::Result<()> {
     if value {
-        Err(err_msg("value is not false"))
+        Err(anyhow!("value is not false"))
     } else {
         Ok(())
     }

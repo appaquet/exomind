@@ -160,7 +160,7 @@ mod tests {
     use crate::engine::testing::EngineTestCluster;
 
     #[test]
-    fn test_chain_sample_block_partial_headers() -> Result<(), failure::Error> {
+    fn test_chain_sample_block_partial_headers() -> anyhow::Result<()> {
         let mut cluster = EngineTestCluster::new(1);
         cluster.chain_generate_dummy(0, 100, 3424);
 

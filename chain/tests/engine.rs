@@ -1,4 +1,3 @@
-use failure::err_msg;
 use itertools::Itertools;
 
 use exocore_core::tests_utils::expect_result;
@@ -8,10 +7,13 @@ use exocore_chain::tests_utils::*;
 use exocore_chain::*;
 use exocore_core::cell::CellNodeRole;
 
+#[macro_use]
+extern crate anyhow;
+
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
 
 #[test]
-fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
+fn single_node_full_chain_write_read() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
@@ -74,7 +76,7 @@ fn single_node_full_chain_write_read() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn single_node_chain_iteration() -> Result<(), failure::Error> {
+fn single_node_chain_iteration() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
@@ -106,7 +108,7 @@ fn single_node_chain_iteration() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn single_node_restart() -> Result<(), failure::Error> {
+fn single_node_restart() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
@@ -137,7 +139,7 @@ fn single_node_restart() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn two_nodes_full_replication() -> Result<(), failure::Error> {
+fn two_nodes_full_replication() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;
@@ -171,7 +173,7 @@ fn two_nodes_full_replication() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
+fn two_nodes_pending_store_cleanup() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;
@@ -204,15 +206,15 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
 
     // first operation should not be in pending store anymore as it got cleaned up
     let first_op = operations_id.first().unwrap();
-    expect_result::<_, _, failure::Error>(|| {
+    expect_result::<_, _, anyhow::Error>(|| {
         let node1_op = cluster.get_handle(0).get_pending_operation(*first_op)?;
         if node1_op.is_some() {
-            return Err(err_msg("Was still on node 0"));
+            return Err(anyhow!("Was still on node 0"));
         }
 
         let node1_op = cluster.get_handle(1).get_pending_operation(*first_op)?;
         if node1_op.is_some() {
-            return Err(err_msg("Was still on node 1"));
+            return Err(anyhow!("Was still on node 1"));
         }
 
         Ok(())
@@ -222,7 +224,7 @@ fn two_nodes_pending_store_cleanup() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn two_nodes_one_data_node() -> Result<(), failure::Error> {
+fn two_nodes_one_data_node() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;

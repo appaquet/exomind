@@ -1,7 +1,6 @@
 #![deny(bare_trait_objects)]
 #![allow(non_camel_case_types)]
 
-use failure::err_msg;
 use std::path::PathBuf;
 use std::str::FromStr;
 use structopt::StructOpt;
@@ -60,11 +59,12 @@ pub enum KeyAlgorithm {
 }
 
 impl FromStr for KeyAlgorithm {
-    type Err = failure::Error;
+    type Err = anyhow::Error;
+
     fn from_str(k: &str) -> Result<Self, Self::Err> {
         match k {
             "ed25519" => Ok(KeyAlgorithm::Ed25519),
-            _ => Err(err_msg("Unsupported key type")),
+            _ => Err(anyhow!("Unsupported key type")),
         }
     }
 }

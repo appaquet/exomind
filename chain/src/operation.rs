@@ -186,34 +186,26 @@ impl crate::operation::Operation for NewOperation {
 }
 
 /// Operations related error
-#[derive(Clone, Debug, Fail)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
-    #[fail(display = "The operation is not any entry operation")]
+    #[error("The operation is not any entry operation")]
     NotAnEntry,
-    #[fail(display = "Framing error: {}", _0)]
-    Framing(#[fail(cause)] exocore_core::framing::Error),
-    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
-    Serialization(capnp::ErrorKind, String),
-    #[fail(display = "Field is not in capnp schema: code={}", _0)]
-    SerializationNotInSchema(u16),
-    #[fail(display = "Other operation error: {}", _0)]
-    Other(String),
-}
 
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::Serialization(err.kind, err.description)
-    }
+    #[error("Framing error: {0}")]
+    Framing(#[from] exocore_core::framing::Error),
+
+    #[error("Error in capnp serialization: {0}")]
+    Serialization(#[from] capnp::Error),
+
+    #[error("Field is not in capnp schema: code={0}")]
+    SerializationNotInSchema(u16),
+
+    #[error("Other operation error: {0}")]
+    Other(String),
 }
 
 impl From<capnp::NotInSchema> for Error {
     fn from(err: capnp::NotInSchema) -> Self {
         Error::SerializationNotInSchema(err.0)
-    }
-}
-
-impl From<exocore_core::framing::Error> for Error {
-    fn from(err: exocore_core::framing::Error) -> Self {
-        Error::Framing(err)
     }
 }

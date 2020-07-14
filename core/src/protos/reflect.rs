@@ -304,7 +304,7 @@ mod tests {
     use chrono::Utc;
 
     #[test]
-    fn reflect_message_from_any() -> Result<(), failure::Error> {
+    fn reflect_message_from_any() -> anyhow::Result<()> {
         let registry = Registry::new_with_exocore_types();
 
         let now = Utc::now();

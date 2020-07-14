@@ -138,7 +138,7 @@ mod tests {
     use crate::framing::assert_builder_equals;
 
     #[test]
-    fn can_build_and_read_multihash() -> Result<(), failure::Error> {
+    fn can_build_and_read_multihash() -> anyhow::Result<()> {
         let inner = b"hello".to_vec();
         let builder = MultihashFrameBuilder::<Sha3_256, _>::new(inner.clone());
 
@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn can_build_to_owned() -> Result<(), failure::Error> {
+    fn can_build_to_owned() -> anyhow::Result<()> {
         let inner = b"hello".to_vec();
         let builder = MultihashFrameBuilder::<Sha3_256, _>::new(inner);
 

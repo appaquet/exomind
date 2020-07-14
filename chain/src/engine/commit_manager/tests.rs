@@ -7,7 +7,7 @@ use super::*;
 use std::time::{Duration, Instant};
 
 #[test]
-fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
+fn should_propose_block_on_new_operations() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.chain_add_genesis_block(0);
     cluster.tick_chain_synchronizer(0)?;
@@ -47,7 +47,7 @@ fn should_propose_block_on_new_operations() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn should_not_propose_block_if_not_data() -> Result<(), failure::Error> {
+fn should_not_propose_block_if_not_data() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.remove_node_role(0, CellNodeRole::Chain);
 
@@ -68,7 +68,7 @@ fn should_not_propose_block_if_not_data() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn only_one_node_at_time_should_commit() -> Result<(), failure::Error> {
+fn only_one_node_at_time_should_commit() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_add_genesis_block(0);
     cluster.chain_add_genesis_block(1);
@@ -94,7 +94,7 @@ fn only_one_node_at_time_should_commit() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn commit_block_at_interval() -> Result<(), failure::Error> {
+fn commit_block_at_interval() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     let commit_interval = cluster.commit_managers[0].config.commit_maximum_interval;
 
@@ -131,7 +131,7 @@ fn commit_block_at_interval() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn commit_block_after_maximum_operations() -> Result<(), failure::Error> {
+fn commit_block_after_maximum_operations() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.clocks[0].set_fixed_instant(Instant::now());
 
@@ -174,7 +174,7 @@ fn commit_block_after_maximum_operations() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn update_pending_status_for_committed_operations() -> Result<(), failure::Error> {
+fn update_pending_status_for_committed_operations() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.clocks[0].set_fixed_instant(Instant::now());
 
@@ -207,7 +207,7 @@ fn update_pending_status_for_committed_operations() -> Result<(), failure::Error
 }
 
 #[test]
-fn should_sign_valid_proposed_block() -> Result<(), failure::Error> {
+fn should_sign_valid_proposed_block() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.chain_add_genesis_block(0);
     cluster.tick_chain_synchronizer(0)?;
@@ -234,7 +234,7 @@ fn should_sign_valid_proposed_block() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn should_order_next_best_blocks() -> Result<(), failure::Error> {
+fn should_order_next_best_blocks() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.chain_add_genesis_block(0);
     cluster.tick_chain_synchronizer(0)?;
@@ -262,7 +262,7 @@ fn should_order_next_best_blocks() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn should_refuse_invalid_proposed_block() -> Result<(), failure::Error> {
+fn should_refuse_invalid_proposed_block() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.chain_add_genesis_block(0);
     cluster.tick_chain_synchronizer(0)?;
@@ -296,7 +296,7 @@ fn should_refuse_invalid_proposed_block() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn proposal_should_expire_after_timeout() -> Result<(), failure::Error> {
+fn proposal_should_expire_after_timeout() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
 
     cluster.chain_add_genesis_block(0);
@@ -334,7 +334,7 @@ fn proposal_should_expire_after_timeout() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn test_is_node_commit_turn() -> Result<(), failure::Error> {
+fn test_is_node_commit_turn() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     let node1 = cluster.get_node(0);
     let node2 = cluster.get_node(1);
@@ -396,7 +396,7 @@ fn test_is_node_commit_turn() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn cleanup_past_committed_operations() -> Result<(), failure::Error> {
+fn cleanup_past_committed_operations() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.clocks[0].set_fixed_instant(Instant::now());
 
@@ -461,7 +461,7 @@ fn cleanup_past_committed_operations() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn dont_cleanup_operations_from_commit_refused_blocks() -> Result<(), failure::Error> {
+fn dont_cleanup_operations_from_commit_refused_blocks() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.chain_generate_dummy(0, 10, 1234);
     cluster.tick_chain_synchronizer(0)?;
@@ -533,7 +533,7 @@ fn dont_cleanup_operations_from_commit_refused_blocks() -> Result<(), failure::E
 }
 
 #[test]
-fn cleanup_dangling_operations() -> Result<(), failure::Error> {
+fn cleanup_dangling_operations() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(1);
     cluster.clocks[0].set_fixed_instant(Instant::now());
 

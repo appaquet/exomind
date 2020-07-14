@@ -11,7 +11,7 @@ use crate::query::QueryBuilder as Q;
 use super::*;
 
 #[test]
-fn index_full_pending_to_chain() -> Result<(), failure::Error> {
+fn index_full_pending_to_chain() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index when block is at depth 1 or more
         ..TestEntityIndex::create_test_config()
@@ -58,7 +58,7 @@ fn index_full_pending_to_chain() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn reopen_chain_index() -> Result<(), failure::Error> {
+fn reopen_chain_index() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear
         chain_index_in_memory: false,
@@ -84,7 +84,7 @@ fn reopen_chain_index() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn reopen_chain_and_pending_transition() -> Result<(), failure::Error> {
+fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 2,
         chain_index_in_memory: false,
@@ -122,7 +122,7 @@ fn reopen_chain_and_pending_transition() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn reindex_pending_on_discontinuity() -> Result<(), failure::Error> {
+fn reindex_pending_on_discontinuity() -> anyhow::Result<()> {
     let mut test_index = TestEntityIndex::new()?;
 
     // index traits without indexing them by clearing events
@@ -149,7 +149,7 @@ fn reindex_pending_on_discontinuity() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn chain_divergence() -> Result<(), failure::Error> {
+fn chain_divergence() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear
         ..TestEntityIndex::create_test_config()
@@ -198,7 +198,7 @@ fn chain_divergence() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn delete_entity_trait() -> Result<(), failure::Error> {
+fn delete_entity_trait() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
         ..TestEntityIndex::create_test_config()
@@ -241,7 +241,7 @@ fn delete_entity_trait() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn delete_all_entity_traits() -> Result<(), failure::Error> {
+fn delete_all_entity_traits() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config)?;
 
@@ -279,7 +279,7 @@ fn delete_all_entity_traits() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn delete_entity() -> Result<(), failure::Error> {
+fn delete_entity() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
         ..TestEntityIndex::create_test_config()
@@ -321,7 +321,7 @@ fn delete_entity() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn traits_compaction() -> Result<(), failure::Error> {
+fn traits_compaction() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
         ..TestEntityIndex::create_test_config()
@@ -418,7 +418,7 @@ fn traits_compaction() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn query_paging() -> Result<(), failure::Error> {
+fn query_paging() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config)?;
 
@@ -508,7 +508,7 @@ fn query_paging() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn query_multiple_mutations_paging() -> Result<(), failure::Error> {
+fn query_multiple_mutations_paging() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config)?;
 
@@ -555,7 +555,7 @@ fn query_multiple_mutations_paging() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn query_ordering() -> Result<(), failure::Error> {
+fn query_ordering() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config)?;
 
@@ -601,7 +601,7 @@ fn query_ordering() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn summary_query() -> Result<(), failure::Error> {
+fn summary_query() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config)?;
 

@@ -19,11 +19,11 @@ pub struct TestEntityIndex {
 }
 
 impl TestEntityIndex {
-    pub fn new() -> Result<TestEntityIndex, failure::Error> {
+    pub fn new() -> Result<TestEntityIndex, anyhow::Error> {
         Self::new_with_config(Self::create_test_config())
     }
 
-    pub fn new_with_config(config: EntityIndexConfig) -> Result<TestEntityIndex, failure::Error> {
+    pub fn new_with_config(config: EntityIndexConfig) -> Result<TestEntityIndex, anyhow::Error> {
         let cluster = TestChainCluster::new_single_and_start()?;
 
         let data_handle = cluster.get_handle(0).clone();
@@ -36,7 +36,7 @@ impl TestEntityIndex {
         })
     }
 
-    pub fn with_restarted_node(self) -> Result<TestEntityIndex, failure::Error> {
+    pub fn with_restarted_node(self) -> Result<TestEntityIndex, anyhow::Error> {
         // deconstruct so that we can drop index and close the index properly before
         // reopening
         let TestEntityIndex {
@@ -104,7 +104,7 @@ impl TestEntityIndex {
     pub fn put_test_traits<R: Iterator<Item = i32>>(
         &mut self,
         range: R,
-    ) -> Result<Vec<OperationId>, failure::Error> {
+    ) -> Result<Vec<OperationId>, anyhow::Error> {
         let mut ops_id = Vec::new();
         for i in range {
             let op_id = self.put_test_trait(
@@ -122,7 +122,7 @@ impl TestEntityIndex {
         entity_id: E,
         trait_id: T,
         name: N,
-    ) -> Result<OperationId, failure::Error> {
+    ) -> Result<OperationId, anyhow::Error> {
         let trt = Self::new_test_trait(trait_id, name)?;
         let mutation = MutationBuilder::new().put_trait(entity_id.into(), trt);
         self.write_mutation(mutation)
@@ -132,7 +132,7 @@ impl TestEntityIndex {
         &mut self,
         entity_id: E,
         trait_id: T,
-    ) -> Result<OperationId, failure::Error> {
+    ) -> Result<OperationId, anyhow::Error> {
         let mutation = MutationBuilder::new().delete_trait(entity_id.into(), trait_id.into());
         self.write_mutation(mutation)
     }
@@ -140,7 +140,7 @@ impl TestEntityIndex {
     pub fn write_mutation<M: Into<MutationRequestLike>>(
         &mut self,
         mutation: M,
-    ) -> Result<OperationId, failure::Error> {
+    ) -> Result<OperationId, anyhow::Error> {
         let request = mutation.into();
         let buf = request.mutations[0].encode_to_vec()?;
         let op_id = self.cluster.get_handle(0).write_entry_operation(&buf)?;

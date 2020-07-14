@@ -10,7 +10,7 @@ use exocore_core::framing::FrameBuilder;
 use itertools::Itertools;
 
 #[test]
-fn handle_sync_response_blocks() -> Result<(), failure::Error> {
+fn handle_sync_response_blocks() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_generate_dummy(0, 10, 1234);
     cluster.chain_generate_dummy(1, 100, 1234);
@@ -81,7 +81,7 @@ fn handle_sync_response_blocks() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_empty_node1_to_full_node2() -> Result<(), failure::Error> {
+fn sync_empty_node1_to_full_node2() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_generate_dummy(1, 100, 3434);
 
@@ -121,7 +121,7 @@ fn sync_empty_node1_to_full_node2() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_full_node1_to_empty_node2() -> Result<(), failure::Error> {
+fn sync_full_node1_to_empty_node2() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_generate_dummy(0, 100, 3434);
 
@@ -152,7 +152,7 @@ fn sync_full_node1_to_empty_node2() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_full_node1_to_half_node2() -> Result<(), failure::Error> {
+fn sync_full_node1_to_half_node2() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_generate_dummy(0, 100, 3434);
     cluster.chain_generate_dummy(1, 50, 3434);
@@ -186,7 +186,7 @@ fn sync_full_node1_to_half_node2() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_half_node1_to_full_node2() -> Result<(), failure::Error> {
+fn sync_half_node1_to_full_node2() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_generate_dummy(0, 50, 3434);
     cluster.chain_generate_dummy(1, 100, 3434);
@@ -223,7 +223,7 @@ fn sync_half_node1_to_full_node2() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_fully_divergent_node1_to_full_node2() -> Result<(), failure::Error> {
+fn sync_fully_divergent_node1_to_full_node2() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_generate_dummy(0, 100, 1234);
     cluster.chain_generate_dummy(1, 100, 9876);
@@ -259,7 +259,7 @@ fn sync_fully_divergent_node1_to_full_node2() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_single_block_even_if_max_out_size() -> Result<(), failure::Error> {
+fn sync_single_block_even_if_max_out_size() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
 
     let node_0 = cluster.get_local_node(0);
@@ -302,7 +302,7 @@ fn sync_single_block_even_if_max_out_size() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn cannot_sync_all_divergent() -> Result<(), failure::Error> {
+fn cannot_sync_all_divergent() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(4);
     cluster.chain_generate_dummy(0, 100, 1234);
     cluster.chain_generate_dummy(1, 100, 9876);
@@ -322,7 +322,7 @@ fn cannot_sync_all_divergent() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_half_divergent_node1_to_full_node2() -> Result<(), failure::Error> {
+fn sync_half_divergent_node1_to_full_node2() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_generate_dummy(0, 100, 1234);
     cluster.chain_generate_dummy(1, 50, 1234);
@@ -359,7 +359,7 @@ fn sync_half_divergent_node1_to_full_node2() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_empty_node1_to_big_chain_node2() -> Result<(), failure::Error> {
+fn sync_empty_node1_to_big_chain_node2() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
 
     // this will force multiple back and forth for data
@@ -379,7 +379,7 @@ fn sync_empty_node1_to_big_chain_node2() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn leader_lost_metadata_out_of_date() -> Result<(), failure::Error> {
+fn leader_lost_metadata_out_of_date() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(4);
     cluster.chain_generate_dummy(0, 50, 3434);
     cluster.chain_generate_dummy(1, 100, 3434);
@@ -411,7 +411,7 @@ fn leader_lost_metadata_out_of_date() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn leader_lost_chain_too_far() -> Result<(), failure::Error> {
+fn leader_lost_chain_too_far() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.chain_generate_dummy(0, 50, 3434);
     cluster.chain_generate_dummy(1, 100, 3434);
@@ -447,7 +447,7 @@ fn leader_lost_chain_too_far() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn quorum_lost_and_regain() -> Result<(), failure::Error> {
+fn quorum_lost_and_regain() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(3);
     cluster.chain_generate_dummy(0, 50, 3434);
     cluster.chain_generate_dummy(1, 100, 3434);

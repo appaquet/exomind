@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use tempdir::TempDir;
+use tempfile::TempDir;
 
 use exocore_chain::tests_utils::TestChainCluster;
 use exocore_chain::{DirectoryChainStore, MemoryPendingStore};
@@ -30,10 +30,10 @@ pub struct TestStore {
 }
 
 impl TestStore {
-    pub fn new() -> Result<TestStore, failure::Error> {
+    pub fn new() -> Result<TestStore, anyhow::Error> {
         let cluster = TestChainCluster::new_single_and_start()?;
 
-        let temp_dir = tempdir::TempDir::new("store")?;
+        let temp_dir = tempfile::tempdir()?;
         let registry = Arc::new(Registry::new_with_exocore_types());
 
         let index_config = EntityIndexConfig {
@@ -71,7 +71,7 @@ impl TestStore {
         })
     }
 
-    pub fn start_store(&mut self) -> Result<(), failure::Error> {
+    pub fn start_store(&mut self) -> anyhow::Result<()> {
         let store = self.store.take().unwrap();
         self.cluster.runtime.spawn(async move {
             match store.run().await {
@@ -88,14 +88,14 @@ impl TestStore {
     pub fn mutate<M: Into<MutationRequestLike>>(
         &mut self,
         request: M,
-    ) -> Result<MutationResult, failure::Error> {
+    ) -> Result<MutationResult, anyhow::Error> {
         self.cluster
             .runtime
             .block_on(self.store_handle.mutate(request))
             .map_err(|err| err.into())
     }
 
-    pub fn query(&mut self, query: EntityQuery) -> Result<EntityResults, failure::Error> {
+    pub fn query(&mut self, query: EntityQuery) -> Result<EntityResults, anyhow::Error> {
         self.cluster
             .runtime
             .block_on(self.store_handle.query(query))

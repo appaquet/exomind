@@ -1,17 +1,17 @@
-#[derive(Debug, Fail)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[fail(display = "Configuration error: {}", _0)]
+    #[error("Configuration error: {0}")]
     Config(String),
 
-    #[fail(display = "Cell error: {}", _0)]
+    #[error("Cell error: {0}")]
     Cell(String),
 
-    #[fail(display = "Application '{}' error: {}", _0, _1)]
+    #[error("Application '{}' error: {0}")]
     Application(String, String),
 
-    #[fail(display = "Key error: {}", _0)]
-    Key(crate::crypto::keys::Error),
+    #[error("Key error: {0}")]
+    Key(#[from] crate::crypto::keys::Error),
 
-    #[fail(display = "Node error: {}", _0)]
+    #[error("Node error: {0}")]
     Node(String),
 }

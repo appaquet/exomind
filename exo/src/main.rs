@@ -9,11 +9,14 @@ mod server;
 #[macro_use]
 extern crate log;
 
+#[macro_use]
+extern crate anyhow;
+
 use log::LevelFilter;
 use std::str::FromStr;
 use structopt::StructOpt;
 
-fn main() -> Result<(), failure::Error> {
+fn main() -> anyhow::Result<()> {
     let opt: options::Options = options::Options::from_args();
     exocore_core::logging::setup(Some(LevelFilter::from_str(&opt.logging_level)?));
 
@@ -41,7 +44,6 @@ fn main() -> Result<(), failure::Error> {
 
     if let Err(err) = result {
         println!("Error: {}", err);
-        println!("Backtrace: {}", err.backtrace());
     }
 
     Ok(())

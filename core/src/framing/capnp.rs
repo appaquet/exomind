@@ -191,7 +191,7 @@ mod tests {
     use crate::protos::generated::data_chain_capnp::block_header;
 
     #[test]
-    fn assert_typed_frame_send_sync() -> Result<(), failure::Error> {
+    fn assert_typed_frame_send_sync() -> anyhow::Result<()> {
         fn test_sync<S: Send + Sync>(_sync: S) {}
 
         let mut frame_builder = CapnpFrameBuilder::<block_header::Owned>::new();
@@ -205,7 +205,7 @@ mod tests {
     }
 
     #[test]
-    fn can_build_and_read() -> Result<(), failure::Error> {
+    fn can_build_and_read() -> anyhow::Result<()> {
         let mut frame_builder = CapnpFrameBuilder::<block_header::Owned>::new();
         let mut builder = frame_builder.get_builder();
         builder.set_height(1234);
@@ -225,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn can_build_to_owned() -> Result<(), failure::Error> {
+    fn can_build_to_owned() -> anyhow::Result<()> {
         let mut frame_builder = CapnpFrameBuilder::<block_header::Owned>::new();
         let mut builder = frame_builder.get_builder();
         builder.set_height(1234);

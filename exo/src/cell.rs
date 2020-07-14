@@ -8,7 +8,7 @@ use exocore_core::protos::generated::data_chain_capnp::block_header;
 pub fn create_genesis_block(
     _opt: &options::Options,
     cell_opts: &options::CellOptions,
-) -> Result<(), failure::Error> {
+) -> anyhow::Result<()> {
     let config = exocore_core::cell::node_config_from_yaml_file(&cell_opts.config)?;
     let (either_cells, _local_node) = Cell::new_from_local_node_config(config)?;
     let full_cell = either_cells
@@ -37,7 +37,7 @@ pub fn create_genesis_block(
 pub fn check_chain(
     _opt: &options::Options,
     cell_opts: &options::CellOptions,
-) -> Result<(), failure::Error> {
+) -> anyhow::Result<()> {
     let config = exocore_core::cell::node_config_from_yaml_file(&cell_opts.config)?;
     let (either_cells, _local_node) = Cell::new_from_local_node_config(config)?;
     let cell = either_cells

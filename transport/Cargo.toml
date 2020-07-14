@@ -19,7 +19,8 @@ libp2p-base = ["libp2p"]
 [dependencies]
 exocore-core = { path = "../core" }
 log = "0.4"
-failure = "0.1"
+thiserror = "1.0"
+anyhow = "1.0"
 futures = { version = "0.3", features = ["compat"] }
 pin-project = "0.4"
 byteorder = "1.3"

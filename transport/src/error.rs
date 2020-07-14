@@ -1,28 +1,26 @@
-use exocore_core::capnp;
-
 /// Transport related error
-#[derive(Debug, Fail, Clone)]
+#[derive(Debug, thiserror::Error, Clone)]
 pub enum Error {
     #[cfg(feature = "libp2p-base")]
-    #[fail(display = "libp2p transport error: {:?}", _0)]
-    Libp2pTransport(std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>),
+    #[error("libp2p transport error: {0:?}")]
+    Libp2pTransport(#[from] std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>),
 
-    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
-    Serialization(capnp::ErrorKind, String),
+    #[error("Error in capnp serialization: {0}")]
+    Serialization(#[from] exocore_core::capnp::Error),
 
-    #[fail(display = "Field is not in capnp schema: code={}", _0)]
+    #[error("Field is not in capnp schema: code={0}")]
     SerializationNotInSchema(u16),
 
-    #[fail(display = "IO error: {}", _0)]
-    IO(String),
+    #[error("IO error: {0}")]
+    IO(#[from] std::sync::Arc<std::io::Error>),
 
-    #[fail(display = "Could not upgrade a weak reference")]
+    #[error("Could not upgrade a weak reference")]
     Upgrade,
 
-    #[fail(display = "Try to lock a mutex that was poisoned")]
+    #[error("Try to lock a mutex that was poisoned")]
     Poisoned,
 
-    #[fail(display = "An error occurred: {}", _0)]
+    #[error("An error occurred: {0}")]
     Other(String),
 }
 
@@ -36,14 +34,8 @@ where
     }
 }
 
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::Serialization(err.kind, err.description)
-    }
-}
-
-impl From<capnp::NotInSchema> for Error {
-    fn from(err: capnp::NotInSchema) -> Self {
+impl From<exocore_core::capnp::NotInSchema> for Error {
+    fn from(err: exocore_core::capnp::NotInSchema) -> Self {
         Error::SerializationNotInSchema(err.0)
     }
 }
@@ -56,6 +48,6 @@ impl<T> From<std::sync::PoisonError<T>> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
-        Error::IO(err.to_string())
+        Error::IO(std::sync::Arc::new(err))
     }
 }

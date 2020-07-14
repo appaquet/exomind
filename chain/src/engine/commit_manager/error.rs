@@ -1,10 +1,11 @@
 use crate::operation::OperationId;
 
 /// CommitManager related error
-#[derive(Clone, Debug, Fail)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum CommitManagerError {
-    #[fail(display = "Invalid signature in commit manager: {}", _0)]
+    #[error("Invalid signature in commit manager: {0}")]
     InvalidSignature(String),
-    #[fail(display = "A referenced operation is missing from local store: {}", _0)]
+
+    #[error("A referenced operation is missing from local store: {0}")]
     MissingOperation(OperationId),
 }

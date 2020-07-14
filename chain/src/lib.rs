@@ -1,11 +1,12 @@
 #![deny(bare_trait_objects)]
 
-#[macro_use]
-extern crate failure;
-
 #[allow(unused_imports)]
 #[macro_use]
 extern crate log;
+
+#[cfg(any(test, feature = "tests-utils"))]
+#[macro_use]
+extern crate anyhow;
 
 /// Modules
 pub mod block;

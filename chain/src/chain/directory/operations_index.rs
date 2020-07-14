@@ -53,11 +53,11 @@ impl OperationsIndex {
     ) -> Result<OperationsIndex, Error> {
         let metadata_path = Metadata::file_path(directory_path);
         let metadata_store = JsonDiskStore::<Metadata>::new(&metadata_path).map_err(|err| {
-            Error::IO(
-                err.kind(),
+            Error::new_io(
+                err,
                 format!(
-                    "Error creating operations index metadata file {:?}: {}",
-                    metadata_path, err
+                    "Error creating operations index metadata file {:?}",
+                    metadata_path
                 ),
             )
         })?;
@@ -89,11 +89,11 @@ impl OperationsIndex {
     ) -> Result<OperationsIndex, Error> {
         let metadata_path = Metadata::file_path(directory_path);
         let metadata_store = JsonDiskStore::<Metadata>::new(&metadata_path).map_err(|err| {
-            Error::IO(
-                err.kind(),
+            Error::new_io(
+                err,
                 format!(
-                    "Error creating operations index metadata file {:?}: {}",
-                    metadata_path, err
+                    "Error creating operations index metadata file {:?}",
+                    metadata_path
                 ),
             )
         })?;
@@ -101,11 +101,11 @@ impl OperationsIndex {
         let metadata = metadata_store
             .read()
             .map_err(|err| {
-                Error::IO(
-                    err.kind(),
+                Error::new_io(
+                    err,
                     format!(
-                        "Error reading operations index metadata file {:?}: {}",
-                        metadata_path, err
+                        "Error reading operations index metadata file {:?}",
+                        metadata_path
                     ),
                 )
             })?
@@ -335,12 +335,9 @@ impl OperationsIndex {
             .collect_vec();
         let metadata = Metadata { files };
 
-        self.metadata_store.write(&metadata).map_err(|err| {
-            Error::IO(
-                err.kind(),
-                format!("Error storing into operations index metadata file: {}", err),
-            )
-        })
+        self.metadata_store
+            .write(&metadata)
+            .map_err(|err| Error::new_io(err, "Error storing into operations index metadata file"))
     }
 }
 
@@ -431,10 +428,10 @@ mod tests {
     use exocore_core::cell::LocalNode;
 
     #[test]
-    fn create_from_iterator() -> Result<(), failure::Error> {
+    fn create_from_iterator() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
-        let dir = tempdir::TempDir::new("ops")?;
+        let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
             operations_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
@@ -458,10 +455,10 @@ mod tests {
     }
 
     #[test]
-    fn open_existing() -> Result<(), failure::Error> {
+    fn open_existing() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
-        let dir = tempdir::TempDir::new("ops")?;
+        let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
             operations_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
@@ -499,10 +496,10 @@ mod tests {
     }
 
     #[test]
-    fn truncate_from_offset_memory() -> Result<(), failure::Error> {
+    fn truncate_from_offset_memory() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
-        let dir = tempdir::TempDir::new("ops")?;
+        let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
             operations_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
@@ -520,10 +517,10 @@ mod tests {
     }
 
     #[test]
-    fn truncate_from_offset_disk() -> Result<(), failure::Error> {
+    fn truncate_from_offset_disk() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
-        let dir = tempdir::TempDir::new("ops")?;
+        let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
             operations_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()

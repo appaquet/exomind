@@ -1,5 +1,3 @@
-use failure::err_msg;
-
 use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -15,10 +13,7 @@ use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
 use crate::options;
 
 /// Starts servers based on given command line options
-pub fn start(
-    _opts: &options::Options,
-    server_opts: &options::ServerOptions,
-) -> Result<(), failure::Error> {
+pub fn start(_opts: &options::Options, server_opts: &options::ServerOptions) -> anyhow::Result<()> {
     let config = exocore_core::cell::node_config_from_yaml_file(&server_opts.config)?;
     let (either_cells, local_node) = Cell::new_from_local_node_config(config)?;
 
@@ -38,10 +33,7 @@ pub fn start(
 
             // make sure data directory exists
             let chain_dir = cell.chain_directory().ok_or_else(|| {
-                err_msg(format!(
-                    "{}: Cell doesn't have a directory configured",
-                    cell_name
-                ))
+                anyhow!("{}: Cell doesn't have a directory configured", cell_name)
             })?;
             std::fs::create_dir_all(&chain_dir)?;
 
@@ -79,7 +71,7 @@ pub fn start(
                 let full_cell = match &either_cell {
                     EitherCell::Full(cell) => cell.as_ref().clone(),
                     _ => {
-                        return Err(err_msg(
+                        return Err(anyhow!(
                             "Cannot have IndexStore role on cell without keypair",
                         ));
                     }
@@ -134,7 +126,7 @@ fn create_local_store<T: TransportHandle>(
     full_cell: FullCell,
     clock: Clock,
     entities_index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
-) -> Result<(), failure::Error> {
+) -> anyhow::Result<()> {
     let store_config = Default::default();
     let local_store = Store::new(
         store_config,

@@ -465,7 +465,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_integration() -> Result<(), failure::Error> {
+    fn test_integration() -> anyhow::Result<()> {
         let mut rt = exocore_core::futures::Builder::new()
             .threaded_scheduler()
             .enable_all()
@@ -518,7 +518,7 @@ mod tests {
     }
 
     #[test]
-    fn handle_removal_and_transport_kill() -> Result<(), failure::Error> {
+    fn handle_removal_and_transport_kill() -> anyhow::Result<()> {
         let mut rt = Runtime::new()?;
 
         let node1 = LocalNode::generate();
@@ -562,7 +562,7 @@ mod tests {
     }
 
     #[test]
-    fn should_queue_message_until_connected() -> Result<(), failure::Error> {
+    fn should_queue_message_until_connected() -> anyhow::Result<()> {
         let mut rt = Runtime::new()?;
 
         let node1 = LocalNode::generate();

@@ -31,7 +31,7 @@ pub use results::*;
 
 use crate::error::Error;
 use crate::ordering::OrderingValueWrapper;
-use failure::_core::borrow::Borrow;
+use std::borrow::Borrow;
 
 mod config;
 mod operations;

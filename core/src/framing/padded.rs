@@ -137,7 +137,7 @@ mod tests {
     use crate::framing::assert_builder_equals;
 
     #[test]
-    fn can_build_and_read() -> Result<(), failure::Error> {
+    fn can_build_and_read() -> anyhow::Result<()> {
         let builder = PaddedFrameBuilder::new(vec![1; 10], 0);
         assert_builder_equals(&builder)?;
 
@@ -161,7 +161,7 @@ mod tests {
     }
 
     #[test]
-    fn can_build_to_owned() -> Result<(), failure::Error> {
+    fn can_build_to_owned() -> anyhow::Result<()> {
         let builder = PaddedFrameBuilder::new(vec![1; 10], 0);
         let frame = builder.as_owned_frame();
         assert_eq!(vec![1; 10], frame.exposed_data());

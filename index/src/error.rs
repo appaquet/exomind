@@ -1,62 +1,60 @@
 use std::time::Duration;
 
-use exocore_core::capnp;
-
-#[derive(Debug, Fail, Clone)]
+#[derive(Debug, thiserror::Error, Clone)]
 pub enum Error {
-    #[fail(display = "Query parsing error: {}", _0)]
+    #[error("Query parsing error: {0}")]
     QueryParsing(String),
 
     #[cfg(feature = "local-store")]
-    #[fail(display = "Error in Tantivy: {}", _0)]
+    #[error("Error in Tantivy: {0}")]
     Tantivy(std::sync::Arc<tantivy::TantivyError>),
 
     #[cfg(feature = "local-store")]
-    #[fail(display = "Error opening Tantivy directory: {:?}", _0)]
+    #[error("Error opening Tantivy directory: {0:?}")]
     TantivyOpenDirectoryError(std::sync::Arc<tantivy::directory::error::OpenDirectoryError>),
 
     #[cfg(feature = "local-store")]
-    #[fail(display = "Error parsing Tantivy query: {:?}", _0)]
+    #[error("Error parsing Tantivy query: {0:?}")]
     TantitvyQueryParsing(std::sync::Arc<tantivy::query::QueryParserError>),
 
     #[cfg(feature = "local-store")]
-    #[fail(display = "Chain engine error: {}", _0)]
-    ChainEngine(#[fail(cause)] exocore_chain::engine::EngineError),
+    #[error("Chain engine error: {0}")]
+    ChainEngine(#[from] exocore_chain::engine::EngineError),
 
-    #[fail(display = "Transport error: {}", _0)]
-    Transport(#[fail(cause)] exocore_transport::Error),
+    #[error("Transport error: {0}")]
+    Transport(#[from] exocore_transport::Error),
 
-    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
-    Serialization(capnp::ErrorKind, String),
+    #[error("Error in capnp serialization: {0}")]
+    Serialization(#[from] exocore_core::capnp::Error),
 
-    #[fail(display = "Protobuf error: {}", _0)]
-    Proto(#[fail(cause)] exocore_core::protos::Error),
+    #[error("Protobuf error: {0}")]
+    Proto(#[from] exocore_core::protos::Error),
 
-    #[fail(display = "A protobuf field was expected, but was empty: {}", _0)]
+    #[error("A protobuf field was expected, but was empty: {0}")]
     ProtoFieldExpected(&'static str),
 
-    #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
+    #[error("IO error of kind {0:?}: {1}")]
     IO(std::io::ErrorKind, String),
 
-    #[fail(display = "Error from remote index: {}", _0)]
+    #[error("Error from remote index: {0}")]
     Remote(String),
 
-    #[fail(display = "Timeout error: {:?} > {:?}", _0, _1)]
+    #[error("Timeout error: {0:?} > {0:?}")]
     Timeout(Duration, Duration),
 
-    #[fail(display = "Try to lock a mutex that was poisoned")]
+    #[error("Try to lock a mutex that was poisoned")]
     Poisoned,
 
-    #[fail(display = "Query or mutation got cancelled")]
+    #[error("Query or mutation got cancelled")]
     Cancelled,
 
-    #[fail(display = "Dropped or couldn't get locked")]
+    #[error("Dropped or couldn't get locked")]
     Dropped,
 
-    #[fail(display = "Other error occurred: {}", _0)]
+    #[error("Other error occurred: {0}")]
     Other(String),
 
-    #[fail(display = "A fatal error occurred: {}", _0)]
+    #[error("A fatal error occurred: {0}")]
     Fatal(String),
 }
 
@@ -106,31 +104,6 @@ impl From<prost::DecodeError> for Error {
 impl From<prost::EncodeError> for Error {
     fn from(err: prost::EncodeError) -> Self {
         Error::Proto(err.into())
-    }
-}
-
-impl From<exocore_core::protos::Error> for Error {
-    fn from(err: exocore_core::protos::Error) -> Self {
-        Error::Proto(err)
-    }
-}
-
-#[cfg(feature = "local-store")]
-impl From<exocore_chain::engine::EngineError> for Error {
-    fn from(err: exocore_chain::engine::EngineError) -> Self {
-        Error::ChainEngine(err)
-    }
-}
-
-impl From<exocore_transport::Error> for Error {
-    fn from(err: exocore_transport::Error) -> Self {
-        Error::Transport(err)
-    }
-}
-
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::Serialization(err.kind, err.description)
     }
 }
 

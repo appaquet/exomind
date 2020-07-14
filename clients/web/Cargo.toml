@@ -11,7 +11,8 @@ crate-type = ["cdylib"]
 exocore-core = { path = "../../core", default-features = false  }
 exocore-index = { path = "../../index", default-features = false }
 exocore-transport = { path = "../../transport", default-features = false, features = ["libp2p-web"]  }
-failure = "0.1"
+thiserror = "1.0"
+anyhow = "1.0"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue
 wasm-bindgen-futures = "0.4"
 console_error_panic_hook = "0.1"

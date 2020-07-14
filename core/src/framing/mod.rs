@@ -174,7 +174,7 @@ fn check_offset_substract(offset: usize, sub_offset: usize) -> Result<(), Error>
 }
 
 #[cfg(test)]
-fn assert_builder_equals<B: FrameBuilder>(frame_builder: &B) -> Result<(), failure::Error> {
+fn assert_builder_equals<B: FrameBuilder>(frame_builder: &B) -> anyhow::Result<()> {
     let mut buffer1 = Vec::new();
     frame_builder.write_to(&mut buffer1)?;
 

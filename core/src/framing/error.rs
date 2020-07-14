@@ -1,25 +1,25 @@
-#[derive(Clone, Debug, Fail)]
+use std::sync::Arc;
+
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
-    #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
-    IO(std::io::ErrorKind, String),
-    #[fail(display = "Destination buffer too small (needed={} actual={})", _0, _1)]
+    #[error("IO error of kind: {0}")]
+    IO(#[from] Arc<std::io::Error>),
+
+    #[error("Destination buffer too small (needed={0} actual={1})")]
     DestinationTooSmall(usize, usize),
-    #[fail(display = "Source buffer too small (needed={} actual={})", _0, _1)]
+
+    #[error("Source buffer too small (needed={0} actual={1})")]
     SourceTooSmall(usize, usize),
-    #[fail(display = "Invalid offset subtraction ({} - {} < 0)", _0, _1)]
+
+    #[error("Invalid offset subtraction ({0} - {1} < 0)")]
     OffsetSubtract(usize, usize),
-    #[fail(display = "Capnp serialization error: {}", _0)]
-    Capnp(capnp::Error),
+
+    #[error("Capnp serialization error: {0}")]
+    Capnp(#[from] capnp::Error),
 }
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
-        Error::IO(err.kind(), err.to_string())
-    }
-}
-
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::Capnp(err)
+        Error::IO(Arc::new(err))
     }
 }

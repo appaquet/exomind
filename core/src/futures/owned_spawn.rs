@@ -143,19 +143,19 @@ mod tests {
     use std::time::Duration;
 
     #[test]
-    fn propagate_spawned_result() -> Result<(), failure::Error> {
+    fn propagate_spawned_result() -> anyhow::Result<()> {
         let mut ret = Runtime::new()?;
         ret.block_on(async move {
             let spawned = owned_spawn(async move { 1 + 1 });
             assert_eq!(2, spawned.await?);
 
-            Ok::<(), failure::Error>(())
+            Ok::<(), anyhow::Error>(())
         })?;
         Ok(())
     }
 
     #[test]
-    fn owner_drop_cancels_spawned() -> Result<(), failure::Error> {
+    fn owner_drop_cancels_spawned() -> anyhow::Result<()> {
         let mut ret = Runtime::new()?;
         ret.block_on(async move {
             let dropper = Dropper::default();
@@ -176,13 +176,13 @@ mod tests {
             delay_for(Duration::from_millis(100)).await;
             assert!(dropped.load(Ordering::SeqCst));
 
-            Ok::<(), failure::Error>(())
+            Ok::<(), anyhow::Error>(())
         })?;
         Ok(())
     }
 
     #[test]
-    fn spawn_set_cleanup() -> Result<(), failure::Error> {
+    fn spawn_set_cleanup() -> anyhow::Result<()> {
         let mut ret = Runtime::new()?;
         ret.block_on(async move {
             let mut set = OwnedSpawnSet::<i32>::new();
@@ -212,7 +212,7 @@ mod tests {
             delay_for(Duration::from_millis(100)).await;
             assert!(dropped.load(Ordering::SeqCst));
 
-            Ok::<(), failure::Error>(())
+            Ok::<(), anyhow::Error>(())
         })?;
         Ok(())
     }

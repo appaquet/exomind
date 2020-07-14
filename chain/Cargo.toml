@@ -11,7 +11,7 @@ license = "MIT"
 
 [features]
 default = ["engine", "directory-chain", "memory-pending"]
-tests-utils = ["engine", "tempdir", "directory-chain", "memory-pending", "exocore-core/tests-utils", "exocore-transport/tests-utils"]
+tests-utils = ["engine", "tempfile", "directory-chain", "memory-pending", "exocore-core/tests-utils", "exocore-transport/tests-utils"]
 engine = []
 directory-chain = ["memmap", "extindex"]
 memory-pending = []
@@ -21,7 +21,8 @@ exocore-core = { path = "../core" }
 exocore-transport = { path = "../transport", default-features = false }
 log = "0.4"
 byteorder = "1.2"
-failure = "0.1"
+thiserror = "1.0"
+anyhow = "1.0"
 itertools = "0.9"
 serde = "1.0"
 serde_derive = "1.0"
@@ -32,12 +33,12 @@ memmap = { version = "0.7", optional = true }
 extindex = { version = "0.3", optional = true }
 
 # For tests
-tempdir = { version = "0.3", optional = true }
+tempfile = { version = "3.1", optional = true }
 
 [dev-dependencies]
 exocore-core = { path = "../core", features = ["tests-utils"] }
 exocore-transport = { path = "../transport", features = ["tests-utils"] }
-tempdir = "0.3"
+tempfile = "3.1"
 
 [[test]]
 name = "engine"

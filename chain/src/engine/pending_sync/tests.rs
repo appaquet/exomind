@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[test]
-fn tick_send_to_other_nodes() -> Result<(), failure::Error> {
+fn tick_send_to_other_nodes() -> anyhow::Result<()> {
     // only one node, shouldn't send to ourself
     let mut cluster = EngineTestCluster::new(1);
     let mut sync_context = SyncContext::new(SyncState::default());
@@ -29,7 +29,7 @@ fn tick_send_to_other_nodes() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn create_sync_range_request() -> Result<(), failure::Error> {
+fn create_sync_range_request() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(0, 0, 100);
 
@@ -54,7 +54,7 @@ fn create_sync_range_request() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn create_sync_range_request_with_height() -> Result<(), failure::Error> {
+fn create_sync_range_request_with_height() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.clocks[0].set_fixed_instant(Instant::now());
 
@@ -98,7 +98,7 @@ fn create_sync_range_request_with_height() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn new_operation_after_last_operation() -> Result<(), failure::Error> {
+fn new_operation_after_last_operation() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(0, 0, 50);
     cluster.pending_generate_dummy(1, 0, 50);
@@ -130,7 +130,7 @@ fn new_operation_after_last_operation() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn new_operation_among_current_operations() -> Result<(), failure::Error> {
+fn new_operation_among_current_operations() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
 
     // generate operations with even operation id
@@ -171,7 +171,7 @@ fn new_operation_among_current_operations() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn handle_sync_equals() -> Result<(), failure::Error> {
+fn handle_sync_equals() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(0, 0, 100);
     cluster.pending_generate_dummy(1, 0, 100);
@@ -184,7 +184,7 @@ fn handle_sync_equals() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn handle_sync_empty_to_many() -> Result<(), failure::Error> {
+fn handle_sync_empty_to_many() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(0, 0, 100);
 
@@ -196,7 +196,7 @@ fn handle_sync_empty_to_many() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn handle_sync_many_to_empty() -> Result<(), failure::Error> {
+fn handle_sync_many_to_empty() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(1, 1, 100);
 
@@ -208,7 +208,7 @@ fn handle_sync_many_to_empty() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn handle_sync_full_to_some() -> Result<(), failure::Error> {
+fn handle_sync_full_to_some() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(0, 0, 100);
 
@@ -228,7 +228,7 @@ fn handle_sync_full_to_some() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn handle_sync_some_to_all() -> Result<(), failure::Error> {
+fn handle_sync_some_to_all() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(1, 1, 100);
 
@@ -248,7 +248,7 @@ fn handle_sync_some_to_all() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn handle_sync_different_some_to_different_some() -> Result<(), failure::Error> {
+fn handle_sync_different_some_to_different_some() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
 
     let generator_node = &cluster.nodes[0];
@@ -268,7 +268,7 @@ fn handle_sync_different_some_to_different_some() -> Result<(), failure::Error> 
 }
 
 #[test]
-fn handle_sync_cleaned_up_depth() -> Result<(), failure::Error> {
+fn handle_sync_cleaned_up_depth() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.clocks[0].set_fixed_instant(Instant::now());
 
@@ -305,7 +305,7 @@ fn handle_sync_cleaned_up_depth() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn should_extract_from_block_offset() -> Result<(), failure::Error> {
+fn should_extract_from_block_offset() -> anyhow::Result<()> {
     let cluster = EngineTestCluster::new(1);
 
     let pending_store = &cluster.pending_stores_synchronizer[0];
@@ -347,7 +347,7 @@ fn should_extract_from_block_offset() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn operations_iter_filtered_height() -> Result<(), failure::Error> {
+fn operations_iter_filtered_height() -> anyhow::Result<()> {
     let cluster = EngineTestCluster::new(1);
 
     let local_node = &cluster.nodes[0];
@@ -424,7 +424,7 @@ fn sync_ranges_push_operation() {
 }
 
 #[test]
-fn sync_range_to_frame_builder_with_hash() -> Result<(), failure::Error> {
+fn sync_range_to_frame_builder_with_hash() -> anyhow::Result<()> {
     let local_node = LocalNode::generate();
     let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetailsLevel::None);
     assert_eq!(frames_builder.len(), 3);
@@ -447,7 +447,7 @@ fn sync_range_to_frame_builder_with_hash() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_range_to_frame_builder_with_headers() -> Result<(), failure::Error> {
+fn sync_range_to_frame_builder_with_headers() -> anyhow::Result<()> {
     let local_node = LocalNode::generate();
     let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetailsLevel::Header);
 
@@ -464,7 +464,7 @@ fn sync_range_to_frame_builder_with_headers() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn sync_range_to_frame_builder_with_data() -> Result<(), failure::Error> {
+fn sync_range_to_frame_builder_with_data() -> anyhow::Result<()> {
     let local_node = LocalNode::generate();
     let frames_builder = build_sync_ranges_frames(&local_node, 90, OperationDetailsLevel::Full);
 
@@ -488,7 +488,7 @@ fn sync_nodes(
     cluster: &mut EngineTestCluster,
     node_id_a: usize,
     node_id_b: usize,
-) -> Result<(usize, usize), failure::Error> {
+) -> Result<(usize, usize), anyhow::Error> {
     // tick the first node, which will generate a sync request
     let sync_context = cluster.tick_pending_synchronizer(node_id_a)?;
     let (_to_node, initial_request) = extract_request_from_result(&sync_context);
@@ -501,7 +501,7 @@ fn sync_nodes_with_initial_request(
     node_id_a: usize,
     node_id_b: usize,
     initial_request: TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
-) -> Result<(usize, usize), failure::Error> {
+) -> Result<(usize, usize), anyhow::Error> {
     let node_a = cluster.get_node(node_id_a);
     let node_b = cluster.get_node(node_id_b);
 

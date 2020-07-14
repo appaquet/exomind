@@ -1,12 +1,14 @@
 #![deny(bare_trait_objects)]
 
 #[macro_use]
-extern crate failure;
-#[macro_use]
 extern crate log;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+
+#[cfg(any(test, feature = "tests-utils"))]
+#[macro_use]
+extern crate anyhow;
 
 pub extern crate capnp;
 pub mod protos;

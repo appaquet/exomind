@@ -3,9 +3,9 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use failure::err_msg;
 use futures::prelude::*;
 use itertools::Itertools;
+use tempfile::TempDir;
 
 use exocore_core::cell::{CellNode, CellNodeRole, LocalNode};
 use exocore_core::futures::Runtime;
@@ -23,7 +23,7 @@ use exocore_transport::TransportLayer;
 
 /// exocore-chain testing utility
 pub struct TestChainCluster {
-    pub tempdir: tempdir::TempDir,
+    pub tempdir: TempDir,
     pub runtime: Runtime,
     pub transport_hub: MockTransport,
 
@@ -46,8 +46,8 @@ pub struct ClusterSpec {
 }
 
 impl TestChainCluster {
-    pub fn new(count: usize) -> Result<TestChainCluster, failure::Error> {
-        let tempdir = tempdir::TempDir::new("engine_tests")?;
+    pub fn new(count: usize) -> Result<TestChainCluster, anyhow::Error> {
+        let tempdir = tempfile::tempdir()?;
 
         let runtime = Runtime::new()?;
 
@@ -141,7 +141,7 @@ impl TestChainCluster {
         Ok(cluster)
     }
 
-    pub fn new_single_and_start() -> Result<TestChainCluster, failure::Error> {
+    pub fn new_single_and_start() -> Result<TestChainCluster, anyhow::Error> {
         let mut cluster = TestChainCluster::new(1)?;
 
         cluster.create_node(0)?;
@@ -160,7 +160,7 @@ impl TestChainCluster {
             .join(self.nodes[node_idx].id().to_string())
     }
 
-    pub fn create_node(&mut self, node_idx: usize) -> Result<(), failure::Error> {
+    pub fn create_node(&mut self, node_idx: usize) -> anyhow::Result<()> {
         let data_dir = self.node_data_dir(node_idx);
         let data_exists = std::fs::metadata(&data_dir).is_ok();
 
@@ -328,14 +328,14 @@ impl TestChainCluster {
     }
 
     pub fn wait_operations_emitted(&self, node_idx: usize, operations_id: &[u64]) {
-        expect_result::<_, _, failure::Error>(|| {
+        expect_result::<_, _, anyhow::Error>(|| {
             let events = self.get_received_events(node_idx);
             let found_ops = extract_ops_events(&events);
 
             if (&operations_id).iter().all(|op| found_ops.contains(op)) {
                 Ok(found_ops)
             } else {
-                Err(failure::err_msg(format!(
+                Err(anyhow!(format!(
                     "Not all ops found: found={:?} expected={:?}",
                     found_ops, &operations_id
                 )))
@@ -348,21 +348,21 @@ impl TestChainCluster {
         node_idx: usize,
         operation_id: OperationId,
     ) -> EngineOperation {
-        expect_result::<_, _, failure::Error>(|| {
+        expect_result::<_, _, anyhow::Error>(|| {
             self.get_handle(node_idx)
                 .get_operation(operation_id)?
                 .filter(|op| op.status.is_committed())
-                .ok_or_else(|| err_msg("Operation not on node"))
+                .ok_or_else(|| anyhow!("Operation not on node"))
         })
     }
 
     pub fn wait_operations_committed(&self, node_idx: usize, operations_id: &[OperationId]) {
-        expect_result::<_, _, failure::Error>(|| {
+        expect_result::<_, _, anyhow::Error>(|| {
             for operation_id in operations_id {
                 self.get_handle(node_idx)
                     .get_operation(*operation_id)?
                     .filter(|op| op.status.is_committed())
-                    .ok_or_else(|| err_msg("Operation not on node"))?;
+                    .ok_or_else(|| anyhow!("Operation not on node"))?;
             }
 
             Ok(())
@@ -370,11 +370,11 @@ impl TestChainCluster {
     }
 
     pub fn wait_operations_exist<I>(&self, node_idx: usize, operations_id: &[OperationId]) {
-        expect_result::<_, _, failure::Error>(|| {
+        expect_result::<_, _, anyhow::Error>(|| {
             for operation_id in operations_id {
                 self.get_handle(node_idx)
                     .get_operation(*operation_id)?
-                    .ok_or_else(|| err_msg("Operation not on node"))?;
+                    .ok_or_else(|| anyhow!("Operation not on node"))?;
             }
 
             Ok(())
@@ -382,19 +382,19 @@ impl TestChainCluster {
     }
 
     pub fn wait_next_block_commit(&self, node_idx: usize) -> Vec<BlockOffset> {
-        expect_result::<_, _, failure::Error>(|| {
+        expect_result::<_, _, anyhow::Error>(|| {
             let events = self.get_received_events(node_idx);
             let offsets = extract_blocks_events(&events);
 
             if !offsets.is_empty() {
                 Ok(offsets)
             } else {
-                Err(failure::err_msg("No block found".to_string()))
+                Err(anyhow!("No block found".to_string()))
             }
         })
     }
 
-    pub fn restart_node(&mut self, node_idx: usize) -> Result<(), failure::Error> {
+    pub fn restart_node(&mut self, node_idx: usize) -> anyhow::Result<()> {
         self.stop_node(node_idx);
         self.create_node(node_idx)?;
         self.start_engine(node_idx);

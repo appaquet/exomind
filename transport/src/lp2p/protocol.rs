@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 use std::{io, iter};
 
 use byteorder::{ByteOrder, LittleEndian};
-use failure::_core::task::{Context, Poll};
 use futures::future::BoxFuture;
 use futures::prelude::*;
 use futures::{AsyncReadExt, AsyncWriteExt};
@@ -12,6 +11,7 @@ use libp2p::swarm::protocols_handler::{
     KeepAlive, ProtocolsHandler, ProtocolsHandlerEvent, ProtocolsHandlerUpgrErr, SubstreamProtocol,
 };
 use libp2p::swarm::NegotiatedSubstream;
+use std::task::{Context, Poll};
 
 const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024; // 10MB
 

@@ -61,12 +61,13 @@ impl<T: Serialize + DeserializeOwned> SimpleStore<T> for JsonDiskStore<T> {
 #[cfg(test)]
 mod test {
     use serde_derive::{Deserialize, Serialize};
+    use tempfile::tempdir;
 
     use super::*;
 
     #[test]
     fn test_not_dir() {
-        let dir = tempdir::TempDir::new("test").unwrap();
+        let dir = tempdir().unwrap();
         let store = JsonDiskStore::<String>::new(dir.path());
         assert!(store.is_err());
 
@@ -77,7 +78,7 @@ mod test {
 
     #[test]
     fn test_write_read() {
-        let dir = tempdir::TempDir::new("test").unwrap();
+        let dir = tempdir().unwrap();
         let file = dir.path().join("store");
         let store = JsonDiskStore::<TestStruct>::new(&file).unwrap();
 

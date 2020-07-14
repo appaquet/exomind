@@ -127,7 +127,7 @@ mod tests {
     use crate::futures::*;
 
     #[test]
-    fn on_all_handles_dropped() -> Result<(), failure::Error> {
+    fn on_all_handles_dropped() -> anyhow::Result<()> {
         let rt = Runtime::new()?;
         let set = HandleSet::new();
 
@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn set_started() -> Result<(), failure::Error> {
+    fn set_started() -> anyhow::Result<()> {
         let rt = Runtime::new()?;
         let set = HandleSet::new();
 
@@ -178,7 +178,7 @@ mod tests {
     }
 
     #[test]
-    fn set_dropped() -> Result<(), failure::Error> {
+    fn set_dropped() -> anyhow::Result<()> {
         let set = HandleSet::new();
 
         let handle = set.get_handle();

@@ -1,8 +1,5 @@
 #![deny(bare_trait_objects)]
 
-#[macro_use]
-extern crate failure;
-
 #[allow(unused_imports)]
 #[macro_use]
 extern crate log;

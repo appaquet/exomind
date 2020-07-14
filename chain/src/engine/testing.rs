@@ -20,7 +20,7 @@ use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use std::borrow::Borrow;
 use std::collections::HashMap;
-use tempdir::TempDir;
+use tempfile::TempDir;
 
 pub(super) struct EngineTestCluster {
     pub cells: Vec<FullCell>,
@@ -67,7 +67,7 @@ impl EngineTestCluster {
             nodes_index.insert(local_node.id().clone(), i);
             nodes.push(local_node.clone());
 
-            let tempdir = TempDir::new("test_cluster").unwrap();
+            let tempdir = tempfile::tempdir().unwrap();
 
             let clock = Clock::new_mocked();
             clocks.push(clock.clone());

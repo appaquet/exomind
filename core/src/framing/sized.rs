@@ -183,7 +183,7 @@ mod tests {
     use std::io::Cursor;
 
     #[test]
-    fn can_build_and_read_sized_inner() -> Result<(), failure::Error> {
+    fn can_build_and_read_sized_inner() -> anyhow::Result<()> {
         let inner = vec![8u8; 100];
         let builder = SizedFrameBuilder::new(inner.clone());
         assert_builder_equals(&builder)?;
@@ -209,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn can_build_and_read_unsized_inner() -> Result<(), failure::Error> {
+    fn can_build_and_read_unsized_inner() -> anyhow::Result<()> {
         // capnp builder cannot provide the size of the frame until it's serialized
         let mut capnp_builder = CapnpFrameBuilder::<block_header::Owned>::new();
         let mut msg_builder = capnp_builder.get_builder();
@@ -227,7 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn can_build_to_owned() -> Result<(), failure::Error> {
+    fn can_build_to_owned() -> anyhow::Result<()> {
         let builder = SizedFrameBuilder::new(vec![1; 10]);
 
         let frame = builder.as_owned_frame();
@@ -238,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    fn frame_iterator() -> Result<(), failure::Error> {
+    fn frame_iterator() -> anyhow::Result<()> {
         let buffer = {
             let buffer = Vec::new();
             let mut buffer_cursor = Cursor::new(buffer);
@@ -266,7 +266,7 @@ mod tests {
     }
 
     #[test]
-    fn from_next_offset() -> Result<(), failure::Error> {
+    fn from_next_offset() -> anyhow::Result<()> {
         let buffer = {
             let buffer = Vec::new();
             let mut buffer_cursor = Cursor::new(buffer);
@@ -292,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    fn invalid_from_next_offset() -> Result<(), failure::Error> {
+    fn invalid_from_next_offset() -> anyhow::Result<()> {
         let frame1 = SizedFrameBuilder::new(vec![1u8; 10]);
         let buffer = frame1.as_bytes();
 

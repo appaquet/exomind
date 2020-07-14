@@ -531,7 +531,7 @@ pub mod tests {
     use super::*;
 
     #[test]
-    fn store_mutate_query_via_handle() -> Result<(), failure::Error> {
+    fn store_mutate_query_via_handle() -> anyhow::Result<()> {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
@@ -550,7 +550,7 @@ pub mod tests {
     }
 
     #[test]
-    fn store_mutate_return_entities() -> Result<(), failure::Error> {
+    fn store_mutate_return_entities() -> anyhow::Result<()> {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
@@ -567,7 +567,7 @@ pub mod tests {
     }
 
     #[test]
-    fn query_error_propagating() -> Result<(), failure::Error> {
+    fn query_error_propagating() -> anyhow::Result<()> {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
@@ -578,7 +578,7 @@ pub mod tests {
     }
 
     #[test]
-    fn mutation_error_propagating() -> Result<(), failure::Error> {
+    fn mutation_error_propagating() -> anyhow::Result<()> {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
@@ -589,7 +589,7 @@ pub mod tests {
     }
 
     #[test]
-    fn watched_query() -> Result<(), failure::Error> {
+    fn watched_query() -> anyhow::Result<()> {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
@@ -633,7 +633,7 @@ pub mod tests {
     }
 
     #[test]
-    fn watched_query_failure() -> Result<(), failure::Error> {
+    fn watched_query_failure() -> anyhow::Result<()> {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 

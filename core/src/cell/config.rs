@@ -235,7 +235,7 @@ mod tests {
     use crate::tests_utils::root_test_fixtures_path;
 
     #[test]
-    fn parse_node_config_yaml_ser_deser() -> Result<(), failure::Error> {
+    fn parse_node_config_yaml_ser_deser() -> anyhow::Result<()> {
         let conf_ser = LocalNodeConfig {
             keypair: "keypair".to_string(),
             public_key: "pk".to_string(),
@@ -275,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_node_config_example_yaml_file() -> Result<(), failure::Error> {
+    fn parse_node_config_example_yaml_file() -> anyhow::Result<()> {
         let config_path = root_test_fixtures_path("examples/config.yaml");
         let config = node_config_from_yaml_file(config_path)?;
 
@@ -308,7 +308,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_node_config_from_yaml() -> Result<(), failure::Error> {
+    pub fn parse_node_config_from_yaml() -> anyhow::Result<()> {
         let yaml = r#"
 name: node name
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
@@ -378,7 +378,7 @@ cells:
     }
 
     #[test]
-    pub fn parse_node_optional_fields_yaml() -> Result<(), failure::Error> {
+    pub fn parse_node_optional_fields_yaml() -> anyhow::Result<()> {
         let yaml = r#"
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
 public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP

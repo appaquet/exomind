@@ -11,4 +11,5 @@ crate-type = ["cdylib"]
 exocore-core = { path = "../../core", features = ["runtime", "logger"] }
 exocore-transport = { path = "../../transport", features = ["libp2p-full"] }
 exocore-index = { path = "../../index" }
-failure = "0.1"
+thiserror = "1.0"
+anyhow = "1.0"

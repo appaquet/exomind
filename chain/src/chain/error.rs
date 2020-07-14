@@ -1,37 +1,34 @@
-use crate::block;
-use exocore_core::capnp;
-
-#[derive(Clone, Debug, Fail)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
-    #[fail(display = "Block related error: {}", _0)]
-    Block(#[fail(cause)] block::Error),
+    #[error("Block related error: {0}")]
+    Block(#[from] crate::block::Error),
 
-    #[fail(display = "The store is in an unexpected state: {}", _0)]
+    #[error("The store is in an unexpected state: {0}")]
     UnexpectedState(String),
 
-    #[fail(display = "The store has an integrity problem: {}", _0)]
+    #[error("The store has an integrity problem: {0}")]
     Integrity(String),
 
-    #[fail(display = "A segment has reached its full capacity")]
+    #[error("A segment has reached its full capacity")]
     SegmentFull,
 
-    #[fail(display = "Error in capnp serialization: kind={:?} msg={}", _0, _1)]
-    Serialization(capnp::ErrorKind, String),
+    #[error("Error in capnp serialization: {0}")]
+    Serialization(#[from] exocore_core::capnp::Error),
 
-    #[fail(display = "An offset is out of the chain data: {}", _0)]
+    #[error("An offset is out of the chain data: {0}")]
     OutOfBound(String),
 
-    #[fail(display = "IO error of kind {:?}: {}", _0, _1)]
-    IO(std::io::ErrorKind, String),
+    #[error("IO error of kind {0}: {1}")]
+    IO(std::sync::Arc<std::io::Error>, String),
 
     #[cfg(feature = "directory-chain")]
-    #[fail(display = "Error in directory chain store: {}", _0)]
-    DirectoryError(#[fail(cause)] super::directory::DirectoryError),
+    #[error("Error in directory chain store: {0}")]
+    DirectoryError(#[from] super::directory::DirectoryError),
 
-    #[fail(display = "Try to lock a mutex that was poisoned")]
+    #[error("Try to lock a mutex that was poisoned")]
     Poisoned,
 
-    #[fail(display = "An error occurred: {}", _0)]
+    #[error("An error occurred: {0}")]
     Other(String),
 }
 
@@ -42,29 +39,14 @@ impl Error {
             _ => false,
         }
     }
-}
 
-impl From<block::Error> for Error {
-    fn from(err: block::Error) -> Self {
-        Error::Block(err)
+    pub fn new_io<S: Into<String>>(io: std::io::Error, msg: S) -> Error {
+        Error::IO(std::sync::Arc::new(io), msg.into())
     }
 }
 
 impl<T> From<std::sync::PoisonError<T>> for Error {
     fn from(_err: std::sync::PoisonError<T>) -> Self {
         Error::Poisoned
-    }
-}
-
-#[cfg(feature = "directory-chain")]
-impl From<super::directory::DirectoryError> for Error {
-    fn from(err: super::directory::DirectoryError) -> Self {
-        Error::DirectoryError(err)
-    }
-}
-
-impl From<capnp::Error> for Error {
-    fn from(err: capnp::Error) -> Self {
-        Error::Serialization(err.kind, err.description)
     }
 }

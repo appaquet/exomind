@@ -1,6 +1,6 @@
-use failure::_core::pin::Pin;
-use failure::_core::task::{Context, Poll};
 use futures::{Stream, StreamExt};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
 /// Wraps a stream to batch all available capped number of items.
 ///

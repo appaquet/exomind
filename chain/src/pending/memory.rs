@@ -241,7 +241,7 @@ mod test {
     use exocore_core::cell::LocalNode;
 
     #[test]
-    fn put_and_retrieve_operation() -> Result<(), failure::Error> {
+    fn put_and_retrieve_operation() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let mut store = MemoryPendingStore::new();
 
@@ -272,7 +272,7 @@ mod test {
     }
 
     #[test]
-    fn operations_iteration() -> Result<(), failure::Error> {
+    fn operations_iteration() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let mut store = MemoryPendingStore::new();
 
@@ -298,7 +298,7 @@ mod test {
     }
 
     #[test]
-    fn operations_delete() -> Result<(), failure::Error> {
+    fn operations_delete() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let mut store = MemoryPendingStore::new();
 
@@ -327,7 +327,7 @@ mod test {
     }
 
     #[test]
-    fn operation_commit_status() -> Result<(), failure::Error> {
+    fn operation_commit_status() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let mut store = MemoryPendingStore::new();
 

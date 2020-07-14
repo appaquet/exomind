@@ -17,7 +17,8 @@ local-store = ["tantivy", "exocore-chain/engine", "crc"]
 exocore-chain = { path = "../chain", default-features = false }
 exocore-transport = { path = "../transport", default-features = false }
 exocore-core = { path = "../core" }
-failure = "0.1"
+thiserror = "1.0"
+anyhow = "1.0"
 itertools = "0.9"
 log = "0.4"
 futures = "0.3"
@@ -31,6 +32,6 @@ tantivy = { version = "0.12", optional = true }
 crc = { version = "1.8", optional = true }
 
 [dev-dependencies]
-tempdir = "0.3"
+tempfile = "3.1"
 exocore-chain = { path = "../chain", features = ["tests-utils"] }
 exocore-core = { path = "../core", features = ["tests-utils"] }
