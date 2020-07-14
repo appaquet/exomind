@@ -125,16 +125,33 @@ pub trait Block {
         &self,
         operation_id: OperationId,
     ) -> Result<Option<crate::operation::OperationFrame<&[u8]>>, Error> {
-        // TODO: Implement binary search in operations, since they are sorted: https://github.com/appaquet/exocore/issues/43
-        let operation = self.operations_iter()?.find(|operation| {
-            if let Ok(operation_reader) = operation.get_reader() {
-                operation_reader.get_operation_id() == operation_id
-            } else {
-                false
-            }
-        });
+        let block_header = self.header().get_reader()?;
+        let operations_header: Vec<BlockOperationHeader> = block_header
+            .get_operations_header()?
+            .iter()
+            .map(|reader| BlockOperationHeader::from_reader(&reader))
+            .collect();
 
-        Ok(operation)
+        let operation_index =
+            operations_header.binary_search_by_key(&operation_id, |header| header.operation_id);
+
+        if let Ok(operation_index) = operation_index {
+            if operation_index > operations_header.len() {
+                return Err(Error::OutOfBound(format!(
+                    "Operation id={} of block={} had an invalid index {} out of {} operations",
+                    operation_id,
+                    self.offset(),
+                    operation_index,
+                    operations_header.len()
+                )));
+            }
+
+            let frame = operations_header[operation_index].read_frame(self.operations_data())?;
+
+            Ok(Some(frame))
+        } else {
+            Ok(None)
+        }
     }
 
     fn validate(&self) -> Result<(), Error> {
@@ -220,15 +237,11 @@ impl<'a> Iterator for BlockOperationsIterator<'a> {
         let header = &self.operations_header[self.index];
         self.index += 1;
 
-        let offset_from = header.data_offset as usize;
-        let offset_to = header.data_offset as usize + header.data_size as usize;
-
-        let frame_res =
-            crate::operation::read_operation_frame(&self.operations_data[offset_from..offset_to]);
+        let frame_res = header.read_frame(self.operations_data);
         match frame_res {
             Ok(frame) => Some(frame),
             Err(err) => {
-                self.last_error = Some(Error::Operation(err));
+                self.last_error = Some(err);
                 None
             }
         }
@@ -594,6 +607,19 @@ impl BlockOperationHeader {
         builder.set_operation_id(self.operation_id);
         builder.set_data_size(self.data_size);
         builder.set_data_offset(self.data_offset);
+    }
+
+    fn read_frame<'a>(
+        &self,
+        operations_data: &'a [u8],
+    ) -> Result<crate::operation::OperationFrame<&'a [u8]>, Error> {
+        let offset_from = self.data_offset as usize;
+        let offset_to = self.data_offset as usize + self.data_size as usize;
+
+        let frame =
+            crate::operation::read_operation_frame(&operations_data[offset_from..offset_to])?;
+
+        Ok(frame)
     }
 }
 
