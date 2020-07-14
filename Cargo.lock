@@ -574,7 +574,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#8e1e26740cbc0f5f5cadfaa0d62b051dd609da29"
+source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -585,31 +585,32 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#8e1e26740cbc0f5f5cadfaa0d62b051dd609da29"
+source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
 dependencies = [
+ "anyhow",
  "byteorder",
  "exocore-core",
  "exocore-transport",
- "failure",
  "futures 0.3.5",
  "itertools 0.9.0",
  "log",
  "serde",
  "serde_derive",
+ "thiserror",
 ]
 
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#8e1e26740cbc0f5f5cadfaa0d62b051dd609da29"
+source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
 dependencies = [
+ "anyhow",
  "bs58",
  "byteorder",
  "bytes 0.5.5",
  "capnp",
  "capnpc",
  "chrono",
- "failure",
  "futures 0.3.5",
  "libp2p",
  "log",
@@ -625,6 +626,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_yaml",
+ "thiserror",
  "tokio 0.2.21",
  "uuid 0.8.1",
  "wasm-bindgen",
@@ -635,33 +637,35 @@ dependencies = [
 [[package]]
 name = "exocore-index"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#8e1e26740cbc0f5f5cadfaa0d62b051dd609da29"
+source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
 dependencies = [
+ "anyhow",
  "bytes 0.5.5",
  "chrono",
  "exocore-chain",
  "exocore-core",
  "exocore-transport",
- "failure",
  "futures 0.3.5",
  "itertools 0.9.0",
  "log",
  "prost",
  "smallvec 1.4.1",
+ "thiserror",
 ]
 
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#8e1e26740cbc0f5f5cadfaa0d62b051dd609da29"
+source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
 dependencies = [
+ "anyhow",
  "byteorder",
  "exocore-core",
- "failure",
  "futures 0.3.5",
  "libp2p",
  "log",
  "pin-project",
+ "thiserror",
  "wasm-bindgen",
 ]
 
