@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 set -e
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$CUR_DIR"
 
 EXOMIND_ROOT=$CUR_DIR/../../
 EXOMIND_WEB_ROOT="$EXOMIND_ROOT/web"
 
+rm -rf $EXOMIND_WEB_ROOT/protos
+mkdir -p $EXOMIND_WEB_ROOT/protos
+
 # Generate protos
 PROTOC_GEN_TS_PATH="$EXOMIND_WEB_ROOT/node_modules/.bin/protoc-gen-ts"
-OUT_DIR="./proto"
 $EXOMIND_WEB_ROOT/node_modules/.bin/pbjs \
     -t static-module \
-    -w corejs \
+    -w es6 \
     --sparse \
     -o $EXOMIND_WEB_ROOT/src/protos/index.js \
     -p "$EXOMIND_ROOT/protos/" \
