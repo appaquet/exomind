@@ -36,7 +36,7 @@
     "protobufjs": "^6.10.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "sanitize-html": "^1.26.0",
+    "sanitize-html": "^1.27.1",
     "squire-rte": "^1.10.1",
     "webpack": "^4.42.1"
   },
