@@ -855,7 +855,7 @@ export const exomind = $root.exomind = (() => {
             Account.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.Account(), key;
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.Account(), key, value;
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
@@ -879,12 +879,26 @@ export const exomind = $root.exomind = (() => {
                             message.scopes.push(reader.int32());
                         break;
                     case 5:
-                        reader.skip().pos++;
                         if (message.data === $util.emptyObject)
                             message.data = {};
-                        key = reader.string();
-                        reader.pos++;
-                        message.data[key] = reader.string();
+                        let end2 = reader.uint32() + reader.pos;
+                        key = "";
+                        value = "";
+                        while (reader.pos < end2) {
+                            let tag2 = reader.uint32();
+                            switch (tag2 >>> 3) {
+                            case 1:
+                                key = reader.string();
+                                break;
+                            case 2:
+                                value = reader.string();
+                                break;
+                            default:
+                                reader.skipType(tag2 & 7);
+                                break;
+                            }
+                        }
+                        message.data[key] = value;
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -2800,7 +2814,7 @@ export const exomind = $root.exomind = (() => {
             EmailAttachment.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.EmailAttachment(), key;
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.EmailAttachment(), key, value;
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
@@ -2820,12 +2834,26 @@ export const exomind = $root.exomind = (() => {
                         message.inlinePlaceholder = reader.string();
                         break;
                     case 6:
-                        reader.skip().pos++;
                         if (message.data === $util.emptyObject)
                             message.data = {};
-                        key = reader.string();
-                        reader.pos++;
-                        message.data[key] = reader.string();
+                        let end2 = reader.uint32() + reader.pos;
+                        key = "";
+                        value = "";
+                        while (reader.pos < end2) {
+                            let tag2 = reader.uint32();
+                            switch (tag2 >>> 3) {
+                            case 1:
+                                key = reader.string();
+                                break;
+                            case 2:
+                                value = reader.string();
+                                break;
+                            default:
+                                reader.skipType(tag2 & 7);
+                                break;
+                            }
+                        }
+                        message.data[key] = value;
                         break;
                     default:
                         reader.skipType(tag & 7);

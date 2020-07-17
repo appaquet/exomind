@@ -17,14 +17,17 @@ message EntityQuery {
         TestPredicate test = 99;
     }
 
-    /// Query paging requested
+    /// Optional projection on traits and fields to be returned.
+    repeated Projection projection = 13;
+
+    /// Query paging requested.
     Paging paging = 5;
 
-    /// Query ordering
+    /// Query ordering.
     Ordering ordering = 6;
 
-    /// If true, only return summary
-    bool summary = 7;
+    /// If true, only return summary.
+    bool summary = 7 [deprecated = true];
 
     /// Optional watch token if this query is to be used for watching.
     uint64 watch_token = 8;
@@ -35,6 +38,19 @@ message EntityQuery {
     /// Include deleted mutations matches. Can be used to return recently modified entities that
     /// also include deletions.
     bool include_deleted = 12;
+}
+
+message Projection {
+    /// If specified, only return the matching Protobuf package prefix.
+    repeated string package_prefix = 1;
+
+    /// If specified, only return fields in traits that have `detail_level` value lower
+    /// than this value. See `options.proto`.`detail_level`
+    uint32 maximum_detail_level = 2;
+
+    /// If specified, only return fields in traits that have `detail_level` value higher
+    /// than this value. See `options.proto`.`detail_level`
+    uint32 minimum_detail_level = 3;
 }
 
 /// Query entities by text match on all indexed fields across all traits.
