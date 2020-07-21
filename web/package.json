@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "",
   "keywords": [],
-  "license": "AGPL-3.0",
+  "license": "Apache-2.0",
   "repository": "https://github.com/appaquet/exomind",
   "main": "index.js",
   "scripts": {
