@@ -626,7 +626,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "thiserror",
- "tokio 0.2.21",
+ "tokio 0.2.22",
  "uuid 0.8.1",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -692,7 +692,7 @@ dependencies = [
  "mailparse",
  "prost-types",
  "serde_json",
- "tokio 0.2.21",
+ "tokio 0.2.22",
  "yup-oauth2",
 ]
 
@@ -995,7 +995,7 @@ version = "0.1.0"
 source = "git+https://github.com/google-apis-rs/generator#a8354755d72b900ed490ee3beba590802e0b2acf"
 dependencies = [
  "hyper 0.13.7",
- "tokio 0.2.21",
+ "tokio 0.2.22",
  "yup-oauth2",
 ]
 
@@ -1059,7 +1059,7 @@ dependencies = [
  "http 0.2.1",
  "indexmap",
  "slab",
- "tokio 0.2.21",
+ "tokio 0.2.22",
  "tokio-util",
  "tracing",
 ]
@@ -1219,7 +1219,7 @@ dependencies = [
  "pin-project",
  "socket2",
  "time",
- "tokio 0.2.21",
+ "tokio 0.2.22",
  "tower-service",
  "tracing",
  "want 0.3.0",
@@ -1238,7 +1238,7 @@ dependencies = [
  "log",
  "rustls 0.17.0",
  "rustls-native-certs",
- "tokio 0.2.21",
+ "tokio 0.2.22",
  "tokio-rustls",
  "webpki",
 ]
@@ -1519,7 +1519,7 @@ dependencies = [
  "libp2p-core",
  "log",
  "socket2",
- "tokio 0.2.21",
+ "tokio 0.2.22",
 ]
 
 [[package]]
@@ -2901,9 +2901,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "0.2.21"
+version = "0.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d099fa27b9702bed751524694adbe393e18b36b204da91eb1cbbbbb4a5ee2d58"
+checksum = "5d34ca54d84bf2b5b4d7d31e901a8464f7b60ac145a284fba25ceb801f2ddccd"
 dependencies = [
  "bytes 0.5.6",
  "fnv",
@@ -2998,7 +2998,7 @@ checksum = "15cb62a0d2770787abc96e99c1cd98fcf17f94959f3af63ca85bdfb203f051b4"
 dependencies = [
  "futures-core",
  "rustls 0.17.0",
- "tokio 0.2.21",
+ "tokio 0.2.22",
  "webpki",
 ]
 
@@ -3066,7 +3066,7 @@ dependencies = [
  "futures-sink",
  "log",
  "pin-project-lite",
- "tokio 0.2.21",
+ "tokio 0.2.22",
 ]
 
 [[package]]
@@ -3532,7 +3532,7 @@ dependencies = [
  "seahash",
  "serde",
  "serde_json",
- "tokio 0.2.21",
+ "tokio 0.2.22",
  "url 2.1.1",
 ]
 
