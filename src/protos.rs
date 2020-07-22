@@ -11,7 +11,7 @@ pub(crate) mod generated {
 
 pub mod base {
     pub use super::generated::exomind::base::*;
-    use exocore::core::protos::prost::NamedMessage;
+    use exocore::core::protos::message::NamedMessage;
 
     impl NamedMessage for Collection {
         fn full_name() -> &'static str {
