@@ -72,7 +72,7 @@ impl Registry {
         full_name: String,
         msg_descriptor: DescriptorProto,
     ) -> Arc<ReflectMessageDescriptor> {
-        let mut fields = Vec::new();
+        let mut fields = HashMap::new();
         for field in msg_descriptor.get_field() {
             let field_type = match field.get_field_type() {
                 FieldDescriptorProto_Type::TYPE_STRING => FieldType::String,
@@ -91,21 +91,27 @@ impl Registry {
                 _ => continue,
             };
 
-            fields.push(FieldDescriptor {
-                id: field.get_number() as u32,
-                name: field.get_name().to_string(),
-                field_type,
-                indexed_flag: Registry::field_has_option(field, 1373), /* see exocore/index/
-                                                                        * options.proto */
-                sorted_flag: Registry::field_has_option(field, 1374),
-                text_flag: Registry::field_has_option(field, 1375),
-            })
+            let id = field.get_number() as u32;
+            fields.insert(
+                id,
+                FieldDescriptor {
+                    id,
+                    name: field.get_name().to_string(),
+                    field_type,
+
+                    // see exocore/index/options.proto
+                    indexed_flag: Registry::field_has_option(field, 1373),
+                    sorted_flag: Registry::field_has_option(field, 1374),
+                    text_flag: Registry::field_has_option(field, 1375),
+                    groups: Registry::get_field_u32s_option(field, 1376),
+                },
+            );
         }
 
         let descriptor = Arc::new(ReflectMessageDescriptor {
             name: full_name.clone(),
-            message: msg_descriptor,
             fields,
+            message: msg_descriptor,
         });
 
         let mut message_descriptors = self.message_descriptors.write().unwrap();
@@ -150,10 +156,18 @@ impl Registry {
     }
 
     fn field_has_option(field: &FieldDescriptorProto, option_field_id: u32) -> bool {
-        if let Some(indexed_value) = field.get_options().unknown_fields.get(option_field_id) {
-            ProtobufTypeBool::get_from_unknown(indexed_value).unwrap_or(false)
+        if let Some(unknown_value) = field.get_options().unknown_fields.get(option_field_id) {
+            ProtobufTypeBool::get_from_unknown(unknown_value).unwrap_or(false)
         } else {
             false
+        }
+    }
+
+    fn get_field_u32s_option(field: &FieldDescriptorProto, option_field_id: u32) -> Vec<u32> {
+        if let Some(unknown_value) = field.get_options().unknown_fields.get(option_field_id) {
+            unknown_value.varint.iter().map(|&v| v as u32).collect()
+        } else {
+            vec![]
         }
     }
 }
@@ -177,5 +191,28 @@ mod tests {
 
         let desc = reg.message_descriptors();
         assert!(desc.len() > 20);
+    }
+
+    #[test]
+    fn field_options() -> anyhow::Result<()> {
+        let registry = Registry::new_with_exocore_types();
+
+        let descriptor = registry.get_message_descriptor("exocore.test.TestMessage")?;
+
+        // see `protos/exocore/test/test.proto`
+        assert_eq!(descriptor.fields.get(&1).unwrap().text_flag, true);
+        assert_eq!(descriptor.fields.get(&2).unwrap().text_flag, false);
+
+        assert_eq!(descriptor.fields.get(&8).unwrap().indexed_flag, true);
+        assert_eq!(descriptor.fields.get(&9).unwrap().indexed_flag, false);
+
+        assert_eq!(descriptor.fields.get(&18).unwrap().sorted_flag, true);
+        assert_eq!(descriptor.fields.get(&11).unwrap().sorted_flag, false);
+
+        assert!(descriptor.fields.get(&19).unwrap().groups.is_empty());
+        assert_eq!(descriptor.fields.get(&20).unwrap().groups, vec![1]);
+        assert_eq!(descriptor.fields.get(&21).unwrap().groups, vec![1, 2]);
+
+        Ok(())
     }
 }

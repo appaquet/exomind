@@ -25,19 +25,20 @@ pub struct Reference {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityQuery {
-    //// Query paging requested
+    //// Optional projections on traits and fields to be returned.
+    #[prost(message, repeated, tag = "7")]
+    pub projections: ::std::vec::Vec<Projection>,
+    //// Query paging requested.
     #[prost(message, optional, tag = "5")]
     pub paging: ::std::option::Option<Paging>,
-    //// Query ordering
+    //// Query ordering.
     #[prost(message, optional, tag = "6")]
     pub ordering: ::std::option::Option<Ordering>,
-    //// If true, only return summary
-    #[prost(bool, tag = "7")]
-    pub summary: bool,
     //// Optional watch token if this query is to be used for watching.
     #[prost(uint64, tag = "8")]
     pub watch_token: u64,
-    //// If specified, if results from server matches this hash, only a summary will be returned.
+    //// If specified, if results from server matches this hash, results will be empty with the
+    //// `skipped_hash` field set to `true`.
     #[prost(uint64, tag = "9")]
     pub result_hash: u64,
     //// Include deleted mutations matches. Can be used to return recently modified entities that
@@ -65,6 +66,23 @@ pub mod entity_query {
         #[prost(message, tag = "99")]
         Test(super::TestPredicate),
     }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Projection {
+    //// If specified, a prefix match will be done against traits' Protobuf full name
+    //// (`some.package.Name`). If ends with a dollar sign "$", an exact match is required (ex:
+    //// `some.package.Name$` will only match this message)
+    #[prost(string, repeated, tag = "1")]
+    pub package: ::std::vec::Vec<std::string::String>,
+    //// Skips the trait if the projection matches.
+    #[prost(bool, tag = "2")]
+    pub skip: bool,
+    //// If specified, only return these fields.
+    #[prost(uint32, repeated, tag = "4")]
+    pub field_ids: ::std::vec::Vec<u32>,
+    //// If specified, only return fields annotated with `options.proto`.`field_group_id`
+    #[prost(uint32, repeated, tag = "5")]
+    pub field_group_ids: ::std::vec::Vec<u32>,
 }
 //// Query entities by text match on all indexed fields across all traits.
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -225,16 +243,24 @@ pub mod ordering_value {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityResults {
+    //// Entities matching query.
     #[prost(message, repeated, tag = "1")]
     pub entities: ::std::vec::Vec<EntityResult>,
+    //// If query specified a `result_hash`, this is set to `true` if the results
+    //// had the same hash has the specified and that `entities` were set to empty.
     #[prost(bool, tag = "2")]
-    pub summary: bool,
+    pub skipped_hash: bool,
+    //// Estimated number of entities matching, based on number of matching mutations.
     #[prost(uint32, tag = "3")]
     pub estimated_count: u32,
+    //// Paging token of the current results.
     #[prost(message, optional, tag = "4")]
     pub current_page: ::std::option::Option<Paging>,
+    //// Paging token of the next page of results.
     #[prost(message, optional, tag = "5")]
     pub next_page: ::std::option::Option<Paging>,
+    //// Hash of the results. Can be used to prevent receiving same results if they haven't
+    //// changed by using the `result_hash` field on the query.
     #[prost(uint64, tag = "6")]
     pub hash: u64,
 }

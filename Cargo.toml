@@ -7,7 +7,7 @@ edition = "2018"
 keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 categories = ["database-implementations", "command-line-interface", "wasm", "web-programming"]
 repository = "https://github.com/appaquet/exocore"
-license = "MIT"
+license = "Apache-2.0"
 
 [features]
 default = ["core-runtime", "core-logger", "transport-libp2p", "index-local-store", "chain-engine", "chain-directory-chain", "chain-memory-pending"]
@@ -49,3 +49,7 @@ members = [
 exclude = [
     "3rd"
 ]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

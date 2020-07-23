@@ -3,7 +3,7 @@
   "name": "exocore",
   "version": "0.1.0",
   "repository": "https://github.com/appaquet/exocore",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "protos": "./clients/web/tools/generate_protos.sh",
     "build": "./clients/web/tools/build.sh --release",

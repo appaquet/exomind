@@ -213,7 +213,7 @@ fn build_dynamic_fields_tantivy_schema(
         let mut u64_fast_fields_count = 0;
         let mut field_mapping = HashMap::new();
 
-        for field in &message_descriptor.fields {
+        for field in message_descriptor.fields.values() {
             if !field.indexed_flag && !field.text_flag && !field.sorted_flag {
                 continue;
             }

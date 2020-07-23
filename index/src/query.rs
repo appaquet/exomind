@@ -10,8 +10,10 @@ use exocore_core::protos::generated::exocore_index::{
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
 use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
 use exocore_core::protos::{
-    index::{AllPredicate, IdsPredicate, OperationsPredicate},
-    prost::{NamedMessage, ProstMessageExt},
+    index::{AllPredicate, IdsPredicate, OperationsPredicate, Projection},
+    message::NamedMessage,
+    prost::ProstMessageExt,
+    reflect::FieldId,
 };
 
 use crate::entity::{EntityId, TraitId};
@@ -70,15 +72,7 @@ impl QueryBuilder {
     }
 
     pub fn with_trait<T: NamedMessage>() -> QueryBuilder {
-        QueryBuilder {
-            query: EntityQuery {
-                predicate: Some(entity_query::Predicate::Trait(TraitPredicate {
-                    trait_name: T::full_name().to_string(),
-                    ..Default::default()
-                })),
-                ..Default::default()
-            },
-        }
+        Self::with_trait_name(T::full_name())
     }
 
     pub fn with_trait_name_query<T: Into<String>>(
@@ -97,15 +91,7 @@ impl QueryBuilder {
     }
 
     pub fn with_trait_query<T: NamedMessage>(query: TraitQuery) -> QueryBuilder {
-        QueryBuilder {
-            query: EntityQuery {
-                predicate: Some(entity_query::Predicate::Trait(TraitPredicate {
-                    trait_name: T::full_name().into(),
-                    query: Some(query),
-                })),
-                ..Default::default()
-            },
-        }
+        Self::with_trait_name_query(T::full_name(), query)
     }
 
     pub fn with_entity_id<E: Into<String>>(id: E) -> QueryBuilder {
@@ -173,12 +159,17 @@ impl QueryBuilder {
         self
     }
 
-    pub fn only_summary(mut self) -> Self {
-        self.query.summary = true;
+    pub fn with_projection<P: Into<ProjectionWrapper>>(mut self, projection: P) -> Self {
+        self.query.projections.push(projection.into().0);
         self
     }
 
-    pub fn only_summary_if_equals(mut self, result_hash: ResultHash) -> Self {
+    pub fn with_projections<P: Into<ProjectionWrapper>>(mut self, projections: Vec<P>) -> Self {
+        self.query.projections = projections.into_iter().map(|p| p.into().0).collect();
+        self
+    }
+
+    pub fn skip_if_results_equals(mut self, result_hash: ResultHash) -> Self {
         self.query.result_hash = result_hash;
         self
     }
@@ -291,6 +282,59 @@ impl TraitQueryBuilder {
     }
 }
 
+pub struct ProjectionBuilder {
+    projection: Projection,
+}
+
+impl ProjectionBuilder {
+    pub fn for_package_prefix<S: Into<String>>(package: S) -> ProjectionBuilder {
+        ProjectionBuilder {
+            projection: Projection {
+                package: vec![package.into()],
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn for_trait_name<S: Into<String>>(trait_name: S) -> ProjectionBuilder {
+        ProjectionBuilder {
+            projection: Projection {
+                package: vec![format!("{}$", trait_name.into())],
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn for_trait<T: NamedMessage>() -> ProjectionBuilder {
+        Self::for_trait_name(T::full_name())
+    }
+
+    pub fn for_all() -> ProjectionBuilder {
+        ProjectionBuilder {
+            projection: Default::default(),
+        }
+    }
+
+    pub fn skip(mut self) -> ProjectionBuilder {
+        self.projection.skip = true;
+        self
+    }
+
+    pub fn return_fields(mut self, field_ids: Vec<FieldId>) -> ProjectionBuilder {
+        self.projection.field_ids = field_ids;
+        self
+    }
+
+    pub fn return_field_groups(mut self, field_groups: Vec<FieldId>) -> ProjectionBuilder {
+        self.projection.field_group_ids = field_groups;
+        self
+    }
+
+    pub fn build(self) -> Projection {
+        self.projection
+    }
+}
+
 pub struct FieldPredicateValueWrapper(trait_field_predicate::Value);
 
 impl Into<FieldPredicateValueWrapper> for EntityId {
@@ -340,6 +384,20 @@ impl Into<ReferencePredicateWrapper> for (&str, &str) {
             entity_id: self.0.to_string(),
             trait_id: self.1.to_string(),
         })
+    }
+}
+
+pub struct ProjectionWrapper(Projection);
+
+impl Into<ProjectionWrapper> for Projection {
+    fn into(self) -> ProjectionWrapper {
+        ProjectionWrapper(self)
+    }
+}
+
+impl Into<ProjectionWrapper> for ProjectionBuilder {
+    fn into(self) -> ProjectionWrapper {
+        ProjectionWrapper(self.build())
     }
 }
 

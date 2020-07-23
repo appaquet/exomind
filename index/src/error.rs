@@ -33,8 +33,8 @@ pub enum Error {
     #[error("A protobuf field was expected, but was empty: {0}")]
     ProtoFieldExpected(&'static str),
 
-    #[error("IO error of kind {0:?}: {1}")]
-    IO(std::io::ErrorKind, String),
+    #[error("IO error of kind {0}")]
+    IO(#[source] std::sync::Arc<std::io::Error>),
 
     #[error("Error from remote index: {0}")]
     Remote(String),
@@ -61,7 +61,7 @@ pub enum Error {
 impl Error {
     pub fn is_fatal(&self) -> bool {
         match self {
-            Error::Fatal(_) | Error::Poisoned | Error::Dropped | Error::IO(_, _) => true,
+            Error::Fatal(_) | Error::Poisoned | Error::Dropped | Error::IO(_) => true,
 
             #[cfg(feature = "local-store")]
             Error::TantivyOpenDirectoryError(_) => true,
@@ -109,7 +109,7 @@ impl From<prost::EncodeError> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
-        Error::IO(err.kind(), err.to_string())
+        Error::IO(std::sync::Arc::new(err))
     }
 }
 

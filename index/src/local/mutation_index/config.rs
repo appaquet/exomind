@@ -17,8 +17,8 @@ pub struct MutationIndexConfig {
 impl Default for MutationIndexConfig {
     fn default() -> Self {
         MutationIndexConfig {
-            indexer_num_threads: None,
-            indexer_heap_size_bytes: 50_000_000,
+            indexer_num_threads: Some(1),
+            indexer_heap_size_bytes: 10_000_000,
             iterator_page_size: 50,
 
             dynamic_reference_fields: 5,

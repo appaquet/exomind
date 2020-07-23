@@ -278,7 +278,7 @@ fn search_query_by_trait_type() -> anyhow::Result<()> {
         operation_id: 1,
         entity_id: "entity_id1".to_string(),
         trt: Trait {
-            id: "trt1".to_string(),
+            id: "trait1".to_string(),
             message: Some(
                 TestMessage {
                     string1: "Foo Bar".to_string(),
@@ -346,12 +346,29 @@ fn search_query_by_trait_type() -> anyhow::Result<()> {
     let query = Q::with_trait::<TestMessage>().build();
     let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
-    assert!(find_put_trait(&res, "trt1").is_some());
+    let trait1 = find_put_trait(&res, "trait1").unwrap();
+    match &trait1.mutation_type {
+        MutationType::TraitPut(pt) => {
+            assert_eq!(pt.trait_type.as_deref(), Some("exocore.test.TestMessage"))
+        }
+        other => {
+            panic!("Expected trait put mutation, got {:?}", other);
+        }
+    }
 
     // ordering of multiple traits is operation id
     let query = Q::with_trait::<TestMessage2>().build();
     let res = index.search(query)?;
     assert_eq!(extract_traits_id(&res), vec!["trait4", "trait3", "trait2"]);
+    let trait4 = find_put_trait(&res, "trait4").unwrap();
+    match &trait4.mutation_type {
+        MutationType::TraitPut(pt) => {
+            assert_eq!(pt.trait_type.as_deref(), Some("exocore.test.TestMessage2"))
+        }
+        other => {
+            panic!("Expected trait put mutation, got {:?}", other);
+        }
+    }
 
     // with limit
     let query = Q::with_trait::<TestMessage2>().with_count(1).build();

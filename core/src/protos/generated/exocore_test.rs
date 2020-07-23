@@ -30,6 +30,10 @@ pub struct TestMessage {
     pub ref1: ::std::option::Option<super::index::Reference>,
     #[prost(message, optional, tag = "14")]
     pub ref2: ::std::option::Option<super::index::Reference>,
+    #[prost(string, tag = "20")]
+    pub grouped1: std::string::String,
+    #[prost(string, tag = "21")]
+    pub grouped2: std::string::String,
     #[prost(oneof = "test_message::Fields", tags = "4, 5")]
     pub fields: ::std::option::Option<test_message::Fields>,
 }

@@ -41,6 +41,10 @@ message TestMessage {
     exocore.index.Reference ref1 = 13 [(exocore.indexed) = true];
 
     exocore.index.Reference ref2 = 14;
+
+    string grouped1 = 20 [(exocore.field_group) = 1];
+
+    string grouped2 = 21 [(exocore.field_group) = 1, (exocore.field_group) = 2];
 }
 
 message TestStruct {

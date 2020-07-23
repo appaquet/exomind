@@ -11,8 +11,8 @@ use tantivy::directory::MmapDirectory;
 use tantivy::query::{AllQuery, BooleanQuery, Occur, PhraseQuery, Query, QueryParser, TermQuery};
 use tantivy::schema::{Field, IndexRecordOption};
 use tantivy::{
-    DocAddress, Document, Index as TantivyIndex, IndexReader, IndexWriter, Searcher, SegmentReader,
-    Term,
+    DocAddress, Document, Index as TantivyIndex, IndexReader, IndexWriter, ReloadPolicy, Searcher,
+    SegmentReader, Term,
 };
 
 pub use config::*;
@@ -72,7 +72,11 @@ impl MutationIndex {
 
         fields.register_tokenizers(&index);
 
-        let index_reader = index.reader()?;
+        let index_reader = index
+            .reader_builder()
+            .reload_policy(ReloadPolicy::Manual) // we do our own reload after each commit for faster availability
+            .try_into()?;
+
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
             index.writer_with_num_threads(nb_threads, config.indexer_heap_size_bytes)?
         } else {
@@ -99,7 +103,11 @@ impl MutationIndex {
         let index = TantivyIndex::create_in_ram(tantivy_schema);
         fields.register_tokenizers(&index);
 
-        let index_reader = index.reader()?;
+        let index_reader = index
+            .reader_builder()
+            .reload_policy(ReloadPolicy::Manual) // we do our own reload after each commit for faster availability
+            .try_into()?;
+
         let index_writer = if let Some(nb_threads) = config.indexer_num_threads {
             index.writer_with_num_threads(nb_threads, config.indexer_heap_size_bytes)?
         } else {
@@ -488,8 +496,8 @@ impl MutationIndex {
 
         let message_mappings = self.fields.dynamic_mappings.get(message_dyn.full_name());
 
-        for field in message_dyn.fields() {
-            let field_value = match message_dyn.get_field_value(field) {
+        for (field_id, field) in message_dyn.fields() {
+            let field_value = match message_dyn.get_field_value(*field_id) {
                 Ok(fv) => fv,
                 Err(err) => {
                     debug!("Couldn't get value of field {:?}: {}", field, err);
@@ -800,6 +808,8 @@ impl MutationIndex {
                     put_trait.modification_date =
                         schema::get_doc_opt_u64_value(&doc, self.fields.modification_date)
                             .map(|ts| Utc.timestamp_nanos(ts as i64));
+                    put_trait.trait_type =
+                        schema::get_doc_opt_string_value(&doc, self.fields.trait_type);
                 }
 
                 let result = MutationMetadata {

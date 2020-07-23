@@ -17,24 +17,40 @@ message EntityQuery {
         TestPredicate test = 99;
     }
 
-    /// Query paging requested
+    /// Optional projections on traits and fields to be returned.
+    repeated Projection projections = 7;
+
+    /// Query paging requested.
     Paging paging = 5;
 
-    /// Query ordering
+    /// Query ordering.
     Ordering ordering = 6;
-
-    /// If true, only return summary
-    bool summary = 7;
 
     /// Optional watch token if this query is to be used for watching.
     uint64 watch_token = 8;
 
-    /// If specified, if results from server matches this hash, only a summary will be returned.
+    /// If specified, if results from server matches this hash, results will be empty with the 
+    /// `skipped_hash` field set to `true`.
     uint64 result_hash = 9;
 
     /// Include deleted mutations matches. Can be used to return recently modified entities that
     /// also include deletions.
     bool include_deleted = 12;
+}
+
+message Projection {
+    /// If specified, a prefix match will be done against traits' Protobuf full name (`some.package.Name`).
+    /// If ends with a dollar sign "$", an exact match is required (ex: `some.package.Name$` will only match this message)
+    repeated string package = 1;
+
+    /// Skips the trait if the projection matches.
+    bool skip = 2;
+
+    /// If specified, only return these fields.
+    repeated uint32 field_ids = 4;
+
+    /// If specified, only return fields annotated with `options.proto`.`field_group_id` matching ids.
+    repeated uint32 field_group_ids = 5;
 }
 
 /// Query entities by text match on all indexed fields across all traits.
@@ -149,16 +165,24 @@ message OrderingValue {
 }
 
 message EntityResults {
+    /// Entities matching query.
     repeated EntityResult entities = 1;
 
-    bool summary = 2;
+    /// If query specified a `result_hash`, this is set to `true` if the results
+    /// had the same hash has the specified and that `entities` were set to empty.
+    bool skipped_hash = 2;
 
+    /// Estimated number of entities matching, based on number of matching mutations.
     uint32 estimated_count = 3;
 
+    /// Paging token of the current results.
     Paging current_page = 4;
 
+    /// Paging token of the next page of results.
     Paging next_page = 5;
 
+    /// Hash of the results. Can be used to prevent receiving same results if they haven't
+    /// changed by using the `result_hash` field on the query.
     uint64 hash = 6;
 }
 

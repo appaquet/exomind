@@ -70,6 +70,7 @@ pub enum MutationType {
 #[derive(Debug)]
 pub struct PutTraitMetadata {
     pub trait_id: TraitId,
+    pub trait_type: Option<String>,
     pub creation_date: Option<DateTime<Utc>>,
     pub modification_date: Option<DateTime<Utc>>,
 }
@@ -87,6 +88,7 @@ impl MutationType {
             Self::TRAIT_TOMBSTONE_ID => Ok(MutationType::TraitTombstone(opt_trait_id.unwrap())),
             Self::TRAIT_PUT_ID => Ok(MutationType::TraitPut(PutTraitMetadata {
                 trait_id: opt_trait_id.unwrap(),
+                trait_type: None,
                 creation_date: None,
                 modification_date: None,
             })),

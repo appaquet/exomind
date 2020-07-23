@@ -7,7 +7,7 @@ edition = "2018"
 keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 categories = ["database-implementations", "command-line-interface", "wasm", "web-programming"]
 repository = "https://github.com/appaquet/exocore"
-license = "MIT"
+license = "Apache-2.0"
 
 [dependencies]
 exocore-core = { path = "../core", features = ["runtime", "logger"] }

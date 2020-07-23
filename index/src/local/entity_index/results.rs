@@ -1,13 +1,28 @@
 use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetadata};
-use super::result_hasher;
 use crate::entity::TraitId;
 use crate::error::Error;
-use crate::query::ResultHash;
+use crate::{ordering::OrderingValueWrapper, query::ResultHash};
 use exocore_chain::operation::OperationId;
+use exocore_core::protos::{
+    generated::exocore_index::EntityResult as EntityResultProto,
+    index::{Projection, Trait},
+    reflect::{FieldId, MutableReflectMessage, ReflectMessage},
+    registry::Registry,
+};
 use exocore_core::time::ConsistentTimestamp;
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
-use std::hash::Hasher;
+use std::iter::FromIterator;
+use std::{hash::Hasher, rc::Rc};
+
+/// Wrapper for entity result with matched mutation from index layer along
+/// aggregated traits.
+pub struct EntityResult {
+    pub matched_mutation: MutationMetadata,
+    pub ordering_value: Rc<OrderingValueWrapper>,
+    pub proto: EntityResultProto,
+    pub mutations: Rc<MutationAggregator>,
+}
 
 /// Aggregates mutations metadata of an entity retrieved from the mutations
 /// index. Once merged, only the latest / active mutations are remaining, and
@@ -17,8 +32,11 @@ use std::hash::Hasher;
 /// operation id within a block. If an old operation gets committed after a
 /// newer operation, the old operation gets discarded to prevent inconsistency.
 pub struct MutationAggregator {
-    // final traits of the entity once all mutations were aggregated
-    pub traits: HashMap<TraitId, MutationMetadata>,
+    // final traits mutation metadata of the entity once all mutations were aggregated
+    pub trait_mutations: HashMap<TraitId, MutationMetadata>,
+
+    // traits' projections (ex: filter out fields) to be applied
+    pub trait_projections: HashMap<TraitId, Rc<Projection>>,
 
     // ids of operations that are still active (ex: were not overridden by another mutation)
     pub active_operations: HashSet<OperationId>,
@@ -106,10 +124,39 @@ impl MutationAggregator {
         }
 
         Ok(MutationAggregator {
-            traits: trait_mutations,
+            trait_mutations,
+            trait_projections: HashMap::new(),
             active_operations: active_operation_ids,
             hash: hasher.finish(),
         })
+    }
+
+    /// Annotates each trait with projections that are matching them in a query.
+    ///
+    /// Projections allow returning only a subset of the traits or a part of its
+    /// data. See `project_trait` method for the actual projections no the data of
+    /// a retrieved trait.
+    pub fn annotate_projections(&mut self, projections: &[Projection]) {
+        if projections.is_empty() {
+            return;
+        }
+
+        let projections_rc = projections.iter().map(|p| Rc::new(p.clone())).collect_vec();
+
+        'traits_loop: for (trait_id, mutation_metadata) in &self.trait_mutations {
+            match &mutation_metadata.mutation_type {
+                MutationType::TraitPut(pm) => {
+                    for projection in &projections_rc {
+                        if projection_matches_trait(pm.trait_type.as_deref(), projection) {
+                            self.trait_projections
+                                .insert(trait_id.clone(), projection.clone());
+                            continue 'traits_loop;
+                        }
+                    }
+                }
+                _other => {}
+            }
+        }
     }
 
     /// Populates the creation and modification dates of a PutTraitMetadata
@@ -160,13 +207,89 @@ impl MutationAggregator {
     }
 }
 
+pub fn result_hasher() -> impl std::hash::Hasher {
+    crc::crc64::Digest::new(crc::crc64::ECMA)
+}
+
+fn projection_matches_trait(trait_type: Option<&str>, projection: &Projection) -> bool {
+    if projection.package.is_empty() {
+        return true;
+    }
+
+    let trait_type = if let Some(trait_type) = trait_type {
+        trait_type
+    } else {
+        return false;
+    };
+
+    for package in &projection.package {
+        if (package.ends_with('$') && Some(trait_type) == package.strip_suffix('$'))
+            || trait_type.starts_with(package)
+        {
+            return true;
+        }
+    }
+
+    false
+}
+
+pub fn project_trait(
+    registry: &Registry,
+    trt: &mut Trait,
+    projection: &Projection,
+) -> Result<(), Error> {
+    let any_msg = if let Some(msg) = &trt.message {
+        msg
+    } else {
+        return Ok(());
+    };
+
+    // early exit if nothing to project since unmarshal+marshal is costly
+    if projection.field_ids.is_empty() && projection.field_group_ids.is_empty() {
+        return Ok(());
+    }
+
+    let mut dyn_msg = exocore_core::protos::reflect::from_prost_any(registry, any_msg)?;
+
+    let field_ids_set: HashSet<FieldId> = HashSet::from_iter(projection.field_ids.iter().cloned());
+    let field_groups_set: HashSet<FieldId> =
+        HashSet::from_iter(projection.field_group_ids.iter().cloned());
+
+    let mut fields_to_clear = Vec::new();
+    for (field_id, field) in dyn_msg.fields() {
+        let direct_field_match = field_ids_set.contains(field_id);
+        let group_field_match = field
+            .groups
+            .iter()
+            .any(|gid| field_groups_set.contains(gid));
+
+        if !direct_field_match && !group_field_match {
+            fields_to_clear.push(*field_id);
+        }
+    }
+
+    if !fields_to_clear.is_empty() {
+        for field_id in fields_to_clear {
+            let _ = dyn_msg.clear_field_value(field_id);
+        }
+        trt.message = Some(dyn_msg.encode_to_prost_any()?);
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ordering::OrderingValueWrapper;
     use exocore_chain::block::BlockOffset;
-    use exocore_core::protos::index::OrderingValue;
+    use exocore_core::protos::prost::ProstAnyPackMessageExt;
+    use exocore_core::protos::{index::OrderingValue, reflect::FieldGroupId, test::TestMessage};
+    use prost::Message;
     use std::rc::Rc;
+
+    const TYPE1: &str = "exocore.test.TestMessage";
+    const TYPE2: &str = "exocore.test.TestMessage2";
 
     #[test]
     fn mutations_ordering() {
@@ -175,19 +298,19 @@ mod tests {
         let t3 = "t3".to_string();
 
         let mutations = vec![
-            mock_put_mutation(&t1, Some(2), 3, None, None),
-            mock_put_mutation(&t3, Some(1), 0, None, None),
-            mock_put_mutation(&t1, Some(1), 2, None, None),
-            mock_put_mutation(&t2, Some(3), 5, None, None),
-            mock_put_mutation(&t3, None, 6, None, None),
-            mock_put_mutation(&t2, Some(1), 1, None, None),
-            mock_put_mutation(&t2, Some(2), 4, None, None),
+            mock_put_trait(&t1, TYPE1, Some(2), 3, None, None),
+            mock_put_trait(&t3, TYPE1, Some(1), 0, None, None),
+            mock_put_trait(&t1, TYPE1, Some(1), 2, None, None),
+            mock_put_trait(&t2, TYPE1, Some(3), 5, None, None),
+            mock_put_trait(&t3, TYPE1, None, 6, None, None),
+            mock_put_trait(&t2, TYPE1, Some(1), 1, None, None),
+            mock_put_trait(&t2, TYPE1, Some(2), 4, None, None),
         ];
 
         let em = MutationAggregator::new(mutations.into_iter()).unwrap();
-        assert_eq!(em.traits.get(&t1).unwrap().operation_id, 3);
-        assert_eq!(em.traits.get(&t2).unwrap().operation_id, 5);
-        assert_eq!(em.traits.get(&t3).unwrap().operation_id, 6);
+        assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 3);
+        assert_eq!(em.trait_mutations.get(&t2).unwrap().operation_id, 5);
+        assert_eq!(em.trait_mutations.get(&t3).unwrap().operation_id, 6);
         assert_eq!(em.active_operations.len(), 3);
         assert!(em.active_operations.contains(&3));
         assert!(em.active_operations.contains(&5));
@@ -200,13 +323,13 @@ mod tests {
 
         // operation 2 got committed before operation 1
         let mutations = vec![
-            mock_put_mutation(&t1, Some(1), 2, None, None),
-            mock_put_mutation(&t1, Some(2), 1, None, None),
+            mock_put_trait(&t1, TYPE1, Some(1), 2, None, None),
+            mock_put_trait(&t1, TYPE1, Some(2), 1, None, None),
         ];
 
         // operation 1 should be discarded, and only operation 2 active
         let em = MutationAggregator::new(mutations.into_iter()).unwrap();
-        assert_eq!(em.traits.get(&t1).unwrap().operation_id, 2);
+        assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 2);
         assert!(em.active_operations.contains(&2));
     }
 
@@ -215,12 +338,12 @@ mod tests {
         let t1 = "t1".to_string();
 
         let mutations = vec![
-            mock_put_mutation(&t1, Some(1), 1, None, None),
-            mock_delete_mutation(&t1, Some(2), 2),
+            mock_put_trait(&t1, TYPE1, Some(1), 1, None, None),
+            mock_delete_trait(&t1, Some(2), 2),
         ];
 
         let em = MutationAggregator::new(mutations.into_iter()).unwrap();
-        assert!(em.traits.get(&t1).is_none());
+        assert!(em.trait_mutations.get(&t1).is_none());
         assert!(em.active_operations.contains(&2));
     }
 
@@ -230,14 +353,14 @@ mod tests {
 
         // delete operation 1 got committed after operation 2
         let mutations = vec![
-            mock_put_mutation(&t1, Some(1), 2, None, None),
-            mock_delete_mutation(&t1, Some(2), 1),
+            mock_put_trait(&t1, TYPE1, Some(1), 2, None, None),
+            mock_delete_trait(&t1, Some(2), 1),
         ];
 
         // delete operation should be discarded since an operation happened on the trait
         // before it got committed
         let em = MutationAggregator::new(mutations.into_iter()).unwrap();
-        assert_eq!(em.traits.get(&t1).unwrap().operation_id, 2);
+        assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 2);
         assert!(em.active_operations.contains(&2))
     }
 
@@ -246,12 +369,12 @@ mod tests {
         let t1 = "t1".to_string();
 
         let mutations = vec![
-            mock_put_mutation(&t1, Some(1), 1, None, None),
+            mock_put_trait(&t1, TYPE1, Some(1), 1, None, None),
             mock_delete_entity(Some(2), 2),
         ];
 
         let em = MutationAggregator::new(mutations.into_iter()).unwrap();
-        assert!(em.traits.get(&t1).is_none());
+        assert!(em.trait_mutations.get(&t1).is_none());
         assert!(em.active_operations.contains(&2));
     }
 
@@ -262,11 +385,11 @@ mod tests {
         // delete entity operation got committed after an newer operation
         let mutations = vec![
             mock_delete_entity(Some(1), 2),
-            mock_put_mutation(&t1, Some(2), 1, None, None),
+            mock_put_trait(&t1, TYPE1, Some(2), 1, None, None),
         ];
 
         let em = MutationAggregator::new(mutations.into_iter()).unwrap();
-        assert_eq!(em.traits.get(&t1).unwrap().operation_id, 1);
+        assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 1);
         assert!(em.active_operations.contains(&1));
     }
 
@@ -276,20 +399,21 @@ mod tests {
 
         let merge_mutations = |mutations: Vec<MutationMetadata>| -> MutationMetadata {
             let mut em = MutationAggregator::new(mutations.into_iter()).unwrap();
-            em.traits.remove(&t1).unwrap()
+            em.trait_mutations.remove(&t1).unwrap()
         };
 
         {
             // if no dates specified, creation date is based on first operation
-            let mutation = merge_mutations(vec![mock_put_mutation(&t1, Some(1), 1, None, None)]);
+            let mutation =
+                merge_mutations(vec![mock_put_trait(&t1, TYPE1, Some(1), 1, None, None)]);
             assert_creation_date(&mutation, Some(1));
         }
 
         {
             // if no dates specified, modification date is based on last operation
             let mutation = merge_mutations(vec![
-                mock_put_mutation(&t1, Some(1), 1, None, None),
-                mock_put_mutation(&t1, Some(2), 2, None, None),
+                mock_put_trait(&t1, TYPE1, Some(1), 1, None, None),
+                mock_put_trait(&t1, TYPE1, Some(2), 2, None, None),
             ]);
             assert_creation_date(&mutation, Some(1));
             assert_modification_date(&mutation, Some(2));
@@ -298,8 +422,8 @@ mod tests {
         {
             // oldest specified creation date has priority
             let mutation = merge_mutations(vec![
-                mock_put_mutation(&t1, Some(1), 5, None, None),
-                mock_put_mutation(&t1, Some(2), 6, Some(1), None),
+                mock_put_trait(&t1, TYPE1, Some(1), 5, None, None),
+                mock_put_trait(&t1, TYPE1, Some(2), 6, Some(1), None),
             ]);
             assert_creation_date(&mutation, Some(1));
             assert_modification_date(&mutation, Some(6));
@@ -308,12 +432,178 @@ mod tests {
         {
             // last operation always override older specified modification date
             let mutation = merge_mutations(vec![
-                mock_put_mutation(&t1, Some(1), 5, None, Some(2)),
-                mock_put_mutation(&t1, Some(2), 6, None, None),
-                mock_put_mutation(&t1, Some(2), 7, None, None),
+                mock_put_trait(&t1, TYPE1, Some(1), 5, None, Some(2)),
+                mock_put_trait(&t1, TYPE1, Some(2), 6, None, None),
+                mock_put_trait(&t1, TYPE1, Some(2), 7, None, None),
             ]);
             assert_modification_date(&mutation, Some(7));
         }
+    }
+
+    #[test]
+    fn test_projection_matches_trait() {
+        {
+            // prefix match
+            let proj1 = Projection {
+                package: vec!["some.message".to_string()],
+                ..Default::default()
+            };
+
+            assert!(projection_matches_trait(Some("some.message.Type"), &proj1));
+            assert!(!projection_matches_trait(None, &proj1));
+            assert!(!projection_matches_trait(
+                Some("other.message.Type2"),
+                &proj1
+            ));
+        }
+
+        {
+            // match all
+            let proj2 = Projection {
+                package: vec![],
+                ..Default::default()
+            };
+            assert!(projection_matches_trait(Some("some.message.Type"), &proj2));
+            assert!(projection_matches_trait(None, &proj2));
+            assert!(projection_matches_trait(
+                Some("other.message.Type2"),
+                &proj2
+            ));
+        }
+
+        {
+            // exact match
+            let proj1 = Projection {
+                package: vec!["some.message.Type$".to_string()],
+                ..Default::default()
+            };
+
+            assert!(projection_matches_trait(Some("some.message.Type"), &proj1));
+            assert!(!projection_matches_trait(
+                Some("some.message.Type2"),
+                &proj1
+            ));
+        }
+    }
+
+    #[test]
+    fn traits_projection_annotation() {
+        let t1 = "t1";
+        let t2 = "t2";
+
+        fn assert_projection_id(em: &MutationAggregator, trait_id: &str, id: u32) {
+            assert_eq!(em.trait_projections.get(trait_id).unwrap().field_ids[0], id,);
+        }
+
+        {
+            // prefix match
+            let mutations = vec![
+                mock_put_trait(t1, TYPE1, Some(1), 1, None, None),
+                mock_put_trait(t2, TYPE2, Some(1), 2, None, None),
+            ];
+            let mut em = MutationAggregator::new(mutations.into_iter()).unwrap();
+            em.annotate_projections(&[Projection {
+                package: vec!["exocore.test".to_string()],
+                field_ids: vec![1],
+                ..Default::default()
+            }]);
+
+            assert_projection_id(&em, t1, 1);
+            assert_projection_id(&em, t2, 1);
+        }
+
+        {
+            // exact match & catch-all
+            let mutations = vec![
+                mock_put_trait(t1, TYPE1, Some(1), 1, None, None),
+                mock_put_trait(t2, TYPE2, Some(1), 2, None, None),
+            ];
+            let mut em = MutationAggregator::new(mutations.into_iter()).unwrap();
+            em.annotate_projections(&[
+                Projection {
+                    package: vec![format!("{}$", TYPE1)],
+                    field_ids: vec![1],
+                    ..Default::default()
+                },
+                Projection {
+                    field_ids: vec![2],
+                    ..Default::default()
+                },
+            ]);
+
+            assert_projection_id(&em, t1, 1);
+            assert_projection_id(&em, t2, 2);
+        }
+    }
+
+    #[test]
+    fn traits_projection() -> anyhow::Result<()> {
+        let registry = Registry::new_with_exocore_types();
+
+        let msg = TestMessage {
+            string1: "string1".to_string(),
+            string2: "string2".to_string(),
+            grouped1: "grouped1".to_string(),
+            grouped2: "grouped2".to_string(),
+            ..Default::default()
+        };
+
+        let project = |fields: Vec<FieldId>, groups: Vec<FieldGroupId>| -> TestMessage {
+            let mut trt = Trait {
+                message: Some(msg.pack_to_any().unwrap()),
+                ..Default::default()
+            };
+
+            project_trait(
+                &registry,
+                &mut trt,
+                &Projection {
+                    field_ids: fields,
+                    field_group_ids: groups,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            TestMessage::decode(trt.message.as_ref().unwrap().value.as_slice()).unwrap()
+        };
+
+        assert_eq!(
+            project(vec![1], vec![]),
+            TestMessage {
+                string1: "string1".to_string(),
+                ..Default::default()
+            }
+        );
+
+        assert_eq!(
+            project(vec![1, 2], vec![]),
+            TestMessage {
+                string1: "string1".to_string(),
+                string2: "string2".to_string(),
+                ..Default::default()
+            }
+        );
+
+        assert_eq!(
+            project(vec![2], vec![1]),
+            TestMessage {
+                string2: "string2".to_string(),
+                grouped1: "grouped1".to_string(),
+                grouped2: "grouped2".to_string(),
+                ..Default::default()
+            }
+        );
+
+        assert_eq!(
+            project(vec![], vec![2]),
+            TestMessage {
+                grouped2: "grouped2".to_string(),
+                ..Default::default()
+            }
+        );
+
+        Ok(())
     }
 
     fn assert_creation_date(mutation: &MutationMetadata, time_op_id: Option<OperationId>) {
@@ -340,8 +630,9 @@ mod tests {
         }
     }
 
-    fn mock_put_mutation<T: Into<String>>(
-        trait_id: T,
+    fn mock_put_trait<I: Into<String>, T: Into<String>>(
+        trait_id: I,
+        trait_type: T,
         block_offset: Option<BlockOffset>,
         operation_id: OperationId,
         created_time_op_id: Option<OperationId>,
@@ -358,6 +649,7 @@ mod tests {
             entity_id: String::new(),
             mutation_type: MutationType::TraitPut(PutTraitMetadata {
                 trait_id: trait_id.into(),
+                trait_type: Some(trait_type.into()),
                 creation_date,
                 modification_date,
             }),
@@ -369,7 +661,7 @@ mod tests {
         }
     }
 
-    fn mock_delete_mutation<T: Into<String>>(
+    fn mock_delete_trait<T: Into<String>>(
         trait_id: T,
         block_offset: Option<BlockOffset>,
         operation_id: OperationId,

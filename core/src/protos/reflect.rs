@@ -10,7 +10,7 @@ use protobuf::well_known_types::{Any, Empty, Timestamp};
 use protobuf::Message;
 use std::convert::TryFrom;
 use std::fmt::Debug;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 pub trait ReflectMessage: Debug {
     fn descriptor(&self) -> &ReflectMessageDescriptor;
@@ -19,82 +19,29 @@ pub trait ReflectMessage: Debug {
         &self.descriptor().name
     }
 
-    fn fields(&self) -> &[FieldDescriptor] {
-        self.descriptor().fields.as_ref()
+    fn fields(&self) -> &HashMap<FieldId, FieldDescriptor> {
+        &self.descriptor().fields
     }
 
-    fn get_field_value(&self, field: &FieldDescriptor) -> Result<FieldValue, Error>;
-}
-
-pub struct StepanMessage<T: Message> {
-    message: T,
-    descriptor: Arc<ReflectMessageDescriptor>,
-}
-
-impl<T: Message> ReflectMessage for StepanMessage<T> {
-    fn descriptor(&self) -> &ReflectMessageDescriptor {
-        self.descriptor.as_ref()
+    fn get_field(&self, id: FieldId) -> Option<&FieldDescriptor> {
+        self.descriptor().fields.get(&id)
     }
 
-    fn get_field_value(&self, field: &FieldDescriptor) -> Result<FieldValue, Error> {
-        let value = self.message.descriptor().field_by_number(field.id);
-        match &field.field_type {
-            FieldType::String => {
-                let value = value.get_str(&self.message).to_string();
-                Ok(FieldValue::String(value))
-            }
-            FieldType::Int32 => {
-                let value = value.get_i32(&self.message);
-                Ok(FieldValue::Int32(value))
-            }
-            FieldType::Uint32 => {
-                let value = value.get_u32(&self.message);
-                Ok(FieldValue::Uint32(value))
-            }
-            FieldType::Int64 => {
-                let value = value.get_i64(&self.message);
-                Ok(FieldValue::Int64(value))
-            }
-            FieldType::Uint64 => {
-                let value = value.get_u64(&self.message);
-                Ok(FieldValue::Uint64(value))
-            }
-            FieldType::DateTime => {
-                let value = value.get_message(&self.message);
-                let secs = value.descriptor().field_by_number(1).get_i64(value);
-                let nanos = value.descriptor().field_by_number(2).get_i32(value);
-                Ok(FieldValue::DateTime(
-                    crate::time::timestamp_parts_to_datetime(secs, nanos),
-                ))
-            }
-            FieldType::Reference => {
-                let value = value.get_message(&self.message);
-                let entity_id = value
-                    .descriptor()
-                    .field_by_number(1)
-                    .get_str(value)
-                    .to_string();
-                let trait_id = value
-                    .descriptor()
-                    .field_by_number(2)
-                    .get_str(value)
-                    .to_string();
-                Ok(FieldValue::Reference(Reference {
-                    entity_id,
-                    trait_id,
-                }))
-            }
-            FieldType::Message(_full_name) => Err(Error::InvalidFieldType),
-        }
+    fn get_field_value(&self, field_id: FieldId) -> Result<FieldValue, Error>;
+
+    fn encode(&self) -> Result<Vec<u8>, Error>;
+
+    fn encode_to_prost_any(&self) -> Result<prost_types::Any, Error> {
+        let bytes = self.encode()?;
+        Ok(prost_types::Any {
+            type_url: self.descriptor().name.clone(),
+            value: bytes,
+        })
     }
 }
 
-impl<T: Message> Debug for StepanMessage<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("StepanMessage")
-            .field("full_name", &self.descriptor.name)
-            .finish()
-    }
+pub trait MutableReflectMessage: ReflectMessage {
+    fn clear_field_value(&mut self, field_id: FieldId) -> Result<(), Error>;
 }
 
 pub struct DynamicMessage {
@@ -107,47 +54,52 @@ impl ReflectMessage for DynamicMessage {
         self.descriptor.as_ref()
     }
 
-    fn get_field_value(&self, field: &FieldDescriptor) -> Result<FieldValue, Error> {
+    fn get_field_value(&self, field_id: FieldId) -> Result<FieldValue, Error> {
+        let field = self
+            .get_field(field_id)
+            .ok_or_else(|| Error::NoSuchField(field_id))?;
         let value = self
             .message
             .unknown_fields
-            .get(field.id)
-            .ok_or(Error::NoSuchField)?;
+            .get(field_id)
+            .ok_or(Error::NoSuchField(field_id))?;
 
         match field.field_type {
             FieldType::String => {
-                let value =
-                    ProtobufTypeString::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                let value = ProtobufTypeString::get_from_unknown(value)
+                    .ok_or(Error::NoSuchField(field_id))?;
                 Ok(FieldValue::String(value))
             }
             FieldType::Int32 => {
-                let value = ProtobufTypeInt32::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                let value = ProtobufTypeInt32::get_from_unknown(value)
+                    .ok_or(Error::NoSuchField(field_id))?;
                 Ok(FieldValue::Int32(value))
             }
             FieldType::Uint32 => {
-                let value =
-                    ProtobufTypeUint32::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                let value = ProtobufTypeUint32::get_from_unknown(value)
+                    .ok_or(Error::NoSuchField(field_id))?;
                 Ok(FieldValue::Uint32(value))
             }
             FieldType::Int64 => {
-                let value = ProtobufTypeInt64::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                let value = ProtobufTypeInt64::get_from_unknown(value)
+                    .ok_or(Error::NoSuchField(field_id))?;
                 Ok(FieldValue::Int64(value))
             }
             FieldType::Uint64 => {
-                let value =
-                    ProtobufTypeUint64::get_from_unknown(value).ok_or(Error::NoSuchField)?;
+                let value = ProtobufTypeUint64::get_from_unknown(value)
+                    .ok_or(Error::NoSuchField(field_id))?;
                 Ok(FieldValue::Uint64(value))
             }
             FieldType::DateTime => {
                 let value = ProtobufTypeMessage::<Timestamp>::get_from_unknown(value)
-                    .ok_or(Error::NoSuchField)?;
+                    .ok_or(Error::NoSuchField(field_id))?;
                 Ok(FieldValue::DateTime(
                     crate::time::timestamp_parts_to_datetime(value.seconds, value.nanos),
                 ))
             }
             FieldType::Reference => {
                 let ref_msg = ProtobufTypeMessage::<Empty>::get_from_unknown(value)
-                    .ok_or(Error::NoSuchField)?;
+                    .ok_or(Error::NoSuchField(field_id))?;
 
                 let entity_id_value = ref_msg
                     .unknown_fields
@@ -166,8 +118,24 @@ impl ReflectMessage for DynamicMessage {
                     trait_id,
                 }))
             }
-            _ => Err(Error::NoSuchField),
+            _ => Err(Error::NoSuchField(field_id)),
         }
+    }
+
+    fn encode(&self) -> Result<Vec<u8>, Error> {
+        let bytes = self.message.write_to_bytes()?;
+        Ok(bytes)
+    }
+}
+
+impl MutableReflectMessage for DynamicMessage {
+    fn clear_field_value(&mut self, field_id: FieldId) -> Result<(), Error> {
+        let fields = self.message.mut_unknown_fields();
+        if let Some(fields) = &mut fields.fields {
+            fields.remove(&field_id);
+        }
+
+        Ok(())
     }
 }
 
@@ -179,20 +147,27 @@ impl Debug for DynamicMessage {
     }
 }
 
+pub type FieldId = u32;
+
+pub type FieldGroupId = u32;
+
 pub struct ReflectMessageDescriptor {
     pub name: String,
-    pub fields: Vec<FieldDescriptor>,
+    pub fields: HashMap<FieldId, FieldDescriptor>,
     pub message: DescriptorProto,
 }
 
 #[derive(Debug)]
 pub struct FieldDescriptor {
-    pub id: u32,
+    pub id: FieldId,
     pub name: String,
     pub field_type: FieldType,
+
+    // see exocore/index/options.proto
     pub indexed_flag: bool,
     pub sorted_flag: bool,
     pub text_flag: bool,
+    pub groups: Vec<FieldGroupId>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -256,16 +231,7 @@ impl<'s> TryFrom<&'s FieldValue> for &'s str {
     }
 }
 
-pub fn from_generated<T: Message>(registry: &Registry, message: T) -> StepanMessage<T> {
-    let descriptor = registry.get_or_register_generated_descriptor(&message);
-
-    StepanMessage {
-        message,
-        descriptor,
-    }
-}
-
-pub fn from_any(registry: &Registry, any: &Any) -> Result<DynamicMessage, Error> {
+pub fn from_stepan_any(registry: &Registry, any: &Any) -> Result<DynamicMessage, Error> {
     from_any_url_and_data(registry, &any.type_url, &any.value)
 }
 
@@ -304,7 +270,7 @@ mod tests {
     use chrono::Utc;
 
     #[test]
-    fn reflect_message_from_any() -> anyhow::Result<()> {
+    fn reflect_dyn_message() -> anyhow::Result<()> {
         let registry = Registry::new_with_exocore_types();
 
         let now = Utc::now();
@@ -321,36 +287,75 @@ mod tests {
             }),
             ..Default::default()
         };
-        let msg_any = msg.pack_to_stepan_any()?;
 
-        let dyn_msg = from_any(&registry, &msg_any)?;
+        let msg_any = msg.pack_to_stepan_any()?;
+        let dyn_msg = from_stepan_any(&registry, &msg_any)?;
 
         assert_eq!("exocore.test.TestMessage", dyn_msg.full_name());
-
         assert!(dyn_msg.fields().len() > 10);
 
-        let field1 = &dyn_msg.fields().iter().find(|f| f.id == 1).unwrap();
+        let field1 = dyn_msg.get_field(1).unwrap();
         assert!(field1.text_flag);
-        assert_eq!(dyn_msg.get_field_value(field1)?.as_str()?, "val1");
+        assert_eq!(dyn_msg.get_field_value(1)?.as_str()?, "val1");
 
-        let field2 = &dyn_msg.fields().iter().find(|f| f.id == 2).unwrap();
+        let field2 = dyn_msg.get_field(2).unwrap();
         assert!(!field2.text_flag);
 
-        let field8 = &dyn_msg.fields().iter().find(|f| f.id == 8).unwrap();
-        assert_eq!(dyn_msg.get_field_value(field8)?.as_datetime()?, &now);
+        let field8 = dyn_msg.get_field(8).unwrap();
+        assert_eq!(dyn_msg.get_field_value(8)?.as_datetime()?, &now);
         assert!(field8.indexed_flag);
 
-        let field13 = &dyn_msg.fields().iter().find(|f| f.id == 13).unwrap();
-        let field_value = dyn_msg.get_field_value(field13)?;
+        let field_value = dyn_msg.get_field_value(13)?;
         let value_ref = field_value.as_reference()?;
         assert_eq!(value_ref.entity_id, "et1");
         assert_eq!(value_ref.trait_id, "trt1");
 
-        let field14 = &dyn_msg.fields().iter().find(|f| f.id == 14).unwrap();
-        let field_value = dyn_msg.get_field_value(field14)?;
+        let field_value = dyn_msg.get_field_value(14)?;
         let value_ref = field_value.as_reference()?;
         assert_eq!(value_ref.entity_id, "et2");
         assert_eq!(value_ref.trait_id, "");
+
+        Ok(())
+    }
+
+    #[test]
+    fn clear_value_dyn_message() -> anyhow::Result<()> {
+        let registry = Registry::new_with_exocore_types();
+
+        let msg = TestMessage {
+            string1: "val1".to_string(),
+            ..Default::default()
+        };
+
+        let msg_any = msg.pack_to_stepan_any()?;
+        let mut dyn_msg = from_stepan_any(&registry, &msg_any)?;
+
+        assert!(dyn_msg.get_field_value(1).is_ok());
+
+        dyn_msg.clear_field_value(1).unwrap();
+
+        assert!(dyn_msg.get_field_value(1).is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn dyn_message_encode() -> anyhow::Result<()> {
+        let registry = Registry::new_with_exocore_types();
+
+        let msg = TestMessage {
+            string1: "val1".to_string(),
+            ..Default::default()
+        };
+
+        let msg_any = msg.pack_to_stepan_any()?;
+        let dyn_msg = from_stepan_any(&registry, &msg_any)?;
+
+        let bytes = dyn_msg.encode()?;
+        assert_eq!(bytes, msg_any.value);
+
+        let prost_any = dyn_msg.encode_to_prost_any()?;
+        assert_eq!(bytes, prost_any.value);
 
         Ok(())
     }
