@@ -51,7 +51,7 @@ petname = "1.0"
 rand = "0.7"
 
 # console_logger
-log4rs = { version = "0.12", optional = true }
+log4rs = { version = "0.13", optional = true }
 
 [target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]
 wasm-bindgen = "0.2"
@@ -63,7 +63,7 @@ prost-build = "0.6"
 
 [dev-dependencies]
 tempfile = "3.1"
-log4rs = "0.12"
+log4rs = "0.13"
 criterion_bencher_compat = "0.3"
 
 [[bench]]

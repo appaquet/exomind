@@ -16,7 +16,7 @@ exocore-index = { path = "../index" }
 exocore-transport = { path = "../transport" }
 log = "0.4"
 structopt = "0.3"
-log4rs = "0.12"
+log4rs = "0.13"
 thiserror = "1.0"
 anyhow = "1.0"
 futures = "0.3"
