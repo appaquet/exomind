@@ -137,7 +137,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         if (this.collectionsQueryKeywords != this.state.debouncedKeywords || !this.collectionsQuery) {
             this.collectionsQuery?.free();
 
-            const traitQuery = (this.state.debouncedKeywords) ? TraitQueryBuilder.matching(this.state.debouncedKeywords).build() : null;
+            const traitQuery = (this.state.debouncedKeywords) ? TraitQueryBuilder.matches(this.state.debouncedKeywords).build() : null;
             const query = QueryBuilder
                 .withTrait(exomind.base.Collection, traitQuery)
                 .count(30)

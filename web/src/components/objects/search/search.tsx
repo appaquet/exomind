@@ -81,7 +81,7 @@ export class Search extends React.Component<IProps> {
     this.entityQuery?.free();
 
     const childrenQuery = QueryBuilder
-      .matching(query)
+      .matches(query)
       .count(30)
       .build();
     this.entityQuery = new ExpandableQuery(childrenQuery, () => {
