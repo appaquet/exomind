@@ -11,7 +11,7 @@ license = "Apache-2.0"
 
 [features]
 default = ["core-runtime", "core-logger", "transport-libp2p", "index-local-store", "chain-engine", "chain-directory-chain", "chain-memory-pending"]
-tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils"]
+tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils", "exocore-index/tests-utils"]
 logger = ["core-logger"]
 
 client = ["core-runtime", "transport-libp2p"]

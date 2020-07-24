@@ -4,7 +4,7 @@ use exocore_chain::operation::OperationId;
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_index::{
     entity_query, ordering, trait_field_predicate, trait_query, EntityQuery, EntityResults,
-    MatchPredicate, Ordering, Paging, ReferencePredicate, TestPredicate, TraitFieldPredicate,
+    MatchPredicate, Ordering, Paging, ReferencePredicate, TraitFieldPredicate,
     TraitFieldReferencePredicate, TraitPredicate, TraitQuery,
 };
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
@@ -94,7 +94,7 @@ impl QueryBuilder {
         Self::with_trait_name_query(T::full_name(), query)
     }
 
-    pub fn with_entity_id<E: Into<String>>(id: E) -> QueryBuilder {
+    pub fn with_id<E: Into<String>>(id: E) -> QueryBuilder {
         QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Ids(IdsPredicate {
@@ -105,15 +105,15 @@ impl QueryBuilder {
         }
     }
 
-    pub fn with_entity_ids<I, E>(ids: I) -> QueryBuilder
+    pub fn with_ids<I>(ids: I) -> QueryBuilder
     where
-        I: Iterator<Item = E>,
-        E: Into<String>,
+        I: IntoIterator,
+        I::Item: Into<String>,
     {
         QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Ids(IdsPredicate {
-                    ids: ids.map(|i| i.into()).collect(),
+                    ids: ids.into_iter().map(|i| i.into()).collect(),
                 })),
                 ..Default::default()
             },
@@ -129,12 +129,12 @@ impl QueryBuilder {
         }
     }
 
-    pub fn failed() -> QueryBuilder {
+    #[cfg(any(test, feature = "tests-utils"))]
+    pub fn test(success: bool) -> QueryBuilder {
+        use exocore_core::protos::generated::exocore_index::TestPredicate;
         QueryBuilder {
             query: EntityQuery {
-                predicate: Some(entity_query::Predicate::Test(TestPredicate {
-                    success: false,
-                })),
+                predicate: Some(entity_query::Predicate::Test(TestPredicate { success })),
                 ..Default::default()
             },
         }
@@ -145,7 +145,7 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_count(mut self, count: u32) -> Self {
+    pub fn count(mut self, count: u32) -> Self {
         match self.query.paging.as_mut() {
             Some(paging) => paging.count = count,
             None => {
@@ -159,12 +159,16 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_projection<P: Into<ProjectionWrapper>>(mut self, projection: P) -> Self {
+    pub fn project<P: Into<ProjectionWrapper>>(mut self, projection: P) -> Self {
         self.query.projections.push(projection.into().0);
         self
     }
 
-    pub fn with_projections<P: Into<ProjectionWrapper>>(mut self, projections: Vec<P>) -> Self {
+    pub fn projects<I>(mut self, projections: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Into<ProjectionWrapper>,
+    {
         self.query.projections = projections.into_iter().map(|p| p.into().0).collect();
         self
     }

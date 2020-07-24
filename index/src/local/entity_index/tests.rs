@@ -92,7 +92,7 @@ fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
     };
 
     let mut test_index = TestEntityIndex::new_with_config(config)?;
-    let query = Q::with_trait::<TestMessage>().with_count(100).build();
+    let query = Q::with_trait::<TestMessage>().count(100).build();
 
     let mut range_from = 0;
     for i in 1..=3 {
@@ -248,7 +248,7 @@ fn delete_all_entity_traits() -> anyhow::Result<()> {
     test_index.wait_operations_committed(&[op1, op2]);
     test_index.handle_engine_events()?;
 
-    let query = Q::with_entity_id("entity1").build();
+    let query = Q::with_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
@@ -256,7 +256,7 @@ fn delete_all_entity_traits() -> anyhow::Result<()> {
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
 
-    let query = Q::with_entity_id("entity1").build();
+    let query = Q::with_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
@@ -264,12 +264,12 @@ fn delete_all_entity_traits() -> anyhow::Result<()> {
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
 
-    let query = Q::with_entity_id("entity1").build();
+    let query = Q::with_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
 
     // if we request deleted, it should now be back
-    let query = Q::with_entity_id("entity1").include_deleted().build();
+    let query = Q::with_id("entity1").include_deleted().build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
@@ -289,14 +289,14 @@ fn delete_entity() -> anyhow::Result<()> {
     test_index.wait_operations_committed(&[op1, op2]);
     test_index.handle_engine_events()?;
 
-    let query = Q::with_entity_id("entity1").build();
+    let query = Q::with_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
     let op_id = test_index.write_mutation(MutationBuilder::new().delete_entity("entity1"))?;
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
-    let query = Q::with_entity_id("entity1").build();
+    let query = Q::with_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
 
@@ -306,12 +306,12 @@ fn delete_entity() -> anyhow::Result<()> {
     test_index.handle_engine_events()?;
 
     // should still be deleted
-    let query = Q::with_entity_id("entity1").build();
+    let query = Q::with_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 0);
 
     // if we request deleted, it should now be back
-    let query = Q::with_entity_id("entity1").include_deleted().build();
+    let query = Q::with_id("entity1").include_deleted().build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
@@ -341,7 +341,7 @@ fn traits_compaction() -> anyhow::Result<()> {
     assert_eq!(vec![op1, op2, op3], ops);
 
     // mut entity has only 1 trait since all ops are on same trait
-    let query = Q::with_entity_id("entity1").build();
+    let query = Q::with_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
     let traits_msgs = extract_result_messages(&res.entities[0]);
@@ -387,7 +387,7 @@ fn traits_compaction() -> anyhow::Result<()> {
     test_index.handle_engine_events()?;
 
     // re-query, dates should still be the same even if we compacted the traits
-    let query = Q::with_entity_id("entity1").build();
+    let query = Q::with_id("entity1").build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
     let traits_msgs = extract_result_messages(&res.entities[0]);
@@ -435,7 +435,7 @@ fn query_paging() -> anyhow::Result<()> {
     test_index.handle_engine_events()?;
 
     // first page
-    let query_builder = Q::with_trait::<TestMessage>().with_count(10);
+    let query_builder = Q::with_trait::<TestMessage>().count(10);
     let res = test_index.index.search(query_builder.clone().build())?;
     let entities_id = extract_results_entities_id(&res);
 
@@ -530,7 +530,7 @@ fn query_multiple_mutations_paging() -> anyhow::Result<()> {
     let query_builder = Q::with_trait::<TestMessage>()
         .order_by_operations(false)
         .include_deleted()
-        .with_count(10);
+        .count(10);
     let res = test_index.index.search(query_builder.clone().build())?;
     let page1 = extract_results_entities_id(&res);
     assert_eq!(
@@ -579,7 +579,7 @@ fn query_ordering() -> anyhow::Result<()> {
     assert_eq!("entity9", ids[9]);
 
     // ascending paged
-    let qb = Q::matches("common").order_ascending(true).with_count(5);
+    let qb = Q::matches("common").order_ascending(true).count(5);
     let res = test_index.index.search(qb.build())?;
     let ids = extract_results_entities_id(&res);
     assert_eq!(5, ids.len());
@@ -632,7 +632,7 @@ fn query_projection() -> anyhow::Result<()> {
     {
         // project field #1, should return `string1`
         let proj = ProjectionBuilder::for_trait::<TestMessage>().return_fields(vec![1]);
-        let query = Q::matches("name").with_projection(proj).build();
+        let query = Q::matches("name").project(proj).build();
         let res = test_index.index.search(query)?;
         let ent = res.entities[0].entity.as_ref().unwrap();
         let trt = &ent.traits[0];
@@ -643,7 +643,7 @@ fn query_projection() -> anyhow::Result<()> {
     {
         // project field #2, should not return `string1`
         let proj = ProjectionBuilder::for_trait::<TestMessage>().return_fields(vec![2]);
-        let query = Q::matches("name").with_projection(proj).build();
+        let query = Q::matches("name").project(proj).build();
         let res = test_index.index.search(query)?;
         let ent = res.entities[0].entity.as_ref().unwrap();
         let trt = &ent.traits[0];
@@ -655,9 +655,7 @@ fn query_projection() -> anyhow::Result<()> {
         // project field on another message type, shouldn't include any traits
         let proj = ProjectionBuilder::for_trait::<TestMessage2>().return_fields(vec![2]);
         let proj_skip = ProjectionBuilder::for_all().skip();
-        let query = Q::matches("name")
-            .with_projections(vec![proj, proj_skip])
-            .build();
+        let query = Q::matches("name").projects(vec![proj, proj_skip]).build();
         let res = test_index.index.search(query)?;
         let ent = res.entities[0].entity.as_ref().unwrap();
         assert!(ent.traits.is_empty());

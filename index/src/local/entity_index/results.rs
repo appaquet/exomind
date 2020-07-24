@@ -134,8 +134,8 @@ impl MutationAggregator {
     /// Annotates each trait with projections that are matching them in a query.
     ///
     /// Projections allow returning only a subset of the traits or a part of its
-    /// data. See `project_trait` method for the actual projections no the data of
-    /// a retrieved trait.
+    /// data. See `project_trait` method for the actual projections no the data
+    /// of a retrieved trait.
     pub fn annotate_projections(&mut self, projections: &[Projection]) {
         if projections.is_empty() {
             return;

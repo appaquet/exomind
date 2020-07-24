@@ -571,7 +571,7 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let query = QueryBuilder::failed().build();
+        let query = QueryBuilder::test(false).build();
         assert!(test_store.query(query).is_err());
 
         Ok(())
@@ -637,7 +637,7 @@ pub mod tests {
         let mut test_store = TestStore::new()?;
         test_store.start_store()?;
 
-        let query = QueryBuilder::failed().build();
+        let query = QueryBuilder::test(false).build();
         let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
 
         let result = stream.next().unwrap();

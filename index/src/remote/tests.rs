@@ -60,7 +60,7 @@ fn query_error_propagation() -> anyhow::Result<()> {
         .create_put_contact_mutation("entity1", "trait1", "hello");
     test_remote_store.send_and_await_mutation(mutation)?;
 
-    let query = QueryBuilder::failed().build();
+    let query = QueryBuilder::test(false).build();
     let result = test_remote_store.send_and_await_query(query);
     assert!(result.is_err());
 
@@ -143,7 +143,7 @@ fn watched_query_error_propagation() -> anyhow::Result<()> {
     test_remote_store.start_server()?;
     test_remote_store.start_client()?;
 
-    let query = QueryBuilder::failed().build();
+    let query = QueryBuilder::test(false).build();
     let mut stream = block_on_stream(test_remote_store.client_handle.watched_query(query));
 
     let results = stream.next().unwrap();

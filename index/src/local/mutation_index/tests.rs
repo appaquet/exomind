@@ -69,7 +69,7 @@ fn fetch_entity_mutations() -> anyhow::Result<()> {
     });
     index.apply_operations(vec![trait1, trait2, trait3].into_iter())?;
 
-    let query = Q::with_entity_id("entity_id1").build();
+    let query = Q::with_id("entity_id1").build();
     let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.mutations[0].block_offset, Some(1));
@@ -77,14 +77,14 @@ fn fetch_entity_mutations() -> anyhow::Result<()> {
     assert_eq!(res.mutations[0].entity_id, "entity_id1");
     assert_is_put_trait(&res.mutations[0].mutation_type, "foo1");
 
-    let query = Q::with_entity_id("entity_id2").build();
+    let query = Q::with_id("entity_id2").build();
     let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 2);
     find_put_trait(&res, "foo2");
     find_put_trait(&res, "foo3");
 
     // search all should return an iterator all results
-    let query = Q::with_entity_id("entity_id2").build();
+    let query = Q::with_id("entity_id2").build();
     let iter = index.search_iter(query)?;
     assert_eq!(iter.total_results, 2);
     let results = iter.collect_vec();
@@ -153,7 +153,7 @@ fn search_query_matches() -> anyhow::Result<()> {
     assert_eq!(res.mutations[0].entity_id, "entity_id2"); // foo is repeated in entity 2
 
     // with limit
-    let query = Q::matches("foo").with_count(1).build();
+    let query = Q::matches("foo").count(1).build();
     let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.remaining, 1);
@@ -217,7 +217,7 @@ fn search_query_matches_paging() -> anyhow::Result<()> {
     });
     index.apply_operations(traits)?;
 
-    let query = Q::matches("foo").with_count(10).build();
+    let query = Q::matches("foo").count(10).build();
     let res1 = index.search(query)?;
     let res1_next_page = res1.next_page.clone().unwrap();
     assert_eq!(res1.total, 30);
@@ -371,7 +371,7 @@ fn search_query_by_trait_type() -> anyhow::Result<()> {
     }
 
     // with limit
-    let query = Q::with_trait::<TestMessage2>().with_count(1).build();
+    let query = Q::with_trait::<TestMessage2>().count(1).build();
     let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
 
@@ -425,7 +425,7 @@ fn search_query_by_trait_type_paging() -> anyhow::Result<()> {
     });
     index.apply_operations(traits)?;
 
-    let query = Q::with_trait::<TestMessage>().with_count(10).build();
+    let query = Q::with_trait::<TestMessage>().count(10).build();
     let res1 = index.search(query)?;
     assert_eq!(res1.total, 30);
     assert_eq!(res1.remaining, 20);
@@ -493,7 +493,7 @@ fn sort_by_field() -> anyhow::Result<()> {
 
     let q1 = Q::with_trait_query::<TestMessage>(TQ::matches("subject").build())
         .order_by_field("uint3", false)
-        .with_count(10);
+        .count(10);
     let res1 = index.search(&q1.clone().build())?;
     let trt1 = extract_traits_id(&res1);
     assert_eq!(trt1[0], "trait19");
@@ -505,7 +505,7 @@ fn sort_by_field() -> anyhow::Result<()> {
     assert_eq!(trt2[0], "trait9");
     assert_eq!(trt2[9], "trait0");
 
-    let q3 = q1.with_count(20).order_ascending(true);
+    let q3 = q1.count(20).order_ascending(true);
     let res3 = index.search(&q3.build())?;
     let trt3 = extract_traits_id(&res3);
     assert_eq!(trt3[0], "trait0");
@@ -783,7 +783,7 @@ fn search_by_ids() -> anyhow::Result<()> {
     index.apply_operations(vec![et1, et2].into_iter())?;
 
     let search = |ids: Vec<String>| {
-        let query = Q::with_entity_ids(ids.iter()).build();
+        let query = Q::with_ids(ids.iter()).build();
         index.search(query).unwrap()
     };
 
@@ -1077,11 +1077,11 @@ fn put_trait_tombstone() -> anyhow::Result<()> {
     });
     index.apply_operation(trait1)?;
 
-    let query = Q::with_entity_id("entity_id1").build();
+    let query = Q::with_id("entity_id1").build();
     let res = index.search(query)?;
     assert_is_trait_tombstone(&res.mutations.first().unwrap().mutation_type, "foo1");
 
-    let query = Q::with_entity_id("entity_id2").build();
+    let query = Q::with_id("entity_id2").build();
     let res = index.search(query)?;
     assert_is_put_trait(&res.mutations.first().unwrap().mutation_type, "foo2");
 
@@ -1101,7 +1101,7 @@ fn put_entity_tombstone() -> anyhow::Result<()> {
     });
     index.apply_operation(trait1)?;
 
-    let query = Q::with_entity_id("entity_id1").build();
+    let query = Q::with_id("entity_id1").build();
     let res = index.search(query)?;
     assert_is_entity_tombstone(&res.mutations.first().unwrap().mutation_type);
 
@@ -1136,7 +1136,7 @@ fn trait_dates() -> anyhow::Result<()> {
     });
     index.apply_operation(trait1)?;
 
-    let query = Q::with_entity_id("entity_id1").build();
+    let query = Q::with_id("entity_id1").build();
     let res = index.search(query)?;
     let trait_meta = find_put_trait(&res, "foo1").unwrap();
     let trait_put = assert_is_put_trait(&trait_meta.mutation_type, "foo1");

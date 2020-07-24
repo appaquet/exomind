@@ -12,6 +12,7 @@ license = "Apache-2.0"
 [features]
 default = ["local-store"]
 local-store = ["tantivy", "exocore-chain/engine", "crc"]
+tests-utils = []
 
 [dependencies]
 exocore-chain = { path = "../chain", default-features = false }

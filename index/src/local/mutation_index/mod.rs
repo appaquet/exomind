@@ -690,7 +690,7 @@ impl MutationIndex {
         });
 
         let total_count = Arc::new(AtomicUsize::new(0));
-        let matching_count = Arc::new(AtomicUsize::new(0));
+        let match_count = Arc::new(AtomicUsize::new(0));
 
         let ordering_value = ordering
             .value
@@ -699,7 +699,7 @@ impl MutationIndex {
             ordering::Value::Score(_) => {
                 let collector = self.match_score_collector(
                     total_count.clone(),
-                    matching_count.clone(),
+                    match_count.clone(),
                     &paging,
                     ordering.ascending,
                 );
@@ -709,7 +709,7 @@ impl MutationIndex {
                 let sort_field = self.fields.operation_id;
                 let collector = self.sorted_field_collector(
                     total_count.clone(),
-                    matching_count.clone(),
+                    match_count.clone(),
                     &paging,
                     sort_field,
                     ordering.ascending,
@@ -735,7 +735,7 @@ impl MutationIndex {
 
                 let collector = self.sorted_field_collector(
                     total_count.clone(),
-                    matching_count.clone(),
+                    match_count.clone(),
                     &paging,
                     sort_field.field,
                     ordering.ascending,
@@ -745,7 +745,7 @@ impl MutationIndex {
         };
 
         let total_results = total_count.load(atomic::Ordering::Relaxed);
-        let remaining_results = matching_count
+        let remaining_results = match_count
             .load(atomic::Ordering::Relaxed)
             .saturating_sub(mutations.len());
 
