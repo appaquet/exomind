@@ -573,7 +573,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
+source = "git+https://github.com/appaquet/exocore.git#45b9acb9e3bcaf2caf7fa4381e34c2cbc376424c"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -584,7 +584,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
+source = "git+https://github.com/appaquet/exocore.git#45b9acb9e3bcaf2caf7fa4381e34c2cbc376424c"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -601,7 +601,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
+source = "git+https://github.com/appaquet/exocore.git#45b9acb9e3bcaf2caf7fa4381e34c2cbc376424c"
 dependencies = [
  "anyhow",
  "bs58",
@@ -636,7 +636,7 @@ dependencies = [
 [[package]]
 name = "exocore-index"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
+source = "git+https://github.com/appaquet/exocore.git#45b9acb9e3bcaf2caf7fa4381e34c2cbc376424c"
 dependencies = [
  "anyhow",
  "bytes 0.5.6",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#e84b0269bd9ce0ec0b45bba0700506e444eae76b"
+source = "git+https://github.com/appaquet/exocore.git#45b9acb9e3bcaf2caf7fa4381e34c2cbc376424c"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1366,9 +1366,9 @@ checksum = "bd7d4bd64732af4bf3a67f367c27df8520ad7e230c5817b8ff485864d80242b9"
 
 [[package]]
 name = "libp2p"
-version = "0.21.1"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d743d03fab397cde23925a17cb87b35b25994f44ab8c6a9e46a7e953ec739cd"
+checksum = "0306a49ee6a89468f96089906f36b0eef82c988dcfc8acf3e2dcd6ad1c859f85"
 dependencies = [
  "bytes 0.5.6",
  "futures 0.3.5",
