@@ -15,8 +15,8 @@ extend google.protobuf.FieldOptions {
     /// Indicates that the text of this field is to be full-text searchable.
     bool text = 1375;
 
-    /// Value used by `Projection.minimum_detail_level` and `Projection.maximum_detail_level` 
-    /// to exclude values that have a level of detail that isn't needed in an `EntityQuery`.
-    uint32 detail_level = 1376;
+    /// Value used by `Projection.field_group_ids` to select the fields to be returned
+    /// when projection on querying entities with `EntityQuery` is done.
+    repeated uint32 field_group = 1376;
 }
 
