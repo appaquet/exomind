@@ -8,13 +8,13 @@
 
 import UIKit
 
-class TaskViewController: UIViewController, EntityTraitView {
-    fileprivate var entityTrait: EntityTrait!
+class TaskViewController: UIViewController, EntityTraitViewOld {
+    fileprivate var entityTrait: EntityTraitOld!
     fileprivate var changed: Bool = false
 
     @IBOutlet weak var taskNameField: UITextField!
 
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
+    func loadEntityTrait(_ entityTrait: EntityTraitOld) {
         self.entityTrait = entityTrait
     }
 

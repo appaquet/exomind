@@ -12,7 +12,7 @@ import JavaScriptCore
 class EmailsLogic {
     fileprivate var jsContext: JSContext!
     
-    static func createReplyEmail(_ entityTrait: EntityTrait) -> Command? {
+    static func createReplyEmail(_ entityTrait: EntityTraitOld) -> Command? {
         if  let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
             let email = entityTrait.trait as? EmailFull,
             let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
@@ -25,7 +25,7 @@ class EmailsLogic {
         }
     }
     
-    static func createReplyAllEmail(_ entityTrait: EntityTrait) -> Command? {
+    static func createReplyAllEmail(_ entityTrait: EntityTraitOld) -> Command? {
         if  let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
             let email = entityTrait.trait as? EmailFull,
             let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
@@ -38,7 +38,7 @@ class EmailsLogic {
         }
     }
 
-    static func createForwardEmail(_ entityTrait: EntityTrait) -> Command? {
+    static func createForwardEmail(_ entityTrait: EntityTraitOld) -> Command? {
         if  let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
             let email = entityTrait.trait as? EmailFull,
             let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
@@ -75,8 +75,16 @@ class EmailsLogic {
             return contact.email
         }
     }
-    
-    static func injectInlineImages(_ entityTrait: EntityTrait, html: String) -> String {
+
+    static func formatContact(_ contact: Exomind_Base_Contact) -> String {
+        if contact.name != "" {
+            return "\(contact.name) <\(contact.email)>"
+        } else {
+            return contact.email
+        }
+    }
+
+    static func injectInlineImages(_ entityTrait: EntityTraitOld, html: String) -> String {
         let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.injectInlineImages")
         if  let jsEntity = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
             let jsEmail = BridgeEntityConverter.recordToJsRecord(entityTrait.trait) {

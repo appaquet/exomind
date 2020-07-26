@@ -1,25 +1,22 @@
-//
-//  NewNoteViewController
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-02-29.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
-
 import UIKit
 import SnapKit
+import Exocore
 
 class NoteViewController: UIViewController, EntityTraitView {
-    private var entityTrait: EntityTrait!
-    private var localNote: NoteFull?
+    private var entity: EntityExt!
+    private var serverNote: Exomind_Base_Note?
+    private var localNote: Exomind_Base_Note?
 
     private var headerView: LabelledFieldView!
     private var titleField: MultilineTextField!
     private var richTextEditor: RichTextEditor!
 
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
-        self.entityTrait = entityTrait
-        self.render()
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+        self.entity = entity
+        self.serverNote = entity.trait(withId: trait.id)?.message
+
+        let localNote: Exomind_Base_Note? = entity.trait(withId: trait.id)?.message
+        self.localNote = localNote?.expensiveClone()
     }
 
     override func viewDidLoad() {
@@ -27,6 +24,7 @@ class NoteViewController: UIViewController, EntityTraitView {
 
         self.createHeaderView()
         self.createWebView()
+        self.render()
 
         self.headerView.snp.makeConstraints { (make) in
             make.width.equalTo(self.view.snp.width)
@@ -59,9 +57,9 @@ class NoteViewController: UIViewController, EntityTraitView {
 
     fileprivate func createWebView() {
         self.richTextEditor = RichTextEditor(callback: { [weak self] (json) -> Void in
-            if let body = json?["content"].string, let note = self?.localNote {
-                note.content = body
-                self?.saveNote() // we don't care to save everytime since it's already debounced in javascript
+            if let body = json?["content"].string, var note = self?.localNote {
+                note.body = body
+                self?.saveNote() // we don't care to save every time since it's already debounced in javascript
             }
         })
         self.addChild(self.richTextEditor)
@@ -71,15 +69,10 @@ class NoteViewController: UIViewController, EntityTraitView {
     }
 
     fileprivate func render() {
-        if isViewLoaded, self.localNote == nil, let localNote = self.entityTrait.trait as? NoteFull {
-            self.localNote = localNote.clone() as? NoteFull
+        guard let localNote = self.localNote else { return }
 
-            let content = localNote.content ?? ""
-            self.titleField.text = localNote.title
-            
-            // we don't override text if text editor has focus, since it will trip cursor
-            self.richTextEditor.setContent(content)
-        }
+        self.titleField.text = localNote.title
+        self.richTextEditor.setContent(localNote.body)
     }
 
     fileprivate func handleTitleChange() {
@@ -88,13 +81,14 @@ class NoteViewController: UIViewController, EntityTraitView {
     }
 
     fileprivate func saveNote() {
-        guard   let serverNote = entityTrait.trait as? NoteFull,
+        guard   let serverNote = self.serverNote,
                 let localNote = self.localNote
-            else { return }
-        
-        
-        if !serverNote.equals(localNote) {
-            ExomindDSL.on(entityTrait.entity).mutate.put(localNote).execute()
+                else {
+            return
+        }
+
+        if !serverNote.isEqualTo(message: localNote) {
+            //TODO: ExomindDSL.on(entityTrait.entity).mutate.put(localNote).execute()
         }
     }
 

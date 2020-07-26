@@ -5,13 +5,14 @@ export class EntityTraits {
     public entity: exocore.index.IEntity;
 
     private typeTraits: { [type: string]: exocore.index.ITrait[] } = {}
-    private traitMessages: { [id: string]: exocore.index.ITrait } = {}
-    private traitInstances: { [id: string]: EntityTrait<unknown> } = {}
+    private idTraits: { [id: string]: exocore.index.ITrait } = {}
+    private idInstances: { [id: string]: EntityTrait<unknown> } = {}
     private priorityTraitId?: string
 
     constructor(entity: exocore.index.IEntity) {
         this.entity = entity;
 
+        // check if it's a special entity (ex: inbox)
         let priorityTrait: [exocore.index.ITrait, ITraitConstants] = null;
         if (this.entity.id in TRAITS_CONSTANTS) {
             const traitsConsts = TRAITS_CONSTANTS[this.entity.id];
@@ -23,6 +24,7 @@ export class EntityTraits {
             }
         }
 
+        // index traits by ids and types
         for (const trait of this.entity.traits) {
             const msgType = Exocore.registry.canonicalFullName(trait.message.type_url);
             if (!(msgType in this.typeTraits)) {
@@ -31,7 +33,7 @@ export class EntityTraits {
                 this.typeTraits[msgType].push(trait);
             }
 
-            this.traitMessages[trait.id] = trait;
+            this.idTraits[trait.id] = trait;
 
             let traitConsts;
             if (this.entity.id == trait.id && this.entity.id in TRAITS_CONSTANTS) {
@@ -76,29 +78,23 @@ export class EntityTraits {
     }
 
     trait<T>(id: string): EntityTrait<T> | null {
-        const trait = this.traitMessages[id];
+        const trait = this.idTraits[id];
         if (!trait) {
             return null;
         }
 
-        if (!(id in this.traitInstances)) {
+        if (!(id in this.idInstances)) {
             const et = new EntityTrait<unknown>(
                 this,
                 trait,
                 Exocore.registry.unpackAny(trait.message),
             );
-            this.traitInstances[id] = et;
+            this.idInstances[id] = et;
 
             return et as EntityTrait<T>;
         }
 
-        return this.traitInstances[id] as EntityTrait<T>;
-    }
-
-    traits(): EntityTrait<unknown>[] {
-        return this.entity.traits.map((trait: exocore.index.ITrait) => {
-            return this.trait(trait.id);
-        });
+        return this.idInstances[id] as EntityTrait<T>;
     }
 
     get priorityTrait(): EntityTrait<unknown> | null {
@@ -116,55 +112,6 @@ export class EntityTraits {
         }
 
         return priorityTrait.match(matcher);
-    }
-
-    actions(container: string, trait?: EntityTrait<unknown>): EntityActionXYZ[] {
-        const finalTrait = trait ?? this.priorityTrait;
-
-        const actions: EntityActionXYZ[] = [];
-        if (finalTrait.canRename) {
-            actions.push(new EntityActionXYZ('pencil', async () => {
-                const newName = prompt('New name', finalTrait.displayName);
-                if (newName) {
-                    await finalTrait.rename(newName);
-                }
-                return ActionResult.success();
-            }));
-        }
-
-        return actions;
-    }
-}
-
-export class EntityActionXYZ {
-    private _trigger: () => Promise<ActionResult>;
-
-    constructor(public icon: string, trigger: () => Promise<ActionResult>) {
-        this._trigger = trigger;
-    }
-
-    async trigger(): Promise<ActionResult> {
-        const result = await this._trigger();
-        return result;
-    }
-}
-
-export class ActionResult {
-    public result?: unknown;
-    public cancelled = false;
-    public removed = false;
-
-    static success(result?: unknown, removed?: boolean): ActionResult {
-        const res = new ActionResult();
-        res.result = result;
-        res.removed = removed ?? false;
-        return res;
-    }
-
-    static cancelled(): ActionResult {
-        const res = new ActionResult();
-        res.cancelled = true;
-        return res;
     }
 }
 
@@ -219,7 +166,7 @@ export class EntityTrait<T> {
         if (this.constants.name_field) {
             const dict = this.message as unknown as { [p: string]: string; };
             const name = dict[this.constants.name_field];
-            return name ?? this.constants.name_default ?? '**UNTITLED**';
+            return name ?? this.constants.name_default ?? '*UNTITLED*';
         }
 
         return '*UNTITLED*';
@@ -308,13 +255,6 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         color: 4,
         order: 1
     },
-    'exomind.integration': {
-        key: 'exomind.integration',
-        name_field: 'key',
-        icon: 'plug',
-        color: 4,
-        order: 1
-    },
     'exomind.base.EmailThread': {
         key: 'exomind.base.EmailThread',
         name_field: 'subject',
@@ -342,6 +282,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     'exomind.base.Collection': {
         key: 'exomind.base.Collection',
         name_field: 'name',
+        name_default: 'Untitled collection',
         icon: 'folder-o',
         color: 2,
         order: 5,
@@ -353,6 +294,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     'exomind.base.Task': {
         key: 'exomind.base.Task',
         name_field: 'title',
+        name_default: 'Untitled task',
         icon: 'check-square-o',
         color: 7,
         order: 6,
@@ -364,6 +306,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     'exomind.base.Note': {
         key: 'exomind.base.Note',
         name_field: 'title',
+        name_default: 'Untitled note',
         icon: 'pencil',
         color: 3,
         order: 7,

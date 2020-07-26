@@ -12,68 +12,71 @@ class CollectionViewController: UIViewController, EntityTraitView {
     fileprivate let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
 
     fileprivate var childrenType: String = "current"
-    fileprivate var entityId: HCEntityId!
-    fileprivate var entityTrait: EntityTrait!
+    fileprivate var entity: EntityExt!
+    fileprivate var trait: AnyTraitInstance!
     fileprivate var childrenViewController: ChildrenViewController!
-    
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
-        self.entityTrait = entityTrait
-        self.entityId = entityTrait.entity.id
+
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+        self.entity = entity
+        self.trait = trait
         self.loadData()
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         self.setupChildrenViewController()
         self.loadData()
     }
-    
+
     fileprivate func setupChildrenViewController() {
         self.childrenViewController = (mainStoryboard.instantiateViewController(withIdentifier: "ChildrenViewController") as! ChildrenViewController)
+        self.childrenViewController.setParent(withId: self.entity.id)
         self.childrenViewController.setItemClickHandler { [weak self] in
             self?.handleItemClick($0)
         }
-        self.childrenViewController.setCollectionQueryBuilder { [weak self] () -> Query? in
-            guard let this = self else { return nil }
-            
-            if this.childrenType == "current" {
-                return HCQueries.Entities().withParent(entityId: this.entityId).withSummary().toDomainQuery()
-            } else if this.childrenType == "old" {
-                return HCQueries.Entities().withTrait(OldChildSchema.fullType, traitBuilder: { (q) in
-                    q.refersTo(this.entityId)
-                }).withSummary().toDomainQuery()
-            } else {
-                return nil
-            }
-        }
+//        self.childrenViewController.setCollectionQueryBuilder { [weak self] () -> Query? in
+//            guard let this = self else {
+//                return nil
+//            }
+//
+//            if this.childrenType == "current" {
+//                return HCQueries.Entities().withParent(entityId: this.entityId).withSummary().toDomainQuery()
+//            } else if this.childrenType == "old" {
+//                return HCQueries.Entities().withTrait(OldChildSchema.fullType, traitBuilder: { (q) in
+//                    q.refersTo(this.entityId)
+//                }).withSummary().toDomainQuery()
+//            } else {
+//                return nil
+//            }
+//        }
         self.switchChildrenType("current")
         self.addChild(self.childrenViewController)
         self.view.addSubview(self.childrenViewController.view)
     }
-    
+
     fileprivate func loadData() {
-        if let entityTrait = self.entityTrait {
+        if let entityTrait = self.trait {
             self.title = entityTrait.displayName
         }
     }
-    
+
     fileprivate func switchChildrenType(_ type: String) {
         self.childrenType = type
         self.setupSwipe()
         self.setupSwitcher()
-        
+
         self.childrenViewController.loadData(true)
-        
+
         self.setupNavigationActions()
         self.changeTheme()
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.setupNavigationActions()
     }
-    
+
     fileprivate func setupNavigationActions() {
         let nav = (self.navigationController as! NavigationController)
         nav.resetState()
@@ -82,7 +85,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
                 self?.handleShowSearch()
             })
         ])
-        
+
         // quick button only visible in current
         if (self.childrenType == "current") {
             nav.setQuickButtonActions([
@@ -90,12 +93,16 @@ class CollectionViewController: UIViewController, EntityTraitView {
                     self?.handleCollectionRename()
                 }),
                 QuickButtonAction(icon: .plus, handler: { [weak self] () -> Void in
-                    guard let this = self else { return }
-                    
-                    (this.navigationController as? NavigationController)?.showCreateObject(this.entityId) { [weak self] (entity) -> Void in
-                        guard let entity = entity else { return }
-                        (self?.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
+                    guard let this = self else {
+                        return
                     }
+
+//   TODO:                 (this.navigationController as? NavigationController)?.showCreateObject(this.entityId) { [weak self] (entity) -> Void in
+//                        guard let entity = entity else {
+//                            return
+//                        }
+//                        (self?.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
+//                    }
                 }),
                 QuickButtonAction(icon: .folderOpen, handler: { [weak self] () -> Void in
                     self?.handleAddToCollection()
@@ -103,7 +110,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
             ])
         }
     }
-    
+
     fileprivate func setupSwitcher() {
         self.childrenViewController.setSwitcherActions([
             SwitcherButtonAction(icon: .folder, active: self.childrenType == "current", callback: { [weak self] in
@@ -114,7 +121,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
             }),
         ])
     }
-    
+
     fileprivate func setupSwipe() {
         if (self.childrenType == "current") {
             self.childrenViewController.setSwipeActions([
@@ -139,35 +146,39 @@ class CollectionViewController: UIViewController, EntityTraitView {
             ])
         }
     }
-    
+
     fileprivate func handleCollectionRename() {
-        let alert = UIAlertController(title: "Name", message: "Enter a new name", preferredStyle: UIAlertController.Style.alert)
-        alert.addTextField(configurationHandler: { [weak self] (textField: UITextField!) in
-            textField.text = self?.entityTrait.displayName
-            textField.isSecureTextEntry = false
-        })
-        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in
-            guard let this = self else { return }
-            let newName = alert.textFields![0] as UITextField
-            
-            if let collection = this.entityTrait.trait as? CollectionFull, let name = newName.text {
-                collection.name = name
-                ExomindDSL.on(this.entityTrait.entity).mutate.update(collection).execute()
-            }
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        self.present(alert, animated: true, completion: nil)
+//        let alert = UIAlertController(title: "Name", message: "Enter a new name", preferredStyle: UIAlertController.Style.alert)
+//        alert.addTextField(configurationHandler: { [weak self] (textField: UITextField!) in
+//            textField.text = self?.trait.displayName
+//            textField.isSecureTextEntry = false
+//        })
+//        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in
+//            guard let this = self else {
+//                return
+//            }
+//            let newName = alert.textFields![0] as UITextField
+//
+//            if let collection = this.trait.trait as? CollectionFull, let name = newName.text {
+//                collection.name = name
+//                ExomindDSL.on(this.trait.entity).mutate.update(collection).execute()
+//            }
+//        }))
+//        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+//        self.present(alert, animated: true, completion: nil)
     }
-    
+
     fileprivate func handleAddToCollection() {
-        guard let entityTrait = self.entityTrait else { return }
-        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entityTrait.entity)
+//        guard let entityTrait = self.trait else {
+//            return
+//        }
+//        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entityTrait.entity)
     }
-    
+
     fileprivate func handleShowSearch() {
-        (self.navigationController as? NavigationController)?.showSearch(self.entityId)
+//        (self.navigationController as? NavigationController)?.showSearch(self.entityId)
     }
-    
+
     fileprivate func changeTheme() {
         if (self.childrenType == "old") {
             self.childrenViewController.setTheme(Stylesheet.collectionThemeDoneBg)
@@ -175,31 +186,31 @@ class CollectionViewController: UIViewController, EntityTraitView {
             self.childrenViewController.setTheme(nil)
         }
     }
-    
-    fileprivate func handleItemClick(_ entity: HCEntity) {
-        (self.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
+
+    fileprivate func handleItemClick(_ entity: EntityExt) {
+//   TODO:     (self.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
     }
-    
-    fileprivate func handleDone(_ entity: HCEntity) {
-        ExomindDSL.on(entity).relations.removeParent(parentId: self.entityId)
+
+    fileprivate func handleDone(_ entity: EntityExt) {
+//   TODO:     ExomindDSL.on(entity).relations.removeParent(parentId: self.entityId)
     }
-    
-    fileprivate func handleMoveCurrent(_ entity: HCEntity) {
-        ExomindDSL.on(entity).relations.addParent(parentId: self.entityId)
+
+    fileprivate func handleMoveCurrent(_ entity: EntityExt) {
+//  TODO:      ExomindDSL.on(entity).relations.addParent(parentId: self.entityId)
     }
-    
-    fileprivate func handleCopyInbox(_ entity: HCEntity) {
-        ExomindDSL.on(entity).relations.addParent(parentId: "inbox")
+
+    fileprivate func handleCopyInbox(_ entity: EntityExt) {
+//   TODO:     ExomindDSL.on(entity).relations.addParent(parentId: "inbox")
     }
-    
-    fileprivate func handleMoveLater(_ entity: HCEntity) {
-        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity)
+
+    fileprivate func handleMoveLater(_ entity: EntityExt) {
+//   TODO:     (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity)
     }
-    
-    fileprivate func handleAddToCollection(_ entity: HCEntity) {
-         (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
+
+    fileprivate func handleAddToCollection(_ entity: EntityExt) {
+// TODO:        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
     }
-    
+
     deinit {
         print("CollectionViewController > Deinit")
     }

@@ -55,7 +55,7 @@ class TabBarController: UITabBarController {
             var newMap = [String: NavigationController]();
             var barViews: [UIViewController] = [self.inboxVC]
             for entity in mindChildrenQuery.resultsAsEntities() {
-                if let entityTrait = EntityTrait(entity: entity) {
+                if let entityTrait = EntityTraitOld(entity: entity) {
                     switch (entityTrait.traitType) {
                     case .inbox(inbox: _), .mind(mind: _):
                         continue
@@ -65,7 +65,7 @@ class TabBarController: UITabBarController {
                             newMap[entity.id] = vc
                         } else {
                             let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "NavigationController") as! NavigationController
-                            vc.replaceTopObject(.entity(entity: entity))
+                            vc.replaceTopObject(.entityOld(entity: entity))
                             let image = ObjectsIcon.icon(forEntity: entity, color: UIColor.black, dimension: 28)
                             vc.tabBarItem = UITabBarItem(title: entityTrait.displayName, image: image, tag: 0)
                             barViews.append(vc)

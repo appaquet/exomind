@@ -45,11 +45,11 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     }
 
     func pushObject(_ object: NavigationObject, animated: Bool = true) {
-        var entityTrait: EntityTrait?
+        var entityTrait: EntityTraitOld?
         switch (object) {
-        case let .entity(entity: entity):
-            entityTrait = EntityTrait(entity: entity)
-        case let .entityTrait(entityTrait: et):
+        case let .entityOld(entity: entity):
+            entityTrait = EntityTraitOld(entity: entity)
+        case let .entityTraitOld(entityTrait: et):
             entityTrait = et
         default:
             entityTrait = nil
@@ -74,11 +74,21 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             vc.populate(entityId: entityId)
             return vc
             
-        case let .entity(entity: entity):
+        case let .entityOld(entity: entity):
             let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
             vc.populate(entity: entity)
             return vc
             
+        case let .entityTraitOld(entityTrait: et):
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
+            vc.populate(entityTrait: et)
+            return vc
+
+        case let .entity(entity: entity):
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
+            vc.populate(entity: entity)
+            return vc
+
         case let .entityTrait(entityTrait: et):
             let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
             vc.populate(entityTrait: et)
@@ -142,7 +152,7 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         self.present(vc, animated: true, completion: nil)
     }
 
-    func showCreateObject(_ fromObjectId: String, callback: @escaping ((HCEntity?) -> Void)) {
+    func showCreateObject(_ fromObjectId: String, callback: @escaping (HCEntity?) -> Void) {
         let showIn = self.parent ?? self
         let vc = AddSelectionViewController(parentId: fromObjectId, callback: callback)
         vc.showInsideViewController(showIn)
@@ -175,7 +185,9 @@ class NavigationControllerBarAction {
 }
 
 enum NavigationObject {
-    case entity(entity: HCEntity)
-    case entityTrait(entityTrait: EntityTrait)
-    case entityId(id: HCEntityId)
+    case entityOld(entity: HCEntity)
+    case entityTraitOld(entityTrait: EntityTraitOld)
+    case entity(entity: EntityExt)
+    case entityTrait(entityTrait: AnyTraitInstance)
+    case entityId(id: EntityId)
 }

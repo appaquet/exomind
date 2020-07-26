@@ -14,20 +14,27 @@ class ObjectsIcon {
 
     
     static func icon(forEntity: HCEntity, color: UIColor, dimension: CGFloat) -> UIImage {
-        let entityTrait = EntityTrait(entity: forEntity)
+        let entityTrait = EntityTraitOld(entity: forEntity)
         let fa = ObjectsIcon.icon(forName: entityTrait?.icon ?? "question")
         return cached(fa: fa, color: color, dimension: dimension, block: { () -> UIImage in
             return UIImage.fontAwesomeIcon(name: fa, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
         })
     }
     
-    static func icon(forEntityTrait: EntityTrait, color: UIColor, dimension: CGFloat) -> UIImage {
+    static func icon(forEntityTrait: EntityTraitOld, color: UIColor, dimension: CGFloat) -> UIImage {
         let fa = ObjectsIcon.icon(forName: forEntityTrait.icon)
         return cached(fa: fa, color: color, dimension: dimension, block: { () -> UIImage in
             return UIImage.fontAwesomeIcon(name: fa, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
         })
     }
-    
+
+    static func icon(forAnyTrait: AnyTraitInstance, color: UIColor, dimension: CGFloat) -> UIImage {
+        let fa = ObjectsIcon.icon(forName: forAnyTrait.constants?.icon ?? "question")
+        return cached(fa: fa, color: color, dimension: dimension, block: { () -> UIImage in
+            return UIImage.fontAwesomeIcon(name: fa, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
+        })
+    }
+
     fileprivate static func cached(fa: FontAwesome, color: UIColor, dimension: CGFloat, block: () -> UIImage) -> UIImage {
         let key = "\(fa)_\(color)_\(dimension)"
         if let img = ObjectsIcon.iconCache[key] {

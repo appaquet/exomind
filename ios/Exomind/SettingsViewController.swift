@@ -30,7 +30,7 @@ class SettingsViewController: UITableViewController {
 
     func exomindBar() {
         if let mind = SessionStore.mindEntity() {
-            (self.tabBarController as? TabBarController)?.show(navigationObject: .entity(entity: mind))
+            (self.tabBarController as? TabBarController)?.show(navigationObject: .entityOld(entity: mind))
         }
     }
 

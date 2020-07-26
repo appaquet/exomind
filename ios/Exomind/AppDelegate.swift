@@ -7,9 +7,7 @@
 //
 
 import UIKit
-import Fabric
 import KeychainSwift
-import HockeySDK
 import GoogleSignIn
 
 @UIApplicationMain
@@ -21,11 +19,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     var googleSigninCallback: ((GIDGoogleUser) -> Void)?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
         HttpUtils.copyCookiesToKeychain()
-        BITHockeyManager.shared().configure(withIdentifier: "fd71ff63e602441d8fc626932fcf55de")
-        BITHockeyManager.shared().start()
-        BITHockeyManager.shared().authenticator.authenticateInstallation()
 
         let gidSignIn = GIDSignIn.sharedInstance()
         gidSignIn?.delegate = self
@@ -38,13 +32,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         let ajaxBridgeFactory = RealXMLHttpRequestBridgeFactory()
         DomainStore.instance = DomainStore(serverHost: "exomind.io", webSocketBridgeFactory: websocketBridgeFactory, ajaxBridgeFactory: ajaxBridgeFactory)
 
+        ExocoreUtils.initialize()
+
         return true
     }
 
     func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
         func openObject(_ entity: HCEntity?) {
             if let entity = entity {
-                RootNavigationController.mainInstance()?.show(navigationObject: .entity(entity: entity))
+                RootNavigationController.mainInstance()?.show(navigationObject: .entityOld(entity: entity))
             }
         }
 

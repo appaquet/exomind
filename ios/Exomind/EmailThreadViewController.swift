@@ -8,8 +8,8 @@
 
 import UIKit
 
-class EmailThreadViewController: UITableViewController, EntityTraitView {
-    var entityTrait: EntityTrait!
+class EmailThreadViewController: UITableViewController, EntityTraitViewOld {
+    var entityTrait: EntityTraitOld!
     var emails = [EmailFull]()
     var draft: DraftEmailFull?
     
@@ -19,7 +19,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     var loadTime = Date()
     var headerView: EmailThreadHeader!
     
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
+    func loadEntityTrait(_ entityTrait: EntityTraitOld) {
         if let oldEntityTrait = self.entityTrait, entityTrait.entity.equals(oldEntityTrait.entity) {
             print("EmailThreadViewController > Entity hasn't change, prevent re-rendering")
             return
@@ -160,7 +160,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
                 self.openedObjectsCell["draft"] = cell
             }
             
-            let emailEntityTrait = EntityTrait(entity: self.entityTrait.entity, trait: draft)
+            let emailEntityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: draft)
             cell.load(newEntityTrait: emailEntityTrait, emailIndex: section)
             cell.threadView = self
             return cell
@@ -187,7 +187,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
                     self.openedObjectsCell[email.id] = cell
                 }
                 
-                let emailEntityTrait = EntityTrait(entity: self.entityTrait.entity, trait: email)
+                let emailEntityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: email)
                 cell.load(newEntityTrait: emailEntityTrait, emailIndex: section)
                 cell.threadView = self
                 return cell
@@ -223,53 +223,53 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     func openEmailView(_ email: EmailFull) {
-        let emailEntityTrait = EntityTrait(entity: self.entityTrait.entity, trait: email)
-        (self.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: emailEntityTrait))
+        let emailEntityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: email)
+        (self.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: emailEntityTrait))
     }
     
     func openDraftView(_ draft: DraftEmailFull) {
-        let emailEntityTrait = EntityTrait(entity: self.entityTrait.entity, trait: draft)
-        (self.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: emailEntityTrait))
+        let emailEntityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: draft)
+        (self.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: emailEntityTrait))
     }
 
     func handleReply() {
         if let lastEmail = self.emails.last {
-            let entityTrait = EntityTrait(entity: self.entityTrait.entity, trait: lastEmail)
+            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
             EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
                 guard   let this = self,
                         let entity = entity,
                         let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
                         else { return }
-                let entityTrait = EntityTrait(entity: entity, trait: draft)
-                (this.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: entityTrait))
+                let entityTrait = EntityTraitOld(entity: entity, trait: draft)
+                (this.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: entityTrait))
             }
         }
     }
 
     func handleReplyAll() {
         if let lastEmail = self.emails.last {
-            let entityTrait = EntityTrait(entity: self.entityTrait.entity, trait: lastEmail)
+            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
             EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
                 guard   let this = self,
                         let entity = entity,
                         let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
                         else { return }
-                let entityTrait = EntityTrait(entity: entity, trait: draft)
-                (this.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: entityTrait))
+                let entityTrait = EntityTraitOld(entity: entity, trait: draft)
+                (this.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: entityTrait))
             }
         }
     }
 
     func handleForward() {
         if let lastEmail = self.emails.last {
-            let entityTrait = EntityTrait(entity: self.entityTrait.entity, trait: lastEmail)
+            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
             EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
                 guard   let this = self,
                         let entity = entity,
                         let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
                         else { return }
-                let entityTrait = EntityTrait(entity: entity, trait: draft)
-                (this.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: entityTrait))
+                let entityTrait = EntityTraitOld(entity: entity, trait: draft)
+                (this.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: entityTrait))
             }
         }
     }

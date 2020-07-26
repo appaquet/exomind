@@ -10,7 +10,7 @@ import UIKit
 import WebKit
 
 class EmailBodyWebView: AutoLayoutWebView, WKNavigationDelegate {
-    var entityTrait: EntityTrait?
+    var entityTrait: EntityTraitOld?
     var onLinkClick: ((URL) -> Bool)?
 
     func initialize() {
@@ -19,7 +19,7 @@ class EmailBodyWebView: AutoLayoutWebView, WKNavigationDelegate {
         self.scrollView.bouncesZoom = false
     }
     
-    func loadEmailEntity(_ entityTrait: EntityTrait, short: Bool = true) {
+    func loadEmailEntity(_ entityTrait: EntityTraitOld, short: Bool = true) {
         self.entityTrait = entityTrait
         var parts: [EmailPart]?
         if let email = entityTrait.trait as? EmailFull {

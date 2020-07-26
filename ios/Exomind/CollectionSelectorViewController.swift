@@ -131,7 +131,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
 
         let collectionEntity = self.collectionsData[(indexPath as NSIndexPath).item]
-        let entityTrait = EntityTrait(entity: collectionEntity)
+        let entityTrait = EntityTraitOld(entity: collectionEntity)
         
         cell.textLabel!.text = entityTrait?.displayName
         cell.imageView?.image = entityTrait.map { ObjectsIcon.icon(forEntityTrait: $0, color: UIColor.black, dimension: 24) }

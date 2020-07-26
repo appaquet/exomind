@@ -8,17 +8,17 @@
 
 import UIKit
 
-class EmailViewController: VerticalLinearViewController, EntityTraitView {
+class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
     fileprivate let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
 
-    var entityTrait: EntityTrait!
+    var entityTrait: EntityTraitOld!
 
     var webview: EmailBodyWebView!
     var fromLabel: UILabel!
     var toLabel: UILabel!
     var subjectLabel: UILabel!
     
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
+    func loadEntityTrait(_ entityTrait: EntityTraitOld) {
         self.entityTrait = entityTrait
         self.render()
     }
@@ -97,21 +97,21 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
     func handleReply() {
         EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
             guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
+            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
         }
     }
 
     func handleReplyAll() {
         EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
             guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
+            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
         }
     }
 
     func handleForward() {
         EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
             guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
+            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
         }
     }
 

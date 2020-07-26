@@ -12,31 +12,45 @@ class ObjectViewController: UIViewController {
     fileprivate let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
 
     private var querySet: QuerySet!
-    
-    private var entityId: HCEntityId?
-    private var entity: HCEntity?
-    private var entityTrait: EntityTrait?
-    private var specificTraitId: HCTraitId?
-    
+
+    private var entityId: EntityId?
+    private var entityOld: HCEntity?
+    private var entity: EntityExt?
+    private var entityTraitOld: EntityTraitOld?
+    private var entityTrait: AnyTraitInstance?
+    private var specificTraitId: TraitId?
+
     private var rendered: Bool = false
-    
+
     private var objectViewController: UIViewController?
-    
+
     func populate(entity: HCEntity) {
         self.entityId = entity.id
-        self.entity = entity
+        self.entityOld = entity
     }
-    
-    func populate(entityTrait: EntityTrait) {
-        self.entity = entityTrait.entity
+
+    func populate(entityTrait: EntityTraitOld) {
+        self.entityOld = entityTrait.entity
         self.entityId = entityTrait.entity.id
         self.specificTraitId = entityTrait.trait.traitId
     }
-    
-    func populate(entityId: HCEntityId) {
+
+    func populate(entity: EntityExt) {
+        self.entityId = entity.id
+        self.entity = entity
+        self.entityTrait = entity.priorityTrait
+    }
+
+    func populate(entityTrait: AnyTraitInstance) {
+        self.entity = entityTrait.entity
+        self.entityId = entityTrait.entity?.id
+        self.specificTraitId = entityTrait.trait.id
+    }
+
+    func populate(entityId: EntityId) {
         self.entityId = entityId
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         self.loadData()
@@ -49,47 +63,82 @@ class ObjectViewController: UIViewController {
                 self?.loadData()
             }
         }
-        
-        if  let entityId = self.entityId {
+
+        if let trait = self.entityTrait {
+            self.title = trait.displayName
+            self.renderView()
+
+        } else if let entityId = self.entityId {
             let entityQuery = self.querySet.executeQuery(HCQueries.Entities().withEntityId(entityId))
-            
+
             if let newEntity = entityQuery.resultAsEntity() {
-                self.entity = newEntity
+                self.entityOld = newEntity
             }
-            
-            if let entity = self.entity {
-                if  let specificTraitId = self.specificTraitId,
-                    let trait = entity.traitsById[specificTraitId] {
-                    
-                    self.entityTrait = EntityTrait(entity: entity, trait: trait)
-                    self.title = entityTrait?.displayName
+
+            if let entity = self.entityOld {
+                if let specificTraitId = self.specificTraitId,
+                   let trait = entity.traitsById[specificTraitId] {
+
+                    self.entityTraitOld = EntityTraitOld(entity: entity, trait: trait)
+                    self.title = entityTraitOld?.displayName
                     self.renderView()
-                    
-                } else if let entityTrait = EntityTrait(entity: entity) {
+
+                } else if let entityTrait = EntityTraitOld(entity: entity) {
                     self.title = entityTrait.displayName
-                    self.entityTrait = entityTrait
+                    self.entityTraitOld = entityTrait
                     self.renderView()
                 }
             }
-            
+
             if let objectViewController = self.objectViewController,
-                let entityTraitView = objectViewController as? EntityTraitView,
-                let entityTrait = self.entityTrait {
-                
+               let entityTraitView = objectViewController as? EntityTraitViewOld,
+               let entityTrait = self.entityTraitOld {
+
                 entityTraitView.loadEntityTrait(entityTrait)
             }
-            
         }
     }
-    
+
     func renderView() {
-        if !self.rendered, let entityTrait = self.entityTrait {
-            self.renderView(entityTrait)
-            self.rendered = true
+        if self.rendered {
+            return
+        }
+        self.rendered = true
+
+        if let entity = self.entity, let trait = self.entityTrait {
+            self.renderView(entity: entity, trait: trait)
+
+        } else if let entityTrait = self.entityTraitOld {
+            self.renderViewOld(entityTrait)
         }
     }
-    
-    func renderView(_ entityTrait: EntityTrait) {
+
+    func renderView(entity: EntityExt, trait: AnyTraitInstance) {
+        guard let traitType = trait.type else {
+            return
+        }
+
+        switch traitType {
+        case .collection:
+            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "CollectionViewController") as! CollectionViewController
+            vc.loadEntityTrait(entity: entity, trait: trait)
+            self.showVC(vc)
+
+        case .note:
+            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "NoteViewController") as! NoteViewController
+            vc.loadEntityTrait(entity: entity, trait: trait)
+            self.showVC(vc)
+
+        case .link:
+            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "LinkViewController") as! LinkViewController
+            vc.loadEntityTrait(entity: entity, trait: trait)
+            self.showVC(vc)
+
+        default: break
+        }
+    }
+
+    func renderViewOld(_ entityTrait: EntityTraitOld) {
         switch (entityTrait.traitType) {
         case .draftEmail(draftEmail: _):
             let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "DraftEmailViewController") as! DraftEmailViewController
@@ -103,24 +152,8 @@ class ObjectViewController: UIViewController {
             let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "EmailThreadViewController") as! EmailThreadViewController
             vc.loadEntityTrait(entityTrait)
             self.showVC(vc)
-        case .note(note: _):
-            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "NoteViewController") as! NoteViewController
-            vc.loadEntityTrait(entityTrait)
-            self.showVC(vc)
-        case .link(link: _):
-            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "LinkViewController") as! LinkViewController
-            vc.loadEntityTrait(entityTrait)
-            self.showVC(vc)
         case .task(task: _):
             let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "TaskViewController") as! TaskViewController
-            vc.loadEntityTrait(entityTrait)
-            self.showVC(vc)
-        case .collection(collection: _):
-            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "CollectionViewController") as! CollectionViewController
-            vc.loadEntityTrait(entityTrait)
-            self.showVC(vc)
-        case .mind(mind: _):
-            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "CollectionViewController") as! CollectionViewController
             vc.loadEntityTrait(entityTrait)
             self.showVC(vc)
         default:
@@ -149,5 +182,9 @@ class ObjectViewController: UIViewController {
 }
 
 protocol EntityTraitView {
-    func loadEntityTrait(_ entityTrait: EntityTrait)
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance)
+}
+
+protocol EntityTraitViewOld {
+    func loadEntityTrait(_ entityTrait: EntityTraitOld)
 }

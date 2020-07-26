@@ -10,7 +10,7 @@ import Foundation
 
 typealias TraitInformationDictionary = [AnyHashable: Any]
 
-enum TraitType {
+enum TraitTypeOld {
     case inbox(inbox: Special)
     case mind(mind: Special)
     case email(email: Email)
@@ -24,7 +24,7 @@ enum TraitType {
     case unknown
 }
 
-class TraitInformation {
+class TraitInformationOld {
     static var traitsInformation: TraitInformationDictionary = {
         return DomainStore.instance.jsContext.evaluateScript("exomind.exomindDomainUtils.TRAITS_INFORMATION")!.toDictionary()
     }()
@@ -34,7 +34,7 @@ class TraitInformation {
     
     init(ofTrait trait: HCTrait) {
         self.trait = trait
-        self.traitInfo = TraitInformation.information(forTrait: trait)
+        self.traitInfo = TraitInformationOld.information(forTrait: trait)
     }
     
     static func information(forTrait: HCTrait) -> TraitInformationDictionary {
@@ -49,7 +49,7 @@ class TraitInformation {
         }
     }
     
-    lazy var traitType: TraitType = {
+    lazy var traitType: TraitTypeOld = {
         switch (self.traitInfo["key"] as? String, self.trait) {
             case let (.some("inbox"), cTrait as Special):
                 return .inbox(inbox: cTrait)
@@ -100,19 +100,19 @@ class TraitInformation {
     }()
 }
 
-class EntityTrait {
+class EntityTraitOld {
     let entity: HCEntity
     let trait: HCTrait
-    let traitInfo: TraitInformation
+    let traitInfo: TraitInformationOld
     
     init(entity: HCEntity, trait: HCTrait) {
         self.entity = entity
         self.trait = trait
-        self.traitInfo = TraitInformation(ofTrait: trait)
+        self.traitInfo = TraitInformationOld(ofTrait: trait)
     }
     
     convenience init?(entity: HCEntity) {
-        guard let trait = EntityTrait.dominantTrait(entity: entity) else { return nil }
+        guard let trait = EntityTraitOld.dominantTrait(entity: entity) else { return nil }
         self.init(entity: entity, trait: trait)
     }
     
@@ -122,14 +122,14 @@ class EntityTrait {
     
     lazy var color: Int = self.traitInfo.color
     
-    lazy var traitType: TraitType = self.traitInfo.traitType
+    lazy var traitType: TraitTypeOld = self.traitInfo.traitType
     
     static func dominantTrait(entity: HCEntity) -> HCTrait? {
         var lowestTrait: HCTrait? = nil
         var lowestInfo: TraitInformationDictionary? = nil
         
         for currentTrait in entity.traits {
-            let currentInfo = TraitInformation.information(forTrait: currentTrait)
+            let currentInfo = TraitInformationOld.information(forTrait: currentTrait)
             if let unpkLowestInfo = lowestInfo {
                 let lowestOrder = unpkLowestInfo["order"] as! Int
                 let currentOrder = currentInfo["order"] as! Int

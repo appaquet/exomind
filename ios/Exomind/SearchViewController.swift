@@ -79,13 +79,13 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
         self.childrenViewController.setCollectionQueryBuilder { () -> Query in
             return Query.unitQuery()
         }
-        self.childrenViewController.setItemClickHandler { [weak self] (entity) -> Void in
+        self.childrenViewController.setItemClickHandlerOld { [weak self] (entity) -> Void in
             self?.handleItemSelection(entity)
         }
         self.childrenViewController.loadData(true)
         self.childrenViewController.setSwipeActions([
             ChildrenViewSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
-                self?.handleCopyInbox(entity)
+//                self?.handleCopyInbox(entity)
             })
         ])
     }
@@ -121,7 +121,7 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
         if let handler = self.selectionHandler {
             handler(entity)
         } else {
-            self.searchNavigationController.pushObject(.entity(entity: entity))
+            self.searchNavigationController.pushObject(.entityOld(entity: entity))
         }
     }
     

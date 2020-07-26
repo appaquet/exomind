@@ -30,22 +30,9 @@ class InboxViewController: UIViewController {
     
     fileprivate func setupChildrenViewController() {
         self.childrenViewController = (mainStoryboard.instantiateViewController(withIdentifier: "ChildrenViewController") as! ChildrenViewController)
+        self.childrenViewController.setParent(withId: "inbox")
         self.childrenViewController.setItemClickHandler { [weak self] in
             self?.handleItemClick($0)
-        }
-        self.childrenViewController.setCollectionQueryBuilder { [weak self] () -> Query? in
-            guard let this = self else { return nil }
-
-            switch (this.childrenType) {
-            case .some("old"):
-                return HCQueries.Entities().withTrait(OldChildSchema.fullType, traitBuilder: { (q) in
-                    q.refersTo("inbox")
-                }).withSummary().toDomainQuery()
-            case .some("future"):
-                return HCQueries.Entities().withTrait(PostponedSchema.fullType).withSummary().toDomainQuery()
-            default:
-                return HCQueries.Entities().withParent(entityId: this.entityId).withSummary().toDomainQuery()
-            }
         }
         self.addChild(self.childrenViewController)
         self.view.addSubview(self.childrenViewController.view)
@@ -87,7 +74,7 @@ class InboxViewController: UIViewController {
                 QuickButtonAction(icon: .plus, handler: { [weak self] () -> Void in
                     (self?.navigationController as? NavigationController)?.showCreateObject("inbox") { [weak self] (entity) -> Void in
                         guard let entity = entity else { return }
-                        (self?.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
+                        (self?.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
                     }
                 }),
                 QuickButtonAction(icon: .check, handler: { () -> Void in
@@ -179,32 +166,37 @@ class InboxViewController: UIViewController {
         }
     }
     
-    fileprivate func handleItemClick(_ entity: HCEntity) {
+    fileprivate func handleItemClick(_ entity: EntityExt) {
         (self.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
     }
     
-    fileprivate func handleRemovePostponed(_ entity: HCEntity) {
-        ExomindDSL.on(entity).relations.removePostpone()
+    fileprivate func handleRemovePostponed(_ entity: EntityExt) {
+        // TODO:
+//        ExomindDSL.on(entity).relations.removePostpone()
     }
     
-    fileprivate func handleDone(_ entity: HCEntity) {
-        ExomindDSL.on(entity).relations.removeParent(parentId: self.entityId)
+    fileprivate func handleDone(_ entity: EntityExt) {
+        // TODO:
+//        ExomindDSL.on(entity).relations.removeParent(parentId: self.entityId)
     }
     
-    fileprivate func handleMoveCurrent(_ entity: HCEntity) {
-        ExomindDSL.on(entity).relations.addParent(parentId: self.entityId)
+    fileprivate func handleMoveCurrent(_ entity: EntityExt) {
+        // TODO:
+//        ExomindDSL.on(entity).relations.addParent(parentId: self.entityId)
     }
     
-    fileprivate func handleMoveLater(_ entity: HCEntity) {
-        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity) { completed in
-            if (completed) {
-                ExomindDSL.on(entity).relations.removeParent(parentId: self.entityId)
-            }
-        }
+    fileprivate func handleMoveLater(_ entity: EntityExt) {
+        // TODO:
+//        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity) { completed in
+//            if (completed) {
+//                ExomindDSL.on(entity).relations.removeParent(parentId: self.entityId)
+//            }
+//        }
     }
     
-    fileprivate func handleAddToCollection(_ entity: HCEntity) {
-        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
+    fileprivate func handleAddToCollection(_ entity: EntityExt) {
+        // TODO:
+//        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
     }
     
     deinit {

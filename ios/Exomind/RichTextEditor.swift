@@ -17,7 +17,7 @@ class RichTextEditor: UIViewController {
     var hasFocus: Bool = false
     fileprivate weak var delegatedScrollView: UIScrollView?
 
-    convenience init(callback: @escaping ((JSON?) -> Void)) {
+    convenience init(callback: @escaping (JSON?) -> Void) {
         self.init(nibName: nil, bundle: nil)
 
         self.webview = RichTextEditorWebView()

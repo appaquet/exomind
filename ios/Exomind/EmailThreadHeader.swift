@@ -41,7 +41,7 @@ class EmailThreadHeader: UIView {
         }
     }
 
-    func load(entityTrait: EntityTrait) {
+    func load(entityTrait: EntityTraitOld) {
         self.label.text = entityTrait.displayName
     }
 }

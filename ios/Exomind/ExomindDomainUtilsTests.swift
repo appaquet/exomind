@@ -22,12 +22,12 @@ class ExomindDomainUtilsTests: XCTestCase {
     
     func testTraitInformation() {
         let inbox = SpecialSummary(name: "Inbox")
-        let inboxInfo = TraitInformation(ofTrait: inbox)
+        let inboxInfo = TraitInformationOld(ofTrait: inbox)
         XCTAssertEqual("Inbox", inboxInfo.displayName)
         XCTAssertEqual("inbox", inboxInfo.icon)
         
         let draftEmail = DraftEmailSummary(creationDate: nil, modificationDate: nil, sendingDate: nil, sentDate: nil, subject: "subject")
-        let draftInfo = TraitInformation(ofTrait: draftEmail)
+        let draftInfo = TraitInformationOld(ofTrait: draftEmail)
         XCTAssertEqual("subject", draftInfo.displayName)
     }
     
@@ -37,12 +37,12 @@ class ExomindDomainUtilsTests: XCTestCase {
         let collection = CollectionSummary(name: "col1")
         
         let entity1 = HCEntity(id: "id1", traits: [note, inbox])
-        let dominantTrait1 = EntityTrait.dominantTrait(entity: entity1)
+        let dominantTrait1 = EntityTraitOld.dominantTrait(entity: entity1)
         XCTAssertNotNil(dominantTrait1)
         XCTAssertTrue(inbox.equals(dominantTrait1!))
         
         let entity2 = HCEntity(id: "id2", traits: [collection, note])
-        let dominantTrait2 = EntityTrait.dominantTrait(entity: entity2)
+        let dominantTrait2 = EntityTraitOld.dominantTrait(entity: entity2)
         XCTAssertNotNil(dominantTrait2)
         XCTAssertTrue(collection.equals(dominantTrait2!))
     }
@@ -52,7 +52,7 @@ class ExomindDomainUtilsTests: XCTestCase {
         let note = NoteSummary(id: "note1", title: "title1")
     
         let entity = HCEntity(id: "id1", traits: [note, inbox])
-        let entityTrait = EntityTrait(entity: entity)
+        let entityTrait = EntityTraitOld(entity: entity)
         XCTAssertNotNil(entityTrait)
         XCTAssertEqual("Inbox", entityTrait?.displayName)
     }

@@ -17,7 +17,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
     weak var threadView: EmailThreadViewController!
     private var wasLinkClick: Bool = false
     
-    private var entityTrait: EntityTrait!
+    private var entityTrait: EntityTraitOld!
     private var email: EmailFull?
     private var draft: DraftEmailFull?
     private var lastTrait: HCTrait?
@@ -31,7 +31,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
         }
     }
     
-    func load(newEntityTrait: EntityTrait, emailIndex: Int) {
+    func load(newEntityTrait: EntityTraitOld, emailIndex: Int) {
         if let lastEntityTrait = self.entityTrait, newEntityTrait.trait.equals(lastEntityTrait.trait) {
             print("EmailThreadOpenedTableViewCell > Entity didn't change, not refreshing")
             return

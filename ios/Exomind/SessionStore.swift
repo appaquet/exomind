@@ -40,13 +40,13 @@ class SessionStore {
         return DomainStore.instance.jsContext.evaluateScript("exomind.session.SessionStore.session.\(name)")
     }
 
-    static func integrations() -> [EntityTrait] {
+    static func integrations() -> [EntityTraitOld] {
         guard let integrations = SessionStore.sessionJsProperty("integrations")
             else { return [] }
         
         return DomainStore.instance.jsArrayToJSValues(integrations)
             .compactMap { BridgeEntityConverter.entityFromJavascript($0) }
-            .compactMap { EntityTrait.init(entity: $0) }
+            .compactMap { EntityTraitOld.init(entity: $0) }
     }
 
     static func inboxEntity() -> HCEntity? {
