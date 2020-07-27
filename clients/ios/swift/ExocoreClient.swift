@@ -80,7 +80,7 @@ public enum ExocoreError: Error {
     case initialization
 }
 
-public func GenerateId(prefix: String? = nil) -> String {
+public func generateId(prefix: String? = nil) -> String {
     let idPtr = exocore_generate_id(prefix)
     let idStr = String(cString: idPtr!)
     exocore_free_string(idPtr)

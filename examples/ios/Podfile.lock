@@ -9,7 +9,7 @@ DEPENDENCIES:
   - KeychainSwift
 
 SPEC REPOS:
-  https://github.com/cocoapods/specs.git:
+  https://github.com/CocoaPods/Specs.git:
     - KeychainSwift
     - SwiftProtobuf
 
@@ -18,10 +18,10 @@ EXTERNAL SOURCES:
     :path: "../../"
 
 SPEC CHECKSUMS:
-  Exocore: 372862974f0c7d5c35bf49cb9aeba22d8a904aea
+  Exocore: bb9e18f6f765625b2e5fae34e2657dcba90c26e9
   KeychainSwift: a06190cf933ad46b1e0abc3d77d29c06331715c7
   SwiftProtobuf: bfafffa9e26d1561c3bd0045e188c4fab5f527ae
 
 PODFILE CHECKSUM: 7b1317688841b9525a045338c0641513e43f78bc
 
-COCOAPODS: 1.7.5
+COCOAPODS: 1.9.3
