@@ -38,20 +38,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     }
 
     func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
-        func openObject(_ entity: HCEntity?) {
+        func openObject(_ entity: EntityExt?) {
             if let entity = entity {
-                RootNavigationController.mainInstance()?.show(navigationObject: .entityOld(entity: entity))
+                RootNavigationController.mainInstance()?.show(navigationObject: .entity(entity: entity))
             }
         }
 
         if (shortcutItem.type.contains("NewNote")) {
-            AddSelectionViewController.createNote(nil, callback: openObject)
+            EntityCreationViewController.createNote(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewTask")) {
-            AddSelectionViewController.createTask(nil, callback: openObject)
+            EntityCreationViewController.createTask(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewEmail")) {
-            AddSelectionViewController.createEmail(nil, callback: openObject)
+            EntityCreationViewController.createEmail(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewCollection")) {
-            AddSelectionViewController.createCollection(nil, callback: openObject)
+            EntityCreationViewController.createCollection(nil, callback: openObject)
         }
     }
 

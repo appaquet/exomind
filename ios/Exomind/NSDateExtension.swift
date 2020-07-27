@@ -19,7 +19,7 @@ public extension Date {
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         return dateFormatter
     }()
-    
+
     fileprivate static let isoDateSerializer: DateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -27,13 +27,13 @@ public extension Date {
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
         return dateFormatter
     }()
-    
+
     fileprivate static let shortTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter
     }()
-    
+
     fileprivate static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
@@ -47,7 +47,15 @@ public extension Date {
     static func dateFromISOString(_ string: String) -> Date? {
         return isoDateDeserializer.date(from: string)
     }
-    
+
+    var millisecondsSince1970: Int64 {
+        Int64((self.timeIntervalSince1970 * 1000.0).rounded())
+    }
+
+    init(milliseconds: Int64) {
+        self = Date(timeIntervalSince1970: TimeInterval(milliseconds) / 1000)
+    }
+
     func toShort() -> String {
         let midnight = Date().midnightUTCDate()
         if (self.isGreaterThan(midnight)) {

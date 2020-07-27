@@ -1,10 +1,3 @@
-//
-//  ChildrenViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-07.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
 
 import UIKit
 import FontAwesome_swift
@@ -13,24 +6,23 @@ import Dwifft
 import Exocore
 
 class ChildrenViewController: UITableViewController {
-    fileprivate var watchedQuery: QueryStreamHandle?
-    fileprivate var parentId: EntityId!
+    private var query: ExpandableQuery?
+    private var parentId: EntityId?
 
-    fileprivate var childrenType: String = "current"
+    private var childrenType: String = "current"
 
-    fileprivate var collectionData: [Exocore_Index_EntityResult] = []
-    fileprivate var itemClickHandler: ((EntityExt) -> Void)?
-    fileprivate var swipeActions: [ChildrenViewSwipeAction] = []
+    private var collectionData: [Exocore_Index_EntityResult] = []
+    private var itemClickHandler: ((EntityExt) -> Void)?
+    private var swipeActions: [ChildrenViewSwipeAction] = []
 
-    fileprivate var switcherButton: SwitcherButton?
-    fileprivate var switcherButtonActions: [SwitcherButtonAction] = []
+    private var switcherButton: SwitcherButton?
+    private var switcherButtonActions: [SwitcherButtonAction] = []
 
-    fileprivate var scrollEverDragged = false
-    fileprivate var scrollDragging = false
-    fileprivate var headerShown: Bool = false
-    fileprivate var headerWasShownBeforeDrag: Bool = false
-    fileprivate var currentlyExpandingQuery = false
-
+    private var scrollEverDragged = false
+    private var scrollDragging = false
+    private var headerShown: Bool = false
+    private var headerWasShownBeforeDrag: Bool = false
+    private var currentlyExpandingQuery = false
 
     var diffCalculator: SingleSectionTableViewDiffCalculator<Exocore_Index_EntityResult>?
 
@@ -46,24 +38,8 @@ class ChildrenViewController: UITableViewController {
         self.swipeActions = actions
     }
 
-    func setCollectionQueryBuilder(_ builder: @escaping () -> Query?) {
-//        self.collectionQueryBuilder = builder
-    }
-
-    func setParent(withId parentId: EntityId) {
-        self.parentId = parentId
-    }
-
-    func setItemClickHandlerOld(_ handler: @escaping (HCEntity) -> Void) {
-        // old stuff
-    }
-
     func setItemClickHandler(_ handler: @escaping (EntityExt) -> Void) {
         self.itemClickHandler = handler
-    }
-
-    func isChildrenCurrent() -> Bool {
-        self.childrenType == "current"
     }
 
     func setSwitcherActions(_ actions: [SwitcherButtonAction]) {
@@ -83,32 +59,32 @@ class ChildrenViewController: UITableViewController {
         }
     }
 
-    func loadData(_ reExecute: Bool = false) {
-        let traitQuery = TraitQueryBuilder.refersTo(field: "collection", entityId: self.parentId).build()
+    func loadData(withResults results: [Exocore_Index_EntityResult]) {
+        self.collectionData = results
+    }
+
+    func loadData(fromChildrenOf entityId: EntityId) {
+        let traitQuery = TraitQueryBuilder.refersTo(field: "collection", entityId: entityId).build()
         let query = QueryBuilder
                 .withTrait(Exomind_Base_CollectionChild.self, query: traitQuery)
                 .orderByField("weight", ascending: false)
                 .count(30)
                 .build()
-        self.watchedQuery = ExocoreClient.store.watchedQuery(query: query) { [weak self] (status, results) in
+
+        self.parentId = entityId
+        self.loadData(fromQuery: query)
+    }
+
+    func loadData(fromQuery query: Exocore_Index_EntityQuery) {
+        self.query = ExpandableQuery(query: query) { [weak self] in
             guard let this = self else {
                 return
             }
+
             DispatchQueue.main.async {
-                this.collectionData = results?.entities ?? []
+                this.collectionData = this.query?.results ?? []
                 this.diffCalculator?.rows = this.collectionData
             }
-        }
-    }
-
-    func setTheme(_ color: UIColor?) {
-        if let color = color {
-            let bgView = UIView()
-            bgView.frame = self.tableView.frame
-            bgView.backgroundColor = color
-            self.tableView.backgroundView = bgView
-        } else {
-            self.tableView.backgroundView = nil
         }
     }
 
@@ -121,7 +97,7 @@ class ChildrenViewController: UITableViewController {
 
         var top = CGFloat(0.0)
         let bottom = Stylesheet.quickButtonSize + 20
-        let showHeader = self.hasHeader() && (!self.isChildrenCurrent() || (scrollDragging && headerWasShownBeforeDrag) || (!scrollDragging && headerShown))
+        let showHeader = self.hasHeader() && (scrollDragging && headerWasShownBeforeDrag) || (!scrollDragging && headerShown)
         if (!showHeader) {
             top = top - (self.tableView.tableHeaderView?.frame.height ?? 0)
         }
@@ -130,7 +106,7 @@ class ChildrenViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        self.collectionData.count ?? 0
+        self.collectionData.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -161,13 +137,7 @@ class ChildrenViewController: UITableViewController {
         // if only 5 items or less are coming up, we load new
         if (itemsComingUp < 10 && self.collectionData.count > 0 && !self.currentlyExpandingQuery) {
             self.currentlyExpandingQuery = true
-            // TODO: Handle this
-//            DispatchQueue.main.async(execute: { [weak self] () -> Void in
-//                if let this = self, let query = this.collectionQuery.expand() {
-//                    print("ChildrenViewController > Expanding query...")
-//                    this.collectionQuery = this.querySet.executeQuery(query, reExecute: true)
-//                }
-//            })
+            self.query?.expand()
         }
 
         if (!headerShown && scrollEverDragged && scrollView.contentOffset.y < -headerHeight * 1.25) {
@@ -256,18 +226,18 @@ class ChildrenViewCell: MCSwipeTableViewCell {
                 self.title1.text = "\(self.title1.text!) (\(emails.count))"
             }
 
-            // TODO: Fix
-            if !emails.filter({ ($0 as? Email)?.unread ?? true }).isEmpty {
+            if !emailThread.message.read {
                 self.title1.font = UIFont.boldSystemFont(ofSize: 14)
                 self.title2.font = UIFont.boldSystemFont(ofSize: 14)
                 self.title3.font = UIFont.boldSystemFont(ofSize: 14)
             }
 
             let lastEmail = emails.max(by: { (a, b) -> Bool in
-                let aDate = a.modificationDate ?? a.creationDate ?? Date()
-                let bDate = b.modificationDate ?? b.creationDate ?? Date()
+                let aDate = a.modificationDate ?? a.creationDate
+                let bDate = b.modificationDate ?? b.creationDate
                 return aDate < bDate
             })
+
             if let lastEmail = lastEmail {
                 self.date.text = lastEmail.modificationDate?.toShort() ?? lastEmail.creationDate.toShort()
             }
@@ -277,7 +247,7 @@ class ChildrenViewCell: MCSwipeTableViewCell {
 
         case let .draftEmail(draftEmail):
             self.title1.text = "Me"
-            self.title2.text = draftEmail.message.subject ?? "Untitled email"
+            self.title2.text = draftEmail.displayName
             self.title3.text = ""
 
         default:

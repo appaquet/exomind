@@ -1,25 +1,20 @@
-//
-//  TaskViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-01-19.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
-
 import UIKit
+import Exocore
 
-class TaskViewController: UIViewController, EntityTraitViewOld {
-    fileprivate var entityTrait: EntityTraitOld!
-    fileprivate var changed: Bool = false
-
+class TaskViewController: UIViewController, EntityTraitView {
     @IBOutlet weak var taskNameField: UITextField!
 
-    func loadEntityTrait(_ entityTrait: EntityTraitOld) {
-        self.entityTrait = entityTrait
+    private var entity: EntityExt!
+    private var taskTrait: TraitInstance<Exomind_Base_Task>!
+    private var changed: Bool = false
+
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+        self.entity = entity
+        self.taskTrait = entity.trait(withId: trait.id)
     }
 
     override func viewDidLoad() {
-        self.taskNameField.text = self.entityTrait.displayName
+        self.taskNameField.text = self.taskTrait.displayName
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -28,15 +23,23 @@ class TaskViewController: UIViewController, EntityTraitViewOld {
     }
 
     @IBAction func nameChanged(_ sender: AnyObject) {
-        changed = true
+        self.changed = true
     }
 
     override func viewWillDisappear(_ animated: Bool) {
-        if (self.changed && self.taskNameField.text != nil && self.taskNameField.text != "") {
-            if let taskTrait = entityTrait.trait as? TaskFull, let text = self.taskNameField.text {
-                let newTask = taskTrait.clone() as! TaskFull
-                newTask.title = text
-                ExomindDSL.on(entityTrait.entity).mutate.put(newTask).execute()
+        if let text = self.taskNameField.text, self.changed && text != "" {
+            var task = self.taskTrait.message
+            task.title = text
+
+            do {
+                let mutation = try MutationBuilder
+                        .updateEntity(entityId: self.entity.id)
+                        .putTrait(message: task, traitId: self.taskTrait.id)
+                        .build()
+
+                ExocoreClient.store.mutate(mutation: mutation)
+            } catch {
+                print("TaskViewController > Error mutating \(error)")
             }
         }
     }

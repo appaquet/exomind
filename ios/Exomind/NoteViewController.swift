@@ -4,8 +4,8 @@ import Exocore
 
 class NoteViewController: UIViewController, EntityTraitView {
     private var entity: EntityExt!
-    private var serverNote: Exomind_Base_Note?
-    private var localNote: Exomind_Base_Note?
+    private var noteTrait: TraitInstance<Exomind_Base_Note>?
+    private var modifiedNote: Exomind_Base_Note?
 
     private var headerView: LabelledFieldView!
     private var titleField: MultilineTextField!
@@ -13,10 +13,8 @@ class NoteViewController: UIViewController, EntityTraitView {
 
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
         self.entity = entity
-        self.serverNote = entity.trait(withId: trait.id)?.message
-
-        let localNote: Exomind_Base_Note? = entity.trait(withId: trait.id)?.message
-        self.localNote = localNote?.expensiveClone()
+        self.noteTrait = entity.trait(withId: trait.id)
+        self.modifiedNote = entity.trait(withId: trait.id)?.message
     }
 
     override func viewDidLoad() {
@@ -57,8 +55,8 @@ class NoteViewController: UIViewController, EntityTraitView {
 
     fileprivate func createWebView() {
         self.richTextEditor = RichTextEditor(callback: { [weak self] (json) -> Void in
-            if let body = json?["content"].string, var note = self?.localNote {
-                note.body = body
+            if let body = json?["content"].string {
+                self?.modifiedNote?.body = body
                 self?.saveNote() // we don't care to save every time since it's already debounced in javascript
             }
         })
@@ -69,26 +67,37 @@ class NoteViewController: UIViewController, EntityTraitView {
     }
 
     fileprivate func render() {
-        guard let localNote = self.localNote else { return }
+        guard let localNote = self.modifiedNote else {
+            return
+        }
 
         self.titleField.text = localNote.title
         self.richTextEditor.setContent(localNote.body)
     }
 
     fileprivate func handleTitleChange() {
-        self.localNote?.title = self.titleField.text
+        self.modifiedNote?.title = self.titleField.text
         self.saveNote()
     }
 
     fileprivate func saveNote() {
-        guard   let serverNote = self.serverNote,
-                let localNote = self.localNote
+        guard   let initialNote = self.noteTrait,
+                let modifiedNote = self.modifiedNote
                 else {
             return
         }
 
-        if !serverNote.isEqualTo(message: localNote) {
-            //TODO: ExomindDSL.on(entityTrait.entity).mutate.put(localNote).execute()
+        if !initialNote.message.isEqualTo(message: modifiedNote) {
+            do {
+                let mutation = try MutationBuilder
+                        .updateEntity(entityId: self.entity.id)
+                        .putTrait(message: modifiedNote, traitId: initialNote.id)
+                        .build()
+
+                ExocoreClient.store.mutate(mutation: mutation)
+            } catch {
+                print("NoteViewController > Error mutating note: \(error)")
+            }
         }
     }
 

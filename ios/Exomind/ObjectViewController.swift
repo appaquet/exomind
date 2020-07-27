@@ -129,6 +129,11 @@ class ObjectViewController: UIViewController {
             vc.loadEntityTrait(entity: entity, trait: trait)
             self.showVC(vc)
 
+        case .task:
+            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "TaskViewController") as! TaskViewController
+            vc.loadEntityTrait(entity: entity, trait: trait)
+            self.showVC(vc)
+
         case .link:
             let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "LinkViewController") as! LinkViewController
             vc.loadEntityTrait(entity: entity, trait: trait)
@@ -150,10 +155,6 @@ class ObjectViewController: UIViewController {
             self.showVC(vc)
         case .emailThread(emailThread: _):
             let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "EmailThreadViewController") as! EmailThreadViewController
-            vc.loadEntityTrait(entityTrait)
-            self.showVC(vc)
-        case .task(task: _):
-            let vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "TaskViewController") as! TaskViewController
             vc.loadEntityTrait(entityTrait)
             self.showVC(vc)
         default:

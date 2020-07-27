@@ -110,13 +110,14 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         } else {
             self.currentFilter = nil
         }
-        
-        if self.debouncedSearch == nil {
-            self.debouncedSearch = Debouncer.debounce(delay: 500, queue: DispatchQueue.main, action: { [weak self] in
-                self?.loadData()
-            })
-        }
-        self.debouncedSearch?()
+
+        // TODO:
+//        if self.debouncedSearch == nil {
+//            self.debouncedSearch = Debouncer.debounce(delay: 500, queue: DispatchQueue.main, action: { [weak self] in
+//                self?.loadData()
+//            })
+//        }
+//        self.debouncedSearch?()
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
