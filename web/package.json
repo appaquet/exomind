@@ -31,7 +31,7 @@
     "linkifyjs": "^2.1.9",
     "lodash": "^4.17.19",
     "mobx": "^5.15.4",
-    "mobx-react": "^6.2.2",
+    "mobx-react": "^6.2.3",
     "prop-types": "latest",
     "protobufjs": "^6.10.0",
     "react": "^16.13.1",
