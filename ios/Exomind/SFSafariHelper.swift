@@ -1,11 +1,4 @@
 
-//  SFSafariHelper.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-02-17.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
-
 import Foundation
 import SafariServices
 

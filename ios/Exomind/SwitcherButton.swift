@@ -1,10 +1,3 @@
-//
-//  SwitcherButton.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-01-11.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import FontAwesome_swift

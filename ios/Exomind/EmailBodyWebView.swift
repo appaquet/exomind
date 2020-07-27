@@ -1,10 +1,3 @@
-//
-//  EmailBodyWebView.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-07.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import WebKit

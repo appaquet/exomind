@@ -1,12 +1,6 @@
-//
-//  CollectionSelectorViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-11-27.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
 
 import UIKit
+import Exocore
 
 class CollectionSelectorViewController: UINavigationController {
     var forEntity: HCEntity!
@@ -23,17 +17,18 @@ class CollectionSelectorViewController: UINavigationController {
 }
 
 class CollectionSelectorTableViewController: UITableViewController, UISearchBarDelegate {
-    fileprivate var querySet: QuerySet!
-    fileprivate var collectionsQuery: Query!
-    fileprivate var entityQuery: Query!
-    fileprivate var parentsQuery: Query?
     fileprivate var entity: HCEntity!
 
-    fileprivate var collectionsData: [HCEntity]!
+    private var querySet: QuerySet!
+    private var collectionsQuery: Query!
+    private var entityQuery: Query!
+    private var parentsQuery: Query?
 
-    fileprivate var searchBar: UISearchBar!
-    fileprivate var currentFilter: String?
-    fileprivate var expandPending = false
+    private var collectionsData: [HCEntity]!
+
+    private var searchBar: UISearchBar!
+    private var currentFilter: String?
+    private var expandPending = false
 
     override func viewDidLoad() {
         super.viewDidLoad()

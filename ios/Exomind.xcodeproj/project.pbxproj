@@ -29,7 +29,6 @@
 		6D00E16C1C03A3D000B2F7E0 /* js in Resources */ = {isa = PBXBuildFile; fileRef = 6D00E16B1C03A3D000B2F7E0 /* js */; };
 		6D00E16E1C03A96900B2F7E0 /* HybridWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D00E16D1C03A96900B2F7E0 /* HybridWebView.swift */; };
 		6D0304EA1C751BA50017B05D /* SFSafariHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0304E91C751BA50017B05D /* SFSafariHelper.swift */; };
-		6D05FB9D1C776384004516B5 /* TrackingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D05FB9C1C776384004516B5 /* TrackingController.swift */; };
 		6D0AE8C51E04EBE700F5F6CE /* Debounce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */; };
 		6D0C3AF81C20F7D700A3D393 /* EmailThreadViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0C3AF71C20F7D700A3D393 /* EmailThreadViewController.swift */; };
 		6D0F6B611C331A2B00AB9DEC /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0F6B601C331A2B00AB9DEC /* ActionViewController.swift */; };
@@ -187,7 +186,6 @@
 		6D00E16B1C03A3D000B2F7E0 /* js */ = {isa = PBXFileReference; lastKnownFileType = folder; path = js; sourceTree = "<group>"; };
 		6D00E16D1C03A96900B2F7E0 /* HybridWebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HybridWebView.swift; sourceTree = "<group>"; };
 		6D0304E91C751BA50017B05D /* SFSafariHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SFSafariHelper.swift; sourceTree = "<group>"; };
-		6D05FB9C1C776384004516B5 /* TrackingController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TrackingController.swift; sourceTree = "<group>"; };
 		6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Debounce.swift; sourceTree = "<group>"; };
 		6D0C3AF71C20F7D700A3D393 /* EmailThreadViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailThreadViewController.swift; sourceTree = "<group>"; };
 		6D0F6B5E1C331A2B00AB9DEC /* ExomindActionExt.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ExomindActionExt.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -583,7 +581,6 @@
 			isa = PBXGroup;
 			children = (
 				6DE65AD01C6007AE0059CCBE /* NotificationsController.swift */,
-				6D05FB9C1C776384004516B5 /* TrackingController.swift */,
 			);
 			name = Controllers;
 			sourceTree = "<group>";
@@ -987,7 +984,6 @@
 				6D5390FE1C6ECF3E0019E56E /* AttachmentView.swift in Sources */,
 				6DCE04221BFA8F2200DF8A34 /* ObjectViewController.swift in Sources */,
 				6D3D466C1C84F3FC0037E51B /* EmailThreadAttachmentTableViewCell.swift in Sources */,
-				6D05FB9D1C776384004516B5 /* TrackingController.swift in Sources */,
 				6D0AE8C51E04EBE700F5F6CE /* Debounce.swift in Sources */,
 				6D7781C91C08B18E00D45299 /* TimeSelectionViewController.swift in Sources */,
 				6D23F61A1C3DB12E00D9A075 /* SearchViewController.swift in Sources */,

@@ -1,10 +1,3 @@
-//
-//  RichTextEditor.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-01.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import SwiftyJSON

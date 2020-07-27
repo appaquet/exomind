@@ -1,10 +1,3 @@
-//
-//  ModalGridViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-08.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 
@@ -37,5 +30,4 @@ class ModalGridViewController: UIViewController {
         self.removeFromParent()
         self.view.removeFromSuperview()
     }
-    
 }

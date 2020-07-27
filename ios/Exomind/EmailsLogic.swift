@@ -1,17 +1,8 @@
-//
-//  EmailsLogic.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-12-09.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
 
 import Foundation
 import JavaScriptCore
 
 class EmailsLogic {
-    fileprivate var jsContext: JSContext!
-    
     static func createReplyEmail(_ entityTrait: EntityTraitOld) -> Command? {
         if  let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
             let email = entityTrait.trait as? EmailFull,

@@ -1,10 +1,3 @@
-//
-//  UIViewExtension.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-01-11.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import SnapKit
@@ -21,7 +14,7 @@ extension UIView {
 
     // http://stackoverflow.com/questions/24370061/assign-xib-to-the-uiview-in-swift
     class func loadFromNibNamed(_ nibNamed: String, bundle: Bundle? = nil) -> UIView? {
-        return UINib(
+        UINib(
                 nibName: nibNamed,
                 bundle: bundle
                 ).instantiate(withOwner: nil, options: nil)[0] as? UIView

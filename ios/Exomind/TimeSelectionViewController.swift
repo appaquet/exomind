@@ -1,11 +1,3 @@
-//
-//  TimeSelectionViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-11-27.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import UIKit
 import SnapKit
 
@@ -13,11 +5,11 @@ class TimeSelectionViewController: ModalGridViewController {
     var value: Date?
     var callback: ((Date?) -> Void)?
 
-    fileprivate var choicesView: GridIconsView!
-    fileprivate var pickerView: UIView!
-    fileprivate var datePicker: UIDatePicker!
+    private var choicesView: GridIconsView!
+    private var pickerView: UIView!
+    private var datePicker: UIDatePicker!
 
-    convenience init(callback: @escaping ((Date?) -> Void)) {
+    convenience init(callback: @escaping (Date?) -> Void) {
         self.init()
         self.callback = callback
     }
@@ -29,7 +21,7 @@ class TimeSelectionViewController: ModalGridViewController {
         self.showChoicesView()
     }
 
-    func initChoicesView() {
+    private func initChoicesView() {
         let choices = TimeLogic.getLaterChoices()
         let gridItems = choices.map {
             choice -> GridIconsViewItem in
@@ -43,13 +35,13 @@ class TimeSelectionViewController: ModalGridViewController {
         self.choicesView.initView()
     }
 
-    func initPickerView() {
+    private func initPickerView() {
         self.pickerView = UIView()
 
         datePicker = UIDatePicker()
         datePicker.setValue(UIColor.white, forKey: "textColor")
         datePicker.datePickerMode = .dateAndTime
-        datePicker.addTarget(self, action: #selector(handlePickeChanged), for: UIControl.Event.valueChanged)
+        datePicker.addTarget(self, action: #selector(handlePickChanged), for: UIControl.Event.valueChanged)
         pickerView.addSubview(datePicker)
 
         datePicker.snp.makeConstraints { (make) in
@@ -67,7 +59,7 @@ class TimeSelectionViewController: ModalGridViewController {
         }
     }
 
-    func showChoicesView() {
+    private func showChoicesView() {
         if (self.pickerView.superview != nil) {
             self.pickerView.removeFromSuperview()
         }
@@ -75,7 +67,7 @@ class TimeSelectionViewController: ModalGridViewController {
         self.choicesView.frame = self.view.frame
     }
 
-    func showPickerView() {
+    private func showPickerView() {
         if (self.choicesView.superview != nil) {
             self.choicesView.removeFromSuperview()
         }
@@ -83,7 +75,7 @@ class TimeSelectionViewController: ModalGridViewController {
         self.pickerView.frame = self.view.frame
     }
 
-    func handleChoiceSelection(_ choice: LaterTimeChoice) {
+    private func handleChoiceSelection(_ choice: LaterTimeChoice) {
         let key = choice.key
         if (key == "pick") {
             self.showPickerView()
@@ -103,7 +95,7 @@ class TimeSelectionViewController: ModalGridViewController {
         }
     }
 
-    @objc func handlePickeChanged() {
+    @objc func handlePickChanged() {
         self.value = self.datePicker.date
     }
 
