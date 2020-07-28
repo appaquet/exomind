@@ -31,7 +31,7 @@ pub use results::*;
 
 use crate::error::Error;
 use crate::ordering::OrderingValueWrapper;
-use std::borrow::Borrow;
+use std::{borrow::Borrow, time::Instant};
 
 mod config;
 mod operations;
@@ -56,6 +56,13 @@ pub struct MutationIndex {
     index_writer: Mutex<IndexWriter>,
     schemas: Arc<Registry>,
     fields: schema::Fields,
+    storage: Storage,
+}
+
+#[derive(Debug)]
+enum Storage {
+    Memory,
+    Disk,
 }
 
 impl MutationIndex {
@@ -90,6 +97,7 @@ impl MutationIndex {
             index_writer: Mutex::new(index_writer),
             schemas,
             fields,
+            storage: Storage::Disk,
         })
     }
 
@@ -121,6 +129,7 @@ impl MutationIndex {
             index_writer: Mutex::new(index_writer),
             schemas,
             fields,
+            storage: Storage::Memory,
         })
     }
 
@@ -128,19 +137,21 @@ impl MutationIndex {
     /// at each operation, so `apply_operations` should be used for multiple
     /// operations.
     #[cfg(test)]
-    fn apply_operation(&mut self, operation: IndexOperation) -> Result<(), Error> {
+    fn apply_operation(&mut self, operation: IndexOperation) -> Result<usize, Error> {
         self.apply_operations(Some(operation).into_iter())
     }
 
     /// Apply an iterator of operations on the index, with a single atomic
     /// commit at the end of the iteration.
-    pub fn apply_operations<T>(&mut self, operations: T) -> Result<(), Error>
+    pub fn apply_operations<T>(&mut self, operations: T) -> Result<usize, Error>
     where
         T: Iterator<Item = IndexOperation>,
     {
         let mut index_writer = self.index_writer.lock()?;
 
-        debug!("Starting applying operations to index...");
+        let begin_time = Instant::now();
+
+        trace!("Starting applying operations to index...");
         let mut nb_operations = 0;
         for operation in operations {
             nb_operations += 1;
@@ -184,14 +195,20 @@ impl MutationIndex {
         }
 
         if nb_operations > 0 {
-            debug!("Applied {} operations, now committing", nb_operations);
             index_writer.commit()?;
             // it may take milliseconds for reader to see committed changes, so we force
             // reload
             self.index_reader.reload()?;
+
+            debug!(
+                "Applied {} mutations to index in {:?} ({:?})",
+                nb_operations,
+                begin_time.elapsed(),
+                self.storage
+            );
         }
 
-        Ok(())
+        Ok(nb_operations)
     }
 
     /// Return the highest block offset found in the index.
@@ -500,7 +517,7 @@ impl MutationIndex {
             let field_value = match message_dyn.get_field_value(*field_id) {
                 Ok(fv) => fv,
                 Err(err) => {
-                    debug!("Couldn't get value of field {:?}: {}", field, err);
+                    trace!("Couldn't get value of field {:?}: {}", field, err);
                     continue;
                 }
             };

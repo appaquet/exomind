@@ -83,7 +83,10 @@ where
                 spawn_set = spawn_set.cleanup().await;
 
                 if let InEvent::Message(msg) = event {
-                    debug!("Got an incoming message");
+                    trace!(
+                        "Got an incoming message. Spawn set has {} items",
+                        spawn_set.len()
+                    );
                     if let Err(err) =
                         Self::handle_incoming_message(&weak_inner, &mut spawn_set, msg)
                     {
@@ -358,7 +361,7 @@ pub struct ServerConfiguration {
 impl Default for ServerConfiguration {
     fn default() -> Self {
         ServerConfiguration {
-            watched_queries_register_timeout: Duration::from_secs(30),
+            watched_queries_register_timeout: Duration::from_secs(20),
             management_timer_interval: Duration::from_millis(500),
         }
     }

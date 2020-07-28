@@ -100,42 +100,51 @@ where
         Ok(index)
     }
 
-    pub fn handle_chain_engine_event(&mut self, event: Event) -> Result<Vec<OperationId>, Error> {
+    pub fn handle_chain_engine_event(
+        &mut self,
+        event: Event,
+    ) -> Result<(Vec<OperationId>, usize), Error> {
         self.handle_chain_engine_events(std::iter::once(event))
     }
 
     /// Handle events coming from the chain layer. These events allow keeping
     /// the index consistent with the chain layer, up to the consistency
-    /// guarantees that the layer offers.
-
+    /// guarantees that the layer offers. Returns operations that have been involved
+    /// and the number of index operations applied.
+    ///
     /// Since the events stream is buffered, we may receive a discontinuity if
     /// the chain layer couldn't send us an event. In that case, we re-index
     /// the pending index since we can't guarantee that we didn't lose an
     /// event.
-    pub fn handle_chain_engine_events<E>(&mut self, events: E) -> Result<Vec<OperationId>, Error>
+    pub fn handle_chain_engine_events<E>(
+        &mut self,
+        events: E,
+    ) -> Result<(Vec<OperationId>, usize), Error>
     where
         E: Iterator<Item = Event>,
     {
-        let mut indexed_operations = Vec::new();
+        let mut index_operations_count = 0;
+        let mut affected_operations = Vec::new();
 
-        let mut pending_operations = Vec::new();
+        let mut batched_operations = Vec::new();
         for event in events {
             // We collect new pending operations so that we can apply them in batch. As soon
             // as we hit another kind of events, we apply collected events at
             // once and then continue.
             if let Event::NewPendingOperation(op_id) = event {
-                pending_operations.push(op_id);
-                indexed_operations.push(op_id);
+                batched_operations.push(op_id);
+                affected_operations.push(op_id);
                 continue;
-            } else if !pending_operations.is_empty() {
-                let current_operations = std::mem::replace(&mut pending_operations, Vec::new());
-                self.handle_chain_engine_event_pending_operations(current_operations.into_iter())?;
+            } else if !batched_operations.is_empty() {
+                let current_operations = std::mem::replace(&mut batched_operations, Vec::new());
+                index_operations_count +=
+                    self.handle_chain_pending_operations(current_operations.into_iter())?;
             }
 
             match event {
                 Event::Started => {
                     info!("Chain engine is ready, indexing pending store & chain");
-                    self.index_chain_new_blocks(Some(&mut indexed_operations))?;
+                    self.index_chain_new_blocks(Some(&mut affected_operations))?;
                     self.reindex_pending()?;
                 }
                 Event::StreamDiscontinuity => {
@@ -147,7 +156,8 @@ where
                         "Got new block at offset {}, checking if we can index a new block",
                         block_offset
                     );
-                    self.index_chain_new_blocks(Some(&mut indexed_operations))?;
+                    index_operations_count +=
+                        self.index_chain_new_blocks(Some(&mut affected_operations))?;
                 }
                 Event::ChainDiverged(diverged_block_offset) => {
                     let highest_indexed_block = self.chain_index.highest_indexed_block()?;
@@ -188,11 +198,12 @@ where
             }
         }
 
-        if !pending_operations.is_empty() {
-            self.handle_chain_engine_event_pending_operations(pending_operations.into_iter())?;
+        if !batched_operations.is_empty() {
+            index_operations_count +=
+                self.handle_chain_pending_operations(batched_operations.into_iter())?;
         }
 
-        Ok(indexed_operations)
+        Ok((affected_operations, index_operations_count))
     }
 
     /// Execute a search query on the indices, and returning all entities
@@ -486,7 +497,7 @@ where
     fn index_chain_new_blocks(
         &mut self,
         affected_operations: Option<&mut Vec<OperationId>>,
-    ) -> Result<(), Error> {
+    ) -> Result<usize, Error> {
         let (_last_chain_block_offset, last_chain_block_height) = self
             .chain_handle
             .get_chain_last_block_info()?
@@ -503,7 +514,7 @@ where
                     "No new blocks to index from chain. last_chain_block_height={} last_indexed_block_height={}",
                     last_chain_block_height, last_indexed_height
                 );
-                return Ok(());
+                return Ok(0);
             }
         }
 
@@ -528,7 +539,7 @@ where
                 // make sure that this operation belongs to the chain index by making sure its
                 // depth is below the configured chain_index_min_depth.
                 *offset > offset_from.unwrap_or(0)
-                    && last_chain_block_height - *height >= chain_index_min_depth
+                    && last_chain_block_height.saturating_sub(*height) >= chain_index_min_depth
             })
             .flat_map(|(offset, _height, engine_operation)| {
                 // for every mutation we index in the chain index, we delete it from the pending
@@ -547,10 +558,11 @@ where
 
         self.chain_index.apply_operations(chain_index_mutations)?;
 
-        if !pending_index_mutations.is_empty() {
+        let index_operations_count = pending_index_mutations.len();
+        if index_operations_count > 0 {
             info!(
                 "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
-                pending_index_mutations.len(),
+                index_operations_count,
                 new_highest_block_offset
             );
 
@@ -562,7 +574,7 @@ where
             }
         }
 
-        Ok(())
+        Ok(index_operations_count)
     }
 
     /// Get last block that got indexed in the chain index
@@ -580,10 +592,9 @@ where
 
     /// Handle new pending store operations events from the chain layer by
     /// indexing them into the pending index.
-    fn handle_chain_engine_event_pending_operations<O>(
-        &mut self,
-        operations_id: O,
-    ) -> Result<(), Error>
+    ///
+    /// Returns number of operations applied on the mutations index.
+    fn handle_chain_pending_operations<O>(&mut self, operations_id: O) -> Result<usize, Error>
     where
         O: Iterator<Item = OperationId>,
     {
