@@ -58,6 +58,49 @@ fn index_full_pending_to_chain() -> anyhow::Result<()> {
 }
 
 #[test]
+fn test_chain_index_block_depth_leeway() -> anyhow::Result<()> {
+    let config = EntityIndexConfig {
+        chain_index_min_depth: 1,    // index up to the depth 1 (last block in chain)
+        chain_index_depth_leeway: 5, // only index once we reach depth of 5 in chain
+        ..TestEntityIndex::create_test_config()
+    };
+    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    test_index.handle_engine_events()?;
+
+    let mut put_and_query = |i| -> anyhow::Result<(usize, usize)> {
+        let entity_id = format!("entity{}", i);
+        let trait_id = format!("trait{}", i);
+        let name = format!("name{}", i);
+        let op = test_index.put_test_trait(entity_id, trait_id, name)?;
+
+        test_index.wait_operations_committed(&[op]);
+        test_index.handle_engine_events()?;
+        let res = test_index
+            .index
+            .search(Q::with_trait::<TestMessage>().build())?;
+
+        let pending_res = count_results_source(&res, EntityResultSource::Pending);
+        let chain_res = count_results_source(&res, EntityResultSource::Chain);
+
+        Ok((pending_res, chain_res))
+    };
+
+    // first block gets indexed, but nothing gets indexed until 6th
+    for i in 0..5 {
+        let (pending_res, chain_res) = put_and_query(i)?;
+        assert_eq!(pending_res + chain_res, i + 1, "iter {}", i);
+        assert!(chain_res <= 1, "Chain {} at iter {}", chain_res, i);
+    }
+
+    // at 6th block, we expect everything to be indexed except last one
+    let (pending_res, chain_res) = put_and_query(5)?;
+    assert_eq!(pending_res + chain_res, 6);
+    assert!(chain_res >= 5, "Chain {} at iter 6", chain_res);
+
+    Ok(())
+}
+
+#[test]
 fn reopen_chain_index() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear

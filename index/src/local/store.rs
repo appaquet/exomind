@@ -146,8 +146,8 @@ where
             while let Some(events) = events_stream.next().await {
                 match Inner::handle_chain_engine_events(&weak_inner, events).await {
                     Ok(indexed_operations) if indexed_operations > 0 => {
-                        // notify query watching. if it's full, it's guaranteed that it will catch those
-                        // changes on next iteration
+                        // notify query watching. if it's full, it's guaranteed that it will catch
+                        // those changes on next iteration
                         let _ = watch_check_sender.try_send(());
                     }
                     Err(err) => {

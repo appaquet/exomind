@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::hash::Hasher;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use itertools::Itertools;
 use prost::Message;
@@ -109,8 +109,8 @@ where
 
     /// Handle events coming from the chain layer. These events allow keeping
     /// the index consistent with the chain layer, up to the consistency
-    /// guarantees that the layer offers. Returns operations that have been involved
-    /// and the number of index operations applied.
+    /// guarantees that the layer offers. Returns operations that have been
+    /// involved and the number of index operations applied.
     ///
     /// Since the events stream is buffered, we may receive a discontinuity if
     /// the chain layer couldn't send us an event. In that case, we re-index
@@ -209,6 +209,8 @@ where
     /// Execute a search query on the indices, and returning all entities
     /// matching the query.
     pub fn search<Q: Borrow<EntityQuery>>(&self, query: Q) -> Result<EntityResults, Error> {
+        let begin_instant = Instant::now();
+
         let query = query.borrow();
         let query_include_deleted = query.include_deleted;
         let mut current_page = query
@@ -225,13 +227,10 @@ where
             ..query.clone()
         };
         let chain_results = self.chain_index.search_iter(&mutations_query)?;
+        let chain_hits = chain_results.total_results;
         let pending_results = self.pending_index.search_iter(&mutations_query)?;
-
-        let total_estimated = chain_results.total_results + pending_results.total_results;
-        debug!(
-            "Found approximately {} from chain, {} from pending, for total of {}",
-            chain_results.total_results, pending_results.total_results, total_estimated
-        );
+        let pending_hits = pending_results.total_results;
+        let after_query_instant = Instant::now();
 
         // create merged iterator, returning results from both underlying in order
         let chain_results = chain_results.map(|res| (res, EntityResultSource::Chain));
@@ -342,6 +341,8 @@ where
                 },
             );
 
+        let after_aggregate_instant = Instant::now();
+
         let next_page = if let Some(last_result) = entity_results.last() {
             let mut new_page = current_page.clone();
 
@@ -371,13 +372,24 @@ where
             self.populate_results_traits(&mut entity_results);
         }
 
+        let end_instant = Instant::now();
+        debug!(
+            "Query done chain_hits={} pending_hits={} query={:?} aggr={:?} fetch={:?} total={:?}",
+            chain_hits,
+            pending_hits,
+            after_query_instant - begin_instant,
+            after_aggregate_instant - after_query_instant,
+            end_instant - after_aggregate_instant,
+            end_instant - begin_instant,
+        );
+
         let entities = entity_results.into_iter().map(|res| res.proto).collect();
         Ok(EntityResults {
             entities,
             skipped_hash,
             next_page,
             current_page: Some(current_page),
-            estimated_count: total_estimated as u32,
+            estimated_count: (chain_hits + pending_hits) as u32,
             hash: results_hash,
         })
     }
@@ -506,13 +518,15 @@ where
             })?;
 
         let chain_index_min_depth = self.config.chain_index_min_depth;
+        let chain_index_depth_leeway = self.config.chain_index_depth_leeway;
         let last_indexed_block = self.last_chain_indexed_block()?;
         let offset_from = last_indexed_block.map(|(offset, _height)| offset);
         if let Some((_last_indexed_offset, last_indexed_height)) = last_indexed_block {
-            if last_chain_block_height - last_indexed_height < chain_index_min_depth {
+            let depth = last_chain_block_height - last_indexed_height;
+            if depth < chain_index_min_depth || depth < chain_index_depth_leeway {
                 debug!(
-                    "No new blocks to index from chain. last_chain_block_height={} last_indexed_block_height={}",
-                    last_chain_block_height, last_indexed_height
+                    "No need to index new blocks to chain index. last_chain_block_height={} last_indexed_block_height={} depth={} min_depth={} leeway={}",
+                    last_chain_block_height, last_indexed_height, depth, chain_index_min_depth, chain_index_depth_leeway,
                 );
                 return Ok(0);
             }

@@ -50,6 +50,7 @@ exclude = [
     "3rd"
 ]
 
-[profile.release]
-lto = "thin"
-codegen-units = 1
+# To enable back when we'll care about size
+# [profile.release]
+# lto = "thin"
+# codegen-units = 1
