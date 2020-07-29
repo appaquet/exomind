@@ -61,12 +61,13 @@ pub trait OrderingValueExt {
 
 impl OrderingValueExt for OrderingValue {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        use ordering_value::Value as V;
+        use std::cmp::Ordering as O;
+
         if self.value == other.value {
             return self.operation_id.partial_cmp(&other.operation_id);
         }
 
-        use ordering_value::Value as V;
-        use std::cmp::Ordering as O;
         match (self.value.as_ref(), other.value.as_ref()) {
             (Some(V::Min(_)), _) => Some(O::Less),
             (_, Some(V::Min(_))) => Some(O::Greater),

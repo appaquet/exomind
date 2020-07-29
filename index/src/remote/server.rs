@@ -335,7 +335,7 @@ where
         let mut timed_out_tokens = Vec::new();
         for (token, watched_query) in &mut inner.watched_queries {
             if watched_query.last_register.elapsed() > timeout_duration {
-                info!(
+                debug!(
                     "Watched query with token={:?} timed out after {:?}, dropping it",
                     token,
                     watched_query.last_register.elapsed(),

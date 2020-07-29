@@ -53,21 +53,19 @@ where
     }
 }
 
-#[inline]
 pub fn result_assert_equal<A: PartialEq + Debug>(left: A, right: A) -> anyhow::Result<()> {
-    if left != right {
-        Err(anyhow!(format!("expected: {:?} got: {:?}", left, right)))
-    } else {
+    if left == right {
         Ok(())
+    } else {
+        Err(anyhow!(format!("expected: {:?} got: {:?}", left, right)))
     }
 }
 
-#[inline]
 pub fn result_assert_true(value: bool) -> anyhow::Result<()> {
-    if !value {
-        Err(anyhow!("value is not true"))
-    } else {
+    if value {
         Ok(())
+    } else {
+        Err(anyhow!("value is not true"))
     }
 }
 

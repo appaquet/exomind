@@ -374,9 +374,10 @@ where
 
         let end_instant = Instant::now();
         debug!(
-            "Query done chain_hits={} pending_hits={} query={:?} aggr={:?} fetch={:?} total={:?}",
+            "Query done chain_hits={} pending_hits={} aggr_fetch={} query={:?} aggr={:?} fetch={:?} total={:?}",
             chain_hits,
             pending_hits,
+            entity_mutations_cache.len(),
             after_query_instant - begin_instant,
             after_aggregate_instant - after_query_instant,
             end_instant - after_aggregate_instant,
