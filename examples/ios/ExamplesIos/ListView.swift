@@ -67,8 +67,8 @@ class MyList: ObservableObject {
     }
 
     func connect(appState: AppState) {
-        let query = QueryBuilder.withTrait(message: Exocore_Test_TestMessage())
-                .count(count: 100)
+        let query = QueryBuilder.withTrait(Exocore_Test_TestMessage.self)
+                .count(100)
                 .build()
         self.resultStream = ExocoreClient.store.watchedQuery(query: query, onChange: { [weak self] (status, results) in
             DispatchQueue.main.async {
@@ -96,7 +96,7 @@ class MyList: ObservableObject {
 
         let mutation = try! MutationBuilder
                 .createEntity()
-                .putTrait(trait: msg)
+                .putTrait(message: msg)
                 .build()
 
         ExocoreClient.store.mutate(mutation: mutation)
@@ -104,7 +104,8 @@ class MyList: ObservableObject {
 
     func remove(atOffsets: IndexSet) {
         let item = self.items[atOffsets.first!]
-        let mutation = MutationBuilder
+
+        let mutation = try! MutationBuilder
                 .updateEntity(entityId: item.id)
                 .deleteEntity()
                 .build()

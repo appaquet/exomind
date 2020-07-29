@@ -310,6 +310,11 @@ export class QueryBuilder {
         return this;
     }
 
+    project(...projection: exocore.index.IProjection[]): QueryBuilder {
+        this.query.projections = this.query.projections.concat(projection);
+        return this;
+    }
+
     orderByField(field: string, ascending: boolean): QueryBuilder {
         this.query.ordering = new exocore.index.Ordering({
             ascending: ascending === true,

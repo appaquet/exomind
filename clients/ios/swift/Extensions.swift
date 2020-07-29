@@ -1,6 +1,8 @@
 import Foundation
 import SwiftProtobuf
 
+let traitUrlPrefix = "type.googleapis.com/"
+
 extension Exocore_Index_Entity {
     public func trait<T: Message>(_ id: String) -> TypedTrait<T>? {
         self.traits.first(where: { (t: Exocore_Index_Trait) in
@@ -16,14 +18,14 @@ extension Exocore_Index_Entity {
     }
 
     public func traitsOfType<T: Message>(_ message: T.Type) -> [TypedTrait<T>] {
-        self.traits.flatMap({ (trait: Exocore_Index_Trait) -> [TypedTrait<T>] in
+        self.traits.compactMap({ (trait: Exocore_Index_Trait) -> TypedTrait<T>? in
             if trait.message.isA(message) {
                 if let msg = try? T.init(unpackingAny: trait.message) {
-                    return [TypedTrait(trait: trait, message: msg)]
+                    return TypedTrait(trait: trait, message: msg)
                 }
             }
 
-            return []
+            return nil
         })
     }
 }
@@ -31,5 +33,19 @@ extension Exocore_Index_Entity {
 public struct TypedTrait<T: Message> {
     public let trait: Exocore_Index_Trait
     public let message: T
+}
+
+public func traitName(fromTypeUrl url: String) -> String {
+    if !url.hasPrefix(traitUrlPrefix) {
+        return ""
+    }
+
+    return String(url.dropFirst(traitUrlPrefix.count))
+}
+
+extension Exocore_Index_Trait {
+    public func canonicalFullName() -> String {
+        traitName(fromTypeUrl: self.message.typeURL)
+    }
 }
 

@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::hash::Hasher;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use itertools::Itertools;
 use prost::Message;
@@ -22,7 +22,7 @@ use exocore_core::protos::generated::exocore_index::{
 use exocore_core::protos::{prost::ProstDateTimeExt, registry::Registry};
 
 use crate::error::Error;
-use crate::ordering::OrderingValueExt;
+use crate::{entity::EntityId, ordering::OrderingValueExt};
 
 use super::mutation_index::{IndexOperation, MutationIndex, MutationType};
 use super::top_results::RescoredTopResultsIterable;
@@ -100,42 +100,51 @@ where
         Ok(index)
     }
 
-    pub fn handle_chain_engine_event(&mut self, event: Event) -> Result<Vec<OperationId>, Error> {
+    pub fn handle_chain_engine_event(
+        &mut self,
+        event: Event,
+    ) -> Result<(Vec<OperationId>, usize), Error> {
         self.handle_chain_engine_events(std::iter::once(event))
     }
 
     /// Handle events coming from the chain layer. These events allow keeping
     /// the index consistent with the chain layer, up to the consistency
-    /// guarantees that the layer offers.
-
+    /// guarantees that the layer offers. Returns operations that have been
+    /// involved and the number of index operations applied.
+    ///
     /// Since the events stream is buffered, we may receive a discontinuity if
     /// the chain layer couldn't send us an event. In that case, we re-index
     /// the pending index since we can't guarantee that we didn't lose an
     /// event.
-    pub fn handle_chain_engine_events<E>(&mut self, events: E) -> Result<Vec<OperationId>, Error>
+    pub fn handle_chain_engine_events<E>(
+        &mut self,
+        events: E,
+    ) -> Result<(Vec<OperationId>, usize), Error>
     where
         E: Iterator<Item = Event>,
     {
-        let mut indexed_operations = Vec::new();
+        let mut index_operations_count = 0;
+        let mut affected_operations = Vec::new();
 
-        let mut pending_operations = Vec::new();
+        let mut batched_operations = Vec::new();
         for event in events {
             // We collect new pending operations so that we can apply them in batch. As soon
             // as we hit another kind of events, we apply collected events at
             // once and then continue.
             if let Event::NewPendingOperation(op_id) = event {
-                pending_operations.push(op_id);
-                indexed_operations.push(op_id);
+                batched_operations.push(op_id);
+                affected_operations.push(op_id);
                 continue;
-            } else if !pending_operations.is_empty() {
-                let current_operations = std::mem::replace(&mut pending_operations, Vec::new());
-                self.handle_chain_engine_event_pending_operations(current_operations.into_iter())?;
+            } else if !batched_operations.is_empty() {
+                let current_operations = std::mem::replace(&mut batched_operations, Vec::new());
+                index_operations_count +=
+                    self.handle_chain_pending_operations(current_operations.into_iter())?;
             }
 
             match event {
                 Event::Started => {
                     info!("Chain engine is ready, indexing pending store & chain");
-                    self.index_chain_new_blocks(Some(&mut indexed_operations))?;
+                    self.index_chain_new_blocks(Some(&mut affected_operations))?;
                     self.reindex_pending()?;
                 }
                 Event::StreamDiscontinuity => {
@@ -147,7 +156,8 @@ where
                         "Got new block at offset {}, checking if we can index a new block",
                         block_offset
                     );
-                    self.index_chain_new_blocks(Some(&mut indexed_operations))?;
+                    index_operations_count +=
+                        self.index_chain_new_blocks(Some(&mut affected_operations))?;
                 }
                 Event::ChainDiverged(diverged_block_offset) => {
                     let highest_indexed_block = self.chain_index.highest_indexed_block()?;
@@ -188,16 +198,19 @@ where
             }
         }
 
-        if !pending_operations.is_empty() {
-            self.handle_chain_engine_event_pending_operations(pending_operations.into_iter())?;
+        if !batched_operations.is_empty() {
+            index_operations_count +=
+                self.handle_chain_pending_operations(batched_operations.into_iter())?;
         }
 
-        Ok(indexed_operations)
+        Ok((affected_operations, index_operations_count))
     }
 
     /// Execute a search query on the indices, and returning all entities
     /// matching the query.
     pub fn search<Q: Borrow<EntityQuery>>(&self, query: Q) -> Result<EntityResults, Error> {
+        let begin_instant = Instant::now();
+
         let query = query.borrow();
         let query_include_deleted = query.include_deleted;
         let mut current_page = query
@@ -214,13 +227,10 @@ where
             ..query.clone()
         };
         let chain_results = self.chain_index.search_iter(&mutations_query)?;
+        let chain_hits = chain_results.total_results;
         let pending_results = self.pending_index.search_iter(&mutations_query)?;
-
-        let total_estimated = chain_results.total_results + pending_results.total_results;
-        debug!(
-            "Found approximately {} from chain, {} from pending, for total of {}",
-            chain_results.total_results, pending_results.total_results, total_estimated
-        );
+        let pending_hits = pending_results.total_results;
+        let after_query_instant = Instant::now();
 
         // create merged iterator, returning results from both underlying in order
         let chain_results = chain_results.map(|res| (res, EntityResultSource::Chain));
@@ -232,7 +242,7 @@ where
 
         // iterate through results and returning the first N entities
         let mut hasher = result_hasher();
-        let mut entity_mutations_cache = HashMap::<String, Rc<MutationAggregator>>::new();
+        let mut entity_mutations_cache = HashMap::<EntityId, Rc<MutationAggregator>>::new();
         let mut matched_entities = HashSet::new();
         let mut entity_results = combined_results
             // iterate through results, starting with best scores
@@ -302,7 +312,7 @@ where
                                 traits: Vec::new(),
                             }),
                             source: index_source.into(),
-                            ordering_value: Some(ordering_value.value.clone()),
+                            ordering_value: Some(ordering_value.value),
                         },
                         mutations: entity_mutations,
                     };
@@ -330,6 +340,8 @@ where
                     results
                 },
             );
+
+        let after_aggregate_instant = Instant::now();
 
         let next_page = if let Some(last_result) = entity_results.last() {
             let mut new_page = current_page.clone();
@@ -360,13 +372,25 @@ where
             self.populate_results_traits(&mut entity_results);
         }
 
+        let end_instant = Instant::now();
+        debug!(
+            "Query done chain_hits={} pending_hits={} aggr_fetch={} query={:?} aggr={:?} fetch={:?} total={:?}",
+            chain_hits,
+            pending_hits,
+            entity_mutations_cache.len(),
+            after_query_instant - begin_instant,
+            after_aggregate_instant - after_query_instant,
+            end_instant - after_aggregate_instant,
+            end_instant - begin_instant,
+        );
+
         let entities = entity_results.into_iter().map(|res| res.proto).collect();
         Ok(EntityResults {
             entities,
             skipped_hash,
             next_page,
             current_page: Some(current_page),
-            estimated_count: total_estimated as u32,
+            estimated_count: (chain_hits + pending_hits) as u32,
             hash: results_hash,
         })
     }
@@ -486,7 +510,7 @@ where
     fn index_chain_new_blocks(
         &mut self,
         affected_operations: Option<&mut Vec<OperationId>>,
-    ) -> Result<(), Error> {
+    ) -> Result<usize, Error> {
         let (_last_chain_block_offset, last_chain_block_height) = self
             .chain_handle
             .get_chain_last_block_info()?
@@ -495,15 +519,17 @@ where
             })?;
 
         let chain_index_min_depth = self.config.chain_index_min_depth;
+        let chain_index_depth_leeway = self.config.chain_index_depth_leeway;
         let last_indexed_block = self.last_chain_indexed_block()?;
         let offset_from = last_indexed_block.map(|(offset, _height)| offset);
         if let Some((_last_indexed_offset, last_indexed_height)) = last_indexed_block {
-            if last_chain_block_height - last_indexed_height < chain_index_min_depth {
+            let depth = last_chain_block_height - last_indexed_height;
+            if depth < chain_index_min_depth || depth < chain_index_depth_leeway {
                 debug!(
-                    "No new blocks to index from chain. last_chain_block_height={} last_indexed_block_height={}",
-                    last_chain_block_height, last_indexed_height
+                    "No need to index new blocks to chain index. last_chain_block_height={} last_indexed_block_height={} depth={} min_depth={} leeway={}",
+                    last_chain_block_height, last_indexed_height, depth, chain_index_min_depth, chain_index_depth_leeway,
                 );
-                return Ok(());
+                return Ok(0);
             }
         }
 
@@ -528,7 +554,7 @@ where
                 // make sure that this operation belongs to the chain index by making sure its
                 // depth is below the configured chain_index_min_depth.
                 *offset > offset_from.unwrap_or(0)
-                    && last_chain_block_height - *height >= chain_index_min_depth
+                    && last_chain_block_height.saturating_sub(*height) >= chain_index_min_depth
             })
             .flat_map(|(offset, _height, engine_operation)| {
                 // for every mutation we index in the chain index, we delete it from the pending
@@ -547,10 +573,11 @@ where
 
         self.chain_index.apply_operations(chain_index_mutations)?;
 
-        if !pending_index_mutations.is_empty() {
+        let index_operations_count = pending_index_mutations.len();
+        if index_operations_count > 0 {
             info!(
                 "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
-                pending_index_mutations.len(),
+                index_operations_count,
                 new_highest_block_offset
             );
 
@@ -562,7 +589,7 @@ where
             }
         }
 
-        Ok(())
+        Ok(index_operations_count)
     }
 
     /// Get last block that got indexed in the chain index
@@ -580,10 +607,9 @@ where
 
     /// Handle new pending store operations events from the chain layer by
     /// indexing them into the pending index.
-    fn handle_chain_engine_event_pending_operations<O>(
-        &mut self,
-        operations_id: O,
-    ) -> Result<(), Error>
+    ///
+    /// Returns number of operations applied on the mutations index.
+    fn handle_chain_pending_operations<O>(&mut self, operations_id: O) -> Result<usize, Error>
     where
         O: Iterator<Item = OperationId>,
     {
@@ -630,12 +656,13 @@ where
     ) -> Result<MutationAggregator, Error> {
         let pending_results = self.pending_index.fetch_entity_mutations(entity_id)?;
         let chain_results = self.chain_index.fetch_entity_mutations(entity_id)?;
-        let ordered_traits_metadata = pending_results
+        let mutations_metadata = pending_results
             .mutations
-            .into_iter()
-            .chain(chain_results.mutations.into_iter());
+            .iter()
+            .chain(chain_results.mutations.iter())
+            .cloned();
 
-        MutationAggregator::new(ordered_traits_metadata)
+        MutationAggregator::new(mutations_metadata)
     }
 
     /// Populate traits in the EntityResult by fetching each entity's traits

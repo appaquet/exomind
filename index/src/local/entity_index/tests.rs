@@ -3,7 +3,6 @@ use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::{prost::ProstTimestampExt, test::TestMessage2};
 use test_index::*;
 
-use crate::local::mutation_index::MutationResults;
 use crate::mutation::MutationBuilder;
 use crate::ordering::{value_from_u64, value_max};
 use crate::query::{ProjectionBuilder, QueryBuilder as Q};
@@ -53,6 +52,49 @@ fn index_full_pending_to_chain() -> anyhow::Result<()> {
     let chain_res = count_results_source(&res, EntityResultSource::Chain);
     assert!(chain_res >= 5, "was equal to {}", chain_res);
     assert_eq!(pending_res + chain_res, 10);
+
+    Ok(())
+}
+
+#[test]
+fn test_chain_index_block_depth_leeway() -> anyhow::Result<()> {
+    let config = EntityIndexConfig {
+        chain_index_min_depth: 1,    // index up to the depth 1 (last block in chain)
+        chain_index_depth_leeway: 5, // only index once we reach depth of 5 in chain
+        ..TestEntityIndex::create_test_config()
+    };
+    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    test_index.handle_engine_events()?;
+
+    let mut put_and_query = |i| -> anyhow::Result<(usize, usize)> {
+        let entity_id = format!("entity{}", i);
+        let trait_id = format!("trait{}", i);
+        let name = format!("name{}", i);
+        let op = test_index.put_test_trait(entity_id, trait_id, name)?;
+
+        test_index.wait_operations_committed(&[op]);
+        test_index.handle_engine_events()?;
+        let res = test_index
+            .index
+            .search(Q::with_trait::<TestMessage>().build())?;
+
+        let pending_res = count_results_source(&res, EntityResultSource::Pending);
+        let chain_res = count_results_source(&res, EntityResultSource::Chain);
+
+        Ok((pending_res, chain_res))
+    };
+
+    // first block gets indexed, but nothing gets indexed until 6th
+    for i in 0..5 {
+        let (pending_res, chain_res) = put_and_query(i)?;
+        assert_eq!(pending_res + chain_res, i + 1, "iter {}", i);
+        assert!(chain_res <= 1, "Chain {} at iter {}", chain_res, i);
+    }
+
+    // at 6th block, we expect everything to be indexed except last one
+    let (pending_res, chain_res) = put_and_query(5)?;
+    assert_eq!(pending_res + chain_res, 6);
+    assert!(chain_res >= 5, "Chain {} at iter 6", chain_res);
 
     Ok(())
 }
@@ -337,7 +379,12 @@ fn traits_compaction() -> anyhow::Result<()> {
         .index
         .pending_index
         .fetch_entity_mutations("entity1")?;
-    let ops = extract_indexed_operations_id(pending_res);
+    let ops: Vec<OperationId> = pending_res
+        .mutations
+        .iter()
+        .map(|r| r.operation_id)
+        .unique()
+        .collect();
     assert_eq!(vec![op1, op2, op3], ops);
 
     // mut entity has only 1 trait since all ops are on same trait
@@ -687,13 +734,5 @@ fn extract_result_messages(res: &EntityResultProto) -> Vec<(Trait, TestMessage)>
             let msg = TestMessage::decode(trt.message.as_ref().unwrap().value.as_slice()).unwrap();
             (trt, msg)
         })
-        .collect()
-}
-
-fn extract_indexed_operations_id(res: MutationResults) -> Vec<OperationId> {
-    res.mutations
-        .iter()
-        .map(|r| r.operation_id)
-        .unique()
         .collect()
 }

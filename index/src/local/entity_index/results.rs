@@ -19,7 +19,7 @@ use std::{hash::Hasher, rc::Rc};
 /// aggregated traits.
 pub struct EntityResult {
     pub matched_mutation: MutationMetadata,
-    pub ordering_value: Rc<OrderingValueWrapper>,
+    pub ordering_value: OrderingValueWrapper,
     pub proto: EntityResultProto,
     pub mutations: Rc<MutationAggregator>,
 }
@@ -286,7 +286,6 @@ mod tests {
     use exocore_core::protos::prost::ProstAnyPackMessageExt;
     use exocore_core::protos::{index::OrderingValue, reflect::FieldGroupId, test::TestMessage};
     use prost::Message;
-    use std::rc::Rc;
 
     const TYPE1: &str = "exocore.test.TestMessage";
     const TYPE2: &str = "exocore.test.TestMessage2";
@@ -653,11 +652,11 @@ mod tests {
                 creation_date,
                 modification_date,
             }),
-            sort_value: Rc::new(OrderingValueWrapper {
+            sort_value: OrderingValueWrapper {
                 value: OrderingValue::default(),
                 ignore: true,
                 reverse: true,
-            }),
+            },
         }
     }
 
@@ -671,11 +670,11 @@ mod tests {
             block_offset,
             entity_id: String::new(),
             mutation_type: MutationType::TraitTombstone(trait_id.into()),
-            sort_value: Rc::new(OrderingValueWrapper {
+            sort_value: OrderingValueWrapper {
                 value: OrderingValue::default(),
                 ignore: true,
                 reverse: true,
-            }),
+            },
         }
     }
 
@@ -688,11 +687,11 @@ mod tests {
             block_offset,
             entity_id: String::new(),
             mutation_type: MutationType::EntityTombstone,
-            sort_value: Rc::new(OrderingValueWrapper {
+            sort_value: OrderingValueWrapper {
                 value: OrderingValue::default(),
                 ignore: true,
                 reverse: true,
-            }),
+            },
         }
     }
 }

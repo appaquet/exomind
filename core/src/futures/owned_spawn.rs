@@ -92,6 +92,14 @@ where
             spawns: remaining_spawns,
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.spawns.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.spawns.is_empty()
+    }
 }
 
 impl<O> Default for OwnedSpawnSet<O>

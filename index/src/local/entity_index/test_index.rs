@@ -64,6 +64,7 @@ impl TestEntityIndex {
     pub fn create_test_config() -> EntityIndexConfig {
         EntityIndexConfig {
             chain_index_in_memory: true,
+            chain_index_depth_leeway: 0, // for tests, we want to index as soon as possible
             pending_index_config: MutationIndexConfig {
                 indexer_num_threads: Some(1),
                 ..MutationIndexConfig::default()

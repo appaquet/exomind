@@ -1,9 +1,23 @@
+use crate::error::Error;
+use crate::ordering::OrderingValueWrapper;
+
+use exocore_chain::block::BlockOffset;
+use exocore_core::protos::generated::exocore_index::{
+    entity_query::Predicate, ordering, ordering_value, trait_field_predicate, trait_query,
+    EntityQuery, IdsPredicate, MatchPredicate, OperationsPredicate, Ordering, OrderingValue,
+    Paging, ReferencePredicate, TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate,
+};
+use exocore_core::protos::prost::{Any, ProstTimestampExt};
+use exocore_core::protos::reflect;
+use exocore_core::protos::reflect::{FieldValue, ReflectMessage};
+use exocore_core::protos::{index::AllPredicate, registry::Registry};
+
 use std::ops::Deref;
 use std::path::Path;
-use std::rc::Rc;
 use std::result::Result;
-use std::sync::{atomic, atomic::AtomicUsize};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use std::sync::{atomic, atomic::AtomicUsize, Mutex};
+use std::{borrow::Borrow, time::Instant};
 
 use chrono::{TimeZone, Utc};
 use tantivy::collector::{Collector, TopDocs};
@@ -16,24 +30,12 @@ use tantivy::{
 };
 
 pub use config::*;
-use exocore_chain::block::BlockOffset;
-use exocore_core::protos::generated::exocore_index::{
-    entity_query::Predicate, ordering, ordering_value, trait_field_predicate, trait_query,
-    EntityQuery, IdsPredicate, MatchPredicate, OperationsPredicate, Ordering, OrderingValue,
-    Paging, ReferencePredicate, TraitFieldPredicate, TraitFieldReferencePredicate, TraitPredicate,
-};
-use exocore_core::protos::prost::{Any, ProstTimestampExt};
-use exocore_core::protos::reflect;
-use exocore_core::protos::reflect::{FieldValue, ReflectMessage};
-use exocore_core::protos::{index::AllPredicate, registry::Registry};
+use entity_cache::EntityMutationsCache;
 pub use operations::*;
 pub use results::*;
 
-use crate::error::Error;
-use crate::ordering::OrderingValueWrapper;
-use std::borrow::Borrow;
-
 mod config;
+mod entity_cache;
 mod operations;
 mod results;
 mod schema;
@@ -56,6 +58,14 @@ pub struct MutationIndex {
     index_writer: Mutex<IndexWriter>,
     schemas: Arc<Registry>,
     fields: schema::Fields,
+    storage: Storage,
+    entity_cache: EntityMutationsCache,
+}
+
+#[derive(Debug)]
+enum Storage {
+    Memory,
+    Disk,
 }
 
 impl MutationIndex {
@@ -90,6 +100,8 @@ impl MutationIndex {
             index_writer: Mutex::new(index_writer),
             schemas,
             fields,
+            storage: Storage::Disk,
+            entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size),
         })
     }
 
@@ -121,6 +133,8 @@ impl MutationIndex {
             index_writer: Mutex::new(index_writer),
             schemas,
             fields,
+            storage: Storage::Memory,
+            entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size),
         })
     }
 
@@ -128,19 +142,21 @@ impl MutationIndex {
     /// at each operation, so `apply_operations` should be used for multiple
     /// operations.
     #[cfg(test)]
-    fn apply_operation(&mut self, operation: IndexOperation) -> Result<(), Error> {
+    fn apply_operation(&mut self, operation: IndexOperation) -> Result<usize, Error> {
         self.apply_operations(Some(operation).into_iter())
     }
 
     /// Apply an iterator of operations on the index, with a single atomic
     /// commit at the end of the iteration.
-    pub fn apply_operations<T>(&mut self, operations: T) -> Result<(), Error>
+    pub fn apply_operations<T>(&mut self, operations: T) -> Result<usize, Error>
     where
         T: Iterator<Item = IndexOperation>,
     {
         let mut index_writer = self.index_writer.lock()?;
 
-        debug!("Starting applying operations to index...");
+        let begin_time = Instant::now();
+
+        trace!("Starting applying operations to index...");
         let mut nb_operations = 0;
         for operation in operations {
             nb_operations += 1;
@@ -153,6 +169,9 @@ impl MutationIndex {
                         entity_trait_id,
                         trait_put.operation_id
                     );
+
+                    self.entity_cache.remove(&trait_put.entity_id);
+
                     let doc = self.trait_put_to_document(&trait_put)?;
                     index_writer.add_document(doc);
                 }
@@ -163,6 +182,9 @@ impl MutationIndex {
                         trait_tombstone.trait_id,
                         trait_tombstone.operation_id
                     );
+
+                    self.entity_cache.remove(&trait_tombstone.entity_id);
+
                     let doc = self.trait_tombstone_to_document(&trait_tombstone);
                     index_writer.add_document(doc);
                 }
@@ -172,6 +194,9 @@ impl MutationIndex {
                         entity_tombstone.entity_id,
                         entity_tombstone.operation_id
                     );
+
+                    self.entity_cache.remove(&entity_tombstone.entity_id);
+
                     let doc = self.entity_tombstone_to_document(&entity_tombstone);
                     index_writer.add_document(doc);
                 }
@@ -184,14 +209,20 @@ impl MutationIndex {
         }
 
         if nb_operations > 0 {
-            debug!("Applied {} operations, now committing", nb_operations);
             index_writer.commit()?;
             // it may take milliseconds for reader to see committed changes, so we force
             // reload
             self.index_reader.reload()?;
+
+            debug!(
+                "Applied {} mutations to index in {:?} ({:?})",
+                nb_operations,
+                begin_time.elapsed(),
+                self.storage
+            );
         }
 
-        Ok(())
+        Ok(nb_operations)
     }
 
     /// Return the highest block offset found in the index.
@@ -251,7 +282,15 @@ impl MutationIndex {
     }
 
     /// Fetch all mutations for a given entity id.
-    pub fn fetch_entity_mutations(&self, entity_id: &str) -> Result<MutationResults, Error> {
+    ///
+    /// This method is in a very hot path since it's called to get all the mutations of an entity
+    /// that go returned in a search query. Therefor, we use a cache to store all the mutations that
+    /// we fetch here and bust them when we index a new mutation for an entity.
+    pub fn fetch_entity_mutations(&self, entity_id: &str) -> Result<EntityMutationResults, Error> {
+        if let Some(results) = self.entity_cache.get(&entity_id) {
+            return Ok(results);
+        }
+
         let searcher = self.index_reader.searcher();
 
         let term = Term::from_field_text(self.fields.entity_id, &entity_id);
@@ -266,7 +305,15 @@ impl MutationIndex {
             ..Default::default()
         };
 
-        self.execute_tantivy_with_paging(searcher, &query, Some(&paging), ordering, None)
+        let results =
+            self.execute_tantivy_with_paging(searcher, &query, Some(&paging), ordering, None)?;
+
+        let entity_mutations = EntityMutationResults {
+            mutations: results.mutations.into_iter().collect(),
+        };
+        self.entity_cache.put(&entity_id, entity_mutations.clone());
+
+        Ok(entity_mutations)
     }
 
     /// Execute a search by trait type query and return traits in operations id
@@ -500,7 +547,7 @@ impl MutationIndex {
             let field_value = match message_dyn.get_field_value(*field_id) {
                 Ok(fv) => fv,
                 Err(err) => {
-                    debug!("Couldn't get value of field {:?}: {}", field, err);
+                    trace!("Couldn't get value of field {:?}: {}", field, err);
                     continue;
                 }
             };
@@ -790,9 +837,9 @@ impl MutationIndex {
         let search_results = searcher.search(query, top_collector)?;
 
         let mut results = Vec::new();
-        for (sort_wrapper, doc_addr) in search_results {
+        for (sort_value, doc_addr) in search_results {
             // ignored results were out of the requested paging
-            if !sort_wrapper.ignore {
+            if !sort_value.ignore {
                 let doc = searcher.doc(doc_addr)?;
                 let block_offset = schema::get_doc_opt_u64_value(&doc, self.fields.block_offset);
                 let operation_id = schema::get_doc_u64_value(&doc, self.fields.operation_id);
@@ -809,7 +856,7 @@ impl MutationIndex {
                         schema::get_doc_opt_u64_value(&doc, self.fields.modification_date)
                             .map(|ts| Utc.timestamp_nanos(ts as i64));
                     put_trait.trait_type =
-                        schema::get_doc_opt_string_value(&doc, self.fields.trait_type);
+                        schema::get_doc_opt_string_value(&doc, self.fields.trait_type)
                 }
 
                 let result = MutationMetadata {
@@ -817,7 +864,7 @@ impl MutationIndex {
                     operation_id,
                     entity_id,
                     mutation_type,
-                    sort_value: Rc::new(sort_wrapper),
+                    sort_value,
                 };
                 results.push(result);
             }

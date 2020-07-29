@@ -4,7 +4,6 @@ use std::sync::{Arc, Mutex};
 use futures::channel::mpsc;
 
 use exocore_core::protos::generated::exocore_index::{EntityQuery, EntityResults};
-use exocore_core::time::Instant;
 
 use crate::error::Error;
 use crate::query::{ResultHash, WatchToken};
@@ -22,39 +21,46 @@ impl WatchedQueries {
         }
     }
 
-    pub fn update_query_results(
+    pub fn track_query(
         &self,
         token: WatchToken,
         query: &EntityQuery,
-        results: &EntityResults,
         sender: Arc<Mutex<mpsc::Sender<Result<EntityResults, Error>>>>,
-    ) -> bool {
+    ) {
         let mut inner = self.inner.lock().expect("Inner got poisoned");
 
-        if let Some(mut current_watched) = inner.queries.remove(&token) {
-            let should_reply = current_watched.last_hash != results.hash;
+        let watched_query = RegisteredWatchedQuery {
+            token,
+            sender,
+            query: Box::new(query.clone()),
+            last_hash: None,
+        };
 
-            current_watched.last_hash = results.hash;
-            inner.queries.insert(token, current_watched);
+        inner.queries.insert(token, watched_query);
+    }
+
+    pub fn update_query_results(&self, token: WatchToken, results: &EntityResults) -> bool {
+        let mut inner = self.inner.lock().expect("Inner got poisoned");
+
+        if let Some(mut current_watched) = inner.queries.get_mut(&token) {
+            let should_reply = current_watched.last_hash != Some(results.hash);
+            current_watched.last_hash = Some(results.hash);
+            current_watched.query.result_hash = results.hash;
 
             should_reply
         } else {
-            let watched_query = RegisteredWatchedQuery {
-                token,
-                sender,
-                query: Arc::new(query.clone()),
-                last_register: Instant::now(),
-                last_hash: results.hash,
-            };
-
-            inner.queries.insert(token, watched_query);
-            true
+            false
         }
     }
 
     pub fn unwatch_query(&self, token: WatchToken) {
         if let Ok(mut inner) = self.inner.lock() {
             inner.queries.remove(&token);
+            debug!(
+                "Dropped watched query {}. {} watched queries left.",
+                token,
+                inner.queries.len()
+            );
         }
     }
 
@@ -72,7 +78,6 @@ struct Inner {
 pub struct RegisteredWatchedQuery {
     pub(crate) token: WatchToken,
     pub(crate) sender: Arc<Mutex<mpsc::Sender<Result<EntityResults, Error>>>>,
-    pub(crate) query: Arc<EntityQuery>,
-    pub(crate) last_register: Instant,
-    pub(crate) last_hash: ResultHash,
+    pub(crate) query: Box<EntityQuery>,
+    pub(crate) last_hash: Option<ResultHash>,
 }

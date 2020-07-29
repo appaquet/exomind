@@ -23,7 +23,7 @@
 * Generate headers & protobuf
     * `./tools/generate.sh`
 
-* Build the universal lib: `cargo lipo`
+* Build the universal lib: `./tools/build.sh`
 
 ## Example project
 

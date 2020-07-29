@@ -74,7 +74,7 @@ fn fetch_entity_mutations() -> anyhow::Result<()> {
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.mutations[0].block_offset, Some(1));
     assert_eq!(res.mutations[0].operation_id, 10);
-    assert_eq!(res.mutations[0].entity_id, "entity_id1");
+    assert_eq!(res.mutations[0].entity_id.as_str(), "entity_id1");
     assert_is_put_trait(&res.mutations[0].mutation_type, "foo1");
 
     let query = Q::with_id("entity_id2").build();
@@ -137,7 +137,7 @@ fn search_query_matches() -> anyhow::Result<()> {
     let query = Q::matches("foo").build();
     let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 2);
-    assert_eq!(res.mutations[0].entity_id, "entity_id1"); // foo is repeated in entity 1
+    assert_eq!(res.mutations[0].entity_id.as_str(), "entity_id1"); // foo is repeated in entity 1
 
     let query = Q::matches("bar").build();
     let res = index.search(query)?;
@@ -150,7 +150,7 @@ fn search_query_matches() -> anyhow::Result<()> {
         .sort_value
         .value
         .is_after(&value_from_f32(0.18, 0)));
-    assert_eq!(res.mutations[0].entity_id, "entity_id2"); // foo is repeated in entity 2
+    assert_eq!(res.mutations[0].entity_id.as_str(), "entity_id2"); // foo is repeated in entity 2
 
     // with limit
     let query = Q::matches("foo").count(1).build();
@@ -170,7 +170,7 @@ fn search_query_matches() -> anyhow::Result<()> {
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.remaining, 0);
     assert_eq!(res.total, 2);
-    assert_eq!(res.mutations[0].entity_id, "entity_id2");
+    assert_eq!(res.mutations[0].entity_id.as_str(), "entity_id2");
 
     // only results before given score
     let paging = Paging {
@@ -183,7 +183,7 @@ fn search_query_matches() -> anyhow::Result<()> {
     assert_eq!(res.mutations.len(), 1);
     assert_eq!(res.remaining, 0);
     assert_eq!(res.total, 2);
-    assert_eq!(res.mutations[0].entity_id, "entity_id1");
+    assert_eq!(res.mutations[0].entity_id.as_str(), "entity_id1");
 
     Ok(())
 }

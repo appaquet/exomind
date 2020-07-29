@@ -107,20 +107,14 @@ where
                 let inner = weak_inner2.upgrade().ok_or(Error::Dropped)?;
                 let inner = inner.read()?;
 
-                match &result {
-                    Ok(_) => debug!("Got query result"),
-                    Err(err) => warn!("Error executing query: err={}", err),
+                if let Err(err) = &result {
+                    warn!("Error executing query: err={}", err);
                 }
 
                 let should_reply = match (&query_request.sender, &result) {
-                    (QueryRequestSender::WatchedQuery(sender, watch_token), Ok(result)) => {
-                        inner.watched_queries.update_query_results(
-                            *watch_token,
-                            &query_request.query,
-                            result,
-                            sender.clone(),
-                        )
-                    }
+                    (QueryRequestSender::WatchedQuery(_sender, watch_token), Ok(result)) => inner
+                        .watched_queries
+                        .update_query_results(*watch_token, result),
 
                     (QueryRequestSender::WatchedQuery(_, watch_token), Err(_err)) => {
                         inner.watched_queries.unwatch_query(*watch_token);
@@ -144,22 +138,26 @@ where
             let events = inner.chain_handle.take_events_stream()?;
 
             // batching stream consumes all available events from stream without waiting
-            BatchingStream::new(events, config.handle_watch_query_channel_size)
+            BatchingStream::new(events, config.chain_events_batch_size)
         };
-        let (mut watch_check_sender, mut watch_check_receiver) = mpsc::channel(2);
+        let (mut watch_check_sender, mut watch_check_receiver) = mpsc::channel(1);
         let weak_inner = Arc::downgrade(&self.inner);
         let chain_events_handler = async move {
             while let Some(events) = events_stream.next().await {
-                if let Err(err) = Inner::handle_chain_engine_events(&weak_inner, events).await {
-                    error!("Error handling chain engine event: {}", err);
-                    if err.is_fatal() {
-                        return Err(err);
+                match Inner::handle_chain_engine_events(&weak_inner, events).await {
+                    Ok(indexed_operations) if indexed_operations > 0 => {
+                        // notify query watching. if it's full, it's guaranteed that it will catch
+                        // those changes on next iteration
+                        let _ = watch_check_sender.try_send(());
                     }
+                    Err(err) => {
+                        error!("Error handling chain engine event: {}", err);
+                        if err.is_fatal() {
+                            return Err(err);
+                        }
+                    }
+                    Ok(_) => {}
                 }
-
-                // notify query watching. if it's full, it's guaranteed that it will catch those
-                // changes on next iteration
-                let _ = watch_check_sender.try_send(());
             }
             Ok(())
         };
@@ -171,9 +169,18 @@ where
                 let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
                 let mut inner = inner.write()?;
 
-                for watched_query in inner.watched_queries.queries() {
+                let queries = inner.watched_queries.queries();
+                if queries.is_empty() {
+                    continue;
+                }
+
+                debug!(
+                    "Store may have changed because of new events. Checking for {} queries",
+                    queries.len()
+                );
+                for watched_query in queries {
                     let send_result = inner.incoming_queries_sender.try_send(QueryRequest {
-                        query: Box::new(watched_query.query.as_ref().clone()),
+                        query: watched_query.query,
                         sender: QueryRequestSender::WatchedQuery(
                             watched_query.sender.clone(),
                             watched_query.token,
@@ -295,22 +302,24 @@ where
     async fn handle_chain_engine_events(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         events: Vec<exocore_chain::engine::Event>,
-    ) -> Result<(), Error> {
+    ) -> Result<usize, Error> {
         let weak_inner = weak_inner.clone();
-        let affected_operation_ids = spawn_blocking(move || -> Result<(), Error> {
+
+        let indexed_operations = spawn_blocking(move || -> Result<usize, Error> {
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let mut inner = inner.write()?;
 
-            let affected_operations = inner.index.handle_chain_engine_events(events.into_iter())?;
+            let (affected_operations, indexed_operations) =
+                inner.index.handle_chain_engine_events(events.into_iter())?;
             inner
                 .mutation_tracker
                 .handle_indexed_operations(affected_operations.as_slice());
 
-            Ok(())
+            Ok(indexed_operations)
         })
         .await;
 
-        affected_operation_ids
+        indexed_operations
             .map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
     }
 }
@@ -417,12 +426,18 @@ where
             query.watch_token = watch_token;
         }
 
+        let (sender, receiver) = mpsc::channel(self.config.handle_watch_query_channel_size);
+        let sender = Arc::new(Mutex::new(sender));
+
+        inner
+            .watched_queries
+            .track_query(watch_token, &query, sender.clone());
+
         // ok to dismiss send as sender end will be dropped in case of an error and
         // consumer will be notified by channel being closed
-        let (sender, receiver) = mpsc::channel(self.config.handle_watch_query_channel_size);
         let _ = inner.incoming_queries_sender.try_send(QueryRequest {
             query: Box::new(query),
-            sender: QueryRequestSender::WatchedQuery(Arc::new(Mutex::new(sender)), watch_token),
+            sender: QueryRequestSender::WatchedQuery(sender, watch_token),
         });
 
         Ok(WatchedQueryStream {

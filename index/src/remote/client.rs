@@ -435,12 +435,8 @@ impl IncomingMessage {
                     crate::mutation::mutation_result_from_response_frame(mutation_frame)?;
                 Ok(IncomingMessage::MutationResponse(mutation_result))
             }
-            <query_response::Owned as MessageType>::MESSAGE_TYPE => {
-                let query_frame = in_message.get_data_as_framed_message()?;
-                let query_result = crate::query::query_results_from_response_frame(query_frame)?;
-                Ok(IncomingMessage::QueryResponse(query_result))
-            }
-            <watched_query_response::Owned as MessageType>::MESSAGE_TYPE => {
+            <query_response::Owned as MessageType>::MESSAGE_TYPE
+            | <watched_query_response::Owned as MessageType>::MESSAGE_TYPE => {
                 let query_frame = in_message.get_data_as_framed_message()?;
                 let query_result = crate::query::query_results_from_response_frame(query_frame)?;
                 Ok(IncomingMessage::QueryResponse(query_result))
