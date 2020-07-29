@@ -7,7 +7,6 @@ use exocore_chain::block::BlockOffset;
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_index::{EntityQuery, Paging};
 use std::borrow::Borrow;
-use std::rc::Rc;
 
 /// Iterates through all results matching a given initial query using the
 /// next_page score when a page got emptied.
@@ -50,24 +49,29 @@ pub struct MutationResults {
     pub next_page: Option<Paging>,
 }
 
+#[derive(Clone)]
+pub struct EntityMutationResults {
+    pub mutations: Vec<MutationMetadata>,
+}
+
 /// Indexed trait / entity mutation metadata returned as a result of a query.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MutationMetadata {
     pub operation_id: OperationId,
     pub block_offset: Option<BlockOffset>,
     pub entity_id: EntityId,
     pub mutation_type: MutationType,
-    pub sort_value: Rc<OrderingValueWrapper>,
+    pub sort_value: OrderingValueWrapper,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MutationType {
     TraitPut(PutTraitMetadata),
     TraitTombstone(TraitId),
     EntityTombstone,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PutTraitMetadata {
     pub trait_id: TraitId,
     pub trait_type: Option<String>,

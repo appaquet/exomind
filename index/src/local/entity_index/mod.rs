@@ -22,7 +22,7 @@ use exocore_core::protos::generated::exocore_index::{
 use exocore_core::protos::{prost::ProstDateTimeExt, registry::Registry};
 
 use crate::error::Error;
-use crate::ordering::OrderingValueExt;
+use crate::{entity::EntityId, ordering::OrderingValueExt};
 
 use super::mutation_index::{IndexOperation, MutationIndex, MutationType};
 use super::top_results::RescoredTopResultsIterable;
@@ -242,7 +242,7 @@ where
 
         // iterate through results and returning the first N entities
         let mut hasher = result_hasher();
-        let mut entity_mutations_cache = HashMap::<String, Rc<MutationAggregator>>::new();
+        let mut entity_mutations_cache = HashMap::<EntityId, Rc<MutationAggregator>>::new();
         let mut matched_entities = HashSet::new();
         let mut entity_results = combined_results
             // iterate through results, starting with best scores
@@ -312,7 +312,7 @@ where
                                 traits: Vec::new(),
                             }),
                             source: index_source.into(),
-                            ordering_value: Some(ordering_value.value.clone()),
+                            ordering_value: Some(ordering_value.value),
                         },
                         mutations: entity_mutations,
                     };
@@ -656,12 +656,13 @@ where
     ) -> Result<MutationAggregator, Error> {
         let pending_results = self.pending_index.fetch_entity_mutations(entity_id)?;
         let chain_results = self.chain_index.fetch_entity_mutations(entity_id)?;
-        let ordered_traits_metadata = pending_results
+        let mutations_metadata = pending_results
             .mutations
-            .into_iter()
-            .chain(chain_results.mutations.into_iter());
+            .iter()
+            .chain(chain_results.mutations.iter())
+            .cloned();
 
-        MutationAggregator::new(ordered_traits_metadata)
+        MutationAggregator::new(mutations_metadata)
     }
 
     /// Populate traits in the EntityResult by fetching each entity's traits

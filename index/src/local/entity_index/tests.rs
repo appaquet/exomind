@@ -3,7 +3,6 @@ use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::protos::{prost::ProstTimestampExt, test::TestMessage2};
 use test_index::*;
 
-use crate::local::mutation_index::MutationResults;
 use crate::mutation::MutationBuilder;
 use crate::ordering::{value_from_u64, value_max};
 use crate::query::{ProjectionBuilder, QueryBuilder as Q};
@@ -380,7 +379,12 @@ fn traits_compaction() -> anyhow::Result<()> {
         .index
         .pending_index
         .fetch_entity_mutations("entity1")?;
-    let ops = extract_indexed_operations_id(pending_res);
+    let ops: Vec<OperationId> = pending_res
+        .mutations
+        .iter()
+        .map(|r| r.operation_id)
+        .unique()
+        .collect();
     assert_eq!(vec![op1, op2, op3], ops);
 
     // mut entity has only 1 trait since all ops are on same trait
@@ -730,13 +734,5 @@ fn extract_result_messages(res: &EntityResultProto) -> Vec<(Trait, TestMessage)>
             let msg = TestMessage::decode(trt.message.as_ref().unwrap().value.as_slice()).unwrap();
             (trt, msg)
         })
-        .collect()
-}
-
-fn extract_indexed_operations_id(res: MutationResults) -> Vec<OperationId> {
-    res.mutations
-        .iter()
-        .map(|r| r.operation_id)
-        .unique()
         .collect()
 }
