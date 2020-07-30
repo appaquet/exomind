@@ -7334,15 +7334,15 @@ sane@^4.0.3:
     minimist "^1.1.1"
     walker "~1.0.5"
 
-sanitize-html@^1.26.0:
-  version "1.27.1"
-  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-1.27.1.tgz#ce147951aa3defba13448e2ca8a4e18d8f2e2cd7"
-  integrity sha512-C+N7E+7ikYaLHdb9lEkQaFOgmj+9ddZ311Ixs/QsBsoLD411/vdLweiFyGqrswUVgLqagOS5NCDxcEPH7trObQ==
+sanitize-html@^1.27.2:
+  version "1.27.2"
+  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-1.27.2.tgz#08c0cee76e594c677ab1c466594f72cb1142f399"
+  integrity sha512-REZETvhFFChM3zyQS8XoR02j5U56HtyQkxsc8cb5HEi3XU0AAX9TuKvWe3ESR0F0IA81ZghA+5YpJg8C35AFyQ==
   dependencies:
     htmlparser2 "^4.1.0"
     lodash "^4.17.15"
+    parse-srcset "^1.0.2"
     postcss "^7.0.27"
-    srcset "^2.0.1"
 
 saxes@^5.0.0:
   version "5.0.1"
@@ -7717,11 +7717,6 @@ squire-rte@^1.10.1:
   version "1.10.2"
   resolved "https://registry.yarnpkg.com/squire-rte/-/squire-rte-1.10.2.tgz#cdc0d8cce4c28344650423595dbb675071bc392f"
   integrity sha512-/IUZbc3+pdZUL+kP6wsUI8brDKtiP+EiIlw6Hj6q1n384NzUqQNa8iMLkeYZKC4o96ToyteY7fhv/DeS1GkWRw==
-
-srcset@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/srcset/-/srcset-2.0.1.tgz#8f842d357487eb797f413d9c309de7a5149df5ac"
-  integrity sha512-00kZI87TdRKwt+P8jj8UZxbfp7mK2ufxcIMWvhAOZNJTRROimpHeruWrGvCZneiuVDLqdyHefVp748ECTnyUBQ==
 
 sshpk@^1.7.0:
   version "1.16.1"
