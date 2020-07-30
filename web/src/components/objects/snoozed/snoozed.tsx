@@ -28,6 +28,15 @@ export default class Snoozed extends React.Component<IProps> {
         const childrenQuery = QueryBuilder
             .withTrait(exomind.base.Postponed)
             .count(30)
+            .project(
+                new exocore.index.Projection({
+                    fieldGroupIds: [1],
+                    package: ["exomind.base"],
+                }),
+                new exocore.index.Projection({
+                    skip: true,
+                })
+            )
             .build();
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
             this.setState({});
@@ -74,7 +83,7 @@ export default class Snoozed extends React.Component<IProps> {
             );
 
         } else {
-            return <Message text="Loading..." showAfterMs={500} />;
+            return <Message text="Loading..." showAfterMs={200} />;
         }
     }
 

@@ -1,5 +1,5 @@
 //
-//  NSDateExtension.swift
+//  DateExtension.swift
 //  Exomind
 //
 //  Created by Andre-Philippe Paquet on 2015-10-07.
@@ -213,5 +213,9 @@ public extension Date {
 
     var second: UInt {
         return UInt((Calendar.current as NSCalendar).component(.second, from: self))
+    }
+
+    static func - (lhs: Date, rhs: Date) -> TimeInterval {
+        lhs.timeIntervalSinceReferenceDate - rhs.timeIntervalSinceReferenceDate
     }
 }

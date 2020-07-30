@@ -25,8 +25,6 @@ export class Inbox extends React.Component<IProps> {
             <Children
                 parentId="inbox"
 
-                sections={['old', 'current', 'future']}
-                section={'current'}
                 actionsForSection={this.actionsForChildrenType.bind(this)}
 
                 selection={this.props.selection}
@@ -37,17 +35,7 @@ export class Inbox extends React.Component<IProps> {
         );
     }
 
-    private actionsForChildrenType(section: string): string[] {
-        switch (section) {
-            case 'current':
-                return ['done', 'postpone', 'move'];
-            case 'old':
-                return ['restore', 'postpone', 'move'];
-            case 'future':
-                return ['inbox', 'done'];
-
-            default:
-                return [];
-        }
+    private actionsForChildrenType(): string[] {
+        return ['done', 'postpone', 'move'];
     }
 }

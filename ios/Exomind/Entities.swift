@@ -19,6 +19,10 @@ class EntityExt {
     private var traitInstances: [TraitId: Message] = [:]
     private let _priorityTrait: (Exocore_Index_Trait, TraitConstants)?;
 
+    var creationDate: Date
+    var modificationDate: Date?
+    var anyDate: Date?
+
     init(entity: Exocore_Index_Entity) {
         self.inner = entity
 
@@ -33,6 +37,9 @@ class EntityExt {
                 }
             }
         }
+
+        var oldestDate: Date?
+        var newestDate: Date?
 
         // index traits by ids and types
         var idTraits: [String: Exocore_Index_Trait] = [:]
@@ -55,10 +62,23 @@ class EntityExt {
             if let traitConstants = traitConstants, (priorityTrait == nil || traitConstants.order < priorityTrait!.1.order) {
                 priorityTrait = (trait, traitConstants)
             }
+
+            // TODO: Should be moved to exocore
+            let creationDate = trait.creationDate.date
+            let modificationDate = trait.modificationDate.date
+            if trait.hasCreationDate && creationDate < oldestDate ?? Date() {
+                oldestDate = creationDate
+            }
+            if trait.hasModificationDate && modificationDate > newestDate ?? Date.init(milliseconds: 0) {
+                newestDate = modificationDate
+            }
         }
         self.idTraits = idTraits
         self.typeTraits = typeTraits
         self._priorityTrait = priorityTrait
+        self.creationDate = oldestDate ?? Date()
+        self.modificationDate = newestDate
+        self.anyDate = self.modificationDate ?? self.creationDate
     }
 
     var id: EntityId {
@@ -133,6 +153,12 @@ class EntityExt {
             return trait
         }
     }()
+}
+
+extension EntityExt: Equatable {
+    static func ==(lhs: EntityExt, rhs: EntityExt) -> Bool {
+        lhs.id == rhs.id && lhs.anyDate == rhs.anyDate
+    }
 }
 
 protocol AnyTraitInstance {

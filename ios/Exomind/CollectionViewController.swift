@@ -111,7 +111,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func handleShowSearch() {
-//        (self.navigationController as? NavigationController)?.showSearch(self.entityId)
+        (self.navigationController as? NavigationController)?.showSearch(self.entity.id)
     }
 
     private func handleItemClick(_ entity: EntityExt) {

@@ -1,4 +1,3 @@
-
 import UIKit
 import FontAwesome_swift
 import MCSwipeTableViewCell
@@ -9,9 +8,7 @@ class ChildrenViewController: UITableViewController {
     private var query: ExpandableQuery?
     private var parentId: EntityId?
 
-    private var childrenType: String = "current"
-
-    private var collectionData: [Exocore_Index_EntityResult] = []
+    private var collectionData: [EntityResult] = []
     private var itemClickHandler: ((EntityExt) -> Void)?
     private var swipeActions: [ChildrenViewSwipeAction] = []
 
@@ -24,14 +21,11 @@ class ChildrenViewController: UITableViewController {
     private var headerWasShownBeforeDrag: Bool = false
     private var currentlyExpandingQuery = false
 
-    var diffCalculator: SingleSectionTableViewDiffCalculator<Exocore_Index_EntityResult>?
+    private var diffCalculator: SingleSectionTableViewDiffCalculator<EntityResult>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         self.tableView.delegate = self
-        self.diffCalculator = SingleSectionTableViewDiffCalculator<Exocore_Index_EntityResult>(tableView: self.tableView, initialRows: [])
-        self.diffCalculator?.insertionAnimation = .fade
-        self.diffCalculator?.deletionAnimation = .fade
     }
 
     func setSwipeActions(_ actions: [ChildrenViewSwipeAction]) {
@@ -60,14 +54,22 @@ class ChildrenViewController: UITableViewController {
     }
 
     func loadData(withResults results: [Exocore_Index_EntityResult]) {
-        self.collectionData = results
+        self.collectionData = convertResults(oldResults: self.collectionData, newResults: results)
     }
 
     func loadData(fromChildrenOf entityId: EntityId) {
         let traitQuery = TraitQueryBuilder.refersTo(field: "collection", entityId: entityId).build()
+
+        var projectSummaryFields = Exocore_Index_Projection()
+        projectSummaryFields.fieldGroupIds = [1]
+        projectSummaryFields.package = ["exomind.base"]
+        var projectSkipRest = Exocore_Index_Projection()
+        projectSkipRest.skip = true
+
         let query = QueryBuilder
                 .withTrait(Exomind_Base_CollectionChild.self, query: traitQuery)
                 .orderByField("weight", ascending: false)
+                .project(withProjections: [projectSummaryFields, projectSkipRest])
                 .count(30)
                 .build()
 
@@ -81,15 +83,22 @@ class ChildrenViewController: UITableViewController {
                 return
             }
 
+            let newResults = this.convertResults(oldResults: this.collectionData, newResults: this.query?.results ?? [])
             DispatchQueue.main.async {
-                this.collectionData = this.query?.results ?? []
-                this.diffCalculator?.rows = this.collectionData
+                // on first load, we load data directly to prevent diff & animation
+                if this.collectionData.isEmpty && !newResults.isEmpty {
+                    this.collectionData = newResults
+                    this.tableView.reloadData()
+
+                    this.diffCalculator = SingleSectionTableViewDiffCalculator<EntityResult>(tableView: this.tableView, initialRows: this.collectionData)
+                    this.diffCalculator?.insertionAnimation = .fade
+                    this.diffCalculator?.deletionAnimation = .fade
+                } else {
+                    this.collectionData = newResults
+                    this.diffCalculator?.rows = this.collectionData
+                }
             }
         }
-    }
-
-    func hasHeader() -> Bool {
-        self.switcherButtonActions.count > 0
     }
 
     override func viewDidLayoutSubviews() {
@@ -117,7 +126,7 @@ class ChildrenViewController: UITableViewController {
         cell.preservesSuperviewLayoutMargins = false
 
         self.configureCellSwipe(indexPath, cell: cell)
-        cell.populate(self.collectionData[(indexPath as NSIndexPath).item])
+        cell.populate(&self.collectionData[(indexPath as NSIndexPath).item])
         return cell
     }
 
@@ -159,13 +168,17 @@ class ChildrenViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let res = self.collectionData[(indexPath as NSIndexPath).item]
+        var res = self.collectionData[(indexPath as NSIndexPath).item]
         if let handler = self.itemClickHandler {
-            handler(res.entity.toExtension())
+            handler(res.entity)
         }
     }
 
-    func configureCellSwipe(_ indexPath: IndexPath, cell: ChildrenViewCell) -> Void {
+    private func hasHeader() -> Bool {
+        self.switcherButtonActions.count > 0
+    }
+
+    private func configureCellSwipe(_ indexPath: IndexPath, cell: ChildrenViewCell) -> Void {
         // background of the swipe cell
         cell.defaultColor = UIColor.systemBackground
 
@@ -178,6 +191,24 @@ class ChildrenViewController: UITableViewController {
             cell.setSwipeGestureWith(swipeIconView, color: action.color, mode: action.mode, state: action.state) { (scell, state, mode) -> Void in
                 action.handler(cell.entity)
             }
+        }
+    }
+
+    private func convertResults(oldResults: [EntityResult], newResults: [Exocore_Index_EntityResult]) -> [EntityResult] {
+        var currentResults = [String: EntityResult]()
+        for currentResult in oldResults {
+            currentResults[currentResult.result.entity.id] = currentResult
+        }
+
+        return newResults.map { (res: Exocore_Index_EntityResult) in
+            let entityId = res.entity.id
+            let entity = res.entity.toExtension()
+
+            if let current = currentResults[entityId], current.entity.anyDate == entity.anyDate {
+                return current
+            }
+
+            return EntityResult(result: res, entity: entity, priorityTrait: entity.priorityTrait)
         }
     }
 
@@ -195,12 +226,12 @@ class ChildrenViewCell: MCSwipeTableViewCell {
 
     var entity: EntityExt!
 
-    func populate(_ result: Exocore_Index_EntityResult) {
+    fileprivate func populate(_ result: inout EntityResult) {
         self.backgroundColor = UIColor.clear
 
-        self.entity = result.entity.toExtension()
+        self.entity = result.entity
 
-        guard let priorityTrait = self.entity.priorityTrait else {
+        guard let priorityTrait = result.priorityTrait else {
             self.title1.text = "UNKNOWN ENTITY TRAIT"
             return
         }
@@ -278,3 +309,14 @@ class ChildrenViewSwipeAction {
         self.handler = handler
     }
 }
+
+fileprivate struct EntityResult: Equatable {
+    var result: Exocore_Index_EntityResult
+    var entity: EntityExt
+    var priorityTrait: AnyTraitInstance?
+
+    static func ==(lhs: EntityResult, rhs: EntityResult) -> Bool {
+        lhs.entity == rhs.entity
+    }
+}
+

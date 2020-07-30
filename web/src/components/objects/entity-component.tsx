@@ -124,14 +124,14 @@ export class EntityComponent extends React.Component<Props, State> {
                 },
             });
 
-            const loading = <Message key={'loading'} text="Loading..." showAfterMs={500} />;
+            const loading = <Message key={'loading'} text="Loading..." showAfterMs={200} />;
             return <React.Suspense fallback={loading}>{inner}</React.Suspense>
 
         } else if (this.state.results) {
             return <Message key={'notfound'} text="Not found" />;
 
         } else {
-            return <Message key={'loading'} text="Loading..." showAfterMs={500} />;
+            return <Message key={'loading'} text="Loading..." showAfterMs={200} />;
         }
     }
 

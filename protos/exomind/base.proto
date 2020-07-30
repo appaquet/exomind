@@ -8,21 +8,22 @@ import "google/protobuf/timestamp.proto";
 
 // TODO: Reset numbering before release
 
+// Fields groups
+//  #1: Fields necesseary for search/listing
+
 message Collection {
-    string name = 1 [(exocore.text) = true];
+    string name = 1 [(exocore.text) = true, (exocore.field_group) = 1];
 }
 
 message CollectionChild {
-    exocore.index.Reference collection = 1 [(exocore.indexed) = true];
-    google.protobuf.Timestamp added_date = 2;
-    uint64 weight = 3 [(exocore.sorted) = true];
+    exocore.index.Reference collection = 1 [(exocore.indexed) = true, (exocore.field_group) = 1];
+    uint64 weight = 3 [(exocore.sorted) = true, (exocore.field_group) = 1];
 }
 
 message Postponed {
-    exocore.index.Reference entity = 1;
+    exocore.index.Reference entity = 1 [(exocore.field_group) = 1];
     google.protobuf.Timestamp until_date = 2;
 }
-
 
 enum AccountType {
     ACCOUNT_TYPE_INVALID = 0;
@@ -46,26 +47,26 @@ message EmailThread {
     exocore.index.Reference account = 8;
     string source_id = 2;
 
-    Contact from = 3;
-    string subject = 4 [(exocore.text) = true];
-    string snippet = 5 [(exocore.text) = true];
+    Contact from = 3 [(exocore.field_group) = 1];
+    string subject = 4 [(exocore.text) = true, (exocore.field_group) = 1];
+    string snippet = 5 [(exocore.text) = true, (exocore.field_group) = 1];
 
     exocore.index.Reference last_email = 6;
-    bool read = 7;
+    bool read = 7 [(exocore.field_group) = 1];
 }
 
 message Email {
     exocore.index.Reference account = 13;
     string source_id = 2;
 
-    Contact from = 3;
-    google.protobuf.Timestamp received_date = 4;
+    Contact from = 3 [(exocore.field_group) = 1];
+    google.protobuf.Timestamp received_date = 4 [(exocore.field_group) = 1];
     repeated Contact to = 6;
     repeated Contact cc = 7;
     repeated Contact bcc = 8;
 
-    string subject = 9 [(exocore.text) = true];
-    string snippet = 10 [(exocore.text) = true];
+    string subject = 9 [(exocore.text) = true, (exocore.field_group) = 1];
+    string snippet = 10 [(exocore.text) = true, (exocore.field_group) = 1];
     repeated EmailPart parts = 11;
     repeated EmailAttachment attachments = 12;
 }
@@ -78,7 +79,7 @@ message DraftEmail {
     repeated Contact cc = 4;
     repeated Contact bcc = 5;
 
-    string subject = 6;
+    string subject = 6 [(exocore.field_group) = 1];
     repeated EmailPart parts = 7;
     repeated EmailAttachment attachments = 8;
 
@@ -101,20 +102,20 @@ message EmailAttachment {
 }
 
 message Note {
-    string title = 1 [(exocore.text) = true];
+    string title = 1 [(exocore.text) = true, (exocore.field_group) = 1];
     string body = 2 [(exocore.text) = true];
 }
 
 message Contact {
-    string name = 1 [(exocore.text) = true];
+    string name = 1 [(exocore.text) = true, (exocore.field_group) = 1];
     string email = 2;
 }
 
 message Task {
-    string title = 1 [(exocore.text) = true];
+    string title = 1 [(exocore.text) = true, (exocore.field_group) = 1];
 }
 
 message Link {
-    string url = 1 [(exocore.text) = true];
-    string title = 2 [(exocore.text) = true];
+    string url = 1 [(exocore.text) = true, (exocore.field_group) = 1];
+    string title = 2 [(exocore.text) = true, (exocore.field_group) = 1];
 }

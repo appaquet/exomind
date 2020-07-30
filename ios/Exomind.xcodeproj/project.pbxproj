@@ -15,6 +15,7 @@
 		45B6B15E79D87F9D7CC7B84A /* HCQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6BFC9DEE4B705075C451C /* HCQueries.swift */; };
 		45B6B285982BFB38D7DBB054 /* HCRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B353166EEE587926FCE4 /* HCRuntimeTests.swift */; };
 		45B6B3BD06C5E24DF09D5ADF /* HCJsonSerialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B5B949028FD257B5B0B5 /* HCJsonSerialization.swift */; };
+		45B6B660281C1CC6E661D13E /* Retry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */; };
 		45B6B8BE23F943FA33D4FC28 /* HCJsonSerialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B5B949028FD257B5B0B5 /* HCJsonSerialization.swift */; };
 		45B6BA03CFE55DF75F868AAB /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0226A61D7D7AADC875D /* StringExtension.swift */; };
 		45B6BA750539831EB6EF80B2 /* ExomindDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B67EAB47BBDB8FAD9A38 /* ExomindDomain.swift */; };
@@ -94,7 +95,7 @@
 		6DA4E33E1DD2B35700E5603E /* CollectionsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */; };
 		6DA4E33F1DD2B35700E5603E /* TimeLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7781C61C08AF1100D45299 /* TimeLogic.swift */; };
 		6DA4E3401DD2B35700E5603E /* EmailsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6EC2551C191CED00944436 /* EmailsLogic.swift */; };
-		6DAB43391D33102700E08229 /* NSDateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* NSDateExtension.swift */; };
+		6DAB43391D33102700E08229 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* DateExtension.swift */; };
 		6DB0E47B1C1F32FA000EE49A /* ObjectsIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB0E47A1C1F32FA000EE49A /* ObjectsIcon.swift */; };
 		6DB0E4811C1F622D000EE49A /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB0E4801C1F622D000EE49A /* SessionStore.swift */; };
 		6DC0D25B1BC418F900F14571 /* DomainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D25A1BC418F900F14571 /* DomainStore.swift */; };
@@ -106,7 +107,7 @@
 		6DC0D26D1BC5537500F14571 /* DictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */; };
 		6DC0D2701BC576AC00F14571 /* ChildrenViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26F1BC576AC00F14571 /* ChildrenViewController.swift */; };
 		6DC0D2721BC58B5D00F14571 /* NavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2711BC58B5D00F14571 /* NavigationController.swift */; };
-		6DC0D2761BC5949900F14571 /* NSDateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* NSDateExtension.swift */; };
+		6DC0D2761BC5949900F14571 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* DateExtension.swift */; };
 		6DC4183D1C165B7200DB564C /* CollectionsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */; };
 		6DC418411C17939A00DB564C /* EntityCreationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC418401C17939A00DB564C /* EntityCreationViewController.swift */; };
 		6DC418431C1796D300DB564C /* CollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC418421C1796D300DB564C /* CollectionViewController.swift */; };
@@ -171,6 +172,7 @@
 		3E570FC5A697FC8476C178F9 /* Pods-Exomind.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Exomind.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Exomind/Pods-Exomind.debug.xcconfig"; sourceTree = "<group>"; };
 		45B6B00FF5BA113203BB6DB8 /* HCQueriesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCQueriesTests.swift; sourceTree = "<group>"; };
 		45B6B0226A61D7D7AADC875D /* StringExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
+		45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
 		45B6B353166EEE587926FCE4 /* HCRuntimeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCRuntimeTests.swift; sourceTree = "<group>"; };
 		45B6B5B949028FD257B5B0B5 /* HCJsonSerialization.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCJsonSerialization.swift; sourceTree = "<group>"; };
 		45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Entities.swift; sourceTree = "<group>"; };
@@ -215,7 +217,7 @@
 		6D570A551DCC140500BD480F /* XMLHttpRequestBridgeExport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XMLHttpRequestBridgeExport.swift; sourceTree = "<group>"; };
 		6D570A661DCC146B00BD480F /* BridgeEntityConverterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeEntityConverterTests.swift; sourceTree = "<group>"; };
 		6D570A6B1DCC171E00BD480F /* WebSocketBridgeExport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebSocketBridgeExport.swift; sourceTree = "<group>"; };
-		6D5D07791BC40D0A007D0011 /* Exomind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Exomind.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D5D07791BC40D0A007D0011 /* ExomindV2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExomindV2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6D5D07811BC40D0A007D0011 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		6D5D07831BC40D0A007D0011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -256,7 +258,7 @@
 		6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryExtension.swift; sourceTree = "<group>"; };
 		6DC0D26F1BC576AC00F14571 /* ChildrenViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChildrenViewController.swift; sourceTree = "<group>"; };
 		6DC0D2711BC58B5D00F14571 /* NavigationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationController.swift; sourceTree = "<group>"; };
-		6DC0D2751BC5949900F14571 /* NSDateExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSDateExtension.swift; sourceTree = "<group>"; };
+		6DC0D2751BC5949900F14571 /* DateExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
 		6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionsLogic.swift; sourceTree = "<group>"; };
 		6DC418401C17939A00DB564C /* EntityCreationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityCreationViewController.swift; sourceTree = "<group>"; };
 		6DC418421C1796D300DB564C /* CollectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionViewController.swift; sourceTree = "<group>"; };
@@ -385,7 +387,7 @@
 		6D5D077A1BC40D0A007D0011 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6D5D07791BC40D0A007D0011 /* Exomind.app */,
+				6D5D07791BC40D0A007D0011 /* ExomindV2.app */,
 				6D0F6B5E1C331A2B00AB9DEC /* ExomindActionExt.appex */,
 				6DAB3F4E1D32F74000E08229 /* ExomindTests.xctest */,
 			);
@@ -518,7 +520,7 @@
 			children = (
 				6DCE042B1BFE709A00DF8A34 /* Stylesheet.swift */,
 				6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */,
-				6DC0D2751BC5949900F14571 /* NSDateExtension.swift */,
+				6DC0D2751BC5949900F14571 /* DateExtension.swift */,
 				6DB0E47A1C1F32FA000EE49A /* ObjectsIcon.swift */,
 				6DE65ACC1C5FEABD0059CCBE /* HttpUtils.swift */,
 				6D4CCBE621587052004636AD /* ExtensionUtils.swift */,
@@ -526,6 +528,7 @@
 				6D3D46711C8620750037E51B /* KeyboardUtils.swift */,
 				45B6B0226A61D7D7AADC875D /* StringExtension.swift */,
 				6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */,
+				45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -641,7 +644,7 @@
 			);
 			name = Exomind;
 			productName = Exomind;
-			productReference = 6D5D07791BC40D0A007D0011 /* Exomind.app */;
+			productReference = 6D5D07791BC40D0A007D0011 /* ExomindV2.app */;
 			productType = "com.apple.product-type.application";
 		};
 		6DAB3F4D1D32F74000E08229 /* ExomindTests */ = {
@@ -678,6 +681,7 @@
 						CreatedOnToolsVersion = 7.2;
 						DevelopmentTeam = FHZCN4GU2K;
 						LastSwiftMigration = 1000;
+						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
 								enabled = 1;
@@ -947,7 +951,7 @@
 				6DCE04301BFFCC2100DF8A34 /* EmailViewController.swift in Sources */,
 				6DC418431C1796D300DB564C /* CollectionViewController.swift in Sources */,
 				6DE65AC91C5FAC850059CCBE /* SplashViewController.swift in Sources */,
-				6DC0D2761BC5949900F14571 /* NSDateExtension.swift in Sources */,
+				6DC0D2761BC5949900F14571 /* DateExtension.swift in Sources */,
 				6D695D8E24BA04AF00E1BA39 /* base.pb.swift in Sources */,
 				6D00E1681C03544900B2F7E0 /* TabBarController.swift in Sources */,
 				6DC0D2721BC58B5D00F14571 /* NavigationController.swift in Sources */,
@@ -1013,6 +1017,7 @@
 				45B6BAE9135B464F193AC3D4 /* StringExtension.swift in Sources */,
 				45B6BFF8AE9157DF82740038 /* Entities.swift in Sources */,
 				45B6BF9E36D12AC04B0E4E61 /* ExpandableQuery.swift in Sources */,
+				45B6B660281C1CC6E661D13E /* Retry.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1023,7 +1028,7 @@
 				6DA4E33B1DD2B27600E5603E /* DomainStoreTests.swift in Sources */,
 				6DA4E33D1DD2B35100E5603E /* ExomindDSL.swift in Sources */,
 				6DA4E3401DD2B35700E5603E /* EmailsLogic.swift in Sources */,
-				6DAB43391D33102700E08229 /* NSDateExtension.swift in Sources */,
+				6DAB43391D33102700E08229 /* DateExtension.swift in Sources */,
 				6D570A5E1DCC144700BD480F /* Command.swift in Sources */,
 				6DE998EB1D33C46100B328C6 /* DictionaryExtension.swift in Sources */,
 				45B6BECC543ACB47DD15D509 /* HCRuntime.swift in Sources */,
@@ -1104,15 +1109,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = ExomindActionExt/ExomindActionExt.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
 				SWIFT_VERSION = 4.2;
@@ -1127,15 +1135,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = ExomindActionExt/ExomindActionExt.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
 				SWIFT_VERSION = 4.2;
@@ -1268,8 +1279,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.3.4;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2;
+				PRODUCT_NAME = ExomindV2;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";
@@ -1294,8 +1305,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.3.4;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2;
+				PRODUCT_NAME = ExomindV2;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";

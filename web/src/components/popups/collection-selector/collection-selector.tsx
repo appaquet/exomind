@@ -84,7 +84,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
 
     private renderInner(): React.ReactNode {
         if (!(this.collectionsQuery?.hasResults ?? false) || !this.state.entity) {
-            return <Message text="Loading..." showAfterMs={50} />
+            return <Message text="Loading..." showAfterMs={200} />
         }
 
         const collectionsResults = Array

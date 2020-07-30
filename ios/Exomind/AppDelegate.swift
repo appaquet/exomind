@@ -32,6 +32,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         let ajaxBridgeFactory = RealXMLHttpRequestBridgeFactory()
         DomainStore.instance = DomainStore(serverHost: "exomind.io", webSocketBridgeFactory: websocketBridgeFactory, ajaxBridgeFactory: ajaxBridgeFactory)
 
+        // see https://github.com/tokio-rs/mio/issues/949
+        signal(SIGPIPE, SIG_IGN)
+
         ExocoreUtils.initialize()
 
         return true

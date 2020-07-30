@@ -49,7 +49,17 @@ export class Children extends React.Component<IProps, IState> {
             .withTrait(exomind.base.CollectionChild, traitQuery)
             .count(30)
             .orderByField('weight', false)
+            .project(
+                new exocore.index.Projection({
+                  fieldGroupIds: [1],
+                  package: ["exomind.base"],
+                }),
+                new exocore.index.Projection({
+                  skip: true,
+                })
+              )
             .build();
+
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
             this.setState({});
         })
@@ -123,7 +133,7 @@ export class Children extends React.Component<IProps, IState> {
             );
 
         } else {
-            return <Message text="Loading..." showAfterMs={500} />;
+            return <Message text="Loading..." showAfterMs={200} />;
         }
     }
 

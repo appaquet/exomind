@@ -4,12 +4,16 @@ import Exocore
 class ExpandableQuery {
     private let query: Exocore_Index_EntityQuery
     private let onChange: () -> ();
+    private let autoReconnect: Bool;
 
     private var queries: [Exocore_Index_EntityQuery] = []
-    private var queryHandles: [QueryStreamHandle] = []
+    private var queryHandles: [QueryStreamHandle?] = []
     private var queryResults: [Exocore_Index_EntityResults] = []
 
+    private var refreshRetry: Retry?
+
     var results: [Exocore_Index_EntityResult] = [];
+    var isDirty: Bool = false
 
     var count: Int {
         get {
@@ -17,11 +21,16 @@ class ExpandableQuery {
         }
     }
 
-    init(query: Exocore_Index_EntityQuery, onChange: @escaping () -> ()) {
+    init(query: Exocore_Index_EntityQuery, onChange: @escaping () -> (), autoReconnect: Bool = true) {
         self.query = query
         self.onChange = onChange
 
+        self.autoReconnect = true
         self.pushQuery(query)
+
+        if self.autoReconnect {
+            NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+        }
     }
 
     func expand() {
@@ -53,6 +62,21 @@ class ExpandableQuery {
         self.queryHandles[lastQueryIndex] = self.execQuery(query: lastQuery, queryIndex: lastQueryIndex)
     }
 
+    func ensureFresh() {
+        if !self.isDirty {
+            return
+        }
+
+        // TODO: Should only retry if Exocore connection is open
+        
+        if self.refreshRetry == nil {
+            self.refreshRetry = Retry(minimumInterval: 2.0) { [weak self] in
+                self?.requeryFailed()
+            }
+        }
+        self.refreshRetry?.trigger()
+    }
+
     func pushQuery(_ query: Exocore_Index_EntityQuery) {
         let queryIndex = self.queries.count
 
@@ -61,22 +85,61 @@ class ExpandableQuery {
         self.queryHandles.append(execQuery(query: query, queryIndex: queryIndex))
     }
 
+    private func requeryFailed() {
+        for i in 0..<self.queries.count {
+            if self.queryHandles[i] == nil {
+                print("ExpandableQuery > Refreshing query \(i)")
+                self.queryHandles[i] = self.execQuery(query: self.queries[i], queryIndex: i)
+            }
+        }
+    }
+
+    @objc private func appWillEnterForeground() {
+        self.ensureFresh()
+    }
+
     private func execQuery(query: Exocore_Index_EntityQuery, queryIndex: Int) -> QueryStreamHandle {
         let handle = ExocoreClient.store.watchedQuery(query: query) { [weak self] status, results in
-            guard let this = self,
-                  let results = results else {
+            guard let this = self else {
                 return
             }
 
-            this.handleQueryResults(queryIndex: queryIndex, results: results)
+            if status == .error {
+                this.handleQueryError(queryIndex: queryIndex)
+                return
+            }
+
+            if let results = results {
+                this.handleQueryResults(queryIndex: queryIndex, results: results)
+            }
         }
         return handle
     }
 
     private func handleQueryResults(queryIndex: Int, results: Exocore_Index_EntityResults) {
         self.queryResults[queryIndex] = results
+        aggregateAndTrigger()
+    }
 
+    private func handleQueryError(queryIndex: Int) {
+        print("ExpandableQuery> Query \(queryIndex) failed")
+        self.queryHandles[queryIndex] = nil
+        aggregateAndTrigger()
+
+        if self.autoReconnect && UIApplication.shared.applicationState == .active {
+            self.ensureFresh()
+        }
+    }
+
+    private func aggregateAndTrigger() {
+        self.isDirty = false
+
+        var idx = 0
         self.results = self.queryResults.reduce(into: []) { (mergedResults, queryResults) in
+            if self.queryHandles[idx] == nil {
+                self.isDirty = true
+            }
+
             for result in queryResults.entities {
                 // they may be same results at boundaries
                 if let last = mergedResults.last {
@@ -87,8 +150,9 @@ class ExpandableQuery {
 
                 mergedResults.append(result)
             }
-        }
 
+            idx += 1
+        }
         self.onChange()
     }
 }
