@@ -1,7 +1,3 @@
-//
-// Created by Andre-Philippe Paquet on 2016-08-07.
-// Copyright (c) 2016 Exomind. All rights reserved.
-//
 
 import Foundation
 

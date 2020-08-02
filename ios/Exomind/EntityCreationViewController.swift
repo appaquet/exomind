@@ -57,13 +57,12 @@ class EntityCreationViewController: ModalGridViewController {
                     .returnEntities()
                     .putTrait(message: task)
 
-            try addChildMutation(parentId: parentId, builder: &builder)
-            executeMutation(mutation: builder.build(), callback: callback)
+            try Mutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            Mutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating task: \(error)")
         }
     }
-
 
     static func createNote(_ parentId: HCEntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
@@ -75,8 +74,8 @@ class EntityCreationViewController: ModalGridViewController {
                     .returnEntities()
                     .putTrait(message: note)
 
-            try addChildMutation(parentId: parentId, builder: &builder)
-            executeMutation(mutation: builder.build(), callback: callback)
+            try Mutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            Mutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating note: \(error)")
         }
@@ -91,8 +90,8 @@ class EntityCreationViewController: ModalGridViewController {
                     .returnEntities()
                     .putTrait(message: email)
 
-            try addChildMutation(parentId: parentId, builder: &builder)
-            executeMutation(mutation: builder.build(), callback: callback)
+            try Mutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            Mutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating collection: \(error)")
         }
@@ -108,34 +107,10 @@ class EntityCreationViewController: ModalGridViewController {
                     .returnEntities()
                     .putTrait(message: collection)
 
-            try addChildMutation(parentId: parentId, builder: &builder)
-            executeMutation(mutation: builder.build(), callback: callback)
+            try Mutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            Mutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating collection: \(error)")
         }
-    }
-
-    private static func addChildMutation(parentId: EntityId?, builder: inout MutationBuilder) throws {
-        let parentId = parentId ?? "inbox"
-
-        var child = Exomind_Base_CollectionChild()
-        child.collection.entityID = parentId
-        child.weight = UInt64(Date().millisecondsSince1970)
-
-        builder = try builder.putTrait(message: child, traitId: "child_\(parentId)")
-    }
-
-    private static func executeMutation(mutation: Exocore_Index_MutationRequest, callback: ((EntityExt?) -> ())?) {
-        ExocoreClient.store.mutate(mutation: mutation, onCompletion: { (status, results) in
-            DispatchQueue.main.async {
-                guard let results = results,
-                      results.entities.count > 0 else {
-                    callback?(nil)
-                    return
-                }
-
-                callback?(results.entities[0].toExtension())
-            }
-        })
     }
 }

@@ -6,7 +6,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
 
     private var entity: EntityExt!
     private var trait: AnyTraitInstance!
-    private var childrenVC: ChildrenViewController!
+    private var entityListViewController: EntityListViewController!
 
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
         self.entity = entity
@@ -17,20 +17,20 @@ class CollectionViewController: UIViewController, EntityTraitView {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setupChildrenVC()
+        self.setupEntityList()
         self.setupNavigationActions()
     }
 
-    private func setupChildrenVC() {
-        self.childrenVC = (mainStoryboard.instantiateViewController(withIdentifier: "ChildrenViewController") as! ChildrenViewController)
-        self.addChild(self.childrenVC)
-        self.view.addSubview(self.childrenVC.view)
+    private func setupEntityList() {
+        self.entityListViewController = (mainStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
+        self.addChild(self.entityListViewController)
+        self.view.addSubview(self.entityListViewController.view)
 
-        self.childrenVC.setItemClickHandler { [weak self] in
+        self.entityListViewController.setItemClickHandler { [weak self] in
             self?.handleItemClick($0)
         }
 
-        self.childrenVC.setSwipeActions([
+        self.entityListViewController.setSwipeActions([
             ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
                 self?.handleDone(entity)
             }),
@@ -42,7 +42,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
             })
         ])
 
-        self.childrenVC.loadData(fromChildrenOf: self.entity.id)
+        self.entityListViewController.loadData(fromChildrenOf: self.entity.id)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -104,10 +104,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func handleAddToCollection() {
-//        guard let entityTrait = self.trait else {
-//            return
-//        }
-//        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entityTrait.entity)
+        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: self.entity)
     }
 
     private func handleShowSearch() {
@@ -119,25 +116,15 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func handleDone(_ entity: EntityExt) {
-        guard let childTrait = entity
-                .traitsOfType(Exomind_Base_CollectionChild.self)
-                .first(where: { $0.message.collection.entityID == self.entity.id }) else {
-            return
-        }
-
-        let mutation = MutationBuilder
-                .updateEntity(entityId: entity.id)
-                .deleteTrait(traitId: childTrait.id)
-                .build()
-        ExocoreClient.store.mutate(mutation: mutation)
+        Mutations.removeParent(entity: entity, parentId: self.entity.id)
     }
 
     private func handleMoveLater(_ entity: EntityExt) {
-//   TODO:     (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity)
+        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity)
     }
 
     private func handleAddToCollection(_ entity: EntityExt) {
-// TODO:        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
+        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
     }
 
     deinit {

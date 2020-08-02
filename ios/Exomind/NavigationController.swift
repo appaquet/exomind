@@ -1,11 +1,10 @@
-
 import UIKit
 import FontAwesome_swift
 
 class NavigationController: UINavigationController, UINavigationControllerDelegate {
     fileprivate let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
     fileprivate let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
-    
+
     fileprivate var quickButton: QuickButtonView!
     fileprivate static let quickButtonExtraMargin = CGFloat(10)
     fileprivate var barActions: [NavigationControllerBarAction] = []
@@ -47,11 +46,11 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         default:
             entityTrait = nil
         }
-        
-        if  let et = entityTrait,
-            case let .link(trait: link) = et.typeInstance(),
-            let url = URL(string: link.message.url) {
-            
+
+        if let et = entityTrait,
+           case let .link(trait: link) = et.typeInstance(),
+           let url = URL(string: link.message.url) {
+
             let sfVc = SFSafariHelper.getViewControllerForURL(url)
             self.present(sfVc, animated: true, completion: nil)
         } else {
@@ -59,19 +58,19 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             self.pushViewController(vc, animated: animated)
         }
     }
-    
+
     private func createViewController(forObject: NavigationObject) -> UIViewController {
         switch (forObject) {
         case let .entityId(id: entityId):
             let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
             vc.populate(entityId: entityId)
             return vc
-            
+
         case let .entityOld(entity: entity):
             let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
             vc.populate(entity: entity)
             return vc
-            
+
         case let .entityTraitOld(entityTrait: et):
             let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
             vc.populate(entityTrait: et)
@@ -129,8 +128,8 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     @objc func handleBarActionClick(_ sender: UIButton) {
         self.barActions[sender.tag].handler?()
     }
-    
-    func showCollectionSelector(forEntity: HCEntity) {
+
+    func showCollectionSelector(forEntity: EntityExt) {
         let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
         vc.forEntity = forEntity
         self.present(vc, animated: true, completion: nil)
@@ -151,12 +150,13 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         vc.showInsideViewController(showIn)
     }
 
-    func showTimeSelector(forEntity: HCEntity, callback: ((Bool) -> Void)? = nil) {
+    func showTimeSelector(forEntity: EntityExt, callback: ((Bool) -> Void)? = nil) {
         let showIn = self.parent ?? self
         let timeSelector = TimeSelectionViewController { (date) in
             if let realDate = date {
-                ExomindDSL.on(forEntity).relations.postpone(untilDate: realDate)
-                callback?(true)
+                Mutations.snooze(entity: forEntity, date: realDate, callback: {
+                    callback?(true)
+                })
             } else {
                 callback?(false)
             }

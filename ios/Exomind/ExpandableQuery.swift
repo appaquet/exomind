@@ -2,7 +2,8 @@ import Foundation
 import Exocore
 
 class ExpandableQuery {
-    private let query: Exocore_Index_EntityQuery
+    let query: Exocore_Index_EntityQuery
+
     private let onChange: () -> ();
     private let autoReconnect: Bool;
 
@@ -14,12 +15,6 @@ class ExpandableQuery {
 
     var results: [Exocore_Index_EntityResult] = [];
     var isDirty: Bool = false
-
-    var count: Int {
-        get {
-            self.results.count
-        }
-    }
 
     init(query: Exocore_Index_EntityQuery, onChange: @escaping () -> (), autoReconnect: Bool = true) {
         self.query = query
@@ -33,6 +28,27 @@ class ExpandableQuery {
         }
     }
 
+    var count: Int {
+        get {
+            self.results.count
+        }
+    }
+
+    var canExpand: Bool {
+        get {
+            guard let lastResult = self.queryResults.last,
+                  let lastQuery = self.queries.last else {
+                return false
+            }
+
+            if lastResult.entities.isEmpty || !lastResult.hasNextPage || lastResult.entities.count < lastQuery.paging.count {
+                return false
+            }
+
+            return true
+        }
+    }
+
     func expand() {
         let lastQueryIndex = self.queryResults.count - 1
         guard let lastResult = self.queryResults.last,
@@ -40,7 +56,7 @@ class ExpandableQuery {
             return
         }
 
-        if lastResult.entities.isEmpty || !lastResult.hasNextPage || lastResult.entities.count < lastQuery.paging.count {
+        if !self.canExpand {
             return
         }
 
@@ -68,7 +84,7 @@ class ExpandableQuery {
         }
 
         // TODO: Should only retry if Exocore connection is open
-        
+
         if self.refreshRetry == nil {
             self.refreshRetry = Retry(minimumInterval: 2.0) { [weak self] in
                 self?.requeryFailed()

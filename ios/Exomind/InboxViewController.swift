@@ -1,10 +1,10 @@
-
 import UIKit
 import Exocore
 
 class InboxViewController: UIViewController {
     private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
-    private var childrenVC: ChildrenViewController!
+
+    private var entityListViewController: EntityListViewController!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -14,29 +14,27 @@ class InboxViewController: UIViewController {
     }
 
     private func setupChildrenVC() {
-        self.childrenVC = (mainStoryboard.instantiateViewController(withIdentifier: "ChildrenViewController") as! ChildrenViewController)
-        self.addChild(self.childrenVC)
-        self.view.addSubview(self.childrenVC.view)
+        self.entityListViewController = (mainStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
+        self.addChild(self.entityListViewController)
+        self.view.addSubview(self.entityListViewController.view)
 
-        self.childrenVC.loadData(fromChildrenOf: "inbox")
+        self.entityListViewController.loadData(fromChildrenOf: "inbox")
 
-        self.childrenVC.setItemClickHandler { [weak self] in
+        self.entityListViewController.setItemClickHandler { [weak self] in
             self?.handleItemClick($0)
         }
 
-        self.childrenVC.setSwipeActions(
-                [
-                    ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
-                        self?.handleDone(entity)
-                    }),
-                    ChildrenViewSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, state: .state3, mode: .switch, handler: { [weak self] (entity) -> Void in
-                        self?.handleMoveLater(entity)
-                    }),
-                    ChildrenViewSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, state: .state4, mode: .switch, handler: { [weak self] (entity) -> Void in
-                        self?.handleAddToCollection(entity)
-                    })
-                ]
-        )
+        self.entityListViewController.setSwipeActions([
+            ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
+                self?.handleDone(entity)
+            }),
+            ChildrenViewSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, state: .state3, mode: .switch, handler: { [weak self] (entity) -> Void in
+                self?.handleMoveLater(entity)
+            }),
+            ChildrenViewSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, state: .state4, mode: .switch, handler: { [weak self] (entity) -> Void in
+                self?.handleAddToCollection(entity)
+            })
+        ])
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -82,31 +80,19 @@ class InboxViewController: UIViewController {
     }
 
     private func handleDone(_ entity: EntityExt) {
-        guard let childTrait = entity
-                .traitsOfType(Exomind_Base_CollectionChild.self)
-                .first(where: { $0.message.collection.entityID == "inbox" }) else {
-            return
-        }
-
-        let mutation = MutationBuilder
-                .updateEntity(entityId: entity.id)
-                .deleteTrait(traitId: childTrait.id)
-                .build()
-        ExocoreClient.store.mutate(mutation: mutation)
+        Mutations.removeParent(entity: entity, parentId: "inbox")
     }
 
     private func handleMoveLater(_ entity: EntityExt) {
-        // TODO:
-//        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity) { completed in
-//            if (completed) {
-//                ExomindDSL.on(entity).relations.removeParent(parentId: self.entityId)
-//            }
-//        }
+        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity) { completed in
+            if (completed) {
+                Mutations.removeParent(entity: entity, parentId: "inbox")
+            }
+        }
     }
 
     private func handleAddToCollection(_ entity: EntityExt) {
-        // TODO:
-//        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
+        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
     }
 
     deinit {

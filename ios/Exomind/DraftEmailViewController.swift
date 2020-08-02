@@ -1,10 +1,3 @@
-//
-//  DraftEmailViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-16.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import SnapKit

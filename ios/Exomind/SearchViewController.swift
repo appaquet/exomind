@@ -46,7 +46,7 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
     fileprivate weak var searchNavigationController: SearchViewController!
 
     private var searchBar: UISearchBar!
-    private var childrenViewController: ChildrenViewController!
+    private var entityListViewController: EntityListViewController!
     private var searchText: String?
     private var searchDebouncer: Debouncer!
 
@@ -57,32 +57,35 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
             self?.executeQuery()
         }
 
-        self.setupChildrenViewController()
+        self.setupEntityList()
+
         self.searchBar = UISearchBar()
         self.navigationItem.titleView = self.searchBar
         self.searchBar.becomeFirstResponder()
         self.searchBar.placeholder = "Search"
         self.searchBar.delegate = self
+
+        Stylesheet.styleSearchBar(self.searchBar, bgColor: Stylesheet.searchNavigationBarBg, fgColor: Stylesheet.searchNavigationBarFg)
     }
 
-    private func setupChildrenViewController() {
-        self.childrenViewController = (self.mainStoryboard.instantiateViewController(withIdentifier: "ChildrenViewController") as! ChildrenViewController)
-        self.childrenViewController.tableView.keyboardDismissMode = .onDrag
+    private func setupEntityList() {
+        self.entityListViewController = (self.mainStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
+        self.entityListViewController.tableView.keyboardDismissMode = .onDrag
 
-        self.addChild(self.childrenViewController)
-        self.view.addSubview(self.childrenViewController.view)
+        self.addChild(self.entityListViewController)
+        self.view.addSubview(self.entityListViewController.view)
 
-        self.childrenViewController.setItemClickHandler { [weak self] (entity) -> Void in
+        self.entityListViewController.setItemClickHandler { [weak self] (entity) -> Void in
             self?.handleItemSelection(entity)
         }
 
-        self.childrenViewController.setSwipeActions([
+        self.entityListViewController.setSwipeActions([
             ChildrenViewSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
                 self?.handleCopyInbox(entity)
             })
         ])
 
-        self.childrenViewController.loadData(withResults: [])
+        self.entityListViewController.loadData(withResults: [])
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -118,7 +121,7 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
                 .count(30)
                 .project(withProjections: [projectSummaryFields, projectSkipRest])
                 .build()
-        self.childrenViewController.loadData(fromQuery: query)
+        self.entityListViewController.loadData(fromQuery: query)
     }
 
     private func handleItemSelection(_ entity: EntityExt) {

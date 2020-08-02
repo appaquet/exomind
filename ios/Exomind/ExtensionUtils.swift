@@ -1,10 +1,3 @@
-//
-//  ExtensionUtils.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2018-09-23.
-//  Copyright © 2018 Exomind. All rights reserved.
-//
 
 import Foundation
 import KeychainSwift

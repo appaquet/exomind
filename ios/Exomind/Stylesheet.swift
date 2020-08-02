@@ -97,4 +97,17 @@ class Stylesheet {
         navigationBar.titleTextAttributes![NSAttributedString.Key.foregroundColor] = fgColor
         navigationBar.barStyle = UIBarStyle.black // misleading, it's actually going to be white...
     }
+
+    static func styleSearchBar(_ searchBar: UISearchBar, bgColor: UIColor, fgColor: UIColor) {
+        searchBar.isTranslucent = false
+
+        // Change color of placeholder text
+        // From https://stackoverflow.com/questions/11827585/uisearchbar-change-placeholder-color
+        let textFieldInsideSearchBar = searchBar.value(forKey: "searchField") as? UITextField
+        if let textFieldInsideSearchBar = textFieldInsideSearchBar {
+            textFieldInsideSearchBar.textColor = fgColor
+            let textFieldInsideSearchBarLabel = textFieldInsideSearchBar.value(forKey: "placeholderLabel") as? UILabel
+            textFieldInsideSearchBarLabel?.textColor = fgColor
+        }
+    }
 }

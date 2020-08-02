@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		458EC161C72B3C9784E6CEE8 /* Pods_ExomindTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BAA1792ED91F713E98050D7 /* Pods_ExomindTests.framework */; };
+		45B6B00646DC34E0D7E0BA0F /* Mutations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B2B1F11CCDC912DEABAF /* Mutations.swift */; };
 		45B6B06D68693F5FF00CC936 /* HCJsonSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B7C8313B3EEB873D3662 /* HCJsonSerializationTests.swift */; };
 		45B6B095D316BA16BBDE095B /* HCQueriesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B00FF5BA113203BB6DB8 /* HCQueriesTests.swift */; };
 		45B6B0E2AF3491A7ED8ECFA2 /* HCQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6BFC9DEE4B705075C451C /* HCQueries.swift */; };
@@ -105,7 +106,7 @@
 		6DC0D2671BC45B4F00F14571 /* JSTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2661BC45B4F00F14571 /* JSTimer.swift */; };
 		6DC0D2691BC54A9700F14571 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2681BC54A9700F14571 /* Query.swift */; };
 		6DC0D26D1BC5537500F14571 /* DictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */; };
-		6DC0D2701BC576AC00F14571 /* ChildrenViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26F1BC576AC00F14571 /* ChildrenViewController.swift */; };
+		6DC0D2701BC576AC00F14571 /* EntityListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */; };
 		6DC0D2721BC58B5D00F14571 /* NavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2711BC58B5D00F14571 /* NavigationController.swift */; };
 		6DC0D2761BC5949900F14571 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* DateExtension.swift */; };
 		6DC4183D1C165B7200DB564C /* CollectionsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */; };
@@ -173,6 +174,7 @@
 		45B6B00FF5BA113203BB6DB8 /* HCQueriesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCQueriesTests.swift; sourceTree = "<group>"; };
 		45B6B0226A61D7D7AADC875D /* StringExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
+		45B6B2B1F11CCDC912DEABAF /* Mutations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutations.swift; sourceTree = "<group>"; };
 		45B6B353166EEE587926FCE4 /* HCRuntimeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCRuntimeTests.swift; sourceTree = "<group>"; };
 		45B6B5B949028FD257B5B0B5 /* HCJsonSerialization.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCJsonSerialization.swift; sourceTree = "<group>"; };
 		45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Entities.swift; sourceTree = "<group>"; };
@@ -256,7 +258,7 @@
 		6DC0D2661BC45B4F00F14571 /* JSTimer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSTimer.swift; sourceTree = "<group>"; };
 		6DC0D2681BC54A9700F14571 /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
 		6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryExtension.swift; sourceTree = "<group>"; };
-		6DC0D26F1BC576AC00F14571 /* ChildrenViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChildrenViewController.swift; sourceTree = "<group>"; };
+		6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityListViewController.swift; sourceTree = "<group>"; };
 		6DC0D2711BC58B5D00F14571 /* NavigationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationController.swift; sourceTree = "<group>"; };
 		6DC0D2751BC5949900F14571 /* DateExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
 		6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionsLogic.swift; sourceTree = "<group>"; };
@@ -438,7 +440,7 @@
 				6DCE04211BFA8F2200DF8A34 /* ObjectViewController.swift */,
 				6DCE04251BFAA2DE00DF8A34 /* InboxViewController.swift */,
 				6DC418421C1796D300DB564C /* CollectionViewController.swift */,
-				6DC0D26F1BC576AC00F14571 /* ChildrenViewController.swift */,
+				6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */,
 				6D3D466F1C84F6F20037E51B /* NoteViewController.swift */,
 				6D3D46681C84F3CC0037E51B /* EmailThreadView */,
 				6DCE042F1BFFCC2100DF8A34 /* EmailViewController.swift */,
@@ -511,6 +513,7 @@
 				6D712F3224CC7B1C009D6989 /* ExocoreUtils.swift */,
 				45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */,
 				45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */,
+				45B6B2B1F11CCDC912DEABAF /* Mutations.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -961,7 +964,7 @@
 				6D9F68351C99E69200FFC7D9 /* MultilineTextField.swift in Sources */,
 				6D3D46721C8620750037E51B /* KeyboardUtils.swift in Sources */,
 				6DB0E4811C1F622D000EE49A /* SessionStore.swift in Sources */,
-				6DC0D2701BC576AC00F14571 /* ChildrenViewController.swift in Sources */,
+				6DC0D2701BC576AC00F14571 /* EntityListViewController.swift in Sources */,
 				6DC0D2651BC45B3000F14571 /* QuerySet.swift in Sources */,
 				6DE65ACD1C5FEABD0059CCBE /* HttpUtils.swift in Sources */,
 				6D68E6CB1C8A673B007BB8F4 /* AutoLayoutWebView.swift in Sources */,
@@ -1018,6 +1021,7 @@
 				45B6BFF8AE9157DF82740038 /* Entities.swift in Sources */,
 				45B6BF9E36D12AC04B0E4E61 /* ExpandableQuery.swift in Sources */,
 				45B6B660281C1CC6E661D13E /* Retry.swift in Sources */,
+				45B6B00646DC34E0D7E0BA0F /* Mutations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

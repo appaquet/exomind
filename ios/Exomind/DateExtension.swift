@@ -1,12 +1,5 @@
-//
-//  DateExtension.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-07.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import Foundation
+import SwiftProtobuf
 
 // https://github.com/justinmakaila/NSDate-ISO-8601/blob/master/NSDateISO8601.swift
 // https://github.com/al7/SwiftDateExtension/blob/master/DateExtension/DateExtension.swift
@@ -215,7 +208,11 @@ public extension Date {
         return UInt((Calendar.current as NSCalendar).component(.second, from: self))
     }
 
-    static func - (lhs: Date, rhs: Date) -> TimeInterval {
+    static func -(lhs: Date, rhs: Date) -> TimeInterval {
         lhs.timeIntervalSinceReferenceDate - rhs.timeIntervalSinceReferenceDate
+    }
+
+    func toProtobuf() -> Google_Protobuf_Timestamp {
+        Google_Protobuf_Timestamp(date: self)
     }
 }

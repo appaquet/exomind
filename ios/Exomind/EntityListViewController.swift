@@ -4,7 +4,7 @@ import MCSwipeTableViewCell
 import Dwifft
 import Exocore
 
-class ChildrenViewController: UITableViewController {
+class EntityListViewController: UITableViewController {
     private var query: ExpandableQuery?
     private var parentId: EntityId?
 
@@ -19,7 +19,6 @@ class ChildrenViewController: UITableViewController {
     private var scrollDragging = false
     private var headerShown: Bool = false
     private var headerWasShownBeforeDrag: Bool = false
-    private var currentlyExpandingQuery = false
 
     private var diffCalculator: SingleSectionTableViewDiffCalculator<EntityResult>?
 
@@ -138,14 +137,8 @@ class ChildrenViewController: UITableViewController {
         let averageHeight = CGFloat(74)
         let itemsComingUp = (totalHeight - currentPosition) / averageHeight
 
-        // if we suddenly have more items, that means we are at beginning or expansion worked
-        if (itemsComingUp > 10) {
-            self.currentlyExpandingQuery = false
-        }
-
-        // if only 5 items or less are coming up, we load new
-        if (itemsComingUp < 10 && self.collectionData.count > 0 && !self.currentlyExpandingQuery) {
-            self.currentlyExpandingQuery = true
+        let canExpand = self.query?.canExpand ?? false
+        if (itemsComingUp < 10 && canExpand) {
             self.query?.expand()
         }
 
@@ -168,7 +161,7 @@ class ChildrenViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        var res = self.collectionData[(indexPath as NSIndexPath).item]
+        let res = self.collectionData[(indexPath as NSIndexPath).item]
         if let handler = self.itemClickHandler {
             handler(res.entity)
         }
@@ -213,7 +206,7 @@ class ChildrenViewController: UITableViewController {
     }
 
     deinit {
-        print("ChildrenViewController > Deinit")
+        print("EntityViewController > Deinit")
     }
 }
 

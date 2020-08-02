@@ -3,7 +3,11 @@ import SnapKit
 import Exocore
 
 class NoteViewController: UIViewController, EntityTraitView {
-    private var entity: EntityExt!
+    private var partialEntity: EntityExt!
+    private var noteTraitId: String!
+
+    private var entityQuery: QueryHandle?
+    private var entity: EntityExt?
     private var noteTrait: TraitInstance<Exomind_Base_Note>?
     private var modifiedNote: Exomind_Base_Note?
 
@@ -12,17 +16,16 @@ class NoteViewController: UIViewController, EntityTraitView {
     private var richTextEditor: RichTextEditor!
 
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
-        self.entity = entity
-        self.noteTrait = entity.trait(withId: trait.id)
-        self.modifiedNote = entity.trait(withId: trait.id)?.message
+        self.partialEntity = entity
+        self.noteTraitId = trait.id
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         self.createHeaderView()
-        self.createWebView()
-        self.render()
+        self.createRichTextEditor()
+        self.loadEntity()
 
         self.headerView.snp.makeConstraints { (make) in
             make.width.equalTo(self.view.snp.width)
@@ -44,7 +47,7 @@ class NoteViewController: UIViewController, EntityTraitView {
         nav.resetState()
     }
 
-    fileprivate func createHeaderView() {
+    private func createHeaderView() {
         self.titleField = MultilineTextField()
         titleField.onChanged = { [weak self] text -> Void in
             self?.handleTitleChange()
@@ -53,11 +56,11 @@ class NoteViewController: UIViewController, EntityTraitView {
         self.view.addSubview(self.headerView)
     }
 
-    fileprivate func createWebView() {
+    private func createRichTextEditor() {
         self.richTextEditor = RichTextEditor(callback: { [weak self] (json) -> Void in
             if let body = json?["content"].string {
                 self?.modifiedNote?.body = body
-                self?.saveNote() // we don't care to save every time since it's already debounced in javascript
+                self?.saveNote() // we don't care about saving every time since it's already debounced in javascript
             }
         })
         self.addChild(self.richTextEditor)
@@ -66,22 +69,35 @@ class NoteViewController: UIViewController, EntityTraitView {
         self.richTextEditor.viewDidLoad()
     }
 
-    fileprivate func render() {
-        guard let localNote = self.modifiedNote else {
-            return
-        }
+    private func loadEntity() {
+        let query = QueryBuilder.withId(self.partialEntity.id).build()
+        self.entityQuery = ExocoreClient.store.query(query: query, onChange: { [weak self] (status, res) in
+            guard let this = self,
+                  let res = res,
+                  let entity = res.entities.first?.entity.toExtension() else {
+                return
+            }
 
-        self.titleField.text = localNote.title
-        self.richTextEditor.setContent(localNote.body)
+            DispatchQueue.main.async {
+                this.entity = entity
+                this.noteTrait = entity.trait(withId: this.noteTraitId)
+                this.modifiedNote = entity.trait(withId: this.noteTraitId)?.message
+                if let note = this.modifiedNote {
+                    this.titleField.text = note.title
+                    this.richTextEditor.setContent(note.body)
+                }
+            }
+        })
     }
 
-    fileprivate func handleTitleChange() {
+    private func handleTitleChange() {
         self.modifiedNote?.title = self.titleField.text
         self.saveNote()
     }
 
-    fileprivate func saveNote() {
-        guard   let initialNote = self.noteTrait,
+    private func saveNote() {
+        guard   let entity = self.entity,
+                let initialNote = self.noteTrait,
                 let modifiedNote = self.modifiedNote
                 else {
             return
@@ -90,7 +106,7 @@ class NoteViewController: UIViewController, EntityTraitView {
         if !initialNote.message.isEqualTo(message: modifiedNote) {
             do {
                 let mutation = try MutationBuilder
-                        .updateEntity(entityId: self.entity.id)
+                        .updateEntity(entityId: entity.id)
                         .putTrait(message: modifiedNote, traitId: initialNote.id)
                         .build()
 

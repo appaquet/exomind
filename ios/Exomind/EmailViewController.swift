@@ -109,9 +109,10 @@ class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
     }
 
     func handleAddToCollection() {
-        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
-        vc.forEntity = self.entityTrait.entity
-        self.present(vc, animated: true, completion: nil)
+        // TODO:
+//        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
+//        vc.forEntity = self.entityTrait.entity
+//        self.present(vc, animated: true, completion: nil)
     }
 
     deinit {

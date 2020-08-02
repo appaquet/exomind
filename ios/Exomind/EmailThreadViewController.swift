@@ -283,7 +283,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitViewOld {
     }
 
     func handleAddToCollection() {
-        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: self.entityTrait.entity)
+//    TODO:    (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: self.entityTrait.entity)
     }
     
     override func viewWillDisappear(_ animated: Bool) {

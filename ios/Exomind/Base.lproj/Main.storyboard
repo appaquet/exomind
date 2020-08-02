@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14854.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="VJs-Cu-oGS">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="VJs-Cu-oGS">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14806.4"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
         <!--Inbox View Controller-->
         <scene sceneID="OC3-Z2-xox">
             <objects>
-                <viewController storyboardIdentifier="InboxViewController" id="Ha1-OZ-pae" customClass="InboxViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="InboxViewController" id="Ha1-OZ-pae" customClass="InboxViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="ep0-NC-hgJ"/>
                         <viewControllerLayoutGuide type="bottom" id="zqZ-MY-dKt"/>
@@ -29,10 +28,10 @@
             </objects>
             <point key="canvasLocation" x="-1718" y="1862"/>
         </scene>
-        <!--Children View Controller-->
+        <!--Entity List View Controller-->
         <scene sceneID="Rju-yP-ADy">
             <objects>
-                <tableViewController storyboardIdentifier="ChildrenViewController" id="mEJ-FM-OT5" userLabel="Children View Controller" customClass="ChildrenViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="EntityListViewController" id="mEJ-FM-OT5" userLabel="Entity List View Controller" customClass="EntityListViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="75" sectionHeaderHeight="28" sectionFooterHeight="28" id="J9e-3G-dGj">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -45,7 +44,7 @@
                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         </view>
                         <prototypes>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" shouldIndentWhileEditing="NO" reuseIdentifier="cell" rowHeight="75" id="Lcp-gw-dB0" customClass="ChildrenViewCell" customModule="Exomind" customModuleProvider="target">
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" shouldIndentWhileEditing="NO" reuseIdentifier="cell" rowHeight="75" id="Lcp-gw-dB0" customClass="ChildrenViewCell" customModule="ExomindV2" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="68" width="375" height="75"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Lcp-gw-dB0" id="CSy-km-Z0o">
@@ -134,7 +133,7 @@
         <!--Login View Controller-->
         <scene sceneID="IS2-WM-UMm">
             <objects>
-                <viewController storyboardIdentifier="loginViewController" id="eXl-1Z-1hg" customClass="LoginViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="loginViewController" id="eXl-1Z-1hg" customClass="LoginViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="c3U-LO-cLd"/>
                         <viewControllerLayoutGuide type="bottom" id="s1r-fy-PUZ"/>
@@ -197,7 +196,7 @@
         <!--Tab Bar Controller-->
         <scene sceneID="jf4-Su-Cjh">
             <objects>
-                <tabBarController storyboardIdentifier="tabBarViewController" id="WaC-Pm-sXL" customClass="TabBarController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <tabBarController storyboardIdentifier="tabBarViewController" id="WaC-Pm-sXL" customClass="TabBarController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <tabBar key="tabBar" contentMode="scaleToFill" id="SQj-nR-PTn">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="49"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -217,7 +216,7 @@
         <!--Collection Selector View Controller-->
         <scene sceneID="00v-Si-ji5">
             <objects>
-                <navigationController storyboardIdentifier="CollectionSelectorViewController" id="1vD-Q3-uVG" customClass="CollectionSelectorViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <navigationController storyboardIdentifier="CollectionSelectorViewController" id="1vD-Q3-uVG" customClass="CollectionSelectorViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="EYF-fg-0sB">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="56"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -233,11 +232,12 @@
         <!--Add to collections-->
         <scene sceneID="N3g-Ik-7YP">
             <objects>
-                <tableViewController id="ZuI-aH-tG4" customClass="CollectionSelectorTableViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController id="ZuI-aH-tG4" customClass="CollectionSelectorTableViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" id="esN-oc-5JB">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                        <color key="sectionIndexBackgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <prototypes>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="cell" id="Z2i-do-qKu">
                                 <rect key="frame" x="0.0" y="28" width="375" height="44"/>
@@ -245,7 +245,9 @@
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Z2i-do-qKu" id="bEC-Ji-pwy">
                                     <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                                     <autoresizingMask key="autoresizingMask"/>
+                                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </tableViewCellContentView>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </tableViewCell>
                         </prototypes>
                         <connections>
@@ -268,7 +270,7 @@
         <!--Search-->
         <scene sceneID="PJK-lx-fNp">
             <objects>
-                <viewController id="a7h-fc-uPw" customClass="SearchCollectionContainer" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="a7h-fc-uPw" customClass="SearchCollectionContainer" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="OUb-RS-XlT"/>
                         <viewControllerLayoutGuide type="bottom" id="fC7-Kd-dEp"/>
@@ -293,7 +295,7 @@
         <!--Search View Controller-->
         <scene sceneID="pCA-ZF-9Ob">
             <objects>
-                <navigationController storyboardIdentifier="SearchViewController" id="RVd-kK-1SS" customClass="SearchViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <navigationController storyboardIdentifier="SearchViewController" id="RVd-kK-1SS" customClass="SearchViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="j6h-8J-lrv">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="56"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -309,7 +311,7 @@
         <!--Inbox-->
         <scene sceneID="DYj-A0-dE0">
             <objects>
-                <navigationController storyboardIdentifier="NavigationController" title="Inbox" id="eFO-j0-vsM" customClass="NavigationController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <navigationController storyboardIdentifier="NavigationController" title="Inbox" id="eFO-j0-vsM" customClass="NavigationController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Inbox" id="Ic5-Ni-mzR"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="mAU-2N-YXh">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="56"/>
@@ -329,7 +331,7 @@
         <!--Settings-->
         <scene sceneID="8w6-8S-Nxc">
             <objects>
-                <tableViewController id="6f7-Fn-RA9" customClass="SettingsViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController id="6f7-Fn-RA9" customClass="SettingsViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="static" style="grouped" separatorStyle="default" rowHeight="44" sectionHeaderHeight="18" sectionFooterHeight="18" id="pzq-Lb-I8F">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -447,7 +449,7 @@
         <!--Root Navigation Controller-->
         <scene sceneID="hmO-Nd-N6W">
             <objects>
-                <navigationController navigationBarHidden="YES" id="VJs-Cu-oGS" customClass="RootNavigationController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <navigationController navigationBarHidden="YES" id="VJs-Cu-oGS" customClass="RootNavigationController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="Ne9-jW-r7v">
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
@@ -464,7 +466,7 @@
         <!--Splash View Controller-->
         <scene sceneID="sxA-V7-SZa">
             <objects>
-                <viewController storyboardIdentifier="splashScreenViewController" id="acW-qF-gff" customClass="SplashViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="splashScreenViewController" id="acW-qF-gff" customClass="SplashViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="3BX-Zs-3No"/>
                         <viewControllerLayoutGuide type="bottom" id="qf0-YB-WkI"/>
