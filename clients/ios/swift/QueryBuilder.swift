@@ -8,6 +8,18 @@ public class QueryBuilder {
         self.inner = Exocore_Index_EntityQuery()
     }
 
+    public static func withIds(_ ids: [String]) -> QueryBuilder {
+        let builder = QueryBuilder()
+        var idsPredicate = Exocore_Index_IdsPredicate()
+        idsPredicate.ids = ids
+        builder.inner.ids = idsPredicate
+        return builder
+    }
+
+    public static func withId(_ id: String) -> QueryBuilder {
+        self.withIds([id])
+    }
+
     public static func withTrait<M: Message>(_ message: M.Type) -> QueryBuilder {
         let builder = QueryBuilder()
         var traitPredicate = Exocore_Index_TraitPredicate()
@@ -50,6 +62,18 @@ public class QueryBuilder {
         return self
     }
 
+    public func project(withProjection projection: Exocore_Index_Projection) -> QueryBuilder {
+        self.inner.projections.append(projection)
+
+        return self
+    }
+
+    public func project(withProjections projections: [Exocore_Index_Projection]) -> QueryBuilder {
+        self.inner.projections.append(contentsOf: projections)
+
+        return self
+    }
+
     public func build() -> Exocore_Index_EntityQuery {
         self.inner
     }
@@ -70,6 +94,15 @@ public class TraitQueryBuilder {
         predicate.reference.entityID = entityId
         predicate.reference.traitID = traitId
         builder.inner.reference = predicate
+
+        return builder
+    }
+
+    public static func matching(query: String) -> TraitQueryBuilder {
+        let builder = TraitQueryBuilder()
+        var predicate = Exocore_Index_MatchPredicate()
+        predicate.query = query
+        builder.inner.match = predicate
 
         return builder
     }

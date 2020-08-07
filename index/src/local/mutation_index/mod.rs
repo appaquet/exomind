@@ -305,8 +305,13 @@ impl MutationIndex {
             ..Default::default()
         };
 
-        let results =
-            self.execute_tantivy_with_paging(searcher, &query, Some(&paging), ordering, None)?;
+        let results = self.execute_tantivy_query_with_paging(
+            searcher,
+            &query,
+            Some(&paging),
+            ordering,
+            None,
+        )?;
 
         let entity_mutations = EntityMutationResults {
             mutations: results.mutations.into_iter().collect(),
@@ -362,7 +367,7 @@ impl MutationIndex {
         }
 
         let query = BooleanQuery::from(queries);
-        self.execute_tantivy_with_paging(
+        self.execute_tantivy_query_with_paging(
             searcher,
             &query,
             paging,
@@ -386,7 +391,7 @@ impl MutationIndex {
         }
 
         let query = self.match_predicate_to_query(predicate)?;
-        self.execute_tantivy_with_paging(searcher, &query, paging, ordering, None)
+        self.execute_tantivy_query_with_paging(searcher, &query, paging, ordering, None)
     }
 
     /// Executes a search for mutations with the given operations ids.
@@ -412,7 +417,7 @@ impl MutationIndex {
             ordering.ascending = true;
         }
 
-        self.execute_tantivy_with_paging(searcher, &query, paging, ordering, None)
+        self.execute_tantivy_query_with_paging(searcher, &query, paging, ordering, None)
     }
 
     /// Executes a search for mutations on the given entities ids.
@@ -437,7 +442,7 @@ impl MutationIndex {
             ordering.value = Some(ordering::Value::OperationId(true));
         }
 
-        self.execute_tantivy_with_paging(searcher, &query, paging, ordering, None)
+        self.execute_tantivy_query_with_paging(searcher, &query, paging, ordering, None)
     }
 
     /// Executes a search for traits that have the given reference to another
@@ -457,7 +462,7 @@ impl MutationIndex {
             ordering.value = Some(ordering::Value::OperationId(true));
         }
 
-        self.execute_tantivy_with_paging(searcher, &query, paging, ordering, None)
+        self.execute_tantivy_query_with_paging(searcher, &query, paging, ordering, None)
     }
 
     /// Returns all mutations.
@@ -475,7 +480,7 @@ impl MutationIndex {
             ordering.ascending = false;
         }
 
-        self.execute_tantivy_with_paging(searcher, &AllQuery, paging, ordering, None)
+        self.execute_tantivy_query_with_paging(searcher, &AllQuery, paging, ordering, None)
     }
 
     /// Converts a trait put / update to Tantivy document
@@ -719,7 +724,7 @@ impl MutationIndex {
 
     /// Execute query on Tantivy index by taking paging, ordering into
     /// consideration and returns paged results.
-    fn execute_tantivy_with_paging<S>(
+    fn execute_tantivy_query_with_paging<S>(
         &self,
         searcher: S,
         query: &dyn tantivy::query::Query,

@@ -19,7 +19,7 @@ impl Default for MutationIndexConfig {
     fn default() -> Self {
         MutationIndexConfig {
             indexer_num_threads: Some(1),
-            indexer_heap_size_bytes: 10_000_000,
+            indexer_heap_size_bytes: 5_000_000,
             iterator_page_size: 50,
             entity_mutations_cache_size: 2000,
 

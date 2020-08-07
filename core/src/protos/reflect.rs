@@ -34,7 +34,7 @@ pub trait ReflectMessage: Debug {
     fn encode_to_prost_any(&self) -> Result<prost_types::Any, Error> {
         let bytes = self.encode()?;
         Ok(prost_types::Any {
-            type_url: self.descriptor().name.clone(),
+            type_url: format!("type.googleapis.com/{}", self.descriptor().name),
             value: bytes,
         })
     }

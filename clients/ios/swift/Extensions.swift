@@ -36,11 +36,11 @@ public struct TypedTrait<T: Message> {
 }
 
 public func traitName(fromTypeUrl url: String) -> String {
-    if !url.hasPrefix(traitUrlPrefix) {
-        return ""
+    if url.hasPrefix(traitUrlPrefix) {
+        return String(url.dropFirst(traitUrlPrefix.count))
     }
 
-    return String(url.dropFirst(traitUrlPrefix.count))
+    return url
 }
 
 extension Exocore_Index_Trait {
