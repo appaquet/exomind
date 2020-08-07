@@ -12,9 +12,10 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
     func initialize(_ component: String, callback: @escaping (JSON?) -> Void) {
         self.navigationDelegate = self
 
+        self.setBackgroundTransparent()
+
         self.component = component
         self.callback = callback
-
 
         let url = URL(fileURLWithPath: Bundle.main.path(forResource: "hybrid", ofType: "html", inDirectory: "js")!)
         self.loadFileURL(url, allowingReadAccessTo: url)
@@ -56,6 +57,7 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
 
         if (url.scheme == "file" || url.scheme == "about") {
             decisionHandler(.allow)
+
         } else if (url.scheme == "exomind") {
             self.evaluateJavaScript("window.getData(\(url.host!))") { (data, err) in
                 if  let msg = data as? String,
@@ -70,7 +72,7 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
                         self.handleCallbackData(json)
                     }
                 } else {
-                    print("HybridWebView > Coulnd't parse message from js. Msg \(String(describing: data))")
+                    print("HybridWebView > Could not parse message from js. Msg \(String(describing: data))")
                 }
             }
 

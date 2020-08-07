@@ -17,7 +17,7 @@ class EntityExt {
     private let idTraits: [TraitId: Exocore_Index_Trait]
     private let typeTraits: [TraitId: [Exocore_Index_Trait]]
     private var traitInstances: [TraitId: Message] = [:]
-    private let _priorityTrait: (Exocore_Index_Trait, TraitConstants)?;
+    private let _priorityTrait: Exocore_Index_Trait?;
 
     var creationDate: Date
     var modificationDate: Date?
@@ -75,7 +75,7 @@ class EntityExt {
         }
         self.idTraits = idTraits
         self.typeTraits = typeTraits
-        self._priorityTrait = priorityTrait
+        self._priorityTrait = priorityTrait.map({ $0.0 })
         self.creationDate = oldestDate ?? Date()
         self.modificationDate = newestDate
         self.anyDate = self.modificationDate ?? self.creationDate
@@ -104,22 +104,9 @@ class EntityExt {
         return TraitInstance(entity: self, trait: trait, message: message)
     }
 
-    func traitOfType<T: Message>(_ message: T.Type) -> TraitInstance<T>? {
-        let traits = self.typeTraits[message.protoMessageName] ?? []
-        return traits.compactMap({ (trait) -> TraitInstance<T>? in
-            self.trait(withId: trait.id)
-        }).first
-    }
-
-    func traitsOfType<T: Message>(_ message: T.Type) -> [TraitInstance<T>] {
-        let traits = self.typeTraits[message.protoMessageName] ?? []
-        return traits.compactMap({ (trait) -> TraitInstance<T>? in
-            self.trait(withId: trait.id)
-        })
-    }
-
-    lazy var priorityTrait: AnyTraitInstance? = {
-        guard let (trait, traitConstants) = self._priorityTrait else {
+    func trait(anyWithId id: TraitId) -> AnyTraitInstance? {
+        guard let trait = self.idTraits[id],
+              let traitConstants = TraitsConstants[trait.canonicalFullName()] else {
             return nil
         }
 
@@ -152,6 +139,28 @@ class EntityExt {
             let trait: TraitInstance<Exomind_Base_Link>? = self.trait(withId: trait.id)
             return trait
         }
+    }
+
+    func traitOfType<T: Message>(_ message: T.Type) -> TraitInstance<T>? {
+        let traits = self.typeTraits[message.protoMessageName] ?? []
+        return traits.compactMap({ (trait) -> TraitInstance<T>? in
+            self.trait(withId: trait.id)
+        }).first
+    }
+
+    func traitsOfType<T: Message>(_ message: T.Type) -> [TraitInstance<T>] {
+        let traits = self.typeTraits[message.protoMessageName] ?? []
+        return traits.compactMap({ (trait) -> TraitInstance<T>? in
+            self.trait(withId: trait.id)
+        })
+    }
+
+    lazy var priorityTrait: AnyTraitInstance? = {
+        guard let trait = self._priorityTrait else {
+            return nil
+        }
+
+        return self.trait(anyWithId: trait.id)
     }()
 }
 
@@ -213,6 +222,12 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
             }
 
             return nil
+        }
+    }
+
+    var anyDate: Date {
+        get {
+            self.modificationDate ?? self.creationDate
         }
     }
 

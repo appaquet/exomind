@@ -57,8 +57,8 @@ class EntityCreationViewController: ModalGridViewController {
                     .returnEntities()
                     .putTrait(message: task)
 
-            try Mutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
-            Mutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
+            try ExomindMutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            ExomindMutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating task: \(error)")
         }
@@ -74,8 +74,8 @@ class EntityCreationViewController: ModalGridViewController {
                     .returnEntities()
                     .putTrait(message: note)
 
-            try Mutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
-            Mutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
+            try ExomindMutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            ExomindMutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating note: \(error)")
         }
@@ -90,8 +90,8 @@ class EntityCreationViewController: ModalGridViewController {
                     .returnEntities()
                     .putTrait(message: email)
 
-            try Mutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
-            Mutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
+            try ExomindMutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            ExomindMutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating collection: \(error)")
         }
@@ -107,8 +107,8 @@ class EntityCreationViewController: ModalGridViewController {
                     .returnEntities()
                     .putTrait(message: collection)
 
-            try Mutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
-            Mutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
+            try ExomindMutations.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            ExomindMutations.executeCreateEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating collection: \(error)")
         }

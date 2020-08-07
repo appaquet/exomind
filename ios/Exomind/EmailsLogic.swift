@@ -1,13 +1,12 @@
-
 import Foundation
 import JavaScriptCore
 
 class EmailsLogic {
     static func createReplyEmail(_ entityTrait: EntityTraitOld) -> Command? {
-        if  let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
-            let email = entityTrait.trait as? EmailFull,
-            let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
-        
+        if let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
+           let email = entityTrait.trait as? EmailFull,
+           let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
+
             let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.createReplyEmail")
             let cmdObj = builderFunc?.call(withArguments: [entityJs, emailJs])
             return Command(jsObj: cmdObj!)
@@ -15,12 +14,12 @@ class EmailsLogic {
             return nil
         }
     }
-    
+
     static func createReplyAllEmail(_ entityTrait: EntityTraitOld) -> Command? {
-        if  let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
-            let email = entityTrait.trait as? EmailFull,
-            let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
-            
+        if let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
+           let email = entityTrait.trait as? EmailFull,
+           let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
+
             let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.createReplyAllEmail")
             let cmdObj = builderFunc?.call(withArguments: [entityJs, emailJs])
             return Command(jsObj: cmdObj!)
@@ -30,10 +29,10 @@ class EmailsLogic {
     }
 
     static func createForwardEmail(_ entityTrait: EntityTraitOld) -> Command? {
-        if  let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
-            let email = entityTrait.trait as? EmailFull,
-            let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
-            
+        if let entityJs = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
+           let email = entityTrait.trait as? EmailFull,
+           let emailJs = BridgeEntityConverter.recordToJsRecord(email) {
+
             let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.createForwardEmail")
             let cmdObj = builderFunc?.call(withArguments: [entityJs, emailJs])
             return Command(jsObj: cmdObj!)
@@ -59,8 +58,8 @@ class EmailsLogic {
     }
 
     static func formatContact(_ contact: Contact, html: Bool = false, showAddress: Bool = false) -> String {
-        if  let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.formatContact"),
-            let jsContact = BridgeEntityConverter.recordToJsRecord(contact) {
+        if let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.formatContact"),
+           let jsContact = BridgeEntityConverter.recordToJsRecord(contact) {
             return builderFunc.call(withArguments: [jsContact, html, showAddress]).toString()
         } else {
             return contact.email
@@ -76,21 +75,24 @@ class EmailsLogic {
     }
 
     static func injectInlineImages(_ entityTrait: EntityTraitOld, html: String) -> String {
-        let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.injectInlineImages")
-        if  let jsEntity = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
-            let jsEmail = BridgeEntityConverter.recordToJsRecord(entityTrait.trait) {
-        
-            return builderFunc!.call(withArguments: [jsEntity, jsEmail, html]).toString()
-        } else {
-            return html
-        }
+        // TODO:
+//        let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.injectInlineImages")
+//        if  let jsEntity = BridgeEntityConverter.entityToJavascript(entityTrait.entity),
+//            let jsEmail = BridgeEntityConverter.recordToJsRecord(entityTrait.trait) {
+//
+//            return builderFunc!.call(withArguments: [jsEntity, jsEmail, html]).toString()
+//        } else {
+//            return html
+//        }
+
+        return html
     }
 
     static func attachmentUrl(_ entity: HCEntity, email: Email, attachment: FileAttachmentIntegration) -> String? {
-        if  let jsEntity = BridgeEntityConverter.entityToJavascript(entity),
-            let jsEmail = BridgeEntityConverter.recordToJsRecord(email),
-            let jsAttachment = BridgeEntityConverter.recordToJsRecord(attachment),
-            let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.attachmentUrl") {
+        if let jsEntity = BridgeEntityConverter.entityToJavascript(entity),
+           let jsEmail = BridgeEntityConverter.recordToJsRecord(email),
+           let jsAttachment = BridgeEntityConverter.recordToJsRecord(attachment),
+           let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.emailsLogic.attachmentUrl") {
 
             return builderFunc.call(withArguments: [jsEntity, jsEmail, jsAttachment]).toString()
         } else {

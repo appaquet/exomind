@@ -10,7 +10,7 @@
         <!--Object View Controller-->
         <scene sceneID="f6v-tQ-Gid">
             <objects>
-                <viewController storyboardIdentifier="ObjectViewController" id="qL7-9E-tda" customClass="ObjectViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ObjectViewController" id="qL7-9E-tda" customClass="EntityViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="9yr-cB-kTY">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

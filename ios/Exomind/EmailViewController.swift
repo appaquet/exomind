@@ -77,35 +77,35 @@ class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
     }
 
     func render() {
-        if self.isViewLoaded, let email = self.entityTrait?.trait as? EmailFull {
-            self.webview.loadEmailEntity(self.entityTrait, short: false)
-
-            self.fromLabel.text = EmailsLogic.formatContact(email.from)
-            self.subjectLabel.text = email.subject ?? "(no subject)"
-            let joined = (email.to + email.cc).map { $0.name ?? $0.email }
-            self.toLabel.text = joined.joined(separator: ", ")
-        }
+//        if self.isViewLoaded, let email = self.entityTrait?.trait as? EmailFull {
+//            self.webview.loadEmailEntity(self.entityTrait, short: false)
+//
+//            self.fromLabel.text = EmailsLogic.formatContact(email.from)
+//            self.subjectLabel.text = email.subject ?? "(no subject)"
+//            let joined = (email.to + email.cc).map { $0.name ?? $0.email }
+//            self.toLabel.text = joined.joined(separator: ", ")
+//        }
     }
 
     func handleReply() {
-        EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-            guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
-        }
+//        EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//            guard let this = self, let entity = entity else { return }
+//            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
+//        }
     }
 
     func handleReplyAll() {
-        EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-            guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
-        }
+//        EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//            guard let this = self, let entity = entity else { return }
+//            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
+//        }
     }
 
     func handleForward() {
-        EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-            guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
-        }
+//        EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//            guard let this = self, let entity = entity else { return }
+//            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
+//        }
     }
 
     func handleAddToCollection() {

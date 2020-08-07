@@ -211,7 +211,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
             return false
         }
 
-        return Mutations.hasParent(entity: entityComplete, parentId: id)
+        return ExomindMutations.hasParent(entity: entityComplete, parentId: id)
     }
 
     private func addParent(parentEntityId id: String) {
@@ -220,7 +220,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         }
 
         do {
-            try Mutations.addParent(entity: entityComplete, parentId: id)
+            try ExomindMutations.addParent(entity: entityComplete, parentId: id)
         } catch {
             print("CollectionSelectionViewController> Error adding parent \(error)")
         }
@@ -231,7 +231,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
             return
         }
 
-        Mutations.removeParent(entity: entityComplete, parentId: id)
+        ExomindMutations.removeParent(entity: entityComplete, parentId: id)
     }
 
     deinit {

@@ -17,21 +17,21 @@ target 'Exomind' do
   pod 'SnapKit', '~> 4.2.0', :inhibit_warnings => true
   pod 'Dwifft', '~> 0.9', :inhibit_warnings => true
   pod 'SwiftProtobuf', '~> 1.10'
-  #pod 'Exocore' , :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
-  pod 'Exocore', :path => '../../exocore'
+  pod 'Exocore' , :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
+  #pod 'Exocore', :path => '../../exocore'
 end
 
 target 'ExomindActionExt' do
   pod 'Alamofire', '~> 4.8', :inhibit_warnings => true
   pod 'KeychainSwift', '~> 13.0'
-  #pod 'Exocore' , :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
-  pod 'Exocore' , :path => '../../exocore'
+  pod 'Exocore' , :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
+  #pod 'Exocore' , :path => '../../exocore'
   pod 'SwiftProtobuf', '~> 1.10'
 end
 
 target 'ExomindTests' do
   pod 'SwiftyJSON', '~> 4.2'
-  #pod 'Exocore' , :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
-  pod 'Exocore', :path => '../../exocore'
+  pod 'Exocore' , :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
+  #pod 'Exocore', :path => '../../exocore'
   pod 'SwiftProtobuf', '~> 1.10'
 end

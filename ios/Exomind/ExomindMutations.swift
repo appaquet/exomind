@@ -1,7 +1,7 @@
 import Foundation
 import Exocore
 
-class Mutations {
+class ExomindMutations {
     static func hasParent(entity: EntityExt, parentId: String) -> Bool {
         let parentRel = entity
                 .traitsOfType(Exomind_Base_CollectionChild.self)

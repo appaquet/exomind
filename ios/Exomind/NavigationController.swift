@@ -62,27 +62,17 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     private func createViewController(forObject: NavigationObject) -> UIViewController {
         switch (forObject) {
         case let .entityId(id: entityId):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
             vc.populate(entityId: entityId)
             return vc
 
-        case let .entityOld(entity: entity):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
-            vc.populate(entity: entity)
-            return vc
-
-        case let .entityTraitOld(entityTrait: et):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
-            vc.populate(entityTrait: et)
-            return vc
-
         case let .entity(entity: entity):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
             vc.populate(entity: entity)
             return vc
 
         case let .entityTrait(entityTrait: et):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
             vc.populate(entityTrait: et)
             return vc
         }
@@ -154,7 +144,7 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         let showIn = self.parent ?? self
         let timeSelector = TimeSelectionViewController { (date) in
             if let realDate = date {
-                Mutations.snooze(entity: forEntity, date: realDate, callback: {
+                ExomindMutations.snooze(entity: forEntity, date: realDate, callback: {
                     callback?(true)
                 })
             } else {
@@ -178,8 +168,6 @@ class NavigationControllerBarAction {
 }
 
 enum NavigationObject {
-    case entityOld(entity: HCEntity)
-    case entityTraitOld(entityTrait: EntityTraitOld)
     case entity(entity: EntityExt)
     case entityTrait(entityTrait: AnyTraitInstance)
     case entityId(id: EntityId)

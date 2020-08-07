@@ -6,6 +6,13 @@ class AutoLayoutWebView: WKWebView {
     var onHeightChange: ((CGFloat) -> Void)?
     var height: CGFloat = 0
 
+    func setBackgroundTransparent() {
+        // default background color to the system color to support dark / light mode
+        self.scrollView.backgroundColor = UIColor.systemBackground
+        self.backgroundColor = UIColor.systemBackground
+        self.isOpaque = false
+    }
+
     @objc func checkSize() {
         if (!self.scrollView.isScrollEnabled) {
             let diff = abs(self.scrollView.contentSize.height - self.height)

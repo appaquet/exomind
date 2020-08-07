@@ -80,13 +80,13 @@ class InboxViewController: UIViewController {
     }
 
     private func handleDone(_ entity: EntityExt) {
-        Mutations.removeParent(entity: entity, parentId: "inbox")
+        ExomindMutations.removeParent(entity: entity, parentId: "inbox")
     }
 
     private func handleMoveLater(_ entity: EntityExt) {
         (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity) { completed in
             if (completed) {
-                Mutations.removeParent(entity: entity, parentId: "inbox")
+                ExomindMutations.removeParent(entity: entity, parentId: "inbox")
             }
         }
     }

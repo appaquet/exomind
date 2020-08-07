@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		458EC161C72B3C9784E6CEE8 /* Pods_ExomindTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BAA1792ED91F713E98050D7 /* Pods_ExomindTests.framework */; };
-		45B6B00646DC34E0D7E0BA0F /* Mutations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B2B1F11CCDC912DEABAF /* Mutations.swift */; };
+		45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */; };
 		45B6B06D68693F5FF00CC936 /* HCJsonSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B7C8313B3EEB873D3662 /* HCJsonSerializationTests.swift */; };
 		45B6B095D316BA16BBDE095B /* HCQueriesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B00FF5BA113203BB6DB8 /* HCQueriesTests.swift */; };
 		45B6B0E2AF3491A7ED8ECFA2 /* HCQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6BFC9DEE4B705075C451C /* HCQueries.swift */; };
@@ -112,7 +112,7 @@
 		6DC4183D1C165B7200DB564C /* CollectionsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */; };
 		6DC418411C17939A00DB564C /* EntityCreationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC418401C17939A00DB564C /* EntityCreationViewController.swift */; };
 		6DC418431C1796D300DB564C /* CollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC418421C1796D300DB564C /* CollectionViewController.swift */; };
-		6DCE04221BFA8F2200DF8A34 /* ObjectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE04211BFA8F2200DF8A34 /* ObjectViewController.swift */; };
+		6DCE04221BFA8F2200DF8A34 /* EntityViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE04211BFA8F2200DF8A34 /* EntityViewController.swift */; };
 		6DCE04261BFAA2DE00DF8A34 /* InboxViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE04251BFAA2DE00DF8A34 /* InboxViewController.swift */; };
 		6DCE042A1BFE6F4500DF8A34 /* FontAwesome.otf in Resources */ = {isa = PBXBuildFile; fileRef = 6DCE04291BFE6F4500DF8A34 /* FontAwesome.otf */; };
 		6DCE042C1BFE709A00DF8A34 /* Stylesheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE042B1BFE709A00DF8A34 /* Stylesheet.swift */; };
@@ -174,7 +174,7 @@
 		45B6B00FF5BA113203BB6DB8 /* HCQueriesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCQueriesTests.swift; sourceTree = "<group>"; };
 		45B6B0226A61D7D7AADC875D /* StringExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
-		45B6B2B1F11CCDC912DEABAF /* Mutations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutations.swift; sourceTree = "<group>"; };
+		45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExomindMutations.swift; sourceTree = "<group>"; };
 		45B6B353166EEE587926FCE4 /* HCRuntimeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCRuntimeTests.swift; sourceTree = "<group>"; };
 		45B6B5B949028FD257B5B0B5 /* HCJsonSerialization.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCJsonSerialization.swift; sourceTree = "<group>"; };
 		45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Entities.swift; sourceTree = "<group>"; };
@@ -264,7 +264,7 @@
 		6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionsLogic.swift; sourceTree = "<group>"; };
 		6DC418401C17939A00DB564C /* EntityCreationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityCreationViewController.swift; sourceTree = "<group>"; };
 		6DC418421C1796D300DB564C /* CollectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionViewController.swift; sourceTree = "<group>"; };
-		6DCE04211BFA8F2200DF8A34 /* ObjectViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ObjectViewController.swift; sourceTree = "<group>"; };
+		6DCE04211BFA8F2200DF8A34 /* EntityViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityViewController.swift; sourceTree = "<group>"; };
 		6DCE04251BFAA2DE00DF8A34 /* InboxViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InboxViewController.swift; sourceTree = "<group>"; };
 		6DCE04291BFE6F4500DF8A34 /* FontAwesome.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = FontAwesome.otf; sourceTree = "<group>"; };
 		6DCE042B1BFE709A00DF8A34 /* Stylesheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Stylesheet.swift; sourceTree = "<group>"; };
@@ -437,7 +437,7 @@
 				6DE65AC61C5EA71B0059CCBE /* LoginViewController.swift */,
 				6D00E1671C03544900B2F7E0 /* TabBarController.swift */,
 				6DC0D2711BC58B5D00F14571 /* NavigationController.swift */,
-				6DCE04211BFA8F2200DF8A34 /* ObjectViewController.swift */,
+				6DCE04211BFA8F2200DF8A34 /* EntityViewController.swift */,
 				6DCE04251BFAA2DE00DF8A34 /* InboxViewController.swift */,
 				6DC418421C1796D300DB564C /* CollectionViewController.swift */,
 				6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */,
@@ -513,7 +513,7 @@
 				6D712F3224CC7B1C009D6989 /* ExocoreUtils.swift */,
 				45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */,
 				45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */,
-				45B6B2B1F11CCDC912DEABAF /* Mutations.swift */,
+				45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -989,7 +989,7 @@
 				6DC418411C17939A00DB564C /* EntityCreationViewController.swift in Sources */,
 				6D570A351DCC08B000BD480F /* BridgeEntityConverter.swift in Sources */,
 				6D5390FE1C6ECF3E0019E56E /* AttachmentView.swift in Sources */,
-				6DCE04221BFA8F2200DF8A34 /* ObjectViewController.swift in Sources */,
+				6DCE04221BFA8F2200DF8A34 /* EntityViewController.swift in Sources */,
 				6D3D466C1C84F3FC0037E51B /* EmailThreadAttachmentTableViewCell.swift in Sources */,
 				6D0AE8C51E04EBE700F5F6CE /* Debounce.swift in Sources */,
 				6D7781C91C08B18E00D45299 /* TimeSelectionViewController.swift in Sources */,
@@ -1021,7 +1021,7 @@
 				45B6BFF8AE9157DF82740038 /* Entities.swift in Sources */,
 				45B6BF9E36D12AC04B0E4E61 /* ExpandableQuery.swift in Sources */,
 				45B6B660281C1CC6E661D13E /* Retry.swift in Sources */,
-				45B6B00646DC34E0D7E0BA0F /* Mutations.swift in Sources */,
+				45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

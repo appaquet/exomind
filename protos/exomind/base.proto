@@ -68,6 +68,8 @@ message Email {
     string snippet = 10 [(exocore.text) = true, (exocore.field_group) = 1];
     repeated EmailPart parts = 11;
     repeated EmailAttachment attachments = 12;
+
+    bool read = 14 [(exocore.field_group) = 1];
 }
 
 message DraftEmail {

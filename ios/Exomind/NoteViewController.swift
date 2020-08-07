@@ -3,10 +3,6 @@ import SnapKit
 import Exocore
 
 class NoteViewController: UIViewController, EntityTraitView {
-    private var partialEntity: EntityExt!
-    private var noteTraitId: String!
-
-    private var entityQuery: QueryHandle?
     private var entity: EntityExt?
     private var noteTrait: TraitInstance<Exomind_Base_Note>?
     private var modifiedNote: Exomind_Base_Note?
@@ -16,8 +12,12 @@ class NoteViewController: UIViewController, EntityTraitView {
     private var richTextEditor: RichTextEditor!
 
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
-        self.partialEntity = entity
-        self.noteTraitId = trait.id
+        self.entity = entity
+        self.noteTrait = entity.trait(withId: trait.id)
+
+        if self.isViewLoaded && self.modifiedNote == nil {
+            self.loadData()
+        }
     }
 
     override func viewDidLoad() {
@@ -25,7 +25,7 @@ class NoteViewController: UIViewController, EntityTraitView {
 
         self.createHeaderView()
         self.createRichTextEditor()
-        self.loadEntity()
+        self.loadData()
 
         self.headerView.snp.makeConstraints { (make) in
             make.width.equalTo(self.view.snp.width)
@@ -50,7 +50,13 @@ class NoteViewController: UIViewController, EntityTraitView {
     private func createHeaderView() {
         self.titleField = MultilineTextField()
         titleField.onChanged = { [weak self] text -> Void in
-            self?.handleTitleChange()
+            guard let this = self else { return }
+
+            if this.modifiedNote == nil {
+                this.modifiedNote = this.noteTrait?.message
+            }
+            this.modifiedNote?.title = this.titleField.text
+            this.saveNote()
         }
         self.headerView = LabelledFieldView(label: "Title", fieldView: titleField)
         self.view.addSubview(self.headerView)
@@ -58,41 +64,28 @@ class NoteViewController: UIViewController, EntityTraitView {
 
     private func createRichTextEditor() {
         self.richTextEditor = RichTextEditor(callback: { [weak self] (json) -> Void in
+            guard let this = self else { return }
+
             if let body = json?["content"].string {
-                self?.modifiedNote?.body = body
-                self?.saveNote() // we don't care about saving every time since it's already debounced in javascript
+                if this.modifiedNote == nil {
+                    this.modifiedNote = this.noteTrait?.message
+                }
+                this.modifiedNote?.body = body
+                this.saveNote() // we don't care about saving every time since it's already debounced in javascript
             }
         })
+
         self.addChild(self.richTextEditor)
         self.view.addSubview(self.richTextEditor.view)
         self.richTextEditor.didMove(toParent: self)
         self.richTextEditor.viewDidLoad()
     }
 
-    private func loadEntity() {
-        let query = QueryBuilder.withId(self.partialEntity.id).build()
-        self.entityQuery = ExocoreClient.store.query(query: query, onChange: { [weak self] (status, res) in
-            guard let this = self,
-                  let res = res,
-                  let entity = res.entities.first?.entity.toExtension() else {
-                return
-            }
-
-            DispatchQueue.main.async {
-                this.entity = entity
-                this.noteTrait = entity.trait(withId: this.noteTraitId)
-                this.modifiedNote = entity.trait(withId: this.noteTraitId)?.message
-                if let note = this.modifiedNote {
-                    this.titleField.text = note.title
-                    this.richTextEditor.setContent(note.body)
-                }
-            }
-        })
-    }
-
-    private func handleTitleChange() {
-        self.modifiedNote?.title = self.titleField.text
-        self.saveNote()
+    private func loadData() {
+        if let note = self.modifiedNote ?? self.noteTrait?.message {
+            self.titleField.text = note.title
+            self.richTextEditor.setContent(note.body)
+        }
     }
 
     private func saveNote() {

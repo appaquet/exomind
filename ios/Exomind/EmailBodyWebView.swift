@@ -1,63 +1,54 @@
-
 import UIKit
 import WebKit
 
 class EmailBodyWebView: AutoLayoutWebView, WKNavigationDelegate {
-    var entityTrait: EntityTraitOld?
     var onLinkClick: ((URL) -> Bool)?
+    var onLoaded: (() -> Void)?
 
     func initialize() {
         self.navigationDelegate = self
         self.scrollView.isScrollEnabled = false
         self.scrollView.bouncesZoom = false
+        self.setBackgroundTransparent()
     }
-    
-    func loadEmailEntity(_ entityTrait: EntityTraitOld, short: Bool = true) {
-        self.entityTrait = entityTrait
-        var parts: [EmailPart]?
-        if let email = entityTrait.trait as? EmailFull {
-            parts = email.parts
-        } else if let draft = entityTrait.trait as? DraftEmailFull {
-            parts = draft.parts
-        }
-        
-        if let parts = parts {
-            for part in parts {
-                if let htmlPart = part as? EmailPartHtmlFull {
-                    let body = htmlPart.body
-                    
-                    var content: String!
-                    if (short) {
-                        let (cnt, _) = EmailsLogic.splitOriginalThreadHtml(body)
-                        content = cnt
-                    } else {
-                        content = body
-                    }
-                    
-                    let inlinedAttachmentBody = EmailsLogic.injectInlineImages(entityTrait, html: content)
-                    let sanitized = EmailsLogic.sanitizeHtml(inlinedAttachmentBody)
-                    self.loadHTML(sanitized)
-                    
-                    // if it's html, we break here since plain may be present after
-                    break
-                } else if let plainPart = part as? EmailPartPlainFull {
-                    let htmlbody = EmailsLogic.plainTextToHtml(plainPart.body)
-                    self.loadHTML(htmlbody)
+
+    func loadEmailEntity(_ parts: [Exomind_Base_EmailPart], short: Bool = true) {
+        for part in parts {
+            if part.mimeType == "text/html" {
+                var content: String!
+                if (short) {
+                    let (cnt, _) = EmailsLogic.splitOriginalThreadHtml(part.body)
+                    content = cnt
+                } else {
+                    content = part.body
                 }
+
+                let inlinedAttachmentBody = content // TODO: EmailsLogic.injectInlineImages(entityTrait, html: content)
+                let sanitized = EmailsLogic.sanitizeHtml(inlinedAttachmentBody!)
+                self.loadHTML(sanitized)
+
+                // if it's html, we break here since plain may be present after
+                break
+            } else {
+                let htmlbody = EmailsLogic.plainTextToHtml(part.body)
+                self.loadHTML(htmlbody)
             }
-        } else {
-            self.loadHTML("Loading...")
         }
     }
 
     func loadHTML(_ body: String) {
         // http://stackoverflow.com/questions/9993393/how-to-toggle-uiwebview-text-when-scalespagetofit-no
         let head = "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'><meta name='viewport' id='iphone-viewport' content='width=device-width'>"
-        let ready = "<script>document.addEventListener(\"DOMContentLoaded\", function(event) { window.location = \"exomind://loaded/\" + document.body.clientHeight; });</script>"
+
+        // Triggered when all DOM elements are ready (but not necessarily images)
+        let ready = "<script>document.addEventListener(\"DOMContentLoaded\", function(event) { window.location = \"exomind://ready/\" + document.body.clientHeight; });</script>"
+
+        // Triggered when the page is fully loaded, with all images
+        let loaded = "window.location = 'exomind://loaded/' + document.body.clientHeight"
 
         // For Dark Mode. Sync with Web's html-editor.js
         let style = "<style>@media (prefers-color-scheme: dark) { body { color: white; background-color: black } a { color: #4285f4 } }</style>"
-        let final = "<html><head>\(head)\(style)</head><body style=\"width: 100%; padding: 10px 5px;\">\(body)\(ready)</body></html>"
+        let final = "<html><head>\(head)\(style)</head><body style=\"width: 100%; padding: 10px 5px;\" onload=\"javascript: \(loaded)\">\(body)\(ready)</body></html>"
         self.loadHTMLString(final, baseURL: nil)
     }
 
@@ -67,9 +58,16 @@ class EmailBodyWebView: AutoLayoutWebView, WKNavigationDelegate {
         // we don't want any website to open inside the frame, we open in safari
         if (url.scheme == "about") {
             decisionHandler(.allow)
+
+        } else if (url.scheme == "exomind" && url.host == "ready") {
+            self.checkSize()
+            self.onLoaded?()
+            decisionHandler(.cancel)
+
         } else if (url.scheme == "exomind" && url.host == "loaded") {
             self.checkSize()
             decisionHandler(.cancel)
+
         } else {
             let shouldAllow = self.onLinkClick?(url) ?? true
             if shouldAllow {

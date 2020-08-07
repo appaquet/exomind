@@ -105,7 +105,7 @@ class EntityListViewController: UITableViewController {
 
         var top = CGFloat(0.0)
         let bottom = Stylesheet.quickButtonSize + 20
-        let showHeader = self.hasHeader() && (scrollDragging && headerWasShownBeforeDrag) || (!scrollDragging && headerShown)
+        let showHeader = self.hasHeader && ((self.scrollDragging && self.headerWasShownBeforeDrag) || (!self.scrollDragging && self.headerShown))
         if (!showHeader) {
             top = top - (self.tableView.tableHeaderView?.frame.height ?? 0)
         }
@@ -167,8 +167,10 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private func hasHeader() -> Bool {
-        self.switcherButtonActions.count > 0
+    private var hasHeader: Bool {
+        get {
+            self.switcherButtonActions.count > 0
+        }
     }
 
     private func configureCellSwipe(_ indexPath: IndexPath, cell: ChildrenViewCell) -> Void {

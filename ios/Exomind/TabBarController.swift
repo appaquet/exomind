@@ -57,12 +57,12 @@ class TabBarController: UITabBarController {
                             barViews.append(vc)
                             newMap[entity.id] = vc
                         } else {
-                            let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "NavigationController") as! NavigationController
-                            vc.replaceTopObject(.entityOld(entity: entity))
-                            let image = ObjectsIcon.icon(forEntity: entity, color: UIColor.black, dimension: 28)
-                            vc.tabBarItem = UITabBarItem(title: entityTrait.displayName, image: image, tag: 0)
-                            barViews.append(vc)
-                            newMap[entity.id] = vc
+//                            let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "NavigationController") as! NavigationController
+//                            vc.replaceTopObject(.entityOld(entity: entity))
+//                            let image = ObjectsIcon.icon(forEntity: entity, color: UIColor.black, dimension: 28)
+//                            vc.tabBarItem = UITabBarItem(title: entityTrait.displayName, image: image, tag: 0)
+//                            barViews.append(vc)
+//                            newMap[entity.id] = vc
                         }
                     }
                 }

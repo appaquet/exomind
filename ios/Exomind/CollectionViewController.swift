@@ -116,7 +116,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func handleDone(_ entity: EntityExt) {
-        Mutations.removeParent(entity: entity, parentId: self.entity.id)
+        ExomindMutations.removeParent(entity: entity, parentId: self.entity.id)
     }
 
     private func handleMoveLater(_ entity: EntityExt) {

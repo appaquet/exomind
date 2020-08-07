@@ -23,7 +23,7 @@
     "core-js": "^3.2.1",
     "domhandler": "^3.0.0",
     "domutils": "^1.5.1",
-    "exocore": "file:../../exocore",
+    "exocore": "https://github.com/appaquet/exocore.git#releases/v0.1",
     "fbemitter": "^2.1.1",
     "font-awesome": "^4.4.0",
     "htmlparser2": "^3.10.1",

@@ -1,10 +1,3 @@
-//
-//  EmailThreadHeader.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-04.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import SnapKit
@@ -41,7 +34,7 @@ class EmailThreadHeader: UIView {
         }
     }
 
-    func load(entityTrait: EntityTraitOld) {
-        self.label.text = entityTrait.displayName
+    func load(thread: TraitInstance<Exomind_Base_EmailThread>) {
+        self.label.text = thread.message.subject
     }
 }
