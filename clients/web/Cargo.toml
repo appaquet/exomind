@@ -21,3 +21,7 @@ log = "0.4"
 wasm-logger = "0.2"
 futures = "0.3"
 prost = "0.6"
+
+# Temporary until https://github.com/rustwasm/wasm-pack/issues/886 is fixed
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["--enable-mutable-globals"]
