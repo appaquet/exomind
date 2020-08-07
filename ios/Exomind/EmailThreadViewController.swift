@@ -1,41 +1,29 @@
-//
-//  EmailThreadViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-12-15.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import UIKit
 
 class EmailThreadViewController: UITableViewController, EntityTraitView {
-    var entityTrait: EntityTrait!
-    var emails = [EmailFull]()
-    var draft: DraftEmailFull?
-    
+    var entity: EntityExt!
+
+    var thread: TraitInstance<Exomind_Base_EmailThread>!
+    var emails = [TraitInstance<Exomind_Base_Email>]()
+    var draft: TraitInstance<Exomind_Base_DraftEmail>?
+
     var opened = [String: Bool]()
     var openedObjectsCell = [String: EmailThreadOpenedTableViewCell]()
-    
+
     var loadTime = Date()
     var headerView: EmailThreadHeader!
-    
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
-        if let oldEntityTrait = self.entityTrait, entityTrait.entity.equals(oldEntityTrait.entity) {
-            print("EmailThreadViewController > Entity hasn't change, prevent re-rendering")
-            return
-        }
-        
-        self.entityTrait = entityTrait
-        self.emails = (self.entityTrait.entity.traitsByType[EmailSchema.fullType] ?? [])
-            .compactMap { $0 as? EmailFull }
-            .sorted(by: { (em1, em2) in
-                return em2.receivedDate.isGreaterThan(em1.receivedDate)
-            })
-        
-        self.draft = (self.entityTrait.entity.traitsByType[DraftEmailSchema.fullType] ?? [])
-            .compactMap { $0 as? DraftEmailFull }
-            .first
-        
+
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+        self.entity = entity
+        self.emails = entity
+                .traitsOfType(Exomind_Base_Email.self)
+                .sorted(by: { (em1, em2) in
+                    em1.message.receivedDate.date.isGreaterThan(em2.message.receivedDate.date)
+                })
+
+        self.thread = entity.traitOfType(Exomind_Base_EmailThread.self)!
+        self.draft = entity.traitOfType(Exomind_Base_DraftEmail.self)
+
         self.loadData()
     }
 
@@ -47,7 +35,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
 
         self.headerView = EmailThreadHeader()
         self.sizeTableHeader()
-        
+
         self.loadData()
     }
 
@@ -68,21 +56,21 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         let nav = (self.navigationController as! NavigationController)
         nav.resetState()
         nav.setQuickButtonActions([
-                QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
-                    self?.handleReply()
-                }),
-                QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
-                    self?.handleReplyAll()
-                }),
-                QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
-                    self?.handleForward()
-                }),
-                QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
-                    self?.handleAddToCollection()
-                }),
-                QuickButtonAction(icon: .check, handler: { [weak self]() -> Void in
-                    self?.handleDone()
-                })
+            QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
+                self?.handleReply()
+            }),
+            QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
+                self?.handleReplyAll()
+            }),
+            QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
+                self?.handleForward()
+            }),
+            QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
+                self?.handleAddToCollection()
+            }),
+            QuickButtonAction(icon: .check, handler: { [weak self]() -> Void in
+                self?.handleDone()
+            })
         ])
     }
 
@@ -97,31 +85,37 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         UIView.setAnimationsEnabled(true)
     }
 
+    func onEmailWebviewLoaded(_ emailIndex: Int) {
+        print("EMAIL LOADED \(emailIndex)")
+    }
     func loadData() {
-        if self.isViewLoaded {
+        //if self.isViewLoaded {  TODO: Put back when have a way to know if fully loaded or not
             self.tableView.reloadData()
-            self.headerView.load(entityTrait: self.entityTrait)
+            self.headerView.load(thread: self.thread)
             self.sizeTableHeader()
-        
+
             self.perform(#selector(goBottom), with: nil, afterDelay: 0.1)
             self.perform(#selector(goBottom), with: nil, afterDelay: 0.5)
             self.perform(#selector(goBottom), with: nil, afterDelay: 1.0)
-        }
+        //}
     }
 
     @objc func goBottom() {
-        if self.tableView.numberOfSections > 0 {
+        // TODO: Should be the first non-read
+        if self.tableView.numberOfSections > 1 {
             let lastSection = max(0, self.tableView.numberOfSections - 1)
             let path = IndexPath(row: 0, section: lastSection)
             self.tableView.scrollToRow(at: path, at: .top, animated: false)
         }
     }
-    
+
     override func numberOfSections(in tableView: UITableView) -> Int {
-        let nbDraft = self.draft.map { (d) in return 1 } ?? 0
+        let nbDraft = self.draft.map { (d) in
+            return 1
+        } ?? 0
         return self.emails.count + nbDraft
     }
-    
+
     fileprivate func isDraft(atSection: Int) -> Bool {
         return atSection >= self.emails.count
     }
@@ -129,8 +123,8 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if !self.isDraft(atSection: section) {
             let email = self.emails[section]
-            if  self.isOpen(email) {
-                let attachmentsCount = email.attachments.count
+            if self.isOpen(email) {
+                let attachmentsCount = email.message.attachments.count
                 if (attachmentsCount > 0) {
                     return 1 + attachmentsCount
                 }
@@ -141,8 +135,8 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         }
     }
 
-    func isOpen(_ email: Email) -> Bool {
-        let isUnread = email.unread ?? false
+    func isOpen(_ email: TraitInstance<Exomind_Base_Email>) -> Bool {
+        let isUnread = true // TODO: email.message.read ?? false
         let isLastEmail = self.emails.last?.id == email.id
         return self.opened[email.id] ?? (isUnread || isLastEmail)
     }
@@ -150,7 +144,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let section = (indexPath as NSIndexPath).section
         let item = (indexPath as NSIndexPath).item
-        
+
         if self.isDraft(atSection: section), let draft = self.draft {
             var cell: EmailThreadOpenedTableViewCell!
             if let exCell = self.openedObjectsCell["draft"] {
@@ -159,25 +153,24 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
                 cell = (EmailThreadOpenedTableViewCell.loadFromNibNamed("EmailThreadOpenedTableViewCell") as! EmailThreadOpenedTableViewCell)
                 self.openedObjectsCell["draft"] = cell
             }
-            
-            let emailEntityTrait = EntityTrait(entity: self.entityTrait.entity, trait: draft)
-            cell.load(newEntityTrait: emailEntityTrait, emailIndex: section)
+
+            cell.load(draft: draft, emailIndex: section)
             cell.threadView = self
             return cell
-            
+
         } else {
             let email = self.emails[section]
             if (!self.isOpen(email)) {
                 let cell = self.tableView.dequeueReusableCell(withIdentifier: "collapsed", for: indexPath) as! EmailThreadCollapsedTableViewCell
                 cell.load(email: email)
                 return cell
-                
-            } else if (email.attachments.count > 0 && item >= 1) {
+
+            } else if (email.message.attachments.count > 0 && item >= 1) {
                 let cell = self.tableView.dequeueReusableCell(withIdentifier: "attachments", for: indexPath) as! EmailThreadAttachmentTableViewCell
                 let attachmentId = item - 1
-                cell.load(attachment: email.attachments[attachmentId])
+                cell.load(attachment: email.message.attachments[attachmentId])
                 return cell
-                
+
             } else {
                 var cell: EmailThreadOpenedTableViewCell!
                 if let exCell = self.openedObjectsCell[email.id] {
@@ -186,9 +179,8 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
                     cell = (EmailThreadOpenedTableViewCell.loadFromNibNamed("EmailThreadOpenedTableViewCell") as! EmailThreadOpenedTableViewCell)
                     self.openedObjectsCell[email.id] = cell
                 }
-                
-                let emailEntityTrait = EntityTrait(entity: self.entityTrait.entity, trait: email)
-                cell.load(newEntityTrait: emailEntityTrait, emailIndex: section)
+
+                cell.load(email: email, emailIndex: section)
                 cell.threadView = self
                 return cell
             }
@@ -199,21 +191,21 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         let section = (indexPath as NSIndexPath).section
         if self.isDraft(atSection: section), let draft = self.draft {
             self.openDraftView(draft)
-        } else{
+        } else {
             let email = self.emails[section]
             if self.isOpen(email) {
                 let isEmailCell = (indexPath as NSIndexPath).item == 0
                 if isEmailCell {
                     self.openEmailView(email)
                 } else {
-                    let attachmentId = (indexPath as NSIndexPath).item - 1
-                    if  let attachment = email.attachments[attachmentId] as? FileAttachmentIntegration,
-                        let url = EmailsLogic.attachmentUrl(self.entityTrait.entity, email: email, attachment: attachment) {
-                        let webView = URLWebViewController(url: URL(string: url)!)
-                        (self.navigationController as? NavigationController)?.pushViewController(webView, animated: true)
-                    } else {
-                        print("Unsupported attachment time \(email.attachments[attachmentId])")
-                    }
+//                    let attachmentId = (indexPath as NSIndexPath).item - 1
+//                    if let attachment = email.message.attachments[attachmentId] as? FileAttachmentIntegration,
+//                       let url = EmailsLogic.attachmentUrl(self.entity.entity, email: email, attachment: attachment) {
+//                        let webView = URLWebViewController(url: URL(string: url)!)
+//                        (self.navigationController as? NavigationController)?.pushViewController(webView, animated: true)
+//                    } else {
+//                        print("Unsupported attachment time \(email.message.attachments[attachmentId])")
+//                    }
                 }
             } else {
                 self.opened[email.id] = true
@@ -222,89 +214,89 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         }
     }
 
-    func openEmailView(_ email: EmailFull) {
-        let emailEntityTrait = EntityTrait(entity: self.entityTrait.entity, trait: email)
-        (self.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: emailEntityTrait))
+    func openEmailView(_ email: TraitInstance<Exomind_Base_Email>) {
+//        let emailEntityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: email)
+//        (self.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: emailEntityTrait))
     }
-    
-    func openDraftView(_ draft: DraftEmailFull) {
-        let emailEntityTrait = EntityTrait(entity: self.entityTrait.entity, trait: draft)
-        (self.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: emailEntityTrait))
+
+    func openDraftView(_ draft: TraitInstance<Exomind_Base_DraftEmail>) {
+//        let emailEntityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: draft)
+//        (self.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: emailEntityTrait))
     }
 
     func handleReply() {
-        if let lastEmail = self.emails.last {
-            let entityTrait = EntityTrait(entity: self.entityTrait.entity, trait: lastEmail)
-            EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-                guard   let this = self,
-                        let entity = entity,
-                        let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
-                        else { return }
-                let entityTrait = EntityTrait(entity: entity, trait: draft)
-                (this.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: entityTrait))
-            }
-        }
+//        if let lastEmail = self.emails.last {
+//            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
+//            EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//                guard   let this = self,
+//                        let entity = entity,
+//                        let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
+//                        else { return }
+//                let entityTrait = EntityTraitOld(entity: entity, trait: draft)
+//                (this.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: entityTrait))
+//            }
+//        }
     }
 
     func handleReplyAll() {
-        if let lastEmail = self.emails.last {
-            let entityTrait = EntityTrait(entity: self.entityTrait.entity, trait: lastEmail)
-            EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-                guard   let this = self,
-                        let entity = entity,
-                        let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
-                        else { return }
-                let entityTrait = EntityTrait(entity: entity, trait: draft)
-                (this.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: entityTrait))
-            }
-        }
+//        if let lastEmail = self.emails.last {
+//            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
+//            EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//                guard   let this = self,
+//                        let entity = entity,
+//                        let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
+//                        else { return }
+//                let entityTrait = EntityTraitOld(entity: entity, trait: draft)
+//                (this.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: entityTrait))
+//            }
+//        }
     }
 
     func handleForward() {
-        if let lastEmail = self.emails.last {
-            let entityTrait = EntityTrait(entity: self.entityTrait.entity, trait: lastEmail)
-            EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-                guard   let this = self,
-                        let entity = entity,
-                        let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
-                        else { return }
-                let entityTrait = EntityTrait(entity: entity, trait: draft)
-                (this.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: entityTrait))
-            }
-        }
+//        if let lastEmail = self.emails.last {
+//            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
+//            EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//                guard   let this = self,
+//                        let entity = entity,
+//                        let draft = entity.traitsByType[DraftEmailSchema.fullType]?.first as? DraftEmailFull
+//                        else { return }
+//                let entityTrait = EntityTraitOld(entity: entity, trait: draft)
+//                (this.navigationController as? NavigationController)?.pushObject(.entityTraitOld(entityTrait: entityTrait))
+//            }
+//        }
     }
 
     func handleDone() {
-        let inInbox = ExomindDSL.on(self.entityTrait.entity).relations.hasParent(parentId: "inbox")
-        if inInbox {
-            ExomindDSL.on(self.entityTrait.entity).relations.removeParent(parentId: "inbox")
-            let _ = self.navigationController?.popViewController(animated: true)
-        }
+//        let inInbox = ExomindDSL.on(self.entity.entity).relations.hasParent(parentId: "inbox")
+//        if inInbox {
+//            ExomindDSL.on(self.entity.entity).relations.removeParent(parentId: "inbox")
+//            let _ = self.navigationController?.popViewController(animated: true)
+//        }
     }
 
     func handleAddToCollection() {
-        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: self.entityTrait.entity)
+//    TODO:    (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: self.entityTrait.entity)
     }
-    
+
     override func viewWillDisappear(_ animated: Bool) {
         if loadTime.plusSeconds(3).isLessThan(Date()) {
             self.markRead()
         }
     }
-    
+
     func markRead() {
-        var modifiedEmails = [EmailBuilder]()
-        for email in self.emails {
-            if (email.unread ?? true) {
-                let builder = EmailBuilder(id: email.id)
-                builder.unread = false
-                modifiedEmails.append(builder)
-            }
-        }
-        
-        if !modifiedEmails.isEmpty {
-            ExomindDSL.on(entityTrait.entity).mutate.put(modifiedEmails).execute()
-        }
+//        var modifiedEmails = [EmailBuilder]()
+//        for email in self.emails {
+//            if (email.unread ?? true) {
+//                let builder = EmailBuilder(id: email.id)
+//                builder.unread = false
+//                modifiedEmails.append(builder)
+//            }
+//        }
+//
+//        if !modifiedEmails.isEmpty {
+//            ExomindDSL.on(entity.entity).mutate.put(modifiedEmails).execute()
+//        }
     }
 
     deinit {

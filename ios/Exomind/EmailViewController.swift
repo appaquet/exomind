@@ -1,24 +1,17 @@
-//
-//  EmailViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-11-20.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
 
 import UIKit
 
-class EmailViewController: VerticalLinearViewController, EntityTraitView {
+class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
     fileprivate let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
 
-    var entityTrait: EntityTrait!
+    var entityTrait: EntityTraitOld!
 
     var webview: EmailBodyWebView!
     var fromLabel: UILabel!
     var toLabel: UILabel!
     var subjectLabel: UILabel!
     
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
+    func loadEntityTrait(_ entityTrait: EntityTraitOld) {
         self.entityTrait = entityTrait
         self.render()
     }
@@ -84,41 +77,42 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
     }
 
     func render() {
-        if self.isViewLoaded, let email = self.entityTrait?.trait as? EmailFull {
-            self.webview.loadEmailEntity(self.entityTrait, short: false)
-
-            self.fromLabel.text = EmailsLogic.formatContact(email.from)
-            self.subjectLabel.text = email.subject ?? "(no subject)"
-            let joined = (email.to + email.cc).map { $0.name ?? $0.email }
-            self.toLabel.text = joined.joined(separator: ", ")
-        }
+//        if self.isViewLoaded, let email = self.entityTrait?.trait as? EmailFull {
+//            self.webview.loadEmailEntity(self.entityTrait, short: false)
+//
+//            self.fromLabel.text = EmailsLogic.formatContact(email.from)
+//            self.subjectLabel.text = email.subject ?? "(no subject)"
+//            let joined = (email.to + email.cc).map { $0.name ?? $0.email }
+//            self.toLabel.text = joined.joined(separator: ", ")
+//        }
     }
 
     func handleReply() {
-        EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-            guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
-        }
+//        EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//            guard let this = self, let entity = entity else { return }
+//            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
+//        }
     }
 
     func handleReplyAll() {
-        EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-            guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
-        }
+//        EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//            guard let this = self, let entity = entity else { return }
+//            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
+//        }
     }
 
     func handleForward() {
-        EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
-            guard let this = self, let entity = entity else { return }
-            (this.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
-        }
+//        EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
+//            guard let this = self, let entity = entity else { return }
+//            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
+//        }
     }
 
     func handleAddToCollection() {
-        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
-        vc.forEntity = self.entityTrait.entity
-        self.present(vc, animated: true, completion: nil)
+        // TODO:
+//        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
+//        vc.forEntity = self.entityTrait.entity
+//        self.present(vc, animated: true, completion: nil)
     }
 
     deinit {

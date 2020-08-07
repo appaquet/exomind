@@ -1,17 +1,10 @@
-//
-//  DraftEmailViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-16.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import SnapKit
 import CLTokenInputView
 
-class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, CLTokenInputViewDelegate {
-    fileprivate var entityTrait: EntityTrait!
+class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld, CLTokenInputViewDelegate {
+    fileprivate var entityTrait: EntityTraitOld!
     fileprivate var serverTrait: DraftEmailFull!
     fileprivate var localTrait: DraftEmailFull!
 
@@ -23,7 +16,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
 
     fileprivate var integrations = [IntegrationSourceFull]()
 
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
+    func loadEntityTrait(_ entityTrait: EntityTraitOld) {
         self.entityTrait = entityTrait
         self.render()
     }

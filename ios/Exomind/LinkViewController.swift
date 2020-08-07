@@ -1,11 +1,3 @@
-//
-//  LinkViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-01-19.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
-
 import UIKit
 import SafariServices
 import WebKit
@@ -13,16 +5,22 @@ import WebKit
 class LinkViewController: UIViewController, EntityTraitView {
     @IBOutlet weak var webView: WKWebView!
 
-    fileprivate var entityTrait: EntityTrait!
+    fileprivate var entity: EntityExt!
+    fileprivate var trait: AnyTraitInstance!
 
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
-        self.entityTrait = entityTrait
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+        self.entity = entity
+        self.trait = trait
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if let link = self.entityTrait.trait as? Link, let url = URL(string: link.url) {
+        guard let typeInstance = self.trait.typeInstance() else {
+            return
+        }
+
+        if case let .link(link) = typeInstance, let url = URL(string: link.message.url) {
             let request = URLRequest(url: url)
             self.webView.load(request)
         }
@@ -32,9 +30,4 @@ class LinkViewController: UIViewController, EntityTraitView {
         let nav = (self.navigationController as! NavigationController)
         nav.resetState()
     }
-
-    deinit {
-        print("LinkViewController > Deinit")
-    }
-
 }

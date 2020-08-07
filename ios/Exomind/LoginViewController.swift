@@ -1,10 +1,3 @@
-//
-//  LoginViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-01-31.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import GoogleSignIn

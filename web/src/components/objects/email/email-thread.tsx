@@ -49,6 +49,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
             .concat(this.entityTraits.traitsOfType(exomind.base.DraftEmail));
         const emailStates = _.chain(emailsAndDraft)
             .map((trait) => {
+                // TODO: isOpen should be based on read flag in email
                 return { index: count++, trait: trait, isOpen: false } as EmailState;
             })
             .sortBy((a) => {

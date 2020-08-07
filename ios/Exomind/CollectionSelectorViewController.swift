@@ -1,21 +1,14 @@
-//
-//  CollectionSelectorViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-11-27.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import UIKit
+import Exocore
 
 class CollectionSelectorViewController: UINavigationController {
-    var forEntity: HCEntity!
+    var forEntity: EntityExt!
     var tableView: CollectionSelectorTableViewController!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         self.tableView = (super.topViewController as! CollectionSelectorTableViewController)
-        self.tableView.entity = forEntity
+        self.tableView.partialEntity = forEntity
 
         // set colors of navigation bar
         Stylesheet.styleNavigationBar(self.navigationBar, bgColor: Stylesheet.collectionSelectorNavigationBarBg, fgColor: Stylesheet.collectionSelectorNavigationBarFg)
@@ -23,17 +16,21 @@ class CollectionSelectorViewController: UINavigationController {
 }
 
 class CollectionSelectorTableViewController: UITableViewController, UISearchBarDelegate {
-    fileprivate var querySet: QuerySet!
-    fileprivate var collectionsQuery: Query!
-    fileprivate var entityQuery: Query!
-    fileprivate var parentsQuery: Query?
-    fileprivate var entity: HCEntity!
+    fileprivate var partialEntity: EntityExt!
 
-    fileprivate var collectionsData: [HCEntity]!
+    private var searchBar: UISearchBar!
 
-    fileprivate var searchBar: UISearchBar!
-    fileprivate var currentFilter: String?
-    fileprivate var expandPending = false
+    private var collectionsQuery: ExpandableQuery?
+    private var collectionsQueryFilter: String?
+
+    private var entityQuery: QueryStreamHandle?
+    private var entityComplete: EntityExt?
+    private var entityParentsQuery: QueryStreamHandle?
+    private var entityParents: [EntityExt]?
+
+    private var currentFilter: String?
+    private var searchDebouncer: Debouncer!
+    private var collectionsData: [EntityExt] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,53 +42,33 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         self.navigationItem.titleView = self.searchBar
         self.searchBar.placeholder = "Filter"
         self.searchBar.delegate = self
-        
+
+        Stylesheet.styleSearchBar(self.searchBar, bgColor: Stylesheet.collectionSelectorNavigationBarBg, fgColor: Stylesheet.collectionSelectorNavigationBarFg)
+
+        self.searchDebouncer = Debouncer(timeInterval: 0.5) { [weak self] in
+            self?.loadData()
+        }
+
         self.loadData()
     }
 
-    func loadData() {
-        if (self.querySet == nil) {
-            self.querySet = DomainStore.instance.getQuerySet()
-            self.querySet.onChange { [weak self] () -> () in
-                self?.loadData()
-            }
-        }
-        
-        let oldCollectionsQuery = self.collectionsQuery
-        if let keywords = self.currentFilter {
-            self.collectionsQuery = self.querySet.executeQuery(
-                HCQueries.Entities()
-                    .withTrait(CollectionSchema.fullType) { tb in
-                        tb.whereFieldMatch("name", value: keywords)
-                    }
-                    .sortBy("-score")
-            )
-        } else {
-            self.collectionsQuery = self.querySet.executeQuery(HCQueries.Entities().withTrait(CollectionSchema.fullType))
+    private func loadData() {
+        if self.entityQuery == nil {
+            self.queryEntity()
         }
 
-        if oldCollectionsQuery?.hash() != self.collectionsQuery.hash() {
-            oldCollectionsQuery?.release()
-            self.expandPending = false
+        if self.collectionsQuery == nil || self.collectionsQueryFilter != self.currentFilter {
+            self.queryFilteredCollections()
         }
 
-        self.entityQuery = self.querySet.executeQuery(HCQueries.Entities().withEntityId(self.entity.id))
-        if let entity = self.entityQuery.resultAsEntity() {
-            self.entity = entity
-            let parents = ExomindDSL.on(entity).relations.getParents().map { $0.to }
-            self.parentsQuery = self.querySet.executeQuery(HCQueries.Entities().withEntityIds(parents))
-        }
+        if let collectionsResults = self.collectionsQuery?.results,
+           let entityParents = self.entityParents {
 
-        // if everything is loaded
-        if let parentsQuery = self.parentsQuery?.resultsAsEntities(),
-            let _ = self.entity,
-            self.collectionsQuery.isLoaded(),
-            self.parentsQuery?.isLoaded() ?? false {
-            
-            let specialEntities = [SessionStore.inboxEntity(), SessionStore.mindEntity()].compactMap { $0 }
-            let combined = parentsQuery + specialEntities + self.collectionsQuery.resultsAsEntities()
-            var uniqueMap = [String:HCEntity]()
-            self.collectionsData = combined.filter { entity in
+            let collectionsEntities = collectionsResults.map({ $0.entity.toExtension() })
+            let combined = entityParents + collectionsEntities
+            var uniqueMap = [String: EntityExt]()
+            self.collectionsData = combined
+                    .filter { (entity: EntityExt) -> Bool in
                 if uniqueMap[entity.id] == nil {
                     uniqueMap[entity.id] = entity
                     return true
@@ -100,44 +77,99 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
                 }
             }
             self.tableView.reloadData()
+        } else {
+            self.collectionsData = []
         }
     }
 
-    var debouncedSearch: (()->())?
+    private func queryEntity() {
+        let entityQuery = QueryBuilder.withId(self.partialEntity.id).build()
+        self.entityQuery = ExocoreClient.store.watchedQuery(query: entityQuery, onChange: { [weak self] (status, res) in
+            guard let this = self,
+                  res?.entities.count ?? 0 > 0 else {
+                return
+            }
+
+            let entity = res!.entities[0].entity.toExtension()
+            this.entityComplete = entity
+            this.queryEntityParents(entity: entity)
+
+            DispatchQueue.main.async {
+                this.loadData()
+            }
+        })
+    }
+
+    private func queryFilteredCollections() {
+        var collectionsQuery: QueryBuilder;
+        if let currentFilter = currentFilter {
+            let traitQuery = TraitQueryBuilder.matching(query: currentFilter).build()
+            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_Collection.self, query: traitQuery)
+        } else {
+            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_Collection.self)
+        }
+        collectionsQuery = collectionsQuery.count(30)
+        self.collectionsQuery = ExpandableQuery(query: collectionsQuery.build(), onChange: { [weak self] in
+            DispatchQueue.main.async {
+                self?.loadData()
+            }
+        })
+        self.collectionsQueryFilter = currentFilter
+    }
+
+    private func queryEntityParents(entity: EntityExt) {
+        let parents = entity
+                .traitsOfType(Exomind_Base_CollectionChild.self)
+                .map({ $0.message.collection.entityID })
+
+        if !parents.isEmpty {
+            let query = QueryBuilder.withIds(parents).count(100).build()
+            self.entityParentsQuery = ExocoreClient.store.watchedQuery(query: query, onChange: { [weak self] (status, res) in
+                self?.entityParents = res?.entities.map({ $0.entity.toExtension() })
+                DispatchQueue.main.async {
+                    self?.loadData()
+                }
+            })
+        } else {
+            self.entityParents = []
+        }
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        // force reload data when dark/light style has changed
+        if self.traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle {
+            self.tableView.reloadData()
+        }
+    }
+
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if (!searchText.isEmpty) {
             self.currentFilter = searchText
         } else {
             self.currentFilter = nil
         }
-        
-        if self.debouncedSearch == nil {
-            self.debouncedSearch = Debouncer.debounce(delay: 500, queue: DispatchQueue.main, action: { [weak self] in
-                self?.loadData()
-            })
-        }
-        self.debouncedSearch?()
+
+        self.searchDebouncer.renewInterval()
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if (self.collectionsQuery.isLoaded()) {
-            return self.collectionsData.count
-        } else {
-            return 0
-        }
+        self.collectionsData.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
 
         let collectionEntity = self.collectionsData[(indexPath as NSIndexPath).item]
-        let entityTrait = EntityTrait(entity: collectionEntity)
-        
-        cell.textLabel!.text = entityTrait?.displayName
-        cell.imageView?.image = entityTrait.map { ObjectsIcon.icon(forEntityTrait: $0, color: UIColor.black, dimension: 24) }
+        let collectionTrait = collectionEntity.priorityTrait
 
-        let currentlyParent = ExomindDSL.on(self.entity).relations.hasParent(parentId: collectionEntity.id)
-        if (currentlyParent) {
+        cell.textLabel?.text = collectionTrait?.displayName ?? "*INVALID*"
+        cell.imageView?.image = collectionTrait.map {
+            ObjectsIcon.icon(forAnyTrait: $0, color: UIColor.label, dimension: 24)
+        }
+
+        if (self.hasParent(parentEntityId: collectionEntity.id)) {
             cell.accessoryType = .checkmark
         } else {
             cell.accessoryType = .none
@@ -148,36 +180,25 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let cell = self.tableView.cellForRow(at: indexPath)!
-        let collection = self.collectionsData[(indexPath as NSIndexPath).item]
+        let collectionEntity = self.collectionsData[(indexPath as NSIndexPath).item]
         if (cell.accessoryType == .checkmark) {
             cell.accessoryType = .none
-            ExomindDSL.on(self.entity).relations.removeParent(parentId: collection.id)
+            self.removeParent(parentEntityId: collectionEntity.id)
         } else {
-            ExomindDSL.on(self.entity).relations.addParent(parentId: collection.id)
-            cell.accessoryType = .checkmark
+            self.addParent(parentEntityId: collectionEntity.id)
         }
     }
-    
+
     override func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let totalHeight = (scrollView.contentSize.height - tableView.frame.size.height)
         let currentPosition = scrollView.contentOffset.y
         let averageHeight = CGFloat(74)
         let itemsComingUp = (totalHeight - currentPosition) / averageHeight
-        
-        // if we suddenly have more items, that means we are at beginning or expansion worked
-        if (itemsComingUp > 10) {
-            self.expandPending = false
-        }
-        
+
         // if only 5 items or less are coming up, we load new
-        if (itemsComingUp < 10 && self.collectionsQuery.isLoaded() && !self.expandPending) {
-//            self.expandPending = true
-//            DispatchQueue.main.async(execute: { [weak self] () -> Void in
-//                if let this = self, let query = this.collectionsQuery.expand() {
-//                    print("CollectionSelectorViewController > Expanding query...")
-//                    this.collectionsQuery = this.querySet.executeQuery(query, reExecute: true)
-//                }
-//            })
+        let canExpand = self.collectionsQuery?.canExpand ?? false
+        if (itemsComingUp < 10 && canExpand) {
+            self.collectionsQuery?.expand()
         }
     }
 
@@ -185,6 +206,33 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         self.dismiss(animated: true, completion: nil)
     }
 
+    private func hasParent(parentEntityId id: String) -> Bool {
+        guard let entityComplete = self.entityComplete else {
+            return false
+        }
+
+        return ExomindMutations.hasParent(entity: entityComplete, parentId: id)
+    }
+
+    private func addParent(parentEntityId id: String) {
+        guard let entityComplete = self.entityComplete else {
+            return
+        }
+
+        do {
+            try ExomindMutations.addParent(entity: entityComplete, parentId: id)
+        } catch {
+            print("CollectionSelectionViewController> Error adding parent \(error)")
+        }
+    }
+
+    private func removeParent(parentEntityId id: String) {
+        guard let entityComplete = self.entityComplete else {
+            return
+        }
+
+        ExomindMutations.removeParent(entity: entityComplete, parentId: id)
+    }
 
     deinit {
         print("CollectionSelectionViewController > Deinit")

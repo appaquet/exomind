@@ -1,18 +1,10 @@
-//
-//  NavigationController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-07.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import UIKit
 import FontAwesome_swift
 
 class NavigationController: UINavigationController, UINavigationControllerDelegate {
     fileprivate let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
     fileprivate let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
-    
+
     fileprivate var quickButton: QuickButtonView!
     fileprivate static let quickButtonExtraMargin = CGFloat(10)
     fileprivate var barActions: [NavigationControllerBarAction] = []
@@ -45,20 +37,20 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     }
 
     func pushObject(_ object: NavigationObject, animated: Bool = true) {
-        var entityTrait: EntityTrait?
+        var entityTrait: AnyTraitInstance?
         switch (object) {
         case let .entity(entity: entity):
-            entityTrait = EntityTrait(entity: entity)
+            entityTrait = entity.priorityTrait
         case let .entityTrait(entityTrait: et):
             entityTrait = et
         default:
             entityTrait = nil
         }
-        
-        if  let et = entityTrait,
-            case let .link(link: link) = et.traitType,
-            let url = URL(string: link.url) {
-            
+
+        if let et = entityTrait,
+           case let .link(trait: link) = et.typeInstance(),
+           let url = URL(string: link.message.url) {
+
             let sfVc = SFSafariHelper.getViewControllerForURL(url)
             self.present(sfVc, animated: true, completion: nil)
         } else {
@@ -66,21 +58,21 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             self.pushViewController(vc, animated: animated)
         }
     }
-    
+
     private func createViewController(forObject: NavigationObject) -> UIViewController {
         switch (forObject) {
         case let .entityId(id: entityId):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
             vc.populate(entityId: entityId)
             return vc
-            
+
         case let .entity(entity: entity):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
             vc.populate(entity: entity)
             return vc
-            
+
         case let .entityTrait(entityTrait: et):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! ObjectViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
             vc.populate(entityTrait: et)
             return vc
         }
@@ -126,34 +118,35 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     @objc func handleBarActionClick(_ sender: UIButton) {
         self.barActions[sender.tag].handler?()
     }
-    
-    func showCollectionSelector(forEntity: HCEntity) {
+
+    func showCollectionSelector(forEntity: EntityExt) {
         let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
         vc.forEntity = forEntity
         self.present(vc, animated: true, completion: nil)
     }
 
-    func showSearch(_ fromObjectId: String?, selectionHandler: ((HCEntity) -> Void)? = nil) {
+    func showSearch(_ fromEntityId: EntityId?, selectionHandler: ((EntityExt) -> Void)? = nil) {
         let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "SearchViewController") as! SearchViewController
-        vc.fromObjectId = fromObjectId
+        vc.fromEntityId = fromEntityId
         if let handler = selectionHandler {
             vc.selectionHandler = handler
         }
         self.present(vc, animated: true, completion: nil)
     }
 
-    func showCreateObject(_ fromObjectId: String, callback: @escaping ((HCEntity?) -> Void)) {
+    func showCreateObject(_ fromEntityId: EntityId, callback: @escaping (EntityExt?) -> Void) {
         let showIn = self.parent ?? self
-        let vc = AddSelectionViewController(parentId: fromObjectId, callback: callback)
+        let vc = EntityCreationViewController(parentId: fromEntityId, callback: callback)
         vc.showInsideViewController(showIn)
     }
 
-    func showTimeSelector(forEntity: HCEntity, callback: ((Bool) -> Void)? = nil) {
+    func showTimeSelector(forEntity: EntityExt, callback: ((Bool) -> Void)? = nil) {
         let showIn = self.parent ?? self
         let timeSelector = TimeSelectionViewController { (date) in
             if let realDate = date {
-                ExomindDSL.on(forEntity).relations.postpone(untilDate: realDate)
-                callback?(true)
+                ExomindMutations.snooze(entity: forEntity, date: realDate, callback: {
+                    callback?(true)
+                })
             } else {
                 callback?(false)
             }
@@ -175,7 +168,7 @@ class NavigationControllerBarAction {
 }
 
 enum NavigationObject {
-    case entity(entity: HCEntity)
-    case entityTrait(entityTrait: EntityTrait)
-    case entityId(id: HCEntityId)
+    case entity(entity: EntityExt)
+    case entityTrait(entityTrait: AnyTraitInstance)
+    case entityId(id: EntityId)
 }

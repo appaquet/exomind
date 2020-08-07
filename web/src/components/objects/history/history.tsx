@@ -30,6 +30,15 @@ export default class History extends React.Component<IProps> {
             .orderByOperationIds(false)
             .includeDeleted()
             .count(30)
+            .project(
+                new exocore.index.Projection({
+                    fieldGroupIds: [1],
+                    package: ["exomind.base"],
+                }),
+                new exocore.index.Projection({
+                    skip: true,
+                })
+            )
             .build();
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
             this.setState({});
@@ -76,7 +85,7 @@ export default class History extends React.Component<IProps> {
             );
 
         } else {
-            return <Message text="Loading..." showAfterMs={500} />;
+            return <Message text="Loading..." showAfterMs={200} />;
         }
     }
 

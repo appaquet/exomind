@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		458EC161C72B3C9784E6CEE8 /* Pods_ExomindTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BAA1792ED91F713E98050D7 /* Pods_ExomindTests.framework */; };
+		45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */; };
 		45B6B06D68693F5FF00CC936 /* HCJsonSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B7C8313B3EEB873D3662 /* HCJsonSerializationTests.swift */; };
 		45B6B095D316BA16BBDE095B /* HCQueriesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B00FF5BA113203BB6DB8 /* HCQueriesTests.swift */; };
 		45B6B0E2AF3491A7ED8ECFA2 /* HCQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6BFC9DEE4B705075C451C /* HCQueries.swift */; };
@@ -15,19 +16,21 @@
 		45B6B15E79D87F9D7CC7B84A /* HCQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6BFC9DEE4B705075C451C /* HCQueries.swift */; };
 		45B6B285982BFB38D7DBB054 /* HCRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B353166EEE587926FCE4 /* HCRuntimeTests.swift */; };
 		45B6B3BD06C5E24DF09D5ADF /* HCJsonSerialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B5B949028FD257B5B0B5 /* HCJsonSerialization.swift */; };
+		45B6B660281C1CC6E661D13E /* Retry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */; };
 		45B6B8BE23F943FA33D4FC28 /* HCJsonSerialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B5B949028FD257B5B0B5 /* HCJsonSerialization.swift */; };
 		45B6BA03CFE55DF75F868AAB /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0226A61D7D7AADC875D /* StringExtension.swift */; };
 		45B6BA750539831EB6EF80B2 /* ExomindDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B67EAB47BBDB8FAD9A38 /* ExomindDomain.swift */; };
 		45B6BAE9135B464F193AC3D4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0226A61D7D7AADC875D /* StringExtension.swift */; };
 		45B6BB66950F446FDFD9FB74 /* ExomindDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B67EAB47BBDB8FAD9A38 /* ExomindDomain.swift */; };
 		45B6BECC543ACB47DD15D509 /* HCRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B69D10210F356E1BDF5D /* HCRuntime.swift */; };
+		45B6BF9E36D12AC04B0E4E61 /* ExpandableQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */; };
+		45B6BFF8AE9157DF82740038 /* Entities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */; };
 		6D00E1641C022DD200B2F7E0 /* CommandBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D00E1631C022DD200B2F7E0 /* CommandBuilder.swift */; };
 		6D00E1661C022E3700B2F7E0 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D00E1651C022E3700B2F7E0 /* Command.swift */; };
 		6D00E1681C03544900B2F7E0 /* TabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D00E1671C03544900B2F7E0 /* TabBarController.swift */; };
 		6D00E16C1C03A3D000B2F7E0 /* js in Resources */ = {isa = PBXBuildFile; fileRef = 6D00E16B1C03A3D000B2F7E0 /* js */; };
 		6D00E16E1C03A96900B2F7E0 /* HybridWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D00E16D1C03A96900B2F7E0 /* HybridWebView.swift */; };
 		6D0304EA1C751BA50017B05D /* SFSafariHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0304E91C751BA50017B05D /* SFSafariHelper.swift */; };
-		6D05FB9D1C776384004516B5 /* TrackingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D05FB9C1C776384004516B5 /* TrackingController.swift */; };
 		6D0AE8C51E04EBE700F5F6CE /* Debounce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */; };
 		6D0C3AF81C20F7D700A3D393 /* EmailThreadViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0C3AF71C20F7D700A3D393 /* EmailThreadViewController.swift */; };
 		6D0F6B611C331A2B00AB9DEC /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0F6B601C331A2B00AB9DEC /* ActionViewController.swift */; };
@@ -77,6 +80,7 @@
 		6D68E6E01C8F7998007BB8F4 /* ModalGridViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D68E6DF1C8F7998007BB8F4 /* ModalGridViewController.swift */; };
 		6D695D8E24BA04AF00E1BA39 /* base.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D695D8D24BA04AF00E1BA39 /* base.pb.swift */; };
 		6D6EC2561C191CED00944436 /* EmailsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6EC2551C191CED00944436 /* EmailsLogic.swift */; };
+		6D712F3324CC7B1C009D6989 /* ExocoreUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D712F3224CC7B1C009D6989 /* ExocoreUtils.swift */; };
 		6D7781C71C08AF1100D45299 /* TimeLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7781C61C08AF1100D45299 /* TimeLogic.swift */; };
 		6D7781C91C08B18E00D45299 /* TimeSelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7781C81C08B18E00D45299 /* TimeSelectionViewController.swift */; };
 		6D7781CC1C08BBDF00D45299 /* CollectionSelectorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7781CB1C08BBDF00D45299 /* CollectionSelectorViewController.swift */; };
@@ -92,7 +96,7 @@
 		6DA4E33E1DD2B35700E5603E /* CollectionsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */; };
 		6DA4E33F1DD2B35700E5603E /* TimeLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7781C61C08AF1100D45299 /* TimeLogic.swift */; };
 		6DA4E3401DD2B35700E5603E /* EmailsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6EC2551C191CED00944436 /* EmailsLogic.swift */; };
-		6DAB43391D33102700E08229 /* NSDateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* NSDateExtension.swift */; };
+		6DAB43391D33102700E08229 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* DateExtension.swift */; };
 		6DB0E47B1C1F32FA000EE49A /* ObjectsIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB0E47A1C1F32FA000EE49A /* ObjectsIcon.swift */; };
 		6DB0E4811C1F622D000EE49A /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB0E4801C1F622D000EE49A /* SessionStore.swift */; };
 		6DC0D25B1BC418F900F14571 /* DomainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D25A1BC418F900F14571 /* DomainStore.swift */; };
@@ -102,13 +106,13 @@
 		6DC0D2671BC45B4F00F14571 /* JSTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2661BC45B4F00F14571 /* JSTimer.swift */; };
 		6DC0D2691BC54A9700F14571 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2681BC54A9700F14571 /* Query.swift */; };
 		6DC0D26D1BC5537500F14571 /* DictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */; };
-		6DC0D2701BC576AC00F14571 /* ChildrenViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26F1BC576AC00F14571 /* ChildrenViewController.swift */; };
+		6DC0D2701BC576AC00F14571 /* EntityListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */; };
 		6DC0D2721BC58B5D00F14571 /* NavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2711BC58B5D00F14571 /* NavigationController.swift */; };
-		6DC0D2761BC5949900F14571 /* NSDateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* NSDateExtension.swift */; };
+		6DC0D2761BC5949900F14571 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* DateExtension.swift */; };
 		6DC4183D1C165B7200DB564C /* CollectionsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */; };
-		6DC418411C17939A00DB564C /* AddSelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC418401C17939A00DB564C /* AddSelectionViewController.swift */; };
+		6DC418411C17939A00DB564C /* EntityCreationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC418401C17939A00DB564C /* EntityCreationViewController.swift */; };
 		6DC418431C1796D300DB564C /* CollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC418421C1796D300DB564C /* CollectionViewController.swift */; };
-		6DCE04221BFA8F2200DF8A34 /* ObjectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE04211BFA8F2200DF8A34 /* ObjectViewController.swift */; };
+		6DCE04221BFA8F2200DF8A34 /* EntityViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE04211BFA8F2200DF8A34 /* EntityViewController.swift */; };
 		6DCE04261BFAA2DE00DF8A34 /* InboxViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE04251BFAA2DE00DF8A34 /* InboxViewController.swift */; };
 		6DCE042A1BFE6F4500DF8A34 /* FontAwesome.otf in Resources */ = {isa = PBXBuildFile; fileRef = 6DCE04291BFE6F4500DF8A34 /* FontAwesome.otf */; };
 		6DCE042C1BFE709A00DF8A34 /* Stylesheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCE042B1BFE709A00DF8A34 /* Stylesheet.swift */; };
@@ -169,11 +173,15 @@
 		3E570FC5A697FC8476C178F9 /* Pods-Exomind.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Exomind.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Exomind/Pods-Exomind.debug.xcconfig"; sourceTree = "<group>"; };
 		45B6B00FF5BA113203BB6DB8 /* HCQueriesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCQueriesTests.swift; sourceTree = "<group>"; };
 		45B6B0226A61D7D7AADC875D /* StringExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
+		45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
+		45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExomindMutations.swift; sourceTree = "<group>"; };
 		45B6B353166EEE587926FCE4 /* HCRuntimeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCRuntimeTests.swift; sourceTree = "<group>"; };
 		45B6B5B949028FD257B5B0B5 /* HCJsonSerialization.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCJsonSerialization.swift; sourceTree = "<group>"; };
+		45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Entities.swift; sourceTree = "<group>"; };
 		45B6B67EAB47BBDB8FAD9A38 /* ExomindDomain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExomindDomain.swift; sourceTree = "<group>"; };
 		45B6B69D10210F356E1BDF5D /* HCRuntime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCRuntime.swift; sourceTree = "<group>"; };
 		45B6B7C8313B3EEB873D3662 /* HCJsonSerializationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCJsonSerializationTests.swift; sourceTree = "<group>"; };
+		45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExpandableQuery.swift; sourceTree = "<group>"; };
 		45B6BFC9DEE4B705075C451C /* HCQueries.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HCQueries.swift; sourceTree = "<group>"; };
 		6772079CC046E94D058060EF /* Pods-ExomindTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ExomindTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ExomindTests/Pods-ExomindTests.debug.xcconfig"; sourceTree = "<group>"; };
 		6D00E1631C022DD200B2F7E0 /* CommandBuilder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandBuilder.swift; sourceTree = "<group>"; };
@@ -182,7 +190,6 @@
 		6D00E16B1C03A3D000B2F7E0 /* js */ = {isa = PBXFileReference; lastKnownFileType = folder; path = js; sourceTree = "<group>"; };
 		6D00E16D1C03A96900B2F7E0 /* HybridWebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HybridWebView.swift; sourceTree = "<group>"; };
 		6D0304E91C751BA50017B05D /* SFSafariHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SFSafariHelper.swift; sourceTree = "<group>"; };
-		6D05FB9C1C776384004516B5 /* TrackingController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TrackingController.swift; sourceTree = "<group>"; };
 		6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Debounce.swift; sourceTree = "<group>"; };
 		6D0C3AF71C20F7D700A3D393 /* EmailThreadViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailThreadViewController.swift; sourceTree = "<group>"; };
 		6D0F6B5E1C331A2B00AB9DEC /* ExomindActionExt.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ExomindActionExt.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -212,7 +219,7 @@
 		6D570A551DCC140500BD480F /* XMLHttpRequestBridgeExport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XMLHttpRequestBridgeExport.swift; sourceTree = "<group>"; };
 		6D570A661DCC146B00BD480F /* BridgeEntityConverterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeEntityConverterTests.swift; sourceTree = "<group>"; };
 		6D570A6B1DCC171E00BD480F /* WebSocketBridgeExport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebSocketBridgeExport.swift; sourceTree = "<group>"; };
-		6D5D07791BC40D0A007D0011 /* Exomind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Exomind.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D5D07791BC40D0A007D0011 /* ExomindV2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExomindV2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6D5D07811BC40D0A007D0011 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		6D5D07831BC40D0A007D0011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -227,6 +234,7 @@
 		6D68E6DF1C8F7998007BB8F4 /* ModalGridViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModalGridViewController.swift; sourceTree = "<group>"; };
 		6D695D8D24BA04AF00E1BA39 /* base.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = base.pb.swift; sourceTree = "<group>"; };
 		6D6EC2551C191CED00944436 /* EmailsLogic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailsLogic.swift; sourceTree = "<group>"; };
+		6D712F3224CC7B1C009D6989 /* ExocoreUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExocoreUtils.swift; sourceTree = "<group>"; };
 		6D7781C61C08AF1100D45299 /* TimeLogic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeLogic.swift; sourceTree = "<group>"; };
 		6D7781C81C08B18E00D45299 /* TimeSelectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeSelectionViewController.swift; sourceTree = "<group>"; };
 		6D7781CB1C08BBDF00D45299 /* CollectionSelectorViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionSelectorViewController.swift; sourceTree = "<group>"; };
@@ -250,13 +258,13 @@
 		6DC0D2661BC45B4F00F14571 /* JSTimer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSTimer.swift; sourceTree = "<group>"; };
 		6DC0D2681BC54A9700F14571 /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
 		6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryExtension.swift; sourceTree = "<group>"; };
-		6DC0D26F1BC576AC00F14571 /* ChildrenViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChildrenViewController.swift; sourceTree = "<group>"; };
+		6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityListViewController.swift; sourceTree = "<group>"; };
 		6DC0D2711BC58B5D00F14571 /* NavigationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationController.swift; sourceTree = "<group>"; };
-		6DC0D2751BC5949900F14571 /* NSDateExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSDateExtension.swift; sourceTree = "<group>"; };
+		6DC0D2751BC5949900F14571 /* DateExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
 		6DC4183C1C165B7200DB564C /* CollectionsLogic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionsLogic.swift; sourceTree = "<group>"; };
-		6DC418401C17939A00DB564C /* AddSelectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddSelectionViewController.swift; sourceTree = "<group>"; };
+		6DC418401C17939A00DB564C /* EntityCreationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityCreationViewController.swift; sourceTree = "<group>"; };
 		6DC418421C1796D300DB564C /* CollectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionViewController.swift; sourceTree = "<group>"; };
-		6DCE04211BFA8F2200DF8A34 /* ObjectViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ObjectViewController.swift; sourceTree = "<group>"; };
+		6DCE04211BFA8F2200DF8A34 /* EntityViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityViewController.swift; sourceTree = "<group>"; };
 		6DCE04251BFAA2DE00DF8A34 /* InboxViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InboxViewController.swift; sourceTree = "<group>"; };
 		6DCE04291BFE6F4500DF8A34 /* FontAwesome.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = FontAwesome.otf; sourceTree = "<group>"; };
 		6DCE042B1BFE709A00DF8A34 /* Stylesheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Stylesheet.swift; sourceTree = "<group>"; };
@@ -381,7 +389,7 @@
 		6D5D077A1BC40D0A007D0011 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6D5D07791BC40D0A007D0011 /* Exomind.app */,
+				6D5D07791BC40D0A007D0011 /* ExomindV2.app */,
 				6D0F6B5E1C331A2B00AB9DEC /* ExomindActionExt.appex */,
 				6DAB3F4E1D32F74000E08229 /* ExomindTests.xctest */,
 			);
@@ -413,7 +421,7 @@
 			isa = PBXGroup;
 			children = (
 				6D7781C81C08B18E00D45299 /* TimeSelectionViewController.swift */,
-				6DC418401C17939A00DB564C /* AddSelectionViewController.swift */,
+				6DC418401C17939A00DB564C /* EntityCreationViewController.swift */,
 				6D68E6DF1C8F7998007BB8F4 /* ModalGridViewController.swift */,
 				6D7781CB1C08BBDF00D45299 /* CollectionSelectorViewController.swift */,
 				6D23F6191C3DB12E00D9A075 /* SearchViewController.swift */,
@@ -429,10 +437,10 @@
 				6DE65AC61C5EA71B0059CCBE /* LoginViewController.swift */,
 				6D00E1671C03544900B2F7E0 /* TabBarController.swift */,
 				6DC0D2711BC58B5D00F14571 /* NavigationController.swift */,
-				6DCE04211BFA8F2200DF8A34 /* ObjectViewController.swift */,
+				6DCE04211BFA8F2200DF8A34 /* EntityViewController.swift */,
 				6DCE04251BFAA2DE00DF8A34 /* InboxViewController.swift */,
 				6DC418421C1796D300DB564C /* CollectionViewController.swift */,
-				6DC0D26F1BC576AC00F14571 /* ChildrenViewController.swift */,
+				6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */,
 				6D3D466F1C84F6F20037E51B /* NoteViewController.swift */,
 				6D3D46681C84F3CC0037E51B /* EmailThreadView */,
 				6DCE042F1BFFCC2100DF8A34 /* EmailViewController.swift */,
@@ -502,6 +510,10 @@
 				6DC4183E1C165B7D00DB564C /* Logic */,
 				6DC4183F1C165BA300DB564C /* Store */,
 				45B6BBB5A20FF44B7A7773DA /* Honeycomb */,
+				6D712F3224CC7B1C009D6989 /* ExocoreUtils.swift */,
+				45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */,
+				45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */,
+				45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -511,7 +523,7 @@
 			children = (
 				6DCE042B1BFE709A00DF8A34 /* Stylesheet.swift */,
 				6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */,
-				6DC0D2751BC5949900F14571 /* NSDateExtension.swift */,
+				6DC0D2751BC5949900F14571 /* DateExtension.swift */,
 				6DB0E47A1C1F32FA000EE49A /* ObjectsIcon.swift */,
 				6DE65ACC1C5FEABD0059CCBE /* HttpUtils.swift */,
 				6D4CCBE621587052004636AD /* ExtensionUtils.swift */,
@@ -519,6 +531,7 @@
 				6D3D46711C8620750037E51B /* KeyboardUtils.swift */,
 				45B6B0226A61D7D7AADC875D /* StringExtension.swift */,
 				6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */,
+				45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -574,7 +587,6 @@
 			isa = PBXGroup;
 			children = (
 				6DE65AD01C6007AE0059CCBE /* NotificationsController.swift */,
-				6D05FB9C1C776384004516B5 /* TrackingController.swift */,
 			);
 			name = Controllers;
 			sourceTree = "<group>";
@@ -624,7 +636,6 @@
 				6D5D07761BC40D0A007D0011 /* Frameworks */,
 				6D5D07771BC40D0A007D0011 /* Resources */,
 				6D0F6B6C1C331A2C00AB9DEC /* Embed App Extensions */,
-				6D9CD2E81C6D24DB008B86D9 /* Hockey App */,
 				1A9ED28F4D3D78BD9CD620DD /* [CP] Embed Pods Frameworks */,
 				D7F55D1815D1C001A5180999 /* [CP] Copy Pods Resources */,
 				6D0F6B421C33088C00AB9DEC /* Fabric */,
@@ -636,7 +647,7 @@
 			);
 			name = Exomind;
 			productName = Exomind;
-			productReference = 6D5D07791BC40D0A007D0011 /* Exomind.app */;
+			productReference = 6D5D07791BC40D0A007D0011 /* ExomindV2.app */;
 			productType = "com.apple.product-type.application";
 		};
 		6DAB3F4D1D32F74000E08229 /* ExomindTests */ = {
@@ -673,6 +684,7 @@
 						CreatedOnToolsVersion = 7.2;
 						DevelopmentTeam = FHZCN4GU2K;
 						LastSwiftMigration = 1000;
+						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
 								enabled = 1;
@@ -843,20 +855,6 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Fabric/run\" c3553f97969289ba0a2065d531b609f15fbd894b 211390adcf1e09eb7a7fdcc3faaff4fab3dbb3ba7a0fdb4ad4dcf7c2097c308f\n";
 		};
-		6D9CD2E81C6D24DB008B86D9 /* Hockey App */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Hockey App";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "FILE=\"${SRCROOT}/HockeySDK-iOS/BuildAgent\"\nif [ -f \"$FILE\" ]; then\n\"$FILE\"\nfi";
-		};
 		817F3D15B590661293C373F1 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -919,12 +917,10 @@
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Exomind/Pods-Exomind-resources.sh",
 				"${PODS_ROOT}/GoogleSignIn/Resources/GoogleSignIn.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/HockeySDK/HockeySDKResources.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleSignIn.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/HockeySDKResources.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -958,7 +954,7 @@
 				6DCE04301BFFCC2100DF8A34 /* EmailViewController.swift in Sources */,
 				6DC418431C1796D300DB564C /* CollectionViewController.swift in Sources */,
 				6DE65AC91C5FAC850059CCBE /* SplashViewController.swift in Sources */,
-				6DC0D2761BC5949900F14571 /* NSDateExtension.swift in Sources */,
+				6DC0D2761BC5949900F14571 /* DateExtension.swift in Sources */,
 				6D695D8E24BA04AF00E1BA39 /* base.pb.swift in Sources */,
 				6D00E1681C03544900B2F7E0 /* TabBarController.swift in Sources */,
 				6DC0D2721BC58B5D00F14571 /* NavigationController.swift in Sources */,
@@ -968,7 +964,7 @@
 				6D9F68351C99E69200FFC7D9 /* MultilineTextField.swift in Sources */,
 				6D3D46721C8620750037E51B /* KeyboardUtils.swift in Sources */,
 				6DB0E4811C1F622D000EE49A /* SessionStore.swift in Sources */,
-				6DC0D2701BC576AC00F14571 /* ChildrenViewController.swift in Sources */,
+				6DC0D2701BC576AC00F14571 /* EntityListViewController.swift in Sources */,
 				6DC0D2651BC45B3000F14571 /* QuerySet.swift in Sources */,
 				6DE65ACD1C5FEABD0059CCBE /* HttpUtils.swift in Sources */,
 				6D68E6CB1C8A673B007BB8F4 /* AutoLayoutWebView.swift in Sources */,
@@ -990,12 +986,11 @@
 				6D3D466A1C84F3DC0037E51B /* EmailThreadOpenedTableViewCell.swift in Sources */,
 				6DC4183D1C165B7200DB564C /* CollectionsLogic.swift in Sources */,
 				6DC0D2671BC45B4F00F14571 /* JSTimer.swift in Sources */,
-				6DC418411C17939A00DB564C /* AddSelectionViewController.swift in Sources */,
+				6DC418411C17939A00DB564C /* EntityCreationViewController.swift in Sources */,
 				6D570A351DCC08B000BD480F /* BridgeEntityConverter.swift in Sources */,
 				6D5390FE1C6ECF3E0019E56E /* AttachmentView.swift in Sources */,
-				6DCE04221BFA8F2200DF8A34 /* ObjectViewController.swift in Sources */,
+				6DCE04221BFA8F2200DF8A34 /* EntityViewController.swift in Sources */,
 				6D3D466C1C84F3FC0037E51B /* EmailThreadAttachmentTableViewCell.swift in Sources */,
-				6D05FB9D1C776384004516B5 /* TrackingController.swift in Sources */,
 				6D0AE8C51E04EBE700F5F6CE /* Debounce.swift in Sources */,
 				6D7781C91C08B18E00D45299 /* TimeSelectionViewController.swift in Sources */,
 				6D23F61A1C3DB12E00D9A075 /* SearchViewController.swift in Sources */,
@@ -1017,11 +1012,16 @@
 				6D570A6C1DCC171E00BD480F /* WebSocketBridgeExport.swift in Sources */,
 				6D6EC2561C191CED00944436 /* EmailsLogic.swift in Sources */,
 				45B6B14A9EDE74BE24B1A3D6 /* HCRuntime.swift in Sources */,
+				6D712F3324CC7B1C009D6989 /* ExocoreUtils.swift in Sources */,
 				6DFC7D841DD76EB60087346E /* ExomindHoneycombExtensions.swift in Sources */,
 				45B6B15E79D87F9D7CC7B84A /* HCQueries.swift in Sources */,
 				45B6B3BD06C5E24DF09D5ADF /* HCJsonSerialization.swift in Sources */,
 				45B6BA750539831EB6EF80B2 /* ExomindDomain.swift in Sources */,
 				45B6BAE9135B464F193AC3D4 /* StringExtension.swift in Sources */,
+				45B6BFF8AE9157DF82740038 /* Entities.swift in Sources */,
+				45B6BF9E36D12AC04B0E4E61 /* ExpandableQuery.swift in Sources */,
+				45B6B660281C1CC6E661D13E /* Retry.swift in Sources */,
+				45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1032,7 +1032,7 @@
 				6DA4E33B1DD2B27600E5603E /* DomainStoreTests.swift in Sources */,
 				6DA4E33D1DD2B35100E5603E /* ExomindDSL.swift in Sources */,
 				6DA4E3401DD2B35700E5603E /* EmailsLogic.swift in Sources */,
-				6DAB43391D33102700E08229 /* NSDateExtension.swift in Sources */,
+				6DAB43391D33102700E08229 /* DateExtension.swift in Sources */,
 				6D570A5E1DCC144700BD480F /* Command.swift in Sources */,
 				6DE998EB1D33C46100B328C6 /* DictionaryExtension.swift in Sources */,
 				45B6BECC543ACB47DD15D509 /* HCRuntime.swift in Sources */,
@@ -1113,15 +1113,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = ExomindActionExt/ExomindActionExt.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
 				SWIFT_VERSION = 4.2;
@@ -1136,15 +1139,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = ExomindActionExt/ExomindActionExt.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
 				SWIFT_VERSION = 4.2;
@@ -1277,8 +1283,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.3.4;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2;
+				PRODUCT_NAME = ExomindV2;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";
@@ -1303,8 +1309,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.3.4;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2;
+				PRODUCT_NAME = ExomindV2;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";

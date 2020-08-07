@@ -1,12 +1,5 @@
-//
-//  NSDateExtension.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-07.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import Foundation
+import SwiftProtobuf
 
 // https://github.com/justinmakaila/NSDate-ISO-8601/blob/master/NSDateISO8601.swift
 // https://github.com/al7/SwiftDateExtension/blob/master/DateExtension/DateExtension.swift
@@ -19,7 +12,7 @@ public extension Date {
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         return dateFormatter
     }()
-    
+
     fileprivate static let isoDateSerializer: DateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -27,13 +20,13 @@ public extension Date {
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
         return dateFormatter
     }()
-    
+
     fileprivate static let shortTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter
     }()
-    
+
     fileprivate static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
@@ -47,7 +40,15 @@ public extension Date {
     static func dateFromISOString(_ string: String) -> Date? {
         return isoDateDeserializer.date(from: string)
     }
-    
+
+    var millisecondsSince1970: Int64 {
+        Int64((self.timeIntervalSince1970 * 1000.0).rounded())
+    }
+
+    init(milliseconds: Int64) {
+        self = Date(timeIntervalSince1970: TimeInterval(milliseconds) / 1000)
+    }
+
     func toShort() -> String {
         let midnight = Date().midnightUTCDate()
         if (self.isGreaterThan(midnight)) {
@@ -205,5 +206,13 @@ public extension Date {
 
     var second: UInt {
         return UInt((Calendar.current as NSCalendar).component(.second, from: self))
+    }
+
+    static func -(lhs: Date, rhs: Date) -> TimeInterval {
+        lhs.timeIntervalSinceReferenceDate - rhs.timeIntervalSinceReferenceDate
+    }
+
+    func toProtobuf() -> Google_Protobuf_Timestamp {
+        Google_Protobuf_Timestamp(date: self)
     }
 }

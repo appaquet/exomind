@@ -28,8 +28,6 @@ export default class Collection extends React.Component<IProps> {
             <Children
                 parent={this.props.entity}
 
-                sections={['current', 'old']}
-                section={'current'}
                 actionsForSection={this.actionsForChildrenType.bind(this)}
 
                 selection={this.props.selection}
@@ -38,25 +36,10 @@ export default class Collection extends React.Component<IProps> {
         );
     }
 
-    private actionsForChildrenType(section: string): string[] {
-        switch (section) {
-            case 'current':
-                return ['done', 'postpone', 'move'];
-            case 'old':
-                return ['restore', 'postpone', 'move'];
-        }
+    private actionsForChildrenType(): string[] {
+        return ['done', 'postpone', 'move'];
     }
 
-    // TODO:
-    // queryForChildrenType(childrenType) {
-    //     switch (childrenType) {
-    //         case 'current':
-    //             return Q.Entities.withTrait(Exomind.Child, b => b.refersTo(this.props.entity.id)).withSummary();
-    //         case 'old':
-    //             return Q.Entities.withTrait(Exomind.OldChild, b => b.refersTo(this.props.entity.id)).withSummary();
-    //     }
-    // }
-    //
     // TODO:
     // handleNameChange(name) {
     //     let newCollection = this.state.currentCollection.clone();
@@ -67,5 +50,4 @@ export default class Collection extends React.Component<IProps> {
     //         this.props.containerController.title = new ModifiableText(name, this.handleNameChange.bind(this));
     //     }
     // }
-
 }

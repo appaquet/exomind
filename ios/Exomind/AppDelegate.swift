@@ -7,9 +7,7 @@
 //
 
 import UIKit
-import Fabric
 import KeychainSwift
-import HockeySDK
 import GoogleSignIn
 
 @UIApplicationMain
@@ -21,11 +19,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     var googleSigninCallback: ((GIDGoogleUser) -> Void)?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
         HttpUtils.copyCookiesToKeychain()
-        BITHockeyManager.shared().configure(withIdentifier: "fd71ff63e602441d8fc626932fcf55de")
-        BITHockeyManager.shared().start()
-        BITHockeyManager.shared().authenticator.authenticateInstallation()
 
         let gidSignIn = GIDSignIn.sharedInstance()
         gidSignIn?.delegate = self
@@ -38,24 +32,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         let ajaxBridgeFactory = RealXMLHttpRequestBridgeFactory()
         DomainStore.instance = DomainStore(serverHost: "exomind.io", webSocketBridgeFactory: websocketBridgeFactory, ajaxBridgeFactory: ajaxBridgeFactory)
 
+        // see https://github.com/tokio-rs/mio/issues/949
+        signal(SIGPIPE, SIG_IGN)
+
+        ExocoreUtils.initialize()
+
         return true
     }
 
     func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
-        func openObject(_ entity: HCEntity?) {
+        func openObject(_ entity: EntityExt?) {
             if let entity = entity {
                 RootNavigationController.mainInstance()?.show(navigationObject: .entity(entity: entity))
             }
         }
 
         if (shortcutItem.type.contains("NewNote")) {
-            AddSelectionViewController.createNote(nil, callback: openObject)
+            EntityCreationViewController.createNote(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewTask")) {
-            AddSelectionViewController.createTask(nil, callback: openObject)
+            EntityCreationViewController.createTask(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewEmail")) {
-            AddSelectionViewController.createEmail(nil, callback: openObject)
+            EntityCreationViewController.createEmail(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewCollection")) {
-            AddSelectionViewController.createCollection(nil, callback: openObject)
+            EntityCreationViewController.createCollection(nil, callback: openObject)
         }
     }
 

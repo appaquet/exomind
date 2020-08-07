@@ -1,10 +1,3 @@
-//
-//  DictionaryExtension.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-07.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
 
 import Foundation
 

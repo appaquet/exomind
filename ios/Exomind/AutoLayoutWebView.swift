@@ -1,10 +1,3 @@
-//
-//  AutoLayoutWebView.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-04.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import WebKit
@@ -12,6 +5,13 @@ import WebKit
 class AutoLayoutWebView: WKWebView {
     var onHeightChange: ((CGFloat) -> Void)?
     var height: CGFloat = 0
+
+    func setBackgroundTransparent() {
+        // default background color to the system color to support dark / light mode
+        self.scrollView.backgroundColor = UIColor.systemBackground
+        self.backgroundColor = UIColor.systemBackground
+        self.isOpaque = false
+    }
 
     @objc func checkSize() {
         if (!self.scrollView.isScrollEnabled) {

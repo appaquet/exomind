@@ -1,32 +1,31 @@
-//
-//  NewNoteViewController
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-02-29.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
-
 import UIKit
 import SnapKit
+import Exocore
 
 class NoteViewController: UIViewController, EntityTraitView {
-    private var entityTrait: EntityTrait!
-    private var localNote: NoteFull?
+    private var entity: EntityExt?
+    private var noteTrait: TraitInstance<Exomind_Base_Note>?
+    private var modifiedNote: Exomind_Base_Note?
 
     private var headerView: LabelledFieldView!
     private var titleField: MultilineTextField!
     private var richTextEditor: RichTextEditor!
 
-    func loadEntityTrait(_ entityTrait: EntityTrait) {
-        self.entityTrait = entityTrait
-        self.render()
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+        self.entity = entity
+        self.noteTrait = entity.trait(withId: trait.id)
+
+        if self.isViewLoaded && self.modifiedNote == nil {
+            self.loadData()
+        }
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         self.createHeaderView()
-        self.createWebView()
+        self.createRichTextEditor()
+        self.loadData()
 
         self.headerView.snp.makeConstraints { (make) in
             make.width.equalTo(self.view.snp.width)
@@ -48,53 +47,66 @@ class NoteViewController: UIViewController, EntityTraitView {
         nav.resetState()
     }
 
-    fileprivate func createHeaderView() {
+    private func createHeaderView() {
         self.titleField = MultilineTextField()
         titleField.onChanged = { [weak self] text -> Void in
-            self?.handleTitleChange()
+            guard let this = self else { return }
+
+            if this.modifiedNote == nil {
+                this.modifiedNote = this.noteTrait?.message
+            }
+            this.modifiedNote?.title = this.titleField.text
+            this.saveNote()
         }
         self.headerView = LabelledFieldView(label: "Title", fieldView: titleField)
         self.view.addSubview(self.headerView)
     }
 
-    fileprivate func createWebView() {
+    private func createRichTextEditor() {
         self.richTextEditor = RichTextEditor(callback: { [weak self] (json) -> Void in
-            if let body = json?["content"].string, let note = self?.localNote {
-                note.content = body
-                self?.saveNote() // we don't care to save everytime since it's already debounced in javascript
+            guard let this = self else { return }
+
+            if let body = json?["content"].string {
+                if this.modifiedNote == nil {
+                    this.modifiedNote = this.noteTrait?.message
+                }
+                this.modifiedNote?.body = body
+                this.saveNote() // we don't care about saving every time since it's already debounced in javascript
             }
         })
+
         self.addChild(self.richTextEditor)
         self.view.addSubview(self.richTextEditor.view)
         self.richTextEditor.didMove(toParent: self)
         self.richTextEditor.viewDidLoad()
     }
 
-    fileprivate func render() {
-        if isViewLoaded, self.localNote == nil, let localNote = self.entityTrait.trait as? NoteFull {
-            self.localNote = localNote.clone() as? NoteFull
-
-            let content = localNote.content ?? ""
-            self.titleField.text = localNote.title
-            
-            // we don't override text if text editor has focus, since it will trip cursor
-            self.richTextEditor.setContent(content)
+    private func loadData() {
+        if let note = self.modifiedNote ?? self.noteTrait?.message {
+            self.titleField.text = note.title
+            self.richTextEditor.setContent(note.body)
         }
     }
 
-    fileprivate func handleTitleChange() {
-        self.localNote?.title = self.titleField.text
-        self.saveNote()
-    }
+    private func saveNote() {
+        guard   let entity = self.entity,
+                let initialNote = self.noteTrait,
+                let modifiedNote = self.modifiedNote
+                else {
+            return
+        }
 
-    fileprivate func saveNote() {
-        guard   let serverNote = entityTrait.trait as? NoteFull,
-                let localNote = self.localNote
-            else { return }
-        
-        
-        if !serverNote.equals(localNote) {
-            ExomindDSL.on(entityTrait.entity).mutate.put(localNote).execute()
+        if !initialNote.message.isEqualTo(message: modifiedNote) {
+            do {
+                let mutation = try MutationBuilder
+                        .updateEntity(entityId: entity.id)
+                        .putTrait(message: modifiedNote, traitId: initialNote.id)
+                        .build()
+
+                ExocoreClient.store.mutate(mutation: mutation)
+            } catch {
+                print("NoteViewController > Error mutating note: \(error)")
+            }
         }
     }
 

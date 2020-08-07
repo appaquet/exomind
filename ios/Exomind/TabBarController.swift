@@ -1,10 +1,3 @@
-//
-//  TabBarController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-11-23.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
 
 import UIKit
 import FontAwesome_swift
@@ -55,7 +48,7 @@ class TabBarController: UITabBarController {
             var newMap = [String: NavigationController]();
             var barViews: [UIViewController] = [self.inboxVC]
             for entity in mindChildrenQuery.resultsAsEntities() {
-                if let entityTrait = EntityTrait(entity: entity) {
+                if let entityTrait = EntityTraitOld(entity: entity) {
                     switch (entityTrait.traitType) {
                     case .inbox(inbox: _), .mind(mind: _):
                         continue
@@ -64,12 +57,12 @@ class TabBarController: UITabBarController {
                             barViews.append(vc)
                             newMap[entity.id] = vc
                         } else {
-                            let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "NavigationController") as! NavigationController
-                            vc.replaceTopObject(.entity(entity: entity))
-                            let image = ObjectsIcon.icon(forEntity: entity, color: UIColor.black, dimension: 28)
-                            vc.tabBarItem = UITabBarItem(title: entityTrait.displayName, image: image, tag: 0)
-                            barViews.append(vc)
-                            newMap[entity.id] = vc
+//                            let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "NavigationController") as! NavigationController
+//                            vc.replaceTopObject(.entityOld(entity: entity))
+//                            let image = ObjectsIcon.icon(forEntity: entity, color: UIColor.black, dimension: 28)
+//                            vc.tabBarItem = UITabBarItem(title: entityTrait.displayName, image: image, tag: 0)
+//                            barViews.append(vc)
+//                            newMap[entity.id] = vc
                         }
                     }
                 }

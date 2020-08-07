@@ -1,10 +1,3 @@
-//
-//  RichTextEditor.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-01.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import SwiftyJSON
@@ -17,7 +10,7 @@ class RichTextEditor: UIViewController {
     var hasFocus: Bool = false
     fileprivate weak var delegatedScrollView: UIScrollView?
 
-    convenience init(callback: @escaping ((JSON?) -> Void)) {
+    convenience init(callback: @escaping (JSON?) -> Void) {
         self.init(nibName: nil, bundle: nil)
 
         self.webview = RichTextEditorWebView()

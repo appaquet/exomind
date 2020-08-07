@@ -1,17 +1,9 @@
-//
-//  SettingsViewController.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-02-01.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import Alamofire
 import KeychainSwift
 
 class SettingsViewController: UITableViewController {
-
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch ((indexPath as NSIndexPath).section, (indexPath as NSIndexPath).item) {
         case (0, 0): // exomind bar
@@ -29,9 +21,9 @@ class SettingsViewController: UITableViewController {
     }
 
     func exomindBar() {
-        if let mind = SessionStore.mindEntity() {
-            (self.tabBarController as? TabBarController)?.show(navigationObject: .entity(entity: mind))
-        }
+//        if let mind = SessionStore.mindEntity() {
+//            (self.tabBarController as? TabBarController)?.show(navigationObject: .entityOld(entity: mind))
+//        }
     }
 
     func logout() {

@@ -1,11 +1,3 @@
-//
-//  EmailThreadCollapsedTableViewCell.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-02-29.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
-
 import UIKit
 
 class EmailThreadCollapsedTableViewCell: UITableViewCell {
@@ -13,14 +5,14 @@ class EmailThreadCollapsedTableViewCell: UITableViewCell {
     @IBOutlet weak var date: UILabel!
     @IBOutlet weak var snippet: UILabel!
 
-    func load(draft: DraftEmail) {
+    func load(draft: TraitInstance<Exomind_Base_DraftEmail>) {
         self.title.text = "Me"
         self.snippet.text = "Draft email"
     }
-    
-    func load(email: Email) {
-        self.title.text = EmailsLogic.formatContact(email.from)
-        self.date.text = email.receivedDate.toShort()
-        self.snippet.text = email.snippet
+
+    func load(email: TraitInstance<Exomind_Base_Email>) {
+        self.title.text = EmailsLogic.formatContact(email.message.from)
+        self.date.text = email.message.receivedDate.date.toShort()
+        self.snippet.text = email.message.snippet
     }
 }

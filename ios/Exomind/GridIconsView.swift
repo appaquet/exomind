@@ -1,10 +1,3 @@
-//
-//  GridIconsView.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-03-08.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
 
 import UIKit
 import FontAwesome_swift
@@ -103,9 +96,9 @@ class GridIconsView: UIView {
 class GridIconsViewItem {
     let label: String
     let icon: FontAwesome
-    let callback: ((GridIconsViewItem) -> ())
+    let callback: (GridIconsViewItem) -> ()
 
-    init(label: String, icon: FontAwesome, callback: @escaping ((GridIconsViewItem) -> ())) {
+    init(label: String, icon: FontAwesome, callback: @escaping (GridIconsViewItem) -> ()) {
         self.label = label
         self.icon = icon
         self.callback = callback

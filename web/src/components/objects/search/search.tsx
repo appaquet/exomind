@@ -73,7 +73,7 @@ export class Search extends React.Component<IProps> {
         </div>
       );
     } else {
-      return <Message text="Loading..." showAfterMs={500} />;
+      return <Message text="Loading..." showAfterMs={200} />;
     }
   }
 
@@ -83,6 +83,15 @@ export class Search extends React.Component<IProps> {
     const childrenQuery = QueryBuilder
       .matches(query)
       .count(30)
+      .project(
+        new exocore.index.Projection({
+          fieldGroupIds: [1],
+          package: ["exomind.base"],
+        }),
+        new exocore.index.Projection({
+          skip: true,
+        })
+      )
       .build();
     this.entityQuery = new ExpandableQuery(childrenQuery, () => {
       this.setState({});
