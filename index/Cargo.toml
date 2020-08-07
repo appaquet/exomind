@@ -27,7 +27,7 @@ prost = "0.6"
 bytes = "0.5"
 chrono = { version = "0.4", features = ["serde"] }
 smallvec = "1.4"
-lru = "0.5"
+lru = "0.6"
 
 # Local store
 tantivy = { version = "0.12", optional = true }
