@@ -7,12 +7,13 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
     @IBOutlet weak var to: UILabel!
 
     private weak var threadView: EmailThreadViewController!
-    private var wasLinkClick: Bool = false
 
     private var index: Int?
     private var email: TraitInstance<Exomind_Base_Email>?
     private var draft: TraitInstance<Exomind_Base_DraftEmail>?
     private var shouldRender: Bool = false
+
+    private var wasLinkClick: Bool = false
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -56,7 +57,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
             self.webView.loadEmailEntity(email.message.parts, short: showShortEmail)
             self.webView.onLinkClick = { [weak self] (url) -> Bool in
                 self?.wasLinkClick = true
-                UIApplication.shared.open(url as URL, options: convertToUIApplicationOpenExternalURLOptionsKeyDictionary([:]), completionHandler: { (success) in
+                UIApplication.shared.open(url as URL, options: [:], completionHandler: { (success) in
                 })
                 return false
             }
@@ -107,9 +108,3 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
     }
 }
 
-// Helper function inserted by Swift 4.2 migrator.
-fileprivate func convertToUIApplicationOpenExternalURLOptionsKeyDictionary(_ input: [String: Any]) -> [UIApplication.OpenExternalURLOptionsKey: Any] {
-    return Dictionary(uniqueKeysWithValues: input.map { key, value in
-        (UIApplication.OpenExternalURLOptionsKey(rawValue: key), value)
-    })
-}

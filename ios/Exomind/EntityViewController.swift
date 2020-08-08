@@ -87,6 +87,8 @@ class EntityViewController: UIViewController {
         switch traitType {
         case .emailThread:
             vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "EmailThreadViewController") as! EmailThreadViewController
+        case .email:
+            vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "EmailViewController") as! EmailViewController
         case .collection:
             vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "CollectionViewController") as! CollectionViewController
         case .note:

@@ -276,33 +276,25 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
         var name: String?;
         switch message {
         case let emailThread as Exomind_Base_EmailThread:
-            name = notEmpty(emailThread.subject) ?? "Untitled email"
+            name = emailThread.subject.nonEmpty() ?? "Untitled email"
         case let draftEmail as Exomind_Base_DraftEmail:
-            name = notEmpty(draftEmail.subject) ?? "Untitled email"
+            name = draftEmail.subject.nonEmpty() ?? "Untitled email"
         case let email as Exomind_Base_Email:
-            name = notEmpty(email.subject) ?? "Untitled email"
+            name = email.subject.nonEmpty() ?? "Untitled email"
         case let collection as Exomind_Base_Collection:
-            name = collection.name
+            name = collection.name.nonEmpty() ?? "Untitled collection"
         case let task as Exomind_Base_Task:
-            name = notEmpty(task.title) ?? "Untitled task"
+            name = task.title.nonEmpty() ?? "Untitled task"
         case let note as Exomind_Base_Note:
-            name = notEmpty(note.title) ?? "Untitled note"
+            name = note.title.nonEmpty() ?? "Untitled note"
         case let link as Exomind_Base_Link:
-            name = notEmpty(link.title) ?? "Untitled link"
+            name = link.title.nonEmpty() ?? "Untitled link"
         default:
             name = nil
         }
 
         return name ?? constants.nameDefault ?? "*UNKNOWN*"
     }
-}
-
-func notEmpty(_ str: String) -> String? {
-    if str == "" {
-        return nil
-    }
-
-    return str
 }
 
 enum TraitType {

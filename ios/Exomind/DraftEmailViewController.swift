@@ -1,4 +1,3 @@
-
 import UIKit
 import SnapKit
 import CLTokenInputView
@@ -78,50 +77,56 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld
         let nav = (self.navigationController as! NavigationController)
         nav.resetState()
         nav.setBarActions([
-              NavigationControllerBarAction(icon: .paperPlane, handler: { [weak self] () -> Void in
-                  self?.handleSendClick()
-              })
-          ])
+            NavigationControllerBarAction(icon: .paperPlane, handler: { [weak self] () -> Void in
+                self?.handleSendClick()
+            })
+        ])
         nav.setQuickButtonActions([
-              QuickButtonAction(icon: .times, handler: { [weak self] () -> Void in
-                  self?.handleDelete()
-              })
-          ])
+            QuickButtonAction(icon: .times, handler: { [weak self] () -> Void in
+                self?.handleDelete()
+            })
+        ])
     }
 
     func render() {
         if !self.isViewLoaded || self.localTrait != nil {
             return
         }
-        
+
         guard   let serverTrait = entityTrait.trait as? DraftEmailFull,
                 let localTrait = serverTrait.clone() as? DraftEmailFull
-            else { return }
-        
+                else {
+            return
+        }
+
         self.serverTrait = serverTrait
         self.localTrait = localTrait
         self.integrations = SessionStore.integrations()
-            .compactMap { entityTrait in
-                switch (entityTrait.traitType) {
-                case let .integration(integration: int) where int.typ == "google":
-                    return IntegrationSourceFull(data: [:], integrationKey: int.key, integrationName: "google")
-                default:
-                    return nil
+                .compactMap { entityTrait in
+                    switch (entityTrait.traitType) {
+                    case let .integration(integration: int) where int.typ == "google":
+                        return IntegrationSourceFull(data: [:], integrationKey: int.key, integrationName: "google")
+                    default:
+                        return nil
+                    }
                 }
-            }
 
         if let htmlPart = (self.localTrait.parts.compactMap { $0 as? EmailPartHtmlFull }).first {
             self.richTextEditor.setContent(htmlPart.body)
         }
-        
+
         if self.localTrait.from == nil {
             self.localTrait.from = self.integrations.first
         }
 
         self.subjectField.text = self.localTrait.subject ?? ""
         self.fromField.text = self.localTrait.from?.integrationKey
-        self.toField.setContacts(self.localTrait.to.compactMap { $0 as? ContactFull })
-        self.ccField.setContacts(self.localTrait.cc.compactMap { $0 as? ContactFull })
+        self.toField.setContacts(self.localTrait.to.compactMap {
+            $0 as? ContactFull
+        })
+        self.ccField.setContacts(self.localTrait.cc.compactMap {
+            $0 as? ContactFull
+        })
     }
 
     func saveEmail() {
@@ -164,6 +169,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld
 
 private class ContactWrapper: NSObject {
     let contact: ContactFull
+
     init(contact: ContactFull) {
         self.contact = contact
     }
@@ -173,7 +179,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
     private var label: String!
     private var tokensField: CLTokenInputView!
     fileprivate var headerView: LabelledFieldView!
-    
+
     var onChange: (() -> Void)?
     private var preventOnChange: Bool = false
 
@@ -184,7 +190,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         self.createField()
     }
 
-    func createField() {
+    private func createField() {
         UITextField.appearance(whenContainedInInstancesOf: [CLTokenInputView.self]).font = UIFont.systemFont(ofSize: 14)
         self.tokensField = CLTokenInputView()
         self.tokensField.delegate = self
@@ -192,7 +198,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         self.headerView = LabelledFieldView(label: self.label, fieldView: self.tokensField, betweenPadding: 0)
     }
 
-    @objc func tokenInputView(_ view: CLTokenInputView, didChangeText text: String?) {
+    func tokenInputView(_ view: CLTokenInputView, didChangeText text: String?) {
         if let text = self.tokensField.text {
             if (text.hasSuffix(" ") || text.hasSuffix(",")) {
                 self.maybeAddCurrentText()
@@ -200,17 +206,17 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         }
     }
 
-    @objc fileprivate func tokenInputView(_ view: CLTokenInputView, didRemove token: CLToken) {
+    func tokenInputView(_ view: CLTokenInputView, didRemove token: CLToken) {
         if !preventOnChange {
             self.onChange?()
         }
     }
 
-    @objc fileprivate func tokenInputViewDidEndEditing(_ view: CLTokenInputView) {
+    func tokenInputViewDidEndEditing(_ view: CLTokenInputView) {
         self.maybeAddCurrentText()
     }
 
-    func maybeAddCurrentText() {
+    private func maybeAddCurrentText() {
         if let text = self.tokensField.text, !preventOnChange {
             // TODO: better validation...
             if (text != "" && text.contains("@")) {
@@ -222,7 +228,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         }
     }
 
-    func setContacts(_ contacts: [ContactFull]) {
+    fileprivate func setContacts(_ contacts: [ContactFull]) {
         self.preventOnChange = true
         self.tokensField.allTokens.forEach { (token) -> () in
             self.tokensField.remove(token)
@@ -233,13 +239,13 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         self.preventOnChange = false
     }
 
-    func getContacts() -> [ContactFull] {
-        return self.tokensField.allTokens.compactMap { token in
-            return (token.context as? ContactWrapper)?.contact
+    fileprivate func getContacts() -> [ContactFull] {
+        self.tokensField.allTokens.compactMap { token in
+            (token.context as? ContactWrapper)?.contact
         }
     }
 
-    fileprivate func contactToToken(_ contact: ContactFull) -> CLToken {
+    private func contactToToken(_ contact: ContactFull) -> CLToken {
         let displayName = EmailsLogic.formatContact(contact)
         return CLToken(displayText: displayName, context: ContactWrapper(contact: contact) as NSObject)
     }

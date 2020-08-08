@@ -1,18 +1,20 @@
-
 import UIKit
+import Exocore
 
-class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
-    fileprivate let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+class EmailViewController: VerticalLinearViewController, EntityTraitView {
+    private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
 
-    var entityTrait: EntityTraitOld!
+    private var entity: EntityExt!
+    private var email: TraitInstance<Exomind_Base_Email>!
 
-    var webview: EmailBodyWebView!
-    var fromLabel: UILabel!
-    var toLabel: UILabel!
-    var subjectLabel: UILabel!
-    
-    func loadEntityTrait(_ entityTrait: EntityTraitOld) {
-        self.entityTrait = entityTrait
+    private var webview: EmailBodyWebView!
+    private var fromLabel: UILabel!
+    private var toLabel: UILabel!
+    private var subjectLabel: UILabel!
+
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+        self.entity = entity
+        self.email = entity.trait(withId: trait.id)
         self.render()
     }
 
@@ -23,11 +25,11 @@ class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
         self.render()
     }
 
-    func createWebView() {
+    private func createWebView() {
         self.webview = EmailBodyWebView()
         self.webview.initialize()
         self.webview.onLinkClick = { url -> Bool in
-            UIApplication.shared.open(url as URL, options: convertToUIApplicationOpenExternalURLOptionsKeyDictionary([:]), completionHandler: { (success) in
+            UIApplication.shared.open(url as URL, options: [:], completionHandler: { (success) in
             })
             return true
         }
@@ -35,7 +37,7 @@ class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
         self.webview.loadHTML("Loading...")
     }
 
-    func createFieldsView() {
+    private func createFieldsView() {
         self.fromLabel = UILabel()
         self.fromLabel.font = UIFont.systemFont(ofSize: 14)
         self.fromLabel.numberOfLines = 0
@@ -61,33 +63,39 @@ class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
         let nav = (self.navigationController as! NavigationController)
         nav.resetState()
         nav.setQuickButtonActions([
-                  QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
-                      self?.handleReply()
-                  }),
-                  QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
-                      self?.handleReplyAll()
-                  }),
-                  QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
-                      self?.handleForward()
-                  }),
-                  QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
-                      self?.handleAddToCollection()
-                  }),
-          ])
+            QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
+                self?.handleReply()
+            }),
+            QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
+                self?.handleReplyAll()
+            }),
+            QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
+                self?.handleForward()
+            }),
+            QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
+                self?.handleAddToCollection()
+            }),
+        ])
     }
 
-    func render() {
-//        if self.isViewLoaded, let email = self.entityTrait?.trait as? EmailFull {
-//            self.webview.loadEmailEntity(self.entityTrait, short: false)
-//
-//            self.fromLabel.text = EmailsLogic.formatContact(email.from)
-//            self.subjectLabel.text = email.subject ?? "(no subject)"
-//            let joined = (email.to + email.cc).map { $0.name ?? $0.email }
-//            self.toLabel.text = joined.joined(separator: ", ")
-//        }
+    private func render() {
+        guard let email = self.email, self.isViewLoaded else {
+            return
+        }
+
+        self.webview.loadEmailEntity(email.message.parts, short: false)
+
+        self.fromLabel.text = EmailsLogic.formatContact(email.message.from)
+        self.subjectLabel.text = email.message.subject ?? "(no subject)"
+
+        let joined = (email.message.to + email.message.cc).map {
+            $0.name.nonEmpty() ?? $0.email
+        }
+        self.toLabel.text = joined.joined(separator: ", ")
     }
 
     func handleReply() {
+        // TODO:
 //        EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
 //            guard let this = self, let entity = entity else { return }
 //            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
@@ -95,6 +103,7 @@ class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
     }
 
     func handleReplyAll() {
+        // TODO:
 //        EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
 //            guard let this = self, let entity = entity else { return }
 //            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
@@ -102,6 +111,7 @@ class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
     }
 
     func handleForward() {
+        // TODO:
 //        EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
 //            guard let this = self, let entity = entity else { return }
 //            (this.navigationController as? NavigationController)?.pushObject(.entityOld(entity: entity))
@@ -109,18 +119,10 @@ class EmailViewController: VerticalLinearViewController, EntityTraitViewOld {
     }
 
     func handleAddToCollection() {
-        // TODO:
-//        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
-//        vc.forEntity = self.entityTrait.entity
-//        self.present(vc, animated: true, completion: nil)
+        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: self.entity)
     }
 
     deinit {
         print("EmailViewController > Deinit")
     }
-}
-
-// Helper function inserted by Swift 4.2 migrator.
-fileprivate func convertToUIApplicationOpenExternalURLOptionsKeyDictionary(_ input: [String: Any]) -> [UIApplication.OpenExternalURLOptionsKey: Any] {
-	return Dictionary(uniqueKeysWithValues: input.map { key, value in (UIApplication.OpenExternalURLOptionsKey(rawValue: key), value)})
 }
