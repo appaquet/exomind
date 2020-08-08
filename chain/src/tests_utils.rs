@@ -9,7 +9,7 @@ use tempfile::TempDir;
 
 use exocore_core::cell::{CellNode, CellNodeRole, LocalNode};
 use exocore_core::futures::Runtime;
-use exocore_core::tests_utils::expect_result;
+use exocore_core::tests_utils::expect_result_eventually;
 use exocore_core::time::Clock;
 
 use crate::block::{BlockOffset, BlockOwned};
@@ -328,7 +328,7 @@ impl TestChainCluster {
     }
 
     pub fn wait_operations_emitted(&self, node_idx: usize, operations_id: &[u64]) {
-        expect_result::<_, _, anyhow::Error>(|| {
+        expect_result_eventually::<_, _, anyhow::Error>(|| {
             let events = self.get_received_events(node_idx);
             let found_ops = extract_ops_events(&events);
 
@@ -348,7 +348,7 @@ impl TestChainCluster {
         node_idx: usize,
         operation_id: OperationId,
     ) -> EngineOperation {
-        expect_result::<_, _, anyhow::Error>(|| {
+        expect_result_eventually::<_, _, anyhow::Error>(|| {
             self.get_handle(node_idx)
                 .get_operation(operation_id)?
                 .filter(|op| op.status.is_committed())
@@ -357,7 +357,7 @@ impl TestChainCluster {
     }
 
     pub fn wait_operations_committed(&self, node_idx: usize, operations_id: &[OperationId]) {
-        expect_result::<_, _, anyhow::Error>(|| {
+        expect_result_eventually::<_, _, anyhow::Error>(|| {
             for operation_id in operations_id {
                 self.get_handle(node_idx)
                     .get_operation(*operation_id)?
@@ -370,7 +370,7 @@ impl TestChainCluster {
     }
 
     pub fn wait_operations_exist<I>(&self, node_idx: usize, operations_id: &[OperationId]) {
-        expect_result::<_, _, anyhow::Error>(|| {
+        expect_result_eventually::<_, _, anyhow::Error>(|| {
             for operation_id in operations_id {
                 self.get_handle(node_idx)
                     .get_operation(*operation_id)?
@@ -382,7 +382,7 @@ impl TestChainCluster {
     }
 
     pub fn wait_next_block_commit(&self, node_idx: usize) -> Vec<BlockOffset> {
-        expect_result::<_, _, anyhow::Error>(|| {
+        expect_result_eventually::<_, _, anyhow::Error>(|| {
             let events = self.get_received_events(node_idx);
             let offsets = extract_blocks_events(&events);
 

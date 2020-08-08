@@ -5,10 +5,10 @@ pub fn expect_eventually<F>(cb: F)
 where
     F: FnMut() -> bool,
 {
-    expect_eventually_within(Duration::from_secs(5), cb)
+    expect_within(Duration::from_secs(5), cb)
 }
 
-pub fn expect_eventually_within<F>(timeout: Duration, mut cb: F)
+pub fn expect_within<F>(timeout: Duration, mut cb: F)
 where
     F: FnMut() -> bool,
 {
@@ -27,7 +27,7 @@ where
     );
 }
 
-pub fn expect_result<F, R, E: Debug>(cb: F) -> R
+pub fn expect_result_eventually<F, R, E: Debug>(cb: F) -> R
 where
     F: FnMut() -> Result<R, E>,
 {

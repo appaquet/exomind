@@ -26,8 +26,8 @@ impl TestEntityIndex {
     pub fn new_with_config(config: EntityIndexConfig) -> Result<TestEntityIndex, anyhow::Error> {
         let cluster = TestChainCluster::new_single_and_start()?;
 
-        let data_handle = cluster.get_handle(0).clone();
-        let index = EntityIndex::open_or_create(cluster.cells[0].clone(), config, data_handle)?;
+        let chain_handle = cluster.get_handle(0).clone();
+        let index = EntityIndex::open_or_create(cluster.cells[0].clone(), config, chain_handle)?;
 
         Ok(TestEntityIndex {
             cluster,

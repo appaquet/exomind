@@ -1,6 +1,9 @@
 use exocore_core::protos::generated::exocore_index::Paging;
 use exocore_core::protos::generated::exocore_test::TestMessage;
-use exocore_core::protos::{prost::ProstTimestampExt, test::TestMessage2};
+use exocore_core::{
+    protos::{prost::ProstTimestampExt, test::TestMessage2},
+    tests_utils::{expect_result_eventually, result_assert_equal, result_assert_true},
+};
 use test_index::*;
 
 use crate::mutation::MutationBuilder;
@@ -44,14 +47,19 @@ fn index_full_pending_to_chain() -> anyhow::Result<()> {
     // wait for second block to be committed, first operations should now be indexed
     // in chain
     test_index.wait_operations_committed(&second_ops_id);
-    test_index.handle_engine_events()?;
-    let res = test_index
-        .index
-        .search(Q::with_trait::<TestMessage>().build())?;
-    let pending_res = count_results_source(&res, EntityResultSource::Pending);
-    let chain_res = count_results_source(&res, EntityResultSource::Chain);
-    assert!(chain_res >= 5, "was equal to {}", chain_res);
-    assert_eq!(pending_res + chain_res, 10);
+    expect_result_eventually(|| -> anyhow::Result<()> {
+        test_index.handle_engine_events()?;
+        let res = test_index
+            .index
+            .search(Q::with_trait::<TestMessage>().build())?;
+        let pending_res = count_results_source(&res, EntityResultSource::Pending);
+        let chain_res = count_results_source(&res, EntityResultSource::Chain);
+
+        result_assert_equal(pending_res + chain_res, 10)?;
+        result_assert_true(chain_res >= 5)?;
+
+        Ok(())
+    });
 
     Ok(())
 }
@@ -271,11 +279,6 @@ fn delete_entity_trait() -> anyhow::Result<()> {
             MutationType::TraitTombstone(_) => true,
             _ => false,
         }));
-
-    // now bury the deletion under 1 block, which should delete for real the trait
-    let op_id = test_index.put_test_trait("entity2", "trait2", "name1")?;
-    test_index.wait_operation_committed(op_id);
-    test_index.handle_engine_events()?;
 
     Ok(())
 }

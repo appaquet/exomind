@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use exocore_core::tests_utils::expect_result;
+use exocore_core::tests_utils::expect_result_eventually;
 
 use exocore_chain::operation::Operation;
 use exocore_chain::tests_utils::*;
@@ -206,7 +206,7 @@ fn two_nodes_pending_store_cleanup() -> anyhow::Result<()> {
 
     // first operation should not be in pending store anymore as it got cleaned up
     let first_op = operations_id.first().unwrap();
-    expect_result::<_, _, anyhow::Error>(|| {
+    expect_result_eventually::<_, _, anyhow::Error>(|| {
         let node1_op = cluster.get_handle(0).get_pending_operation(*first_op)?;
         if node1_op.is_some() {
             return Err(anyhow!("Was still on node 0"));

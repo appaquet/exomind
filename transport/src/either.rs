@@ -243,7 +243,9 @@ mod tests {
     use crate::TransportLayer::Index;
     use exocore_core::cell::LocalNode;
     use exocore_core::futures::Runtime;
-    use exocore_core::tests_utils::{expect_result, result_assert_false, result_assert_true};
+    use exocore_core::tests_utils::{
+        expect_result_eventually, result_assert_false, result_assert_true,
+    };
 
     #[test]
     fn test_send_and_receive() -> anyhow::Result<()> {
@@ -279,7 +281,7 @@ mod tests {
         // since node1 has never sent message, it will send to node 2 via transport 1
         // (left side)
         node1_either.send_test_message(&mut rt, node2.node(), 1);
-        expect_result::<_, _, anyhow::Error>(|| {
+        expect_result_eventually::<_, _, anyhow::Error>(|| {
             let transport1_has_message = node2_transport1.has_message()?;
             let transport2_has_message = node2_transport2.has_message()?;
             result_assert_true(transport1_has_message)?;
