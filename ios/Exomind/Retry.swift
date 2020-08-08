@@ -13,6 +13,7 @@ class Retry {
     }
 
     func trigger() {
+        // TODO: Exponential
         let now = Date()
         if let lastAttempt = lastAttempt {
             let interval = now - lastAttempt

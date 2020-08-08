@@ -50,7 +50,9 @@ class NoteViewController: UIViewController, EntityTraitView {
     private func createHeaderView() {
         self.titleField = MultilineTextField()
         titleField.onChanged = { [weak self] text -> Void in
-            guard let this = self else { return }
+            guard let this = self else {
+                return
+            }
 
             if this.modifiedNote == nil {
                 this.modifiedNote = this.noteTrait?.message
@@ -64,7 +66,9 @@ class NoteViewController: UIViewController, EntityTraitView {
 
     private func createRichTextEditor() {
         self.richTextEditor = RichTextEditor(callback: { [weak self] (json) -> Void in
-            guard let this = self else { return }
+            guard let this = self else {
+                return
+            }
 
             if let body = json?["content"].string {
                 if this.modifiedNote == nil {
@@ -118,4 +122,3 @@ class NoteViewController: UIViewController, EntityTraitView {
         print("NoteViewController > Deinit")
     }
 }
-

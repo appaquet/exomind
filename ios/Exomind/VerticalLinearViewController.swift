@@ -31,7 +31,7 @@ class VerticalLinearViewController: UIViewController {
         }
     }
 
-    func addLinearView(_ view: UIView) {
+    func addLinearView(_ view: UIView, minHeight: CGFloat? = nil) {
         self.scrollViewContainer.addSubview(view)
         view.snp.makeConstraints { (make) in
             if let previous = self.linearViews.last {
@@ -41,6 +41,10 @@ class VerticalLinearViewController: UIViewController {
             }
             make.left.equalTo(self.scrollViewContainer.snp.left)
             make.width.equalTo(self.scrollViewContainer.snp.width)
+
+            if let minHeight = minHeight {
+                make.height.greaterThanOrEqualTo(minHeight)
+            }
         }
         self.linearViews.append(view)
     }

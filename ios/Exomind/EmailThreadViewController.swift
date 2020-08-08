@@ -35,7 +35,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
             self.loadedEmails.append(false)
         }
 
-        self.refreshData()
+        self.loadData()
     }
 
     override func viewDidLoad() {
@@ -47,7 +47,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         self.headerView = EmailThreadHeader()
         self.sizeTableHeader()
 
-        self.refreshData()
+        self.loadData()
     }
 
     // http://stackoverflow.com/questions/19005446/table-header-view-height-is-wrong-when-using-auto-layout-ib-and-font-sizes
@@ -100,11 +100,11 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         print("EmailThreadViewController > Email webview loaded \(emailIndex)")
         if emailIndex < self.loadedEmails.count {
             self.loadedEmails[emailIndex] = true
-            self.refreshData()
+            self.loadData()
         }
     }
 
-    func refreshData() {
+    func loadData() {
         self.tableView.reloadData()
         self.headerView.load(thread: self.thread)
         self.sizeTableHeader()

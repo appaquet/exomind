@@ -2,30 +2,53 @@ import UIKit
 import SnapKit
 import CLTokenInputView
 
-class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld, CLTokenInputViewDelegate {
-    fileprivate var entityTrait: EntityTraitOld!
-    fileprivate var serverTrait: DraftEmailFull!
-    fileprivate var localTrait: DraftEmailFull!
+import Exocore
 
-    fileprivate var fromField: UILabel!
-    fileprivate var toField: ContactsField!
-    fileprivate var ccField: ContactsField!
-    fileprivate var subjectField: MultilineTextField!
-    fileprivate var richTextEditor: RichTextEditor!
+class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, CLTokenInputViewDelegate {
+    private var entity: EntityExt?
+    private var draftTrait: TraitInstance<Exomind_Base_DraftEmail>?
+    private var modifiedDraft: Exomind_Base_DraftEmail?
 
-    fileprivate var integrations = [IntegrationSourceFull]()
+    private var fromField: UILabel!
+    private var toField: ContactsField!
+    private var ccField: ContactsField!
+    private var subjectField: MultilineTextField!
+    private var richTextEditor: RichTextEditor!
 
-    func loadEntityTrait(_ entityTrait: EntityTraitOld) {
-        self.entityTrait = entityTrait
-        self.render()
+    private var accounts = [Account]()
+    private var accountQuery: QueryHandle?
+
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+        self.entity = entity
+        self.draftTrait = entity.trait(withId: trait.id)
+
+        if self.accounts.isEmpty {
+            let query = QueryBuilder.withTrait(Exomind_Base_Account.self).build()
+            self.accountQuery = ExocoreClient.store.query(query: query) { [weak self] (status, results) in
+                guard let results = results else {
+                    return
+                }
+
+                self?.accounts = results.entities.compactMap({ (result) in
+                    let entity = result.entity.toExtension()
+                    guard let account: TraitInstance<Exomind_Base_Account> = entity.traitOfType(Exomind_Base_Account.self) else { return nil }
+                    return Account(entity: entity, trait: account)
+                })
+            }
+        }
+
+        if self.isViewLoaded && self.modifiedDraft == nil {
+            self.loadData()
+        }
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         self.createViews()
+        self.loadData()
     }
 
-    func createViews() {
+    private func createViews() {
         self.fromField = UILabel()
         self.fromField.font = UIFont.systemFont(ofSize: 14)
         self.fromField.isUserInteractionEnabled = true
@@ -33,22 +56,47 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld
         self.addLinearView(LabelledFieldView(label: "From", fieldView: self.fromField, betweenPadding: 15))
 
         self.toField = ContactsField(label: "To") { [weak self] in
-            if let contacts = self?.toField.getContacts() {
-                self?.localTrait.to = contacts
+            guard let this = self else {
+                return
             }
+
+            if this.modifiedDraft == nil {
+                this.modifiedDraft = this.draftTrait?.message
+            }
+
+            let contacts = this.toField.getContacts()
+            this.modifiedDraft?.to = contacts
+            this.saveDraft()
         }
         self.addLinearView(self.toField.headerView)
 
         self.ccField = ContactsField(label: "CC") { [weak self] in
-            if let contacts = self?.ccField.getContacts() {
-                self?.localTrait.cc = contacts
+            guard let this = self else {
+                return
             }
+
+            if this.modifiedDraft == nil {
+                this.modifiedDraft = this.draftTrait?.message
+            }
+
+            let contacts = this.ccField.getContacts()
+            this.modifiedDraft?.cc = contacts
+            this.saveDraft()
         }
         self.addLinearView(self.ccField.headerView)
 
         self.subjectField = MultilineTextField()
         self.subjectField.onChanged = { [weak self] (text) in
-            self?.localTrait.subject = text
+            guard let this = self else {
+                return
+            }
+
+            if this.modifiedDraft == nil {
+                this.modifiedDraft = this.draftTrait?.message
+            }
+
+            this.modifiedDraft?.subject = text
+            this.saveDraft()
         }
         self.addLinearView(LabelledFieldView(label: "Subject", fieldView: self.subjectField))
 
@@ -57,11 +105,22 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld
 
     func createRichTextView() {
         self.richTextEditor = RichTextEditor(callback: { [weak self] (json) -> Void in
+            guard let this = self else {
+                return
+            }
+
             if let body = json?["content"].string {
-                self?.localTrait.parts = [EmailPartHtmlFull(body: body)]
+                if this.modifiedDraft == nil {
+                    this.modifiedDraft = this.draftTrait?.message
+                }
+
+                var part = Exomind_Base_EmailPart()
+                part.body = body
+                part.mimeType = "text/html"
+                this.modifiedDraft?.parts = [part]
 
                 // we don't care to save everytime since it's already debounced in javascript
-                self?.saveEmail()
+                this.saveDraft()
             }
         })
         self.addChild(self.richTextEditor)
@@ -69,7 +128,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld
         self.richTextEditor.viewDidLoad()
         self.richTextEditor.delegateScrollTo(self.scrollView)
 
-        self.addLinearView(self.richTextEditor.view)
+        self.addLinearView(self.richTextEditor.view, minHeight: self.view.frame.height)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -88,70 +147,80 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld
         ])
     }
 
-    func render() {
-        if !self.isViewLoaded || self.localTrait != nil {
+    func loadData() {
+        if !self.isViewLoaded {
             return
         }
 
-        guard   let serverTrait = entityTrait.trait as? DraftEmailFull,
-                let localTrait = serverTrait.clone() as? DraftEmailFull
+        guard var draft = self.modifiedDraft ?? self.draftTrait?.message else {
+            return
+        }
+
+        if !draft.hasAccount {
+            if let firstAccount = self.accounts.first {
+                draft.account = firstAccount.reference
+            }
+        }
+
+        self.fromField.text = accounts.first(where: { $0.reference == draft.account })?.trait.message.name
+        self.toField.setContacts(draft.to)
+        self.ccField.setContacts(draft.cc)
+        self.subjectField.text = draft.subject
+        self.richTextEditor.setContent(draft.parts.first?.body ?? "Some text")
+    }
+
+    private func saveDraft() {
+        guard   let entity = self.entity,
+                let initialDraft = self.draftTrait,
+                let modifiedDraft = self.modifiedDraft
                 else {
             return
         }
 
-        self.serverTrait = serverTrait
-        self.localTrait = localTrait
-        self.integrations = SessionStore.integrations()
-                .compactMap { entityTrait in
-                    switch (entityTrait.traitType) {
-                    case let .integration(integration: int) where int.typ == "google":
-                        return IntegrationSourceFull(data: [:], integrationKey: int.key, integrationName: "google")
-                    default:
-                        return nil
-                    }
-                }
+        if !initialDraft.message.isEqualTo(message: modifiedDraft) {
+            do {
+                let mutation = try MutationBuilder
+                        .updateEntity(entityId: entity.id)
+                        .putTrait(message: modifiedDraft, traitId: initialDraft.id)
+                        .build()
 
-        if let htmlPart = (self.localTrait.parts.compactMap { $0 as? EmailPartHtmlFull }).first {
-            self.richTextEditor.setContent(htmlPart.body)
-        }
-
-        if self.localTrait.from == nil {
-            self.localTrait.from = self.integrations.first
-        }
-
-        self.subjectField.text = self.localTrait.subject ?? ""
-        self.fromField.text = self.localTrait.from?.integrationKey
-        self.toField.setContacts(self.localTrait.to.compactMap {
-            $0 as? ContactFull
-        })
-        self.ccField.setContacts(self.localTrait.cc.compactMap {
-            $0 as? ContactFull
-        })
-    }
-
-    func saveEmail() {
-        if !self.localTrait.equals(self.serverTrait) {
-            ExomindDSL.on(self.entityTrait.entity).mutate.put(self.localTrait).execute()
+                ExocoreClient.store.mutate(mutation: mutation)
+            } catch {
+                print("DraftEmailViewController > Error mutating note: \(error)")
+            }
         }
     }
 
-    func handleSendClick() {
-        self.localTrait.sendingDate = Date()
-        self.saveEmail()
-        let _ = self.navigationController?.popViewController(animated: true)
+    private func handleSendClick() {
+        // TODO:        let _ = self.navigationController?.popViewController(animated: true)
     }
 
-    func handleDelete() {
-        ExomindDSL.on(self.entityTrait.entity).mutate.remove(self.localTrait).execute()
+    private func handleDelete() {
+        guard   let entity = self.entity,
+                let initialDraft = self.draftTrait
+                else {
+            return
+        }
+        let mutation = MutationBuilder
+                .updateEntity(entityId: entity.id)
+                .deleteTrait(traitId: initialDraft.id)
+                .build()
+
+        ExocoreClient.store.mutate(mutation: mutation)
+
         let _ = self.navigationController?.popViewController(animated: true)
     }
 
     @objc func handleFromTouch() {
         let vc = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        for integration in self.integrations {
-            vc.addAction(UIAlertAction(title: integration.integrationKey, style: .default, handler: { [weak self] (action) -> Void in
-                self?.localTrait.from = integration
-                self?.render()
+        for account in self.accounts {
+            vc.addAction(UIAlertAction(title: account.trait.message.name, style: .default, handler: { [weak self] (action) -> Void in
+                var accountRef = Exocore_Index_Reference()
+                accountRef.entityID = account.entity.id
+                accountRef.traitID = account.trait.id
+
+                self?.modifiedDraft?.account = account.reference
+                self?.loadData()
             }))
         }
         vc.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
@@ -159,7 +228,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld
     }
 
     override func viewWillDisappear(_ animated: Bool) {
-        self.saveEmail()
+        self.saveDraft()
     }
 
     deinit {
@@ -168,9 +237,9 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitViewOld
 }
 
 private class ContactWrapper: NSObject {
-    let contact: ContactFull
+    let contact: Exomind_Base_Contact
 
-    init(contact: ContactFull) {
+    init(contact: Exomind_Base_Contact) {
         self.contact = contact
     }
 }
@@ -220,15 +289,16 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         if let text = self.tokensField.text, !preventOnChange {
             // TODO: better validation...
             if (text != "" && text.contains("@")) {
-                let trimmed = text.trimmingCharacters(in: CharacterSet(charactersIn: ", \t\n"))
-                let contact = ContactFull(email: trimmed, name: nil)
+                var contact = Exomind_Base_Contact()
+                contact.email = text.trimmingCharacters(in: CharacterSet(charactersIn: ", \t\n"))
+
                 self.tokensField.add(self.contactToToken(contact))
                 self.onChange?()
             }
         }
     }
 
-    fileprivate func setContacts(_ contacts: [ContactFull]) {
+    fileprivate func setContacts(_ contacts: [Exomind_Base_Contact]) {
         self.preventOnChange = true
         self.tokensField.allTokens.forEach { (token) -> () in
             self.tokensField.remove(token)
@@ -239,13 +309,13 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         self.preventOnChange = false
     }
 
-    fileprivate func getContacts() -> [ContactFull] {
+    fileprivate func getContacts() -> [Exomind_Base_Contact] {
         self.tokensField.allTokens.compactMap { token in
             (token.context as? ContactWrapper)?.contact
         }
     }
 
-    private func contactToToken(_ contact: ContactFull) -> CLToken {
+    private func contactToToken(_ contact: Exomind_Base_Contact) -> CLToken {
         let displayName = EmailsLogic.formatContact(contact)
         return CLToken(displayText: displayName, context: ContactWrapper(contact: contact) as NSObject)
     }
@@ -254,3 +324,18 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         print("ContactsField > Deinit")
     }
 }
+
+private struct Account {
+    let entity: EntityExt
+    let trait: TraitInstance<Exomind_Base_Account>
+
+    var reference: Exocore_Index_Reference {
+        get {
+            var ref = Exocore_Index_Reference()
+            ref.entityID = entity.id
+            ref.traitID = trait.id
+            return ref
+        }
+    }
+}
+

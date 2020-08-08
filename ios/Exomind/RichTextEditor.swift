@@ -1,14 +1,15 @@
-
 import UIKit
 import SwiftyJSON
 import FontAwesome_swift
 import SnapKit
 
 class RichTextEditor: UIViewController {
-    var webview: RichTextEditorWebView!
-    var keyboardSpacing = CGFloat(250)
-    var hasFocus: Bool = false
     fileprivate weak var delegatedScrollView: UIScrollView?
+
+    fileprivate var webview: RichTextEditorWebView!
+    
+    private var keyboardHeight = CGFloat(250)
+    private var hasFocus: Bool = false
 
     convenience init(callback: @escaping (JSON?) -> Void) {
         self.init(nibName: nil, bundle: nil)
@@ -24,27 +25,30 @@ class RichTextEditor: UIViewController {
         KeyboardUtils.sharedInstance.addHiddenObserver(self, selector: #selector(handleKeyboardHidden))
     }
 
-    func setNoScroll(_ onScrollChange: ((CGPoint) -> Void)? = nil) {
+    func setNoScroll(_ onCursorPositionChange: ((CGPoint) -> Void)? = nil) {
         self.webview.scrollView.isScrollEnabled = false
         self.webview.setContentCompressionResistancePriority(UILayoutPriority.defaultHigh, for: .vertical)
-        self.webview.onScrollChange = onScrollChange
+        self.webview.onCursorPositionChange = onCursorPositionChange
     }
 
     func delegateScrollTo(_ delegatedScrollView: UIScrollView) {
         self.delegatedScrollView = delegatedScrollView
-        self.setNoScroll { [weak self] (contentOffset) -> Void in
-            guard let this = self else { return }
+        self.setNoScroll { [weak self] (cursorPosition) -> Void in
+            guard let this = self else {
+                return
+            }
 
-            let headerViewHeight = this.view.frame.minY
-            let scrollOffset = this.delegatedScrollView!.contentOffset.y
+            let previousContentHeight = this.view.frame.minY
+            let outterScrollOffset = this.delegatedScrollView!.contentOffset.y
+            let innerScrollOffset = this.webview.scrollView.contentOffset.y
             let scrollInset = this.delegatedScrollView!.contentInset.top
-            let diff = (contentOffset.y + headerViewHeight) - (scrollOffset + scrollInset)
+            let diff = (cursorPosition.y + previousContentHeight) - (outterScrollOffset + scrollInset)
 
             // size we tolerate between under top bar and beginning of keyboard
-            if (diff > 0 && diff < this.keyboardSpacing) {
+            if (diff > 0 && diff < this.keyboardHeight) {
                 print("RichTextEditor > Offset is already visible")
             } else {
-                print("RichTextEditor > contentOffset=\(contentOffset.y) headerViewHeight=\(headerViewHeight) scrollOffset=\(scrollOffset) scrollInset=\(scrollInset) diff=\(diff)")
+                print("RichTextEditor > contentOffset=\(cursorPosition.y) headerViewHeight=\(previousContentHeight) outterScrollOffset=\(outterScrollOffset) innerScrollOffset=\(innerScrollOffset) scrollInset=\(scrollInset) diff=\(diff)")
                 this.delegatedScrollView!.contentOffset = CGPoint(x: this.delegatedScrollView!.contentOffset.x, y: this.delegatedScrollView!.contentOffset.y + diff)
             }
         }
@@ -63,6 +67,12 @@ class RichTextEditor: UIViewController {
     @objc func handleKeyboardShown(_ notification: Notification) {
         self.webview.checkSize()
         self.hasFocus = true
+
+        // https://stackoverflow.com/questions/31774006/how-to-get-height-of-keyboard#33130819
+        if let keyboardFrame: NSValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
+            let keyboardRectangle = keyboardFrame.cgRectValue
+            self.keyboardHeight = keyboardRectangle.height
+        }
     }
 
     @objc func handleKeyboardHidden(_ notification: Notification) {
@@ -77,7 +87,7 @@ class RichTextEditor: UIViewController {
 }
 
 class RichTextEditorWebView: HybridWebView {
-    var onScrollChange: ((CGPoint) -> Void)?
+    var onCursorPositionChange: ((CGPoint) -> Void)?
 
     func initialize(_ callback: @escaping ((JSON?) -> Void)) {
         self.initialize("html-editor", callback: callback)
@@ -85,7 +95,7 @@ class RichTextEditorWebView: HybridWebView {
 
     override func handleCallbackData(_ json: JSON) {
         if let cursorY = json["cursorY"].number {
-            self.onScrollChange?(CGPoint(x: 0, y: cursorY.intValue))
+            self.onCursorPositionChange?(CGPoint(x: 0, y: cursorY.intValue))
             self.checkSize()
         } else {
             super.handleCallbackData(json)
@@ -154,12 +164,12 @@ class RichTextEditorToolsView: UIView {
     weak var editor: RichTextEditor!
 
     let buttons = [
-            ("bold", FontAwesome.bold),
-            ("italic", FontAwesome.italic),
-            ("list-ul", FontAwesome.listUl),
-            ("list-ol", FontAwesome.listOl),
-            ("indent", FontAwesome.indent),
-            ("outdent", FontAwesome.outdent),
+        ("bold", FontAwesome.bold),
+        ("italic", FontAwesome.italic),
+        ("list-ul", FontAwesome.listUl),
+        ("list-ol", FontAwesome.listOl),
+        ("indent", FontAwesome.indent),
+        ("outdent", FontAwesome.outdent),
     ]
 
     override init(frame: CGRect) {

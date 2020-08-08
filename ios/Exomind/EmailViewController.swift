@@ -15,14 +15,14 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
         self.entity = entity
         self.email = entity.trait(withId: trait.id)
-        self.render()
+        self.loadData()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         self.createFieldsView()
         self.createWebView()
-        self.render()
+        self.loadData()
     }
 
     private func createWebView() {
@@ -78,7 +78,7 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
         ])
     }
 
-    private func render() {
+    private func loadData() {
         guard let email = self.email, self.isViewLoaded else {
             return
         }
@@ -86,7 +86,7 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
         self.webview.loadEmailEntity(email.message.parts, short: false)
 
         self.fromLabel.text = EmailsLogic.formatContact(email.message.from)
-        self.subjectLabel.text = email.message.subject ?? "(no subject)"
+        self.subjectLabel.text = email.message.subject.nonEmpty() ?? "(no subject)"
 
         let joined = (email.message.to + email.message.cc).map {
             $0.name.nonEmpty() ?? $0.email
