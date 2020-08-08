@@ -45,7 +45,7 @@
 		6D3463CF1C4EDD64009CC326 /* TaskViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3463CE1C4EDD64009CC326 /* TaskViewController.swift */; };
 		6D3D466A1C84F3DC0037E51B /* EmailThreadOpenedTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3D46691C84F3DC0037E51B /* EmailThreadOpenedTableViewCell.swift */; };
 		6D3D466C1C84F3FC0037E51B /* EmailThreadAttachmentTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3D466B1C84F3FC0037E51B /* EmailThreadAttachmentTableViewCell.swift */; };
-		6D3D466E1C84F41D0037E51B /* EmailThreadCollapsedTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3D466D1C84F41D0037E51B /* EmailThreadCollapsedTableViewCell.swift */; };
+		6D3D466E1C84F41D0037E51B /* EmailThreadClosedTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3D466D1C84F41D0037E51B /* EmailThreadClosedTableViewCell.swift */; };
 		6D3D46701C84F6F20037E51B /* NoteViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3D466F1C84F6F20037E51B /* NoteViewController.swift */; };
 		6D3D46721C8620750037E51B /* KeyboardUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3D46711C8620750037E51B /* KeyboardUtils.swift */; };
 		6D452BA61DDD49CC0032AC8A /* ExomindHoneycombExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DFC7D831DD76EB60087346E /* ExomindHoneycombExtensions.swift */; };
@@ -208,7 +208,7 @@
 		6D3463CE1C4EDD64009CC326 /* TaskViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TaskViewController.swift; sourceTree = "<group>"; };
 		6D3D46691C84F3DC0037E51B /* EmailThreadOpenedTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailThreadOpenedTableViewCell.swift; sourceTree = "<group>"; };
 		6D3D466B1C84F3FC0037E51B /* EmailThreadAttachmentTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailThreadAttachmentTableViewCell.swift; sourceTree = "<group>"; };
-		6D3D466D1C84F41D0037E51B /* EmailThreadCollapsedTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailThreadCollapsedTableViewCell.swift; sourceTree = "<group>"; };
+		6D3D466D1C84F41D0037E51B /* EmailThreadClosedTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailThreadClosedTableViewCell.swift; sourceTree = "<group>"; };
 		6D3D466F1C84F6F20037E51B /* NoteViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoteViewController.swift; sourceTree = "<group>"; };
 		6D3D46711C8620750037E51B /* KeyboardUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyboardUtils.swift; sourceTree = "<group>"; };
 		6D4CCBD0215867D9004636AD /* IntentsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IntentsUI.framework; path = System/Library/Frameworks/IntentsUI.framework; sourceTree = SDKROOT; };
@@ -369,7 +369,7 @@
 				6DFC928C1C8F9D290024C960 /* EmailThreadOpenedTableViewCell.xib */,
 				6D3D46691C84F3DC0037E51B /* EmailThreadOpenedTableViewCell.swift */,
 				6D3D466B1C84F3FC0037E51B /* EmailThreadAttachmentTableViewCell.swift */,
-				6D3D466D1C84F41D0037E51B /* EmailThreadCollapsedTableViewCell.swift */,
+				6D3D466D1C84F41D0037E51B /* EmailThreadClosedTableViewCell.swift */,
 			);
 			name = EmailThreadView;
 			sourceTree = "<group>";
@@ -1006,7 +1006,7 @@
 				6D68E6E01C8F7998007BB8F4 /* ModalGridViewController.swift in Sources */,
 				6DB0E47B1C1F32FA000EE49A /* ObjectsIcon.swift in Sources */,
 				6D0304EA1C751BA50017B05D /* SFSafariHelper.swift in Sources */,
-				6D3D466E1C84F41D0037E51B /* EmailThreadCollapsedTableViewCell.swift in Sources */,
+				6D3D466E1C84F41D0037E51B /* EmailThreadClosedTableViewCell.swift in Sources */,
 				6D7781CC1C08BBDF00D45299 /* CollectionSelectorViewController.swift in Sources */,
 				6DE65AD11C6007AE0059CCBE /* NotificationsController.swift in Sources */,
 				6D570A6C1DCC171E00BD480F /* WebSocketBridgeExport.swift in Sources */,

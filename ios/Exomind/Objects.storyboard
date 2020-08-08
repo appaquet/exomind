@@ -70,7 +70,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <prototypes>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="collapsed" rowHeight="47" id="Pa3-Mx-pfv" userLabel="collapsed" customClass="EmailThreadCollapsedTableViewCell" customModule="Exomind" customModuleProvider="target">
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="collapsed" rowHeight="47" id="Pa3-Mx-pfv" userLabel="collapsed" customClass="EmailThreadClosedTableViewCell" customModule="Exomind" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="55.5" width="375" height="47"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Pa3-Mx-pfv" id="AwW-UD-AIp">

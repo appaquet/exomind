@@ -264,6 +264,10 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
         }
     }
 
+    func toAny() -> AnyTraitInstance? {
+        self.entity?.trait(anyWithId: self.id)
+    }
+
     private static func getDisplayName<M: Message>(constants: TraitConstants, message: M) -> String {
         if let name = constants.name {
             return name
