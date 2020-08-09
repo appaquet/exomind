@@ -5,12 +5,12 @@ class CollectionViewController: UIViewController, EntityTraitView {
     private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
 
     private var entity: EntityExt!
-    private var trait: AnyTraitInstance!
+    private var collection: TraitInstance<Exomind_Base_Collection>!
     private var entityListViewController: EntityListViewController!
 
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
         self.entity = entity
-        self.trait = trait
+        self.collection = entity.trait(withId: trait.id)
         self.title = trait.displayName
     }
 
@@ -74,25 +74,36 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func handleCollectionRename() {
-        // TODO:
-        //        let alert = UIAlertController(title: "Name", message: "Enter a new name", preferredStyle: UIAlertController.Style.alert)
-        //        alert.addTextField(configurationHandler: { [weak self] (textField: UITextField!) in
-        //            textField.text = self?.trait.displayName
-        //            textField.isSecureTextEntry = false
-        //        })
-        //        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in
-        //            guard let this = self else {
-        //                return
-        //            }
-        //            let newName = alert.textFields![0] as UITextField
-        //
-        //            if let collection = this.trait.trait as? CollectionFull, let name = newName.text {
-        //                collection.name = name
-        //                ExomindDSL.on(this.trait.entity).mutate.update(collection).execute()
-        //            }
-        //        }))
-        //        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        //        self.present(alert, animated: true, completion: nil)
+        let alert = UIAlertController(title: "Name", message: "Enter a new name", preferredStyle: UIAlertController.Style.alert)
+        alert.addTextField(configurationHandler: { [weak self] (textField: UITextField!) in
+            textField.text = self?.collection.displayName
+            textField.isSecureTextEntry = false
+        })
+        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in
+            let newName = alert.textFields![0] as UITextField
+
+            guard let this = self,
+                  let entity = self?.entity,
+                  let collection = self?.collection,
+                  let name = newName.text else {
+                return
+            }
+
+            var newCollection = collection.message
+            newCollection.name = name
+
+            do {
+                let mutation = try MutationBuilder
+                        .updateEntity(entityId: entity.id)
+                        .putTrait(message: newCollection, traitId: collection.id)
+                        .build()
+                ExocoreClient.store.mutate(mutation: mutation)
+            } catch {
+                print("CollectionViewController> Couldn't rename \(error)")
+            }
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        self.present(alert, animated: true, completion: nil)
     }
 
     private func handleCreateObject() -> ()? {
