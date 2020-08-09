@@ -40,6 +40,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
 
         self.searchBar = UISearchBar()
         self.navigationItem.titleView = self.searchBar
+        self.searchBar.becomeFirstResponder()
         self.searchBar.placeholder = "Filter"
         self.searchBar.delegate = self
 

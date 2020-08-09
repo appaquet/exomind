@@ -172,7 +172,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
         self.toField.setContacts(draft.to)
         self.ccField.setContacts(draft.cc)
         self.subjectField.text = draft.subject
-        self.richTextEditor.setContent(draft.parts.first?.body ?? "Some text")
+        self.richTextEditor.setContent(draft.parts.first?.body ?? "")
     }
 
     private func saveDraft() {

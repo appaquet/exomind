@@ -74,24 +74,25 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func handleCollectionRename() {
-//        let alert = UIAlertController(title: "Name", message: "Enter a new name", preferredStyle: UIAlertController.Style.alert)
-//        alert.addTextField(configurationHandler: { [weak self] (textField: UITextField!) in
-//            textField.text = self?.trait.displayName
-//            textField.isSecureTextEntry = false
-//        })
-//        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in
-//            guard let this = self else {
-//                return
-//            }
-//            let newName = alert.textFields![0] as UITextField
-//
-//            if let collection = this.trait.trait as? CollectionFull, let name = newName.text {
-//                collection.name = name
-//                ExomindDSL.on(this.trait.entity).mutate.update(collection).execute()
-//            }
-//        }))
-//        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-//        self.present(alert, animated: true, completion: nil)
+        // TODO:
+        //        let alert = UIAlertController(title: "Name", message: "Enter a new name", preferredStyle: UIAlertController.Style.alert)
+        //        alert.addTextField(configurationHandler: { [weak self] (textField: UITextField!) in
+        //            textField.text = self?.trait.displayName
+        //            textField.isSecureTextEntry = false
+        //        })
+        //        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in
+        //            guard let this = self else {
+        //                return
+        //            }
+        //            let newName = alert.textFields![0] as UITextField
+        //
+        //            if let collection = this.trait.trait as? CollectionFull, let name = newName.text {
+        //                collection.name = name
+        //                ExomindDSL.on(this.trait.entity).mutate.update(collection).execute()
+        //            }
+        //        }))
+        //        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        //        self.present(alert, animated: true, completion: nil)
     }
 
     private func handleCreateObject() -> ()? {
