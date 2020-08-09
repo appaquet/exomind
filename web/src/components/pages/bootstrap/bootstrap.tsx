@@ -22,7 +22,7 @@ export default class Loading extends React.Component<IProps, IState> {
   render(): React.ReactNode {
     return (
       <div className="node-bootstrap">
-        <h2>Node boostrap</h2>
+        <h2>Node bootstrap</h2>
 
         <div className="input">
           <textarea value={this.state.config} onChange={this.handleChange.bind(this)}/>

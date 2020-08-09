@@ -18,6 +18,7 @@
 		6D00E16C1C03A3D000B2F7E0 /* js in Resources */ = {isa = PBXBuildFile; fileRef = 6D00E16B1C03A3D000B2F7E0 /* js */; };
 		6D00E16E1C03A96900B2F7E0 /* HybridWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D00E16D1C03A96900B2F7E0 /* HybridWebView.swift */; };
 		6D0304EA1C751BA50017B05D /* SFSafariHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0304E91C751BA50017B05D /* SFSafariHelper.swift */; };
+		6D069E6024DF7C00008983DF /* BootstrapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D069E5F24DF7C00008983DF /* BootstrapViewController.swift */; };
 		6D0AE8C51E04EBE700F5F6CE /* Debounce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */; };
 		6D0C3AF81C20F7D700A3D393 /* EmailThreadViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0C3AF71C20F7D700A3D393 /* EmailThreadViewController.swift */; };
 		6D0F6B611C331A2B00AB9DEC /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0F6B601C331A2B00AB9DEC /* ActionViewController.swift */; };
@@ -88,7 +89,6 @@
 		6DD392061C8680A600B959E8 /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DD392051C8680A600B959E8 /* RichTextEditor.swift */; };
 		6DDEDB5B24BA118C00A345BC /* base.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D695D8D24BA04AF00E1BA39 /* base.pb.swift */; };
 		6DDEDB5C24BA119500A345BC /* base.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D695D8D24BA04AF00E1BA39 /* base.pb.swift */; };
-		6DE65AC71C5EA71B0059CCBE /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65AC61C5EA71B0059CCBE /* LoginViewController.swift */; };
 		6DE65AC91C5FAC850059CCBE /* SplashViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65AC81C5FAC850059CCBE /* SplashViewController.swift */; };
 		6DE65ACB1C5FB5520059CCBE /* RootNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65ACA1C5FB5520059CCBE /* RootNavigationController.swift */; };
 		6DE65ACD1C5FEABD0059CCBE /* HttpUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65ACC1C5FEABD0059CCBE /* HttpUtils.swift */; };
@@ -148,6 +148,7 @@
 		6D00E16B1C03A3D000B2F7E0 /* js */ = {isa = PBXFileReference; lastKnownFileType = folder; path = js; sourceTree = "<group>"; };
 		6D00E16D1C03A96900B2F7E0 /* HybridWebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HybridWebView.swift; sourceTree = "<group>"; };
 		6D0304E91C751BA50017B05D /* SFSafariHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SFSafariHelper.swift; sourceTree = "<group>"; };
+		6D069E5F24DF7C00008983DF /* BootstrapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BootstrapViewController.swift; sourceTree = "<group>"; };
 		6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Debounce.swift; sourceTree = "<group>"; };
 		6D0C3AF71C20F7D700A3D393 /* EmailThreadViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailThreadViewController.swift; sourceTree = "<group>"; };
 		6D0F6B5E1C331A2B00AB9DEC /* ExomindActionExt.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ExomindActionExt.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -202,7 +203,6 @@
 		6DAB3F4E1D32F74000E08229 /* ExomindTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ExomindTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6DAB3F521D32F74000E08229 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6DB0E47A1C1F32FA000EE49A /* ObjectsIcon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ObjectsIcon.swift; sourceTree = "<group>"; };
-		6DB3BC2D1F5457EC000137A4 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "../../../conf/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		6DC0D25A1BC418F900F14571 /* JSBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSBridge.swift; sourceTree = "<group>"; };
 		6DC0D2601BC43CD700F14571 /* WebSocketBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebSocketBridge.swift; sourceTree = "<group>"; };
 		6DC0D2621BC43D9600F14571 /* XMLHttpRequestBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XMLHttpRequestBridge.swift; sourceTree = "<group>"; };
@@ -219,7 +219,6 @@
 		6DCE042B1BFE709A00DF8A34 /* Stylesheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Stylesheet.swift; sourceTree = "<group>"; };
 		6DCE042F1BFFCC2100DF8A34 /* EmailViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailViewController.swift; sourceTree = "<group>"; };
 		6DD392051C8680A600B959E8 /* RichTextEditor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
-		6DE65AC61C5EA71B0059CCBE /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		6DE65AC81C5FAC850059CCBE /* SplashViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SplashViewController.swift; sourceTree = "<group>"; };
 		6DE65ACA1C5FB5520059CCBE /* RootNavigationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RootNavigationController.swift; sourceTree = "<group>"; };
 		6DE65ACC1C5FEABD0059CCBE /* HttpUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpUtils.swift; sourceTree = "<group>"; };
@@ -338,14 +337,12 @@
 				6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */,
 				6DC0D2791BC5D57400F14571 /* UI */,
 				6DC0D25F1BC43CA700F14571 /* Core */,
-				6DE65AD21C600B0C0059CCBE /* Controllers */,
 				6DC0D26E1BC554B900F14571 /* Utils */,
 				6D15CF4F1C064D18002F09A6 /* Resources */,
 				6D695D8B24BA04AF00E1BA39 /* protos */,
 				6D5D07831BC40D0A007D0011 /* Assets.xcassets */,
 				6D0F6B6E1C331E2C00AB9DEC /* Exomind.entitlements */,
 				6D5D07851BC40D0A007D0011 /* LaunchScreen.storyboard */,
-				6DB3BC2D1F5457EC000137A4 /* GoogleService-Info.plist */,
 				6D5D07881BC40D0A007D0011 /* Info.plist */,
 			);
 			path = Exomind;
@@ -368,7 +365,7 @@
 			children = (
 				6DE65ACA1C5FB5520059CCBE /* RootNavigationController.swift */,
 				6DE65AC81C5FAC850059CCBE /* SplashViewController.swift */,
-				6DE65AC61C5EA71B0059CCBE /* LoginViewController.swift */,
+				6D069E5F24DF7C00008983DF /* BootstrapViewController.swift */,
 				6D00E1671C03544900B2F7E0 /* TabBarController.swift */,
 				6DC0D2711BC58B5D00F14571 /* NavigationController.swift */,
 				6DCE04211BFA8F2200DF8A34 /* EntityViewController.swift */,
@@ -446,6 +443,7 @@
 				6D712F3224CC7B1C009D6989 /* ExocoreUtils.swift */,
 				45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */,
 				45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */,
+				6DE65AD01C6007AE0059CCBE /* NotificationsController.swift */,
 				45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */,
 			);
 			name = Core;
@@ -504,14 +502,6 @@
 			name = Javascript;
 			sourceTree = "<group>";
 		};
-		6DE65AD21C600B0C0059CCBE /* Controllers */ = {
-			isa = PBXGroup;
-			children = (
-				6DE65AD01C6007AE0059CCBE /* NotificationsController.swift */,
-			);
-			name = Controllers;
-			sourceTree = "<group>";
-		};
 		F4D35BADCA25BF4C5F214204 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -558,8 +548,6 @@
 				6D5D07771BC40D0A007D0011 /* Resources */,
 				6D0F6B6C1C331A2C00AB9DEC /* Embed App Extensions */,
 				1A9ED28F4D3D78BD9CD620DD /* [CP] Embed Pods Frameworks */,
-				D7F55D1815D1C001A5180999 /* [CP] Copy Pods Resources */,
-				6D0F6B421C33088C00AB9DEC /* Fabric */,
 			);
 			buildRules = (
 			);
@@ -708,8 +696,6 @@
 				"${BUILT_PRODUCTS_DIR}/Dwifft/Dwifft.framework",
 				"${BUILT_PRODUCTS_DIR}/Exocore/Exocore.framework",
 				"${BUILT_PRODUCTS_DIR}/FontAwesome.swift/FontAwesome_swift.framework",
-				"${BUILT_PRODUCTS_DIR}/GTMSessionFetcher/GTMSessionFetcher.framework",
-				"${BUILT_PRODUCTS_DIR}/GoogleToolboxForMac/GoogleToolboxForMac.framework",
 				"${BUILT_PRODUCTS_DIR}/KeychainSwift/KeychainSwift.framework",
 				"${BUILT_PRODUCTS_DIR}/MCSwipeTableViewCell/MCSwipeTableViewCell.framework",
 				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
@@ -725,8 +711,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Dwifft.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Exocore.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FontAwesome_swift.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GTMSessionFetcher.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleToolboxForMac.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KeychainSwift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MCSwipeTableViewCell.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
@@ -761,20 +745,6 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ExomindTests/Pods-ExomindTests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
-		};
-		6D0F6B421C33088C00AB9DEC /* Fabric */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = Fabric;
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Fabric/run\" c3553f97969289ba0a2065d531b609f15fbd894b 211390adcf1e09eb7a7fdcc3faaff4fab3dbb3ba7a0fdb4ad4dcf7c2097c308f\n";
 		};
 		817F3D15B590661293C373F1 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -830,24 +800,6 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		D7F55D1815D1C001A5180999 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Exomind/Pods-Exomind-resources.sh",
-				"${PODS_ROOT}/GoogleSignIn/Resources/GoogleSignIn.bundle",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleSignIn.bundle",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Exomind/Pods-Exomind-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -869,6 +821,7 @@
 				6D5391001C6EE29F0019E56E /* URLWebViewController.swift in Sources */,
 				6D3D46701C84F6F20037E51B /* NoteViewController.swift in Sources */,
 				6DC0D2611BC43CD700F14571 /* WebSocketBridge.swift in Sources */,
+				6D069E6024DF7C00008983DF /* BootstrapViewController.swift in Sources */,
 				6DCE04261BFAA2DE00DF8A34 /* InboxViewController.swift in Sources */,
 				6DD392061C8680A600B959E8 /* RichTextEditor.swift in Sources */,
 				6D9F68331C99C78C00FFC7D9 /* LabelledFieldView.swift in Sources */,
@@ -890,7 +843,6 @@
 				6D9F68311C999AD100FFC7D9 /* DraftEmailViewController.swift in Sources */,
 				6D3463CF1C4EDD64009CC326 /* TaskViewController.swift in Sources */,
 				6D68E6DD1C8F74F1007BB8F4 /* GridIconsView.swift in Sources */,
-				6DE65AC71C5EA71B0059CCBE /* LoginViewController.swift in Sources */,
 				6D4CCBE721587052004636AD /* ExtensionUtils.swift in Sources */,
 				6DE65ACB1C5FB5520059CCBE /* RootNavigationController.swift in Sources */,
 				6D68E6D51C8A76A4007BB8F4 /* EmailThreadHeader.swift in Sources */,

@@ -202,7 +202,7 @@ class RichTextEditorToolsView: UIView {
             make.centerY.equalTo(self.snp.centerY)
         }
 
-        var closeButton = UIButton()
+        let closeButton = UIButton()
         closeButton.setTitle("Done", for: .normal)
         closeButton.setTitleColor(UIColor.label, for: .normal)
         closeButton.addTarget(self, action: #selector(handleCloseKeyboard), for: .touchUpInside)

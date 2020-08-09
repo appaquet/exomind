@@ -1,7 +1,7 @@
 import UIKit
 
 class SplashViewController: UIViewController {
-    @IBAction func skipLogin(_ sender: AnyObject) {
-        (self.navigationController as? RootNavigationController)?.showLogin()
+    @IBAction func showBootstrap(_ sender: AnyObject) {
+        (self.navigationController as? RootNavigationController)?.showBootstrap(fromRoot: true)
     }
 }

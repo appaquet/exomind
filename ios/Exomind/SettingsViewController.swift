@@ -5,14 +5,11 @@ import KeychainSwift
 class SettingsViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch ((indexPath as NSIndexPath).section, (indexPath as NSIndexPath).item) {
-        case (0, 0): // exomind bar
+        case (0, 0): // edit favorites
             self.exomindBar()
 
-        case (1, 0): // feedback
-            self.feedback()
-
-        case (2, 0): // logout
-            self.logout()
+        case (1, 0): // cell config
+            self.cellConfig()
 
         default:
             print("SettingsViewController > Unhandled setting \(indexPath)")
@@ -25,6 +22,10 @@ class SettingsViewController: UITableViewController {
 //        }
     }
 
+    func cellConfig() {
+        RootNavigationController.mainInstance()?.showBootstrap(fromRoot: false)
+    }
+
     func logout() {
         Alamofire
                 .request("https://exomind.io/logout")
@@ -34,8 +35,5 @@ class SettingsViewController: UITableViewController {
 
         HttpUtils.wipeCookies()
         JSBridge.instance.resetConnections()
-    }
-
-    func feedback() {
     }
 }

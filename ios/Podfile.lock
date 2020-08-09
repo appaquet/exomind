@@ -1,26 +1,10 @@
 PODS:
   - Alamofire (4.9.1)
   - CLTokenInputView (2.3.0)
-  - Crashlytics (3.14.0):
-    - Fabric (~> 1.10.2)
   - Dwifft (0.9)
   - Exocore (0.1.0):
     - SwiftProtobuf (~> 1.10)
-  - Fabric (1.10.2)
   - FontAwesome.swift (1.9.0)
-  - GoogleSignIn (4.4.0):
-    - "GoogleToolboxForMac/NSDictionary+URLArguments (~> 2.1)"
-    - "GoogleToolboxForMac/NSString+URLArguments (~> 2.1)"
-    - GTMSessionFetcher/Core (~> 1.1)
-  - GoogleToolboxForMac/DebugUtils (2.2.2):
-    - GoogleToolboxForMac/Defines (= 2.2.2)
-  - GoogleToolboxForMac/Defines (2.2.2)
-  - "GoogleToolboxForMac/NSDictionary+URLArguments (2.2.2)":
-    - GoogleToolboxForMac/DebugUtils (= 2.2.2)
-    - GoogleToolboxForMac/Defines (= 2.2.2)
-    - "GoogleToolboxForMac/NSString+URLArguments (= 2.2.2)"
-  - "GoogleToolboxForMac/NSString+URLArguments (2.2.2)"
-  - GTMSessionFetcher/Core (1.4.0)
   - KeychainSwift (13.0.0)
   - MCSwipeTableViewCell (2.1.4)
   - SnapKit (4.2.0)
@@ -32,12 +16,9 @@ PODS:
 DEPENDENCIES:
   - Alamofire (~> 4.8)
   - CLTokenInputView
-  - Crashlytics
   - Dwifft (~> 0.9)
   - Exocore (from `https://github.com/appaquet/exocore.git`, branch `releases/v0.1`)
-  - Fabric
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
-  - GoogleSignIn (~> 4.4)
   - KeychainSwift (~> 13.0)
   - MCSwipeTableViewCell
   - SnapKit (~> 4.2.0)
@@ -50,12 +31,7 @@ SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - Alamofire
     - CLTokenInputView
-    - Crashlytics
     - Dwifft
-    - Fabric
-    - GoogleSignIn
-    - GoogleToolboxForMac
-    - GTMSessionFetcher
     - KeychainSwift
     - MCSwipeTableViewCell
     - SnapKit
@@ -86,14 +62,9 @@ CHECKOUT OPTIONS:
 SPEC CHECKSUMS:
   Alamofire: 85e8a02c69d6020a0d734f6054870d7ecb75cf18
   CLTokenInputView: 9dc1ffb7c9d2d81787e69a63c75bd97b0b2d1e76
-  Crashlytics: 540b7e5f5da5a042647227a5e3ac51d85eed06df
   Dwifft: 42912068ed2a8146077d1a1404df18625bd086e1
   Exocore: bb9e18f6f765625b2e5fae34e2657dcba90c26e9
-  Fabric: 706c8b8098fff96c33c0db69cbf81f9c551d0d74
   FontAwesome.swift: a403b88cec950511745ba8f2decd1b6a07346d13
-  GoogleSignIn: 7ff245e1a7b26d379099d3243a562f5747e23d39
-  GoogleToolboxForMac: 800648f8b3127618c1b59c7f97684427630c5ea3
-  GTMSessionFetcher: 6f5c8abbab8a9bce4bb3f057e317728ec6182b10
   KeychainSwift: 23d6c16cbc33f20fafa30c3d783241b4b87d998c
   MCSwipeTableViewCell: 1b303e16c3a26b1982f3a68386e9b8c5fc8344c3
   SnapKit: fe8a619752f3f27075cc9a90244d75c6c3f27e2a
@@ -102,6 +73,6 @@ SPEC CHECKSUMS:
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: 9f8aaf61f19204c9ec93e48842c9dab8adc2482d
+PODFILE CHECKSUM: 89fc5e5882d998ff0b2b84b9540e4a8bc978517b
 
 COCOAPODS: 1.9.3

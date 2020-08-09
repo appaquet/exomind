@@ -10,23 +10,15 @@ class RootNavigationController: UINavigationController {
     }
 
     override func viewDidLoad() {
-        self.checkViewStatus()
+        self.showStateView()
     }
 
-    @objc func checkViewStatus() {
-        // TODO: Check if bootstrapped
-        self.showTabBar()
-//        if (DomainStore.instance.unauthorized()) {
-//            self.showLogin()
-//        } else {
-//            let onTabBar = self.topViewController as? TabBarController != nil
-//            if (DomainStore.instance.connected() || onTabBar) {
-//                self.showTabBar()
-//            } else {
-//                self.showSplash()
-//            }
-//        }
-//        self.perform(#selector(checkViewStatus), with: nil, afterDelay: 5.0)
+    @objc func showStateView() {
+        if !ExocoreUtils.initialized {
+            self.showBootstrap(fromRoot: true)
+        } else {
+            self.showTabBar()
+        }
     }
 
     func showTabBar() {
@@ -39,11 +31,18 @@ class RootNavigationController: UINavigationController {
         }
     }
 
-    func showLogin() {
-        let onLogin = self.topViewController as? LoginViewController != nil
-        if (!onLogin) {
-            self.popToRootViewController(animated: false)
-            let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "loginViewController")
+    func showBootstrap(fromRoot: Bool) {
+        let onBootstrap = self.topViewController as? BootstrapViewController != nil
+        if (!onBootstrap) {
+            if fromRoot {
+                self.popToRootViewController(animated: false)
+            }
+
+            let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "bootstrapViewController") as! BootstrapViewController
+            vc.onDone = { [weak self] in
+                self?.popToRootViewController(animated: false)
+                self?.showStateView()
+            }
             self.show(vc, sender: self)
         }
     }
@@ -60,5 +59,4 @@ class RootNavigationController: UINavigationController {
             tabBar.show(navigationObject: navigationObject)
         }
     }
-
 }

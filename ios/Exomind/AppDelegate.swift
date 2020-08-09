@@ -1,23 +1,15 @@
 import UIKit
 import KeychainSwift
-import GoogleSignIn
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
-
+class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     var inForeground: Bool = true
-
-    var googleSigninCallback: ((GIDGoogleUser) -> Void)?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         HttpUtils.copyCookiesToKeychain()
 
-        let gidSignIn = GIDSignIn.sharedInstance()
-        gidSignIn?.delegate = self
-        gidSignIn?.clientID = "1054868499665-2jnactlmaqpl24i4nfrf5mk007cu6t5i.apps.googleusercontent.com"
-        gidSignIn?.serverClientID = "1054868499665-ikokqsknv905fn5lipkrglovnnfqjgha.apps.googleusercontent.com"
-        gidSignIn?.scopes = ["https://mail.google.com/"]
+        ExocoreUtils.initialize()
 
         let websocketBridgeFactory = RealWebSocketBridgeFactory()
         let ajaxBridgeFactory = RealXMLHttpRequestBridgeFactory()
@@ -25,8 +17,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
 
         // see https://github.com/tokio-rs/mio/issues/949
         signal(SIGPIPE, SIG_IGN)
-
-        ExocoreUtils.initialize()
 
         return true
     }
@@ -59,21 +49,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
 
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
         NotificationsController.didReceiveRemoteNotification(userInfo, inForeground: self.inForeground)
-    }
-
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        return GIDSignIn.sharedInstance().handle(url,
-                sourceApplication: options[UIApplication.OpenURLOptionsKey.sourceApplication] as? String,
-                annotation: [:])
-    }
-
-    func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!, withError error: Error!) {
-        print("Got sigin from google for user \(String(describing: user))")
-        self.googleSigninCallback?(user)
-    }
-
-    func sign(_ signIn: GIDSignIn!, didDisconnectWith user: GIDGoogleUser!, withError error: Error!) {
-        print("Got disconnect from google \(String(describing: user)))")
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
