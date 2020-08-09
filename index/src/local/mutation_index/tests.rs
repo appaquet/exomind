@@ -4,7 +4,10 @@ use itertools::Itertools;
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_index::{Reference, Trait};
 use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
-use exocore_core::protos::prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt};
+use exocore_core::protos::{
+    index::TraitDetails,
+    prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt},
+};
 
 use crate::ordering::{value_from_f32, value_from_u64, OrderingValueExt};
 use crate::query::{QueryBuilder as Q, TraitQueryBuilder as TQ};
@@ -1132,6 +1135,7 @@ fn trait_dates() -> anyhow::Result<()> {
             ),
             creation_date: Some(creation_date.to_proto_timestamp()),
             modification_date: Some(modification_date.to_proto_timestamp()),
+            details: TraitDetails::Full.into(),
         },
     });
     index.apply_operation(trait1)?;

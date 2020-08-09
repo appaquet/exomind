@@ -2,10 +2,11 @@ use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetad
 use crate::entity::TraitId;
 use crate::error::Error;
 use crate::{ordering::OrderingValueWrapper, query::ResultHash};
+use chrono::{DateTime, Utc};
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::{
     generated::exocore_index::EntityResult as EntityResultProto,
-    index::{Projection, Trait},
+    index::{Projection, Trait, TraitDetails},
     reflect::{FieldId, MutableReflectMessage, ReflectMessage},
     registry::Registry,
 };
@@ -21,7 +22,7 @@ pub struct EntityResult {
     pub matched_mutation: MutationMetadata,
     pub ordering_value: OrderingValueWrapper,
     pub proto: EntityResultProto,
-    pub mutations: Rc<MutationAggregator>,
+    pub mutations: Rc<EntityAggregator>,
 }
 
 /// Aggregates mutations metadata of an entity retrieved from the mutations
@@ -31,7 +32,7 @@ pub struct EntityResult {
 /// Operations are merged in order they got committed to the chain, and then
 /// operation id within a block. If an old operation gets committed after a
 /// newer operation, the old operation gets discarded to prevent inconsistency.
-pub struct MutationAggregator {
+pub struct EntityAggregator {
     // final traits mutation metadata of the entity once all mutations were aggregated
     pub trait_mutations: HashMap<TraitId, MutationMetadata>,
 
@@ -43,10 +44,16 @@ pub struct MutationAggregator {
 
     // hash of the operations of the entity
     pub hash: ResultHash,
+
+    // date of the creation of entity, based on put trait creation date OR first operation
+    pub creation_date: Option<DateTime<Utc>>,
+
+    // date of the modification of entity, based on put trait modifcation date OR last operation
+    pub modification_date: Option<DateTime<Utc>>,
 }
 
-impl MutationAggregator {
-    pub fn new<I>(mutations_metadata: I) -> Result<MutationAggregator, Error>
+impl EntityAggregator {
+    pub fn new<I>(mutations_metadata: I) -> Result<EntityAggregator, Error>
     where
         I: Iterator<Item = MutationMetadata>,
     {
@@ -57,12 +64,17 @@ impl MutationAggregator {
             (block_offset, result.operation_id)
         });
 
+        let mut entity_creation_date = None;
+        let mut entity_modification_date = None;
+
         let mut hasher = result_hasher();
         let mut trait_mutations = HashMap::<TraitId, MutationMetadata>::new();
         let mut active_operation_ids = HashSet::<OperationId>::new();
         let mut latest_operation_id = None;
         for mut current_mutation in ordered_mutations_metadata {
             let current_operation_id = current_mutation.operation_id;
+            let current_operation_time =
+                ConsistentTimestamp::from(current_operation_id).to_datetime();
 
             // hashing operations instead of traits content allow invalidating results as
             // soon as one operation is made since we can't guarantee anything
@@ -87,6 +99,17 @@ impl MutationAggregator {
                         opt_prev_trait_mutation,
                     );
 
+                    if entity_creation_date.is_none()
+                        || put_trait.creation_date < entity_creation_date
+                    {
+                        entity_creation_date = put_trait.creation_date;
+                    }
+                    if entity_modification_date.is_none()
+                        || put_trait.modification_date < entity_modification_date
+                    {
+                        entity_modification_date = put_trait.modification_date;
+                    }
+
                     active_operation_ids.insert(current_operation_id);
                     trait_mutations.insert(put_trait.trait_id.clone(), current_mutation);
                 }
@@ -102,6 +125,10 @@ impl MutationAggregator {
                     }
                     active_operation_ids.insert(current_operation_id);
                     trait_mutations.remove(trait_id);
+
+                    if Some(current_operation_time) > entity_modification_date {
+                        entity_modification_date = Some(current_operation_time);
+                    }
                 }
                 MutationType::EntityTombstone => {
                     if let Some(latest_operation_id) = latest_operation_id {
@@ -115,6 +142,8 @@ impl MutationAggregator {
                     active_operation_ids.clear();
                     active_operation_ids.insert(current_operation_id);
                     trait_mutations.clear();
+                    entity_creation_date = None;
+                    entity_modification_date = None;
                 }
             }
 
@@ -123,11 +152,13 @@ impl MutationAggregator {
             }
         }
 
-        Ok(MutationAggregator {
+        Ok(EntityAggregator {
             trait_mutations,
             trait_projections: HashMap::new(),
             active_operations: active_operation_ids,
             hash: hasher.finish(),
+            creation_date: entity_creation_date,
+            modification_date: entity_modification_date,
         })
     }
 
@@ -273,6 +304,7 @@ pub fn project_trait(
             let _ = dyn_msg.clear_field_value(field_id);
         }
         trt.message = Some(dyn_msg.encode_to_prost_any()?);
+        trt.details = TraitDetails::Partial.into();
     }
 
     Ok(())
@@ -306,7 +338,7 @@ mod tests {
             mock_put_trait(&t2, TYPE1, Some(2), 4, None, None),
         ];
 
-        let em = MutationAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
         assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 3);
         assert_eq!(em.trait_mutations.get(&t2).unwrap().operation_id, 5);
         assert_eq!(em.trait_mutations.get(&t3).unwrap().operation_id, 6);
@@ -327,7 +359,7 @@ mod tests {
         ];
 
         // operation 1 should be discarded, and only operation 2 active
-        let em = MutationAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
         assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 2);
         assert!(em.active_operations.contains(&2));
     }
@@ -341,7 +373,7 @@ mod tests {
             mock_delete_trait(&t1, Some(2), 2),
         ];
 
-        let em = MutationAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
         assert!(em.trait_mutations.get(&t1).is_none());
         assert!(em.active_operations.contains(&2));
     }
@@ -358,7 +390,7 @@ mod tests {
 
         // delete operation should be discarded since an operation happened on the trait
         // before it got committed
-        let em = MutationAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
         assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 2);
         assert!(em.active_operations.contains(&2))
     }
@@ -372,7 +404,7 @@ mod tests {
             mock_delete_entity(Some(2), 2),
         ];
 
-        let em = MutationAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
         assert!(em.trait_mutations.get(&t1).is_none());
         assert!(em.active_operations.contains(&2));
     }
@@ -387,17 +419,17 @@ mod tests {
             mock_put_trait(&t1, TYPE1, Some(2), 1, None, None),
         ];
 
-        let em = MutationAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
         assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 1);
         assert!(em.active_operations.contains(&1));
     }
 
     #[test]
-    fn merge_mutations_dates() {
+    fn merge_trait_dates() {
         let t1 = "t1".to_string();
 
         let merge_mutations = |mutations: Vec<MutationMetadata>| -> MutationMetadata {
-            let mut em = MutationAggregator::new(mutations.into_iter()).unwrap();
+            let mut em = EntityAggregator::new(mutations.into_iter()).unwrap();
             em.trait_mutations.remove(&t1).unwrap()
         };
 
@@ -436,6 +468,69 @@ mod tests {
                 mock_put_trait(&t1, TYPE1, Some(2), 7, None, None),
             ]);
             assert_modification_date(&mutation, Some(7));
+        }
+    }
+
+    #[test]
+    fn entity_dates() {
+        let t1 = "t1".to_string();
+
+        let assert_dates = |em: &EntityAggregator,
+                            creation: Option<OperationId>,
+                            modification: Option<OperationId>| {
+            assert_eq!(
+                em.creation_date,
+                creation.map(|c| ConsistentTimestamp::from(c).to_datetime()),
+            );
+            assert_eq!(
+                em.modification_date,
+                modification.map(|m| ConsistentTimestamp::from(m).to_datetime()),
+            );
+        };
+
+        {
+            // creation date based on operation
+            let mutations = vec![mock_put_trait(&t1, TYPE1, Some(2), 1, None, None)];
+            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            assert_dates(&em, Some(1), None);
+        }
+
+        {
+            // explicit dates
+            let mutations = vec![mock_put_trait(&t1, TYPE1, Some(2), 10, Some(1), Some(2))];
+            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            assert_dates(&em, Some(1), Some(2));
+        }
+
+        {
+            // multiple mutations operations based dates
+            let mutations = vec![
+                mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
+                mock_put_trait(&t1, TYPE1, Some(3), 11, None, None),
+            ];
+            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            assert_dates(&em, Some(10), Some(11));
+        }
+
+        {
+            // trait deletion counts as modification
+            let mutations = vec![
+                mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
+                mock_delete_trait(&t1, Some(3), 11),
+            ];
+            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            assert_dates(&em, Some(10), Some(11));
+        }
+
+        {
+            // entity deletion resets dates
+            let mutations = vec![
+                mock_put_trait(&t1, TYPE1, Some(2), 1, Some(10), Some(11)),
+                mock_delete_entity(Some(2), 2),
+                mock_put_trait(&t1, TYPE1, Some(3), 3, Some(20), Some(21)),
+            ];
+            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            assert_dates(&em, Some(20), Some(21));
         }
     }
 
@@ -490,7 +585,7 @@ mod tests {
         let t1 = "t1";
         let t2 = "t2";
 
-        fn assert_projection_id(em: &MutationAggregator, trait_id: &str, id: u32) {
+        fn assert_projection_id(em: &EntityAggregator, trait_id: &str, id: u32) {
             assert_eq!(em.trait_projections.get(trait_id).unwrap().field_ids[0], id,);
         }
 
@@ -500,7 +595,7 @@ mod tests {
                 mock_put_trait(t1, TYPE1, Some(1), 1, None, None),
                 mock_put_trait(t2, TYPE2, Some(1), 2, None, None),
             ];
-            let mut em = MutationAggregator::new(mutations.into_iter()).unwrap();
+            let mut em = EntityAggregator::new(mutations.into_iter()).unwrap();
             em.annotate_projections(&[Projection {
                 package: vec!["exocore.test".to_string()],
                 field_ids: vec![1],
@@ -517,7 +612,7 @@ mod tests {
                 mock_put_trait(t1, TYPE1, Some(1), 1, None, None),
                 mock_put_trait(t2, TYPE2, Some(1), 2, None, None),
             ];
-            let mut em = MutationAggregator::new(mutations.into_iter()).unwrap();
+            let mut em = EntityAggregator::new(mutations.into_iter()).unwrap();
             em.annotate_projections(&[
                 Projection {
                     package: vec![format!("{}$", TYPE1)],
@@ -547,7 +642,9 @@ mod tests {
             ..Default::default()
         };
 
-        let project = |fields: Vec<FieldId>, groups: Vec<FieldGroupId>| -> TestMessage {
+        let project = |fields: Vec<FieldId>,
+                       groups: Vec<FieldGroupId>|
+         -> (TestMessage, TraitDetails) {
             let mut trt = Trait {
                 message: Some(msg.pack_to_any().unwrap()),
                 ..Default::default()
@@ -564,42 +661,58 @@ mod tests {
             )
             .unwrap();
 
-            TestMessage::decode(trt.message.as_ref().unwrap().value.as_slice()).unwrap()
+            let msg = TestMessage::decode(trt.message.as_ref().unwrap().value.as_slice()).unwrap();
+
+            (msg, TraitDetails::from_i32(trt.details).unwrap())
         };
+
+        assert_eq!(project(vec![], vec![]), (msg.clone(), TraitDetails::Full));
 
         assert_eq!(
             project(vec![1], vec![]),
-            TestMessage {
-                string1: "string1".to_string(),
-                ..Default::default()
-            }
+            (
+                TestMessage {
+                    string1: "string1".to_string(),
+                    ..Default::default()
+                },
+                TraitDetails::Partial
+            )
         );
 
         assert_eq!(
             project(vec![1, 2], vec![]),
-            TestMessage {
-                string1: "string1".to_string(),
-                string2: "string2".to_string(),
-                ..Default::default()
-            }
+            (
+                TestMessage {
+                    string1: "string1".to_string(),
+                    string2: "string2".to_string(),
+                    ..Default::default()
+                },
+                TraitDetails::Partial
+            )
         );
 
         assert_eq!(
             project(vec![2], vec![1]),
-            TestMessage {
-                string2: "string2".to_string(),
-                grouped1: "grouped1".to_string(),
-                grouped2: "grouped2".to_string(),
-                ..Default::default()
-            }
+            (
+                TestMessage {
+                    string2: "string2".to_string(),
+                    grouped1: "grouped1".to_string(),
+                    grouped2: "grouped2".to_string(),
+                    ..Default::default()
+                },
+                TraitDetails::Partial
+            )
         );
 
         assert_eq!(
             project(vec![], vec![2]),
-            TestMessage {
-                grouped2: "grouped2".to_string(),
-                ..Default::default()
-            }
+            (
+                TestMessage {
+                    grouped2: "grouped2".to_string(),
+                    ..Default::default()
+                },
+                TraitDetails::Partial
+            )
         );
 
         Ok(())

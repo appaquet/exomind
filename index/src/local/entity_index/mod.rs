@@ -242,7 +242,7 @@ where
 
         // iterate through results and returning the first N entities
         let mut hasher = result_hasher();
-        let mut entity_mutations_cache = HashMap::<EntityId, Rc<MutationAggregator>>::new();
+        let mut entity_mutations_cache = HashMap::<EntityId, Rc<EntityAggregator>>::new();
         let mut matched_entities = HashSet::new();
         let mut entity_results = combined_results
             // iterate through results, starting with best scores
@@ -300,9 +300,13 @@ where
 
                 matched_entities.insert(matched_mutation.entity_id.clone());
 
+
                 // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
                 let ordering_value = matched_mutation.sort_value.clone();
                 if ordering_value.value.is_within_page_bound(&current_page) {
+                    let creation_date = entity_mutations.creation_date.map(|t| t.to_proto_timestamp());
+                    let modification_date = entity_mutations.modification_date.map(|t| t.to_proto_timestamp());
+
                     let result = EntityResult {
                         matched_mutation,
                         ordering_value: ordering_value.clone(),
@@ -310,9 +314,12 @@ where
                             entity: Some(Entity {
                                 id: entity_id,
                                 traits: Vec::new(),
+                                creation_date,
+                                modification_date,
                             }),
                             source: index_source.into(),
                             ordering_value: Some(ordering_value.value),
+                            hash: entity_mutations.hash,
                         },
                         mutations: entity_mutations,
                     };
@@ -639,21 +646,20 @@ where
     /// Traits returned follow mutations in order of operation id.
     #[cfg(test)]
     fn fetch_entity(&self, entity_id: &str) -> Result<Entity, Error> {
-        let mutations_metedata = self.fetch_entity_mutations_metadata(entity_id)?;
-        let traits = self.fetch_entity_traits(&mutations_metedata);
+        let mutations = self.fetch_entity_mutations_metadata(entity_id)?;
+        let traits = self.fetch_entity_traits(&mutations);
 
         Ok(Entity {
             id: entity_id.to_string(),
             traits,
+            creation_date: mutations.creation_date.map(|t| t.to_proto_timestamp()),
+            modification_date: mutations.modification_date.map(|t| t.to_proto_timestamp()),
         })
     }
 
     /// Fetch indexed mutations metadata from pending and chain indices for this
     /// entity id, and merge them.
-    fn fetch_entity_mutations_metadata(
-        &self,
-        entity_id: &str,
-    ) -> Result<MutationAggregator, Error> {
+    fn fetch_entity_mutations_metadata(&self, entity_id: &str) -> Result<EntityAggregator, Error> {
         let pending_results = self.pending_index.fetch_entity_mutations(entity_id)?;
         let chain_results = self.chain_index.fetch_entity_mutations(entity_id)?;
         let mutations_metadata = pending_results
@@ -662,7 +668,7 @@ where
             .chain(chain_results.mutations.iter())
             .cloned();
 
-        MutationAggregator::new(mutations_metadata)
+        EntityAggregator::new(mutations_metadata)
     }
 
     /// Populate traits in the EntityResult by fetching each entity's traits
@@ -677,7 +683,7 @@ where
     }
 
     /// Fetch traits data from chain layer.
-    fn fetch_entity_traits(&self, entity_mutations: &MutationAggregator) -> Vec<Trait> {
+    fn fetch_entity_traits(&self, entity_mutations: &EntityAggregator) -> Vec<Trait> {
         entity_mutations
             .trait_mutations
             .iter()

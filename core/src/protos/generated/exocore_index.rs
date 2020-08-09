@@ -4,6 +4,10 @@ pub struct Entity {
     pub id: std::string::String,
     #[prost(message, repeated, tag = "4")]
     pub traits: ::std::vec::Vec<Trait>,
+    #[prost(message, optional, tag = "5")]
+    pub creation_date: ::std::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "6")]
+    pub modification_date: ::std::option::Option<::prost_types::Timestamp>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Trait {
@@ -15,6 +19,8 @@ pub struct Trait {
     pub creation_date: ::std::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "4")]
     pub modification_date: ::std::option::Option<::prost_types::Timestamp>,
+    #[prost(enumeration = "TraitDetails", tag = "5")]
+    pub details: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Reference {
@@ -22,6 +28,12 @@ pub struct Reference {
     pub entity_id: std::string::String,
     #[prost(string, tag = "2")]
     pub trait_id: std::string::String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum TraitDetails {
+    Full = 0,
+    Partial = 1,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityQuery {
@@ -69,9 +81,8 @@ pub mod entity_query {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Projection {
-    //// If specified, a prefix match will be done against traits' Protobuf full name
-    //// (`some.package.Name`). If ends with a dollar sign "$", an exact match is required (ex:
-    //// `some.package.Name$` will only match this message)
+    //// If specified, a prefix match will be done against traits' Protobuf full name (`some.package.Name`).
+    //// If ends with a dollar sign "$", an exact match is required (ex: `some.package.Name$` will only match this message)
     #[prost(string, repeated, tag = "1")]
     pub package: ::std::vec::Vec<std::string::String>,
     //// Skips the trait if the projection matches.
@@ -80,7 +91,7 @@ pub struct Projection {
     //// If specified, only return these fields.
     #[prost(uint32, repeated, tag = "4")]
     pub field_ids: ::std::vec::Vec<u32>,
-    //// If specified, only return fields annotated with `options.proto`.`field_group_id`
+    //// If specified, only return fields annotated with `options.proto`.`field_group_id` matching ids.
     #[prost(uint32, repeated, tag = "5")]
     pub field_group_ids: ::std::vec::Vec<u32>,
 }
@@ -97,8 +108,7 @@ pub struct IdsPredicate {
     pub ids: ::std::vec::Vec<std::string::String>,
 }
 //// Query entities by mutations' operation ids.
-//// Used to return entities on which mutations with these operation ids were
-//// applied and indexed.
+//// Used to return entities on which mutations with these operation ids were applied and indexed.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OperationsPredicate {
     #[prost(uint64, repeated, tag = "1")]
@@ -113,8 +123,7 @@ pub struct TestPredicate {
     #[prost(bool, tag = "1")]
     pub success: bool,
 }
-//// Query entities that have a specified trait and optionally matching a trait
-//// query.
+//// Query entities that have a specified trait and optionally matching a trait query.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitPredicate {
     #[prost(string, tag = "1")]
@@ -220,13 +229,16 @@ pub mod ordering {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OrderingValue {
-    //// ID operation used to tie break equal results
+    //// Secondary comparison, in case values were equal. In this case,
+    //// the last operation id that mutated the entity is used.
     #[prost(uint64, tag = "6")]
     pub operation_id: u64,
+    //// Primary comparison
     #[prost(oneof = "ordering_value::Value", tags = "1, 2, 3, 4, 5")]
     pub value: ::std::option::Option<ordering_value::Value>,
 }
 pub mod ordering_value {
+    //// Primary comparison
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         #[prost(float, tag = "1")]
@@ -266,12 +278,27 @@ pub struct EntityResults {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityResult {
+    //// The entity with its traits. Projection could have been done on the entity, which will
+    //// be indicated in its traits' details field.
     #[prost(message, optional, tag = "1")]
     pub entity: ::std::option::Option<Entity>,
+    //// Indicates where the entity was taken from in terms of storage. If all of the entities'
+    //// traits were coming from the chain (i.e. committed), the source will be `CHAIN`. Otherwise,
+    //// as soon as one entity mutation is coming from pending store (i.e. not committed yet), this
+    //// field will be `PENDING`.
+    ////
+    //// This can be used to know if an entity can be considered stable once mutations were executed on it.
+    //// Once it's committed, a majority of nodes agreed on it and will not result in further changes happening
+    //// before the latest consistent timestamp.
     #[prost(enumeration = "EntityResultSource", tag = "2")]
     pub source: i32,
+    //// Value to be used to order results. `EntityResults` already contains ordered results,
+    //// but it may be useful to compare ordering queries (ex.: to merge different pages)
     #[prost(message, optional, tag = "3")]
     pub ordering_value: ::std::option::Option<OrderingValue>,
+    //// Hash of the tntiy result. Can be used to compare if the entity has changed since last results.
+    #[prost(uint64, tag = "4")]
+    pub hash: u64,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -345,16 +372,14 @@ pub struct UpdateTraitMutation {
     pub r#trait: ::std::option::Option<Trait>,
     #[prost(message, optional, tag = "3")]
     pub field_mask: ::std::option::Option<::prost_types::FieldMask>,
-    /// Updates is only valid if the last mutation operation on trait this given
-    /// operation id.
+    /// Updates is only valid if the last mutation operation on trait this given operation id.
     #[prost(uint64, tag = "4")]
     pub if_last_operation_id: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompactTraitMutation {
-    /// List of operations that are compacted by this compaction. The compaction
-    /// will only succeed if there were no operations between these
-    /// operations and the compaction's operation itself.
+    /// List of operations that are compacted by this compaction. The compaction will only succeed
+    /// if there were no operations between these operations and the compaction's operation itself.
     #[prost(message, repeated, tag = "1")]
     pub compacted_operations: ::std::vec::Vec<compact_trait_mutation::Operation>,
     /// Trait with merged values from compacted operations
