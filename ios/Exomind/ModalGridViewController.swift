@@ -1,4 +1,3 @@
-
 import UIKit
 
 class ModalGridViewController: UIViewController {
@@ -14,7 +13,7 @@ class ModalGridViewController: UIViewController {
 
         UIView.animate(withDuration: 0.2, animations: {
             self.view.backgroundColor = UIColor.black.withAlphaComponent(0.8)
-        }) 
+        })
 
         let closeTapRecogizer = UITapGestureRecognizer(target: self, action: #selector(close))
         self.view.addGestureRecognizer(closeTapRecogizer)

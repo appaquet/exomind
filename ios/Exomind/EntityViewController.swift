@@ -130,7 +130,3 @@ class EntityViewController: UIViewController {
 protocol EntityTraitView: UIViewController {
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance)
 }
-
-protocol EntityTraitViewOld { // TODO: To remove
-    func loadEntityTrait(_ entityTrait: EntityTraitOld)
-}

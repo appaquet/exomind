@@ -1,11 +1,3 @@
-//
-//  Stylesheet.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-11-19.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import Foundation
 import UIKit
 import UIColor_Hex_Swift
@@ -48,7 +40,7 @@ class Stylesheet {
     static let objectColor10 = UIColor("#FEC4C4")
     static let objectColors = [objectColor1, objectColor2, objectColor3, objectColor4, objectColor5, objectColor6, objectColor7, objectColor8, objectColor9, objectColor10]
 
-    
+
     static func objectColor(forId: Int) -> UIColor {
         let finalId = forId - 1
         if finalId >= 0 && finalId < objectColors.count {
@@ -57,7 +49,7 @@ class Stylesheet {
             return objectColor1
         }
     }
-    
+
     static func objectColor(forString: String) -> UIColor {
         if let int = Int(forString) {
             return objectColor(forId: int)

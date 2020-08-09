@@ -1,4 +1,3 @@
-
 import Foundation
 import KeychainSwift
 import Alamofire
@@ -52,10 +51,10 @@ class ExtensionUtils {
         request.httpBody = try! JSONSerialization.data(withJSONObject: payload, options: [])
 
         Alamofire
-            .request(request)
-            .responseString { response in
-                print(response)
-        }
+                .request(request)
+                .responseString { response in
+                    print(response)
+                }
     }
 
     static func createTaskObject(title: String) {
@@ -100,9 +99,9 @@ class ExtensionUtils {
         request.httpBody = try! JSONSerialization.data(withJSONObject: payload, options: [])
 
         Alamofire
-            .request(request)
-            .responseString { response in
-                print(response)
-        }
+                .request(request)
+                .responseString { response in
+                    print(response)
+                }
     }
 }

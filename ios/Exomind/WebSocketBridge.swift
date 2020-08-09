@@ -1,11 +1,3 @@
-//
-//  WebSocketBridge.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-06.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import Foundation
 import JavaScriptCore
 import SwiftWebSocket
@@ -16,7 +8,7 @@ class RealWebSocketBridgeFactory: WebSocketBridgeFactory {
     }
 }
 
-@objc class WebSocketBridge: NSObject, WebSocketBridgeExport {
+class WebSocketBridge: NSObject, WebSocketBridgeExport {
     var ws: WebSocket?
 
     dynamic var onopen: JSValue?
@@ -55,7 +47,7 @@ class RealWebSocketBridgeFactory: WebSocketBridgeFactory {
     func handleMessage(_ data: Any) {
         if let msg = data as? String {
             let obj = [
-                    "data": msg
+                "data": msg
             ]
             let _ = self.onmessage?.call(withArguments: [obj])
         }

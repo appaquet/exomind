@@ -9,7 +9,7 @@ class EmailThreadAttachmentTableViewCell: UITableViewCell {
             attachmentView = nil
         }
 
-        var attachmentName  = attachment.name
+        var attachmentName = attachment.name
         if attachmentName == "" {
             attachmentName = "(unnamed attachment)"
         }

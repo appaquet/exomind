@@ -31,9 +31,15 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
 
                 self?.accounts = results.entities.compactMap({ (result) in
                     let entity = result.entity.toExtension()
-                    guard let account: TraitInstance<Exomind_Base_Account> = entity.traitOfType(Exomind_Base_Account.self) else { return nil }
+                    guard let account: TraitInstance<Exomind_Base_Account> = entity.traitOfType(Exomind_Base_Account.self) else {
+                        return nil
+                    }
                     return Account(entity: entity, trait: account)
                 })
+
+                DispatchQueue.main.async { [weak self] in
+                    self?.loadData()
+                }
             }
         }
 

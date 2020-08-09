@@ -1,11 +1,3 @@
-//
-//  JSInterval.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-06.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import Foundation
 import JavaScriptCore
 

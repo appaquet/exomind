@@ -1,4 +1,3 @@
-
 import UIKit
 import FontAwesome_swift
 
@@ -61,7 +60,7 @@ class GridIconsView: UIView {
                 make.height.equalTo(squareSize)
             })
 
-            let choiceImg = UIImageView(image: UIImage.fontAwesomeIcon(name: choice.icon, style: .solid,  textColor: squareColor, size: CGSize(width: imageSize, height: imageSize)))
+            let choiceImg = UIImageView(image: UIImage.fontAwesomeIcon(name: choice.icon, style: .solid, textColor: squareColor, size: CGSize(width: imageSize, height: imageSize)))
             choiceView.addSubview(choiceImg)
             choiceImg.snp.makeConstraints { (make) in
                 make.centerX.equalTo(choiceView.snp.centerX)

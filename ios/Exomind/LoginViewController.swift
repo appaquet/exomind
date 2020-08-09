@@ -1,4 +1,3 @@
-
 import UIKit
 import GoogleSignIn
 import WebKit
@@ -31,7 +30,7 @@ class LoginViewController: UIViewController, GIDSignInUIDelegate {
         vc.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         self.present(vc, animated: true, completion: nil)
     }
-    
+
     func sign(inWillDispatch signIn: GIDSignIn!, error: Error!) {
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
         appDelegate?.googleSigninCallback = { [weak self] (user) -> Void in
@@ -40,7 +39,7 @@ class LoginViewController: UIViewController, GIDSignInUIDelegate {
             vc.callback = { (success, cookies, err) in
                 print("Login succeed \(success) \(String(describing: err))")
                 HttpUtils.saveCookies(cookies)
-                DomainStore.instance.resetConnections()
+                JSBridge.instance.resetConnections()
                 appDelegate?.googleSigninCallback = nil
             }
             self?.present(vc, animated: true, completion: nil)
@@ -60,7 +59,7 @@ class GoogleLoginViewController: UIViewController, WKNavigationDelegate {
     var webview: WKWebView!
     var callback: ((Bool, [HTTPCookie], NSError?) -> Void)?
     var token: String!
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -73,7 +72,7 @@ class GoogleLoginViewController: UIViewController, WKNavigationDelegate {
         urlComponents?.queryItems = [
             URLQueryItem(name: "code", value: token)
         ]
-        
+
         if let url = urlComponents?.url {
             let req = URLRequest(url: url)
             self.webview.load(req)

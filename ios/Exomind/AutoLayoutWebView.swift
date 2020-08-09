@@ -1,4 +1,3 @@
-
 import UIKit
 import WebKit
 
@@ -28,7 +27,7 @@ class AutoLayoutWebView: WKWebView {
         }
     }
 
-    override var intrinsicContentSize : CGSize {
+    override var intrinsicContentSize: CGSize {
         if (!self.scrollView.isScrollEnabled) {
             self.checkSize()
             return CGSize(width: self.scrollView.contentSize.width, height: self.height)

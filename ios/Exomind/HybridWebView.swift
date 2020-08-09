@@ -1,4 +1,3 @@
-
 import UIKit
 import SwiftyJSON
 import WebKit
@@ -26,7 +25,7 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
         }
     }
 
-    func setData(_ data: [String:AnyObject]) {
+    func setData(_ data: [String: AnyObject]) {
         if (self.ready) {
             let jsonData = JSON(data)
             let jsonText = (jsonData.rawString()) ?? ""
@@ -60,9 +59,9 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
 
         } else if (url.scheme == "exomind") {
             self.evaluateJavaScript("window.getData(\(url.host!))") { (data, err) in
-                if  let msg = data as? String,
-                    let msgData = msg.data(using: String.Encoding.utf8, allowLossyConversion: false),
-                    let json = try? JSON(data: msgData, options: .allowFragments) {
+                if let msg = data as? String,
+                   let msgData = msg.data(using: String.Encoding.utf8, allowLossyConversion: false),
+                   let json = try? JSON(data: msgData, options: .allowFragments) {
 
                     if (json.string == "ready") {
                         self.handleReady()

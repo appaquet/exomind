@@ -1,11 +1,3 @@
-//
-//  AppDelegate.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-06.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import UIKit
 import KeychainSwift
 import GoogleSignIn
@@ -15,7 +7,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
 
     var window: UIWindow?
     var inForeground: Bool = true
-    
+
     var googleSigninCallback: ((GIDGoogleUser) -> Void)?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -26,11 +18,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         gidSignIn?.clientID = "1054868499665-2jnactlmaqpl24i4nfrf5mk007cu6t5i.apps.googleusercontent.com"
         gidSignIn?.serverClientID = "1054868499665-ikokqsknv905fn5lipkrglovnnfqjgha.apps.googleusercontent.com"
         gidSignIn?.scopes = ["https://mail.google.com/"]
-        
-        HCNamespaces.registerNamespace(ExomindNamespace())
+
         let websocketBridgeFactory = RealWebSocketBridgeFactory()
         let ajaxBridgeFactory = RealXMLHttpRequestBridgeFactory()
-        DomainStore.instance = DomainStore(serverHost: "exomind.io", webSocketBridgeFactory: websocketBridgeFactory, ajaxBridgeFactory: ajaxBridgeFactory)
+        JSBridge.instance = JSBridge(serverHost: "exomind.io", webSocketBridgeFactory: websocketBridgeFactory, ajaxBridgeFactory: ajaxBridgeFactory)
 
         // see https://github.com/tokio-rs/mio/issues/949
         signal(SIGPIPE, SIG_IGN)
@@ -69,18 +60,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
         NotificationsController.didReceiveRemoteNotification(userInfo, inForeground: self.inForeground)
     }
-    
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+
+    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         return GIDSignIn.sharedInstance().handle(url,
-                                                    sourceApplication:options[UIApplication.OpenURLOptionsKey.sourceApplication] as? String,
-                                                    annotation: [:])
+                sourceApplication: options[UIApplication.OpenURLOptionsKey.sourceApplication] as? String,
+                annotation: [:])
     }
-    
+
     func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!, withError error: Error!) {
         print("Got sigin from google for user \(String(describing: user))")
         self.googleSigninCallback?(user)
     }
-    
+
     func sign(_ signIn: GIDSignIn!, didDisconnectWith user: GIDGoogleUser!, withError error: Error!) {
         print("Got disconnect from google \(String(describing: user)))")
     }
@@ -95,14 +86,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
         self.inForeground = false
         print("AppDelegate > App in background")
-        DomainStore.instance.pauseConnections()
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
         print("AppDelegate > App in foreground")
         NotificationsController.clearNotifications()
-        DomainStore.instance.resumeConnections()
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {

@@ -1,18 +1,10 @@
-//
-//  TimeLogic.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-11-27.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import Foundation
 import JavaScriptCore
 
 class TimeLogic {
 
     static func getLaterChoices() -> [LaterTimeChoice] {
-        let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.timeLogic.getLaterChoices")
+        let builderFunc = JSBridge.instance.jsContext.evaluateScript("exomind.timeLogic.getLaterChoices")
         let choices = builderFunc?.call(withArguments: [])
         return choices!.toArray().map {
             (choice) -> LaterTimeChoice in
@@ -22,11 +14,11 @@ class TimeLogic {
     }
 
     static func getLaterIcon(_ key: String) -> String {
-        return DomainStore.instance.jsContext.evaluateScript("exomind.timeLogic.getLaterIcon").call(withArguments: [key]).toString()
+        return JSBridge.instance.jsContext.evaluateScript("exomind.timeLogic.getLaterIcon").call(withArguments: [key]).toString()
     }
 
     static func textDiffToDate(_ textDiff: String) -> Date {
-        let builderFunc = DomainStore.instance.jsContext.evaluateScript("exomind.timeLogic.textDiffToDate")
+        let builderFunc = JSBridge.instance.jsContext.evaluateScript("exomind.timeLogic.textDiffToDate")
         let jsDate = builderFunc?.call(withArguments: [textDiff])
         return jsDate!.toDate()
     }

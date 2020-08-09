@@ -10,27 +10,23 @@ class RootNavigationController: UINavigationController {
     }
 
     override func viewDidLoad() {
-        SessionStore.onChange { [weak self]() -> () in
-            if let this = self {
-                NSObject.cancelPreviousPerformRequests(withTarget: this)
-                this.perform(#selector(this.checkViewStatus), with: nil, afterDelay: 0.5)
-            }
-        }
-        self.perform(#selector(checkViewStatus), with: nil, afterDelay: 1.0)
+        self.checkViewStatus()
     }
 
     @objc func checkViewStatus() {
-        if (DomainStore.instance.unauthorized()) {
-            self.showLogin()
-        } else {
-            let onTabBar = self.topViewController as? TabBarController != nil
-            if (DomainStore.instance.connected() || onTabBar) {
-                self.showTabBar()
-            } else {
-                self.showSplash()
-            }
-        }
-        self.perform(#selector(checkViewStatus), with: nil, afterDelay: 5.0)
+        // TODO: Check if bootstrapped
+        self.showTabBar()
+//        if (DomainStore.instance.unauthorized()) {
+//            self.showLogin()
+//        } else {
+//            let onTabBar = self.topViewController as? TabBarController != nil
+//            if (DomainStore.instance.connected() || onTabBar) {
+//                self.showTabBar()
+//            } else {
+//                self.showSplash()
+//            }
+//        }
+//        self.perform(#selector(checkViewStatus), with: nil, afterDelay: 5.0)
     }
 
     func showTabBar() {

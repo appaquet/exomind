@@ -4,25 +4,10 @@ import FontAwesome_swift
 class ObjectsIcon {
     private static var iconCache = [String: UIImage]()
 
-    static func icon(forEntity: HCEntity, color: UIColor, dimension: CGFloat) -> UIImage {
-        let entityTrait = EntityTraitOld(entity: forEntity)
-        let fa = ObjectsIcon.icon(forName: entityTrait?.icon ?? "question")
-        return cached(fa: fa, color: color, dimension: dimension, block: { () -> UIImage in
-            return UIImage.fontAwesomeIcon(name: fa, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
-        })
-    }
-
-    static func icon(forEntityTrait: EntityTraitOld, color: UIColor, dimension: CGFloat) -> UIImage {
-        let fa = ObjectsIcon.icon(forName: forEntityTrait.icon)
-        return cached(fa: fa, color: color, dimension: dimension, block: { () -> UIImage in
-            return UIImage.fontAwesomeIcon(name: fa, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
-        })
-    }
-
     static func icon(forAnyTrait: AnyTraitInstance, color: UIColor, dimension: CGFloat) -> UIImage {
         let fa = ObjectsIcon.icon(forName: forAnyTrait.constants?.icon ?? "question")
         return cached(fa: fa, color: color, dimension: dimension, block: { () -> UIImage in
-            return UIImage.fontAwesomeIcon(name: fa, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
+            UIImage.fontAwesomeIcon(name: fa, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
         })
     }
 

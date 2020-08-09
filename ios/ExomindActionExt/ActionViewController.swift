@@ -1,11 +1,3 @@
-//
-//  ActionViewController.swift
-//  ExomindActionExt
-//
-//  Created by Andre-Philippe Paquet on 2015-12-29.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import UIKit
 import MobileCoreServices
 
@@ -16,14 +8,14 @@ class ActionViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if !ExtensionUtils.hasKeychainCookie()  {
+        if !ExtensionUtils.hasKeychainCookie() {
             self.messageLabel.text = "You need to open Exomind first and sign in."
             return
         }
-    
+
         for item: Any in self.extensionContext!.inputItems {
             let inputItem = item as! NSExtensionItem
-            
+
             for provider: Any in inputItem.attachments! {
                 let itemProvider = provider as! NSItemProvider
                 itemProvider.loadItem(forTypeIdentifier: "public.url", options: nil, completionHandler: { (data, err) -> Void in

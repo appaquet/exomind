@@ -1,7 +1,6 @@
-
 import Foundation
 
-extension String  {
+extension String {
     // from http://stackoverflow.com/questions/24123518/how-to-use-cc-md5-method-in-swift-language
     var md5: String! {
         get {
@@ -23,7 +22,7 @@ extension String  {
     func nonEmpty() -> String? {
         if !self.isEmpty {
             return self
-        }  else {
+        } else {
             return nil
         }
     }

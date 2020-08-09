@@ -1,4 +1,3 @@
-
 import UIKit
 import UserNotifications
 
@@ -19,23 +18,13 @@ class NotificationsController {
     }
 
     static func isRemoteRegistered() -> Bool {
-        if (!UIApplication.shared.isRegisteredForRemoteNotifications) {
-            return false
-        } else {
-            return !getApplePushIntegrations().isEmpty
-        }
-    }
-    
-    static func getApplePushIntegrations() -> [Integration] {
-        return SessionStore.integrations()
-            .compactMap { entityTrait in
-                switch (entityTrait.traitType) {
-                case let .integration(integration: int) where int.typ == "apple_push":
-                    return int
-                default:
-                    return nil
-                }
-            }
+        // TODO:
+        //        if (!UIApplication.shared.isRegisteredForRemoteNotifications) {
+        //            return false
+        //        } else {
+        //            return !getApplePushIntegrations().isEmpty
+        //        }
+        return true
     }
 
     static func didFailToRegisterForRemoteNotificationsWithError(_ error: Error) {
@@ -46,16 +35,17 @@ class NotificationsController {
         // from http://stackoverflow.com/questions/9372815/how-can-i-convert-my-device-token-nsdata-into-an-nsstring
         let tokenChars = (deviceToken as NSData).bytes.bindMemory(to: CChar.self, capacity: deviceToken.count)
         var tokenString = ""
-        for i in 0 ..< deviceToken.count {
+        for i in 0..<deviceToken.count {
             tokenString += String(format: "%02.2hhx", arguments: [tokenChars[i]])
         }
 
-        ExomindDSL
-            .on(HCEntity(id: tokenString, traits: []))
-            .mutate
-            .put(IntegrationFull(data: ["device_token" : tokenString], key: tokenString, typ: "apple_push"))
-            .execute()
-        
+        // TODO: Register
+        //        ExomindDSL
+        //            .on(HCEntity(id: tokenString, traits: []))
+        //            .mutate
+        //            .put(IntegrationFull(data: ["device_token" : tokenString], key: tokenString, typ: "apple_push"))
+        //            .execute()
+
         print("NotificationsController > Successfully registered for remote notification with token \(tokenString)")
     }
 

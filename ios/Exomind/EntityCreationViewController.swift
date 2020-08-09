@@ -64,7 +64,7 @@ class EntityCreationViewController: ModalGridViewController {
         }
     }
 
-    static func createNote(_ parentId: HCEntityId?, callback: ((EntityExt?) -> Void)?) {
+    static func createNote(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
             var note = Exomind_Base_Note()
             note.title = "New note"
@@ -81,7 +81,7 @@ class EntityCreationViewController: ModalGridViewController {
         }
     }
 
-    static func createEmail(_ parentId: HCEntityId?, callback: ((EntityExt?) -> Void)?) {
+    static func createEmail(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
             let email = Exomind_Base_DraftEmail()
 
@@ -97,7 +97,7 @@ class EntityCreationViewController: ModalGridViewController {
         }
     }
 
-    static func createCollection(_ parentId: HCEntityId?, callback: ((EntityExt?) -> Void)?) {
+    static func createCollection(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
             var collection = Exomind_Base_Collection()
             collection.name = "New collection"

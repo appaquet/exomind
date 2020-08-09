@@ -1,11 +1,3 @@
-//
-//  AjaxBridge.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-06.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import Foundation
 
 import Foundation
@@ -14,18 +6,18 @@ import Alamofire
 
 class RealXMLHttpRequestBridgeFactory: XMLHttpRequestBridgeFactory {
     func build() -> XMLHttpRequestBridgeExport {
-        return XMLHttpRequestBridge()
+        XMLHttpRequestBridge()
     }
 }
 
-@objc class XMLHttpRequestBridge: NSObject, XMLHttpRequestBridgeExport {
+class XMLHttpRequestBridge: NSObject, XMLHttpRequestBridgeExport {
     dynamic var onreadystatechange: JSValue?
     dynamic var readyState: Int = 0
     dynamic var status: Int = 0
     dynamic var responseText: String = ""
-    dynamic var open: ((_ method:String, _ url:String) -> Void)?
-    dynamic var send: ((_ data:String) -> Void)?
-    dynamic var setRequestHeader: ((_ header:String, _ value:String) -> Void)?
+    dynamic var open: ((_ method: String, _ url: String) -> Void)?
+    dynamic var send: ((_ data: String) -> Void)?
+    dynamic var setRequestHeader: ((_ header: String, _ value: String) -> Void)?
     var url: String?
     var method: String = "POST"
 
@@ -56,28 +48,28 @@ class RealXMLHttpRequestBridgeFactory: XMLHttpRequestBridgeFactory {
         }
 
         Alamofire
-        .request(request)
-        .responseString(encoding: String.Encoding.utf8) { response in
-            if let err = response.result.error {
-                self.status = response.response?.statusCode ?? 533
-                print("XMLHttpRequestBridge > Got error status=\(self.status) err=\(err)")
-                self.readyState = 4
-                self.responseText = err.localizedDescription
-                let _ = self.onreadystatechange?.call(withArguments: [])
-            } else {
-                self.status = response.response?.statusCode ?? 200
-                print("XMLHttpRequestBridge > Got data status=\(self.status)")
-                self.readyState = 4
-                self.responseText = response.result.value ?? ""
-                let _ = self.onreadystatechange?.call(withArguments: [])
-            }
+                .request(request)
+                .responseString(encoding: String.Encoding.utf8) { response in
+                    if let err = response.result.error {
+                        self.status = response.response?.statusCode ?? 533
+                        print("XMLHttpRequestBridge > Got error status=\(self.status) err=\(err)")
+                        self.readyState = 4
+                        self.responseText = err.localizedDescription
+                        let _ = self.onreadystatechange?.call(withArguments: [])
+                    } else {
+                        self.status = response.response?.statusCode ?? 200
+                        print("XMLHttpRequestBridge > Got data status=\(self.status)")
+                        self.readyState = 4
+                        self.responseText = response.result.value ?? ""
+                        let _ = self.onreadystatechange?.call(withArguments: [])
+                    }
 
-            // helps cleanup memory
-            self.onreadystatechange = nil
-            self.open = nil
-            self.send = nil
-            self.setRequestHeader = nil
-        }
+                    // helps cleanup memory
+                    self.onreadystatechange = nil
+                    self.open = nil
+                    self.send = nil
+                    self.setRequestHeader = nil
+                }
     }
 
 }

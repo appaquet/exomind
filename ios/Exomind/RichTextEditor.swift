@@ -7,7 +7,7 @@ class RichTextEditor: UIViewController {
     fileprivate weak var delegatedScrollView: UIScrollView?
 
     fileprivate var webview: RichTextEditorWebView!
-    
+
     private var keyboardHeight = CGFloat(250)
     private var hasFocus: Bool = false
 
@@ -111,8 +111,7 @@ extension RichTextEditor {
     // from http://stackoverflow.com/questions/30312525/replace-inputaccessoryview-of-keyboard-in-uiwebview-in-swift
 
     func addNewAccessoryView(_ oldAccessoryView: UIView) {
-        let frame = oldAccessoryView.frame
-        let newAccessoryView = RichTextEditorToolsView(frame: frame)
+        let newAccessoryView = RichTextEditorToolsView(frame: oldAccessoryView.frame)
         newAccessoryView.editor = self
         oldAccessoryView.addSubview(newAccessoryView)
 
@@ -124,6 +123,7 @@ extension RichTextEditor {
             make.left.equalTo(oldAccessoryView.snp.left)
             make.top.equalTo(oldAccessoryView.snp.top).offset(1)
             make.height.equalTo(oldAccessoryView.snp.height)
+            make.right.equalTo(oldAccessoryView.snp.right)
         }
     }
 
@@ -181,14 +181,8 @@ class RichTextEditorToolsView: UIView {
         super.init(coder: aDecoder)
     }
 
-    @objc func handleButtonTouch(_ sender: UIButton) {
-        let (name, _) = self.buttons[sender.tag]
-        self.editor.webview.setData(["action": name as AnyObject])
-    }
-
     func createView() {
-        let buttonViews = buttons.enumerated().map {
-            (i, tup) -> UIButton in
+        let buttonViews = buttons.enumerated().map { (i, tup) -> UIButton in
             let (_, icon) = tup
             let button = UIButton()
             let img = UIImage.fontAwesomeIcon(name: icon, style: .solid, textColor: UIColor.label, size: CGSize(width: 25, height: 25))
@@ -199,14 +193,32 @@ class RichTextEditorToolsView: UIView {
         }
 
         let stack = UIStackView(arrangedSubviews: buttonViews)
-        stack.alignment = .fill
+        stack.alignment = .leading
         stack.axis = .horizontal
         stack.spacing = 20
         self.addSubview(stack)
         stack.snp.makeConstraints { (make) in
             make.left.equalTo(self.snp.left).offset(20)
-            make.right.equalTo(self.snp.right)
             make.centerY.equalTo(self.snp.centerY)
         }
+
+        var closeButton = UIButton()
+        closeButton.setTitle("Done", for: .normal)
+        closeButton.setTitleColor(UIColor.label, for: .normal)
+        closeButton.addTarget(self, action: #selector(handleCloseKeyboard), for: .touchUpInside)
+        self.addSubview(closeButton)
+        closeButton.snp.makeConstraints { (make) in
+            make.right.equalToSuperview().offset(-20)
+            make.centerY.equalToSuperview()
+        }
+    }
+
+    @objc func handleButtonTouch(_ sender: UIButton) {
+        let (name, _) = self.buttons[sender.tag]
+        self.editor.webview.setData(["action": name as AnyObject])
+    }
+
+    @objc func handleCloseKeyboard(_ sender: UIButton) {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }

@@ -1,11 +1,3 @@
-//
-//  WebSocketBridgeExport.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2016-11-03.
-//  Copyright © 2016 Exomind. All rights reserved.
-//
-
 import Foundation
 
 import Foundation
@@ -21,6 +13,6 @@ protocol WebSocketBridgeFactory {
     var onerror: JSValue? { get set }
     var onclose: JSValue? { get set }
     func send(_ data: String)
-    
+
     func close()
 }

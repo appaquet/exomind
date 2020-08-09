@@ -1,4 +1,3 @@
-
 import UIKit
 import FontAwesome_swift
 
@@ -34,9 +33,9 @@ class SwitcherButton: UIView {
         self.widthConstraint = NSLayoutConstraint(item: self, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .width, multiplier: 0, constant: 0)
         self.heightConstraint = NSLayoutConstraint(item: self, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .height, multiplier: 0, constant: buttonHeight)
         self.addConstraints([
-                                    self.widthConstraint,
-                                    self.heightConstraint
-                            ])
+            self.widthConstraint,
+            self.heightConstraint
+        ])
     }
 
     func setActions(_ actions: [SwitcherButtonAction]) {

@@ -1,44 +1,21 @@
-//
-//  Store.swift
-//  Exomind
-//
-//  Created by Andre-Philippe Paquet on 2015-10-06.
-//  Copyright © 2015 Exomind. All rights reserved.
-//
-
 import Foundation
 import JavaScriptCore
 
-// https://github.com/NSHipster/articles/blob/master/2015-01-19-javascriptcore.md
-
-class DomainStore {
-    static var instance: DomainStore!
-    let hcSerialization = HCJsonSerialization()
+class JSBridge {
+    static var instance: JSBridge!
 
     fileprivate let serverHost: String
     fileprivate var timers: [JSTimer] = []
     fileprivate(set) var jsContext: JSContext!
     fileprivate let webSocketBridgeFactory: WebSocketBridgeFactory
     fileprivate let ajaxBridgeFactory: XMLHttpRequestBridgeFactory
-    
+
     init(serverHost: String, webSocketBridgeFactory: WebSocketBridgeFactory, ajaxBridgeFactory: XMLHttpRequestBridgeFactory) {
         self.serverHost = serverHost
         self.webSocketBridgeFactory = webSocketBridgeFactory
         self.ajaxBridgeFactory = ajaxBridgeFactory
-        
+
         self.initializeContext()
-    }
-
-    func getQuerySet() -> QuerySet {
-        let value = self.jsContext.evaluateScript("exomind.store.DomainStore.getQuerySet()")
-        return QuerySet(jsContext: jsContext, jsObj: value!)
-    }
-
-    @discardableResult
-    func executeCommand(_ command: Command) -> Command {
-        let cmd = self.jsContext.evaluateScript("exomind.store.DomainStore.executeCommand")
-        let finalCmd = cmd?.call(withArguments: [command.jsObj])
-        return Command(jsObj: finalCmd!)
     }
 
     func pauseConnections() {
@@ -60,7 +37,7 @@ class DomainStore {
     func unauthorized() -> Bool {
         return self.jsContext.evaluateScript("exomind.backendSocket.unauthorized").toBool()
     }
-    
+
     func orNull(_ opt: AnyObject?) -> JSValue {
         if let object = opt {
             return JSValue(object: object, in: self.jsContext)
@@ -68,18 +45,18 @@ class DomainStore {
             return JSValue(nullIn: self.jsContext)
         }
     }
-    
+
     func jsArrayToJSValues(_ array: JSValue) -> [JSValue] {
         let length = array.forProperty("length").toUInt32()
         var ret: [JSValue] = []
         if (length > 0) {
-            for i in 0 ... (length - 1) {
+            for i in 0...(length - 1) {
                 ret.append(array.atIndex(Int(i)))
             }
         }
         return ret
     }
-    
+
     func destroy() {
         self.timers.forEach {
             (elem) -> () in
@@ -87,7 +64,7 @@ class DomainStore {
         }
         self.jsContext = nil
     }
-    
+
     fileprivate func initializeContext() {
         if jsContext == nil {
             jsContext = JSContext()
@@ -115,7 +92,7 @@ class DomainStore {
             jsContext.setObject(unsafeBitCast(xmlhttprequestBuilder, to: AnyObject.self), forKeyedSubscript: "XMLHttpRequest" as (NSCopying & NSObjectProtocol))
 
             // support for setInterval
-            let setInterval: @convention(block)(JSValue, Int) -> Void = {
+            let setInterval: @convention(block) (JSValue, Int) -> Void = {
                 callback, delay in
                 let interval = JSTimer(callback: callback, delay: Double(delay) / 1000.0, repeats: true)
                 self.timers.append(interval)
@@ -123,14 +100,14 @@ class DomainStore {
             jsContext.setObject(unsafeBitCast(setInterval, to: AnyObject.self), forKeyedSubscript: "setInterval" as (NSCopying & NSObjectProtocol))
 
             // support for setTimeout
-            let setTimeout: @convention(block)(JSValue, Int) -> Void = {
+            let setTimeout: @convention(block) (JSValue, Int) -> Void = {
                 callback, delay in
                 let _ = JSTimer(callback: callback, delay: Double(delay) / 1000.0, repeats: false)
             }
             jsContext.setObject(unsafeBitCast(setTimeout, to: AnyObject.self), forKeyedSubscript: "setTimeout" as (NSCopying & NSObjectProtocol))
 
             // support for primitive console.log
-            let consoleLog: @convention(block)(JSValue) -> Void = {
+            let consoleLog: @convention(block) (JSValue) -> Void = {
                 log in
                 print("JS > \(log.description)")
             }

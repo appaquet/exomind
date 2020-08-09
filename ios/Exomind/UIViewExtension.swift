@@ -1,4 +1,3 @@
-
 import UIKit
 import SnapKit
 
@@ -17,7 +16,7 @@ extension UIView {
         UINib(
                 nibName: nibNamed,
                 bundle: bundle
-                ).instantiate(withOwner: nil, options: nil)[0] as? UIView
+        ).instantiate(withOwner: nil, options: nil)[0] as? UIView
     }
 
     func addBorderBottomView() {
@@ -31,5 +30,4 @@ extension UIView {
             make.bottom.equalTo(self.snp.bottom)
         }
     }
-
 }
