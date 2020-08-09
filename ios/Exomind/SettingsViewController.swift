@@ -17,9 +17,7 @@ class SettingsViewController: UITableViewController {
     }
 
     func exomindBar() {
-//        if let mind = SessionStore.mindEntity() {
-//            (self.tabBarController as? TabBarController)?.show(navigationObject: .entityOld(entity: mind))
-//        }
+        (self.tabBarController as? TabBarController)?.show(navigationObject: .entityId(id: "favorites"))
     }
 
     func cellConfig() {

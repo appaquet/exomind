@@ -123,8 +123,6 @@ export class Children extends React.Component<IProps, IState> {
                         actionsForEntity={this.actionsForEntity.bind(this)}
 
                         onDropIn={this.handleDropInEntity.bind(this)}
-
-                        headerControl={this.renderParentSwitcher()}
                     />
 
                     {controls}
@@ -137,21 +135,8 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private renderParentSwitcher() {
-        if (this.props.sections) {
-            return <ChildrenTypeSwitcher
-                types={this.props.sections}
-                selected={this.props.section}
-                onChange={this.handleParentTypeChange.bind(this)} />;
-        }
-    }
-
     private handleLoadMore() {
         this.entityQuery.expand();
-    }
-
-    private handleParentTypeChange(/*section: string*/) {
-        // TODO: Change query
     }
 
     private handleMouseEnter() {

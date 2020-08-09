@@ -299,7 +299,7 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 {this.renderEntityImage(entityTrait)}
                 <div className="content">
-                    <div className="title1">{entityTrait.displayName}</div>
+                    <div className="title1">Unknown entity {entityTrait.et.id}</div>
                 </div>
 
                 <div className="clearfix" />

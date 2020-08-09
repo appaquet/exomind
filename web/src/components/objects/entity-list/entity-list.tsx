@@ -20,7 +20,7 @@ interface IProps {
     onSelectionChange?: (sel: Selection) => void;
     actionsForEntity?: (entity: EntityTraits) => EntityAction[];
 
-    headerControl?: React.ReactNode;
+    header?: React.ReactNode;
 
     droppable?: boolean;
     draggable?: boolean;
@@ -50,19 +50,19 @@ export class EntityList extends React.Component<IProps> {
     render(): React.ReactNode {
         const classes = classNames({
             'entity-list': true,
-            'header-control': !!this.props.headerControl,
+            'header-control': !!this.props.header,
         });
 
         const nbItems = this.props.entities.length;
         return (
             <div className={classes}>
                 <Scrollable
-                    initialTopInset={(this.props.headerControl) ? 30 : 0}
+                    initialTopInset={(this.props.header) ? 30 : 0}
                     loadMoreItems={15}
                     onNeedMore={this.props.onRequireLoadMore}
                     nbItems={nbItems}>
 
-                    {this.props.headerControl}
+                    {this.props.header}
                     {this.renderCollection()}
 
                 </Scrollable>
