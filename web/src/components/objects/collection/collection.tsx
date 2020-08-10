@@ -4,6 +4,7 @@ import React from 'react';
 import { EntityTrait } from '../../../store/entities';
 import { Children } from '../children/children';
 import { Selection } from '../entity-list/selection';
+import { ContainerController } from '../container-controller';
 
 interface IProps {
     entity: exocore.index.IEntity;
@@ -39,15 +40,4 @@ export default class Collection extends React.Component<IProps> {
     private actionsForChildrenType(): string[] {
         return ['done', 'postpone', 'move'];
     }
-
-    // TODO:
-    // handleNameChange(name) {
-    //     let newCollection = this.state.currentCollection.clone();
-    //     newCollection.name = name;
-    //     ExomindDSL.on(this.props.entity).mutate.update(newCollection).execute();
-    //
-    //     if (this.props.containerController) {
-    //         this.props.containerController.title = new ModifiableText(name, this.handleNameChange.bind(this));
-    //     }
-    // }
 }

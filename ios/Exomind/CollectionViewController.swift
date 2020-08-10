@@ -82,8 +82,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
         alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in
             let newName = alert.textFields![0] as UITextField
 
-            guard let this = self,
-                  let entity = self?.entity,
+            guard let entity = self?.entity,
                   let collection = self?.collection,
                   let name = newName.text else {
                 return

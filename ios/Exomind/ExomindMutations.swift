@@ -35,12 +35,12 @@ class ExomindMutations {
     }
 
     static func snooze(entity: EntityExt, date: Date, callback: (() -> Void)? = nil) {
-        var postpone = Exomind_Base_Postponed()
-        postpone.untilDate = date.toProtobuf()
+        var snoozed = Exomind_Base_Postponed()
+        snoozed.untilDate = date.toProtobuf()
 
         let mutation = try! MutationBuilder
                 .updateEntity(entityId: entity.id)
-                .putTrait(message: postpone, traitId: "postponed")
+                .putTrait(message: snoozed, traitId: "snoozed")
                 .returnEntities()
                 .build()
 

@@ -13,7 +13,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     private var opened = [String: Bool]()
     private var openedObjectsCell = [String: EmailThreadOpenedTableViewCell]()
 
-    private var navigatedFirstNonRead = true
+    private var navigatedFirstNonRead = false
     private var loadTime = Date()
     private var headerView: EmailThreadHeader!
 
@@ -26,8 +26,8 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
                 .sorted(by: { (em1, em2) in
                     em1.message.receivedDate.date.isLessThan(em2.message.receivedDate.date)
                 })
-        self.loadedEmails = self.emails.map({ (email) in false })
-        self.firstNonRead = 0 // TODO:
+        self.loadedEmails = self.emails.map({ $0.message.read })
+        self.firstNonRead = self.emails.firstIndex(where: { !$0.message.read}) ?? 0
 
         self.draft = entity.traitOfType(Exomind_Base_DraftEmail.self)
 
@@ -153,7 +153,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     func isOpen(_ email: TraitInstance<Exomind_Base_Email>) -> Bool {
-        let isUnread = true // TODO: email.message.read ?? false
+        let isUnread = !email.message.read
         let isLastEmail = self.emails.last?.id == email.id
         return self.opened[email.id] ?? (isUnread || isLastEmail)
     }

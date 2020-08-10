@@ -108,7 +108,7 @@ export default class Email extends React.Component<IProps, IState> {
     }
 
     private handleReplyEmail(): void {
-        // TODO:
+        // TODO: Reply
         // EmailsLogic.createReplyEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
         //     if (obj) {
         //         this.props.onSelectionChange([obj]);
@@ -117,7 +117,7 @@ export default class Email extends React.Component<IProps, IState> {
     }
 
     private handleReplyAllEmail(): void {
-        // TODO:
+        // TODO: Reply all
         // EmailsLogic.createReplyAllEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
         //     if (obj) {
         //         this.props.onSelectionChange([obj]);
@@ -126,7 +126,7 @@ export default class Email extends React.Component<IProps, IState> {
     }
 
     private handleForwardEmail(): void {
-        // TODO:
+        // TODO: Forward
         // EmailsLogic.createForwardEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
         //     if (obj) {
         //         this.props.onSelectionChange([obj]);

@@ -144,7 +144,7 @@ export class ListActions extends React.Component<IProps> {
     }
 
     private handleDoneClick() {
-        // TODO:
+        // TODO: Done all selected
         // _.forEach(this.props.selection, (entity) => {
         //   ExomindDSL.on(entity).relations.removeParent(this.props.parent);
         // });
@@ -163,6 +163,7 @@ export class ListActions extends React.Component<IProps> {
     private handleTimeSelectorDone(/*date: Date*/) {
         ModalStore.hideModal();
 
+        // TODO: Postpone all selected
         // _.forEach(this.props.selection, (entity) => {
         //   ExomindDSL.on(entity).relations.postpone(date);
         //   if (this.props.removeOnPostpone) {

@@ -152,6 +152,7 @@ message Ordering {
 }
 
 message OrderingValue {
+    /// Primary comparison
     oneof value {
         float float = 1;
         uint64 uint64 = 2;
@@ -160,7 +161,8 @@ message OrderingValue {
         bool max = 5;
     }
 
-    /// ID operation used to tie break equal results
+    /// Secondary comparison, in case values were equal. In this case,
+    /// the last operation id that mutated the entity is used.
     uint64 operation_id = 6;
 }
 
@@ -187,11 +189,26 @@ message EntityResults {
 }
 
 message EntityResult {
+    /// The entity with its traits. Projection could have been done on the entity, which will
+    /// be indicated in its traits' details field.
     Entity entity = 1;
 
+    /// Indicates where the entity was taken from in terms of storage. If all of the entities'
+    /// traits were coming from the chain (i.e. committed), the source will be `CHAIN`. Otherwise,
+    /// as soon as one entity mutation is coming from pending store (i.e. not committed yet), this
+    /// field will be `PENDING`.
+    ///
+    /// This can be used to know if an entity can be considered stable once mutations were executed on it.
+    /// Once it's committed, a majority of nodes agreed on it and will not result in further changes happening
+    /// before the latest consistent timestamp.
     EntityResultSource source = 2;
 
+    /// Value to be used to order results. `EntityResults` already contains ordered results,
+    /// but it may be useful to compare ordering queries (ex.: to merge different pages)
     OrderingValue ordering_value = 3;
+
+    /// Hash of the tntiy result. Can be used to compare if the entity has changed since last results.
+    uint64 hash = 4;
 }
 
 enum EntityResultSource {

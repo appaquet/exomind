@@ -194,9 +194,6 @@ export class EntityComponent extends React.Component<Props, State> {
         let mb = MutationBuilder
             .updateEntity(this.state.entityTraits.id)
             .putTrait(new exomind.base.Postponed({
-                entity: new exocore.index.Reference({
-                    entityId: this.state.entityTraits.id,
-                }),
                 untilDate: toProtoTimestamp(date),
             }), "postponed")
             .returnEntities();

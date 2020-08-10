@@ -11,10 +11,11 @@ import sanitizeHtml from 'sanitize-html';
 import Constants from '../constants';
 import { EntityTrait, EntityTraits } from '../store/entities';
 import DateUtil from '../utils/date-util';
+import { fromProtoTimestamp } from 'exocore';
 
 export default class EmailsLogic {
   static createReplyEmail(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
-    // TODO:
+    // TODO: Create reply email
     // let parts = EmailsLogicXYZ.generateReplyParts(email);
     // let draft = new Exomind.DraftEmail({
     //   to: [email.from],
@@ -31,7 +32,7 @@ export default class EmailsLogic {
   }
 
   static createReplyAllEmail(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
-    // TODO:
+    // TODO: Create reply all email
     // let parts = EmailsLogic.generateReplyParts(email);
     // let draft = new Exomind.DraftEmail({
     //   to: [email.from],
@@ -48,7 +49,7 @@ export default class EmailsLogic {
   }
 
   static createForwardEmail(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
-    // TODO:
+    // TODO: Create forward email
     // let parts = EmailsLogic.generateReplyParts(email);
     // let draft = new Exomind.DraftEmail({
     //   to: [],
@@ -65,29 +66,33 @@ export default class EmailsLogic {
   }
 
   static generateReplyParts(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
-    // TODO:
-    // let formattedReceiveDate = DateUtil.toLongGmtFormat(new Date(email.receivedDate));
-    // let htmlPart = EmailsLogic.extractHtmlPart(email.parts);
-    // let formattedFrom = EmailsLogic.formatContact(email.from, true);
-    // let dateLine = `On ${formattedReceiveDate} ${formattedFrom} wrote:`;
+    const formattedReceiveDate = DateUtil.toLongGmtFormat(fromProtoTimestamp(email.message.receivedDate));
+    const htmlPart = EmailsLogic.extractHtmlPart(email.message.parts);
+    const formattedFrom = EmailsLogic.formatContact(email.message.from, true);
+    const dateLine = `On ${formattedReceiveDate} ${formattedFrom} wrote:`;
 
-    // var parts = [];
-    // if (htmlPart.isDefined) {
-    //   let part = htmlPart.get().clone();
-    //   let html = EmailsLogic.sanitizeHtml(part.body);
-    //   part.body = `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${html}</blockquote></div>`;
-    //   parts = [part];
+    let parts: exomind.base.IEmailPart[] = [];
+    if (htmlPart) {
+      const part = new exomind.base.EmailPart(htmlPart);
+      const html = EmailsLogic.sanitizeHtml(part.body);
+      const newPart = new exomind.base.EmailPart({
+        body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${html}</blockquote></div>`,
+        mimeType: "text/html",
+      })
 
-    // } else if (email.parts.length > 0) {
-    //   let plainPart = _.first(email.parts);
-    //   let body = EmailsLogic.plainTextToHtml(plainPart.body);
-    //   let newPart = new Exomind.EmailPartHtml({
-    //     body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${body}</blockquote></div>`
-    //   });
-    //   parts = [newPart];
-    // }
+      parts = [newPart];
 
-    // return parts;
+    } else if (email.message.parts.length > 0) {
+      const plainPart = _.first(email.message.parts);
+      const body = EmailsLogic.plainTextToHtml(plainPart.body);
+      const newPart = new exomind.base.EmailPart({
+        body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${body}</blockquote></div>`,
+        mimeType: "text/html",
+      });
+      parts = [newPart];
+    }
+
+    return parts;
   }
 
   static extractHtmlPart(parts: exomind.base.IEmailPart[]) {

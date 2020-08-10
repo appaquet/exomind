@@ -219,7 +219,6 @@ export const exomind = $root.exomind = (() => {
              * @memberof exomind.base
              * @interface ICollectionChild
              * @property {exocore.index.IReference|null} [collection] CollectionChild collection
-             * @property {google.protobuf.ITimestamp|null} [addedDate] CollectionChild addedDate
              * @property {number|Long|null} [weight] CollectionChild weight
              */
 
@@ -245,14 +244,6 @@ export const exomind = $root.exomind = (() => {
              * @instance
              */
             CollectionChild.prototype.collection = null;
-
-            /**
-             * CollectionChild addedDate.
-             * @member {google.protobuf.ITimestamp|null|undefined} addedDate
-             * @memberof exomind.base.CollectionChild
-             * @instance
-             */
-            CollectionChild.prototype.addedDate = null;
 
             /**
              * CollectionChild weight.
@@ -288,8 +279,6 @@ export const exomind = $root.exomind = (() => {
                     writer = $Writer.create();
                 if (message.collection != null && Object.hasOwnProperty.call(message, "collection"))
                     $root.exocore.index.Reference.encode(message.collection, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                if (message.addedDate != null && Object.hasOwnProperty.call(message, "addedDate"))
-                    $root.google.protobuf.Timestamp.encode(message.addedDate, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 if (message.weight != null && Object.hasOwnProperty.call(message, "weight"))
                     writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.weight);
                 return writer;
@@ -328,9 +317,6 @@ export const exomind = $root.exomind = (() => {
                     switch (tag >>> 3) {
                     case 1:
                         message.collection = $root.exocore.index.Reference.decode(reader, reader.uint32());
-                        break;
-                    case 2:
-                        message.addedDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
                         break;
                     case 3:
                         message.weight = reader.uint64();
@@ -375,11 +361,6 @@ export const exomind = $root.exomind = (() => {
                     if (error)
                         return "collection." + error;
                 }
-                if (message.addedDate != null && message.hasOwnProperty("addedDate")) {
-                    let error = $root.google.protobuf.Timestamp.verify(message.addedDate);
-                    if (error)
-                        return "addedDate." + error;
-                }
                 if (message.weight != null && message.hasOwnProperty("weight"))
                     if (!$util.isInteger(message.weight) && !(message.weight && $util.isInteger(message.weight.low) && $util.isInteger(message.weight.high)))
                         return "weight: integer|Long expected";
@@ -402,11 +383,6 @@ export const exomind = $root.exomind = (() => {
                     if (typeof object.collection !== "object")
                         throw TypeError(".exomind.base.CollectionChild.collection: object expected");
                     message.collection = $root.exocore.index.Reference.fromObject(object.collection);
-                }
-                if (object.addedDate != null) {
-                    if (typeof object.addedDate !== "object")
-                        throw TypeError(".exomind.base.CollectionChild.addedDate: object expected");
-                    message.addedDate = $root.google.protobuf.Timestamp.fromObject(object.addedDate);
                 }
                 if (object.weight != null)
                     if ($util.Long)
@@ -435,7 +411,6 @@ export const exomind = $root.exomind = (() => {
                 let object = {};
                 if (options.defaults) {
                     object.collection = null;
-                    object.addedDate = null;
                     if ($util.Long) {
                         let long = new $util.Long(0, 0, true);
                         object.weight = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
@@ -444,8 +419,6 @@ export const exomind = $root.exomind = (() => {
                 }
                 if (message.collection != null && message.hasOwnProperty("collection"))
                     object.collection = $root.exocore.index.Reference.toObject(message.collection, options);
-                if (message.addedDate != null && message.hasOwnProperty("addedDate"))
-                    object.addedDate = $root.google.protobuf.Timestamp.toObject(message.addedDate, options);
                 if (message.weight != null && message.hasOwnProperty("weight"))
                     if (typeof message.weight === "number")
                         object.weight = options.longs === String ? String(message.weight) : message.weight;
@@ -474,7 +447,6 @@ export const exomind = $root.exomind = (() => {
              * Properties of a Postponed.
              * @memberof exomind.base
              * @interface IPostponed
-             * @property {exocore.index.IReference|null} [entity] Postponed entity
              * @property {google.protobuf.ITimestamp|null} [untilDate] Postponed untilDate
              */
 
@@ -492,14 +464,6 @@ export const exomind = $root.exomind = (() => {
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
-
-            /**
-             * Postponed entity.
-             * @member {exocore.index.IReference|null|undefined} entity
-             * @memberof exomind.base.Postponed
-             * @instance
-             */
-            Postponed.prototype.entity = null;
 
             /**
              * Postponed untilDate.
@@ -533,8 +497,6 @@ export const exomind = $root.exomind = (() => {
             Postponed.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.entity != null && Object.hasOwnProperty.call(message, "entity"))
-                    $root.exocore.index.Reference.encode(message.entity, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 if (message.untilDate != null && Object.hasOwnProperty.call(message, "untilDate"))
                     $root.google.protobuf.Timestamp.encode(message.untilDate, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
@@ -571,9 +533,6 @@ export const exomind = $root.exomind = (() => {
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
-                    case 1:
-                        message.entity = $root.exocore.index.Reference.decode(reader, reader.uint32());
-                        break;
                     case 2:
                         message.untilDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
                         break;
@@ -612,11 +571,6 @@ export const exomind = $root.exomind = (() => {
             Postponed.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.entity != null && message.hasOwnProperty("entity")) {
-                    let error = $root.exocore.index.Reference.verify(message.entity);
-                    if (error)
-                        return "entity." + error;
-                }
                 if (message.untilDate != null && message.hasOwnProperty("untilDate")) {
                     let error = $root.google.protobuf.Timestamp.verify(message.untilDate);
                     if (error)
@@ -637,11 +591,6 @@ export const exomind = $root.exomind = (() => {
                 if (object instanceof $root.exomind.base.Postponed)
                     return object;
                 let message = new $root.exomind.base.Postponed();
-                if (object.entity != null) {
-                    if (typeof object.entity !== "object")
-                        throw TypeError(".exomind.base.Postponed.entity: object expected");
-                    message.entity = $root.exocore.index.Reference.fromObject(object.entity);
-                }
                 if (object.untilDate != null) {
                     if (typeof object.untilDate !== "object")
                         throw TypeError(".exomind.base.Postponed.untilDate: object expected");
@@ -663,12 +612,8 @@ export const exomind = $root.exomind = (() => {
                 if (!options)
                     options = {};
                 let object = {};
-                if (options.defaults) {
-                    object.entity = null;
+                if (options.defaults)
                     object.untilDate = null;
-                }
-                if (message.entity != null && message.hasOwnProperty("entity"))
-                    object.entity = $root.exocore.index.Reference.toObject(message.entity, options);
                 if (message.untilDate != null && message.hasOwnProperty("untilDate"))
                     object.untilDate = $root.google.protobuf.Timestamp.toObject(message.untilDate, options);
                 return object;
@@ -1433,6 +1378,7 @@ export const exomind = $root.exomind = (() => {
              * @property {string|null} [snippet] Email snippet
              * @property {Array.<exomind.base.IEmailPart>|null} [parts] Email parts
              * @property {Array.<exomind.base.IEmailAttachment>|null} [attachments] Email attachments
+             * @property {boolean|null} [read] Email read
              */
 
             /**
@@ -1544,6 +1490,14 @@ export const exomind = $root.exomind = (() => {
             Email.prototype.attachments = $util.emptyArray;
 
             /**
+             * Email read.
+             * @member {boolean} read
+             * @memberof exomind.base.Email
+             * @instance
+             */
+            Email.prototype.read = false;
+
+            /**
              * Creates a new Email instance using the specified properties.
              * @function create
              * @memberof exomind.base.Email
@@ -1594,6 +1548,8 @@ export const exomind = $root.exomind = (() => {
                         $root.exomind.base.EmailAttachment.encode(message.attachments[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
                 if (message.account != null && Object.hasOwnProperty.call(message, "account"))
                     $root.exocore.index.Reference.encode(message.account, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
+                if (message.read != null && Object.hasOwnProperty.call(message, "read"))
+                    writer.uint32(/* id 14, wireType 0 =*/112).bool(message.read);
                 return writer;
             };
 
@@ -1670,6 +1626,9 @@ export const exomind = $root.exomind = (() => {
                         if (!(message.attachments && message.attachments.length))
                             message.attachments = [];
                         message.attachments.push($root.exomind.base.EmailAttachment.decode(reader, reader.uint32()));
+                        break;
+                    case 14:
+                        message.read = reader.bool();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -1775,6 +1734,9 @@ export const exomind = $root.exomind = (() => {
                             return "attachments." + error;
                     }
                 }
+                if (message.read != null && message.hasOwnProperty("read"))
+                    if (typeof message.read !== "boolean")
+                        return "read: boolean expected";
                 return null;
             };
 
@@ -1861,6 +1823,8 @@ export const exomind = $root.exomind = (() => {
                         message.attachments[i] = $root.exomind.base.EmailAttachment.fromObject(object.attachments[i]);
                     }
                 }
+                if (object.read != null)
+                    message.read = Boolean(object.read);
                 return message;
             };
 
@@ -1891,6 +1855,7 @@ export const exomind = $root.exomind = (() => {
                     object.subject = "";
                     object.snippet = "";
                     object.account = null;
+                    object.read = false;
                 }
                 if (message.sourceId != null && message.hasOwnProperty("sourceId"))
                     object.sourceId = message.sourceId;
@@ -1929,6 +1894,8 @@ export const exomind = $root.exomind = (() => {
                 }
                 if (message.account != null && message.hasOwnProperty("account"))
                     object.account = $root.exocore.index.Reference.toObject(message.account, options);
+                if (message.read != null && message.hasOwnProperty("read"))
+                    object.read = message.read;
                 return object;
             };
 

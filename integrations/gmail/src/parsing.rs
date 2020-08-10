@@ -26,6 +26,10 @@ pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThre
             let mut email: exomind::protos::base::Email = exomind::protos::base::Email::default();
             email.snippet = message.snippet.clone().unwrap_or_default();
             email.source_id = message.id.clone().unwrap_or_default();
+            email.read = message
+                .label_ids
+                .map(|lbls| !lbls.iter().any(|l| l == "UNREAD"))
+                .unwrap_or(true);
 
             match parse_part(&part, &mut email) {
                 Ok(()) => {
@@ -40,6 +44,8 @@ pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThre
             }
         }
     }
+
+    parsed_thread.thread.read = parsed_thread.emails.iter().all(|e| e.read);
 
     if let Some(last_email) = parsed_thread.emails.last() {
         parsed_thread.thread.snippet = last_email.snippet.clone();

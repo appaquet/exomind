@@ -101,9 +101,6 @@ export namespace exomind {
             /** CollectionChild collection */
             collection?: (exocore.index.IReference|null);
 
-            /** CollectionChild addedDate */
-            addedDate?: (google.protobuf.ITimestamp|null);
-
             /** CollectionChild weight */
             weight?: (number|Long|null);
         }
@@ -119,9 +116,6 @@ export namespace exomind {
 
             /** CollectionChild collection. */
             public collection?: (exocore.index.IReference|null);
-
-            /** CollectionChild addedDate. */
-            public addedDate?: (google.protobuf.ITimestamp|null);
 
             /** CollectionChild weight. */
             public weight: (number|Long);
@@ -200,9 +194,6 @@ export namespace exomind {
         /** Properties of a Postponed. */
         interface IPostponed {
 
-            /** Postponed entity */
-            entity?: (exocore.index.IReference|null);
-
             /** Postponed untilDate */
             untilDate?: (google.protobuf.ITimestamp|null);
         }
@@ -215,9 +206,6 @@ export namespace exomind {
              * @param [properties] Properties to set
              */
             constructor(properties?: exomind.base.IPostponed);
-
-            /** Postponed entity. */
-            public entity?: (exocore.index.IReference|null);
 
             /** Postponed untilDate. */
             public untilDate?: (google.protobuf.ITimestamp|null);
@@ -580,6 +568,9 @@ export namespace exomind {
 
             /** Email attachments */
             attachments?: (exomind.base.IEmailAttachment[]|null);
+
+            /** Email read */
+            read?: (boolean|null);
         }
 
         /** Represents an Email. */
@@ -623,6 +614,9 @@ export namespace exomind {
 
             /** Email attachments. */
             public attachments: exomind.base.IEmailAttachment[];
+
+            /** Email read. */
+            public read: boolean;
 
             /**
              * Creates a new Email instance using the specified properties.

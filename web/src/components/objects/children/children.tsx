@@ -7,7 +7,6 @@ import { ModalStore } from "../../../store/modal-store";
 import { ExpandableQuery } from "../../../store/queries";
 import { CollectionSelector } from "../../popups/collection-selector/collection-selector";
 import TimeSelector from "../../popups/time-selector/time-selector";
-import ChildrenTypeSwitcher from "../entity-list/children-type-switcher";
 import EntityAction from '../entity-list/entity-action';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
 import { ListActions } from "../entity-list/list-actions";
@@ -210,9 +209,6 @@ export class Children extends React.Component<IProps, IState> {
         let mb = MutationBuilder
             .updateEntity(et.id)
             .putTrait(new exomind.base.Postponed({
-                entity: new exocore.index.Reference({
-                    entityId: et.id,
-                }),
                 untilDate: toProtoTimestamp(date),
             }), "postponed")
             .returnEntities();

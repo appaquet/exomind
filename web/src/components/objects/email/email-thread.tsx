@@ -45,17 +45,18 @@ export default class EmailThread extends React.Component<IProps, IState> {
         this.draftTrait = this.entityTraits.traitOfType(exomind.base.DraftEmail);
 
         let count = 0;
-        const emailsAndDraft = this.entityTraits.traitsOfType(exomind.base.Email)
-            .concat(this.entityTraits.traitsOfType(exomind.base.DraftEmail));
-        const emailStates = _.chain(emailsAndDraft)
+        const emailStates = _.chain(this.entityTraits.traitsOfType<exomind.base.Email>(exomind.base.Email))
             .map((trait) => {
-                // TODO: isOpen should be based on read flag in email
-                return { index: count++, trait: trait, isOpen: false } as EmailState;
+                return { index: count++, trait: trait, isOpen: !trait.message.read } as EmailState;
             })
             .sortBy((a) => {
                 return a.trait.modificationDate ?? a.trait.creationDate;
             })
             .value();
+
+        if (this.draftTrait) {
+            emailStates.push({ index: count++, trait: this.draftTrait, isOpen: true });
+        }
 
         const last = _.last(emailStates);
         if (last) {
@@ -310,7 +311,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     private handleReplyEmail(): void {
-        // TODO:
+        // TODO: Reply
         // EmailsLogicXYZ.createReplyEmail(this.props.entity, email).onProcessed((cmd, obj) => {
         //     if (obj) {
         //         let entityTrait = new EntityTrait(this.props.entity, 'exomind.draft_email');
@@ -320,7 +321,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     private handleReplyAllEmail(): void {
-        // TODO:
+        // TODO: Reply all
         // EmailsLogicXYZ.createReplyAllEmail(this.props.entity, email).onProcessed((cmd, obj) => {
         //     if (obj) {
         //         let entityTrait = new EntityTrait(this.props.entity.id, 'exomind.draft_email');
@@ -330,7 +331,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     private handleForwardEmail(): void {
-        // TODO:
+        // TODO: Forward
         // EmailsLogicXYZ.createForwardEmail(this.props.entity, email).onProcessed((cmd, obj) => {
         //     if (obj) {
         //         let entityTrait = new EntityTrait(this.props.entity.id, 'exomind.draft_email');
@@ -340,7 +341,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     private trackMarkAsRead(): void {
-        // TODO:
+        // TODO: Mark as read
         // let entity = this.props.entity;
         // setTimeout(t => {
         //     if (this.mounted && entity.id == this.props.entity.id && this.markRead !== entity.id) {
