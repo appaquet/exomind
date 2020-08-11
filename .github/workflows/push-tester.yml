@@ -10,7 +10,7 @@ jobs:
   rust_checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.2
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -34,7 +34,7 @@ jobs:
   rust_tests_coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.2
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -55,7 +55,7 @@ jobs:
   rust_linux_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.2
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -72,7 +72,7 @@ jobs:
   rust_macos_tests:
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.2
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -89,7 +89,7 @@ jobs:
   rust_windows_tests:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.2
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -108,7 +108,7 @@ jobs:
     container:
       image: ubuntu:19.10 # required for clang with wasm
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.2
 
       - name: Install build dependencies
         run: |
@@ -144,7 +144,7 @@ jobs:
   ios_client_build:
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.2
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -179,5 +179,5 @@ jobs:
   markdown_links_check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.3.1
+    - uses: actions/checkout@v2.3.2
     - uses: gaurav-nelson/github-action-markdown-link-check@v1
