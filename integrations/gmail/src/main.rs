@@ -5,8 +5,10 @@ use exocore::core::protos::prost::ProstAnyPackMessageExt;
 use exocore::core::time::Clock;
 use exocore::index::mutation::MutationBuilder;
 use exocore::index::remote::{Client, ClientHandle};
-use exocore::transport::{Libp2pTransport, TransportLayer};
-use exomind;
+use exocore::{
+    protos::index::TraitDetails,
+    transport::{Libp2pTransport, TransportLayer},
+};
 use exomind::protos::base::{
     Account, AccountScope, AccountType, Collection, CollectionChild, Email, EmailThread,
 };
@@ -51,7 +53,6 @@ async fn main() {
             message: Some(
                 Collection {
                     name: "Inbox".to_string(),
-                    ..Default::default()
                 }
                 .pack_to_any()
                 .unwrap(),
@@ -63,7 +64,6 @@ async fn main() {
             message: Some(
                 Collection {
                     name: "Favorites".to_string(),
-                    ..Default::default()
                 }
                 .pack_to_any()
                 .unwrap(),
@@ -93,7 +93,7 @@ async fn main() {
         .execute()
         .unwrap();
 
-    let threads = list.threads.unwrap_or_else(|| Vec::new());
+    let threads = list.threads.unwrap_or_else(Vec::new);
     for partial_thread in threads {
         let thread_id = partial_thread.id.unwrap().clone();
         let thread: google_gmail1::schemas::Thread = gmail_client
@@ -145,6 +145,7 @@ async fn main() {
                 message: Some(thread.pack_to_any().unwrap()),
                 creation_date: thread_create_date,
                 modification_date: thread_modification_date,
+                details: TraitDetails::Full.into(),
             };
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), thread_trait);
             let _ = exocore_client.mutate(mutation).await.unwrap();
@@ -157,6 +158,7 @@ async fn main() {
                 message: Some(email.pack_to_any().unwrap()),
                 creation_date,
                 modification_date: None,
+                details: TraitDetails::Full.into(),
             };
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), email_trait);
             let _ = exocore_client.mutate(mutation).await.unwrap();
@@ -175,7 +177,6 @@ async fn main() {
                             .duration_since(std::time::SystemTime::UNIX_EPOCH)
                             .unwrap()
                             .as_millis() as u64,
-                        ..Default::default()
                     }
                     .pack_to_any()
                     .unwrap(),

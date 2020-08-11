@@ -140,7 +140,7 @@ fn parse_attachment(
         .unwrap_or_default();
 
     email.attachments.push(EmailAttachment {
-        key: key.to_string(),
+        key,
         name: filename.to_string(),
         mime_type: mime_type.to_string(),
         inline_placeholder: attachment_id.unwrap_or_default(),
