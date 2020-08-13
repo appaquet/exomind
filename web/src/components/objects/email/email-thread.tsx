@@ -141,9 +141,11 @@ export default class EmailThread extends React.Component<IProps, IState> {
                     <span className="from">{EmailsLogic.formatContact(email.message.from)}</span>
                     {snippetOrTo}
                     <span
-                        className="time">{EmailsLogic.formatDate(fromProtoTimestamp(email.message.receivedDate))}</span>
-                    <span className="header-controls" onClick={this.handleOpenEmailClick.bind(this, emailState, email)}><i
-                        className="icon" /></span>
+                        className="time">{EmailsLogic.formatDate(fromProtoTimestamp(email.message.receivedDate))}
+                    </span>
+                    <span className="header-controls" onClick={this.handleOpenEmailClick.bind(this, emailState, email)}>
+                        <i className="icon" />
+                    </span>
                 </div>
 
                 {emailBody}

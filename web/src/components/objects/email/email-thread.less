@@ -25,9 +25,12 @@
           display: inline-block;
         }
         .snippet, .to {
+          &:before {
+            content: " - "
+          }
           font-weight: normal;
           margin-left: 5px;
-          font-size: 0.9em;
+          font-size: 0.8em;
         }
         .time {
           position: absolute;
@@ -104,9 +107,9 @@
           border-radius: 20px;
           font-size: 10px;
           text-align: center;
+          line-height: 20px;;
         }
       }
-
 
       .object-body {
         padding-bottom: 50px; // enough space for email controls to appear non awklardly
