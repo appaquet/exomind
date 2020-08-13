@@ -727,7 +727,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#7ffe378d88633cdd7351bc620755a24ccba8d30c"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -738,7 +738,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#7ffe378d88633cdd7351bc620755a24ccba8d30c"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -755,7 +755,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#7ffe378d88633cdd7351bc620755a24ccba8d30c"
 dependencies = [
  "anyhow",
  "bs58",
@@ -790,7 +790,7 @@ dependencies = [
 [[package]]
 name = "exocore-index"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#7ffe378d88633cdd7351bc620755a24ccba8d30c"
 dependencies = [
  "anyhow",
  "bytes 0.5.6",
@@ -810,7 +810,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#7ffe378d88633cdd7351bc620755a24ccba8d30c"
 dependencies = [
  "anyhow",
  "byteorder",
