@@ -75,7 +75,7 @@
     "file-loader": "^6.0.0",
     "html-loader": "^1.1.0",
     "html-webpack-plugin": "^4.3.0",
-    "jest": "^26.1.0",
+    "jest": "^26.4.0",
     "json-loader": "^0.5.7",
     "less-loader": "^6.1.0",
     "moment": "^2.25.3",
