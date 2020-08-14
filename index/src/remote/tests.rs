@@ -160,13 +160,13 @@ fn watched_query_error_propagation() -> anyhow::Result<()> {
 fn watched_query_timeout() -> anyhow::Result<()> {
     let server_config = ServerConfiguration {
         management_timer_interval: Duration::from_millis(100),
-        watched_queries_register_timeout: Duration::from_millis(1000),
+        watched_queries_register_timeout: Duration::from_millis(2000),
     };
 
     // client will re-register itself at higher interval then expected on server,
     // which will result in timing out eventually
     let client_config = ClientConfiguration {
-        watched_queries_register_interval: Duration::from_millis(1100),
+        watched_queries_register_interval: Duration::from_millis(2100),
         ..ClientConfiguration::default()
     };
 

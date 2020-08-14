@@ -1,6 +1,7 @@
 keypair: ae4cDx4QxczCi3SAn2f9Wve1Gb4eJrNA68VGEnRMyYKVVkT4rfRR8dVATQxJGapmiSa49qLm8SbVFqj4BBJYNdqgo3
 public_key: pe4joYLBR7R48zZfbLBqHLNvZ97eXAz1zE3pY29h25fGr5
 name: vigorously-emerging-elk
+
 data_directory: ./data
 nodes:
   - node:

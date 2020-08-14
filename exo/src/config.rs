@@ -2,7 +2,7 @@ use crate::options;
 use exocore_core::protos::core::{cell_application_config, node_cell_config};
 
 pub fn validate(
-    _opts: &options::Options,
+    _exo_opts: &options::ExoOptions,
     _conf_opts: &options::ConfigOptions,
     validate_opts: &options::ValidateOpts,
 ) -> anyhow::Result<()> {
@@ -16,7 +16,7 @@ pub fn validate(
 }
 
 pub fn standalone(
-    _opts: &options::Options,
+    _exo_opts: &options::ExoOptions,
     _conf_opts: &options::ConfigOptions,
     convert_opts: &options::StandaloneOpts,
 ) -> anyhow::Result<()> {

@@ -4,11 +4,11 @@
 
 **Warning: Exocore is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
 
-Exocore is a distributed applications framework with private and encrypted data storage. It can be used as a computing and 
-storage backend for web and mobile applications, and is extensible via WebAssembly. It is designed to be resilient to 
-failures, allow offline usage (ex: on mobile). Exocore exposes SDKs for web/WebAssembly, Mobile (Android/iOS) and Rust.
+Exocore is a distributed applications framework with private and encrypted data storage. Think of like an infrastructure that allows
+a user to own his own personal cloud that is extensible via WebAssembly applications and accessible via Web/Mobile SDKs. It is designed 
+to be resilient to failures, allow offline usage (ex: on mobile). 
 
-The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data. 
+The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data.
 
 A cell consists of:
 * Chain nodes managing replication and storage by using a blockchain data structure.
@@ -16,22 +16,25 @@ A cell consists of:
 * Applications nodes run applications written in WebAssembly (that can be collocated with index nodes)
 * Clients (fat or thin) that can also act as index, data and partially run applications' WebAssembly.
 
-
-## Development status
+## Roadmap
+### v0.1 (in progress)
 * **Chain storage and replication layer**: Proof of concept
 * **Transport layer**: Proof of concept
 * **Index layer:** Proof of concept
-* **SDKs**: In development
-* **Security**: In development
-* **Applications**: In development
-* **Cell management**: Not yet started
-* **Nodes discovery**: Not yet started
-* **Blob storage (IPFS)**: Not yet started
+* **Encryption**: In development
+
+### v0.2
+* **Cell management**
+* **Applications**  (WebAssembly)
+* **Android SDK**
+
+### v0.3 and beyond
+* **Nodes discovery**
+* **Blob storage**  (IPFS)
+* **Offline support**
 
 
 ## Dependencies
-
-### General
 * Build dependencies
     * On MacOS: Install Xcode and command lines tools
     * On Ubuntu: `apt install build-essential pkg-config libssl-dev`
@@ -48,25 +51,16 @@ A cell consists of:
     * On MacOS: `brew install protobuf` 
     * On Ubuntu: `apt install protobuf-compiler` 
     
-### Web (optional)
-* See [Web WASM client README](./clients/web/README.md)
-
-### Android (optional)
-* See [Android client README](./clients/android/README.md)
-
-### iOS (optional)
-* See [iOS client README](./clients/ios/README.md)
 
 ## Usage & configuration
 * CLI:
   * `./tools/install.sh` or `cd exo && cargo install --path .`
 
 * Configuration
-    * Most command requires a `config.yaml` file, for which an example can be found in here: [`./examples/config.yaml`]
+    * Most commands requires a `config.yaml` file, for which an example can be found in here: [`./examples/config.yaml`]
     * At minimum, the config requires 2 keypair: one for the node, one for the cell.
     * The node keypair is unique per server/node, while the cell keypair is shared among servers that host the cell.
     
-
 ## Quick start
 
 ### Create a Cell hosted on 2 nodes
@@ -93,9 +87,17 @@ A cell consists of:
   * Start development server which will watch files and rebuild automatically:
     * `cd ./examples/web && yarn install && yarn start`
   * Generate cell configuration for web:
-    * Convert config to JSON: `exo config standalone <config file>`
+    * Convert config to JSON: `exo config standalone <config file> --exclude-app-schemas json`
   * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
     * Paste JSON config and save
+
+## Clients
+
+#### Web
+* See [Web WASM client README](./clients/web/README.md)
+
+#### iOS
+* See [iOS client README](./clients/ios/README.md)
   
 ## Documentation
 * [Replication](chain/replication.md)

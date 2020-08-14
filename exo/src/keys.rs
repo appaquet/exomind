@@ -2,7 +2,10 @@ use crate::options;
 use exocore_core::cell::{Node, NodeId};
 use exocore_core::crypto::keys::Keypair;
 
-pub fn generate(_opt: &options::Options, keys_opts: &options::KeysOptions) -> anyhow::Result<()> {
+pub fn generate(
+    _exo_opts: &options::ExoOptions,
+    keys_opts: &options::KeysOptions,
+) -> anyhow::Result<()> {
     let keypair = match keys_opts.algorithm {
         options::KeyAlgorithm::Ed25519 => Keypair::generate_ed25519(),
         options::KeyAlgorithm::Rsa => unimplemented!(),

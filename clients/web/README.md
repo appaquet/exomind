@@ -28,7 +28,12 @@
     * `cd ../../examples/web && yarn install && yarn start`
     * Navigate to [http://localhost:8080](http://localhost:8080)
 
-# Notes
+* Generate a node configuration and copy it to the app:
+
+  `exo config standalone path/to/web/node/config.yaml --exclude-app-schemas json`
+
+
+## Known issues
 * Connection can only be via localhost or https since WebCrypto used in libp2p's secio implementation only works over secure code.
   * See https://www.fxsitecompat.dev/en-CA/docs/2020/web-crypto-api-is-no-longer-available-on-insecure-sites/ and
         https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto

@@ -28,6 +28,22 @@ impl<I: FrameReader> SizedFrame<I> {
     }
 }
 
+impl SizedFrame<Vec<u8>> {
+    pub fn new_from_reader<R: std::io::Read>(reader: &mut R) -> Result<SizedFrame<Vec<u8>>, Error> {
+        let inner_size = reader.read_u32::<LittleEndian>()? as usize;
+
+        let mut buf = vec![0u8; inner_size + 8];
+
+        (&mut buf[0..4]).write_u32::<LittleEndian>(inner_size as u32)?;
+        reader.read_exact(&mut buf[4..8 + inner_size])?;
+
+        Ok(SizedFrame {
+            inner: buf,
+            inner_size,
+        })
+    }
+}
+
 impl SizedFrame<&[u8]> {
     pub fn new_from_next_offset(
         buffer: &[u8],
@@ -133,16 +149,16 @@ impl<I: FrameBuilder> FrameBuilder for SizedFrameBuilder<I> {
     }
 }
 
-/// Iterate through a series of sized frame in the given buffer.
-pub struct SizedFrameIterator<'a> {
+/// Iterate through a series of sized frame in the given bytes slice.
+pub struct SizedFrameSliceIterator<'a> {
     buffer: &'a [u8],
     current_offset: usize,
     pub last_error: Option<Error>,
 }
 
-impl<'a> SizedFrameIterator<'a> {
-    pub fn new(buffer: &'a [u8]) -> SizedFrameIterator<'a> {
-        SizedFrameIterator {
+impl<'a> SizedFrameSliceIterator<'a> {
+    pub fn new(buffer: &'a [u8]) -> SizedFrameSliceIterator<'a> {
+        SizedFrameSliceIterator {
             buffer,
             current_offset: 0,
             last_error: None,
@@ -150,8 +166,8 @@ impl<'a> SizedFrameIterator<'a> {
     }
 }
 
-impl<'a> Iterator for SizedFrameIterator<'a> {
-    type Item = IteratedSizedFrame<'a>;
+impl<'a> Iterator for SizedFrameSliceIterator<'a> {
+    type Item = IteratedSizedSliceFrame<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let offset = self.current_offset;
@@ -160,7 +176,7 @@ impl<'a> Iterator for SizedFrameIterator<'a> {
         match SizedFrame::new(slice) {
             Ok(frame) => {
                 self.current_offset += frame.size();
-                Some(IteratedSizedFrame { offset, frame })
+                Some(IteratedSizedSliceFrame { offset, frame })
             }
             Err(err) => {
                 self.last_error = Some(err);
@@ -170,9 +186,50 @@ impl<'a> Iterator for SizedFrameIterator<'a> {
     }
 }
 
-pub struct IteratedSizedFrame<'a> {
+pub struct IteratedSizedSliceFrame<'a> {
     pub offset: usize,
     pub frame: SizedFrame<&'a [u8]>,
+}
+
+/// Iterate through a series of sized frame from given reader.
+pub struct SizedFrameReaderIterator<R: std::io::Read> {
+    reader: R,
+    current_offset: usize,
+    pub last_error: Option<Error>,
+}
+
+impl<R: std::io::Read> SizedFrameReaderIterator<R> {
+    pub fn new(reader: R) -> SizedFrameReaderIterator<R> {
+        SizedFrameReaderIterator {
+            reader,
+            current_offset: 0,
+            last_error: None,
+        }
+    }
+}
+
+impl<R: std::io::Read> Iterator for SizedFrameReaderIterator<R> {
+    type Item = IteratedSizedReaderFrame;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let offset = self.current_offset;
+
+        match SizedFrame::new_from_reader(&mut self.reader) {
+            Ok(frame) => {
+                self.current_offset += frame.size();
+                Some(IteratedSizedReaderFrame { offset, frame })
+            }
+            Err(err) => {
+                self.last_error = Some(err);
+                None
+            }
+        }
+    }
+}
+
+pub struct IteratedSizedReaderFrame {
+    pub offset: usize,
+    pub frame: SizedFrame<Vec<u8>>,
 }
 
 #[cfg(test)]
@@ -238,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn frame_iterator() -> anyhow::Result<()> {
+    fn frame_slice_iterator() -> anyhow::Result<()> {
         let buffer = {
             let buffer = Vec::new();
             let mut buffer_cursor = Cursor::new(buffer);
@@ -252,14 +309,42 @@ mod tests {
             buffer_cursor.into_inner()
         };
 
-        let iter = SizedFrameIterator::new(&buffer);
+        let iter = SizedFrameSliceIterator::new(&buffer);
         let frames = iter.collect::<Vec<_>>();
         assert_eq!(2, frames.len());
         assert_eq!(vec![1u8; 10], frames[0].frame.exposed_data());
         assert_eq!(vec![2u8; 10], frames[1].frame.exposed_data());
 
         let empty = Vec::new();
-        let iter = SizedFrameIterator::new(&empty);
+        let iter = SizedFrameSliceIterator::new(&empty);
+        assert_eq!(0, iter.count());
+
+        Ok(())
+    }
+
+    #[test]
+    fn frame_reader_iterator() -> anyhow::Result<()> {
+        let buffer = {
+            let buffer = Vec::new();
+            let mut buffer_cursor = Cursor::new(buffer);
+
+            let frame1 = SizedFrameBuilder::new(vec![1u8; 10]);
+            frame1.write_to(&mut buffer_cursor)?;
+
+            let frame2 = SizedFrameBuilder::new(vec![2u8; 10]);
+            frame2.write_to(&mut buffer_cursor)?;
+
+            buffer_cursor.into_inner()
+        };
+
+        let iter = SizedFrameReaderIterator::new(buffer.as_slice());
+        let frames = iter.collect::<Vec<_>>();
+        assert_eq!(2, frames.len());
+        assert_eq!(vec![1u8; 10], frames[0].frame.exposed_data());
+        assert_eq!(vec![2u8; 10], frames[1].frame.exposed_data());
+
+        let empty = Vec::new();
+        let iter = SizedFrameReaderIterator::new(empty.as_slice());
         assert_eq!(0, iter.count());
 
         Ok(())
