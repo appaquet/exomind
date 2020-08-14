@@ -84,10 +84,10 @@ export default class Layout extends React.Component<IProps> {
 
   private renderPath(): React.ReactNode {
     const path = this.props.path;
-    if (Navigation.isBootstrapPath(path)) {
+    if (Navigation.isBootstrapPath(path) || !this.exocoreInitialized) {
       return <Bootstrap />;
 
-    } else if (this.props.path.isRoot() || !this.exocoreInitialized) {
+    } else if (this.props.path.isRoot()) {
       if (this.exocoreInitialized) {
         Navigation.navigate(Navigation.pathForInbox());
       }

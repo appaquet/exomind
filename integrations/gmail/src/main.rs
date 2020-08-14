@@ -1,8 +1,8 @@
 use exocore::core::cell::Cell;
 use exocore::core::futures::spawn_future;
 use exocore::core::protos::index::{Reference, Trait};
-use exocore::core::protos::prost::ProstAnyPackMessageExt;
-use exocore::core::time::Clock;
+use exocore::core::protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt};
+use exocore::core::time::{Clock, Utc};
 use exocore::index::mutation::MutationBuilder;
 use exocore::index::remote::{Client, ClientHandle};
 use exocore::{
@@ -25,6 +25,7 @@ extern crate anyhow;
 async fn main() {
     exocore::core::logging::setup(None);
 
+    // TODO: Proper configuration file.
     // TODO: Save tokens into account by persisting to a temp file and save to exocore when changed
 
     let gmail_client = new_gmail_client().await;
@@ -103,6 +104,7 @@ async fn main() {
             .execute()
             .unwrap();
 
+        // TODO: Clean this up. This should be a mode to extract them
         // {
         //     let path = format!(
         //         "integrations/gmail/fixtures/threads/{}.new.json",
@@ -138,6 +140,11 @@ async fn main() {
 
         let thread_create_date = emails.first().and_then(|email| email.received_date.clone());
         let thread_modification_date = emails.last().and_then(|email| email.received_date.clone());
+        let thread_last_date = thread_modification_date
+            .as_ref()
+            .or(thread_create_date.as_ref())
+            .map(|t| t.to_chrono_datetime())
+            .unwrap_or_else(|| Utc::now());
 
         {
             let thread_trait = Trait {
@@ -173,10 +180,7 @@ async fn main() {
                             entity_id: "inbox".to_string(),
                             ..Default::default()
                         }),
-                        weight: std::time::SystemTime::now()
-                            .duration_since(std::time::SystemTime::UNIX_EPOCH)
-                            .unwrap()
-                            .as_millis() as u64,
+                        weight: thread_last_date.timestamp_millis() as u64,
                     }
                     .pack_to_any()
                     .unwrap(),
@@ -190,7 +194,7 @@ async fn main() {
 }
 
 async fn new_exocore_client() -> ClientHandle {
-    let config = exocore::core::cell::node_config_from_yaml_file("local_conf/config.yaml").unwrap();
+    let config = exocore::core::cell::node_config_from_yaml_file("local_conf/node.yaml").unwrap();
     let (cells, local_node) = Cell::new_from_local_node_config(config).unwrap();
     let either_cell = cells.first().unwrap();
     let cell = either_cell.cell();
