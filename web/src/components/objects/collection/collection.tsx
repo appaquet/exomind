@@ -4,7 +4,6 @@ import React from 'react';
 import { EntityTrait } from '../../../store/entities';
 import { Children } from '../children/children';
 import { Selection } from '../entity-list/selection';
-import { ContainerController } from '../container-controller';
 
 interface IProps {
     entity: exocore.index.IEntity;
