@@ -727,7 +727,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#5b1b46c4471ec61e338f08b072f900eb91e6e801"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -738,7 +738,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#5b1b46c4471ec61e338f08b072f900eb91e6e801"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -755,7 +755,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#5b1b46c4471ec61e338f08b072f900eb91e6e801"
 dependencies = [
  "anyhow",
  "bs58",
@@ -790,7 +790,7 @@ dependencies = [
 [[package]]
 name = "exocore-index"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#5b1b46c4471ec61e338f08b072f900eb91e6e801"
 dependencies = [
  "anyhow",
  "bytes 0.5.6",
@@ -803,14 +803,14 @@ dependencies = [
  "log",
  "lru",
  "prost",
- "smallvec 1.4.1",
+ "smallvec 1.4.2",
  "thiserror",
 ]
 
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#2f623cfdffebae13d2601bc25fb486d8af32d686"
+source = "git+https://github.com/appaquet/exocore.git#5b1b46c4471ec61e338f08b072f900eb91e6e801"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1569,7 +1569,7 @@ dependencies = [
  "parity-multiaddr",
  "parking_lot 0.10.2",
  "pin-project",
- "smallvec 1.4.1",
+ "smallvec 1.4.2",
  "wasm-timer",
 ]
 
@@ -1600,7 +1600,7 @@ dependencies = [
  "ring",
  "rw-stream-sink",
  "sha2 0.8.2",
- "smallvec 1.4.1",
+ "smallvec 1.4.2",
  "thiserror",
  "unsigned-varint 0.4.0",
  "void",
@@ -1706,7 +1706,7 @@ dependencies = [
  "libp2p-core",
  "log",
  "rand 0.7.3",
- "smallvec 1.4.1",
+ "smallvec 1.4.2",
  "void",
  "wasm-timer",
 ]
@@ -1987,7 +1987,7 @@ dependencies = [
  "futures 0.3.5",
  "log",
  "pin-project",
- "smallvec 1.4.1",
+ "smallvec 1.4.2",
  "unsigned-varint 0.4.0",
 ]
 
@@ -2202,7 +2202,7 @@ dependencies = [
  "cloudabi 0.0.3",
  "libc",
  "redox_syscall",
- "smallvec 1.4.1",
+ "smallvec 1.4.2",
  "winapi 0.3.9",
 ]
 
@@ -2217,7 +2217,7 @@ dependencies = [
  "instant",
  "libc",
  "redox_syscall",
- "smallvec 1.4.1",
+ "smallvec 1.4.2",
  "winapi 0.3.9",
 ]
 
@@ -2391,9 +2391,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.16.2"
+version = "2.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d883f78645c21b7281d21305181aa1f4dd9e9363e7cf2566c93121552cff003e"
+checksum = "cb14183cc7f213ee2410067e1ceeadba2a7478a59432ff0747a335202798b1e2"
 
 [[package]]
 name = "publicsuffix"
@@ -2980,9 +2980,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.4.1"
+version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3757cb9d89161a2f24e1cf78efa0c1fcff485d18e3f55e0aa3480824ddaa0f3f"
+checksum = "fbee7696b84bbf3d89a1c2eccff0850e3047ed46bfcd2e92c29a2d074d57e252"
 
 [[package]]
 name = "snow"

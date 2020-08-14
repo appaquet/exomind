@@ -50,3 +50,9 @@ jobs:
           yarn build
           yarn test
           yarn lint
+
+  markdown_links_check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.3.2
+    - uses: gaurav-nelson/github-action-markdown-link-check@v1
