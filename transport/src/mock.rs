@@ -8,7 +8,9 @@ use exocore_core::protos::generated::common_capnp::envelope;
 use futures::channel::mpsc;
 use futures::prelude::*;
 
-use crate::transport::{MpscHandleSink, MpscHandleStream, TransportHandleOnStart};
+use crate::transport::{
+    ConnectionStatus, MpscHandleSink, MpscHandleStream, TransportHandleOnStart,
+};
 use crate::{Error, InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer};
 use exocore_core::utils::handle_set::{Handle, HandleSet};
 use futures::executor::block_on;
@@ -61,6 +63,19 @@ impl MockTransport {
             handles_sink: Arc::downgrade(&self.handles_sink),
             incoming_stream: Some(incoming_receiver),
             outgoing_stream: None,
+        }
+    }
+
+    pub fn notify_node_connection_status(
+        &self,
+        node_id: &NodeId,
+        connection_status: ConnectionStatus,
+    ) {
+        let mut handles_sink = self.handles_sink.lock().unwrap();
+        for (_handle_key, sink) in handles_sink.iter_mut() {
+            let _ = sink
+                .sender
+                .try_send(InEvent::NodeStatus(node_id.clone(), connection_status));
         }
     }
 }
@@ -244,6 +259,16 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
         }
     }
 
+    pub fn receive_connection_status(&mut self, rt: &mut Runtime) -> (NodeId, ConnectionStatus) {
+        let stream = self.in_stream.as_mut().unwrap();
+        let event = rt.block_on(async { stream.next().await });
+
+        match event.unwrap() {
+            InEvent::NodeStatus(node_id, status) => (node_id, status),
+            InEvent::Message(_) => self.receive_connection_status(rt),
+        }
+    }
+
     pub fn has_message(&mut self) -> Result<bool, Error> {
         block_on(async {
             let result = futures::future::poll_fn(|cx| -> Poll<bool> {
@@ -297,5 +322,21 @@ mod test {
         let (msg_node, msg) = transport0_test.receive_test_message(&mut rt);
         assert_eq!(&msg_node, node1.id());
         assert_eq!(msg, 101);
+    }
+
+    #[test]
+    fn connection_status_notification() {
+        let mut rt = Runtime::new().unwrap();
+        let hub = MockTransport::default();
+
+        let node0 = LocalNode::generate();
+        let transport0 = hub.get_transport(node0.clone(), TransportLayer::Chain);
+        let mut transport0_test = transport0.into_testable();
+        transport0_test.start(&mut rt);
+
+        hub.notify_node_connection_status(node0.id(), ConnectionStatus::Connected);
+        let (msg_node, status) = transport0_test.receive_connection_status(&mut rt);
+        assert_eq!(&msg_node, node0.id());
+        assert_eq!(status, ConnectionStatus::Connected);
     }
 }

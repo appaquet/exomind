@@ -8,7 +8,7 @@ use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
 use exocore_core::cell::Node;
-use exocore_core::cell::{Cell, CellNodeRole};
+use exocore_core::cell::{Cell, CellNodeRole, NodeId};
 use exocore_core::framing::CapnpFrameBuilder;
 use exocore_core::futures::interval;
 use exocore_core::protos::generated::exocore_index::{
@@ -22,7 +22,8 @@ use exocore_core::time::Instant;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use exocore_core::utils::handle_set::{Handle, HandleSet};
 use exocore_transport::{
-    InEvent, InMessage, OutEvent, OutMessage, TransportHandle, TransportLayer,
+    transport::ConnectionStatus, InEvent, InMessage, OutEvent, OutMessage, TransportHandle,
+    TransportLayer,
 };
 
 use crate::error::Error;
@@ -50,18 +51,13 @@ where
         clock: Clock,
         transport_handle: T,
     ) -> Result<Client<T>, Error> {
+        // pick the first node that has index role for now, we'll be switching over to the first node
+        // that connects once transport established connection
         let index_node = {
             let cell_nodes = cell.nodes();
             let cell_nodes_iter = cell_nodes.iter();
-
-            let index_node = cell_nodes_iter.with_role(CellNodeRole::IndexStore).next();
-
-            index_node
-                .ok_or_else(|| {
-                    Error::Other("Cell doesn't have any index store configured".to_string())
-                })?
-                .node()
-                .clone()
+            let first_index_node = cell_nodes_iter.with_role(CellNodeRole::IndexStore).next();
+            first_index_node.map(|n| n.node()).cloned()
         };
 
         let inner = Arc::new(RwLock::new(Inner {
@@ -70,6 +66,7 @@ where
             clock,
             transport_out: None,
             index_node,
+            nodes_status: HashMap::new(),
             pending_queries: HashMap::new(),
             watched_queries: HashMap::new(),
             pending_mutations: HashMap::new(),
@@ -117,13 +114,18 @@ where
         let mut transport_stream = self.transport_handle.get_stream();
         let transport_receiver = async move {
             while let Some(event) = transport_stream.next().await {
-                if let InEvent::Message(msg) = event {
-                    if let Err(err) = Inner::handle_incoming_message(&weak_inner, msg) {
-                        if err.is_fatal() {
-                            return Err(err);
-                        } else {
-                            error!("Couldn't process incoming message: {}", err);
-                        }
+                let res = match event {
+                    InEvent::Message(msg) => Inner::handle_incoming_message(&weak_inner, msg),
+                    InEvent::NodeStatus(node, status) => {
+                        Inner::handle_node_status_change(&weak_inner, node, status)
+                    }
+                };
+
+                if let Err(err) = res {
+                    if err.is_fatal() {
+                        return Err(err);
+                    } else {
+                        error!("Couldn't process incoming transport message: {}", err);
                     }
                 }
             }
@@ -152,6 +154,7 @@ where
             _ = self.handles.on_handles_dropped().fuse() => (),
         };
 
+        info!("Store client dropped");
         Ok(())
     }
 }
@@ -177,18 +180,62 @@ impl Default for ClientConfiguration {
     }
 }
 
-struct Inner {
+pub(crate) struct Inner {
     config: ClientConfiguration,
     cell: Cell,
     clock: Clock,
     transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
-    index_node: Node,
+    index_node: Option<Node>,
+    nodes_status: HashMap<NodeId, ConnectionStatus>,
     pending_queries: HashMap<ConsistentTimestamp, PendingRequest<EntityResults>>,
     watched_queries: HashMap<ConsistentTimestamp, WatchedQueryRequest>,
     pending_mutations: HashMap<ConsistentTimestamp, PendingRequest<MutationResult>>,
 }
 
 impl Inner {
+    fn handle_node_status_change(
+        weak_inner: &Weak<RwLock<Inner>>,
+        node_id: NodeId,
+        status: ConnectionStatus,
+    ) -> Result<(), Error> {
+        let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+        let mut inner = inner.write()?;
+
+        inner.nodes_status.insert(node_id, status);
+
+        let node_is_connected = |node_id: &NodeId| -> bool {
+            let index_node_status = inner.nodes_status.get(node_id);
+            index_node_status == Some(&ConnectionStatus::Connected)
+        };
+
+        // if currently selected index node is already connected, we're fine
+        if let Some(index_node) = &inner.index_node {
+            if node_is_connected(index_node.id()) {
+                return Ok(());
+            }
+        }
+
+        // otherwise we try to find a new index node that is connected
+        let new_index_node = {
+            let cell_nodes = inner.cell.nodes();
+            let cell_nodes_iter = cell_nodes.iter();
+
+            let index_node = cell_nodes_iter
+                .with_role(CellNodeRole::IndexStore)
+                .find(|n| node_is_connected(n.node().id()));
+
+            index_node.map(|n| n.node()).cloned()
+        };
+        if let Some(new_index_node) = new_index_node {
+            info!("Switching index server node to {:?}", new_index_node);
+            inner.index_node = Some(new_index_node);
+        }
+
+        inner.send_watched_queries_keepalive();
+
+        Ok(())
+    }
+
     fn handle_incoming_message(
         weak_inner: &Weak<RwLock<Inner>>,
         in_message: Box<InMessage>,
@@ -263,11 +310,13 @@ impl Inner {
     ) -> Result<oneshot::Receiver<Result<MutationResult, Error>>, Error> {
         let (result_sender, receiver) = oneshot::channel();
 
+        let index_node = self.index_node.as_ref().ok_or(Error::NotConnected)?;
+
         let request_id = self.clock.consistent_time(self.cell.local_node());
         let request_frame = crate::mutation::mutation_to_request_frame(request)?;
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
-                .with_to_node(self.index_node.clone())
+                .with_to_node(index_node.clone())
                 .with_expiration(Some(Instant::now() + self.config.mutation_timeout))
                 .with_rendez_vous_id(request_id);
         self.send_message(message)?;
@@ -296,11 +345,13 @@ impl Inner {
     > {
         let (result_sender, receiver) = oneshot::channel();
 
+        let index_node = self.index_node.as_ref().ok_or(Error::NotConnected)?;
+
         let request_id = self.clock.consistent_time(self.cell.local_node());
         let request_frame = crate::query::query_to_request_frame(&query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
-                .with_to_node(self.index_node.clone())
+                .with_to_node(index_node.clone())
                 .with_expiration(Some(Instant::now() + self.config.query_timeout))
                 .with_rendez_vous_id(request_id);
         self.send_message(message)?;
@@ -343,23 +394,27 @@ impl Inner {
     }
 
     fn send_watch_query(&self, watched_query: &WatchedQueryRequest) -> Result<(), Error> {
+        let index_node = self.index_node.as_ref().ok_or(Error::NotConnected)?;
+
         let request_frame = crate::query::watched_query_to_request_frame(&watched_query.query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, request_frame)?
-                .with_to_node(self.index_node.clone())
+                .with_to_node(index_node.clone())
                 .with_rendez_vous_id(watched_query.request_id);
 
         self.send_message(message)
     }
 
     fn send_unwatch_query(&self, token: WatchToken) -> Result<(), Error> {
+        let index_node = self.index_node.as_ref().ok_or(Error::NotConnected)?;
+
         let mut frame_builder = CapnpFrameBuilder::<unwatch_query_request::Owned>::new();
         let mut message_builder = frame_builder.get_builder();
         message_builder.set_token(token);
 
         let message =
             OutMessage::from_framed_message(&self.cell, TransportLayer::Index, frame_builder)?
-                .with_to_node(self.index_node.clone());
+                .with_to_node(index_node.clone());
 
         self.send_message(message)
     }
@@ -645,5 +700,69 @@ impl Drop for WatchedQueryStream {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use exocore_core::{
+        cell::{FullCell, LocalNode},
+        futures::Runtime,
+        tests_utils::expect_eventually,
+    };
+    use exocore_transport::mock::MockTransport;
+
+    #[test]
+    fn connects_to_online_node() -> anyhow::Result<()> {
+        let rt = Runtime::new()?;
+        let local_node = LocalNode::generate();
+        let full_cell = FullCell::generate(local_node.clone());
+        let clock = Clock::new();
+        let transport = MockTransport::default();
+
+        let node1 = LocalNode::generate();
+        {
+            let mut cell_nodes = full_cell.nodes_mut();
+            cell_nodes.add(node1.node().clone());
+            let cell_node1 = cell_nodes.get_mut(node1.id()).unwrap();
+            cell_node1.add_role(CellNodeRole::IndexStore);
+        }
+
+        let transport_handle = transport.get_transport(local_node, TransportLayer::Index);
+        let config = ClientConfiguration::default();
+        let client = Client::new(config, full_cell.cell().clone(), clock, transport_handle)?;
+        let client_inner = client.inner.clone();
+        let _client_handle = client.get_handle();
+
+        rt.spawn(async move {
+            let _ = client.run().await;
+        });
+
+        {
+            // client should have selected the only node as an index server even if it's not online
+            let inner = client_inner.read().unwrap();
+            assert_eq!(inner.index_node.as_ref().unwrap().id(), node1.id());
+        }
+
+        // add a second index node to the cell
+        let node2 = LocalNode::generate();
+        {
+            let mut cell_nodes = full_cell.nodes_mut();
+            cell_nodes.add(node2.node().clone());
+            let cell_node2 = cell_nodes.get_mut(node2.id()).unwrap();
+            cell_node2.add_role(CellNodeRole::IndexStore);
+        }
+
+        // notify that the second node is online
+        transport.notify_node_connection_status(node2.id(), ConnectionStatus::Connected);
+
+        expect_eventually(|| -> bool {
+            // should now be connected to the second node since the first wasn't online
+            let inner = client_inner.read().unwrap();
+            inner.index_node.as_ref().unwrap().id() == node2.id()
+        });
+
+        Ok(())
     }
 }

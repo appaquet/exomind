@@ -42,6 +42,9 @@ pub enum Error {
     #[error("Timeout error: {0:?} > {0:?}")]
     Timeout(Duration, Duration),
 
+    #[error("Not connected to any store node")]
+    NotConnected,
+
     #[error("Try to lock a mutex that was poisoned")]
     Poisoned,
 
