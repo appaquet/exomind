@@ -231,7 +231,7 @@ impl Inner {
             inner.index_node = Some(new_index_node);
         }
 
-        inner.send_watched_queries_keepalive();
+        inner.send_watched_queries_keepalive(true);
 
         Ok(())
     }
@@ -299,7 +299,7 @@ impl Inner {
         let mutation_timeout = inner.config.mutation_timeout;
         Inner::check_map_requests_timeouts(&mut inner.pending_mutations, mutation_timeout);
 
-        inner.send_watched_queries_keepalive();
+        inner.send_watched_queries_keepalive(false);
 
         Ok(())
     }
@@ -439,12 +439,12 @@ impl Inner {
         }
     }
 
-    fn send_watched_queries_keepalive(&mut self) {
+    fn send_watched_queries_keepalive(&mut self, force: bool) {
         let register_interval = self.config.watched_queries_register_interval;
 
         let mut sent_queries = Vec::new();
         for (token, query) in &self.watched_queries {
-            if query.last_register.elapsed() > register_interval {
+            if force || query.last_register.elapsed() > register_interval {
                 if let Err(err) = self.send_watch_query(query) {
                     error!("Couldn't send watch query: {}", err);
                 }
