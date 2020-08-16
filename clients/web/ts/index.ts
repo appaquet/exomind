@@ -127,7 +127,6 @@ export class WatchedQuery {
     }
 }
 
-
 export class Registry {
     private _registeredMessages: { [name: string]: any } = {};
 

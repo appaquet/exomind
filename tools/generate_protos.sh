@@ -29,19 +29,20 @@ for proto_path in `ls $EXOCORE_ROOT/target/debug/build/exocore-core-*/out/*.*.rs
   cp $proto_path $dest_path
 done
 
+cargo fmt --all
+
 # Descriptors
 protoc -I"$EXOCORE_ROOT/protos/" $EXOCORE_ROOT/protos/exocore/index/*.proto -o "$EXOCORE_ROOT/core/src/protos/generated/exocore_index.fd"
 protoc -I"$EXOCORE_ROOT/protos/" $EXOCORE_ROOT/protos/exocore/test/*.proto -o "$EXOCORE_ROOT/core/src/protos/generated/exocore_test.fd"
 
-cargo fmt --all
-cargo test --all
-
 # Generate web protos if possible
 if [[ -d "$EXOCORE_ROOT/node_modules" ]]; then
+  echo "Generating web protos..."
   ./clients/web/tools/generate_protos.sh
 fi
 
 # Generate iOS protos if possible
 if [[ "$OSTYPE" == "darwin"* ]]; then
+  echo "Generating iOS protos..."
   ./clients/ios/tools/generate.sh
 fi
