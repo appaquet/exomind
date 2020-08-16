@@ -196,21 +196,26 @@ impl Inner {
     fn handle_node_status_change(
         weak_inner: &Weak<RwLock<Inner>>,
         node_id: NodeId,
-        status: ConnectionStatus,
+        node_new_status: ConnectionStatus,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let mut inner = inner.write()?;
 
-        inner.nodes_status.insert(node_id, status);
+        inner.nodes_status.insert(node_id, node_new_status);
 
         let node_is_connected = |node_id: &NodeId| -> bool {
             let index_node_status = inner.nodes_status.get(node_id);
             index_node_status == Some(&ConnectionStatus::Connected)
         };
 
-        // if currently selected index node is already connected, we're fine
+        // if the node we are already using for store is connected, we don't have to do anything
         if let Some(index_node) = &inner.index_node {
             if node_is_connected(index_node.id()) {
+                // if our current node has just reconnected, we need to make sure watched queries are still registered
+                if node_new_status == ConnectionStatus::Connected {
+                    inner.send_watched_queries_keepalive(true);
+                }
+
                 return Ok(());
             }
         }
