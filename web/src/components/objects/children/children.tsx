@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, TraitQueryBuilder } from 'exocore';
+import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, TraitQueryBuilder, WatchedQuery } from 'exocore';
 import React from 'react';
 import { exomind } from "../../../protos";
 import { EntityTraits } from '../../../store/entities';
@@ -36,6 +36,7 @@ interface IState {
 
 export class Children extends React.Component<IProps, IState> {
     private entityQuery: ExpandableQuery;
+    private parentQuery: WatchedQuery;
     private parentId: string;
 
     constructor(props: IProps) {
@@ -50,13 +51,13 @@ export class Children extends React.Component<IProps, IState> {
             .orderByField('weight', false)
             .project(
                 new exocore.index.Projection({
-                  fieldGroupIds: [1],
-                  package: ["exomind.base"],
+                    fieldGroupIds: [1],
+                    package: ["exomind.base"],
                 }),
                 new exocore.index.Projection({
-                  skip: true,
+                    skip: true,
                 })
-              )
+            )
             .build();
 
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
@@ -69,7 +70,8 @@ export class Children extends React.Component<IProps, IState> {
             }
 
             const parentQuery = QueryBuilder.withIds(props.parentId).build();
-            Exocore.store.query(parentQuery).then((res) => {
+            this.parentQuery = Exocore.store.watchedQuery(parentQuery);
+            this.parentQuery.onChange((res) => {
                 this.setState({
                     parent: res.entities[0].entity,
                 });
@@ -84,6 +86,10 @@ export class Children extends React.Component<IProps, IState> {
 
     componentWillUnmount(): void {
         this.entityQuery.free();
+
+        if (this.parentQuery) {
+            this.parentQuery.free();
+        }
     }
 
     render(): React.ReactNode {

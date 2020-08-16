@@ -202,7 +202,7 @@ async fn new_exocore_client() -> ClientHandle {
     let clock = Clock::new();
 
     let mut transport = Libp2pTransport::new(local_node.clone(), Default::default());
-    let index_transport = transport
+    let store_transport = transport
         .get_handle(cell.clone(), TransportLayer::Index)
         .unwrap();
 
@@ -212,7 +212,7 @@ async fn new_exocore_client() -> ClientHandle {
     });
 
     let store_client =
-        Client::new(Default::default(), cell.clone(), clock, index_transport).unwrap();
+        Client::new(Default::default(), cell.clone(), clock, store_transport).unwrap();
     let store_handle = store_client.get_handle();
 
     spawn_future(async move {
