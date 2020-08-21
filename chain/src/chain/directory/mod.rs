@@ -187,9 +187,8 @@ impl ChainStore for DirectoryChainStore {
                 match self.segments.last() {
                     None => true,
                     Some(s) => {
-                        let new_block_end_offset = s.next_file_offset() as u64
-                            + block.total_size() as u64
-                            + self.config.segment_over_allocate_size;
+                        let new_block_end_offset =
+                            s.next_file_offset() as u64 + block.total_size() as u64;
                         new_block_end_offset > self.config.segment_max_size
                     }
                 }
@@ -528,6 +527,7 @@ pub mod tests {
         let dir = tempfile::tempdir()?;
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 350_000;
+        config.segment_over_allocate_size = 10_000;
 
         fn validate_directory(directory_chain: &DirectoryChainStore) -> anyhow::Result<()> {
             let segments = directory_chain

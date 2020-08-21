@@ -174,7 +174,6 @@ impl Libp2pTransport {
                     OutEvent::Message(msg) => {
                         let frame_data = msg.envelope_builder.as_bytes(); // TODO: Should be to an Arc
 
-
                         // prevent cloning frame if we only send to 1 node
                         if msg.to.len() == 1 {
                             let to_node = msg.to.first().unwrap();
