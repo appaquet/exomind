@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use structopt::StructOpt;
 
-/// CLI options
 #[derive(StructOpt)]
 #[structopt(name = "exocore-cli", about = "Exocore Command Line Interface")]
 pub struct ExoOptions {
@@ -75,9 +74,12 @@ pub struct CellOptions {
     /// Path to node configuration.
     #[structopt(long, short = "c", default_value = "config.yaml")]
     pub config: PathBuf,
+
     #[structopt(long, short)]
-    /// Public key of the cell we want to make an action on.
-    pub public_key: String,
+    /// Public key of the cell we want to make an action on. If not specified and the
+    /// node config only contains 1 cell, this cell will be taken.
+    pub public_key: Option<String>,
+
     #[structopt(subcommand)]
     pub command: CellCommand,
 }
@@ -98,12 +100,12 @@ pub struct ChainExportOptions {
 
 #[derive(StructOpt)]
 pub struct ChainImportOptions {
-    // File from which chain will be imported
-    pub file: PathBuf,
-
     // Number of operations per blocks
-    #[structopt(default_value = "30")]
+    #[structopt(long, default_value = "30")]
     pub operations_per_block: usize,
+
+    // Files from which chain will be imported
+    pub files: Vec<PathBuf>,
 }
 
 /// Configs related options

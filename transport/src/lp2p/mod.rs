@@ -172,7 +172,7 @@ impl Libp2pTransport {
             while let Poll::Ready(Some(event)) = out_receiver.poll_next_unpin(cx) {
                 match event {
                     OutEvent::Message(msg) => {
-                        let frame_data = msg.envelope_builder.as_bytes();
+                        let frame_data = msg.envelope_builder.as_bytes(); // TODO: Should be to an Arc
 
                         // prevent cloning frame if we only send to 1 node
                         if msg.to.len() == 1 {

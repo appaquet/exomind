@@ -240,10 +240,6 @@ impl DirectorySegment {
         if self.segment_file.current_size < (next_file_offset + write_size) as u64 {
             let target_size =
                 (next_file_offset + write_size) as u64 + self.config.segment_over_allocate_size;
-            if target_size > self.config.segment_max_size {
-                return Err(Error::SegmentFull);
-            }
-
             self.segment_file.set_len(target_size)?;
         }
 

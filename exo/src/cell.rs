@@ -152,8 +152,6 @@ pub fn import_chain(
         panic!("Chain is already initialized");
     }
 
-    let file = std::fs::File::open(&import_opts.file).expect("Couldn't open imported file");
-
     let genesis_block = exocore_chain::block::BlockOwned::new_genesis(&full_cell)
         .expect("Couldn't create genesis block");
     chain_store
@@ -186,33 +184,37 @@ pub fn import_chain(
             blocks_count += 1;
         };
 
-    let operation_frames_iter = SizedFrameReaderIterator::new(file);
-    for operation_frame in operation_frames_iter {
-        let operation =
-            exocore_chain::operation::read_operation_frame(operation_frame.frame.whole_data())
-                .expect("Couldn't read operation frame");
+    for file in &import_opts.files {
+        let file = std::fs::File::open(file).expect("Couldn't open imported file");
 
-        let operation_id = {
-            let reader = operation.get_reader()?;
-            reader.get_operation_id()
-        };
+        let operation_frames_iter = SizedFrameReaderIterator::new(file);
+        for operation_frame in operation_frames_iter {
+            let operation =
+                exocore_chain::operation::read_operation_frame(operation_frame.frame.whole_data())
+                    .expect("Couldn't read operation frame");
 
-        if let Some(prev_op_id) = previous_operation_id {
-            if operation_id < prev_op_id {
-                panic!(
-                    "Operations are not sorted! prev={} current={}",
-                    prev_op_id, operation_id
-                );
+            let operation_id = {
+                let reader = operation.get_reader()?;
+                reader.get_operation_id()
+            };
+
+            if let Some(prev_op_id) = previous_operation_id {
+                if operation_id < prev_op_id {
+                    panic!(
+                        "Operations are not sorted! prev={} current={}",
+                        prev_op_id, operation_id
+                    );
+                }
             }
-        }
-        previous_operation_id = Some(operation_id);
+            previous_operation_id = Some(operation_id);
 
-        operations_count += 1;
+            operations_count += 1;
 
-        operations_buffer.push(operation.to_owned());
-        if operations_buffer.len() > import_opts.operations_per_block {
-            let block_op_id = operation_id + 1;
-            flush_buffer(block_op_id, &mut operations_buffer);
+            operations_buffer.push(operation.to_owned());
+            if operations_buffer.len() > import_opts.operations_per_block {
+                let block_op_id = operation_id + 1;
+                flush_buffer(block_op_id, &mut operations_buffer);
+            }
         }
     }
 
@@ -234,10 +236,19 @@ fn get_cell(cell_opts: &options::CellOptions) -> (LocalNodeConfig, EitherCell) {
         .expect("Error parsing configuration");
     let (either_cells, _local_node) =
         Cell::new_from_local_node_config(config.clone()).expect("Couldn't create cell from config");
-    let cell = either_cells
-        .into_iter()
-        .find(|c| c.cell().public_key().encode_base58_string() == cell_opts.public_key)
-        .expect("Couldn't find cell with given public key");
+
+    let cell = if let Some(pk) = &cell_opts.public_key {
+        either_cells
+            .into_iter()
+            .find(|c| c.cell().public_key().encode_base58_string() == *pk)
+            .expect("Couldn't find cell with given public key")
+    } else {
+        if either_cells.len() != 1 {
+            panic!("Node config needs to contain only 1 cell if no public key is specified. Use -p option.");
+        }
+
+        either_cells.into_iter().next().expect("Couldn't find cell")
+    };
 
     (config, cell)
 }

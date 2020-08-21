@@ -9,9 +9,6 @@ pub enum Error {
     #[error("The store has an integrity problem: {0}")]
     Integrity(String),
 
-    #[error("A segment has reached its full capacity")]
-    SegmentFull,
-
     #[error("Error in capnp serialization: {0}")]
     Serialization(#[from] exocore_core::capnp::Error),
 

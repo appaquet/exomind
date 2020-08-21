@@ -527,6 +527,7 @@ pub mod tests {
         let dir = tempfile::tempdir()?;
         let mut config: DirectoryChainStoreConfig = Default::default();
         config.segment_max_size = 350_000;
+        config.segment_over_allocate_size = 10_000;
 
         fn validate_directory(directory_chain: &DirectoryChainStore) -> anyhow::Result<()> {
             let segments = directory_chain

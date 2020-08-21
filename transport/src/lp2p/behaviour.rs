@@ -39,14 +39,14 @@ impl ExocoreBehaviour {
     }
 
     pub fn send_message(&mut self, peer_id: PeerId, expiration: Option<Instant>, data: Vec<u8>) {
-        let event = NetworkBehaviourAction::NotifyHandler {
-            peer_id: peer_id.clone(),
-            handler: NotifyHandler::Any,
-            event: ExocoreProtoMessage { data },
-        };
-
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             if peer.status == PeerStatus::Connected {
+                let event = NetworkBehaviourAction::NotifyHandler {
+                    peer_id: peer_id.clone(),
+                    handler: NotifyHandler::Any,
+                    event: ExocoreProtoMessage { data },
+                };
+
                 self.actions.push_back(event);
             } else {
                 let expiration =
@@ -56,7 +56,11 @@ impl ExocoreBehaviour {
 
                 // Node is disconnected, push the event to a queue and try to connect
                 peer.temp_queue.push_back(QueuedPeerEvent {
-                    event,
+                    event: NetworkBehaviourAction::NotifyHandler {
+                        peer_id: peer_id.clone(),
+                        handler: NotifyHandler::Any,
+                        event: ExocoreProtoMessage { data },
+                    },
                     expiration: Some(expiration),
                 });
 
