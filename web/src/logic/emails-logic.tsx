@@ -193,6 +193,17 @@ export default class EmailsLogic {
               target: '_blank'
             })
           };
+        },
+        'img': (tagName, attribs) => {
+          // force http images to https
+          if (attribs['src'].startsWith('http:')) {
+            attribs['src'] = attribs['src'].replace('http:', 'https:');
+          }
+
+          return {
+            tagName: 'img',
+            attribs: attribs,
+          };
         }
       }
     });

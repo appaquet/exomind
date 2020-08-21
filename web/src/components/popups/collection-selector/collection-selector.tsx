@@ -197,7 +197,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                         entityId: collectionEntity.id,
                     }),
                     weight: new Date().getTime(),
-                }), `child_${this.props.entity.id}`)
+                }), `child_${collectionEntity.id}`)
                 .build();
             Exocore.store.mutate(mutation);
 

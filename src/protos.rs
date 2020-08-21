@@ -49,6 +49,12 @@ pub mod base {
         }
     }
 
+    impl NamedMessage for DraftEmail {
+        fn full_name() -> &'static str {
+            "exomind.base.DraftEmail"
+        }
+    }
+
     impl NamedMessage for EmailPart {
         fn full_name() -> &'static str {
             "exomind.base.EmailPart"
@@ -64,6 +70,18 @@ pub mod base {
     impl NamedMessage for Note {
         fn full_name() -> &'static str {
             "exomind.base.Note"
+        }
+    }
+
+    impl NamedMessage for Task {
+        fn full_name() -> &'static str {
+            "exomind.base.Task"
+        }
+    }
+
+    impl NamedMessage for Link {
+        fn full_name() -> &'static str {
+            "exomind.base.Link"
         }
     }
 
