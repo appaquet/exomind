@@ -59,6 +59,10 @@ impl Clock {
                 break counter;
             }
 
+            // unfortunately, as soon as we roll over the counter, we need to make sure that we don't
+            // have the same millisecond since that would mean its not monotonic
+            std::thread::sleep(std::time::Duration::from_millis(1));
+
             // counter is higher than MAX, we try to swap it with 0.
             // if the previous value after swap wasn't equal to what we expected, it
             // means another thread swapped / increased the value, and we need to retry
