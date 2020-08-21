@@ -30,7 +30,7 @@ smallvec = "1.4"
 lru = "0.6"
 
 # Local store
-tantivy = { version = "0.12", optional = true }
+tantivy = { version = "0.13", optional = true }
 crc = { version = "1.8", optional = true }
 
 [dev-dependencies]
