@@ -196,7 +196,7 @@ export default class EmailsLogic {
         },
         'img': (tagName, attribs) => {
           // force http images to https
-          if (attribs['src'].startsWith('http:')) {
+          if (attribs['src'] && attribs['src'].startsWith('http:')) {
             attribs['src'] = attribs['src'].replace('http:', 'https:');
           }
 
