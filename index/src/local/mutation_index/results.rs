@@ -16,6 +16,7 @@ pub struct MutationResultsIterator<'i, Q: Borrow<EntityQuery>> {
     pub total_results: usize,
     pub current_results: std::vec::IntoIter<MutationMetadata>,
     pub next_page: Option<Paging>,
+    pub max_pages: usize,
 }
 
 impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultsIterator<'i, Q> {
@@ -29,12 +30,21 @@ impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultsIterator<'i, Q> {
             let mut query = self.query.borrow().clone();
             query.paging = Some(self.next_page.clone()?);
 
+            if self.max_pages == 0 {
+                error!(
+                    "Too many page fetched. Stopping here. Last query={:?}",
+                    query
+                );
+                return None;
+            }
+
             let results = self
                 .index
                 .search(&query)
                 .expect("Couldn't get another page from initial iterator query");
             self.next_page = results.next_page;
             self.current_results = results.mutations.into_iter();
+            self.max_pages -= 1;
 
             self.current_results.next()
         }

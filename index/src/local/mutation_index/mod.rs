@@ -278,6 +278,7 @@ impl MutationIndex {
             total_results: results.total,
             current_results: results.mutations.into_iter(),
             next_page: results.next_page,
+            max_pages: self.config.iterator_max_pages,
         })
     }
 

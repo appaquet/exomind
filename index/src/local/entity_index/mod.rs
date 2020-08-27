@@ -95,6 +95,12 @@ where
             chain_handle,
         };
 
+        let chain_last_block = index.chain_handle.get_chain_last_block_info()?;
+        let last_chain_indexed_block = index.chain_index.highest_indexed_block()?;
+        if last_chain_indexed_block.is_none() && chain_last_block.is_some() {
+            index.reindex_chain()?;
+        }
+
         index.reindex_pending()?;
 
         Ok(index)
@@ -240,11 +246,15 @@ where
                 res1.sort_value >= res2.sort_value
             });
 
-        // iterate through results and returning the first N entities
         let mut hasher = result_hasher();
         let mut entity_mutations_cache = HashMap::<EntityId, Rc<EntityAggregator>>::new();
         let mut matched_entities = HashSet::new();
+        let mut got_results = false;
+        let early_exit = std::cell::Cell::new(false);
+
+        // iterate through results and returning the first N entities
         let mut entity_results = combined_results
+            .take_while(|(_matched_mutation, _index_source)| !early_exit.get())
             // iterate through results, starting with best scores
             .flat_map(|(matched_mutation, index_source)| {
                 let entity_id = matched_mutation.entity_id.clone();
@@ -300,10 +310,11 @@ where
 
                 matched_entities.insert(matched_mutation.entity_id.clone());
 
-
                 // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
                 let ordering_value = matched_mutation.sort_value.clone();
                 if ordering_value.value.is_within_page_bound(&current_page) {
+                    got_results = true;
+
                     let creation_date = entity_mutations.creation_date.map(|t| t.to_proto_timestamp());
                     let modification_date = entity_mutations.modification_date.map(|t| t.to_proto_timestamp());
 
@@ -326,6 +337,13 @@ where
 
                     Some(result)
                 } else {
+                    if got_results {
+                        // If we are here, it means that we found results within the page we were looking for, and then suddenly a new
+                        // result doesn't fit in the page. This means that we are passed the page, and we can early exit since we won't find
+                        // any new results passed this.
+                        early_exit.set(true);
+                    }
+
                     None
                 }
             })
@@ -381,7 +399,7 @@ where
 
         let end_instant = Instant::now();
         debug!(
-            "Query done chain_hits={} pending_hits={} aggr_fetch={} query={:?} aggr={:?} fetch={:?} total={:?}",
+            "Query done chain_hits={} pending_hits={} aggr_fetch={} query={:?} aggr={:?} fetch={:?} total={:?} page={:?} next_page={:?}",
             chain_hits,
             pending_hits,
             entity_mutations_cache.len(),
@@ -389,6 +407,8 @@ where
             after_aggregate_instant - after_query_instant,
             end_instant - after_aggregate_instant,
             end_instant - begin_instant,
+            current_page,
+            next_page,
         );
 
         let entities = entity_results.into_iter().map(|res| res.proto).collect();

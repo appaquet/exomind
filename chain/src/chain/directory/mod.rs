@@ -321,8 +321,10 @@ impl ChainStore for DirectoryChainStore {
             }
         }
 
-        // we need to take out the index because it needs a block iterator that depends
-        // on the store itself TODO: To be solved in https://github.com/appaquet/exocore/issues/34
+        // We need to take out the index because it needs a block iterator that depends
+        // on the store itself.
+        //
+        // TODO: To be solved in https://github.com/appaquet/exocore/issues/34
         let mut index = self
             .operations_index
             .take()
@@ -341,7 +343,6 @@ impl ChainStore for DirectoryChainStore {
 #[derive(Copy, Clone, Debug)]
 pub struct DirectoryChainStoreConfig {
     pub segment_over_allocate_size: u64,
-    pub segment_min_free_size: u64,
     pub segment_max_size: u64,
     pub operations_index_max_memory_items: usize,
 }
@@ -349,10 +350,9 @@ pub struct DirectoryChainStoreConfig {
 impl Default for DirectoryChainStoreConfig {
     fn default() -> Self {
         DirectoryChainStoreConfig {
-            segment_over_allocate_size: 100 * 1024 * 1024, // 100mb
-            segment_min_free_size: 10 * 1024 * 1024,       // 10mb
-            segment_max_size: 1024 * 1024 * 1024,          // 1gb
-            operations_index_max_memory_items: 10000,
+            segment_over_allocate_size: 20 * 1024 * 1024, // 20mb
+            segment_max_size: 200 * 1024 * 1024,          // 200mb
+            operations_index_max_memory_items: 100000,
         }
     }
 }
