@@ -278,21 +278,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "blake3"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce4f9586c9a3151c4b49b19e82ba163dd073614dd057e53c969e1a4db5b52720"
-dependencies = [
- "arrayref",
- "arrayvec",
- "cc",
- "cfg-if",
- "constant_time_eq",
- "crypto-mac 0.8.0",
- "digest 0.9.0",
-]
-
-[[package]]
 name = "block-buffer"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2002,13 +1987,12 @@ dependencies = [
 
 [[package]]
 name = "multihash"
-version = "0.11.3"
+version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51cc1552a982658478dbc22eefb72bb1d4fd1161eb9818f7bbf4347443f07569"
+checksum = "567122ab6492f49b59def14ecc36e13e64dca4188196dd0cd41f9f3f979f3df6"
 dependencies = [
  "blake2b_simd",
  "blake2s_simd",
- "blake3",
  "digest 0.9.0",
  "sha-1 0.9.1",
  "sha2 0.9.1",
