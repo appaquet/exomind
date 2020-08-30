@@ -5,12 +5,13 @@ use std::sync::Mutex;
 
 // TODO: Fix useless cloning of &str to &String once https://github.com/jeromefroe/lru-rs/issues/85 is resolved
 
-/// Cache of entity mutations results when fetched using the `fetch_entity_mutations`
-/// method on the `MutationIndex`.
+/// Cache of entity mutations results when fetched using the
+/// `fetch_entity_mutations` method on the `MutationIndex`.
 ///
-/// The `fetch_entity_mutation` method is use massively when iterating through results
-/// in the `EntityIndex` to know if an entity's matched mutation is still active, and
-/// get the chain's storage information if the result is to be returned.
+/// The `fetch_entity_mutation` method is use massively when iterating through
+/// results in the `EntityIndex` to know if an entity's matched mutation is
+/// still active, and get the chain's storage information if the result is to be
+/// returned.
 pub struct EntityMutationsCache {
     cache: Mutex<LruCache<EntityId, EntityMutationResults>>,
 }

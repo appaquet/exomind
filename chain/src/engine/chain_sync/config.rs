@@ -1,8 +1,8 @@
-use crate::block::{BlockHeight, BlockOffset};
+use crate::block::BlockHeight;
 use crate::engine::request_tracker;
 
 /// Chain synchronizer's configuration
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct ChainSyncConfig {
     /// Config for requests timing tracker
     pub request_tracker: request_tracker::RequestTrackerConfig,
@@ -11,16 +11,24 @@ pub struct ChainSyncConfig {
     /// offsync
     pub meta_sync_max_failures: usize,
 
-    /// Number of headers to always include at beginning of a headers sync
+    /// Number of blocks metadata to always include at beginning of a metadata
+    /// sync request
+    pub metadata_sync_begin_count: usize,
+
+    /// Number of blocks metadata to always include at end of a metadata sync
     /// request
-    pub headers_sync_begin_count: BlockOffset,
+    pub metadata_sync_end_count: usize,
 
-    /// Number of headers to always include at end of a headers sync request
-    pub headers_sync_end_count: BlockOffset,
+    /// Number of sampled blocks metadata to include between begin and end
+    /// blocks of a metadata sync request
+    pub metadata_sync_sampled_count: usize,
 
-    /// Number of sampled headers to include between begin and end headers of a
-    /// headers sync request
-    pub headers_sync_sampled_count: BlockOffset,
+    /// When doing blocks metadata synchronization, if the requested range spans
+    /// multiple segments, this is the threshold from which we fall into a
+    /// fast synchronization mode. Instead of sampling blocks, only the
+    /// first block of each segments (segments boundary) is sent preventing
+    /// scanning blocks.
+    pub metadata_sync_segments_boundaries_threshold: usize,
 
     /// Maximum number of bytes worth of blocks to send in a response
     /// This should be lower than transport maximum packet size
@@ -38,9 +46,10 @@ impl Default for ChainSyncConfig {
         ChainSyncConfig {
             request_tracker: request_tracker::RequestTrackerConfig::default(),
             meta_sync_max_failures: 2,
-            headers_sync_begin_count: 5,
-            headers_sync_end_count: 5,
-            headers_sync_sampled_count: 10,
+            metadata_sync_begin_count: 5,
+            metadata_sync_end_count: 5,
+            metadata_sync_sampled_count: 10,
+            metadata_sync_segments_boundaries_threshold: 5,
             blocks_max_send_size: 50 * 1024,
             max_leader_common_block_height_delta: 5,
         }

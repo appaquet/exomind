@@ -51,8 +51,8 @@ where
         clock: Clock,
         transport_handle: T,
     ) -> Result<Client<T>, Error> {
-        // pick the first node that has index role for now, we'll be switching over to the first node
-        // that connects once transport established connection
+        // pick the first node that has index role for now, we'll be switching over to
+        // the first node that connects once transport established connection
         let index_node = {
             let cell_nodes = cell.nodes();
             let cell_nodes_iter = cell_nodes.iter();
@@ -208,10 +208,12 @@ impl Inner {
             index_node_status == Some(&ConnectionStatus::Connected)
         };
 
-        // if the node we are already using for store is connected, we don't have to do anything
+        // if the node we are already using for store is connected, we don't have to do
+        // anything
         if let Some(index_node) = &inner.index_node {
             if node_is_connected(index_node.id()) {
-                // if our current node has just reconnected, we need to make sure watched queries are still registered
+                // if our current node has just reconnected, we need to make sure watched
+                // queries are still registered
                 if node_new_status == ConnectionStatus::Connected {
                     inner.send_watched_queries_keepalive(true);
                 }
@@ -745,7 +747,8 @@ mod tests {
         });
 
         {
-            // client should have selected the only node as an index server even if it's not online
+            // client should have selected the only node as an index server even if it's not
+            // online
             let inner = client_inner.read().unwrap();
             assert_eq!(inner.index_node.as_ref().unwrap().id(), node1.id());
         }

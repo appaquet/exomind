@@ -76,7 +76,7 @@ where
             clock.clone(),
         );
         let chain_synchronizer = chain_sync::ChainSynchronizer::new(
-            config.chain_sync_config,
+            config.chain_sync_config.clone(),
             cell.clone(),
             clock.clone(),
         );
@@ -87,7 +87,7 @@ where
         );
 
         let inner = Arc::new(RwLock::new(Inner {
-            config,
+            config: config.clone(),
             cell,
             clock,
             pending_store,

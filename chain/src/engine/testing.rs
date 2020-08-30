@@ -5,7 +5,7 @@ use crate::block::{
     Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignatures,
     BlockSignaturesSize, SignaturesFrame,
 };
-use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig as DirectoryConfig};
+use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
 use crate::chain::ChainStore;
 use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, OperationId};
 use crate::pending::memory::MemoryPendingStore;
@@ -42,8 +42,34 @@ pub(super) struct EngineTestCluster {
     pub sync_states: Vec<SyncState>,
 }
 
+pub(super) struct EngineTestClusterConfig {
+    pub nodes_count: usize,
+    pub chain_config: DirectoryChainStoreConfig,
+}
+
+impl Default for EngineTestClusterConfig {
+    fn default() -> Self {
+        EngineTestClusterConfig {
+            nodes_count: 1,
+            chain_config: DirectoryChainStoreConfig {
+                segment_max_size: 100_000,
+                segment_over_allocate_size: 101_000,
+                ..Default::default()
+            },
+        }
+    }
+}
+
 impl EngineTestCluster {
     pub fn new(count: usize) -> EngineTestCluster {
+        let config = EngineTestClusterConfig {
+            nodes_count: count,
+            ..Default::default()
+        };
+        Self::new_from_config(config)
+    }
+
+    pub fn new_from_config(config: EngineTestClusterConfig) -> EngineTestCluster {
         let mut cells = Vec::new();
 
         let mut nodes = Vec::new();
@@ -58,7 +84,7 @@ impl EngineTestCluster {
         let mut commit_managers = Vec::new();
         let mut sync_states = Vec::new();
 
-        for i in 0..count {
+        for i in 0..config.nodes_count {
             let local_node = LocalNode::generate();
 
             let cell = FullCell::generate(local_node.clone());
@@ -72,12 +98,8 @@ impl EngineTestCluster {
             let clock = Clock::new_mocked();
             clocks.push(clock.clone());
 
-            let chain_config = DirectoryConfig {
-                segment_max_size: 100_000,
-                segment_over_allocate_size: 101_000,
-                ..DirectoryConfig::default()
-            };
-            chains.push(DirectoryChainStore::create(chain_config, tempdir.as_ref()).unwrap());
+            chains
+                .push(DirectoryChainStore::create(config.chain_config, tempdir.as_ref()).unwrap());
             chains_synchronizer.push(chain_sync::ChainSynchronizer::new(
                 chain_sync::ChainSyncConfig::default(),
                 cell.cell().clone(),
@@ -128,7 +150,7 @@ impl EngineTestCluster {
             sync_states,
         };
 
-        for i in 0..count {
+        for i in 0..config.nodes_count {
             cluster.add_node_role(i, CellNodeRole::Chain);
         }
 

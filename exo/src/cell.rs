@@ -106,7 +106,8 @@ pub fn export_chain(
             .expect("Couldn't iterate operations from block");
         for operation in operations {
             {
-                // only export entry operations (actual data, not chain maintenance related operations)
+                // only export entry operations (actual data, not chain maintenance related
+                // operations)
                 let reader = operation
                     .get_reader()
                     .expect("Couldn't get reader on operation");

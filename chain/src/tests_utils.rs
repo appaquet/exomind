@@ -215,7 +215,7 @@ impl TestChainCluster {
             .get_transport(self.nodes[node_idx].clone(), TransportLayer::Chain);
 
         let mut engine = Engine::new(
-            self.engines_config[node_idx],
+            self.engines_config[node_idx].clone(),
             self.clocks[node_idx].clone(),
             transport,
             self.chain_stores[node_idx].take().unwrap(),

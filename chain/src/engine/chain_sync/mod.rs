@@ -17,9 +17,9 @@ pub use config::ChainSyncConfig;
 pub use error::ChainSyncError;
 use node_info::{NodeStatus, NodeSyncInfo};
 
+mod meta;
 mod node_info;
-use block::BlockMeta;
-mod block;
+use self::meta::BlockMetadata;
 mod config;
 mod error;
 #[cfg(test)]
@@ -203,7 +203,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    /// Handles an incoming sync request. This request can be for headers, or
+    /// Handles an incoming sync request. This request can be for metadata, or
     /// could be for blocks.
     pub fn handle_sync_request<F: FrameReader>(
         &mut self,
@@ -230,22 +230,22 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         node_info.request_tracker.set_last_responded_now();
 
         if requested_details == chain_sync_request::RequestedDetails::Headers {
+            let from_offset_opt = if from_offset != 0 {
+                Some(from_offset)
+            } else {
+                None
+            };
+
             let to_offset_opt = if to_offset != 0 {
                 Some(to_offset)
             } else {
                 None
             };
 
-            let headers = BlockMeta::from_sampled_chain_slice(
-                store,
-                from_offset,
-                to_offset_opt,
-                self.config.headers_sync_begin_count,
-                self.config.headers_sync_end_count,
-                self.config.headers_sync_sampled_count,
-            )?;
-
-            let response = Self::create_sync_response_for_headers(from_offset, to_offset, headers)?;
+            let blocks_metadata =
+                BlockMetadata::from_store(store, from_offset_opt, to_offset_opt, &self.config)?;
+            let response =
+                Self::create_sync_response_for_metadata(from_offset, to_offset, blocks_metadata)?;
             sync_context.push_chain_sync_response(from_node.id().clone(), response);
         } else if requested_details == chain_sync_request::RequestedDetails::Blocks {
             let blocks_iter = store
@@ -269,11 +269,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    /// Handles a sync response from a node, that could contain either headers
-    /// or blocks data. If it contains headers, we gather the knowledge
-    /// about the remote node's chain metadata. If it contains data, it
-    /// means that it comes from the leader node and we need to append data
-    /// to our local chain.
+    /// Handles a sync response from a node, that could contain either blocks
+    /// metadata or blocks data. If it contains metadata, we gather the
+    /// knowledge about the remote node's chain metadata. If it contains
+    /// data, it means that it comes from the leader node and we need to
+    /// append data to our local chain.
     pub fn handle_sync_response<R: FrameReader>(
         &mut self,
         sync_context: &mut SyncContext,
@@ -286,11 +286,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             debug!("Got blocks response from node {}", from_node);
             self.handle_sync_response_blocks(sync_context, from_node, store, response_reader)?;
         } else if response_reader.has_headers() {
-            debug!("Got headers response from node {}", from_node);
-            self.handle_sync_response_headers(sync_context, from_node, store, response_reader)?;
+            debug!("Got metadata response from node {}", from_node);
+            self.handle_sync_response_metadata(sync_context, from_node, store, response_reader)?;
         } else {
             warn!(
-                "Got a response without headers and blocks from node {}",
+                "Got a response without metadata and blocks from node {}",
                 from_node
             );
         }
@@ -427,9 +427,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(())
     }
 
-    /// Creates a new sync request to be sent to a node, asking for headers or
-    /// blocks. Headers are used remote node's chain metadata, while blocks
-    /// are requested if we determined that a node is our leader.
+    /// Creates a new sync request to be sent to a node, asking for blocks
+    /// metadata or blocks. Blocks metadata are used remote node's chain
+    /// metadata, while blocks are requested if we determined that a node is
+    /// our leader.
     fn create_sync_request(
         node_info: &NodeSyncInfo,
         requested_details: RequestedDetails,
@@ -465,25 +466,25 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(frame_builder)
     }
 
-    /// Creates a response to a request for headers from a remote node.
-    fn create_sync_response_for_headers(
+    /// Creates a response to a request for blocks metadata from a remote node.
+    fn create_sync_response_for_metadata(
         from_offset: BlockOffset,
         to_offset: BlockOffset,
-        headers: Vec<BlockMeta>,
+        blocks_metadata: Vec<BlockMetadata>,
     ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, EngineError> {
         let mut frame_builder = CapnpFrameBuilder::new();
         let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder();
         response_builder.set_from_offset(from_offset);
         response_builder.set_to_offset(to_offset);
 
-        let mut headers_builder = response_builder.init_headers(headers.len() as u32);
-        for (i, header) in headers.iter().enumerate() {
+        let mut headers_builder = response_builder.init_headers(blocks_metadata.len() as u32);
+        for (i, header) in blocks_metadata.iter().enumerate() {
             header.copy_into_builder(&mut headers_builder.reborrow().get(i as u32));
         }
 
         debug!(
-            "Sending {} header(s) from offset {:?} to offset {:?}",
-            headers.len(),
+            "Sending {} block(s) metadata from offset {:?} to offset {:?}",
+            blocks_metadata.len(),
             from_offset,
             to_offset,
         );
@@ -536,13 +537,13 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         Ok(frame_builder)
     }
 
-    /// Manages headers response by comparing to local blocks and finding the
-    /// common ancestor (if any) and the last block of the node against
-    /// which we're syncing.
-
+    /// Manages blocks metadata response by comparing to local blocks and
+    /// finding the common ancestor (if any) and the last block of the node
+    /// against which we're syncing.
+    ///
     /// If we didn't find the latest common ancestor, we reply with another
     /// request from the earliest common ancestor we could find so far.
-    fn handle_sync_response_headers(
+    fn handle_sync_response_metadata(
         &mut self,
         sync_context: &mut SyncContext,
         from_node: &Node,
@@ -551,26 +552,26 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     ) -> Result<(), EngineError> {
         let from_node_info = self.get_or_create_node_info_mut(&from_node.id());
 
-        let headers_reader = response_reader.get_headers()?;
+        let metadata_reader = response_reader.get_headers()?;
         let mut has_new_common_block = false;
         let mut first_non_common_block: Option<BlockOffset> = None;
-        let mut last_header_height = None;
+        let mut last_block_height = None;
         let mut all_contiguous = true;
 
-        for header in headers_reader.iter() {
-            let header_reader: block_partial_header::Reader = header;
-            let offset = header_reader.get_offset();
-            let height = header_reader.get_height();
+        for metadata in metadata_reader.iter() {
+            let metadata_reader: block_partial_header::Reader = metadata;
+            let offset = metadata_reader.get_offset();
+            let height = metadata_reader.get_height();
 
-            // check if headers are contiguous blocks, which would mean we can take for
+            // check if metedata are contiguous blocks, which would mean we can take for
             // granted that no block are missing between the first and last
-            // given header
-            if let Some(last_header_height) = last_header_height {
-                if height != last_header_height + 1 {
+            // given metadata
+            if let Some(last_block_height) = last_block_height {
+                if height != last_block_height + 1 {
                     all_contiguous = false;
                 }
             }
-            last_header_height = Some(height);
+            last_block_height = Some(height);
 
             // if we haven't encountered a block we didn't have in common, we keep checking
             // if we have the block locally, and update the last_common_block
@@ -578,14 +579,15 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 if let Ok(local_block) = store.get_block(offset) {
                     let local_block_signature =
                         local_block.header.inner().inner().multihash_bytes();
-                    if header_reader.get_block_hash()? == local_block_signature {
+                    if metadata_reader.get_block_hash()? == local_block_signature {
                         let is_latest_common_offset = from_node_info
                             .last_common_block
                             .as_ref()
                             .map_or(true, |b| b.offset < offset);
                         if is_latest_common_offset {
-                            from_node_info.last_common_block =
-                                Some(BlockMeta::from_block_partial_header_reader(header_reader)?);
+                            from_node_info.last_common_block = Some(
+                                BlockMetadata::from_block_partial_metadata_reader(metadata_reader)?,
+                            );
                             has_new_common_block = true;
                         }
                     } else {
@@ -602,18 +604,19 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 .as_ref()
                 .map_or(true, |b| b.offset < offset);
             if is_latest_offset {
-                from_node_info.last_known_block =
-                    Some(BlockMeta::from_block_partial_header_reader(header_reader)?);
+                from_node_info.last_known_block = Some(
+                    BlockMetadata::from_block_partial_metadata_reader(metadata_reader)?,
+                );
             }
         }
 
         // if we have new common block, and blocks weren't contiguous, it means we need
-        // to ask for headers from our common ancestors again, since we may have
-        // a higher common block that wasn't in headers
+        // to ask for blocks metadata from our common ancestors again, since we may have
+        // a higher common block that wasn't in metadata
         if has_new_common_block && !all_contiguous {
             let to_offset = first_non_common_block;
             debug!(
-                "New common ancestor block: {:?} to {:?}. Asking for more headers.",
+                "New common ancestor block: {:?} to {:?}. Asking for more metadata.",
                 from_node_info.last_common_block, first_non_common_block
             );
 
@@ -653,9 +656,9 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let from_node_info = self.get_or_create_node_info_mut(&from_node.id());
 
         // write incoming blocks
-        let mut last_local_block: Option<BlockMeta> = store
+        let mut last_local_block: Option<BlockMetadata> = store
             .get_last_block()?
-            .map(BlockMeta::from_stored_block)
+            .map(BlockMetadata::from_stored_block)
             .transpose()?;
         let blocks_reader = response_reader.get_blocks()?;
         for data_res in blocks_reader.iter() {
@@ -666,12 +669,14 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             let block = BlockRef::new(data)?;
 
             // make sure the block was expected in our chain, then add it
-            let next_local_offset = last_local_block.as_ref().map_or(0, BlockMeta::next_offset);
+            let next_local_offset = last_local_block
+                .as_ref()
+                .map_or(0, BlockMetadata::next_offset);
             if block.offset() == next_local_offset {
                 sync_context.push_event(Event::NewChainBlock(block.offset()));
                 store.write_block(&block)?;
-                let new_block_partial_header = BlockMeta::from_stored_block(block)?;
-                last_local_block = Some(new_block_partial_header);
+                let new_block_partial_metadata = BlockMetadata::from_stored_block(block)?;
+                last_local_block = Some(new_block_partial_metadata);
             } else {
                 return Err(ChainSyncError::InvalidSyncResponse(format!(
                     "Got a block with data at an invalid offset. \
@@ -710,7 +715,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             return self.nodes_info.get_mut(node_id).unwrap();
         }
 
-        let config = self.config;
+        let config = self.config.clone();
         let clock = self.clock.clone();
         self.nodes_info
             .entry(node_id.clone())

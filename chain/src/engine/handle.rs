@@ -49,7 +49,7 @@ where
         Ok(operation_id)
     }
 
-    pub fn get_chain_segments(&self) -> Result<Vec<chain::Segment>, EngineError> {
+    pub fn get_chain_segments(&self) -> Result<chain::Segments, EngineError> {
         let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
         Ok(unlocked_inner.chain_store.segments())

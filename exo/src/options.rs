@@ -76,8 +76,8 @@ pub struct CellOptions {
     pub config: PathBuf,
 
     #[structopt(long, short)]
-    /// Public key of the cell we want to make an action on. If not specified and the
-    /// node config only contains 1 cell, this cell will be taken.
+    /// Public key of the cell we want to make an action on. If not specified
+    /// and the node config only contains 1 cell, this cell will be taken.
     pub public_key: Option<String>,
 
     #[structopt(subcommand)]

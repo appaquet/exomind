@@ -11,6 +11,7 @@ use crate::chain::{ChainStore, Error, Segment, StoredBlockIterator};
 mod operations_index;
 mod segment;
 
+use super::Segments;
 use operations_index::OperationsIndex;
 
 /// Directory based chain persistence. The chain is split in segments with
@@ -115,7 +116,7 @@ impl DirectoryChainStore {
                 segments.push(segment);
             }
         }
-        segments.sort_by(|a, b| a.first_block_offset().cmp(&b.first_block_offset()));
+        segments.sort_by_key(|a| a.first_block_offset());
 
         let mut store = DirectoryChainStore {
             config,
@@ -170,13 +171,15 @@ impl DirectoryChainStore {
 }
 
 impl ChainStore for DirectoryChainStore {
-    fn segments(&self) -> Vec<Segment> {
-        self.segments
-            .iter()
-            .map(|segment| Segment {
-                range: segment.offset_range(),
-            })
-            .collect()
+    fn segments(&self) -> Segments {
+        Segments(
+            self.segments
+                .iter()
+                .map(|segment| Segment {
+                    range: segment.offset_range(),
+                })
+                .collect(),
+        )
     }
 
     fn write_block<B: Block>(&mut self, block: &B) -> Result<BlockOffset, Error> {
@@ -478,9 +481,9 @@ pub mod tests {
             let data_size = (block.total_size() * 2) as BlockOffset;
             assert_eq!(
                 segments,
-                vec![Segment {
+                Segments(vec![Segment {
                     range: 0..data_size
-                }]
+                }])
             );
             segments
         };

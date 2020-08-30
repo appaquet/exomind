@@ -284,9 +284,10 @@ impl MutationIndex {
 
     /// Fetch all mutations for a given entity id.
     ///
-    /// This method is in a very hot path since it's called to get all the mutations of an entity
-    /// that go returned in a search query. Therefor, we use a cache to store all the mutations that
-    /// we fetch here and bust them when we index a new mutation for an entity.
+    /// This method is in a very hot path since it's called to get all the
+    /// mutations of an entity that go returned in a search query. Therefor,
+    /// we use a cache to store all the mutations that we fetch here and
+    /// bust them when we index a new mutation for an entity.
     pub fn fetch_entity_mutations(&self, entity_id: &str) -> Result<EntityMutationResults, Error> {
         if let Some(results) = self.entity_cache.get(&entity_id) {
             return Ok(results);
