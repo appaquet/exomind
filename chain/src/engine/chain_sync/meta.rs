@@ -91,7 +91,7 @@ impl BlockMetadata {
         // include N blocks before the requested to offset
         let last_chain_block = store.get_last_block()?;
         let to_offset = to_offset
-            .or_else(|| last_chain_block.map(|b| b.offset))
+            .or_else(|| last_chain_block.map(|b| b.next_offset()))
             .ok_or_else(|| {
                 ChainSyncError::InvalidSyncRequest(format!(
                     "Couldn't find last to offset block {:?}",
@@ -281,13 +281,7 @@ mod tests {
             let blocks =
                 BlockMetadata::from_segment_boundaries(store, segments, from, to, &config).unwrap();
             assert_eq!(
-                blocks
-                    .iter()
-                    .map(|b| {
-                        println!("{}\n", b.offset);
-                        b.height
-                    })
-                    .collect::<Vec<_>>(),
+                blocks.iter().map(|b| { b.height }).collect::<Vec<_>>(),
                 expected_heights
             );
         };
@@ -302,7 +296,7 @@ mod tests {
                 None,
                 None,
                 config,
-                vec![0, 1, 13, 26, 39, 52, 65, 78, 91, 97, 98],
+                vec![0, 1, 13, 26, 39, 52, 65, 78, 91, 98, 99],
             );
         }
 

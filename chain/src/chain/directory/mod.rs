@@ -225,7 +225,6 @@ impl ChainStore for DirectoryChainStore {
             current_offset: from_offset,
             current_segment: None,
             last_error: None,
-            reverse: false,
             done: false,
         }))
     }
@@ -234,20 +233,11 @@ impl ChainStore for DirectoryChainStore {
         &self,
         from_next_offset: BlockOffset,
     ) -> Result<StoredBlockIterator, Error> {
-        let segment = self
-            .get_segment_for_next_block_offset(from_next_offset)
-            .ok_or_else(|| {
-                Error::OutOfBound(format!("No segment with next offset {}", from_next_offset))
-            })?;
-
-        let last_block = segment.get_block_from_next_offset(from_next_offset)?;
-
-        Ok(Box::new(DirectoryBlockIterator {
+        Ok(Box::new(DirectoryBlockReverseIterator {
             directory: self,
-            current_offset: last_block.offset,
+            current_offset: from_next_offset,
             current_segment: None,
             last_error: None,
-            reverse: true,
             done: false,
         }))
     }
@@ -366,7 +356,6 @@ struct DirectoryBlockIterator<'pers> {
     current_offset: BlockOffset,
     current_segment: Option<&'pers DirectorySegment>,
     last_error: Option<Error>,
-    reverse: bool,
     done: bool,
 }
 
@@ -395,12 +384,8 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
                     .ok()?;
 
                 let data_size = block.total_size() as BlockOffset;
-                let end_of_segment = if !self.reverse {
-                    (self.current_offset + data_size) >= segment.next_block_offset()
-                } else {
-                    data_size > self.current_offset
-                        || (self.current_offset - data_size) < segment.first_block_offset()
-                };
+                let end_of_segment =
+                    (self.current_offset + data_size) >= segment.next_block_offset();
 
                 (block, data_size, end_of_segment)
             }
@@ -413,18 +398,69 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
             self.current_segment = None;
         }
 
-        // if we're in reverse and next offset would be lower than 0, we indicate we're
-        // done
-        if self.reverse && data_size > self.current_offset {
+        if !self.done {
+            self.current_offset += data_size;
+        }
+
+        Some(item)
+    }
+}
+
+/// Reverse iterator over blocks stored in this directory based chain persistence.
+struct DirectoryBlockReverseIterator<'pers> {
+    directory: &'pers DirectoryChainStore,
+    current_offset: BlockOffset,
+    current_segment: Option<&'pers DirectorySegment>,
+    last_error: Option<Error>,
+    done: bool,
+}
+
+impl<'pers> Iterator for DirectoryBlockReverseIterator<'pers> {
+    type Item = BlockRef<'pers>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.done {
+            return None;
+        }
+
+        if self.current_segment.is_none() {
+            self.current_segment = self
+                .directory
+                .get_segment_for_next_block_offset(self.current_offset);
+        }
+
+        let (item, data_size, end_of_segment) = match self.current_segment {
+            Some(segment) => {
+                let block = segment
+                    .get_block_from_next_offset(self.current_offset)
+                    .map_err(|err| {
+                        error!("Got an error getting block in iterator: {}", err);
+                        self.last_error = Some(err);
+                    })
+                    .ok()?;
+
+                let data_size = block.total_size() as BlockOffset;
+                let end_of_segment = (data_size + 1) > self.current_offset
+                    || (self.current_offset - data_size - 1) < segment.first_block_offset();
+
+                (block, data_size, end_of_segment)
+            }
+            None => {
+                return None;
+            }
+        };
+
+        if end_of_segment {
+            self.current_segment = None;
+        }
+
+        // if next offset would be lower than 0, we're done
+        if data_size > self.current_offset {
             self.done = true;
         }
 
         if !self.done {
-            if !self.reverse {
-                self.current_offset += data_size;
-            } else {
-                self.current_offset -= data_size;
-            }
+            self.current_offset -= data_size;
         }
 
         Some(item)
@@ -519,6 +555,30 @@ pub mod tests {
             std::fs::write(dir.path().join("some_file"), "hello")?;
             assert!(DirectoryChainStore::create(config, dir.path()).is_err());
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn directory_chain_iterator() -> anyhow::Result<()> {
+        let local_node = LocalNode::generate();
+        let cell = FullCell::generate(local_node);
+        let dir = tempfile::tempdir()?;
+        let mut config: DirectoryChainStoreConfig = Default::default();
+        config.segment_max_size = 350_000;
+        config.segment_over_allocate_size = 10_000;
+
+        let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
+        append_blocks(&cell, &mut directory_chain, 1000, 0);
+
+        let count = directory_chain.blocks_iter(0)?.count();
+        assert_eq!(count, 1000);
+
+        let last_block = directory_chain.get_last_block()?.unwrap();
+        let next_offset = last_block.next_offset();
+
+        let count = directory_chain.blocks_iter_reverse(next_offset)?.count();
+        assert_eq!(count, 1000);
 
         Ok(())
     }
@@ -775,13 +835,16 @@ pub mod tests {
     }
 
     pub fn create_block(cell: &FullCell, offset: BlockOffset) -> BlockOwned {
+        let operation_data_size = ((offset >> 3) % 831311) as usize;
+        let operation_data: Vec<u8> = b"d".repeat(operation_data_size % 13 + 1);
+
         // only true for tests
         let operation_id = offset as u64 + 1;
         let operations = vec![
             crate::operation::OperationBuilder::new_entry(
                 operation_id,
                 cell.local_node().id(),
-                b"some_data",
+                &operation_data,
             )
             .sign_and_build(cell.local_node())
             .unwrap()

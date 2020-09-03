@@ -15,6 +15,8 @@ impl<I: FrameReader> PaddedFrame<I> {
 
         let padding_size =
             (&exposed_data[exposed_data.len() - 4..]).read_u32::<LittleEndian>()? as usize;
+        check_from_size(4 + padding_size, exposed_data)?;
+
         Ok(PaddedFrame {
             inner,
             padding_size,
