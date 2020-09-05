@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::operation::OperationId;
 use segment::DirectorySegment;
@@ -12,7 +12,11 @@ mod operations_index;
 mod segment;
 
 use super::Segments;
+use exocore_core::simple_store::json_disk_store::JsonDiskStore;
+use exocore_core::simple_store::SimpleStore;
 use operations_index::OperationsIndex;
+
+const METADATA_FILE: &str = "metadata.json";
 
 /// Directory based chain persistence. The chain is split in segments with
 /// configurable maximum size. This maximum size allows using mmap on 32bit
@@ -20,6 +24,7 @@ use operations_index::OperationsIndex;
 pub struct DirectoryChainStore {
     config: DirectoryChainStoreConfig,
     directory: PathBuf,
+    metadata_store: JsonDiskStore<DirectoryChainMetadata>,
     segments: Vec<DirectorySegment>,
 
     // TODO: Optional because index needs the Store to be initialized to iterate
@@ -77,11 +82,23 @@ impl DirectoryChainStore {
             )));
         }
 
+        let metadata_path = directory_path.join(METADATA_FILE);
+        let metadata_store = JsonDiskStore::new(&metadata_path).map_err(|err| {
+            Error::new_io(
+                err,
+                format!(
+                    "Error opening metadata file {}",
+                    metadata_path.to_string_lossy(),
+                ),
+            )
+        })?;
+
         let operations_index = OperationsIndex::create(config, directory_path)?;
 
         Ok(DirectoryChainStore {
             config,
             directory: directory_path.to_path_buf(),
+            metadata_store,
             segments: Vec::new(),
             operations_index: Some(operations_index),
         })
@@ -98,6 +115,25 @@ impl DirectoryChainStore {
             )));
         }
 
+        let metadata_path = directory_path.join(METADATA_FILE);
+        let metadata_store =
+            JsonDiskStore::<DirectoryChainMetadata>::new(&metadata_path).map_err(|err| {
+                Error::new_io(
+                    err,
+                    format!(
+                        "Error opening metadata file {}",
+                        metadata_path.to_string_lossy(),
+                    ),
+                )
+            })?;
+
+        let mut segments_metadata = HashMap::new();
+        if let Ok(Some(metadata)) = metadata_store.read() {
+            for segment_metadata in metadata.segments.into_iter() {
+                segments_metadata.insert(segment_metadata.filename.clone(), segment_metadata);
+            }
+        }
+
         let mut segments = Vec::new();
         let paths = std::fs::read_dir(directory_path).map_err(|err| {
             Error::new_io(
@@ -112,7 +148,13 @@ impl DirectoryChainStore {
             let path = path.map_err(|err| Error::new_io(err, "Error getting directory entry"))?;
 
             if DirectorySegment::is_segment_file(&path.path()) {
-                let segment = DirectorySegment::open(config, &path.path())?;
+                let filename = path.file_name().to_string_lossy().to_string();
+
+                let segment = if let Some(metadata) = segments_metadata.get(&filename) {
+                    DirectorySegment::open_with_metadata(config, &path.path(), metadata)?
+                } else {
+                    DirectorySegment::open(config, &path.path())?
+                };
                 segments.push(segment);
             }
         }
@@ -121,6 +163,7 @@ impl DirectoryChainStore {
         let mut store = DirectoryChainStore {
             config,
             directory: directory_path.to_path_buf(),
+            metadata_store,
             segments,
             operations_index: None,
         };
@@ -133,6 +176,8 @@ impl DirectoryChainStore {
             operations_index
         };
         store.operations_index = Some(operations_index);
+
+        store.save_metadata()?;
 
         Ok(store)
     }
@@ -168,6 +213,24 @@ impl DirectoryChainStore {
             None
         }
     }
+
+    fn save_metadata(&mut self) -> Result<(), Error> {
+        let mut segment_metadata: Vec<segment::SegmentMetadata> =
+            self.segments.iter().map(|s| s.metadata()).collect();
+
+        // remove last segment since it's still mutable and may change
+        segment_metadata.pop();
+
+        let metadata = DirectoryChainMetadata {
+            segments: segment_metadata,
+        };
+
+        self.metadata_store
+            .write(&metadata)
+            .map_err(|err| Error::new_io(err, "Error saving metadata file".to_string()))?;
+
+        Ok(())
+    }
 }
 
 impl ChainStore for DirectoryChainStore {
@@ -200,6 +263,7 @@ impl ChainStore for DirectoryChainStore {
             if need_new_segment {
                 let segment = DirectorySegment::create(self.config, &self.directory, block)?;
                 self.segments.push(segment);
+                self.save_metadata()?;
             }
 
             (self.segments.last_mut().unwrap(), need_new_segment)
@@ -314,6 +378,8 @@ impl ChainStore for DirectoryChainStore {
             }
         }
 
+        self.save_metadata()?;
+
         // We need to take out the index because it needs a block iterator that depends
         // on the store itself.
         //
@@ -332,6 +398,20 @@ impl ChainStore for DirectoryChainStore {
     }
 }
 
+/// Metadata information of the chain directory store persisted to disk.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct DirectoryChainMetadata {
+    segments: Vec<segment::SegmentMetadata>,
+}
+
+impl Default for DirectoryChainMetadata {
+    fn default() -> Self {
+        DirectoryChainMetadata {
+            segments: Vec::new(),
+        }
+    }
+}
+
 /// Configuration for directory based chain persistence.
 #[derive(Copy, Clone, Debug)]
 pub struct DirectoryChainStoreConfig {
@@ -345,7 +425,7 @@ impl Default for DirectoryChainStoreConfig {
         DirectoryChainStoreConfig {
             segment_over_allocate_size: 20 * 1024 * 1024, // 20mb
             segment_max_size: 200 * 1024 * 1024,          // 200mb
-            operations_index_max_memory_items: 100000,
+            operations_index_max_memory_items: 10000,
         }
     }
 }
@@ -532,6 +612,20 @@ pub mod tests {
         {
             let directory_chain = DirectoryChainStore::open(config, dir.path())?;
             assert_eq!(directory_chain.segments(), init_segments);
+        }
+
+        {
+            // can still open even if the metadata file is deleted
+            let metadata_path = dir.path().join(METADATA_FILE);
+            assert!(metadata_path.is_file());
+            std::fs::remove_file(&metadata_path)?;
+            assert!(!metadata_path.is_file());
+
+            let directory_chain = DirectoryChainStore::open(config, dir.path())?;
+            assert_eq!(directory_chain.segments(), init_segments);
+
+            // metadata should have been re-created
+            assert!(metadata_path.is_file());
         }
 
         Ok(())

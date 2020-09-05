@@ -16,9 +16,9 @@ use std::ffi::OsStr;
 /// space, we re-size and re-open the file.
 pub struct DirectorySegment {
     config: DirectoryChainStoreConfig,
-    first_block_offset: BlockOffset,
     segment_path: PathBuf,
     segment_file: SegmentFile,
+    first_block_offset: BlockOffset,
     next_block_offset: BlockOffset,
     next_file_offset: usize,
 }
@@ -50,9 +50,9 @@ impl DirectorySegment {
 
         Ok(DirectorySegment {
             config,
-            first_block_offset,
             segment_path,
             segment_file,
+            first_block_offset,
             next_block_offset: first_block_offset + written_data_size as BlockOffset,
             next_file_offset: written_data_size,
         })
@@ -83,34 +83,30 @@ impl DirectorySegment {
     ) -> Result<DirectorySegment, Error> {
         info!("Opening segment at {:?}", segment_path);
 
+        let metadata = SegmentMetadata::from_segment_file_path(segment_path)?;
+
+        Self::open_with_metadata(config, segment_path, &metadata)
+    }
+
+    pub fn open_with_metadata(
+        config: DirectoryChainStoreConfig,
+        segment_path: &Path,
+        metadata: &SegmentMetadata,
+    ) -> Result<DirectorySegment, Error> {
+        info!(
+            "Opening segment at {:?} with metadata {:?}",
+            segment_path, metadata
+        );
+
         let segment_file = SegmentFile::open(&segment_path, 0)?;
-
-        // read first block to validate it has the same offset as segment
-        let first_block = BlockRef::new(&segment_file.mmap[..]).map_err(|err| {
-            error!(
-                "Couldn't read first block from segment file {:?}: {}",
-                segment_path, err
-            );
-            err
-        })?;
-
-        // iterate through segments and find the last block and its offset
-        let blocks_iterator = ChainBlockIterator::new(&segment_file.mmap[..]);
-        let last_block = blocks_iterator.last().ok_or_else(|| {
-            Error::Integrity(
-                "Couldn't find last block of segment: no blocks returned by iterator".to_string(),
-            )
-        })?;
-
-        let next_block_offset = last_block.offset + last_block.total_size() as BlockOffset;
-        let next_file_offset = (next_block_offset - first_block.offset) as usize;
+        let next_file_offset = (metadata.next_block_offset - metadata.first_block_offset) as usize;
 
         Ok(DirectorySegment {
             config,
-            first_block_offset: first_block.offset,
+            first_block_offset: metadata.first_block_offset,
             segment_path: segment_path.to_path_buf(),
             segment_file,
-            next_block_offset,
+            next_block_offset: metadata.next_block_offset,
             next_file_offset,
         })
     }
@@ -250,6 +246,72 @@ impl DirectorySegment {
     fn truncate_extra(&mut self) -> Result<(), Error> {
         let next_file_offset = self.next_file_offset as u64;
         self.segment_file.set_len(next_file_offset)
+    }
+
+    pub fn metadata(&self) -> SegmentMetadata {
+        let filename = self
+            .segment_path
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        SegmentMetadata {
+            filename,
+            first_block_offset: self.first_block_offset,
+            next_block_offset: self.next_block_offset,
+        }
+    }
+}
+
+/// Metadata of a segment file, such as beginning and end offsets.
+///
+/// Metadata can be inferred by scanning the file, but can be persisted
+/// separately to allow faster opening.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct SegmentMetadata {
+    pub filename: String,
+    pub first_block_offset: BlockOffset,
+    pub next_block_offset: BlockOffset,
+}
+
+impl SegmentMetadata {
+    fn from_segment_file_path(path: &Path) -> Result<SegmentMetadata, Error> {
+        let segment_file = SegmentFile::open(path, 0)?;
+
+        Self::from_segment_file(&segment_file)
+    }
+
+    fn from_segment_file(segment: &SegmentFile) -> Result<SegmentMetadata, Error> {
+        // read first block to validate it has the same offset as segment
+        let first_block = BlockRef::new(&segment.mmap[..]).map_err(|err| {
+            error!(
+                "Couldn't read first block from segment file {:?}: {}",
+                &segment.path, err
+            );
+            err
+        })?;
+
+        // iterate through segments and find the last block and its offset
+        let blocks_iterator = ChainBlockIterator::new(&segment.mmap[..]);
+        let last_block = blocks_iterator.last().ok_or_else(|| {
+            Error::Integrity(
+                "Couldn't find last block of segment: no blocks returned by iterator".to_string(),
+            )
+        })?;
+
+        let next_block_offset = last_block.offset + last_block.total_size() as BlockOffset;
+
+        let filename = segment
+            .path
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        Ok(SegmentMetadata {
+            filename,
+            first_block_offset: first_block.offset,
+            next_block_offset,
+        })
     }
 }
 

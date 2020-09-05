@@ -31,7 +31,7 @@ impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultsIterator<'i, Q> {
             query.paging = Some(self.next_page.clone()?);
 
             if self.max_pages == 0 {
-                error!(
+                warn!(
                     "Too many page fetched. Stopping here. Last query={:?}",
                     query
                 );
