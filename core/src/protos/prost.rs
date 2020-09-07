@@ -1,5 +1,6 @@
 use super::{Error, NamedMessage};
-use prost::Message;
+
+pub use prost::Message;
 pub use prost_types::{Any, Timestamp};
 
 pub trait ProstTimestampExt {

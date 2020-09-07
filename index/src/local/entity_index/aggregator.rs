@@ -1,11 +1,10 @@
 use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetadata};
 use crate::entity::TraitId;
 use crate::error::Error;
-use crate::{ordering::OrderingValueWrapper, query::ResultHash};
+use crate::query::ResultHash;
 use chrono::{DateTime, Utc};
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::{
-    generated::exocore_index::EntityResult as EntityResultProto,
     index::{Projection, Trait, TraitDetails},
     reflect::{FieldId, MutableReflectMessage, ReflectMessage},
     registry::Registry,
@@ -16,15 +15,6 @@ use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 use std::{hash::Hasher, rc::Rc};
 
-/// Wrapper for entity result with matched mutation from index layer along
-/// aggregated traits.
-pub struct EntityResult {
-    pub matched_mutation: MutationMetadata,
-    pub ordering_value: OrderingValueWrapper,
-    pub proto: EntityResultProto,
-    pub mutations: Rc<EntityAggregator>,
-}
-
 /// Aggregates mutations metadata of an entity retrieved from the mutations
 /// index. Once merged, only the latest / active mutations are remaining, and
 /// can then be fetched from the chain.
@@ -33,11 +23,8 @@ pub struct EntityResult {
 /// operation id within a block. If an old operation gets committed after a
 /// newer operation, the old operation gets discarded to prevent inconsistency.
 pub struct EntityAggregator {
-    // final traits mutation metadata of the entity once all mutations were aggregated
-    pub trait_mutations: HashMap<TraitId, MutationMetadata>,
-
-    // traits' projections (ex: filter out fields) to be applied
-    pub trait_projections: HashMap<TraitId, Rc<Projection>>,
+    /// traits aggregator
+    pub traits: HashMap<TraitId, TraitAggregator>,
 
     // ids of operations that are still active (ex: were not overridden by another mutation)
     pub active_operations: HashSet<OperationId>,
@@ -50,6 +37,9 @@ pub struct EntityAggregator {
 
     // date of the modification of entity, based on put trait modifcation date OR last operation
     pub modification_date: Option<DateTime<Utc>>,
+
+    // date of the deletion of the entity if all traits are deleted once all mutations are applied
+    pub deletion_date: Option<DateTime<Utc>>,
 }
 
 impl EntityAggregator {
@@ -66,11 +56,13 @@ impl EntityAggregator {
 
         let mut entity_creation_date = None;
         let mut entity_modification_date = None;
+        let mut entity_deletion_date = None;
 
         let mut hasher = result_hasher();
-        let mut trait_mutations = HashMap::<TraitId, MutationMetadata>::new();
+        let mut traits = HashMap::<TraitId, TraitAggregator>::new();
         let mut active_operation_ids = HashSet::<OperationId>::new();
         let mut latest_operation_id = None;
+
         for mut current_mutation in ordered_mutations_metadata {
             let current_operation_id = current_mutation.operation_id;
             let current_operation_time =
@@ -82,52 +74,47 @@ impl EntityAggregator {
 
             match &mut current_mutation.mutation_type {
                 MutationType::TraitPut(put_trait) => {
-                    let opt_prev_trait_mutation = trait_mutations.get(&put_trait.trait_id);
-                    if let Some(prev_trait_mutation) = opt_prev_trait_mutation {
+                    let agg = TraitAggregator::get_for_trait(&mut traits, &put_trait.trait_id);
+
+                    if let Some(last_operation_id) = agg.last_operation_id {
                         // discard the new mutation if it happened before the last mutation, but got
                         // commited late, to prevent inconsistency
-                        if current_operation_id < prev_trait_mutation.operation_id {
+                        if current_operation_id < last_operation_id {
                             continue;
                         }
 
-                        active_operation_ids.remove(&prev_trait_mutation.operation_id);
+                        active_operation_ids.remove(&last_operation_id);
                     }
 
-                    Self::merge_trait_metadata_dates(
-                        current_operation_id,
-                        put_trait,
-                        opt_prev_trait_mutation,
-                    );
-
-                    if entity_creation_date.is_none()
-                        || put_trait.creation_date < entity_creation_date
-                    {
-                        entity_creation_date = put_trait.creation_date;
-                    }
-                    if entity_modification_date.is_none()
-                        || put_trait.modification_date < entity_modification_date
-                    {
-                        entity_modification_date = put_trait.modification_date;
-                    }
-
+                    agg.push_put_mutation(current_mutation);
                     active_operation_ids.insert(current_operation_id);
-                    trait_mutations.insert(put_trait.trait_id.clone(), current_mutation);
+
+                    update_if_older(&mut entity_creation_date, agg.creation_date);
+                    update_if_newer(&mut entity_modification_date, agg.modification_date);
+                    entity_deletion_date = None;
                 }
                 MutationType::TraitTombstone(trait_id) => {
-                    if let Some(prev_trait_mutation) = trait_mutations.get(trait_id) {
+                    let agg = TraitAggregator::get_for_trait(&mut traits, trait_id);
+
+                    if let Some(last_operation_id) = agg.last_operation_id {
                         // discard the new mutation if it happened before the last mutation, but got
                         // commited late, to prevent inconsistency
-                        if current_operation_id < prev_trait_mutation.operation_id {
+                        if current_operation_id < last_operation_id {
                             continue;
                         }
 
-                        active_operation_ids.remove(&prev_trait_mutation.operation_id);
+                        active_operation_ids.remove(&last_operation_id);
                     }
-                    active_operation_ids.insert(current_operation_id);
-                    trait_mutations.remove(trait_id);
 
-                    if Some(current_operation_time) > entity_modification_date {
-                        entity_modification_date = Some(current_operation_time);
+                    active_operation_ids.insert(current_operation_id);
+                    agg.push_delete_mutation(current_operation_id);
+
+                    update_if_newer(&mut entity_modification_date, Some(current_operation_time));
+
+                    if TraitAggregator::all_deleted(&traits) {
+                        entity_creation_date = None;
+                        entity_modification_date = None;
+                        entity_deletion_date = Some(current_operation_time);
                     }
                 }
                 MutationType::EntityTombstone => {
@@ -139,11 +126,16 @@ impl EntityAggregator {
                         }
                     }
 
+                    for aggregated_trait in traits.values_mut() {
+                        aggregated_trait.push_delete_mutation(current_operation_id);
+                    }
+
                     active_operation_ids.clear();
                     active_operation_ids.insert(current_operation_id);
-                    trait_mutations.clear();
+
                     entity_creation_date = None;
                     entity_modification_date = None;
+                    entity_deletion_date = Some(current_operation_time);
                 }
             }
 
@@ -153,12 +145,12 @@ impl EntityAggregator {
         }
 
         Ok(EntityAggregator {
-            trait_mutations,
-            trait_projections: HashMap::new(),
+            traits,
             active_operations: active_operation_ids,
             hash: hasher.finish(),
             creation_date: entity_creation_date,
             modification_date: entity_modification_date,
+            deletion_date: entity_deletion_date,
         })
     }
 
@@ -174,66 +166,90 @@ impl EntityAggregator {
 
         let projections_rc = projections.iter().map(|p| Rc::new(p.clone())).collect_vec();
 
-        'traits_loop: for (trait_id, mutation_metadata) in &self.trait_mutations {
-            match &mutation_metadata.mutation_type {
-                MutationType::TraitPut(pm) => {
-                    for projection in &projections_rc {
-                        if projection_matches_trait(pm.trait_type.as_deref(), projection) {
-                            self.trait_projections
-                                .insert(trait_id.clone(), projection.clone());
-                            continue 'traits_loop;
-                        }
+        'traits_loop: for trait_agg in self.traits.values_mut() {
+            if let Some((_mutation, pm)) = trait_agg.last_put_mutation() {
+                for projection in &projections_rc {
+                    if projection_matches_trait(pm.trait_type.as_deref(), projection) {
+                        trait_agg.projection = Some(projection.clone());
+                        continue 'traits_loop;
                     }
                 }
-                _other => {}
             }
         }
     }
+}
 
-    /// Populates the creation and modification dates of a PutTraitMetadata
-    /// based on current operation id, previous version of the same trait
-    /// and current dates data.
-    fn merge_trait_metadata_dates(
-        operation_id: OperationId,
-        put_trait: &mut PutTraitMetadata,
-        opt_prev_trait: Option<&MutationMetadata>,
-    ) {
-        let op_time = ConsistentTimestamp::from(operation_id).to_datetime();
-        let mut creation_date;
-        let mut modification_date = None;
+#[derive(Default)]
+/// Aggregates mutations metadata of an entity's trait retrieved from the
+/// mutations index. Once merged, only the latest / active mutations are
+/// remaining, and can then be fetched from the chain.
+pub struct TraitAggregator {
+    pub put_mutations: Vec<MutationMetadata>,
+    pub last_operation_id: Option<OperationId>,
+    pub creation_date: Option<DateTime<Utc>>,
+    pub modification_date: Option<DateTime<Utc>>,
+    pub deletion_date: Option<DateTime<Utc>>,
+    pub projection: Option<Rc<Projection>>,
+}
 
-        // dates on trait takes precedence
-        if put_trait.creation_date.is_some() {
-            creation_date = put_trait.creation_date;
+impl TraitAggregator {
+    fn get_for_trait<'t>(
+        traits: &'t mut HashMap<TraitId, TraitAggregator>,
+        trait_id: &str,
+    ) -> &'t mut TraitAggregator {
+        if !traits.contains_key(trait_id) {
+            traits.insert(trait_id.to_string(), TraitAggregator::default());
+        }
+
+        traits.get_mut(trait_id).unwrap()
+    }
+
+    fn all_deleted(traits: &HashMap<TraitId, TraitAggregator>) -> bool {
+        traits.values().all(|t| t.deletion_date.is_some())
+    }
+
+    fn push_put_mutation(&mut self, mutation: MutationMetadata) {
+        let op_id = mutation.operation_id;
+        let op_time = ConsistentTimestamp::from(op_id).to_datetime();
+
+        let put_trait = if let MutationType::TraitPut(put_trait) = &mutation.mutation_type {
+            put_trait
         } else {
-            creation_date = Some(op_time);
-        }
-        if put_trait.modification_date.is_some() {
-            modification_date = put_trait.modification_date;
-        }
+            return;
+        };
 
-        // if we currently have a mutation for this trait, we merge creation and
-        // modifications dates so that creation date is the oldest date and
-        // modification is the newest
-        if let Some(prev_trait) = opt_prev_trait {
-            if let MutationType::TraitPut(prev_trait) = &prev_trait.mutation_type {
-                if modification_date.is_none() {
-                    modification_date = Some(op_time);
-                }
+        let modification_date = if let Some(modification_date) = put_trait.modification_date {
+            Some(modification_date)
+        } else if self.creation_date.is_some() {
+            Some(op_time)
+        } else {
+            None
+        };
+        update_if_newer(&mut self.modification_date, modification_date);
 
-                if prev_trait.creation_date.is_some() && creation_date > prev_trait.creation_date {
-                    creation_date = prev_trait.creation_date
-                }
-            }
-        }
+        let creation_date = put_trait.creation_date.unwrap_or(op_time);
+        update_if_older(&mut self.creation_date, Some(creation_date));
 
-        // update the new trait creation date and modification date
-        if put_trait.creation_date.is_none() || creation_date < put_trait.creation_date {
-            put_trait.creation_date = creation_date;
-        }
-        if put_trait.modification_date.is_none() || modification_date > put_trait.modification_date
-        {
-            put_trait.modification_date = modification_date;
+        self.deletion_date = None;
+
+        self.put_mutations.push(mutation);
+        self.last_operation_id = Some(op_id);
+    }
+
+    fn push_delete_mutation(&mut self, operation_id: OperationId) {
+        let op_time = ConsistentTimestamp::from(operation_id).to_datetime();
+        self.creation_date = None;
+        self.modification_date = None;
+        self.deletion_date = Some(op_time);
+        self.last_operation_id = Some(operation_id);
+    }
+
+    pub fn last_put_mutation(&self) -> Option<(&MutationMetadata, &PutTraitMetadata)> {
+        let mutation = self.put_mutations.last()?;
+
+        match &mutation.mutation_type {
+            MutationType::TraitPut(put) => Some((mutation, put)),
+            _ => None,
         }
     }
 }
@@ -310,6 +326,18 @@ pub fn project_trait(
     Ok(())
 }
 
+fn update_if_newer(current: &mut Option<DateTime<Utc>>, new: Option<DateTime<Utc>>) {
+    if current.is_none() || new > *current {
+        *current = new;
+    }
+}
+
+fn update_if_older(current: &mut Option<DateTime<Utc>>, new: Option<DateTime<Utc>>) {
+    if current.is_none() || new < *current {
+        *current = new;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -339,9 +367,9 @@ mod tests {
         ];
 
         let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-        assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 3);
-        assert_eq!(em.trait_mutations.get(&t2).unwrap().operation_id, 5);
-        assert_eq!(em.trait_mutations.get(&t3).unwrap().operation_id, 6);
+        assert_eq!(em.traits.get(&t1).unwrap().last_operation_id, Some(3));
+        assert_eq!(em.traits.get(&t2).unwrap().last_operation_id, Some(5));
+        assert_eq!(em.traits.get(&t3).unwrap().last_operation_id, Some(6));
         assert_eq!(em.active_operations.len(), 3);
         assert!(em.active_operations.contains(&3));
         assert!(em.active_operations.contains(&5));
@@ -360,7 +388,7 @@ mod tests {
 
         // operation 1 should be discarded, and only operation 2 active
         let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-        assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 2);
+        assert_eq!(em.traits.get(&t1).unwrap().last_operation_id, Some(2));
         assert!(em.active_operations.contains(&2));
     }
 
@@ -374,7 +402,8 @@ mod tests {
         ];
 
         let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-        assert!(em.trait_mutations.get(&t1).is_none());
+        assert!(em.deletion_date.is_some());
+        assert!(em.traits.get(&t1).unwrap().deletion_date.is_some());
         assert!(em.active_operations.contains(&2));
     }
 
@@ -391,7 +420,7 @@ mod tests {
         // delete operation should be discarded since an operation happened on the trait
         // before it got committed
         let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-        assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 2);
+        assert_eq!(em.traits.get(&t1).unwrap().last_operation_id, Some(2));
         assert!(em.active_operations.contains(&2))
     }
 
@@ -405,7 +434,8 @@ mod tests {
         ];
 
         let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-        assert!(em.trait_mutations.get(&t1).is_none());
+        assert!(em.deletion_date.is_some());
+        assert!(em.traits.get(&t1).unwrap().deletion_date.is_some());
         assert!(em.active_operations.contains(&2));
     }
 
@@ -420,86 +450,129 @@ mod tests {
         ];
 
         let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-        assert_eq!(em.trait_mutations.get(&t1).unwrap().operation_id, 1);
+        assert_eq!(em.traits.get(&t1).unwrap().last_operation_id, Some(1));
         assert!(em.active_operations.contains(&1));
     }
 
     #[test]
-    fn merge_trait_dates() {
+    fn trait_dates() {
         let t1 = "t1".to_string();
 
-        let merge_mutations = |mutations: Vec<MutationMetadata>| -> MutationMetadata {
+        let merge_mutations = |mutations: Vec<MutationMetadata>| -> TraitAggregator {
             let mut em = EntityAggregator::new(mutations.into_iter()).unwrap();
-            em.trait_mutations.remove(&t1).unwrap()
+            em.traits.remove(&t1).unwrap()
         };
+
+        fn assert_dates(
+            agg: &TraitAggregator,
+            creation: Option<OperationId>,
+            modification: Option<OperationId>,
+            deletion: Option<OperationId>,
+        ) {
+            assert_eq!(
+                agg.creation_date,
+                creation.map(|c| ConsistentTimestamp::from(c).to_datetime()),
+            );
+            assert_eq!(
+                agg.modification_date,
+                modification.map(|m| ConsistentTimestamp::from(m).to_datetime()),
+            );
+            assert_eq!(
+                agg.deletion_date,
+                deletion.map(|m| ConsistentTimestamp::from(m).to_datetime()),
+            );
+        }
 
         {
             // if no dates specified, creation date is based on first operation
-            let mutation =
-                merge_mutations(vec![mock_put_trait(&t1, TYPE1, Some(1), 1, None, None)]);
-            assert_creation_date(&mutation, Some(1));
+            let agg = merge_mutations(vec![mock_put_trait(&t1, TYPE1, Some(1), 1, None, None)]);
+            assert_dates(&agg, Some(1), None, None);
         }
 
         {
             // if no dates specified, modification date is based on last operation
-            let mutation = merge_mutations(vec![
+            let agg = merge_mutations(vec![
                 mock_put_trait(&t1, TYPE1, Some(1), 1, None, None),
                 mock_put_trait(&t1, TYPE1, Some(2), 2, None, None),
             ]);
-            assert_creation_date(&mutation, Some(1));
-            assert_modification_date(&mutation, Some(2));
+            assert_dates(&agg, Some(1), Some(2), None);
         }
 
         {
             // oldest specified creation date has priority
-            let mutation = merge_mutations(vec![
+            let agg = merge_mutations(vec![
                 mock_put_trait(&t1, TYPE1, Some(1), 5, None, None),
                 mock_put_trait(&t1, TYPE1, Some(2), 6, Some(1), None),
             ]);
-            assert_creation_date(&mutation, Some(1));
-            assert_modification_date(&mutation, Some(6));
+            assert_dates(&agg, Some(1), Some(6), None);
         }
 
         {
             // last operation always override older specified modification date
-            let mutation = merge_mutations(vec![
+            let agg = merge_mutations(vec![
                 mock_put_trait(&t1, TYPE1, Some(1), 5, None, Some(2)),
                 mock_put_trait(&t1, TYPE1, Some(2), 6, None, None),
                 mock_put_trait(&t1, TYPE1, Some(2), 7, None, None),
             ]);
-            assert_modification_date(&mutation, Some(7));
+            assert_dates(&agg, Some(5), Some(7), None);
+        }
+
+        {
+            // deleting trait should reset dates & mark as deleted
+            let agg = merge_mutations(vec![
+                mock_put_trait(&t1, TYPE1, Some(1), 5, None, Some(2)),
+                mock_delete_trait(&t1, Some(2), 6),
+            ]);
+            assert_dates(&agg, None, None, Some(6));
+        }
+
+        {
+            // deleting entity should reset dates & mark as deleted
+            let agg = merge_mutations(vec![
+                mock_put_trait(&t1, TYPE1, Some(1), 5, None, Some(2)),
+                mock_delete_entity(Some(2), 6),
+            ]);
+            assert_dates(&agg, None, None, Some(6));
         }
     }
 
     #[test]
     fn entity_dates() {
         let t1 = "t1".to_string();
+        let t2 = "t2".to_string();
 
-        let assert_dates = |em: &EntityAggregator,
-                            creation: Option<OperationId>,
-                            modification: Option<OperationId>| {
+        fn assert_dates(
+            agg: &EntityAggregator,
+            creation: Option<OperationId>,
+            modification: Option<OperationId>,
+            deletion: Option<OperationId>,
+        ) {
             assert_eq!(
-                em.creation_date,
+                agg.creation_date,
                 creation.map(|c| ConsistentTimestamp::from(c).to_datetime()),
             );
             assert_eq!(
-                em.modification_date,
+                agg.modification_date,
                 modification.map(|m| ConsistentTimestamp::from(m).to_datetime()),
             );
-        };
+            assert_eq!(
+                agg.deletion_date,
+                deletion.map(|m| ConsistentTimestamp::from(m).to_datetime()),
+            );
+        }
 
         {
             // creation date based on operation
             let mutations = vec![mock_put_trait(&t1, TYPE1, Some(2), 1, None, None)];
             let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-            assert_dates(&em, Some(1), None);
+            assert_dates(&em, Some(1), None, None);
         }
 
         {
             // explicit dates
             let mutations = vec![mock_put_trait(&t1, TYPE1, Some(2), 10, Some(1), Some(2))];
             let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-            assert_dates(&em, Some(1), Some(2));
+            assert_dates(&em, Some(1), Some(2), None);
         }
 
         {
@@ -509,17 +582,37 @@ mod tests {
                 mock_put_trait(&t1, TYPE1, Some(3), 11, None, None),
             ];
             let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-            assert_dates(&em, Some(10), Some(11));
+            assert_dates(&em, Some(10), Some(11), None);
         }
 
         {
             // trait deletion counts as modification
             let mutations = vec![
                 mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
+                mock_put_trait(&t2, TYPE1, Some(2), 10, None, None),
                 mock_delete_trait(&t1, Some(3), 11),
             ];
             let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-            assert_dates(&em, Some(10), Some(11));
+            assert_dates(&em, Some(10), Some(11), None);
+        }
+
+        {
+            // deleting all traits should mark entity as deleted
+            let mutations = vec![
+                mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
+                mock_delete_trait(&t1, Some(3), 11),
+            ];
+            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            assert_dates(&em, None, None, Some(11));
+        }
+        {
+            // deleting entity should mark entity as deleted
+            let mutations = vec![
+                mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
+                mock_delete_entity(Some(2), 11),
+            ];
+            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            assert_dates(&em, None, None, Some(11));
         }
 
         {
@@ -530,7 +623,7 @@ mod tests {
                 mock_put_trait(&t1, TYPE1, Some(3), 3, Some(20), Some(21)),
             ];
             let em = EntityAggregator::new(mutations.into_iter()).unwrap();
-            assert_dates(&em, Some(20), Some(21));
+            assert_dates(&em, Some(20), Some(21), None);
         }
     }
 
@@ -586,7 +679,9 @@ mod tests {
         let t2 = "t2";
 
         fn assert_projection_id(em: &EntityAggregator, trait_id: &str, id: u32) {
-            assert_eq!(em.trait_projections.get(trait_id).unwrap().field_ids[0], id,);
+            let trt = em.traits.get(trait_id);
+            let proj = trt.unwrap().projection.as_ref().unwrap();
+            assert_eq!(proj.field_ids[0], id,);
         }
 
         {
@@ -642,9 +737,7 @@ mod tests {
             ..Default::default()
         };
 
-        let project = |fields: Vec<FieldId>,
-                       groups: Vec<FieldGroupId>|
-         -> (TestMessage, TraitDetails) {
+        let project = |fields: Vec<FieldId>, groups: Vec<FieldGroupId>| {
             let mut trt = Trait {
                 message: Some(msg.pack_to_any().unwrap()),
                 ..Default::default()
@@ -716,30 +809,6 @@ mod tests {
         );
 
         Ok(())
-    }
-
-    fn assert_creation_date(mutation: &MutationMetadata, time_op_id: Option<OperationId>) {
-        match &mutation.mutation_type {
-            MutationType::TraitPut(put_mut) => {
-                let date = time_op_id.map(|op_id| ConsistentTimestamp::from(op_id).to_datetime());
-                assert_eq!(put_mut.creation_date, date);
-            }
-            other => {
-                panic!("Expected put trait mutation, got {:?}", other);
-            }
-        }
-    }
-
-    fn assert_modification_date(mutation: &MutationMetadata, time_op_id: Option<OperationId>) {
-        match &mutation.mutation_type {
-            MutationType::TraitPut(put_mut) => {
-                let date = time_op_id.map(|op_id| ConsistentTimestamp::from(op_id).to_datetime());
-                assert_eq!(put_mut.modification_date, date);
-            }
-            other => {
-                panic!("Expected put trait mutation, got {:?}", other);
-            }
-        }
     }
 
     fn mock_put_trait<I: Into<String>, T: Into<String>>(

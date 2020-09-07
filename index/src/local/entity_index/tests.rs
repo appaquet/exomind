@@ -8,7 +8,10 @@ use test_index::*;
 
 use crate::mutation::MutationBuilder;
 use crate::ordering::{value_from_u64, value_max};
-use crate::query::{ProjectionBuilder, QueryBuilder as Q};
+use crate::{
+    local::mutation_index::MutationType,
+    query::{ProjectionBuilder, QueryBuilder as Q},
+};
 
 use super::*;
 
@@ -318,6 +321,12 @@ fn delete_all_entity_traits() -> anyhow::Result<()> {
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
 
+    let entity = res.entities[0].entity.as_ref().unwrap();
+    assert!(entity.deletion_date.is_some());
+    assert_eq!(entity.traits.len(), 2);
+    assert!(entity.traits[0].deletion_date.is_some());
+    assert!(entity.traits[1].deletion_date.is_some());
+
     Ok(())
 }
 
@@ -359,6 +368,12 @@ fn delete_entity() -> anyhow::Result<()> {
     let query = Q::with_id("entity1").include_deleted().build();
     let res = test_index.index.search(query)?;
     assert_eq!(res.entities.len(), 1);
+    assert!(res.entities[0]
+        .entity
+        .as_ref()
+        .unwrap()
+        .deletion_date
+        .is_some());
 
     Ok(())
 }

@@ -1,4 +1,3 @@
-#![deny(bare_trait_objects)]
 #![allow(non_camel_case_types)]
 
 use std::path::PathBuf;

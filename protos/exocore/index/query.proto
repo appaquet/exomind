@@ -34,7 +34,8 @@ message EntityQuery {
     uint64 result_hash = 9;
 
     /// Include deleted mutations matches. Can be used to return recently modified entities that
-    /// also include deletions.
+    /// also include deletions. Deleted traits will be included in the results, but will have a 
+    /// `deletion_date` field with the date of the deletion.
     bool include_deleted = 12;
 }
 

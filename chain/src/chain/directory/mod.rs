@@ -486,7 +486,8 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
     }
 }
 
-/// Reverse iterator over blocks stored in this directory based chain persistence.
+/// Reverse iterator over blocks stored in this directory based chain
+/// persistence.
 struct DirectoryBlockReverseIterator<'pers> {
     directory: &'pers DirectoryChainStore,
     current_offset: BlockOffset,
