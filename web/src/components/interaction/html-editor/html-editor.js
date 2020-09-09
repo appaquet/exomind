@@ -71,7 +71,7 @@ export default class HtmlEditor extends React.Component {
     doc.open();
 
     // width hack: http://stackoverflow.com/questions/23083462/how-to-get-an-iframe-to-be-responsive-in-ios-safari
-    doc.write('<!DOCTYPE html><html style="height: 100%"><meta><title></title></meta>' +
+    doc.write('<!DOCTYPE html><html style="height: 100%; font-size: 14px; font-family: Arial"><meta><title></title></meta>' +
 
         // This is for iOS dark mode. If changed, change in iOS EmailBodyWebView
         '<style>@media (prefers-color-scheme: dark) and (-webkit-overflow-scrolling: touch) { body { color: white; background-color: black } a { color: #4285f4; } }</style>' +

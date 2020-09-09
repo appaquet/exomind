@@ -6,14 +6,12 @@ edition = "2018"
 license = "Apache-2.0"
 
 [dependencies]
-prost = "0.6"
-prost-types = "0.6"
-exocore = { git = "https://github.com/appaquet/exocore.git", default-features = false, features = ["client"] }
-
-[build-dependencies]
-prost-build = "0.6"
 
 [workspace]
 members = [
+  "core",
   "integrations/gmail"
 ]
+
+[patch.'https://github.com/appaquet/exocore.git']
+exocore = { path = "../exocore" }

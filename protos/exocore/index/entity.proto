@@ -29,10 +29,12 @@ message Trait {
 
 message Reference {
     string entity_id = 1;
+
     string trait_id = 2;
 }
 
 enum TraitDetails {
     TRAIT_DETAILS_FULL = 0;
     TRAIT_DETAILS_PARTIAL = 1;
+    TRAIT_DETAILS_NONE = 2;
 }

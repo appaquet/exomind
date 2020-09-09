@@ -43,6 +43,7 @@ message Account {
 }
 
 message EmailThread {
+    // TODO: These 2 fields should probably be into a "source" object ?
     exocore.index.Reference account = 8;
     string source_id = 2;
 
