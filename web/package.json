@@ -50,7 +50,7 @@
     "@babel/preset-react": "^7.9.4",
     "@types/classnames": "^2.2.10",
     "@types/domhandler": "^2.4.1",
-    "@types/domutils": "^1.5.2",
+    "@types/domutils": "^1.7.3",
     "@types/fbemitter": "^2.0.32",
     "@types/htmlparser2": "^3.10.1",
     "@types/jest": "^26.0.10",
