@@ -1,12 +1,9 @@
 use crate::cli;
 use exomind_core::protos::base::{Account, AccountScope, AccountType};
 use google_gmail1::schemas::ModifyThreadRequest;
-use std::{collections::HashMap, path::PathBuf, collections::HashSet};
+use std::{collections::HashSet, path::PathBuf};
 use tokio::task::block_in_place;
 use yup_oauth2::{AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
-
-// TODO: wrap all calls into block_in_place
-// TODO: paging
 
 pub type HistoryId = u64;
 
@@ -52,7 +49,7 @@ impl GmailClient {
                 .threads()
                 .list("me")
                 .label_ids("INBOX".to_string())
-                .max_results(1000)
+                .max_results(1000) // TODO: Should be done via paging instead
                 .execute()
         })?;
 
@@ -102,6 +99,13 @@ impl GmailClient {
         thread_id: &str,
         label: String,
     ) -> anyhow::Result<google_gmail1::schemas::Thread> {
+        info!(
+            "Adding label {} to {} in account {}",
+            label,
+            thread_id,
+            self.account.email()
+        );
+
         let thread: google_gmail1::schemas::Thread = block_in_place(|| {
             let req = ModifyThreadRequest {
                 add_label_ids: Some(vec![label]),
@@ -123,6 +127,13 @@ impl GmailClient {
         thread_id: &str,
         label: String,
     ) -> anyhow::Result<google_gmail1::schemas::Thread> {
+        info!(
+            "Removing label {} to {} in account {}",
+            label,
+            thread_id,
+            self.account.email()
+        );
+
         let thread: google_gmail1::schemas::Thread = block_in_place(|| {
             let req = ModifyThreadRequest {
                 add_label_ids: None,
@@ -139,7 +150,10 @@ impl GmailClient {
         Ok(thread)
     }
 
-    pub async fn list_history(&self, history: HistoryId) -> anyhow::Result<Vec<HistoryAction>> {
+    pub async fn list_history(
+        &self,
+        history: HistoryId,
+    ) -> anyhow::Result<Vec<GmailHistoryAction>> {
         let history_resp: google_gmail1::schemas::ListHistoryResponse = block_in_place(|| {
             self.client
                 .users()
@@ -151,17 +165,33 @@ impl GmailClient {
         })?;
 
         if history_resp.next_page_token.is_some() {
+            // TODO:
             error!("History had next page...");
         }
 
-        let mut added_threads = HashSet::<String>::new();
-
         let mut actions = Vec::new();
+        let mut imported_threads = HashSet::<String>::new();
+        let mut removed_threads = HashSet::<String>::new();
+
         let history_list = history_resp.history.unwrap_or_default();
         for history in history_list {
-            let labels_added = history.labels_added.unwrap_or_default();
-            let labels_removed = history.labels_removed.unwrap_or_default();
+            let messages_added = history.messages_added.unwrap_or_default();
+            for added in messages_added {
+                let msg = added.message.as_ref().unwrap();
+                let thread_id = msg.thread_id.as_deref().unwrap();
 
+                if !imported_threads.contains(thread_id) {
+                    imported_threads.insert(thread_id.to_string());
+
+                    let thread = self.fetch_thread(thread_id, true).await?;
+                    actions.push(GmailHistoryAction::AddToInbox(
+                        history.id.unwrap().clone(),
+                        thread,
+                    ));
+                }
+            }
+
+            let labels_added = history.labels_added.unwrap_or_default();
             for added in labels_added {
                 let labels = added.label_ids.unwrap_or_default();
                 if !labels.contains(&"INBOX".to_string()) {
@@ -171,17 +201,18 @@ impl GmailClient {
                 let msg = added.message.as_ref().unwrap();
                 let thread_id = msg.thread_id.as_deref().unwrap();
 
-                if !added_threads.contains(thread_id) {
-                    let thread = self.fetch_thread(thread_id, true).await?;
-                    added_threads.insert(thread_id.to_string());
+                if !imported_threads.contains(thread_id) {
+                    imported_threads.insert(thread_id.to_string());
 
-                    actions.push(HistoryAction::AddToInbox(
+                    let thread = self.fetch_thread(thread_id, true).await?;
+                    actions.push(GmailHistoryAction::AddToInbox(
                         history.id.unwrap().clone(),
                         thread,
                     ));
                 }
             }
 
+            let labels_removed = history.labels_removed.unwrap_or_default();
             for removed in labels_removed {
                 let labels = removed.label_ids.unwrap_or_default();
                 if !labels.contains(&"INBOX".to_string()) {
@@ -191,39 +222,18 @@ impl GmailClient {
                 let msg = removed.message.as_ref().unwrap();
                 let thread_id = msg.thread_id.as_deref().unwrap();
 
-                actions.push(HistoryAction::RemoveFromInbox(
-                    history.id.unwrap().clone(),
-                    thread_id.to_string(),
-                ))
+                if !removed_threads.contains(thread_id) {
+                    removed_threads.insert(thread_id.to_string());
+
+                    actions.push(GmailHistoryAction::RemoveFromInbox(
+                        history.id.unwrap().clone(),
+                        thread_id.to_string(),
+                    ))
+                }
             }
         }
 
         Ok(actions)
-    }
-}
-
-pub enum HistoryAction {
-    AddToInbox(HistoryId, google_gmail1::schemas::Thread),
-    RemoveFromInbox(HistoryId, String),
-}
-
-pub fn account_token_file(config: &cli::Config, email: &str) -> anyhow::Result<PathBuf> {
-    let token_dir = PathBuf::from(&config.tokens_directory);
-    if !token_dir.exists() {
-        std::fs::create_dir(&token_dir)?;
-    }
-
-    Ok(token_dir.join(format!("token_{}.json", email)))
-}
-
-#[derive(Debug)]
-struct YupAuth {
-    token: AccessToken,
-}
-
-impl google_api_auth::GetAccessToken for YupAuth {
-    fn access_token(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.token.as_str().to_string())
     }
 }
 
@@ -253,5 +263,30 @@ impl GmailAccount {
 
     pub fn email(&self) -> &str {
         &self.account.key
+    }
+}
+
+pub enum GmailHistoryAction {
+    AddToInbox(HistoryId, google_gmail1::schemas::Thread),
+    RemoveFromInbox(HistoryId, String),
+}
+
+pub fn account_token_file(config: &cli::Config, email: &str) -> anyhow::Result<PathBuf> {
+    let token_dir = PathBuf::from(&config.tokens_directory);
+    if !token_dir.exists() {
+        std::fs::create_dir(&token_dir)?;
+    }
+
+    Ok(token_dir.join(format!("token_{}.json", email)))
+}
+
+#[derive(Debug)]
+struct YupAuth {
+    token: AccessToken,
+}
+
+impl google_api_auth::GetAccessToken for YupAuth {
+    fn access_token(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self.token.as_str().to_string())
     }
 }

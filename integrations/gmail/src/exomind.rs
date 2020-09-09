@@ -1,6 +1,8 @@
-use crate::{cli, gmail::GmailAccount, ThreadEntity};
+use crate::{cli, gmail::GmailAccount, SynchronizedThread};
 use exocore::{
-    core::protos::prost::ProstAnyPackMessageExt, core::time::Utc, protos::prost::ProstTimestampExt,
+    chain::operation::OperationId, core::protos::prost::ProstAnyPackMessageExt,
+    core::time::ConsistentTimestamp, core::time::DateTime, core::time::Utc,
+    index::entity::EntityExt, protos::index::EntityResult, protos::prost::ProstTimestampExt,
 };
 use exocore::{
     core::{cell::Cell, futures::spawn_future, time::Clock},
@@ -141,7 +143,78 @@ impl ExomindClient {
         Ok(entities)
     }
 
-    pub async fn import_thread(&self, thread: &ThreadEntity) -> anyhow::Result<()> {
+    pub async fn list_inbox_history(
+        &self,
+        account: &GmailAccount,
+        after_operation_id: OperationId,
+    ) -> anyhow::Result<Vec<ExomindHistoryAction>> {
+        // TODO: Projection
+
+        let tq = TraitQueryBuilder::field_references("collection", "inbox").build();
+        let query = QueryBuilder::with_trait_query::<CollectionChild>(tq)
+            .include_deleted()
+            .order_by_operations(false)
+            .count(100)
+            .build();
+
+        let after_timestamp = ConsistentTimestamp::from(after_operation_id);
+        let after_date = after_timestamp.to_datetime();
+
+        let mut actions = Vec::new();
+        let results = self.store.query(query).await?;
+        for entity_result in results.entities {
+            if let Some(action) = Self::history_result_to_action(entity_result, account, after_date)
+            {
+                actions.push(action);
+            }
+        }
+
+        Ok(actions)
+    }
+
+    fn history_result_to_action(
+        entity_result: EntityResult,
+        account: &GmailAccount,
+        after_date: DateTime<Utc>,
+    ) -> Option<ExomindHistoryAction> {
+        let entity = entity_result.entity?;
+
+        let thread = entity.trait_of_type::<EmailThread>()?;
+        if thread.instance.account.as_ref()?.entity_id != account.entity_id {
+            return None;
+        }
+
+        let child_trait = entity
+            .traits_of_type::<CollectionChild>()
+            .into_iter()
+            .find(|c| {
+                c.instance
+                    .collection
+                    .as_ref()
+                    .map(|r| r.entity_id == "inbox")
+                    .unwrap_or(false)
+            })?;
+
+        if let Some(delete_timestamp) = &child_trait.trt.deletion_date {
+            let deleted_date = delete_timestamp.to_chrono_datetime();
+            if deleted_date > after_date {
+                let thread_entity = SynchronizedThread::from_exomind(entity)?;
+                return Some(ExomindHistoryAction::RemovedFromInbox(thread_entity));
+            }
+        }
+
+        if let Some(create_timestamp) = &child_trait.trt.creation_date {
+            let create_date = create_timestamp.to_chrono_datetime();
+            if create_date > after_date {
+                let thread_entity = SynchronizedThread::from_exomind(entity)?;
+                return Some(ExomindHistoryAction::AddToInbox(thread_entity));
+            }
+        }
+
+        None
+    }
+
+    pub async fn import_thread(&self, thread: &SynchronizedThread) -> anyhow::Result<()> {
         info!(
             "Importing thread {} from {} to exomind",
             thread.thread_id(),
@@ -214,10 +287,7 @@ impl ExomindClient {
     pub async fn remove_from_inbox(&self, thread_id: &str) -> anyhow::Result<()> {
         let thread_entity_id = thread_id_entity_id(thread_id);
 
-        info!(
-            "Removing thread {} from exomind",
-            thread_entity_id,
-        );
+        info!("Removing thread {} from exomind", thread_entity_id,);
 
         // TODO: This isn't right. It may have a different trait id
         let mutation = MutationBuilder::new().delete_trait(thread_entity_id, "child_inbox");
@@ -225,6 +295,11 @@ impl ExomindClient {
 
         Ok(())
     }
+}
+
+pub enum ExomindHistoryAction {
+    AddToInbox(SynchronizedThread),
+    RemovedFromInbox(SynchronizedThread),
 }
 
 pub fn thread_entity_id(thread: &EmailThread) -> String {

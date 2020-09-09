@@ -1,15 +1,21 @@
-use exocore::core::protos::index::{Reference, Trait};
-use exocore::core::protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt};
 use exocore::core::time::Utc;
+use exocore::core::{
+    protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
+    time::ConsistentTimestamp,
+};
+use exocore::{
+    chain::operation::OperationId,
+    core::protos::index::{Reference, Trait},
+};
 use exocore::{
     index::{entity::EntityExt, mutation::MutationBuilder},
     protos::index::Entity,
 };
-use exomind::{email_trait_id, thread_entity_id, ExomindClient};
+use exomind::{email_trait_id, thread_entity_id, ExomindClient, ExomindHistoryAction};
 use exomind_core::protos::base::{CollectionChild, Email, EmailThread};
-use gmail::{GmailAccount, GmailClient, HistoryAction, HistoryId};
+use gmail::{GmailAccount, GmailClient, GmailHistoryAction, HistoryId};
 use log::LevelFilter;
-use std::{collections::HashSet, str::FromStr, time::Duration};
+use std::{collections::HashSet, str::FromStr, time::Duration, io::Write};
 use structopt::StructOpt;
 use tokio::time::delay_for;
 
@@ -25,14 +31,6 @@ extern crate anyhow;
 
 // TODO: Account entity key vs trait key fix up
 // TODO: Make sure account key is right in converter
-
-// TODO:
-//  if opt.save_fixtures {
-//             let path = format!("{}.new.json", thread.id.as_ref().unwrap());
-//             let mut f = std::fs::File::create(path)?;
-//             let json = serde_json::to_string_pretty(&thread)?;
-//             f.write_all(json.as_bytes())?;
-//         }
 
 #[tokio::main]
 async fn main() {
@@ -111,32 +109,6 @@ async fn list_accounts(config: cli::Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-struct AccountSyncer {
-    account: GmailAccount,
-    last_history_id: Option<HistoryId>,
-    client: GmailClient,
-}
-
-impl AccountSyncer {
-    fn update_history_id(&mut self, history_id: Option<HistoryId>) {
-        let history_id = if let Some(history_id) = history_id {
-            history_id
-        } else {
-            return;
-        };
-
-        match self.last_history_id {
-            Some(last_history_id) if last_history_id < history_id => {
-                self.last_history_id = Some(history_id);
-            }
-            None => {
-                self.last_history_id = Some(history_id);
-            }
-            _ => {}
-        }
-    }
-}
-
 async fn start(config: cli::Config, opt: cli::StartOptions) -> anyhow::Result<()> {
     let exm = ExomindClient::new(&config).await?;
     exm.create_base_objects().await?; // TODO: This shouldn't be here
@@ -144,150 +116,228 @@ async fn start(config: cli::Config, opt: cli::StartOptions) -> anyhow::Result<()
     let accounts = exm.get_accounts(true).await?;
     let mut account_synchronizers = Vec::new();
     for account in accounts {
-        account_synchronizers.push(AccountSyncer {
+        account_synchronizers.push(AccountSynchronizer {
             account: account.clone(),
-            client: GmailClient::new(&config, account).await?,
-            last_history_id: None,
+            gmail: GmailClient::new(&config, account).await?,
+            last_gmail_history: None,
+            last_exomind_operation: None,
         });
     }
-
-    let mut last_exomind_check = Utc::now();
 
     let exomind_inbox = exm
         .list_inbox_entities()
         .await?
         .into_iter()
-        .flat_map(ThreadEntity::from_exomind)
+        .flat_map(SynchronizedThread::from_exomind)
         .collect::<Vec<_>>();
     for sync in &mut account_synchronizers {
         info!("Initial inbox sync for account {}", sync.account.email());
 
+        let threads = sync.gmail.list_inbox_threads(true).await?;
+        if opt.save_fixtures {
+            for thread in &threads {
+                let path = format!("{}.new.json", thread.id.as_ref().unwrap());
+                let mut f = std::fs::File::create(path)?;
+                let json = serde_json::to_string_pretty(&thread)?;
+                f.write_all(json.as_bytes())?;
+            }
+        }
+
         // import threads from gmail to exomind inbox
-        let threads = sync.client.list_inbox_threads(true).await?;
         let thread_entities = threads
             .into_iter()
-            .flat_map(|th| ThreadEntity::from_gmail(sync.account.clone(), th))
+            .flat_map(|th| SynchronizedThread::from_gmail(sync.account.clone(), th))
             .collect::<Vec<_>>();
         let mut gmail_threads = HashSet::new();
         for thread_entity in thread_entities {
-            sync.update_history_id(thread_entity.history_id);
+            sync.update_last_gmail_history(thread_entity.history_id);
             gmail_threads.insert(thread_entity.thread_id().to_string());
+
+            // TODO: Check if we need to import it really
             thread_entity.import_to_exomind(&exm).await?;
         }
 
         // move to inbox emails that are in exomind's inbox
         for thread in &exomind_inbox {
-            if thread.account_entity_id == sync.account.entity_id
-                && !gmail_threads.contains(thread.thread_id())
-            {
-                let history_id = thread.add_to_gmail_inbox(&sync.client).await?;
-                sync.update_history_id(history_id);
+            if thread.account_entity_id == sync.account.entity_id {
+                sync.update_last_exomind_operation(thread.operation_id);
+
+                if !gmail_threads.contains(thread.thread_id()) {
+                    let history_id = thread.add_to_gmail_inbox(&sync.gmail).await?;
+                    sync.update_last_gmail_history(history_id);
+                }
             }
         }
     }
 
+    // TODO: Error handling. Shouldn't fail because one sync failed.
+    // TODO: Try to parallelize accounts fetching. May have to duplicate handles.
     loop {
         for sync in &mut account_synchronizers {
-            match sync.last_history_id {
+            match sync.last_gmail_history {
                 Some(last_history_id) => {
-                    let history_list = sync.client.list_history(last_history_id).await?;
-                    info!("Fetch {} history from gmail", history_list.len());
+                    let history_list = sync.gmail.list_history(last_history_id).await?;
+                    info!(
+                        "Fetch {} history from gmail from history id {}",
+                        history_list.len(),
+                        last_history_id
+                    );
                     for history in history_list {
                         match history {
-                            HistoryAction::AddToInbox(history_id, thread) => {
+                            GmailHistoryAction::AddToInbox(history_id, thread) => {
                                 let thread_entity =
-                                    ThreadEntity::from_gmail(sync.account.clone(), thread);
+                                    SynchronizedThread::from_gmail(sync.account.clone(), thread);
                                 if let Some(thread_entity) = thread_entity {
+                                    // TODO: Fetch to make sure we aren't adding traits that already exist
                                     thread_entity.import_to_exomind(&exm).await?;
                                 }
 
-                                sync.update_history_id(Some(history_id));
+                                sync.update_last_gmail_history(Some(history_id));
                             }
-                            HistoryAction::RemoveFromInbox(history_id, thread_id) => {
+                            GmailHistoryAction::RemoveFromInbox(history_id, thread_id) => {
                                 exm.remove_from_inbox(&thread_id).await?;
-                                sync.update_history_id(Some(history_id));
+                                sync.update_last_gmail_history(Some(history_id));
                             }
                         }
                     }
+
+                    // TODO: Note "just added" threads
+                    // TODO: Note "just removed" threads
                 }
                 None => {
                     error!("Require full inbox fetch");
                     // TODO: Aggregate full
                 }
             }
+
+            let last_operation_id = sync.last_exomind_operation.unwrap_or_default();
+            // TODO: Should be fetched once, and filtering done externally so that we can do in a watched at some point
+            let history_list = exm
+                .list_inbox_history(&sync.account, last_operation_id)
+                .await?;
+            info!(
+                "Fetch {} history from exomind after {:?}",
+                history_list.len(),
+                ConsistentTimestamp::from(last_operation_id).to_datetime(),
+            );
+            for history in history_list {
+                match history {
+                    ExomindHistoryAction::AddToInbox(thread) => {
+                        thread.add_to_gmail_inbox(&sync.gmail).await?;
+                        sync.update_last_exomind_operation(thread.operation_id);
+
+                        // TODO: Note history ID to prevent adding in exomind
+                    }
+                    ExomindHistoryAction::RemovedFromInbox(thread) => {
+                        thread.remove_from_gmail_inbox(&sync.gmail).await?;
+                        sync.update_last_exomind_operation(thread.operation_id);
+
+                        // TODO: Note history ID to prevent removing in exomind
+                    }
+                }
+            }
         }
 
-        // TODO: Aggregate history from Gmail. If no history, check inbox and insert all.
-        // TODO: Ignore all history from last round
-        // TODO: Note "just added" threads
-        // TODO: Note "just removed" threads
-
-        // TODO: Fetch history from Exomind. Note addition or removal of CollectionChild since last check
-        // TODO: Don't add back to gmail threads that are in "just added"
-        // TODO: Don't remove from gmail threads that are in "just removed"
-
-        // TODO: Wipe "just added" / "just removed"
-        // TODO: Add / remove from gmail
-        // TODO: Note history ids of modified
-
-        delay_for(Duration::from_secs(5)).await;
+        delay_for(Duration::from_secs(10)).await;
     }
-
-    // loop {
-    //     for account in &accounts {
-    //         println!("Syncing account {}", account.email());
-
-    //         let account_inbox_tracker = inbox_tracker.for_account(&account);
-
-    //         let inbox_entities = exm.list_inbox_entities().await?;
-
-    //         let inbox_threads = TrackedThread::from_entities(&inbox_entities)
-    //             .into_iter()
-    //             .filter(|thread| thread.account_entity_id == account.entity_id)
-    //             .collect::<Vec<_>>();
-    //         println!("In inbox for account: {:?}", inbox_threads);
-
-    //         let gmc = GmailClient::new(&config, account.clone()).await?;
-    //         let threads = gmc.list_inbox_threads().await?;
-    //     }
-
-    //     delay_for(Duration::from_secs(5)).await;
-    // }
 }
 
-pub struct ThreadEntity {
+struct AccountSynchronizer {
+    account: GmailAccount,
+    gmail: GmailClient,
+    last_gmail_history: Option<HistoryId>,
+    last_exomind_operation: Option<OperationId>,
+}
+
+impl AccountSynchronizer {
+    fn update_last_gmail_history(&mut self, history_id: Option<HistoryId>) {
+        let history_id = if let Some(history_id) = history_id {
+            history_id
+        } else {
+            return;
+        };
+
+        match self.last_gmail_history {
+            Some(last_history_id) if last_history_id < history_id => {
+                self.last_gmail_history = Some(history_id);
+            }
+            None => {
+                self.last_gmail_history = Some(history_id);
+            }
+            _ => {}
+        }
+    }
+
+    fn update_last_exomind_operation(&mut self, operation_id: Option<OperationId>) {
+        let operation_id = if let Some(operation_id) = operation_id {
+            operation_id
+        } else {
+            return;
+        };
+
+        match self.last_exomind_operation {
+            Some(last_operation_id) if last_operation_id < operation_id => {
+                self.last_exomind_operation = Some(operation_id);
+            }
+            None => {
+                self.last_exomind_operation = Some(operation_id);
+            }
+            _ => {}
+        }
+    }
+}
+
+pub struct SynchronizedThread {
     account_entity_id: String,
     thread: EmailThread,
     emails: Vec<Email>,
-    inbox_child: Option<CollectionChild>,
+    _inbox_child: Option<CollectionChild>,
     history_id: Option<HistoryId>,
+    operation_id: Option<OperationId>,
 }
 
-impl ThreadEntity {
-    fn from_exomind(entity: Entity) -> Option<ThreadEntity> {
-        let thread: EmailThread = entity.trait_of_type::<EmailThread>()?;
+impl SynchronizedThread {
+    fn from_exomind(entity: Entity) -> Option<SynchronizedThread> {
+        let thread: EmailThread = entity.trait_of_type::<EmailThread>()?.instance;
         let account_entity_id = thread.account.as_ref()?.entity_id.clone();
 
         let inbox_child = entity
             .traits_of_type::<CollectionChild>()
             .into_iter()
-            .find(|c| c.collection.as_ref().map(|c| c.entity_id.as_ref()) == Some("inbox"));
+            .find(|c| c.instance.collection.as_ref().map(|c| c.entity_id.as_ref()) == Some("inbox"))
+            .map(|t| t.instance);
 
-        let emails: Vec<Email> = entity.traits_of_type::<Email>();
+        let emails: Vec<Email> = entity
+            .traits_of_type::<Email>()
+            .into_iter()
+            .map(|t| t.instance)
+            .collect();
 
-        Some(ThreadEntity {
+        // TODO: Fix this, should be operation id
+        let operation_id = if let Some(d) = entity.deletion_date {
+            Some(d.to_timestamp_nanos())
+        } else if let Some(d) = entity.modification_date {
+            Some(d.to_timestamp_nanos())
+        } else if let Some(d) = entity.creation_date {
+            Some(d.to_timestamp_nanos())
+        } else {
+            None
+        };
+
+        Some(SynchronizedThread {
             account_entity_id,
             thread,
             emails,
-            inbox_child,
+            _inbox_child: inbox_child,
             history_id: None,
+            operation_id,
         })
     }
 
     fn from_gmail(
         account: GmailAccount,
         thread: google_gmail1::schemas::Thread,
-    ) -> Option<ThreadEntity> {
+    ) -> Option<SynchronizedThread> {
         let history_id = thread.history_id;
         let thread_id = thread.id.clone()?;
         let parsed = parsing::parse_thread(thread);
@@ -344,12 +394,13 @@ impl ThreadEntity {
             None
         };
 
-        Some(ThreadEntity {
+        Some(SynchronizedThread {
             account_entity_id: account.entity_id.clone(),
             thread,
             emails,
-            inbox_child,
+            _inbox_child: inbox_child,
             history_id,
+            operation_id: None,
         })
     }
 
@@ -358,6 +409,7 @@ impl ThreadEntity {
     }
 
     async fn import_to_exomind(&self, exm: &ExomindClient) -> anyhow::Result<()> {
+        // TODO: Should have a "current object" to compare and only import what is necessary
         exm.import_thread(self).await?;
 
         Ok(())
