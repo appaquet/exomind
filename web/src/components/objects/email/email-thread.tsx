@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { exocore, fromProtoTimestamp } from 'exocore';
+import { exocore, fromProtoTimestamp, MutationBuilder, Exocore } from 'exocore';
 import { exomind } from '../../../protos';
 import _ from 'lodash';
 import React from 'react';
@@ -8,6 +8,7 @@ import { EntityTrait, EntityTraits } from '../../../store/entities';
 import { SelectedItem, Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
 import './email-thread.less';
+import { ContainerController } from '../container-controller';
 
 
 interface IProps {
@@ -15,6 +16,8 @@ interface IProps {
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
+
+    containerController?: ContainerController;
 }
 
 interface IState {
@@ -299,17 +302,36 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     private renderEmailControls(): React.ReactNode {
-        const email = this.entityTraits.trait<exomind.base.Email>(this.state.controlledEmailId);
+        let doneAction = null;
+        const inboxChild = this.entityTraits
+            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .find((trt) => trt.message.collection.entityId == 'inbox');
+        if (inboxChild) {
+            doneAction = <>
+                <li onClick={this.handleDoneEmail.bind(this, inboxChild)}><i className="done" /></li>
+            </>;
+        }
 
         return (
             <div className="object-actions">
                 <ul>
-                    <li onClick={this.handleReplyAllEmail.bind(this, email)}><i className="reply-all" /></li>
-                    <li onClick={this.handleReplyEmail.bind(this, email)}><i className="reply" /></li>
-                    <li onClick={this.handleForwardEmail.bind(this, email)}><i className="forward" /></li>
+                    {doneAction}
+                    <li onClick={this.handleReplyAllEmail.bind(this)}><i className="reply-all" /></li>
+                    <li onClick={this.handleReplyEmail.bind(this)}><i className="reply" /></li>
+                    <li onClick={this.handleForwardEmail.bind(this)}><i className="forward" /></li>
                 </ul>
             </div>
         );
+    }
+
+    private handleDoneEmail(child: EntityTrait<exomind.base.CollectionChild>): void {
+        const mutation = MutationBuilder
+            .updateEntity(this.entityTraits.id)
+            .deleteTrait(child.id)
+            .build();
+        Exocore.store.mutate(mutation);
+
+        this.props.containerController?.close();
     }
 
     private handleReplyEmail(): void {

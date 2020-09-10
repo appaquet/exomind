@@ -100,6 +100,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         entity={this.state.entityTraits.entity}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerController={this.props.containerController}
                     />;
                 },
                 email: (email) => {
