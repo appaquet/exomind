@@ -44,8 +44,8 @@ message Account {
 
 message EmailThread {
     // TODO: These 2 fields should probably be into a "source" object ?
-    exocore.index.Reference account = 8;
-    string source_id = 2;
+    exocore.index.Reference account = 8 [(exocore.field_group) = 1];
+    string source_id = 2 [(exocore.field_group) = 1];
 
     Contact from = 3 [(exocore.field_group) = 1];
     string subject = 4 [(exocore.text) = true, (exocore.field_group) = 1];
@@ -56,8 +56,8 @@ message EmailThread {
 }
 
 message Email {
-    exocore.index.Reference account = 13;
-    string source_id = 2;
+    exocore.index.Reference account = 13 [(exocore.field_group) = 1];
+    string source_id = 2 [(exocore.field_group) = 1];
 
     Contact from = 3 [(exocore.field_group) = 1];
     google.protobuf.Timestamp received_date = 4 [(exocore.field_group) = 1];

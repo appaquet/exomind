@@ -135,9 +135,9 @@ impl ExomindClient {
 
         let tq = TraitQueryBuilder::field_references("collection", "inbox").build();
         let query = QueryBuilder::with_trait_query::<CollectionChild>(tq)
-            .project(ProjectionBuilder::for_trait::<CollectionChild>().return_all())
-            .project(ProjectionBuilder::for_trait::<Email>().return_all())
-            .project(ProjectionBuilder::for_trait::<EmailThread>().return_all())
+            .project(ProjectionBuilder::for_trait::<CollectionChild>().return_field_groups(vec![1]))
+            .project(ProjectionBuilder::for_trait::<Email>().return_field_groups(vec![1]))
+            .project(ProjectionBuilder::for_trait::<EmailThread>().return_field_groups(vec![1]))
             .project(ProjectionBuilder::for_all().skip())
             .count(100)
             .build();
@@ -170,9 +170,9 @@ impl ExomindClient {
         let tq = TraitQueryBuilder::field_references("collection", "inbox").build();
         let query = QueryBuilder::with_trait_query::<CollectionChild>(tq)
             .include_deleted()
-            .project(ProjectionBuilder::for_trait::<CollectionChild>().return_all())
-            .project(ProjectionBuilder::for_trait::<Email>().return_all())
-            .project(ProjectionBuilder::for_trait::<EmailThread>().return_all())
+            .project(ProjectionBuilder::for_trait::<CollectionChild>().return_field_groups(vec![1]))
+            .project(ProjectionBuilder::for_trait::<Email>().return_field_groups(vec![1]))
+            .project(ProjectionBuilder::for_trait::<EmailThread>().return_field_groups(vec![1]))
             .project(ProjectionBuilder::for_all().skip())
             .count(100)
             .order_by_operations(false)

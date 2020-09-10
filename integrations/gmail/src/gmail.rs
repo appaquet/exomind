@@ -32,8 +32,9 @@ impl GmailClient {
         config: &cli::Config,
         account: &GmailAccount,
     ) -> anyhow::Result<google_gmail1::Client> {
-        let token_file = account_token_file(config, account.email())?;
+        info!("Creating gmail client for account {}", account.email());
 
+        let token_file = account_token_file(config, account.email())?;
         let secret = yup_oauth2::read_application_secret(&config.client_secret).await?;
         let auth =
             InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::Interactive)
