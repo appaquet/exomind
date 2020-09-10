@@ -59,14 +59,14 @@ impl Config {
             .parent()
             .ok_or_else(|| anyhow!("Couldn't get config parent directory"))?;
 
-        config.node_config = Self::to_abs_path(config_dir, &config.node_config);
-        config.client_secret = Self::to_abs_path(config_dir, &config.client_secret);
-        config.tokens_directory = Self::to_abs_path(config_dir, &config.tokens_directory);
+        config.node_config = Self::get_abs_path(config_dir, &config.node_config);
+        config.client_secret = Self::get_abs_path(config_dir, &config.client_secret);
+        config.tokens_directory = Self::get_abs_path(config_dir, &config.tokens_directory);
 
         Ok(config)
     }
 
-    fn to_abs_path(parent_path: &Path, child_path: &str) -> String {
+    fn get_abs_path(parent_path: &Path, child_path: &str) -> String {
         let child_path_buf = PathBuf::from(child_path);
         if child_path_buf.is_absolute() {
             return child_path_buf.to_string_lossy().to_string();

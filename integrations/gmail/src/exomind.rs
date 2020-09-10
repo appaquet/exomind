@@ -220,7 +220,10 @@ impl ExomindClient {
             let deleted_date = delete_timestamp.to_chrono_datetime();
             if deleted_date > after_date {
                 let thread_entity = SynchronizedThread::from_exomind(&entity)?;
-                return Some(ExomindHistoryAction::RemovedFromInbox(entity.last_operation_id, thread_entity));
+                return Some(ExomindHistoryAction::RemovedFromInbox(
+                    entity.last_operation_id,
+                    thread_entity,
+                ));
             }
         }
 
@@ -228,7 +231,10 @@ impl ExomindClient {
             let create_date = create_timestamp.to_chrono_datetime();
             if create_date > after_date {
                 let thread_entity = SynchronizedThread::from_exomind(&entity)?;
-                return Some(ExomindHistoryAction::AddToInbox(entity.last_operation_id, thread_entity));
+                return Some(ExomindHistoryAction::AddToInbox(
+                    entity.last_operation_id,
+                    thread_entity,
+                ));
             }
         }
 
@@ -254,9 +260,9 @@ impl ExomindClient {
             .and_then(|email| email.received_date.clone());
         let thread_last_date = modification_date
             .as_ref()
-            .or(creation_date.as_ref())
+            .or_else(|| creation_date.as_ref())
             .map(|t| t.to_chrono_datetime())
-            .unwrap_or_else(|| Utc::now());
+            .unwrap_or_else(Utc::now);
 
         if previous_thread.is_none() {
             let thread_trait = Trait {

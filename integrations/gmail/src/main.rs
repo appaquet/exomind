@@ -9,12 +9,12 @@ use structopt::StructOpt;
 use sync::{AccountSynchronizer, SynchronizedThread};
 use tokio::time::delay_for;
 
+mod capped_hashset;
 mod cli;
 mod exomind;
 mod gmail;
 mod parsing;
 mod sync;
-mod capped_hashset;
 
 #[macro_use]
 extern crate log;
@@ -122,7 +122,7 @@ async fn start(config: cli::Config, opt: cli::StartOptions) -> anyhow::Result<()
 
     loop {
         for sync in &mut account_synchronizers {
-            if let Err(err)  =sync.maybe_refresh_client().await {
+            if let Err(err) = sync.maybe_refresh_client().await {
                 error!(
                     "Error refreshing client for account {}: {}",
                     sync.account.email(),

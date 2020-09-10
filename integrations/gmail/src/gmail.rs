@@ -78,7 +78,7 @@ impl GmailClient {
                 .threads()
                 .list("me")
                 .label_ids("INBOX".to_string())
-                .max_results(1000) // TODO: Should be done via paging instead
+                .max_results(100) // TODO: Should be done via paging instead
                 .execute()
         })?;
 
@@ -213,10 +213,7 @@ impl GmailClient {
                     imported_threads.insert(thread_id.to_string());
 
                     let thread = self.fetch_thread(thread_id, true).await?;
-                    actions.push(GmailHistoryAction::AddToInbox(
-                        history.id.unwrap().clone(),
-                        thread,
-                    ));
+                    actions.push(GmailHistoryAction::AddToInbox(history.id.unwrap(), thread));
                 }
             }
 
@@ -234,10 +231,7 @@ impl GmailClient {
                     imported_threads.insert(thread_id.to_string());
 
                     let thread = self.fetch_thread(thread_id, true).await?;
-                    actions.push(GmailHistoryAction::AddToInbox(
-                        history.id.unwrap().clone(),
-                        thread,
-                    ));
+                    actions.push(GmailHistoryAction::AddToInbox(history.id.unwrap(), thread));
                 }
             }
 
@@ -255,7 +249,7 @@ impl GmailClient {
                     removed_threads.insert(thread_id.to_string());
 
                     actions.push(GmailHistoryAction::RemoveFromInbox(
-                        history.id.unwrap().clone(),
+                        history.id.unwrap(),
                         thread_id.to_string(),
                     ))
                 }

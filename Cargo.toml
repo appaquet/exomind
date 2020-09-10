@@ -13,5 +13,5 @@ members = [
   "integrations/gmail"
 ]
 
-[patch.'https://github.com/appaquet/exocore.git']
-exocore = { path = "../exocore" }
+# [patch.'https://github.com/appaquet/exocore.git']
+# exocore = { path = "../exocore" }

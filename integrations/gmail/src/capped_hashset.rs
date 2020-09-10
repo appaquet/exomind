@@ -20,7 +20,7 @@ impl<K: Hash + Eq + Clone> CappedHashSet<K> {
             self.list.push_front(item);
         }
 
-        self.cap()
+        self.cap();
     }
 
     pub fn insert_all(&mut self, items: &[K]) {
@@ -30,7 +30,7 @@ impl<K: Hash + Eq + Clone> CappedHashSet<K> {
             }
         }
 
-        self.cap()
+        self.cap();
     }
 
     #[cfg(test)]
@@ -47,7 +47,7 @@ impl<K: Hash + Eq + Clone> CappedHashSet<K> {
     }
 
     fn cap(&mut self) {
-        if self.list.len() > self.capacity {
+        while self.list.len() > self.capacity {
             if let Some(item) = self.list.pop_back() {
                 self.set.remove(&item);
             }
