@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use crate::{cli, gmail::GmailAccount, SynchronizedThread};
 use exocore::{
     chain::operation::OperationId, core::protos::prost::ProstAnyPackMessageExt,
     core::time::ConsistentTimestamp, core::time::DateTime, core::time::Utc,
-    index::entity::EntityExt, protos::index::EntityResult, protos::prost::ProstTimestampExt,
+    index::entity::EntityExt, index::entity::EntityId, protos::index::EntityResult,
+    protos::prost::ProstTimestampExt,
 };
 use exocore::{
     core::{cell::Cell, futures::spawn_future, time::Clock},
@@ -22,6 +25,7 @@ use exomind_core::protos::base::{
     Account, AccountType, Collection, CollectionChild, Email, EmailThread,
 };
 
+#[derive(Clone)]
 pub struct ExomindClient {
     pub store: ClientHandle,
 }
@@ -143,6 +147,14 @@ impl ExomindClient {
         Ok(entities)
     }
 
+    pub async fn get_entity(&self, entity_id: &str) -> anyhow::Result<Option<Entity>> {
+        let query = QueryBuilder::with_id(entity_id).build();
+        let results = self.store.query(query).await?;
+        let entity = results.entities.into_iter().flat_map(|e| e.entity).next();
+
+        Ok(entity)
+    }
+
     pub async fn list_inbox_history(
         &self,
         account: &GmailAccount,
@@ -198,7 +210,7 @@ impl ExomindClient {
         if let Some(delete_timestamp) = &child_trait.trt.deletion_date {
             let deleted_date = delete_timestamp.to_chrono_datetime();
             if deleted_date > after_date {
-                let thread_entity = SynchronizedThread::from_exomind(entity)?;
+                let thread_entity = SynchronizedThread::from_exomind(&entity)?;
                 return Some(ExomindHistoryAction::RemovedFromInbox(thread_entity));
             }
         }
@@ -206,7 +218,7 @@ impl ExomindClient {
         if let Some(create_timestamp) = &child_trait.trt.creation_date {
             let create_date = create_timestamp.to_chrono_datetime();
             if create_date > after_date {
-                let thread_entity = SynchronizedThread::from_exomind(entity)?;
+                let thread_entity = SynchronizedThread::from_exomind(&entity)?;
                 return Some(ExomindHistoryAction::AddToInbox(thread_entity));
             }
         }
@@ -214,42 +226,57 @@ impl ExomindClient {
         None
     }
 
-    pub async fn import_thread(&self, thread: &SynchronizedThread) -> anyhow::Result<()> {
-        info!(
-            "Importing thread {} from {} to exomind",
-            thread.thread_id(),
-            thread.account_entity_id
-        );
+    pub async fn import_thread(
+        &self,
+        thread: &SynchronizedThread,
+        previous_thread: Option<&SynchronizedThread>,
+    ) -> anyhow::Result<()> {
+        let mut mutated_count: usize = 0;
 
         let thread_entity_id = thread_entity_id(&thread.thread);
 
-        let thread_create_date = thread
+        let creation_date = thread
             .emails
             .first()
             .and_then(|email| email.received_date.clone());
-        let thread_modification_date = thread
+        let modification_date = thread
             .emails
             .last()
             .and_then(|email| email.received_date.clone());
-        let thread_last_date = thread_modification_date
+        let thread_last_date = modification_date
             .as_ref()
-            .or(thread_create_date.as_ref())
+            .or(creation_date.as_ref())
             .map(|t| t.to_chrono_datetime())
             .unwrap_or_else(|| Utc::now());
 
-        {
+        if previous_thread.is_none() {
             let thread_trait = Trait {
                 id: thread_entity_id.clone(),
                 message: Some(thread.thread.pack_to_any().unwrap()),
-                creation_date: thread_create_date,
-                modification_date: thread_modification_date,
+                creation_date,
+                modification_date,
                 ..Default::default()
             };
+
+            mutated_count += 1;
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), thread_trait);
             let _ = self.store.mutate(mutation).await.unwrap();
         }
 
+        let previous_emails: HashMap<String, &Email> = if let Some(prev) = previous_thread {
+            prev.emails
+                .iter()
+                .map(|email| (email.source_id.clone(), email))
+                .collect()
+        } else {
+            HashMap::new()
+        };
+
         for email in &thread.emails {
+            if previous_emails.contains_key(&email.source_id) {
+                continue;
+            }
+
             let creation_date = email.received_date.clone();
             let email_trait = Trait {
                 id: email_trait_id(&email),
@@ -257,11 +284,13 @@ impl ExomindClient {
                 creation_date,
                 ..Default::default()
             };
+
+            mutated_count += 1;
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), email_trait);
             let _ = self.store.mutate(mutation).await.unwrap();
         }
 
-        {
+        if previous_thread.map_or(true, |c| c._inbox_child.is_none()) {
             let child_trait = Trait {
                 id: "child_inbox".to_string(),
                 message: Some(
@@ -277,8 +306,19 @@ impl ExomindClient {
                 ),
                 ..Default::default()
             };
+
+            mutated_count += 1;
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), child_trait);
             let _ = self.store.mutate(mutation).await.unwrap();
+        }
+
+        if mutated_count > 0 {
+            info!(
+                "Imported {} objects for thread {} from {} to exomind",
+                mutated_count,
+                thread.thread_id(),
+                thread.account_entity_id
+            );
         }
 
         Ok(())

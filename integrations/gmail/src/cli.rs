@@ -41,7 +41,7 @@ pub struct LogoutOptions {
     pub email: String,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Clone, serde::Deserialize)]
 pub struct Config {
     pub node_config: String,
 

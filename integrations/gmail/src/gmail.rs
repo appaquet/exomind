@@ -1,23 +1,40 @@
 use crate::cli;
 use exomind_core::protos::base::{Account, AccountScope, AccountType};
 use google_gmail1::schemas::ModifyThreadRequest;
-use std::{collections::HashSet, path::PathBuf};
+use std::{collections::HashSet, path::PathBuf, time::Duration, time::Instant};
 use tokio::task::block_in_place;
 use yup_oauth2::{AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
+
+const CLIENT_REFRESH_INTERVAL: Duration = Duration::from_secs(5 * 60);
 
 pub type HistoryId = u64;
 
 pub struct GmailClient {
-    pub account: GmailAccount,
-    pub client: google_gmail1::Client,
+    account: GmailAccount,
+    config: cli::Config,
+    client: google_gmail1::Client,
+    last_refresh: Instant,
 }
 
 impl GmailClient {
     pub async fn new(config: &cli::Config, account: GmailAccount) -> anyhow::Result<GmailClient> {
-        let secret = yup_oauth2::read_application_secret(&config.client_secret).await?;
+        let client = Self::create_client(config, &account).await?;
 
+        Ok(GmailClient {
+            account,
+            config: config.clone(),
+            client,
+            last_refresh: Instant::now(),
+        })
+    }
+
+    async fn create_client(
+        config: &cli::Config,
+        account: &GmailAccount,
+    ) -> anyhow::Result<google_gmail1::Client> {
         let token_file = account_token_file(config, account.email())?;
 
+        let secret = yup_oauth2::read_application_secret(&config.client_secret).await?;
         let auth =
             InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::Interactive)
                 .persist_tokens_to_disk(token_file)
@@ -27,10 +44,22 @@ impl GmailClient {
         let scopes = &["https://mail.google.com/"];
         let token = auth.token(scopes).await?;
 
-        Ok(GmailClient {
-            account,
-            client: google_gmail1::Client::new(YupAuth { token }),
-        })
+        Ok(google_gmail1::Client::new(YupAuth { token }))
+    }
+
+    pub async fn maybe_refresh(&mut self) -> anyhow::Result<()> {
+        let elapsed_refresh = self.last_refresh.elapsed();
+
+        if elapsed_refresh > CLIENT_REFRESH_INTERVAL {
+            info!(
+                "Refreshing gmail client for account {}",
+                self.account.email()
+            );
+            self.client = Self::create_client(&self.config, &self.account).await?;
+            self.last_refresh = Instant::now();
+        }
+
+        Ok(())
     }
 
     pub async fn get_profile(&self) -> anyhow::Result<google_gmail1::schemas::Profile> {
