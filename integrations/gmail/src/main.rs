@@ -14,6 +14,7 @@ mod exomind;
 mod gmail;
 mod parsing;
 mod sync;
+mod capped_hashset;
 
 #[macro_use]
 extern crate log;

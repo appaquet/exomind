@@ -4,7 +4,7 @@ use crate::{cli, gmail::GmailAccount, SynchronizedThread};
 use exocore::{
     chain::operation::OperationId, core::protos::prost::ProstAnyPackMessageExt,
     core::time::ConsistentTimestamp, core::time::DateTime, core::time::Utc,
-    index::entity::EntityExt, index::entity::EntityId, protos::index::EntityResult,
+    index::entity::EntityExt, index::query::ProjectionBuilder, protos::index::EntityResult,
     protos::prost::ProstTimestampExt,
 };
 use exocore::{
@@ -131,11 +131,16 @@ impl ExomindClient {
     }
 
     pub async fn list_inbox_entities(&self) -> anyhow::Result<Vec<Entity>> {
-        let tq = TraitQueryBuilder::field_references("collection", "inbox").build();
-        let query = QueryBuilder::with_trait_query::<CollectionChild>(tq).build();
+        // TODO: Paging
 
-        // TODO: Count
-        // TODO: Projection
+        let tq = TraitQueryBuilder::field_references("collection", "inbox").build();
+        let query = QueryBuilder::with_trait_query::<CollectionChild>(tq)
+            .project(ProjectionBuilder::for_trait::<CollectionChild>().return_all())
+            .project(ProjectionBuilder::for_trait::<Email>().return_all())
+            .project(ProjectionBuilder::for_trait::<EmailThread>().return_all())
+            .project(ProjectionBuilder::for_all().skip())
+            .count(100)
+            .build();
 
         let results = self.store.query(query).await?;
         let entities = results
@@ -160,13 +165,17 @@ impl ExomindClient {
         account: &GmailAccount,
         after_operation_id: OperationId,
     ) -> anyhow::Result<Vec<ExomindHistoryAction>> {
-        // TODO: Projection
+        // TODO: Paging
 
         let tq = TraitQueryBuilder::field_references("collection", "inbox").build();
         let query = QueryBuilder::with_trait_query::<CollectionChild>(tq)
             .include_deleted()
-            .order_by_operations(false)
+            .project(ProjectionBuilder::for_trait::<CollectionChild>().return_all())
+            .project(ProjectionBuilder::for_trait::<Email>().return_all())
+            .project(ProjectionBuilder::for_trait::<EmailThread>().return_all())
+            .project(ProjectionBuilder::for_all().skip())
             .count(100)
+            .order_by_operations(false)
             .build();
 
         let after_timestamp = ConsistentTimestamp::from(after_operation_id);
@@ -211,7 +220,7 @@ impl ExomindClient {
             let deleted_date = delete_timestamp.to_chrono_datetime();
             if deleted_date > after_date {
                 let thread_entity = SynchronizedThread::from_exomind(&entity)?;
-                return Some(ExomindHistoryAction::RemovedFromInbox(thread_entity));
+                return Some(ExomindHistoryAction::RemovedFromInbox(entity.last_operation_id, thread_entity));
             }
         }
 
@@ -219,7 +228,7 @@ impl ExomindClient {
             let create_date = create_timestamp.to_chrono_datetime();
             if create_date > after_date {
                 let thread_entity = SynchronizedThread::from_exomind(&entity)?;
-                return Some(ExomindHistoryAction::AddToInbox(thread_entity));
+                return Some(ExomindHistoryAction::AddToInbox(entity.last_operation_id, thread_entity));
             }
         }
 
@@ -230,8 +239,8 @@ impl ExomindClient {
         &self,
         thread: &SynchronizedThread,
         previous_thread: Option<&SynchronizedThread>,
-    ) -> anyhow::Result<()> {
-        let mut mutated_count: usize = 0;
+    ) -> anyhow::Result<Vec<OperationId>> {
+        let mut operation_ids = Vec::new();
 
         let thread_entity_id = thread_entity_id(&thread.thread);
 
@@ -258,9 +267,9 @@ impl ExomindClient {
                 ..Default::default()
             };
 
-            mutated_count += 1;
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), thread_trait);
-            let _ = self.store.mutate(mutation).await.unwrap();
+            let mut res = self.store.mutate(mutation).await.unwrap();
+            operation_ids.append(&mut res.operation_ids);
         }
 
         let previous_emails: HashMap<String, &Email> = if let Some(prev) = previous_thread {
@@ -285,9 +294,9 @@ impl ExomindClient {
                 ..Default::default()
             };
 
-            mutated_count += 1;
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), email_trait);
-            let _ = self.store.mutate(mutation).await.unwrap();
+            let mut res = self.store.mutate(mutation).await.unwrap();
+            operation_ids.append(&mut res.operation_ids);
         }
 
         if previous_thread.map_or(true, |c| c._inbox_child.is_none()) {
@@ -307,39 +316,39 @@ impl ExomindClient {
                 ..Default::default()
             };
 
-            mutated_count += 1;
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), child_trait);
-            let _ = self.store.mutate(mutation).await.unwrap();
+            let mut res = self.store.mutate(mutation).await.unwrap();
+            operation_ids.append(&mut res.operation_ids);
         }
 
-        if mutated_count > 0 {
+        if !operation_ids.is_empty() {
             info!(
                 "Imported {} objects for thread {} from {} to exomind",
-                mutated_count,
+                operation_ids.len(),
                 thread.thread_id(),
                 thread.account_entity_id
             );
         }
 
-        Ok(())
+        Ok(operation_ids)
     }
 
-    pub async fn remove_from_inbox(&self, thread_id: &str) -> anyhow::Result<()> {
+    pub async fn remove_from_inbox(&self, thread_id: &str) -> anyhow::Result<Vec<OperationId>> {
         let thread_entity_id = thread_id_entity_id(thread_id);
 
         info!("Removing thread {} from exomind", thread_entity_id,);
 
         // TODO: This isn't right. It may have a different trait id
         let mutation = MutationBuilder::new().delete_trait(thread_entity_id, "child_inbox");
-        let _ = self.store.mutate(mutation).await.unwrap();
+        let res = self.store.mutate(mutation).await.unwrap();
 
-        Ok(())
+        Ok(res.operation_ids)
     }
 }
 
 pub enum ExomindHistoryAction {
-    AddToInbox(SynchronizedThread),
-    RemovedFromInbox(SynchronizedThread),
+    AddToInbox(OperationId, SynchronizedThread),
+    RemovedFromInbox(OperationId, SynchronizedThread),
 }
 
 pub fn thread_entity_id(thread: &EmailThread) -> String {

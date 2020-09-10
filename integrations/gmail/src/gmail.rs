@@ -194,8 +194,8 @@ impl GmailClient {
         })?;
 
         if history_resp.next_page_token.is_some() {
-            // TODO:
-            error!("History had next page...");
+            // TODO: Implement history paging
+            error!("History had next page, but paging wasn't implemented");
         }
 
         let mut actions = Vec::new();
