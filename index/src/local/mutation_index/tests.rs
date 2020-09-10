@@ -1136,6 +1136,7 @@ fn trait_dates() -> anyhow::Result<()> {
             creation_date: Some(creation_date.to_proto_timestamp()),
             modification_date: Some(modification_date.to_proto_timestamp()),
             deletion_date: None,
+            last_operation_id: 10,
             details: TraitDetails::Full.into(),
         },
     });

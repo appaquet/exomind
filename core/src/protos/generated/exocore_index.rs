@@ -12,6 +12,8 @@ pub struct Entity {
     pub modification_date: ::std::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "7")]
     pub deletion_date: ::std::option::Option<::prost_types::Timestamp>,
+    #[prost(uint64, tag = "8")]
+    pub last_operation_id: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Trait {
@@ -25,6 +27,8 @@ pub struct Trait {
     pub modification_date: ::std::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "6")]
     pub deletion_date: ::std::option::Option<::prost_types::Timestamp>,
+    #[prost(uint64, tag = "7")]
+    pub last_operation_id: u64,
     #[prost(enumeration = "TraitDetails", tag = "5")]
     pub details: i32,
 }

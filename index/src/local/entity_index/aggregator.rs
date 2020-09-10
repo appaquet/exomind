@@ -40,6 +40,8 @@ pub struct EntityAggregator {
 
     // date of the deletion of the entity if all traits are deleted once all mutations are applied
     pub deletion_date: Option<DateTime<Utc>>,
+
+    pub last_operatin_id: OperationId,
 }
 
 impl EntityAggregator {
@@ -61,9 +63,9 @@ impl EntityAggregator {
         let mut hasher = result_hasher();
         let mut traits = HashMap::<TraitId, TraitAggregator>::new();
         let mut active_operation_ids = HashSet::<OperationId>::new();
-        let mut latest_operation_id = None;
+        let mut last_operation_id = None;
 
-        for mut current_mutation in ordered_mutations_metadata {
+        for current_mutation in ordered_mutations_metadata {
             let current_operation_id = current_mutation.operation_id;
             let current_operation_time =
                 ConsistentTimestamp::from(current_operation_id).to_datetime();
@@ -72,7 +74,7 @@ impl EntityAggregator {
             // soon as one operation is made since we can't guarantee anything
             hasher.write_u64(current_operation_id);
 
-            match &mut current_mutation.mutation_type {
+            match &current_mutation.mutation_type {
                 MutationType::TraitPut(put_trait) => {
                     let agg = TraitAggregator::get_for_trait(&mut traits, &put_trait.trait_id);
 
@@ -118,7 +120,7 @@ impl EntityAggregator {
                     }
                 }
                 MutationType::EntityTombstone => {
-                    if let Some(latest_operation_id) = latest_operation_id {
+                    if let Some(latest_operation_id) = last_operation_id {
                         // discard the new mutation if it happened before the latest operation, but
                         // got committed late, to prevent inconsistency
                         if current_operation_id < latest_operation_id {
@@ -139,8 +141,8 @@ impl EntityAggregator {
                 }
             }
 
-            if current_operation_id > latest_operation_id.unwrap_or(std::u64::MIN) {
-                latest_operation_id = Some(current_operation_id);
+            if current_operation_id > last_operation_id.unwrap_or(std::u64::MIN) {
+                last_operation_id = Some(current_operation_id);
             }
         }
 
@@ -151,6 +153,7 @@ impl EntityAggregator {
             creation_date: entity_creation_date,
             modification_date: entity_modification_date,
             deletion_date: entity_deletion_date,
+            last_operatin_id: last_operation_id.unwrap_or_default(),
         })
     }
 

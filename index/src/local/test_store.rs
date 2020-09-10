@@ -123,6 +123,7 @@ impl TestStore {
                 creation_date: Some(Utc::now().to_proto_timestamp()),
                 modification_date: Some(Utc::now().to_proto_timestamp()),
                 deletion_date: None,
+                last_operation_id: 10,
                 details: TraitDetails::Full.into(),
             },
         )

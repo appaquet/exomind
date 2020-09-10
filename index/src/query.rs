@@ -10,7 +10,7 @@ use exocore_core::protos::generated::exocore_index::{
 use exocore_core::protos::generated::index_transport_capnp::watched_query_request;
 use exocore_core::protos::generated::index_transport_capnp::{query_request, query_response};
 use exocore_core::protos::{
-    index::{AllPredicate, IdsPredicate, OperationsPredicate, Projection},
+    index::{AllPredicate, IdsPredicate, OperationsPredicate, Projection, Reference},
     message::NamedMessage,
     prost::ProstMessageExt,
     reflect::FieldId,
@@ -324,6 +324,10 @@ impl ProjectionBuilder {
         self
     }
 
+    pub fn return_all(self) -> ProjectionBuilder {
+        self
+    }
+
     pub fn return_fields(mut self, field_ids: Vec<FieldId>) -> ProjectionBuilder {
         self.projection.field_ids = field_ids;
         self
@@ -387,6 +391,15 @@ impl Into<ReferencePredicateWrapper> for (&str, &str) {
         ReferencePredicateWrapper(ReferencePredicate {
             entity_id: self.0.to_string(),
             trait_id: self.1.to_string(),
+        })
+    }
+}
+
+impl Into<ReferencePredicateWrapper> for Reference {
+    fn into(self) -> ReferencePredicateWrapper {
+        ReferencePredicateWrapper(ReferencePredicate {
+            entity_id: self.entity_id,
+            trait_id: self.trait_id,
         })
     }
 }

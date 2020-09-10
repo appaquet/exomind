@@ -304,10 +304,9 @@ where
                 if (entity_mutations.deletion_date.is_some() || !operation_still_present)
                     && !query_include_deleted
                 {
-                    // no traits remaining means that entity is now deleted
-                    // if current operation is not active anymore, it means that it got overridden
-                    // by another operation and should not be considered at this
-                    // point as a result
+                    // we are here if the entity has been deleted (ex: explicitely or no traits remaining)
+                    // or if the mutation metadata that was returned by the mutation index is not active anymore,
+                    // which means that it got overriden by a subsequent operation.
                     return None;
                 }
 
@@ -332,6 +331,7 @@ where
                                 creation_date,
                                 modification_date,
                                 deletion_date,
+                                last_operation_id: entity_mutations.last_operatin_id,
                             }),
                             source: index_source.into(),
                             ordering_value: Some(ordering_value.value),
@@ -680,6 +680,7 @@ where
             creation_date: mutations.creation_date.map(|t| t.to_proto_timestamp()),
             modification_date: mutations.modification_date.map(|t| t.to_proto_timestamp()),
             deletion_date: mutations.deletion_date.map(|t| t.to_proto_timestamp()),
+            last_operation_id: mutations.last_operatin_id,
         })
     }
 
@@ -774,6 +775,7 @@ where
                 trt.creation_date = agg.creation_date.map(|d| d.to_proto_timestamp());
                 trt.modification_date = agg.modification_date.map(|d| d.to_proto_timestamp());
                 trt.deletion_date = agg.deletion_date.map(|d| d.to_proto_timestamp());
+                trt.last_operation_id = agg.last_operation_id.unwrap_or_default();
 
                 Some(trt)
             })

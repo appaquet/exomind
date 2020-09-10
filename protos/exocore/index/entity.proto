@@ -17,6 +17,8 @@ message Entity {
     google.protobuf.Timestamp modification_date = 6;
 
     google.protobuf.Timestamp deletion_date = 7;
+
+    uint64 last_operation_id = 8;
 }
 
 message Trait {
@@ -29,6 +31,8 @@ message Trait {
     google.protobuf.Timestamp modification_date = 4;
 
     google.protobuf.Timestamp deletion_date = 6;
+
+    uint64 last_operation_id = 7;
 
     TraitDetails details = 5;
 }

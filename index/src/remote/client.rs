@@ -526,6 +526,7 @@ struct WatchedQueryRequest {
 }
 
 /// Async handle to the store.
+#[derive(Clone)]
 pub struct ClientHandle {
     inner: Weak<RwLock<Inner>>,
     handle: Handle,
