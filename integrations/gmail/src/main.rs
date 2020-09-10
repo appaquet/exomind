@@ -1,20 +1,20 @@
-use exocore::core::cell::Cell;
-use exocore::core::futures::spawn_future;
-use exocore::core::protos::index::{Reference, Trait};
-use exocore::core::protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt};
-use exocore::core::time::{Clock, Utc};
+use exocore::core::protos::index::Trait;
+use exocore::core::protos::prost::ProstAnyPackMessageExt;
 use exocore::index::mutation::MutationBuilder;
-use exocore::index::remote::{Client, ClientHandle};
-use exocore::{
-    protos::index::TraitDetails,
-    transport::{Libp2pTransport, TransportLayer},
-};
-use exomind::protos::base::{
-    Account, AccountScope, AccountType, Collection, CollectionChild, Email, EmailThread,
-};
-use yup_oauth2::{AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
+use exomind::ExomindClient;
+use gmail::{GmailAccount, GmailClient};
+use log::LevelFilter;
+use std::{str::FromStr, time::Duration};
+use structopt::StructOpt;
+use sync::{AccountSynchronizer, SynchronizedThread};
+use tokio::time::delay_for;
 
+mod capped_hashset;
+mod cli;
+mod exomind;
+mod gmail;
 mod parsing;
+mod sync;
 
 #[macro_use]
 extern crate log;
@@ -23,240 +23,124 @@ extern crate anyhow;
 
 #[tokio::main]
 async fn main() {
-    exocore::core::logging::setup(None);
+    let opt: cli::Options = cli::Options::from_args();
+    exocore::core::logging::setup(Some(LevelFilter::from_str(&opt.logging_level).unwrap()));
 
-    // TODO: Proper configuration file.
-    // TODO: Save tokens into account by persisting to a temp file and save to exocore when changed
+    let config = cli::Config::from_file(&opt.config)
+        .unwrap_or_else(|err| panic!("Couldn't parse config {:?}: {}", &opt.config, err));
 
-    let gmail_client = new_gmail_client().await;
-    let exocore_client = new_exocore_client().await;
-
-    let me: google_gmail1::schemas::Profile =
-        gmail_client.users().get_profile("me").execute().unwrap();
-
-    let me_email = me.email_address.unwrap();
-    let account_ref = Reference {
-        entity_id: format!("exomind_{}", me_email),
-        trait_id: me_email.clone(),
-    };
-
-    {
-        let account_trait = Account {
-            key: account_ref.trait_id.clone(),
-            name: format!("Gmail - {}", me_email),
-            r#type: AccountType::Gmail.into(),
-            scopes: vec![AccountScope::Email.into()],
-            ..Default::default()
-        };
-
-        let inbox_trait = Trait {
-            id: "inbox".to_string(),
-            message: Some(
-                Collection {
-                    name: "Inbox".to_string(),
-                }
-                .pack_to_any()
-                .unwrap(),
-            ),
-            ..Default::default()
-        };
-        let fav_trait = Trait {
-            id: "favorites".to_string(),
-            message: Some(
-                Collection {
-                    name: "Favorites".to_string(),
-                }
-                .pack_to_any()
-                .unwrap(),
-            ),
-            ..Default::default()
-        };
-        let mutations = MutationBuilder::new()
-            .put_trait("inbox", inbox_trait)
-            .put_trait("favorites", fav_trait)
-            .put_trait(
-                format!("exomind_{}", me_email),
-                Trait {
-                    id: me_email.clone(),
-                    message: Some(account_trait.pack_to_any().unwrap()),
-                    ..Default::default()
-                },
-            );
-
-        let _ = exocore_client.mutate(mutations).await.unwrap();
-    }
-
-    let list: google_gmail1::schemas::ListThreadsResponse = gmail_client
-        .users()
-        .threads()
-        .list("me")
-        .label_ids("INBOX".to_string())
-        .execute()
-        .unwrap();
-
-    let threads = list.threads.unwrap_or_else(Vec::new);
-    for partial_thread in threads {
-        let thread_id = partial_thread.id.unwrap().clone();
-        let thread: google_gmail1::schemas::Thread = gmail_client
-            .users()
-            .threads()
-            .get("me", thread_id.clone())
-            .execute()
-            .unwrap();
-
-        // TODO: Clean this up. This should be a mode to extract them
-        // {
-        //     let path = format!(
-        //         "integrations/gmail/fixtures/threads/{}.new.json",
-        //         thread.id.as_ref().unwrap()
-        //     );
-        //     let mut f = std::fs::File::create(path).unwrap();
-        //     let json = serde_json::to_string_pretty(&thread).unwrap();
-        //     f.write_all(json.as_bytes()).unwrap();
-        // }
-
-        let parsing::ParsedThread {
-            mut thread,
-            mut emails,
-            labels: _,
-        } = parsing::parse_thread(thread).unwrap();
-
-        let thread_entity_id = thread_entity_id(&thread);
-
-        thread.account = Some(account_ref.clone());
-        for email in &mut emails {
-            email.account = Some(account_ref.clone());
+    match opt.subcommand {
+        cli::SubCommand::start(start_opt) => {
+            start(config, start_opt).await.unwrap();
         }
-
-        if let Some(email) = emails.last() {
-            thread.snippet = email.snippet.clone();
-            thread.subject = email.subject.clone();
-            thread.from = email.from.clone();
-            thread.last_email = Some(Reference {
-                entity_id: thread_entity_id.clone(),
-                trait_id: email_trait_id(email),
-            })
+        cli::SubCommand::list_accounts => {
+            list_accounts(config).await.unwrap();
         }
-
-        let thread_create_date = emails.first().and_then(|email| email.received_date.clone());
-        let thread_modification_date = emails.last().and_then(|email| email.received_date.clone());
-        let thread_last_date = thread_modification_date
-            .as_ref()
-            .or(thread_create_date.as_ref())
-            .map(|t| t.to_chrono_datetime())
-            .unwrap_or_else(|| Utc::now());
-
-        {
-            let thread_trait = Trait {
-                id: thread_entity_id.clone(),
-                message: Some(thread.pack_to_any().unwrap()),
-                creation_date: thread_create_date,
-                modification_date: thread_modification_date,
-                details: TraitDetails::Full.into(),
-            };
-            let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), thread_trait);
-            let _ = exocore_client.mutate(mutation).await.unwrap();
+        cli::SubCommand::login(login_opt) => {
+            login(config, login_opt).await.unwrap();
         }
-
-        for email in emails.into_iter() {
-            let creation_date = email.received_date.clone();
-            let email_trait = Trait {
-                id: email_trait_id(&email),
-                message: Some(email.pack_to_any().unwrap()),
-                creation_date,
-                modification_date: None,
-                details: TraitDetails::Full.into(),
-            };
-            let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), email_trait);
-            let _ = exocore_client.mutate(mutation).await.unwrap();
-        }
-
-        {
-            let child_trait = Trait {
-                id: format!("child_{}", thread_entity_id),
-                message: Some(
-                    CollectionChild {
-                        collection: Some(Reference {
-                            entity_id: "inbox".to_string(),
-                            ..Default::default()
-                        }),
-                        weight: thread_last_date.timestamp_millis() as u64,
-                    }
-                    .pack_to_any()
-                    .unwrap(),
-                ),
-                ..Default::default()
-            };
-            let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), child_trait);
-            let _ = exocore_client.mutate(mutation).await.unwrap();
+        cli::SubCommand::logout(logout_opt) => {
+            logout(config, logout_opt).await.unwrap();
         }
     }
 }
 
-async fn new_exocore_client() -> ClientHandle {
-    let config = exocore::core::cell::node_config_from_yaml_file("local_conf/node.yaml").unwrap();
-    let (cells, local_node) = Cell::new_from_local_node_config(config).unwrap();
-    let either_cell = cells.first().unwrap();
-    let cell = either_cell.cell();
+async fn login(config: cli::Config, opt: cli::LoginOptions) -> anyhow::Result<()> {
+    let exm = ExomindClient::new(&config).await?;
 
-    let clock = Clock::new();
+    let account = GmailAccount::from_email(&opt.email);
+    let gmc = GmailClient::new(&config, account.clone()).await?;
 
-    let mut transport = Libp2pTransport::new(local_node.clone(), Default::default());
-    let store_transport = transport
-        .get_handle(cell.clone(), TransportLayer::Index)
-        .unwrap();
+    let profile = gmc.get_profile().await?;
 
-    spawn_future(async move {
-        let res = transport.run().await;
-        info!("Transport done: {:?}", res);
-    });
+    if profile.email_address.as_deref() != Some(&opt.email) {
+        panic!(
+            "Token is logged in to a different email. Expected {}, got {:?}",
+            opt.email, profile.email_address
+        );
+    }
 
-    let store_client =
-        Client::new(Default::default(), cell.clone(), clock, store_transport).unwrap();
-    let store_handle = store_client.get_handle();
+    let mutations = MutationBuilder::new().put_trait(
+        format!("exomind_{}", opt.email),
+        Trait {
+            id: opt.email.clone(),
+            message: Some(account.account.pack_to_any()?),
+            ..Default::default()
+        },
+    );
 
-    spawn_future(async move {
-        let res = store_client.run().await;
-        info!("Remote client done: {:?}", res);
-    });
+    let _ = exm.store.mutate(mutations).await?;
 
-    store_handle.on_start().await;
-
-    store_handle
+    Ok(())
 }
 
-async fn new_gmail_client() -> google_gmail1::Client {
-    let secret = yup_oauth2::read_application_secret("local_conf/client_secret.json")
-        .await
-        .unwrap();
+async fn logout(config: cli::Config, opt: cli::LogoutOptions) -> anyhow::Result<()> {
+    let exm = ExomindClient::new(&config).await?;
 
-    let auth = InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::Interactive)
-        .persist_tokens_to_disk("local_conf/tokencache.json")
-        .build()
-        .await
-        .unwrap();
+    if let Ok(token_file) = gmail::account_token_file(&config, &opt.email) {
+        let _ = std::fs::remove_file(token_file);
+    }
 
-    let scopes = &["https://mail.google.com/"];
-    let token = auth.token(scopes).await.unwrap();
+    let mutations = MutationBuilder::new().delete_entity(format!("exomind_{}", opt.email));
+    let _ = exm.store.mutate(mutations).await?;
 
-    google_gmail1::Client::new(YupAuth { token })
+    Ok(())
 }
 
-fn thread_entity_id(thread: &EmailThread) -> String {
-    format!("bgt{}", thread.source_id)
+async fn list_accounts(config: cli::Config) -> anyhow::Result<()> {
+    let exm = ExomindClient::new(&config).await?;
+    let accounts = exm.get_accounts(true).await?;
+
+    for account in accounts {
+        println!("{:?}", account);
+    }
+
+    Ok(())
 }
 
-fn email_trait_id(email: &Email) -> String {
-    format!("bge{}", email.source_id)
-}
+async fn start(config: cli::Config, opt: cli::StartOptions) -> anyhow::Result<()> {
+    let exm = ExomindClient::new(&config).await?;
 
-#[derive(Debug)]
-struct YupAuth {
-    token: AccessToken,
-}
+    exm.create_base_objects().await?; // TODO: This shouldn't be here
 
-impl google_api_auth::GetAccessToken for YupAuth {
-    fn access_token(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.token.as_str().to_string())
+    let accounts = exm.get_accounts(true).await?;
+    let mut account_synchronizers = Vec::new();
+    for account in accounts {
+        let gmail_client = GmailClient::new(&config, account.clone()).await?;
+        let mut synchronizer = AccountSynchronizer::new(account, exm.clone(), gmail_client);
+
+        if opt.save_fixtures {
+            synchronizer.save_fixtures = true;
+        }
+
+        account_synchronizers.push(synchronizer);
+    }
+
+    for sync in &mut account_synchronizers {
+        sync.synchronize_inbox().await?;
+    }
+
+    loop {
+        for sync in &mut account_synchronizers {
+            if let Err(err) = sync.maybe_refresh_client().await {
+                error!(
+                    "Error refreshing client for account {}: {}",
+                    sync.account.email(),
+                    err
+                );
+                continue;
+            }
+
+            if let Err(err) = sync.synchronize_history().await {
+                error!(
+                    "Error synchronizing via history for account {}: {}",
+                    sync.account.email(),
+                    err
+                );
+            }
+        }
+
+        // TODO: Watch query on exomind
+        delay_for(Duration::from_secs(10)).await;
     }
 }

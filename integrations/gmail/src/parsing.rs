@@ -1,5 +1,5 @@
 use charset::Charset;
-use exomind::protos::base::{Contact, Email, EmailAttachment, EmailPart, EmailThread};
+use exomind_core::protos::base::{Contact, Email, EmailAttachment, EmailPart, EmailThread};
 
 #[derive(Default)]
 pub struct ParsedThread {
@@ -23,7 +23,7 @@ pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThre
 
     for message in messages {
         if let Some(part) = message.payload {
-            let mut email: exomind::protos::base::Email = exomind::protos::base::Email::default();
+            let mut email = exomind_core::protos::base::Email::default();
             email.snippet = message.snippet.clone().unwrap_or_default();
             email.source_id = message.id.clone().unwrap_or_default();
             email.read = message

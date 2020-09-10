@@ -5,6 +5,8 @@ package exocore.index;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/any.proto";
 
+// TODO: Renumber
+
 message Entity {
     string id = 1;
 
@@ -13,6 +15,10 @@ message Entity {
     google.protobuf.Timestamp creation_date = 5;
 
     google.protobuf.Timestamp modification_date = 6;
+
+    google.protobuf.Timestamp deletion_date = 7;
+
+    uint64 last_operation_id = 8;
 }
 
 message Trait {
@@ -24,11 +30,16 @@ message Trait {
 
     google.protobuf.Timestamp modification_date = 4;
 
+    google.protobuf.Timestamp deletion_date = 6;
+
+    uint64 last_operation_id = 7;
+
     TraitDetails details = 5;
 }
 
 message Reference {
     string entity_id = 1;
+
     string trait_id = 2;
 }
 

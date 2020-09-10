@@ -1,0 +1,9 @@
+
+# Path to Exocore gmail's node configuration
+node_config: node.yaml
+
+# Path to Google API client secret file (downloaded from Google API Console. See gmail's integration README.md)
+client_secret: client_secret.json
+
+# Path to directory where oauth tokens will be saved
+tokens_directory: gmail_tokens
