@@ -8,7 +8,7 @@ PODS:
   - KeychainSwift (13.0.0)
   - MCSwipeTableViewCell (2.1.4)
   - SnapKit (4.2.0)
-  - SwiftProtobuf (1.10.2)
+  - SwiftProtobuf (1.12.0)
   - SwiftWebSocket (2.7.0)
   - SwiftyJSON (4.3.0)
   - UIColor_Hex_Swift (4.2.0)
@@ -50,10 +50,10 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   Exocore:
-    :commit: f16e36fcc7f07ed8091ef6c30935e59717ff0795
+    :commit: 491e08df09a76b70e204aaedf2a7f6061997e957
     :git: https://github.com/appaquet/exocore.git
   FontAwesome.swift:
-    :commit: 2684b5bcde5bf712d45c14dac8f474917a65ec13
+    :commit: d5cb8ca99cc1e1a0ab51f6f284001872804a921c
     :git: https://github.com/thii/FontAwesome.swift.git
   SwiftWebSocket:
     :commit: 7b2682abf301fb5d372b1661678fbcae89c4f660
@@ -68,11 +68,11 @@ SPEC CHECKSUMS:
   KeychainSwift: 23d6c16cbc33f20fafa30c3d783241b4b87d998c
   MCSwipeTableViewCell: 1b303e16c3a26b1982f3a68386e9b8c5fc8344c3
   SnapKit: fe8a619752f3f27075cc9a90244d75c6c3f27e2a
-  SwiftProtobuf: bec1ae7d686ff73dd09d79866154f4970b891410
+  SwiftProtobuf: 4ef85479c18ca85b5482b343df9c319c62bda699
   SwiftWebSocket: 612c9729fd503cb6b0b8b45390c788686dac306f
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: 89fc5e5882d998ff0b2b84b9540e4a8bc978517b
+PODFILE CHECKSUM: aa754b62fbd8f5dcb522a830f78656754aa20275
 
 COCOAPODS: 1.9.3
