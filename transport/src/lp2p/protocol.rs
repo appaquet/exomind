@@ -15,8 +15,7 @@ use std::task::{Context, Poll};
 
 const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024; // 10MB
 
-type HandlerEvent =
-    ProtocolsHandlerEvent<ExocoreProtoConfig, ExocoreProtoMessage, ExocoreProtoMessage, io::Error>;
+type HandlerEvent = ProtocolsHandlerEvent<ExocoreProtoConfig, (), ExocoreProtoMessage, io::Error>;
 
 // TODO: Remove dyn dispatched future once type_alias_impl_trait lands: https://github.com/rust-lang/rust/issues/63063
 type InboundStreamFuture = BoxFuture<
@@ -42,7 +41,7 @@ type OutboundStreamFuture =
 ///   * Streams are not mapped 1:1 to sockets as the transport may be
 ///     multiplexed.
 pub struct ExocoreProtoHandler {
-    listen_protocol: SubstreamProtocol<ExocoreProtoConfig>,
+    listen_protocol: SubstreamProtocol<ExocoreProtoConfig, ()>,
     inbound_stream_futures: Vec<InboundStreamFuture>,
     outbound_dialing: bool,
     outbound_stream_futures: Vec<OutboundStreamFuture>,
@@ -54,7 +53,7 @@ pub struct ExocoreProtoHandler {
 impl Default for ExocoreProtoHandler {
     fn default() -> Self {
         ExocoreProtoHandler {
-            listen_protocol: SubstreamProtocol::new(ExocoreProtoConfig::default()),
+            listen_protocol: SubstreamProtocol::new(ExocoreProtoConfig::default(), ()),
             inbound_stream_futures: Vec::new(),
             outbound_dialing: false,
             outbound_stream_futures: Vec::new(),
@@ -70,14 +69,19 @@ impl ProtocolsHandler for ExocoreProtoHandler {
     type OutEvent = ExocoreProtoMessage;
     type Error = io::Error;
     type InboundProtocol = ExocoreProtoConfig;
+    type InboundOpenInfo = ();
     type OutboundProtocol = ExocoreProtoConfig;
-    type OutboundOpenInfo = ExocoreProtoMessage;
+    type OutboundOpenInfo = ();
 
-    fn listen_protocol(&self) -> SubstreamProtocol<Self::InboundProtocol> {
+    fn listen_protocol(&self) -> SubstreamProtocol<Self::InboundProtocol, ()> {
         self.listen_protocol.clone()
     }
 
-    fn inject_fully_negotiated_inbound(&mut self, substream: WrappedStream<NegotiatedSubstream>) {
+    fn inject_fully_negotiated_inbound(
+        &mut self,
+        substream: WrappedStream<NegotiatedSubstream>,
+        _in_info: (),
+    ) {
         trace!("Inbound negotiated");
         self.inbound_stream_futures
             .push(Box::pin(substream.read_message()));
@@ -86,12 +90,11 @@ impl ProtocolsHandler for ExocoreProtoHandler {
     fn inject_fully_negotiated_outbound(
         &mut self,
         substream: WrappedStream<NegotiatedSubstream>,
-        message: ExocoreProtoMessage,
+        _out_info: (),
     ) {
         trace!("Outbound negotiated. Sending message.");
         self.outbound_dialing = false;
-        self.outbound_stream_futures
-            .push(Box::pin(substream.send_message(message)));
+        self.idle_outbound_stream = Some(substream);
     }
 
     fn inject_event(&mut self, message: ExocoreProtoMessage) {
@@ -100,7 +103,7 @@ impl ProtocolsHandler for ExocoreProtoHandler {
 
     fn inject_dial_upgrade_error(
         &mut self,
-        _message: ExocoreProtoMessage,
+        _out_info: (),
         _err: ProtocolsHandlerUpgrErr<io::Error>,
     ) {
         debug!("Upgrade error. Dropping stream.");
@@ -122,11 +125,8 @@ impl ProtocolsHandler for ExocoreProtoHandler {
             trace!("Asking to open outbound stream");
 
             self.outbound_dialing = true; // only one dialing at the time
-
-            let message = self.send_queue.pop_front().unwrap();
             return Poll::Ready(ProtocolsHandlerEvent::OutboundSubstreamRequest {
                 protocol: self.listen_protocol.clone(),
-                info: message,
             });
         }
 

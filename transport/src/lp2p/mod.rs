@@ -98,11 +98,19 @@ impl Libp2pTransport {
         #[cfg(all(feature = "libp2p-web", target_arch = "wasm32"))]
         let mut swarm = {
             use libp2p::{wasm_ext::ffi::websocket_transport, wasm_ext::ExtTransport, Transport};
+
+            let noise_keys = libp2p::noise::Keypair::<libp2p::noise::X25519Spec>::new()
+                .into_authentic(self.local_node.keypair().to_libp2p())
+                .map_err(|err| {
+                    Error::Other(format!(
+                        "Signing libp2p-noise static DH keypair failed: {}",
+                        err
+                    ))
+                })?;
+
             let transport = ExtTransport::new(websocket_transport())
                 .upgrade(libp2p::core::upgrade::Version::V1)
-                .authenticate(libp2p::secio::SecioConfig::new(
-                    self.local_node.keypair().to_libp2p().clone(),
-                ))
+                .authenticate(libp2p::noise::NoiseConfig::xx(noise_keys).into_authenticated())
                 .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
                     libp2p::yamux::Config::default(),
                     libp2p::mplex::MplexConfig::new(),
@@ -113,7 +121,7 @@ impl Libp2pTransport {
 
         #[cfg(feature = "libp2p-full")]
         let mut swarm = {
-            let transport = libp2p::build_tcp_ws_secio_mplex_yamux(
+            let transport = libp2p::build_tcp_ws_noise_mplex_yamux(
                 self.local_node.keypair().to_libp2p().clone(),
             )?;
 

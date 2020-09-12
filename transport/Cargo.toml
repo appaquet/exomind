@@ -12,7 +12,7 @@ license = "Apache-2.0"
 [features]
 default = ["libp2p-full"]
 tests-utils = ["exocore-core/tests-utils"]
-libp2p-web = ["libp2p-base", "libp2p/wasm-ext", "libp2p-wasm-ext"] 
+libp2p-web = ["libp2p-base", "libp2p/wasm-ext-websocket"] 
 libp2p-full = ["libp2p-base", "libp2p/tcp-tokio"]
 libp2p-base = ["libp2p"]
 
@@ -24,10 +24,9 @@ anyhow = "1.0"
 futures = { version = "0.3", features = ["compat"] }
 pin-project = "0.4"
 byteorder = "1.3"
-libp2p = { version = "0.24", optional = true, default-features = false, features = [ "dns", "mplex", "secio", "websocket", "yamux" ] }
+libp2p = { version = "0.28", optional = true, default-features = false, features = [ "dns", "mplex", "noise", "websocket", "yamux" ] }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
-libp2p-wasm-ext = { version = "0.21", features = ["websocket"], optional = true }
 wasm-bindgen = "0.2"
 
 [dev-dependencies]
