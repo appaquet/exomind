@@ -92,8 +92,9 @@ pub mod entity_query {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Projection {
-    //// If specified, a prefix match will be done against traits' Protobuf full name (`some.package.Name`).
-    //// If ends with a dollar sign "$", an exact match is required (ex: `some.package.Name$` will only match this message)
+    //// If specified, a prefix match will be done against traits' Protobuf full name
+    //// (`some.package.Name`). If ends with a dollar sign "$", an exact match is required (ex:
+    //// `some.package.Name$` will only match this message)
     #[prost(string, repeated, tag = "1")]
     pub package: ::std::vec::Vec<std::string::String>,
     //// Skips the trait if the projection matches.
@@ -102,7 +103,8 @@ pub struct Projection {
     //// If specified, only return these fields.
     #[prost(uint32, repeated, tag = "4")]
     pub field_ids: ::std::vec::Vec<u32>,
-    //// If specified, only return fields annotated with `options.proto`.`field_group_id` matching ids.
+    //// If specified, only return fields annotated with `options.proto`.`field_group_id` matching
+    //// ids.
     #[prost(uint32, repeated, tag = "5")]
     pub field_group_ids: ::std::vec::Vec<u32>,
 }
@@ -119,7 +121,8 @@ pub struct IdsPredicate {
     pub ids: ::std::vec::Vec<std::string::String>,
 }
 //// Query entities by mutations' operation ids.
-//// Used to return entities on which mutations with these operation ids were applied and indexed.
+//// Used to return entities on which mutations with these operation ids were
+//// applied and indexed.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OperationsPredicate {
     #[prost(uint64, repeated, tag = "1")]
@@ -134,7 +137,8 @@ pub struct TestPredicate {
     #[prost(bool, tag = "1")]
     pub success: bool,
 }
-//// Query entities that have a specified trait and optionally matching a trait query.
+//// Query entities that have a specified trait and optionally matching a trait
+//// query.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitPredicate {
     #[prost(string, tag = "1")]
@@ -298,16 +302,17 @@ pub struct EntityResult {
     //// as soon as one entity mutation is coming from pending store (i.e. not committed yet), this
     //// field will be `PENDING`.
     ////
-    //// This can be used to know if an entity can be considered stable once mutations were executed on it.
-    //// Once it's committed, a majority of nodes agreed on it and will not result in further changes happening
-    //// before the latest consistent timestamp.
+    //// This can be used to know if an entity can be considered stable once mutations were
+    //// executed on it. Once it's committed, a majority of nodes agreed on it and will not
+    //// result in further changes happening before the latest consistent timestamp.
     #[prost(enumeration = "EntityResultSource", tag = "2")]
     pub source: i32,
     //// Value to be used to order results. `EntityResults` already contains ordered results,
     //// but it may be useful to compare ordering queries (ex.: to merge different pages)
     #[prost(message, optional, tag = "3")]
     pub ordering_value: ::std::option::Option<OrderingValue>,
-    //// Hash of the tntiy result. Can be used to compare if the entity has changed since last results.
+    //// Hash of the tntiy result. Can be used to compare if the entity has changed since last
+    //// results.
     #[prost(uint64, tag = "4")]
     pub hash: u64,
 }
@@ -383,14 +388,16 @@ pub struct UpdateTraitMutation {
     pub r#trait: ::std::option::Option<Trait>,
     #[prost(message, optional, tag = "3")]
     pub field_mask: ::std::option::Option<::prost_types::FieldMask>,
-    /// Updates is only valid if the last mutation operation on trait this given operation id.
+    /// Updates is only valid if the last mutation operation on trait this given
+    /// operation id.
     #[prost(uint64, tag = "4")]
     pub if_last_operation_id: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompactTraitMutation {
-    /// List of operations that are compacted by this compaction. The compaction will only succeed
-    /// if there were no operations between these operations and the compaction's operation itself.
+    /// List of operations that are compacted by this compaction. The compaction
+    /// will only succeed if there were no operations between these
+    /// operations and the compaction's operation itself.
     #[prost(message, repeated, tag = "1")]
     pub compacted_operations: ::std::vec::Vec<compact_trait_mutation::Operation>,
     /// Trait with merged values from compacted operations

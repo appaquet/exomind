@@ -1,13 +1,12 @@
-use super::config::to_absolute_from_parent_path;
 use super::{
     CellApplications, CellNode, CellNodeRole, CellNodes, CellNodesRead, CellNodesWrite, Error,
     LocalNode, Node, NodeId,
 };
-use crate::cell::cell_config_from_node_cell;
 use crate::cell::config::cell_config_from_yaml_file;
 use crate::crypto::keys::{Keypair, PublicKey};
 use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
 use crate::protos::registry::Registry;
+use crate::{cell::cell_config_from_node_cell, utils::path::child_to_abs_path};
 use libp2p::core::PeerId;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -126,7 +125,7 @@ impl Cell {
             let mut cell_config = cell_config_from_node_cell(node_cell_config, &config)?;
 
             if cell_config.path.is_empty() {
-                let cell_path = to_absolute_from_parent_path(&config.path, &cell_config.path);
+                let cell_path = child_to_abs_path(&config.path, &cell_config.path);
                 cell_config.path = cell_path.to_string_lossy().to_string();
             }
 

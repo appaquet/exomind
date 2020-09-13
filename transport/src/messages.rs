@@ -2,7 +2,7 @@ use exocore_core::cell::Node;
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::protos::generated::MessageType;
 
-use crate::{Error, TransportLayer};
+use crate::{transport::ConnectionID, Error, TransportLayer};
 use exocore_core::cell::{Cell, CellId};
 use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::time::{ConsistentTimestamp, Instant};
@@ -13,6 +13,7 @@ pub type RendezVousId = ConsistentTimestamp;
 pub struct OutMessage {
     pub to: Vec<Node>,
     pub expiration: Option<Instant>,
+    pub connection: Option<ConnectionID>,
     pub envelope_builder: CapnpFrameBuilder<envelope::Owned>,
 }
 
@@ -36,6 +37,7 @@ impl OutMessage {
         Ok(OutMessage {
             to: vec![],
             expiration: None,
+            connection: None,
             envelope_builder: envelope_frame_builder,
         })
     }
@@ -61,6 +63,11 @@ impl OutMessage {
         self.expiration = expiration;
         self
     }
+
+    pub fn with_connection(mut self, connection: ConnectionID) -> Self {
+        self.connection = Some(connection);
+        self
+    }
 }
 
 /// Message receive from another node.
@@ -71,6 +78,7 @@ pub struct InMessage {
     pub layer: TransportLayer,
     pub rendez_vous_id: Option<RendezVousId>,
     pub message_type: u16,
+    pub connection: Option<ConnectionID>,
     pub envelope: TypedCapnpFrame<Vec<u8>, envelope::Owned>,
 }
 
@@ -100,6 +108,7 @@ impl InMessage {
             layer,
             rendez_vous_id,
             message_type,
+            connection: None,
             envelope: envelope.to_owned(),
         }))
     }
@@ -127,6 +136,7 @@ impl InMessage {
             from: self.from.clone(),
             layer: self.layer,
             rendez_vous_id: self.get_rendez_vous_id()?,
+            connection: self.connection,
         })
     }
 
@@ -159,6 +169,7 @@ pub struct MessageReplyToken {
     from: Node,
     layer: TransportLayer,
     rendez_vous_id: RendezVousId,
+    connection: Option<ConnectionID>,
 }
 
 impl MessageReplyToken {
@@ -170,8 +181,12 @@ impl MessageReplyToken {
     where
         T: for<'a> MessageType<'a>,
     {
-        let out_message = OutMessage::from_framed_message(cell, self.layer, frame)?
-            .with_to_node(self.from.clone());
-        Ok(out_message.with_rendez_vous_id(self.rendez_vous_id))
+        let mut out_message = OutMessage::from_framed_message(cell, self.layer, frame)?
+            .with_to_node(self.from.clone())
+            .with_rendez_vous_id(self.rendez_vous_id);
+
+        out_message.connection = self.connection;
+
+        Ok(out_message)
     }
 }

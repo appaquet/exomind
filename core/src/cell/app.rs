@@ -1,7 +1,7 @@
 use super::{app_manifest_from_yaml_file, Error};
-use crate::crypto::keys::PublicKey;
 use crate::protos::generated::exocore_apps::manifest_schema::Source;
 use crate::protos::generated::exocore_apps::Manifest;
+use crate::{crypto::keys::PublicKey, utils::path::child_to_abs_path};
 use protobuf::descriptor::FileDescriptorSet;
 use std::fs::File;
 use std::path::Path;
@@ -50,8 +50,7 @@ impl Application {
         for app_schema in &manifest.schemas {
             match &app_schema.source {
                 Some(Source::File(rel_path)) => {
-                    let schema_path =
-                        super::config::to_absolute_from_parent_path(&manifest.path, rel_path);
+                    let schema_path = child_to_abs_path(&manifest.path, rel_path);
                     let fd_set = read_file_descriptor_set_file(&manifest.name, schema_path)?;
                     schemas.push(fd_set);
                 }

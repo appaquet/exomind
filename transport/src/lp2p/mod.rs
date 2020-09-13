@@ -19,10 +19,10 @@ use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
 
-use crate::lp2p::behaviour::PeerStatus;
 use crate::messages::InMessage;
 use crate::transport::{ConnectionStatus, InEvent, OutEvent, TransportHandleOnStart};
 use crate::Error;
+use crate::{lp2p::behaviour::PeerStatus, transport::ConnectionID};
 use crate::{TransportHandle, TransportLayer};
 
 mod behaviour;
@@ -182,12 +182,20 @@ impl Libp2pTransport {
                     OutEvent::Message(msg) => {
                         let frame_data = msg.envelope_builder.as_bytes(); // TODO: Should be to an Arc
 
+                        let connection =
+                            if let Some(ConnectionID::Libp2p(connection)) = msg.connection {
+                                Some(connection)
+                            } else {
+                                None
+                            };
+
                         // prevent cloning frame if we only send to 1 node
                         if msg.to.len() == 1 {
                             let to_node = msg.to.first().unwrap();
                             swarm.send_message(
                                 to_node.peer_id().clone(),
                                 msg.expiration,
+                                connection,
                                 frame_data,
                             );
                         } else {
@@ -195,6 +203,7 @@ impl Libp2pTransport {
                                 swarm.send_message(
                                     to_node.peer_id().clone(),
                                     msg.expiration,
+                                    connection,
                                     frame_data.clone(),
                                 );
                             }
@@ -286,7 +295,9 @@ impl Libp2pTransport {
         };
 
         let source_node = Self::get_node_by_peer(&handle_channels.cell, message.source)?;
-        let msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
+        let mut msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
+        msg.connection = Some(ConnectionID::Libp2p(message.connection));
+
         handle_channels
             .in_sender
             .try_send(InEvent::Message(msg))
@@ -460,13 +471,13 @@ mod tests {
 
     use futures::{SinkExt, StreamExt};
 
-    use exocore_core::cell::FullCell;
     use exocore_core::cell::Node;
     use exocore_core::framing::CapnpFrameBuilder;
     use exocore_core::futures::Runtime;
     use exocore_core::protos::generated::data_chain_capnp::block_operation_header;
     use exocore_core::tests_utils::expect_eventually;
     use exocore_core::time::{ConsistentTimestamp, Instant};
+    use exocore_core::{cell::FullCell, tests_utils::expect_result_eventually};
 
     use crate::OutMessage;
 
@@ -492,7 +503,7 @@ mod tests {
 
         let mut transport1 = Libp2pTransport::new(node1.clone(), Libp2pTransportConfig::default());
         let handle1 = transport1.get_handle(node1_cell.cell().clone(), TransportLayer::Chain)?;
-        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell);
+        let handle1_tester = TransportHandleTester::new(&mut rt, handle1, node1_cell.clone());
         rt.spawn(async {
             let res = transport1.run().await;
             info!("Transport done: {:?}", res);
@@ -516,11 +527,21 @@ mod tests {
 
         // send 1 to 2
         handle1_tester.send(vec![node2.node().clone()], 123);
-        expect_eventually(|| handle2_tester.check_received(123));
+        let msg = expect_result_eventually(|| {
+            handle2_tester
+                .receive_memo_message(123)
+                .ok_or_else(|| anyhow::anyhow!("not received"))
+        });
 
-        // send 2 to 1 by duplicating node, should expect receiving 2 messages
-        handle2_tester.send(vec![node1.node().clone(), node1.node().clone()], 234);
-        expect_eventually(|| handle1_tester.received_messages().len() == 2);
+        // reply to message
+        let msg_frame = TransportHandleTester::empty_message_frame();
+        let reply_msg = msg.to_response_message(node1_cell.cell(), msg_frame)?;
+        handle2_tester.send_message(reply_msg);
+        expect_eventually(|| handle1_tester.check_received_memo_message(123));
+
+        // send 2 to 1 by duplicating node, should expect receiving 2 new messages (so total 3 because of prev reply)
+        handle2_tester.send(vec![node1.node().clone(), node1.node().clone()], 345);
+        expect_eventually(|| handle1_tester.received_messages().len() == 3);
 
         Ok(())
     }
@@ -597,14 +618,11 @@ mod tests {
         handle1_tester.send(vec![node2.node().clone()], 1);
 
         // send 1 to 2, but with expired message, which shouldn't be delivered
-        let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
-        let _builder = frame_builder.get_builder();
-        let msg =
-            OutMessage::from_framed_message(&node1_cell, TransportLayer::Chain, frame_builder)
-                .unwrap()
-                .with_expiration(Some(Instant::now() - Duration::from_secs(5)))
-                .with_rendez_vous_id(ConsistentTimestamp(2))
-                .with_to_nodes(vec![node2.node().clone()]);
+        let msg_frame = TransportHandleTester::empty_message_frame();
+        let msg = OutMessage::from_framed_message(&node1_cell, TransportLayer::Chain, msg_frame)?
+            .with_expiration(Some(Instant::now() - Duration::from_secs(5)))
+            .with_rendez_vous_id(ConsistentTimestamp(2))
+            .with_to_nodes(vec![node2.node().clone()]);
         handle1_tester.send_message(msg);
 
         // leave some time for first messages to arrive
@@ -628,9 +646,9 @@ mod tests {
 
         // should receive 1 & 3, but not 2 since it had expired
         expect_eventually(|| {
-            handle2_tester.check_received(1)
-                && !handle2_tester.check_received(2)
-                && handle2_tester.check_received(3)
+            handle2_tester.check_received_memo_message(1)
+                && !handle2_tester.check_received_memo_message(2)
+                && handle2_tester.check_received_memo_message(3)
         });
 
         Ok(())
@@ -683,9 +701,14 @@ mod tests {
             rt.block_on(self.handle.on_started());
         }
 
-        fn send(&self, to_nodes: Vec<Node>, memo: u64) {
+        fn empty_message_frame() -> CapnpFrameBuilder<block_operation_header::Owned> {
             let mut frame_builder = CapnpFrameBuilder::<block_operation_header::Owned>::new();
-            let _builder = frame_builder.get_builder();
+            let _ = frame_builder.get_builder();
+            frame_builder
+        }
+
+        fn send(&self, to_nodes: Vec<Node>, memo: u64) {
+            let frame_builder = Self::empty_message_frame();
             let msg =
                 OutMessage::from_framed_message(&self.cell, TransportLayer::Chain, frame_builder)
                     .unwrap()
@@ -736,12 +759,25 @@ mod tests {
                 .unwrap_or_else(|| ConnectionStatus::Disconnected)
         }
 
-        fn check_received(&self, memo: u64) -> bool {
+        fn check_received_memo_message(&self, memo: u64) -> bool {
+            self.receive_memo_message(memo).is_some()
+        }
+
+        fn receive_memo_message(&self, memo: u64) -> Option<Box<InMessage>> {
             let received = self.received_events();
-            received.iter().any(|msg| match msg {
-                InEvent::Message(event) => event.rendez_vous_id == Some(ConsistentTimestamp(memo)),
-                InEvent::NodeStatus(_, _) => false,
-            })
+            received
+                .into_iter()
+                .flat_map(|msg| match msg {
+                    InEvent::Message(event) => {
+                        if event.rendez_vous_id == Some(ConsistentTimestamp(memo)) {
+                            Some(event)
+                        } else {
+                            None
+                        }
+                    }
+                    InEvent::NodeStatus(_, _) => None,
+                })
+                .next()
         }
     }
 }

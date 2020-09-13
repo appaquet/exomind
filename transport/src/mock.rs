@@ -235,6 +235,7 @@ impl<T: TransportHandle> TestableTransportHandle<T> {
             to: vec![to.clone()],
             expiration: None,
             envelope_builder,
+            connection: None,
         };
 
         rt.block_on(

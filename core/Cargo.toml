@@ -21,7 +21,8 @@ runtime = [
     "tokio/rt-threaded",
     "tokio/stream",
     "tokio/sync",
-    "tokio/time"
+    "tokio/time",
+    "tokio/macros"
 ]
 logger = ["log4rs"]
 

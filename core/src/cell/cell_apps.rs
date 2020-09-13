@@ -1,9 +1,9 @@
 use super::{Application, ApplicationId, Error};
-use crate::protos::generated::exocore_apps::Manifest;
 use crate::protos::generated::exocore_core::{
     cell_application_config, CellApplicationConfig, CellConfig,
 };
 use crate::protos::registry::Registry;
+use crate::{protos::generated::exocore_apps::Manifest, utils::path::child_to_abs_path};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -38,21 +38,18 @@ impl CellApplications {
             match app_location {
                 cell_application_config::Location::Instance(manifest) => {
                     let mut manifest: Manifest = manifest.clone();
-
-                    let app_path = super::config::to_absolute_from_parent_path(
-                        &cell_config.path,
-                        &manifest.path,
-                    );
-                    manifest.path = app_path.to_string_lossy().to_string();
+                    manifest.path = child_to_abs_path(&cell_config.path, &manifest.path)
+                        .to_string_lossy()
+                        .to_string();
 
                     let application = Application::new_from_manifest(manifest)?;
-
                     self.add_application(application)?;
                 }
                 cell_application_config::Location::Directory(dir) => {
-                    let absolute_path =
-                        super::config::to_absolute_from_parent_path(&cell_config.path, &dir);
-                    let application = Application::new_from_directory(absolute_path)?;
+                    let application = Application::new_from_directory(child_to_abs_path(
+                        &cell_config.path,
+                        &dir,
+                    ))?;
                     self.add_application(application)?;
                 }
             }

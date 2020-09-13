@@ -1,8 +1,8 @@
 use super::Error;
-use crate::protos::generated::exocore_apps::Manifest;
 use crate::protos::generated::exocore_core::{
     node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
 };
+use crate::{protos::generated::exocore_apps::Manifest, utils::path::child_to_abs_path};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -101,7 +101,7 @@ pub fn cell_config_from_node_cell(
             Ok(cell_config)
         }
         Some(node_cell_config::Location::Directory(directory)) => {
-            let mut config_path = to_absolute_from_parent_path(&node_config.path, directory);
+            let mut config_path = child_to_abs_path(&node_config.path, directory);
             config_path.push("cell.yaml");
 
             cell_config_from_yaml_file(config_path)
@@ -117,7 +117,7 @@ pub fn cell_config_to_standalone(mut config: CellConfig) -> Result<CellConfig, E
     for app in config.apps.iter_mut() {
         let mut final_manifest = match app.location.take() {
             Some(crate::protos::core::cell_application_config::Location::Directory(dir)) => {
-                let absolute_path = to_absolute_from_parent_path(&config.path, &dir)
+                let absolute_path = child_to_abs_path(&config.path, &dir)
                     .to_string_lossy()
                     .to_string();
 
@@ -143,10 +143,9 @@ pub fn cell_config_to_standalone(mut config: CellConfig) -> Result<CellConfig, E
         for schema in final_manifest.schemas.iter_mut() {
             let final_source = match schema.source.take() {
                 Some(crate::protos::apps::manifest_schema::Source::File(schema_path)) => {
-                    let abs_schema_path =
-                        to_absolute_from_parent_path(&final_manifest.path, &schema_path)
-                            .to_string_lossy()
-                            .to_string();
+                    let abs_schema_path = child_to_abs_path(&final_manifest.path, &schema_path)
+                        .to_string_lossy()
+                        .to_string();
                     let mut file = File::open(&abs_schema_path).map_err(|err| {
                         Error::Application(
                             app_name.clone(),
@@ -216,16 +215,6 @@ pub fn app_manifest_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, 
     })?;
 
     Ok(manifest)
-}
-
-pub(crate) fn to_absolute_from_parent_path(parent_path: &str, child_path: &str) -> PathBuf {
-    let child_path_buf = PathBuf::from(child_path);
-    if parent_path.is_empty() || child_path_buf.is_absolute() {
-        return child_path_buf;
-    }
-
-    let parent_path_buf = PathBuf::from(parent_path);
-    parent_path_buf.join(child_path_buf)
 }
 
 #[cfg(test)]

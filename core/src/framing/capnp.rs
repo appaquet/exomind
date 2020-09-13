@@ -65,8 +65,8 @@ where
 
     pub fn from_capnp(capnp_frame: CapnpFrame<I>) -> Result<TypedCapnpFrame<I, T>, capnp::Error> {
         let opts = capnp::message::ReaderOptions {
-            // This remove security limit, but we keep reusing the reader and we eventually reach that limit
-            // because of it.
+            // This remove security limit, but we keep reusing the reader and we eventually reach
+            // that limit because of it.
             traversal_limit_in_words: std::u64::MAX,
             ..Default::default()
         };

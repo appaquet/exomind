@@ -38,12 +38,24 @@ impl ExocoreBehaviour {
         }
     }
 
-    pub fn send_message(&mut self, peer_id: PeerId, expiration: Option<Instant>, data: Vec<u8>) {
+    pub fn send_message(
+        &mut self,
+        peer_id: PeerId,
+        expiration: Option<Instant>,
+        connection: Option<ConnectionId>,
+        data: Vec<u8>,
+    ) {
+        let handler = if let Some(connection_id) = connection {
+            NotifyHandler::One(connection_id)
+        } else {
+            NotifyHandler::Any
+        };
+
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             if peer.status == PeerStatus::Connected {
                 let event = NetworkBehaviourAction::NotifyHandler {
                     peer_id: peer_id.clone(),
-                    handler: NotifyHandler::Any,
+                    handler,
                     event: ExocoreProtoMessage { data },
                 };
 
@@ -58,7 +70,7 @@ impl ExocoreBehaviour {
                 peer.temp_queue.push_back(QueuedPeerEvent {
                     event: NetworkBehaviourAction::NotifyHandler {
                         peer_id: peer_id.clone(),
-                        handler: NotifyHandler::Any,
+                        handler,
                         event: ExocoreProtoMessage { data },
                     },
                     expiration: Some(expiration),
@@ -174,7 +186,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
     fn inject_event(
         &mut self,
         peer_id: PeerId,
-        _connection: ConnectionId,
+        connection: ConnectionId,
         msg: ExocoreProtoMessage,
     ) {
         if let Some(peer) = self.peers.get_mut(&peer_id) {
@@ -184,6 +196,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
                 .push_back(NetworkBehaviourAction::GenerateEvent(
                     ExocoreBehaviourEvent::Message(ExocoreBehaviourMessage {
                         source: peer_id,
+                        connection,
                         data: msg.data,
                     }),
                 ));
@@ -267,6 +280,7 @@ pub enum ExocoreBehaviourEvent {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ExocoreBehaviourMessage {
     pub source: PeerId,
+    pub connection: ConnectionId,
     pub data: Vec<u8>,
 }
 
