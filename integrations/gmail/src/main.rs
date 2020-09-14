@@ -20,6 +20,8 @@ mod sync;
 extern crate log;
 #[macro_use]
 extern crate anyhow;
+#[macro_use]
+extern crate serde_derive;
 
 #[tokio::main]
 async fn main() {
@@ -100,8 +102,6 @@ async fn list_accounts(config: cli::Config) -> anyhow::Result<()> {
 
 async fn start(config: cli::Config, opt: cli::StartOptions) -> anyhow::Result<()> {
     let exm = ExomindClient::new(&config).await?;
-
-    exm.create_base_objects().await?; // TODO: This shouldn't be here
 
     let accounts = exm.get_accounts(true).await?;
     let mut account_synchronizers = Vec::new();

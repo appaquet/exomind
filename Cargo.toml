@@ -10,7 +10,11 @@ license = "Apache-2.0"
 [workspace]
 members = [
   "core",
+  "server",
   "integrations/gmail"
+]
+exclude = [
+    "3rd"
 ]
 
 # [patch.'https://github.com/appaquet/exocore.git']

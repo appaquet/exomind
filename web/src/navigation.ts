@@ -89,8 +89,8 @@ export default class Navigation {
     return '/c/' + config;
   }
 
-  static pathForFullscreen(entity: exocore.index.IEntity): string {
-    return '/s/' + entity.id;
+  static pathForFullscreen(entityId: string): string {
+    return '/s/' + entityId;
   }
 
   static pathForBootstrap(): string {

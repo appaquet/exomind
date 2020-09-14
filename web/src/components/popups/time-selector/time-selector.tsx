@@ -85,9 +85,9 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         e.stopPropagation();
     }
 
-    private handlePickerChange(date: Date): void {
+    private handlePickerChange(timestamp: number): void {
         this.setState({
-            date: date
+            date: new Date(timestamp)
         });
     }
 

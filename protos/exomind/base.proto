@@ -21,7 +21,7 @@ message CollectionChild {
 }
 
 message Postponed { // TODO: Rename to Snoozed + renumber
-    google.protobuf.Timestamp until_date = 2;
+    google.protobuf.Timestamp until_date = 2 [(exocore.sorted) = true];
 }
 
 enum AccountType {

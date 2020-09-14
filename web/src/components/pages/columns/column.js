@@ -59,7 +59,7 @@ export default class Column extends React.Component {
     }
 
     let headerActions = [];
-    if (!_.isEmpty(this.state.containerController.actions)) {
+    if (this.state.containerController.actions) {
       this.state.containerController.actions.forEach(action => {
         headerActions.push(action);
       });
@@ -143,5 +143,4 @@ export default class Column extends React.Component {
     let url = Constants.webUrl + Navigation.pathForFullscreen(entityId);
     window.open(url, '_blank', 'menubar=no,location=no,status=no,titlebar=no,toolbar=no');
   }
-
 }

@@ -1,4 +1,5 @@
 use charset::Charset;
+use exocore::protos::prost::Timestamp;
 use exomind_core::protos::base::{Contact, Email, EmailAttachment, EmailPart, EmailThread};
 
 #[derive(Default)]
@@ -185,7 +186,7 @@ fn parse_part_headers(
             }
             "date" => {
                 let ts = mailparse::dateparse(value)?;
-                email.received_date = Some(prost_types::Timestamp {
+                email.received_date = Some(Timestamp {
                     seconds: ts,
                     nanos: 0,
                 });

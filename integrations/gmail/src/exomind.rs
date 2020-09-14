@@ -21,9 +21,7 @@ use exocore::{
     },
     transport::{Libp2pTransport, TransportLayer},
 };
-use exomind_core::protos::base::{
-    Account, AccountType, Collection, CollectionChild, Email, EmailThread,
-};
+use exomind_core::protos::base::{Account, AccountType, CollectionChild, Email, EmailThread};
 
 #[derive(Clone)]
 pub struct ExomindClient {
@@ -62,38 +60,6 @@ impl ExomindClient {
         Ok(ExomindClient {
             store: store_handle,
         })
-    }
-
-    pub async fn create_base_objects(&self) -> anyhow::Result<()> {
-        // TODO: move to exomind server
-
-        let inbox_trait = Trait {
-            id: "inbox".to_string(),
-            message: Some(
-                Collection {
-                    name: "Inbox".to_string(),
-                }
-                .pack_to_any()?,
-            ),
-            ..Default::default()
-        };
-        let fav_trait = Trait {
-            id: "favorites".to_string(),
-            message: Some(
-                Collection {
-                    name: "Favorites".to_string(),
-                }
-                .pack_to_any()?,
-            ),
-            ..Default::default()
-        };
-
-        let mutations = MutationBuilder::new()
-            .put_trait("inbox", inbox_trait)
-            .put_trait("favorites", fav_trait);
-        let _ = self.store.mutate(mutations).await?;
-
-        Ok(())
     }
 
     pub async fn get_accounts(&self, only_gmail: bool) -> anyhow::Result<Vec<GmailAccount>> {
@@ -267,14 +233,14 @@ impl ExomindClient {
         if previous_thread.is_none() {
             let thread_trait = Trait {
                 id: thread_entity_id.clone(),
-                message: Some(thread.thread.pack_to_any().unwrap()),
+                message: Some(thread.thread.pack_to_any()?),
                 creation_date,
                 modification_date,
                 ..Default::default()
             };
 
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), thread_trait);
-            let mut res = self.store.mutate(mutation).await.unwrap();
+            let mut res = self.store.mutate(mutation).await?;
             operation_ids.append(&mut res.operation_ids);
         }
 
@@ -295,13 +261,13 @@ impl ExomindClient {
             let creation_date = email.received_date.clone();
             let email_trait = Trait {
                 id: email_trait_id(&email),
-                message: Some(email.pack_to_any().unwrap()),
+                message: Some(email.pack_to_any()?),
                 creation_date,
                 ..Default::default()
             };
 
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), email_trait);
-            let mut res = self.store.mutate(mutation).await.unwrap();
+            let mut res = self.store.mutate(mutation).await?;
             operation_ids.append(&mut res.operation_ids);
         }
 
@@ -316,14 +282,13 @@ impl ExomindClient {
                         }),
                         weight: thread_last_date.timestamp_millis() as u64,
                     }
-                    .pack_to_any()
-                    .unwrap(),
+                    .pack_to_any()?,
                 ),
                 ..Default::default()
             };
 
             let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), child_trait);
-            let mut res = self.store.mutate(mutation).await.unwrap();
+            let mut res = self.store.mutate(mutation).await?;
             operation_ids.append(&mut res.operation_ids);
         }
 
@@ -346,7 +311,7 @@ impl ExomindClient {
 
         // TODO: This isn't right. It may have a different trait id
         let mutation = MutationBuilder::new().delete_trait(thread_entity_id, "child_inbox");
-        let res = self.store.mutate(mutation).await.unwrap();
+        let res = self.store.mutate(mutation).await?;
 
         Ok(res.operation_ids)
     }

@@ -221,14 +221,13 @@
       z-index: 910;
     }
   }
-
 }
 
 // When we have only 1 column, we make sure that we are centering correctly the column if the hamburger is opened
 .hamburger-open {
   .columns.count-1 {
     @media (min-width: @screen-md-min) {
-      margin-left: -@hamburger-width + 30px; // I don't know where 30px comes from, but it works
+      margin-left: -@hamburger-width + 7px; // from trial & errors
     }
   }
 }

@@ -5,13 +5,13 @@ use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
-#[structopt(name = "exomind-gmail", about = "Exomind Gmail integration")]
+#[structopt(name = "exomind-server", about = "Exomind server")]
 pub struct Options {
     #[structopt(long, short, default_value = "info")]
     /// Logging level (off, error, warn, info, debug, trace)
     pub logging_level: String,
 
-    #[structopt(long, short = "c", default_value = "gmail.yaml")]
+    #[structopt(long, short = "c", default_value = "exomind.yaml")]
     pub config: PathBuf,
 
     #[structopt(subcommand)]
@@ -20,35 +20,12 @@ pub struct Options {
 
 #[derive(StructOpt)]
 pub enum SubCommand {
-    start(StartOptions),
-    list_accounts,
-    login(LoginOptions),
-    logout(LogoutOptions),
-}
-
-#[derive(StructOpt)]
-pub struct StartOptions {
-    #[structopt(long)]
-    pub save_fixtures: bool,
-}
-
-#[derive(StructOpt)]
-pub struct LoginOptions {
-    pub email: String,
-}
-
-#[derive(StructOpt)]
-pub struct LogoutOptions {
-    pub email: String,
+    start,
 }
 
 #[derive(Clone, Deserialize)]
 pub struct Config {
     pub node_config: PathBuf,
-
-    pub client_secret: PathBuf,
-
-    pub tokens_directory: PathBuf,
 }
 
 impl Config {
@@ -61,8 +38,6 @@ impl Config {
             .ok_or_else(|| anyhow!("Couldn't get config parent directory"))?;
 
         config.node_config = child_to_abs_path(config_dir, &config.node_config);
-        config.client_secret = child_to_abs_path(config_dir, &config.client_secret);
-        config.tokens_directory = child_to_abs_path(config_dir, &config.tokens_directory);
 
         Ok(config)
     }
