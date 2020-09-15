@@ -810,6 +810,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "charset",
+ "encoding_rs",
  "exocore",
  "exomind-core",
  "google-gmail1",
