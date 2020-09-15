@@ -1,29 +1,5 @@
-const HtmlWebPackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  entry: {
-    web: ["./src/index.js"],
-    hybrid: ["./src/ios/hybrid.js"],
-    store: ["./src/ios/store.js"]
-  },
-
-  devtool: 'eval-cheap-module-source-map', // TODO: disable prod https://webpack.js.org/configuration/devtool/ and https://webpack.js.org/guides/production/
-
-  devServer: {
-    disableHostCheck: true, // to accept localhost.exomind.io
-    historyApiFallback: true, // allow history push on front-end
-    clientLogLevel: 'debug',
-    open: false,
-    proxy: {
-      '/v1': {
-        target: 'https://exomind.io',
-        secure: false,
-        changeOrigin: true,
-        ws: true
-      }
-    }
-  },
-
   module: {
     rules: [
       {
@@ -67,29 +43,9 @@ module.exports = {
       { test: /\.woff2(\?.*$|$)/, loader: "url-loader?limit=10000&minetype=application/font-woff" },
       { test: /\.ttf(\?.*$|$)/, loader: "file-loader" },
       { test: /\.eot(\?.*$|$)/, loader: "file-loader" },
-
     ]
-  },
-  optimization: {
-    splitChunks: {
-      chunks: 'all',
-    },
   },
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx']
   },
-  plugins: [
-    new HtmlWebPackPlugin({
-      inject: true,
-      chunks: ['web'],
-      filename: 'index.html',
-      template: './src/index.html'
-    }),
-    new HtmlWebPackPlugin({
-      inject: true,
-      chunks: ['hybrid'],
-      filename: 'hybrid.html',
-      template: './src/ios/hybrid.html'
-    })
-  ]
 };

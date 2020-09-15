@@ -74,7 +74,7 @@ export default class HtmlEditor extends React.Component {
     doc.write('<!DOCTYPE html><html style="height: 100%; font-size: 14px; font-family: Arial"><meta><title></title></meta>' +
 
         // This is for iOS dark mode. If changed, change in iOS EmailBodyWebView
-        '<style>@media (prefers-color-scheme: dark) and (-webkit-overflow-scrolling: touch) { body { color: white; background-color: black } a { color: #4285f4; } }</style>' +
+        '<style>@media (prefers-color-scheme: dark) { body { color: white; background-color: black } a { color: #4285f4; } }</style>' +
 
       '<body style="height: 100%; margin: 0; -webkit-tap-highlight-color: transparent; width: 1px; min-width: 100%;"></body></html>');
     doc.close();

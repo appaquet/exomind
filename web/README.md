@@ -1,6 +1,11 @@
 
 # Web client
 
+## Dependencies
+* Install Node & Yarn
+    * [Install Node](https://github.com/nodesource/distributions/blob/master/README.md#debinstall)
+    * Install yarn: `npm install -g yarn`
+
 ## Development
 * `yarn start_dev`
 

@@ -119,9 +119,6 @@ class JSBridge {
             let content = FileManager.default.contents(atPath: resource!)
             let str = NSString(data: content!, encoding: String.Encoding.utf8.rawValue) as String?
             jsContext.evaluateScript(str!)
-
-            // ensure session loaded
-            jsContext.evaluateScript("exomind.session.SessionStore.ensureLoaded()")
         }
     }
 }
