@@ -3,7 +3,6 @@ import Constants from './constants';
 import { ColumnsConfig } from './components/pages/columns/columns-config';
 import { EntityTraits } from './store/entities';
 import Path from './utils/path';
-import { exocore } from 'exocore';
 
 export default class Navigation {
   static currentPath: Path = null;

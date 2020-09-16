@@ -16,6 +16,7 @@ exomind-core = { path = "../../core" }
 mailparse = "0.13"
 anyhow = "1.0"
 charset = "0.1"
+chardetng = "0.1"
 structopt = "0.3"
 serde = "1.0"
 serde_yaml = "0.8"

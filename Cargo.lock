@@ -386,6 +386,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "chardetng"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7817bfb797fd08f0b1cf095378254b28cb0b5000412ca32b490c9d9e225ffc38"
+dependencies = [
+ "encoding_rs",
+ "memchr",
+]
+
+[[package]]
 name = "charset"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -809,6 +819,7 @@ name = "exomind-gmail"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chardetng",
  "charset",
  "exocore",
  "exomind-core",

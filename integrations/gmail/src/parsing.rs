@@ -90,16 +90,14 @@ fn parse_part(part: &google_gmail1::schemas::MessagePart, email: &mut Email) -> 
             let utf8_charset = Charset::for_label(b"UTF-8").unwrap();
             let charset = Charset::for_label(encoding.charset.as_bytes()).unwrap_or(utf8_charset);
 
-            // Sometimes, the header indicates a charset, but then the HTML indicates another charset. This happens mostly on non-UTF-8
-            // charsets, so we restrict our lookup to this.
+            // Sometimes, the header indicates a charset, but then the HTML indicates another charset.
+            // This happens mostly on non-UTF-8 charsets, so in this case, we try to detect the right encoding.
             // See https://stackoverflow.com/questions/27037816/can-an-email-header-have-different-character-encoding-than-the-body-of-the-email
             let charset = if charset != utf8_charset {
-                let tried_decoded_bytes = String::from_utf8_lossy(body_bytes);
-                if tried_decoded_bytes.contains("charset=utf-8") {
-                    utf8_charset
-                } else {
-                    charset
-                }
+                let mut detector = chardetng::EncodingDetector::new();
+                detector.feed(body_bytes, true);
+                let encoding = detector.guess(None, true);
+                Charset::for_encoding(encoding)
             } else {
                 charset
             };
@@ -191,13 +189,13 @@ fn parse_part_headers(
                 email.from = parse_contacts(value)?.into_iter().next();
             }
             "to" => {
-                email.to = parse_contacts(value)?;
+                email.to = parse_contacts(value).unwrap_or_default();
             }
             "cc" => {
-                email.cc = parse_contacts(value)?;
+                email.cc = parse_contacts(value).unwrap_or_default();
             }
             "bcc" => {
-                email.bcc = parse_contacts(value)?;
+                email.bcc = parse_contacts(value).unwrap_or_default();
             }
             "date" => {
                 let ts = mailparse::dateparse(value)?;
@@ -328,6 +326,19 @@ mod tests {
 
         let body: &str = &parsed.emails[0].parts[0].body;
         assert!(body.contains("Découvrir"));
+    }
+
+    #[test]
+    fn parse_no_to_address() {
+        let thread = read_thread_fixture("no_to_address").unwrap();
+        let parsed = parse_thread(thread).unwrap();
+
+        assert_eq!(1, parsed.emails.len());
+
+        // The email is marked as ISO-8859, but is actually UTF8.
+        // The detector should have detected correct encoding.
+        let body: &str = &parsed.emails[0].parts[0].body;
+        assert!(body.contains("reportées"));
     }
 
     fn read_thread_fixture(file: &str) -> Result<google_gmail1::schemas::Thread, anyhow::Error> {
