@@ -87,14 +87,29 @@ fn parse_part(part: &google_gmail1::schemas::MessagePart, email: &mut Email) -> 
                 .as_ref();
 
             let encoding = mailparse::parse_content_type(content_type);
-            let charset = Charset::for_label(encoding.charset.as_bytes())
-                .unwrap_or_else(|| Charset::for_label(b"UTF-8").unwrap());
+            let utf8_charset = Charset::for_label(b"UTF-8").unwrap();
+            let charset = Charset::for_label(encoding.charset.as_bytes()).unwrap_or(utf8_charset);
+
+            // Sometimes, the header indicates a charset, but then the HTML indicates another charset. This happens mostly on non-UTF-8
+            // charsets, so we restrict our lookup to this.
+            // See https://stackoverflow.com/questions/27037816/can-an-email-header-have-different-character-encoding-than-the-body-of-the-email
+            let charset = if charset != utf8_charset {
+                let tried_decoded_bytes = String::from_utf8_lossy(body_bytes);
+                if tried_decoded_bytes.contains("charset=utf-8") {
+                    utf8_charset
+                } else {
+                    charset
+                }
+            } else {
+                charset
+            };
+
             let (decoded, _detected_charset, had_errors) = charset.decode(body_bytes);
 
             if had_errors {
                 warn!(
-                    "Error decoding body: content_type={} body={}",
-                    content_type,
+                    "Error decoding body: charset={:?} body={}",
+                    charset,
                     String::from_utf8_lossy(body_bytes)
                 );
             }
@@ -301,6 +316,18 @@ mod tests {
             }],
             parsed.emails[0].attachments
         );
+    }
+
+    #[test]
+    fn parse_windows_1252_header_utf8_body() {
+        let thread = read_thread_fixture("windows_1252_header_utf8_body").unwrap();
+        let parsed = parse_thread(thread).unwrap();
+
+        assert_eq!(1, parsed.emails.len());
+        assert_eq!(1, parsed.emails[0].parts.len());
+
+        let body: &str = &parsed.emails[0].parts[0].body;
+        assert!(body.contains("Découvrir"));
     }
 
     fn read_thread_fixture(file: &str) -> Result<google_gmail1::schemas::Thread, anyhow::Error> {
