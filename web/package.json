@@ -54,7 +54,7 @@
     "@types/domutils": "^1.5.2",
     "@types/fbemitter": "^2.0.32",
     "@types/htmlparser2": "^3.10.1",
-    "@types/jest": "^26.0.10",
+    "@types/jest": "^26.0.14",
     "@types/linkifyjs": "^2.1.3",
     "@types/lodash": "^4.14.161",
     "@types/node": "^14.10.2",
