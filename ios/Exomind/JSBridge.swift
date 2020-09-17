@@ -4,38 +4,11 @@ import JavaScriptCore
 class JSBridge {
     static var instance: JSBridge!
 
-    fileprivate let serverHost: String
     fileprivate var timers: [JSTimer] = []
     fileprivate(set) var jsContext: JSContext!
-    fileprivate let webSocketBridgeFactory: WebSocketBridgeFactory
-    fileprivate let ajaxBridgeFactory: XMLHttpRequestBridgeFactory
 
-    init(serverHost: String, webSocketBridgeFactory: WebSocketBridgeFactory, ajaxBridgeFactory: XMLHttpRequestBridgeFactory) {
-        self.serverHost = serverHost
-        self.webSocketBridgeFactory = webSocketBridgeFactory
-        self.ajaxBridgeFactory = ajaxBridgeFactory
-
+    init() {
         self.initializeContext()
-    }
-
-    func pauseConnections() {
-        self.jsContext.evaluateScript("exomind.backendSocket.pauseConnections()")
-    }
-
-    func resumeConnections() {
-        self.jsContext.evaluateScript("exomind.backendSocket.resumeConnections()")
-    }
-
-    func resetConnections() {
-        self.jsContext.evaluateScript("exomind.backendSocket.resetConnections()")
-    }
-
-    func connected() -> Bool {
-        return self.jsContext.evaluateScript("exomind.backendSocket.connected").toBool()
-    }
-
-    func unauthorized() -> Bool {
-        return self.jsContext.evaluateScript("exomind.backendSocket.unauthorized").toBool()
     }
 
     func orNull(_ opt: AnyObject?) -> JSValue {
@@ -75,21 +48,7 @@ class JSBridge {
                 print("JS > Got an exception error='\(String(describing: exception))' function='\(String(describing: stack))'")
             }
 
-            jsContext.evaluateScript("window = {}; window.location = {}; window.location.host = '\(serverHost)'; exomind = {};");
-
-            // Websocket polyfill
-            let websocketBuilder: @convention(block) (String) -> WebSocketBridgeExport = {
-                [weak self] url in
-                return self!.webSocketBridgeFactory.build(url: url)
-            }
-            jsContext.setObject(unsafeBitCast(websocketBuilder, to: AnyObject.self), forKeyedSubscript: "WebSocket" as (NSCopying & NSObjectProtocol))
-
-            // XMLHttpRequest polyfill
-            let xmlhttprequestBuilder: @convention(block) (String) -> XMLHttpRequestBridgeExport = {
-                [weak self] url in
-                return self!.ajaxBridgeFactory.build()
-            }
-            jsContext.setObject(unsafeBitCast(xmlhttprequestBuilder, to: AnyObject.self), forKeyedSubscript: "XMLHttpRequest" as (NSCopying & NSObjectProtocol))
+            jsContext.evaluateScript("window = {}; window.location = {}; window.location.host = 'exomind.io'; exomind = {};");
 
             // support for setInterval
             let setInterval: @convention(block) (JSValue, Int) -> Void = {

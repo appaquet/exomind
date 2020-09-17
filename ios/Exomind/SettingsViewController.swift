@@ -1,5 +1,4 @@
 import UIKit
-import Alamofire
 import KeychainSwift
 
 class SettingsViewController: UITableViewController {
@@ -25,13 +24,6 @@ class SettingsViewController: UITableViewController {
     }
 
     func logout() {
-        Alamofire
-                .request("https://exomind.io/logout")
-                .response { (resp) in
-                    print("SettingsViewController > Logged out")
-                }
-
         HttpUtils.wipeCookies()
-        JSBridge.instance.resetConnections()
     }
 }

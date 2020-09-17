@@ -8,12 +8,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         HttpUtils.copyCookiesToKeychain()
-
         ExocoreUtils.initialize()
-
-        let websocketBridgeFactory = RealWebSocketBridgeFactory()
-        let ajaxBridgeFactory = RealXMLHttpRequestBridgeFactory()
-        JSBridge.instance = JSBridge(serverHost: "exomind.io", webSocketBridgeFactory: websocketBridgeFactory, ajaxBridgeFactory: ajaxBridgeFactory)
+        JSBridge.instance = JSBridge()
 
         // see https://github.com/tokio-rs/mio/issues/949
         signal(SIGPIPE, SIG_IGN)

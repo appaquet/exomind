@@ -1,5 +1,4 @@
 import Foundation
-import Alamofire
 import KeychainSwift
 
 class HttpUtils {
@@ -33,17 +32,5 @@ class HttpUtils {
             }
         }
         HttpUtils.copyCookiesToKeychain()
-    }
-
-    static func switchBackendType(_ type: String) {
-        Alamofire
-                .request("https://exomind.io/switch", parameters: ["b": type, "f": type])
-                .response(completionHandler: { (resp) in
-                    if let error = resp.error {
-                        print("ConfigPanelViewController > Couldn't switch to \(type) backend", error)
-                    } else {
-                        print("ConfigPanelViewController > Switched to \(type) backend")
-                    }
-                })
     }
 }
