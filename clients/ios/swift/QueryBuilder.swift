@@ -45,6 +45,12 @@ public class QueryBuilder {
         return builder
     }
 
+    public static func all() -> QueryBuilder {
+        let builder = QueryBuilder()
+        builder.inner.all = Exocore_Index_AllPredicate()
+        return builder
+    }
+
     public func count(_ count: Int) -> QueryBuilder {
         var paging = Exocore_Index_Paging()
         paging.count = UInt32(count)
@@ -62,6 +68,15 @@ public class QueryBuilder {
         return self
     }
 
+    public func orderByOperationIds(ascending: Bool = false) -> QueryBuilder {
+        var ordering = Exocore_Index_Ordering()
+        ordering.ascending = ascending
+        ordering.operationID = true
+        self.inner.ordering = ordering
+
+        return self
+    }
+
     public func project(withProjection projection: Exocore_Index_Projection) -> QueryBuilder {
         self.inner.projections.append(projection)
 
@@ -70,6 +85,12 @@ public class QueryBuilder {
 
     public func project(withProjections projections: [Exocore_Index_Projection]) -> QueryBuilder {
         self.inner.projections.append(contentsOf: projections)
+
+        return self
+    }
+
+    public func includeDeleted() -> QueryBuilder {
+        self.inner.includeDeleted = true
 
         return self
     }
