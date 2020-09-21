@@ -9,7 +9,7 @@ class InboxViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.title = "Inbox"
+        self.navigationItem.title = "Inbox"
         self.setupChildrenVC()
     }
 
@@ -45,7 +45,6 @@ class InboxViewController: UIViewController {
     private func setupNavigationActions() {
         let nav = (self.navigationController as! NavigationController)
         nav.resetState()
-
         nav.setBarActions([
             NavigationControllerBarAction(icon: .search, handler: { [weak self] () -> Void in
                 (self?.navigationController as? NavigationController)?.showSearch("inbox")
@@ -94,9 +93,4 @@ class InboxViewController: UIViewController {
     private func handleAddToCollection(_ entity: EntityExt) {
         (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
     }
-
-    deinit {
-        print("InboxViewController > Deinit")
-    }
-
 }

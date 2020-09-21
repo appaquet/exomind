@@ -25,7 +25,7 @@ class TimeSelectionViewController: ModalGridViewController {
         let choices = TimeLogic.getLaterChoices()
         let gridItems = choices.map {
             choice -> GridIconsViewItem in
-            let fa = ObjectsIcon.icon(forName: TimeLogic.getLaterIcon(choice.key))
+            let fa = ObjectsIcon.faIcon(forName: TimeLogic.getLaterIcon(choice.key))
             return GridIconsViewItem(label: choice.copy, icon: fa, callback: {
                 [weak self] (item) -> () in
                 self?.handleChoiceSelection(choice)

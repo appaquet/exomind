@@ -4,14 +4,14 @@ import FontAwesome_swift
 class TabBarController: UITabBarController {
     fileprivate let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
 
-    fileprivate let inboxIndex = 0
-    fileprivate var inboxItem: UITabBarItem!
-    fileprivate var inboxVC: UIViewController!
+    fileprivate let homeIndex = 0
+    fileprivate var homeItem: UITabBarItem!
+    fileprivate var homeVC: UIViewController!
     fileprivate let settingsIndex = 1
     fileprivate var settingsItem: UITabBarItem!
     fileprivate var settingsVC: UIViewController!
 
-    fileprivate let imageInbox = UIImage.fontAwesomeIcon(name: .inbox, style: .solid, textColor: UIColor.black, size: CGSize(width: 28, height: 28))
+    fileprivate let imageHome = UIImage.fontAwesomeIcon(name: .home, style: .solid, textColor: UIColor.black, size: CGSize(width: 28, height: 28))
     fileprivate let imageSettings = UIImage.fontAwesomeIcon(name: .cog, style: .solid, textColor: UIColor.black, size: CGSize(width: 28, height: 28))
 
     fileprivate var objectsController = [String: NavigationController]()
@@ -19,15 +19,24 @@ class TabBarController: UITabBarController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.inboxItem = self.tabBar.items![self.inboxIndex]
-        self.inboxItem.image = imageInbox
-        self.inboxVC = self.viewControllers![self.inboxIndex]
+        self.homeItem = self.tabBar.items![self.homeIndex]
+        self.homeItem.image = imageHome
+        self.homeVC = self.viewControllers![self.homeIndex]
+
         self.settingsItem = self.tabBar.items![self.settingsIndex]
         self.settingsItem.image = imageSettings
         self.settingsVC = self.viewControllers![self.settingsIndex]
 
         self.tabBar.tintColor = Stylesheet.tabBarSelectedFg
+
+        for item in self.tabBar.items! {
+            item.imageInsets = UIEdgeInsets(top: 6, left: 0, bottom: -6, right: 0)
+            item.title = ""
+        }
     }
+
+    // TODO: Middle item
+    // https://medium.com/better-programming/how-to-create-a-custom-action-for-center-tab-bar-item-65e3e5cb0519
 
     func show(navigationObject: NavigationObject) {
         self.selectedIndex = 0

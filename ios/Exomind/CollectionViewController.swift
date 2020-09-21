@@ -11,7 +11,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
         self.entity = entity
         self.collection = entity.trait(withId: trait.id)
-        self.title = trait.displayName
+        self.navigationItem.title = trait.displayName
     }
 
     override func viewDidLoad() {

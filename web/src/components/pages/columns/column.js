@@ -9,7 +9,7 @@ import { Selection } from '../../objects/entity-list/selection';
 import { Header, HeaderAction } from '../../objects/header';
 import { Inbox } from "../../objects/inbox/inbox";
 import Snoozed from "../../objects/snoozed/snoozed";
-import History from "../../objects/history/history";
+import Recent from "../../objects/recent/recent";
 import { Search } from '../../objects/search/search';
 import './column.less';
 import { ColumnConfig } from './columns-config';
@@ -103,7 +103,7 @@ export default class Column extends React.Component {
       />;
 
     } else if (this.props.columnConfig.isHistory) {
-      return <History
+      return <Recent
         containerController={this.state.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}

@@ -59,20 +59,35 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         }
     }
 
+    func pushInbox(_ animated: Bool = true) {
+        let vc = InboxViewController()
+        self.pushViewController(vc, animated: animated)
+    }
+
+    func pushSnoozed(_ animated: Bool = true) {
+        let vc = SnoozedViewController()
+        self.pushViewController(vc, animated: animated)
+    }
+
+    func pushRecent(_ animated: Bool = true) {
+        let vc = RecentViewController()
+        self.pushViewController(vc, animated: animated)
+    }
+
     private func createViewController(forObject: NavigationObject) -> UIViewController {
         switch (forObject) {
         case let .entityId(id: entityId):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
             vc.populate(entityId: entityId)
             return vc
 
         case let .entity(entity: entity):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
             vc.populate(entity: entity)
             return vc
 
         case let .entityTrait(entityTrait: et):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "ObjectViewController") as! EntityViewController
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
             vc.populate(entityTrait: et)
             return vc
         }
@@ -171,4 +186,17 @@ enum NavigationObject {
     case entity(entity: EntityExt)
     case entityTrait(entityTrait: AnyTraitInstance)
     case entityId(id: EntityId)
+
+    var id: EntityId {
+        get {
+            switch self {
+            case let .entity(entity: et):
+                return et.id
+            case let .entityTrait(entityTrait: et):
+                return et.entity?.id ?? ""
+            case let .entityId(id: id):
+                return id
+            }
+        }
+    }
 }
