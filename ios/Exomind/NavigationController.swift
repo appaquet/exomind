@@ -186,17 +186,4 @@ enum NavigationObject {
     case entity(entity: EntityExt)
     case entityTrait(entityTrait: AnyTraitInstance)
     case entityId(id: EntityId)
-
-    var id: EntityId {
-        get {
-            switch self {
-            case let .entity(entity: et):
-                return et.id
-            case let .entityTrait(entityTrait: et):
-                return et.entity?.id ?? ""
-            case let .entityId(id: id):
-                return id
-            }
-        }
-    }
 }
