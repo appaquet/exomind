@@ -4,13 +4,11 @@ use_frameworks!
 
 target 'Exomind' do
   pod 'SwiftyJSON', '~> 4.2'
-  pod 'Alamofire', '~> 4.8', :inhibit_warnings => true
-  pod 'SwiftWebSocket', :git => 'https://github.com/starxor/SwiftWebSocket.git', :inhibit_warnings => true #'~> 2.7.0'
   pod 'FontAwesome.swift', :git => 'https://github.com/thii/FontAwesome.swift.git', :inhibit_warnings => true
   pod 'UIColor_Hex_Swift', '~> 4.2.0', :inhibit_warnings => true
   pod 'MCSwipeTableViewCell', :inhibit_warnings => true
   pod 'CLTokenInputView', :inhibit_warnings => true
-  pod 'KeychainSwift', '~> 13.0'
+  pod 'KeychainSwift', '~> 19.0'
   pod 'SnapKit', '~> 4.2.0', :inhibit_warnings => true
   pod 'Dwifft', '~> 0.9', :inhibit_warnings => true
   pod 'SwiftProtobuf', '~> 1.10'
@@ -20,8 +18,7 @@ target 'Exomind' do
 end
 
 target 'ExomindActionExt' do
-  pod 'Alamofire', '~> 4.8', :inhibit_warnings => true
-  pod 'KeychainSwift', '~> 13.0'
+  pod 'KeychainSwift', '~> 19.0'
   pod 'SwiftProtobuf', '~> 1.10'
 
   pod 'Exocore', :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
@@ -34,4 +31,15 @@ target 'ExomindTests' do
 
   pod 'Exocore', :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
   #pod 'Exocore', :path => '../../exocore'
+end
+
+
+# Prevent warning where pod minimum deployment target isn't matching the project's one
+# See https://stackoverflow.com/questions/54704207/the-ios-simulator-deployment-targets-is-set-to-7-0-but-the-range-of-supported-d
+post_install do |pi|
+    pi.pods_project.targets.each do |t|
+      t.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      end
+    end
 end

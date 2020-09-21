@@ -1,35 +1,30 @@
 PODS:
-  - Alamofire (4.9.1)
   - CLTokenInputView (2.3.0)
   - Dwifft (0.9)
   - Exocore (0.1.0):
     - SwiftProtobuf (~> 1.10)
   - FontAwesome.swift (1.9.0)
-  - KeychainSwift (13.0.0)
+  - KeychainSwift (19.0.0)
   - MCSwipeTableViewCell (2.1.4)
   - SnapKit (4.2.0)
   - SwiftProtobuf (1.12.0)
-  - SwiftWebSocket (2.7.0)
   - SwiftyJSON (4.3.0)
   - UIColor_Hex_Swift (4.2.0)
 
 DEPENDENCIES:
-  - Alamofire (~> 4.8)
   - CLTokenInputView
   - Dwifft (~> 0.9)
   - Exocore (from `https://github.com/appaquet/exocore.git`, branch `releases/v0.1`)
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
-  - KeychainSwift (~> 13.0)
+  - KeychainSwift (~> 19.0)
   - MCSwipeTableViewCell
   - SnapKit (~> 4.2.0)
   - SwiftProtobuf (~> 1.10)
-  - SwiftWebSocket (from `https://github.com/starxor/SwiftWebSocket.git`)
   - SwiftyJSON (~> 4.2)
   - UIColor_Hex_Swift (~> 4.2.0)
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
-    - Alamofire
     - CLTokenInputView
     - Dwifft
     - KeychainSwift
@@ -45,34 +40,27 @@ EXTERNAL SOURCES:
     :git: https://github.com/appaquet/exocore.git
   FontAwesome.swift:
     :git: https://github.com/thii/FontAwesome.swift.git
-  SwiftWebSocket:
-    :git: https://github.com/starxor/SwiftWebSocket.git
 
 CHECKOUT OPTIONS:
   Exocore:
-    :commit: 491e08df09a76b70e204aaedf2a7f6061997e957
+    :commit: 2bd31c66cafb8e22221ef9034ad7c61f607ec4ea
     :git: https://github.com/appaquet/exocore.git
   FontAwesome.swift:
     :commit: d5cb8ca99cc1e1a0ab51f6f284001872804a921c
     :git: https://github.com/thii/FontAwesome.swift.git
-  SwiftWebSocket:
-    :commit: 7b2682abf301fb5d372b1661678fbcae89c4f660
-    :git: https://github.com/starxor/SwiftWebSocket.git
 
 SPEC CHECKSUMS:
-  Alamofire: 85e8a02c69d6020a0d734f6054870d7ecb75cf18
   CLTokenInputView: 9dc1ffb7c9d2d81787e69a63c75bd97b0b2d1e76
   Dwifft: 42912068ed2a8146077d1a1404df18625bd086e1
   Exocore: bb9e18f6f765625b2e5fae34e2657dcba90c26e9
   FontAwesome.swift: a403b88cec950511745ba8f2decd1b6a07346d13
-  KeychainSwift: 23d6c16cbc33f20fafa30c3d783241b4b87d998c
+  KeychainSwift: a06190cf933ad46b1e0abc3d77d29c06331715c7
   MCSwipeTableViewCell: 1b303e16c3a26b1982f3a68386e9b8c5fc8344c3
   SnapKit: fe8a619752f3f27075cc9a90244d75c6c3f27e2a
   SwiftProtobuf: 4ef85479c18ca85b5482b343df9c319c62bda699
-  SwiftWebSocket: 612c9729fd503cb6b0b8b45390c788686dac306f
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: aa754b62fbd8f5dcb522a830f78656754aa20275
+PODFILE CHECKSUM: 5d1677cb316648f3f5cc0b61a3695801159c178b
 
 COCOAPODS: 1.9.3

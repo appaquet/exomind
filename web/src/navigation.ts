@@ -57,8 +57,8 @@ export default class Navigation {
     return Navigation.pathForColumnsConfig(ColumnsConfig.forSnoozed());
   }
 
-  static pathForHistory(): string {
-    return Navigation.pathForColumnsConfig(ColumnsConfig.forHistory());
+  static pathForRecent(): string {
+    return Navigation.pathForColumnsConfig(ColumnsConfig.forRecent());
   }
 
   static pathForSearch(keywords: string): string {

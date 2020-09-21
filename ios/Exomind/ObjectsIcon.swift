@@ -4,14 +4,23 @@ import FontAwesome_swift
 class ObjectsIcon {
     private static var iconCache = [String: UIImage]()
 
+    static func icon(forName: String, color: UIColor, dimension: CGFloat) -> UIImage {
+        let fa = ObjectsIcon.faIcon(forName: forName)
+        return icon(forFontAwesome: fa, color: color, dimension: dimension)
+    }
+
     static func icon(forAnyTrait: AnyTraitInstance, color: UIColor, dimension: CGFloat) -> UIImage {
-        let fa = ObjectsIcon.icon(forName: forAnyTrait.constants?.icon ?? "question")
-        return cached(fa: fa, color: color, dimension: dimension, block: { () -> UIImage in
-            UIImage.fontAwesomeIcon(name: fa, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
+        let fa = ObjectsIcon.faIcon(forName: forAnyTrait.constants?.icon ?? "question")
+        return icon(forFontAwesome: fa, color: color, dimension: dimension)
+    }
+
+    static func icon(forFontAwesome: FontAwesome, color: UIColor, dimension: CGFloat) -> UIImage {
+        cached(fa: forFontAwesome, color: color, dimension: dimension, block: { () -> UIImage in
+            UIImage.fontAwesomeIcon(name: forFontAwesome, style: .solid, textColor: color, size: CGSize(width: dimension, height: dimension))
         })
     }
 
-    static func icon(forName name: String) -> FontAwesome {
+    static func faIcon(forName name: String) -> FontAwesome {
         var fa: FontAwesome! = nil
         switch name {
         case "folder-o":
@@ -20,6 +29,8 @@ class ObjectsIcon {
             fa = .inbox
         case "cloud":
             fa = .cloud
+        case "clock-o":
+             fa = .clock
         case "chevron-right":
             fa = .chevronRight
         case "search":
@@ -38,6 +49,8 @@ class ObjectsIcon {
             fa = .moon
         case "hourglass-start":
             fa = .hourglassStart
+        case "history":
+            fa = .history
         case "coffee":
             fa = .coffee
         case "soccer-ball-o":

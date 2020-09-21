@@ -47,10 +47,10 @@ class QuickButtonView: UIView {
         self.addSubview(self.mainButtonView)
 
         self.addConstraints([
-            NSLayoutConstraint(item: self.mainButtonView, attribute: .centerX, relatedBy: .equal, toItem: self, attribute: .centerX, multiplier: 1, constant: 0),
-            NSLayoutConstraint(item: self.mainButtonView, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1, constant: 0),
-            NSLayoutConstraint(item: self.mainButtonView, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .width, multiplier: 0, constant: Stylesheet.quickButtonSize),
-            NSLayoutConstraint(item: self.mainButtonView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .height, multiplier: 0, constant: Stylesheet.quickButtonSize),
+            NSLayoutConstraint(item: self.mainButtonView!, attribute: .centerX, relatedBy: .equal, toItem: self, attribute: .centerX, multiplier: 1, constant: 0),
+            NSLayoutConstraint(item: self.mainButtonView!, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1, constant: 0),
+            NSLayoutConstraint(item: self.mainButtonView!, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .width, multiplier: 0, constant: Stylesheet.quickButtonSize),
+            NSLayoutConstraint(item: self.mainButtonView!, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .height, multiplier: 0, constant: Stylesheet.quickButtonSize),
         ])
 
         self.panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handleMainPan))

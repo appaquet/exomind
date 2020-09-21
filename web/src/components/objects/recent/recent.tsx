@@ -9,7 +9,7 @@ import EntityAction from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
-import './history.less';
+import './recent.less';
 
 interface IProps {
     selection?: Selection;
@@ -19,7 +19,7 @@ interface IProps {
     containerController?: ContainerController;
 }
 
-export default class History extends React.Component<IProps> {
+export default class Recent extends React.Component<IProps> {
     private entityQuery: ExpandableQuery;
 
     constructor(props: IProps) {
@@ -45,7 +45,7 @@ export default class History extends React.Component<IProps> {
         })
 
         if (props.containerController) {
-            props.containerController.title = 'History';
+            props.containerController.title = 'Recent';
             props.containerController.icon = 'history';
         }
 
@@ -60,7 +60,7 @@ export default class History extends React.Component<IProps> {
         if (this.entityQuery.hasResults) {
             const classes = classNames({
                 'entity-component': true,
-                'history': true,
+                'recent': true,
             });
 
             const entities = Array.from(this.entityQuery.results()).map((res) => {

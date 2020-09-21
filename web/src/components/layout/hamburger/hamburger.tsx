@@ -59,8 +59,8 @@ export default class Hamburger extends React.Component<IProps, IState> {
           <HamburgerLink path={this.props.path} link={Navigation.pathForSnoozed()} label="Snoozed" icon="clock-o" />
           <li className="sep" key={'snoozed_sep'} />
 
-          <HamburgerLink path={this.props.path} link={Navigation.pathForHistory()} label="History" icon="history" />
-          <li className="sep" key={'history_sep'} />
+          <HamburgerLink path={this.props.path} link={Navigation.pathForRecent()} label="Recent" icon="history" />
+          <li className="sep" key={'recent_sep'} />
 
           {this.renderFavorites()}
 

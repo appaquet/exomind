@@ -30,6 +30,7 @@ class EntityViewController: UIViewController {
 
     func populate(entityId: EntityId) {
         self.entityId = entityId
+        self.fetchFullEntity()
     }
 
     override func viewDidLoad() {
@@ -91,7 +92,7 @@ class EntityViewController: UIViewController {
             vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "DraftEmailViewController") as! DraftEmailViewController
         case .email:
             vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "EmailViewController") as! EmailViewController
-        case .collection:
+        case .collection, .favorites:
             vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "CollectionViewController") as! CollectionViewController
         case .note:
             vc = self.objectsStoryboard.instantiateViewController(withIdentifier: "NoteViewController") as! NoteViewController
@@ -123,7 +124,7 @@ class EntityViewController: UIViewController {
     }
 
     deinit {
-        print("ObjectViewController > Deinit")
+        print("EntityViewController > Deinit")
     }
 }
 

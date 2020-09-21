@@ -140,9 +140,9 @@ class ExpandableQuery {
     private func handleQueryError(queryIndex: Int) {
         print("ExpandableQuery> Query \(queryIndex) failed")
         self.queryHandles[queryIndex] = nil
-        aggregateAndTrigger()
+        self.aggregateAndTrigger()
 
-        if self.autoReconnect && UIApplication.shared.applicationState == .active {
+        if self.autoReconnect {
             self.ensureFresh()
         }
     }

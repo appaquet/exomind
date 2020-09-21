@@ -10,8 +10,10 @@
 		458EC161C72B3C9784E6CEE8 /* Pods_ExomindTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BAA1792ED91F713E98050D7 /* Pods_ExomindTests.framework */; };
 		45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */; };
 		45B6B660281C1CC6E661D13E /* Retry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */; };
+		45B6B7AFB59BE04411373421 /* SnoozedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B84D222701DCA1AD9E26 /* SnoozedViewController.swift */; };
 		45B6BA03CFE55DF75F868AAB /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0226A61D7D7AADC875D /* StringExtension.swift */; };
 		45B6BAE9135B464F193AC3D4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0226A61D7D7AADC875D /* StringExtension.swift */; };
+		45B6BC2D44FA8A6C4331BA43 /* RecentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0AF625C6336DCDB990F /* RecentViewController.swift */; };
 		45B6BF9E36D12AC04B0E4E61 /* ExpandableQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */; };
 		45B6BFF8AE9157DF82740038 /* Entities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */; };
 		6D00E1681C03544900B2F7E0 /* TabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D00E1671C03544900B2F7E0 /* TabBarController.swift */; };
@@ -25,6 +27,7 @@
 		6D0F6B641C331A2C00AB9DEC /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D0F6B621C331A2C00AB9DEC /* MainInterface.storyboard */; };
 		6D0F6B681C331A2C00AB9DEC /* ExomindActionExt.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 6D0F6B5E1C331A2B00AB9DEC /* ExomindActionExt.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6D0F6B701C3329E700AB9DEC /* KeychainSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6D0F6B6F1C3329E700AB9DEC /* KeychainSwift.framework */; };
+		6D1F240B2516442900CFA8D9 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1F240A2516442900CFA8D9 /* HomeViewController.swift */; };
 		6D2272751C44107100B0FC61 /* SwitcherButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D2272741C44107100B0FC61 /* SwitcherButton.swift */; };
 		6D2272771C441ED200B0FC61 /* UIViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D2272761C441ED200B0FC61 /* UIViewExtension.swift */; };
 		6D23F61A1C3DB12E00D9A075 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D23F6191C3DB12E00D9A075 /* SearchViewController.swift */; };
@@ -40,12 +43,8 @@
 		6D4CCBE82158708D004636AD /* ExtensionUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4CCBE621587052004636AD /* ExtensionUtils.swift */; };
 		6D5390FE1C6ECF3E0019E56E /* AttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5390FD1C6ECF3E0019E56E /* AttachmentView.swift */; };
 		6D5391001C6EE29F0019E56E /* URLWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5390FF1C6EE29F0019E56E /* URLWebViewController.swift */; };
-		6D570A561DCC140500BD480F /* XMLHttpRequestBridgeExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D570A551DCC140500BD480F /* XMLHttpRequestBridgeExport.swift */; };
 		6D570A581DCC144700BD480F /* JSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D25A1BC418F900F14571 /* JSBridge.swift */; };
 		6D570A631DCC144700BD480F /* JSTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2661BC45B4F00F14571 /* JSTimer.swift */; };
-		6D570A651DCC144700BD480F /* XMLHttpRequestBridgeExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D570A551DCC140500BD480F /* XMLHttpRequestBridgeExport.swift */; };
-		6D570A6C1DCC171E00BD480F /* WebSocketBridgeExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D570A6B1DCC171E00BD480F /* WebSocketBridgeExport.swift */; };
-		6D570A6D1DCC186A00BD480F /* WebSocketBridgeExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D570A6B1DCC171E00BD480F /* WebSocketBridgeExport.swift */; };
 		6D5D077D1BC40D0A007D0011 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */; };
 		6D5D07821BC40D0A007D0011 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D5D07801BC40D0A007D0011 /* Main.storyboard */; };
 		6D5D07841BC40D0A007D0011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6D5D07831BC40D0A007D0011 /* Assets.xcassets */; };
@@ -72,8 +71,6 @@
 		6DAB43391D33102700E08229 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* DateExtension.swift */; };
 		6DB0E47B1C1F32FA000EE49A /* ObjectsIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB0E47A1C1F32FA000EE49A /* ObjectsIcon.swift */; };
 		6DC0D25B1BC418F900F14571 /* JSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D25A1BC418F900F14571 /* JSBridge.swift */; };
-		6DC0D2611BC43CD700F14571 /* WebSocketBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2601BC43CD700F14571 /* WebSocketBridge.swift */; };
-		6DC0D2631BC43D9600F14571 /* XMLHttpRequestBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2621BC43D9600F14571 /* XMLHttpRequestBridge.swift */; };
 		6DC0D2671BC45B4F00F14571 /* JSTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2661BC45B4F00F14571 /* JSTimer.swift */; };
 		6DC0D26D1BC5537500F14571 /* DictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */; };
 		6DC0D2701BC576AC00F14571 /* EntityListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */; };
@@ -140,8 +137,10 @@
 		3E570FC5A697FC8476C178F9 /* Pods-Exomind.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Exomind.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Exomind/Pods-Exomind.debug.xcconfig"; sourceTree = "<group>"; };
 		45B6B0226A61D7D7AADC875D /* StringExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
+		45B6B0AF625C6336DCDB990F /* RecentViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentViewController.swift; sourceTree = "<group>"; };
 		45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExomindMutations.swift; sourceTree = "<group>"; };
 		45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Entities.swift; sourceTree = "<group>"; };
+		45B6B84D222701DCA1AD9E26 /* SnoozedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SnoozedViewController.swift; sourceTree = "<group>"; };
 		45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExpandableQuery.swift; sourceTree = "<group>"; };
 		6772079CC046E94D058060EF /* Pods-ExomindTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ExomindTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ExomindTests/Pods-ExomindTests.debug.xcconfig"; sourceTree = "<group>"; };
 		6D00E1671C03544900B2F7E0 /* TabBarController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabBarController.swift; sourceTree = "<group>"; };
@@ -158,6 +157,7 @@
 		6D0F6B6D1C331E1900AB9DEC /* ExomindActionExt.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = ExomindActionExt.entitlements; sourceTree = "<group>"; };
 		6D0F6B6E1C331E2C00AB9DEC /* Exomind.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Exomind.entitlements; sourceTree = "<group>"; };
 		6D0F6B6F1C3329E700AB9DEC /* KeychainSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = KeychainSwift.framework; path = "Pods/../build/Debug-iphoneos/KeychainSwift.framework"; sourceTree = "<group>"; };
+		6D1F240A2516442900CFA8D9 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		6D2272741C44107100B0FC61 /* SwitcherButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwitcherButton.swift; sourceTree = "<group>"; };
 		6D2272761C441ED200B0FC61 /* UIViewExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewExtension.swift; sourceTree = "<group>"; };
 		6D23472D1D57E4E80025E59C /* bridging-header-tests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "bridging-header-tests.h"; sourceTree = "<group>"; };
@@ -174,8 +174,6 @@
 		6D4CCBE621587052004636AD /* ExtensionUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionUtils.swift; sourceTree = "<group>"; };
 		6D5390FD1C6ECF3E0019E56E /* AttachmentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AttachmentView.swift; sourceTree = "<group>"; };
 		6D5390FF1C6EE29F0019E56E /* URLWebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLWebViewController.swift; sourceTree = "<group>"; };
-		6D570A551DCC140500BD480F /* XMLHttpRequestBridgeExport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XMLHttpRequestBridgeExport.swift; sourceTree = "<group>"; };
-		6D570A6B1DCC171E00BD480F /* WebSocketBridgeExport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebSocketBridgeExport.swift; sourceTree = "<group>"; };
 		6D5D07791BC40D0A007D0011 /* ExomindV2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExomindV2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6D5D07811BC40D0A007D0011 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -204,8 +202,6 @@
 		6DAB3F521D32F74000E08229 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6DB0E47A1C1F32FA000EE49A /* ObjectsIcon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ObjectsIcon.swift; sourceTree = "<group>"; };
 		6DC0D25A1BC418F900F14571 /* JSBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSBridge.swift; sourceTree = "<group>"; };
-		6DC0D2601BC43CD700F14571 /* WebSocketBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebSocketBridge.swift; sourceTree = "<group>"; };
-		6DC0D2621BC43D9600F14571 /* XMLHttpRequestBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XMLHttpRequestBridge.swift; sourceTree = "<group>"; };
 		6DC0D2661BC45B4F00F14571 /* JSTimer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSTimer.swift; sourceTree = "<group>"; };
 		6DC0D26C1BC5537500F14571 /* DictionaryExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryExtension.swift; sourceTree = "<group>"; };
 		6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityListViewController.swift; sourceTree = "<group>"; };
@@ -367,6 +363,7 @@
 				6DE65AC81C5FAC850059CCBE /* SplashViewController.swift */,
 				6D069E5F24DF7C00008983DF /* BootstrapViewController.swift */,
 				6D00E1671C03544900B2F7E0 /* TabBarController.swift */,
+				6D1F240A2516442900CFA8D9 /* HomeViewController.swift */,
 				6DC0D2711BC58B5D00F14571 /* NavigationController.swift */,
 				6DCE04211BFA8F2200DF8A34 /* EntityViewController.swift */,
 				6DCE04251BFAA2DE00DF8A34 /* InboxViewController.swift */,
@@ -380,6 +377,8 @@
 				6D9F68301C999AD100FFC7D9 /* DraftEmailViewController.swift */,
 				6DE65ACE1C5FEDE50059CCBE /* SettingsViewController.swift */,
 				6D5390FF1C6EE29F0019E56E /* URLWebViewController.swift */,
+				45B6B84D222701DCA1AD9E26 /* SnoozedViewController.swift */,
+				45B6B0AF625C6336DCDB990F /* RecentViewController.swift */,
 			);
 			name = "Navigation Controllers";
 			sourceTree = "<group>";
@@ -494,10 +493,6 @@
 				6DC0D25A1BC418F900F14571 /* JSBridge.swift */,
 				6DA4E3391DD2B26B00E5603E /* JSBridgeTests.swift */,
 				6DC0D2661BC45B4F00F14571 /* JSTimer.swift */,
-				6D570A6B1DCC171E00BD480F /* WebSocketBridgeExport.swift */,
-				6DC0D2601BC43CD700F14571 /* WebSocketBridge.swift */,
-				6D570A551DCC140500BD480F /* XMLHttpRequestBridgeExport.swift */,
-				6DC0D2621BC43D9600F14571 /* XMLHttpRequestBridge.swift */,
 			);
 			name = Javascript;
 			sourceTree = "<group>";
@@ -586,13 +581,13 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1000;
-				LastUpgradeCheck = 1150;
+				LastUpgradeCheck = 1200;
 				ORGANIZATIONNAME = Exomind;
 				TargetAttributes = {
 					6D0F6B5D1C331A2B00AB9DEC = {
 						CreatedOnToolsVersion = 7.2;
 						DevelopmentTeam = FHZCN4GU2K;
-						LastSwiftMigration = 1000;
+						LastSwiftMigration = 1200;
 						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
@@ -606,7 +601,7 @@
 					6D5D07781BC40D0A007D0011 = {
 						CreatedOnToolsVersion = 7.0.1;
 						DevelopmentTeam = FHZCN4GU2K;
-						LastSwiftMigration = 1000;
+						LastSwiftMigration = 1200;
 						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
@@ -625,17 +620,16 @@
 					};
 					6DAB3F4D1D32F74000E08229 = {
 						CreatedOnToolsVersion = 7.3.1;
-						LastSwiftMigration = 1000;
+						LastSwiftMigration = 1200;
 						TestTargetID = 6D5D07781BC40D0A007D0011;
 					};
 				};
 			};
 			buildConfigurationList = 6D5D07741BC40D0A007D0011 /* Build configuration list for PBXProject "Exomind" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
 				en,
 				Base,
 			);
@@ -691,7 +685,6 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Exomind/Pods-Exomind-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
 				"${BUILT_PRODUCTS_DIR}/CLTokenInputView/CLTokenInputView.framework",
 				"${BUILT_PRODUCTS_DIR}/Dwifft/Dwifft.framework",
 				"${BUILT_PRODUCTS_DIR}/Exocore/Exocore.framework",
@@ -700,13 +693,11 @@
 				"${BUILT_PRODUCTS_DIR}/MCSwipeTableViewCell/MCSwipeTableViewCell.framework",
 				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
 				"${BUILT_PRODUCTS_DIR}/SwiftProtobuf/SwiftProtobuf.framework",
-				"${BUILT_PRODUCTS_DIR}/SwiftWebSocket/SwiftWebSocket.framework",
 				"${BUILT_PRODUCTS_DIR}/SwiftyJSON/SwiftyJSON.framework",
 				"${BUILT_PRODUCTS_DIR}/UIColor_Hex_Swift/UIColor_Hex_Swift.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CLTokenInputView.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Dwifft.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Exocore.framework",
@@ -715,7 +706,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MCSwipeTableViewCell.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftProtobuf.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftWebSocket.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftyJSON.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/UIColor_Hex_Swift.framework",
 			);
@@ -817,10 +807,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6DC0D2631BC43D9600F14571 /* XMLHttpRequestBridge.swift in Sources */,
 				6D5391001C6EE29F0019E56E /* URLWebViewController.swift in Sources */,
 				6D3D46701C84F6F20037E51B /* NoteViewController.swift in Sources */,
-				6DC0D2611BC43CD700F14571 /* WebSocketBridge.swift in Sources */,
 				6D069E6024DF7C00008983DF /* BootstrapViewController.swift in Sources */,
 				6DCE04261BFAA2DE00DF8A34 /* InboxViewController.swift in Sources */,
 				6DD392061C8680A600B959E8 /* RichTextEditor.swift in Sources */,
@@ -844,6 +832,7 @@
 				6D3463CF1C4EDD64009CC326 /* TaskViewController.swift in Sources */,
 				6D68E6DD1C8F74F1007BB8F4 /* GridIconsView.swift in Sources */,
 				6D4CCBE721587052004636AD /* ExtensionUtils.swift in Sources */,
+				6D1F240B2516442900CFA8D9 /* HomeViewController.swift in Sources */,
 				6DE65ACB1C5FB5520059CCBE /* RootNavigationController.swift in Sources */,
 				6D68E6D51C8A76A4007BB8F4 /* EmailThreadHeader.swift in Sources */,
 				6DE65ACF1C5FEDE50059CCBE /* SettingsViewController.swift in Sources */,
@@ -861,7 +850,6 @@
 				6D00E16E1C03A96900B2F7E0 /* HybridWebView.swift in Sources */,
 				6D5FE49E1C4ED47B006C6E3B /* LinkViewController.swift in Sources */,
 				6DC0D26D1BC5537500F14571 /* DictionaryExtension.swift in Sources */,
-				6D570A561DCC140500BD480F /* XMLHttpRequestBridgeExport.swift in Sources */,
 				6D2272751C44107100B0FC61 /* SwitcherButton.swift in Sources */,
 				6D5D077D1BC40D0A007D0011 /* AppDelegate.swift in Sources */,
 				6D68E6D71C8E1A17007BB8F4 /* EmailBodyWebView.swift in Sources */,
@@ -873,7 +861,6 @@
 				6D3D466E1C84F41D0037E51B /* EmailThreadClosedTableViewCell.swift in Sources */,
 				6D7781CC1C08BBDF00D45299 /* CollectionSelectorViewController.swift in Sources */,
 				6DE65AD11C6007AE0059CCBE /* NotificationsController.swift in Sources */,
-				6D570A6C1DCC171E00BD480F /* WebSocketBridgeExport.swift in Sources */,
 				6D6EC2561C191CED00944436 /* EmailsLogic.swift in Sources */,
 				6D712F3324CC7B1C009D6989 /* ExocoreUtils.swift in Sources */,
 				45B6BAE9135B464F193AC3D4 /* StringExtension.swift in Sources */,
@@ -881,6 +868,8 @@
 				45B6BF9E36D12AC04B0E4E61 /* ExpandableQuery.swift in Sources */,
 				45B6B660281C1CC6E661D13E /* Retry.swift in Sources */,
 				45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */,
+				45B6B7AFB59BE04411373421 /* SnoozedViewController.swift in Sources */,
+				45B6BC2D44FA8A6C4331BA43 /* RecentViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -892,9 +881,7 @@
 				6DA4E3401DD2B35700E5603E /* EmailsLogic.swift in Sources */,
 				6DAB43391D33102700E08229 /* DateExtension.swift in Sources */,
 				6DE998EB1D33C46100B328C6 /* DictionaryExtension.swift in Sources */,
-				6D570A6D1DCC186A00BD480F /* WebSocketBridgeExport.swift in Sources */,
 				6DDEDB5B24BA118C00A345BC /* base.pb.swift in Sources */,
-				6D570A651DCC144700BD480F /* XMLHttpRequestBridgeExport.swift in Sources */,
 				45B6BA03CFE55DF75F868AAB /* StringExtension.swift in Sources */,
 				6D570A631DCC144700BD480F /* JSTimer.swift in Sources */,
 				6D570A581DCC144700BD480F /* JSBridge.swift in Sources */,
@@ -967,7 +954,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -993,7 +980,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -1020,6 +1007,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1078,6 +1066,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1129,7 +1118,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -1155,7 +1144,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -1173,8 +1162,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header-tests.h";
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
-				SWIFT_VERSION = 4.2;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Exomind.app/Exomind";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ExomindV2.app/ExomindV2";
 			};
 			name = Debug;
 		};
@@ -1192,8 +1181,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header-tests.h";
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
-				SWIFT_VERSION = 4.2;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Exomind.app/Exomind";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ExomindV2.app/ExomindV2";
 			};
 			name = Release;
 		};

@@ -28,8 +28,8 @@ export class ColumnsConfig {
         return new ColumnsConfig([ColumnConfig.forSnoozed()]);
     }
 
-    static forHistory(): ColumnsConfig {
-        return new ColumnsConfig([ColumnConfig.forHistory()]);
+    static forRecent(): ColumnsConfig {
+        return new ColumnsConfig([ColumnConfig.forRecent()]);
     }
 
     static forCollections(): ColumnsConfig {
@@ -80,7 +80,7 @@ export class ColumnConfig {
     static EntityToken = 'e';
     static TraitToken = 't';
     static SnoozedToken = 'z';
-    static HistoryToken = 'h';
+    static RecentToken = 'r';
 
     part: string;
     splitPart: string[];
@@ -102,8 +102,8 @@ export class ColumnConfig {
         return new ColumnConfig(ColumnConfig.SnoozedToken);
     }
 
-    static forHistory(): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.HistoryToken);
+    static forRecent(): ColumnConfig {
+        return new ColumnConfig(ColumnConfig.RecentToken);
     }
 
     static forCollections(): ColumnConfig {
@@ -159,7 +159,7 @@ export class ColumnConfig {
     }
 
     get isHistory(): boolean {
-        return this.token === ColumnConfig.HistoryToken;
+        return this.token === ColumnConfig.RecentToken;
     }
 
     get value(): string {
