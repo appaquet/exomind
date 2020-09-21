@@ -82,7 +82,7 @@
     "moment": "^2.25.3",
     "style-loader": "^1.2.1",
     "ts-jest": "^26.1.1",
-    "ts-loader": "^8.0.0",
+    "ts-loader": "^8.0.4",
     "typescript": "^4.0.2",
     "url-loader": "^4.1.0",
     "webpack-cli": "^3.3.11",
