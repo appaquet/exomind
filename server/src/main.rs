@@ -46,18 +46,26 @@ async fn start(config: cli::Config) -> anyhow::Result<()> {
     exm.create_base_entities().await?;
 
     loop {
-        let snoozed_list = exm.get_snoozed().await?;
-        for snoozed_entity in snoozed_list {
-            if let Err(err) = move_snoozed_inbox(&exm, &snoozed_entity).await {
-                error!(
-                    "Error moving snoozed entity {} to inbox: {}",
-                    snoozed_entity.id, err
-                );
-            }
+        if let Err(err) = check_snoozed(&exm).await {
+            error!("Error checking for snoozed entity: {}", err);
         }
 
         delay_for(Duration::from_secs(60)).await;
     }
+}
+
+async fn check_snoozed(exm: &ExomindClient) -> anyhow::Result<()> {
+    let snoozed_list = exm.get_snoozed().await?;
+    for snoozed_entity in snoozed_list {
+        if let Err(err) = move_snoozed_inbox(&exm, &snoozed_entity).await {
+            error!(
+                "Error moving snoozed entity {} to inbox: {}",
+                snoozed_entity.id, err
+            );
+        }
+    }
+
+    Ok(())
 }
 
 async fn move_snoozed_inbox(exm: &ExomindClient, snoozed_entity: &Entity) -> anyhow::Result<()> {
