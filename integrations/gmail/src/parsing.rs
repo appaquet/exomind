@@ -24,11 +24,21 @@ pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThre
 
     for message in messages {
         if let Some(part) = message.payload {
+            let is_draft = message
+                .label_ids
+                .as_ref()
+                .map(|lbls| lbls.iter().any(|l| l == "DRAFT"))
+                .unwrap_or(false);
+            if is_draft {
+                continue;
+            }
+
             let mut email = exomind_core::protos::base::Email::default();
             email.snippet = message.snippet.clone().unwrap_or_default();
             email.source_id = message.id.clone().unwrap_or_default();
             email.read = message
                 .label_ids
+                .as_ref()
                 .map(|lbls| !lbls.iter().any(|l| l == "UNREAD"))
                 .unwrap_or(true);
 
