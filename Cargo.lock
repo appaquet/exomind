@@ -340,12 +340,12 @@ checksum = "4964518bd3b4a8190e832886cdc0da9794f12e8e6c1613a9e90ff331c4c8724b"
 [[package]]
 name = "capnp"
 version = "0.13.3"
-source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#55729c968f70ed29de128f80f8cc515cee3d3e74"
+source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#04b21106c97da1d46983a5c24c4a9e9b14bd7603"
 
 [[package]]
 name = "capnpc"
 version = "0.13.1"
-source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#55729c968f70ed29de128f80f8cc515cee3d3e74"
+source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#04b21106c97da1d46983a5c24c4a9e9b14bd7603"
 dependencies = [
  "capnp",
 ]
@@ -704,7 +704,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#0fca81d39c806cfb775405026cf1289b035e42ab"
+source = "git+https://github.com/appaquet/exocore.git#00ae4085667d2b04e815f72bf16565b84117a6e7"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -715,7 +715,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#0fca81d39c806cfb775405026cf1289b035e42ab"
+source = "git+https://github.com/appaquet/exocore.git#00ae4085667d2b04e815f72bf16565b84117a6e7"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -732,7 +732,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#0fca81d39c806cfb775405026cf1289b035e42ab"
+source = "git+https://github.com/appaquet/exocore.git#00ae4085667d2b04e815f72bf16565b84117a6e7"
 dependencies = [
  "anyhow",
  "bs58",
@@ -767,7 +767,7 @@ dependencies = [
 [[package]]
 name = "exocore-index"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#0fca81d39c806cfb775405026cf1289b035e42ab"
+source = "git+https://github.com/appaquet/exocore.git#00ae4085667d2b04e815f72bf16565b84117a6e7"
 dependencies = [
  "anyhow",
  "bytes 0.5.6",
@@ -787,7 +787,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#0fca81d39c806cfb775405026cf1289b035e42ab"
+source = "git+https://github.com/appaquet/exocore.git#00ae4085667d2b04e815f72bf16565b84117a6e7"
 dependencies = [
  "anyhow",
  "byteorder",
