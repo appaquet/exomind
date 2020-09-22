@@ -352,12 +352,12 @@ checksum = "4964518bd3b4a8190e832886cdc0da9794f12e8e6c1613a9e90ff331c4c8724b"
 [[package]]
 name = "capnp"
 version = "0.13.3"
-source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#55729c968f70ed29de128f80f8cc515cee3d3e74"
+source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#04b21106c97da1d46983a5c24c4a9e9b14bd7603"
 
 [[package]]
 name = "capnpc"
 version = "0.13.1"
-source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#55729c968f70ed29de128f80f8cc515cee3d3e74"
+source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#04b21106c97da1d46983a5c24c4a9e9b14bd7603"
 dependencies = [
  "capnp",
 ]
