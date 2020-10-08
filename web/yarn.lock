@@ -7540,10 +7540,10 @@ sane@^4.0.3:
     minimist "^1.1.1"
     walker "~1.0.5"
 
-sanitize-html@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-2.0.0.tgz#a7ead82fa462b4abed864e226005746bf4a1f078"
-  integrity sha512-oc/F8o32Og3UBR0eeVBqZEVyu1Vzqd0Lhz3AcHomknfJfwrLoybXnUjC0oMBhB9fxIvT2GdGzBvQGqPRSnxtNQ==
+sanitize-html@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-2.1.0.tgz#fd7ae54981277cbda8dbd844c273088acf928d94"
+  integrity sha512-KmMfD0jJGigON1Ll0snYz6QgK+L3wYoi6Zl4jSUZT/rg5Pw55zIKAQSjCiZmxL5izM+qJSFr+PW9WGHuiYobgA==
   dependencies:
     deepmerge "^4.2.2"
     escape-string-regexp "^4.0.0"
