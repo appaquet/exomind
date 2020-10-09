@@ -1,3 +1,5 @@
+use crate::time::ConsistentTimestamp;
+
 use super::{Error, NamedMessage};
 
 pub use prost::Message;
@@ -8,6 +10,10 @@ pub trait ProstTimestampExt {
 
     fn to_timestamp_nanos(&self) -> u64 {
         self.to_chrono_datetime().timestamp_nanos() as u64
+    }
+
+    fn to_consistent_timestamp(&self) -> ConsistentTimestamp {
+        self.to_timestamp_nanos().into()
     }
 }
 
@@ -27,6 +33,12 @@ impl ProstDateTimeExt for chrono::DateTime<chrono::Utc> {
             seconds: self.timestamp(),
             nanos: self.timestamp_subsec_nanos() as i32,
         }
+    }
+}
+
+impl ProstDateTimeExt for ConsistentTimestamp {
+    fn to_proto_timestamp(&self) -> Timestamp {
+        self.to_datetime().to_proto_timestamp()
     }
 }
 

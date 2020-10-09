@@ -1,6 +1,8 @@
 use std::fmt::Debug;
 use std::time::{Duration, Instant};
 
+use futures::Future;
+
 pub fn expect_eventually<F>(cb: F)
 where
     F: FnMut() -> bool,
@@ -25,6 +27,30 @@ where
         timeout,
         start_time.elapsed()
     );
+}
+
+pub async fn async_expect_eventually<F, T>(mut cb: F)
+where
+    F: FnMut() -> T,
+    T: Future<Output = bool>,
+{
+    let begin = Instant::now();
+    let timeout = Duration::from_secs(5);
+    loop {
+        if cb().await {
+            return;
+        } else {
+            if begin.elapsed() > timeout {
+                panic!(
+                    "Expected result within {:?}, but waited {:?} without result",
+                    timeout,
+                    begin.elapsed()
+                );
+            }
+
+            crate::futures::delay_for(Duration::from_millis(100)).await;
+        }
+    }
 }
 
 pub fn expect_result_eventually<F, R, E: Debug>(cb: F) -> R

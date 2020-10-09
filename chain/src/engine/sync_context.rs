@@ -6,7 +6,7 @@ use exocore_core::framing::CapnpFrameBuilder;
 use exocore_core::protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_response, pending_sync_request,
 };
-use exocore_transport::{OutMessage, TransportLayer};
+use exocore_transport::{OutMessage, ServiceType};
 
 /// Synchronization context used by `chain_sync`, `pending_sync` and
 /// `commit_manager` to dispatch messages to other nodes, and dispatch events to
@@ -81,15 +81,15 @@ impl SyncContextMessage {
 
         let message = match self {
             SyncContextMessage::PendingSyncRequest(_, request_builder) => {
-                OutMessage::from_framed_message(cell, TransportLayer::Chain, request_builder)?
+                OutMessage::from_framed_message(cell, ServiceType::Chain, request_builder)?
                     .with_to_nodes(to_nodes)
             }
             SyncContextMessage::ChainSyncRequest(_, request_builder) => {
-                OutMessage::from_framed_message(cell, TransportLayer::Chain, request_builder)?
+                OutMessage::from_framed_message(cell, ServiceType::Chain, request_builder)?
                     .with_to_nodes(to_nodes)
             }
             SyncContextMessage::ChainSyncResponse(_, response_builder) => {
-                OutMessage::from_framed_message(cell, TransportLayer::Chain, response_builder)?
+                OutMessage::from_framed_message(cell, ServiceType::Chain, response_builder)?
                     .with_to_nodes(to_nodes)
             }
         };

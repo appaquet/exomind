@@ -79,10 +79,7 @@ impl RequestTracker {
     }
 
     fn has_responded_last_request(&self) -> bool {
-        match (self.last_request_send, self.last_response_receive) {
-            (Some(send), Some(resp)) if resp > send => true,
-            _ => false,
-        }
+        matches!((self.last_request_send, self.last_response_receive), (Some(send), Some(resp)) if resp > send)
     }
 
     pub fn response_failure_count(&self) -> usize {

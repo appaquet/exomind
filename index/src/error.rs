@@ -63,6 +63,7 @@ pub enum Error {
 
 impl Error {
     pub fn is_fatal(&self) -> bool {
+        #![allow(clippy::match_like_matches_macro)]
         match self {
             Error::Fatal(_) | Error::Poisoned | Error::Dropped | Error::IO(_) => true,
 

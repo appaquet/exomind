@@ -299,10 +299,7 @@ pub enum EngineOperationStatus {
 
 impl EngineOperationStatus {
     pub fn is_committed(&self) -> bool {
-        match self {
-            EngineOperationStatus::Committed(_offset, _height) => true,
-            _ => false,
-        }
+        matches!(self, EngineOperationStatus::Committed(_offset, _height))
     }
 }
 

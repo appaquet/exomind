@@ -8,7 +8,7 @@ use libp2p::swarm::{
 
 use exocore_core::time::Instant;
 
-use crate::lp2p::protocol::{ExocoreProtoHandler, ExocoreProtoMessage};
+use super::protocol::{ExocoreProtoHandler, ExocoreProtoMessage};
 use exocore_core::cell::Node;
 use std::time::Duration;
 

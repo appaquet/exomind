@@ -880,16 +880,14 @@ mod tests {
         assert_eq!(block.operations_iter()?.count(), 0);
 
         // 5 operations
-        let operations = (0..5)
-            .map(|i| {
-                OperationBuilder::new_entry(i, local_node.id(), b"op1")
-                    .sign_and_build(&local_node)
-                    .unwrap()
-                    .frame
-            })
-            .collect::<Vec<_>>();
+        let operations = (0..5).map(|i| {
+            OperationBuilder::new_entry(i, local_node.id(), b"op1")
+                .sign_and_build(&local_node)
+                .unwrap()
+                .frame
+        });
 
-        let block_operations = BlockOperations::from_operations(operations.into_iter())?;
+        let block_operations = BlockOperations::from_operations(operations)?;
         let block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, block_operations)?;
         assert_eq!(block.operations_iter()?.count(), 5);
 

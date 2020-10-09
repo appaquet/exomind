@@ -278,10 +278,7 @@ fn delete_entity_trait() -> anyhow::Result<()> {
     assert!(pending_res
         .mutations
         .iter()
-        .any(|r| match &r.mutation_type {
-            MutationType::TraitTombstone(_) => true,
-            _ => false,
-        }));
+        .any(|r| matches!(&r.mutation_type, MutationType::TraitTombstone(_))));
 
     Ok(())
 }

@@ -18,8 +18,8 @@ use exocore_core::protos::{index::MutationRequest, prost::ProstMessageExt};
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use exocore_core::utils::id::{generate_id, generate_prefixed_id};
 use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};
-use exocore_transport::lp2p::Libp2pTransportConfig;
-use exocore_transport::{Libp2pTransport, TransportHandle, TransportLayer};
+use exocore_transport::p2p::Libp2pTransportConfig;
+use exocore_transport::{Libp2pTransport, ServiceType, TransportServiceHandle};
 
 pub struct Context {
     _runtime: Runtime,
@@ -72,7 +72,7 @@ impl Context {
         let clock = Clock::new();
 
         let store_transport = transport
-            .get_handle(cell.clone(), TransportLayer::Index)
+            .get_handle(cell.clone(), ServiceType::Index)
             .map_err(|err| {
                 error!("Couldn't get transport handle for remote index: {}", err);
                 ContextStatus::Error
@@ -87,12 +87,13 @@ impl Context {
             )?;
 
         let store_handle = Arc::new(remote_store_client.get_handle());
-        let management_transport_handle = transport
-            .get_handle(cell, TransportLayer::None)
-            .map_err(|err| {
-                error!("Couldn't get transport handle: {}", err);
-                ContextStatus::Error
-            })?;
+        let management_transport_handle =
+            transport
+                .get_handle(cell, ServiceType::None)
+                .map_err(|err| {
+                    error!("Couldn't get transport handle: {}", err);
+                    ContextStatus::Error
+                })?;
 
         runtime.spawn(async move {
             let res = transport.run().await;

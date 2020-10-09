@@ -46,7 +46,8 @@ impl Node {
 
         let node = Self::build(public_key, name);
 
-        for addr in config.addresses {
+        let addresses = config.addresses.unwrap_or_default();
+        for addr in addresses.p2p {
             let maddr = addr
                 .parse()
                 .map_err(|err| Error::Cell(format!("Couldn't parse multi-address: {}", err)))?;
@@ -174,7 +175,8 @@ impl LocalNode {
 
         let node = Self::new_from_keypair(keypair);
 
-        for addr in config.listen_addresses {
+        let addresses = config.addresses.unwrap_or_default();
+        for addr in addresses.p2p {
             let maddr = addr.parse().map_err(|err| {
                 Error::Cell(format!("Couldn't parse local node address: {}", err))
             })?;
@@ -258,6 +260,16 @@ impl NodeId {
     pub fn to_peer_id(&self) -> &PeerId {
         &self.0
     }
+
+    pub fn from_bytes(id: Vec<u8>) -> Result<NodeId, Error> {
+        let peer_id = PeerId::from_bytes(id)
+            .map_err(|_| Error::Node("Couldn't convert bytes to peer id".to_string()))?;
+        Ok(NodeId(peer_id))
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        self.0.as_bytes()
+    }
 }
 
 impl std::fmt::Display for NodeId {
@@ -288,6 +300,19 @@ mod tests {
         assert_eq!(node1, node1);
         assert_eq!(node1, node1.clone());
         assert_ne!(node1, node2);
+    }
+
+    #[test]
+    fn node_id_bytes() {
+        let node1 = LocalNode::generate();
+        let node2 = LocalNode::generate();
+
+        assert_ne!(node1.id().as_bytes(), node2.id().as_bytes());
+        assert_eq!(node1.id().as_bytes(), node1.id().as_bytes());
+
+        let n1_bytes = node1.id().as_bytes();
+        let n1_id_bytes = NodeId::from_bytes(n1_bytes.to_vec()).unwrap();
+        assert_eq!(n1_id_bytes, *node1.id());
     }
 
     #[test]

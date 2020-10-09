@@ -10,17 +10,17 @@ repository = "https://github.com/appaquet/exocore"
 license = "Apache-2.0"
 
 [features]
-default = ["core-runtime", "core-logger", "transport-libp2p", "index-local-store", "chain-engine", "chain-directory-chain", "chain-memory-pending"]
+default = ["core-runtime", "core-logger", "transport-p2p", "index-local-store", "chain-engine", "chain-directory-chain", "chain-memory-pending"]
 tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils", "exocore-index/tests-utils"]
 logger = ["core-logger"]
 
-client = ["core-runtime", "transport-libp2p"]
-web = ["transport-libp2p-web"]
+client = ["core-runtime", "transport-p2p"]
+web = ["transport-p2p-web"]
 
 core-runtime = ["exocore-core/runtime"]
 core-logger = ["exocore-core/logger"]
-transport-libp2p = ["exocore-transport/libp2p-full"]
-transport-libp2p-web = ["exocore-transport/libp2p-web"]
+transport-p2p = ["exocore-transport/p2p-full"]
+transport-p2p-web = ["exocore-transport/p2p-web"]
 index-local-store = ["exocore-index/local-store"]
 chain-engine = ["exocore-chain/engine"]
 chain-directory-chain = ["exocore-chain/directory-chain"]

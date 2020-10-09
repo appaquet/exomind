@@ -112,12 +112,11 @@ jobs:
           ls -R clients/web
 
       - name: Commit assets 
-        uses: EndBug/add-and-commit@v4
+        uses: EndBug/add-and-commit@v5
         with:
-          add: 'web/wasm web/tsc web/protos ios/lib ios/swift'
+          add: '--force web/wasm web/tsc web/protos ios/lib ios/swift'
           author_name: Exocore bot
           cwd: 'clients'
-          force: true
           message: 'Build assets'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

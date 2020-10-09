@@ -1163,10 +1163,7 @@ fn find_put_trait<'r>(
     results: &'r MutationResults,
     trait_id: &str,
 ) -> Option<&'r MutationMetadata> {
-    results.mutations.iter().find(|t| match &t.mutation_type {
-        MutationType::TraitPut(put_trait) if put_trait.trait_id == trait_id => true,
-        _ => false,
-    })
+    results.mutations.iter().find(|t| matches!(&t.mutation_type, MutationType::TraitPut(put_trait) if put_trait.trait_id == trait_id))
 }
 
 fn assert_is_put_trait<'r>(

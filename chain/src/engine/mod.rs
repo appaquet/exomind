@@ -11,7 +11,7 @@ use exocore_core::protos::generated::data_transport_capnp::{
 use exocore_core::protos::generated::MessageType;
 use exocore_core::time::Clock;
 use exocore_core::utils::handle_set::HandleSet;
-use exocore_transport::{InEvent, InMessage, OutEvent, TransportHandle};
+use exocore_transport::{InEvent, InMessage, OutEvent, TransportServiceHandle};
 use futures::channel::mpsc;
 use futures::future::FutureExt;
 use futures::{SinkExt, StreamExt};
@@ -46,7 +46,7 @@ pub(crate) mod testing;
 ///   * Chain store: persistent store using a block-chain like data structure
 pub struct Engine<T, CS, PS>
 where
-    T: TransportHandle,
+    T: TransportServiceHandle,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -58,7 +58,7 @@ where
 
 impl<T, CS, PS> Engine<T, CS, PS>
 where
-    T: TransportHandle,
+    T: TransportServiceHandle,
     CS: chain::ChainStore,
     PS: pending::PendingStore,
 {
@@ -224,8 +224,8 @@ where
                 }
                 msg_type => {
                     return Err(EngineError::Other(format!(
-                        "Got an unknown message type: message_type={} transport_layer={:?}",
-                        msg_type, message.layer,
+                        "Got an unknown message type: message_type={} service_type={:?}",
+                        msg_type, message.service_type,
                     )));
                 }
             }

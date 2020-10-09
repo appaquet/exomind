@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 [dependencies]
 exocore-core = { path = "../../core", default-features = false  }
 exocore-index = { path = "../../index", default-features = false }
-exocore-transport = { path = "../../transport", default-features = false, features = ["libp2p-web"]  }
+exocore-transport = { path = "../../transport", default-features = false, features = ["p2p-web"]  }
 thiserror = "1.0"
 anyhow = "1.0"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] } # serde for serialization from JsValue

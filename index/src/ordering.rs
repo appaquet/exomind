@@ -87,19 +87,11 @@ impl OrderingValueExt for OrderingValue {
     }
 
     fn is_after(&self, other: &Self) -> bool {
-        if let Some(std::cmp::Ordering::Greater) = self.partial_cmp(other) {
-            true
-        } else {
-            false
-        }
+        matches!(self.partial_cmp(other), Some(std::cmp::Ordering::Greater))
     }
 
     fn is_before(&self, other: &Self) -> bool {
-        if let Some(std::cmp::Ordering::Less) = self.partial_cmp(other) {
-            true
-        } else {
-            false
-        }
+        matches!(self.partial_cmp(other), Some(std::cmp::Ordering::Less))
     }
 
     fn is_within_page_bound(&self, page: &Paging) -> bool {

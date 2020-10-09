@@ -12,7 +12,7 @@ use exocore_core::protos::generated::index_transport_capnp::{
 };
 use exocore_core::protos::{generated::MessageType, index::MutationResult};
 use exocore_core::time::{Duration, Instant};
-use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportHandle};
+use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportServiceHandle};
 
 use crate::error::Error;
 use crate::query::WatchToken;
@@ -21,7 +21,7 @@ pub struct Server<CS, PS, T>
 where
     CS: exocore_chain::chain::ChainStore,
     PS: exocore_chain::pending::PendingStore,
-    T: TransportHandle,
+    T: TransportServiceHandle,
 {
     config: ServerConfiguration,
     inner: Arc<RwLock<Inner<CS, PS>>>,
@@ -33,7 +33,7 @@ impl<CS, PS, T> Server<CS, PS, T>
 where
     CS: exocore_chain::chain::ChainStore,
     PS: exocore_chain::pending::PendingStore,
-    T: TransportHandle,
+    T: TransportServiceHandle,
 {
     pub fn new(
         config: ServerConfiguration,

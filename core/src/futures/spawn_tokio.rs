@@ -1,5 +1,6 @@
 use futures::Future;
 
+pub use tokio;
 pub use tokio::task::{block_in_place, spawn_blocking};
 
 #[cfg(any(test, feature = "tests-utils", feature = "runtime"))]

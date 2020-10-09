@@ -645,6 +645,7 @@ where
     where
         O: Iterator<Item = OperationId>,
     {
+        #![allow(clippy::needless_collect)] // see https://github.com/rust-lang/rust-clippy/issues/6066
         let mutations = operations_id
             .flat_map(|op_id| match self.chain_handle.get_pending_operation(op_id) {
                 Ok(Some(op)) => IndexOperation::from_pending_engine_operation(op),

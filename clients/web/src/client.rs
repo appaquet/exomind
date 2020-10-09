@@ -10,12 +10,12 @@ use exocore_core::protos::generated::exocore_index::EntityQuery;
 use exocore_core::time::Clock;
 use exocore_index::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::transport::ConnectionStatus;
-use exocore_transport::{InEvent, Libp2pTransport, TransportHandle, TransportLayer};
+use exocore_transport::{InEvent, Libp2pTransport, ServiceType, TransportServiceHandle};
 
 use crate::js::into_js_error;
 use crate::watched_query::WatchedQuery;
 use exocore_core::protos::{index::MutationRequest, prost::ProstMessageExt};
-use exocore_transport::lp2p::Libp2pTransportConfig;
+use exocore_transport::p2p::Libp2pTransportConfig;
 
 static INIT: Once = Once::new();
 
@@ -69,7 +69,7 @@ impl ExocoreClient {
         let clock = Clock::new();
 
         let index_handle = transport
-            .get_handle(cell.clone(), TransportLayer::Index)
+            .get_handle(cell.clone(), ServiceType::Index)
             .unwrap();
         let remote_store = Client::new(
             ClientConfiguration::default(),
@@ -98,8 +98,7 @@ impl ExocoreClient {
             status_change_callback,
         }));
 
-        let mut client_transport_handle =
-            transport.get_handle(cell, TransportLayer::Client).unwrap();
+        let mut client_transport_handle = transport.get_handle(cell, ServiceType::Client).unwrap();
         let inner_clone = inner.clone();
         spawn_future_non_send(async move {
             let mut stream = client_transport_handle.get_stream();

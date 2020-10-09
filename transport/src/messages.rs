@@ -2,7 +2,7 @@ use exocore_core::cell::Node;
 use exocore_core::protos::generated::common_capnp::envelope;
 use exocore_core::protos::generated::MessageType;
 
-use crate::{transport::ConnectionID, Error, TransportLayer};
+use crate::{transport::ConnectionID, Error, ServiceType};
 use exocore_core::cell::{Cell, CellId};
 use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::time::{ConsistentTimestamp, Instant};
@@ -20,7 +20,7 @@ pub struct OutMessage {
 impl OutMessage {
     pub fn from_framed_message<T>(
         cell: &Cell,
-        to_layer: TransportLayer,
+        to_service: ServiceType,
         frame: CapnpFrameBuilder<T>,
     ) -> Result<OutMessage, Error>
     where
@@ -28,7 +28,7 @@ impl OutMessage {
     {
         let mut envelope_frame_builder = CapnpFrameBuilder::<envelope::Owned>::new();
         let mut envelope_message_builder = envelope_frame_builder.get_builder();
-        envelope_message_builder.set_layer(to_layer.to_code());
+        envelope_message_builder.set_layer(to_service.to_code());
         envelope_message_builder.set_type(T::MESSAGE_TYPE);
         envelope_message_builder.set_cell_id(cell.id().as_bytes());
         envelope_message_builder.set_from_node_id(&cell.local_node().id().to_string());
@@ -68,6 +68,16 @@ impl OutMessage {
         self.connection = Some(connection);
         self
     }
+
+    #[cfg(any(test, feature = "tests-utils", feature = "http-server"))]
+    pub(crate) fn to_in_message(&self, from_node: Node) -> Result<Box<InMessage>, Error> {
+        let envelope = self.envelope_builder.as_owned_frame();
+
+        let mut msg = InMessage::from_node_and_frame(from_node, envelope)?;
+        msg.connection = self.connection.clone();
+
+        Ok(msg)
+    }
 }
 
 /// Message receive from another node.
@@ -75,7 +85,7 @@ impl OutMessage {
 pub struct InMessage {
     pub from: Node,
     pub cell_id: CellId,
-    pub layer: TransportLayer,
+    pub service_type: ServiceType,
     pub rendez_vous_id: Option<RendezVousId>,
     pub message_type: u16,
     pub connection: Option<ConnectionID>,
@@ -95,9 +105,12 @@ impl InMessage {
         };
 
         let cell_id = CellId::from_bytes(envelope_reader.get_cell_id()?);
-        let layer_id = envelope_reader.get_layer();
-        let layer = TransportLayer::from_code(layer_id).ok_or_else(|| {
-            Error::Other(format!("Got message with invalid layer id: {}", layer_id))
+        let service_type_id = envelope_reader.get_layer();
+        let service_type = ServiceType::from_code(service_type_id).ok_or_else(|| {
+            Error::Other(format!(
+                "Got message with invalid service type id: {}",
+                service_type_id
+            ))
         })?;
 
         let message_type = envelope_reader.get_type();
@@ -105,7 +118,7 @@ impl InMessage {
         Ok(Box::new(InMessage {
             from,
             cell_id,
-            layer,
+            service_type,
             rendez_vous_id,
             message_type,
             connection: None,
@@ -134,9 +147,9 @@ impl InMessage {
     pub fn get_reply_token(&self) -> Result<MessageReplyToken, Error> {
         Ok(MessageReplyToken {
             from: self.from.clone(),
-            layer: self.layer,
+            service_type: self.service_type,
             rendez_vous_id: self.get_rendez_vous_id()?,
-            connection: self.connection,
+            connection: self.connection.clone(),
         })
     }
 
@@ -155,8 +168,8 @@ impl InMessage {
     fn get_rendez_vous_id(&self) -> Result<RendezVousId, Error> {
         self.rendez_vous_id.ok_or_else(|| {
             Error::Other(format!(
-                "Tried to respond to an InMessage without a follow id (message_type={} layer={:?})",
-                self.message_type, self.layer
+                "Tried to respond to an InMessage without a follow id (message_type={} service_type={:?})",
+                self.message_type, self.service_type
             ))
         })
     }
@@ -167,7 +180,7 @@ impl InMessage {
 #[derive(Clone)]
 pub struct MessageReplyToken {
     from: Node,
-    layer: TransportLayer,
+    service_type: ServiceType,
     rendez_vous_id: RendezVousId,
     connection: Option<ConnectionID>,
 }
@@ -181,11 +194,11 @@ impl MessageReplyToken {
     where
         T: for<'a> MessageType<'a>,
     {
-        let mut out_message = OutMessage::from_framed_message(cell, self.layer, frame)?
+        let mut out_message = OutMessage::from_framed_message(cell, self.service_type, frame)?
             .with_to_node(self.from.clone())
             .with_rendez_vous_id(self.rendez_vous_id);
 
-        out_message.connection = self.connection;
+        out_message.connection = self.connection.clone();
 
         Ok(out_message)
     }

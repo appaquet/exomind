@@ -16,9 +16,6 @@ pub enum ChainSyncError {
 
 impl ChainSyncError {
     pub fn is_fatal(&self) -> bool {
-        match *self {
-            ChainSyncError::Diverged(_) => true,
-            _ => false,
-        }
+        matches!(self, ChainSyncError::Diverged(_))
     }
 }

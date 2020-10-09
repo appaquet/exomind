@@ -9,7 +9,7 @@ crate-type = ["staticlib"]
 
 [dependencies]
 exocore-core = { path = "../../core", features = ["runtime", "logger"] }
-exocore-transport = { path = "../../transport", features = ["libp2p-full"] }
+exocore-transport = { path = "../../transport", features = ["p2p-full"] }
 exocore-index = { path = "../../index", default-features = false }
 libc = "0.2"
 log4rs = "0.13"

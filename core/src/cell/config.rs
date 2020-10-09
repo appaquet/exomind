@@ -224,6 +224,7 @@ mod tests {
     use crate::protos::{
         apps::manifest_schema,
         core::cell_application_config,
+        core::NodeAddresses,
         generated::exocore_core::{
             cell_node_config, node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig,
             NodeCellConfig, NodeConfig,
@@ -251,14 +252,20 @@ mod tests {
                             public_key: "pk".to_string(),
                             name: "node_name".to_string(),
                             id: String::new(),
-                            addresses: vec!["maddr".to_string()],
+                            addresses: Some(NodeAddresses {
+                                p2p: vec!["maddr".to_string()],
+                                http: vec!["httpaddr".to_string()],
+                            }),
                         }),
                         roles: vec![cell_node_config::Role::InvalidRole.into()],
                     }],
                     apps: vec![],
                 })),
             }],
-            listen_addresses: vec!["maddr".to_string()],
+            addresses: Some(NodeAddresses {
+                p2p: vec!["maddr".to_string()],
+                http: vec!["httpaddr".to_string()],
+            }),
         };
 
         let yaml = serde_yaml::to_string(&conf_ser)?;
@@ -360,9 +367,10 @@ name: node name
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
 public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
 
-listen_addresses:
-  - /ip4/0.0.0.0/tcp/3330
-  - /ip4/0.0.0.0/tcp/3341/ws
+addresses:
+  p2p:
+    - /ip4/0.0.0.0/tcp/3330
+    - /ip4/0.0.0.0/tcp/3341/ws
 
 cells:
    - location:
@@ -376,7 +384,8 @@ cells:
                    name: node name
                    public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
                    addresses:
-                     - /ip4/192.168.2.67/tcp/3330
+                     p2p:
+                       - /ip4/192.168.2.67/tcp/3330
                  roles:
                    - 1
              apps:
@@ -429,9 +438,10 @@ cells:
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
 public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
 
-listen_addresses:
-  - /ip4/0.0.0.0/tcp/3330
-  - /ip4/0.0.0.0/tcp/3341/ws
+addresses:
+  p2p:
+    - /ip4/0.0.0.0/tcp/3330
+    - /ip4/0.0.0.0/tcp/3341/ws
 
 cells:
    - location:
@@ -441,7 +451,8 @@ cells:
              - node:
                    public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
                    addresses:
-                      - /ip4/192.168.2.67/tcp/3330
+                      p2p:
+                         - /ip4/192.168.2.67/tcp/3330
 "#;
 
         node_config_from_yaml(yaml.as_bytes())?;

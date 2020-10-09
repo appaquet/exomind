@@ -6,21 +6,24 @@ extern crate log;
 
 pub mod error;
 pub mod messages;
+pub mod streams;
 pub mod transport;
 
-#[cfg(feature = "libp2p-base")]
-#[macro_use]
-pub mod lp2p;
+#[cfg(feature = "p2p-base")]
+pub mod p2p;
 
-#[cfg(feature = "libp2p-base")]
-pub use lp2p::{Libp2pTransport, Libp2pTransportHandle};
+#[cfg(feature = "p2p-base")]
+pub use p2p::{Libp2pTransport, Libp2pTransportServiceHandle};
+
+#[cfg(feature = "http-server")]
+pub mod http;
+
+#[cfg(any(feature = "http-server", feature = "p2p-full"))]
+pub mod either;
 
 #[cfg(any(test, feature = "tests-utils"))]
-pub mod mock;
-
-#[cfg(feature = "libp2p-base")]
-pub mod either;
+pub mod testing;
 
 pub use error::Error;
 pub use messages::{InMessage, OutMessage};
-pub use transport::{InEvent, OutEvent, TransportHandle, TransportLayer};
+pub use transport::{InEvent, OutEvent, ServiceType, TransportServiceHandle};

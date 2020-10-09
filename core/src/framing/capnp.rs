@@ -67,7 +67,7 @@ where
         let opts = capnp::message::ReaderOptions {
             // This remove security limit, but we keep reusing the reader and we eventually reach
             // that limit because of it.
-            traversal_limit_in_words: std::u64::MAX,
+            traversal_limit_in_words: std::usize::MAX as u64,
             ..Default::default()
         };
         let mut data = capnp_frame.exposed_data();

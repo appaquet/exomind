@@ -1,7 +1,7 @@
 /// Transport related error
 #[derive(Debug, thiserror::Error, Clone)]
 pub enum Error {
-    #[cfg(feature = "libp2p-base")]
+    #[cfg(feature = "p2p-base")]
     #[error("libp2p transport error: {0:?}")]
     Libp2pTransport(#[from] std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>),
 
@@ -24,7 +24,7 @@ pub enum Error {
     Other(String),
 }
 
-#[cfg(feature = "libp2p-base")]
+#[cfg(feature = "p2p-base")]
 impl<Terr> From<libp2p::core::transport::TransportError<Terr>> for Error
 where
     Terr: std::error::Error + Send + Sync + 'static,

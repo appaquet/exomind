@@ -18,8 +18,8 @@ use crate::engine::{EngineHandle, EngineOperation, Event, RequestTrackerConfig};
 use crate::operation::OperationId;
 use crate::*;
 use exocore_core::cell::FullCell;
-use exocore_transport::mock::MockTransport;
-use exocore_transport::TransportLayer;
+use exocore_transport::testing::MockTransport;
+use exocore_transport::ServiceType;
 
 /// exocore-chain testing utility
 pub struct TestChainCluster {
@@ -212,7 +212,7 @@ impl TestChainCluster {
     pub fn start_engine(&mut self, node_idx: usize) {
         let transport = self
             .transport_hub
-            .get_transport(self.nodes[node_idx].clone(), TransportLayer::Chain);
+            .get_transport(self.nodes[node_idx].clone(), ServiceType::Chain);
 
         let mut engine = Engine::new(
             self.engines_config[node_idx].clone(),
