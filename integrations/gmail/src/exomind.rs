@@ -19,7 +19,7 @@ use exocore::{
         index::{Entity, Reference, Trait},
         prost::Message,
     },
-    transport::{Libp2pTransport, TransportLayer},
+    transport::{Libp2pTransport, ServiceType},
 };
 use exomind_core::protos::base::{Account, AccountType, CollectionChild, Email, EmailThread};
 
@@ -40,7 +40,7 @@ impl ExomindClient {
         let clock = Clock::new();
 
         let mut transport = Libp2pTransport::new(local_node.clone(), Default::default());
-        let store_transport = transport.get_handle(cell.clone(), TransportLayer::Index)?;
+        let store_transport = transport.get_handle(cell.clone(), ServiceType::Index)?;
 
         spawn_future(async move {
             let res = transport.run().await;

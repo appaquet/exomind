@@ -2,7 +2,7 @@ use exocore::{
     core::cell::Cell, core::futures::spawn_future, core::time::Clock,
     index::mutation::MutationBuilder, index::query::QueryBuilder, index::remote::Client,
     index::remote::ClientHandle, protos::index::Entity, protos::index::Trait,
-    protos::prost::ProstAnyPackMessageExt, transport::Libp2pTransport, transport::TransportLayer,
+    protos::prost::ProstAnyPackMessageExt, transport::Libp2pTransport, transport::ServiceType,
 };
 use exomind_core::protos::base::{Collection, Postponed};
 
@@ -25,7 +25,7 @@ impl ExomindClient {
         let clock = Clock::new();
 
         let mut transport = Libp2pTransport::new(local_node.clone(), Default::default());
-        let store_transport = transport.get_handle(cell.clone(), TransportLayer::Index)?;
+        let store_transport = transport.get_handle(cell.clone(), ServiceType::Index)?;
 
         spawn_future(async move {
             let res = transport.run().await;
