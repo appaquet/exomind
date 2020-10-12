@@ -14,6 +14,9 @@ message MutationRequest {
 
     /// Waits for mutation to be indexed and returns the mutated entities.
     bool return_entities = 3;
+
+    /// If an entity ID is generated for the mutated entities, reuse the same ID for all mutations.
+    bool common_entity_id = 4;
 }
 
 message MutationResult {

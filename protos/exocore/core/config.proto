@@ -15,9 +15,15 @@ message LocalNodeConfig {
 
     string path = 5;
 
-    repeated string listen_addresses = 6;
+    NodeAddresses addresses = 6;
 
     repeated NodeCellConfig cells = 7;
+}
+
+message NodeAddresses {
+    repeated string p2p = 1;
+
+    repeated string http = 2;
 }
 
 message NodeCellConfig {
@@ -62,7 +68,7 @@ message NodeConfig {
 
     string id = 3;
 
-    repeated string addresses = 4;
+    NodeAddresses addresses = 4;
 }
 
 message CellApplicationConfig {

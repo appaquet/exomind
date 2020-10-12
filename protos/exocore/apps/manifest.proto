@@ -15,6 +15,7 @@ message Manifest {
 message ManifestSchema {
     oneof source {
         string file = 1;
+
         bytes bytes = 2;
     }
 }
