@@ -11,13 +11,13 @@ import { Message } from '../../objects/message';
 import './collection-selector.less';
 
 interface IProps {
-    entity: exocore.index.IEntity;
+    entity: exocore.store.IEntity;
 }
 
 interface IState {
     entity?: EntityTraits;
     entityParentsIds?: string[],
-    entityParents?: exocore.index.IEntityResult[],
+    entityParents?: exocore.store.IEntityResult[],
     keywords: string;
     debouncedKeywords?: string;
 }
@@ -100,7 +100,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         );
     }
 
-    private renderCollections(collectionResults: exocore.index.IEntityResult[]): React.ReactNode {
+    private renderCollections(collectionResults: exocore.store.IEntityResult[]): React.ReactNode {
         if (collectionResults.length > 0) {
             const parentsIds = _.keyBy(this.state.entityParentsIds ?? [])
             return _.chain(collectionResults)
@@ -193,7 +193,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
             const mutation = MutationBuilder
                 .updateEntity(this.state.entity.id)
                 .putTrait(new exomind.base.CollectionChild({
-                    collection: new exocore.index.Reference({
+                    collection: new exocore.store.Reference({
                         entityId: collectionEntity.id,
                     }),
                     weight: new Date().getTime(),

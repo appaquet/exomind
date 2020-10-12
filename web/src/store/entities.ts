@@ -2,18 +2,18 @@ import { Exocore, exocore, fromProtoTimestamp, MutationBuilder } from 'exocore';
 import { exomind } from '../protos';
 
 export class EntityTraits {
-    public entity: exocore.index.IEntity;
+    public entity: exocore.store.IEntity;
 
-    private typeTraits: { [type: string]: exocore.index.ITrait[] } = {}
-    private idTraits: { [id: string]: exocore.index.ITrait } = {}
+    private typeTraits: { [type: string]: exocore.store.ITrait[] } = {}
+    private idTraits: { [id: string]: exocore.store.ITrait } = {}
     private idInstances: { [id: string]: EntityTrait<unknown> } = {}
     private priorityTraitId?: string
 
-    constructor(entity: exocore.index.IEntity) {
+    constructor(entity: exocore.store.IEntity) {
         this.entity = entity;
 
         // check if it's a special entity (ex: inbox)
-        let priorityTrait: [exocore.index.ITrait, ITraitConstants] = null;
+        let priorityTrait: [exocore.store.ITrait, ITraitConstants] = null;
         if (this.entity.id in TRAITS_CONSTANTS) {
             const traitsConsts = TRAITS_CONSTANTS[this.entity.id];
             for (const trait of this.entity.traits) {
@@ -68,7 +68,7 @@ export class EntityTraits {
 
     traitsOfType<T>(msg: unknown): EntityTrait<T>[] {
         const msgType = Exocore.registry.messageFullName(msg);
-        return this.entity.traits.flatMap((trait: exocore.index.ITrait) => {
+        return this.entity.traits.flatMap((trait: exocore.store.ITrait) => {
             if (trait.message.type_url.endsWith(msgType)) {
                 return [this.trait(trait.id)];
             } else {
@@ -116,11 +116,11 @@ export class EntityTraits {
 }
 
 export class EntityTrait<T> {
-    trait: exocore.index.ITrait;
+    trait: exocore.store.ITrait;
     message: T;
     et: EntityTraits;
 
-    constructor(et: EntityTraits, trait: exocore.index.ITrait, message: T) {
+    constructor(et: EntityTraits, trait: exocore.store.ITrait, message: T) {
         this.et = et;
         this.trait = trait;
         this.message = message;
@@ -200,7 +200,7 @@ export class EntityTrait<T> {
         return !!this.constants.rename;
     }
 
-    async rename(newName: string): Promise<exocore.index.IMutationResult> {
+    async rename(newName: string): Promise<exocore.store.IMutationResult> {
         if (!this.constants.rename) {
             return;
         }

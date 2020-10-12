@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package exocore.test;
 
-import "exocore/index/options.proto";
-import "exocore/index/entity.proto";
+import "exocore/store/options.proto";
+import "exocore/store/entity.proto";
 import "google/protobuf/timestamp.proto";
 
 message TestMessage {
@@ -38,9 +38,9 @@ message TestMessage {
 
     int32 int3 = 19 [(exocore.indexed) = true, (exocore.sorted) = true];
 
-    exocore.index.Reference ref1 = 13 [(exocore.indexed) = true];
+    exocore.store.Reference ref1 = 13 [(exocore.indexed) = true];
 
-    exocore.index.Reference ref2 = 14;
+    exocore.store.Reference ref2 = 14;
 
     string grouped1 = 20 [(exocore.field_group) = 1];
 

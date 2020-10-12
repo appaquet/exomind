@@ -15,4 +15,4 @@ $EXOMIND_WEB_ROOT/node_modules/.bin/pbjs \
     -p "$EXOMIND_ROOT/protos/" \
     -r 'exomind-root' \
     $EXOMIND_ROOT/protos/exomind/base.proto \
-    $EXOMIND_ROOT/protos/exocore/index/mutation.proto
+    $EXOMIND_ROOT/protos/exocore/store/mutation.proto

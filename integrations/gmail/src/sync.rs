@@ -10,9 +10,9 @@ use crate::{
     parsing,
 };
 use exocore::core::{protos::prost::ProstTimestampExt, time::ConsistentTimestamp};
-use exocore::{chain::operation::OperationId, core::protos::index::Reference};
-use exocore::{core::time::Utc, index::entity::EntityId};
-use exocore::{index::entity::EntityExt, protos::index::Entity};
+use exocore::{chain::operation::OperationId, core::protos::store::Reference};
+use exocore::{core::time::Utc, store::entity::EntityId};
+use exocore::{store::entity::EntityExt, protos::store::Entity};
 use exomind_core::protos::base::{CollectionChild, Email, EmailThread};
 
 pub struct AccountSynchronizer {

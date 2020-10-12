@@ -37,5 +37,5 @@ async function initialize(config: Record<string, unknown>): Promise<void> {
     instance.registry.registerMessage(exomind.base.Task, 'exomind.base.Task');
     instance.registry.registerMessage(exomind.base.Note, 'exomind.base.Note');
     instance.registry.registerMessage(exomind.base.Link, 'exomind.base.Link');
-    instance.registry.registerMessage(exomind.base.Postponed, 'exomind.base.Postponed');
+    instance.registry.registerMessage(exomind.base.Snoozed, 'exomind.base.Snoozed');
 }

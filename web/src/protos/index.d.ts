@@ -99,7 +99,7 @@ export namespace exomind {
         interface ICollectionChild {
 
             /** CollectionChild collection */
-            collection?: (exocore.index.IReference|null);
+            collection?: (exocore.store.IReference|null);
 
             /** CollectionChild weight */
             weight?: (number|Long|null);
@@ -115,7 +115,7 @@ export namespace exomind {
             constructor(properties?: exomind.base.ICollectionChild);
 
             /** CollectionChild collection. */
-            public collection?: (exocore.index.IReference|null);
+            public collection?: (exocore.store.IReference|null);
 
             /** CollectionChild weight. */
             public weight: (number|Long);
@@ -191,91 +191,91 @@ export namespace exomind {
             public toJSON(): { [k: string]: any };
         }
 
-        /** Properties of a Postponed. */
-        interface IPostponed {
+        /** Properties of a Snoozed. */
+        interface ISnoozed {
 
-            /** Postponed untilDate */
+            /** Snoozed untilDate */
             untilDate?: (google.protobuf.ITimestamp|null);
         }
 
-        /** Represents a Postponed. */
-        class Postponed implements IPostponed {
+        /** Represents a Snoozed. */
+        class Snoozed implements ISnoozed {
 
             /**
-             * Constructs a new Postponed.
+             * Constructs a new Snoozed.
              * @param [properties] Properties to set
              */
-            constructor(properties?: exomind.base.IPostponed);
+            constructor(properties?: exomind.base.ISnoozed);
 
-            /** Postponed untilDate. */
+            /** Snoozed untilDate. */
             public untilDate?: (google.protobuf.ITimestamp|null);
 
             /**
-             * Creates a new Postponed instance using the specified properties.
+             * Creates a new Snoozed instance using the specified properties.
              * @param [properties] Properties to set
-             * @returns Postponed instance
+             * @returns Snoozed instance
              */
-            public static create(properties?: exomind.base.IPostponed): exomind.base.Postponed;
+            public static create(properties?: exomind.base.ISnoozed): exomind.base.Snoozed;
 
             /**
-             * Encodes the specified Postponed message. Does not implicitly {@link exomind.base.Postponed.verify|verify} messages.
-             * @param message Postponed message or plain object to encode
+             * Encodes the specified Snoozed message. Does not implicitly {@link exomind.base.Snoozed.verify|verify} messages.
+             * @param message Snoozed message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encode(message: exomind.base.IPostponed, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encode(message: exomind.base.ISnoozed, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Encodes the specified Postponed message, length delimited. Does not implicitly {@link exomind.base.Postponed.verify|verify} messages.
-             * @param message Postponed message or plain object to encode
+             * Encodes the specified Snoozed message, length delimited. Does not implicitly {@link exomind.base.Snoozed.verify|verify} messages.
+             * @param message Snoozed message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encodeDelimited(message: exomind.base.IPostponed, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encodeDelimited(message: exomind.base.ISnoozed, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Decodes a Postponed message from the specified reader or buffer.
+             * Decodes a Snoozed message from the specified reader or buffer.
              * @param reader Reader or buffer to decode from
              * @param [length] Message length if known beforehand
-             * @returns Postponed
+             * @returns Snoozed
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exomind.base.Postponed;
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exomind.base.Snoozed;
 
             /**
-             * Decodes a Postponed message from the specified reader or buffer, length delimited.
+             * Decodes a Snoozed message from the specified reader or buffer, length delimited.
              * @param reader Reader or buffer to decode from
-             * @returns Postponed
+             * @returns Snoozed
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exomind.base.Postponed;
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exomind.base.Snoozed;
 
             /**
-             * Verifies a Postponed message.
+             * Verifies a Snoozed message.
              * @param message Plain object to verify
              * @returns `null` if valid, otherwise the reason why it is not
              */
             public static verify(message: { [k: string]: any }): (string|null);
 
             /**
-             * Creates a Postponed message from a plain object. Also converts values to their respective internal types.
+             * Creates a Snoozed message from a plain object. Also converts values to their respective internal types.
              * @param object Plain object
-             * @returns Postponed
+             * @returns Snoozed
              */
-            public static fromObject(object: { [k: string]: any }): exomind.base.Postponed;
+            public static fromObject(object: { [k: string]: any }): exomind.base.Snoozed;
 
             /**
-             * Creates a plain object from a Postponed message. Also converts values to other types if specified.
-             * @param message Postponed
+             * Creates a plain object from a Snoozed message. Also converts values to other types if specified.
+             * @param message Snoozed
              * @param [options] Conversion options
              * @returns Plain object
              */
-            public static toObject(message: exomind.base.Postponed, options?: $protobuf.IConversionOptions): { [k: string]: any };
+            public static toObject(message: exomind.base.Snoozed, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
             /**
-             * Converts this Postponed to JSON.
+             * Converts this Snoozed to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
@@ -411,7 +411,7 @@ export namespace exomind {
         interface IEmailThread {
 
             /** EmailThread account */
-            account?: (exocore.index.IReference|null);
+            account?: (exocore.store.IReference|null);
 
             /** EmailThread sourceId */
             sourceId?: (string|null);
@@ -426,7 +426,7 @@ export namespace exomind {
             snippet?: (string|null);
 
             /** EmailThread lastEmail */
-            lastEmail?: (exocore.index.IReference|null);
+            lastEmail?: (exocore.store.IReference|null);
 
             /** EmailThread read */
             read?: (boolean|null);
@@ -442,7 +442,7 @@ export namespace exomind {
             constructor(properties?: exomind.base.IEmailThread);
 
             /** EmailThread account. */
-            public account?: (exocore.index.IReference|null);
+            public account?: (exocore.store.IReference|null);
 
             /** EmailThread sourceId. */
             public sourceId: string;
@@ -457,7 +457,7 @@ export namespace exomind {
             public snippet: string;
 
             /** EmailThread lastEmail. */
-            public lastEmail?: (exocore.index.IReference|null);
+            public lastEmail?: (exocore.store.IReference|null);
 
             /** EmailThread read. */
             public read: boolean;
@@ -537,7 +537,7 @@ export namespace exomind {
         interface IEmail {
 
             /** Email account */
-            account?: (exocore.index.IReference|null);
+            account?: (exocore.store.IReference|null);
 
             /** Email sourceId */
             sourceId?: (string|null);
@@ -583,7 +583,7 @@ export namespace exomind {
             constructor(properties?: exomind.base.IEmail);
 
             /** Email account. */
-            public account?: (exocore.index.IReference|null);
+            public account?: (exocore.store.IReference|null);
 
             /** Email sourceId. */
             public sourceId: string;
@@ -693,10 +693,10 @@ export namespace exomind {
         interface IDraftEmail {
 
             /** DraftEmail account */
-            account?: (exocore.index.IReference|null);
+            account?: (exocore.store.IReference|null);
 
             /** DraftEmail inReplyTo */
-            inReplyTo?: (exocore.index.IReference|null);
+            inReplyTo?: (exocore.store.IReference|null);
 
             /** DraftEmail to */
             to?: (exomind.base.IContact[]|null);
@@ -733,10 +733,10 @@ export namespace exomind {
             constructor(properties?: exomind.base.IDraftEmail);
 
             /** DraftEmail account. */
-            public account?: (exocore.index.IReference|null);
+            public account?: (exocore.store.IReference|null);
 
             /** DraftEmail inReplyTo. */
-            public inReplyTo?: (exocore.index.IReference|null);
+            public inReplyTo?: (exocore.store.IReference|null);
 
             /** DraftEmail to. */
             public to: exomind.base.IContact[];
@@ -1432,8 +1432,8 @@ export namespace exomind {
 /** Namespace exocore. */
 export namespace exocore {
 
-    /** Namespace index. */
-    namespace index {
+    /** Namespace store. */
+    namespace store {
 
         /** Properties of a Reference. */
         interface IReference {
@@ -1452,7 +1452,7 @@ export namespace exocore {
              * Constructs a new Reference.
              * @param [properties] Properties to set
              */
-            constructor(properties?: exocore.index.IReference);
+            constructor(properties?: exocore.store.IReference);
 
             /** Reference entityId. */
             public entityId: string;
@@ -1465,23 +1465,23 @@ export namespace exocore {
              * @param [properties] Properties to set
              * @returns Reference instance
              */
-            public static create(properties?: exocore.index.IReference): exocore.index.Reference;
+            public static create(properties?: exocore.store.IReference): exocore.store.Reference;
 
             /**
-             * Encodes the specified Reference message. Does not implicitly {@link exocore.index.Reference.verify|verify} messages.
+             * Encodes the specified Reference message. Does not implicitly {@link exocore.store.Reference.verify|verify} messages.
              * @param message Reference message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encode(message: exocore.index.IReference, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encode(message: exocore.store.IReference, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Encodes the specified Reference message, length delimited. Does not implicitly {@link exocore.index.Reference.verify|verify} messages.
+             * Encodes the specified Reference message, length delimited. Does not implicitly {@link exocore.store.Reference.verify|verify} messages.
              * @param message Reference message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encodeDelimited(message: exocore.index.IReference, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encodeDelimited(message: exocore.store.IReference, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
              * Decodes a Reference message from the specified reader or buffer.
@@ -1491,7 +1491,7 @@ export namespace exocore {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.index.Reference;
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): exocore.store.Reference;
 
             /**
              * Decodes a Reference message from the specified reader or buffer, length delimited.
@@ -1500,7 +1500,7 @@ export namespace exocore {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.index.Reference;
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): exocore.store.Reference;
 
             /**
              * Verifies a Reference message.
@@ -1514,7 +1514,7 @@ export namespace exocore {
              * @param object Plain object
              * @returns Reference
              */
-            public static fromObject(object: { [k: string]: any }): exocore.index.Reference;
+            public static fromObject(object: { [k: string]: any }): exocore.store.Reference;
 
             /**
              * Creates a plain object from a Reference message. Also converts values to other types if specified.
@@ -1522,7 +1522,7 @@ export namespace exocore {
              * @param [options] Conversion options
              * @returns Plain object
              */
-            public static toObject(message: exocore.index.Reference, options?: $protobuf.IConversionOptions): { [k: string]: any };
+            public static toObject(message: exocore.store.Reference, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
             /**
              * Converts this Reference to JSON.

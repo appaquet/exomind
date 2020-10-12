@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package exocore.index;
+package exocore.store;
 
-import "exocore/index/entity.proto";
+import "exocore/store/entity.proto";
 import "google/protobuf/timestamp.proto";
 
 message EntityQuery {

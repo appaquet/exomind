@@ -15,12 +15,12 @@ import { Message } from "../message";
 import './children.less';
 
 interface IProps {
-    parent?: exocore.index.IEntity;
+    parent?: exocore.store.IEntity;
     parentId?: string;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: exocore.index.IEntity) => void;
+    onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
 
     sections?: string[];
     section?: string;
@@ -30,7 +30,7 @@ interface IProps {
 }
 
 interface IState {
-    parent?: exocore.index.IEntity;
+    parent?: exocore.store.IEntity;
     hovered: boolean;
 }
 
@@ -50,11 +50,11 @@ export class Children extends React.Component<IProps, IState> {
             .count(30)
             .orderByField('weight', false)
             .project(
-                new exocore.index.Projection({
+                new exocore.store.Projection({
                     fieldGroupIds: [1],
                     package: ["exomind.base"],
                 }),
-                new exocore.index.Projection({
+                new exocore.store.Projection({
                     skip: true,
                 })
             )
@@ -214,9 +214,9 @@ export class Children extends React.Component<IProps, IState> {
 
         let mb = MutationBuilder
             .updateEntity(et.id)
-            .putTrait(new exomind.base.Postponed({
+            .putTrait(new exomind.base.Snoozed({
                 untilDate: toProtoTimestamp(date),
-            }), "postponed")
+            }), "snoozed")
             .returnEntities();
 
         if (this.parentId === 'inbox') {
@@ -247,7 +247,7 @@ export class Children extends React.Component<IProps, IState> {
         const mb = MutationBuilder
             .updateEntity(et.id)
             .putTrait(new exomind.base.CollectionChild({
-                collection: new exocore.index.Reference({
+                collection: new exocore.store.Reference({
                     entityId: et.id,
                 }),
                 weight: new Date().getTime(),
@@ -268,14 +268,14 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private handleDropInEntity(droppedItem: IDroppedItem) {
-        const getEntityParentRelation = (entity: exocore.index.IEntity, parentId: string) => {
+        const getEntityParentRelation = (entity: exocore.store.IEntity, parentId: string) => {
             return new EntityTraits(entity)
                 .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
                 .filter((e) => e.message.collection.entityId == parentId)
                 .shift();
         }
 
-        const getEntityParentWeight = (entity: exocore.index.IEntity): number => {
+        const getEntityParentWeight = (entity: exocore.store.IEntity): number => {
             const child = getEntityParentRelation(entity, this.parentId)
             return child.message.weight as number;
         }
@@ -304,7 +304,7 @@ export class Children extends React.Component<IProps, IState> {
         let mb = MutationBuilder
             .updateEntity(droppedEntity.id)
             .putTrait(new exomind.base.CollectionChild({
-                collection: new exocore.index.Reference({
+                collection: new exocore.store.Reference({
                     entityId: this.parentId
                 }),
                 weight: weight,
@@ -324,14 +324,14 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private handleCreatedEntity(entity: exocore.index.IEntity) {
+    private handleCreatedEntity(entity: exocore.store.IEntity) {
         if (this.props.onSelectionChange && this.props.selection) {
             const newSelection = this.props.selection.withItem(SelectedItem.fromEntity(entity));
             this.props.onSelectionChange(newSelection);
         }
     }
 
-    private removeFromSelection(entity: exocore.index.IEntity) {
+    private removeFromSelection(entity: exocore.store.IEntity) {
         if (this.props.onSelectionChange && this.props.selection) {
             const newSelection = this.props.selection.withoutItem(SelectedItem.fromEntity(entity));
             this.props.onSelectionChange(newSelection);

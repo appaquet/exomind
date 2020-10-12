@@ -14,7 +14,7 @@ import './recent.less';
 interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: exocore.index.IEntity) => void;
+    onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
 
     containerController?: ContainerController;
 }
@@ -31,11 +31,11 @@ export default class Recent extends React.Component<IProps> {
             .includeDeleted()
             .count(30)
             .project(
-                new exocore.index.Projection({
+                new exocore.store.Projection({
                     fieldGroupIds: [1],
                     package: ["exomind.base"],
                 }),
-                new exocore.index.Projection({
+                new exocore.store.Projection({
                     skip: true,
                 })
             )
@@ -103,7 +103,7 @@ export default class Recent extends React.Component<IProps> {
         const mb = MutationBuilder
             .updateEntity(et.id)
             .putTrait(new exomind.base.CollectionChild({
-                collection: new exocore.index.Reference({
+                collection: new exocore.store.Reference({
                     entityId: 'inbox',
                 }),
                 weight: new Date().getTime(),

@@ -3,14 +3,14 @@ use std::{str::FromStr, time::Duration};
 use exocore::{
     core::protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
     core::time::Utc,
-    index::entity::EntityExt,
-    index::mutation::MutationBuilder,
-    protos::index::Entity,
-    protos::index::Reference,
-    protos::index::Trait,
+    store::entity::EntityExt,
+    store::mutation::MutationBuilder,
+    protos::store::Entity,
+    protos::store::Reference,
+    protos::store::Trait,
 };
 use exomind::ExomindClient;
-use exomind_core::protos::base::{CollectionChild, Postponed};
+use exomind_core::protos::base::{CollectionChild, Snoozed};
 use log::LevelFilter;
 use structopt::StructOpt;
 use tokio::time::delay_for;
@@ -70,7 +70,7 @@ async fn check_snoozed(exm: &ExomindClient) -> anyhow::Result<()> {
 
 async fn move_snoozed_inbox(exm: &ExomindClient, snoozed_entity: &Entity) -> anyhow::Result<()> {
     let snoozed_trait = snoozed_entity
-        .trait_of_type::<Postponed>()
+        .trait_of_type::<Snoozed>()
         .ok_or_else(|| anyhow!("no snoozed trait on entity"))?;
 
     let until_date = snoozed_trait

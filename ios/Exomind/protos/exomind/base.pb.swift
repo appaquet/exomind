@@ -119,8 +119,8 @@ struct Exomind_Base_CollectionChild {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var collection: Exocore.Exocore_Index_Reference {
-    get {return _collection ?? Exocore.Exocore_Index_Reference()}
+  var collection: Exocore.Exocore_Store_Reference {
+    get {return _collection ?? Exocore.Exocore_Store_Reference()}
     set {_collection = newValue}
   }
   /// Returns true if `collection` has been explicitly set.
@@ -134,7 +134,7 @@ struct Exomind_Base_CollectionChild {
 
   init() {}
 
-  fileprivate var _collection: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _collection: Exocore.Exocore_Store_Reference? = nil
 }
 
 /// TODO: Rename to Snoozed + renumber
@@ -184,8 +184,8 @@ struct Exomind_Base_EmailThread {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var account: Exocore.Exocore_Index_Reference {
-    get {return _account ?? Exocore.Exocore_Index_Reference()}
+  var account: Exocore.Exocore_Store_Reference {
+    get {return _account ?? Exocore.Exocore_Store_Reference()}
     set {_account = newValue}
   }
   /// Returns true if `account` has been explicitly set.
@@ -208,8 +208,8 @@ struct Exomind_Base_EmailThread {
 
   var snippet: String = String()
 
-  var lastEmail: Exocore.Exocore_Index_Reference {
-    get {return _lastEmail ?? Exocore.Exocore_Index_Reference()}
+  var lastEmail: Exocore.Exocore_Store_Reference {
+    get {return _lastEmail ?? Exocore.Exocore_Store_Reference()}
     set {_lastEmail = newValue}
   }
   /// Returns true if `lastEmail` has been explicitly set.
@@ -223,9 +223,9 @@ struct Exomind_Base_EmailThread {
 
   init() {}
 
-  fileprivate var _account: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _account: Exocore.Exocore_Store_Reference? = nil
   fileprivate var _from: Exomind_Base_Contact? = nil
-  fileprivate var _lastEmail: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _lastEmail: Exocore.Exocore_Store_Reference? = nil
 }
 
 struct Exomind_Base_Email {
@@ -233,8 +233,8 @@ struct Exomind_Base_Email {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var account: Exocore.Exocore_Index_Reference {
-    get {return _account ?? Exocore.Exocore_Index_Reference()}
+  var account: Exocore.Exocore_Store_Reference {
+    get {return _account ?? Exocore.Exocore_Store_Reference()}
     set {_account = newValue}
   }
   /// Returns true if `account` has been explicitly set.
@@ -282,7 +282,7 @@ struct Exomind_Base_Email {
 
   init() {}
 
-  fileprivate var _account: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _account: Exocore.Exocore_Store_Reference? = nil
   fileprivate var _from: Exomind_Base_Contact? = nil
   fileprivate var _receivedDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
@@ -292,8 +292,8 @@ struct Exomind_Base_DraftEmail {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var account: Exocore.Exocore_Index_Reference {
-    get {return _account ?? Exocore.Exocore_Index_Reference()}
+  var account: Exocore.Exocore_Store_Reference {
+    get {return _account ?? Exocore.Exocore_Store_Reference()}
     set {_account = newValue}
   }
   /// Returns true if `account` has been explicitly set.
@@ -301,8 +301,8 @@ struct Exomind_Base_DraftEmail {
   /// Clears the value of `account`. Subsequent reads from it will return its default value.
   mutating func clearAccount() {self._account = nil}
 
-  var inReplyTo: Exocore.Exocore_Index_Reference {
-    get {return _inReplyTo ?? Exocore.Exocore_Index_Reference()}
+  var inReplyTo: Exocore.Exocore_Store_Reference {
+    get {return _inReplyTo ?? Exocore.Exocore_Store_Reference()}
     set {_inReplyTo = newValue}
   }
   /// Returns true if `inReplyTo` has been explicitly set.
@@ -344,8 +344,8 @@ struct Exomind_Base_DraftEmail {
 
   init() {}
 
-  fileprivate var _account: Exocore.Exocore_Index_Reference? = nil
-  fileprivate var _inReplyTo: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _account: Exocore.Exocore_Store_Reference? = nil
+  fileprivate var _inReplyTo: Exocore.Exocore_Store_Reference? = nil
   fileprivate var _sendingDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
   fileprivate var _sentDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }

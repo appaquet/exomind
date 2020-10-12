@@ -55,9 +55,9 @@ export class Selection {
 }
 
 export class SelectedItem {
-    private _entity?: exocore.index.IEntity;
+    private _entity?: exocore.store.IEntity;
     private _entityId?: string;
-    private _trait?: exocore.index.ITrait;
+    private _trait?: exocore.store.ITrait;
     private _traitId?: string;
 
     static fromEntityId(entityId: string): SelectedItem {
@@ -73,13 +73,13 @@ export class SelectedItem {
         return item;
     }
 
-    static fromEntity(entity: exocore.index.IEntity): SelectedItem {
+    static fromEntity(entity: exocore.store.IEntity): SelectedItem {
         const item = new SelectedItem();
         item._entity = entity;
         return item;
     }
 
-    static fromEntityTrait(entity: exocore.index.IEntity, trait: exocore.index.ITrait): SelectedItem {
+    static fromEntityTrait(entity: exocore.store.IEntity, trait: exocore.store.ITrait): SelectedItem {
         const item = new SelectedItem();
         item._entity = entity;
         item._trait = trait;

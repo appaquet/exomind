@@ -14,7 +14,7 @@ import './snoozed.less';
 interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: exocore.index.IEntity) => void;
+    onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
 
     containerController?: ContainerController;
 }
@@ -26,14 +26,14 @@ export default class Snoozed extends React.Component<IProps> {
         super(props);
 
         const childrenQuery = QueryBuilder
-            .withTrait(exomind.base.Postponed)
+            .withTrait(exomind.base.Snoozed)
             .count(30)
             .project(
-                new exocore.index.Projection({
+                new exocore.store.Projection({
                     fieldGroupIds: [1],
                     package: ["exomind.base"],
                 }),
-                new exocore.index.Projection({
+                new exocore.store.Projection({
                     skip: true,
                 })
             )
@@ -98,7 +98,7 @@ export default class Snoozed extends React.Component<IProps> {
     }
 
     private handleEntityMoveInbox(et: EntityTraits) {
-        const snoozedTrait = et.traitOfType<exomind.base.IPostponed>(exomind.base.Postponed);
+        const snoozedTrait = et.traitOfType<exomind.base.ISnoozed>(exomind.base.Snoozed);
         if (!snoozedTrait) {
             return;
         }
@@ -106,7 +106,7 @@ export default class Snoozed extends React.Component<IProps> {
         const mb = MutationBuilder
             .updateEntity(et.id)
             .putTrait(new exomind.base.CollectionChild({
-                collection: new exocore.index.Reference({
+                collection: new exocore.store.Reference({
                     entityId: 'inbox',
                 }),
                 weight: new Date().getTime(),

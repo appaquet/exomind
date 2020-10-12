@@ -4,20 +4,20 @@ use crate::{cli, gmail::GmailAccount, SynchronizedThread};
 use exocore::{
     chain::operation::OperationId, core::protos::prost::ProstAnyPackMessageExt,
     core::time::ConsistentTimestamp, core::time::DateTime, core::time::Utc,
-    index::entity::EntityExt, index::query::ProjectionBuilder, protos::index::EntityResult,
-    protos::prost::ProstTimestampExt,
+    protos::prost::ProstTimestampExt, protos::store::EntityResult, store::entity::EntityExt,
+    store::query::ProjectionBuilder,
 };
 use exocore::{
     core::{cell::Cell, futures::spawn_future, time::Clock},
-    index::{
+    protos::NamedMessage,
+    protos::{
+        prost::Message,
+        store::{Entity, Reference, Trait},
+    },
+    store::{
         mutation::MutationBuilder,
         query::{QueryBuilder, TraitQueryBuilder},
         remote::{Client, ClientHandle},
-    },
-    protos::NamedMessage,
-    protos::{
-        index::{Entity, Reference, Trait},
-        prost::Message,
     },
     transport::{Libp2pTransport, ServiceType},
 };
@@ -40,7 +40,7 @@ impl ExomindClient {
         let clock = Clock::new();
 
         let mut transport = Libp2pTransport::new(local_node.clone(), Default::default());
-        let store_transport = transport.get_handle(cell.clone(), ServiceType::Index)?;
+        let store_transport = transport.get_handle(cell.clone(), ServiceType::Store)?;
 
         spawn_future(async move {
             let res = transport.run().await;

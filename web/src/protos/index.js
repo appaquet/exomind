@@ -218,7 +218,7 @@ export const exomind = $root.exomind = (() => {
              * Properties of a CollectionChild.
              * @memberof exomind.base
              * @interface ICollectionChild
-             * @property {exocore.index.IReference|null} [collection] CollectionChild collection
+             * @property {exocore.store.IReference|null} [collection] CollectionChild collection
              * @property {number|Long|null} [weight] CollectionChild weight
              */
 
@@ -239,7 +239,7 @@ export const exomind = $root.exomind = (() => {
 
             /**
              * CollectionChild collection.
-             * @member {exocore.index.IReference|null|undefined} collection
+             * @member {exocore.store.IReference|null|undefined} collection
              * @memberof exomind.base.CollectionChild
              * @instance
              */
@@ -278,9 +278,9 @@ export const exomind = $root.exomind = (() => {
                 if (!writer)
                     writer = $Writer.create();
                 if (message.collection != null && Object.hasOwnProperty.call(message, "collection"))
-                    $root.exocore.index.Reference.encode(message.collection, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                    $root.exocore.store.Reference.encode(message.collection, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 if (message.weight != null && Object.hasOwnProperty.call(message, "weight"))
-                    writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.weight);
+                    writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.weight);
                 return writer;
             };
 
@@ -316,9 +316,9 @@ export const exomind = $root.exomind = (() => {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
-                        message.collection = $root.exocore.index.Reference.decode(reader, reader.uint32());
+                        message.collection = $root.exocore.store.Reference.decode(reader, reader.uint32());
                         break;
-                    case 3:
+                    case 2:
                         message.weight = reader.uint64();
                         break;
                     default:
@@ -357,7 +357,7 @@ export const exomind = $root.exomind = (() => {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 if (message.collection != null && message.hasOwnProperty("collection")) {
-                    let error = $root.exocore.index.Reference.verify(message.collection);
+                    let error = $root.exocore.store.Reference.verify(message.collection);
                     if (error)
                         return "collection." + error;
                 }
@@ -382,7 +382,7 @@ export const exomind = $root.exomind = (() => {
                 if (object.collection != null) {
                     if (typeof object.collection !== "object")
                         throw TypeError(".exomind.base.CollectionChild.collection: object expected");
-                    message.collection = $root.exocore.index.Reference.fromObject(object.collection);
+                    message.collection = $root.exocore.store.Reference.fromObject(object.collection);
                 }
                 if (object.weight != null)
                     if ($util.Long)
@@ -418,7 +418,7 @@ export const exomind = $root.exomind = (() => {
                         object.weight = options.longs === String ? "0" : 0;
                 }
                 if (message.collection != null && message.hasOwnProperty("collection"))
-                    object.collection = $root.exocore.index.Reference.toObject(message.collection, options);
+                    object.collection = $root.exocore.store.Reference.toObject(message.collection, options);
                 if (message.weight != null && message.hasOwnProperty("weight"))
                     if (typeof message.weight === "number")
                         object.weight = options.longs === String ? String(message.weight) : message.weight;
@@ -441,24 +441,24 @@ export const exomind = $root.exomind = (() => {
             return CollectionChild;
         })();
 
-        base.Postponed = (function() {
+        base.Snoozed = (function() {
 
             /**
-             * Properties of a Postponed.
+             * Properties of a Snoozed.
              * @memberof exomind.base
-             * @interface IPostponed
-             * @property {google.protobuf.ITimestamp|null} [untilDate] Postponed untilDate
+             * @interface ISnoozed
+             * @property {google.protobuf.ITimestamp|null} [untilDate] Snoozed untilDate
              */
 
             /**
-             * Constructs a new Postponed.
+             * Constructs a new Snoozed.
              * @memberof exomind.base
-             * @classdesc Represents a Postponed.
-             * @implements IPostponed
+             * @classdesc Represents a Snoozed.
+             * @implements ISnoozed
              * @constructor
-             * @param {exomind.base.IPostponed=} [properties] Properties to set
+             * @param {exomind.base.ISnoozed=} [properties] Properties to set
              */
-            function Postponed(properties) {
+            function Snoozed(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -466,35 +466,35 @@ export const exomind = $root.exomind = (() => {
             }
 
             /**
-             * Postponed untilDate.
+             * Snoozed untilDate.
              * @member {google.protobuf.ITimestamp|null|undefined} untilDate
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @instance
              */
-            Postponed.prototype.untilDate = null;
+            Snoozed.prototype.untilDate = null;
 
             /**
-             * Creates a new Postponed instance using the specified properties.
+             * Creates a new Snoozed instance using the specified properties.
              * @function create
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @static
-             * @param {exomind.base.IPostponed=} [properties] Properties to set
-             * @returns {exomind.base.Postponed} Postponed instance
+             * @param {exomind.base.ISnoozed=} [properties] Properties to set
+             * @returns {exomind.base.Snoozed} Snoozed instance
              */
-            Postponed.create = function create(properties) {
-                return new Postponed(properties);
+            Snoozed.create = function create(properties) {
+                return new Snoozed(properties);
             };
 
             /**
-             * Encodes the specified Postponed message. Does not implicitly {@link exomind.base.Postponed.verify|verify} messages.
+             * Encodes the specified Snoozed message. Does not implicitly {@link exomind.base.Snoozed.verify|verify} messages.
              * @function encode
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @static
-             * @param {exomind.base.IPostponed} message Postponed message or plain object to encode
+             * @param {exomind.base.ISnoozed} message Snoozed message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
-            Postponed.encode = function encode(message, writer) {
+            Snoozed.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
                 if (message.untilDate != null && Object.hasOwnProperty.call(message, "untilDate"))
@@ -503,33 +503,33 @@ export const exomind = $root.exomind = (() => {
             };
 
             /**
-             * Encodes the specified Postponed message, length delimited. Does not implicitly {@link exomind.base.Postponed.verify|verify} messages.
+             * Encodes the specified Snoozed message, length delimited. Does not implicitly {@link exomind.base.Snoozed.verify|verify} messages.
              * @function encodeDelimited
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @static
-             * @param {exomind.base.IPostponed} message Postponed message or plain object to encode
+             * @param {exomind.base.ISnoozed} message Snoozed message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
-            Postponed.encodeDelimited = function encodeDelimited(message, writer) {
+            Snoozed.encodeDelimited = function encodeDelimited(message, writer) {
                 return this.encode(message, writer).ldelim();
             };
 
             /**
-             * Decodes a Postponed message from the specified reader or buffer.
+             * Decodes a Snoozed message from the specified reader or buffer.
              * @function decode
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
-             * @returns {exomind.base.Postponed} Postponed
+             * @returns {exomind.base.Snoozed} Snoozed
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Postponed.decode = function decode(reader, length) {
+            Snoozed.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.Postponed();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.Snoozed();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
@@ -545,30 +545,30 @@ export const exomind = $root.exomind = (() => {
             };
 
             /**
-             * Decodes a Postponed message from the specified reader or buffer, length delimited.
+             * Decodes a Snoozed message from the specified reader or buffer, length delimited.
              * @function decodeDelimited
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {exomind.base.Postponed} Postponed
+             * @returns {exomind.base.Snoozed} Snoozed
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Postponed.decodeDelimited = function decodeDelimited(reader) {
+            Snoozed.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
                     reader = new $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
-             * Verifies a Postponed message.
+             * Verifies a Snoozed message.
              * @function verify
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @static
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            Postponed.verify = function verify(message) {
+            Snoozed.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 if (message.untilDate != null && message.hasOwnProperty("untilDate")) {
@@ -580,35 +580,35 @@ export const exomind = $root.exomind = (() => {
             };
 
             /**
-             * Creates a Postponed message from a plain object. Also converts values to their respective internal types.
+             * Creates a Snoozed message from a plain object. Also converts values to their respective internal types.
              * @function fromObject
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @static
              * @param {Object.<string,*>} object Plain object
-             * @returns {exomind.base.Postponed} Postponed
+             * @returns {exomind.base.Snoozed} Snoozed
              */
-            Postponed.fromObject = function fromObject(object) {
-                if (object instanceof $root.exomind.base.Postponed)
+            Snoozed.fromObject = function fromObject(object) {
+                if (object instanceof $root.exomind.base.Snoozed)
                     return object;
-                let message = new $root.exomind.base.Postponed();
+                let message = new $root.exomind.base.Snoozed();
                 if (object.untilDate != null) {
                     if (typeof object.untilDate !== "object")
-                        throw TypeError(".exomind.base.Postponed.untilDate: object expected");
+                        throw TypeError(".exomind.base.Snoozed.untilDate: object expected");
                     message.untilDate = $root.google.protobuf.Timestamp.fromObject(object.untilDate);
                 }
                 return message;
             };
 
             /**
-             * Creates a plain object from a Postponed message. Also converts values to other types if specified.
+             * Creates a plain object from a Snoozed message. Also converts values to other types if specified.
              * @function toObject
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @static
-             * @param {exomind.base.Postponed} message Postponed
+             * @param {exomind.base.Snoozed} message Snoozed
              * @param {$protobuf.IConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
-            Postponed.toObject = function toObject(message, options) {
+            Snoozed.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
                 let object = {};
@@ -620,17 +620,17 @@ export const exomind = $root.exomind = (() => {
             };
 
             /**
-             * Converts this Postponed to JSON.
+             * Converts this Snoozed to JSON.
              * @function toJSON
-             * @memberof exomind.base.Postponed
+             * @memberof exomind.base.Snoozed
              * @instance
              * @returns {Object.<string,*>} JSON object
              */
-            Postponed.prototype.toJSON = function toJSON() {
+            Snoozed.prototype.toJSON = function toJSON() {
                 return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
             };
 
-            return Postponed;
+            return Snoozed;
         })();
 
         /**
@@ -1032,12 +1032,12 @@ export const exomind = $root.exomind = (() => {
              * Properties of an EmailThread.
              * @memberof exomind.base
              * @interface IEmailThread
-             * @property {exocore.index.IReference|null} [account] EmailThread account
+             * @property {exocore.store.IReference|null} [account] EmailThread account
              * @property {string|null} [sourceId] EmailThread sourceId
              * @property {exomind.base.IContact|null} [from] EmailThread from
              * @property {string|null} [subject] EmailThread subject
              * @property {string|null} [snippet] EmailThread snippet
-             * @property {exocore.index.IReference|null} [lastEmail] EmailThread lastEmail
+             * @property {exocore.store.IReference|null} [lastEmail] EmailThread lastEmail
              * @property {boolean|null} [read] EmailThread read
              */
 
@@ -1058,7 +1058,7 @@ export const exomind = $root.exomind = (() => {
 
             /**
              * EmailThread account.
-             * @member {exocore.index.IReference|null|undefined} account
+             * @member {exocore.store.IReference|null|undefined} account
              * @memberof exomind.base.EmailThread
              * @instance
              */
@@ -1098,7 +1098,7 @@ export const exomind = $root.exomind = (() => {
 
             /**
              * EmailThread lastEmail.
-             * @member {exocore.index.IReference|null|undefined} lastEmail
+             * @member {exocore.store.IReference|null|undefined} lastEmail
              * @memberof exomind.base.EmailThread
              * @instance
              */
@@ -1136,6 +1136,8 @@ export const exomind = $root.exomind = (() => {
             EmailThread.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
+                if (message.account != null && Object.hasOwnProperty.call(message, "account"))
+                    $root.exocore.store.Reference.encode(message.account, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 if (message.sourceId != null && Object.hasOwnProperty.call(message, "sourceId"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.sourceId);
                 if (message.from != null && Object.hasOwnProperty.call(message, "from"))
@@ -1145,11 +1147,9 @@ export const exomind = $root.exomind = (() => {
                 if (message.snippet != null && Object.hasOwnProperty.call(message, "snippet"))
                     writer.uint32(/* id 5, wireType 2 =*/42).string(message.snippet);
                 if (message.lastEmail != null && Object.hasOwnProperty.call(message, "lastEmail"))
-                    $root.exocore.index.Reference.encode(message.lastEmail, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+                    $root.exocore.store.Reference.encode(message.lastEmail, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
                 if (message.read != null && Object.hasOwnProperty.call(message, "read"))
                     writer.uint32(/* id 7, wireType 0 =*/56).bool(message.read);
-                if (message.account != null && Object.hasOwnProperty.call(message, "account"))
-                    $root.exocore.index.Reference.encode(message.account, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
                 return writer;
             };
 
@@ -1184,8 +1184,8 @@ export const exomind = $root.exomind = (() => {
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
-                    case 8:
-                        message.account = $root.exocore.index.Reference.decode(reader, reader.uint32());
+                    case 1:
+                        message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
                         break;
                     case 2:
                         message.sourceId = reader.string();
@@ -1200,7 +1200,7 @@ export const exomind = $root.exomind = (() => {
                         message.snippet = reader.string();
                         break;
                     case 6:
-                        message.lastEmail = $root.exocore.index.Reference.decode(reader, reader.uint32());
+                        message.lastEmail = $root.exocore.store.Reference.decode(reader, reader.uint32());
                         break;
                     case 7:
                         message.read = reader.bool();
@@ -1241,7 +1241,7 @@ export const exomind = $root.exomind = (() => {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 if (message.account != null && message.hasOwnProperty("account")) {
-                    let error = $root.exocore.index.Reference.verify(message.account);
+                    let error = $root.exocore.store.Reference.verify(message.account);
                     if (error)
                         return "account." + error;
                 }
@@ -1260,7 +1260,7 @@ export const exomind = $root.exomind = (() => {
                     if (!$util.isString(message.snippet))
                         return "snippet: string expected";
                 if (message.lastEmail != null && message.hasOwnProperty("lastEmail")) {
-                    let error = $root.exocore.index.Reference.verify(message.lastEmail);
+                    let error = $root.exocore.store.Reference.verify(message.lastEmail);
                     if (error)
                         return "lastEmail." + error;
                 }
@@ -1285,7 +1285,7 @@ export const exomind = $root.exomind = (() => {
                 if (object.account != null) {
                     if (typeof object.account !== "object")
                         throw TypeError(".exomind.base.EmailThread.account: object expected");
-                    message.account = $root.exocore.index.Reference.fromObject(object.account);
+                    message.account = $root.exocore.store.Reference.fromObject(object.account);
                 }
                 if (object.sourceId != null)
                     message.sourceId = String(object.sourceId);
@@ -1301,7 +1301,7 @@ export const exomind = $root.exomind = (() => {
                 if (object.lastEmail != null) {
                     if (typeof object.lastEmail !== "object")
                         throw TypeError(".exomind.base.EmailThread.lastEmail: object expected");
-                    message.lastEmail = $root.exocore.index.Reference.fromObject(object.lastEmail);
+                    message.lastEmail = $root.exocore.store.Reference.fromObject(object.lastEmail);
                 }
                 if (object.read != null)
                     message.read = Boolean(object.read);
@@ -1322,14 +1322,16 @@ export const exomind = $root.exomind = (() => {
                     options = {};
                 let object = {};
                 if (options.defaults) {
+                    object.account = null;
                     object.sourceId = "";
                     object.from = null;
                     object.subject = "";
                     object.snippet = "";
                     object.lastEmail = null;
                     object.read = false;
-                    object.account = null;
                 }
+                if (message.account != null && message.hasOwnProperty("account"))
+                    object.account = $root.exocore.store.Reference.toObject(message.account, options);
                 if (message.sourceId != null && message.hasOwnProperty("sourceId"))
                     object.sourceId = message.sourceId;
                 if (message.from != null && message.hasOwnProperty("from"))
@@ -1339,11 +1341,9 @@ export const exomind = $root.exomind = (() => {
                 if (message.snippet != null && message.hasOwnProperty("snippet"))
                     object.snippet = message.snippet;
                 if (message.lastEmail != null && message.hasOwnProperty("lastEmail"))
-                    object.lastEmail = $root.exocore.index.Reference.toObject(message.lastEmail, options);
+                    object.lastEmail = $root.exocore.store.Reference.toObject(message.lastEmail, options);
                 if (message.read != null && message.hasOwnProperty("read"))
                     object.read = message.read;
-                if (message.account != null && message.hasOwnProperty("account"))
-                    object.account = $root.exocore.index.Reference.toObject(message.account, options);
                 return object;
             };
 
@@ -1367,7 +1367,7 @@ export const exomind = $root.exomind = (() => {
              * Properties of an Email.
              * @memberof exomind.base
              * @interface IEmail
-             * @property {exocore.index.IReference|null} [account] Email account
+             * @property {exocore.store.IReference|null} [account] Email account
              * @property {string|null} [sourceId] Email sourceId
              * @property {exomind.base.IContact|null} [from] Email from
              * @property {google.protobuf.ITimestamp|null} [receivedDate] Email receivedDate
@@ -1403,7 +1403,7 @@ export const exomind = $root.exomind = (() => {
 
             /**
              * Email account.
-             * @member {exocore.index.IReference|null|undefined} account
+             * @member {exocore.store.IReference|null|undefined} account
              * @memberof exomind.base.Email
              * @instance
              */
@@ -1521,6 +1521,8 @@ export const exomind = $root.exomind = (() => {
             Email.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
+                if (message.account != null && Object.hasOwnProperty.call(message, "account"))
+                    $root.exocore.store.Reference.encode(message.account, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 if (message.sourceId != null && Object.hasOwnProperty.call(message, "sourceId"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.sourceId);
                 if (message.from != null && Object.hasOwnProperty.call(message, "from"))
@@ -1529,25 +1531,23 @@ export const exomind = $root.exomind = (() => {
                     $root.google.protobuf.Timestamp.encode(message.receivedDate, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
                 if (message.to != null && message.to.length)
                     for (let i = 0; i < message.to.length; ++i)
-                        $root.exomind.base.Contact.encode(message.to[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+                        $root.exomind.base.Contact.encode(message.to[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
                 if (message.cc != null && message.cc.length)
                     for (let i = 0; i < message.cc.length; ++i)
-                        $root.exomind.base.Contact.encode(message.cc[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+                        $root.exomind.base.Contact.encode(message.cc[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
                 if (message.bcc != null && message.bcc.length)
                     for (let i = 0; i < message.bcc.length; ++i)
-                        $root.exomind.base.Contact.encode(message.bcc[i], writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
+                        $root.exomind.base.Contact.encode(message.bcc[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
                 if (message.subject != null && Object.hasOwnProperty.call(message, "subject"))
-                    writer.uint32(/* id 9, wireType 2 =*/74).string(message.subject);
+                    writer.uint32(/* id 8, wireType 2 =*/66).string(message.subject);
                 if (message.snippet != null && Object.hasOwnProperty.call(message, "snippet"))
-                    writer.uint32(/* id 10, wireType 2 =*/82).string(message.snippet);
+                    writer.uint32(/* id 9, wireType 2 =*/74).string(message.snippet);
                 if (message.parts != null && message.parts.length)
                     for (let i = 0; i < message.parts.length; ++i)
-                        $root.exomind.base.EmailPart.encode(message.parts[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+                        $root.exomind.base.EmailPart.encode(message.parts[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
                 if (message.attachments != null && message.attachments.length)
                     for (let i = 0; i < message.attachments.length; ++i)
-                        $root.exomind.base.EmailAttachment.encode(message.attachments[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
-                if (message.account != null && Object.hasOwnProperty.call(message, "account"))
-                    $root.exocore.index.Reference.encode(message.account, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
+                        $root.exomind.base.EmailAttachment.encode(message.attachments[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
                 if (message.read != null && Object.hasOwnProperty.call(message, "read"))
                     writer.uint32(/* id 14, wireType 0 =*/112).bool(message.read);
                 return writer;
@@ -1584,8 +1584,8 @@ export const exomind = $root.exomind = (() => {
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
-                    case 13:
-                        message.account = $root.exocore.index.Reference.decode(reader, reader.uint32());
+                    case 1:
+                        message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
                         break;
                     case 2:
                         message.sourceId = reader.string();
@@ -1596,33 +1596,33 @@ export const exomind = $root.exomind = (() => {
                     case 4:
                         message.receivedDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
                         break;
-                    case 6:
+                    case 5:
                         if (!(message.to && message.to.length))
                             message.to = [];
                         message.to.push($root.exomind.base.Contact.decode(reader, reader.uint32()));
                         break;
-                    case 7:
+                    case 6:
                         if (!(message.cc && message.cc.length))
                             message.cc = [];
                         message.cc.push($root.exomind.base.Contact.decode(reader, reader.uint32()));
                         break;
-                    case 8:
+                    case 7:
                         if (!(message.bcc && message.bcc.length))
                             message.bcc = [];
                         message.bcc.push($root.exomind.base.Contact.decode(reader, reader.uint32()));
                         break;
-                    case 9:
+                    case 8:
                         message.subject = reader.string();
                         break;
-                    case 10:
+                    case 9:
                         message.snippet = reader.string();
                         break;
-                    case 11:
+                    case 10:
                         if (!(message.parts && message.parts.length))
                             message.parts = [];
                         message.parts.push($root.exomind.base.EmailPart.decode(reader, reader.uint32()));
                         break;
-                    case 12:
+                    case 11:
                         if (!(message.attachments && message.attachments.length))
                             message.attachments = [];
                         message.attachments.push($root.exomind.base.EmailAttachment.decode(reader, reader.uint32()));
@@ -1666,7 +1666,7 @@ export const exomind = $root.exomind = (() => {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 if (message.account != null && message.hasOwnProperty("account")) {
-                    let error = $root.exocore.index.Reference.verify(message.account);
+                    let error = $root.exocore.store.Reference.verify(message.account);
                     if (error)
                         return "account." + error;
                 }
@@ -1755,7 +1755,7 @@ export const exomind = $root.exomind = (() => {
                 if (object.account != null) {
                     if (typeof object.account !== "object")
                         throw TypeError(".exomind.base.Email.account: object expected");
-                    message.account = $root.exocore.index.Reference.fromObject(object.account);
+                    message.account = $root.exocore.store.Reference.fromObject(object.account);
                 }
                 if (object.sourceId != null)
                     message.sourceId = String(object.sourceId);
@@ -1849,14 +1849,16 @@ export const exomind = $root.exomind = (() => {
                     object.attachments = [];
                 }
                 if (options.defaults) {
+                    object.account = null;
                     object.sourceId = "";
                     object.from = null;
                     object.receivedDate = null;
                     object.subject = "";
                     object.snippet = "";
-                    object.account = null;
                     object.read = false;
                 }
+                if (message.account != null && message.hasOwnProperty("account"))
+                    object.account = $root.exocore.store.Reference.toObject(message.account, options);
                 if (message.sourceId != null && message.hasOwnProperty("sourceId"))
                     object.sourceId = message.sourceId;
                 if (message.from != null && message.hasOwnProperty("from"))
@@ -1892,8 +1894,6 @@ export const exomind = $root.exomind = (() => {
                     for (let j = 0; j < message.attachments.length; ++j)
                         object.attachments[j] = $root.exomind.base.EmailAttachment.toObject(message.attachments[j], options);
                 }
-                if (message.account != null && message.hasOwnProperty("account"))
-                    object.account = $root.exocore.index.Reference.toObject(message.account, options);
                 if (message.read != null && message.hasOwnProperty("read"))
                     object.read = message.read;
                 return object;
@@ -1919,8 +1919,8 @@ export const exomind = $root.exomind = (() => {
              * Properties of a DraftEmail.
              * @memberof exomind.base
              * @interface IDraftEmail
-             * @property {exocore.index.IReference|null} [account] DraftEmail account
-             * @property {exocore.index.IReference|null} [inReplyTo] DraftEmail inReplyTo
+             * @property {exocore.store.IReference|null} [account] DraftEmail account
+             * @property {exocore.store.IReference|null} [inReplyTo] DraftEmail inReplyTo
              * @property {Array.<exomind.base.IContact>|null} [to] DraftEmail to
              * @property {Array.<exomind.base.IContact>|null} [cc] DraftEmail cc
              * @property {Array.<exomind.base.IContact>|null} [bcc] DraftEmail bcc
@@ -1953,7 +1953,7 @@ export const exomind = $root.exomind = (() => {
 
             /**
              * DraftEmail account.
-             * @member {exocore.index.IReference|null|undefined} account
+             * @member {exocore.store.IReference|null|undefined} account
              * @memberof exomind.base.DraftEmail
              * @instance
              */
@@ -1961,7 +1961,7 @@ export const exomind = $root.exomind = (() => {
 
             /**
              * DraftEmail inReplyTo.
-             * @member {exocore.index.IReference|null|undefined} inReplyTo
+             * @member {exocore.store.IReference|null|undefined} inReplyTo
              * @memberof exomind.base.DraftEmail
              * @instance
              */
@@ -2055,8 +2055,10 @@ export const exomind = $root.exomind = (() => {
             DraftEmail.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
+                if (message.account != null && Object.hasOwnProperty.call(message, "account"))
+                    $root.exocore.store.Reference.encode(message.account, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 if (message.inReplyTo != null && Object.hasOwnProperty.call(message, "inReplyTo"))
-                    $root.exocore.index.Reference.encode(message.inReplyTo, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                    $root.exocore.store.Reference.encode(message.inReplyTo, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 if (message.to != null && message.to.length)
                     for (let i = 0; i < message.to.length; ++i)
                         $root.exomind.base.Contact.encode(message.to[i], writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
@@ -2078,8 +2080,6 @@ export const exomind = $root.exomind = (() => {
                     $root.google.protobuf.Timestamp.encode(message.sendingDate, writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
                 if (message.sentDate != null && Object.hasOwnProperty.call(message, "sentDate"))
                     $root.google.protobuf.Timestamp.encode(message.sentDate, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
-                if (message.account != null && Object.hasOwnProperty.call(message, "account"))
-                    $root.exocore.index.Reference.encode(message.account, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
                 return writer;
             };
 
@@ -2114,11 +2114,11 @@ export const exomind = $root.exomind = (() => {
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
-                    case 11:
-                        message.account = $root.exocore.index.Reference.decode(reader, reader.uint32());
-                        break;
                     case 1:
-                        message.inReplyTo = $root.exocore.index.Reference.decode(reader, reader.uint32());
+                        message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                        break;
+                    case 2:
+                        message.inReplyTo = $root.exocore.store.Reference.decode(reader, reader.uint32());
                         break;
                     case 3:
                         if (!(message.to && message.to.length))
@@ -2190,12 +2190,12 @@ export const exomind = $root.exomind = (() => {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 if (message.account != null && message.hasOwnProperty("account")) {
-                    let error = $root.exocore.index.Reference.verify(message.account);
+                    let error = $root.exocore.store.Reference.verify(message.account);
                     if (error)
                         return "account." + error;
                 }
                 if (message.inReplyTo != null && message.hasOwnProperty("inReplyTo")) {
-                    let error = $root.exocore.index.Reference.verify(message.inReplyTo);
+                    let error = $root.exocore.store.Reference.verify(message.inReplyTo);
                     if (error)
                         return "inReplyTo." + error;
                 }
@@ -2275,12 +2275,12 @@ export const exomind = $root.exomind = (() => {
                 if (object.account != null) {
                     if (typeof object.account !== "object")
                         throw TypeError(".exomind.base.DraftEmail.account: object expected");
-                    message.account = $root.exocore.index.Reference.fromObject(object.account);
+                    message.account = $root.exocore.store.Reference.fromObject(object.account);
                 }
                 if (object.inReplyTo != null) {
                     if (typeof object.inReplyTo !== "object")
                         throw TypeError(".exomind.base.DraftEmail.inReplyTo: object expected");
-                    message.inReplyTo = $root.exocore.index.Reference.fromObject(object.inReplyTo);
+                    message.inReplyTo = $root.exocore.store.Reference.fromObject(object.inReplyTo);
                 }
                 if (object.to) {
                     if (!Array.isArray(object.to))
@@ -2368,14 +2368,16 @@ export const exomind = $root.exomind = (() => {
                     object.attachments = [];
                 }
                 if (options.defaults) {
+                    object.account = null;
                     object.inReplyTo = null;
                     object.subject = "";
                     object.sendingDate = null;
                     object.sentDate = null;
-                    object.account = null;
                 }
+                if (message.account != null && message.hasOwnProperty("account"))
+                    object.account = $root.exocore.store.Reference.toObject(message.account, options);
                 if (message.inReplyTo != null && message.hasOwnProperty("inReplyTo"))
-                    object.inReplyTo = $root.exocore.index.Reference.toObject(message.inReplyTo, options);
+                    object.inReplyTo = $root.exocore.store.Reference.toObject(message.inReplyTo, options);
                 if (message.to && message.to.length) {
                     object.to = [];
                     for (let j = 0; j < message.to.length; ++j)
@@ -2407,8 +2409,6 @@ export const exomind = $root.exomind = (() => {
                     object.sendingDate = $root.google.protobuf.Timestamp.toObject(message.sendingDate, options);
                 if (message.sentDate != null && message.hasOwnProperty("sentDate"))
                     object.sentDate = $root.google.protobuf.Timestamp.toObject(message.sentDate, options);
-                if (message.account != null && message.hasOwnProperty("account"))
-                    object.account = $root.exocore.index.Reference.toObject(message.account, options);
                 return object;
             };
 
@@ -3816,20 +3816,20 @@ export const exocore = $root.exocore = (() => {
      */
     const exocore = {};
 
-    exocore.index = (function() {
+    exocore.store = (function() {
 
         /**
-         * Namespace index.
+         * Namespace store.
          * @memberof exocore
          * @namespace
          */
-        const index = {};
+        const store = {};
 
-        index.Reference = (function() {
+        store.Reference = (function() {
 
             /**
              * Properties of a Reference.
-             * @memberof exocore.index
+             * @memberof exocore.store
              * @interface IReference
              * @property {string|null} [entityId] Reference entityId
              * @property {string|null} [traitId] Reference traitId
@@ -3837,11 +3837,11 @@ export const exocore = $root.exocore = (() => {
 
             /**
              * Constructs a new Reference.
-             * @memberof exocore.index
+             * @memberof exocore.store
              * @classdesc Represents a Reference.
              * @implements IReference
              * @constructor
-             * @param {exocore.index.IReference=} [properties] Properties to set
+             * @param {exocore.store.IReference=} [properties] Properties to set
              */
             function Reference(properties) {
                 if (properties)
@@ -3853,7 +3853,7 @@ export const exocore = $root.exocore = (() => {
             /**
              * Reference entityId.
              * @member {string} entityId
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @instance
              */
             Reference.prototype.entityId = "";
@@ -3861,7 +3861,7 @@ export const exocore = $root.exocore = (() => {
             /**
              * Reference traitId.
              * @member {string} traitId
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @instance
              */
             Reference.prototype.traitId = "";
@@ -3869,21 +3869,21 @@ export const exocore = $root.exocore = (() => {
             /**
              * Creates a new Reference instance using the specified properties.
              * @function create
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @static
-             * @param {exocore.index.IReference=} [properties] Properties to set
-             * @returns {exocore.index.Reference} Reference instance
+             * @param {exocore.store.IReference=} [properties] Properties to set
+             * @returns {exocore.store.Reference} Reference instance
              */
             Reference.create = function create(properties) {
                 return new Reference(properties);
             };
 
             /**
-             * Encodes the specified Reference message. Does not implicitly {@link exocore.index.Reference.verify|verify} messages.
+             * Encodes the specified Reference message. Does not implicitly {@link exocore.store.Reference.verify|verify} messages.
              * @function encode
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @static
-             * @param {exocore.index.IReference} message Reference message or plain object to encode
+             * @param {exocore.store.IReference} message Reference message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -3898,11 +3898,11 @@ export const exocore = $root.exocore = (() => {
             };
 
             /**
-             * Encodes the specified Reference message, length delimited. Does not implicitly {@link exocore.index.Reference.verify|verify} messages.
+             * Encodes the specified Reference message, length delimited. Does not implicitly {@link exocore.store.Reference.verify|verify} messages.
              * @function encodeDelimited
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @static
-             * @param {exocore.index.IReference} message Reference message or plain object to encode
+             * @param {exocore.store.IReference} message Reference message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -3913,18 +3913,18 @@ export const exocore = $root.exocore = (() => {
             /**
              * Decodes a Reference message from the specified reader or buffer.
              * @function decode
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
-             * @returns {exocore.index.Reference} Reference
+             * @returns {exocore.store.Reference} Reference
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
             Reference.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.index.Reference();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exocore.store.Reference();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
@@ -3945,10 +3945,10 @@ export const exocore = $root.exocore = (() => {
             /**
              * Decodes a Reference message from the specified reader or buffer, length delimited.
              * @function decodeDelimited
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {exocore.index.Reference} Reference
+             * @returns {exocore.store.Reference} Reference
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
@@ -3961,7 +3961,7 @@ export const exocore = $root.exocore = (() => {
             /**
              * Verifies a Reference message.
              * @function verify
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @static
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -3981,15 +3981,15 @@ export const exocore = $root.exocore = (() => {
             /**
              * Creates a Reference message from a plain object. Also converts values to their respective internal types.
              * @function fromObject
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @static
              * @param {Object.<string,*>} object Plain object
-             * @returns {exocore.index.Reference} Reference
+             * @returns {exocore.store.Reference} Reference
              */
             Reference.fromObject = function fromObject(object) {
-                if (object instanceof $root.exocore.index.Reference)
+                if (object instanceof $root.exocore.store.Reference)
                     return object;
-                let message = new $root.exocore.index.Reference();
+                let message = new $root.exocore.store.Reference();
                 if (object.entityId != null)
                     message.entityId = String(object.entityId);
                 if (object.traitId != null)
@@ -4000,9 +4000,9 @@ export const exocore = $root.exocore = (() => {
             /**
              * Creates a plain object from a Reference message. Also converts values to other types if specified.
              * @function toObject
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @static
-             * @param {exocore.index.Reference} message Reference
+             * @param {exocore.store.Reference} message Reference
              * @param {$protobuf.IConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
@@ -4024,7 +4024,7 @@ export const exocore = $root.exocore = (() => {
             /**
              * Converts this Reference to JSON.
              * @function toJSON
-             * @memberof exocore.index.Reference
+             * @memberof exocore.store.Reference
              * @instance
              * @returns {Object.<string,*>} JSON object
              */
@@ -4035,7 +4035,7 @@ export const exocore = $root.exocore = (() => {
             return Reference;
         })();
 
-        return index;
+        return store;
     })();
 
     return exocore;

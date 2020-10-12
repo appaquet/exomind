@@ -221,7 +221,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
         let vc = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         for account in self.accounts {
             vc.addAction(UIAlertAction(title: account.trait.message.name, style: .default, handler: { [weak self] (action) -> Void in
-                var accountRef = Exocore_Index_Reference()
+                var accountRef = Exocore_Store_Reference()
                 accountRef.entityID = account.entity.id
                 accountRef.traitID = account.trait.id
 
@@ -335,9 +335,9 @@ private struct Account {
     let entity: EntityExt
     let trait: TraitInstance<Exomind_Base_Account>
 
-    var reference: Exocore_Index_Reference {
+    var reference: Exocore_Store_Reference {
         get {
-            var ref = Exocore_Index_Reference()
+            var ref = Exocore_Store_Reference()
             ref.entityID = entity.id
             ref.traitID = trait.id
             return ref

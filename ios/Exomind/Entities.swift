@@ -5,28 +5,28 @@ import SwiftProtobuf
 typealias EntityId = String
 typealias TraitId = String
 
-extension Exocore_Index_Entity {
+extension Exocore_Store_Entity {
     func toExtension() -> EntityExt {
         EntityExt(entity: self)
     }
 }
 
 class EntityExt {
-    let inner: Exocore_Index_Entity;
+    let inner: Exocore_Store_Entity;
 
-    private let idTraits: [TraitId: Exocore_Index_Trait]
-    private let typeTraits: [TraitId: [Exocore_Index_Trait]]
+    private let idTraits: [TraitId: Exocore_Store_Trait]
+    private let typeTraits: [TraitId: [Exocore_Store_Trait]]
     private var traitInstances: [TraitId: Message] = [:]
-    private let _priorityTrait: Exocore_Index_Trait?;
+    private let _priorityTrait: Exocore_Store_Trait?;
 
     var creationDate: Date
     var modificationDate: Date?
     var anyDate: Date?
 
-    init(entity: Exocore_Index_Entity) {
+    init(entity: Exocore_Store_Entity) {
         self.inner = entity
 
-        var priorityTrait: (Exocore_Index_Trait, TraitConstants)?
+        var priorityTrait: (Exocore_Store_Trait, TraitConstants)?
 
         // check if it's a special entity (ex: inbox)
         if let entityConstants = TraitsConstants[entity.id] {
@@ -42,8 +42,8 @@ class EntityExt {
         var newestDate: Date?
 
         // index traits by ids and types
-        var idTraits: [String: Exocore_Index_Trait] = [:]
-        var typeTraits: [String: [Exocore_Index_Trait]] = [:]
+        var idTraits: [String: Exocore_Store_Trait] = [:]
+        var typeTraits: [String: [Exocore_Store_Trait]] = [:]
         for trait in entity.traits {
             idTraits[trait.id] = trait
 
@@ -173,7 +173,7 @@ extension EntityExt: Equatable {
 protocol AnyTraitInstance {
     var entity: EntityExt? { get }
     var id: TraitId { get }
-    var trait: Exocore_Index_Trait { get }
+    var trait: Exocore_Store_Trait { get }
     var constants: TraitConstants? { get }
     var type: TraitType? { get }
     var displayName: String { get }
@@ -185,12 +185,12 @@ protocol AnyTraitInstance {
 
 struct TraitInstance<T: Message>: AnyTraitInstance {
     weak var entity: EntityExt?;
-    let trait: Exocore_Index_Trait
+    let trait: Exocore_Store_Trait
     let message: T
     let displayName: String
     let constants: TraitConstants?
 
-    init(entity: EntityExt, trait: Exocore_Index_Trait, message: T) {
+    init(entity: EntityExt, trait: Exocore_Store_Trait, message: T) {
         self.entity = entity
         self.trait = trait
         self.message = message
@@ -332,7 +332,7 @@ struct TraitConstants {
     let collectionLike: Bool
 }
 
-func getTraitConstants(entity: EntityExt, trait: Exocore_Index_Trait) -> TraitConstants? {
+func getTraitConstants(entity: EntityExt, trait: Exocore_Store_Trait) -> TraitConstants? {
     if let entityConsts = TraitsConstants[entity.id], entity.id == trait.id {
         return entityConsts
     } else {

@@ -57,7 +57,7 @@ message CellNodeConfig {
     enum Role {
         INVALID_ROLE = 0;
         CHAIN_ROLE = 1;
-        INDEX_STORE_ROLE = 2;
+        STORE_ROLE = 2;
     }
 }
 

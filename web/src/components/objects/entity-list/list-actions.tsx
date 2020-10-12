@@ -8,12 +8,12 @@ import { Selection } from "./selection";
 
 
 interface IProps {
-    parent: exocore.index.IEntity;
+    parent: exocore.store.IEntity;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    onCreated: (et: exocore.index.IEntity) => void;
+    onCreated: (et: exocore.store.IEntity) => void;
 
     removeOnPostpone?: boolean;
 }
@@ -56,7 +56,7 @@ export class ListActions extends React.Component<IProps> {
                 title: 'New note',
             }))
             .putTrait(new exomind.base.CollectionChild({
-                collection: new exocore.index.Reference({
+                collection: new exocore.store.Reference({
                     entityId: this.props.parent.id,
                 }),
                 weight: new Date().getTime(),
@@ -72,7 +72,7 @@ export class ListActions extends React.Component<IProps> {
             .createEntity()
             .putTrait(new exomind.base.DraftEmail())
             .putTrait(new exomind.base.CollectionChild({
-                collection: new exocore.index.Reference({
+                collection: new exocore.store.Reference({
                     entityId: this.props.parent.id,
                 }),
                 weight: new Date().getTime(),
@@ -90,7 +90,7 @@ export class ListActions extends React.Component<IProps> {
                 name: 'New collection',
             }))
             .putTrait(new exomind.base.CollectionChild({
-                collection: new exocore.index.Reference({
+                collection: new exocore.store.Reference({
                     entityId: this.props.parent.id,
                 }),
                 weight: new Date().getTime(),
@@ -110,7 +110,7 @@ export class ListActions extends React.Component<IProps> {
                     title: title,
                 }))
                 .putTrait(new exomind.base.CollectionChild({
-                    collection: new exocore.index.Reference({
+                    collection: new exocore.store.Reference({
                         entityId: this.props.parent.id,
                     }),
                     weight: new Date().getTime(),
@@ -131,7 +131,7 @@ export class ListActions extends React.Component<IProps> {
                     url: url,
                 }))
                 .putTrait(new exomind.base.CollectionChild({
-                    collection: new exocore.index.Reference({
+                    collection: new exocore.store.Reference({
                         entityId: this.props.parent.id,
                     }),
                     weight: new Date().getTime(),
@@ -176,7 +176,7 @@ export class ListActions extends React.Component<IProps> {
         }
     }
 
-    private executeNewEntityMutation(mutation: exocore.index.MutationRequest) {
+    private executeNewEntityMutation(mutation: exocore.store.MutationRequest) {
         Exocore.store.mutate(mutation).then(result => {
             if (result.entities.length > 0 && this.props.onCreated) {
                 this.props.onCreated(result.entities[0]);

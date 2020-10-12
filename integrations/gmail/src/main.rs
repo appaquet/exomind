@@ -1,6 +1,6 @@
-use exocore::core::protos::index::Trait;
+use exocore::core::protos::store::Trait;
 use exocore::core::protos::prost::ProstAnyPackMessageExt;
-use exocore::index::mutation::MutationBuilder;
+use exocore::store::mutation::MutationBuilder;
 use exomind::ExomindClient;
 use gmail::{GmailAccount, GmailClient};
 use log::LevelFilter;
