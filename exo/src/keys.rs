@@ -1,6 +1,6 @@
 use crate::options;
 use exocore_core::cell::{Node, NodeId};
-use exocore_core::crypto::keys::Keypair;
+use exocore_core::sec::keys::Keypair;
 
 pub fn generate(
     _exo_opts: &options::ExoOptions,

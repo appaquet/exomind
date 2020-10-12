@@ -4,7 +4,7 @@ use crate::operation::{NewOperation, Operation, OperationId};
 use crate::pending::{CommitStatus, PendingStore, StoredOperation};
 use exocore_core::cell::{Cell, CellNodeRole, CellNodes};
 use exocore_core::cell::{Node, NodeId};
-use exocore_core::crypto::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
+use exocore_core::sec::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::data_chain_capnp::chain_operation_header;
 use exocore_core::protos::generated::data_transport_capnp::{

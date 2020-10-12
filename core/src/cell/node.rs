@@ -1,8 +1,8 @@
 use super::error::Error;
-use crate::crypto::signature::Signature;
+use crate::sec::signature::Signature;
 use crate::protos::generated::exocore_core::{LocalNodeConfig, NodeConfig};
 use crate::{
-    crypto::keys::{Keypair, PublicKey},
+    sec::keys::{Keypair, PublicKey},
     protos::core::NodeAddresses,
 };
 use libp2p::core::{Multiaddr, PeerId};

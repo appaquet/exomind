@@ -12,7 +12,7 @@ use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
 use exocore_core::cell::{CellNodeRole, FullCell};
 use exocore_core::cell::{LocalNode, Node, NodeId};
-use exocore_core::crypto::hash::Sha3_256;
+use exocore_core::sec::hash::Sha3_256;
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
 };

@@ -7,7 +7,7 @@ use exocore_chain::{
 };
 use exocore_core::{
     cell::{Cell, EitherCell},
-    crypto::auth_token::AuthToken,
+    sec::auth_token::AuthToken,
     time::Clock,
 };
 use exocore_core::{

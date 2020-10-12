@@ -1,6 +1,6 @@
 use exocore_core::{
     cell::{FullCell, LocalNode},
-    crypto::auth_token::AuthToken,
+    sec::auth_token::AuthToken,
     framing::CapnpFrameBuilder,
     futures::spawn_future,
     protos::generated::index_transport_capnp::mutation_request,

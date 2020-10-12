@@ -1,7 +1,7 @@
 use super::{app_manifest_from_yaml_file, Error};
 use crate::protos::generated::exocore_apps::manifest_schema::Source;
 use crate::protos::generated::exocore_apps::Manifest;
-use crate::{crypto::keys::PublicKey, utils::path::child_to_abs_path};
+use crate::{sec::keys::PublicKey, utils::path::child_to_abs_path};
 use protobuf::descriptor::FileDescriptorSet;
 use std::fs::File;
 use std::path::Path;

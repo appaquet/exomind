@@ -161,7 +161,7 @@ impl std::fmt::Debug for AuthToken {
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Signature error: {0}")]
-    KeyError(#[from] crate::crypto::keys::Error),
+    KeyError(#[from] crate::sec::keys::Error),
 
     #[error("Invalid information in token: {0}")]
     Invalid(String),

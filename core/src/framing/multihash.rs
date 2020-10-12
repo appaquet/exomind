@@ -1,5 +1,5 @@
 use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
-use crate::crypto::hash::MultihashDigestExt;
+use crate::sec::hash::MultihashDigestExt;
 use std::io;
 
 /// Checksumed frame using a multihash encoded digest
@@ -134,7 +134,7 @@ impl<D: MultihashDigestExt, I: FrameBuilder> FrameBuilder for MultihashFrameBuil
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::crypto::hash::Sha3_256;
+    use crate::sec::hash::Sha3_256;
     use crate::framing::assert_builder_equals;
 
     #[test]

@@ -2,10 +2,10 @@ use crate::operation::OperationId;
 use exocore_core::capnp;
 use exocore_core::cell::{Cell, FullCell};
 use exocore_core::cell::{CellNodeRole, NodeId};
-use exocore_core::crypto::hash::{
+use exocore_core::sec::hash::{
     Code, MultihashDigest, MultihashDigestExt, MultihashGeneric, Sha3_256,
 };
-use exocore_core::crypto::signature::Signature;
+use exocore_core::sec::signature::Signature;
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
     PaddedFrame, PaddedFrameBuilder, SizedFrame, SizedFrameBuilder, TypedCapnpFrame,

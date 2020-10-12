@@ -2,7 +2,7 @@ use super::{OperationDetailsLevel, PendingSyncConfig};
 use crate::engine::EngineError;
 use crate::operation::OperationId;
 use crate::pending::StoredOperation;
-use exocore_core::crypto::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
+use exocore_core::sec::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
 use exocore_core::framing::FrameReader;
 use exocore_core::protos::generated::data_transport_capnp::pending_sync_range;
 use std::ops::Bound;

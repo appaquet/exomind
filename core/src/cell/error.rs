@@ -10,7 +10,7 @@ pub enum Error {
     Application(String, String),
 
     #[error("Key error: {0}")]
-    Key(#[from] crate::crypto::keys::Error),
+    Key(#[from] crate::sec::keys::Error),
 
     #[error("Node error: {0}")]
     Node(String),
