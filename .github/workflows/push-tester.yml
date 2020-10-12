@@ -127,8 +127,8 @@ jobs:
           toolchain: stable
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Build client
 
+      - name: Build client
         run: |
           cd $GITHUB_WORKSPACE
           yarn build_dev
