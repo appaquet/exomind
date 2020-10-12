@@ -12,11 +12,11 @@ use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
 use exocore_core::cell::{CellNodeRole, FullCell};
 use exocore_core::cell::{LocalNode, Node, NodeId};
-use exocore_core::sec::hash::Sha3_256;
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
 };
 use exocore_core::protos::generated::data_chain_capnp::block_header;
+use exocore_core::sec::hash::Sha3_256;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use std::borrow::Borrow;
 use std::collections::HashMap;

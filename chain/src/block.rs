@@ -2,10 +2,6 @@ use crate::operation::OperationId;
 use exocore_core::capnp;
 use exocore_core::cell::{Cell, FullCell};
 use exocore_core::cell::{CellNodeRole, NodeId};
-use exocore_core::sec::hash::{
-    Code, MultihashDigest, MultihashDigestExt, MultihashGeneric, Sha3_256,
-};
-use exocore_core::sec::signature::Signature;
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
     PaddedFrame, PaddedFrameBuilder, SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
@@ -13,6 +9,10 @@ use exocore_core::framing::{
 use exocore_core::protos::generated::data_chain_capnp::{
     block_header, block_operation_header, block_signature, block_signatures,
 };
+use exocore_core::sec::hash::{
+    Code, MultihashDigest, MultihashDigestExt, MultihashGeneric, Sha3_256,
+};
+use exocore_core::sec::signature::Signature;
 use std::borrow::Borrow;
 
 pub type BlockOffset = u64;

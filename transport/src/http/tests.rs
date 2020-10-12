@@ -1,12 +1,12 @@
 use exocore_core::{
     cell::{FullCell, LocalNode},
-    sec::auth_token::AuthToken,
     framing::CapnpFrameBuilder,
     futures::spawn_future,
     protos::generated::index_transport_capnp::mutation_request,
     protos::generated::index_transport_capnp::mutation_response,
     protos::generated::index_transport_capnp::query_request,
     protos::generated::index_transport_capnp::query_response,
+    sec::auth_token::AuthToken,
     time::Clock,
 };
 use hyper::{body::Buf, Body, Client, Request, Response};

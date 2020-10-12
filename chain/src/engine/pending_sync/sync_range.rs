@@ -2,9 +2,9 @@ use super::{OperationDetailsLevel, PendingSyncConfig};
 use crate::engine::EngineError;
 use crate::operation::OperationId;
 use crate::pending::StoredOperation;
-use exocore_core::sec::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
 use exocore_core::framing::FrameReader;
 use exocore_core::protos::generated::data_transport_capnp::pending_sync_range;
+use exocore_core::sec::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
 use std::ops::Bound;
 
 /// Collection of SyncRangeBuilder, taking into account maximum operations we

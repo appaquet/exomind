@@ -134,8 +134,8 @@ impl<D: MultihashDigestExt, I: FrameBuilder> FrameBuilder for MultihashFrameBuil
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sec::hash::Sha3_256;
     use crate::framing::assert_builder_equals;
+    use crate::sec::hash::Sha3_256;
 
     #[test]
     fn can_build_and_read_multihash() -> anyhow::Result<()> {

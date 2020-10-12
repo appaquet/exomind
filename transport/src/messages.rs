@@ -28,7 +28,7 @@ impl OutMessage {
     {
         let mut envelope_frame_builder = CapnpFrameBuilder::<envelope::Owned>::new();
         let mut envelope_message_builder = envelope_frame_builder.get_builder();
-        envelope_message_builder.set_layer(to_service.to_code());
+        envelope_message_builder.set_service(to_service.to_code());
         envelope_message_builder.set_type(T::MESSAGE_TYPE);
         envelope_message_builder.set_cell_id(cell.id().as_bytes());
         envelope_message_builder.set_from_node_id(&cell.local_node().id().to_string());
@@ -105,7 +105,7 @@ impl InMessage {
         };
 
         let cell_id = CellId::from_bytes(envelope_reader.get_cell_id()?);
-        let service_type_id = envelope_reader.get_layer();
+        let service_type_id = envelope_reader.get_service();
         let service_type = ServiceType::from_code(service_type_id).ok_or_else(|| {
             Error::Other(format!(
                 "Got message with invalid service type id: {}",

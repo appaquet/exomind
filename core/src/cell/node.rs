@@ -1,9 +1,9 @@
 use super::error::Error;
-use crate::sec::signature::Signature;
 use crate::protos::generated::exocore_core::{LocalNodeConfig, NodeConfig};
+use crate::sec::signature::Signature;
 use crate::{
-    sec::keys::{Keypair, PublicKey},
     protos::core::NodeAddresses,
+    sec::keys::{Keypair, PublicKey},
 };
 use libp2p::core::{Multiaddr, PeerId};
 use std::collections::HashSet;

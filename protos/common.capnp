@@ -1,11 +1,11 @@
 @0x8ee58f74f0999479;
 
 #
-# Message envelope for transport between nodes / layers
+# Message envelope for transport between nodes / service
 #
 struct Envelope {
     cellId             @0: Data;
-    layer              @1: UInt8;
+    service            @1: UInt8;
     type               @2: UInt16;
     rendezVousId       @3: UInt64;
     fromNodeId         @4: Text;

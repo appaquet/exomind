@@ -268,10 +268,10 @@ impl Libp2pTransport {
         let mut inner = inner.write()?;
 
         let cell_id = CellId::from_bytes(&cell_id_bytes);
-        let service_type = ServiceType::from_code(frame_reader.get_layer()).ok_or_else(|| {
+        let service_type = ServiceType::from_code(frame_reader.get_service()).ok_or_else(|| {
             Error::Other(format!(
                 "Message has invalid service_type {}",
-                frame_reader.get_layer()
+                frame_reader.get_service()
             ))
         })?;
 

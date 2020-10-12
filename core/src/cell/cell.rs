@@ -3,9 +3,9 @@ use super::{
     LocalNode, Node, NodeId,
 };
 use crate::cell::config::cell_config_from_yaml_file;
-use crate::sec::keys::{Keypair, PublicKey};
 use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
 use crate::protos::registry::Registry;
+use crate::sec::keys::{Keypair, PublicKey};
 use crate::{cell::cell_config_from_node_cell, utils::path::child_to_abs_path};
 use libp2p::core::PeerId;
 use std::collections::HashMap;

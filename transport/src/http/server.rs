@@ -9,13 +9,13 @@ use crate::{transport::ConnectionID, InMessage, OutEvent, OutMessage, ServiceTyp
 use exocore_core::{
     capnp,
     cell::{Cell, CellNodes, LocalNode, Node},
-    sec::auth_token::AuthToken,
     framing::{CapnpFrameBuilder, FrameBuilder},
     futures::block_on,
     protos::generated::index_transport_capnp::mutation_request,
     protos::generated::index_transport_capnp::mutation_response,
     protos::generated::index_transport_capnp::query_request,
     protos::generated::index_transport_capnp::query_response,
+    sec::auth_token::AuthToken,
     time::Clock,
     utils::handle_set::HandleSet,
 };
