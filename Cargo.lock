@@ -706,7 +706,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#3968cefa57e48e1a0601326add2a089c3c8c75ca"
+source = "git+https://github.com/appaquet/exocore.git#44f80abc484a3a88155b74603b0aa37c3c48f208"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -717,7 +717,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#3968cefa57e48e1a0601326add2a089c3c8c75ca"
+source = "git+https://github.com/appaquet/exocore.git#44f80abc484a3a88155b74603b0aa37c3c48f208"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -734,7 +734,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#3968cefa57e48e1a0601326add2a089c3c8c75ca"
+source = "git+https://github.com/appaquet/exocore.git#44f80abc484a3a88155b74603b0aa37c3c48f208"
 dependencies = [
  "anyhow",
  "bs58",
@@ -760,6 +760,7 @@ dependencies = [
  "serde_yaml",
  "thiserror",
  "tokio 0.2.22",
+ "url 2.1.1",
  "uuid 0.8.1",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -769,7 +770,7 @@ dependencies = [
 [[package]]
 name = "exocore-index"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#3968cefa57e48e1a0601326add2a089c3c8c75ca"
+source = "git+https://github.com/appaquet/exocore.git#44f80abc484a3a88155b74603b0aa37c3c48f208"
 dependencies = [
  "anyhow",
  "bytes 0.5.6",
@@ -789,7 +790,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#3968cefa57e48e1a0601326add2a089c3c8c75ca"
+source = "git+https://github.com/appaquet/exocore.git#44f80abc484a3a88155b74603b0aa37c3c48f208"
 dependencies = [
  "anyhow",
  "byteorder",
