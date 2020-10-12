@@ -30,3 +30,4 @@ cargo test --all
 
 # Generate web protos
 $EXOMIND_ROOT/web/tools/generate_protos.sh
+$EXOMIND_ROOT/browsers/tools/generate_protos.sh

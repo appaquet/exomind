@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <style>
+            body { 
+                min-width: 420px; 
+                overflow-x: hidden; 
+                font-family: Arial, sans-serif; 
+                font-size: 12px; 
+            }
+            input { 
+                width: 420px; 
+            }
+            input#save { 
+                font-weight: bold; width: auto; 
+            }
+        </style>
+        <script src="protobuf.min.js"></script>
+        <script src="protos.js"></script>
+        <script src="popup.js"></script>
+    </head>
+    <body>
+        <form id="addbookmark">
+            <p><label for="title">Title</label><br />
+            <input type="text" id="title" name="title" size="50" value="" /></p>
+
+            <p><label for="url">Url</label><br />
+            <input type="text" id="url" name="url" size="50" value="" /></p>
+
+            <p><label for="endpoint">Exomind endpoint</label><br />
+            <input type="text" id="endpoint" name="endpoint" size="50" value="" /></p>
+
+            <p><label for="auth_token">Auth token</label><br />
+            <input type="text" id="auth_token" name="auth_token" size="50" value="" /></p>
+
+            <p>
+                <input id="save" type="submit" value="Save" />
+                <span id="status-display"></span>
+            </p>
+        </form>
+    </body>
+</html>

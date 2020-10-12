@@ -37,3 +37,5 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 * See [iOS README](./ios/README.md)
 
 * See [Gmail README](./integrations/gmail/README.md)
+
+* See [Browser extensions README](./browsers/README.md)
