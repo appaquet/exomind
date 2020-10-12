@@ -7,7 +7,7 @@ fn main() {
                 "../protos/common.capnp",
                 "../protos/data_chain.capnp",
                 "../protos/data_transport.capnp",
-                "../protos/index_transport.capnp",
+                "../protos/store_transport.capnp",
             ];
             for proto_file in capn_protos_file {
                 capnpc::CompilerCommand::new()
@@ -19,9 +19,9 @@ fn main() {
 
         {
             let prost_protos_file = vec![
-                "../protos/exocore/index/entity.proto",
-                "../protos/exocore/index/query.proto",
-                "../protos/exocore/index/mutation.proto",
+                "../protos/exocore/store/entity.proto",
+                "../protos/exocore/store/query.proto",
+                "../protos/exocore/store/mutation.proto",
                 "../protos/exocore/test/test.proto",
                 "../protos/exocore/core/auth.proto",
                 "../protos/exocore/core/config.proto",

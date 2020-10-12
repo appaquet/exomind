@@ -14,5 +14,5 @@ protoc -I "$EXOCORE_ROOT/protos/" \
   --swift_out=$EXOCORE_IOS_ROOT/swift/protos/ \
   $EXOCORE_ROOT/protos/exocore/core/*.proto \
   $EXOCORE_ROOT/protos/exocore/apps/*.proto \
-  $EXOCORE_ROOT/protos/exocore/index/*.proto \
+  $EXOCORE_ROOT/protos/exocore/store/*.proto \
   $EXOCORE_ROOT/protos/exocore/test/*.proto

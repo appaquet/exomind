@@ -23,7 +23,7 @@ pub enum ServiceType {
     Meta = 1,
     Common = 2,
     Chain = 3,
-    Index = 4,
+    Store = 4,
     Client = 5,
 }
 
@@ -34,7 +34,7 @@ impl ServiceType {
             1 => Some(ServiceType::Meta),
             2 => Some(ServiceType::Common),
             3 => Some(ServiceType::Chain),
-            4 => Some(ServiceType::Index),
+            4 => Some(ServiceType::Store),
             5 => Some(ServiceType::Client),
             _ => None,
         }

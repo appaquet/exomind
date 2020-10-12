@@ -276,7 +276,7 @@ pub enum Side {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ServiceType::Index;
+    use crate::ServiceType::Store;
     use crate::{
         testing::{MockTransport, TestableTransportHandle},
         ServiceType,
@@ -295,17 +295,17 @@ mod tests {
 
         // create 2 different kind of transports
         // on node 1, we use it combined using the EitherTransportHandle
-        let node1_t1 = mock1.get_transport(node1.clone(), Index);
-        let node1_t2 = mock2.get_transport(node1.clone(), Index);
+        let node1_t1 = mock1.get_transport(node1.clone(), Store);
+        let node1_t2 = mock2.get_transport(node1.clone(), Store);
         let mut node1_either = TestableTransportHandle::new(
             EitherTransportServiceHandle::new(node1_t1, node1_t2),
             cell1.cell().clone(),
         );
 
         // on node 2, we use transports independently
-        let node2_t1 = mock1.get_transport(node2.clone(), Index);
+        let node2_t1 = mock1.get_transport(node2.clone(), Store);
         let mut node2_t1 = TestableTransportHandle::new(node2_t1, cell2.cell().clone());
-        let node2_t2 = mock2.get_transport(node2.clone(), Index);
+        let node2_t2 = mock2.get_transport(node2.clone(), Store);
         let mut node2_t2 = TestableTransportHandle::new(node2_t2, cell2.cell().clone());
 
         // since node1 has never sent message, it will send to node 2 via transport 1

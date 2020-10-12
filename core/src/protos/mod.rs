@@ -10,4 +10,4 @@ pub mod error;
 pub use error::*;
 
 pub mod generated;
-pub use generated::{apps, core, index, test};
+pub use generated::{apps, core, store, test};

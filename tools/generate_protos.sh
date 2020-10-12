@@ -32,7 +32,7 @@ done
 cargo fmt --all
 
 # Descriptors
-protoc -I"$EXOCORE_ROOT/protos/" $EXOCORE_ROOT/protos/exocore/index/*.proto -o "$EXOCORE_ROOT/core/src/protos/generated/exocore_index.fd"
+protoc -I"$EXOCORE_ROOT/protos/" $EXOCORE_ROOT/protos/exocore/store/*.proto -o "$EXOCORE_ROOT/core/src/protos/generated/exocore_store.fd"
 protoc -I"$EXOCORE_ROOT/protos/" $EXOCORE_ROOT/protos/exocore/test/*.proto -o "$EXOCORE_ROOT/core/src/protos/generated/exocore_test.fd"
 
 # Generate web protos if possible

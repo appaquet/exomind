@@ -294,10 +294,7 @@ mod tests {
             assert_eq!(2, nodes.count());
 
             let nodes_iter = nodes.iter();
-            let node = nodes_iter
-                .with_role(CellNodeRole::IndexStore)
-                .next()
-                .unwrap();
+            let node = nodes_iter.with_role(CellNodeRole::Store).next().unwrap();
             assert_eq!(2, node.roles().len());
         }
 
@@ -432,7 +429,7 @@ cells:
 
         {
             assert!(cell.local_node_has_role(CellNodeRole::Chain));
-            assert!(!cell.local_node_has_role(CellNodeRole::IndexStore));
+            assert!(!cell.local_node_has_role(CellNodeRole::Store));
         }
 
         Ok(())

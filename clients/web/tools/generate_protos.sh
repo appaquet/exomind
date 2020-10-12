@@ -17,7 +17,7 @@ $EXOCORE_ROOT/node_modules/.bin/pbjs \
     -p $EXOCORE_ROOT/protos/ \
     --es6 \
     -r 'exocore-root' \
-    $EXOCORE_ROOT/protos/exocore/index/*.proto \
+    $EXOCORE_ROOT/protos/exocore/store/*.proto \
     $EXOCORE_ROOT/protos/exocore/test/*.proto
 
 # Generate typescript definition for protos

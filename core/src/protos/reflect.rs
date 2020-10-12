@@ -1,6 +1,6 @@
 use super::registry::Registry;
 use super::Error;
-use crate::protos::generated::exocore_index::Reference;
+use crate::protos::generated::exocore_store::Reference;
 use protobuf::descriptor::DescriptorProto;
 use protobuf::types::{
     ProtobufType, ProtobufTypeInt32, ProtobufTypeInt64, ProtobufTypeMessage, ProtobufTypeString,
@@ -163,7 +163,7 @@ pub struct FieldDescriptor {
     pub name: String,
     pub field_type: FieldType,
 
-    // see exocore/index/options.proto
+    // see exocore/store/options.proto
     pub indexed_flag: bool,
     pub sorted_flag: bool,
     pub text_flag: bool,

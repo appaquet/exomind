@@ -800,7 +800,7 @@ dependencies = [
  "anyhow",
  "exocore-chain",
  "exocore-core",
- "exocore-index",
+ "exocore-store",
  "exocore-transport",
  "futures 0.3.6",
  "log",
@@ -815,7 +815,7 @@ version = "0.1.0"
 dependencies = [
  "exocore-chain",
  "exocore-core",
- "exocore-index",
+ "exocore-store",
  "exocore-transport",
 ]
 
@@ -844,7 +844,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "exocore-core",
- "exocore-index",
+ "exocore-store",
  "exocore-transport",
  "thiserror",
 ]
@@ -855,7 +855,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "exocore-core",
- "exocore-index",
+ "exocore-store",
  "exocore-transport",
  "futures 0.3.6",
  "libc",
@@ -872,7 +872,7 @@ dependencies = [
  "anyhow",
  "console_error_panic_hook",
  "exocore-core",
- "exocore-index",
+ "exocore-store",
  "exocore-transport",
  "futures 0.3.6",
  "js-sys",
@@ -922,7 +922,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "exocore-index"
+name = "exocore-store"
 version = "0.1.0"
 dependencies = [
  "anyhow",

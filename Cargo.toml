@@ -10,8 +10,8 @@ repository = "https://github.com/appaquet/exocore"
 license = "Apache-2.0"
 
 [features]
-default = ["core-runtime", "core-logger", "transport-p2p", "index-local-store", "chain-engine", "chain-directory-chain", "chain-memory-pending"]
-tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils", "exocore-index/tests-utils"]
+default = ["core-runtime", "core-logger", "transport-p2p", "store-local", "chain-engine", "chain-directory-chain", "chain-memory-pending"]
+tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils", "exocore-store/tests-utils"]
 logger = ["core-logger"]
 
 client = ["core-runtime", "transport-p2p"]
@@ -21,7 +21,7 @@ core-runtime = ["exocore-core/runtime"]
 core-logger = ["exocore-core/logger"]
 transport-p2p = ["exocore-transport/p2p-full"]
 transport-p2p-web = ["exocore-transport/p2p-web"]
-index-local-store = ["exocore-index/local-store"]
+store-local = ["exocore-store/local"]
 chain-engine = ["exocore-chain/engine"]
 chain-directory-chain = ["exocore-chain/directory-chain"]
 chain-memory-pending = ["exocore-chain/memory-pending"]
@@ -29,7 +29,7 @@ chain-memory-pending = ["exocore-chain/memory-pending"]
 [dependencies]
 exocore-core = { version = "0.1.0", path = "./core", default-features = false }
 exocore-transport = { version = "0.1.0", path = "./transport", default-features = false }
-exocore-index = { version = "0.1.0", path = "./index", default-features = false }
+exocore-store = { version = "0.1.0", path = "./store", default-features = false }
 exocore-chain = { version = "0.1.0", path = "./chain", default-features = false }
 
 [dev-dependencies]
@@ -38,7 +38,7 @@ exocore-core = { version = "0.1.0", path = "./core", features = ["tests-utils"] 
 [workspace]
 members = [
   "exo",
-  "index",
+  "store",
   "chain",
   "core",
   "transport",

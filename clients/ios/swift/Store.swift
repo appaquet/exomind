@@ -7,7 +7,7 @@ public class Store {
         self.client = client
     }
 
-    public func mutate(mutation: Exocore_Index_MutationRequest, onCompletion: ((MutationStatus, Exocore_Index_MutationResult?) -> Void)? = nil) {
+    public func mutate(mutation: Exocore_Store_MutationRequest, onCompletion: ((MutationStatus, Exocore_Store_MutationResult?) -> Void)? = nil) {
         let callback = onCompletion ?? { status, result in }
         let cb = MutationCallback(cb: callback)
         let observer = UnsafeRawPointer(Unmanaged.passRetained(cb).toOpaque())
@@ -23,7 +23,7 @@ public class Store {
                     cb.cb(.error, nil)
                 } else {
                     let resultsData = Data(bytes: resultsPtr!, count: Int(resultsSize))
-                    if let results = try? Exocore_Index_MutationResult(serializedData: resultsData) {
+                    if let results = try? Exocore_Store_MutationResult(serializedData: resultsData) {
                         cb.cb(.done, results)
                     } else {
                         cb.cb(.error, nil)
@@ -33,7 +33,7 @@ public class Store {
         }
     }
 
-    public func query(query: Exocore_Index_EntityQuery, onChange: @escaping (QueryStatus, Exocore_Index_EntityResults?) -> Void) -> QueryHandle {
+    public func query(query: Exocore_Store_EntityQuery, onChange: @escaping (QueryStatus, Exocore_Store_EntityResults?) -> Void) -> QueryHandle {
         let cb = QueryCallback(cb: onChange)
         let observer = UnsafeRawPointer(Unmanaged.passRetained(cb).toOpaque())
 
@@ -48,7 +48,7 @@ public class Store {
                     cb.cb(.error, nil)
                 } else {
                     let resultsData = Data(bytes: resultsPtr!, count: Int(resultsSize))
-                    if let results = try? Exocore_Index_EntityResults(serializedData: resultsData) {
+                    if let results = try? Exocore_Store_EntityResults(serializedData: resultsData) {
                         cb.cb(.done, results)
                     } else {
                         cb.cb(.error, nil)
@@ -60,7 +60,7 @@ public class Store {
         return QueryHandle(queryHandle: handle, client: self.client!)
     }
 
-    public func watchedQuery(query: Exocore_Index_EntityQuery, onChange: @escaping (QueryStatus, Exocore_Index_EntityResults?) -> Void) -> QueryStreamHandle {
+    public func watchedQuery(query: Exocore_Store_EntityQuery, onChange: @escaping (QueryStatus, Exocore_Store_EntityResults?) -> Void) -> QueryStreamHandle {
         let cb = QueryCallback(cb: onChange)
         let observer = UnsafeRawPointer(Unmanaged.passRetained(cb).toOpaque())
 
@@ -81,7 +81,7 @@ public class Store {
 
                 let cb = Unmanaged<QueryCallback>.fromOpaque(observer!).takeUnretainedValue() // don't consume the ptr
                 let resultsData = Data(bytes: resultsPtr!, count: Int(resultsSize))
-                if let results = try? Exocore_Index_EntityResults(serializedData: resultsData) {
+                if let results = try? Exocore_Store_EntityResults(serializedData: resultsData) {
                     cb.cb(.running, results)
                 } else {
                     cb.cb(.error, nil)
@@ -132,17 +132,17 @@ public class QueryHandle {
 }
 
 public class QueryCallback {
-    var cb: (QueryStatus, Exocore_Index_EntityResults?) -> Void
+    var cb: (QueryStatus, Exocore_Store_EntityResults?) -> Void
 
-    init(cb: @escaping (QueryStatus, Exocore_Index_EntityResults?) -> Void) {
+    init(cb: @escaping (QueryStatus, Exocore_Store_EntityResults?) -> Void) {
         self.cb = cb
     }
 }
 
 public class MutationCallback {
-    var cb: (MutationStatus, Exocore_Index_MutationResult?) -> Void
+    var cb: (MutationStatus, Exocore_Store_MutationResult?) -> Void
 
-    init(cb: @escaping (MutationStatus, Exocore_Index_MutationResult?) -> Void) {
+    init(cb: @escaping (MutationStatus, Exocore_Store_MutationResult?) -> Void) {
         self.cb = cb
     }
 }

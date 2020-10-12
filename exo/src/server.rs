@@ -5,8 +5,8 @@ use exocore_chain::{
 use exocore_core::cell::{Cell, CellNodeRole, EitherCell, FullCell};
 use exocore_core::futures::Runtime;
 use exocore_core::time::Clock;
-use exocore_index::local::{EntityIndex, EntityIndexConfig, Store};
-use exocore_index::remote::server::Server;
+use exocore_store::local::{EntityIndex, EntityIndexConfig, Store};
+use exocore_store::remote::server::Server;
 use exocore_transport::{
     either::EitherTransportServiceHandle, http::HTTPTransportConfig, http::HTTPTransportServer,
     p2p::Libp2pTransportConfig,
@@ -69,7 +69,7 @@ pub fn start(
             // will get dropped
             let engine_handle = engine.get_handle();
             engines_handle.push(engine_handle);
-            let index_engine_handle = engine.get_handle();
+            let store_engine_handle = engine.get_handle();
 
             // start the engine
             rt.spawn(async move {
@@ -77,14 +77,12 @@ pub fn start(
                 info!("{}: Engine is done: {:?}", cell_name, res);
             });
 
-            // start an local store index if needed
-            if cell.local_node_has_role(CellNodeRole::IndexStore) {
+            // start an local store if needed
+            if cell.local_node_has_role(CellNodeRole::Store) {
                 let full_cell = match &either_cell {
                     EitherCell::Full(cell) => cell.as_ref().clone(),
                     _ => {
-                        return Err(anyhow!(
-                            "Cannot have IndexStore role on cell without keypair",
-                        ));
+                        return Err(anyhow!("Cannot have store role on cell without keypair",));
                     }
                 };
 
@@ -92,14 +90,14 @@ pub fn start(
                 let entities_index = EntityIndex::open_or_create(
                     full_cell.clone(),
                     entities_index_config,
-                    index_engine_handle.clone(),
+                    store_engine_handle.clone(),
                 )?;
 
-                // create a combined p2p + http transport for entities index so that it can received mutation / query over http
+                // create a combined p2p + http transport for entities store so that it can received mutation / query over http
                 let entities_p2p_transport =
-                    p2p_transport.get_handle(cell.clone(), ServiceType::Index)?;
+                    p2p_transport.get_handle(cell.clone(), ServiceType::Store)?;
                 let entities_http_transport =
-                    http_transport.get_handle(cell.clone(), ServiceType::Index)?;
+                    http_transport.get_handle(cell.clone(), ServiceType::Store)?;
                 let entities_transport = EitherTransportServiceHandle::new(
                     entities_p2p_transport,
                     entities_http_transport,
@@ -108,14 +106,14 @@ pub fn start(
                 create_local_store(
                     &mut rt,
                     entities_transport,
-                    index_engine_handle,
+                    store_engine_handle,
                     full_cell,
                     clock.clone(),
                     entities_index,
                 )?;
             } else {
                 info!(
-                    "{}: Local node doesn't have index role. Not starting local store index.",
+                    "{}: Local node doesn't have store role. Not starting local store server.",
                     cell
                 )
             }
@@ -146,7 +144,7 @@ pub fn start(
 fn create_local_store<T: TransportServiceHandle>(
     rt: &mut Runtime,
     transport: T,
-    index_engine_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
+    chain_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
     full_cell: FullCell,
     clock: Clock,
     entities_index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
@@ -156,15 +154,15 @@ fn create_local_store<T: TransportServiceHandle>(
         store_config,
         full_cell.cell().clone(),
         clock,
-        index_engine_handle,
+        chain_handle,
         entities_index,
     )?;
     let store_handle = local_store.get_handle();
 
     rt.spawn(async move {
         match local_store.run().await {
-            Ok(_) => info!("Local index has stopped"),
-            Err(err) => error!("Local index has stopped: {}", err),
+            Ok(_) => info!("Local store has stopped"),
+            Err(err) => error!("Local store has stopped: {}", err),
         }
     });
     rt.block_on(store_handle.on_start());

@@ -11,10 +11,10 @@ use exocore_core::{
     cell::{Cell, CellNodes, LocalNode, Node},
     framing::{CapnpFrameBuilder, FrameBuilder},
     futures::block_on,
-    protos::generated::index_transport_capnp::mutation_request,
-    protos::generated::index_transport_capnp::mutation_response,
-    protos::generated::index_transport_capnp::query_request,
-    protos::generated::index_transport_capnp::query_response,
+    protos::generated::store_transport_capnp::mutation_request,
+    protos::generated::store_transport_capnp::mutation_response,
+    protos::generated::store_transport_capnp::query_request,
+    protos::generated::store_transport_capnp::query_response,
     sec::auth_token::AuthToken,
     time::Clock,
     utils::handle_set::HandleSet,
@@ -302,7 +302,7 @@ async fn send_entity_query(
     msg_builder.set_request(body_bytes);
 
     let message =
-        OutMessage::from_framed_message(&service.cell, ServiceType::Index, frame_builder)?
+        OutMessage::from_framed_message(&service.cell, ServiceType::Store, frame_builder)?
             .with_to_node(local_node)
             .with_rendez_vous_id(clock.consistent_time(service.cell.local_node()))
             .with_connection(ConnectionID::HTTPServer(tracked_request.id()))
@@ -351,7 +351,7 @@ async fn send_entity_mutation(
     msg_builder.set_request(body_bytes);
 
     let message =
-        OutMessage::from_framed_message(&service.cell, ServiceType::Index, frame_builder)?
+        OutMessage::from_framed_message(&service.cell, ServiceType::Store, frame_builder)?
             .with_to_node(local_node)
             .with_rendez_vous_id(clock.consistent_time(service.cell.local_node()))
             .with_connection(ConnectionID::HTTPServer(tracked_request.id()))
@@ -427,8 +427,8 @@ impl RequestType {
 
     fn service_type(&self) -> ServiceType {
         match self {
-            RequestType::EntitiesQuery => ServiceType::Index,
-            RequestType::EntitiesMutation => ServiceType::Index,
+            RequestType::EntitiesQuery => ServiceType::Store,
+            RequestType::EntitiesMutation => ServiceType::Store,
         }
     }
 }

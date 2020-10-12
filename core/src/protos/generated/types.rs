@@ -68,31 +68,31 @@ impl<'a> MessageType<'a> for super::data_transport_capnp::chain_sync_response::O
     const MESSAGE_TYPE: u16 = 203;
 }
 
-/// Messages related to transport / messaging between nodes on index layer
-impl<'a> MessageType<'a> for super::index_transport_capnp::query_request::Owned {
+/// Messages related to transport / messaging between nodes on store layer
+impl<'a> MessageType<'a> for super::store_transport_capnp::query_request::Owned {
     const MESSAGE_TYPE: u16 = 300;
 }
 
-impl<'a> MessageType<'a> for super::index_transport_capnp::query_response::Owned {
+impl<'a> MessageType<'a> for super::store_transport_capnp::query_response::Owned {
     const MESSAGE_TYPE: u16 = 301;
 }
 
-impl<'a> MessageType<'a> for super::index_transport_capnp::mutation_request::Owned {
+impl<'a> MessageType<'a> for super::store_transport_capnp::mutation_request::Owned {
     const MESSAGE_TYPE: u16 = 302;
 }
 
-impl<'a> MessageType<'a> for super::index_transport_capnp::mutation_response::Owned {
+impl<'a> MessageType<'a> for super::store_transport_capnp::mutation_response::Owned {
     const MESSAGE_TYPE: u16 = 303;
 }
 
-impl<'a> MessageType<'a> for super::index_transport_capnp::watched_query_request::Owned {
+impl<'a> MessageType<'a> for super::store_transport_capnp::watched_query_request::Owned {
     const MESSAGE_TYPE: u16 = 304;
 }
 
-impl<'a> MessageType<'a> for super::index_transport_capnp::watched_query_response::Owned {
+impl<'a> MessageType<'a> for super::store_transport_capnp::watched_query_response::Owned {
     const MESSAGE_TYPE: u16 = 305;
 }
 
-impl<'a> MessageType<'a> for super::index_transport_capnp::unwatch_query_request::Owned {
+impl<'a> MessageType<'a> for super::store_transport_capnp::unwatch_query_request::Owned {
     const MESSAGE_TYPE: u16 = 306;
 }

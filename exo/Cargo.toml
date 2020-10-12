@@ -12,7 +12,7 @@ license = "Apache-2.0"
 [dependencies]
 exocore-core = { path = "../core", features = ["runtime", "logger"] }
 exocore-chain = { path = "../chain" }
-exocore-index = { path = "../index" }
+exocore-store = { path = "../store" }
 exocore-transport = { path = "../transport", features = ["http-server"] }
 log = "0.4"
 structopt = "0.3"

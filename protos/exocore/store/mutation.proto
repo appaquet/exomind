@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package exocore.store;
+
+import "exocore/store/entity.proto";
+import "google/protobuf/field_mask.proto";
+
+message MutationRequest {
+    /// Mutations to apply.
+    repeated EntityMutation mutations = 1;
+
+    /// Waits for mutation to be indexed.
+    bool wait_indexed = 2;
+
+    /// Waits for mutation to be indexed and returns the mutated entities.
+    bool return_entities = 3;
+
+    /// If an entity ID is generated for the mutated entities, reuse the same ID for all mutations.
+    bool common_entity_id = 4;
+}
+
+message MutationResult {
+    /// Unique operation ids for each mutations.
+    repeated uint64 operation_ids = 1;
+
+    /// Mutated entities if requested.
+    repeated Entity entities = 2;
+}
+
+message EntityMutation {
+    string entity_id = 1;
+
+    oneof mutation {
+        PutTraitMutation put_trait = 2;
+        DeleteTraitMutation delete_trait = 3;
+        DeleteEntityMutation delete_entity = 4;
+        UpdateTraitMutation update_trait = 5;
+        CompactTraitMutation compact_trait = 6;
+        TestMutation test = 99;
+    }
+}
+
+message PutTraitMutation {
+    Trait trait = 1;
+}
+
+message DeleteTraitMutation {
+    string trait_id = 1;
+}
+
+message DeleteEntityMutation {
+}
+
+message UpdateTraitMutation {
+    string trait_id = 1;
+
+    Trait trait = 2;
+
+    google.protobuf.FieldMask field_mask = 3;
+
+    // Updates is only valid if the last mutation operation on trait this given operation id.
+    uint64 if_last_operation_id = 4;
+}
+
+message CompactTraitMutation {
+    // List of operations that are compacted by this compaction. The compaction will only succeed
+    // if there were no operations between these operations and the compaction's operation itself.
+    repeated Operation compacted_operations = 1;
+
+    // Trait with merged values from compacted operations
+    Trait trait = 2;
+
+    message Operation {
+        uint64 operation_id = 1;
+    }
+}
+
+message TestMutation {
+    bool success = 1;
+}

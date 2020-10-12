@@ -10,6 +10,6 @@ crate-type = ["cdylib"]
 [dependencies]
 exocore-core = { path = "../../core", features = ["runtime", "logger"] }
 exocore-transport = { path = "../../transport", features = ["p2p-full"] }
-exocore-index = { path = "../../index" }
+exocore-store = { path = "../../store" }
 thiserror = "1.0"
 anyhow = "1.0"

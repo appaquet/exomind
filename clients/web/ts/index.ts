@@ -81,22 +81,22 @@ export class Store {
         this.wasmClient = inner;
     }
 
-    async mutate(mutation: exocore.index.IMutationRequest): Promise<exocore.index.MutationResult> {
-        const encoded = exocore.index.MutationRequest.encode(mutation).finish();
+    async mutate(mutation: exocore.store.IMutationRequest): Promise<exocore.store.MutationResult> {
+        const encoded = exocore.store.MutationRequest.encode(mutation).finish();
 
         let resultsData: Uint8Array = await this.wasmClient.mutate(encoded);
-        return exocore.index.MutationResult.decode(resultsData);
+        return exocore.store.MutationResult.decode(resultsData);
     }
 
-    async query(query: exocore.index.IEntityQuery): Promise<exocore.index.EntityResults> {
-        const encoded = exocore.index.EntityQuery.encode(query).finish();
+    async query(query: exocore.store.IEntityQuery): Promise<exocore.store.EntityResults> {
+        const encoded = exocore.store.EntityQuery.encode(query).finish();
 
         const resultsData: Uint8Array = await this.wasmClient.query(encoded);
-        return exocore.index.EntityResults.decode(resultsData);
+        return exocore.store.EntityResults.decode(resultsData);
     }
 
-    watchedQuery(query: exocore.index.IEntityQuery): WatchedQuery {
-        const encoded = exocore.index.EntityQuery.encode(query).finish();
+    watchedQuery(query: exocore.store.IEntityQuery): WatchedQuery {
+        const encoded = exocore.store.EntityQuery.encode(query).finish();
 
         return new WatchedQuery(this.wasmClient.watched_query(encoded));
     }
@@ -117,10 +117,10 @@ export class WatchedQuery {
         this.inner = inner;
     }
 
-    onChange(cb: (results: exocore.index.EntityResults) => void): WatchedQuery {
+    onChange(cb: (results: exocore.store.EntityResults) => void): WatchedQuery {
         this.inner.on_change(() => {
             const resultsData: Uint8Array = this.inner.get();
-            const res = exocore.index.EntityResults.decode(resultsData);
+            const res = exocore.store.EntityResults.decode(resultsData);
             cb(res);
         })
         return this;
@@ -189,11 +189,11 @@ export class Registry {
 
 export class MutationBuilder {
     entityId: string;
-    request: exocore.index.MutationRequest;
+    request: exocore.store.MutationRequest;
 
     constructor(entityId: string) {
         this.entityId = entityId;
-        this.request = new exocore.index.MutationRequest();
+        this.request = new exocore.store.MutationRequest();
     }
 
     static createEntity(entityId?: string): MutationBuilder {
@@ -229,10 +229,10 @@ export class MutationBuilder {
             traitId = _exocore_wasm.generate_id('trt');
         }
 
-        this.request.mutations.push(new exocore.index.EntityMutation({
+        this.request.mutations.push(new exocore.store.EntityMutation({
             entityId: this.entityId,
-            putTrait: new exocore.index.PutTraitMutation({
-                trait: new exocore.index.Trait({
+            putTrait: new exocore.store.PutTraitMutation({
+                trait: new exocore.store.Trait({
                     id: traitId,
                     message: Exocore.registry.packToAny(message),
                 })
@@ -243,9 +243,9 @@ export class MutationBuilder {
     }
 
     deleteTrait(traitId: string): MutationBuilder {
-        this.request.mutations.push(new exocore.index.EntityMutation({
+        this.request.mutations.push(new exocore.store.EntityMutation({
             entityId: this.entityId,
-            deleteTrait: new exocore.index.DeleteTraitMutation({
+            deleteTrait: new exocore.store.DeleteTraitMutation({
                 traitId: traitId,
             })
         }));
@@ -259,21 +259,21 @@ export class MutationBuilder {
         return this;
     }
 
-    build(): exocore.index.MutationRequest {
+    build(): exocore.store.MutationRequest {
         return this.request;
     }
 }
 
 export class QueryBuilder {
-    query: exocore.index.EntityQuery;
+    query: exocore.store.EntityQuery;
 
     constructor() {
-        this.query = new exocore.index.EntityQuery();
+        this.query = new exocore.store.EntityQuery();
     }
 
-    static withTrait(message: any, traitQuery?: exocore.index.ITraitQuery): QueryBuilder {
+    static withTrait(message: any, traitQuery?: exocore.store.ITraitQuery): QueryBuilder {
         let builder = new QueryBuilder();
-        builder.query.trait = new exocore.index.TraitPredicate({
+        builder.query.trait = new exocore.store.TraitPredicate({
             traitName: Exocore.registry.messageFullName(message),
             query: traitQuery,
         });
@@ -282,7 +282,7 @@ export class QueryBuilder {
 
     static matches(query: string): QueryBuilder {
         let builder = new QueryBuilder();
-        builder.query.match = new exocore.index.MatchPredicate({
+        builder.query.match = new exocore.store.MatchPredicate({
             query: query
         });
         return builder;
@@ -294,7 +294,7 @@ export class QueryBuilder {
         }
 
         let builder = new QueryBuilder();
-        builder.query.ids = new exocore.index.IdsPredicate({
+        builder.query.ids = new exocore.store.IdsPredicate({
             ids: ids,
         });
         return builder;
@@ -302,24 +302,24 @@ export class QueryBuilder {
 
     static all(): QueryBuilder {
         let builder = new QueryBuilder();
-        builder.query.all = new exocore.index.AllPredicate();
+        builder.query.all = new exocore.store.AllPredicate();
         return builder;
     }
 
     count(count: number): QueryBuilder {
-        this.query.paging = new exocore.index.Paging({
+        this.query.paging = new exocore.store.Paging({
             count: count,
         });
         return this;
     }
 
-    project(...projection: exocore.index.IProjection[]): QueryBuilder {
+    project(...projection: exocore.store.IProjection[]): QueryBuilder {
         this.query.projections = this.query.projections.concat(projection);
         return this;
     }
 
     orderByField(field: string, ascending: boolean): QueryBuilder {
-        this.query.ordering = new exocore.index.Ordering({
+        this.query.ordering = new exocore.store.Ordering({
             ascending: ascending === true,
             field: field,
         });
@@ -327,7 +327,7 @@ export class QueryBuilder {
     }
 
     orderByOperationIds(ascending: boolean): QueryBuilder {
-        this.query.ordering = new exocore.index.Ordering({
+        this.query.ordering = new exocore.store.Ordering({
             ascending: ascending === true,
             operationId: true,
         });
@@ -339,23 +339,23 @@ export class QueryBuilder {
         return this;
     }
 
-    build(): exocore.index.IEntityQuery {
+    build(): exocore.store.IEntityQuery {
         return this.query;
     }
 }
 
 export class TraitQueryBuilder {
-    query: exocore.index.TraitQuery
+    query: exocore.store.TraitQuery
 
     constructor() {
-        this.query = new exocore.index.TraitQuery();
+        this.query = new exocore.store.TraitQuery();
     }
 
     static refersTo(field: string, entityId: string, traitId?: string): TraitQueryBuilder {
         let builder = new TraitQueryBuilder();
-        builder.query.reference = new exocore.index.TraitFieldReferencePredicate({
+        builder.query.reference = new exocore.store.TraitFieldReferencePredicate({
             field: field,
-            reference: new exocore.index.Reference({
+            reference: new exocore.store.Reference({
                 entityId: entityId,
                 traitId: traitId,
             })
@@ -366,14 +366,14 @@ export class TraitQueryBuilder {
 
     static matches(query: string): TraitQueryBuilder {
         let builder = new TraitQueryBuilder();
-        builder.query.match = new exocore.index.MatchPredicate({
+        builder.query.match = new exocore.store.MatchPredicate({
             query: query,
         });
 
         return builder;
     }
 
-    build(): exocore.index.ITraitQuery {
+    build(): exocore.store.ITraitQuery {
         return this.query;
     }
 }
@@ -392,7 +392,7 @@ export function fromProtoTimestamp(ts: protos.google.protobuf.ITimestamp): Date 
     return new Date((ts.seconds as number) * 1000 + ts.nanos / 1000000);
 }
 
-export function matchTrait<T>(trait: exocore.index.ITrait, matchMap: { [fullName: string]: (trait: exocore.index.ITrait, message: any)=>T}): T|null {
+export function matchTrait<T>(trait: exocore.store.ITrait, matchMap: { [fullName: string]: (trait: exocore.store.ITrait, message: any)=>T}): T|null {
     const fullName = Exocore.registry.canonicalFullName(trait.message.type_url);
 
     if (fullName in matchMap) {

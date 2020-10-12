@@ -12,15 +12,15 @@ The primary concept in Exocore is a Cell, which is a unique container for a user
 
 A cell consists of:
 * Chain nodes managing replication and storage by using a blockchain data structure.
-* Index nodes managing indexation, querying and mutation of the data (collocated with chain node).
-* Applications nodes run applications written in WebAssembly (that can be collocated with index nodes)
+* Store nodes managing indexation, querying and mutation of the data (collocated with chain node).
+* Applications nodes run applications written in WebAssembly (that can be collocated with store nodes)
 * Clients (fat or thin) that can also act as index, data and partially run applications' WebAssembly.
 
 ## Roadmap
 ### v0.1 (in progress)
 * **Chain storage and replication layer**: Proof of concept
 * **Transport layer**: Proof of concept
-* **Index layer:** Proof of concept
+* **Store layer:** Proof of concept
 * **Encryption**: In development
 
 ### v0.2

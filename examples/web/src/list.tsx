@@ -5,8 +5,8 @@ interface IListProps {
 }
 
 interface IListItem {
-    entity: exocore.index.IEntity;
-    trait: exocore.index.ITrait;
+    entity: exocore.store.IEntity;
+    trait: exocore.store.ITrait;
     message: exocore.test.ITestMessage;
 }
 

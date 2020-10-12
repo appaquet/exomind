@@ -27,9 +27,9 @@ pub struct TestMessage {
     #[prost(int32, tag = "19")]
     pub int3: i32,
     #[prost(message, optional, tag = "13")]
-    pub ref1: ::std::option::Option<super::index::Reference>,
+    pub ref1: ::std::option::Option<super::store::Reference>,
     #[prost(message, optional, tag = "14")]
-    pub ref2: ::std::option::Option<super::index::Reference>,
+    pub ref2: ::std::option::Option<super::store::Reference>,
     #[prost(string, tag = "20")]
     pub grouped1: std::string::String,
     #[prost(string, tag = "21")]

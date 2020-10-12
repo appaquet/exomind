@@ -96,7 +96,7 @@ pub mod cell_node_config {
     pub enum Role {
         InvalidRole = 0,
         ChainRole = 1,
-        IndexStoreRole = 2,
+        StoreRole = 2,
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]

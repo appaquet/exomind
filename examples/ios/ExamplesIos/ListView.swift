@@ -73,7 +73,7 @@ class MyList: ObservableObject {
         self.resultStream = ExocoreClient.store.watchedQuery(query: query, onChange: { [weak self] (status, results) in
             DispatchQueue.main.async {
                 if let results = results {
-                    self?.items = results.entities.map { (result: Exocore_Index_EntityResult) -> Item in
+                    self?.items = results.entities.map { (result: Exocore_Store_EntityResult) -> Item in
 
                         var title = "UNKNOWN"
                         if let trt = result.entity.traitOfType(Exocore_Test_TestMessage.self) {

@@ -14,7 +14,7 @@ nodes:
 
     # Role of the node
     # Chain = 1
-    # Index store = 2
+    # Store = 2
     roles:
       - 1
       - 2

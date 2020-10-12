@@ -2,10 +2,10 @@ use exocore_core::{
     cell::{FullCell, LocalNode},
     framing::CapnpFrameBuilder,
     futures::spawn_future,
-    protos::generated::index_transport_capnp::mutation_request,
-    protos::generated::index_transport_capnp::mutation_response,
-    protos::generated::index_transport_capnp::query_request,
-    protos::generated::index_transport_capnp::query_response,
+    protos::generated::store_transport_capnp::mutation_request,
+    protos::generated::store_transport_capnp::mutation_response,
+    protos::generated::store_transport_capnp::query_request,
+    protos::generated::store_transport_capnp::query_response,
     sec::auth_token::AuthToken,
     time::Clock,
 };
@@ -124,7 +124,7 @@ async fn start_server(cell: &FullCell, clock: &Clock, port: u16) -> TestableTran
 
     let mut server = HTTPTransportServer::new(cell.local_node().clone(), config, clock.clone());
     let handle = server
-        .get_handle(cell.cell().clone(), ServiceType::Index)
+        .get_handle(cell.cell().clone(), ServiceType::Store)
         .unwrap();
 
     spawn_future(async move {

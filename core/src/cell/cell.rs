@@ -225,11 +225,11 @@ impl Cell {
         }
     }
 
-    pub fn index_directory(&self) -> Option<PathBuf> {
+    pub fn store_directory(&self) -> Option<PathBuf> {
         if let Some(path) = &self.identity.path {
-            let mut index_dir = PathBuf::from(path);
-            index_dir.push("index");
-            Some(index_dir)
+            let mut store_dir = PathBuf::from(path);
+            store_dir.push("store");
+            Some(store_dir)
         } else {
             None
         }

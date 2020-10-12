@@ -1,0 +1,39 @@
+[package]
+name = "exocore-store"
+description = "Store layer of Exocore (Distributed applications framework)"
+version = "0.1.0"
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+edition = "2018"
+keywords = ["networking", "mobile", "webassembly", "storage", "database"]
+categories = ["database-implementations", "command-line-interface", "wasm", "web-programming"]
+repository = "https://github.com/appaquet/exocore"
+license = "Apache-2.0"
+
+[features]
+default = ["local"]
+local = ["tantivy", "exocore-chain/engine", "crc"]
+tests-utils = []
+
+[dependencies]
+exocore-chain = { path = "../chain", default-features = false }
+exocore-transport = { path = "../transport", default-features = false }
+exocore-core = { path = "../core" }
+thiserror = "1.0"
+anyhow = "1.0"
+itertools = "0.9"
+log = "0.4"
+futures = "0.3"
+prost = "0.6"
+bytes = "0.5"
+chrono = { version = "0.4", features = ["serde"] }
+smallvec = "1.4"
+lru = "0.6"
+
+# Local store
+tantivy = { version = "0.13", optional = true }
+crc = { version = "1.8", optional = true }
+
+[dev-dependencies]
+tempfile = "3.1"
+exocore-chain = { path = "../chain", features = ["tests-utils"] }
+exocore-core = { path = "../core", features = ["tests-utils"] }

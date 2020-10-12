@@ -26,8 +26,8 @@ impl Registry {
     pub fn new_with_exocore_types() -> Registry {
         let reg = Registry::new();
 
-        reg.register_file_descriptor_set_bytes(super::generated::INDEX_FDSET)
-            .expect("Couldn't register exocore_index FileDescriptorProto");
+        reg.register_file_descriptor_set_bytes(super::generated::STORE_FDSET)
+            .expect("Couldn't register exocore_store FileDescriptorProto");
 
         reg.register_file_descriptor_set_bytes(super::generated::TEST_FDSET)
             .expect("Couldn't register exocore_test FileDescriptorProto");
@@ -84,7 +84,7 @@ impl Registry {
                     let typ = field.get_type_name().trim_start_matches('.');
                     match typ {
                         "google.protobuf.Timestamp" => FieldType::DateTime,
-                        "exocore.index.Reference" => FieldType::Reference,
+                        "exocore.store.Reference" => FieldType::Reference,
                         _ => FieldType::Message(typ.to_string()),
                     }
                 }
@@ -99,7 +99,7 @@ impl Registry {
                     name: field.get_name().to_string(),
                     field_type,
 
-                    // see exocore/index/options.proto
+                    // see exocore/store/options.proto
                     indexed_flag: Registry::field_has_option(field, 1373),
                     sorted_flag: Registry::field_has_option(field, 1374),
                     text_flag: Registry::field_has_option(field, 1375),
@@ -185,8 +185,8 @@ mod tests {
     #[test]
     fn with_exocore_types() {
         let reg = Registry::new_with_exocore_types();
-        let entity = reg.get_message_descriptor("exocore.index.Entity").unwrap();
-        assert_eq!(entity.name, "exocore.index.Entity");
+        let entity = reg.get_message_descriptor("exocore.store.Entity").unwrap();
+        assert_eq!(entity.name, "exocore.store.Entity");
         assert!(!entity.fields.is_empty());
 
         let desc = reg.message_descriptors();
