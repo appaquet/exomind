@@ -664,9 +664,9 @@ checksum = "134951f4028bdadb9b84baf4232681efbf277da25144b9b0ad65df75946c422b"
 
 [[package]]
 name = "ed25519"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07dfc993ea376e864fe29a4099a61ca0bb994c6d7745a61bf60ddb3d64e05237"
+checksum = "37c66a534cbb46ab4ea03477eae19d5c22c01da8258030280b7bd9d8433fb6ef"
 dependencies = [
  "signature",
 ]
@@ -712,7 +712,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#a3daed0e9638c9ff3ebf82a1d84222d2ccb4cf6e"
+source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -723,7 +723,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#a3daed0e9638c9ff3ebf82a1d84222d2ccb4cf6e"
+source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -740,7 +740,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#a3daed0e9638c9ff3ebf82a1d84222d2ccb4cf6e"
+source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
 dependencies = [
  "anyhow",
  "bs58",
@@ -776,7 +776,7 @@ dependencies = [
 [[package]]
 name = "exocore-index"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#a3daed0e9638c9ff3ebf82a1d84222d2ccb4cf6e"
+source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
 dependencies = [
  "anyhow",
  "bytes 0.5.6",
@@ -796,7 +796,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#a3daed0e9638c9ff3ebf82a1d84222d2ccb4cf6e"
+source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -812,6 +812,9 @@ dependencies = [
 [[package]]
 name = "exomind"
 version = "0.1.0"
+dependencies = [
+ "exomind-core",
+]
 
 [[package]]
 name = "exomind-core"

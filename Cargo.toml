@@ -6,6 +6,7 @@ edition = "2018"
 license = "Apache-2.0"
 
 [dependencies]
+exomind-core = { path = "./core" }
 
 [workspace]
 members = [
