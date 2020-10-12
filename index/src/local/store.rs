@@ -256,14 +256,34 @@ where
 {
     fn handle_mutation_request(
         &self,
-        request: MutationRequest,
+        mut request: MutationRequest,
     ) -> Result<oneshot::Receiver<Result<MutationResult, Error>>, Error> {
         let (sender, receiver) = oneshot::channel();
 
         let mut operation_ids = Vec::new();
-        for mutation in &request.mutations {
+        let mut last_entity_id = None;
+        for mutation in &mut request.mutations {
             if let Some(Mutation::Test(_mutation)) = &mutation.mutation {
                 return Err(Error::ProtoFieldExpected("mutation"));
+            }
+
+            // if mutation doesn't have an entity id, generate one
+            if mutation.entity_id == "" {
+                if request.common_entity_id && last_entity_id.is_some() {
+                    mutation.entity_id = last_entity_id.unwrap_or_default();
+                } else {
+                    mutation.entity_id = exocore_core::utils::id::generate_prefixed_id("et");
+                }
+            }
+            last_entity_id = Some(mutation.entity_id.clone());
+
+            // if a put mutation doesn't have a trait id, generate one
+            if let Some(Mutation::PutTrait(put_mutation)) = &mut mutation.mutation {
+                if let Some(trt) = &mut put_mutation.r#trait {
+                    if trt.id == "" {
+                        trt.id = exocore_core::utils::id::generate_prefixed_id("trt");
+                    }
+                }
             }
 
             let encoded = mutation.encode_to_vec()?;
@@ -537,7 +557,8 @@ pub mod tests {
 
     use futures::executor::block_on_stream;
 
-    use exocore_core::futures::delay_for;
+    use exocore_core::protos::prost::ProstAnyPackMessageExt;
+    use exocore_core::{futures::delay_for, protos::index::Trait, protos::test::TestMessage};
 
     use crate::mutation::MutationBuilder;
     use crate::query::QueryBuilder;
@@ -577,6 +598,58 @@ pub mod tests {
 
         let entity = &result.entities[0];
         assert_eq!(entity.id, "entry1");
+
+        Ok(())
+    }
+
+    #[test]
+    fn store_mutate_generate_ids() -> anyhow::Result<()> {
+        let mut test_store = TestStore::new()?;
+        test_store.start_store()?;
+
+        let test_msg = TestMessage::default().pack_to_any().unwrap();
+
+        {
+            // generate entity and trait ids if none are given
+            let mutation = test_store
+                .create_put_contact_mutation("", "contact1", "Hello World")
+                .return_entities();
+            let result = test_store.mutate(mutation)?;
+            assert_eq!(result.entities.len(), 1);
+            assert_ne!("", result.entities[0].id);
+            assert_ne!("", result.entities[0].traits[0].id);
+        }
+
+        {
+            // use same entity id for both mutations if requested to be common ids
+            let mutation = MutationBuilder::new()
+                .put_trait(
+                    "".to_string(),
+                    Trait {
+                        id: "".to_string(),
+                        message: Some(test_msg.clone()),
+                        ..Default::default()
+                    },
+                )
+                .put_trait(
+                    "".to_string(),
+                    Trait {
+                        id: "".to_string(),
+                        message: Some(test_msg),
+                        ..Default::default()
+                    },
+                )
+                .use_common_entity_id()
+                .return_entities();
+            let result = test_store.mutate(mutation)?;
+
+            // should have created 1 entity with same id, with 2 different traits
+            assert_eq!(result.entities.len(), 1);
+            assert_ne!("", result.entities[0].id);
+            assert_eq!(result.entities[0].traits.len(), 2);
+            assert_ne!("", result.entities[0].traits[0].id);
+            assert_ne!("", result.entities[0].traits[1].id);
+        }
 
         Ok(())
     }

@@ -15,11 +15,11 @@ use super::*;
 #[tokio::test(threaded_scheduler)]
 async fn test_integration() -> anyhow::Result<()> {
     let n1 = LocalNode::generate();
-    n1.add_address("/ip4/127.0.0.1/tcp/3003".parse()?);
+    n1.add_p2p_address("/ip4/127.0.0.1/tcp/3003".parse()?);
     let n1_cell = FullCell::generate(n1.clone());
 
     let n2 = LocalNode::generate();
-    n2.add_address("/ip4/127.0.0.1/tcp/3004".parse()?);
+    n2.add_p2p_address("/ip4/127.0.0.1/tcp/3004".parse()?);
     let n2_cell = n1_cell.clone().with_local_node(n2.clone());
 
     n1_cell.nodes_mut().add(n2.node().clone());
@@ -71,11 +71,11 @@ async fn test_integration() -> anyhow::Result<()> {
 #[tokio::test]
 async fn handle_removal_and_transport_kill() -> anyhow::Result<()> {
     let n1 = LocalNode::generate();
-    n1.add_address("/ip4/127.0.0.1/tcp/0".parse()?);
+    n1.add_p2p_address("/ip4/127.0.0.1/tcp/0".parse()?);
     let n1_cell = FullCell::generate(n1.clone());
 
     let n2 = LocalNode::generate();
-    n2.add_address("/ip4/127.0.0.1/tcp/0".parse()?);
+    n2.add_p2p_address("/ip4/127.0.0.1/tcp/0".parse()?);
     let n2_cell = FullCell::generate(n2);
 
     let mut transport = Libp2pTransport::new(n1, Libp2pTransportConfig::default());
@@ -110,11 +110,11 @@ async fn handle_removal_and_transport_kill() -> anyhow::Result<()> {
 #[tokio::test]
 async fn should_queue_message_until_connected() -> anyhow::Result<()> {
     let n1 = LocalNode::generate();
-    n1.add_address("/ip4/127.0.0.1/tcp/3005".parse()?);
+    n1.add_p2p_address("/ip4/127.0.0.1/tcp/3005".parse()?);
     let n1_cell = FullCell::generate(n1.clone());
 
     let n2 = LocalNode::generate();
-    n2.add_address("/ip4/127.0.0.1/tcp/3006".parse()?);
+    n2.add_p2p_address("/ip4/127.0.0.1/tcp/3006".parse()?);
     let n2_cell = n1_cell.clone().with_local_node(n2.clone());
 
     n1_cell.nodes_mut().add(n2.node().clone());

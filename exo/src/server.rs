@@ -7,7 +7,10 @@ use exocore_core::futures::Runtime;
 use exocore_core::time::Clock;
 use exocore_index::local::{EntityIndex, EntityIndexConfig, Store};
 use exocore_index::remote::server::Server;
-use exocore_transport::p2p::Libp2pTransportConfig;
+use exocore_transport::{
+    either::EitherTransportServiceHandle, http::HTTPTransportConfig, http::HTTPTransportServer,
+    p2p::Libp2pTransportConfig,
+};
 use exocore_transport::{Libp2pTransport, ServiceType, TransportServiceHandle};
 
 use crate::options;
@@ -21,15 +24,20 @@ pub fn start(
     let (either_cells, local_node) = Cell::new_from_local_node_config(config)?;
 
     let mut rt = Runtime::new()?;
+    let clock = Clock::new();
+
+    let mut p2p_transport = {
+        let p2p_config = Libp2pTransportConfig::default();
+        Libp2pTransport::new(local_node.clone(), p2p_config)
+    };
+
+    let mut http_transport = {
+        let http_config = HTTPTransportConfig::default();
+        HTTPTransportServer::new(local_node, http_config, clock.clone())
+    };
+
     let mut engines_handle = Vec::new();
-
-    // create transport
-    let transport_config = Libp2pTransportConfig::default();
-    let mut transport = Libp2pTransport::new(local_node, transport_config);
-
     for either_cell in either_cells.iter() {
-        let clock = Clock::new();
-
         let cell = either_cell.cell();
         if cell.local_node_has_role(CellNodeRole::Chain) {
             let cell_name = cell.name().to_string();
@@ -46,7 +54,7 @@ pub fn start(
             let pending_store = MemoryPendingStore::new();
 
             // create the engine
-            let chain_transport = transport.get_handle(cell.clone(), ServiceType::Chain)?;
+            let chain_transport = p2p_transport.get_handle(cell.clone(), ServiceType::Chain)?;
             let engine_config = EngineConfig::default();
             let mut engine = Engine::new(
                 engine_config,
@@ -87,14 +95,22 @@ pub fn start(
                     index_engine_handle.clone(),
                 )?;
 
-                // if we have a WebSocket handle, we create a combined transport
-                let transport_handle = transport.get_handle(cell.clone(), ServiceType::Index)?;
+                // create a combined p2p + http transport for entities index so that it can received mutation / query over http
+                let entities_p2p_transport =
+                    p2p_transport.get_handle(cell.clone(), ServiceType::Index)?;
+                let entities_http_transport =
+                    http_transport.get_handle(cell.clone(), ServiceType::Index)?;
+                let entities_transport = EitherTransportServiceHandle::new(
+                    entities_p2p_transport,
+                    entities_http_transport,
+                );
+
                 create_local_store(
                     &mut rt,
-                    transport_handle,
+                    entities_transport,
                     index_engine_handle,
                     full_cell,
-                    clock,
+                    clock.clone(),
                     entities_index,
                 )?;
             } else {
@@ -111,10 +127,15 @@ pub fn start(
         }
     }
 
-    // start transport
+    // start transports
     rt.spawn(async {
-        let res = transport.run().await;
-        info!("Libp2p transport done: {:?}", res);
+        let res = p2p_transport.run().await;
+        info!("libp2p transport done: {:?}", res);
+    });
+
+    rt.spawn(async {
+        let res = http_transport.run().await;
+        info!("HTTP transport done: {:?}", res);
     });
 
     std::thread::park();

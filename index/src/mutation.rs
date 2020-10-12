@@ -24,6 +24,7 @@ impl MutationBuilder {
                 mutations: vec![],
                 wait_indexed: false,
                 return_entities: false,
+                common_entity_id: false,
             },
         }
     }
@@ -57,6 +58,12 @@ impl MutationBuilder {
             entity_id: entity_id.into(),
             mutation: Some(Mutation::DeleteEntity(DeleteEntityMutation {})),
         });
+
+        self
+    }
+
+    pub fn use_common_entity_id(mut self) -> MutationBuilder {
+        self.request.common_entity_id = true;
 
         self
     }

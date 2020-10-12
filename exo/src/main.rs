@@ -37,6 +37,9 @@ fn main() -> anyhow::Result<()> {
             CellCommand::import_chain(import_opts) => {
                 cell::import_chain(&opt, cell_opts, import_opts)
             }
+            CellCommand::generate_auth_token(gen_opts) => {
+                cell::generate_auth_token(&opt, cell_opts, gen_opts)
+            }
         },
         SubCommand::config(config_opts) => match &config_opts.command {
             ConfigCommand::validate(validate_opts) => {

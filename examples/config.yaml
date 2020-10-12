@@ -10,7 +10,7 @@ addresses:
     - /ip4/0.0.0.0/tcp/3330
     - /ip4/0.0.0.0/tcp/3341/ws
   http:
-    - 0.0.0.0:8888
+    - http://0.0.0.0:8888
 
 # Cells that the node is part of
 # Use `exo keys generate` to generate cell's keys
@@ -30,6 +30,8 @@ cells:
                 p2p:
                   - /ip4/127.0.0.1/tcp/3330
                   - /ip4/127.0.0.1/tcp/3341/ws
+                http:
+                  - http://127.0.0.1:8888
 
             # Role of the node
             # Chain = 1

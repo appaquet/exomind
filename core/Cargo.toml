@@ -50,6 +50,7 @@ bytes = "0.5"
 uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
 petname = "1.0"
 rand = "0.7"
+url = "2.1"
 
 # console_logger
 log4rs = { version = "0.13", optional = true }

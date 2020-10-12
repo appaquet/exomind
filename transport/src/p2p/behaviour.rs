@@ -88,7 +88,7 @@ impl ExocoreBehaviour {
 
     pub fn add_node_peer(&mut self, node: &Node) {
         let peer_id = node.peer_id().clone();
-        let addresses = node.addresses();
+        let addresses = node.p2p_addresses();
 
         if let Some(current_peer) = self.peers.get(&peer_id) {
             if current_peer.addresses == addresses {

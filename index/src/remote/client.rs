@@ -627,6 +627,12 @@ impl ClientHandle {
 
         Ok(())
     }
+
+    pub fn index_node(&self) -> Option<Node> {
+        let inner = self.inner.upgrade()?;
+        let inner = inner.read().ok()?;
+        inner.index_node.clone()
+    }
 }
 
 /// Future query result.

@@ -5,12 +5,16 @@ use exocore_chain::{
     operation::{OperationFrame, OperationId},
     DirectoryChainStore, DirectoryChainStoreConfig,
 };
-use exocore_core::cell::{Cell, EitherCell};
+use exocore_core::{
+    cell::{Cell, EitherCell},
+    crypto::auth_token::AuthToken,
+    time::Clock,
+};
 use exocore_core::{
     framing::{sized::SizedFrameReaderIterator, FrameReader},
     protos::{core::LocalNodeConfig, generated::data_chain_capnp::block_header},
 };
-use std::io::Write;
+use std::{io::Write, time::Duration};
 
 pub fn create_genesis_block(
     _exo_opts: &options::ExoOptions,
@@ -228,6 +232,28 @@ pub fn import_chain(
         "Wrote {} operations in {} blocks to chain",
         operations_count, blocks_count
     );
+
+    Ok(())
+}
+
+pub fn generate_auth_token(
+    _exo_opts: &options::ExoOptions,
+    cell_opts: &options::CellOptions,
+    gen_opts: &options::GenerateAuthTokenOptions,
+) -> anyhow::Result<()> {
+    let (_, cell) = get_cell(cell_opts);
+    let cell = cell.cell();
+
+    let clock = Clock::new();
+    let local_node = cell.local_node();
+
+    let expiration_dur = Duration::from_secs(u64::from(gen_opts.expiration_days) * 86400);
+    let expiration = clock.consistent_time(local_node.node()) + expiration_dur;
+
+    let token = AuthToken::new(cell, &clock, Some(expiration)).expect("Couldn't generate token");
+
+    println!("Expiration: {:?}", expiration.to_datetime());
+    println!("Token: {}", token.encode_base58_string());
 
     Ok(())
 }

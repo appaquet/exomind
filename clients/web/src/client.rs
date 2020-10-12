@@ -185,6 +185,19 @@ impl ExocoreClient {
         WatchedQuery::new(self.store_handle.clone(), entity_query)
     }
 
+    #[wasm_bindgen]
+    pub fn store_http_endpoints(&self) -> js_sys::Array {
+        let index_node_urls = self
+            .store_handle
+            .index_node()
+            .map(|node| node.http_addresses())
+            .unwrap_or_else(Vec::new)
+            .into_iter()
+            .map(|url| JsValue::from(url.to_string()));
+
+        index_node_urls.collect()
+    }
+
     fn js_bytes_to_vec(js_bytes: js_sys::Uint8Array) -> Vec<u8> {
         let mut bytes = vec![0u8; js_bytes.length() as usize];
         js_bytes.copy_to(&mut bytes);

@@ -104,6 +104,10 @@ export class Store {
     generateId(prefix?: string): string {
         return _exocore_wasm.generate_id(prefix);
     }
+
+    httpEndpoints(): Array<string> {
+        return this.wasmClient.store_http_endpoints();
+    }
 }
 
 export class WatchedQuery {

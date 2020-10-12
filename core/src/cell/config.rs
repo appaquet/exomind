@@ -285,7 +285,7 @@ mod tests {
 
         let (cells, node) = Cell::new_from_local_node_config(config)?;
         assert_eq!(2, cells.len());
-        assert_eq!(2, node.addresses().len());
+        assert_eq!(2, node.p2p_addresses().len());
 
         let full_cell = cells.first().cloned().unwrap().unwrap_full();
 
@@ -371,6 +371,8 @@ addresses:
   p2p:
     - /ip4/0.0.0.0/tcp/3330
     - /ip4/0.0.0.0/tcp/3341/ws
+  http:
+    - http://0.0.0.0:8080
 
 cells:
    - location:
@@ -386,6 +388,8 @@ cells:
                    addresses:
                      p2p:
                        - /ip4/192.168.2.67/tcp/3330
+                     http:
+                       - http://192.168.2.67:8080
                  roles:
                    - 1
              apps:
@@ -399,7 +403,8 @@ cells:
 
         let (cells, node) = Cell::new_from_local_node_config(config)?;
         assert_eq!(1, cells.len());
-        assert_eq!(2, node.addresses().len());
+        assert_eq!(2, node.p2p_addresses().len());
+        assert_eq!(1, node.http_addresses().len());
 
         let cell = cells.first().cloned().unwrap().unwrap_cell();
 
@@ -421,7 +426,8 @@ cells:
                 node.node().id().to_string()
             );
 
-            assert_eq!(1, node.node().addresses().len());
+            assert_eq!(1, node.node().p2p_addresses().len());
+            assert_eq!(1, node.node().http_addresses().len());
         }
 
         {

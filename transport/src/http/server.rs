@@ -1,8 +1,14 @@
-use std::{borrow::Cow, sync::Arc};
+use super::{
+    handles::ServiceHandle, handles::ServiceHandles, requests::RequestTracker,
+    requests::TrackedRequest, HTTPTransportConfig, HTTPTransportServiceHandle,
+};
+
+use crate::Error;
+use crate::{transport::ConnectionID, InMessage, OutEvent, OutMessage, ServiceType};
 
 use exocore_core::{
     capnp,
-    cell::{Cell, CellNodes, Node},
+    cell::{Cell, CellNodes, LocalNode, Node},
     crypto::auth_token::AuthToken,
     framing::{CapnpFrameBuilder, FrameBuilder},
     futures::block_on,
@@ -13,6 +19,7 @@ use exocore_core::{
     time::Clock,
     utils::handle_set::HandleSet,
 };
+
 use futures::{channel::mpsc, lock::Mutex, FutureExt, StreamExt};
 use hyper::{
     service::{make_service_fn, service_fn},
@@ -20,13 +27,7 @@ use hyper::{
 };
 use hyper::{Body, Request, Response, Server};
 
-use crate::Error;
-use crate::{transport::ConnectionID, InMessage, OutEvent, OutMessage, ServiceType};
-
-use super::{
-    handles::ServiceHandle, handles::ServiceHandles, requests::RequestTracker,
-    requests::TrackedRequest, HTTPTransportConfig, HTTPTransportServiceHandle,
-};
+use std::{borrow::Cow, sync::Arc};
 
 /// Unidirectional HTTP transport server used for request-response type of
 /// communication by clients for which a full libp2p transport is impossible.
@@ -37,6 +38,7 @@ use super::{
 ///
 /// At the moment, this transport is only used for entity queries and mutations.
 pub struct HTTPTransportServer {
+    local_node: LocalNode,
     config: HTTPTransportConfig,
     clock: Clock,
     service_handles: Arc<Mutex<ServiceHandles>>,
@@ -45,8 +47,13 @@ pub struct HTTPTransportServer {
 
 impl HTTPTransportServer {
     /// Creates a new HTTP server with the given configuration and clock.
-    pub fn new(config: HTTPTransportConfig, clock: Clock) -> HTTPTransportServer {
+    pub fn new(
+        local_node: LocalNode,
+        config: HTTPTransportConfig,
+        clock: Clock,
+    ) -> HTTPTransportServer {
         HTTPTransportServer {
+            local_node,
             config,
             clock,
             service_handles: Default::default(),
@@ -90,7 +97,23 @@ impl HTTPTransportServer {
         // Listen on all addresess
         let servers = {
             let mut futures = Vec::new();
-            for addr in &self.config.listen_addresses {
+            for listen_url in &self.config.listen_addresses(&self.local_node)? {
+                let host = listen_url.domain().unwrap_or("0.0.0.0");
+                let port = listen_url.port().unwrap_or(80);
+                let addr_res = format!("{}:{}", host, port).parse();
+                let addr = match addr_res {
+                    Ok(addr) => addr,
+                    Err(err) => {
+                        error!(
+                            "Couldn't extract and parse listen address from url {} ({}:{}): {}",
+                            listen_url, host, port, err
+                        );
+                        continue;
+                    }
+                };
+
+                info!("Starting a server on {} ({})", addr, listen_url);
+
                 let request_tracker = request_tracker.clone();
                 let service_handles = self.service_handles.clone();
                 let clock = self.clock.clone();
@@ -186,7 +209,10 @@ async fn handle_request(
     clock: Clock,
     req: Request<Body>,
 ) -> Result<Response<Body>, RequestError> {
-    let request_type = RequestType::from_url_path(req.uri().path())?;
+    let request_type = RequestType::from_url_path(req.uri().path()).map_err(|err| {
+        error!("Invalid request type with path {}", req.uri().path());
+        err
+    })?;
 
     // Authentify the request using the authentication token and extract cell & node
     // from it

@@ -89,6 +89,7 @@ pub enum CellCommand {
     check_chain,
     export_chain(ChainExportOptions),
     import_chain(ChainImportOptions),
+    generate_auth_token(GenerateAuthTokenOptions),
 }
 
 #[derive(StructOpt)]
@@ -105,6 +106,13 @@ pub struct ChainImportOptions {
 
     // Files from which chain will be imported
     pub files: Vec<PathBuf>,
+}
+
+#[derive(StructOpt)]
+pub struct GenerateAuthTokenOptions {
+    // Token expiration duration in days
+    #[structopt(long, default_value = "30")]
+    pub expiration_days: u16,
 }
 
 /// Configs related options
