@@ -20,6 +20,7 @@ end
 target 'ExomindActionExt' do
   pod 'KeychainSwift', '~> 19.0'
   pod 'SwiftProtobuf', '~> 1.10'
+  pod 'Alamofire', '~> 5.2'
 
   pod 'Exocore', :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
   #pod 'Exocore' , :path => '../../exocore'

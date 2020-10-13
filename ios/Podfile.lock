@@ -1,4 +1,5 @@
 PODS:
+  - Alamofire (5.2.2)
   - CLTokenInputView (2.3.0)
   - Dwifft (0.9)
   - Exocore (0.1.0):
@@ -12,6 +13,7 @@ PODS:
   - UIColor_Hex_Swift (4.2.0)
 
 DEPENDENCIES:
+  - Alamofire (~> 5.2)
   - CLTokenInputView
   - Dwifft (~> 0.9)
   - Exocore (from `https://github.com/appaquet/exocore.git`, branch `releases/v0.1`)
@@ -25,6 +27,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
+    - Alamofire
     - CLTokenInputView
     - Dwifft
     - KeychainSwift
@@ -43,13 +46,14 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   Exocore:
-    :commit: 2bd31c66cafb8e22221ef9034ad7c61f607ec4ea
+    :commit: 515c1aaa6d60d05a5e70ca959e1b26352c52e811
     :git: https://github.com/appaquet/exocore.git
   FontAwesome.swift:
     :commit: d5cb8ca99cc1e1a0ab51f6f284001872804a921c
     :git: https://github.com/thii/FontAwesome.swift.git
 
 SPEC CHECKSUMS:
+  Alamofire: 814429acc853c6c54ff123fc3d2ef66803823ce0
   CLTokenInputView: 9dc1ffb7c9d2d81787e69a63c75bd97b0b2d1e76
   Dwifft: 42912068ed2a8146077d1a1404df18625bd086e1
   Exocore: bb9e18f6f765625b2e5fae34e2657dcba90c26e9
@@ -61,6 +65,6 @@ SPEC CHECKSUMS:
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: 5d1677cb316648f3f5cc0b61a3695801159c178b
+PODFILE CHECKSUM: 13b2c07366c06122ecf363cc80635c0ea4fc2549
 
 COCOAPODS: 1.9.3
