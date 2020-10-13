@@ -712,18 +712,18 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
+source = "git+https://github.com/appaquet/exocore.git#3f3b9e457e3bd745287d563bf9d665a950c2f6fb"
 dependencies = [
  "exocore-chain",
  "exocore-core",
- "exocore-index",
+ "exocore-store",
  "exocore-transport",
 ]
 
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
+source = "git+https://github.com/appaquet/exocore.git#3f3b9e457e3bd745287d563bf9d665a950c2f6fb"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -740,7 +740,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
+source = "git+https://github.com/appaquet/exocore.git#3f3b9e457e3bd745287d563bf9d665a950c2f6fb"
 dependencies = [
  "anyhow",
  "bs58",
@@ -774,9 +774,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "exocore-index"
+name = "exocore-store"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
+source = "git+https://github.com/appaquet/exocore.git#3f3b9e457e3bd745287d563bf9d665a950c2f6fb"
 dependencies = [
  "anyhow",
  "bytes 0.5.6",
@@ -796,7 +796,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#d8f9e27c5a295840986579a84b1f1c7fe890bfef"
+source = "git+https://github.com/appaquet/exocore.git#3f3b9e457e3bd745287d563bf9d665a950c2f6fb"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -2883,9 +2883,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.58"
+version = "1.0.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a230ea9107ca2220eea9d46de97eddcb04cd00e92d13dda78e478dd33fa82bd4"
+checksum = "dcac07dbffa1c65e7f816ab9eba78eb142c6d44410f4eeba1e26e4f5dfa56b95"
 dependencies = [
  "itoa",
  "ryu",

@@ -1,5 +1,5 @@
-use exocore::core::protos::store::Trait;
 use exocore::core::protos::prost::ProstAnyPackMessageExt;
+use exocore::core::protos::store::Trait;
 use exocore::store::mutation::MutationBuilder;
 use exomind::ExomindClient;
 use gmail::{GmailAccount, GmailClient};

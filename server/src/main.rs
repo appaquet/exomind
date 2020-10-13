@@ -3,11 +3,11 @@ use std::{str::FromStr, time::Duration};
 use exocore::{
     core::protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
     core::time::Utc,
-    store::entity::EntityExt,
-    store::mutation::MutationBuilder,
     protos::store::Entity,
     protos::store::Reference,
     protos::store::Trait,
+    store::entity::EntityExt,
+    store::mutation::MutationBuilder,
 };
 use exomind::ExomindClient;
 use exomind_core::protos::base::{CollectionChild, Snoozed};
