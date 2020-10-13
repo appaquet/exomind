@@ -250,6 +250,13 @@ impl Inner {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let mut inner = inner.write()?;
 
+        if let Some(store_node) = &inner.store_node {
+            if in_message.from.id() != store_node.id() {
+                warn!("Got message from a node other than store node. Dropping it");
+                return Ok(());
+            }
+        }
+
         let request_id = if let Some(rendez_vous_id) = in_message.rendez_vous_id {
             rendez_vous_id
         } else {

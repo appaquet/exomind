@@ -179,7 +179,6 @@ where
 
             let resp_frame = crate::query::query_results_to_response_frame(result)?;
             let message = in_message.to_response_message(&inner.cell, resp_frame)?;
-
             inner.send_message(message)?;
 
             Ok(())
