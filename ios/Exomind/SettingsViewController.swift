@@ -1,4 +1,5 @@
 import UIKit
+import Exocore
 
 class SettingsViewController: UITableViewController {
     override func viewDidLoad() {
@@ -22,6 +23,10 @@ class SettingsViewController: UITableViewController {
             self.cellConfig()
             self.tableView.deselectRow(at: indexPath, animated: false)
 
+        case (1, 1): // configure extension
+            configureExtension()
+            self.tableView.deselectRow(at: indexPath, animated: false)
+
         default:
             print("SettingsViewController > Unhandled setting \(indexPath)")
         }
@@ -33,5 +38,21 @@ class SettingsViewController: UITableViewController {
 
     private func cellConfig() {
         RootNavigationController.mainInstance()?.showBootstrap(fromRoot: false)
+    }
+
+    private func configureExtension() {
+        let endpoints = ExocoreClient.store.httpEndpoints()
+        let authToken = ExocoreClient.cell.generateAuthToken()
+
+        if let authToken = authToken, let endpoint = endpoints.first {
+            ExtensionUtils.setStoreEndpoint(endpoint: endpoint, authToken: authToken)
+            let alert = UIAlertController(title: "Success", message: "Endpoint set to \(endpoint)", preferredStyle: UIAlertController.Style.alert)
+            alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+            self.present(alert, animated: true)
+        } else {
+            let alert = UIAlertController(title: "Error", message: "Couldn't configure extension. Endpoints or auth token missing.", preferredStyle: UIAlertController.Style.alert)
+            alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+            self.present(alert, animated: true)
+        }
     }
 }

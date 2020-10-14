@@ -32,6 +32,7 @@
 		6D2272771C441ED200B0FC61 /* UIViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D2272761C441ED200B0FC61 /* UIViewExtension.swift */; };
 		6D23F61A1C3DB12E00D9A075 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D23F6191C3DB12E00D9A075 /* SearchViewController.swift */; };
 		6D2AFD971C28969E000E13A7 /* QuickButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D2AFD961C28969D000E13A7 /* QuickButtonView.swift */; };
+		6D2EC697253676F000456FD2 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2751BC5949900F14571 /* DateExtension.swift */; };
 		6D3279B02204A64F00F39E04 /* Objects.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D3279AF2204A64F00F39E04 /* Objects.storyboard */; };
 		6D3463CF1C4EDD64009CC326 /* TaskViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3463CE1C4EDD64009CC326 /* TaskViewController.swift */; };
 		6D3D466A1C84F3DC0037E51B /* EmailThreadOpenedTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3D46691C84F3DC0037E51B /* EmailThreadOpenedTableViewCell.swift */; };
@@ -163,6 +164,7 @@
 		6D23472D1D57E4E80025E59C /* bridging-header-tests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "bridging-header-tests.h"; sourceTree = "<group>"; };
 		6D23F6191C3DB12E00D9A075 /* SearchViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
 		6D2AFD961C28969D000E13A7 /* QuickButtonView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickButtonView.swift; sourceTree = "<group>"; };
+		6D2EC69B253677D800456FD2 /* Alamofire.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Alamofire.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D3279AF2204A64F00F39E04 /* Objects.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Objects.storyboard; sourceTree = "<group>"; };
 		6D3463CE1C4EDD64009CC326 /* TaskViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TaskViewController.swift; sourceTree = "<group>"; };
 		6D3D46691C84F3DC0037E51B /* EmailThreadOpenedTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailThreadOpenedTableViewCell.swift; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 		514EA9F37F4A348AE3A9E362 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				6D2EC69B253677D800456FD2 /* Alamofire.framework */,
 				6D0F6B6F1C3329E700AB9DEC /* KeychainSwift.framework */,
 				ABDBECEF26D46B2EA5123CE8 /* Pods_Exomind.framework */,
 				2A623259A00FC2C8C0804519 /* Pods_ExomindActionExt.framework */,
@@ -798,6 +801,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6D0F6B611C331A2B00AB9DEC /* ActionViewController.swift in Sources */,
+				6D2EC697253676F000456FD2 /* DateExtension.swift in Sources */,
 				6DDEDB5C24BA119500A345BC /* base.pb.swift in Sources */,
 				6D4CCBE82158708D004636AD /* ExtensionUtils.swift in Sources */,
 			);
@@ -936,7 +940,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 0D4DA008EFE28D6E52725F8E /* Pods-ExomindActionExt.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = ExomindActionExt/ExomindActionExt.entitlements;
@@ -962,7 +965,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B67E2837BF4EF7A995AC1C55 /* Pods-ExomindActionExt.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = ExomindActionExt/ExomindActionExt.entitlements;

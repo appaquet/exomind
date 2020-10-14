@@ -1,108 +1,52 @@
 import Foundation
 import KeychainSwift
+import Exocore
 
 class ExtensionUtils {
-    static func hasKeychainCookie() -> Bool {
+    static func hasKeychainHasEndpoint() -> Bool {
         let keychain = KeychainSwift()
-        return keychain.get("cookie") != nil
+        return keychain.get("store_http_endpoint") != nil && keychain.get("store_auth_token") != nil
+    }
+
+    static func setStoreEndpoint(endpoint: String, authToken: String) {
+        let keychain = KeychainSwift()
+        keychain.set(endpoint, forKey: "store_http_endpoint")
+        keychain.set(authToken, forKey: "store_auth_token")
     }
 
     static func createLinkObject(url: String, title: String) {
-        // TODO:
-//        let nsurl = URL(string: "https://exomind.io/v1/command")!
-//        let keychain = KeychainSwift()
-//        guard let cookie = keychain.get("cookie") else {
-//            print("ExtensionUtils> No cookie in keychain")
-//            return
-//        }
-//
-//        var request = URLRequest(url: nsurl)
-//        request.httpMethod = "POST"
-//        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-//        request.setValue(cookie, forHTTPHeaderField: "Cookie")
-//
-//        let isoDateSerializer: DateFormatter = {
-//            let dateFormatter = DateFormatter()
-//            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-//            dateFormatter.timeZone = TimeZone(abbreviation: "GMT")
-//            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-//            return dateFormatter
-//        }()
-//        let now = Date()
-//        let isoDate = isoDateSerializer.string(from: now) + "Z"
-//        let weight = now.timeIntervalSince1970 * 1000
-//
-//        let payload: [String: Any] = [
-//            "type": "command_entity_traits",
-//            "addTraits": [
-//                [
-//                    "_type": "exomind.link",
-//                    "title": title,
-//                    "url": url
-//                ],
-//                [
-//                    "_type": "exomind.child",
-//                    "date": isoDate,
-//                    "weight": weight,
-//                    "to": "inbox"
-//                ]], "updateTraits": [], "putTraits": [], "removeTraits": []
-//        ]
-//
-//        request.httpBody = try! JSONSerialization.data(withJSONObject: payload, options: [])
-//
-//        Alamofire
-//                .request(request)
-//                .responseString { response in
-//                    print(response)
-//                }
-    }
+        let keychain = KeychainSwift()
+        guard let endpoint = keychain.get("store_http_endpoint"),
+              let authToken = keychain.get("store_auth_token") else {
+            print("ExtensionUtils> No cookies in keychain")
+            return
+        }
 
-    static func createTaskObject(title: String) {
-        // TODO:
-//        let nsurl = URL(string: "https://exomind.io/v1/command")!
-//        let keychain = KeychainSwift()
-//        guard let cookie = keychain.get("cookie") else {
-//            print("ExtensionUtils> No cookie in keychain")
-//            return
-//        }
-//
-//        var request = URLRequest(url: nsurl)
-//        request.httpMethod = "POST"
-//        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-//        request.setValue(cookie, forHTTPHeaderField: "Cookie")
-//
-//        let isoDateSerializer: DateFormatter = {
-//            let dateFormatter = DateFormatter()
-//            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-//            dateFormatter.timeZone = TimeZone(abbreviation: "GMT")
-//            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-//            return dateFormatter
-//        }()
-//        let now = Date()
-//        let isoDate = isoDateSerializer.string(from: now) + "Z"
-//        let weight = now.timeIntervalSince1970 * 1000
-//
-//        let payload: [String: Any] = [
-//            "type": "command_entity_traits",
-//            "addTraits": [
-//                [
-//                    "_type": "exomind.task",
-//                    "title": title,
-//                ],
-//                [
-//                    "_type": "exomind.child",
-//                    "date": isoDate,
-//                    "weight": weight,
-//                    "to": "inbox"
-//                ]], "updateTraits": [], "putTraits": [], "removeTraits": []
-//        ]
-//
-//        request.httpBody = try! JSONSerialization.data(withJSONObject: payload, options: [])
-//
-//        Alamofire
-//                .request(request)
-//                .responseString { response in
-//                    print(response)
-//                }
+        var link = Exomind_Base_Link()
+        link.url = url
+        link.title = title
+
+        var child = Exomind_Base_CollectionChild()
+        child.collection.entityID = "inbox"
+        child.weight = UInt64(Date().millisecondsSince1970)
+
+        let mutationRequest = try! MutationBuilder
+                .createEntity()
+                .putTrait(message: link)
+                .putTrait(message: child)
+                .build()
+                .serializedData()
+
+        let url = URL(string: "\(endpoint)entities/mutate?token=\(authToken)")!
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/protobuf", forHTTPHeaderField: "Content-Type")
+        request.httpBody = mutationRequest
+
+        let task = URLSession.shared.dataTask(with: request as URLRequest, completionHandler: { data, response, error in
+            print("Posted")
+        })
+        task.resume()
     }
 }
