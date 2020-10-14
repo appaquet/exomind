@@ -34,6 +34,12 @@ public class ExocoreClient {
         }
     }
 
+    public static var cell: Cell {
+        get {
+            ExocoreClient.defaultInstance!.cell
+        }
+    }
+
     public static var store: Store {
         get {
             ExocoreClient.defaultInstance!.store
@@ -58,6 +64,10 @@ public class ClientInstance {
 
         self.context = try ExocoreClient.contextFromConfig(configData: configData, format: UInt8(ExocoreConfigFormat_Yaml.rawValue))
     }
+
+    public lazy var cell: Cell = {
+        Cell(client: self)
+    }()
 
     public lazy var store: Store = {
         Store(client: self)

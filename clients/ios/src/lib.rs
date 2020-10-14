@@ -3,9 +3,12 @@
 #[macro_use]
 extern crate log;
 
-use std::ffi::{CStr, CString};
 use std::os::raw::c_void;
 use std::sync::Arc;
+use std::{
+    ffi::{CStr, CString},
+    time::Duration,
+};
 
 use futures::StreamExt;
 use prost::Message;
@@ -23,6 +26,8 @@ use exocore_transport::{Libp2pTransport, ServiceType, TransportServiceHandle};
 
 pub struct Context {
     _runtime: Runtime,
+    clock: Clock,
+    cell: Cell,
     store_handle: Arc<ClientHandle>,
 }
 
@@ -78,22 +83,24 @@ impl Context {
                 ContextStatus::Error
             })?;
         let remote_store_config = ClientConfiguration::default();
-        let remote_store_client =
-            Client::new(remote_store_config, cell.clone(), clock, store_transport).map_err(
-                |err| {
-                    error!("Couldn't create remote store client: {}", err);
-                    ContextStatus::Error
-                },
-            )?;
+        let remote_store_client = Client::new(
+            remote_store_config,
+            cell.clone(),
+            clock.clone(),
+            store_transport,
+        )
+        .map_err(|err| {
+            error!("Couldn't create remote store client: {}", err);
+            ContextStatus::Error
+        })?;
 
         let store_handle = Arc::new(remote_store_client.get_handle());
-        let management_transport_handle =
-            transport
-                .get_handle(cell, ServiceType::None)
-                .map_err(|err| {
-                    error!("Couldn't get transport handle: {}", err);
-                    ContextStatus::Error
-                })?;
+        let management_transport_handle = transport
+            .get_handle(cell.clone(), ServiceType::None)
+            .map_err(|err| {
+                error!("Couldn't get transport handle: {}", err);
+                ContextStatus::Error
+            })?;
 
         runtime.spawn(async move {
             let res = transport.run().await;
@@ -109,6 +116,8 @@ impl Context {
 
         Ok(Context {
             _runtime: runtime,
+            clock,
+            cell,
             store_handle,
         })
     }
@@ -439,6 +448,53 @@ pub extern "C" fn exocore_watched_query_cancel(ctx: *mut Context, handle: QueryS
     {
         error!("Error cancelling query stream: {}", err)
     }
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_generate_auth_token(
+    ctx: *mut Context,
+    expiration_days: usize,
+) -> *mut libc::c_char {
+    let context = unsafe { ctx.as_mut().unwrap() };
+
+    let expiration = if expiration_days > 0 {
+        let now = context
+            .clock
+            .consistent_time(context.cell.local_node().node());
+        Some(now + Duration::from_secs(expiration_days as u64 * 86400))
+    } else {
+        None
+    };
+
+    let auth_token =
+        exocore_core::sec::auth_token::AuthToken::new(&context.cell, &context.clock, expiration);
+    let auth_token = if let Ok(token) = auth_token {
+        token
+    } else {
+        return CString::new("").unwrap().into_raw();
+    };
+
+    let auth_token_bs58 = auth_token.encode_base58_string();
+
+    CString::new(auth_token_bs58).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_store_http_endpoints(ctx: *mut Context) -> *mut libc::c_char {
+    let context = unsafe { ctx.as_mut().unwrap() };
+
+    let store_node_urls = context
+        .store_handle
+        .store_node()
+        .map(|node| node.http_addresses())
+        .unwrap_or_else(Vec::new)
+        .into_iter()
+        .map(|url| url.to_string())
+        .collect::<Vec<_>>();
+
+    let joined = store_node_urls.join(";");
+
+    CString::new(joined).unwrap().into_raw()
 }
 
 #[no_mangle]

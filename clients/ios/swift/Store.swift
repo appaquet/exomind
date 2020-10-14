@@ -91,6 +91,16 @@ public class Store {
 
         return QueryStreamHandle(queryHandle: handle, client: self.client!)
     }
+
+    public func httpEndpoints() -> [String] {
+        guard let context = self.client?.context else { return [] }
+
+        let endpointsPtr = exocore_store_http_endpoints(context)
+        let endpointsStr = String(cString: endpointsPtr!)
+        exocore_free_string(endpointsPtr)
+
+        return endpointsStr.split(separator: ";").map { String($0) }
+    }
 }
 
 public enum QueryStatus {
