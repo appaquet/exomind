@@ -2,11 +2,9 @@ syntax = "proto3";
 
 package exomind.base;
 
-import "exocore/index/options.proto";
-import "exocore/index/entity.proto";
+import "exocore/store/options.proto";
+import "exocore/store/entity.proto";
 import "google/protobuf/timestamp.proto";
-
-// TODO: Reset numbering before release
 
 // Fields groups
 //  #1: Fields necesseary for search/listing
@@ -16,11 +14,11 @@ message Collection {
 }
 
 message CollectionChild {
-    exocore.index.Reference collection = 1 [(exocore.indexed) = true, (exocore.field_group) = 1];
-    uint64 weight = 3 [(exocore.sorted) = true, (exocore.field_group) = 1];
+    exocore.store.Reference collection = 1 [(exocore.indexed) = true, (exocore.field_group) = 1];
+    uint64 weight = 2 [(exocore.sorted) = true, (exocore.field_group) = 1];
 }
 
-message Postponed { // TODO: Rename to Snoozed + renumber
+message Snoozed {
     google.protobuf.Timestamp until_date = 2 [(exocore.sorted) = true];
 }
 
@@ -44,38 +42,38 @@ message Account {
 
 message EmailThread {
     // TODO: These 2 fields should probably be into a "source" object ?
-    exocore.index.Reference account = 8 [(exocore.field_group) = 1];
+    exocore.store.Reference account = 1 [(exocore.field_group) = 1];
     string source_id = 2 [(exocore.field_group) = 1];
 
     Contact from = 3 [(exocore.field_group) = 1];
     string subject = 4 [(exocore.text) = true, (exocore.field_group) = 1];
     string snippet = 5 [(exocore.text) = true, (exocore.field_group) = 1];
 
-    exocore.index.Reference last_email = 6;
+    exocore.store.Reference last_email = 6;
     bool read = 7 [(exocore.field_group) = 1];
 }
 
 message Email {
-    exocore.index.Reference account = 13 [(exocore.field_group) = 1];
+    exocore.store.Reference account = 1 [(exocore.field_group) = 1];
     string source_id = 2 [(exocore.field_group) = 1];
 
     Contact from = 3 [(exocore.field_group) = 1];
     google.protobuf.Timestamp received_date = 4 [(exocore.field_group) = 1];
-    repeated Contact to = 6;
-    repeated Contact cc = 7;
-    repeated Contact bcc = 8;
+    repeated Contact to = 5;
+    repeated Contact cc = 6;
+    repeated Contact bcc = 7;
 
-    string subject = 9 [(exocore.text) = true, (exocore.field_group) = 1];
-    string snippet = 10 [(exocore.text) = true, (exocore.field_group) = 1];
-    repeated EmailPart parts = 11;
-    repeated EmailAttachment attachments = 12;
+    string subject = 8 [(exocore.text) = true, (exocore.field_group) = 1];
+    string snippet = 9 [(exocore.text) = true, (exocore.field_group) = 1];
+    repeated EmailPart parts = 10;
+    repeated EmailAttachment attachments = 11;
 
     bool read = 14 [(exocore.field_group) = 1];
 }
 
 message DraftEmail {
-    exocore.index.Reference account = 11;
-    exocore.index.Reference in_reply_to = 1;
+    exocore.store.Reference account = 1;
+    exocore.store.Reference in_reply_to = 2;
 
     repeated Contact to = 3;
     repeated Contact cc = 4;

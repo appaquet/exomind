@@ -12,7 +12,7 @@ import { ContainerController } from '../container-controller';
 
 
 interface IProps {
-    entity?: exocore.index.IEntity;
+    entity?: exocore.store.IEntity;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;

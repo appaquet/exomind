@@ -8,7 +8,7 @@ class ActionViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if !ExtensionUtils.hasKeychainCookie() {
+        if !ExtensionUtils.hasKeychainHasEndpoint() {
             self.messageLabel.text = "You need to open Exomind first and sign in."
             return
         }

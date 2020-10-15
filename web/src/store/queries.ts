@@ -2,23 +2,23 @@
 import { Exocore, exocore, WatchedQuery } from 'exocore';
 
 export class ExpandableQuery {
-    query: exocore.index.IEntityQuery;
+    query: exocore.store.IEntityQuery;
     onChange: () => void;
 
     hasResults: boolean;
 
-    queries: exocore.index.IEntityQuery[] = [];
+    queries: exocore.store.IEntityQuery[] = [];
     watched_queries: WatchedQuery[] = [];
-    queries_results: exocore.index.IEntityResults[] = [];
+    queries_results: exocore.store.IEntityResults[] = [];
 
-    constructor(query: exocore.index.IEntityQuery, onChange: () => void) {
+    constructor(query: exocore.store.IEntityQuery, onChange: () => void) {
         this.query = query;
         this.onChange = onChange;
 
         this.pushQuery(query);
     }
 
-    *results(): IterableIterator<exocore.index.IEntityResult> {
+    *results(): IterableIterator<exocore.store.IEntityResult> {
         let lastEntity = null;
 
         for (const query_results of this.queries_results) {
@@ -38,11 +38,11 @@ export class ExpandableQuery {
         }
     }
 
-    pushQuery(query: exocore.index.IEntityQuery): void {
+    pushQuery(query: exocore.store.IEntityQuery): void {
         const queryIndex = this.watched_queries.length;
 
         const watchedQuery = Exocore.store.watchedQuery(query);
-        watchedQuery.onChange((results: exocore.index.EntityResults) => {
+        watchedQuery.onChange((results: exocore.store.EntityResults) => {
             this.queries_results[queryIndex] = results;
             this.hasResults = true;
             this.triggerChanged();
@@ -62,7 +62,7 @@ export class ExpandableQuery {
         }
 
         // push a new query for next page
-        const nextQuery = new exocore.index.EntityQuery(this.query);
+        const nextQuery = new exocore.store.EntityQuery(this.query);
         nextQuery.paging = lastResults.nextPage;
         this.pushQuery(nextQuery);
 
@@ -79,7 +79,7 @@ export class ExpandableQuery {
         query.paging.count = 1000;
 
         const watchedQuery = Exocore.store.watchedQuery(query);
-        watchedQuery.onChange((results: exocore.index.EntityResults) => {
+        watchedQuery.onChange((results: exocore.store.EntityResults) => {
             this.queries_results[lastIndex] = results;
             this.hasResults = true;
             this.triggerChanged();

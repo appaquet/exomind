@@ -6,12 +6,12 @@ import { Children } from '../children/children';
 import { Selection } from '../entity-list/selection';
 
 interface IProps {
-    entity: exocore.index.IEntity;
+    entity: exocore.store.IEntity;
     collection: EntityTrait<exomind.base.ICollection>;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: exocore.index.IEntity) => void;
+    onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
 
     sections?: string[];
     section?: string;

@@ -22,11 +22,11 @@ function addBookmark(e) {
   let exocore = protobuf.roots["exomind-root"].exocore;
   let google = protobuf.roots["exomind-root"].google;
 
-  let req = new exocore.index.MutationRequest({
+  let req = new exocore.store.MutationRequest({
     mutations: [
-      new exocore.index.EntityMutation({
-        putTrait: new exocore.index.PutTraitMutation({
-          trait: new exocore.index.Trait({
+      new exocore.store.EntityMutation({
+        putTrait: new exocore.store.PutTraitMutation({
+          trait: new exocore.store.Trait({
             message: new google.protobuf.Any({
               type_url: 'type.googleapis.com/exomind.base.Link',
               value: exomind.base.Link.encode(new exomind.base.Link({
@@ -37,13 +37,13 @@ function addBookmark(e) {
           })
         })
       }),
-      new exocore.index.EntityMutation({
-        putTrait: new exocore.index.PutTraitMutation({
-          trait: new exocore.index.Trait({
+      new exocore.store.EntityMutation({
+        putTrait: new exocore.store.PutTraitMutation({
+          trait: new exocore.store.Trait({
             message: new google.protobuf.Any({
               type_url: 'type.googleapis.com/exomind.base.CollectionChild',
               value: exomind.base.CollectionChild.encode(new exomind.base.CollectionChild({
-                collection: new exocore.index.Reference({
+                collection: new exocore.store.Reference({
                   entityId: 'inbox',
                 }),
                 weight: new Date().getTime(),
@@ -56,7 +56,7 @@ function addBookmark(e) {
     commonEntityId: true
   });
 
-  console.log(exocore.index.MutationRequest.encode(req).finish());
+  console.log(exocore.store.MutationRequest.encode(req).finish());
 
   const endpointURL = _endpoint + '/entities/mutate?token=' + _auth_token;
   console.log(endpointURL);
@@ -64,7 +64,7 @@ function addBookmark(e) {
   let xhr = new XMLHttpRequest();
   xhr.open('POST', endpointURL, true);
   xhr.setRequestHeader('Content-Type', 'application/protobuf');
-  xhr.send(exocore.index.MutationRequest.encode(req).finish());
+  xhr.send(exocore.store.MutationRequest.encode(req).finish());
 
   xhr.onreadystatechange = function () {
     if (xhr.readyState == 4) {

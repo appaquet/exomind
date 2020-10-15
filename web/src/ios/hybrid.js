@@ -4,6 +4,9 @@ import ReactDOM from 'react-dom';
 import ReactBridge from './react-bridge.js';
 import './hybrid.less';
 
+// used in some places to detect if we're on iOS or not
+window.isHybridExomind = true;
+
 // communication to iOS app
 window.toIosDataId = 0;
 window.toIosData = {};

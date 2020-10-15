@@ -158,7 +158,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         const { entity, account } = entityAccount;
 
         const draft = this.state.currentDraft;
-        draft.account = new exocore.index.Reference({
+        draft.account = new exocore.store.Reference({
             entityId: entity.id,
             traitId: account.id,
         });

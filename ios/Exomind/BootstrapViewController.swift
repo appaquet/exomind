@@ -17,6 +17,11 @@ class BootstrapViewController: UIViewController {
         self.errorText.text = ExocoreUtils.error
     }
 
+    @IBAction func onClear(_ sender: Any) {
+        self.configText.text = ""
+        self.errorText.text = ""
+    }
+
     @IBAction func onSave(_ sender: Any) {
         ExocoreUtils.cellConfig = self.configText.text
         ExocoreUtils.initialize()

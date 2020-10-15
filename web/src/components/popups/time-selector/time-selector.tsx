@@ -85,22 +85,15 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         e.stopPropagation();
     }
 
-    private handlePickerChange(timestamp: number): void {
+    private handlePickerChange(timestamp: string): void {
         this.setState({
-            date: new Date(timestamp)
+            date: new Date(parseInt(timestamp))
         });
     }
 
     private handlePickerDone(): void {
-        let date;
-        if (this.state.date) {
-            date = this.state.date;
-        } else {
-            date = new Date();
-        }
-
-        if (this.props.onSelectionDone) {
-            this.props.onSelectionDone(date);
+        if (this.props.onSelectionDone && this.state.date) {
+            this.props.onSelectionDone(this.state.date);
         }
     }
 
@@ -120,7 +113,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
     /**
      * We catch wheel events to prevent scrolling parent when we're getting at the end or at the beginning of the list overflow
      */
-    private handleListWheel(e: MouseWheelEvent): void {
+    private handleListWheel(e: WheelEvent): void {
         const listElem = this.listElemRef.current;
         if (listElem.scrollTop === 0 && e.deltaY < 0) {
             // if we are at the top, prevent scrolling up

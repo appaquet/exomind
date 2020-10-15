@@ -11,8 +11,8 @@ import './entity-list.less';
 import { SelectedItem, Selection } from "./selection";
 
 interface IProps {
-    entities: exocore.index.IEntity[];
-    parentEntity?: exocore.index.IEntity;
+    entities: exocore.store.IEntity[];
+    parentEntity?: exocore.store.IEntity;
 
     onRequireLoadMore?: () => void;
 
@@ -30,12 +30,12 @@ interface IProps {
 }
 
 export interface IDroppedItem {
-    droppedEntity?: exocore.index.IEntity;
-    fromParentEntity?: exocore.index.IEntity;
+    droppedEntity?: exocore.store.IEntity;
+    fromParentEntity?: exocore.store.IEntity;
 
-    previousEntity?: exocore.index.IEntity;
-    overEntity?: exocore.index.IEntity;
-    nextEntity?: exocore.index.IEntity;
+    previousEntity?: exocore.store.IEntity;
+    overEntity?: exocore.store.IEntity;
+    nextEntity?: exocore.store.IEntity;
 
     effect: DropEffect,
 }
@@ -73,7 +73,7 @@ export class EntityList extends React.Component<IProps> {
     private renderCollection(): React.ReactNode {
         if (this.props.entities.length > 0) {
 
-            let previousEntity: exocore.index.IEntity = null;
+            let previousEntity: exocore.store.IEntity = null;
             const items = this.props.entities.map((entity) => {
                 const selected = this.props.selection?.contains(SelectedItem.fromEntity(entity)) ?? false;
 
@@ -118,7 +118,7 @@ export class EntityList extends React.Component<IProps> {
         );
     }
 
-    private handleDropIn(overEntity: exocore.index.IEntity, previousEntity: exocore.index.IEntity, entity: exocore.index.IEntity, effect: DropEffect, parentEntity: exocore.index.IEntity): void {
+    private handleDropIn(overEntity: exocore.store.IEntity, previousEntity: exocore.store.IEntity, entity: exocore.store.IEntity, effect: DropEffect, parentEntity: exocore.store.IEntity): void {
         if (this.props.onDropIn != null) {
             this.props.onDropIn({
                 effect: effect,
@@ -130,7 +130,7 @@ export class EntityList extends React.Component<IProps> {
         }
     }
 
-    private handleItemClick(entity: exocore.index.IEntity, e: MouseEvent): void {
+    private handleItemClick(entity: exocore.store.IEntity, e: MouseEvent): void {
         if (this.props.onSelectionChange) {
             const special = e.shiftKey || e.altKey || e.metaKey;
 

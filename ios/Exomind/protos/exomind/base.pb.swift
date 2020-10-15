@@ -119,8 +119,8 @@ struct Exomind_Base_CollectionChild {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var collection: Exocore.Exocore_Index_Reference {
-    get {return _collection ?? Exocore.Exocore_Index_Reference()}
+  var collection: Exocore.Exocore_Store_Reference {
+    get {return _collection ?? Exocore.Exocore_Store_Reference()}
     set {_collection = newValue}
   }
   /// Returns true if `collection` has been explicitly set.
@@ -134,11 +134,10 @@ struct Exomind_Base_CollectionChild {
 
   init() {}
 
-  fileprivate var _collection: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _collection: Exocore.Exocore_Store_Reference? = nil
 }
 
-/// TODO: Rename to Snoozed + renumber
-struct Exomind_Base_Postponed {
+struct Exomind_Base_Snoozed {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -184,8 +183,9 @@ struct Exomind_Base_EmailThread {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var account: Exocore.Exocore_Index_Reference {
-    get {return _account ?? Exocore.Exocore_Index_Reference()}
+  /// TODO: These 2 fields should probably be into a "source" object ?
+  var account: Exocore.Exocore_Store_Reference {
+    get {return _account ?? Exocore.Exocore_Store_Reference()}
     set {_account = newValue}
   }
   /// Returns true if `account` has been explicitly set.
@@ -208,8 +208,8 @@ struct Exomind_Base_EmailThread {
 
   var snippet: String = String()
 
-  var lastEmail: Exocore.Exocore_Index_Reference {
-    get {return _lastEmail ?? Exocore.Exocore_Index_Reference()}
+  var lastEmail: Exocore.Exocore_Store_Reference {
+    get {return _lastEmail ?? Exocore.Exocore_Store_Reference()}
     set {_lastEmail = newValue}
   }
   /// Returns true if `lastEmail` has been explicitly set.
@@ -223,9 +223,9 @@ struct Exomind_Base_EmailThread {
 
   init() {}
 
-  fileprivate var _account: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _account: Exocore.Exocore_Store_Reference? = nil
   fileprivate var _from: Exomind_Base_Contact? = nil
-  fileprivate var _lastEmail: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _lastEmail: Exocore.Exocore_Store_Reference? = nil
 }
 
 struct Exomind_Base_Email {
@@ -233,8 +233,8 @@ struct Exomind_Base_Email {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var account: Exocore.Exocore_Index_Reference {
-    get {return _account ?? Exocore.Exocore_Index_Reference()}
+  var account: Exocore.Exocore_Store_Reference {
+    get {return _account ?? Exocore.Exocore_Store_Reference()}
     set {_account = newValue}
   }
   /// Returns true if `account` has been explicitly set.
@@ -282,7 +282,7 @@ struct Exomind_Base_Email {
 
   init() {}
 
-  fileprivate var _account: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _account: Exocore.Exocore_Store_Reference? = nil
   fileprivate var _from: Exomind_Base_Contact? = nil
   fileprivate var _receivedDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
@@ -292,8 +292,8 @@ struct Exomind_Base_DraftEmail {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var account: Exocore.Exocore_Index_Reference {
-    get {return _account ?? Exocore.Exocore_Index_Reference()}
+  var account: Exocore.Exocore_Store_Reference {
+    get {return _account ?? Exocore.Exocore_Store_Reference()}
     set {_account = newValue}
   }
   /// Returns true if `account` has been explicitly set.
@@ -301,8 +301,8 @@ struct Exomind_Base_DraftEmail {
   /// Clears the value of `account`. Subsequent reads from it will return its default value.
   mutating func clearAccount() {self._account = nil}
 
-  var inReplyTo: Exocore.Exocore_Index_Reference {
-    get {return _inReplyTo ?? Exocore.Exocore_Index_Reference()}
+  var inReplyTo: Exocore.Exocore_Store_Reference {
+    get {return _inReplyTo ?? Exocore.Exocore_Store_Reference()}
     set {_inReplyTo = newValue}
   }
   /// Returns true if `inReplyTo` has been explicitly set.
@@ -344,8 +344,8 @@ struct Exomind_Base_DraftEmail {
 
   init() {}
 
-  fileprivate var _account: Exocore.Exocore_Index_Reference? = nil
-  fileprivate var _inReplyTo: Exocore.Exocore_Index_Reference? = nil
+  fileprivate var _account: Exocore.Exocore_Store_Reference? = nil
+  fileprivate var _inReplyTo: Exocore.Exocore_Store_Reference? = nil
   fileprivate var _sendingDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
   fileprivate var _sentDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
@@ -491,14 +491,14 @@ extension Exomind_Base_CollectionChild: SwiftProtobuf.Message, SwiftProtobuf._Me
   static let protoMessageName: String = _protobuf_package + ".CollectionChild"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "collection"),
-    3: .same(proto: "weight"),
+    2: .same(proto: "weight"),
   ]
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularMessageField(value: &self._collection)
-      case 3: try decoder.decodeSingularUInt64Field(value: &self.weight)
+      case 2: try decoder.decodeSingularUInt64Field(value: &self.weight)
       default: break
       }
     }
@@ -509,7 +509,7 @@ extension Exomind_Base_CollectionChild: SwiftProtobuf.Message, SwiftProtobuf._Me
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     }
     if self.weight != 0 {
-      try visitor.visitSingularUInt64Field(value: self.weight, fieldNumber: 3)
+      try visitor.visitSingularUInt64Field(value: self.weight, fieldNumber: 2)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -522,8 +522,8 @@ extension Exomind_Base_CollectionChild: SwiftProtobuf.Message, SwiftProtobuf._Me
   }
 }
 
-extension Exomind_Base_Postponed: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Postponed"
+extension Exomind_Base_Snoozed: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".Snoozed"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     2: .standard(proto: "until_date"),
   ]
@@ -544,7 +544,7 @@ extension Exomind_Base_Postponed: SwiftProtobuf.Message, SwiftProtobuf._MessageI
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Postponed, rhs: Exomind_Base_Postponed) -> Bool {
+  static func ==(lhs: Exomind_Base_Snoozed, rhs: Exomind_Base_Snoozed) -> Bool {
     if lhs._untilDate != rhs._untilDate {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -607,7 +607,7 @@ extension Exomind_Base_Account: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
 extension Exomind_Base_EmailThread: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".EmailThread"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    8: .same(proto: "account"),
+    1: .same(proto: "account"),
     2: .standard(proto: "source_id"),
     3: .same(proto: "from"),
     4: .same(proto: "subject"),
@@ -619,19 +619,22 @@ extension Exomind_Base_EmailThread: SwiftProtobuf.Message, SwiftProtobuf._Messag
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
+      case 1: try decoder.decodeSingularMessageField(value: &self._account)
       case 2: try decoder.decodeSingularStringField(value: &self.sourceID)
       case 3: try decoder.decodeSingularMessageField(value: &self._from)
       case 4: try decoder.decodeSingularStringField(value: &self.subject)
       case 5: try decoder.decodeSingularStringField(value: &self.snippet)
       case 6: try decoder.decodeSingularMessageField(value: &self._lastEmail)
       case 7: try decoder.decodeSingularBoolField(value: &self.read)
-      case 8: try decoder.decodeSingularMessageField(value: &self._account)
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if let v = self._account {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    }
     if !self.sourceID.isEmpty {
       try visitor.visitSingularStringField(value: self.sourceID, fieldNumber: 2)
     }
@@ -649,9 +652,6 @@ extension Exomind_Base_EmailThread: SwiftProtobuf.Message, SwiftProtobuf._Messag
     }
     if self.read != false {
       try visitor.visitSingularBoolField(value: self.read, fieldNumber: 7)
-    }
-    if let v = self._account {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -672,34 +672,34 @@ extension Exomind_Base_EmailThread: SwiftProtobuf.Message, SwiftProtobuf._Messag
 extension Exomind_Base_Email: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Email"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    13: .same(proto: "account"),
+    1: .same(proto: "account"),
     2: .standard(proto: "source_id"),
     3: .same(proto: "from"),
     4: .standard(proto: "received_date"),
-    6: .same(proto: "to"),
-    7: .same(proto: "cc"),
-    8: .same(proto: "bcc"),
-    9: .same(proto: "subject"),
-    10: .same(proto: "snippet"),
-    11: .same(proto: "parts"),
-    12: .same(proto: "attachments"),
+    5: .same(proto: "to"),
+    6: .same(proto: "cc"),
+    7: .same(proto: "bcc"),
+    8: .same(proto: "subject"),
+    9: .same(proto: "snippet"),
+    10: .same(proto: "parts"),
+    11: .same(proto: "attachments"),
     14: .same(proto: "read"),
   ]
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
+      case 1: try decoder.decodeSingularMessageField(value: &self._account)
       case 2: try decoder.decodeSingularStringField(value: &self.sourceID)
       case 3: try decoder.decodeSingularMessageField(value: &self._from)
       case 4: try decoder.decodeSingularMessageField(value: &self._receivedDate)
-      case 6: try decoder.decodeRepeatedMessageField(value: &self.to)
-      case 7: try decoder.decodeRepeatedMessageField(value: &self.cc)
-      case 8: try decoder.decodeRepeatedMessageField(value: &self.bcc)
-      case 9: try decoder.decodeSingularStringField(value: &self.subject)
-      case 10: try decoder.decodeSingularStringField(value: &self.snippet)
-      case 11: try decoder.decodeRepeatedMessageField(value: &self.parts)
-      case 12: try decoder.decodeRepeatedMessageField(value: &self.attachments)
-      case 13: try decoder.decodeSingularMessageField(value: &self._account)
+      case 5: try decoder.decodeRepeatedMessageField(value: &self.to)
+      case 6: try decoder.decodeRepeatedMessageField(value: &self.cc)
+      case 7: try decoder.decodeRepeatedMessageField(value: &self.bcc)
+      case 8: try decoder.decodeSingularStringField(value: &self.subject)
+      case 9: try decoder.decodeSingularStringField(value: &self.snippet)
+      case 10: try decoder.decodeRepeatedMessageField(value: &self.parts)
+      case 11: try decoder.decodeRepeatedMessageField(value: &self.attachments)
       case 14: try decoder.decodeSingularBoolField(value: &self.read)
       default: break
       }
@@ -707,6 +707,9 @@ extension Exomind_Base_Email: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if let v = self._account {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    }
     if !self.sourceID.isEmpty {
       try visitor.visitSingularStringField(value: self.sourceID, fieldNumber: 2)
     }
@@ -717,28 +720,25 @@ extension Exomind_Base_Email: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
     }
     if !self.to.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.to, fieldNumber: 6)
+      try visitor.visitRepeatedMessageField(value: self.to, fieldNumber: 5)
     }
     if !self.cc.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.cc, fieldNumber: 7)
+      try visitor.visitRepeatedMessageField(value: self.cc, fieldNumber: 6)
     }
     if !self.bcc.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.bcc, fieldNumber: 8)
+      try visitor.visitRepeatedMessageField(value: self.bcc, fieldNumber: 7)
     }
     if !self.subject.isEmpty {
-      try visitor.visitSingularStringField(value: self.subject, fieldNumber: 9)
+      try visitor.visitSingularStringField(value: self.subject, fieldNumber: 8)
     }
     if !self.snippet.isEmpty {
-      try visitor.visitSingularStringField(value: self.snippet, fieldNumber: 10)
+      try visitor.visitSingularStringField(value: self.snippet, fieldNumber: 9)
     }
     if !self.parts.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.parts, fieldNumber: 11)
+      try visitor.visitRepeatedMessageField(value: self.parts, fieldNumber: 10)
     }
     if !self.attachments.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.attachments, fieldNumber: 12)
-    }
-    if let v = self._account {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 13)
+      try visitor.visitRepeatedMessageField(value: self.attachments, fieldNumber: 11)
     }
     if self.read != false {
       try visitor.visitSingularBoolField(value: self.read, fieldNumber: 14)
@@ -767,8 +767,8 @@ extension Exomind_Base_Email: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
 extension Exomind_Base_DraftEmail: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".DraftEmail"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    11: .same(proto: "account"),
-    1: .standard(proto: "in_reply_to"),
+    1: .same(proto: "account"),
+    2: .standard(proto: "in_reply_to"),
     3: .same(proto: "to"),
     4: .same(proto: "cc"),
     5: .same(proto: "bcc"),
@@ -782,7 +782,8 @@ extension Exomind_Base_DraftEmail: SwiftProtobuf.Message, SwiftProtobuf._Message
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._inReplyTo)
+      case 1: try decoder.decodeSingularMessageField(value: &self._account)
+      case 2: try decoder.decodeSingularMessageField(value: &self._inReplyTo)
       case 3: try decoder.decodeRepeatedMessageField(value: &self.to)
       case 4: try decoder.decodeRepeatedMessageField(value: &self.cc)
       case 5: try decoder.decodeRepeatedMessageField(value: &self.bcc)
@@ -791,15 +792,17 @@ extension Exomind_Base_DraftEmail: SwiftProtobuf.Message, SwiftProtobuf._Message
       case 8: try decoder.decodeRepeatedMessageField(value: &self.attachments)
       case 9: try decoder.decodeSingularMessageField(value: &self._sendingDate)
       case 10: try decoder.decodeSingularMessageField(value: &self._sentDate)
-      case 11: try decoder.decodeSingularMessageField(value: &self._account)
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._inReplyTo {
+    if let v = self._account {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    }
+    if let v = self._inReplyTo {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }
     if !self.to.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.to, fieldNumber: 3)
@@ -824,9 +827,6 @@ extension Exomind_Base_DraftEmail: SwiftProtobuf.Message, SwiftProtobuf._Message
     }
     if let v = self._sentDate {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
-    }
-    if let v = self._account {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 11)
     }
     try unknownFields.traverse(visitor: &visitor)
   }

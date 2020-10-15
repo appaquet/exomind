@@ -84,11 +84,11 @@ export class Search extends React.Component<IProps> {
       .matches(query)
       .count(30)
       .project(
-        new exocore.index.Projection({
+        new exocore.store.Projection({
           fieldGroupIds: [1],
           package: ["exomind.base"],
         }),
-        new exocore.index.Projection({
+        new exocore.store.Projection({
           skip: true,
         })
       )
@@ -121,7 +121,7 @@ export class Search extends React.Component<IProps> {
     const mutation = MutationBuilder
       .updateEntity(et.id)
       .putTrait(new exomind.base.CollectionChild({
-        collection: new exocore.index.Reference({
+        collection: new exocore.store.Reference({
           entityId: 'inbox',
         }),
         weight: new Date().getTime(),

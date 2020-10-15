@@ -2,21 +2,21 @@ import Foundation
 import Exocore
 
 class ExpandableQuery {
-    let query: Exocore_Index_EntityQuery
+    let query: Exocore_Store_EntityQuery
 
     private let onChange: () -> ();
     private let autoReconnect: Bool;
 
-    private var queries: [Exocore_Index_EntityQuery] = []
+    private var queries: [Exocore_Store_EntityQuery] = []
     private var queryHandles: [QueryStreamHandle?] = []
-    private var queryResults: [Exocore_Index_EntityResults] = []
+    private var queryResults: [Exocore_Store_EntityResults] = []
 
     private var refreshRetry: Retry?
 
-    var results: [Exocore_Index_EntityResult] = [];
+    var results: [Exocore_Store_EntityResult] = [];
     var isDirty: Bool = false
 
-    init(query: Exocore_Index_EntityQuery, onChange: @escaping () -> (), autoReconnect: Bool = true) {
+    init(query: Exocore_Store_EntityQuery, onChange: @escaping () -> (), autoReconnect: Bool = true) {
         self.query = query
         self.onChange = onChange
 
@@ -93,11 +93,11 @@ class ExpandableQuery {
         self.refreshRetry?.trigger()
     }
 
-    func pushQuery(_ query: Exocore_Index_EntityQuery) {
+    func pushQuery(_ query: Exocore_Store_EntityQuery) {
         let queryIndex = self.queries.count
 
         self.queries.append(query)
-        self.queryResults.append(Exocore_Index_EntityResults())
+        self.queryResults.append(Exocore_Store_EntityResults())
         self.queryHandles.append(execQuery(query: query, queryIndex: queryIndex))
     }
 
@@ -114,7 +114,7 @@ class ExpandableQuery {
         self.ensureFresh()
     }
 
-    private func execQuery(query: Exocore_Index_EntityQuery, queryIndex: Int) -> QueryStreamHandle {
+    private func execQuery(query: Exocore_Store_EntityQuery, queryIndex: Int) -> QueryStreamHandle {
         let handle = ExocoreClient.store.watchedQuery(query: query) { [weak self] status, results in
             guard let this = self else {
                 return
@@ -132,7 +132,7 @@ class ExpandableQuery {
         return handle
     }
 
-    private func handleQueryResults(queryIndex: Int, results: Exocore_Index_EntityResults) {
+    private func handleQueryResults(queryIndex: Int, results: Exocore_Store_EntityResults) {
         self.queryResults[queryIndex] = results
         aggregateAndTrigger()
     }

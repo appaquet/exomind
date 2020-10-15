@@ -110,10 +110,10 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
             return
         }
 
-        var projectSummaryFields = Exocore_Index_Projection()
+        var projectSummaryFields = Exocore_Store_Projection()
         projectSummaryFields.fieldGroupIds = [1]
         projectSummaryFields.package = ["exomind.base"]
-        var projectSkipRest = Exocore_Index_Projection()
+        var projectSkipRest = Exocore_Store_Projection()
         projectSkipRest.skip = true
 
         let query = QueryBuilder

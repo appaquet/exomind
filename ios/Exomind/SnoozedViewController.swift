@@ -18,14 +18,14 @@ class SnoozedViewController: UIViewController {
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 
-        var projectSummaryFields = Exocore_Index_Projection()
+        var projectSummaryFields = Exocore_Store_Projection()
         projectSummaryFields.fieldGroupIds = [1]
         projectSummaryFields.package = ["exomind.base"]
-        var projectSkipRest = Exocore_Index_Projection()
+        var projectSkipRest = Exocore_Store_Projection()
         projectSkipRest.skip = true
 
         let query = QueryBuilder
-                .withTrait(Exomind_Base_Postponed.self)
+                .withTrait(Exomind_Base_Snoozed.self)
                 .project(withProjections: [projectSummaryFields, projectSkipRest])
                 .count(30)
                 .build()
@@ -67,8 +67,8 @@ class SnoozedViewController: UIViewController {
                     .updateEntity(entityId: entity.id)
                     .putTrait(message: child, traitId: inboxRelationId)
 
-            if let postponed = entity.traitOfType(Exomind_Base_Postponed.self) {
-                mutation = mutation.deleteTrait(traitId: postponed.id)
+            if let snoozed = entity.traitOfType(Exomind_Base_Snoozed.self) {
+                mutation = mutation.deleteTrait(traitId: snoozed.id)
             }
 
             ExocoreClient.store.mutate(mutation: mutation.build())

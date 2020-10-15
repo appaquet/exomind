@@ -12,8 +12,8 @@ import EntityAction from './entity-action';
 import './entity.less';
 
 interface IProps {
-    entity: exocore.index.IEntity;
-    parentEntity?: exocore.index.IEntity;
+    entity: exocore.store.IEntity;
+    parentEntity?: exocore.store.IEntity;
 
     selected?: boolean;
     onClick?: (e: MouseEvent) => void;
@@ -21,8 +21,8 @@ interface IProps {
 
     draggable?: boolean;
     droppable?: boolean;
-    onDropOut?: (object: exocore.index.IEntity, effect: string, parentObject: exocore.index.IEntity) => void;
-    onDropIn?: (object: exocore.index.IEntity, effect: string, parentObject: exocore.index.IEntity) => void;
+    onDropOut?: (object: exocore.store.IEntity, effect: string, parentObject: exocore.store.IEntity) => void;
+    onDropIn?: (object: exocore.store.IEntity, effect: string, parentObject: exocore.store.IEntity) => void;
 }
 
 interface IState {
@@ -84,7 +84,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private getEntityTraits = memoize((entity: exocore.index.IEntity) => new EntityTraits(entity));
+    private getEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
 
     private renderActions(entityTraits: EntityTraits, actions: EntityAction[]): React.ReactNode {
         const actionsComponents = actions.map((action) => {

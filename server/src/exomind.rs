@@ -1,10 +1,10 @@
 use exocore::{
     core::cell::Cell, core::futures::spawn_future, core::time::Clock,
-    index::mutation::MutationBuilder, index::query::QueryBuilder, index::remote::Client,
-    index::remote::ClientHandle, protos::index::Entity, protos::index::Trait,
-    protos::prost::ProstAnyPackMessageExt, transport::Libp2pTransport, transport::ServiceType,
+    protos::prost::ProstAnyPackMessageExt, protos::store::Entity, protos::store::Trait,
+    store::mutation::MutationBuilder, store::query::QueryBuilder, store::remote::Client,
+    store::remote::ClientHandle, transport::Libp2pTransport, transport::ServiceType,
 };
-use exomind_core::protos::base::{Collection, Postponed};
+use exomind_core::protos::base::{Collection, Snoozed};
 
 use crate::cli;
 
@@ -25,7 +25,7 @@ impl ExomindClient {
         let clock = Clock::new();
 
         let mut transport = Libp2pTransport::new(local_node.clone(), Default::default());
-        let store_transport = transport.get_handle(cell.clone(), ServiceType::Index)?;
+        let store_transport = transport.get_handle(cell.clone(), ServiceType::Store)?;
 
         spawn_future(async move {
             let res = transport.run().await;
@@ -78,9 +78,9 @@ impl ExomindClient {
     }
 
     pub async fn get_snoozed(&self) -> anyhow::Result<Vec<Entity>> {
-        let query = QueryBuilder::with_trait::<Postponed>()
+        let query = QueryBuilder::with_trait::<Snoozed>()
             .count(100)
-            // TODO: Reindex .order_by_field("until_date", true)
+            .order_by_field("until_date", true)
             .build();
 
         let results = self.store.query(query).await?;

@@ -35,7 +35,7 @@ class ExomindMutations {
     }
 
     static func snooze(entity: EntityExt, date: Date, callback: (() -> Void)? = nil) {
-        var snoozed = Exomind_Base_Postponed()
+        var snoozed = Exomind_Base_Snoozed()
         snoozed.untilDate = date.toProtobuf()
 
         let mutation = try! MutationBuilder
@@ -57,7 +57,7 @@ class ExomindMutations {
         builder = try builder.putTrait(message: child, traitId: "child_\(parentId)")
     }
 
-    static func executeCreateEntityMutation(mutation: Exocore_Index_MutationRequest, callback: ((EntityExt?) -> ())?) {
+    static func executeCreateEntityMutation(mutation: Exocore_Store_MutationRequest, callback: ((EntityExt?) -> ())?) {
         ExocoreClient.store.mutate(mutation: mutation, onCompletion: { (status, results) in
             DispatchQueue.main.async {
                 guard let results = results,

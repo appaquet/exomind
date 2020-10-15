@@ -29,6 +29,8 @@ export default class HtmlEditor extends React.Component {
       content: null,
       isFocus: props.initialFocus
     };
+
+    this.iframeRef = React.createRef();
   }
 
   componentDidMount() {
@@ -61,21 +63,26 @@ export default class HtmlEditor extends React.Component {
 
     return <div className="html-editor">
       {placeholder}
-      <iframe ref="iframe"/>
+      <iframe ref={this.iframeRef} />
     </div>;
   }
 
   loadEditor() {
-    let iframeNode = this.refs.iframe;
+    let iframeNode = this.iframeRef.current;
     let doc = iframeNode.contentDocument;
     doc.open();
 
+    let darkmode;
+    if (window.isHybridExomind) {
+      // This is for iOS dark mode. If changed, change in iOS EmailBodyWebView
+      darkmode = '<style>@media (prefers-color-scheme: dark) { body { color: white; background-color: black } a { color: #4285f4; } }</style>';
+    }
+
     // width hack: http://stackoverflow.com/questions/23083462/how-to-get-an-iframe-to-be-responsive-in-ios-safari
-    doc.write('<!DOCTYPE html><html style="height: 100%; font-size: 14px; font-family: Segoe UI, Arial, Helvetica, sans-serif"><meta><title></title></meta>' +
-
-        // This is for iOS dark mode. If changed, change in iOS EmailBodyWebView
-        '<style>@media (prefers-color-scheme: dark) { body { color: white; background-color: black } a { color: #4285f4; } }</style>' +
-
+    doc.write(
+      '<!DOCTYPE html><html style="height: 100%; font-size: 14px; font-family: Segoe UI, Arial, Helvetica, sans-serif">' +
+      '<meta><title></title></meta>' +
+      + darkmode +
       '<body style="height: 100%; margin: 0; -webkit-tap-highlight-color: transparent; width: 1px; min-width: 100%;"></body></html>');
     doc.close();
 
@@ -130,7 +137,7 @@ export default class HtmlEditor extends React.Component {
     }
   }
 
-  handleCursorChange(e) {
+  handleCursorChange() {
     if (this.props.onCursorChange) {
       this.props.onCursorChange();
     }
@@ -149,37 +156,37 @@ export default class HtmlEditor extends React.Component {
     }
   }
 
-  increaseQuoteLevel(e)  {
+  increaseQuoteLevel(e) {
     this.maybePreventDefault(e);
     this.editor.increaseQuoteLevel();
   }
 
-  decreaseQuoteLevel(e)  {
+  decreaseQuoteLevel(e) {
     this.maybePreventDefault(e);
     this.editor.decreaseQuoteLevel();
   }
 
-  makeUnorderedList(e)  {
+  makeUnorderedList(e) {
     this.maybePreventDefault(e);
     this.editor.makeUnorderedList();
   }
 
-  makeOrderedList(e)  {
+  makeOrderedList(e) {
     this.maybePreventDefault(e);
     this.editor.makeOrderedList();
   }
 
-  removeList(e)  {
+  removeList(e) {
     this.maybePreventDefault(e);
     this.editor.removeList();
   }
 
-  increaseListLevel(e)  {
+  increaseListLevel(e) {
     this.maybePreventDefault(e);
     this.editor.increaseListLevel();
   }
 
-  decreaseListLevel(e)  {
+  decreaseListLevel(e) {
     this.maybePreventDefault(e);
     this.editor.decreaseListLevel();
   }
@@ -221,7 +228,7 @@ export default class HtmlEditor extends React.Component {
       if (predicate(node)) {
         return node;
       }
-    } while (node = node.parentNode);
+    } while (node == node.parentNode);
     return null;
   }
 

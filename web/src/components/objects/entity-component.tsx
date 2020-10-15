@@ -30,7 +30,7 @@ interface Props {
 }
 
 interface State {
-    results?: exocore.index.EntityResults;
+    results?: exocore.store.EntityResults;
     entityTraits?: EntityTraits;
     trait?: EntityTrait<unknown>;
 }
@@ -136,7 +136,7 @@ export class EntityComponent extends React.Component<Props, State> {
         }
     }
 
-    private handleNewResults(results: exocore.index.EntityResults): void {
+    private handleNewResults(results: exocore.store.EntityResults): void {
         if (results && results.entities.length > 0) {
             const et = new EntityTraits(results.entities[0].entity)
 
@@ -194,9 +194,9 @@ export class EntityComponent extends React.Component<Props, State> {
 
         let mb = MutationBuilder
             .updateEntity(this.state.entityTraits.id)
-            .putTrait(new exomind.base.Postponed({
+            .putTrait(new exomind.base.Snoozed({
                 untilDate: toProtoTimestamp(date),
-            }), "postponed")
+            }), "snoozed")
             .returnEntities();
 
         const parentRelation = this.state.entityTraits

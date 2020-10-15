@@ -25,9 +25,9 @@ pub mod base {
         }
     }
 
-    impl NamedMessage for Postponed {
+    impl NamedMessage for Snoozed {
         fn full_name() -> &'static str {
-            "exomind.base.Postponed"
+            "exomind.base.Snoozed"
         }
     }
 

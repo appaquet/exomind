@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package exocore.index;
+package exocore.store;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/any.proto";

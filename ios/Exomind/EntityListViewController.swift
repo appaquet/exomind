@@ -52,17 +52,17 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    func loadData(withResults results: [Exocore_Index_EntityResult]) {
+    func loadData(withResults results: [Exocore_Store_EntityResult]) {
         self.collectionData = convertResults(oldResults: self.collectionData, newResults: results)
     }
 
     func loadData(fromChildrenOf entityId: EntityId) {
         let traitQuery = TraitQueryBuilder.refersTo(field: "collection", entityId: entityId).build()
 
-        var projectSummaryFields = Exocore_Index_Projection()
+        var projectSummaryFields = Exocore_Store_Projection()
         projectSummaryFields.fieldGroupIds = [1]
         projectSummaryFields.package = ["exomind.base"]
-        var projectSkipRest = Exocore_Index_Projection()
+        var projectSkipRest = Exocore_Store_Projection()
         projectSkipRest.skip = true
 
         let query = QueryBuilder
@@ -76,7 +76,7 @@ class EntityListViewController: UITableViewController {
         self.loadData(fromQuery: query)
     }
 
-    func loadData(fromQuery query: Exocore_Index_EntityQuery) {
+    func loadData(fromQuery query: Exocore_Store_EntityQuery) {
         self.query = ExpandableQuery(query: query) { [weak self] in
             guard let this = self else {
                 return
@@ -189,13 +189,13 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private func convertResults(oldResults: [EntityResult], newResults: [Exocore_Index_EntityResult]) -> [EntityResult] {
+    private func convertResults(oldResults: [EntityResult], newResults: [Exocore_Store_EntityResult]) -> [EntityResult] {
         var currentResults = [String: EntityResult]()
         for currentResult in oldResults {
             currentResults[currentResult.result.entity.id] = currentResult
         }
 
-        return newResults.map { (res: Exocore_Index_EntityResult) in
+        return newResults.map { (res: Exocore_Store_EntityResult) in
             let entityId = res.entity.id
             let entity = res.entity.toExtension()
 
@@ -306,7 +306,7 @@ class ChildrenViewSwipeAction {
 }
 
 fileprivate struct EntityResult: Equatable {
-    var result: Exocore_Index_EntityResult
+    var result: Exocore_Store_EntityResult
     var entity: EntityExt
     var priorityTrait: AnyTraitInstance?
 
