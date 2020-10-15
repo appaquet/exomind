@@ -16,7 +16,7 @@ public class Store {
         let _ = mutationData.withUnsafeBytes { (ptr) -> ExocoreMutationHandle in
             let addr = ptr.bindMemory(to: UInt8.self).baseAddress
 
-            return exocore_mutate(self.client!.context, addr, UInt(mutationData.count), { (status, resultsPtr, resultsSize, observer) in
+            return exocore_store_mutate(self.client!.context, addr, UInt(mutationData.count), { (status, resultsPtr, resultsSize, observer) in
                 let cb = Unmanaged<MutationCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
 
                 if status == UInt8(ExocoreMutationStatus_Error.rawValue) {
@@ -41,7 +41,7 @@ public class Store {
         let handle = queryData.withUnsafeBytes { (ptr) -> ExocoreQueryHandle in
             let addr = ptr.bindMemory(to: UInt8.self).baseAddress
 
-            return exocore_query(self.client!.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
+            return exocore_store_query(self.client!.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
                 let cb = Unmanaged<QueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
 
                 if status == UInt8(ExocoreQueryStatus_Error.rawValue) {
@@ -68,7 +68,7 @@ public class Store {
         let handle = queryData.withUnsafeBytes { (ptr) -> ExocoreQueryStreamHandle in
             let addr = ptr.bindMemory(to: UInt8.self).baseAddress
 
-            return exocore_watched_query(self.client!.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
+            return exocore_store_watched_query(self.client!.context, addr, UInt(queryData.count), { (status, resultsPtr, resultsSize, observer) in
                 if status == UInt8(ExocoreQueryStreamStatus_Done.rawValue) {
                     let cb = Unmanaged<QueryCallback>.fromOpaque(observer!).takeRetainedValue() // consume ptr
                     cb.cb(.done, nil)
@@ -120,7 +120,7 @@ public class QueryStreamHandle {
 
     deinit {
         if let client = self.client {
-            exocore_watched_query_cancel(client.context, self.handle)
+            exocore_store_watched_query_cancel(client.context, self.handle)
         }
     }
 }
@@ -136,7 +136,7 @@ public class QueryHandle {
 
     deinit {
         if let client = self.client {
-            exocore_query_cancel(client.context, self.handle)
+            exocore_store_query_cancel(client.context, self.handle)
         }
     }
 }

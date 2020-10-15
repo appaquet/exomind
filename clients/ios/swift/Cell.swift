@@ -11,7 +11,7 @@ public class Cell {
         guard let context = self.client?.context else { return nil }
 
         let days = expirationDays ?? 0
-        let tokenPtr = exocore_generate_auth_token(context, UInt(days))
+        let tokenPtr = exocore_cell_generate_auth_token(context, UInt(days))
         let tokenStr = String(cString: tokenPtr!)
         exocore_free_string(tokenPtr)
 

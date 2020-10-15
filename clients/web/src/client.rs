@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex, Once};
+use std::{
+    sync::{Arc, Mutex, Once},
+    time::Duration,
+};
 
 use futures::StreamExt;
 use prost::Message;
@@ -21,6 +24,8 @@ static INIT: Once = Once::new();
 
 #[wasm_bindgen]
 pub struct ExocoreClient {
+    clock: Clock,
+    cell: Cell,
     store_handle: Arc<ClientHandle>,
     _inner: Arc<Mutex<Inner>>,
 }
@@ -74,7 +79,7 @@ impl ExocoreClient {
         let remote_store = Client::new(
             ClientConfiguration::default(),
             cell.clone(),
-            clock,
+            clock.clone(),
             store_handle,
         )
         .expect("Couldn't create store");
@@ -98,7 +103,9 @@ impl ExocoreClient {
             status_change_callback,
         }));
 
-        let mut client_transport_handle = transport.get_handle(cell, ServiceType::Client).unwrap();
+        let mut client_transport_handle = transport
+            .get_handle(cell.clone(), ServiceType::Client)
+            .unwrap();
         let inner_clone = inner.clone();
         spawn_future_non_send(async move {
             let mut stream = client_transport_handle.get_stream();
@@ -133,13 +140,32 @@ impl ExocoreClient {
         });
 
         Ok(ExocoreClient {
+            clock,
+            cell,
             store_handle,
             _inner: inner,
         })
     }
 
     #[wasm_bindgen]
-    pub fn mutate(&self, mutation_proto_bytes: js_sys::Uint8Array) -> js_sys::Promise {
+    pub fn cell_generate_auth_token(&self, expiration_days: f64) -> Result<String, JsValue> {
+        let expiration = if expiration_days > 0.0 {
+            let now = self.clock.consistent_time(self.cell.local_node().node());
+            Some(now + Duration::from_secs(expiration_days as u64 * 86400))
+        } else {
+            None
+        };
+
+        let auth_token =
+            exocore_core::sec::auth_token::AuthToken::new(&self.cell, &self.clock, expiration)
+                .map_err(into_js_error)?;
+
+        let auth_token_bs58 = auth_token.encode_base58_string();
+        Ok(auth_token_bs58)
+    }
+
+    #[wasm_bindgen]
+    pub fn store_mutate(&self, mutation_proto_bytes: js_sys::Uint8Array) -> js_sys::Promise {
         let bytes = Self::js_bytes_to_vec(mutation_proto_bytes);
         let entity_mutation =
             MutationRequest::decode(bytes.as_ref()).expect("Couldn't encode query");
@@ -159,7 +185,7 @@ impl ExocoreClient {
     }
 
     #[wasm_bindgen]
-    pub fn query(&self, query_proto_bytes: js_sys::Uint8Array) -> js_sys::Promise {
+    pub fn store_query(&self, query_proto_bytes: js_sys::Uint8Array) -> js_sys::Promise {
         let bytes = Self::js_bytes_to_vec(query_proto_bytes);
         let entity_query = EntityQuery::decode(bytes.as_ref()).expect("Couldn't encode query");
 
@@ -178,7 +204,7 @@ impl ExocoreClient {
     }
 
     #[wasm_bindgen]
-    pub fn watched_query(&self, query_proto_bytes: js_sys::Uint8Array) -> WatchedQuery {
+    pub fn store_watched_query(&self, query_proto_bytes: js_sys::Uint8Array) -> WatchedQuery {
         let bytes = Self::js_bytes_to_vec(query_proto_bytes);
         let entity_query = EntityQuery::decode(bytes.as_ref()).expect("Couldn't encode query");
 

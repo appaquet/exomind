@@ -43,6 +43,10 @@ export class Exocore {
         return instance;
     }
 
+    static get cell(): Cell {
+        return Exocore.defaultInstance.cell;
+    }
+
     static get store(): Store {
         return Exocore.defaultInstance.store;
     }
@@ -54,6 +58,7 @@ export class Exocore {
 
 export class ExocoreInstance {
     wasmClient: any;
+    cell: Cell;
     store: Store;
     status: string;
     registry: Registry;
@@ -61,6 +66,7 @@ export class ExocoreInstance {
 
     constructor(wasmClient: any) {
         this.wasmClient = wasmClient;
+        this.cell = new Cell(wasmClient);
         this.store = new Store(wasmClient);
         this.registry = new Registry();
     }
@@ -70,6 +76,19 @@ export class ExocoreInstance {
         if (this.onChange) {
             this.onChange();
         }
+    }
+}
+
+export class Cell {
+    wasmClient: any;
+    statusChangeCallback: () => void;
+
+    constructor(inner: any) {
+        this.wasmClient = inner;
+    }
+
+    generateAuthToken(expirationDays?: number): Array<string> {
+        return this.wasmClient.cell_generate_auth_token(expirationDays ?? 0);
     }
 }
 
@@ -84,21 +103,21 @@ export class Store {
     async mutate(mutation: exocore.store.IMutationRequest): Promise<exocore.store.MutationResult> {
         const encoded = exocore.store.MutationRequest.encode(mutation).finish();
 
-        let resultsData: Uint8Array = await this.wasmClient.mutate(encoded);
+        let resultsData: Uint8Array = await this.wasmClient.store_mutate(encoded);
         return exocore.store.MutationResult.decode(resultsData);
     }
 
     async query(query: exocore.store.IEntityQuery): Promise<exocore.store.EntityResults> {
         const encoded = exocore.store.EntityQuery.encode(query).finish();
 
-        const resultsData: Uint8Array = await this.wasmClient.query(encoded);
+        const resultsData: Uint8Array = await this.wasmClient.store_query(encoded);
         return exocore.store.EntityResults.decode(resultsData);
     }
 
     watchedQuery(query: exocore.store.IEntityQuery): WatchedQuery {
         const encoded = exocore.store.EntityQuery.encode(query).finish();
 
-        return new WatchedQuery(this.wasmClient.watched_query(encoded));
+        return new WatchedQuery(this.wasmClient.store_watched_query(encoded));
     }
 
     generateId(prefix?: string): string {

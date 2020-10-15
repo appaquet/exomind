@@ -373,85 +373,7 @@ pub extern "C" fn exocore_context_free(ctx: *mut Context) {
 }
 
 #[no_mangle]
-pub extern "C" fn exocore_mutate(
-    ctx: *mut Context,
-    mutation_bytes: *const libc::c_uchar,
-    mutation_size: usize,
-    callback: extern "C" fn(status: MutationStatus, *const libc::c_uchar, usize, *const c_void),
-    callback_ctx: *const c_void,
-) -> MutationHandle {
-    let context = unsafe { ctx.as_mut().unwrap() };
-
-    match context.mutate(mutation_bytes, mutation_size, callback, callback_ctx) {
-        Ok(res) => res,
-        Err(status) => MutationHandle { status },
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn exocore_query(
-    ctx: *mut Context,
-    query_bytes: *const libc::c_uchar,
-    query_size: usize,
-    callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
-    callback_ctx: *const c_void,
-) -> QueryHandle {
-    let context = unsafe { ctx.as_mut().unwrap() };
-
-    match context.query(query_bytes, query_size, callback, callback_ctx) {
-        Ok(res) => res,
-        Err(status) => QueryHandle {
-            status,
-            query_id: 0,
-        },
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn exocore_query_cancel(ctx: *mut Context, handle: QueryHandle) {
-    let context = unsafe { ctx.as_mut().unwrap() };
-
-    if let Err(err) = context
-        .store_handle
-        .cancel_query(ConsistentTimestamp(handle.query_id))
-    {
-        error!("Error cancelling query: {}", err)
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn exocore_watched_query(
-    ctx: *mut Context,
-    query_bytes: *const libc::c_uchar,
-    query_size: usize,
-    callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
-    callback_ctx: *const c_void,
-) -> QueryStreamHandle {
-    let context = unsafe { ctx.as_mut().unwrap() };
-
-    match context.watched_query(query_bytes, query_size, callback, callback_ctx) {
-        Ok(res) => res,
-        Err(status) => QueryStreamHandle {
-            status,
-            query_id: 0,
-        },
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn exocore_watched_query_cancel(ctx: *mut Context, handle: QueryStreamHandle) {
-    let context = unsafe { ctx.as_mut().unwrap() };
-
-    if let Err(err) = context
-        .store_handle
-        .cancel_query(ConsistentTimestamp(handle.query_id))
-    {
-        error!("Error cancelling query stream: {}", err)
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn exocore_generate_auth_token(
+pub extern "C" fn exocore_cell_generate_auth_token(
     ctx: *mut Context,
     expiration_days: usize,
 ) -> *mut libc::c_char {
@@ -477,6 +399,84 @@ pub extern "C" fn exocore_generate_auth_token(
     let auth_token_bs58 = auth_token.encode_base58_string();
 
     CString::new(auth_token_bs58).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_store_mutate(
+    ctx: *mut Context,
+    mutation_bytes: *const libc::c_uchar,
+    mutation_size: usize,
+    callback: extern "C" fn(status: MutationStatus, *const libc::c_uchar, usize, *const c_void),
+    callback_ctx: *const c_void,
+) -> MutationHandle {
+    let context = unsafe { ctx.as_mut().unwrap() };
+
+    match context.mutate(mutation_bytes, mutation_size, callback, callback_ctx) {
+        Ok(res) => res,
+        Err(status) => MutationHandle { status },
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_store_query(
+    ctx: *mut Context,
+    query_bytes: *const libc::c_uchar,
+    query_size: usize,
+    callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
+    callback_ctx: *const c_void,
+) -> QueryHandle {
+    let context = unsafe { ctx.as_mut().unwrap() };
+
+    match context.query(query_bytes, query_size, callback, callback_ctx) {
+        Ok(res) => res,
+        Err(status) => QueryHandle {
+            status,
+            query_id: 0,
+        },
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_store_query_cancel(ctx: *mut Context, handle: QueryHandle) {
+    let context = unsafe { ctx.as_mut().unwrap() };
+
+    if let Err(err) = context
+        .store_handle
+        .cancel_query(ConsistentTimestamp(handle.query_id))
+    {
+        error!("Error cancelling query: {}", err)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_store_watched_query(
+    ctx: *mut Context,
+    query_bytes: *const libc::c_uchar,
+    query_size: usize,
+    callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
+    callback_ctx: *const c_void,
+) -> QueryStreamHandle {
+    let context = unsafe { ctx.as_mut().unwrap() };
+
+    match context.watched_query(query_bytes, query_size, callback, callback_ctx) {
+        Ok(res) => res,
+        Err(status) => QueryStreamHandle {
+            status,
+            query_id: 0,
+        },
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn exocore_store_watched_query_cancel(ctx: *mut Context, handle: QueryStreamHandle) {
+    let context = unsafe { ctx.as_mut().unwrap() };
+
+    if let Err(err) = context
+        .store_handle
+        .cancel_query(ConsistentTimestamp(handle.query_id))
+    {
+        error!("Error cancelling query stream: {}", err)
+    }
 }
 
 #[no_mangle]
