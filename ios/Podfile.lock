@@ -43,10 +43,10 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   Exocore:
-    :commit: d695d24cb7f1d2ae74a7cc3a221d6b2b20803aa9
+    :commit: 2bf87e40c4bc73ede97ec0683206734712edad3c
     :git: https://github.com/appaquet/exocore.git
   FontAwesome.swift:
-    :commit: d5cb8ca99cc1e1a0ab51f6f284001872804a921c
+    :commit: 70da3c6af1eb397113d0f9bd9cfc96ae406d9c84
     :git: https://github.com/thii/FontAwesome.swift.git
 
 SPEC CHECKSUMS:
