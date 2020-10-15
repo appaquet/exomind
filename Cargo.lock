@@ -954,7 +954,7 @@ dependencies = [
  "hyper",
  "libp2p",
  "log",
- "pin-project",
+ "pin-project 1.0.0",
  "thiserror",
  "tokio",
  "url",
@@ -1213,7 +1213,7 @@ dependencies = [
  "futures-sink",
  "futures-task",
  "memchr",
- "pin-project",
+ "pin-project 0.4.27",
  "pin-utils",
  "proc-macro-hack",
  "proc-macro-nested",
@@ -1229,7 +1229,7 @@ dependencies = [
  "bytes",
  "futures 0.3.6",
  "memchr",
- "pin-project",
+ "pin-project 0.4.27",
 ]
 
 [[package]]
@@ -1456,7 +1456,7 @@ dependencies = [
  "httparse",
  "httpdate",
  "itoa",
- "pin-project",
+ "pin-project 0.4.27",
  "socket2",
  "tokio",
  "tower-service",
@@ -1625,7 +1625,7 @@ dependencies = [
  "multihash",
  "parity-multiaddr",
  "parking_lot 0.10.2",
- "pin-project",
+ "pin-project 0.4.27",
  "smallvec",
  "wasm-timer",
 ]
@@ -1650,7 +1650,7 @@ dependencies = [
  "multistream-select",
  "parity-multiaddr",
  "parking_lot 0.10.2",
- "pin-project",
+ "pin-project 0.4.27",
  "prost",
  "prost-build",
  "rand 0.7.3",
@@ -2023,7 +2023,7 @@ dependencies = [
  "bytes",
  "futures 0.3.6",
  "log",
- "pin-project",
+ "pin-project 0.4.27",
  "smallvec",
  "unsigned-varint 0.4.0",
 ]
@@ -2278,7 +2278,16 @@ version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ffbc8e94b38ea3d2d8ba92aea2983b503cd75d0888d75b86bb37970b5698e15"
 dependencies = [
- "pin-project-internal",
+ "pin-project-internal 0.4.27",
+]
+
+[[package]]
+name = "pin-project"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7d8ba72884f707ee1b9daf3e3f4692d84202df5c767552a8a0bb4615e9ad5d5"
+dependencies = [
+ "pin-project-internal 1.0.0",
 ]
 
 [[package]]
@@ -2286,6 +2295,17 @@ name = "pin-project-internal"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65ad2ae56b6abe3a1ee25f15ee605bacadb9a764edaba9c2bf4103800d4a1895"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "pin-project-internal"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3bdf2be66f09649de0c194e9e7204df2fe9e9251834c25e94a0f502ba19cf2b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2692,7 +2712,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4da5fcb054c46f5a5dff833b129285a93d3f0179531735e6c866e8cc307d2020"
 dependencies = [
  "futures 0.3.6",
- "pin-project",
+ "pin-project 0.4.27",
  "static_assertions",
 ]
 

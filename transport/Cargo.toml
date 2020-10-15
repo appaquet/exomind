@@ -23,7 +23,7 @@ log = "0.4"
 thiserror = "1.0"
 anyhow = "1.0"
 futures = { version = "0.3", features = ["compat"] }
-pin-project = "0.4"
+pin-project = "1.0"
 byteorder = "1.3"
 libp2p = { version = "0.28", optional = true, default-features = false, features = [ "dns", "mplex", "noise", "websocket", "yamux" ] }
 hyper = { version = "0.13", optional = true }
