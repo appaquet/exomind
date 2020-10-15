@@ -248,6 +248,11 @@ async fn handle_request(
             })?
     };
 
+    // validate token
+    auth_token
+        .is_valid(&service.cell, &clock)
+        .map_err(|_| RequestError::Unauthorized)?;
+
     match request_type {
         RequestType::EntitiesQuery => {
             let body_bytes = hyper::body::to_bytes(req.into_body()).await?;

@@ -9,7 +9,7 @@ use exocore_core::{
     sec::auth_token::AuthToken,
     time::Clock,
 };
-use hyper::{body::Buf, Body, Client, Request, Response};
+use hyper::{body::Buf, Body, Client, Request, Response, StatusCode};
 
 use crate::{testing::TestableTransportHandle, ServiceType, TransportServiceHandle};
 
@@ -21,14 +21,30 @@ async fn invalid_requests() -> anyhow::Result<()> {
     let cell = FullCell::generate(node.clone());
     let clock = Clock::new();
 
-    let _entities_handle = start_server(&cell, &clock, 3007);
+    let _entities_handle = start_server(&cell, &clock, 3007).await;
 
     {
         // invalid authentication token
         let url = "http://127.0.0.1:3007/entities/query?token=invalid_token";
         let resp_chan = send_http_request(url, b"query body");
-        let resp = resp_chan.await?;
-        assert!(resp.is_err());
+        let resp = resp_chan.await??;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    {
+        // valid token, but invalid signature
+        let auth_token = {
+            let auth_token = AuthToken::new(cell.cell(), &clock, None)?;
+            let mut auth_token_proto = auth_token.as_proto().clone();
+            auth_token_proto.signature = vec![1, 3, 3, 7];
+            let auth_token = AuthToken::from_proto(auth_token_proto)?;
+            auth_token.encode_base58_string()
+        };
+
+        let url = format!("http://127.0.0.1:3007/entities/query?token={}", auth_token);
+        let resp_chan = send_http_request(url, b"query body");
+        let resp = resp_chan.await??;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
     {
@@ -38,18 +54,18 @@ async fn invalid_requests() -> anyhow::Result<()> {
         let auth_token = auth_token.encode_base58_string();
         let url = format!("http://127.0.0.1:3007/entities/query?token={}", auth_token);
         let resp_chan = send_http_request(url, b"query body");
-        let resp = resp_chan.await?;
-        assert!(resp.is_err());
+        let resp = resp_chan.await??;
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     }
 
     {
         // invalid request type
         let auth_token = AuthToken::new(cell.cell(), &clock, None)?;
         let auth_token = auth_token.encode_base58_string();
-        let url = format!("http://127.0.0.1:3007/entities/query?token={}", auth_token);
+        let url = format!("http://127.0.0.1:3007/invalid/type?token={}", auth_token);
         let resp_chan = send_http_request(url, b"query body");
-        let resp = resp_chan.await?;
-        assert!(resp.is_err());
+        let resp = resp_chan.await??;
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     }
 
     Ok(())
