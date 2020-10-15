@@ -80,7 +80,7 @@ export default class HtmlEditor extends React.Component {
 
     // width hack: http://stackoverflow.com/questions/23083462/how-to-get-an-iframe-to-be-responsive-in-ios-safari
     doc.write(
-      '<!DOCTYPE html><html style="height: 100%; font-size: 14px; font-family: Segoe UI, Arial, Helvetica, sans-serif">' +
+      '<!DOCTYPE html><html style="height: 100%; font-size: 16px; font-family: Segoe UI, Arial, Helvetica, sans-serif">' +
       '<meta><title></title></meta>' +
       + darkmode +
       '<body style="height: 100%; margin: 0; -webkit-tap-highlight-color: transparent; width: 1px; min-width: 100%;"></body></html>');
