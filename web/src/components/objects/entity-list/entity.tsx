@@ -152,7 +152,7 @@ export class Entity extends React.Component<IProps, IState> {
 
         let snippetMarkup;
         if (thread.snippet != null) {
-            snippetMarkup = <div className="text single-line">{thread.snippet}</div>
+            snippetMarkup = <div className="text">{thread.snippet}</div>
         }
 
         const classes = classNames({
