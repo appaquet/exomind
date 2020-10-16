@@ -712,7 +712,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#940c7620f383bca674e6403975aa1394febb8bcc"
+source = "git+https://github.com/appaquet/exocore.git#6d517461efeb5b6eab23bc665331f8fd653c6e6f"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -723,7 +723,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#940c7620f383bca674e6403975aa1394febb8bcc"
+source = "git+https://github.com/appaquet/exocore.git#6d517461efeb5b6eab23bc665331f8fd653c6e6f"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -740,7 +740,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#940c7620f383bca674e6403975aa1394febb8bcc"
+source = "git+https://github.com/appaquet/exocore.git#6d517461efeb5b6eab23bc665331f8fd653c6e6f"
 dependencies = [
  "anyhow",
  "bs58",
@@ -776,7 +776,7 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#940c7620f383bca674e6403975aa1394febb8bcc"
+source = "git+https://github.com/appaquet/exocore.git#6d517461efeb5b6eab23bc665331f8fd653c6e6f"
 dependencies = [
  "anyhow",
  "bytes 0.5.6",
@@ -796,7 +796,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#940c7620f383bca674e6403975aa1394febb8bcc"
+source = "git+https://github.com/appaquet/exocore.git#6d517461efeb5b6eab23bc665331f8fd653c6e6f"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -804,7 +804,7 @@ dependencies = [
  "futures 0.3.6",
  "libp2p",
  "log",
- "pin-project 1.0.0",
+ "pin-project 1.0.1",
  "thiserror",
  "wasm-bindgen",
 ]
@@ -2256,11 +2256,11 @@ dependencies = [
 
 [[package]]
 name = "pin-project"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7d8ba72884f707ee1b9daf3e3f4692d84202df5c767552a8a0bb4615e9ad5d5"
+checksum = "ee41d838744f60d959d7074e3afb6b35c7456d0f61cad38a24e35e6553f73841"
 dependencies = [
- "pin-project-internal 1.0.0",
+ "pin-project-internal 1.0.1",
 ]
 
 [[package]]
@@ -2276,9 +2276,9 @@ dependencies = [
 
 [[package]]
 name = "pin-project-internal"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3bdf2be66f09649de0c194e9e7204df2fe9e9251834c25e94a0f502ba19cf2b"
+checksum = "81a4ffa594b66bff340084d4081df649a7dc049ac8d7fc458d8e628bfbbb2f86"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2862,9 +2862,9 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.116"
+version = "1.0.117"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96fe57af81d28386a513cbc6858332abc6117cfdb5999647c6444b8f43a370a5"
+checksum = "b88fa983de7720629c9387e9f517353ed404164b1e482c970a90c1a4aaf7dc1a"
 dependencies = [
  "serde_derive",
 ]
@@ -2881,9 +2881,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.116"
+version = "1.0.117"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f630a6370fd8e457873b4bd2ffdae75408bc291ba72be773772a4c2a065d9ae8"
+checksum = "cbd1ae72adb44aab48f325a02444a5fc079349a8d804c1fc922aed3f7454c74e"
 dependencies = [
  "proc-macro2",
  "quote",
