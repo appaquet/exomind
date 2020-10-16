@@ -171,7 +171,7 @@ impl Libp2pTransport {
             while let Poll::Ready(Some(event)) = out_receiver.poll_next_unpin(cx) {
                 match event {
                     OutEvent::Message(msg) => {
-                        let frame_data = msg.envelope_builder.as_bytes(); 
+                        let frame_data = msg.envelope_builder.as_bytes();
 
                         let connection =
                             if let Some(ConnectionID::Libp2p(connection)) = msg.connection {
