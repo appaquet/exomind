@@ -106,7 +106,8 @@ impl Libp2pTransport {
                     libp2p::yamux::Config::default(),
                     libp2p::mplex::MplexConfig::new(),
                 ))
-                .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)));
+                .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)))
+                .boxed();
             Swarm::new(transport, behaviour, self.local_node.peer_id().clone())
         };
 
