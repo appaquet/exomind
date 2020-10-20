@@ -41,14 +41,9 @@ export default class IosHtmlEditor extends React.Component {
   }
 
   render() {
-    if (!this.state.content) {
-      return <div></div>;
-    }
-
     return (
       <HtmlEditor
         content={this.state.content}
-        placeholder="Type your text here"
         onBound={this.handleBound.bind(this)}
         onChange={this.handleContentChange.bind(this)}
         onCursorChange={this.handleCursorChange.bind(this)}

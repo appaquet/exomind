@@ -1,5 +1,5 @@
 
-import React, { RefObject, SyntheticEvent, KeyboardEvent, MouseEvent } from 'react';
+import React, { RefObject, SyntheticEvent, KeyboardEvent } from 'react';
 import { EditorState, RichUtils, DraftEditorCommand, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier } from 'draft-js';
 import './html-editor.less';
 import 'draft-js/dist/Draft.css';
@@ -192,8 +192,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     if (!e) {
       e = {
         shift: false,
-        preventDefault: () => {},
-      } as any as KeyboardEvent;
+        preventDefault: () => {
+          // nothing to do
+        },
+      } as unknown as KeyboardEvent;
     }
 
     const newEditorState = RichUtils.onTab(
@@ -209,8 +211,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     if (!e) {
       e = {
         shift: true,
-        preventDefault: () => {},
-      } as any as KeyboardEvent;
+        preventDefault: () => {
+          // nothing to do
+        },
+      } as unknown as KeyboardEvent;
     }
 
     const a = e as KeyboardEvent;
@@ -225,7 +229,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   }
 
   // https://gist.github.com/tonis2/cfeb6d044347d6f3cbab656d6a94eee2
-  clearStyle() {
+  clearStyle(): void {
     const { editorState } = this.state
     const selection = editorState.getSelection()
     const contentState = editorState.getCurrentContent()
