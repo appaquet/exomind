@@ -1,7 +1,8 @@
 import React from 'react';
-import HtmlEditor from '../../components/interaction/html-editor/html-editor.js';
+import HtmlEditor from '../../components/interaction/html-editor/html-editor';
 import './ios-html-editor.less';
 import PropTypes from 'prop-types';
+import Debouncer from '../../utils/debouncer';
 
 export default class IosHtmlEditor extends React.Component {
   static propTypes = {
@@ -12,24 +13,38 @@ export default class IosHtmlEditor extends React.Component {
 
   constructor(props) {
     super(props);
+
+    this.debouncer = new Debouncer(1000);
+
+    // content is set via state because it may be empty at time in props
+    // props are used message passing, not as full state
     this.state = {
       content: props.content
     }
   }
 
-  UNSAFE_componentWillReceiveProps(newProps) {
-    if (newProps.action) {
-      this.handleAction(newProps.action);
+  componentDidUpdate(prevProps) {
+    // if we receive an action
+    if (this.props.action) {
+      this.handleAction(this.props.action);
     }
 
-    if (newProps.content) {
-      this.setState({
-        content: newProps.content
-      });
-    }
+    // if we receive new content
+    // for some reason, if it's not on same stack, it crashes
+    setTimeout(() => {
+      if (this.props.content) {
+        this.setState({
+          content: this.props.content
+        });
+      }
+    });
   }
 
   render() {
+    if (!this.state.content) {
+      return <div></div>;
+    }
+
     return (
       <HtmlEditor
         content={this.state.content}
@@ -37,15 +52,12 @@ export default class IosHtmlEditor extends React.Component {
         onBound={this.handleBound.bind(this)}
         onChange={this.handleContentChange.bind(this)}
         onCursorChange={this.handleCursorChange.bind(this)}
-        onFocus={this.handleFocus.bind(this)}
       />
     );
   }
 
   handleBound(editor) {
-    this.setState({
-      editor: editor
-    });
+    this.setState({ editor });
   }
 
   handleContentChange(newContent) {
@@ -57,71 +69,56 @@ export default class IosHtmlEditor extends React.Component {
       sendIos({
         content: newContent
       });
+
     } else {
-      // debounces event to ios
-      setTimeout(() => {
+      this.debouncer.debounce(() => {
         if (this.newContent === newContent) {
           sendIos({
             content: newContent
           });
         }
-      }, 500);
+      });
     }
-
-    this.sendCursor();
   }
 
-  handleCursorChange() {
-    this.sendCursor();
-  }
-
-  handleFocus(e) {
-    setTimeout(() => {
-      this.handleCursorChange();
-    }, 100);
-  }
-
-  sendCursor() {
-    let contentDoc = document.getElementsByTagName('iframe')[0].contentDocument;
-    if (contentDoc) {
-      let range = contentDoc.getSelection().getRangeAt(0);
-      let rects = range.getClientRects();
-      if (!_.isEmpty(rects)) {
-        let cursorY = rects[0].top;
-        if (this.lastCursorY != cursorY) {
-          sendIos({
-            cursorY: cursorY
-          });
-          this.lastCursorY = cursorY;
-        }
+  handleCursorChange(cursor) {
+    if (cursor && cursor.rect) {
+      let cursorY = cursor.rect.top;
+      if (this.lastCursorY != cursorY) {
+        sendIos({
+          cursorY: cursorY
+        });
+        this.lastCursorY = cursorY
       }
     }
   }
 
   handleAction(name) {
     switch (name) {
-    case 'bold':
-      this.state.editor.toggleSelectionTag('b');
-      break;
-    case 'italic':
-      this.state.editor.toggleSelectionTag('i');
-      break;
-    case 'list-ul':
-      this.state.editor.makeUnorderedList();
-      break;
-    case 'list-ol':
-      this.state.editor.makeOrderedList();
-      break;
-    case 'indent':
-      this.state.editor.indent();
-      break;
-    case 'outdent':
-      this.state.editor.outdent();
-      break;
-    default:
-      console.log('Unhandled action ' + name);
+      case 'bold':
+        this.state.editor.toggleInlineStyle('BOLD');
+        break;
+      case 'strikethrough':
+        this.state.editor.toggleInlineStyle('STRIKETHROUGH');
+        break;
+      case 'header-toggle':
+        this.state.editor.toggleHeader();
+        break;
+      case 'list-ul':
+        this.state.editor.toggleBlockType('unordered-list-item');
+        break;
+      case 'list-ol':
+        this.state.editor.toggleBlockType('ordered-list-item');
+        break;
+      case 'indent':
+        this.state.editor.indent();
+        break;
+      case 'outdent':
+        this.state.editor.outdent();
+        break;
+      default:
+        console.log('Unhandled action ' + name);
     }
   }
-
 }
 

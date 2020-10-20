@@ -6,7 +6,7 @@ import React, { ChangeEvent } from 'react';
 import EmailsLogic from '../../../logic/emails-logic';
 import { exocore, exomind } from '../../../protos';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
-import HtmlEditor from '../../interaction/html-editor/html-editor.js';
+import HtmlEditor from '../../interaction/html-editor/html-editor';
 import { ContainerController } from '../container-controller';
 import { Selection } from '../entity-list/selection';
 import './draft-email.less';
@@ -27,7 +27,7 @@ interface IState {
     savedDraft: exomind.base.IDraftEmail;
     currentDraft: exomind.base.IDraftEmail;
     accounts?: AccountsMap;
-    editor?: unknown;
+    editor?: HtmlEditor;
 }
 
 export default class DraftEmail extends React.Component<IProps, IState> {
@@ -216,7 +216,6 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     }
 
     private renderBody(): React.ReactNode {
-
         let editPart = EmailsLogic.extractHtmlPart(this.state.currentDraft.parts);
         if (!editPart) {
             if (!_.isEmpty(this.state.currentDraft.parts)) {
@@ -238,17 +237,18 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         );
     }
 
-    private handleHtmlEditorBound(editor: unknown): void {
+    private handleHtmlEditorBound(editor: HtmlEditor): void {
         this.setState({
             editor: editor
         });
     }
 
     private handleBodyChange(editPart: exomind.base.EmailPart, content: string): void {
-        editPart.body = content;
+        const newEditPart = new exomind.base.EmailPart(editPart);
+        newEditPart.body = content;
 
         const draft = this.state.currentDraft;
-        draft.parts = [editPart];
+        draft.parts = [newEditPart];
         this.setState({ currentDraft: draft });
 
         // if after a second, it's still the same body, we save it (debouncing)

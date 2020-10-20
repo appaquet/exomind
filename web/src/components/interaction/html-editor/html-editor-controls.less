@@ -8,12 +8,17 @@
     li {
       .make-list-item();
       display: inline-block;
-      padding: 2px 2px 2px 8px;
+      padding: 6px 7px;
+      margin-right: 2px; 
       font-size: 10px;
 
       &:hover {
         cursor: pointer;
         background: #f0f0f0;
+      }
+
+      &.active {
+        background: #d3d3d3;
       }
 
       .icon {
@@ -32,12 +37,47 @@
         &.strikethrough {
           .icon-font-awesome('strikethrough');
         }
+
+        &.header-one, &.header-two, &.header-three, &.header-four {
+          font-weight: bold;
+          line-height: 10px;
+          font-size: 13px;
+          font-style: normal;
+        }
+        &.header-one {
+          &:before {
+            content: "H1"
+          }
+        }
+        &.header-two {
+          &:before {
+            content: "H2"
+          }
+        }
+        &.header-three {
+          &:before {
+            content: "H3"
+          }
+        }
+        &.header-four {
+          &:before {
+            content: "H4"
+          }
+        }
+
         &.list-ul {
           .icon-font-awesome('list-ul');
         }
         &.list-ol {
           .icon-font-awesome('list-ol');
         }
+        &.quote-right {
+          .icon-font-awesome('quote-right');
+        }
+        &.code {
+          .icon-font-awesome('code');
+        }
+
         &.indent {
           .icon-font-awesome('indent');
         }

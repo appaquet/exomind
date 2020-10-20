@@ -165,11 +165,12 @@ class RichTextEditorToolsView: UIView {
 
     let buttons = [
         ("bold", FontAwesome.bold),
-        ("italic", FontAwesome.italic),
+        ("strikethrough", FontAwesome.strikethrough),
+        ("header-toggle", FontAwesome.heading),
         ("list-ul", FontAwesome.listUl),
         ("list-ol", FontAwesome.listOl),
-        ("indent", FontAwesome.indent),
         ("outdent", FontAwesome.outdent),
+        ("indent", FontAwesome.indent),
     ]
 
     override init(frame: CGRect) {
@@ -195,7 +196,7 @@ class RichTextEditorToolsView: UIView {
         let stack = UIStackView(arrangedSubviews: buttonViews)
         stack.alignment = .leading
         stack.axis = .horizontal
-        stack.spacing = 20
+        stack.spacing = 15
         self.addSubview(stack)
         stack.snp.makeConstraints { (make) in
             make.left.equalTo(self.snp.left).offset(20)
