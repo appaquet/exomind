@@ -1,17 +1,10 @@
 
 import React, { RefObject, SyntheticEvent, KeyboardEvent } from 'react';
-import { EditorState, RichUtils, DraftEditorCommand, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier } from 'draft-js';
-import './html-editor.less';
-import 'draft-js/dist/Draft.css';
-
-import Editor from 'draft-js-plugins-editor';
+import { Editor, EditorState, RichUtils, DraftEditorCommand, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier, getDefaultKeyBinding } from 'draft-js';
 import { convertToHTML, convertFromHTML } from 'draft-convert';
-
-// No type definitions for this
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import createMarkdownShortcutsPlugin from 'draft-js-markdown-shortcuts-plugin';
-const plugins = [createMarkdownShortcutsPlugin()];
+import Debouncer from '../../../utils/debouncer';
+import 'draft-js/dist/Draft.css';
+import './html-editor.less';
 
 const defaultInitialFocus = true;
 const listMaxDepth = 4;
@@ -37,6 +30,7 @@ interface IState {
 export default class HtmlEditor extends React.Component<IProps, IState> {
   editorRef: RefObject<Editor>;
   lastTriggeredChangeState?: ContentState;
+  debouncer: Debouncer;
 
   constructor(props: IProps) {
     super(props);
@@ -57,6 +51,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     };
 
     this.editorRef = React.createRef();
+    this.debouncer = new Debouncer(200);
   }
 
   componentDidMount(): void {
@@ -85,10 +80,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     return <div className="html-editor">
       <Editor
         ref={this.editorRef}
-        plugins={plugins}
         editorState={this.state.editorState}
         onChange={this.onChange.bind(this)}
         handleKeyCommand={this.handleKeyCommand.bind(this)}
+        keyBindingFn={this.handleKeyBinding.bind(this)}
         placeholder={this.props.placeholder}
         onFocus={this.handleFocus.bind(this)}
         onBlur={this.handleBlur.bind(this)}
@@ -98,23 +93,20 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
   private onChange(editorState: EditorState): void {
     const contentState = editorState.getCurrentContent();
+    let hasChanges = false;
+    if (this.lastTriggeredChangeState != contentState && this.state.initialContent != contentState) {
+      this.lastTriggeredChangeState = contentState;
+      hasChanges = true;
+    }
 
     this.setState({
       editorState,
+      localChanges: this.state.localChanges || hasChanges,
     });
 
-    let hasChanged = false;
-    if (this.lastTriggeredChangeState != contentState && this.state.initialContent != contentState) {
-      this.lastTriggeredChangeState = contentState;
-      this.setState({
-        localChanges: true
-      });
-      hasChanged = true;
-    }
 
-    // trigger separately so that we don't get props changed on same stack
-    setTimeout(() => {
-      if (this.props.onChange && hasChanged) {
+    this.debouncer.debounce(() => {
+      if (this.props.onChange && hasChanges) {
         const htmlContent = toHTML(contentState);
         this.props.onChange(htmlContent);
       }
@@ -139,6 +131,20 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     return 'not-handled';
+  }
+
+  private handleKeyBinding(e: KeyboardEvent): DraftEditorCommand | null {
+    if (e.keyCode === 9 /* TAB */) {
+      const newEditorState = RichUtils.onTab(e, this.state.editorState, listMaxDepth,);
+
+      if (newEditorState !== this.state.editorState) {
+        this.onChange(newEditorState);
+      }
+
+      return;
+    }
+
+    return getDefaultKeyBinding(e);
   }
 
   private handleBlur(): void {
