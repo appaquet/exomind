@@ -2,6 +2,7 @@
 export default class Debouncer {
   private delay: number;
   private lastCallback: () => void;
+  private lastTimeout?: unknown;
 
   constructor(delay: number) {
     this.delay = delay;
@@ -10,9 +11,15 @@ export default class Debouncer {
   debounce(cb: ()=>void): void {
     this.lastCallback = cb;
 
-    setTimeout(() => {
+    if (this.lastTimeout) {
+      clearTimeout(this.lastTimeout as number);
+      this.lastTimeout = null;
+    }
+
+    this.lastTimeout = setTimeout(() => {
       if (this.lastCallback === cb) {
         cb();
+        this.lastTimeout = null;
       }
     }, this.delay);
   }

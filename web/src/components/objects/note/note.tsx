@@ -6,8 +6,8 @@ import * as _ from 'lodash';
 import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
 import EditableText from '../../interaction/editable-text/editable-text.js';
-import HtmlEditorControls from '../../interaction/html-editor/html-editor-controls.js';
-import HtmlEditor from '../../interaction/html-editor/html-editor.js';
+import HtmlEditorControls from '../../interaction/html-editor/html-editor-controls';
+import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-editor';
 import { Selection } from '../entity-list/selection';
 import './note.less';
 
@@ -22,7 +22,8 @@ interface IProps {
 interface IState {
     savedNote: exomind.base.INote;
     currentNote: exomind.base.INote;
-    editor?: unknown;
+    editor?: HtmlEditor;
+    cursor?: EditorCursor;
 }
 
 export default class Note extends React.Component<IProps, IState> {
@@ -54,19 +55,21 @@ export default class Note extends React.Component<IProps, IState> {
                 </div>
 
                 <div className="object-body">
-                    <HtmlEditorControls editor={this.state.editor} />
+                    <HtmlEditorControls editor={this.state.editor} cursor={this.state.cursor} />
                     <HtmlEditor
                         content={this.state.currentNote.body}
                         placeholder="Type your note here"
                         onBound={this.handleContentBound.bind(this)}
                         onChange={this.handleContentChange.bind(this)}
-                        onBlur={this.saveContent.bind(this)} />
+                        onBlur={this.saveContent.bind(this)}
+                        onCursorChange={this.handleCursorChange.bind(this)}
+                    />
                 </div>
             </div>
         );
     }
 
-    private handleContentBound(editor: unknown): void {
+    private handleContentBound(editor: HtmlEditor): void {
         this.setState({
             editor: editor
         });
@@ -101,6 +104,11 @@ export default class Note extends React.Component<IProps, IState> {
                 }
             }, 1000);
         }
+    }
+
+
+    private handleCursorChange(cursor: EditorCursor) {
+        this.setState({ cursor })
     }
 
     private saveContent(): void {

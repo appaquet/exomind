@@ -13,6 +13,7 @@
     "build": "webpack --config webpack.prod.js",
     "build_dev": "webpack --config webpack.dev.js",
     "build_ios": "webpack --config webpack.ios.js",
+    "build_ios_watch": "webpack-dev-server --config webpack.ios.js --dev",
     "test": "jest",
     "lint": "tsc --noEmit && eslint 'src/**/*.ts' 'src/**/*.tsx'"
   },
@@ -24,6 +25,8 @@
     "core-js": "^3.2.1",
     "domhandler": "^3.3.0",
     "domutils": "^1.5.1",
+    "draft-convert": "^2.1.10",
+    "draft-js": "^0.11.7",
     "exocore": "https://github.com/appaquet/exocore.git#releases/v0.1",
     "fbemitter": "^2.1.1",
     "font-awesome": "^4.4.0",
@@ -38,7 +41,6 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "sanitize-html": "^2.0.0",
-    "squire-rte": "^1.10.1",
     "webpack": "^4.44.2"
   },
   "devDependencies": {
@@ -52,6 +54,8 @@
     "@types/classnames": "^2.2.10",
     "@types/domhandler": "^2.4.1",
     "@types/domutils": "^1.5.2",
+    "@types/draft-convert": "^2.1.1",
+    "@types/draft-js": "^0.10.44",
     "@types/fbemitter": "^2.0.32",
     "@types/htmlparser2": "^3.10.1",
     "@types/jest": "^26.0.14",

@@ -1,19 +1,14 @@
+
 .html-editor {
   width: 100%;
-  height: 100%;
-  position: relative;
 
-  iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-  }
+  .DraftEditor-root {
+    font-family: Segoe UI, Arial, Helvetica, sans-serif;
+    font-size: 16px;
 
-  .placeholder {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    font-style: italic;
+    // make sure that we have enough to click on if it's empty
+    .public-DraftEditor-content {
+      min-height: 500px;
+    }
   }
 }
-

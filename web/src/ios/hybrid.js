@@ -31,6 +31,7 @@ window._startComponent = () => {
   try {
     ReactDOM.render(<ReactBridge />, document.getElementById('body'));
   } catch (e) {
+    document.getElementById('body').innerHTML = e;
     alert(e);
     throw(e);
   }
@@ -47,7 +48,7 @@ Promise.all([
   })
 ]).then(() => {
   // window.component = 'html-editor';
-  window._startComponent();
   window.sendIos('ready');
+  window._startComponent();
 });
 
