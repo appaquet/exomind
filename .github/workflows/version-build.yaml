@@ -50,7 +50,7 @@ jobs:
 
 
   ios_client_build:
-    runs-on: macOS-latest
+    runs-on: macOS-latest # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
       - uses: actions/checkout@v2.3.3
 
@@ -64,9 +64,6 @@ jobs:
           brew install swift-protobuf
           rustup target add aarch64-apple-ios x86_64-apple-ios # actions-rs don't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
           cargo install cargo-lipo
-
-      - name: Force Xcode 11.5
-        run: sudo xcode-select -switch /Applications/Xcode_11.5.app
 
       - name: Build client & pod
         run: |

@@ -35,5 +35,5 @@
 
 ## Known issues
 * Connection can only be via localhost or https since WebCrypto used in libp2p's secio implementation only works over secure code.
-  * See https://www.fxsitecompat.dev/en-CA/docs/2020/web-crypto-api-is-no-longer-available-on-insecure-sites/ and
+  * See https://stackoverflow.com/questions/46670556/how-to-enable-crypto-subtle-for-unsecure-origins-in-chrome and
         https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto
