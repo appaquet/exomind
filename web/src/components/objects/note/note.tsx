@@ -108,7 +108,9 @@ export default class Note extends React.Component<IProps, IState> {
 
 
     private handleCursorChange(cursor: EditorCursor) {
-        this.setState({ cursor })
+        if (this.mounted) {
+            this.setState({ cursor })
+        }
     }
 
     private saveContent(): void {
