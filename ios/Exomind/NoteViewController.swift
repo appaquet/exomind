@@ -70,7 +70,18 @@ class NoteViewController: UIViewController, EntityTraitView {
                 return
             }
 
-            if let body = json?["content"].string {
+            if let url = json?["link"].string {
+                if url.starts(with: "entity://") {
+                    let entityId = url.replacingOccurrences(of: "entity://", with: "")
+                    let obj = NavigationObject.entityId(id: EntityId(entityId))
+                    (self?.navigationController as? NavigationController)?.pushObject(obj)
+                } else if url.starts(with: "http") {
+                    if let parsedUrl = URL(string: url) {
+                        let sfVc = SFSafariHelper.getViewControllerForURL(parsedUrl)
+                        this.present(sfVc, animated: true, completion: nil)
+                    }
+                }
+            } else if let body = json?["content"].string {
                 if this.modifiedNote == nil {
                     this.modifiedNote = this.noteTrait?.message
                 }

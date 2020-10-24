@@ -60,9 +60,6 @@ jobs:
         run: |
           brew install swift-protobuf
 
-      - name: Force Xcode 11.5
-        run: sudo xcode-select -switch /Applications/Xcode_11.5.app
-
       - name: Build 
         run: |
           cd $GITHUB_WORKSPACE/web

@@ -1,7 +1,7 @@
 
-import React, { RefObject, SyntheticEvent, KeyboardEvent } from 'react';
-import { Editor, EditorState, RichUtils, DraftEditorCommand, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier, getDefaultKeyBinding, DraftInlineStyleType, ContentBlock, DraftHandleValue, SelectionState } from 'draft-js';
-import { convertToHTML, convertFromHTML, Tag } from 'draft-convert';
+import React, { RefObject, SyntheticEvent, MouseEvent, KeyboardEvent, ReactNode } from 'react';
+import { Editor, EditorState, RichUtils, DraftEditorCommand, KeyBindingUtil, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier, getDefaultKeyBinding, DraftInlineStyleType, ContentBlock, DraftHandleValue, SelectionState, CompositeDecorator } from 'draft-js';
+import { convertToHTML, convertFromHTML } from 'draft-convert';
 import Debouncer from '../../../utils/debouncer';
 import 'draft-js/dist/Draft.css';
 import './html-editor.less';
@@ -19,6 +19,7 @@ interface IProps {
   onFocus?: () => void;
   onBlur?: () => void;
   onCursorChange?: (cursor: EditorCursor) => void;
+  onLinkClick?: (url: string, e: MouseEvent) => void;
   initialFocus?: boolean;
 }
 
@@ -30,25 +31,36 @@ interface IState {
 }
 
 export default class HtmlEditor extends React.Component<IProps, IState> {
-  editorRef: RefObject<Editor>;
-  lastTriggeredChangeState?: ContentState;
-  debouncer: Debouncer;
+  private editorRef: RefObject<Editor>;
+  private lastTriggeredChangeState?: ContentState;
+  private debouncer: Debouncer;
+
+  private decorator = new CompositeDecorator([
+    {
+      strategy: findLinkEntities,
+      component: Link,
+      props: {
+        editor: this,
+      }
+    },
+  ]);
 
   constructor(props: IProps) {
     super(props);
 
     const htmlContent = convertOldHTML(props.content);
 
-    let state;
+    let editorState;
     if (htmlContent) {
-      state = EditorState.createWithContent(fromHTML(htmlContent));
+      editorState = EditorState.createWithContent(fromHTML(htmlContent));
     } else {
-      state = EditorState.createEmpty();
+      editorState = EditorState.createEmpty();
     }
+    editorState = EditorState.set(editorState, { decorator: this.decorator });
 
     this.state = {
-      editorState: state,
-      initialContent: state.getCurrentContent(),
+      editorState: editorState,
+      initialContent: editorState.getCurrentContent(),
       localChanges: false,
     };
 
@@ -69,10 +81,11 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   componentDidUpdate(prevProps: IProps): void {
     if (!this.state.localChanges && this.props.content !== prevProps.content && this.props.content !== this.state.htmlContent) {
       const htmlContent = convertOldHTML(this.props.content);
-      const state = EditorState.push(this.state.editorState, fromHTML(htmlContent), 'insert-characters');
+      let editorState = EditorState.push(this.state.editorState, fromHTML(htmlContent), 'insert-characters');
+      editorState = EditorState.set(editorState, { decorator: this.decorator });
       this.setState({
-        editorState: state,
-        initialContent: state.getCurrentContent(),
+        editorState: editorState,
+        initialContent: editorState.getCurrentContent(),
       });
     }
   }
@@ -82,10 +95,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       <Editor
         ref={this.editorRef}
         editorState={this.state.editorState}
-        onChange={this.onChange.bind(this)}
-        handleKeyCommand={this.handleKeyCommand.bind(this)}
-        keyBindingFn={this.handleKeyBinding.bind(this)}
         placeholder={this.props.placeholder}
+        onChange={this.handleOnChange.bind(this)}
+        keyBindingFn={this.handleKeyBinding.bind(this)}
+        handleKeyCommand={this.handleKeyCommand.bind(this)}
         handleBeforeInput={this.handleBeforeInput.bind(this)}
         handleReturn={this.handleReturn.bind(this)}
         onFocus={this.handleFocus.bind(this)}
@@ -94,24 +107,24 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     </div>;
   }
 
-  private onChange(editorState: EditorState): void {
-    const contentState = editorState.getCurrentContent();
-    let hasChanges = false;
-    if (this.lastTriggeredChangeState != contentState && this.state.initialContent != contentState) {
-      this.lastTriggeredChangeState = contentState;
-      hasChanges = true;
-    }
-
+  private handleOnChange(editorState: EditorState): void {
     this.setState({
       editorState,
-      localChanges: this.state.localChanges || hasChanges,
+      localChanges: this.state.initialContent != editorState.getCurrentContent(),
     });
 
     this.debouncer.debounce(() => {
-      if (this.props.onChange && hasChanges) {
-        const htmlContent = toHTML(contentState);
-        this.setState({ htmlContent });
-        this.props.onChange(htmlContent);
+      const editorState = this.state.editorState;
+
+      if (this.props.onChange) {
+        const contentState = editorState.getCurrentContent();
+        if (this.lastTriggeredChangeState != contentState && this.state.initialContent != contentState) {
+          this.lastTriggeredChangeState = contentState;
+
+          const htmlContent = toHTML(contentState);
+          this.setState({ htmlContent });
+          this.props.onChange(htmlContent);
+        }
       }
 
       if (this.props.onCursorChange) {
@@ -125,11 +138,52 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     });
   }
 
-  private handleKeyCommand(command: DraftEditorCommand, editorState: EditorState): string {
-    const newState = RichUtils.handleKeyCommand(editorState, command);
+  private handleKeyBinding(e: KeyboardEvent): DraftEditorCommand | null {
+    if (e.key === 'Tab') {
+      e.preventDefault();
 
+      const currentState = this.state.editorState;
+      const currentSelection = currentState.getSelection();
+      const currentContent = currentState.getCurrentContent();
+      const blockType = currentContent.getBlockForKey(currentSelection.getStartKey()).getType();
+
+      let newEditorState;
+      if (blockType == 'unordered-list-item' || blockType == 'ordered-list-item') {
+        newEditorState = RichUtils.onTab(e, currentState, listMaxDepth);
+      } else if (!e.shiftKey) {
+        newEditorState = Commands.handleIndentText(currentState);
+      } else {
+        newEditorState = Commands.handleOutdentText(currentState);
+      }
+
+      if (newEditorState && newEditorState != currentState) {
+        this.handleOnChange(newEditorState);
+        return;
+      }
+    }
+
+    if (e.key == 'k' && KeyBindingUtil.hasCommandModifier(e)) {
+      e.preventDefault();
+
+      setTimeout(() => {
+        const link = prompt('Enter link');
+        if (link) {
+          this.toggleLink(link);
+        }
+      });
+      return;
+    }
+
+    // otherwise fallback to default keyboard binding
+    return getDefaultKeyBinding(e);
+  }
+
+  /// Handles commands such as the one generated by `handleKeyBinding` (ex: bold, etc.)
+  private handleKeyCommand(command: DraftEditorCommand, editorState: EditorState): string {
+    // check if draft.js can handle that command (ex: bold, etc.)
+    const newState = RichUtils.handleKeyCommand(editorState, command);
     if (newState) {
-      this.onChange(newState);
+      this.handleOnChange(newState);
       return 'handled';
     }
 
@@ -182,40 +236,13 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         // put selection after bullet
         newState = EditorState.forceSelection(newState, newContent.getSelectionAfter());
 
-        this.onChange(newState);
+        this.handleOnChange(newState);
 
         return 'handled';
       }
     }
 
     return 'not-handled';
-  }
-
-  private handleKeyBinding(e: KeyboardEvent): DraftEditorCommand | null {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-
-      const currentState = this.state.editorState;
-      const currentSelection = currentState.getSelection();
-      const currentContent = currentState.getCurrentContent();
-      const blockType = currentContent.getBlockForKey(currentSelection.getStartKey()).getType();
-
-      let newEditorState;
-      if (blockType == 'unordered-list-item' || blockType == 'ordered-list-item') {
-        newEditorState = RichUtils.onTab(e, currentState, listMaxDepth);
-      } else if (!e.shiftKey) {
-        newEditorState = Commands.handleIndentText(currentState);
-      } else {
-        newEditorState = Commands.handleOutdentText(currentState);
-      }
-
-      if (newEditorState && newEditorState != currentState) {
-        this.onChange(newEditorState);
-        return;
-      }
-    }
-
-    return getDefaultKeyBinding(e);
   }
 
   private handleReturn(e: KeyboardEvent, editorState: EditorState): DraftHandleValue {
@@ -227,7 +254,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     // remove block style when we return inside a header
     // only do it if cursor is not at beginning of header. if it is, we're just trying to add an empty line above
     if (curBlock.getType().startsWith('header-') && curSel.getStartOffset() != 0) {
-      this.onChange(Commands.createUnstyledNextBlock(editorState));
+      this.handleOnChange(Commands.createUnstyledNextBlock(editorState));
       return 'handled';
     }
 
@@ -247,11 +274,32 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   }
 
   toggleInlineStyle(style: string): void {
-    this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, style));
+    this.handleOnChange(RichUtils.toggleInlineStyle(this.state.editorState, style));
   }
 
   toggleBlockType(type: string): void {
-    this.onChange(RichUtils.toggleBlockType(this.state.editorState, type));
+    this.handleOnChange(RichUtils.toggleBlockType(this.state.editorState, type));
+  }
+
+  toggleLink(url: string | null): void {
+    const editorState = this.state.editorState;
+    const contentState = editorState.getCurrentContent();
+
+    const contentStateWithEntity = contentState.createEntity(
+      'LINK',
+      'MUTABLE',
+      { url: url }
+    );
+    const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+
+    let newEditorState = EditorState.set(editorState, { currentContent: contentStateWithEntity });
+    newEditorState = RichUtils.toggleLink(
+      newEditorState,
+      newEditorState.getSelection(),
+      entityKey
+    );
+
+    this.handleOnChange(newEditorState);
   }
 
   toggleHeader(): void {
@@ -297,7 +345,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       listMaxDepth,
     );
 
-    this.onChange(newEditorState);
+    this.handleOnChange(newEditorState);
   }
 
   outdent(e: SyntheticEvent): void {
@@ -318,7 +366,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       listMaxDepth,
     );
 
-    this.onChange(newEditorState);
+    this.handleOnChange(newEditorState);
   }
 
   // https://gist.github.com/tonis2/cfeb6d044347d6f3cbab656d6a94eee2
@@ -342,6 +390,41 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       )
     })
   }
+}
+
+interface LinkProps {
+  entityKey: string;
+  contentState: ContentState;
+  children: ReactNode;
+  editor: HtmlEditor;
+}
+
+const Link = (props: LinkProps) => {
+  const { url } = props.contentState.getEntity(props.entityKey).getData();
+  const handleClick = (e: MouseEvent) => {
+    console.log(url, props.editor.props.onLinkClick);
+    if (props.editor.props.onLinkClick) {
+      props.editor.props.onLinkClick(url, e);
+    }
+  };
+  return (
+    <a href={url} onClick={handleClick} target="local">
+      {props.children}
+    </a>
+  );
+};
+
+function findLinkEntities(contentBlock: ContentBlock, callback: (start: number, end: number) => void, contentState: ContentState) {
+  contentBlock.findEntityRanges(
+    (character) => {
+      const entityKey = character.getEntity();
+      return (
+        entityKey !== null &&
+        contentState.getEntity(entityKey).getType() === 'LINK'
+      );
+    },
+    callback
+  );
 }
 
 export interface EditorCursor {
@@ -368,17 +451,6 @@ function convertOldHTML(html: string | undefined): string {
   return html.replace(/<br>\s*<\/li>/mgi, "</li>");
 }
 
-function fromHTML(html: string): ContentState {
-  return convertFromHTML({
-    // https://github.com/HubSpot/draft-convert
-    htmlToBlock: (nodeName, _node) => {
-      if (nodeName === 'code') {
-        return 'code-block';
-      }
-    }
-  })(html);
-}
-
 function toHTML(content: ContentState): string {
   return convertToHTML({
     // https://github.com/HubSpot/draft-convert
@@ -388,6 +460,33 @@ function toHTML(content: ContentState): string {
       if (tBlock.type === 'code-block') {
         return <code />;
       }
+    },
+    entityToHTML: (entity, originalText) => {
+      if (entity.type === 'LINK') {
+        return <a href={entity.data.url}>{originalText}</a>;
+      }
+      return originalText;
     }
   })(content);
+}
+
+function fromHTML(html: string): ContentState {
+  return convertFromHTML({
+    // https://github.com/HubSpot/draft-convert
+    htmlToBlock: (nodeName, _node) => {
+      if (nodeName === 'code') {
+        return 'code-block';
+      }
+    },
+    htmlToEntity: (nodeName, node, createEntity) => {
+      const linkNode = node as HTMLLinkElement;
+      if (nodeName === 'a') {
+        return createEntity(
+          'LINK',
+          'MUTABLE',
+          { url: linkNode.href }
+        )
+      }
+    },
+  })(html);
 }

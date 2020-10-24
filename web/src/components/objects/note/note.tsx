@@ -8,7 +8,7 @@ import { EntityTrait, EntityTraits } from '../../../store/entities';
 import EditableText from '../../interaction/editable-text/editable-text.js';
 import HtmlEditorControls from '../../interaction/html-editor/html-editor-controls';
 import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-editor';
-import { Selection } from '../entity-list/selection';
+import { SelectedItem, Selection } from '../entity-list/selection';
 import './note.less';
 
 interface IProps {
@@ -63,6 +63,7 @@ export default class Note extends React.Component<IProps, IState> {
                         onChange={this.handleContentChange.bind(this)}
                         onBlur={this.saveContent.bind(this)}
                         onCursorChange={this.handleCursorChange.bind(this)}
+                        onLinkClick={this.handleLinkClick.bind(this)}
                     />
                 </div>
             </div>
@@ -106,10 +107,23 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-
     private handleCursorChange(cursor: EditorCursor) {
         if (this.mounted) {
             this.setState({ cursor })
+        }
+    }
+
+    private handleLinkClick(url: string, e: MouseEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (url.startsWith('entity://')) {
+            const entityId = url.replace('entity://', '');
+            if (this.props.onSelectionChange) {
+                this.props.onSelectionChange(new Selection(SelectedItem.fromEntityId(entityId)));
+            }
+        } else {
+            window.open(url, '_blank');
         }
     }
 
