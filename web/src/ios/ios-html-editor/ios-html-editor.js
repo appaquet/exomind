@@ -1,8 +1,7 @@
 import React from 'react';
 import HtmlEditor from '../../components/interaction/html-editor/html-editor';
-import './ios-html-editor.less';
 import PropTypes from 'prop-types';
-import Debouncer from '../../utils/debouncer';
+import './ios-html-editor.less';
 
 export default class IosHtmlEditor extends React.Component {
   static propTypes = {
@@ -13,8 +12,6 @@ export default class IosHtmlEditor extends React.Component {
 
   constructor(props) {
     super(props);
-
-    this.debouncer = new Debouncer(1000);
 
     // content is set via state because it may be empty at time in props
     // props are used message passing, not as full state
@@ -29,8 +26,7 @@ export default class IosHtmlEditor extends React.Component {
       this.handleAction(this.props.action);
     }
 
-    // if we receive new content
-    // for some reason, if it's not on same stack, it crashes
+    // if we receive new content and we update editor on same stack, it crashes
     setTimeout(() => {
       if (this.props.content) {
         this.setState({
@@ -58,20 +54,9 @@ export default class IosHtmlEditor extends React.Component {
   handleContentChange(newContent) {
     this.newContent = newContent;
 
-    // Send first event directly. Otherwise we debounce
-    if (!this.onceReported) {
-      this.onceReported = true;
+    if (this.newContent === newContent) {
       sendIos({
         content: newContent
-      });
-
-    } else {
-      this.debouncer.debounce(() => {
-        if (this.newContent === newContent) {
-          sendIos({
-            content: newContent
-          });
-        }
       });
     }
   }

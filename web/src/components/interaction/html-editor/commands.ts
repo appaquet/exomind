@@ -1,5 +1,4 @@
 import { ContentBlock, ContentState, EditorState, Modifier, SelectionState } from "draft-js"
-import { KeyboardEvent } from 'react';
 
 export class Commands {
     static handleIndentText(editorState: EditorState): EditorState | void {

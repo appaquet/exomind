@@ -25,6 +25,7 @@ interface IProps {
 interface IState {
   editorState: EditorState;
   initialContent: ContentState;
+  htmlContent?: string;
   localChanges: boolean;
 }
 
@@ -52,7 +53,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     };
 
     this.editorRef = React.createRef();
-    this.debouncer = new Debouncer(200);
+    this.debouncer = new Debouncer(300);
   }
 
   componentDidMount(): void {
@@ -66,8 +67,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   }
 
   componentDidUpdate(prevProps: IProps): void {
-    const htmlContent = toHTML(this.state.editorState.getCurrentContent());
-    if (!this.state.localChanges && this.props.content !== prevProps.content && this.props.content !== htmlContent) {
+    if (!this.state.localChanges && this.props.content !== prevProps.content && this.props.content !== this.state.htmlContent) {
       const htmlContent = convertOldHTML(this.props.content);
       const state = EditorState.push(this.state.editorState, fromHTML(htmlContent), 'insert-characters');
       this.setState({
@@ -107,10 +107,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       localChanges: this.state.localChanges || hasChanges,
     });
 
-
     this.debouncer.debounce(() => {
       if (this.props.onChange && hasChanges) {
         const htmlContent = toHTML(contentState);
+        this.setState({ htmlContent });
         this.props.onChange(htmlContent);
       }
 
@@ -137,6 +137,11 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   }
 
   private handleBeforeInput(chars: string, editorState: EditorState): DraftHandleValue {
+    // we only do insertions if we just typed a space after the prefix
+    if (chars != ' ') {
+      return;
+    }
+
     const curContent = editorState.getCurrentContent();
     const curSel = editorState.getSelection();
 
@@ -149,11 +154,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       '##': 'header-two',
       '###': 'header-three',
       '####': 'header-four',
-      '#####': 'header-five',
     };
 
     // if we just type a space, and we are not beyond the biggest prefix length
-    if (chars == ' ' && curSel.getEndOffset() <= maxPrefixLen) {
+    if (curSel.getEndOffset() <= maxPrefixLen) {
       const curBlock = curContent.getBlockForKey(curSel.getFocusKey());
 
       // only support this if we're in an unstyled block
@@ -162,7 +166,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       }
 
       // check if we have a style for this prefix
-      const linePrefix = curBlock.getText().slice(0, maxPrefixLen);
+      const linePrefix = curBlock.getText().slice(0, curSel.getEndOffset());
       if (linePrefix in prefixStyle) {
         // remove pre characters
         const removeSel = SelectionState.createEmpty(curBlock.getKey()).merge({
@@ -215,14 +219,14 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   }
 
   private handleReturn(e: KeyboardEvent, editorState: EditorState): DraftHandleValue {
-    const currentState = editorState;
-    const currentSelection = currentState.getSelection();
-    const currentContent = currentState.getCurrentContent();
-    const currentBlock = currentContent.getBlockForKey(currentSelection.getStartKey());
-    const blockType = currentBlock.getType();
+    const curState = editorState;
+    const curSel = curState.getSelection();
+    const curContent = curState.getCurrentContent();
+    const curBlock = curContent.getBlockForKey(curSel.getStartKey());
 
     // remove block style when we return inside a header
-    if (blockType.startsWith('header-')) {
+    // only do it if cursor is not at beginning of header. if it is, we're just trying to add an empty line above
+    if (curBlock.getType().startsWith('header-') && curSel.getStartOffset() != 0) {
       this.onChange(Commands.createUnstyledNextBlock(editorState));
       return 'handled';
     }
