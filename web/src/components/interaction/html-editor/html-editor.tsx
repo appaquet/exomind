@@ -1,10 +1,11 @@
 
 import React, { RefObject, SyntheticEvent, KeyboardEvent } from 'react';
-import { Editor, EditorState, RichUtils, DraftEditorCommand, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier, getDefaultKeyBinding } from 'draft-js';
-import { convertToHTML, convertFromHTML } from 'draft-convert';
+import { Editor, EditorState, RichUtils, DraftEditorCommand, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier, getDefaultKeyBinding, DraftInlineStyleType, ContentBlock, DraftHandleValue, SelectionState } from 'draft-js';
+import { convertToHTML, convertFromHTML, Tag } from 'draft-convert';
 import Debouncer from '../../../utils/debouncer';
 import 'draft-js/dist/Draft.css';
 import './html-editor.less';
+import { Commands } from './commands';
 
 const defaultInitialFocus = true;
 const listMaxDepth = 4;
@@ -24,6 +25,7 @@ interface IProps {
 interface IState {
   editorState: EditorState;
   initialContent: ContentState;
+  htmlContent?: string;
   localChanges: boolean;
 }
 
@@ -51,7 +53,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     };
 
     this.editorRef = React.createRef();
-    this.debouncer = new Debouncer(200);
+    this.debouncer = new Debouncer(300);
   }
 
   componentDidMount(): void {
@@ -65,8 +67,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   }
 
   componentDidUpdate(prevProps: IProps): void {
-    const htmlContent = toHTML(this.state.editorState.getCurrentContent());
-    if (!this.state.localChanges && this.props.content !== prevProps.content && this.props.content !== htmlContent) {
+    if (!this.state.localChanges && this.props.content !== prevProps.content && this.props.content !== this.state.htmlContent) {
       const htmlContent = convertOldHTML(this.props.content);
       const state = EditorState.push(this.state.editorState, fromHTML(htmlContent), 'insert-characters');
       this.setState({
@@ -85,6 +86,8 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         handleKeyCommand={this.handleKeyCommand.bind(this)}
         keyBindingFn={this.handleKeyBinding.bind(this)}
         placeholder={this.props.placeholder}
+        handleBeforeInput={this.handleBeforeInput.bind(this)}
+        handleReturn={this.handleReturn.bind(this)}
         onFocus={this.handleFocus.bind(this)}
         onBlur={this.handleBlur.bind(this)}
       />
@@ -104,10 +107,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       localChanges: this.state.localChanges || hasChanges,
     });
 
-
     this.debouncer.debounce(() => {
       if (this.props.onChange && hasChanges) {
         const htmlContent = toHTML(contentState);
+        this.setState({ htmlContent });
         this.props.onChange(htmlContent);
       }
 
@@ -133,18 +136,102 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     return 'not-handled';
   }
 
-  private handleKeyBinding(e: KeyboardEvent): DraftEditorCommand | null {
-    if (e.keyCode === 9 /* TAB */) {
-      const newEditorState = RichUtils.onTab(e, this.state.editorState, listMaxDepth,);
-
-      if (newEditorState !== this.state.editorState) {
-        this.onChange(newEditorState);
-      }
-
+  private handleBeforeInput(chars: string, editorState: EditorState): DraftHandleValue {
+    // we only do insertions if we just typed a space after the prefix
+    if (chars != ' ') {
       return;
     }
 
+    const curContent = editorState.getCurrentContent();
+    const curSel = editorState.getSelection();
+
+    const maxPrefixLen = 6;
+    const prefixStyle: { [prefix: string]: string } = {
+      '*': 'unordered-list-item',
+      '-': 'unordered-list-item',
+      '1.': 'ordered-list-item',
+      '#': 'header-one',
+      '##': 'header-two',
+      '###': 'header-three',
+      '####': 'header-four',
+    };
+
+    // if we just type a space, and we are not beyond the biggest prefix length
+    if (curSel.getEndOffset() <= maxPrefixLen) {
+      const curBlock = curContent.getBlockForKey(curSel.getFocusKey());
+
+      // only support this if we're in an unstyled block
+      if (curBlock.getType() != 'unstyled') {
+        return 'not-handled';
+      }
+
+      // check if we have a style for this prefix
+      const linePrefix = curBlock.getText().slice(0, curSel.getEndOffset());
+      if (linePrefix in prefixStyle) {
+        // remove pre characters
+        const removeSel = SelectionState.createEmpty(curBlock.getKey()).merge({
+          anchorOffset: 0,
+          focusOffset: linePrefix.length,
+        });
+        const newContent = Modifier.replaceText(curContent, removeSel, '');
+        let newState = EditorState.push(editorState, newContent, 'remove-range');
+
+        // add list style
+        newState = RichUtils.toggleBlockType(newState, prefixStyle[linePrefix]);
+
+        // put selection after bullet
+        newState = EditorState.forceSelection(newState, newContent.getSelectionAfter());
+
+        this.onChange(newState);
+
+        return 'handled';
+      }
+    }
+
+    return 'not-handled';
+  }
+
+  private handleKeyBinding(e: KeyboardEvent): DraftEditorCommand | null {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+
+      const currentState = this.state.editorState;
+      const currentSelection = currentState.getSelection();
+      const currentContent = currentState.getCurrentContent();
+      const blockType = currentContent.getBlockForKey(currentSelection.getStartKey()).getType();
+
+      let newEditorState;
+      if (blockType == 'unordered-list-item' || blockType == 'ordered-list-item') {
+        newEditorState = RichUtils.onTab(e, currentState, listMaxDepth);
+      } else if (!e.shiftKey) {
+        newEditorState = Commands.handleIndentText(currentState);
+      } else {
+        newEditorState = Commands.handleOutdentText(currentState);
+      }
+
+      if (newEditorState && newEditorState != currentState) {
+        this.onChange(newEditorState);
+        return;
+      }
+    }
+
     return getDefaultKeyBinding(e);
+  }
+
+  private handleReturn(e: KeyboardEvent, editorState: EditorState): DraftHandleValue {
+    const curState = editorState;
+    const curSel = curState.getSelection();
+    const curContent = curState.getCurrentContent();
+    const curBlock = curContent.getBlockForKey(curSel.getStartKey());
+
+    // remove block style when we return inside a header
+    // only do it if cursor is not at beginning of header. if it is, we're just trying to add an empty line above
+    if (curBlock.getType().startsWith('header-') && curSel.getStartOffset() != 0) {
+      this.onChange(Commands.createUnstyledNextBlock(editorState));
+      return 'handled';
+    }
+
+    return 'not-handled';
   }
 
   private handleBlur(): void {
@@ -283,12 +370,24 @@ function convertOldHTML(html: string | undefined): string {
 
 function fromHTML(html: string): ContentState {
   return convertFromHTML({
-    // see https://github.com/HubSpot/draft-convert
+    // https://github.com/HubSpot/draft-convert
+    htmlToBlock: (nodeName, _node) => {
+      if (nodeName === 'code') {
+        return 'code-block';
+      }
+    }
   })(html);
 }
 
 function toHTML(content: ContentState): string {
   return convertToHTML({
-    // see https://github.com/HubSpot/draft-convert
+    // https://github.com/HubSpot/draft-convert
+    blockToHTML: (block) => {
+      // types are incorrect
+      const tBlock = block as unknown as { type: string };
+      if (tBlock.type === 'code-block') {
+        return <code />;
+      }
+    }
   })(content);
 }

@@ -14,10 +14,6 @@ export default class ReactBridge extends React.Component {
 
   render() {
     if (this.state.component === 'html-editor') {
-      if (!this.state.data) {
-        return <div></div>;
-      }
-
       return <IosHtmlEditor {...this.state.data} />;
     } else {
       return <div>Unknown component {this.state.component}</div>;

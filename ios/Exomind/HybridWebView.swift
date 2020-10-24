@@ -27,6 +27,7 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
 
     func setData(_ data: [String: AnyObject]) {
         if (self.ready) {
+            print("HybridWebView > Sending data")
             let jsonData = JSON(data)
             let jsonText = (jsonData.rawString()) ?? ""
             self.evaluateJavaScript("window.setData(\(jsonText))") { (ret, err) in
@@ -59,6 +60,7 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
 
         } else if (url.scheme == "exomind") {
             self.evaluateJavaScript("window.getData(\(url.host!))") { (data, err) in
+                print("HybridWebView > Got data")
                 if let msg = data as? String,
                    let msgData = msg.data(using: String.Encoding.utf8, allowLossyConversion: false),
                    let json = try? JSON(data: msgData, options: .allowFragments) {
