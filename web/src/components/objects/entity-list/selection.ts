@@ -4,8 +4,14 @@ import * as _ from 'lodash';
 export class Selection {
     items: SelectedItem[];
 
-    constructor(items?: SelectedItem[]) {
-        this.items = items ?? [];
+    constructor(items?: SelectedItem[] | SelectedItem | undefined) {
+        if (!items) {
+            items = [];
+        } else if (!Array.isArray(items)) {
+            items = [items]
+        }
+
+        this.items = items;
     }
 
     contains(needle: SelectedItem): boolean {

@@ -43,6 +43,7 @@ export default class IosHtmlEditor extends React.Component {
         onBound={this.handleBound.bind(this)}
         onChange={this.handleContentChange.bind(this)}
         onCursorChange={this.handleCursorChange.bind(this)}
+        onLinkClick={this.handleLinkClick.bind(this)}
       />
     );
   }
@@ -71,6 +72,15 @@ export default class IosHtmlEditor extends React.Component {
         this.lastCursorY = cursorY
       }
     }
+  }
+
+  handleLinkClick(url, e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    sendIos({
+      link: url
+    });
   }
 
   handleAction(name) {

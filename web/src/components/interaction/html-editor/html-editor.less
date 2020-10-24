@@ -1,3 +1,4 @@
+@import (reference) "../../../style/variables.less";
 
 .html-editor {
   width: 100%;
@@ -36,6 +37,14 @@
     h4 {
       font-size: 1.1em !important;
       font-weight: bold;
+    }
+    a {
+      text-decoration: underline;
+      color: @exomind-orange;
+      &:hover {
+        color: @exomind-orange;
+        cursor: pointer;
+      }
     }
   }
 }

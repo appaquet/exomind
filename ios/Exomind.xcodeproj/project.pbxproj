@@ -176,7 +176,7 @@
 		6D4CCBE621587052004636AD /* ExtensionUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionUtils.swift; sourceTree = "<group>"; };
 		6D5390FD1C6ECF3E0019E56E /* AttachmentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AttachmentView.swift; sourceTree = "<group>"; };
 		6D5390FF1C6EE29F0019E56E /* URLWebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLWebViewController.swift; sourceTree = "<group>"; };
-		6D5D07791BC40D0A007D0011 /* ExomindV2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExomindV2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D5D07791BC40D0A007D0011 /* Exomind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Exomind.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6D5D07811BC40D0A007D0011 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		6D5D07831BC40D0A007D0011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -321,7 +321,7 @@
 		6D5D077A1BC40D0A007D0011 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6D5D07791BC40D0A007D0011 /* ExomindV2.app */,
+				6D5D07791BC40D0A007D0011 /* Exomind.app */,
 				6D0F6B5E1C331A2B00AB9DEC /* ExomindActionExt.appex */,
 				6DAB3F4E1D32F74000E08229 /* ExomindTests.xctest */,
 			);
@@ -554,7 +554,7 @@
 			);
 			name = Exomind;
 			productName = Exomind;
-			productReference = 6D5D07791BC40D0A007D0011 /* ExomindV2.app */;
+			productReference = 6D5D07791BC40D0A007D0011 /* Exomind.app */;
 			productType = "com.apple.product-type.application";
 		};
 		6DAB3F4D1D32F74000E08229 /* ExomindTests */ = {
@@ -951,7 +951,7 @@
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -976,7 +976,7 @@
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1114,8 +1114,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.3.4;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2;
-				PRODUCT_NAME = ExomindV2;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
+				PRODUCT_NAME = Exomind;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";
@@ -1140,8 +1140,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.3.4;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindV2;
-				PRODUCT_NAME = ExomindV2;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
+				PRODUCT_NAME = Exomind;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";
