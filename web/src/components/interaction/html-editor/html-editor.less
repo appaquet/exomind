@@ -4,8 +4,17 @@
   width: 100%;
 
   .DraftEditor-root {
+    @font-size: 16px;
+    @code-font-size: 14px;
+
+    .code() {
+      font-family: Consolas, Liberation Mono, Menlo, monospace !important;
+      font-size: @code-font-size !important;
+      background-color: #f5f5f5;
+    }
+
     font-family: Segoe UI, Arial, Helvetica, sans-serif;
-    font-size: 16px;
+    font-size: @font-size;
 
     // make sure that we have enough to click on if it's empty
     .public-DraftEditor-content {
@@ -14,12 +23,19 @@
 
     .public-DraftStyleDefault-pre {
       pre, div {
-        font-family: Consolas, Liberation Mono, Menlo, monospace !important;
-        font-size: 16px !important;
+        .code();
         border: none;
         padding: 0;
         margin: 0;
       }
+    }
+
+    // inline code
+    // see https://github.com/facebook/draft-js/issues/2302
+    span[style*="text-decoration-color: black"] {
+      .code();
+      text-decoration: none;
+      padding: 3px;
     }
 
     h1 {

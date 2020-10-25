@@ -45,6 +45,10 @@ export default class HtmlEditorControls extends React.Component<IProps> {
         cssStyle: 'strikethrough',
         draftStyle: 'STRIKETHROUGH',
       },
+      {
+        cssStyle: 'code',
+        draftStyle: 'CODE',
+      },
     ];
 
     return styles.map(({ cssStyle, draftStyle }) => {

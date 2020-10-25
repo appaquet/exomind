@@ -1,11 +1,12 @@
 
-import React, { RefObject, SyntheticEvent, MouseEvent, KeyboardEvent, ReactNode } from 'react';
-import { Editor, EditorState, RichUtils, DraftEditorCommand, KeyBindingUtil, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier, getDefaultKeyBinding, DraftInlineStyleType, ContentBlock, DraftHandleValue, SelectionState, CompositeDecorator } from 'draft-js';
-import { convertToHTML, convertFromHTML } from 'draft-convert';
+import React, { RefObject, SyntheticEvent, MouseEvent, KeyboardEvent } from 'react';
+import { Editor, EditorState, RichUtils, DraftEditorCommand, KeyBindingUtil, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier, getDefaultKeyBinding, DraftHandleValue, SelectionState, CompositeDecorator } from 'draft-js';
 import Debouncer from '../../../utils/debouncer';
 import 'draft-js/dist/Draft.css';
 import './html-editor.less';
 import { Commands } from './commands';
+import { findLinkEntities, Link, toggleLink } from './link';
+import { convertOldHTML, fromHTML, toHTML } from './convert';
 
 const defaultInitialFocus = true;
 const listMaxDepth = 4;
@@ -44,6 +45,14 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       }
     },
   ]);
+
+  private styleMap = {
+    'CODE': {
+      // use to be able to style inline code
+      // see https://github.com/facebook/draft-js/issues/2302
+      textDecorationColor: 'black',
+    }
+  };
 
   constructor(props: IProps) {
     super(props);
@@ -96,6 +105,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         ref={this.editorRef}
         editorState={this.state.editorState}
         placeholder={this.props.placeholder}
+        customStyleMap={this.styleMap}
         onChange={this.handleOnChange.bind(this)}
         keyBindingFn={this.handleKeyBinding.bind(this)}
         handleKeyCommand={this.handleKeyCommand.bind(this)}
@@ -175,6 +185,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     // otherwise fallback to default keyboard binding
+    // see https://github.com/facebook/draft-js/blob/bc716b279299748d955bbdc398454bff45ea0191/src/component/utils/getDefaultKeyBinding.js
     return getDefaultKeyBinding(e);
   }
 
@@ -208,6 +219,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       '##': 'header-two',
       '###': 'header-three',
       '####': 'header-four',
+      '```': 'code-block',
     };
 
     // if we just type a space, and we are not beyond the biggest prefix length
@@ -282,24 +294,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   }
 
   toggleLink(url: string | null): void {
-    const editorState = this.state.editorState;
-    const contentState = editorState.getCurrentContent();
-
-    const contentStateWithEntity = contentState.createEntity(
-      'LINK',
-      'MUTABLE',
-      { url: url }
-    );
-    const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-
-    let newEditorState = EditorState.set(editorState, { currentContent: contentStateWithEntity });
-    newEditorState = RichUtils.toggleLink(
-      newEditorState,
-      newEditorState.getSelection(),
-      entityKey
-    );
-
-    this.handleOnChange(newEditorState);
+    const newState = toggleLink(this.state.editorState, url);
+    if (newState) {
+      this.handleOnChange(newState);
+    }
   }
 
   toggleHeader(): void {
@@ -392,41 +390,6 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   }
 }
 
-interface LinkProps {
-  entityKey: string;
-  contentState: ContentState;
-  children: ReactNode;
-  editor: HtmlEditor;
-}
-
-const Link = (props: LinkProps) => {
-  const { url } = props.contentState.getEntity(props.entityKey).getData();
-  const handleClick = (e: MouseEvent) => {
-    console.log(url, props.editor.props.onLinkClick);
-    if (props.editor.props.onLinkClick) {
-      props.editor.props.onLinkClick(url, e);
-    }
-  };
-  return (
-    <a href={url} onClick={handleClick} target="local">
-      {props.children}
-    </a>
-  );
-};
-
-function findLinkEntities(contentBlock: ContentBlock, callback: (start: number, end: number) => void, contentState: ContentState) {
-  contentBlock.findEntityRanges(
-    (character) => {
-      const entityKey = character.getEntity();
-      return (
-        entityKey !== null &&
-        contentState.getEntity(entityKey).getType() === 'LINK'
-      );
-    },
-    callback
-  );
-}
-
 export interface EditorCursor {
   blockType: DraftBlockType;
   inlineStyle: DraftInlineStyle;
@@ -440,53 +403,4 @@ export interface CursorRect {
   top: number;
   bottom: number;
   height: number;
-}
-
-function convertOldHTML(html: string | undefined): string {
-  if (!html) {
-    return html;
-  }
-
-  // Squire added usless new lines after list items
-  return html.replace(/<br>\s*<\/li>/mgi, "</li>");
-}
-
-function toHTML(content: ContentState): string {
-  return convertToHTML({
-    // https://github.com/HubSpot/draft-convert
-    blockToHTML: (block) => {
-      // types are incorrect
-      const tBlock = block as unknown as { type: string };
-      if (tBlock.type === 'code-block') {
-        return <code />;
-      }
-    },
-    entityToHTML: (entity, originalText) => {
-      if (entity.type === 'LINK') {
-        return <a href={entity.data.url}>{originalText}</a>;
-      }
-      return originalText;
-    }
-  })(content);
-}
-
-function fromHTML(html: string): ContentState {
-  return convertFromHTML({
-    // https://github.com/HubSpot/draft-convert
-    htmlToBlock: (nodeName, _node) => {
-      if (nodeName === 'code') {
-        return 'code-block';
-      }
-    },
-    htmlToEntity: (nodeName, node, createEntity) => {
-      const linkNode = node as HTMLLinkElement;
-      if (nodeName === 'a') {
-        return createEntity(
-          'LINK',
-          'MUTABLE',
-          { url: linkNode.href }
-        )
-      }
-    },
-  })(html);
 }
