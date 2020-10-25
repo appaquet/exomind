@@ -6,9 +6,9 @@ class HomeViewController: UITableViewController {
 
     private lazy var exmElements: [Element] = {
         [
-            Element(title: "Inbox", icon: Element.icon(forName: "inbox"), action: pushInbox),
-            Element(title: "Snoozed", icon: Element.icon(forName: "clock-o"), action: pushSnoozed),
-            Element(title: "Recent", icon: Element.icon(forName: "history"), action: pushRecent)
+            Element(title: "Inbox", iconName: "inbox", action: pushInbox),
+            Element(title: "Snoozed", iconName: "clock-o", action: pushSnoozed),
+            Element(title: "Recent", iconName: "history", action: pushRecent)
         ]
     }()
     private var favElements: [Element] = []
@@ -17,7 +17,10 @@ class HomeViewController: UITableViewController {
         self.navigationItem.title = "Home"
 
         let traitQuery = TraitQueryBuilder.refersTo(field: "collection", entityId: "favorites").build()
-        let query = QueryBuilder.withTrait(Exomind_Base_CollectionChild.self, query: traitQuery).build()
+        let query = QueryBuilder
+            .withTrait(Exomind_Base_CollectionChild.self, query: traitQuery)
+            .orderByField("weight", ascending: false)
+            .build()
         self.query = ExpandableQuery(query: query) { [weak self] in
             self?.loadFavoritesEntities()
         }
@@ -25,11 +28,19 @@ class HomeViewController: UITableViewController {
         (self.navigationController as? NavigationController)?.pushInbox(false)
     }
 
-
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
         (self.navigationController as? NavigationController)?.resetState()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        // force reload data when dark/light style has changed
+        if self.traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle {
+            self.tableView.reloadData()
+        }
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -63,7 +74,7 @@ class HomeViewController: UITableViewController {
 
         if let element = self.elementForPath(indexPath) {
             cell.textLabel?.text = element.title
-            cell.imageView?.image = element.icon
+            cell.imageView?.image = element.getIcon()
         } else {
             cell.textLabel?.text = "Unknown"
             cell.imageView?.image = nil
@@ -133,24 +144,26 @@ class HomeViewController: UITableViewController {
 
 fileprivate struct Element {
     let title: String
-    var icon: UIImage? = nil
+    var iconName: String
     let action: () -> ()
     var entity: EntityExt? = nil
 
     static func fromEntity(_ entity: EntityExt, action: @escaping () -> ()) -> Element {
         guard let priorityTrait = entity.priorityTrait else {
-            return Element(title: "Unknown \(entity.id)", icon: Element.icon(forName: "question"), action: action, entity: entity)
+            return Element(title: "Unknown \(entity.id)", iconName: "question", action: action, entity: entity)
         }
 
         let title = priorityTrait.displayName
-        let icon = ObjectsIcon.icon(forAnyTrait: priorityTrait, color: UIColor.label, dimension: CGFloat(24))
+        let iconName = priorityTrait.constants?.icon ?? "question"
 
-        return Element(title: title, icon: icon, action: action, entity: entity)
+        return Element(title: title, iconName: iconName, action: action, entity: entity)
     }
 
     static func icon(forName: String) -> UIImage {
         ObjectsIcon.icon(forName: forName, color: UIColor.label, dimension: CGFloat(24))
     }
+
+    func getIcon() -> UIImage {
+        return Element.icon(forName: self.iconName)
+    }
 }
-
-
