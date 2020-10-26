@@ -1,11 +1,12 @@
 [package]
-name = "exocore-client-ios"
+name = "exocore-client-c"
 version = "0.1.0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
 [lib]
-crate-type = ["staticlib"]
+name = "exocore"
+crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
 exocore-core = { path = "../../core", features = ["runtime", "logger"] }

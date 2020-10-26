@@ -1,15 +1,18 @@
 # iOS client
 
+**Note: The iOS client doesn't contain any Rust code (yet) and uses the C client.**
+
 ## Dependencies
 **You need to be on MacOS**
+
+* Install Exocore C client dependencies. See [README](../c/README.md).
 
 * Install Rust targets
     * `rustup target add aarch64-apple-ios`
     * `rustup target add x86_64-apple-ios`
     
-* Install tools
+* Install [cargo lipo](https://github.com/TimNN/cargo-lipo) to generate [universal binaries](https://en.wikipedia.org/wiki/Universal_binary).
     * `cargo install cargo-lipo`
-    * `cargo install cbindgen`
 
 * Install Cocoapods
     * `sudo gem install cocoapods`
@@ -17,13 +20,11 @@
 * Install [Swift Protobuf Plugin](https://github.com/apple/swift-protobuf/)
     * `brew install swift-protobuf`
 
-
 ## Building
 * Generate headers & protobuf
     * `./tools/generate.sh`
 
 * Build the universal lib: `./tools/build.sh`
-
 
 ## Example project
 
@@ -33,7 +34,6 @@
 * Generate a node configuration and copy it to the app:
 
   `exo config standalone path/to/ios/node/config.yaml --exclude-app-schemas yaml`
-
 
 ## Known issues
 * App gets terminated due to signal 13 when resuming from background.

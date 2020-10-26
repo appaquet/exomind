@@ -5,6 +5,7 @@ cd "$CUR_DIR"
 
 EXOCORE_IOS_ROOT="$CUR_DIR/../"
 EXOCORE_ROOT="$EXOCORE_IOS_ROOT/../../"
+EXOCORE_C_ROOT="$EXOCORE_ROOT/clients/c"
 
 MODE=${1:-debug}
 if [[ "$MODE" == "release" ]]; then
@@ -16,8 +17,11 @@ else
     exit 1
 fi
 
-pushd $EXOCORE_IOS_ROOT
+pushd $EXOCORE_C_ROOT
 cargo lipo $LIPO_ARGS
+popd
+
+pushd $EXOCORE_IOS_ROOT
 EXOCORE_IOS_LIB_DIR="$EXOCORE_IOS_ROOT/lib"
 rm -rf $EXOCORE_IOS_LIB_DIR
 mkdir $EXOCORE_IOS_LIB_DIR

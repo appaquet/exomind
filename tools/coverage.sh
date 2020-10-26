@@ -14,7 +14,7 @@ if [[ -d $CUR_DIR/../target ]]; then
 fi
 
 export RUSTUP_TOOLCHAIN=nightly-2020-10-17 # if changed, change in push-tester.yml. Use https://rust-lang.github.io/rustup-components-history/ to get a nightly with all components
-export CARGO_OPTIONS="--all --all-features --exclude=exo --exclude=exocore-client-web --exclude=exocore-client-android --exclude=exocore-client-ios"
+export CARGO_OPTIONS="--all --all-features --exclude=exo --exclude=exocore-client-web --exclude=exocore-client-android --exclude=exocore-client-c"
 export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
 cargo clean

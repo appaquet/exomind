@@ -885,7 +885,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "exocore-client-ios"
+name = "exocore-client-c"
 version = "0.1.0"
 dependencies = [
  "bytes 0.6.0",

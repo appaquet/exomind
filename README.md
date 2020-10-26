@@ -92,9 +92,11 @@ A cell consists of:
     * Paste JSON config and save
 
 ## Clients
-
 #### Web
 * See [Web WASM client README](./clients/web/README.md)
+
+#### C
+* See [C client README](./clients/c/README.md)
 
 #### iOS
 * See [iOS client README](./clients/ios/README.md)

@@ -4,8 +4,10 @@ CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 EXOCORE_IOS_ROOT="$CUR_DIR/../"
 EXOCORE_ROOT="$EXOCORE_IOS_ROOT/../../"
+EXOCORE_C_ROOT="$EXOCORE_ROOT/clients/c"
 
-cbindgen --config $EXOCORE_IOS_ROOT/cbindgen.toml --crate exocore-client-ios --output $EXOCORE_IOS_ROOT/swift/exocore.h
+$EXOCORE_C_ROOT/tools/generate.sh
+cp $EXOCORE_C_ROOT/exocore.h $EXOCORE_IOS_ROOT/swift/exocore.h
 
 rm -rf $EXOCORE_IOS_ROOT/swift/protos
 mkdir -p $EXOCORE_IOS_ROOT/swift/protos
