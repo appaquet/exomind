@@ -33,7 +33,7 @@ export function toHTML(content: ContentState): string {
 export function fromHTML(html: string): ContentState {
   return convertFromHTML({
     // https://github.com/HubSpot/draft-convert
-    htmlToBlock: (nodeName, _node) => {
+    htmlToBlock: (nodeName) => {
       if (nodeName === 'code') {
         return 'code-block';
       }

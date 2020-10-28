@@ -90,7 +90,7 @@ export default class Columns extends React.Component {
     }
 
     handleColumnClose(colId) {
-        let columnsConfig = this.getConfig().unset(colId);
+        let columnsConfig = this.getConfig().pop(colId);
         this.props.onConfigChange(columnsConfig);
     }
 

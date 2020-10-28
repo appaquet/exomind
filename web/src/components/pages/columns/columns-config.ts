@@ -54,8 +54,15 @@ export class ColumnsConfig {
         return new ColumnsConfig(ret);
     }
 
+    // Removes a column and its following
     unset(col: number): ColumnsConfig {
         const ret = this.parts.slice(0, col);
+        return new ColumnsConfig(ret);
+    }
+
+    // Remove a column and keeps the following
+    pop(col: number): ColumnsConfig {
+        const ret = this.parts.slice(0, col).concat(this.parts.slice(col + 1));
         return new ColumnsConfig(ret);
     }
 

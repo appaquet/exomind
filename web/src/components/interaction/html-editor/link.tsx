@@ -9,7 +9,7 @@ interface LinkProps {
     editor: HtmlEditor;
 }
 
-export const Link = (props: LinkProps) => {
+export const Link = (props: LinkProps): ReactNode => {
     const { url } = props.contentState.getEntity(props.entityKey).getData();
     const handleClick = (e: MouseEvent) => {
         console.log(url, props.editor.props.onLinkClick);
@@ -24,7 +24,7 @@ export const Link = (props: LinkProps) => {
     );
 };
 
-export function findLinkEntities(contentBlock: ContentBlock, callback: (start: number, end: number) => void, contentState: ContentState) {
+export function findLinkEntities(contentBlock: ContentBlock, callback: (start: number, end: number) => void, contentState: ContentState): void {
     contentBlock.findEntityRanges(
         (character) => {
             const entityKey = character.getEntity();
@@ -43,17 +43,17 @@ export function toggleLink(editorState: EditorState, url: string | null): Editor
     const contentState = editorState.getCurrentContent();
 
     const contentStateWithEntity = contentState.createEntity(
-      'LINK',
-      'MUTABLE',
-      { url: url }
+        'LINK',
+        'MUTABLE',
+        { url: url }
     );
     const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
 
     let newEditorState = EditorState.set(editorState, { currentContent: contentStateWithEntity });
     newEditorState = RichUtils.toggleLink(
-      newEditorState,
-      newEditorState.getSelection(),
-      entityKey
+        newEditorState,
+        newEditorState.getSelection(),
+        entityKey
     );
 
     return newEditorState;
