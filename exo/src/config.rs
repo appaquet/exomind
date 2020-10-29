@@ -2,12 +2,11 @@ use crate::options;
 use exocore_core::protos::core::{cell_application_config, node_cell_config};
 
 pub fn validate(
-    _exo_opts: &options::ExoOptions,
+    exo_opts: &options::ExoOptions,
     _conf_opts: &options::ConfigOptions,
-    validate_opts: &options::ValidateOpts,
 ) -> anyhow::Result<()> {
     // parse config
-    let config = exocore_core::cell::node_config_from_yaml_file(&validate_opts.config)?;
+    let config = exo_opts.read_configuration()?;
 
     // create instance to validate the config
     let (_cells, _node) = exocore_core::cell::Cell::new_from_local_node_config(config)?;
@@ -16,11 +15,11 @@ pub fn validate(
 }
 
 pub fn standalone(
-    _exo_opts: &options::ExoOptions,
+    exo_opts: &options::ExoOptions,
     _conf_opts: &options::ConfigOptions,
     convert_opts: &options::StandaloneOpts,
 ) -> anyhow::Result<()> {
-    let config = exocore_core::cell::node_config_from_yaml_file(&convert_opts.config)?;
+    let config = exo_opts.read_configuration()?;
     let mut config = exocore_core::cell::node_config_to_standalone(config)?;
 
     if convert_opts.exclude_app_schemas {

@@ -7,8 +7,8 @@ pub fn generate(
     keys_opts: &options::KeysOptions,
 ) -> anyhow::Result<()> {
     let keypair = match keys_opts.algorithm {
-        options::KeyAlgorithm::Ed25519 => Keypair::generate_ed25519(),
-        options::KeyAlgorithm::Rsa => unimplemented!(),
+        options::KeyAlgorithm::ED25519 => Keypair::generate_ed25519(),
+        options::KeyAlgorithm::RSA => unimplemented!(),
     };
 
     println!("keypair: {}", keypair.encode_base58_string());

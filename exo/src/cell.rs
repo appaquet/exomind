@@ -17,10 +17,10 @@ use exocore_core::{
 use std::{io::Write, time::Duration};
 
 pub fn create_genesis_block(
-    _exo_opts: &options::ExoOptions,
+    exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
 ) -> anyhow::Result<()> {
-    let (_, cell) = get_cell(cell_opts);
+    let (_, cell) = get_cell(exo_opts, cell_opts);
     let full_cell = cell.unwrap_full();
 
     let chain_dir = full_cell
@@ -41,10 +41,10 @@ pub fn create_genesis_block(
 }
 
 pub fn check_chain(
-    _exo_opts: &options::ExoOptions,
+    exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
 ) -> anyhow::Result<()> {
-    let (_, cell) = get_cell(cell_opts);
+    let (_, cell) = get_cell(exo_opts, cell_opts);
 
     let chain_dir = cell
         .cell()
@@ -80,11 +80,11 @@ pub fn check_chain(
 }
 
 pub fn export_chain(
-    _exo_opts: &options::ExoOptions,
+    exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
     export_opts: &options::ChainExportOptions,
 ) -> anyhow::Result<()> {
-    let (_, cell) = get_cell(cell_opts);
+    let (_, cell) = get_cell(exo_opts, cell_opts);
 
     let chain_dir = cell
         .cell()
@@ -138,11 +138,11 @@ pub fn export_chain(
 }
 
 pub fn import_chain(
-    _exo_opts: &options::ExoOptions,
+    exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
     import_opts: &options::ChainImportOptions,
 ) -> anyhow::Result<()> {
-    let (_, cell) = get_cell(cell_opts);
+    let (_, cell) = get_cell(exo_opts, cell_opts);
     let full_cell = cell.unwrap_full();
 
     let chain_dir = full_cell
@@ -237,11 +237,11 @@ pub fn import_chain(
 }
 
 pub fn generate_auth_token(
-    _exo_opts: &options::ExoOptions,
+    exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
     gen_opts: &options::GenerateAuthTokenOptions,
 ) -> anyhow::Result<()> {
-    let (_, cell) = get_cell(cell_opts);
+    let (_, cell) = get_cell(exo_opts, cell_opts);
     let cell = cell.cell();
 
     let clock = Clock::new();
@@ -258,8 +258,12 @@ pub fn generate_auth_token(
     Ok(())
 }
 
-fn get_cell(cell_opts: &options::CellOptions) -> (LocalNodeConfig, EitherCell) {
-    let config = exocore_core::cell::node_config_from_yaml_file(&cell_opts.config)
+fn get_cell(
+    exo_opts: &options::ExoOptions,
+    cell_opts: &options::CellOptions,
+) -> (LocalNodeConfig, EitherCell) {
+    let config = exo_opts
+        .read_configuration()
         .expect("Error parsing configuration");
     let (either_cells, _local_node) =
         Cell::new_from_local_node_config(config.clone()).expect("Couldn't create cell from config");

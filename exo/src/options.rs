@@ -1,59 +1,68 @@
-#![allow(non_camel_case_types)]
-
+use clap::Clap;
+use exocore_core::protos::core::LocalNodeConfig;
 use std::path::PathBuf;
 use std::str::FromStr;
-use structopt::StructOpt;
 
-#[derive(StructOpt)]
-#[structopt(name = "exocore-cli", about = "Exocore Command Line Interface")]
+#[derive(Clap)]
+#[clap(name = "exocore-cli", about = "Exocore Command Line Interface")]
 pub struct ExoOptions {
-    #[structopt(long, short, default_value = "info")]
     /// Logging level (off, error, warn, info, debug, trace)
+    #[clap(long, short, default_value = "info", env = "EXO_INFO")]
     pub logging_level: String,
-    #[structopt(subcommand)]
+
+    /// Home directory where config, cells and data will be store.
+    #[clap(long, short = 'h', default_value = "~/.exocore", env = "EXO_HOME")]
+    pub home: PathBuf,
+
+    /// Configuration of the node to use, relative to the home directory.
+    #[clap(long, short = 'c', default_value = "node.yaml", env = "EXO_CONFIG")]
+    pub config: PathBuf,
+
+    #[clap(subcommand)]
     pub subcommand: SubCommand,
 }
 
-#[derive(StructOpt)]
+impl ExoOptions {
+    pub fn read_configuration(&self) -> anyhow::Result<LocalNodeConfig> {
+        let config_path = if self.config.is_absolute() {
+            self.config.clone()
+        } else {
+            self.home.join(&self.config)
+        };
+
+        let config = exocore_core::cell::node_config_from_yaml_file(config_path)?;
+
+        Ok(config)
+    }
+}
+
+#[derive(Clap)]
 pub enum SubCommand {
-    server(ServerOptions),
-    keys(KeysOptions),
-    cell(CellOptions),
-    config(ConfigOptions),
-}
-
-#[derive(StructOpt)]
-pub struct ServerOptions {
-    #[structopt(long, short = "c", default_value = "config.yaml")]
-    pub config: PathBuf,
-    #[structopt(subcommand)]
-    pub command: ServerCommand,
-}
-
-#[derive(StructOpt)]
-pub enum ServerCommand {
-    start,
+    Daemon,
+    Keys(KeysOptions),
+    Cell(CellOptions),
+    Config(ConfigOptions),
 }
 
 /// Keys related options
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub struct KeysOptions {
-    #[structopt(long, default_value = "ed25519")]
+    #[clap(long, default_value = "ed25519")]
     /// Algorithm of the keypair to generate (ed25519, rsa)
     pub algorithm: KeyAlgorithm,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub command: KeysCommand,
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub enum KeysCommand {
-    generate,
+    Generate,
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub enum KeyAlgorithm {
-    Ed25519,
-    Rsa,
+    ED25519,
+    RSA,
 }
 
 impl FromStr for KeyAlgorithm {
@@ -61,90 +70,83 @@ impl FromStr for KeyAlgorithm {
 
     fn from_str(k: &str) -> Result<Self, Self::Err> {
         match k {
-            "ed25519" => Ok(KeyAlgorithm::Ed25519),
+            "ed25519" => Ok(KeyAlgorithm::ED25519),
             _ => Err(anyhow!("Unsupported key type")),
         }
     }
 }
 
 /// Cell related options
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub struct CellOptions {
-    /// Path to node configuration.
-    #[structopt(long, short = "c", default_value = "config.yaml")]
-    pub config: PathBuf,
-
-    #[structopt(long, short)]
+    #[clap(long, short)]
     /// Public key of the cell we want to make an action on. If not specified
     /// and the node config only contains 1 cell, this cell will be taken.
     pub public_key: Option<String>,
 
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub command: CellCommand,
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub enum CellCommand {
-    create_genesis_block,
-    check_chain,
-    export_chain(ChainExportOptions),
-    import_chain(ChainImportOptions),
-    generate_auth_token(GenerateAuthTokenOptions),
+    CreateGenesisBlock,
+    CheckChain,
+    Exportchain(ChainExportOptions),
+    ImportChain(ChainImportOptions),
+    GenerateAuthToken(GenerateAuthTokenOptions),
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub struct ChainExportOptions {
     // File in which chain will be exported
     pub file: PathBuf,
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub struct ChainImportOptions {
     // Number of operations per blocks
-    #[structopt(long, default_value = "30")]
+    #[clap(long, default_value = "30")]
     pub operations_per_block: usize,
 
     // Files from which chain will be imported
     pub files: Vec<PathBuf>,
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub struct GenerateAuthTokenOptions {
     // Token expiration duration in days
-    #[structopt(long, default_value = "30")]
+    #[clap(long, default_value = "30")]
     pub expiration_days: u16,
 }
 
 /// Configs related options
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub struct ConfigOptions {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub command: ConfigCommand,
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub enum ConfigCommand {
-    /// Validate a configuration
-    validate(ValidateOpts),
+    /// Validate the node's configuration
+    Validate,
 
-    /// Convert a configuration to a standalone configuration
-    standalone(StandaloneOpts),
+    /// Convert the node's configuration to a standalone configuration
+    Standalone(StandaloneOpts),
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub struct ValidateOpts {
     /// Path to configuration
     pub config: PathBuf,
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub struct StandaloneOpts {
-    /// Path to configuration
-    pub config: PathBuf,
-
-    #[structopt(default_value = "json")]
+    #[clap(default_value = "json")]
     pub format: String,
 
-    #[structopt(long)]
+    #[clap(long)]
     pub exclude_app_schemas: bool,
 }
