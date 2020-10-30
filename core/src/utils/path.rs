@@ -32,8 +32,8 @@ mod tests {
 
     #[test]
     fn test_clean_path() {
-        assert_eq!(clean_path("./test/./test").to_str(), Some("./test/test"));
-        assert_eq!(clean_path("./test/././test").to_str(), Some("./test/test"));
-        assert_eq!(clean_path("/test/test").to_str(), Some("/test/test"));
+        assert_eq!(clean_path("./test/./test"), PathBuf::from("./test/test"));
+        assert_eq!(clean_path("./test/././test"), PathBuf::from("./test/test"));
+        assert_eq!(clean_path("/test/test"), PathBuf::from("/test/test"));
     }
 }
