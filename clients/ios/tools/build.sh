@@ -25,6 +25,6 @@ pushd $EXOCORE_IOS_ROOT
 EXOCORE_IOS_LIB_DIR="$EXOCORE_IOS_ROOT/lib"
 rm -rf $EXOCORE_IOS_LIB_DIR
 mkdir $EXOCORE_IOS_LIB_DIR
-cp $EXOCORE_ROOT/target/universal/$MODE/*.a $EXOCORE_IOS_LIB_DIR/  # TODO: debug vs release
+cp $EXOCORE_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/  # TODO: debug vs release
 popd
 

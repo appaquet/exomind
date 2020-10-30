@@ -1,7 +1,7 @@
 use super::Error;
-use crate::protos::generated::exocore_core::{
+use crate::{utils::path::clean_path, protos::generated::exocore_core::{
     node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
-};
+}};
 use crate::{protos::generated::exocore_apps::Manifest, utils::path::child_to_abs_path};
 use std::fs::File;
 use std::io::prelude::*;
@@ -22,7 +22,7 @@ pub fn node_config_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<LocalNodeCo
     if config.path.is_empty() {
         let mut node_path = path.as_ref().to_path_buf();
         node_path.pop();
-        config.path = node_path.to_string_lossy().to_string();
+        config.path = clean_path(node_path).to_string_lossy().to_string();
     }
 
     Ok(config)
@@ -84,7 +84,7 @@ pub fn cell_config_from_yaml_file<P: AsRef<Path>>(path: P) -> Result<CellConfig,
     if config.path.is_empty() {
         let mut node_path = path.as_ref().to_path_buf();
         node_path.pop();
-        config.path = node_path.to_string_lossy().to_string();
+        config.path = clean_path(node_path).to_string_lossy().to_string();
     }
 
     Ok(config)
