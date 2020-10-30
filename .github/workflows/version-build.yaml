@@ -72,7 +72,7 @@ jobs:
           ./tools/build.sh release
 
           cd $GITHUB_WORKSPACE/
-          pod lib lint --verbose
+          pod lib lint --verbose --allow-warnings
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2.2.0

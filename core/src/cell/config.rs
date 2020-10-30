@@ -1,8 +1,11 @@
 use super::Error;
-use crate::{utils::path::clean_path, protos::generated::exocore_core::{
-    node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
-}};
 use crate::{protos::generated::exocore_apps::Manifest, utils::path::child_to_abs_path};
+use crate::{
+    protos::generated::exocore_core::{
+        node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
+    },
+    utils::path::clean_path,
+};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;

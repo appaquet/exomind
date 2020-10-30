@@ -163,7 +163,7 @@ jobs:
           ./tools/build.sh
 
           cd $GITHUB_WORKSPACE/
-          pod lib lint --verbose
+          pod lib lint --verbose --allow-warnings
 
       - name: Build example project
         run: |
