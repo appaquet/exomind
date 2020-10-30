@@ -226,8 +226,8 @@ mod tests {
     use super::*;
     use crate::protos::{
         apps::manifest_schema,
-        core::cell_application_config,
         core::NodeAddresses,
+        core::{cell_application_config, CellApplicationConfig},
         generated::exocore_core::{
             cell_node_config, node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig,
             NodeCellConfig, NodeConfig,
@@ -243,28 +243,49 @@ mod tests {
             name: "node_name".to_string(),
             id: String::new(),
             path: "path".to_string(),
-            cells: vec![NodeCellConfig {
-                location: Some(node_cell_config::Location::Instance(CellConfig {
-                    public_key: "pk".to_string(),
-                    keypair: "kp".to_string(),
-                    name: "cell_name".to_string(),
-                    id: String::new(),
-                    path: "path".to_string(),
-                    nodes: vec![CellNodeConfig {
-                        node: Some(NodeConfig {
-                            public_key: "pk".to_string(),
-                            name: "node_name".to_string(),
-                            id: String::new(),
-                            addresses: Some(NodeAddresses {
-                                p2p: vec!["maddr".to_string()],
-                                http: vec!["httpaddr".to_string()],
+            cells: vec![
+                NodeCellConfig {
+                    location: Some(node_cell_config::Location::Instance(CellConfig {
+                        public_key: "pk".to_string(),
+                        keypair: "kp".to_string(),
+                        name: "cell_name".to_string(),
+                        id: String::new(),
+                        path: "path".to_string(),
+                        nodes: vec![CellNodeConfig {
+                            node: Some(NodeConfig {
+                                public_key: "pk".to_string(),
+                                name: "node_name".to_string(),
+                                id: String::new(),
+                                addresses: Some(NodeAddresses {
+                                    p2p: vec!["maddr".to_string()],
+                                    http: vec!["httpaddr".to_string()],
+                                }),
                             }),
-                        }),
-                        roles: vec![cell_node_config::Role::InvalidRole.into()],
-                    }],
-                    apps: vec![],
-                })),
-            }],
+                            roles: vec![cell_node_config::Role::ChainRole.into()],
+                        }],
+                        apps: vec![
+                            CellApplicationConfig {
+                                location: Some(cell_application_config::Location::Instance(
+                                    Manifest {
+                                        name: "name".to_string(),
+                                        ..Default::default()
+                                    },
+                                )),
+                            },
+                            CellApplicationConfig {
+                                location: Some(cell_application_config::Location::Directory(
+                                    "some_path".to_string(),
+                                )),
+                            },
+                        ],
+                    })),
+                },
+                NodeCellConfig {
+                    location: Some(node_cell_config::Location::Directory(
+                        "some_path".to_string(),
+                    )),
+                },
+            ],
             addresses: Some(NodeAddresses {
                 p2p: vec!["maddr".to_string()],
                 http: vec!["httpaddr".to_string()],
@@ -272,7 +293,7 @@ mod tests {
         };
 
         let yaml = serde_yaml::to_string(&conf_ser)?;
-        // println!("{}", yaml);
+        println!("{}", yaml);
 
         let conf_deser = node_config_from_yaml(yaml.as_bytes())?;
 
@@ -375,28 +396,26 @@ addresses:
     - http://0.0.0.0:8080
 
 cells:
-   - location:
-        Instance:
-             public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
-             keypair: ""
-             name: ""
-             data_directory: target/data/cell1
-             nodes:
-               - node:
-                   name: node name
-                   public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
-                   addresses:
-                     p2p:
-                       - /ip4/192.168.2.67/tcp/3330
-                     http:
-                       - http://192.168.2.67:8080
-                 roles:
-                   - 1
-             apps:
-               - location:
-                   Instance:
-                     name: some application
-                     public_key: peHZC1CM51uAugeMNxbXkVukFzCwMJY52m1xDCfLmm1pc1
+  - instance:
+      public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
+      keypair: ""
+      name: ""
+      data_directory: target/data/cell1
+      nodes:
+        - node:
+            name: node name
+            public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+            addresses:
+              p2p:
+                - /ip4/192.168.2.67/tcp/3330
+              http:
+                - http://192.168.2.67:8080
+          roles:
+            - 1
+      apps:
+        - instance:
+             name: some application
+             public_key: peHZC1CM51uAugeMNxbXkVukFzCwMJY52m1xDCfLmm1pc1
 "#;
 
         let config = node_config_from_yaml(yaml.as_bytes())?;
@@ -450,15 +469,14 @@ addresses:
     - /ip4/0.0.0.0/tcp/3341/ws
 
 cells:
-   - location:
-       Instance:
-           public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
-           nodes:
-             - node:
-                   public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
-                   addresses:
-                      p2p:
-                         - /ip4/192.168.2.67/tcp/3330
+  - instance:
+      public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
+      nodes:
+        - node:
+            public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+            addresses:
+              p2p:
+                - /ip4/192.168.2.67/tcp/3330
 "#;
 
         node_config_from_yaml(yaml.as_bytes())?;

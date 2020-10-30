@@ -14,10 +14,12 @@ pub struct Manifest {
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
 pub struct ManifestSchema {
     #[prost(oneof = "manifest_schema::Source", tags = "1, 2")]
+    #[serde(flatten)]
     pub source: ::std::option::Option<manifest_schema::Source>,
 }
 pub mod manifest_schema {
     #[derive(Clone, PartialEq, ::prost::Oneof, Serialize, Deserialize)]
+    #[serde(rename_all = "lowercase")]
     pub enum Source {
         #[prost(string, tag = "1")]
         File(std::string::String),

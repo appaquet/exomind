@@ -28,8 +28,8 @@ message NodeAddresses {
 
 message NodeCellConfig {
     oneof location {
-       CellConfig instance = 1;
-       string directory = 2;
+       CellConfig instance = 1; // TODO: should be "inline"
+       string directory = 2; // TODO: should be path
     }
 }
 
@@ -73,7 +73,7 @@ message NodeConfig {
 
 message CellApplicationConfig {
     oneof location {
-        exocore.apps.Manifest instance = 1;
-        string directory = 2;
+        exocore.apps.Manifest instance = 1; // TODO: should be "inline"
+        string directory = 2; // TODO: Should be "path"
     }
 }

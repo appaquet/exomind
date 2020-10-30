@@ -24,5 +24,4 @@ nodes:
       public_key: peHdrwp1ZXicF1v7RQRRC4ursqgE1oM9nuVijCmrf74n7E
 
 apps:
-  - location:
-      Directory: ../app
+  - directory: ../app

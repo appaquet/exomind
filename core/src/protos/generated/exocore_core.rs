@@ -48,13 +48,17 @@ pub struct NodeAddresses {
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
 pub struct NodeCellConfig {
     #[prost(oneof = "node_cell_config::Location", tags = "1, 2")]
+    #[serde(flatten)]
     pub location: ::std::option::Option<node_cell_config::Location>,
 }
 pub mod node_cell_config {
     #[derive(Clone, PartialEq, ::prost::Oneof, Serialize, Deserialize)]
+    #[serde(rename_all = "lowercase")]
     pub enum Location {
+        /// TODO: should be "inline"
         #[prost(message, tag = "1")]
         Instance(super::CellConfig),
+        /// TODO: should be path
         #[prost(string, tag = "2")]
         Directory(std::string::String),
     }
@@ -115,13 +119,17 @@ pub struct NodeConfig {
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
 pub struct CellApplicationConfig {
     #[prost(oneof = "cell_application_config::Location", tags = "1, 2")]
+    #[serde(flatten)]
     pub location: ::std::option::Option<cell_application_config::Location>,
 }
 pub mod cell_application_config {
     #[derive(Clone, PartialEq, ::prost::Oneof, Serialize, Deserialize)]
+    #[serde(rename_all = "lowercase")]
     pub enum Location {
+        /// TODO: should be "inline"
         #[prost(message, tag = "1")]
         Instance(super::super::apps::Manifest),
+        /// TODO: Should be "path"
         #[prost(string, tag = "2")]
         Directory(std::string::String),
     }
