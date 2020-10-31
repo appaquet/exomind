@@ -1,4 +1,7 @@
-use super::{CellApplications, config::CellConfigExt, CellNode, CellNodeRole, CellNodes, CellNodesRead, CellNodesWrite, Error, LocalNode, Node, NodeId};
+use super::{
+    config::CellConfigExt, CellApplications, CellNode, CellNodeRole, CellNodes, CellNodesRead,
+    CellNodesWrite, Error, LocalNode, Node, NodeId,
+};
 use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
 use crate::protos::registry::Registry;
 use crate::sec::keys::{Keypair, PublicKey};

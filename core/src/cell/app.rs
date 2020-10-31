@@ -1,4 +1,4 @@
-use super::{ManifestExt, Error};
+use super::{Error, ManifestExt};
 use crate::protos::generated::exocore_apps::manifest_schema::Source;
 use crate::protos::generated::exocore_apps::Manifest;
 use crate::{sec::keys::PublicKey, utils::path::child_to_abs_path};
