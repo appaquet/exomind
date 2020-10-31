@@ -239,7 +239,9 @@ impl CellConfigExt for CellConfig {
         match &config.location {
             Some(node_cell_config::Location::Instance(cell_config)) => {
                 let mut cell_config = cell_config.clone();
-                cell_config.path = node_config.path.clone();
+                cell_config.path = child_to_abs_path(&node_config.path, cell_config.path)
+                    .to_string_lossy()
+                    .to_string();
                 Ok(cell_config)
             }
             Some(node_cell_config::Location::Directory(directory)) => {
