@@ -1,5 +1,8 @@
 use crate::options;
-use exocore_core::protos::core::{cell_application_config, node_cell_config};
+use exocore_core::{
+    cell::LocalNodeConfigExt,
+    protos::core::{cell_application_config, node_cell_config},
+};
 
 pub fn validate(
     exo_opts: &options::ExoOptions,
@@ -20,7 +23,7 @@ pub fn standalone(
     convert_opts: &options::StandaloneOpts,
 ) -> anyhow::Result<()> {
     let config = exo_opts.read_configuration()?;
-    let mut config = exocore_core::cell::node_config_to_standalone(config)?;
+    let mut config = config.to_standalone()?;
 
     if convert_opts.exclude_app_schemas {
         for cell in &mut config.cells {
@@ -37,9 +40,9 @@ pub fn standalone(
     }
 
     if convert_opts.format == "json" {
-        println!("{}", exocore_core::cell::node_config_to_json(&config)?);
+        println!("{}", config.to_json()?);
     } else {
-        println!("{}", exocore_core::cell::node_config_to_yaml(&config)?);
+        println!("{}", config.to_yaml()?);
     }
 
     Ok(())

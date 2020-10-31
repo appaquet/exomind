@@ -1,4 +1,4 @@
-use super::{app_manifest_from_yaml_file, Error};
+use super::{ManifestExt, Error};
 use crate::protos::generated::exocore_apps::manifest_schema::Source;
 use crate::protos::generated::exocore_apps::Manifest;
 use crate::{sec::keys::PublicKey, utils::path::child_to_abs_path};
@@ -26,7 +26,7 @@ impl Application {
         let mut manifest_path = dir.as_ref().to_path_buf();
         manifest_path.push("app.yaml");
 
-        let mut manifest = app_manifest_from_yaml_file(manifest_path)?;
+        let mut manifest = Manifest::from_yaml_file(manifest_path)?;
         manifest.path = dir.as_ref().to_string_lossy().to_string();
 
         Self::build(manifest)

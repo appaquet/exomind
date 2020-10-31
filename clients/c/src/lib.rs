@@ -13,7 +13,7 @@ use std::{
 use futures::StreamExt;
 use prost::Message;
 
-use exocore_core::cell::Cell;
+use exocore_core::cell::{Cell, LocalNodeConfigExt};
 use exocore_core::futures::Runtime;
 use exocore_core::protos::generated::exocore_core::LocalNodeConfig;
 use exocore_core::protos::generated::exocore_store::EntityQuery;
@@ -45,12 +45,10 @@ impl Context {
                 error!("Couldn't decode node config from Protobuf: {}", err);
                 ContextStatus::Error
             })?,
-            ConfigFormat::Yaml => {
-                exocore_core::cell::node_config_from_yaml(config_bytes).map_err(|err| {
-                    error!("Couldn't parse node config from YAML: {}", err);
-                    ContextStatus::Error
-                })?
-            }
+            ConfigFormat::Yaml => LocalNodeConfig::from_yaml(config_bytes).map_err(|err| {
+                error!("Couldn't parse node config from YAML: {}", err);
+                ContextStatus::Error
+            })?,
         };
 
         let (either_cells, local_node) =

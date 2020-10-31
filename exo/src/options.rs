@@ -1,5 +1,5 @@
 use clap::Clap;
-use exocore_core::protos::core::LocalNodeConfig;
+use exocore_core::{cell::LocalNodeConfigExt, protos::core::LocalNodeConfig};
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -30,7 +30,7 @@ impl ExoOptions {
             self.home.join(&self.config)
         };
 
-        let config = exocore_core::cell::node_config_from_yaml_file(config_path)?;
+        let config = LocalNodeConfig::from_yaml_file(config_path)?;
 
         Ok(config)
     }
