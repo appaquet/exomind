@@ -19,7 +19,7 @@ cells:
   - instance:
       public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
       keypair: ae55Nfv11ppyFVxCDaYovcxTcaTDaSzSFjiVoiC3VwGARfEuaqGcgoJUdVpqfwKQVDN4rvGKUvt4yqQc6w7it7PCpG
-      data_directory: /path/to/data
+      path: /path/to/data
       name: Optional Cell Name
       nodes:
         - node:

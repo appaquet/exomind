@@ -468,7 +468,7 @@ cells:
       public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
       keypair: ""
       name: ""
-      data_directory: target/data/cell1
+      path: target/data/cell1
       nodes:
         - node:
             name: node name

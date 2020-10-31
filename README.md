@@ -74,7 +74,7 @@ A cell consists of:
     * Generate keypair for the node: `exo keys generate`
     * Change the node's `keypair` and `public_key` config with the generated keypair.
     * Change `listen_addresses` with unique port per node.
-    * Change cell's `data_directory` with unique data directory per node. 
+    * Change cell's `path` with unique data directory per node. 
     * Put the other node `public_key` and `addresses` in the cell's nodes section.
 * Generate keypair for the cell: `exo keys generate` 
 * Add this keypair in both `node1.yaml` and `node2.yaml` in the `cells` section.
