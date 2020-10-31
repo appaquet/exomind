@@ -79,7 +79,7 @@ A cell consists of:
 * Generate keypair for the cell: `exo keys generate` 
 * Add this keypair in both `node1.yaml` and `node2.yaml` in the `cells` section.
 * Validate config with `exo config validate <config file>`
-* Initialize chain one first node: `exo cell --config node1.yaml --public_key <cell_public_key> create_genesis_block`
+* Initialize chain one first node: `exo cell --config node1.yaml --public_key <cell_public_key> create-genesis-block`
 * Start both nodes:
     * Node 1: `exo server --config ./node1.yaml start`
     * Node 2: `exo server --config ./node2.yaml start`
