@@ -2,6 +2,7 @@
 import React, { ChangeEvent } from 'react';
 import './bootstrap.less';
 import { StoresInstance } from '../../../store/stores';
+import { observer } from 'mobx-react';
 
 type IProps = Record<string, unknown>;
 interface IState {
@@ -9,6 +10,7 @@ interface IState {
   error?: string;
 }
 
+@observer
 export default class Loading extends React.Component<IProps, IState> {
   constructor(props: IProps) {
     super(props);
