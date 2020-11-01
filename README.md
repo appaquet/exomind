@@ -61,15 +61,15 @@ A cell consists of:
   * `./tools/install.sh` or `cd exo && cargo install --path .`
 
 * Configuration
-    * Most commands requires a `config.yaml` file, for which an example can be found in here: [`./examples/config.yaml`]
+    * Most commands requires a `node.yaml` file, for which an example can be found in here: [`./examples/node.yaml`]
     * At minimum, the config requires 2 keypair: one for the node, one for the cell.
     * The node keypair is unique per server/node, while the cell keypair is shared among servers that host the cell.
     
 ## Quick start
 
 ### Create a Cell hosted on 2 nodes
-* `cp ./examples/config.yaml node1.yaml`
-* `cp ./examples/config.yaml node2.yaml`
+* `cp ./examples/node.yaml node1.yaml`
+* `cp ./examples/node.yaml node2.yaml`
 * For each node's config:
     * Generate keypair for the node: `exo keys generate`
     * Change the node's `keypair` and `public_key` config with the generated keypair.

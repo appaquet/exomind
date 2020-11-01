@@ -52,8 +52,8 @@ impl ExocoreClient {
         let node_config_format = node_config_format.as_deref();
 
         let config = match node_config_format {
-            Some("json") => LocalNodeConfig::from_json(config_bytes.as_slice()),
-            Some("yaml") => LocalNodeConfig::from_yaml(config_bytes.as_slice()),
+            Some("json") => LocalNodeConfig::from_json_reader(config_bytes.as_slice()),
+            Some("yaml") => LocalNodeConfig::from_yaml_reader(config_bytes.as_slice()),
             other => panic!("Invalid config format: {:?}", other),
         }
         .expect("Couldn't decode config");

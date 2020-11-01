@@ -1,22 +1,24 @@
 use super::Error;
-use crate::{protos::generated::exocore_apps::Manifest, utils::path::child_to_abs_path};
 use crate::{
     protos::generated::exocore_core::{
         node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
     },
-    utils::path::clean_path,
+    protos::{core::cell_application_config, generated::exocore_apps::Manifest},
+    utils::path::{child_to_abs_path, child_to_abs_path_string},
 };
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::path::PathBuf;
 
+/// Extension for `LocalNodeConfig` proto.
 pub trait LocalNodeConfigExt {
     fn config(&self) -> &LocalNodeConfig;
-    fn from_yaml<R: std::io::Read>(bytes: R) -> Result<LocalNodeConfig, Error>;
+    fn from_yaml_reader<R: Read>(reader: R) -> Result<LocalNodeConfig, Error>;
     fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<LocalNodeConfig, Error>;
-    fn from_json<R: std::io::Read>(bytes: R) -> Result<LocalNodeConfig, Error>;
+    fn from_json_reader<R: Read>(bytes: R) -> Result<LocalNodeConfig, Error>;
     fn to_yaml(&self) -> Result<String, Error>;
+    fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error>;
     fn to_json(&self) -> Result<String, Error>;
     fn to_standalone(&self) -> Result<LocalNodeConfig, Error>;
 }
@@ -26,8 +28,8 @@ impl LocalNodeConfigExt for LocalNodeConfig {
         self
     }
 
-    fn from_yaml<R: Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
-        let config = serde_yaml::from_reader(bytes)
+    fn from_yaml_reader<R: Read>(reader: R) -> Result<LocalNodeConfig, Error> {
+        let config = serde_yaml::from_reader(reader)
             .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
 
         Ok(config)
@@ -42,18 +44,13 @@ impl LocalNodeConfigExt for LocalNodeConfig {
             ))
         })?;
 
-        let mut config = Self::from_yaml(file)?;
-
-        if config.path.is_empty() {
-            let mut node_path = path.as_ref().to_path_buf();
-            node_path.pop();
-            config.path = clean_path(node_path).to_string_lossy().to_string();
-        }
+        let mut config = Self::from_yaml_reader(file)?;
+        resolve_local_node_config_paths(&mut config, path.as_ref());
 
         Ok(config)
     }
 
-    fn from_json<R: Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
+    fn from_json_reader<R: Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
         let config = serde_json::from_reader(bytes)
             .map_err(|err| Error::Config(format!("Couldn't decode JSON node config: {}", err)))?;
 
@@ -62,6 +59,11 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 
     fn to_yaml(&self) -> Result<String, Error> {
         serde_yaml::to_string(self.config())
+            .map_err(|err| Error::Config(format!("Couldn't encode node config to YAML: {}", err)))
+    }
+
+    fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error> {
+        serde_yaml::to_writer(write, self.config())
             .map_err(|err| Error::Config(format!("Couldn't encode node config to YAML: {}", err)))
     }
 
@@ -90,6 +92,7 @@ impl LocalNodeConfigExt for LocalNodeConfig {
     }
 }
 
+/// Extension for `CellNodeConfig` proto.
 pub trait CellNodeConfigExt {
     fn config(&self) -> &CellNodeConfig;
 
@@ -112,7 +115,7 @@ impl CellNodeConfigExt for CellNodeConfig {
 pub trait CellConfigExt {
     fn config(&self) -> &CellConfig;
 
-    fn from_yaml<R: Read>(bytes: R) -> Result<CellConfig, Error>;
+    fn from_yaml_reader<R: Read>(bytes: R) -> Result<CellConfig, Error>;
 
     fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<CellConfig, Error>;
 
@@ -129,7 +132,7 @@ impl CellConfigExt for CellConfig {
         self
     }
 
-    fn from_yaml<R: Read>(bytes: R) -> Result<CellConfig, Error> {
+    fn from_yaml_reader<R: Read>(bytes: R) -> Result<CellConfig, Error> {
         let config: CellConfig = serde_yaml::from_reader(bytes)
             .map_err(|err| Error::Config(format!("Couldn't decode YAML cell config: {}", err)))?;
 
@@ -145,14 +148,10 @@ impl CellConfigExt for CellConfig {
             ))
         })?;
 
-        let mut config = Self::from_yaml(file)?;
-        if config.path.is_empty() {
-            let mut node_path = path.as_ref().to_path_buf();
-            node_path.pop();
-            config.path = clean_path(node_path).to_string_lossy().to_string();
-        }
+        let mut cell_config = Self::from_yaml_reader(file)?;
+        resolve_cell_config_paths(&mut cell_config, path.as_ref());
 
-        Ok(config)
+        Ok(cell_config)
     }
 
     fn to_standalone(&self) -> Result<CellConfig, Error> {
@@ -161,13 +160,11 @@ impl CellConfigExt for CellConfig {
         for app in config.apps.iter_mut() {
             let mut final_manifest = match app.location.take() {
                 Some(crate::protos::core::cell_application_config::Location::Directory(dir)) => {
-                    let absolute_path = child_to_abs_path(&config.path, &dir)
-                        .to_string_lossy()
-                        .to_string();
+                    let absolute_path = child_to_abs_path_string(&config.path, &dir);
 
                     let mut manifest_path = PathBuf::from(&absolute_path);
                     manifest_path.push("app.yaml");
-                    let mut manifest = Manifest::from_yaml_file(manifest_path)?;
+                    let mut manifest = Manifest::read_yaml_file(manifest_path)?;
                     manifest.path = absolute_path;
                     manifest
                 }
@@ -176,7 +173,7 @@ impl CellConfigExt for CellConfig {
                 )) => manifest,
                 other => {
                     return Err(Error::Application(
-                        String::new(),
+                        "unnamed".to_string(),
                         format!("Unsupported application location: {:?}", other),
                     ));
                 }
@@ -187,9 +184,8 @@ impl CellConfigExt for CellConfig {
             for schema in final_manifest.schemas.iter_mut() {
                 let final_source = match schema.source.take() {
                     Some(crate::protos::apps::manifest_schema::Source::File(schema_path)) => {
-                        let abs_schema_path = child_to_abs_path(&final_manifest.path, &schema_path)
-                            .to_string_lossy()
-                            .to_string();
+                        let abs_schema_path =
+                            child_to_abs_path_string(&final_manifest.path, &schema_path);
                         let mut file = File::open(&abs_schema_path).map_err(|err| {
                             Error::Application(
                                 app_name.clone(),
@@ -239,9 +235,7 @@ impl CellConfigExt for CellConfig {
         match &config.location {
             Some(node_cell_config::Location::Instance(cell_config)) => {
                 let mut cell_config = cell_config.clone();
-                cell_config.path = child_to_abs_path(&node_config.path, cell_config.path)
-                    .to_string_lossy()
-                    .to_string();
+                cell_config.path = child_to_abs_path_string(&node_config.path, cell_config.path);
                 Ok(cell_config)
             }
             Some(node_cell_config::Location::Directory(directory)) => {
@@ -258,10 +252,11 @@ impl CellConfigExt for CellConfig {
     }
 }
 
+/// Extension for `Manifest` proto.
 pub trait ManifestExt {
     fn manifest(&self) -> &Manifest;
 
-    fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error>;
+    fn read_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error>;
 }
 
 impl ManifestExt for Manifest {
@@ -269,12 +264,12 @@ impl ManifestExt for Manifest {
         self
     }
 
-    fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error> {
+    fn read_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error> {
         let path = path.as_ref();
 
         let file = File::open(path).map_err(|err| {
             Error::Application(
-                String::new(),
+                "unnamed".to_string(),
                 format!(
                     "Couldn't open application manifest at path '{:?}': {}",
                     path, err
@@ -282,19 +277,65 @@ impl ManifestExt for Manifest {
             )
         })?;
 
-        let manifest = serde_yaml::from_reader(file).map_err(|err| {
+        let mut manifest = serde_yaml::from_reader::<_, Manifest>(file).map_err(|err| {
             Error::Application(
-                String::new(),
-                format!("Couldn't decode YAML manifest at path {:?}: {}", path, err),
+                "unnamed".to_string(),
+                format!(
+                    "Couldn't decode YAML manifest at path '{:?}': {}",
+                    path, err
+                ),
             )
         })?;
+
+        let file_directory = path.parent().unwrap_or(path);
+        manifest.path = child_to_abs_path_string(file_directory, &manifest.path);
 
         Ok(manifest)
     }
 }
 
+/// Resolves all paths in a `LocalNodeConfig` to absolute paths using the file path where it was read from.
+fn resolve_local_node_config_paths(config: &mut LocalNodeConfig, config_file_path: &Path) {
+    let config_directory = config_file_path.parent().unwrap_or(config_file_path);
+
+    config.path = child_to_abs_path_string(&config_directory, &config.path);
+
+    for cell in &mut config.cells {
+        match cell.location.as_mut() {
+            Some(node_cell_config::Location::Instance(cell)) => {
+                resolve_cell_config_paths(cell, config_file_path);
+            }
+            Some(node_cell_config::Location::Directory(path)) => {
+                *path = child_to_abs_path_string(&config.path, path.clone());
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Resolves all paths in a `CellConfig` to absolute paths using the file path where it was read from.
+fn resolve_cell_config_paths(cell_config: &mut CellConfig, config_file_path: &Path) {
+    let config_directory = config_file_path.parent().unwrap_or(config_file_path);
+
+    cell_config.path = child_to_abs_path_string(&config_directory, &cell_config.path);
+
+    for app in &mut cell_config.apps {
+        match app.location.as_mut() {
+            Some(cell_application_config::Location::Instance(app_manifest)) => {
+                app_manifest.path = child_to_abs_path_string(&cell_config.path, &app_manifest.path);
+            }
+            Some(cell_application_config::Location::Directory(path)) => {
+                *path = child_to_abs_path_string(&cell_config.path, path.clone());
+            }
+            _ => {}
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::io::SeekFrom;
+
     use super::super::{Cell, CellNodeRole, CellNodes};
     use super::*;
     use crate::protos::{
@@ -366,7 +407,7 @@ mod tests {
         };
 
         let conf_yaml = conf_ser.to_yaml()?;
-        let conf_deser = LocalNodeConfig::from_yaml(conf_yaml.as_bytes())?;
+        let conf_deser = LocalNodeConfig::from_yaml_reader(conf_yaml.as_bytes())?;
         assert_eq!(conf_ser, conf_deser);
 
         Ok(())
@@ -374,7 +415,7 @@ mod tests {
 
     #[test]
     fn parse_node_config_example_yaml_file() -> anyhow::Result<()> {
-        let config_path = root_test_fixtures_path("examples/config.yaml");
+        let config_path = root_test_fixtures_path("examples/node.yaml");
         let config = LocalNodeConfig::from_yaml_file(config_path)?;
 
         let (cells, node) = Cell::new_from_local_node_config(config)?;
@@ -403,8 +444,27 @@ mod tests {
     }
 
     #[test]
-    fn test_node_config_to_standalone() -> anyhow::Result<()> {
-        let config_path = root_test_fixtures_path("examples/config.yaml");
+    fn write_node_config_yaml_file() -> anyhow::Result<()> {
+        let config_init = LocalNodeConfig {
+            name: "node_name".to_string(),
+            ..Default::default()
+        };
+
+        let mut file = tempfile::tempfile()?;
+        config_init.to_yaml_writer(&mut file)?;
+
+        file.seek(SeekFrom::Start(0))?;
+
+        let config_read = LocalNodeConfig::from_yaml_reader(file)?;
+
+        assert_eq!(config_init, config_read);
+
+        Ok(())
+    }
+
+    #[test]
+    fn node_config_to_standalone() -> anyhow::Result<()> {
+        let config_path = root_test_fixtures_path("examples/node.yaml");
         let config = LocalNodeConfig::from_yaml_file(config_path)?;
 
         let standalone_config = config.to_standalone().unwrap();
@@ -453,6 +513,7 @@ mod tests {
 
     #[test]
     pub fn parse_node_config_from_yaml() -> anyhow::Result<()> {
+        // TODO: Should be merged into reading examples test since it's a mess to manage yaml string here
         let yaml = r#"
 name: node name
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
@@ -488,7 +549,7 @@ cells:
              public_key: peHZC1CM51uAugeMNxbXkVukFzCwMJY52m1xDCfLmm1pc1
 "#;
 
-        let config = LocalNodeConfig::from_yaml(yaml.as_bytes())?;
+        let config = LocalNodeConfig::from_yaml_reader(yaml.as_bytes())?;
 
         let (cells, node) = Cell::new_from_local_node_config(config)?;
         assert_eq!(1, cells.len());
@@ -523,33 +584,6 @@ cells:
             assert!(cell.local_node_has_role(CellNodeRole::Chain));
             assert!(!cell.local_node_has_role(CellNodeRole::Store));
         }
-
-        Ok(())
-    }
-
-    #[test]
-    pub fn parse_node_optional_fields_yaml() -> anyhow::Result<()> {
-        let yaml = r#"
-keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
-public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
-
-addresses:
-  p2p:
-    - /ip4/0.0.0.0/tcp/3330
-    - /ip4/0.0.0.0/tcp/3341/ws
-
-cells:
-  - instance:
-      public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
-      nodes:
-        - node:
-            public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
-            addresses:
-              p2p:
-                - /ip4/192.168.2.67/tcp/3330
-"#;
-
-        LocalNodeConfig::from_yaml(yaml.as_bytes())?;
 
         Ok(())
     }

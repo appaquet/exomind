@@ -12,6 +12,12 @@ pub fn child_to_abs_path<P: AsRef<Path>, C: AsRef<Path>>(parent: P, child: C) ->
     clean_path(parent_path_buf.join(child_path))
 }
 
+pub fn child_to_abs_path_string<P: AsRef<Path>, C: AsRef<Path>>(parent: P, child: C) -> String {
+    child_to_abs_path(parent, child)
+        .to_string_lossy()
+        .to_string()
+}
+
 pub fn clean_path<P: AsRef<Path>>(path: P) -> PathBuf {
     let path = path.as_ref();
     let mut out = PathBuf::new();

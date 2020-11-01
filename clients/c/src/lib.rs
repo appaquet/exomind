@@ -45,10 +45,12 @@ impl Context {
                 error!("Couldn't decode node config from Protobuf: {}", err);
                 ContextStatus::Error
             })?,
-            ConfigFormat::Yaml => LocalNodeConfig::from_yaml(config_bytes).map_err(|err| {
-                error!("Couldn't parse node config from YAML: {}", err);
-                ContextStatus::Error
-            })?,
+            ConfigFormat::Yaml => {
+                LocalNodeConfig::from_yaml_reader(config_bytes).map_err(|err| {
+                    error!("Couldn't parse node config from YAML: {}", err);
+                    ContextStatus::Error
+                })?
+            }
         };
 
         let (either_cells, local_node) =
