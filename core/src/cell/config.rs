@@ -121,6 +121,10 @@ pub trait CellConfigExt {
 
     fn to_standalone(&self) -> Result<CellConfig, Error>;
 
+    fn to_yaml(&self) -> Result<String, Error>;
+
+    fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error>;
+
     fn from_node_cell(
         config: &NodeCellConfig,
         node_config: &LocalNodeConfig,
@@ -226,6 +230,16 @@ impl CellConfigExt for CellConfig {
         }
 
         Ok(config)
+    }
+
+    fn to_yaml(&self) -> Result<String, Error> {
+        serde_yaml::to_string(self.config())
+            .map_err(|err| Error::Config(format!("Couldn't encode cell config to YAML: {}", err)))
+    }
+
+    fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error> {
+        serde_yaml::to_writer(write, self.config())
+            .map_err(|err| Error::Config(format!("Couldn't encode cell config to YAML: {}", err)))
     }
 
     fn from_node_cell(
@@ -422,22 +436,42 @@ mod tests {
         assert_eq!(2, cells.len());
         assert_eq!(2, node.p2p_addresses().len());
 
-        let full_cell = cells.first().cloned().unwrap().unwrap_full();
-
         {
-            let nodes = full_cell.nodes();
-            assert_eq!(2, nodes.count());
+            // inlined cell
+            let cell = cells[1].clone().unwrap_full();
 
-            let nodes_iter = nodes.iter();
-            let node = nodes_iter.with_role(CellNodeRole::Store).next().unwrap();
-            assert_eq!(2, node.roles().len());
+            {
+                let nodes = cell.nodes();
+                assert_eq!(2, nodes.count());
+
+                let nodes_iter = nodes.iter();
+                let node = nodes_iter.with_role(CellNodeRole::Store).next().unwrap();
+                assert_eq!(2, node.roles().len());
+            }
+
+            {
+                let schemas = cell
+                    .schemas()
+                    .get_message_descriptor("exocore.example_app.Task");
+                assert!(schemas.is_ok());
+            }
         }
 
         {
-            let schemas = full_cell
-                .schemas()
-                .get_message_descriptor("exocore.example_app.Task");
-            assert!(schemas.is_ok());
+            // cell from directory
+            let cell = cells[1].clone().unwrap_full();
+
+            {
+                let nodes = cell.nodes();
+                assert_eq!(2, nodes.count());
+            }
+
+            {
+                let schemas = cell
+                    .schemas()
+                    .get_message_descriptor("exocore.example_app.Task");
+                assert!(schemas.is_ok());
+            }
         }
 
         Ok(())
@@ -513,7 +547,6 @@ mod tests {
 
     #[test]
     pub fn parse_node_config_from_yaml() -> anyhow::Result<()> {
-        // TODO: Should be merged into reading examples test since it's a mess to manage yaml string here
         let yaml = r#"
 name: node name
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ

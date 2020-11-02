@@ -4,13 +4,9 @@ use exocore_core::sec::keys::Keypair;
 
 pub fn generate(
     _exo_opts: &options::ExoOptions,
-    keys_opts: &options::KeysOptions,
+    _keys_opts: &options::KeysOptions,
 ) -> anyhow::Result<()> {
-    let keypair = match keys_opts.algorithm {
-        options::KeyAlgorithm::ED25519 => Keypair::generate_ed25519(),
-        options::KeyAlgorithm::RSA => unimplemented!(),
-    };
-
+    let keypair = Keypair::generate_ed25519();
     println!("keypair: {}", keypair.encode_base58_string());
     println!("public_key: {}", keypair.public().encode_base58_string());
     println!(

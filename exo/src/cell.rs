@@ -1,4 +1,4 @@
-use crate::options;
+use crate::{options, utils::shell_prompt};
 use exocore_chain::block::{Block, BlockOperations, BlockOwned};
 use exocore_chain::chain::ChainStore;
 use exocore_chain::{
@@ -6,15 +6,153 @@ use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig,
 };
 use exocore_core::{
+    cell::CellConfigExt,
+    cell::CellId,
+    cell::LocalNode,
+    cell::LocalNodeConfigExt,
     cell::{Cell, EitherCell},
+    protos::core::cell_node_config,
+    protos::core::node_cell_config,
+    protos::core::CellConfig,
+    protos::core::CellNodeConfig,
+    protos::core::NodeCellConfig,
+    protos::core::NodeConfig,
     sec::auth_token::AuthToken,
+    sec::keys::Keypair,
     time::Clock,
 };
 use exocore_core::{
     framing::{sized::SizedFrameReaderIterator, FrameReader},
     protos::{core::LocalNodeConfig, generated::data_chain_capnp::block_header},
 };
-use std::{io::Write, time::Duration};
+use std::{
+    fs::{File, OpenOptions},
+    io::Write,
+    time::Duration,
+};
+
+pub fn init(
+    exo_opts: &options::ExoOptions,
+    _cell_opts: &options::CellOptions,
+    init_opts: &options::CellInitOptions,
+) -> anyhow::Result<()> {
+    let node_config_path = exo_opts.config_path()?;
+    let mut node_config = exo_opts.read_configuration()?;
+
+    let node = LocalNode::new_from_config(node_config.clone())
+        .map_err(|err| anyhow!("Couldn't create node from node config: {}", err))?;
+    let cell_keypair = Keypair::generate_ed25519();
+    let cell_pk_str = cell_keypair.public().encode_base58_string();
+
+    let mut cell_name = node.name().to_string();
+    if init_opts.cell_name.is_none() {
+        let resp = shell_prompt("Cell name", None)?;
+        if let Some(resp) = resp {
+            cell_name = resp;
+        }
+    }
+
+    let cell_node = {
+        // Create a configuration for the node in the cell
+        let mut cell_node = CellNodeConfig {
+            node: Some(NodeConfig {
+                public_key: node.public_key().encode_base58_string(),
+                id: node.id().to_string(),
+                name: node.name().to_string(),
+                addresses: node_config.addresses.clone(),
+            }),
+            ..Default::default()
+        };
+
+        if !init_opts.no_chain {
+            cell_node
+                .roles
+                .push(cell_node_config::Role::ChainRole.into());
+        }
+
+        if !init_opts.no_store {
+            cell_node
+                .roles
+                .push(cell_node_config::Role::StoreRole.into());
+        }
+
+        cell_node
+    };
+
+    {
+        // Write cell configuration
+        let mut cell_dir = exo_opts.home_path()?;
+        cell_dir.push("cells");
+        cell_dir.push(cell_pk_str.clone());
+
+        std::fs::create_dir_all(&cell_dir)
+            .map_err(|err| anyhow!("Couldn't create cell directory at {:?}: {}", cell_dir, err))?;
+
+        let cell_id = CellId::from_public_key(&cell_keypair.public());
+        let cell_config = CellConfig {
+            keypair: cell_keypair.encode_base58_string(),
+            public_key: cell_pk_str.clone(),
+            id: cell_id.to_string(),
+            name: cell_name,
+            nodes: vec![cell_node],
+            ..Default::default()
+        };
+
+        let cell_config_path = cell_dir.join("cell.yaml");
+        let cell_config_file = File::create(&cell_config_path).map_err(|err| {
+            anyhow!(
+                "Couldn't open cell config for write at path {:?}: {}",
+                cell_config_path,
+                err
+            )
+        })?;
+        cell_config
+            .to_yaml_writer(cell_config_file)
+            .map_err(|err| {
+                anyhow!(
+                    "Couldn't write cell config at path {:?}: {}",
+                    cell_config_path,
+                    err
+                )
+            })?;
+    }
+
+    {
+        // Write node configuration with new cell
+        let node_config_file = OpenOptions::new()
+            .write(true)
+            .open(&node_config_path)
+            .map_err(|err| {
+                anyhow!(
+                    "Couldn't open node config for write at path {:?}: {}",
+                    node_config_path,
+                    err
+                )
+            })?;
+
+        let node_cell = NodeCellConfig {
+            location: Some(node_cell_config::Location::Directory(format!(
+                "cells/{}",
+                cell_pk_str
+            ))),
+        };
+
+        node_config.cells.push(node_cell);
+        node_config
+            .to_yaml_writer(&node_config_file)
+            .map_err(|err| {
+                anyhow!(
+                    "Couldn't write node config at path {:?}: {}",
+                    node_config_file,
+                    err
+                )
+            })?;
+    }
+
+    // TODO: Genesis
+
+    Ok(())
+}
 
 pub fn create_genesis_block(
     exo_opts: &options::ExoOptions,
@@ -273,6 +411,11 @@ fn get_cell(
             .into_iter()
             .find(|c| c.cell().public_key().encode_base58_string() == *pk)
             .expect("Couldn't find cell with given public key")
+    } else if let Some(name) = &cell_opts.name {
+        either_cells
+            .into_iter()
+            .find(|c| c.cell().name() == *name)
+            .expect("Couldn't find cell with given name")
     } else {
         if either_cells.len() != 1 {
             panic!("Node config needs to contain only 1 cell if no public key is specified. Use -p option.");
