@@ -864,7 +864,6 @@ dependencies = [
  "log",
  "memmap",
  "serde",
- "serde_derive",
  "tempfile",
  "thiserror",
 ]

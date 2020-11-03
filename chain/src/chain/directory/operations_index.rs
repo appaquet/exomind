@@ -7,7 +7,7 @@ use byteorder::LittleEndian;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use extindex::{Builder, Encodable, Reader};
 use itertools::Itertools;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::operation::OperationId;
 use exocore_core::protos::generated::data_chain_capnp::block_header;

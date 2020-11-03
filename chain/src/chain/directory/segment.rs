@@ -1,6 +1,7 @@
 use std::fs::{File, OpenOptions};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
+use serde::{Serialize,Deserialize};
 
 use super::Error;
 use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};
@@ -267,7 +268,7 @@ impl DirectorySegment {
 ///
 /// Metadata can be inferred by scanning the file, but can be persisted
 /// separately to allow faster opening.
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SegmentMetadata {
     pub filename: String,
     pub first_block_offset: BlockOffset,
