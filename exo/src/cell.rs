@@ -37,8 +37,8 @@ pub fn cmd_init(
     _cell_opts: &options::CellOptions,
     init_opts: &options::CellInitOptions,
 ) -> anyhow::Result<()> {
-    let node_config_path = exo_opts.config_path()?;
-    let mut node_config = exo_opts.read_configuration()?;
+    let node_config_path = exo_opts.config_path();
+    let mut node_config = exo_opts.read_configuration();
 
     let node = LocalNode::new_from_config(node_config.clone())
         .expect("Couldn't create node from node config");
@@ -82,7 +82,7 @@ pub fn cmd_init(
 
     {
         // Write cell configuration
-        let mut cell_dir = exo_opts.home_path()?;
+        let mut cell_dir = exo_opts.home_path();
         cell_dir.push("cells");
         cell_dir.push(cell_pk_str.clone());
 
@@ -126,7 +126,7 @@ pub fn cmd_init(
             .expect("Couldn't write node config");
     }
 
-    {
+    if init_opts.no_genesis {
         // Create genesis block
         let (either_cells, _local_node) = Cell::new_from_local_node_config(node_config)
             .expect("Couldn't create cell from config");
@@ -142,14 +142,21 @@ pub fn cmd_init(
     Ok(())
 }
 
-pub fn cmd_create_genesis_block(
+pub fn cmd_list(
     exo_opts: &options::ExoOptions,
-    cell_opts: &options::CellOptions,
+    _cell_opts: &options::CellOptions,
 ) -> anyhow::Result<()> {
-    let (_, cell) = get_cell(exo_opts, cell_opts);
-    let full_cell = cell.unwrap_full();
+    let config = exo_opts.read_configuration();
+    let (either_cells, _local_node) =
+        Cell::new_from_local_node_config(config.clone()).expect("Couldn't create cell from config");
 
-    create_genesis_block(full_cell)?;
+    for cell in &either_cells {
+        println!(
+            "Name: {} Public key: {}",
+            cell.cell().name(),
+            cell.cell().public_key().encode_base58_string()
+        );
+    }
 
     Ok(())
 }
@@ -372,13 +379,23 @@ pub fn cmd_generate_auth_token(
     Ok(())
 }
 
+pub fn cmd_create_genesis_block(
+    exo_opts: &options::ExoOptions,
+    cell_opts: &options::CellOptions,
+) -> anyhow::Result<()> {
+    let (_, cell) = get_cell(exo_opts, cell_opts);
+    let full_cell = cell.unwrap_full();
+
+    create_genesis_block(full_cell)?;
+
+    Ok(())
+}
+
 fn get_cell(
     exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
 ) -> (LocalNodeConfig, EitherCell) {
-    let config = exo_opts
-        .read_configuration()
-        .expect("Error parsing configuration");
+    let config = exo_opts.read_configuration();
     let (either_cells, _local_node) =
         Cell::new_from_local_node_config(config.clone()).expect("Couldn't create cell from config");
 
@@ -405,10 +422,8 @@ fn extract_cell_by_pk(either_cells: Vec<EitherCell>, key: &str) -> Option<Either
         .find(|c| c.cell().public_key().encode_base58_string() == key)
 }
 
-fn extract_cell_by_name(either_cells: Vec<EitherCell>, key: &str) -> Option<EitherCell> {
-    either_cells
-        .into_iter()
-        .find(|c| c.cell().public_key().encode_base58_string() == key)
+fn extract_cell_by_name(either_cells: Vec<EitherCell>, name: &str) -> Option<EitherCell> {
+    either_cells.into_iter().find(|c| c.cell().name() == name)
 }
 
 fn create_genesis_block(cell: FullCell) -> anyhow::Result<()> {

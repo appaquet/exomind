@@ -9,7 +9,7 @@ use crate::utils::expand_tild;
 pub struct ExoOptions {
     /// Logging level (off, error, warn, info, debug, trace)
     #[clap(long, short, default_value = "info", env = "EXO_LOG")]
-    pub logging_level: String,
+    pub log: String,
 
     /// Home directory where config, cells and data will be stored. If none is specified, the parent directory
     /// of the configuration is used.
@@ -40,56 +40,66 @@ impl ExoOptions {
         Ok(())
     }
 
-    pub fn home_path(&self) -> anyhow::Result<PathBuf> {
+    pub fn home_path(&self) -> PathBuf {
         if let Some(home) = &self.home {
-            Ok(home.clone())
+            home.clone()
         } else {
             match self.config.parent() {
-                Some(parent) => Ok(parent.to_owned()),
-                None => Err(anyhow!(
+                Some(parent) => parent.to_owned(),
+                None => panic!(
                     "Couldn't find home path since config file doesn't have parent: config={:?}",
                     self.config
-                )),
+                ),
             }
         }
     }
 
-    pub fn config_path(&self) -> anyhow::Result<PathBuf> {
+    pub fn config_path(&self) -> PathBuf {
         if let Some(home) = &self.home {
             if !self.config.is_absolute() {
-                Ok(home.join(&self.config))
+                home.join(&self.config)
             } else {
-                Err(anyhow!(
+                panic!(
                     "Expected config to be relative is a home path was specified, but got '{:?}'",
                     self.config
-                ))
+                )
             }
         } else {
-            Ok(self.config.clone())
+            self.config.clone()
         }
     }
 
-    pub fn read_configuration(&self) -> anyhow::Result<LocalNodeConfig> {
-        let config = LocalNodeConfig::from_yaml_file(self.config_path()?)
-            .map_err(|err| anyhow!("Couldn't read configuration: {}", err))?;
-        Ok(config)
+    pub fn read_configuration(&self) -> LocalNodeConfig {
+        let config_path = self.config_path();
+        let config =
+            LocalNodeConfig::from_yaml_file(&config_path).expect("Couldn't read node config");
+        config
     }
 }
 
 #[derive(Clap)]
 pub enum SubCommand {
+    /// Initialize the node and its configuration.
     Init(NodeInitOptions),
+
+    /// Starts the node daemon, with all its cells and roles.
     Daemon,
+
+    /// Keys releated commands.
     Keys(KeysOptions),
+
+    /// Cells related commands.
     Cell(CellOptions),
+
+    /// Node configuration related commands.
     Config(ConfigOptions),
 }
 
 /// Node intialization related options
 #[derive(Clap)]
 pub struct NodeInitOptions {
-    #[clap(long)]
     /// Name of the node
+    #[clap(long)]
     pub node_name: Option<String>,
 }
 
@@ -124,12 +134,26 @@ pub struct CellOptions {
 
 #[derive(Clap)]
 pub enum CellCommand {
+    /// Initializes a new cell.
     Init(CellInitOptions),
-    CreateGenesisBlock,
+
+    /// Lists cells of the node.
+    List,
+
+    /// Check the cell's chain integrity.
     CheckChain,
+
+    /// Export the chain's data.
     Exportchain(ChainExportOptions),
+
+    /// Import the chain's data.
     ImportChain(ChainImportOptions),
+
+    /// Generate an auth token.
     GenerateAuthToken(GenerateAuthTokenOptions),
+
+    /// Create genesis block of the chain.
+    CreateGenesisBlock,
 }
 
 /// Cell intialization related options
@@ -146,6 +170,10 @@ pub struct CellInitOptions {
     /// The node will not expose an entity store server.
     #[clap(long)]
     pub no_store: bool,
+
+    /// Don't create genesis block.
+    #[clap(long)]
+    pub no_genesis: bool,
 }
 
 #[derive(Clap)]

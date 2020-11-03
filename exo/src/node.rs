@@ -14,15 +14,15 @@ pub fn cmd_init(
     exo_opts: &options::ExoOptions,
     init_opts: &options::NodeInitOptions,
 ) -> anyhow::Result<()> {
-    let config_path = exo_opts.config_path()?;
+    let config_path = exo_opts.config_path();
     if config_path.exists() {
-        return Err(anyhow!(
+        panic!(
             "Cannot initialize node. A file already exists at '{:?}'",
             config_path
-        ));
+        );
     }
 
-    let home_path = exo_opts.home_path()?;
+    let home_path = exo_opts.home_path();
     if !home_path.exists() {
         std::fs::create_dir_all(home_path).expect("Couldn't create home directory");
     }
@@ -67,7 +67,7 @@ pub fn cmd_validate(
     _conf_opts: &options::ConfigOptions,
 ) -> anyhow::Result<()> {
     // parse config
-    let config = exo_opts.read_configuration()?;
+    let config = exo_opts.read_configuration();
 
     // create instance to validate the config
     let (_cells, _node) = exocore_core::cell::Cell::new_from_local_node_config(config)?;
@@ -80,8 +80,10 @@ pub fn cmd_standalone(
     _conf_opts: &options::ConfigOptions,
     convert_opts: &options::StandaloneOpts,
 ) -> anyhow::Result<()> {
-    let config = exo_opts.read_configuration()?;
-    let mut config = config.to_standalone()?;
+    let config = exo_opts.read_configuration();
+    let mut config = config
+        .to_standalone()
+        .expect("Couldn't convert config to standalone");
 
     if convert_opts.exclude_app_schemas {
         for cell in &mut config.cells {

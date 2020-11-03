@@ -22,7 +22,7 @@ fn main() -> anyhow::Result<()> {
     let mut opts: options::ExoOptions = options::ExoOptions::parse();
     opts.validate()?;
 
-    exocore_core::logging::setup(Some(LevelFilter::from_str(&opts.logging_level)?));
+    exocore_core::logging::setup(Some(LevelFilter::from_str(&opts.log)?));
 
     let result = match &opts.subcommand {
         SubCommand::Init(init_opts) => node::cmd_init(&opts, init_opts),
@@ -32,7 +32,7 @@ fn main() -> anyhow::Result<()> {
         },
         SubCommand::Cell(cell_opts) => match &cell_opts.command {
             CellCommand::Init(init_opts) => cell::cmd_init(&opts, cell_opts, init_opts),
-            CellCommand::CreateGenesisBlock => cell::cmd_create_genesis_block(&opts, cell_opts),
+            CellCommand::List => cell::cmd_list(&opts, cell_opts),
             CellCommand::CheckChain => cell::cmd_check_chain(&opts, cell_opts),
             CellCommand::Exportchain(export_opts) => {
                 cell::cmd_export_chain(&opts, cell_opts, export_opts)
@@ -43,6 +43,7 @@ fn main() -> anyhow::Result<()> {
             CellCommand::GenerateAuthToken(gen_opts) => {
                 cell::cmd_generate_auth_token(&opts, cell_opts, gen_opts)
             }
+            CellCommand::CreateGenesisBlock => cell::cmd_create_genesis_block(&opts, cell_opts),
         },
         SubCommand::Config(config_opts) => match &config_opts.command {
             ConfigCommand::Validate => node::cmd_validate(&opts, config_opts),
