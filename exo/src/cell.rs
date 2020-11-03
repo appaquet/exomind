@@ -8,6 +8,7 @@ use exocore_chain::{
 use exocore_core::{
     cell::CellConfigExt,
     cell::CellId,
+    cell::FullCell,
     cell::LocalNode,
     cell::LocalNodeConfigExt,
     cell::{Cell, EitherCell},
@@ -31,7 +32,7 @@ use std::{
     time::Duration,
 };
 
-pub fn init(
+pub fn cmd_init(
     exo_opts: &options::ExoOptions,
     _cell_opts: &options::CellOptions,
     init_opts: &options::CellInitOptions,
@@ -40,7 +41,7 @@ pub fn init(
     let mut node_config = exo_opts.read_configuration()?;
 
     let node = LocalNode::new_from_config(node_config.clone())
-        .map_err(|err| anyhow!("Couldn't create node from node config: {}", err))?;
+        .expect("Couldn't create node from node config");
     let cell_keypair = Keypair::generate_ed25519();
     let cell_pk_str = cell_keypair.public().encode_base58_string();
 
@@ -85,8 +86,7 @@ pub fn init(
         cell_dir.push("cells");
         cell_dir.push(cell_pk_str.clone());
 
-        std::fs::create_dir_all(&cell_dir)
-            .map_err(|err| anyhow!("Couldn't create cell directory at {:?}: {}", cell_dir, err))?;
+        std::fs::create_dir_all(&cell_dir).expect("Couldn't create cell directory");
 
         let cell_id = CellId::from_public_key(&cell_keypair.public());
         let cell_config = CellConfig {
@@ -99,22 +99,11 @@ pub fn init(
         };
 
         let cell_config_path = cell_dir.join("cell.yaml");
-        let cell_config_file = File::create(&cell_config_path).map_err(|err| {
-            anyhow!(
-                "Couldn't open cell config for write at path {:?}: {}",
-                cell_config_path,
-                err
-            )
-        })?;
+        let cell_config_file =
+            File::create(&cell_config_path).expect("Couldn't create cell config");
         cell_config
             .to_yaml_writer(cell_config_file)
-            .map_err(|err| {
-                anyhow!(
-                    "Couldn't write cell config at path {:?}: {}",
-                    cell_config_path,
-                    err
-                )
-            })?;
+            .expect("Couldn't write cell config");
     }
 
     {
@@ -122,13 +111,7 @@ pub fn init(
         let node_config_file = OpenOptions::new()
             .write(true)
             .open(&node_config_path)
-            .map_err(|err| {
-                anyhow!(
-                    "Couldn't open node config for write at path {:?}: {}",
-                    node_config_path,
-                    err
-                )
-            })?;
+            .expect("Couldn't open node config for write");
 
         let node_cell = NodeCellConfig {
             location: Some(node_cell_config::Location::Directory(format!(
@@ -140,45 +123,38 @@ pub fn init(
         node_config.cells.push(node_cell);
         node_config
             .to_yaml_writer(&node_config_file)
-            .map_err(|err| {
-                anyhow!(
-                    "Couldn't write node config at path {:?}: {}",
-                    node_config_file,
-                    err
-                )
-            })?;
+            .expect("Couldn't write node config");
     }
 
-    // TODO: Genesis
+    {
+        // Create genesis block
+        let (either_cells, _local_node) = Cell::new_from_local_node_config(node_config)
+            .expect("Couldn't create cell from config");
+
+        let cell = extract_cell_by_pk(either_cells, &cell_pk_str)
+            .expect("Couldn't find just created cell in config");
+
+        let full_cell = cell.unwrap_full();
+
+        create_genesis_block(full_cell).expect("Couldn't create genesis block");
+    }
 
     Ok(())
 }
 
-pub fn create_genesis_block(
+pub fn cmd_create_genesis_block(
     exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
 ) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
     let full_cell = cell.unwrap_full();
 
-    let chain_dir = full_cell
-        .chain_directory()
-        .expect("Cell doesn't have a path configured");
-    std::fs::create_dir_all(&chain_dir)?;
-
-    let mut chain_store =
-        DirectoryChainStore::create_or_open(DirectoryChainStoreConfig::default(), &chain_dir)?;
-    if chain_store.get_last_block()?.is_some() {
-        panic!("Chain is already initialized");
-    }
-
-    let genesis_block = exocore_chain::block::BlockOwned::new_genesis(&full_cell)?;
-    chain_store.write_block(&genesis_block)?;
+    create_genesis_block(full_cell)?;
 
     Ok(())
 }
 
-pub fn check_chain(
+pub fn cmd_check_chain(
     exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
 ) -> anyhow::Result<()> {
@@ -217,7 +193,7 @@ pub fn check_chain(
     Ok(())
 }
 
-pub fn export_chain(
+pub fn cmd_export_chain(
     exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
     export_opts: &options::ChainExportOptions,
@@ -275,7 +251,7 @@ pub fn export_chain(
     Ok(())
 }
 
-pub fn import_chain(
+pub fn cmd_import_chain(
     exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
     import_opts: &options::ChainImportOptions,
@@ -374,7 +350,7 @@ pub fn import_chain(
     Ok(())
 }
 
-pub fn generate_auth_token(
+pub fn cmd_generate_auth_token(
     exo_opts: &options::ExoOptions,
     cell_opts: &options::CellOptions,
     gen_opts: &options::GenerateAuthTokenOptions,
@@ -407,14 +383,10 @@ fn get_cell(
         Cell::new_from_local_node_config(config.clone()).expect("Couldn't create cell from config");
 
     let cell = if let Some(pk) = &cell_opts.public_key {
-        either_cells
-            .into_iter()
-            .find(|c| c.cell().public_key().encode_base58_string() == *pk)
+        extract_cell_by_pk(either_cells, pk.as_str())
             .expect("Couldn't find cell with given public key")
     } else if let Some(name) = &cell_opts.name {
-        either_cells
-            .into_iter()
-            .find(|c| c.cell().name() == *name)
+        extract_cell_by_name(either_cells, name.as_str())
             .expect("Couldn't find cell with given name")
     } else {
         if either_cells.len() != 1 {
@@ -425,4 +397,41 @@ fn get_cell(
     };
 
     (config, cell)
+}
+
+fn extract_cell_by_pk(either_cells: Vec<EitherCell>, key: &str) -> Option<EitherCell> {
+    either_cells
+        .into_iter()
+        .find(|c| c.cell().public_key().encode_base58_string() == key)
+}
+
+fn extract_cell_by_name(either_cells: Vec<EitherCell>, key: &str) -> Option<EitherCell> {
+    either_cells
+        .into_iter()
+        .find(|c| c.cell().public_key().encode_base58_string() == key)
+}
+
+fn create_genesis_block(cell: FullCell) -> anyhow::Result<()> {
+    let chain_dir = cell
+        .chain_directory()
+        .expect("Couldn't find chain directory");
+
+    std::fs::create_dir_all(&chain_dir)
+        .map_err(|err| anyhow!("Couldn't create chain directory: {}", err))?;
+
+    let mut chain_store =
+        DirectoryChainStore::create_or_open(DirectoryChainStoreConfig::default(), &chain_dir)
+            .map_err(|err| anyhow!("Couldn't create chain store: {}", err))?;
+    if chain_store.get_last_block()?.is_some() {
+        panic!("Chain is already initialized");
+    }
+
+    let genesis_block = exocore_chain::block::BlockOwned::new_genesis(&cell)
+        .map_err(|err| anyhow!("Couldn't create genesis block: {}", err))?;
+
+    chain_store
+        .write_block(&genesis_block)
+        .map_err(|err| anyhow!("Couldn't write genesis block: {}", err))?;
+
+    Ok(())
 }

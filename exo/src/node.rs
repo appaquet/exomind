@@ -10,7 +10,7 @@ use exocore_core::{
     sec::keys::Keypair,
 };
 
-pub fn init(
+pub fn cmd_init(
     exo_opts: &options::ExoOptions,
     init_opts: &options::NodeInitOptions,
 ) -> anyhow::Result<()> {
@@ -62,7 +62,7 @@ pub fn init(
     Ok(())
 }
 
-pub fn validate(
+pub fn cmd_validate(
     exo_opts: &options::ExoOptions,
     _conf_opts: &options::ConfigOptions,
 ) -> anyhow::Result<()> {
@@ -75,7 +75,7 @@ pub fn validate(
     Ok(())
 }
 
-pub fn standalone(
+pub fn cmd_standalone(
     exo_opts: &options::ExoOptions,
     _conf_opts: &options::ConfigOptions,
     convert_opts: &options::StandaloneOpts,

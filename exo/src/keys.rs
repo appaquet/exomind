@@ -2,7 +2,7 @@ use crate::options;
 use exocore_core::cell::{Node, NodeId};
 use exocore_core::sec::keys::Keypair;
 
-pub fn generate(
+pub fn cmd_generate(
     _exo_opts: &options::ExoOptions,
     _keys_opts: &options::KeysOptions,
 ) -> anyhow::Result<()> {
