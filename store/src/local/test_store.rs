@@ -30,8 +30,8 @@ pub struct TestStore {
 }
 
 impl TestStore {
-    pub fn new() -> Result<TestStore, anyhow::Error> {
-        let cluster = TestChainCluster::new_single_and_start()?;
+    pub async fn new() -> Result<TestStore, anyhow::Error> {
+        let cluster = TestChainCluster::new_single_and_start().await?;
 
         let temp_dir = tempfile::tempdir()?;
         let registry = Arc::new(Registry::new_with_exocore_types());
@@ -71,34 +71,34 @@ impl TestStore {
         })
     }
 
-    pub fn start_store(&mut self) -> anyhow::Result<()> {
+    pub async fn start_store(&mut self) -> anyhow::Result<()> {
         let store = self.store.take().unwrap();
-        self.cluster.runtime.spawn(async move {
+        tokio::spawn(async move {
             match store.run().await {
                 Ok(_) => {}
                 Err(err) => error!("Error running store: {}", err),
             }
         });
 
-        self.cluster.runtime.block_on(self.store_handle.on_start());
+        self.store_handle.on_start().await;
 
         Ok(())
     }
 
-    pub fn mutate<M: Into<MutationRequestLike>>(
+    pub async fn mutate<M: Into<MutationRequestLike>>(
         &mut self,
         request: M,
     ) -> Result<MutationResult, anyhow::Error> {
-        self.cluster
-            .runtime
-            .block_on(self.store_handle.mutate(request))
+        self.store_handle
+            .mutate(request)
+            .await
             .map_err(|err| err.into())
     }
 
-    pub fn query(&mut self, query: EntityQuery) -> Result<EntityResults, anyhow::Error> {
-        self.cluster
-            .runtime
-            .block_on(self.store_handle.query(query))
+    pub async fn query(&mut self, query: EntityQuery) -> Result<EntityResults, anyhow::Error> {
+        self.store_handle
+            .query(query)
+            .await
             .map_err(|err| err.into())
     }
 

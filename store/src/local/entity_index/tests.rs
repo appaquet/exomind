@@ -15,13 +15,13 @@ use crate::{
 
 use super::*;
 
-#[test]
-fn index_full_pending_to_chain() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn index_full_pending_to_chain() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index when block is at depth 1 or more
         ..TestEntityIndex::create_test_config()
     };
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
     test_index.handle_engine_events()?;
 
     // index a few traits, they should now be available from pending index
@@ -67,14 +67,14 @@ fn index_full_pending_to_chain() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_chain_index_block_depth_leeway() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn test_chain_index_block_depth_leeway() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1,    // index up to the depth 1 (last block in chain)
         chain_index_depth_leeway: 5, // only index once we reach depth of 5 in chain
         ..TestEntityIndex::create_test_config()
     };
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
     test_index.handle_engine_events()?;
 
     let mut put_and_query = |i| -> anyhow::Result<(usize, usize)> {
@@ -110,8 +110,8 @@ fn test_chain_index_block_depth_leeway() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn reopen_chain_index() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn reopen_chain_index() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear
         chain_index_in_memory: false,
@@ -119,14 +119,14 @@ fn reopen_chain_index() -> anyhow::Result<()> {
     };
 
     // index a few traits & make sure it's in the chain index
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
     let ops_id = test_index.put_test_traits(0..=9)?;
     test_index.wait_operations_committed(&ops_id);
     test_index.drain_received_events();
     test_index.index.reindex_chain()?;
 
     // reopen index, make sure data is still in there
-    let test_index = test_index.with_restarted_node()?;
+    let test_index = test_index.with_restarted_node().await?;
     // traits should still be indexed
     let res = test_index
         .index
@@ -136,15 +136,15 @@ fn reopen_chain_index() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 2,
         chain_index_in_memory: false,
         ..TestEntityIndex::create_test_config()
     };
 
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
     let query = Q::with_trait::<TestMessage>().count(100).build();
 
     let mut range_from = 0;
@@ -160,7 +160,7 @@ fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
 
         // restart node, which will clear pending
         // reopening index should re-index first block in pending
-        test_index = test_index.with_restarted_node()?;
+        test_index = test_index.with_restarted_node().await?;
 
         // traits should still be indexed
         let res = test_index.index.search(&query)?;
@@ -172,9 +172,9 @@ fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn reindex_pending_on_discontinuity() -> anyhow::Result<()> {
-    let mut test_index = TestEntityIndex::new()?;
+#[tokio::test(threaded_scheduler)]
+async fn reindex_pending_on_discontinuity() -> anyhow::Result<()> {
+    let mut test_index = TestEntityIndex::new().await?;
 
     // index traits without indexing them by clearing events
     test_index.put_test_traits(0..=5)?;
@@ -199,13 +199,13 @@ fn reindex_pending_on_discontinuity() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn chain_divergence() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn chain_divergence() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear
         ..TestEntityIndex::create_test_config()
     };
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     // create 3 blocks worth of traits
     let ops_id = test_index.put_test_traits(0..=2)?;
@@ -248,13 +248,13 @@ fn chain_divergence() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn delete_entity_trait() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn delete_entity_trait() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
         ..TestEntityIndex::create_test_config()
     };
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "name1")?;
     let op2 = test_index.put_test_trait("entity1", "trait2", "name2")?;
@@ -283,10 +283,10 @@ fn delete_entity_trait() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn delete_all_entity_traits() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn delete_all_entity_traits() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "name1")?;
     let op2 = test_index.put_test_trait("entity1", "trait2", "name2")?;
@@ -327,13 +327,13 @@ fn delete_all_entity_traits() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn delete_entity() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn delete_entity() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
         ..TestEntityIndex::create_test_config()
     };
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "name1")?;
     let op2 = test_index.put_test_trait("entity1", "trait2", "name2")?;
@@ -375,13 +375,13 @@ fn delete_entity() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn traits_compaction() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn traits_compaction() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
         ..TestEntityIndex::create_test_config()
     };
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "op1")?;
     let op2 = test_index.put_test_trait("entity1", "trait1", "op2")?;
@@ -477,10 +477,10 @@ fn traits_compaction() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn query_paging() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn query_paging() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     // add traits in 3 batch so that we have pending & chain items
     let ops_id = test_index.put_test_traits(0..10)?;
@@ -567,10 +567,10 @@ fn query_paging() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn query_multiple_mutations_paging() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn query_multiple_mutations_paging() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     // add traits in 2 batch so that we have pending & chain items
     let ops_id = test_index.put_test_traits(0..10)?;
@@ -614,10 +614,10 @@ fn query_multiple_mutations_paging() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn query_ordering() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn query_ordering() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let ops_id = test_index.put_test_traits(0..10)?;
     test_index.wait_operations_emitted(&ops_id);
@@ -660,10 +660,10 @@ fn query_ordering() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn skip_results_hash() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn skip_results_hash() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "name")?;
     let op2 = test_index.put_test_trait("entity2", "trait1", "name")?;
@@ -681,10 +681,10 @@ fn skip_results_hash() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn query_projection() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn query_projection() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
-    let mut test_index = TestEntityIndex::new_with_config(config)?;
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "name 1")?;
     let op2 = test_index.put_test_trait("entity2", "trait1", "name 2")?;

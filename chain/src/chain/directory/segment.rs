@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
-use serde::{Serialize,Deserialize};
 
 use super::Error;
 use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};

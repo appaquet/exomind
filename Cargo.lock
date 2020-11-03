@@ -866,6 +866,7 @@ dependencies = [
  "serde",
  "tempfile",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -971,6 +972,7 @@ dependencies = [
  "tantivy",
  "tempfile",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
