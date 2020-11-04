@@ -11,7 +11,7 @@ jobs:
     container:
       image: ubuntu:19.10 # required for clang with wasm
     steps:
-      - uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v2.3.4
 
       - name: Install build dependencies
         run: |
@@ -52,7 +52,7 @@ jobs:
   ios_client_build:
     runs-on: macOS-latest # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
-      - uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v2.3.4
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [web_client_build, ios_client_build]
     steps:
-      - uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v2.3.4
         with:
           lfs: true
 
