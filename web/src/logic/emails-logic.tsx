@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Element, Node } from 'domhandler';
-import DomUtils from 'domutils';
+import * as domutils from 'domutils';
 import { exomind } from '../protos';
-import HtmlParser from 'htmlparser2';
+import * as htmlparser from 'htmlparser2';
+import domSerializerRender from "dom-serializer";
 import linkify from 'linkifyjs';
 import linkifyHtml from 'linkifyjs/html';
 import _ from 'lodash';
@@ -221,15 +222,10 @@ export default class EmailsLogic {
   }
 
   static splitOriginalThreadHtml(html: string) {
-    // TODO: Fix this by bumping version. Definition doesn't expose this method
-    interface DomParser {
-      parseDOM(html: string): Element[];
-    }
-
-    const dom = (HtmlParser as unknown as DomParser).parseDOM(html);
+    const dom = htmlparser.parseDOM(html);
 
     function isOnWroteText(el: Node) {
-      const text = DomUtils.getText(el).trim();
+      const text = domutils.getText(el).trim();
 
       const length = text.length;
       if (length < 200) {
@@ -256,7 +252,7 @@ export default class EmailsLogic {
         return [currents, originals];
 
       } else {
-        if (DomUtils.getAttributeValue(el, 'class') === 'gmail_quote' || DomUtils.getAttributeValue(el, 'class') === 'gmail_extra') {
+        if (domutils.getAttributeValue(el, 'class') === 'gmail_quote' || domutils.getAttributeValue(el, 'class') === 'gmail_extra') {
           return [[], [el]];
 
         } else if (el.type === 'tag' && el.name === 'blockquote') {
@@ -281,11 +277,11 @@ export default class EmailsLogic {
     // eslint-disable-next-line prefer-const
     let [current, original] = parseRecursive(dom as Element[]);
 
-    if (DomUtils.getText(current).trim().length === 0) {
+    if (domutils.getText(current).trim().length === 0) {
       current = original;
-      return [DomUtils.getOuterHTML(current), ''];
+      return [domSerializerRender(current), ''];
     } else {
-      return [DomUtils.getOuterHTML(current), DomUtils.getOuterHTML(original)];
+      return [domSerializerRender(current), domSerializerRender(original)];
     }
   }
 }

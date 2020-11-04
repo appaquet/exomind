@@ -132,6 +132,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
           this.lastTriggeredChangeState = contentState;
 
           const htmlContent = toHTML(contentState);
+          console.log(htmlContent);
           this.setState({ htmlContent });
           this.props.onChange(htmlContent);
         }
