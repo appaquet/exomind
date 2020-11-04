@@ -522,11 +522,11 @@ mod tests {
         };
         config.make_absolute_paths("parent");
 
-        assert_eq!(config.path, "parent/path".to_string());
+        assert_eq!(PathBuf::from(&config.path), PathBuf::from("parent/path"));
 
         config.make_relative_paths("parent");
 
-        assert_eq!(config.path, "path".to_string());
+        assert_eq!(PathBuf::from(&config.path), PathBuf::from("path"));
 
         Ok(())
     }
@@ -734,11 +734,11 @@ cells:
         };
         config.make_absolute_paths("parent");
 
-        assert_eq!(config.path, "parent/path".to_string());
+        assert_eq!(PathBuf::from(&config.path), PathBuf::from("parent/path"));
 
         config.make_relative_paths("parent");
 
-        assert_eq!(config.path, "path".to_string());
+        assert_eq!(PathBuf::from(&config.path), PathBuf::from("path"));
 
         Ok(())
     }
