@@ -71,9 +71,7 @@ impl ExoOptions {
 
     pub fn read_configuration(&self) -> LocalNodeConfig {
         let config_path = self.config_path();
-        let config =
-            LocalNodeConfig::from_yaml_file(&config_path).expect("Couldn't read node config");
-        config
+        LocalNodeConfig::from_yaml_file(&config_path).expect("Couldn't read node config")
     }
 }
 

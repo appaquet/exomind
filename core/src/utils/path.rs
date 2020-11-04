@@ -18,6 +18,23 @@ pub fn child_to_abs_path_string<P: AsRef<Path>, C: AsRef<Path>>(parent: P, child
         .to_string()
 }
 
+pub fn child_to_relative_path<P: AsRef<Path>, C: AsRef<Path>>(parent: P, child: C) -> PathBuf {
+    child
+        .as_ref()
+        .strip_prefix(parent.as_ref())
+        .unwrap_or_else(|_| child.as_ref())
+        .to_owned()
+}
+
+pub fn child_to_relative_path_string<P: AsRef<Path>, C: AsRef<Path>>(
+    parent: P,
+    child: C,
+) -> String {
+    child_to_relative_path(parent, child)
+        .to_string_lossy()
+        .to_string()
+}
+
 pub fn clean_path<P: AsRef<Path>>(path: P) -> PathBuf {
     let path = path.as_ref();
     let mut out = PathBuf::new();
@@ -41,5 +58,34 @@ mod tests {
         assert_eq!(clean_path("./test/./test"), PathBuf::from("./test/test"));
         assert_eq!(clean_path("./test/././test"), PathBuf::from("./test/test"));
         assert_eq!(clean_path("/test/test"), PathBuf::from("/test/test"));
+    }
+
+    #[test]
+    fn to_absolute_path() {
+        assert_eq!(
+            child_to_abs_path("/parent", "child"),
+            PathBuf::from("/parent/child")
+        );
+        assert_eq!(
+            child_to_abs_path("/parent", "./child"),
+            PathBuf::from("/parent/child")
+        );
+        assert_eq!(
+            child_to_abs_path("/parent", "././child"),
+            PathBuf::from("/parent/child")
+        );
+        assert_eq!(child_to_abs_path("/", "././child"), PathBuf::from("/child"));
+    }
+
+    #[test]
+    fn to_relative_path() {
+        assert_eq!(
+            child_to_relative_path("/parent", "/parent/child"),
+            PathBuf::from("child")
+        );
+        assert_eq!(
+            child_to_relative_path("/bleh", "/parent/child"),
+            PathBuf::from("/parent/child")
+        );
     }
 }

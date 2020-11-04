@@ -26,11 +26,7 @@ use exocore_core::{
     framing::{sized::SizedFrameReaderIterator, FrameReader},
     protos::{core::LocalNodeConfig, generated::data_chain_capnp::block_header},
 };
-use std::{
-    fs::{File, OpenOptions},
-    io::Write,
-    time::Duration,
-};
+use std::{io::Write, time::Duration};
 
 pub fn cmd_init(
     exo_opts: &options::ExoOptions,
@@ -99,20 +95,13 @@ pub fn cmd_init(
         };
 
         let cell_config_path = cell_dir.join("cell.yaml");
-        let cell_config_file =
-            File::create(&cell_config_path).expect("Couldn't create cell config");
         cell_config
-            .to_yaml_writer(cell_config_file)
+            .to_yaml_file(cell_config_path)
             .expect("Couldn't write cell config");
     }
 
     {
         // Write node configuration with new cell
-        let node_config_file = OpenOptions::new()
-            .write(true)
-            .open(&node_config_path)
-            .expect("Couldn't open node config for write");
-
         let node_cell = NodeCellConfig {
             location: Some(node_cell_config::Location::Directory(format!(
                 "cells/{}",
@@ -122,7 +111,7 @@ pub fn cmd_init(
 
         node_config.cells.push(node_cell);
         node_config
-            .to_yaml_writer(&node_config_file)
+            .to_yaml_file(&node_config_path)
             .expect("Couldn't write node config");
     }
 
@@ -148,7 +137,7 @@ pub fn cmd_list(
 ) -> anyhow::Result<()> {
     let config = exo_opts.read_configuration();
     let (either_cells, _local_node) =
-        Cell::new_from_local_node_config(config.clone()).expect("Couldn't create cell from config");
+        Cell::new_from_local_node_config(config).expect("Couldn't create cell from config");
 
     for cell in &either_cells {
         println!(

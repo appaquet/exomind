@@ -4,6 +4,7 @@ use crate::{
         node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
     },
     protos::{core::cell_application_config, generated::exocore_apps::Manifest},
+    utils::path::child_to_relative_path_string,
     utils::path::{child_to_abs_path, child_to_abs_path_string},
 };
 use std::fs::File;
@@ -19,8 +20,11 @@ pub trait LocalNodeConfigExt {
     fn from_json_reader<R: Read>(bytes: R) -> Result<LocalNodeConfig, Error>;
     fn to_yaml(&self) -> Result<String, Error>;
     fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error>;
+    fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error>;
     fn to_json(&self) -> Result<String, Error>;
     fn to_standalone(&self) -> Result<LocalNodeConfig, Error>;
+    fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
+    fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P);
 }
 
 impl LocalNodeConfigExt for LocalNodeConfig {
@@ -44,8 +48,13 @@ impl LocalNodeConfigExt for LocalNodeConfig {
             ))
         })?;
 
+        let directory = path
+            .as_ref()
+            .parent()
+            .expect("Couldn't get enclosing directory of yaml file");
+
         let mut config = Self::from_yaml_reader(file)?;
-        resolve_local_node_config_paths(&mut config, path.as_ref());
+        config.make_absolute_paths(directory);
 
         Ok(config)
     }
@@ -65,6 +74,27 @@ impl LocalNodeConfigExt for LocalNodeConfig {
     fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error> {
         serde_yaml::to_writer(write, self.config())
             .map_err(|err| Error::Config(format!("Couldn't encode node config to YAML: {}", err)))
+    }
+
+    fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
+        let file = File::create(path.as_ref()).map_err(|err| {
+            Error::Config(format!(
+                "Couldn't create YAML node file at path '{:?}': {}",
+                path.as_ref(),
+                err
+            ))
+        })?;
+
+        let directory = path
+            .as_ref()
+            .parent()
+            .expect("Couldn't get enclosing directory of yaml file");
+
+        let mut config = self.clone();
+        config.make_relative_paths(directory);
+        config.to_yaml_writer(file)?;
+
+        Ok(())
     }
 
     fn to_json(&self) -> Result<String, Error> {
@@ -89,6 +119,38 @@ impl LocalNodeConfigExt for LocalNodeConfig {
         config.cells = cells;
 
         Ok(config)
+    }
+
+    fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P) {
+        self.path = child_to_abs_path_string(&directory, &self.path);
+
+        for cell in &mut self.cells {
+            match cell.location.as_mut() {
+                Some(node_cell_config::Location::Instance(cell)) => {
+                    cell.make_absolute_paths(directory.as_ref());
+                }
+                Some(node_cell_config::Location::Directory(path)) => {
+                    *path = child_to_abs_path_string(&self.path, path.clone());
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P) {
+        self.path = child_to_relative_path_string(&directory, &self.path);
+
+        for cell in &mut self.cells {
+            match cell.location.as_mut() {
+                Some(node_cell_config::Location::Instance(cell)) => {
+                    cell.make_relative_paths(directory.as_ref());
+                }
+                Some(node_cell_config::Location::Directory(path)) => {
+                    *path = child_to_relative_path_string(&self.path, path.clone());
+                }
+                _ => {}
+            }
+        }
     }
 }
 
@@ -125,10 +187,16 @@ pub trait CellConfigExt {
 
     fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error>;
 
+    fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error>;
+
     fn from_node_cell(
         config: &NodeCellConfig,
         node_config: &LocalNodeConfig,
     ) -> Result<CellConfig, Error>;
+
+    fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
+
+    fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P);
 }
 
 impl CellConfigExt for CellConfig {
@@ -152,8 +220,13 @@ impl CellConfigExt for CellConfig {
             ))
         })?;
 
+        let directory = path
+            .as_ref()
+            .parent()
+            .expect("Couldn't get enclosing directory of yaml file");
+
         let mut cell_config = Self::from_yaml_reader(file)?;
-        resolve_cell_config_paths(&mut cell_config, path.as_ref());
+        cell_config.make_absolute_paths(directory);
 
         Ok(cell_config)
     }
@@ -242,6 +315,27 @@ impl CellConfigExt for CellConfig {
             .map_err(|err| Error::Config(format!("Couldn't encode cell config to YAML: {}", err)))
     }
 
+    fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
+        let file = File::create(path.as_ref()).map_err(|err| {
+            Error::Config(format!(
+                "Couldn't open YAML node file at path '{:?}': {}",
+                path.as_ref(),
+                err
+            ))
+        })?;
+
+        let directory = path
+            .as_ref()
+            .parent()
+            .expect("Couldn't get enclosing directory of yaml file");
+
+        let mut config = self.clone();
+        config.make_relative_paths(directory);
+        config.to_yaml_writer(file)?;
+
+        Ok(())
+    }
+
     fn from_node_cell(
         config: &NodeCellConfig,
         node_config: &LocalNodeConfig,
@@ -262,6 +356,39 @@ impl CellConfigExt for CellConfig {
                 "Invalid cell instance config: {:?}",
                 other
             ))),
+        }
+    }
+
+    fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P) {
+        self.path = child_to_abs_path_string(directory.as_ref(), &self.path);
+
+        for app in &mut self.apps {
+            match app.location.as_mut() {
+                Some(cell_application_config::Location::Instance(app_manifest)) => {
+                    app_manifest.path = child_to_abs_path_string(&self.path, &app_manifest.path);
+                }
+                Some(cell_application_config::Location::Directory(path)) => {
+                    *path = child_to_abs_path_string(&self.path, path.clone());
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P) {
+        self.path = child_to_relative_path_string(directory.as_ref(), &self.path);
+
+        for app in &mut self.apps {
+            match app.location.as_mut() {
+                Some(cell_application_config::Location::Instance(app_manifest)) => {
+                    app_manifest.path =
+                        child_to_relative_path_string(&self.path, &app_manifest.path);
+                }
+                Some(cell_application_config::Location::Directory(path)) => {
+                    *path = child_to_relative_path_string(&self.path, path.clone());
+                }
+                _ => {}
+            }
         }
     }
 }
@@ -308,48 +435,8 @@ impl ManifestExt for Manifest {
     }
 }
 
-/// Resolves all paths in a `LocalNodeConfig` to absolute paths using the file path where it was read from.
-fn resolve_local_node_config_paths(config: &mut LocalNodeConfig, config_file_path: &Path) {
-    let config_directory = config_file_path.parent().unwrap_or(config_file_path);
-
-    config.path = child_to_abs_path_string(&config_directory, &config.path);
-
-    for cell in &mut config.cells {
-        match cell.location.as_mut() {
-            Some(node_cell_config::Location::Instance(cell)) => {
-                resolve_cell_config_paths(cell, config_file_path);
-            }
-            Some(node_cell_config::Location::Directory(path)) => {
-                *path = child_to_abs_path_string(&config.path, path.clone());
-            }
-            _ => {}
-        }
-    }
-}
-
-/// Resolves all paths in a `CellConfig` to absolute paths using the file path where it was read from.
-fn resolve_cell_config_paths(cell_config: &mut CellConfig, config_file_path: &Path) {
-    let config_directory = config_file_path.parent().unwrap_or(config_file_path);
-
-    cell_config.path = child_to_abs_path_string(&config_directory, &cell_config.path);
-
-    for app in &mut cell_config.apps {
-        match app.location.as_mut() {
-            Some(cell_application_config::Location::Instance(app_manifest)) => {
-                app_manifest.path = child_to_abs_path_string(&cell_config.path, &app_manifest.path);
-            }
-            Some(cell_application_config::Location::Directory(path)) => {
-                *path = child_to_abs_path_string(&cell_config.path, path.clone());
-            }
-            _ => {}
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use std::io::SeekFrom;
-
     use super::super::{Cell, CellNodeRole, CellNodes};
     use super::*;
     use crate::protos::{
@@ -428,6 +515,23 @@ mod tests {
     }
 
     #[test]
+    fn node_config_absolute_relative_paths() -> anyhow::Result<()> {
+        let mut config = LocalNodeConfig {
+            path: "path".to_string(),
+            ..Default::default()
+        };
+        config.make_absolute_paths("parent");
+
+        assert_eq!(config.path, "parent/path".to_string());
+
+        config.make_relative_paths("parent");
+
+        assert_eq!(config.path, "path".to_string());
+
+        Ok(())
+    }
+
+    #[test]
     fn parse_node_config_example_yaml_file() -> anyhow::Result<()> {
         let config_path = root_test_fixtures_path("examples/node.yaml");
         let config = LocalNodeConfig::from_yaml_file(config_path)?;
@@ -484,12 +588,13 @@ mod tests {
             ..Default::default()
         };
 
-        let mut file = tempfile::tempfile()?;
-        config_init.to_yaml_writer(&mut file)?;
+        let dir = tempfile::tempdir()?;
+        let file = dir.path().join("file");
 
-        file.seek(SeekFrom::Start(0))?;
+        config_init.to_yaml_file(&file)?;
 
-        let config_read = LocalNodeConfig::from_yaml_reader(file)?;
+        let mut config_read = LocalNodeConfig::from_yaml_file(&file)?;
+        config_read.path = "".to_string();
 
         assert_eq!(config_init, config_read);
 
@@ -617,6 +722,42 @@ cells:
             assert!(cell.local_node_has_role(CellNodeRole::Chain));
             assert!(!cell.local_node_has_role(CellNodeRole::Store));
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn cell_config_absolute_relative_paths() -> anyhow::Result<()> {
+        let mut config = CellConfig {
+            path: "path".to_string(),
+            ..Default::default()
+        };
+        config.make_absolute_paths("parent");
+
+        assert_eq!(config.path, "parent/path".to_string());
+
+        config.make_relative_paths("parent");
+
+        assert_eq!(config.path, "path".to_string());
+
+        Ok(())
+    }
+
+    #[test]
+    fn cell_config_yaml_file() -> anyhow::Result<()> {
+        let config_init = CellConfig {
+            ..Default::default()
+        };
+
+        let dir = tempfile::tempdir()?;
+        let file = dir.path().join("file");
+
+        config_init.to_yaml_file(&file)?;
+
+        let mut config_read = CellConfig::from_yaml_file(&file)?;
+        config_read.path = "".to_string();
+
+        assert_eq!(config_init, config_read);
 
         Ok(())
     }
