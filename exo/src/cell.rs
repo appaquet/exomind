@@ -1,4 +1,4 @@
-use crate::{options, utils::shell_prompt};
+use crate::{options, utils::{edit_file, shell_prompt}};
 use exocore_chain::block::{Block, BlockOperations, BlockOwned};
 use exocore_chain::chain::ChainStore;
 use exocore_chain::{
@@ -127,6 +127,29 @@ pub fn cmd_init(
 
         create_genesis_block(full_cell).expect("Couldn't create genesis block");
     }
+
+    Ok(())
+}
+
+pub fn cmd_edit(
+    exo_opts: &options::ExoOptions,
+    cell_opts: &options::CellOptions,
+) -> anyhow::Result<()> {
+    let (_, cell) = get_cell(exo_opts, cell_opts);
+    let cell = cell.cell();
+
+    let cell_directory = cell.cell_directory().expect("Couldn't find cell directory");
+    let config_path = cell_directory.join("cell.yaml");
+
+    edit_file(&config_path, |temp_path| -> bool {
+        if let Err(err) = CellConfig::from_yaml_file(temp_path) {
+            println!("Error parsing config: {:?}", err);
+            std::thread::sleep(Duration::from_secs(2));
+            false
+        } else {
+            true
+        }
+    });
 
     Ok(())
 }

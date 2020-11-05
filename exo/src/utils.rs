@@ -1,6 +1,7 @@
 use std::{
     io::Write,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 pub fn shell_prompt(question: &str, default: Option<&str>) -> anyhow::Result<Option<String>> {
@@ -28,6 +29,30 @@ pub fn shell_prompt(question: &str, default: Option<&str>) -> anyhow::Result<Opt
     }
 
     Ok(Some(resp_trimmed.to_string()))
+}
+
+pub fn edit_file<P: AsRef<Path>, V>(file: P, validator: V)
+where
+    V: Fn(&Path) -> bool,
+{
+    let temp_file = tempfile::NamedTempFile::new().expect("Couldn't create temp file");
+
+    std::fs::copy(&file, temp_file.path()).expect("Couldn't copy edit file to temp file");
+    let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vim".to_string());
+
+    loop {
+        Command::new(&editor)
+            .arg(temp_file.path().as_os_str())
+            .status()
+            .expect("Couldn't launch editor");
+
+        if validator(temp_file.path()) {
+            break;
+        }
+    }
+
+    std::fs::copy(temp_file.path(), &file)
+        .expect("Couldn't copy edited temp file to original file");
 }
 
 pub fn expand_tild<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {

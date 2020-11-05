@@ -214,6 +214,10 @@ impl Cell {
         &self.apps
     }
 
+    pub fn cell_directory(&self) -> Option<&Path> {
+        self.identity.path.as_deref()
+    }
+
     pub fn chain_directory(&self) -> Option<PathBuf> {
         if let Some(path) = &self.identity.path {
             let mut chain_dir = PathBuf::from(path);

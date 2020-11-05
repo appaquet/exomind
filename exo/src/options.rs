@@ -150,6 +150,9 @@ pub enum CellCommand {
     /// Generate an auth token.
     GenerateAuthToken(GenerateAuthTokenOptions),
 
+    /// Edit cell configuration.
+    Edit,
+
     /// Create genesis block of the chain.
     CreateGenesisBlock,
 }
@@ -206,6 +209,9 @@ pub struct ConfigOptions {
 
 #[derive(Clap)]
 pub enum ConfigCommand {
+    /// Edit the node's configuration
+    Edit,
+
     /// Validate the node's configuration
     Validate,
 

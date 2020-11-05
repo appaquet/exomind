@@ -1,6 +1,9 @@
-use std::fs::File;
+use std::{time::Duration, fs::File};
 
-use crate::{options, utils::shell_prompt};
+use crate::{
+    options,
+    utils::{edit_file, shell_prompt},
+};
 use exocore_core::{
     cell::LocalNodeConfigExt,
     cell::Node,
@@ -58,6 +61,25 @@ pub fn cmd_init(
     local_node_config.to_yaml_writer(config_file)?;
 
     println!("Node config written to {:?}", config_path);
+
+    Ok(())
+}
+
+pub fn cmd_edit(
+    exo_opts: &options::ExoOptions,
+    _conf_opts: &options::ConfigOptions,
+) -> anyhow::Result<()> {
+    let config_path = exo_opts.config_path();
+
+    edit_file(config_path, |temp_path| -> bool {
+        if let Err(err) = LocalNodeConfig::from_yaml_file(temp_path) {
+            println!("Error parsing config: {:?}", err);
+            std::thread::sleep(Duration::from_secs(2));
+            false
+        } else {
+            true
+        }
+    });
 
     Ok(())
 }

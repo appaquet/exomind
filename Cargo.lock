@@ -891,6 +891,7 @@ dependencies = [
  "futures 0.3.7",
  "log",
  "log4rs",
+ "tempfile",
  "thiserror",
 ]
 

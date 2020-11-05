@@ -43,9 +43,11 @@ fn main() -> anyhow::Result<()> {
             CellCommand::GenerateAuthToken(gen_opts) => {
                 cell::cmd_generate_auth_token(&opts, cell_opts, gen_opts)
             }
+            CellCommand::Edit => cell::cmd_edit(&opts, cell_opts),
             CellCommand::CreateGenesisBlock => cell::cmd_create_genesis_block(&opts, cell_opts),
         },
         SubCommand::Config(config_opts) => match &config_opts.command {
+            ConfigCommand::Edit => node::cmd_edit(&opts, config_opts),
             ConfigCommand::Validate => node::cmd_validate(&opts, config_opts),
             ConfigCommand::Standalone(standalone_opts) => {
                 node::cmd_standalone(&opts, config_opts, standalone_opts)
