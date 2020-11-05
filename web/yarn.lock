@@ -6897,20 +6897,10 @@ postcss-value-parser@^4.1.0:
   resolved "https://registry.yarnpkg.com/postcss-value-parser/-/postcss-value-parser-4.1.0.tgz#443f6a20ced6481a2bda4fa8532a6e55d789a2cb"
   integrity sha512-97DXOFbQJhk71ne5/Mt6cOu6yxsSfM0QGQyl0L25Gca4yGWEGJaig7l7gbCX623VqTBNGLRLaVUCnNkcedlRSQ==
 
-postcss@^8.0.2:
+postcss@^8.0.2, postcss@^8.1.1:
   version "8.1.2"
   resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.1.2.tgz#9731fcaa4f7b0bef47121821bdae9eeb609a324c"
   integrity sha512-mToqEVFq8jF9TFhlIK4HhE34zknFJuNTgqtsr60vUvrWn+9TIYugCwiV1JZRxCuOrej2jjstun1bn4Bc7/1HkA==
-  dependencies:
-    colorette "^1.2.1"
-    line-column "^1.0.2"
-    nanoid "^3.1.12"
-    source-map "^0.6.1"
-
-postcss@^8.1.1:
-  version "8.1.1"
-  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.1.1.tgz#c3a287dd10e4f6c84cb3791052b96a5d859c9389"
-  integrity sha512-9DGLSsjooH3kSNjTZUOt2eIj2ZTW0VI2PZ/3My+8TC7KIbH2OKwUlISfDsf63EP4aiRUt3XkEWMWvyJHvJelEg==
   dependencies:
     colorette "^1.2.1"
     line-column "^1.0.2"
@@ -7558,10 +7548,10 @@ sane@^4.0.3:
     minimist "^1.1.1"
     walker "~1.0.5"
 
-sanitize-html@^2.0.0:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-2.1.1.tgz#ad87355592bcb6c4659d45193db86098c7efe449"
-  integrity sha512-yb+I+K25cn6PzsRJb+kGdlOBC3SkvEwJrr/Xl+6YR42oDZDeu61yWeEMSEi0hCKlRSYlWWE4tUnF2Ds+c/M1Vg==
+sanitize-html@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-2.1.2.tgz#184fed43bb186e633c63a7769dfff29392b753a1"
+  integrity sha512-i/h+fJal+609o6GlWFpQmAL7E5ZL4rrb0QwbDKQue2uift+4WKMe/HViRGawP4Q/UgswdDKxMqjDRrKPtCpBMg==
   dependencies:
     deepmerge "^4.2.2"
     escape-string-regexp "^4.0.0"
