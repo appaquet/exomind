@@ -1,4 +1,4 @@
-use std::{time::Duration, fs::File};
+use std::{fs::File, time::Duration};
 
 use crate::{
     options,

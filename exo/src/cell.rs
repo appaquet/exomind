@@ -1,4 +1,7 @@
-use crate::{options, utils::{edit_file, shell_prompt}};
+use crate::{
+    options,
+    utils::{edit_file, shell_prompt},
+};
 use exocore_chain::block::{Block, BlockOperations, BlockOwned};
 use exocore_chain::chain::ChainStore;
 use exocore_chain::{
