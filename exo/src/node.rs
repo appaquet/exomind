@@ -1,23 +1,20 @@
-use std::{fs::File, time::Duration};
-
-use crate::{
-    options,
-    utils::{edit_file, shell_prompt},
-};
+use crate::{utils::shell_prompt, Options};
+use clap::Clap;
 use exocore_core::{
-    cell::LocalNodeConfigExt,
-    cell::Node,
-    protos::core::LocalNodeConfig,
-    protos::core::NodeAddresses,
-    protos::core::{cell_application_config, node_cell_config},
-    sec::keys::Keypair,
+    cell::LocalNodeConfigExt, cell::Node, protos::core::LocalNodeConfig,
+    protos::core::NodeAddresses, sec::keys::Keypair,
 };
+use std::fs::File;
 
-pub fn cmd_init(
-    exo_opts: &options::ExoOptions,
-    init_opts: &options::NodeInitOptions,
-) -> anyhow::Result<()> {
-    let config_path = exo_opts.config_path();
+#[derive(Clap)]
+pub struct InitOptions {
+    /// Name of the node.
+    #[clap(long)]
+    pub name: Option<String>,
+}
+
+pub fn cmd_init(exo_opts: &Options, init_opts: &InitOptions) -> anyhow::Result<()> {
+    let config_path = exo_opts.conf_path();
     if config_path.exists() {
         panic!(
             "Cannot initialize node. A file already exists at '{:?}'",
@@ -25,7 +22,7 @@ pub fn cmd_init(
         );
     }
 
-    let home_path = exo_opts.home_path();
+    let home_path = exo_opts.dir_path();
     if !home_path.exists() {
         std::fs::create_dir_all(home_path).expect("Couldn't create home directory");
     }
@@ -34,7 +31,7 @@ pub fn cmd_init(
     let node = Node::new_from_public_key(keypair.public());
 
     let mut node_name = node.name().to_string();
-    if init_opts.node_name.is_none() {
+    if init_opts.name.is_none() {
         let resp = shell_prompt("Node name", Some(&node_name))?;
         if let Some(resp) = resp {
             node_name = resp;
@@ -61,71 +58,6 @@ pub fn cmd_init(
     local_node_config.to_yaml_writer(config_file)?;
 
     println!("Node config written to {:?}", config_path);
-
-    Ok(())
-}
-
-pub fn cmd_edit(
-    exo_opts: &options::ExoOptions,
-    _conf_opts: &options::ConfigOptions,
-) -> anyhow::Result<()> {
-    let config_path = exo_opts.config_path();
-
-    edit_file(config_path, |temp_path| -> bool {
-        if let Err(err) = LocalNodeConfig::from_yaml_file(temp_path) {
-            println!("Error parsing config: {:?}", err);
-            std::thread::sleep(Duration::from_secs(2));
-            false
-        } else {
-            true
-        }
-    });
-
-    Ok(())
-}
-
-pub fn cmd_validate(
-    exo_opts: &options::ExoOptions,
-    _conf_opts: &options::ConfigOptions,
-) -> anyhow::Result<()> {
-    // parse config
-    let config = exo_opts.read_configuration();
-
-    // create instance to validate the config
-    let (_cells, _node) = exocore_core::cell::Cell::new_from_local_node_config(config)?;
-
-    Ok(())
-}
-
-pub fn cmd_standalone(
-    exo_opts: &options::ExoOptions,
-    _conf_opts: &options::ConfigOptions,
-    convert_opts: &options::StandaloneOpts,
-) -> anyhow::Result<()> {
-    let config = exo_opts.read_configuration();
-    let mut config = config
-        .to_standalone()
-        .expect("Couldn't convert config to standalone");
-
-    if convert_opts.exclude_app_schemas {
-        for cell in &mut config.cells {
-            if let Some(node_cell_config::Location::Instance(cell_config)) = &mut cell.location {
-                for app in &mut cell_config.apps {
-                    if let Some(cell_application_config::Location::Instance(app_manifest)) =
-                        &mut app.location
-                    {
-                        app_manifest.schemas.clear();
-                    }
-                }
-            }
-        }
-    }
-
-    if convert_opts.format == "json" {
-        println!("{}", config.to_json()?);
-    } else {
-        println!("{}", config.to_yaml()?);
-    }
 
     Ok(())
 }

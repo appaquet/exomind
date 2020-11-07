@@ -1,10 +1,10 @@
 #![deny(bare_trait_objects)]
 
 mod cell;
+mod config;
 mod daemon;
 mod keys;
 mod node;
-mod options;
 mod utils;
 
 #[macro_use]
@@ -14,45 +14,82 @@ extern crate log;
 extern crate anyhow;
 
 use clap::Clap;
+use exocore_core::{cell::LocalNodeConfigExt, protos::core::LocalNodeConfig};
 use log::LevelFilter;
-use options::{CellCommand, ConfigCommand, KeysCommand, SubCommand};
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
+use utils::expand_tild;
+
+#[derive(Clap)]
+#[clap(name = "exocore-cli", about = "Exocore Command Line Interface")]
+pub struct Options {
+    /// Logging level (off, error, warn, info, debug, trace)
+    #[clap(long, short, default_value = "info", env = "EXO_LOG")]
+    pub log: String,
+
+    /// Directory where config, cells and data will be stored.
+    #[clap(long, short = 'd', default_value = "~/.exocore", env = "EXO_DIR")]
+    pub dir: PathBuf,
+
+    /// Configuration of the node to use, relative to the directory.
+    #[clap(long, short = 'c', default_value = "node.yaml", env = "EXO_CONF")]
+    pub conf: PathBuf,
+
+    #[clap(subcommand)]
+    pub subcommand: Commands,
+}
+
+impl Options {
+    pub fn validate(&mut self) -> anyhow::Result<()> {
+        self.dir = expand_tild(&self.dir)?;
+        self.conf = expand_tild(&self.conf)?;
+
+        Ok(())
+    }
+
+    pub fn dir_path(&self) -> PathBuf {
+        self.dir.clone()
+    }
+
+    pub fn conf_path(&self) -> PathBuf {
+        self.dir.join(&self.conf)
+    }
+
+    pub fn read_configuration(&self) -> LocalNodeConfig {
+        let config_path = self.conf_path();
+        LocalNodeConfig::from_yaml_file(&config_path).expect("Couldn't read node config")
+    }
+}
+
+#[derive(Clap)]
+pub enum Commands {
+    /// Initialize the node and its configuration.
+    Init(node::InitOptions),
+
+    /// Starts the node daemon, with all its cells and roles.
+    Daemon,
+
+    /// Keys releated commands.
+    Keys(keys::KeysOptions),
+
+    /// Cells related commands.
+    Cell(cell::CellOptions),
+
+    /// Node configuration related commands.
+    Config(config::ConfigOptions),
+}
 
 fn main() -> anyhow::Result<()> {
-    let mut opts: options::ExoOptions = options::ExoOptions::parse();
+    let mut opts: Options = Options::parse();
     opts.validate()?;
 
     exocore_core::logging::setup(Some(LevelFilter::from_str(&opts.log)?));
 
     let result = match &opts.subcommand {
-        SubCommand::Init(init_opts) => node::cmd_init(&opts, init_opts),
-        SubCommand::Daemon => daemon::cmd_start(&opts),
-        SubCommand::Keys(keys_opts) => match keys_opts.command {
-            KeysCommand::Generate => keys::cmd_generate(&opts, keys_opts),
-        },
-        SubCommand::Cell(cell_opts) => match &cell_opts.command {
-            CellCommand::Init(init_opts) => cell::cmd_init(&opts, cell_opts, init_opts),
-            CellCommand::List => cell::cmd_list(&opts, cell_opts),
-            CellCommand::CheckChain => cell::cmd_check_chain(&opts, cell_opts),
-            CellCommand::Exportchain(export_opts) => {
-                cell::cmd_export_chain(&opts, cell_opts, export_opts)
-            }
-            CellCommand::ImportChain(import_opts) => {
-                cell::cmd_import_chain(&opts, cell_opts, import_opts)
-            }
-            CellCommand::GenerateAuthToken(gen_opts) => {
-                cell::cmd_generate_auth_token(&opts, cell_opts, gen_opts)
-            }
-            CellCommand::Edit => cell::cmd_edit(&opts, cell_opts),
-            CellCommand::CreateGenesisBlock => cell::cmd_create_genesis_block(&opts, cell_opts),
-        },
-        SubCommand::Config(config_opts) => match &config_opts.command {
-            ConfigCommand::Edit => node::cmd_edit(&opts, config_opts),
-            ConfigCommand::Validate => node::cmd_validate(&opts, config_opts),
-            ConfigCommand::Standalone(standalone_opts) => {
-                node::cmd_standalone(&opts, config_opts, standalone_opts)
-            }
-        },
+        Commands::Init(init_opts) => node::cmd_init(&opts, init_opts),
+        Commands::Daemon => daemon::cmd_start(&opts),
+        Commands::Keys(keys_opts) => keys::handle_cmd(&opts, keys_opts),
+        Commands::Cell(cell_opts) => cell::handle_cmd(&opts, cell_opts),
+        Commands::Config(config_opts) => config::handle_cmd(&opts, config_opts),
     };
 
     if let Err(err) = result {

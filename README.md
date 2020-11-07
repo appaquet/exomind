@@ -68,21 +68,38 @@ A cell consists of:
 ## Quick start
 
 ### Create a Cell hosted on 2 nodes
-* `cp ./examples/node.yaml node1.yaml`
-* `cp ./examples/node.yaml node2.yaml`
-* For each node's config:
-    * Generate keypair for the node: `exo keys generate`
-    * Change the node's `keypair` and `public_key` config with the generated keypair.
-    * Change `listen_addresses` with unique port per node.
-    * Change cell's `path` with unique data directory per node. 
-    * Put the other node `public_key` and `addresses` in the cell's nodes section.
-* Generate keypair for the cell: `exo keys generate` 
-* Add this keypair in both `node1.yaml` and `node2.yaml` in the `cells` section.
-* Validate config with `exo config validate <config file>`
-* Initialize chain one first node: `exo cell --config node1.yaml --public_key <cell_public_key> create-genesis-block`
+* On node 1
+  * Generate configuration: 
+    `exo --dir ./node1 init --name node1`
+  * Edit configuration to include accessible addresses:
+    `exo -d ./node1 config edit`
+  * Generate a cell:
+    `exo -d ./node1 cell init --name my_cell`
+
+* On node 2
+  * Generate configuration: 
+    `exo --dir ./node2 init --name node1`
+  * Edit configuration to include accessible addresses. 
+    If both nodes are running on same machine, make sure they have unique ports.
+    `exo -d ./node2 config edit`
+  * Copy node's public info:
+    `exo -d ./node2 config print --cell`
+
+* On node 1:
+  * Add node 2:
+    `exo -d ./node1 cell node add --chain --store` 
+    and then copy node 2's public info in editor.
+  * Copy cell's config:
+    `exo -d ./node1 cell print` 
+
+* On node 2:
+  * Add join the cell:
+    `exo -d ./node2 cell join`
+    and then copy cell's config in editor.
+
 * Start both nodes:
-    * Node 1: `exo server --config ./node1.yaml start`
-    * Node 2: `exo server --config ./node2.yaml start`
+  * Node 1: `exo -d ./node1 daemon`
+  * Node 2: `exo -d ./node2 daemon`
 
 ### Launch sample web project
 * Run the [web example](./examples/web):

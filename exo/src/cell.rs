@@ -1,7 +1,8 @@
 use crate::{
-    options,
     utils::{edit_file, shell_prompt},
+    Options,
 };
+use clap::Clap;
 use exocore_chain::block::{Block, BlockOperations, BlockOwned};
 use exocore_chain::chain::ChainStore;
 use exocore_chain::{
@@ -29,14 +30,158 @@ use exocore_core::{
     framing::{sized::SizedFrameReaderIterator, FrameReader},
     protos::{core::LocalNodeConfig, generated::data_chain_capnp::block_header},
 };
-use std::{io::Write, time::Duration};
+use std::{io::Write, path::PathBuf, time::Duration};
 
-pub fn cmd_init(
-    exo_opts: &options::ExoOptions,
-    _cell_opts: &options::CellOptions,
-    init_opts: &options::CellInitOptions,
+#[derive(Clap)]
+pub struct CellOptions {
+    /// Public key of the cell we want to make an action on. If not specified
+    /// and the node config only contains 1 cell, this cell will be taken.
+    #[clap(long, short)]
+    pub public_key: Option<String>,
+
+    /// Name of the cell we want to make an action on. If not specified
+    /// and the node config only contains 1 cell, this cell will be taken.
+    #[clap(long, short)]
+    pub name: Option<String>,
+
+    #[clap(subcommand)]
+    pub command: CellCommand,
+}
+
+#[derive(Clap)]
+pub enum CellCommand {
+    /// Initializes a new cell.
+    Init(InitOptions),
+
+    /// Lists cells of the node.
+    List,
+
+    /// Join a cell.
+    Join(JoinOptions),
+
+    /// Cell nodes options.
+    Node(CellNodeOptions),
+
+    /// Check the cell's chain integrity.
+    CheckChain,
+
+    /// Export the chain's data.
+    Exportchain(ChainExportOptions),
+
+    /// Import the chain's data.
+    ImportChain(ChainImportOptions),
+
+    /// Generate an auth token.
+    GenerateAuthToken(GenerateAuthTokenOptions),
+
+    /// Edit cell configuration.
+    Edit,
+
+    /// Create genesis block of the chain.
+    CreateGenesisBlock,
+}
+
+/// Cell intialization related options
+#[derive(Clap)]
+pub struct InitOptions {
+    /// Name of the cell
+    pub name: Option<String>,
+
+    /// The node will not host the chain locally. The chain will need to be
+    /// initialized on another node manually using "create_genesis_block".
+    #[clap(long)]
+    pub no_chain: bool,
+
+    /// The node will not expose an entity store server.
+    #[clap(long)]
+    pub no_store: bool,
+
+    /// Don't create genesis block.
+    #[clap(long)]
+    pub no_genesis: bool,
+}
+
+/// Cell join related options
+#[derive(Clap)]
+pub struct JoinOptions {
+    /// The node will host the chain locally.
+    #[clap(long)]
+    pub chain: bool,
+
+    /// The node will host entities store.
+    #[clap(long)]
+    pub index: bool,
+}
+
+#[derive(Clap)]
+pub struct ChainExportOptions {
+    // File in which chain will be exported
+    pub file: PathBuf,
+}
+
+#[derive(Clap)]
+pub struct ChainImportOptions {
+    // Number of operations per blocks
+    #[clap(long, default_value = "30")]
+    pub operations_per_block: usize,
+
+    // Files from which chain will be imported
+    pub files: Vec<PathBuf>,
+}
+
+#[derive(Clap)]
+pub struct GenerateAuthTokenOptions {
+    // Token expiration duration in days
+    #[clap(long, default_value = "30")]
+    pub expiration_days: u16,
+}
+
+/// Cell node options
+#[derive(Clap)]
+pub struct CellNodeOptions {
+    #[clap(subcommand)]
+    pub command: CellNodeCommands,
+}
+
+#[derive(Clap)]
+pub enum CellNodeCommands {
+    /// Add a node to the cell.
+    Add,
+}
+
+pub fn handle_cmd(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
+    match &cell_opts.command {
+        CellCommand::Init(init_opts) => cmd_init(&exo_opts, cell_opts, init_opts),
+        CellCommand::Node(node_opts) => {
+            //TODO:
+            Ok(())
+        }
+        CellCommand::Join(join_opts) => {
+            //TODO:
+            Ok(())
+        }
+        CellCommand::List => cmd_list(&exo_opts, cell_opts),
+        CellCommand::CheckChain => cmd_check_chain(&exo_opts, cell_opts),
+        CellCommand::Exportchain(export_opts) => {
+            cmd_export_chain(&exo_opts, cell_opts, export_opts)
+        }
+        CellCommand::ImportChain(import_opts) => {
+            cmd_import_chain(&exo_opts, cell_opts, import_opts)
+        }
+        CellCommand::GenerateAuthToken(gen_opts) => {
+            cmd_generate_auth_token(&exo_opts, cell_opts, gen_opts)
+        }
+        CellCommand::Edit => cmd_edit(&exo_opts, cell_opts),
+        CellCommand::CreateGenesisBlock => cmd_create_genesis_block(&exo_opts, cell_opts),
+    }
+}
+
+fn cmd_init(
+    exo_opts: &Options,
+    _cell_opts: &CellOptions,
+    init_opts: &InitOptions,
 ) -> anyhow::Result<()> {
-    let node_config_path = exo_opts.config_path();
+    let node_config_path = exo_opts.conf_path();
     let mut node_config = exo_opts.read_configuration();
 
     let node = LocalNode::new_from_config(node_config.clone())
@@ -45,7 +190,7 @@ pub fn cmd_init(
     let cell_pk_str = cell_keypair.public().encode_base58_string();
 
     let mut cell_name = node.name().to_string();
-    if init_opts.cell_name.is_none() {
+    if init_opts.name.is_none() {
         let resp = shell_prompt("Cell name", None)?;
         if let Some(resp) = resp {
             cell_name = resp;
@@ -81,7 +226,7 @@ pub fn cmd_init(
 
     {
         // Write cell configuration
-        let mut cell_dir = exo_opts.home_path();
+        let mut cell_dir = exo_opts.dir_path();
         cell_dir.push("cells");
         cell_dir.push(cell_pk_str.clone());
 
@@ -134,10 +279,7 @@ pub fn cmd_init(
     Ok(())
 }
 
-pub fn cmd_edit(
-    exo_opts: &options::ExoOptions,
-    cell_opts: &options::CellOptions,
-) -> anyhow::Result<()> {
+fn cmd_edit(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
     let cell = cell.cell();
 
@@ -157,10 +299,7 @@ pub fn cmd_edit(
     Ok(())
 }
 
-pub fn cmd_list(
-    exo_opts: &options::ExoOptions,
-    _cell_opts: &options::CellOptions,
-) -> anyhow::Result<()> {
+fn cmd_list(exo_opts: &Options, _cell_opts: &CellOptions) -> anyhow::Result<()> {
     let config = exo_opts.read_configuration();
     let (either_cells, _local_node) =
         Cell::new_from_local_node_config(config).expect("Couldn't create cell from config");
@@ -176,10 +315,7 @@ pub fn cmd_list(
     Ok(())
 }
 
-pub fn cmd_check_chain(
-    exo_opts: &options::ExoOptions,
-    cell_opts: &options::CellOptions,
-) -> anyhow::Result<()> {
+fn cmd_check_chain(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
 
     let chain_dir = cell
@@ -215,10 +351,10 @@ pub fn cmd_check_chain(
     Ok(())
 }
 
-pub fn cmd_export_chain(
-    exo_opts: &options::ExoOptions,
-    cell_opts: &options::CellOptions,
-    export_opts: &options::ChainExportOptions,
+fn cmd_export_chain(
+    exo_opts: &Options,
+    cell_opts: &CellOptions,
+    export_opts: &ChainExportOptions,
 ) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
 
@@ -273,10 +409,10 @@ pub fn cmd_export_chain(
     Ok(())
 }
 
-pub fn cmd_import_chain(
-    exo_opts: &options::ExoOptions,
-    cell_opts: &options::CellOptions,
-    import_opts: &options::ChainImportOptions,
+fn cmd_import_chain(
+    exo_opts: &Options,
+    cell_opts: &CellOptions,
+    import_opts: &ChainImportOptions,
 ) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
     let full_cell = cell.unwrap_full();
@@ -372,10 +508,10 @@ pub fn cmd_import_chain(
     Ok(())
 }
 
-pub fn cmd_generate_auth_token(
-    exo_opts: &options::ExoOptions,
-    cell_opts: &options::CellOptions,
-    gen_opts: &options::GenerateAuthTokenOptions,
+fn cmd_generate_auth_token(
+    exo_opts: &Options,
+    cell_opts: &CellOptions,
+    gen_opts: &GenerateAuthTokenOptions,
 ) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
     let cell = cell.cell();
@@ -394,10 +530,7 @@ pub fn cmd_generate_auth_token(
     Ok(())
 }
 
-pub fn cmd_create_genesis_block(
-    exo_opts: &options::ExoOptions,
-    cell_opts: &options::CellOptions,
-) -> anyhow::Result<()> {
+fn cmd_create_genesis_block(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
     let full_cell = cell.unwrap_full();
 
@@ -406,10 +539,7 @@ pub fn cmd_create_genesis_block(
     Ok(())
 }
 
-fn get_cell(
-    exo_opts: &options::ExoOptions,
-    cell_opts: &options::CellOptions,
-) -> (LocalNodeConfig, EitherCell) {
+fn get_cell(exo_opts: &Options, cell_opts: &CellOptions) -> (LocalNodeConfig, EitherCell) {
     let config = exo_opts.read_configuration();
     let (either_cells, _local_node) =
         Cell::new_from_local_node_config(config.clone()).expect("Couldn't create cell from config");
