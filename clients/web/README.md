@@ -30,7 +30,7 @@
 
 * Generate a node configuration and copy it to the app:
 
-  `exo config standalone path/to/web/node/node.yaml --exclude-app-schemas json`
+  `exo -d ./node/path config print --exclude-app-schemas --format json`
 
 
 ## Known issues

@@ -70,7 +70,7 @@ A cell consists of:
 ### Create a Cell hosted on 2 nodes
 * On node 1
   * Generate configuration: 
-    `exo --dir ./node1 init --name node1`
+    `exo --dir ./node1 node init --name node1`
   * Edit configuration to include accessible addresses:
     `exo -d ./node1 config edit`
   * Generate a cell:
@@ -78,7 +78,7 @@ A cell consists of:
 
 * On node 2
   * Generate configuration: 
-    `exo --dir ./node2 init --name node1`
+    `exo --dir ./node2 node init --name node1`
   * Edit configuration to include accessible addresses. 
     If both nodes are running on same machine, make sure they have unique ports.
     `exo -d ./node2 config edit`
@@ -108,7 +108,7 @@ A cell consists of:
   * Start development server which will watch files and rebuild automatically:
     * `cd ./examples/web && yarn install && yarn start`
   * Generate cell configuration for web:
-    * Convert config to JSON: `exo config standalone <config file> --exclude-app-schemas json`
+    * Convert config to JSON: `exo -d ./node/path config print --exclude-app-schemas --format json`
   * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
     * Paste JSON config and save
 

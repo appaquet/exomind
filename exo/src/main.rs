@@ -62,17 +62,17 @@ impl Options {
 
 #[derive(Clap)]
 pub enum Commands {
-    /// Initialize the node and its configuration.
-    Init(node::InitOptions),
+    /// Nodes releated commands.
+    Node(node::NodeOptions),
+
+    /// Cells related commands.
+    Cell(cell::CellOptions),
 
     /// Starts the node daemon, with all its cells and roles.
     Daemon,
 
     /// Keys releated commands.
     Keys(keys::KeysOptions),
-
-    /// Cells related commands.
-    Cell(cell::CellOptions),
 
     /// Node configuration related commands.
     Config(config::ConfigOptions),
@@ -85,7 +85,7 @@ fn main() -> anyhow::Result<()> {
     exocore_core::logging::setup(Some(LevelFilter::from_str(&opts.log)?));
 
     let result = match &opts.subcommand {
-        Commands::Init(init_opts) => node::cmd_init(&opts, init_opts),
+        Commands::Node(node_opts) => node::handle_cmd(&opts, node_opts),
         Commands::Daemon => daemon::cmd_start(&opts),
         Commands::Keys(keys_opts) => keys::handle_cmd(&opts, keys_opts),
         Commands::Cell(cell_opts) => cell::handle_cmd(&opts, cell_opts),

@@ -1,8 +1,8 @@
 use crate::{utils::edit_file, Options};
 use clap::Clap;
 use exocore_core::{
-    cell::LocalNodeConfigExt,
-    protos::core::{cell_application_config, node_cell_config, LocalNodeConfig},
+    cell::{LocalNodeConfigExt, NodeConfigExt},
+    protos::core::{cell_application_config, node_cell_config, LocalNodeConfig, NodeConfig},
 };
 use std::time::Duration;
 
@@ -14,21 +14,31 @@ pub struct ConfigOptions {
 
 #[derive(Clap)]
 pub enum ConfigCommand {
-    /// Edit the node's configuration
+    /// Edit node configuration.
     Edit,
 
-    /// Validate the node's configuration
-    Validate,
+    /// Print node configuration.
+    Print(PrintOpts),
 
-    /// Convert the node's configuration to a standalone configuration
-    Standalone(StandaloneOpts),
+    /// Validate node configuration.
+    Validate,
 }
 
 #[derive(Clap)]
-pub struct StandaloneOpts {
-    #[clap(default_value = "json")]
+pub struct PrintOpts {
+    /// Print format.
+    #[clap(default_value = "yaml")]
     pub format: String,
 
+    /// Print configuration in `NodeConfig` format to be used to configure cell nodes.
+    #[clap(long)]
+    pub cell: bool,
+
+    /// Inline configuration instead of pointing to external objects (cells / apps).
+    #[clap(long)]
+    pub inline: bool,
+
+    /// Exclude applications schemas from configuration.
     #[clap(long)]
     pub exclude_app_schemas: bool,
 }
@@ -36,10 +46,8 @@ pub struct StandaloneOpts {
 pub fn handle_cmd(exo_opts: &Options, config_opts: &ConfigOptions) -> anyhow::Result<()> {
     match &config_opts.command {
         ConfigCommand::Edit => cmd_edit(&exo_opts, config_opts),
+        ConfigCommand::Print(print_opts) => cmd_print(&exo_opts, config_opts, print_opts),
         ConfigCommand::Validate => cmd_validate(&exo_opts, config_opts),
-        ConfigCommand::Standalone(standalone_opts) => {
-            cmd_standalone(&exo_opts, config_opts, standalone_opts)
-        }
     }
 }
 
@@ -69,17 +77,30 @@ fn cmd_validate(exo_opts: &Options, _conf_opts: &ConfigOptions) -> anyhow::Resul
     Ok(())
 }
 
-fn cmd_standalone(
+fn cmd_print(
     exo_opts: &Options,
     _conf_opts: &ConfigOptions,
-    convert_opts: &StandaloneOpts,
+    print_opts: &PrintOpts,
 ) -> anyhow::Result<()> {
-    let config = exo_opts.read_configuration();
-    let mut config = config
-        .to_standalone()
-        .expect("Couldn't convert config to standalone");
+    let node_config = exo_opts.read_configuration();
 
-    if convert_opts.exclude_app_schemas {
+    if !print_opts.cell {
+        cmd_print_node_config(node_config, print_opts);
+    } else {
+        cmd_print_cell_node_config(node_config);
+    }
+
+    Ok(())
+}
+
+fn cmd_print_node_config(config: LocalNodeConfig, print_opts: &PrintOpts) {
+    let mut config = if print_opts.inline {
+        config.inlined().expect("Couldn't inline configuration")
+    } else {
+        config.clone()
+    };
+
+    if print_opts.exclude_app_schemas {
         for cell in &mut config.cells {
             if let Some(node_cell_config::Location::Instance(cell_config)) = &mut cell.location {
                 for app in &mut cell_config.apps {
@@ -93,11 +114,20 @@ fn cmd_standalone(
         }
     }
 
-    if convert_opts.format == "json" {
-        println!("{}", config.to_json()?);
+    if print_opts.format == "json" {
+        println!("{}", config.to_json().expect("Couldn't convert to json"));
     } else {
-        println!("{}", config.to_yaml()?);
+        println!("{}", config.to_yaml().expect("Couldn't convert to yaml"));
     }
+}
 
-    Ok(())
+fn cmd_print_cell_node_config(config: LocalNodeConfig) {
+    let cell_node = NodeConfig {
+        id: config.id,
+        name: config.name,
+        public_key: config.public_key,
+        addresses: config.addresses,
+    };
+
+    println!("{}", cell_node.to_yaml().expect("Couldn't convert to yaml"));
 }

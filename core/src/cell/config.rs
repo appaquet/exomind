@@ -3,7 +3,7 @@ use crate::{
     protos::generated::exocore_core::{
         node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
     },
-    protos::{core::cell_application_config, generated::exocore_apps::Manifest},
+    protos::{core::cell_application_config, core::NodeConfig, generated::exocore_apps::Manifest},
     utils::path::child_to_relative_path_string,
     utils::path::{child_to_abs_path, child_to_abs_path_string},
 };
@@ -22,7 +22,7 @@ pub trait LocalNodeConfigExt {
     fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error>;
     fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error>;
     fn to_json(&self) -> Result<String, Error>;
-    fn to_standalone(&self) -> Result<LocalNodeConfig, Error>;
+    fn inlined(&self) -> Result<LocalNodeConfig, Error>;
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
     fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P);
 }
@@ -102,13 +102,13 @@ impl LocalNodeConfigExt for LocalNodeConfig {
             .map_err(|err| Error::Config(format!("Couldn't encode node config to JSON: {}", err)))
     }
 
-    fn to_standalone(&self) -> Result<LocalNodeConfig, Error> {
+    fn inlined(&self) -> Result<LocalNodeConfig, Error> {
         let mut config = self.config().clone();
 
         let mut cells = Vec::new();
         for node_cell_config in &config.cells {
             let cell_config = CellConfig::from_node_cell(node_cell_config, &config)?;
-            let cell_config = cell_config.to_standalone()?;
+            let cell_config = cell_config.inlined()?;
 
             let mut node_cell_config = node_cell_config.clone();
             node_cell_config.location = Some(node_cell_config::Location::Instance(cell_config));
@@ -167,8 +167,9 @@ impl CellNodeConfigExt for CellNodeConfig {
     }
 
     fn from_yaml<R: Read>(bytes: R) -> Result<CellNodeConfig, Error> {
-        let config = serde_yaml::from_reader(bytes)
-            .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
+        let config = serde_yaml::from_reader(bytes).map_err(|err| {
+            Error::Config(format!("Couldn't decode YAML cell node config: {}", err))
+        })?;
 
         Ok(config)
     }
@@ -181,7 +182,7 @@ pub trait CellConfigExt {
 
     fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<CellConfig, Error>;
 
-    fn to_standalone(&self) -> Result<CellConfig, Error>;
+    fn inlined(&self) -> Result<CellConfig, Error>;
 
     fn to_yaml(&self) -> Result<String, Error>;
 
@@ -231,7 +232,7 @@ impl CellConfigExt for CellConfig {
         Ok(cell_config)
     }
 
-    fn to_standalone(&self) -> Result<CellConfig, Error> {
+    fn inlined(&self) -> Result<CellConfig, Error> {
         let mut config = self.config().clone();
 
         for app in config.apps.iter_mut() {
@@ -390,6 +391,19 @@ impl CellConfigExt for CellConfig {
                 _ => {}
             }
         }
+    }
+}
+
+/// Extension for `NodeConfig` proto.
+pub trait NodeConfigExt {
+    fn to_yaml(&self) -> Result<String, Error>;
+}
+
+impl NodeConfigExt for NodeConfig {
+    fn to_yaml(&self) -> Result<String, Error> {
+        serde_yaml::to_string(self).map_err(|err| {
+            Error::Config(format!("Couldn't encode cell node config to YAML: {}", err))
+        })
     }
 }
 
@@ -602,11 +616,11 @@ mod tests {
     }
 
     #[test]
-    fn node_config_to_standalone() -> anyhow::Result<()> {
+    fn node_config_inlined() -> anyhow::Result<()> {
         let config_path = root_test_fixtures_path("examples/node.yaml");
         let config = LocalNodeConfig::from_yaml_file(config_path)?;
 
-        let standalone_config = config.to_standalone().unwrap();
+        let inlined_config = config.inlined().unwrap();
 
         fn validate_node_cell_config(node_cell_config: &NodeCellConfig) {
             match node_cell_config.location.as_ref() {
@@ -640,12 +654,12 @@ mod tests {
             }
         }
 
-        for cell in &standalone_config.cells {
+        for cell in &inlined_config.cells {
             validate_node_cell_config(cell);
         }
 
-        // should be able to load cell standalone
-        assert!(Cell::new_from_local_node_config(standalone_config).is_ok());
+        // should be able to load cell inlined
+        assert!(Cell::new_from_local_node_config(inlined_config).is_ok());
 
         Ok(())
     }

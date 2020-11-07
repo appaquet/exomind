@@ -33,7 +33,7 @@
 * Open the project in XCode / AppCode
 * Generate a node configuration and copy it to the app:
 
-  `exo config standalone path/to/ios/node/node.yaml --exclude-app-schemas yaml`
+  `exo -d ./config print --exclude-app-schemas`
 
 ## Known issues
 * App gets terminated due to signal 13 when resuming from background.

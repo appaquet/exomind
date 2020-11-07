@@ -14,6 +14,8 @@ pub use cell_apps::{CellApplication, CellApplications};
 pub use cell_nodes::{
     CellNode, CellNodeRole, CellNodes, CellNodesIter, CellNodesOwned, CellNodesRead, CellNodesWrite,
 };
-pub use config::{CellConfigExt, CellNodeConfigExt, LocalNodeConfigExt, ManifestExt};
+pub use config::{
+    CellConfigExt, CellNodeConfigExt, LocalNodeConfigExt, ManifestExt, NodeConfigExt,
+};
 pub use error::Error;
 pub use node::{LocalNode, Node, NodeId};

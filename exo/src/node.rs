@@ -7,13 +7,31 @@ use exocore_core::{
 use std::fs::File;
 
 #[derive(Clap)]
+pub struct NodeOptions {
+    #[clap(subcommand)]
+    pub command: NodeCommand,
+}
+
+#[derive(Clap)]
+pub enum NodeCommand {
+    /// Initialize node.
+    Init(InitOptions),
+}
+
+#[derive(Clap)]
 pub struct InitOptions {
     /// Name of the node.
     #[clap(long)]
     pub name: Option<String>,
 }
 
-pub fn cmd_init(exo_opts: &Options, init_opts: &InitOptions) -> anyhow::Result<()> {
+pub fn handle_cmd(exo_opts: &Options, node_opts: &NodeOptions) -> anyhow::Result<()> {
+    match &node_opts.command {
+        NodeCommand::Init(init_opts) => cmd_init(exo_opts, init_opts),
+    }
+}
+
+fn cmd_init(exo_opts: &Options, init_opts: &InitOptions) -> anyhow::Result<()> {
     let config_path = exo_opts.conf_path();
     if config_path.exists() {
         panic!(
