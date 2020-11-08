@@ -5,7 +5,6 @@ use super::{
 use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
 use crate::protos::registry::Registry;
 use crate::sec::keys::{Keypair, PublicKey};
-use crate::utils::path::child_to_abs_path;
 use libp2p::core::PeerId;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -95,8 +94,7 @@ impl Cell {
         {
             // load apps from config
             let cell = either_cell.cell();
-            cell.apps
-                .load_from_cell_applications_config(&config, config.apps.iter())?;
+            cell.apps.load_from_cell_apps_conf(config.apps.iter())?;
         }
 
         Ok(either_cell)
@@ -121,13 +119,7 @@ impl Cell {
 
         let mut either_cells = Vec::new();
         for node_cell_config in &config.cells {
-            let mut cell_config = CellConfig::from_node_cell(node_cell_config)?;
-
-            if cell_config.path.is_empty() {
-                let cell_path = child_to_abs_path(&config.path, &cell_config.path);
-                cell_config.path = cell_path.to_string_lossy().to_string();
-            }
-
+            let cell_config = CellConfig::from_node_cell(node_cell_config)?;
             let either_cell = Self::new_from_config(cell_config, local_node.clone())?;
             either_cells.push(either_cell);
         }

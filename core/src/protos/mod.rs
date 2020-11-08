@@ -1,3 +1,4 @@
+pub mod base64;
 pub mod prost;
 pub mod reflect;
 pub mod registry;

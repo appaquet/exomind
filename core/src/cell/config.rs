@@ -1,5 +1,6 @@
 use super::Error;
 use crate::{
+    protos::apps::manifest_schema,
     protos::generated::exocore_core::{
         node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
     },
@@ -104,6 +105,7 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 
     fn inlined(&self) -> Result<LocalNodeConfig, Error> {
         let mut config = self.config().clone();
+        config.path = String::new();
 
         let mut cells = Vec::new();
         for node_cell_config in &config.cells {
@@ -231,16 +233,15 @@ impl CellConfigExt for CellConfig {
 
     fn inlined(&self) -> Result<CellConfig, Error> {
         let mut config = self.config().clone();
+        config.path = String::new();
 
         for app in config.apps.iter_mut() {
             let app_manifest = match app.location.take() {
                 Some(crate::protos::core::cell_application_config::Location::Path(dir)) => {
-                    let absolute_path = child_to_abs_path_string(&config.path, &dir);
-
-                    let mut manifest_path = PathBuf::from(&absolute_path);
+                    let mut manifest_path = PathBuf::from(dir);
                     manifest_path.push("app.yaml");
                     let mut manifest = Manifest::read_yaml_file(manifest_path)?;
-                    manifest.path = absolute_path;
+                    manifest.path = String::new();
                     manifest
                 }
                 Some(crate::protos::core::cell_application_config::Location::Inline(manifest)) => {
@@ -316,7 +317,7 @@ impl CellConfigExt for CellConfig {
         for app in &mut self.apps {
             match app.location.as_mut() {
                 Some(cell_application_config::Location::Inline(app_manifest)) => {
-                    app_manifest.path = child_to_abs_path_string(&self.path, &app_manifest.path);
+                    app_manifest.make_absolute_paths(directory.as_ref());
                 }
                 Some(cell_application_config::Location::Path(path)) => {
                     *path = child_to_abs_path_string(&self.path, path.clone());
@@ -332,8 +333,7 @@ impl CellConfigExt for CellConfig {
         for app in &mut self.apps {
             match app.location.as_mut() {
                 Some(cell_application_config::Location::Inline(app_manifest)) => {
-                    app_manifest.path =
-                        child_to_relative_path_string(&self.path, &app_manifest.path);
+                    app_manifest.make_relative_paths(directory.as_ref());
                 }
                 Some(cell_application_config::Location::Path(path)) => {
                     *path = child_to_relative_path_string(&self.path, path.clone());
@@ -369,10 +369,10 @@ impl NodeConfigExt for NodeConfig {
 /// Extension for `Manifest` proto.
 pub trait ManifestExt {
     fn manifest(&self) -> &Manifest;
-
     fn inlined(&self) -> Result<Manifest, Error>;
-
     fn read_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error>;
+    fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
+    fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P);
 }
 
 impl ManifestExt for Manifest {
@@ -382,19 +382,18 @@ impl ManifestExt for Manifest {
 
     fn inlined(&self) -> Result<Manifest, Error> {
         let mut app_manifest = self.manifest().clone();
+        app_manifest.path = String::new();
 
         let app_name = app_manifest.name.clone();
         for schema in app_manifest.schemas.iter_mut() {
             let final_source = match schema.source.take() {
                 Some(crate::protos::apps::manifest_schema::Source::File(schema_path)) => {
-                    let abs_schema_path =
-                        child_to_abs_path_string(&app_manifest.path, &schema_path);
-                    let mut file = File::open(&abs_schema_path).map_err(|err| {
+                    let mut file = File::open(&schema_path).map_err(|err| {
                         Error::Application(
                             app_name.clone(),
                             format!(
                                 "Couldn't open application schema at path '{:?}': {}",
-                                abs_schema_path, err
+                                schema_path, err
                             ),
                         )
                     })?;
@@ -405,7 +404,7 @@ impl ManifestExt for Manifest {
                             app_name.clone(),
                             format!(
                                 "Couldn't read application schema at path '{:?}': {}",
-                                abs_schema_path, err
+                                schema_path, err
                             ),
                         )
                     })?;
@@ -450,9 +449,29 @@ impl ManifestExt for Manifest {
         })?;
 
         let file_directory = path.parent().unwrap_or(path);
-        manifest.path = child_to_abs_path_string(file_directory, &manifest.path);
+        manifest.make_absolute_paths(file_directory);
 
         Ok(manifest)
+    }
+
+    fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P) {
+        self.path = child_to_abs_path_string(directory.as_ref(), &self.path);
+
+        for schema in &mut self.schemas {
+            if let Some(manifest_schema::Source::File(path)) = schema.source.as_mut() {
+                *path = child_to_abs_path_string(&directory, path.clone());
+            }
+        }
+    }
+
+    fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P) {
+        self.path = child_to_relative_path_string(directory.as_ref(), &self.path);
+
+        for schema in &mut self.schemas {
+            if let Some(manifest_schema::Source::File(path)) = schema.source.as_mut() {
+                *path = child_to_relative_path_string(&directory, path.clone());
+            }
+        }
     }
 }
 

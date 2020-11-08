@@ -17,14 +17,14 @@ pub enum ConfigCommand {
     Edit,
 
     /// Print node configuration.
-    Print(PrintOpts),
+    Print(PrintOptions),
 
     /// Validate node configuration.
     Validate,
 }
 
 #[derive(Clap)]
-pub struct PrintOpts {
+pub struct PrintOptions {
     /// Print format.
     #[clap(default_value = "yaml")]
     pub format: String,
@@ -74,7 +74,7 @@ fn cmd_validate(exo_opts: &Options, _conf_opts: &ConfigOptions) -> anyhow::Resul
 fn cmd_print(
     exo_opts: &Options,
     _conf_opts: &ConfigOptions,
-    print_opts: &PrintOpts,
+    print_opts: &PrintOptions,
 ) -> anyhow::Result<()> {
     let node_config = exo_opts.read_configuration();
 
@@ -87,7 +87,7 @@ fn cmd_print(
     Ok(())
 }
 
-fn cmd_print_node_config(config: LocalNodeConfig, print_opts: &PrintOpts) {
+fn cmd_print_node_config(config: LocalNodeConfig, print_opts: &PrintOptions) {
     let mut config = if print_opts.inline {
         config.inlined().expect("Couldn't inline configuration")
     } else {

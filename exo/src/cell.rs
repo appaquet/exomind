@@ -67,7 +67,7 @@ enum CellCommand {
     Node(NodeOptions),
 
     /// Print cell configuration.
-    Print,
+    Print(PrintOptions),
 
     /// Check the cell's chain integrity.
     CheckChain,
@@ -111,6 +111,36 @@ struct InitOptions {
 struct JoinOptions {}
 
 #[derive(Clap)]
+struct NodeOptions {
+    #[clap(subcommand)]
+    command: NodeCommand,
+}
+
+#[derive(Clap)]
+pub struct PrintOptions {
+    /// Inline configuration instead of pointing to external objects.
+    #[clap(long)]
+    pub inline: bool,
+}
+
+#[derive(Clap)]
+enum NodeCommand {
+    /// Add a node to the cell.
+    Add(NodeAddOptions),
+}
+
+#[derive(Clap)]
+struct NodeAddOptions {
+    /// The node will host the chain locally.
+    #[clap(long)]
+    chain: bool,
+
+    /// The node will host entities store.
+    #[clap(long)]
+    store: bool,
+}
+
+#[derive(Clap)]
 struct ChainExportOptions {
     // File in which chain will be exported.
     file: PathBuf,
@@ -133,29 +163,6 @@ struct GenerateAuthTokenOptions {
     expiration_days: u16,
 }
 
-#[derive(Clap)]
-struct NodeOptions {
-    #[clap(subcommand)]
-    command: NodeCommand,
-}
-
-#[derive(Clap)]
-enum NodeCommand {
-    /// Add a node to the cell.
-    Add(NodeAddOptions),
-}
-
-#[derive(Clap)]
-struct NodeAddOptions {
-    /// The node will host the chain locally.
-    #[clap(long)]
-    chain: bool,
-
-    /// The node will host entities store.
-    #[clap(long)]
-    store: bool,
-}
-
 pub fn handle_cmd(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
     match &cell_opts.command {
         CellCommand::Init(init_opts) => cmd_init(&exo_opts, cell_opts, init_opts),
@@ -165,7 +172,7 @@ pub fn handle_cmd(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result
         CellCommand::Join(join_opts) => cmd_join(exo_opts, cell_opts, join_opts),
         CellCommand::List => cmd_list(&exo_opts, cell_opts),
         CellCommand::Edit => cmd_edit(&exo_opts, cell_opts),
-        CellCommand::Print => cmd_print(&exo_opts, cell_opts),
+        CellCommand::Print(opts) => cmd_print(&exo_opts, cell_opts, opts),
         CellCommand::CheckChain => cmd_check_chain(&exo_opts, cell_opts),
         CellCommand::Exportchain(export_opts) => {
             cmd_export_chain(&exo_opts, cell_opts, export_opts)
@@ -345,12 +352,20 @@ fn cmd_edit(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn cmd_print(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
+fn cmd_print(
+    exo_opts: &Options,
+    cell_opts: &CellOptions,
+    print_opts: &PrintOptions,
+) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
     let cell = cell.cell();
 
     let config_path = cell_config_path(cell);
-    let config = CellConfig::from_yaml_file(config_path).expect("Coudlnt' read cell config");
+    let mut config = CellConfig::from_yaml_file(config_path).expect("Coudlnt' read cell config");
+
+    if print_opts.inline {
+        config = config.inlined().expect("Couldn't inline config");
+    }
 
     println!(
         "{}",

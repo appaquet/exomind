@@ -198,6 +198,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
 
 [[package]]
+name = "base64"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
+
+[[package]]
 name = "bitflags"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -975,6 +981,7 @@ name = "exocore-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.13.0",
  "bs58",
  "byteorder",
  "bytes 0.6.0",
@@ -2756,7 +2763,7 @@ version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d1126dcf58e93cee7d098dbda643b5f92ed724f1f6a63007c1116eed6700c81"
 dependencies = [
- "base64",
+ "base64 0.12.3",
  "log",
  "ring",
  "sct",
@@ -3009,7 +3016,7 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5c71ed3d54db0a699f4948e1bb3e45b450fa31fe602621dee6680361d569c88"
 dependencies = [
- "base64",
+ "base64 0.12.3",
  "bytes 0.5.6",
  "flate2",
  "futures 0.3.7",
@@ -3101,7 +3108,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37dfd693ae55afd87e798e967bb2d894b32163e3c9a172958efe5bc89ed7df08"
 dependencies = [
  "atomicwrites",
- "base64",
+ "base64 0.12.3",
  "bitpacking",
  "byteorder",
  "census",

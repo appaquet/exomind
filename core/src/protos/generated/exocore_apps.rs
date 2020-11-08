@@ -24,6 +24,10 @@ pub mod manifest_schema {
         #[prost(string, tag = "1")]
         File(std::string::String),
         #[prost(bytes, tag = "2")]
+        #[serde(
+            serialize_with = "crate::protos::base64::as_base64",
+            deserialize_with = "crate::protos::base64::from_base64"
+        )]
         Bytes(std::vec::Vec<u8>),
     }
 }

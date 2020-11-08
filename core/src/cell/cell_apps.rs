@@ -1,9 +1,6 @@
 use super::{Application, ApplicationId, Error};
-use crate::protos::generated::exocore_core::{
-    cell_application_config, CellApplicationConfig, CellConfig,
-};
+use crate::protos::generated::exocore_core::{cell_application_config, CellApplicationConfig};
 use crate::protos::registry::Registry;
-use crate::{protos::generated::exocore_apps::Manifest, utils::path::child_to_abs_path};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -22,11 +19,7 @@ impl CellApplications {
         }
     }
 
-    pub(crate) fn load_from_cell_applications_config<'c, I>(
-        &self,
-        cell_config: &CellConfig,
-        iter: I,
-    ) -> Result<(), Error>
+    pub(crate) fn load_from_cell_apps_conf<'c, I>(&self, iter: I) -> Result<(), Error>
     where
         I: Iterator<Item = &'c CellApplicationConfig> + 'c,
     {
@@ -37,19 +30,11 @@ impl CellApplications {
 
             match app_location {
                 cell_application_config::Location::Inline(manifest) => {
-                    let mut manifest: Manifest = manifest.clone();
-                    manifest.path = child_to_abs_path(&cell_config.path, &manifest.path)
-                        .to_string_lossy()
-                        .to_string();
-
-                    let application = Application::new_from_manifest(manifest)?;
+                    let application = Application::new_from_manifest(manifest.clone())?;
                     self.add_application(application)?;
                 }
                 cell_application_config::Location::Path(dir) => {
-                    let application = Application::new_from_directory(child_to_abs_path(
-                        &cell_config.path,
-                        &dir,
-                    ))?;
+                    let application = Application::new_from_directory(&dir)?;
                     self.add_application(application)?;
                 }
             }
