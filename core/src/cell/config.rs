@@ -233,7 +233,7 @@ impl CellConfigExt for CellConfig {
         let mut config = self.config().clone();
 
         for app in config.apps.iter_mut() {
-            let mut final_manifest = match app.location.take() {
+            let app_manifest = match app.location.take() {
                 Some(crate::protos::core::cell_application_config::Location::Path(dir)) => {
                     let absolute_path = child_to_abs_path_string(&config.path, &dir);
 
@@ -254,50 +254,10 @@ impl CellConfigExt for CellConfig {
                 }
             };
 
-            let app_name = final_manifest.name.clone();
+            let app_manifest = app_manifest.inlined()?;
 
-            for schema in final_manifest.schemas.iter_mut() {
-                let final_source = match schema.source.take() {
-                    Some(crate::protos::apps::manifest_schema::Source::File(schema_path)) => {
-                        let abs_schema_path =
-                            child_to_abs_path_string(&final_manifest.path, &schema_path);
-                        let mut file = File::open(&abs_schema_path).map_err(|err| {
-                            Error::Application(
-                                app_name.clone(),
-                                format!(
-                                    "Couldn't open application schema at path '{:?}': {}",
-                                    abs_schema_path, err
-                                ),
-                            )
-                        })?;
-
-                        let mut content = vec![];
-                        file.read_to_end(&mut content).map_err(|err| {
-                            Error::Application(
-                                app_name.clone(),
-                                format!(
-                                    "Couldn't read application schema at path '{:?}': {}",
-                                    abs_schema_path, err
-                                ),
-                            )
-                        })?;
-                        crate::protos::apps::manifest_schema::Source::Bytes(content)
-                    }
-                    Some(src @ crate::protos::apps::manifest_schema::Source::Bytes(_)) => src,
-                    other => {
-                        return Err(Error::Application(
-                            config.name.clone(),
-                            format!("Unsupported application schema type: {:?}", other),
-                        ));
-                    }
-                };
-
-                schema.source = Some(final_source);
-            }
-
-            app.location = Some(
-                crate::protos::core::cell_application_config::Location::Inline(final_manifest),
-            );
+            app.location =
+                Some(crate::protos::core::cell_application_config::Location::Inline(app_manifest));
         }
 
         Ok(config)
@@ -410,12 +370,60 @@ impl NodeConfigExt for NodeConfig {
 pub trait ManifestExt {
     fn manifest(&self) -> &Manifest;
 
+    fn inlined(&self) -> Result<Manifest, Error>;
+
     fn read_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error>;
 }
 
 impl ManifestExt for Manifest {
     fn manifest(&self) -> &Manifest {
         self
+    }
+
+    fn inlined(&self) -> Result<Manifest, Error> {
+        let mut app_manifest = self.manifest().clone();
+
+        let app_name = app_manifest.name.clone();
+        for schema in app_manifest.schemas.iter_mut() {
+            let final_source = match schema.source.take() {
+                Some(crate::protos::apps::manifest_schema::Source::File(schema_path)) => {
+                    let abs_schema_path =
+                        child_to_abs_path_string(&app_manifest.path, &schema_path);
+                    let mut file = File::open(&abs_schema_path).map_err(|err| {
+                        Error::Application(
+                            app_name.clone(),
+                            format!(
+                                "Couldn't open application schema at path '{:?}': {}",
+                                abs_schema_path, err
+                            ),
+                        )
+                    })?;
+
+                    let mut content = vec![];
+                    file.read_to_end(&mut content).map_err(|err| {
+                        Error::Application(
+                            app_name.clone(),
+                            format!(
+                                "Couldn't read application schema at path '{:?}': {}",
+                                abs_schema_path, err
+                            ),
+                        )
+                    })?;
+                    crate::protos::apps::manifest_schema::Source::Bytes(content)
+                }
+                Some(src @ crate::protos::apps::manifest_schema::Source::Bytes(_)) => src,
+                other => {
+                    return Err(Error::Application(
+                        app_name,
+                        format!("Unsupported application schema type: {:?}", other),
+                    ));
+                }
+            };
+
+            schema.source = Some(final_source);
+        }
+
+        Ok(app_manifest)
     }
 
     fn read_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error> {
