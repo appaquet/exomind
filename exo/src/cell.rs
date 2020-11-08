@@ -1,5 +1,5 @@
 use crate::{
-    utils::{edit_file, shell_prompt},
+    utils::{edit_file, edit_string, shell_prompt},
     Options,
 };
 use clap::Clap;
@@ -15,6 +15,7 @@ use exocore_core::{
     cell::FullCell,
     cell::LocalNode,
     cell::LocalNodeConfigExt,
+    cell::NodeConfigExt,
     cell::{Cell, EitherCell},
     protos::core::cell_node_config,
     protos::core::node_cell_config,
@@ -37,19 +38,19 @@ pub struct CellOptions {
     /// Public key of the cell we want to make an action on. If not specified
     /// and the node config only contains 1 cell, this cell will be taken.
     #[clap(long, short)]
-    pub public_key: Option<String>,
+    public_key: Option<String>,
 
     /// Name of the cell we want to make an action on. If not specified
     /// and the node config only contains 1 cell, this cell will be taken.
     #[clap(long, short)]
-    pub name: Option<String>,
+    name: Option<String>,
 
     #[clap(subcommand)]
-    pub command: CellCommand,
+    command: CellCommand,
 }
 
 #[derive(Clap)]
-pub enum CellCommand {
+enum CellCommand {
     /// Initializes a new cell.
     Init(InitOptions),
 
@@ -60,7 +61,7 @@ pub enum CellCommand {
     Join(JoinOptions),
 
     /// Cell nodes options.
-    Node(CellNodeOptions),
+    Node(NodeOptions),
 
     /// Check the cell's chain integrity.
     CheckChain,
@@ -83,83 +84,81 @@ pub enum CellCommand {
 
 /// Cell intialization related options
 #[derive(Clap)]
-pub struct InitOptions {
+struct InitOptions {
     /// Name of the cell
-    pub name: Option<String>,
+    name: Option<String>,
 
     /// The node will not host the chain locally. The chain will need to be
     /// initialized on another node manually using "create_genesis_block".
     #[clap(long)]
-    pub no_chain: bool,
+    no_chain: bool,
 
     /// The node will not expose an entity store server.
     #[clap(long)]
-    pub no_store: bool,
+    no_store: bool,
 
     /// Don't create genesis block.
     #[clap(long)]
-    pub no_genesis: bool,
+    no_genesis: bool,
 }
 
 /// Cell join related options
 #[derive(Clap)]
-pub struct JoinOptions {
+struct JoinOptions {}
+
+#[derive(Clap)]
+struct ChainExportOptions {
+    // File in which chain will be exported.
+    file: PathBuf,
+}
+
+#[derive(Clap)]
+struct ChainImportOptions {
+    // Number of operations per blocks.
+    #[clap(long, default_value = "30")]
+    operations_per_block: usize,
+
+    // Files from which chain will be imported.
+    files: Vec<PathBuf>,
+}
+
+#[derive(Clap)]
+struct GenerateAuthTokenOptions {
+    // Token expiration duration in days.
+    #[clap(long, default_value = "30")]
+    expiration_days: u16,
+}
+
+#[derive(Clap)]
+struct NodeOptions {
+    #[clap(subcommand)]
+    command: NodeCommand,
+}
+
+#[derive(Clap)]
+enum NodeCommand {
+    /// Add a node to the cell.
+    Add(NodeAddOptions),
+}
+
+#[derive(Clap)]
+struct NodeAddOptions {
     /// The node will host the chain locally.
     #[clap(long)]
-    pub chain: bool,
+    chain: bool,
 
     /// The node will host entities store.
     #[clap(long)]
-    pub index: bool,
-}
-
-#[derive(Clap)]
-pub struct ChainExportOptions {
-    // File in which chain will be exported
-    pub file: PathBuf,
-}
-
-#[derive(Clap)]
-pub struct ChainImportOptions {
-    // Number of operations per blocks
-    #[clap(long, default_value = "30")]
-    pub operations_per_block: usize,
-
-    // Files from which chain will be imported
-    pub files: Vec<PathBuf>,
-}
-
-#[derive(Clap)]
-pub struct GenerateAuthTokenOptions {
-    // Token expiration duration in days
-    #[clap(long, default_value = "30")]
-    pub expiration_days: u16,
-}
-
-/// Cell node options
-#[derive(Clap)]
-pub struct CellNodeOptions {
-    #[clap(subcommand)]
-    pub command: CellNodeCommands,
-}
-
-#[derive(Clap)]
-pub enum CellNodeCommands {
-    /// Add a node to the cell.
-    Add,
+    store: bool,
 }
 
 pub fn handle_cmd(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
     match &cell_opts.command {
         CellCommand::Init(init_opts) => cmd_init(&exo_opts, cell_opts, init_opts),
-        CellCommand::Node(node_opts) => {
-            //TODO:
-            Ok(())
-        }
-        CellCommand::Join(join_opts) => {
-            //TODO:
-            Ok(())
-        }
+        CellCommand::Node(node_opts) => match &node_opts.command {
+            NodeCommand::Add(add_opts) => cmd_node_add(exo_opts, cell_opts, add_opts),
+        },
+        CellCommand::Join(join_opts) => cmd_join(exo_opts, cell_opts, join_opts),
         CellCommand::List => cmd_list(&exo_opts, cell_opts),
         CellCommand::CheckChain => cmd_check_chain(&exo_opts, cell_opts),
         CellCommand::Exportchain(export_opts) => {
@@ -181,13 +180,9 @@ fn cmd_init(
     _cell_opts: &CellOptions,
     init_opts: &InitOptions,
 ) -> anyhow::Result<()> {
-    let node_config_path = exo_opts.conf_path();
-    let mut node_config = exo_opts.read_configuration();
-
+    let node_config = exo_opts.read_configuration();
     let node = LocalNode::new_from_config(node_config.clone())
         .expect("Couldn't create node from node config");
-    let cell_keypair = Keypair::generate_ed25519();
-    let cell_pk_str = cell_keypair.public().encode_base58_string();
 
     let mut cell_name = node.name().to_string();
     if init_opts.name.is_none() {
@@ -224,43 +219,29 @@ fn cmd_init(
         cell_node
     };
 
-    {
-        // Write cell configuration
-        let mut cell_dir = exo_opts.dir_path();
-        cell_dir.push("cells");
-        cell_dir.push(cell_pk_str.clone());
-
-        std::fs::create_dir_all(&cell_dir).expect("Couldn't create cell directory");
+    let cell_config = {
+        // Create & write cell configuration
+        let cell_keypair = Keypair::generate_ed25519();
+        let cell_pk_str = cell_keypair.public().encode_base58_string();
 
         let cell_id = CellId::from_public_key(&cell_keypair.public());
         let cell_config = CellConfig {
             keypair: cell_keypair.encode_base58_string(),
-            public_key: cell_pk_str.clone(),
+            public_key: cell_pk_str,
             id: cell_id.to_string(),
             name: cell_name,
             nodes: vec![cell_node],
             ..Default::default()
         };
 
-        let cell_config_path = cell_dir.join("cell.yaml");
+        write_cell_config(exo_opts, &cell_config);
+
         cell_config
-            .to_yaml_file(cell_config_path)
-            .expect("Couldn't write cell config");
-    }
+    };
 
     {
         // Write node configuration with new cell
-        let node_cell = NodeCellConfig {
-            location: Some(node_cell_config::Location::Directory(format!(
-                "cells/{}",
-                cell_pk_str
-            ))),
-        };
-
-        node_config.cells.push(node_cell);
-        node_config
-            .to_yaml_file(&node_config_path)
-            .expect("Couldn't write node config");
+        add_node_config_cell(exo_opts, &node_config, &cell_config);
     }
 
     if init_opts.no_genesis {
@@ -268,7 +249,7 @@ fn cmd_init(
         let (either_cells, _local_node) = Cell::new_from_local_node_config(node_config)
             .expect("Couldn't create cell from config");
 
-        let cell = extract_cell_by_pk(either_cells, &cell_pk_str)
+        let cell = extract_cell_by_pk(either_cells, &cell_config.public_key)
             .expect("Couldn't find just created cell in config");
 
         let full_cell = cell.unwrap_full();
@@ -279,13 +260,85 @@ fn cmd_init(
     Ok(())
 }
 
+fn cmd_node_add(
+    exo_opts: &Options,
+    cell_opts: &CellOptions,
+    add_opts: &NodeAddOptions,
+) -> anyhow::Result<()> {
+    let (_, cell) = get_cell(exo_opts, cell_opts);
+    let cell = cell.cell();
+
+    let config_path = cell_config_path(cell);
+    let mut cell_config =
+        CellConfig::from_yaml_file(&config_path).expect("Couldn't read cell config");
+
+    let node_config_str = edit_string(
+        "# Paste joining node's public info (result of `exo config print --cell` on joining node)",
+        |config| {
+            std::thread::sleep(Duration::from_secs(2));
+            NodeConfig::from_yaml(config.as_bytes()).is_ok()
+        },
+    );
+
+    let node =
+        NodeConfig::from_yaml(node_config_str.as_bytes()).expect("Couldn't decode node config");
+
+    let mut cell_node = CellNodeConfig {
+        node: Some(node),
+        roles: vec![],
+    };
+
+    if add_opts.chain {
+        cell_node
+            .roles
+            .push(cell_node_config::Role::ChainRole.into());
+    }
+
+    if add_opts.store {
+        cell_node
+            .roles
+            .push(cell_node_config::Role::StoreRole.into());
+    }
+
+    cell_config.nodes.push(cell_node);
+
+    cell_config
+        .to_yaml_file(&config_path)
+        .expect("Couldn't write cell config");
+
+    Ok(())
+}
+
+fn cmd_join(
+    exo_opts: &Options,
+    _cell_opts: &CellOptions,
+    _join_opts: &JoinOptions,
+) -> anyhow::Result<()> {
+    let node_config = exo_opts.read_configuration();
+
+    let cell_config_str = edit_string(
+        "# Paste config of the cell to join (result of `exo cell print` on host node)",
+        |config| {
+            std::thread::sleep(Duration::from_secs(2));
+            CellConfig::from_yaml(config.as_bytes()).is_ok()
+        },
+    );
+
+    let cell_config =
+        CellConfig::from_yaml(cell_config_str.as_bytes()).expect("Couldn't parse cell config");
+
+    write_cell_config(exo_opts, &cell_config);
+
+    add_node_config_cell(exo_opts, &node_config, &cell_config);
+
+    Ok(())
+}
+
 fn cmd_edit(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
     let (_, cell) = get_cell(exo_opts, cell_opts);
     let cell = cell.cell();
 
-    let cell_directory = cell.cell_directory().expect("Couldn't find cell directory");
-    let config_path = cell_directory.join("cell.yaml");
-
+    let config_path = cell_config_path(cell);
     edit_file(&config_path, |temp_path| -> bool {
         if let Err(err) = CellConfig::from_yaml_file(temp_path) {
             println!("Error parsing config: {:?}", err);
@@ -571,6 +624,11 @@ fn extract_cell_by_name(either_cells: Vec<EitherCell>, name: &str) -> Option<Eit
     either_cells.into_iter().find(|c| c.cell().name() == name)
 }
 
+fn cell_config_path(cell: &Cell) -> PathBuf {
+    let cell_directory = cell.cell_directory().expect("Couldn't find cell directory");
+    cell_directory.join("cell.yaml")
+}
+
 fn create_genesis_block(cell: FullCell) -> anyhow::Result<()> {
     let chain_dir = cell
         .chain_directory()
@@ -594,4 +652,40 @@ fn create_genesis_block(cell: FullCell) -> anyhow::Result<()> {
         .map_err(|err| anyhow!("Couldn't write genesis block: {}", err))?;
 
     Ok(())
+}
+
+fn write_cell_config(exo_opts: &Options, config: &CellConfig) {
+    if config.public_key.is_empty() {
+        panic!("Expected cell to have a public key");
+    }
+
+    let mut cell_dir = exo_opts.dir_path();
+    cell_dir.push("cells");
+    cell_dir.push(config.public_key.clone());
+
+    std::fs::create_dir_all(&cell_dir).expect("Couldn't create cell directory");
+
+    let cell_config_path = cell_dir.join("cell.yaml");
+    config
+        .to_yaml_file(cell_config_path)
+        .expect("Couldn't write cell config");
+}
+
+fn add_node_config_cell(
+    exo_opts: &Options,
+    node_config: &LocalNodeConfig,
+    cell_config: &CellConfig,
+) {
+    let node_cell = NodeCellConfig {
+        location: Some(node_cell_config::Location::Directory(format!(
+            "cells/{}",
+            &cell_config.public_key
+        ))),
+    };
+
+    let mut node_config = node_config.clone();
+    node_config.cells.push(node_cell);
+    node_config
+        .to_yaml_file(exo_opts.conf_path())
+        .expect("Couldn't write node config");
 }

@@ -97,7 +97,7 @@ fn cmd_print_node_config(config: LocalNodeConfig, print_opts: &PrintOpts) {
     let mut config = if print_opts.inline {
         config.inlined().expect("Couldn't inline configuration")
     } else {
-        config.clone()
+        config
     };
 
     if print_opts.exclude_app_schemas {

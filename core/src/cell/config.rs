@@ -178,7 +178,7 @@ impl CellNodeConfigExt for CellNodeConfig {
 pub trait CellConfigExt {
     fn config(&self) -> &CellConfig;
 
-    fn from_yaml_reader<R: Read>(bytes: R) -> Result<CellConfig, Error>;
+    fn from_yaml<R: Read>(bytes: R) -> Result<CellConfig, Error>;
 
     fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<CellConfig, Error>;
 
@@ -205,7 +205,7 @@ impl CellConfigExt for CellConfig {
         self
     }
 
-    fn from_yaml_reader<R: Read>(bytes: R) -> Result<CellConfig, Error> {
+    fn from_yaml<R: Read>(bytes: R) -> Result<CellConfig, Error> {
         let config: CellConfig = serde_yaml::from_reader(bytes)
             .map_err(|err| Error::Config(format!("Couldn't decode YAML cell config: {}", err)))?;
 
@@ -226,7 +226,7 @@ impl CellConfigExt for CellConfig {
             .parent()
             .expect("Couldn't get enclosing directory of yaml file");
 
-        let mut cell_config = Self::from_yaml_reader(file)?;
+        let mut cell_config = Self::from_yaml(file)?;
         cell_config.make_absolute_paths(directory);
 
         Ok(cell_config)
@@ -396,10 +396,19 @@ impl CellConfigExt for CellConfig {
 
 /// Extension for `NodeConfig` proto.
 pub trait NodeConfigExt {
+    fn from_yaml<R: Read>(bytes: R) -> Result<NodeConfig, Error>;
+
     fn to_yaml(&self) -> Result<String, Error>;
 }
 
 impl NodeConfigExt for NodeConfig {
+    fn from_yaml<R: Read>(bytes: R) -> Result<NodeConfig, Error> {
+        let config: NodeConfig = serde_yaml::from_reader(bytes)
+            .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
+
+        Ok(config)
+    }
+
     fn to_yaml(&self) -> Result<String, Error> {
         serde_yaml::to_string(self).map_err(|err| {
             Error::Config(format!("Couldn't encode cell node config to YAML: {}", err))

@@ -35,7 +35,7 @@ pub struct Options {
     pub conf: PathBuf,
 
     #[clap(subcommand)]
-    pub subcommand: Commands,
+    subcommand: Commands,
 }
 
 impl Options {
