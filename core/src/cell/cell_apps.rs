@@ -36,7 +36,7 @@ impl CellApplications {
             })?;
 
             match app_location {
-                cell_application_config::Location::Instance(manifest) => {
+                cell_application_config::Location::Inline(manifest) => {
                     let mut manifest: Manifest = manifest.clone();
                     manifest.path = child_to_abs_path(&cell_config.path, &manifest.path)
                         .to_string_lossy()
@@ -45,7 +45,7 @@ impl CellApplications {
                     let application = Application::new_from_manifest(manifest)?;
                     self.add_application(application)?;
                 }
-                cell_application_config::Location::Directory(dir) => {
+                cell_application_config::Location::Path(dir) => {
                     let application = Application::new_from_directory(child_to_abs_path(
                         &cell_config.path,
                         &dir,

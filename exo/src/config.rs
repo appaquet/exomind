@@ -96,9 +96,9 @@ fn cmd_print_node_config(config: LocalNodeConfig, print_opts: &PrintOpts) {
 
     if print_opts.exclude_app_schemas {
         for cell in &mut config.cells {
-            if let Some(node_cell_config::Location::Instance(cell_config)) = &mut cell.location {
+            if let Some(node_cell_config::Location::Inline(cell_config)) = &mut cell.location {
                 for app in &mut cell_config.apps {
-                    if let Some(cell_application_config::Location::Instance(app_manifest)) =
+                    if let Some(cell_application_config::Location::Inline(app_manifest)) =
                         &mut app.location
                     {
                         app_manifest.schemas.clear();

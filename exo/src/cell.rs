@@ -687,7 +687,7 @@ fn add_node_config_cell(
     cell_config: &CellConfig,
 ) {
     let node_cell = NodeCellConfig {
-        location: Some(node_cell_config::Location::Directory(format!(
+        location: Some(node_cell_config::Location::Path(format!(
             "cells/{}",
             &cell_config.public_key
         ))),

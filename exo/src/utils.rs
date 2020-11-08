@@ -84,7 +84,7 @@ where
         match validator(&content) {
             Ok(ret) => {
                 result = ret;
-                break
+                break;
             }
             Err(err) => {
                 println!("Error: {}", err);

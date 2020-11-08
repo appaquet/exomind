@@ -16,7 +16,7 @@ addresses:
 # Use `exo keys generate` to generate cell's keys
 cells:
   # Cell defined inline
-  - instance:
+  - inline:
       public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
       keypair: ae55Nfv11ppyFVxCDaYovcxTcaTDaSzSFjiVoiC3VwGARfEuaqGcgoJUdVpqfwKQVDN4rvGKUvt4yqQc6w7it7PCpG
       name: Optional Cell Name
@@ -43,7 +43,7 @@ cells:
             public_key: peHdrwp1ZXicF1v7RQRRC4ursqgE1oM9nuVijCmrf74n7E
 
       apps:
-        - directory: ./app
+        - path: ./app
 
   # Cell defined in a directory
-  - directory: ./cell
+  - path: ./cell

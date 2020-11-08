@@ -111,7 +111,7 @@ impl LocalNodeConfigExt for LocalNodeConfig {
             let cell_config = cell_config.inlined()?;
 
             let mut node_cell_config = node_cell_config.clone();
-            node_cell_config.location = Some(node_cell_config::Location::Instance(cell_config));
+            node_cell_config.location = Some(node_cell_config::Location::Inline(cell_config));
 
             cells.push(node_cell_config);
         }
@@ -126,10 +126,10 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 
         for cell in &mut self.cells {
             match cell.location.as_mut() {
-                Some(node_cell_config::Location::Instance(cell)) => {
+                Some(node_cell_config::Location::Inline(cell)) => {
                     cell.make_absolute_paths(directory.as_ref());
                 }
-                Some(node_cell_config::Location::Directory(path)) => {
+                Some(node_cell_config::Location::Path(path)) => {
                     *path = child_to_abs_path_string(&self.path, path.clone());
                 }
                 _ => {}
@@ -142,10 +142,10 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 
         for cell in &mut self.cells {
             match cell.location.as_mut() {
-                Some(node_cell_config::Location::Instance(cell)) => {
+                Some(node_cell_config::Location::Inline(cell)) => {
                     cell.make_relative_paths(directory.as_ref());
                 }
-                Some(node_cell_config::Location::Directory(path)) => {
+                Some(node_cell_config::Location::Path(path)) => {
                     *path = child_to_relative_path_string(&self.path, path.clone());
                 }
                 _ => {}
@@ -234,7 +234,7 @@ impl CellConfigExt for CellConfig {
 
         for app in config.apps.iter_mut() {
             let mut final_manifest = match app.location.take() {
-                Some(crate::protos::core::cell_application_config::Location::Directory(dir)) => {
+                Some(crate::protos::core::cell_application_config::Location::Path(dir)) => {
                     let absolute_path = child_to_abs_path_string(&config.path, &dir);
 
                     let mut manifest_path = PathBuf::from(&absolute_path);
@@ -243,9 +243,9 @@ impl CellConfigExt for CellConfig {
                     manifest.path = absolute_path;
                     manifest
                 }
-                Some(crate::protos::core::cell_application_config::Location::Instance(
-                    manifest,
-                )) => manifest,
+                Some(crate::protos::core::cell_application_config::Location::Inline(manifest)) => {
+                    manifest
+                }
                 other => {
                     return Err(Error::Application(
                         "unnamed".to_string(),
@@ -296,7 +296,7 @@ impl CellConfigExt for CellConfig {
             }
 
             app.location = Some(
-                crate::protos::core::cell_application_config::Location::Instance(final_manifest),
+                crate::protos::core::cell_application_config::Location::Inline(final_manifest),
             );
         }
 
@@ -336,8 +336,8 @@ impl CellConfigExt for CellConfig {
 
     fn from_node_cell(config: &NodeCellConfig) -> Result<CellConfig, Error> {
         match &config.location {
-            Some(node_cell_config::Location::Instance(cell_config)) => Ok(cell_config.clone()),
-            Some(node_cell_config::Location::Directory(directory)) => {
+            Some(node_cell_config::Location::Inline(cell_config)) => Ok(cell_config.clone()),
+            Some(node_cell_config::Location::Path(directory)) => {
                 let mut config_path = PathBuf::from(directory);
                 config_path.push("cell.yaml");
 
@@ -355,10 +355,10 @@ impl CellConfigExt for CellConfig {
 
         for app in &mut self.apps {
             match app.location.as_mut() {
-                Some(cell_application_config::Location::Instance(app_manifest)) => {
+                Some(cell_application_config::Location::Inline(app_manifest)) => {
                     app_manifest.path = child_to_abs_path_string(&self.path, &app_manifest.path);
                 }
-                Some(cell_application_config::Location::Directory(path)) => {
+                Some(cell_application_config::Location::Path(path)) => {
                     *path = child_to_abs_path_string(&self.path, path.clone());
                 }
                 _ => {}
@@ -371,11 +371,11 @@ impl CellConfigExt for CellConfig {
 
         for app in &mut self.apps {
             match app.location.as_mut() {
-                Some(cell_application_config::Location::Instance(app_manifest)) => {
+                Some(cell_application_config::Location::Inline(app_manifest)) => {
                     app_manifest.path =
                         child_to_relative_path_string(&self.path, &app_manifest.path);
                 }
-                Some(cell_application_config::Location::Directory(path)) => {
+                Some(cell_application_config::Location::Path(path)) => {
                     *path = child_to_relative_path_string(&self.path, path.clone());
                 }
                 _ => {}
@@ -473,7 +473,7 @@ mod tests {
             path: "path".to_string(),
             cells: vec![
                 NodeCellConfig {
-                    location: Some(node_cell_config::Location::Instance(CellConfig {
+                    location: Some(node_cell_config::Location::Inline(CellConfig {
                         public_key: "pk".to_string(),
                         keypair: "kp".to_string(),
                         name: "cell_name".to_string(),
@@ -493,7 +493,7 @@ mod tests {
                         }],
                         apps: vec![
                             CellApplicationConfig {
-                                location: Some(cell_application_config::Location::Instance(
+                                location: Some(cell_application_config::Location::Inline(
                                     Manifest {
                                         name: "name".to_string(),
                                         ..Default::default()
@@ -501,7 +501,7 @@ mod tests {
                                 )),
                             },
                             CellApplicationConfig {
-                                location: Some(cell_application_config::Location::Directory(
+                                location: Some(cell_application_config::Location::Path(
                                     "some_path".to_string(),
                                 )),
                             },
@@ -509,9 +509,7 @@ mod tests {
                     })),
                 },
                 NodeCellConfig {
-                    location: Some(node_cell_config::Location::Directory(
-                        "some_path".to_string(),
-                    )),
+                    location: Some(node_cell_config::Location::Path("some_path".to_string())),
                 },
             ],
             addresses: Some(NodeAddresses {
@@ -623,7 +621,7 @@ mod tests {
 
         fn validate_node_cell_config(node_cell_config: &NodeCellConfig) {
             match node_cell_config.location.as_ref() {
-                Some(node_cell_config::Location::Instance(cell_config)) => {
+                Some(node_cell_config::Location::Inline(cell_config)) => {
                     validate_cell(cell_config);
                 }
                 other => panic!("Expected cell to be an instance location, got: {:?}", other),
@@ -633,7 +631,7 @@ mod tests {
         fn validate_cell(cell_config: &CellConfig) {
             for cell_app_config in &cell_config.apps {
                 match cell_app_config.location.as_ref() {
-                    Some(cell_application_config::Location::Instance(app_manifest)) => {
+                    Some(cell_application_config::Location::Inline(app_manifest)) => {
                         validate_app(app_manifest);
                     }
                     other => panic!("Expected app to be an instance location, got: {:?}", other),
@@ -678,7 +676,7 @@ addresses:
     - http://0.0.0.0:8080
 
 cells:
-  - instance:
+  - inline:
       public_key: pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ
       keypair: ""
       name: ""
@@ -695,7 +693,7 @@ cells:
           roles:
             - 1
       apps:
-        - instance:
+        - inline:
              name: some application
              public_key: peHZC1CM51uAugeMNxbXkVukFzCwMJY52m1xDCfLmm1pc1
 "#;

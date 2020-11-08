@@ -55,12 +55,10 @@ pub mod node_cell_config {
     #[derive(Clone, PartialEq, ::prost::Oneof, Serialize, Deserialize)]
     #[serde(rename_all = "lowercase")]
     pub enum Location {
-        /// TODO: should be "inline"
         #[prost(message, tag = "1")]
-        Instance(super::CellConfig),
-        /// TODO: should be path
+        Inline(super::CellConfig),
         #[prost(string, tag = "2")]
-        Directory(std::string::String),
+        Path(std::string::String),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
@@ -126,11 +124,9 @@ pub mod cell_application_config {
     #[derive(Clone, PartialEq, ::prost::Oneof, Serialize, Deserialize)]
     #[serde(rename_all = "lowercase")]
     pub enum Location {
-        /// TODO: should be "inline"
         #[prost(message, tag = "1")]
-        Instance(super::super::apps::Manifest),
-        /// TODO: Should be "path"
+        Inline(super::super::apps::Manifest),
         #[prost(string, tag = "2")]
-        Directory(std::string::String),
+        Path(std::string::String),
     }
 }
