@@ -32,11 +32,9 @@ pub fn shell_prompt(question: &str, default: Option<&str>) -> anyhow::Result<Opt
     Ok(Some(resp_trimmed.to_string()))
 }
 
-// TODO: Validator should return Result
-// TODO: Sleep should be done here
 pub fn edit_file<P: AsRef<Path>, V>(file: P, validator: V)
 where
-    V: Fn(&Path) -> bool,
+    V: Fn(&Path) -> anyhow::Result<()>,
 {
     let temp_file = tempfile::NamedTempFile::new().expect("Couldn't create temp file");
 
@@ -49,8 +47,12 @@ where
             .status()
             .expect("Couldn't launch editor");
 
-        if validator(temp_file.path()) {
-            break;
+        match validator(temp_file.path()) {
+            Ok(_) => break,
+            Err(err) => {
+                println!("Error: {}", err);
+                std::thread::sleep(Duration::from_secs(2));
+            }
         }
     }
 
@@ -58,11 +60,9 @@ where
         .expect("Couldn't copy edited temp file to original file");
 }
 
-// TODO: Validator should return Result
-// TODO: Sleep should be done here
-pub fn edit_string<S: AsRef<str>, V>(content: S, validator: V) -> String
+pub fn edit_string<S: AsRef<str>, V, R>(content: S, validator: V) -> R
 where
-    V: Fn(&str) -> bool,
+    V: Fn(&str) -> anyhow::Result<R>,
 {
     let temp_file = tempfile::NamedTempFile::new().expect("Couldn't create temp file");
 
@@ -72,6 +72,7 @@ where
             .expect("Couldn't write to temp file");
     }
 
+    let result: R;
     let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vim".to_string());
     loop {
         Command::new(&editor)
@@ -80,14 +81,21 @@ where
             .expect("Couldn't launch editor");
 
         let content = std::fs::read_to_string(temp_file.path()).expect("Couldn't read temp file");
-        if validator(&content) {
-            break;
-        } else {
-            std::thread::sleep(Duration::from_secs(2));
+        match validator(&content) {
+            Ok(ret) => {
+                result = ret;
+                break
+            }
+            Err(err) => {
+                println!("Error: {}", err);
+                std::thread::sleep(Duration::from_secs(2));
+            }
         }
     }
 
-    std::fs::read_to_string(temp_file.path()).expect("Couldn't read temp file")
+    std::fs::read_to_string(temp_file.path()).expect("Couldn't read temp file");
+
+    result
 }
 
 pub fn expand_tild<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {

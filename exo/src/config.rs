@@ -4,7 +4,6 @@ use exocore_core::{
     cell::{LocalNodeConfigExt, NodeConfigExt},
     protos::core::{cell_application_config, node_cell_config, LocalNodeConfig, NodeConfig},
 };
-use std::time::Duration;
 
 #[derive(Clap)]
 pub struct ConfigOptions {
@@ -54,14 +53,9 @@ pub fn handle_cmd(exo_opts: &Options, config_opts: &ConfigOptions) -> anyhow::Re
 fn cmd_edit(exo_opts: &Options, _conf_opts: &ConfigOptions) -> anyhow::Result<()> {
     let config_path = exo_opts.conf_path();
 
-    edit_file(config_path, |temp_path| -> bool {
-        if let Err(err) = LocalNodeConfig::from_yaml_file(temp_path) {
-            println!("Error parsing config: {:?}", err);
-            std::thread::sleep(Duration::from_secs(2));
-            false
-        } else {
-            true
-        }
+    edit_file(config_path, |temp_path| {
+        LocalNodeConfig::from_yaml_file(temp_path)?;
+        Ok(())
     });
 
     Ok(())

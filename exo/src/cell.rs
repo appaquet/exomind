@@ -57,11 +57,17 @@ enum CellCommand {
     /// Lists cells of the node.
     List,
 
+    /// Edit cell configuration.
+    Edit,
+
     /// Join a cell.
     Join(JoinOptions),
 
     /// Cell nodes options.
     Node(NodeOptions),
+
+    /// Print cell configuration.
+    Print,
 
     /// Check the cell's chain integrity.
     CheckChain,
@@ -75,9 +81,6 @@ enum CellCommand {
     /// Generate an auth token.
     GenerateAuthToken(GenerateAuthTokenOptions),
 
-    /// Edit cell configuration.
-    Edit,
-
     /// Create genesis block of the chain.
     CreateGenesisBlock,
 }
@@ -86,6 +89,7 @@ enum CellCommand {
 #[derive(Clap)]
 struct InitOptions {
     /// Name of the cell
+    #[clap(long)]
     name: Option<String>,
 
     /// The node will not host the chain locally. The chain will need to be
@@ -160,6 +164,8 @@ pub fn handle_cmd(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result
         },
         CellCommand::Join(join_opts) => cmd_join(exo_opts, cell_opts, join_opts),
         CellCommand::List => cmd_list(&exo_opts, cell_opts),
+        CellCommand::Edit => cmd_edit(&exo_opts, cell_opts),
+        CellCommand::Print => cmd_print(&exo_opts, cell_opts),
         CellCommand::CheckChain => cmd_check_chain(&exo_opts, cell_opts),
         CellCommand::Exportchain(export_opts) => {
             cmd_export_chain(&exo_opts, cell_opts, export_opts)
@@ -170,7 +176,6 @@ pub fn handle_cmd(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result
         CellCommand::GenerateAuthToken(gen_opts) => {
             cmd_generate_auth_token(&exo_opts, cell_opts, gen_opts)
         }
-        CellCommand::Edit => cmd_edit(&exo_opts, cell_opts),
         CellCommand::CreateGenesisBlock => cmd_create_genesis_block(&exo_opts, cell_opts),
     }
 }
@@ -239,13 +244,12 @@ fn cmd_init(
         cell_config
     };
 
-    {
-        // Write node configuration with new cell
-        add_node_config_cell(exo_opts, &node_config, &cell_config);
-    }
+    // Write node configuration with new cell
+    add_node_config_cell(exo_opts, &node_config, &cell_config);
 
-    if init_opts.no_genesis {
+    if !init_opts.no_genesis {
         // Create genesis block
+        let node_config = exo_opts.read_configuration();
         let (either_cells, _local_node) = Cell::new_from_local_node_config(node_config)
             .expect("Couldn't create cell from config");
 
@@ -272,16 +276,16 @@ fn cmd_node_add(
     let mut cell_config =
         CellConfig::from_yaml_file(&config_path).expect("Couldn't read cell config");
 
-    let node_config_str = edit_string(
+    let node_config = edit_string(
         "# Paste joining node's public info (result of `exo config print --cell` on joining node)",
-        |config| NodeConfig::from_yaml(config.as_bytes()).is_ok(),
+        |config| {
+            let config = NodeConfig::from_yaml(config.as_bytes())?;
+            Ok(config)
+        },
     );
 
-    let node =
-        NodeConfig::from_yaml(node_config_str.as_bytes()).expect("Couldn't decode node config");
-
     let mut cell_node = CellNodeConfig {
-        node: Some(node),
+        node: Some(node_config),
         roles: vec![],
     };
 
@@ -313,16 +317,13 @@ fn cmd_join(
 ) -> anyhow::Result<()> {
     let node_config = exo_opts.read_configuration();
 
-    let cell_config_str = edit_string(
+    let cell_config = edit_string(
         "# Paste config of the cell to join (result of `exo cell print` on host node)",
         |config| {
-            std::thread::sleep(Duration::from_secs(2));
-            CellConfig::from_yaml(config.as_bytes()).is_ok()
+            let config = CellConfig::from_yaml(config.as_bytes())?;
+            Ok(config)
         },
     );
-
-    let cell_config =
-        CellConfig::from_yaml(cell_config_str.as_bytes()).expect("Couldn't parse cell config");
 
     write_cell_config(exo_opts, &cell_config);
 
@@ -336,15 +337,27 @@ fn cmd_edit(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
     let cell = cell.cell();
 
     let config_path = cell_config_path(cell);
-    edit_file(&config_path, |temp_path| -> bool {
-        if let Err(err) = CellConfig::from_yaml_file(temp_path) {
-            println!("Error parsing config: {:?}", err);
-            std::thread::sleep(Duration::from_secs(2));
-            false
-        } else {
-            true
-        }
+    edit_file(&config_path, |temp_path| {
+        CellConfig::from_yaml_file(temp_path)?;
+        Ok(())
     });
+
+    Ok(())
+}
+
+fn cmd_print(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result<()> {
+    let (_, cell) = get_cell(exo_opts, cell_opts);
+    let cell = cell.cell();
+
+    let config_path = cell_config_path(cell);
+    let config = CellConfig::from_yaml_file(config_path).expect("Coudlnt' read cell config");
+
+    println!(
+        "{}",
+        config
+            .to_yaml()
+            .expect("Couldn't convert cell config to yaml")
+    );
 
     Ok(())
 }
