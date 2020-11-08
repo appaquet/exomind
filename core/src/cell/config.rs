@@ -4,8 +4,8 @@ use crate::{
         node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
     },
     protos::{core::cell_application_config, core::NodeConfig, generated::exocore_apps::Manifest},
+    utils::path::child_to_abs_path_string,
     utils::path::child_to_relative_path_string,
-    utils::path::{child_to_abs_path, child_to_abs_path_string},
 };
 use std::fs::File;
 use std::io::prelude::*;
@@ -107,7 +107,7 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 
         let mut cells = Vec::new();
         for node_cell_config in &config.cells {
-            let cell_config = CellConfig::from_node_cell(node_cell_config, &config)?;
+            let cell_config = CellConfig::from_node_cell(node_cell_config)?;
             let cell_config = cell_config.inlined()?;
 
             let mut node_cell_config = node_cell_config.clone();
@@ -190,10 +190,7 @@ pub trait CellConfigExt {
 
     fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error>;
 
-    fn from_node_cell(
-        config: &NodeCellConfig,
-        node_config: &LocalNodeConfig,
-    ) -> Result<CellConfig, Error>;
+    fn from_node_cell(config: &NodeCellConfig) -> Result<CellConfig, Error>;
 
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
 
@@ -337,18 +334,11 @@ impl CellConfigExt for CellConfig {
         Ok(())
     }
 
-    fn from_node_cell(
-        config: &NodeCellConfig,
-        node_config: &LocalNodeConfig,
-    ) -> Result<CellConfig, Error> {
+    fn from_node_cell(config: &NodeCellConfig) -> Result<CellConfig, Error> {
         match &config.location {
-            Some(node_cell_config::Location::Instance(cell_config)) => {
-                let mut cell_config = cell_config.clone();
-                cell_config.path = child_to_abs_path_string(&node_config.path, cell_config.path);
-                Ok(cell_config)
-            }
+            Some(node_cell_config::Location::Instance(cell_config)) => Ok(cell_config.clone()),
             Some(node_cell_config::Location::Directory(directory)) => {
-                let mut config_path = child_to_abs_path(&node_config.path, directory);
+                let mut config_path = PathBuf::from(directory);
                 config_path.push("cell.yaml");
 
                 Self::from_yaml_file(config_path)

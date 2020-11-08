@@ -121,7 +121,7 @@ impl Cell {
 
         let mut either_cells = Vec::new();
         for node_cell_config in &config.cells {
-            let mut cell_config = CellConfig::from_node_cell(node_cell_config, &config)?;
+            let mut cell_config = CellConfig::from_node_cell(node_cell_config)?;
 
             if cell_config.path.is_empty() {
                 let cell_path = child_to_abs_path(&config.path, &cell_config.path);

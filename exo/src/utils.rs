@@ -2,6 +2,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     process::Command,
+    time::Duration,
 };
 
 pub fn shell_prompt(question: &str, default: Option<&str>) -> anyhow::Result<Option<String>> {
@@ -31,6 +32,8 @@ pub fn shell_prompt(question: &str, default: Option<&str>) -> anyhow::Result<Opt
     Ok(Some(resp_trimmed.to_string()))
 }
 
+// TODO: Validator should return Result
+// TODO: Sleep should be done here
 pub fn edit_file<P: AsRef<Path>, V>(file: P, validator: V)
 where
     V: Fn(&Path) -> bool,
@@ -55,6 +58,8 @@ where
         .expect("Couldn't copy edited temp file to original file");
 }
 
+// TODO: Validator should return Result
+// TODO: Sleep should be done here
 pub fn edit_string<S: AsRef<str>, V>(content: S, validator: V) -> String
 where
     V: Fn(&str) -> bool,
@@ -77,6 +82,8 @@ where
         let content = std::fs::read_to_string(temp_file.path()).expect("Couldn't read temp file");
         if validator(&content) {
             break;
+        } else {
+            std::thread::sleep(Duration::from_secs(2));
         }
     }
 

@@ -274,10 +274,7 @@ fn cmd_node_add(
 
     let node_config_str = edit_string(
         "# Paste joining node's public info (result of `exo config print --cell` on joining node)",
-        |config| {
-            std::thread::sleep(Duration::from_secs(2));
-            NodeConfig::from_yaml(config.as_bytes()).is_ok()
-        },
+        |config| NodeConfig::from_yaml(config.as_bytes()).is_ok(),
     );
 
     let node =
