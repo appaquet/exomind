@@ -10,7 +10,7 @@ jobs:
   rust_checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v2.3.4
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v2.3.4
 
       - name: Setup Node
         uses: actions/setup-node@v2.1.2
@@ -58,7 +58,7 @@ jobs:
   ios_build:
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v2.3.4
 
       - name: Install dependencies
         run: |
@@ -77,5 +77,5 @@ jobs:
   markdown_links_check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.3.3
+    - uses: actions/checkout@v2.3.4
     - uses: gaurav-nelson/github-action-markdown-link-check@v1
