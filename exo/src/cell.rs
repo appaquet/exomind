@@ -81,7 +81,7 @@ enum CellCommand {
     /// Generate an auth token.
     GenerateAuthToken(GenerateAuthTokenOptions),
 
-    /// Create genesis block of the chain. 
+    /// Create genesis block of the chain.
     CreateGenesisBlock,
 }
 
