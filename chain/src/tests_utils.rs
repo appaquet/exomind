@@ -8,7 +8,7 @@ use itertools::Itertools;
 use tempfile::TempDir;
 
 use exocore_core::cell::{CellNode, CellNodeRole, LocalNode};
-use exocore_core::futures::Runtime;
+use exocore_core::futures::spawn_future;
 use exocore_core::tests_utils::expect_result_eventually;
 use exocore_core::time::Clock;
 
@@ -24,7 +24,6 @@ use exocore_transport::ServiceType;
 /// exocore-chain testing utility
 pub struct TestChainCluster {
     pub tempdir: TempDir,
-    pub runtime: Runtime,
     pub transport_hub: MockTransport,
 
     pub nodes: Vec<LocalNode>,
@@ -48,8 +47,6 @@ pub struct ClusterSpec {
 impl TestChainCluster {
     pub fn new(count: usize) -> Result<TestChainCluster, anyhow::Error> {
         let tempdir = tempfile::tempdir()?;
-
-        let runtime = Runtime::new()?;
 
         let transport_hub = MockTransport::default();
 
@@ -119,7 +116,6 @@ impl TestChainCluster {
 
         let mut cluster = TestChainCluster {
             tempdir,
-            runtime,
             nodes,
             transport_hub,
             clocks,
@@ -141,12 +137,12 @@ impl TestChainCluster {
         Ok(cluster)
     }
 
-    pub fn new_single_and_start() -> Result<TestChainCluster, anyhow::Error> {
+    pub async fn new_single_and_start() -> Result<TestChainCluster, anyhow::Error> {
         let mut cluster = TestChainCluster::new(1)?;
 
         cluster.create_node(0)?;
         cluster.create_chain_genesis_block(0);
-        cluster.start_engine(0);
+        cluster.start_engine(0).await;
 
         // wait for engine to start
         cluster.wait_started(0);
@@ -209,7 +205,7 @@ impl TestChainCluster {
         }
     }
 
-    pub fn start_engine(&mut self, node_idx: usize) {
+    pub async fn start_engine(&mut self, node_idx: usize) {
         let transport = self
             .transport_hub
             .get_transport(self.nodes[node_idx].clone(), ServiceType::Chain);
@@ -227,8 +223,7 @@ impl TestChainCluster {
         self.handles[node_idx] = Some(engine_handle);
 
         self.collect_events_stream(node_idx);
-
-        self.runtime.spawn(async {
+        spawn_future(async move {
             let res = engine.run().await;
             info!("Engine done: {:?}", res);
         });
@@ -249,7 +244,8 @@ impl TestChainCluster {
                 .unwrap()
                 .take_events_stream()
                 .unwrap();
-            self.runtime.spawn(async move {
+
+            spawn_future(async move {
                 while let Some(event) = stream_events.next().await {
                     let mut events = events.lock().unwrap();
                     events.push(event.clone());
@@ -394,13 +390,13 @@ impl TestChainCluster {
         })
     }
 
-    pub fn restart_node(&mut self, node_idx: usize) -> anyhow::Result<()> {
+    pub async fn restart_node(&mut self, node_idx: usize) -> anyhow::Result<()> {
         self.stop_node(node_idx);
         self.create_node(node_idx)?;
-        self.start_engine(node_idx);
+        self.start_engine(node_idx).await;
 
         let handle = self.handles[node_idx].as_ref().unwrap().clone();
-        self.runtime.block_on(handle.on_started());
+        handle.on_started().await;
 
         Ok(())
     }

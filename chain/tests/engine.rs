@@ -12,12 +12,12 @@ extern crate anyhow;
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
 
-#[test]
-fn single_node_full_chain_write_read() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn single_node_full_chain_write_read() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
-    cluster.start_engine(0);
+    cluster.start_engine(0).await;
     cluster.wait_started(0);
 
     let op1 = cluster
@@ -75,12 +75,12 @@ fn single_node_full_chain_write_read() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn single_node_chain_iteration() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn single_node_chain_iteration() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
-    cluster.start_engine(0);
+    cluster.start_engine(0).await;
     cluster.wait_started(0);
 
     let chain_operations = cluster.get_handle(0).get_chain_operations(None);
@@ -107,12 +107,12 @@ fn single_node_chain_iteration() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn single_node_restart() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn single_node_restart() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
     cluster.create_chain_genesis_block(0);
-    cluster.start_engine(0);
+    cluster.start_engine(0).await;
     cluster.wait_started(0);
 
     // wait for all operations to be emitted on stream
@@ -129,7 +129,7 @@ fn single_node_restart() -> anyhow::Result<()> {
     assert!(entry_before.status.is_committed());
 
     // stop and restart node
-    cluster.restart_node(0)?;
+    cluster.restart_node(0).await?;
 
     // committed data should still exist
     let entry_after = cluster.get_handle(0).get_operation(op1)?.unwrap();
@@ -138,16 +138,16 @@ fn single_node_restart() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn two_nodes_full_replication() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn two_nodes_full_replication() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;
 
     cluster.create_chain_genesis_block(0);
 
-    cluster.start_engine(0);
-    cluster.start_engine(1);
+    cluster.start_engine(0).await;
+    cluster.start_engine(1).await;
     cluster.wait_started(0);
     cluster.wait_started(1);
 
@@ -172,8 +172,8 @@ fn two_nodes_full_replication() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn two_nodes_pending_store_cleanup() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn two_nodes_pending_store_cleanup() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;
@@ -188,8 +188,8 @@ fn two_nodes_pending_store_cleanup() -> anyhow::Result<()> {
         .commit_manager_config
         .operations_cleanup_after_block_depth = 2;
 
-    cluster.start_engine(0);
-    cluster.start_engine(1);
+    cluster.start_engine(0).await;
+    cluster.start_engine(1).await;
     cluster.wait_started(0);
     cluster.wait_started(1);
 
@@ -223,8 +223,8 @@ fn two_nodes_pending_store_cleanup() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn two_nodes_one_data_node() -> anyhow::Result<()> {
+#[tokio::test(threaded_scheduler)]
+async fn two_nodes_one_data_node() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
     cluster.create_node(1)?;
@@ -236,8 +236,8 @@ fn two_nodes_one_data_node() -> anyhow::Result<()> {
 
     cluster.create_chain_genesis_block(0);
 
-    cluster.start_engine(0);
-    cluster.start_engine(1);
+    cluster.start_engine(0).await;
+    cluster.start_engine(1).await;
     cluster.wait_started(0);
     cluster.wait_started(1);
 

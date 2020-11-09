@@ -19,12 +19,14 @@ pub struct TestEntityIndex {
 }
 
 impl TestEntityIndex {
-    pub fn new() -> Result<TestEntityIndex, anyhow::Error> {
-        Self::new_with_config(Self::create_test_config())
+    pub async fn new() -> Result<TestEntityIndex, anyhow::Error> {
+        Self::new_with_config(Self::create_test_config()).await
     }
 
-    pub fn new_with_config(config: EntityIndexConfig) -> Result<TestEntityIndex, anyhow::Error> {
-        let cluster = TestChainCluster::new_single_and_start()?;
+    pub async fn new_with_config(
+        config: EntityIndexConfig,
+    ) -> Result<TestEntityIndex, anyhow::Error> {
+        let cluster = TestChainCluster::new_single_and_start().await?;
 
         let chain_handle = cluster.get_handle(0).clone();
         let index = EntityIndex::open_or_create(cluster.cells[0].clone(), config, chain_handle)?;
@@ -36,7 +38,7 @@ impl TestEntityIndex {
         })
     }
 
-    pub fn with_restarted_node(self) -> Result<TestEntityIndex, anyhow::Error> {
+    pub async fn with_restarted_node(self) -> Result<TestEntityIndex, anyhow::Error> {
         // deconstruct so that we can drop index and close the index properly before
         // reopening
         let TestEntityIndex {
@@ -46,7 +48,7 @@ impl TestEntityIndex {
         } = self;
         drop(index);
 
-        cluster.restart_node(0)?;
+        cluster.restart_node(0).await?;
 
         let index = EntityIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
             cluster.cells[0].clone(),

@@ -566,34 +566,34 @@ pub mod tests {
     use super::super::TestStore;
     use super::*;
 
-    #[test]
-    fn store_mutate_query_via_handle() -> anyhow::Result<()> {
-        let mut test_store = TestStore::new()?;
-        test_store.start_store()?;
+    #[tokio::test(threaded_scheduler)]
+    async fn store_mutate_query_via_handle() -> anyhow::Result<()> {
+        let mut test_store = TestStore::new().await?;
+        test_store.start_store().await?;
 
         let mutation = test_store.create_put_contact_mutation("entry1", "contact1", "Hello World");
-        let result = test_store.mutate(mutation)?;
+        let result = test_store.mutate(mutation).await?;
         assert_eq!(result.entities.len(), 0);
         test_store
             .cluster
             .wait_operation_committed(0, result.operation_ids[0]);
 
         let query = QueryBuilder::matches("hello").build();
-        let results = test_store.query(query)?;
+        let results = test_store.query(query).await?;
         assert_eq!(results.entities.len(), 1);
 
         Ok(())
     }
 
-    #[test]
-    fn store_mutate_return_entities() -> anyhow::Result<()> {
-        let mut test_store = TestStore::new()?;
-        test_store.start_store()?;
+    #[tokio::test(threaded_scheduler)]
+    async fn store_mutate_return_entities() -> anyhow::Result<()> {
+        let mut test_store = TestStore::new().await?;
+        test_store.start_store().await?;
 
         let mutation = test_store
             .create_put_contact_mutation("entry1", "contact1", "Hello World")
             .return_entities();
-        let result = test_store.mutate(mutation)?;
+        let result = test_store.mutate(mutation).await?;
         assert_eq!(result.entities.len(), 1);
 
         let entity = &result.entities[0];
@@ -602,10 +602,10 @@ pub mod tests {
         Ok(())
     }
 
-    #[test]
-    fn store_mutate_generate_ids() -> anyhow::Result<()> {
-        let mut test_store = TestStore::new()?;
-        test_store.start_store()?;
+    #[tokio::test(threaded_scheduler)]
+    async fn store_mutate_generate_ids() -> anyhow::Result<()> {
+        let mut test_store = TestStore::new().await?;
+        test_store.start_store().await?;
 
         let test_msg = TestMessage::default().pack_to_any().unwrap();
 
@@ -614,7 +614,7 @@ pub mod tests {
             let mutation = test_store
                 .create_put_contact_mutation("", "contact1", "Hello World")
                 .return_entities();
-            let result = test_store.mutate(mutation)?;
+            let result = test_store.mutate(mutation).await?;
             assert_eq!(result.entities.len(), 1);
             assert_ne!("", result.entities[0].id);
             assert_ne!("", result.entities[0].traits[0].id);
@@ -641,7 +641,7 @@ pub mod tests {
                 )
                 .use_common_entity_id()
                 .return_entities();
-            let result = test_store.mutate(mutation)?;
+            let result = test_store.mutate(mutation).await?;
 
             // should have created 1 entity with same id, with 2 different traits
             assert_eq!(result.entities.len(), 1);
@@ -654,32 +654,32 @@ pub mod tests {
         Ok(())
     }
 
-    #[test]
-    fn query_error_propagating() -> anyhow::Result<()> {
-        let mut test_store = TestStore::new()?;
-        test_store.start_store()?;
+    #[tokio::test(threaded_scheduler)]
+    async fn query_error_propagating() -> anyhow::Result<()> {
+        let mut test_store = TestStore::new().await?;
+        test_store.start_store().await?;
 
         let query = QueryBuilder::test(false).build();
-        assert!(test_store.query(query).is_err());
+        assert!(test_store.query(query).await.is_err());
 
         Ok(())
     }
 
-    #[test]
-    fn mutation_error_propagating() -> anyhow::Result<()> {
-        let mut test_store = TestStore::new()?;
-        test_store.start_store()?;
+    #[tokio::test(threaded_scheduler)]
+    async fn mutation_error_propagating() -> anyhow::Result<()> {
+        let mut test_store = TestStore::new().await?;
+        test_store.start_store().await?;
 
         let mutation = MutationBuilder::new().fail_mutation("entity_id".to_string());
-        assert!(test_store.mutate(mutation).is_err());
+        assert!(test_store.mutate(mutation).await.is_err());
 
         Ok(())
     }
 
-    #[test]
-    fn watched_query() -> anyhow::Result<()> {
-        let mut test_store = TestStore::new()?;
-        test_store.start_store()?;
+    #[tokio::test(threaded_scheduler)]
+    async fn watched_query() -> anyhow::Result<()> {
+        let mut test_store = TestStore::new().await?;
+        test_store.start_store().await?;
 
         let query = QueryBuilder::matches("hello").build();
         let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
@@ -688,7 +688,7 @@ pub mod tests {
         assert_eq!(result.unwrap().entities.len(), 0);
 
         let mutation = test_store.create_put_contact_mutation("entry1", "contact1", "Hello World");
-        let response = test_store.mutate(mutation)?;
+        let response = test_store.mutate(mutation).await?;
         test_store
             .cluster
             .wait_operation_committed(0, response.operation_ids[0]);
@@ -698,32 +698,30 @@ pub mod tests {
 
         let mutation =
             test_store.create_put_contact_mutation("entry2", "contact2", "Something else");
-        let response = test_store.mutate(mutation)?;
+        let response = test_store.mutate(mutation).await?;
         test_store
             .cluster
             .wait_operation_committed(0, response.operation_ids[0]);
 
-        test_store.cluster.runtime.block_on(async move {
-            let mut stream = stream.into_inner();
-            let delay = delay_for(Duration::from_secs(1));
+        let mut stream = stream.into_inner();
+        let delay = delay_for(Duration::from_secs(1));
 
-            futures::select! {
-                res = stream.next().fuse() => {
-                    panic!("Got result, should have timed out");
-                },
-                _ = delay.fuse() => {
-                    // alright
-                }
+        futures::select! {
+            res = stream.next().fuse() => {
+                panic!("Got result, should have timed out");
+            },
+            _ = delay.fuse() => {
+                // alright
             }
-        });
+        }
 
         Ok(())
     }
 
-    #[test]
-    fn watched_query_failure() -> anyhow::Result<()> {
-        let mut test_store = TestStore::new()?;
-        test_store.start_store()?;
+    #[tokio::test(threaded_scheduler)]
+    async fn watched_query_failure() -> anyhow::Result<()> {
+        let mut test_store = TestStore::new().await?;
+        test_store.start_store().await?;
 
         let query = QueryBuilder::test(false).build();
         let mut stream = block_on_stream(test_store.store_handle.watched_query(query)?);
