@@ -68,7 +68,7 @@ pub enum Commands {
     /// Cells related commands.
     Cell(cell::CellOptions),
 
-    /// Starts the node daemon, with all its cells and roles.
+    /// Start the node daemon, with all its cells and roles.
     Daemon,
 
     /// Keys releated commands.
@@ -86,7 +86,7 @@ fn main() -> anyhow::Result<()> {
 
     let result = match &opts.subcommand {
         Commands::Node(node_opts) => node::handle_cmd(&opts, node_opts),
-        Commands::Daemon => daemon::cmd_start(&opts),
+        Commands::Daemon => daemon::cmd_daemon(&opts),
         Commands::Keys(keys_opts) => keys::handle_cmd(&opts, keys_opts),
         Commands::Cell(cell_opts) => cell::handle_cmd(&opts, cell_opts),
         Commands::Config(config_opts) => config::handle_cmd(&opts, config_opts),

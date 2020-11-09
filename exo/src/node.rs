@@ -14,7 +14,7 @@ pub struct NodeOptions {
 
 #[derive(Clap)]
 pub enum NodeCommand {
-    /// Initialize node.
+    /// Initialize the node.
     Init(InitOptions),
 }
 

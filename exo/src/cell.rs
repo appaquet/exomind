@@ -51,10 +51,10 @@ pub struct CellOptions {
 
 #[derive(Clap)]
 enum CellCommand {
-    /// Initializes a new cell.
+    /// Initialize a new cell.
     Init(InitOptions),
 
-    /// Lists cells of the node.
+    /// List cells of the node.
     List,
 
     /// Edit cell configuration.
@@ -73,7 +73,7 @@ enum CellCommand {
     CheckChain,
 
     /// Export the chain's data.
-    Exportchain(ChainExportOptions),
+    ExportChain(ChainExportOptions),
 
     /// Import the chain's data.
     ImportChain(ChainImportOptions),
@@ -81,11 +81,10 @@ enum CellCommand {
     /// Generate an auth token.
     GenerateAuthToken(GenerateAuthTokenOptions),
 
-    /// Create genesis block of the chain.
+    /// Create genesis block of the chain. 
     CreateGenesisBlock,
 }
 
-/// Cell intialization related options
 #[derive(Clap)]
 struct InitOptions {
     /// Name of the cell
@@ -148,7 +147,7 @@ struct ChainExportOptions {
 
 #[derive(Clap)]
 struct ChainImportOptions {
-    // Number of operations per blocks.
+    // Number of operations per block.
     #[clap(long, default_value = "30")]
     operations_per_block: usize,
 
@@ -174,7 +173,7 @@ pub fn handle_cmd(exo_opts: &Options, cell_opts: &CellOptions) -> anyhow::Result
         CellCommand::Edit => cmd_edit(&exo_opts, cell_opts),
         CellCommand::Print(opts) => cmd_print(&exo_opts, cell_opts, opts),
         CellCommand::CheckChain => cmd_check_chain(&exo_opts, cell_opts),
-        CellCommand::Exportchain(export_opts) => {
+        CellCommand::ExportChain(export_opts) => {
             cmd_export_chain(&exo_opts, cell_opts, export_opts)
         }
         CellCommand::ImportChain(import_opts) => {
@@ -251,7 +250,6 @@ fn cmd_init(
         cell_config
     };
 
-    // Write node configuration with new cell
     add_node_config_cell(exo_opts, &node_config, &cell_config);
 
     if !init_opts.no_genesis {
@@ -325,7 +323,7 @@ fn cmd_join(
     let node_config = exo_opts.read_configuration();
 
     let cell_config = edit_string(
-        "# Paste config of the cell to join (result of `exo cell print` on host node)",
+        "# Paste config of the cell to join (result of `exo cell print --inline` on host node)",
         |config| {
             let config = CellConfig::from_yaml(config.as_bytes())?;
             Ok(config)

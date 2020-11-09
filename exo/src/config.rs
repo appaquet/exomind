@@ -26,7 +26,7 @@ pub enum ConfigCommand {
 #[derive(Clap)]
 pub struct PrintOptions {
     /// Print format.
-    #[clap(default_value = "yaml")]
+    #[clap(long, default_value = "yaml")]
     pub format: String,
 
     /// Print configuration in `NodeConfig` format to be used to configure cell nodes.

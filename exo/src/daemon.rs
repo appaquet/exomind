@@ -15,7 +15,7 @@ use exocore_transport::{Libp2pTransport, ServiceType, TransportServiceHandle};
 
 use crate::Options;
 
-pub fn cmd_start(opts: &Options) -> anyhow::Result<()> {
+pub fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
     let config = opts.read_configuration();
     let (either_cells, local_node) = Cell::new_from_local_node_config(config)?;
 

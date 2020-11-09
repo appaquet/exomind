@@ -61,15 +61,16 @@ A cell consists of:
   * `./tools/install.sh` or `cd exo && cargo install --path .`
 
 * Configuration
-    * Most commands requires a `node.yaml` file, for which an example can be found in here: [`./examples/node.yaml`]
+    * Most commands requires a node configuration file, for which an example can be found in here: [`./examples/node.yaml`].
     * At minimum, the config requires 2 keypair: one for the node, one for the cell.
     * The node keypair is unique per server/node, while the cell keypair is shared among servers that host the cell.
+    * See [Quick start](#quick-start) section for example 2 nodes setup.
     
 ## Quick start
 
 ### Create a Cell hosted on 2 nodes
 * On node 1
-  * Generate configuration: 
+  * Generate node's configuration: 
     `exo --dir ./node1 node init --name node1`
   * Edit configuration to include accessible addresses:
     `exo -d ./node1 config edit`
@@ -77,7 +78,7 @@ A cell consists of:
     `exo -d ./node1 cell init --name my_cell`
 
 * On node 2
-  * Generate configuration: 
+  * Generate node's configuration: 
     `exo --dir ./node2 node init --name node1`
   * Edit configuration to include accessible addresses. 
     If both nodes are running on same machine, make sure they have unique ports.
@@ -90,10 +91,10 @@ A cell consists of:
     `exo -d ./node1 cell node add --chain --store` 
     and then copy node 2's public info in editor.
   * Copy cell's config:
-    `exo -d ./node1 cell print` 
+    `exo -d ./node1 cell print --inline` 
 
 * On node 2:
-  * Add join the cell:
+  * Join the just created cell:
     `exo -d ./node2 cell join`
     and then copy cell's config in editor.
 
@@ -106,11 +107,14 @@ A cell consists of:
   * Build WASM client
     * `./clients/web/tools/build.sh`
   * Start development server which will watch files and rebuild automatically:
-    * `cd ./examples/web && yarn install && yarn start`
+    * `cd ./examples/web && npm install && npm run start`
   * Generate cell configuration for web:
-    * Convert config to JSON: `exo -d ./node/path config print --exclude-app-schemas --format json`
+    * Follow [Quick start](#quick-start) as if web was another node, without a `chain` and `store` role.
+    * Then convert config to JSON: `exo -d ./web/node config print --inline --format json`
   * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
-    * Paste JSON config and save
+    * Paste JSON config
+    * Remove listen addresses
+    * Save
 
 ## Clients
 #### Web

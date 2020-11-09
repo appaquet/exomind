@@ -11,7 +11,7 @@ pub struct KeysOptions {
 
 #[derive(Clap)]
 pub enum KeysCommand {
-    /// Generates a keypair.
+    /// Generate a keypair.
     Generate,
 }
 
