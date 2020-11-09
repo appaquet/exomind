@@ -19,7 +19,7 @@ export default class Fullscreen extends React.Component<IProps> {
     }, this);
 
     return (
-      <div id="fullscreen">
+      <div className="fullscreen">
         <EntityComponent
           entityId={this.props.entityId}
           containerController={containerController}/>

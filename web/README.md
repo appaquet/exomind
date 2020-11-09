@@ -9,9 +9,9 @@
 ## Development
 * `yarn start_dev`
 
-* Configure a new Exocore node, add it to the cell and create a standalone node config:
+* Configure a new Exocore node, add it to the cell and create an inlined node config:
 
-  `exo config standalone path/to/web/config.yaml --exclude-app-schemas json`
+  `exo -d ./node/path config print --inline --format json`
 
 * Browse to [http://127.0.0.1:8080](http://127.0.0.1:8080), and use this config to bootstrap.
 
