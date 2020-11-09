@@ -13,14 +13,10 @@ use exocore_transport::{
 };
 use exocore_transport::{Libp2pTransport, ServiceType, TransportServiceHandle};
 
-use crate::options;
+use crate::Options;
 
-/// Starts servers based on given command line options
-pub fn start(
-    _opts: &options::ExoOptions,
-    server_opts: &options::ServerOptions,
-) -> anyhow::Result<()> {
-    let config = exocore_core::cell::node_config_from_yaml_file(&server_opts.config)?;
+pub fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
+    let config = opts.read_configuration();
     let (either_cells, local_node) = Cell::new_from_local_node_config(config)?;
 
     let mut rt = Runtime::new()?;

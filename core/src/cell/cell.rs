@@ -1,12 +1,10 @@
 use super::{
-    CellApplications, CellNode, CellNodeRole, CellNodes, CellNodesRead, CellNodesWrite, Error,
-    LocalNode, Node, NodeId,
+    config::CellConfigExt, CellApplications, CellNode, CellNodeRole, CellNodes, CellNodesRead,
+    CellNodesWrite, Error, LocalNode, Node, NodeId,
 };
-use crate::cell::config::cell_config_from_yaml_file;
 use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
 use crate::protos::registry::Registry;
 use crate::sec::keys::{Keypair, PublicKey};
-use crate::{cell::cell_config_from_node_cell, utils::path::child_to_abs_path};
 use libp2p::core::PeerId;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -96,8 +94,7 @@ impl Cell {
         {
             // load apps from config
             let cell = either_cell.cell();
-            cell.apps
-                .load_from_cell_applications_config(&config, config.apps.iter())?;
+            cell.apps.load_from_cell_apps_conf(config.apps.iter())?;
         }
 
         Ok(either_cell)
@@ -110,7 +107,7 @@ impl Cell {
         let mut config_path = directory.as_ref().to_path_buf();
         config_path.push("cell.yaml");
 
-        let cell_config = cell_config_from_yaml_file(config_path)?;
+        let cell_config = CellConfig::from_yaml_file(config_path)?;
 
         Self::new_from_config(cell_config, local_node)
     }
@@ -122,13 +119,7 @@ impl Cell {
 
         let mut either_cells = Vec::new();
         for node_cell_config in &config.cells {
-            let mut cell_config = cell_config_from_node_cell(node_cell_config, &config)?;
-
-            if cell_config.path.is_empty() {
-                let cell_path = child_to_abs_path(&config.path, &cell_config.path);
-                cell_config.path = cell_path.to_string_lossy().to_string();
-            }
-
+            let cell_config = CellConfig::from_node_cell(node_cell_config)?;
             let either_cell = Self::new_from_config(cell_config, local_node.clone())?;
             either_cells.push(either_cell);
         }
@@ -213,6 +204,10 @@ impl Cell {
 
     pub fn applications(&self) -> &CellApplications {
         &self.apps
+    }
+
+    pub fn cell_directory(&self) -> Option<&Path> {
+        self.identity.path.as_deref()
     }
 
     pub fn chain_directory(&self) -> Option<PathBuf> {

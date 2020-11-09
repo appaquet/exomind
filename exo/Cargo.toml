@@ -15,8 +15,10 @@ exocore-chain = { path = "../chain" }
 exocore-store = { path = "../store" }
 exocore-transport = { path = "../transport", features = ["http-server"] }
 log = "0.4"
-structopt = "0.3"
+clap = "3.0.0-beta.2"
 log4rs = "0.13"
 thiserror = "1.0"
 anyhow = "1.0"
 futures = "0.3"
+dirs-next = "2.0"
+tempfile = "3.1"

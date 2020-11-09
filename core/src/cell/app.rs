@@ -1,7 +1,7 @@
-use super::{app_manifest_from_yaml_file, Error};
+use super::{Error, ManifestExt};
 use crate::protos::generated::exocore_apps::manifest_schema::Source;
 use crate::protos::generated::exocore_apps::Manifest;
-use crate::{sec::keys::PublicKey, utils::path::child_to_abs_path};
+use crate::sec::keys::PublicKey;
 use protobuf::descriptor::FileDescriptorSet;
 use std::fs::File;
 use std::path::Path;
@@ -26,7 +26,7 @@ impl Application {
         let mut manifest_path = dir.as_ref().to_path_buf();
         manifest_path.push("app.yaml");
 
-        let mut manifest = app_manifest_from_yaml_file(manifest_path)?;
+        let mut manifest = Manifest::read_yaml_file(manifest_path)?;
         manifest.path = dir.as_ref().to_string_lossy().to_string();
 
         Self::build(manifest)
@@ -49,8 +49,7 @@ impl Application {
         let mut schemas = Vec::new();
         for app_schema in &manifest.schemas {
             match &app_schema.source {
-                Some(Source::File(rel_path)) => {
-                    let schema_path = child_to_abs_path(&manifest.path, rel_path);
+                Some(Source::File(schema_path)) => {
                     let fd_set = read_file_descriptor_set_file(&manifest.name, schema_path)?;
                     schemas.push(fd_set);
                 }

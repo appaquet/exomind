@@ -7,10 +7,10 @@ use futures::StreamExt;
 use prost::Message;
 use wasm_bindgen::prelude::*;
 
-use exocore_core::cell::Cell;
 use exocore_core::futures::spawn_future_non_send;
 use exocore_core::protos::generated::exocore_store::EntityQuery;
 use exocore_core::time::Clock;
+use exocore_core::{cell::Cell, cell::LocalNodeConfigExt, protos::core::LocalNodeConfig};
 use exocore_store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::transport::ConnectionStatus;
 use exocore_transport::{InEvent, Libp2pTransport, ServiceType, TransportServiceHandle};
@@ -52,8 +52,8 @@ impl ExocoreClient {
         let node_config_format = node_config_format.as_deref();
 
         let config = match node_config_format {
-            Some("json") => exocore_core::cell::node_config_from_json(config_bytes.as_slice()),
-            Some("yaml") => exocore_core::cell::node_config_from_yaml(config_bytes.as_slice()),
+            Some("json") => LocalNodeConfig::from_json_reader(config_bytes.as_slice()),
+            Some("yaml") => LocalNodeConfig::from_yaml_reader(config_bytes.as_slice()),
             other => panic!("Invalid config format: {:?}", other),
         }
         .expect("Couldn't decode config");

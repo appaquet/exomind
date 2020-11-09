@@ -30,7 +30,7 @@ fn main() {
 
             let mut config = prost_build::Config::new();
 
-            // add serde serializability on some types
+            // add serde annotations on some types and fields
             config
                 .type_attribute("LocalNodeConfig", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("NodeAddresses", "#[derive(Serialize, Deserialize)]")
@@ -39,6 +39,11 @@ fn main() {
                     "NodeCellConfig.location",
                     "#[derive(Serialize, Deserialize)]",
                 )
+                .type_attribute(
+                    "NodeCellConfig.location",
+                    "#[serde(rename_all = \"lowercase\")]",
+                )
+                .field_attribute("NodeCellConfig.location", "#[serde(flatten)]")
                 .type_attribute("CellConfig", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("CellNodeConfig", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("CellNodeConfig.Role", "#[derive(Serialize, Deserialize)]")
@@ -48,12 +53,20 @@ fn main() {
                     "CellApplicationConfig.location",
                     "#[derive(Serialize, Deserialize)]",
                 )
+                .type_attribute(
+                    "CellApplicationConfig.location",
+                    "#[serde(rename_all = \"lowercase\")]",
+                )
+                .field_attribute("CellApplicationConfig.location", "#[serde(flatten)]")
                 .type_attribute("Manifest", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("ManifestSchema", "#[derive(Serialize, Deserialize)]")
-                .type_attribute("ManifestSchema.source", "#[derive(Serialize, Deserialize)]");
-
-            // default fields
-            config
+                .type_attribute("ManifestSchema.source", "#[derive(Serialize, Deserialize)]")
+                .type_attribute(
+                    "ManifestSchema.source",
+                    "#[serde(rename_all = \"lowercase\")]",
+                )
+                .field_attribute("ManifestSchema.source", "#[serde(flatten)]")
+                .field_attribute("ManifestSchema.source.bytes", "#[serde(serialize_with = \"crate::protos::base64::as_base64\", deserialize_with = \"crate::protos::base64::from_base64\")]")
                 .field_attribute("LocalNodeConfig.name", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.id", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.path", "#[serde(default)]")

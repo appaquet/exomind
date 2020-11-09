@@ -24,13 +24,7 @@
 * Build:
     * `./tools/build.sh`
 
-* Launch the [sample project](../../examples/web):
-    * `cd ../../examples/web && yarn install && yarn start`
-    * Navigate to [http://localhost:8080](http://localhost:8080)
-
-* Generate a node configuration and copy it to the app:
-
-  `exo config standalone path/to/web/node/config.yaml --exclude-app-schemas json`
+* Follow [Launch sample web project](../../README.md) on how to configure web.
 
 
 ## Known issues
