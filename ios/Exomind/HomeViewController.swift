@@ -20,6 +20,7 @@ class HomeViewController: UITableViewController {
         let query = QueryBuilder
             .withTrait(Exomind_Base_CollectionChild.self, query: traitQuery)
             .orderByField("weight", ascending: false)
+            .count(100)
             .build()
         self.query = ExpandableQuery(query: query) { [weak self] in
             self?.loadFavoritesEntities()

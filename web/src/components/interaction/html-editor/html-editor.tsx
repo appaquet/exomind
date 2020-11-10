@@ -113,6 +113,8 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         handleReturn={this.handleReturn.bind(this)}
         onFocus={this.handleFocus.bind(this)}
         onBlur={this.handleBlur.bind(this)}
+
+        spellCheck={true}
       />
     </div>;
   }
