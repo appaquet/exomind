@@ -7,32 +7,27 @@ on:
 
 jobs:
   web_client_build:
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:19.10 # required for clang with wasm
+    runs-on: ubuntu-20.04
+    steps:
     steps:
       - uses: actions/checkout@v2.3.4
 
       - name: Install build dependencies
         run: |
-          apt update && DEBIAN_FRONTEND=noninteractive apt install -y clang curl pkg-config libssl-dev openssl
+          sudo apt update
+          sudo apt install -yq libssl-dev openssl protobuf-compiler
 
-          curl -sL https://deb.nodesource.com/setup_14.x | bash -
-          apt-get install -y nodejs protobuf-compiler
-          npm install -g yarn
+          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.9.1/wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz | tar zxf -
+          mv wasm-pack*/wasm-pack .
+          echo `pwd` >> $GITHUB_PATH
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
+          sudo npm install -g yarn
+
+      - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
           target: wasm32-unknown-unknown
-
-      - name: Install wasm-pack
-        run: |
-          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.9.1/wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz | tar zxf -
-          mv wasm-pack*/wasm-pack .
-          echo `pwd` >> $GITHUB_PATH
 
       - name: Build client
         run: |
