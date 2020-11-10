@@ -1,7 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{cli, gmail::GmailAccount, SynchronizedThread};
-use exocore::{chain::operation::OperationId, core::protos::prost::ProstAnyPackMessageExt, core::time::ConsistentTimestamp, core::time::DateTime, core::time::Utc, protos::core::LocalNodeConfig, protos::prost::ProstTimestampExt, protos::store::EntityResult, store::entity::EntityExt, core::cell::LocalNodeConfigExt, store::query::ProjectionBuilder};
+use exocore::{
+    chain::operation::OperationId, core::cell::LocalNodeConfigExt,
+    core::protos::prost::ProstAnyPackMessageExt, core::time::ConsistentTimestamp,
+    core::time::DateTime, core::time::Utc, protos::core::LocalNodeConfig,
+    protos::prost::ProstTimestampExt, protos::store::EntityResult, store::entity::EntityExt,
+    store::query::ProjectionBuilder,
+};
 use exocore::{
     core::{cell::Cell, futures::spawn_future, time::Clock},
     protos::NamedMessage,

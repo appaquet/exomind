@@ -1,4 +1,17 @@
-use exocore::{core::cell::Cell, core::futures::spawn_future, core::{time::Clock, cell::LocalNodeConfigExt}, protos::prost::ProstAnyPackMessageExt, protos::store::Entity, protos::{core::LocalNodeConfig, store::Trait}, store::mutation::MutationBuilder, store::query::QueryBuilder, store::remote::Client, store::remote::ClientHandle, transport::Libp2pTransport, transport::ServiceType};
+use exocore::{
+    core::cell::Cell,
+    core::futures::spawn_future,
+    core::{cell::LocalNodeConfigExt, time::Clock},
+    protos::prost::ProstAnyPackMessageExt,
+    protos::store::Entity,
+    protos::{core::LocalNodeConfig, store::Trait},
+    store::mutation::MutationBuilder,
+    store::query::QueryBuilder,
+    store::remote::Client,
+    store::remote::ClientHandle,
+    transport::Libp2pTransport,
+    transport::ServiceType,
+};
 use exomind_core::protos::base::{Collection, Snoozed};
 
 use crate::cli;
