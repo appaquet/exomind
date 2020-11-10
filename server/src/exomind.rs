@@ -1,9 +1,4 @@
-use exocore::{
-    core::cell::Cell, core::futures::spawn_future, core::time::Clock,
-    protos::prost::ProstAnyPackMessageExt, protos::store::Entity, protos::store::Trait,
-    store::mutation::MutationBuilder, store::query::QueryBuilder, store::remote::Client,
-    store::remote::ClientHandle, transport::Libp2pTransport, transport::ServiceType,
-};
+use exocore::{core::cell::Cell, core::futures::spawn_future, core::{time::Clock, cell::LocalNodeConfigExt}, protos::prost::ProstAnyPackMessageExt, protos::store::Entity, protos::{core::LocalNodeConfig, store::Trait}, store::mutation::MutationBuilder, store::query::QueryBuilder, store::remote::Client, store::remote::ClientHandle, transport::Libp2pTransport, transport::ServiceType};
 use exomind_core::protos::base::{Collection, Snoozed};
 
 use crate::cli;
@@ -15,7 +10,7 @@ pub struct ExomindClient {
 
 impl ExomindClient {
     pub async fn new(config: &cli::Config) -> anyhow::Result<ExomindClient> {
-        let config = exocore::core::cell::node_config_from_yaml_file(&config.node_config)?;
+        let config = LocalNodeConfig::from_yaml_file(&config.node_config)?;
         let (cells, local_node) = Cell::new_from_local_node_config(config)?;
         let either_cell = cells
             .first()

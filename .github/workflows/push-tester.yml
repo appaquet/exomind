@@ -1,10 +1,10 @@
 name: Push tester
 
 on:
-  pull_request:
   push:
     branches:    
-      -master
+      - '**'
+      - '!releases/**' # releases handled by version workflow
 
 jobs:
   rust_checks:
