@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::{cli, gmail::GmailAccount, SynchronizedThread};
 use exocore::{
-    chain::operation::OperationId, core::protos::prost::ProstAnyPackMessageExt,
-    core::time::ConsistentTimestamp, core::time::DateTime, core::time::Utc,
+    chain::operation::OperationId, core::cell::LocalNodeConfigExt,
+    core::protos::prost::ProstAnyPackMessageExt, core::time::ConsistentTimestamp,
+    core::time::DateTime, core::time::Utc, protos::core::LocalNodeConfig,
     protos::prost::ProstTimestampExt, protos::store::EntityResult, store::entity::EntityExt,
     store::query::ProjectionBuilder,
 };
@@ -30,7 +31,7 @@ pub struct ExomindClient {
 
 impl ExomindClient {
     pub async fn new(config: &cli::Config) -> anyhow::Result<ExomindClient> {
-        let config = exocore::core::cell::node_config_from_yaml_file(&config.node_config)?;
+        let config = LocalNodeConfig::from_yaml_file(&config.node_config)?;
         let (cells, local_node) = Cell::new_from_local_node_config(config)?;
         let either_cell = cells
             .first()
