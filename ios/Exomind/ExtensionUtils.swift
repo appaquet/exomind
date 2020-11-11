@@ -37,7 +37,7 @@ class ExtensionUtils {
                 .build()
                 .serializedData()
 
-        let url = URL(string: "\(endpoint)entities/mutate?token=\(authToken)")!
+        let url = URL(string: "\(endpoint)store/mutate?token=\(authToken)")!
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

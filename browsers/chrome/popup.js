@@ -56,9 +56,7 @@ function addBookmark(e) {
     commonEntityId: true
   });
 
-  console.log(exocore.store.MutationRequest.encode(req).finish());
-
-  const endpointURL = _endpoint + '/entities/mutate?token=' + _auth_token;
+  const endpointURL = _endpoint + '/store/mutate?token=' + _auth_token;
   console.log(endpointURL);
 
   let xhr = new XMLHttpRequest();
