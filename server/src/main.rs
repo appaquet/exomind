@@ -13,7 +13,7 @@ use exomind::ExomindClient;
 use exomind_core::protos::base::{CollectionChild, Snoozed};
 use log::LevelFilter;
 use structopt::StructOpt;
-use tokio::time::delay_for;
+use tokio::time::sleep;
 
 mod cli;
 mod exomind;
@@ -50,7 +50,7 @@ async fn start(config: cli::Config) -> anyhow::Result<()> {
             error!("Error checking for snoozed entity: {}", err);
         }
 
-        delay_for(Duration::from_secs(60)).await;
+        sleep(Duration::from_secs(60)).await;
     }
 }
 

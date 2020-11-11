@@ -7,7 +7,7 @@ use log::LevelFilter;
 use std::{str::FromStr, time::Duration};
 use structopt::StructOpt;
 use sync::{AccountSynchronizer, SynchronizedThread};
-use tokio::time::delay_for;
+use tokio::time::sleep;
 
 mod capped_hashset;
 mod cli;
@@ -141,6 +141,6 @@ async fn start(config: cli::Config, opt: cli::StartOptions) -> anyhow::Result<()
         }
 
         // TODO: Watch query on exomind
-        delay_for(Duration::from_secs(10)).await;
+        sleep(Duration::from_secs(10)).await;
     }
 }
