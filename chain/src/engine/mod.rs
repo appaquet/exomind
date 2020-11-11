@@ -170,11 +170,11 @@ where
 
         info!("Engine started");
         futures::select! {
-            _ = outgoing_transport_handler.fuse() => (),
-            _ = incoming_transport_handler.fuse() => (),
-            _ = management_timer.fuse() => (),
-            _ = self.handle_set.on_handles_dropped().fuse() => (),
-            _ = self.transport.fuse() => (),
+            _ = outgoing_transport_handler.fuse() => {},
+            _ = incoming_transport_handler.fuse() => {},
+            _ = management_timer.fuse() => {},
+            _ = self.handle_set.on_handles_dropped().fuse() => {},
+            _ = self.transport.fuse() => {},
         }
         info!("Engine done");
 

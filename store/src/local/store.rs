@@ -203,10 +203,10 @@ where
         info!("Index store started");
 
         futures::select! {
-            _ = self.handle_set.on_handles_dropped().fuse() => (),
-            _ = queries_executor.fuse() => (),
-            _ = chain_events_handler.fuse() => (),
-            _ = watched_queries_checker.fuse() => (),
+            _ = self.handle_set.on_handles_dropped().fuse() => {},
+            _ = queries_executor.fuse() => {},
+            _ = chain_events_handler.fuse() => {},
+            _ = watched_queries_checker.fuse() => {},
         }
 
         Ok(())
@@ -707,7 +707,7 @@ pub mod tests {
         let delay = delay_for(Duration::from_secs(1));
 
         futures::select! {
-            res = stream.next().fuse() => {
+            _ = stream.next().fuse() => {
                 panic!("Got result, should have timed out");
             },
             _ = delay.fuse() => {

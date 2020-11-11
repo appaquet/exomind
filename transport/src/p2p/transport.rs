@@ -248,9 +248,9 @@ impl Libp2pTransport {
 
         info!("Libp2p transport now running");
         futures::select! {
-            _ = swarm_task.fuse() => (),
-            _ = handles_dispatcher.fuse() => (),
-            _ = self.handle_set.on_handles_dropped().fuse() => (),
+            _ = swarm_task.fuse() => {},
+            _ = handles_dispatcher.fuse() => {},
+            _ = self.handle_set.on_handles_dropped().fuse() => {},
         };
         info!("Libp2p transport is done");
 

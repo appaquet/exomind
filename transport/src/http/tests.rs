@@ -21,11 +21,11 @@ async fn invalid_requests() -> anyhow::Result<()> {
     let cell = FullCell::generate(node.clone());
     let clock = Clock::new();
 
-    let _entities_handle = start_server(&cell, &clock, 3007).await;
+    let _handle = start_server(&cell, &clock, 3007).await;
 
     {
         // invalid authentication token
-        let url = "http://127.0.0.1:3007/entities/query?token=invalid_token";
+        let url = "http://127.0.0.1:3007/store/query?token=invalid_token";
         let resp_chan = send_http_request(url, b"query body");
         let resp = resp_chan.await??;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
@@ -41,7 +41,7 @@ async fn invalid_requests() -> anyhow::Result<()> {
             auth_token.encode_base58_string()
         };
 
-        let url = format!("http://127.0.0.1:3007/entities/query?token={}", auth_token);
+        let url = format!("http://127.0.0.1:3007/store/query?token={}", auth_token);
         let resp_chan = send_http_request(url, b"query body");
         let resp = resp_chan.await??;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
@@ -52,7 +52,7 @@ async fn invalid_requests() -> anyhow::Result<()> {
         let cell = FullCell::generate(node.clone());
         let auth_token = AuthToken::new(cell.cell(), &clock, None)?;
         let auth_token = auth_token.encode_base58_string();
-        let url = format!("http://127.0.0.1:3007/entities/query?token={}", auth_token);
+        let url = format!("http://127.0.0.1:3007/store/query?token={}", auth_token);
         let resp_chan = send_http_request(url, b"query body");
         let resp = resp_chan.await??;
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
@@ -82,7 +82,7 @@ async fn entities_query() -> anyhow::Result<()> {
 
     let mut entities_handle = start_server(&cell, &clock, 3008).await;
 
-    let url = format!("http://127.0.0.1:3008/entities/query?token={}", auth_token);
+    let url = format!("http://127.0.0.1:3008/store/query?token={}", auth_token);
     let resp_chan = send_http_request(url, b"query");
 
     entities_receive_response_query(&mut entities_handle, b"query", b"response").await?;
@@ -105,7 +105,7 @@ async fn entities_mutation() -> anyhow::Result<()> {
 
     let mut entities_handle = start_server(&cell, &clock, 3009).await;
 
-    let url = format!("http://127.0.0.1:3009/entities/mutate?token={}", auth_token);
+    let url = format!("http://127.0.0.1:3009/store/mutate?token={}", auth_token);
     let resp_chan = send_http_request(url, b"mutation");
 
     {

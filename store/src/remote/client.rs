@@ -147,11 +147,11 @@ where
         };
 
         futures::select! {
-            _ = transport_sender.fuse() => (),
-            _ = transport_receiver.fuse() => (),
-            _ = management_timer.fuse() => (),
-            _ = self.transport_handle.fuse() => (),
-            _ = self.handles.on_handles_dropped().fuse() => (),
+            _ = transport_sender.fuse() => {},
+            _ = transport_receiver.fuse() => {},
+            _ = management_timer.fuse() => {},
+            _ = self.transport_handle.fuse() => {},
+            _ = self.handles.on_handles_dropped().fuse() => {},
         };
 
         info!("Store client dropped");

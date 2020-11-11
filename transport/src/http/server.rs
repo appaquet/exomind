@@ -191,9 +191,9 @@ impl HTTPTransportServer {
 
         info!("HTTP transport now running");
         futures::select! {
-            _ = servers.fuse() => (),
-            _ = handles_dispatcher.fuse() => (),
-            _ = self.handle_set.on_handles_dropped().fuse() => (),
+            _ = servers.fuse() => {},
+            _ = handles_dispatcher.fuse() => {},
+            _ = self.handle_set.on_handles_dropped().fuse() => {},
         };
         info!("HTTP transport is done");
 
@@ -254,7 +254,7 @@ async fn handle_request(
         .map_err(|_| RequestError::Unauthorized)?;
 
     match request_type {
-        RequestType::EntitiesQuery => {
+        RequestType::StoreQuery => {
             let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
             let tracked_request = request_tracker.push().await;
             let cell = service.cell.clone();
@@ -272,7 +272,7 @@ async fn handle_request(
 
             Ok(receive_entity_query(&cell, tracked_request).await?)
         }
-        RequestType::EntitiesMutation => {
+        RequestType::StoreMutation => {
             let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
             let tracked_request = request_tracker.push().await;
             let cell = service.cell.clone();
@@ -415,16 +415,16 @@ fn get_query_token(pairs: url::form_urlencoded::Parse) -> Option<Cow<str>> {
 /// Type of an incoming HTTP request.
 #[derive(Debug, PartialEq)]
 enum RequestType {
-    EntitiesQuery,
-    EntitiesMutation,
+    StoreQuery,
+    StoreMutation,
 }
 
 impl RequestType {
     fn from_url_path(path: &str) -> Result<RequestType, RequestError> {
-        if path == "/entities/query" {
-            Ok(RequestType::EntitiesQuery)
-        } else if path == "/entities/mutate" {
-            Ok(RequestType::EntitiesMutation)
+        if path == "/store/query" {
+            Ok(RequestType::StoreQuery)
+        } else if path == "/store/mutate" {
+            Ok(RequestType::StoreMutation)
         } else {
             Err(RequestError::InvalidRequestType)
         }
@@ -432,8 +432,8 @@ impl RequestType {
 
     fn service_type(&self) -> ServiceType {
         match self {
-            RequestType::EntitiesQuery => ServiceType::Store,
-            RequestType::EntitiesMutation => ServiceType::Store,
+            RequestType::StoreQuery => ServiceType::Store,
+            RequestType::StoreMutation => ServiceType::Store,
         }
     }
 }
