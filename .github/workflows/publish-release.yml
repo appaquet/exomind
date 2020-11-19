@@ -6,9 +6,6 @@ on:
       publish:
         description: 'Publish'  
         default: true
-  release:
-    types:
-      - published
 
 jobs:
   docker_build:
