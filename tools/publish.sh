@@ -4,7 +4,7 @@ CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd $CUR_DIR/../
 
 echo "Publishing to crates.io..."
-CRATES=("core" "transport" "chain" "index"  "." "exo")
+CRATES=("core" "transport" "chain" "store"  "." "exo")
 for CRATE in "${CRATES[@]}"; do
   pushd $CUR_DIR/../$CRATE
   cargo publish ${@:1}
@@ -12,4 +12,4 @@ for CRATE in "${CRATES[@]}"; do
 done
 
 echo "Publishing to npm..."
-yarn publish
+npm publish ${@:1}
