@@ -1,0 +1,10 @@
+FROM debian:buster-slim
+
+ARG TARGETPLATFORM
+ARG TARGETARCH
+
+RUN echo "Building for platform $TARGETPLATFORM arch $TARGETARCH"
+COPY "exo-$TARGETARCH" /usr/local/exo
+
+WORKDIR /volume
+ENTRYPOINT ["/usr/local/exo"]

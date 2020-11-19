@@ -4,7 +4,6 @@ on:
   push:
     branches:    
       - '**'
-      - '!releases/**' # releases handled by version workflow
 
 jobs:
   rust_checks:
