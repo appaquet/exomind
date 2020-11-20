@@ -4,7 +4,7 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 
 RUN echo "Building for platform $TARGETPLATFORM arch $TARGETARCH"
-COPY "exo-$TARGETARCH" /usr/local/exo
+COPY "exo-$TARGETARCH" /usr/local/bin/exo
 
 WORKDIR /volume
-ENTRYPOINT ["/usr/local/exo"]
+ENTRYPOINT ["/usr/local/bin/exo"]

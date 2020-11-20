@@ -55,6 +55,7 @@ jobs:
         cd assets/
         docker buildx build \
           --tag appaquet/exocore:$TAG \
+          --tag appaquet/exocore:latest \
           --platform linux/amd64,linux/arm \
           --file ../.github/Dockerfile.buildx \
           $BUILD_PARAMS \
