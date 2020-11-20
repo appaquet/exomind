@@ -13,7 +13,7 @@ target 'Exomind' do
   pod 'Dwifft', '~> 0.9', :inhibit_warnings => true
   pod 'SwiftProtobuf', '~> 1.10'
 
-  pod 'Exocore', :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.0/exocore-ios.tar.gz'
   #pod 'Exocore', :path => '../../exocore'
 end
 
@@ -21,7 +21,7 @@ target 'ExomindActionExt' do
   pod 'KeychainSwift', '~> 19.0'
   pod 'SwiftProtobuf', '~> 1.10'
 
-  pod 'Exocore', :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.0/exocore-ios.tar.gz'
   #pod 'Exocore' , :path => '../../exocore'
 end
 
@@ -29,7 +29,7 @@ target 'ExomindTests' do
   pod 'SwiftyJSON', '~> 4.2'
   pod 'SwiftProtobuf', '~> 1.10'
 
-  pod 'Exocore', :git => 'https://github.com/appaquet/exocore.git', :branch => 'releases/v0.1'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.0/exocore-ios.tar.gz'
   #pod 'Exocore', :path => '../../exocore'
 end
 
