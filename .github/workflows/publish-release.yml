@@ -47,14 +47,14 @@ jobs:
 
         BUILD_PARAMS=""
         if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
-          BUILD_PARAMS="--publish"
+          BUILD_PARAMS="--push"
         fi
 
         echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
         cd assets/
         docker buildx build \
-          --tag appaquet/exocore-cli:$TAG \
+          --tag appaquet/exocore:$TAG \
           --platform linux/amd64,linux/arm \
           --file ../.github/Dockerfile.buildx \
           $BUILD_PARAMS \
