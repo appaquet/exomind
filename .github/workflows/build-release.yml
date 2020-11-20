@@ -7,102 +7,57 @@ on:
       - 'v1.*'
 
 jobs:
-  exo_linux:
-    runs-on: ubuntu-latest
+  exo:
     strategy:
       fail-fast: true
       matrix:
-        target: ["armv7-unknown-linux-gnueabihf", "x86_64-unknown-linux-gnu"]
+        pair:
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            bin: exo
+            cross: true
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            bin: exo
+            cross: true
+          - target: x86_64-apple-darwin
+            os: macOS-latest
+            bin: exo
+            cross: false
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            bin: exo.exe
+            cross: false
+
+    runs-on: ${{ matrix.pair.os }}
+
     steps:
       - uses: actions/checkout@v2.3.4
 
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
+          target: ${{ matrix.pair.target }}
           override: true
 
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
+          use-cross: ${{ matrix.pair.cross }}
           command: build
-          args: -p exo --release --target ${{ matrix.target }}
+          args: -p exo --release --target ${{ matrix.pair.target }}
 
       - name: Create binary
         run: |
           mkdir archive
-          cp target/${{ matrix.target }}/release/exo archive
+          cp target/${{ matrix.pair.target }}/release/${{ matrix.pair.bin }} archive
           cd archive/
-          tar -czf $GITHUB_WORKSPACE/exo.${{ matrix.target }}.tar.gz *
+          tar -czf ../exo.${{ matrix.pair.target }}.tar.gz *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2.2.1
         with:
-          name: ${{ matrix.target }}-artifact
-          path: exo.${{ matrix.target }}.tar.gz
-
-  exo_macos:
-    runs-on: macOS-latest
-    strategy:
-      matrix:
-        target: ["x86_64-apple-darwin"]
-    steps:
-      - uses: actions/checkout@v2.3.4
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: -p exo --release --target ${{ matrix.target }}
-
-      - name: Create binary
-        run: |
-          mkdir archive
-          cp target/${{ matrix.target }}/release/exo archive
-          cd archive/
-          tar -czf $GITHUB_WORKSPACE/exo.${{ matrix.target }}.tar.gz *
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.1
-        with:
-          name: ${{ matrix.target }}-artifact
-          path: exo.${{ matrix.target }}.tar.gz
-
-  exo_windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        target: ["x86_64-pc-windows-msvc"]
-    steps:
-      - uses: actions/checkout@v2.3.4
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: -p exo --release --target ${{ matrix.target }}
-
-      - name: Create binary
-        shell: bash
-        run: |
-          mkdir archive
-          cp target/${{ matrix.target }}/release/exo.exe archive
-          cd archive/
-          tar -czf ../exo.${{ matrix.target }}.tar.gz *
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.1
-        with:
-          name: ${{ matrix.target }}-artifact
-          path: exo.${{ matrix.target }}.tar.gz
+          name: ${{ matrix.pair.target }}-artifact
+          path: exo.${{ matrix.pair.target }}.tar.gz
 
   web_client:
     runs-on: ubuntu-20.04
@@ -176,7 +131,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [exo_linux, exo_macos, exo_windows, web_client, ios_client]
+    needs: [exo, web_client, ios_client]
     steps:
       - uses: actions/checkout@v2.3.4
 

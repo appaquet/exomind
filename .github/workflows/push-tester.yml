@@ -51,42 +51,20 @@ jobs:
           ./tools/coverage.sh codecov_io
 
 
-  rust_linux_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.3.4
+  rust_tests:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macOS-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
+    runs-on: ${{ matrix.pair.os }}
 
-      - name: Tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all --all-features
-
-
-  rust_macos_tests:
-    runs-on: macOS-latest
-    steps:
-      - uses: actions/checkout@v2.3.4
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-
-      - name: Tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all --all-features
-
-
-  rust_windows_tests:
-    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2.3.4
 

@@ -57,7 +57,7 @@ impl ReflectMessage for DynamicMessage {
     fn get_field_value(&self, field_id: FieldId) -> Result<FieldValue, Error> {
         let field = self
             .get_field(field_id)
-            .ok_or_else(|| Error::NoSuchField(field_id))?;
+            .ok_or(Error::NoSuchField(field_id))?;
         let value = self
             .message
             .unknown_fields

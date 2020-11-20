@@ -491,7 +491,7 @@ impl MutationIndex {
             .trt
             .message
             .as_ref()
-            .ok_or_else(|| Error::ProtoFieldExpected("Trait message"))?;
+            .ok_or(Error::ProtoFieldExpected("Trait message"))?;
 
         let mut doc = Document::default();
 
@@ -698,7 +698,7 @@ impl MutationIndex {
         let reference = predicate
             .reference
             .as_ref()
-            .ok_or_else(|| Error::ProtoFieldExpected("reference"))?;
+            .ok_or(Error::ProtoFieldExpected("reference"))?;
 
         Ok(self.reference_predicate_to_query(field.field, reference))
     }
@@ -737,7 +737,7 @@ impl MutationIndex {
     where
         S: Deref<Target = Searcher>,
     {
-        let paging = paging.cloned().unwrap_or_else(|| Paging {
+        let paging = paging.cloned().unwrap_or(Paging {
             after_ordering_value: None,
             before_ordering_value: None,
             count: self.config.iterator_page_size,
@@ -748,7 +748,7 @@ impl MutationIndex {
 
         let ordering_value = ordering
             .value
-            .ok_or_else(|| Error::ProtoFieldExpected("ordering.value"))?;
+            .ok_or(Error::ProtoFieldExpected("ordering.value"))?;
         let mutations = match ordering_value {
             ordering::Value::Score(_) => {
                 let collector = self.match_score_collector(
@@ -890,14 +890,14 @@ impl MutationIndex {
         sort_field: Field,
         ascending: bool,
     ) -> impl Collector<Fruit = Vec<(OrderingValueWrapper, DocAddress)>> {
-        let after_ordering_value = Arc::new(paging.after_ordering_value.clone().unwrap_or_else(
-            || OrderingValue {
+        let after_ordering_value = Arc::new(paging.after_ordering_value.clone().unwrap_or(
+            OrderingValue {
                 value: Some(ordering_value::Value::Min(true)),
                 operation_id: 0,
             },
         ));
-        let before_ordering_value = Arc::new(paging.before_ordering_value.clone().unwrap_or_else(
-            || OrderingValue {
+        let before_ordering_value = Arc::new(paging.before_ordering_value.clone().unwrap_or(
+            OrderingValue {
                 value: Some(ordering_value::Value::Max(true)),
                 operation_id: 0,
             },
@@ -956,26 +956,21 @@ impl MutationIndex {
         paging: &Paging,
         ascending: bool,
     ) -> impl Collector<Fruit = Vec<(OrderingValueWrapper, DocAddress)>> {
-        let after_score =
-            Arc::new(
-                paging
-                    .after_ordering_value
-                    .clone()
-                    .unwrap_or_else(|| OrderingValue {
-                        value: Some(ordering_value::Value::Min(true)),
-                        operation_id: 0,
-                    }),
-            );
-        let before_score =
-            Arc::new(
-                paging
-                    .before_ordering_value
-                    .clone()
-                    .unwrap_or_else(|| OrderingValue {
-                        value: Some(ordering_value::Value::Max(true)),
-                        operation_id: 0,
-                    }),
-            );
+        let after_score = Arc::new(
+            paging
+                .after_ordering_value
+                .clone()
+                .unwrap_or(OrderingValue {
+                    value: Some(ordering_value::Value::Min(true)),
+                    operation_id: 0,
+                }),
+        );
+        let before_score = Arc::new(paging.before_ordering_value.clone().unwrap_or(
+            OrderingValue {
+                value: Some(ordering_value::Value::Max(true)),
+                operation_id: 0,
+            },
+        ));
 
         let operation_id_field = self.fields.operation_id;
         TopDocs::with_limit(paging.count as usize).tweak_score(

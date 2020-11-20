@@ -158,7 +158,7 @@ impl HTTPTransportServer {
             let services = self.service_handles.clone();
             let request_tracker = request_tracker.clone();
 
-            async move {
+            let futures = async move {
                 let mut inner = services.lock().await;
 
                 let mut futures = Vec::new();
@@ -184,9 +184,11 @@ impl HTTPTransportServer {
                         }
                     });
                 }
-                futures::future::join_all(futures)
-            }
-            .await
+
+                futures
+            }.await;
+
+            futures::future::join_all(futures)
         };
 
         info!("HTTP transport now running");

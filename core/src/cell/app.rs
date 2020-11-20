@@ -12,7 +12,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct Application {
     identity: Arc<Identity>,
-    schemas: Arc<Vec<FileDescriptorSet>>,
+    schemas: Arc<[FileDescriptorSet]>,
 }
 
 struct Identity {
@@ -82,7 +82,7 @@ impl Application {
                 id,
                 manifest,
             }),
-            schemas: Arc::new(schemas),
+            schemas: schemas.into(),
         })
     }
 
@@ -103,7 +103,7 @@ impl Application {
     }
 
     pub fn schemas(&self) -> &[FileDescriptorSet] {
-        self.schemas.as_slice()
+        self.schemas.as_ref()
     }
 }
 
