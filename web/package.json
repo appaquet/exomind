@@ -18,7 +18,7 @@
     "lint": "tsc --noEmit && eslint 'src/**/*.ts' 'src/**/*.tsx'"
   },
   "dependencies": {
-    "@babel/preset-typescript": "^7.10.1",
+    "@babel/preset-typescript": "^7.12.7",
     "@blen/react-bootstrap-datetimepicker": "^0.1.2",
     "bootstrap": "^3.3.5",
     "classnames": "^2.2.6",
