@@ -37,4 +37,4 @@ crc = { version = "1.8", optional = true }
 tempfile = "3.1"
 exocore-chain = { path = "../chain", features = ["tests-utils"] }
 exocore-core = { path = "../core", features = ["tests-utils"] }
-tokio = { version = "0.2", features = ["test-util", "macros", "blocking", "rt-core", "rt-threaded"], default-features = false }
+tokio = { version = "0.2", default-features = false, features = ["macros"] } 

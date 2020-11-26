@@ -41,8 +41,7 @@ anyhow = "1.0"
 libp2p = { version = "0.29", features = ["noise"], default-features = false }
 chrono = "0.4"
 wasm-timer = "0.2"
-futures = { version = "0.3", features = ["async-await", "compat"] }
-tokio = { version = "0.2", features = ["rt-core", "blocking"], default-features = false }
+futures = { version = "0.3", features = ["async-await"] }
 protobuf = "2"
 prost = "0.6"
 prost-types = "0.6"
@@ -50,7 +49,7 @@ bytes = "0.6"
 uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
 petname = "1.0"
 rand = "0.7"
-url = "2.1"
+url = "2.2"
 base64 = "0.13"
 
 # console_logger
@@ -59,6 +58,9 @@ log4rs = { version = "0.13", optional = true }
 [target."cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))".dependencies]
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "0.2", features = ["rt-core", "blocking"], default-features = false }
 
 [build-dependencies]
 capnpc = { version = "0.13", git = "https://github.com/appaquet/capnproto-rust.git", branch = "atomic-read-limiter" }

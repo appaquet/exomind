@@ -2,24 +2,29 @@ use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
 };
-use exocore_core::cell::{Cell, CellNodeRole, EitherCell, FullCell};
-use exocore_core::futures::Runtime;
-use exocore_core::time::Clock;
-use exocore_store::local::{EntityIndex, EntityIndexConfig, Store};
-use exocore_store::remote::server::Server;
-use exocore_transport::{
-    either::EitherTransportServiceHandle, http::HTTPTransportConfig, http::HTTPTransportServer,
-    p2p::Libp2pTransportConfig,
+use exocore_core::{
+    cell::{Cell, CellNodeRole, EitherCell, FullCell},
+    futures::owned_spawn,
+    time::Clock,
 };
-use exocore_transport::{Libp2pTransport, ServiceType, TransportServiceHandle};
+use exocore_store::{
+    local::{EntityIndex, EntityIndexConfig, Store},
+    remote::server::Server,
+};
+use exocore_transport::{
+    either::EitherTransportServiceHandle,
+    http::{HTTPTransportConfig, HTTPTransportServer},
+    p2p::Libp2pTransportConfig,
+    Libp2pTransport, ServiceType, TransportServiceHandle,
+};
+use futures::{Future, FutureExt};
 
 use crate::Options;
 
-pub fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
+pub async fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
     let config = opts.read_configuration();
     let (either_cells, local_node) = Cell::new_from_local_node_config(config)?;
 
-    let mut rt = Runtime::new()?;
     let clock = Clock::new();
 
     let mut p2p_transport = {
@@ -32,7 +37,10 @@ pub fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
         HTTPTransportServer::new(local_node, http_config, clock.clone())
     };
 
-    let mut engines_handle = Vec::new();
+    let mut engine_handles = Vec::new();
+    let mut engine_completions = Vec::new();
+    let mut store_completions = Vec::new();
+
     for either_cell in either_cells.iter() {
         let cell = either_cell.cell();
         if cell.local_node_has_role(CellNodeRole::Chain) {
@@ -64,14 +72,14 @@ pub fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
             // we keep a handle of the engine, otherwise the engine will not start since it
             // will get dropped
             let engine_handle = engine.get_handle();
-            engines_handle.push(engine_handle);
+            engine_handles.push(engine_handle);
             let store_engine_handle = engine.get_handle();
 
             // start the engine
-            rt.spawn(async move {
+            engine_completions.push(owned_spawn(async move {
                 let res = engine.run().await;
                 info!("{}: Engine is done: {:?}", cell_name, res);
-            });
+            }));
 
             // start an local store if needed
             if cell.local_node_has_role(CellNodeRole::Store) {
@@ -99,14 +107,16 @@ pub fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
                     entities_http_transport,
                 );
 
-                create_local_store(
-                    &mut rt,
-                    entities_transport,
-                    store_engine_handle,
-                    full_cell,
-                    clock.clone(),
-                    entities_index,
-                )?;
+                store_completions.push(
+                    create_local_store(
+                        entities_transport,
+                        store_engine_handle,
+                        full_cell,
+                        clock.clone(),
+                        entities_index,
+                    )
+                    .await?,
+                );
             } else {
                 info!(
                     "{}: Local node doesn't have store role. Not starting local store server.",
@@ -122,29 +132,33 @@ pub fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
     }
 
     // start transports
-    rt.spawn(async {
+    let p2p_transport = owned_spawn(async {
         let res = p2p_transport.run().await;
         info!("libp2p transport done: {:?}", res);
     });
-
-    rt.spawn(async {
+    let http_transport = owned_spawn(async {
         let res = http_transport.run().await;
         info!("HTTP transport done: {:?}", res);
     });
 
-    std::thread::park();
+    // wait for anything to stop
+    futures::select! {
+        _ = p2p_transport.fuse() => {},
+        _ = http_transport.fuse() => {},
+        _ = futures::future::join_all(engine_completions).fuse() => {},
+        _ = futures::future::join_all(store_completions).fuse() => {},
+    }
 
     Ok(())
 }
 
-fn create_local_store<T: TransportServiceHandle>(
-    rt: &mut Runtime,
+async fn create_local_store<T: TransportServiceHandle>(
     transport: T,
     chain_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
     full_cell: FullCell,
     clock: Clock,
     entities_index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<impl Future<Output = ()>> {
     let store_config = Default::default();
     let local_store = Store::new(
         store_config,
@@ -155,13 +169,14 @@ fn create_local_store<T: TransportServiceHandle>(
     )?;
     let store_handle = local_store.get_handle();
 
-    rt.spawn(async move {
+    let local_store_complete = owned_spawn(async move {
         match local_store.run().await {
             Ok(_) => info!("Local store has stopped"),
             Err(err) => error!("Local store has stopped: {}", err),
         }
     });
-    rt.block_on(store_handle.on_start());
+
+    store_handle.on_start().await;
 
     let server_config = Default::default();
     let remote_store_server = Server::new(
@@ -170,12 +185,17 @@ fn create_local_store<T: TransportServiceHandle>(
         store_handle,
         transport,
     )?;
-    rt.spawn(async move {
+    let remote_store_complete = owned_spawn(async move {
         match remote_store_server.run().await {
             Ok(_) => info!("Remote store server has stopped"),
             Err(err) => info!("Remote store server has failed: {}", err),
         }
     });
 
-    Ok(())
+    Ok(async move {
+        futures::select! {
+            _ = local_store_complete.fuse() => {},
+            _ = remote_store_complete.fuse() => {},
+        }
+    })
 }

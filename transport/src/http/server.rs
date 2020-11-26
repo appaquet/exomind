@@ -1,20 +1,19 @@
 use super::{
-    handles::ServiceHandle, handles::ServiceHandles, requests::RequestTracker,
-    requests::TrackedRequest, HTTPTransportConfig, HTTPTransportServiceHandle,
+    handles::{ServiceHandle, ServiceHandles},
+    requests::{RequestTracker, TrackedRequest},
+    HTTPTransportConfig, HTTPTransportServiceHandle,
 };
 
-use crate::Error;
-use crate::{transport::ConnectionID, InMessage, OutEvent, OutMessage, ServiceType};
+use crate::{transport::ConnectionID, Error, InMessage, OutEvent, OutMessage, ServiceType};
 
 use exocore_core::{
     capnp,
     cell::{Cell, CellNodes, LocalNode, Node},
     framing::{CapnpFrameBuilder, FrameBuilder},
     futures::block_on,
-    protos::generated::store_transport_capnp::mutation_request,
-    protos::generated::store_transport_capnp::mutation_response,
-    protos::generated::store_transport_capnp::query_request,
-    protos::generated::store_transport_capnp::query_response,
+    protos::generated::store_transport_capnp::{
+        mutation_request, mutation_response, query_request, query_response,
+    },
     sec::auth_token::AuthToken,
     time::Clock,
     utils::handle_set::HandleSet,
@@ -23,9 +22,8 @@ use exocore_core::{
 use futures::{channel::mpsc, lock::Mutex, FutureExt, StreamExt};
 use hyper::{
     service::{make_service_fn, service_fn},
-    StatusCode,
+    Body, Request, Response, Server, StatusCode,
 };
-use hyper::{Body, Request, Response, Server};
 
 use std::{borrow::Cow, sync::Arc};
 

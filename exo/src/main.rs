@@ -3,6 +3,7 @@
 mod cell;
 mod config;
 mod daemon;
+mod disco;
 mod keys;
 mod node;
 mod utils;
@@ -68,17 +69,21 @@ pub enum Commands {
     /// Cells related commands.
     Cell(cell::CellOptions),
 
-    /// Start the node daemon, with all its cells and roles.
-    Daemon,
-
     /// Keys releated commands.
     Keys(keys::KeysOptions),
 
     /// Node configuration related commands.
     Config(config::ConfigOptions),
+
+    /// Start the node daemon, with all its cells and roles.
+    Daemon,
+
+    /// Discovery service related commands.
+    Discovery(disco::DiscoveryCommand),
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let mut opts: Options = Options::parse();
     opts.validate()?;
 
@@ -86,10 +91,11 @@ fn main() -> anyhow::Result<()> {
 
     let result = match &opts.subcommand {
         Commands::Node(node_opts) => node::handle_cmd(&opts, node_opts),
-        Commands::Daemon => daemon::cmd_daemon(&opts),
+        Commands::Daemon => daemon::cmd_daemon(&opts).await,
         Commands::Keys(keys_opts) => keys::handle_cmd(&opts, keys_opts),
         Commands::Cell(cell_opts) => cell::handle_cmd(&opts, cell_opts),
         Commands::Config(config_opts) => config::handle_cmd(&opts, config_opts),
+        Commands::Discovery(disco_opts) => disco::cmd_daemon(&opts, disco_opts).await,
     };
 
     if let Err(err) = result {

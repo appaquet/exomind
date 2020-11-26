@@ -14,6 +14,7 @@ exocore-core = { path = "../core", features = ["runtime", "logger"] }
 exocore-chain = { path = "../chain" }
 exocore-store = { path = "../store" }
 exocore-transport = { path = "../transport", features = ["http-server"] }
+exocore-discovery = { path = "../discovery", features = ["server"] }
 log = "0.4"
 clap = "3.0.0-beta.2"
 log4rs = "0.13"
@@ -22,3 +23,4 @@ anyhow = "1.0"
 futures = "0.3"
 dirs-next = "2.0"
 tempfile = "3.1"
+tokio = { version = "0.2", features = ["macros"] }
