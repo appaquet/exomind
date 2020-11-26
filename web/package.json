@@ -22,7 +22,7 @@
     "@blen/react-bootstrap-datetimepicker": "^0.1.2",
     "bootstrap": "^3.3.5",
     "classnames": "^2.2.6",
-    "core-js": "^3.2.1",
+    "core-js": "^3.8.0",
     "dom-serializer": "1.1.0",
     "domhandler": "^3.3.0",
     "domutils": "^2.4.2",
