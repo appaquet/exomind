@@ -729,7 +729,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#7a685ed1019aef7be9198fe630718dccdad39909"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -740,7 +740,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#7a685ed1019aef7be9198fe630718dccdad39909"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -756,7 +756,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#7a685ed1019aef7be9198fe630718dccdad39909"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -793,7 +793,7 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#7a685ed1019aef7be9198fe630718dccdad39909"
 dependencies = [
  "anyhow",
  "bytes 0.6.0",
@@ -813,7 +813,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#7a685ed1019aef7be9198fe630718dccdad39909"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1084,7 +1084,6 @@ version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d304cff4a7b99cfb7986f7d43fbe93d175e72e704a8860787cc95e9ffd85cbd2"
 dependencies = [
- "futures 0.1.30",
  "futures-channel",
  "futures-core",
  "futures-io",
