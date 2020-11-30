@@ -354,12 +354,12 @@ checksum = "e0dcbc35f504eb6fc275a6d20e4ebcda18cf50d40ba6fabff8c711fa16cb3b16"
 [[package]]
 name = "capnp"
 version = "0.13.3"
-source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#04b21106c97da1d46983a5c24c4a9e9b14bd7603"
+source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#25f9948387a5991cc99b4a93971c900c8ad7a33d"
 
 [[package]]
 name = "capnpc"
 version = "0.13.1"
-source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#04b21106c97da1d46983a5c24c4a9e9b14bd7603"
+source = "git+https://github.com/appaquet/capnproto-rust.git?branch=atomic-read-limiter#25f9948387a5991cc99b4a93971c900c8ad7a33d"
 dependencies = [
  "capnp",
 ]
@@ -729,7 +729,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#0cda9469699bdca397beb39549166e9dba8c95bc"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -740,7 +740,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#0cda9469699bdca397beb39549166e9dba8c95bc"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -756,7 +756,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#0cda9469699bdca397beb39549166e9dba8c95bc"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -793,7 +793,7 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#0cda9469699bdca397beb39549166e9dba8c95bc"
 dependencies = [
  "anyhow",
  "bytes 0.6.0",
@@ -813,7 +813,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.0"
-source = "git+https://github.com/appaquet/exocore.git#52310618eb8ed83fc99ac2c0ad0b1f1840dff69a"
+source = "git+https://github.com/appaquet/exocore.git#0cda9469699bdca397beb39549166e9dba8c95bc"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1084,7 +1084,6 @@ version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d304cff4a7b99cfb7986f7d43fbe93d175e72e704a8860787cc95e9ffd85cbd2"
 dependencies = [
- "futures 0.1.30",
  "futures-channel",
  "futures-core",
  "futures-io",
