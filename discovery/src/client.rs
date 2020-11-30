@@ -1,4 +1,6 @@
-use crate::payload::{CreatePayloadRequest, CreatePayloadResponse, Payload, PayloadID};
+use std::convert::TryInto;
+
+use crate::payload::{CreatePayloadRequest, CreatePayloadResponse, Payload, Pin};
 use reqwest::IntoUrl;
 pub use reqwest::Url;
 
@@ -38,10 +40,11 @@ impl Client {
     }
 
     /// Gets a payload by unique identifier created by the call to `create` by another client.
-    pub async fn get(&self, id: PayloadID) -> Result<Vec<u8>, Error> {
+    pub async fn get<P: TryInto<Pin>>(&self, id: P) -> Result<Vec<u8>, Error> {
+        let id_u32: u32 = id.try_into().map_err(|_| Error::InvalidPin)?.into();
         let url = self
             .base_uri
-            .join(&format!("/{}", id))
+            .join(&format!("/{}", id_u32))
             .expect("Couldn't create URL");
         let http_resp = reqwest::Client::builder().build()?.get(url).send().await?;
 
@@ -69,4 +72,7 @@ pub enum Error {
 
     #[error("Received an invalid payload from server")]
     InvalidPayload,
+
+    #[error("Received an invalid pin")]
+    InvalidPin,
 }

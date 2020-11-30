@@ -1,4 +1,6 @@
-use crate::payload::{CreatePayloadRequest, CreatePayloadResponse, Payload, PayloadID};
+use std::convert::TryInto;
+
+use crate::payload::{CreatePayloadRequest, CreatePayloadResponse, Payload, Pin};
 use futures::prelude::*;
 use hyper::{
     service::{make_service_fn, service_fn},
@@ -115,10 +117,7 @@ impl Server {
         Ok(resp)
     }
 
-    async fn handle_get(
-        store: store::Store,
-        id: PayloadID,
-    ) -> Result<Response<Body>, RequestError> {
+    async fn handle_get(store: store::Store, id: Pin) -> Result<Response<Body>, RequestError> {
         let data = store.get(id).await.ok_or(RequestError::NotFound)?;
 
         let resp_payload = Payload { id, data };
@@ -153,7 +152,7 @@ impl Server {
 #[derive(Debug, PartialEq)]
 enum RequestType {
     Post,
-    Get(PayloadID),
+    Get(Pin),
     Options,
 }
 
@@ -162,11 +161,19 @@ impl RequestType {
         match *method {
             Method::POST if path == "/" => Ok(RequestType::Post),
             Method::GET => {
-                let id: PayloadID = path.replace("/", "").parse().map_err(|err| {
-                    debug!("Couldn't parse path '{}': {}", path, err);
-                    RequestError::InvalidRequestType
-                })?;
-                Ok(RequestType::Get(id))
+                let pin: Pin = path
+                    .replace("/", "")
+                    .parse::<u32>()
+                    .map_err(|err| {
+                        debug!("Couldn't parse path '{}': {}", path, err);
+                        RequestError::InvalidRequestType
+                    })?
+                    .try_into()
+                    .map_err(|_| {
+                        debug!("Couldn't parse pin in path '{}'", path);
+                        RequestError::InvalidRequestType
+                    })?;
+                Ok(RequestType::Get(pin))
             }
             Method::OPTIONS => Ok(RequestType::Options),
             _ => {

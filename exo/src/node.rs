@@ -1,8 +1,9 @@
-use crate::{utils::shell_prompt, Options};
+use crate::{term::*, Context};
 use clap::Clap;
 use exocore_core::{
-    cell::LocalNodeConfigExt, cell::Node, protos::core::LocalNodeConfig,
-    protos::core::NodeAddresses, sec::keys::Keypair,
+    cell::{LocalNodeConfigExt, Node},
+    protos::core::{LocalNodeConfig, NodeAddresses},
+    sec::keys::Keypair,
 };
 use std::fs::File;
 
@@ -25,14 +26,14 @@ pub struct InitOptions {
     pub name: Option<String>,
 }
 
-pub fn handle_cmd(exo_opts: &Options, node_opts: &NodeOptions) -> anyhow::Result<()> {
+pub fn handle_cmd(ctx: &Context, node_opts: &NodeOptions) -> anyhow::Result<()> {
     match &node_opts.command {
-        NodeCommand::Init(init_opts) => cmd_init(exo_opts, init_opts),
+        NodeCommand::Init(init_opts) => cmd_init(ctx, init_opts),
     }
 }
 
-fn cmd_init(exo_opts: &Options, init_opts: &InitOptions) -> anyhow::Result<()> {
-    let config_path = exo_opts.conf_path();
+fn cmd_init(ctx: &Context, init_opts: &InitOptions) -> anyhow::Result<()> {
+    let config_path = ctx.options.conf_path();
     if config_path.exists() {
         panic!(
             "Cannot initialize node. A file already exists at '{:?}'",
@@ -40,8 +41,10 @@ fn cmd_init(exo_opts: &Options, init_opts: &InitOptions) -> anyhow::Result<()> {
         );
     }
 
-    let home_path = exo_opts.dir_path();
+    print_step("Initializing node directory");
+    let home_path = ctx.options.dir_path();
     if !home_path.exists() {
+        print_action(format!("Creating directory {}", style_value(&home_path)));
         std::fs::create_dir_all(home_path).expect("Couldn't create home directory");
     }
 
@@ -50,10 +53,11 @@ fn cmd_init(exo_opts: &Options, init_opts: &InitOptions) -> anyhow::Result<()> {
 
     let mut node_name = node.name().to_string();
     if init_opts.name.is_none() {
-        let resp = shell_prompt("Node name", Some(&node_name))?;
-        if let Some(resp) = resp {
-            node_name = resp;
-        }
+        print_spacer();
+        node_name = dialoguer::Input::with_theme(ctx.dialog_theme.as_ref())
+            .with_prompt("Enter the name of the node")
+            .default(node.name().to_string())
+            .interact_text()?;
     }
 
     let local_node_config = LocalNodeConfig {
@@ -72,10 +76,17 @@ fn cmd_init(exo_opts: &Options, init_opts: &InitOptions) -> anyhow::Result<()> {
         ..Default::default()
     };
 
+    print_action(format!(
+        "Writing configuration to {}",
+        style_value(&config_path)
+    ));
     let config_file = File::create(&config_path)?;
     local_node_config.to_yaml_writer(config_file)?;
 
-    println!("Node config written to {:?}", config_path);
-
+    print_success(format!(
+        "Node {} with public key {} created",
+        style_value(&local_node_config.name),
+        style_value(&local_node_config.public_key),
+    ));
     Ok(())
 }

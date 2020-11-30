@@ -6,6 +6,7 @@ mod daemon;
 mod disco;
 mod keys;
 mod node;
+mod term;
 mod utils;
 
 #[macro_use]
@@ -18,6 +19,7 @@ use clap::Clap;
 use exocore_core::{cell::LocalNodeConfigExt, protos::core::LocalNodeConfig};
 use log::LevelFilter;
 use std::{path::PathBuf, str::FromStr};
+use term::*;
 use utils::expand_tild;
 
 #[derive(Clap)]
@@ -34,6 +36,15 @@ pub struct Options {
     /// Configuration of the node to use, relative to the directory.
     #[clap(long, short = 'c', default_value = "node.yaml", env = "EXO_CONF")]
     pub conf: PathBuf,
+
+    /// URL of the discovery service to use for configuration exchange when
+    /// joining a cell or adding a new node to a cell.
+    #[clap(
+        long,
+        default_value = "https://disco.exocore.io",
+        env = "EXO_DISCOVERY"
+    )]
+    pub discovery_service: String,
 
     #[clap(subcommand)]
     subcommand: Commands,
@@ -57,7 +68,25 @@ impl Options {
 
     pub fn read_configuration(&self) -> LocalNodeConfig {
         let config_path = self.conf_path();
+
+        print_info(format!(
+            "Using node in directory {}",
+            style_value(config_path.to_string_lossy()),
+        ));
+
         LocalNodeConfig::from_yaml_file(&config_path).expect("Couldn't read node config")
+    }
+}
+
+pub struct Context {
+    options: Options,
+
+    dialog_theme: Box<dyn dialoguer::theme::Theme>,
+}
+
+impl Context {
+    fn get_discovery_client(&self) -> exocore_discovery::Client {
+        disco::get_discovery_client(self)
     }
 }
 
@@ -84,18 +113,23 @@ pub enum Commands {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut opts: Options = Options::parse();
-    opts.validate()?;
+    let mut options: Options = Options::parse();
+    options.validate()?;
 
-    exocore_core::logging::setup(Some(LevelFilter::from_str(&opts.log)?));
+    exocore_core::logging::setup(Some(LevelFilter::from_str(&options.log)?));
 
-    let result = match &opts.subcommand {
-        Commands::Node(node_opts) => node::handle_cmd(&opts, node_opts),
-        Commands::Daemon => daemon::cmd_daemon(&opts).await,
-        Commands::Keys(keys_opts) => keys::handle_cmd(&opts, keys_opts),
-        Commands::Cell(cell_opts) => cell::handle_cmd(&opts, cell_opts),
-        Commands::Config(config_opts) => config::handle_cmd(&opts, config_opts),
-        Commands::Discovery(disco_opts) => disco::cmd_daemon(&opts, disco_opts).await,
+    let ctx = Context {
+        options,
+        dialog_theme: Box::new(dialoguer::theme::ColorfulTheme::default()),
+    };
+
+    let result = match &ctx.options.subcommand {
+        Commands::Node(node_opts) => node::handle_cmd(&ctx, node_opts),
+        Commands::Daemon => daemon::cmd_daemon(&ctx).await,
+        Commands::Keys(keys_opts) => keys::handle_cmd(&ctx, keys_opts),
+        Commands::Cell(cell_opts) => cell::handle_cmd(&ctx, cell_opts).await,
+        Commands::Config(config_opts) => config::handle_cmd(&ctx, config_opts),
+        Commands::Discovery(disco_opts) => disco::cmd_daemon(&ctx, disco_opts).await,
     };
 
     if let Err(err) = result {

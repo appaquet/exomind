@@ -19,10 +19,11 @@ async fn golden_path() -> anyhow::Result<()> {
     let client = Client::new("http://127.0.0.1:3010")?;
     let create_resp = client.create(b"hello world").await?;
 
-    let get_res = client.get(1337).await;
+    let get_res = client.get(100_000_000).await;
     match get_res {
         Err(Error::NotFound) => {}
-        _other => panic!("Expected not found error"),
+        Err(err) => panic!("Expected not found error, got {}", err),
+        _ => panic!("Expected not found error, got a response"),
     }
 
     let get_res = client.get(create_resp.id).await?;
@@ -52,10 +53,11 @@ async fn payloads_expiration() -> anyhow::Result<()> {
 
     tokio::time::delay_for(std::time::Duration::from_millis(110)).await;
 
-    let get_res = client.get(1337).await;
+    let get_res = client.get(100_000_000).await;
     match get_res {
         Err(Error::NotFound) => {}
-        _other => panic!("Expected not found error"),
+        Err(err) => panic!("Expected not found error, got {}", err),
+        _ => panic!("Expected not found error, got a response"),
     }
 
     Ok(())

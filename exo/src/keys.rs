@@ -1,4 +1,4 @@
-use crate::Options;
+use crate::Context;
 use clap::Clap;
 use exocore_core::cell::{Node, NodeId};
 use exocore_core::sec::keys::Keypair;
@@ -15,13 +15,13 @@ pub enum KeysCommand {
     Generate,
 }
 
-pub fn handle_cmd(exo_opts: &Options, keys_opts: &KeysOptions) -> anyhow::Result<()> {
+pub fn handle_cmd(ctx: &Context, keys_opts: &KeysOptions) -> anyhow::Result<()> {
     match keys_opts.command {
-        KeysCommand::Generate => cmd_generate(&exo_opts, keys_opts),
+        KeysCommand::Generate => cmd_generate(ctx, keys_opts),
     }
 }
 
-fn cmd_generate(_exo_opts: &Options, _keys_opts: &KeysOptions) -> anyhow::Result<()> {
+fn cmd_generate(_ctx: &Context, _keys_opts: &KeysOptions) -> anyhow::Result<()> {
     let keypair = Keypair::generate_ed25519();
     println!("keypair: {}", keypair.encode_base58_string());
     println!("public_key: {}", keypair.public().encode_base58_string());

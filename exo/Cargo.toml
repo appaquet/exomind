@@ -24,3 +24,6 @@ futures = "0.3"
 dirs-next = "2.0"
 tempfile = "3.1"
 tokio = { version = "0.2", features = ["macros"] }
+dialoguer = "0.7"
+console = "0.13"
+indicatif = "0.15"

@@ -1,3 +1,4 @@
+use crate::Context;
 use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -19,10 +20,8 @@ use exocore_transport::{
 };
 use futures::{Future, FutureExt};
 
-use crate::Options;
-
-pub async fn cmd_daemon(opts: &Options) -> anyhow::Result<()> {
-    let config = opts.read_configuration();
+pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
+    let config = ctx.options.read_configuration();
     let (either_cells, local_node) = Cell::new_from_local_node_config(config)?;
 
     let clock = Clock::new();

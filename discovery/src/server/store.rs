@@ -1,9 +1,10 @@
-use crate::payload::PayloadID;
+use crate::payload::Pin;
 use chrono::{DateTime, Utc};
 use futures::lock::Mutex;
 use rand::Rng;
 use std::{
     collections::{HashMap, HashSet},
+    convert::TryInto,
     sync::Arc,
 };
 
@@ -25,7 +26,7 @@ impl Store {
     pub(super) async fn push(
         &self,
         data: String,
-    ) -> Result<(PayloadID, DateTime<Utc>), super::RequestError> {
+    ) -> Result<(Pin, DateTime<Utc>), super::RequestError> {
         let mut inner = self.inner.lock().await;
 
         if inner.payloads.len() > self.config.max_payloads {
@@ -44,7 +45,7 @@ impl Store {
         Ok((id, expiration))
     }
 
-    pub(super) async fn get(&self, id: PayloadID) -> Option<String> {
+    pub(super) async fn get(&self, id: Pin) -> Option<String> {
         let mut inner = self.inner.lock().await;
         let payload = inner.payloads.remove(&id)?;
         Some(payload.data)
@@ -69,15 +70,15 @@ impl Store {
 
 #[derive(Default)]
 struct StoreInner {
-    payloads: HashMap<PayloadID, PendingPayload>,
+    payloads: HashMap<Pin, PendingPayload>,
 }
 
 impl StoreInner {
-    fn next_id(&self) -> PayloadID {
+    fn next_id(&self) -> Pin {
         let mut rng = rand::thread_rng();
         loop {
             // generate a 9 pin random code
-            let id: PayloadID = rng.gen_range(100_000_000, 999_999_999);
+            let id: Pin = rng.gen_range(100_000_000, 999_999_999).try_into().unwrap();
             if !self.payloads.contains_key(&id) {
                 return id;
             }

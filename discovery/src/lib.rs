@@ -2,6 +2,7 @@
 extern crate log;
 
 pub mod payload;
+pub use payload::{CreatePayloadRequest, CreatePayloadResponse, Payload, Pin};
 
 #[cfg(feature = "server")]
 pub mod server;
