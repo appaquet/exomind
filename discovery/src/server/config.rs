@@ -12,7 +12,7 @@ pub struct ServerConfig {
     /// Maximum payload size.
     pub max_payload_size: usize,
 
-    /// Payloads expiration duration.
+    /// Payloads expiration delay.
     pub expiration: Duration,
 
     /// Interval at which expired payloads are cleaned up.

@@ -21,16 +21,28 @@ use std::{
 /// Extension for `LocalNodeConfig` proto.
 pub trait LocalNodeConfigExt {
     fn config(&self) -> &LocalNodeConfig;
+
     fn from_yaml_reader<R: Read>(reader: R) -> Result<LocalNodeConfig, Error>;
+
     fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<LocalNodeConfig, Error>;
+
     fn from_json_reader<R: Read>(bytes: R) -> Result<LocalNodeConfig, Error>;
+
     fn to_yaml(&self) -> Result<String, Error>;
+
     fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error>;
+
     fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error>;
+
     fn to_json(&self) -> Result<String, Error>;
+
     fn inlined(&self) -> Result<LocalNodeConfig, Error>;
+
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
+
     fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P);
+
+    fn add_cell(&mut self, cell: NodeCellConfig);
 }
 
 impl LocalNodeConfigExt for LocalNodeConfig {
@@ -158,6 +170,36 @@ impl LocalNodeConfigExt for LocalNodeConfig {
                 _ => {}
             }
         }
+    }
+
+    fn add_cell(&mut self, cell: NodeCellConfig) {
+        let mut current_position: Option<usize> = None;
+
+        use node_cell_config::Location;
+        for (idx, other_cell) in self.cells.iter().enumerate() {
+            match (other_cell.location.as_ref(), &cell.location.as_ref()) {
+                (Some(Location::Path(other_path)), Some(Location::Path(path))) => {
+                    let abs_path = child_to_abs_path_string(&self.path, path);
+                    if other_path == path || other_path == &abs_path {
+                        current_position = Some(idx);
+                        break;
+                    }
+                }
+                (Some(Location::Inline(other_cell)), Some(Location::Inline(cell))) => {
+                    if other_cell.id == cell.id {
+                        current_position = Some(idx);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        if let Some(current_position) = current_position {
+            self.cells.remove(current_position);
+        }
+
+        self.cells.push(cell);
     }
 }
 
@@ -396,9 +438,13 @@ impl NodeConfigExt for NodeConfig {
 /// Extension for `Manifest` proto.
 pub trait ManifestExt {
     fn manifest(&self) -> &Manifest;
+
     fn inlined(&self) -> Result<Manifest, Error>;
+
     fn read_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error>;
+
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
+
     fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P);
 }
 
@@ -714,6 +760,60 @@ mod tests {
 
         // should be able to load cell inlined
         assert!(Cell::new_from_local_node_config(inlined_config).is_ok());
+
+        Ok(())
+    }
+
+    #[test]
+    fn node_config_add_cell() -> anyhow::Result<()> {
+        {
+            // cell by path
+            let mut config = LocalNodeConfig::default();
+
+            config.add_cell(NodeCellConfig {
+                location: Some(node_cell_config::Location::Path("some_path".to_string())),
+            });
+            assert_eq!(1, config.cells.len());
+
+            config.add_cell(NodeCellConfig {
+                location: Some(node_cell_config::Location::Path("some_path".to_string())),
+            });
+            assert_eq!(1, config.cells.len());
+
+            config.add_cell(NodeCellConfig {
+                location: Some(node_cell_config::Location::Path("other_path".to_string())),
+            });
+            assert_eq!(2, config.cells.len());
+        }
+
+        {
+            // cell inlined
+            let mut config = LocalNodeConfig::default();
+
+            config.add_cell(NodeCellConfig {
+                location: Some(node_cell_config::Location::Inline(CellConfig {
+                    id: "id1".to_string(),
+                    ..Default::default()
+                })),
+            });
+            assert_eq!(1, config.cells.len());
+
+            config.add_cell(NodeCellConfig {
+                location: Some(node_cell_config::Location::Inline(CellConfig {
+                    id: "id1".to_string(),
+                    ..Default::default()
+                })),
+            });
+            assert_eq!(1, config.cells.len());
+
+            config.add_cell(NodeCellConfig {
+                location: Some(node_cell_config::Location::Inline(CellConfig {
+                    id: "id2".to_string(),
+                    ..Default::default()
+                })),
+            });
+            assert_eq!(2, config.cells.len());
+        }
 
         Ok(())
     }

@@ -875,7 +875,8 @@ fn add_node_config_cell(ctx: &Context, node_config: &LocalNodeConfig, cell_confi
     ));
 
     let mut node_config = node_config.clone();
-    node_config.cells.push(node_cell);
+    node_config.add_cell(node_cell);
+
     node_config
         .to_yaml_file(ctx.options.conf_path())
         .expect("Couldn't write node config");
