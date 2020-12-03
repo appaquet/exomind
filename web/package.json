@@ -41,7 +41,7 @@
     "protobufjs": "^6.10.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "sanitize-html": "^2.0.0",
+    "sanitize-html": "^2.2.0",
     "webpack": "^4.44.2"
   },
   "devDependencies": {
