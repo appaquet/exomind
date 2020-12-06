@@ -24,6 +24,7 @@ reqwest = {version = "0.10", default-features = false, features = ["json", "rust
 serde = "1.0"
 serde_json = "1.0"
 thiserror = "1.0"
+wasm-timer = "0.2"
 
 # For server
 hyper = {version = "0.13", optional = true}

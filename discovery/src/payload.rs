@@ -1,6 +1,10 @@
-use std::convert::TryFrom;
+use std::{
+    convert::{TryFrom, TryInto},
+    str::FromStr,
+};
 
 use chrono::{DateTime, Utc};
+use rand::Rng;
 
 #[derive(
     Clone, Copy, Ord, PartialOrd, Eq, PartialEq, serde::Serialize, serde::Deserialize, Debug, Hash,
@@ -25,7 +29,25 @@ impl TryFrom<u32> for Pin {
     }
 }
 
+impl FromStr for Pin {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let pin_int: u32 = s
+            .replace(|c: char| c.is_whitespace(), "")
+            .parse()
+            .map_err(|_| ())?;
+
+        Pin::try_from(pin_int)
+    }
+}
+
 impl Pin {
+    pub fn generate() -> Pin {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(100_000_000, 999_999_999).try_into().unwrap()
+    }
+
     pub fn to_formatted_string(&self) -> String {
         let id = self.0;
         let three = id - (id / 1_000) * 1_000;
@@ -38,19 +60,67 @@ impl Pin {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct CreatePayloadRequest {
+    /// Payload
     pub data: String,
+
+    /// If true, a reply token will be generated to be used
+    /// to authenticate reply.
+    pub expect_reply: bool,
 }
+
+/// Random token generated when a payload got accepted used to
+/// authenticate the reply.
+pub type ReplyToken = u64;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct CreatePayloadResponse {
-    pub id: Pin,
+    /// Pin of the payload
+    pub pin: Pin,
+
+    /// Time at which payload will be cleaned up from server
+    /// if not consumed before.
     pub expiration: DateTime<Utc>,
+
+    /// If payload expects a reply, pin to be used to reply to
+    /// this payload.
+    pub reply_pin: Option<Pin>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ReplyPayloadRequest {
+    /// Payload
+    pub data: String,
+
+    /// Reply authentication token.
+    pub reply_token: ReplyToken,
+
+    /// If true, a reply token will be generated to be used
+    /// to authenticate reply.
+    pub expect_reply: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Payload {
-    pub id: Pin,
-    pub data: String,
+    /// Pin of the payload
+    pub pin: Pin,
+
+    /// Payload
+    pub(crate) data: String,
+
+    /// If payload expects a reply, pin to be used to reply to
+    /// this payload.
+    pub reply_pin: Option<Pin>,
+
+    /// If payload expects a reply, reply token that will be
+    /// required in the `ReplyPayloadRequest` to authenticate.
+    pub reply_token: Option<ReplyToken>,
+}
+
+impl Payload {
+    pub fn decode_payload(&self) -> Result<Vec<u8>, ()> {
+        let b64_payload = base64::decode(&self.data).map_err(|_| ())?;
+        Ok(b64_payload)
+    }
 }
 
 #[cfg(test)]
@@ -71,5 +141,14 @@ mod tests {
         assert_eq!(&Pin(123_456_789).to_formatted_string(), "123 456 789");
         assert_eq!(&Pin(100_000_000).to_formatted_string(), "100 000 000");
         assert_eq!(&Pin(999_999_999).to_formatted_string(), "999 999 999");
+    }
+
+    #[test]
+    fn pin_string_parsing() {
+        assert_eq!("123 456 789".parse().ok(), Some(Pin(123_456_789)));
+        assert_eq!("100 000 000".parse().ok(), Some(Pin(100_000_000)));
+        assert!("123".parse::<Pin>().is_err());
+        assert!("foo".parse::<Pin>().is_err());
+        assert_eq!(" 99 9 9 99 999 ".parse().ok(), Some(Pin(999_999_999)));
     }
 }

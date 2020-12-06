@@ -1,8 +1,12 @@
 use std::convert::TryInto;
+use std::time::Duration;
 
-use crate::payload::{CreatePayloadRequest, CreatePayloadResponse, Payload, Pin};
-use reqwest::IntoUrl;
+use crate::payload::{
+    CreatePayloadRequest, CreatePayloadResponse, Payload, Pin, ReplyPayloadRequest, ReplyToken,
+};
 pub use reqwest::Url;
+use reqwest::{IntoUrl, StatusCode};
+use wasm_timer::Instant;
 
 /// Discovery service client.
 ///
@@ -22,10 +26,17 @@ impl Client {
     }
 
     /// Creates a new payload on the server. If successfully created, the response contains
-    /// a unique identifier that can be used by another client to retrieve the payload.
-    pub async fn create(&self, payload: &[u8]) -> Result<CreatePayloadResponse, Error> {
+    /// a unique pin that can be used by another client to retrieve the payload.
+    pub async fn create(
+        &self,
+        payload: &[u8],
+        expect_reply: bool,
+    ) -> Result<CreatePayloadResponse, Error> {
         let b64_payload = base64::encode(payload);
-        let create_request = CreatePayloadRequest { data: b64_payload };
+        let create_request = CreatePayloadRequest {
+            data: b64_payload,
+            expect_reply,
+        };
 
         let http_resp = reqwest::Client::builder()
             .build()?
@@ -34,31 +45,105 @@ impl Client {
             .send()
             .await?;
 
+        if http_resp.status() != StatusCode::OK {
+            return Err(Error::ServerError(http_resp.status()));
+        }
+
         let create_resp = http_resp.json::<CreatePayloadResponse>().await?;
 
         Ok(create_resp)
     }
 
-    /// Gets a payload by unique identifier created by the call to `create` by another client.
-    pub async fn get<P: TryInto<Pin>>(&self, id: P) -> Result<Vec<u8>, Error> {
-        let id_u32: u32 = id.try_into().map_err(|_| Error::InvalidPin)?.into();
+    /// Gets a payload by unique pin created by the call to `create` by another client.
+    pub async fn get<P: TryInto<Pin>>(&self, pin: P) -> Result<Payload, Error> {
+        let pin_u32: u32 = pin.try_into().map_err(|_| Error::InvalidPin)?.into();
         let url = self
             .base_uri
-            .join(&format!("/{}", id_u32))
+            .join(&format!("/{}", pin_u32))
             .expect("Couldn't create URL");
         let http_resp = reqwest::Client::builder().build()?.get(url).send().await?;
 
-        if http_resp.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(Error::NotFound);
+        match http_resp.status() {
+            reqwest::StatusCode::OK => {}
+            reqwest::StatusCode::NOT_FOUND => {
+                return Err(Error::NotFound);
+            }
+            other => {
+                return Err(Error::ServerError(other));
+            }
         }
 
         let payload = http_resp.json::<Payload>().await?;
-        let b64_payload = base64::decode(&payload.data).map_err(|err| {
-            error!("Couldn't base64 decode payload data: {}", err);
-            Error::InvalidPayload
-        })?;
 
-        Ok(b64_payload)
+        Ok(payload)
+    }
+
+    /// Gets a payload by unique pin created by the call to `create` by another client
+    /// and retries fetching if it hasn't been found it until `timeout`.
+    pub async fn get_loop<P: TryInto<Pin>>(
+        &self,
+        pin: P,
+        timeout: Duration,
+    ) -> Result<Payload, Error> {
+        let pin = pin.try_into().map_err(|_| Error::InvalidPin)?;
+        let begin = Instant::now();
+        loop {
+            match self.get(pin).await {
+                Ok(payload) => return Ok(payload),
+                Err(Error::NotFound) if begin.elapsed() > timeout => {
+                    return Err(Error::NotFound);
+                }
+                Err(Error::NotFound) if begin.elapsed() < timeout => {
+                    debug!("Payload not found on server... Waiting");
+                    let _ = wasm_timer::Delay::new(Duration::from_millis(1000)).await;
+                }
+                Err(other) => return Err(other),
+            }
+        }
+    }
+
+    /// Replies to a payload on the server using the given reply pin and authentication token.
+    /// If successfully created, the response contains can be retrieved using the reply pin.
+    pub async fn reply(
+        &self,
+        reply_pin: Pin,
+        reply_token: ReplyToken,
+        payload: &[u8],
+        expect_reply: bool,
+    ) -> Result<CreatePayloadResponse, Error> {
+        let pin_u32: u32 = reply_pin.into();
+        let url = self
+            .base_uri
+            .join(&format!("/{}", pin_u32))
+            .expect("Couldn't create URL");
+
+        let b64_payload = base64::encode(payload);
+        let reply_request = ReplyPayloadRequest {
+            data: b64_payload,
+            expect_reply,
+            reply_token,
+        };
+
+        let http_resp = reqwest::Client::builder()
+            .build()?
+            .put(url)
+            .json(&reply_request)
+            .send()
+            .await?;
+
+        match http_resp.status() {
+            reqwest::StatusCode::OK => {}
+            reqwest::StatusCode::NOT_FOUND => {
+                return Err(Error::NotFound);
+            }
+            other => {
+                return Err(Error::ServerError(other));
+            }
+        }
+
+        let create_resp = http_resp.json::<CreatePayloadResponse>().await?;
+
+        Ok(create_resp)
     }
 }
 
@@ -69,6 +154,9 @@ pub enum Error {
 
     #[error("Payload with this id was not found or has expired")]
     NotFound,
+
+    #[error("Received an unexpected error from server: code={0}")]
+    ServerError(reqwest::StatusCode),
 
     #[error("Received an invalid payload from server")]
     InvalidPayload,

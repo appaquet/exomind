@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 use crate::Context;
 use clap::Clap;
 use exocore_discovery::{Client, Pin, Server, ServerConfig};
@@ -41,22 +39,17 @@ pub fn get_discovery_client(ctx: &Context) -> Client {
 pub fn prompt_discovery_pin(ctx: &Context, text: &str) -> Pin {
     let node_discovery_pin = dialoguer::Input::with_theme(ctx.dialog_theme.as_ref())
         .with_prompt(text)
-        .validate_with(|input: &String| {
-            if input.chars().all(|c| c.is_digit(10) || c.is_whitespace()) {
-                Ok(())
-            } else {
-                Err("This is not a valid pin")
-            }
+        .validate_with(|input: &String| -> Result<(), &str> {
+            input
+                .parse::<Pin>()
+                .map_err(|_| "This is not a valid pin")?;
+
+            Ok(())
         })
         .interact_text()
         .expect("Couldn't get pin input from terminal");
 
-    let node_discovery_pin: u32 = node_discovery_pin
-        .replace(|c: char| c.is_whitespace(), "")
-        .parse()
-        .expect("Couldn't parse discovery pin");
-
     node_discovery_pin
-        .try_into()
+        .parse()
         .expect("Received an invalid pin from discovery service")
 }

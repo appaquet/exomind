@@ -1,17 +1,14 @@
-#![allow(clippy::unnecessary_mut_passed)]
-
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::Arc;
-
-use futures::channel::oneshot;
-use futures::prelude::*;
-use wasm_bindgen::prelude::*;
-
-use exocore_core::futures::spawn_future_non_send;
-use exocore_core::protos::generated::exocore_store::{EntityQuery, EntityResults};
-use exocore_core::protos::prost::ProstMessageExt;
+use exocore_core::{
+    futures::spawn_future_non_send,
+    protos::{
+        generated::exocore_store::{EntityQuery, EntityResults},
+        prost::ProstMessageExt,
+    },
+};
 use exocore_store::remote::ClientHandle;
+use futures::{channel::oneshot, prelude::*};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
+use wasm_bindgen::prelude::*;
 
 type ResultCell = Rc<RefCell<Option<Result<EntityResults, exocore_store::error::Error>>>>;
 type CallbackCell = Rc<RefCell<Option<js_sys::Function>>>;

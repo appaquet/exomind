@@ -303,27 +303,34 @@ async fn cmd_node_add(
 
     let disco_client = ctx.get_discovery_client();
 
-    let node_config = if add_opts.manual {
-        edit_string(
+    let (new_node_config, reply_pin, reply_token) = if add_opts.manual {
+        let node_config = edit_string(
             "# Paste joining node's public info (result of `exo config print --cell` on joining node)",
             |config| {
                 let config = NodeConfig::from_yaml(config.as_bytes())?;
                 Ok(config)
             },
-        )
+        );
+        (node_config, None, None)
     } else {
         print_spacer();
         let pin = prompt_discovery_pin(ctx, "Enter the joining node discovery PIN");
-        let node_config = disco_client
+        let payload = disco_client
             .get(pin)
             .await
             .expect("Couldn't find joining node using the given discovery pin");
 
-        NodeConfig::from_yaml(node_config.as_slice()).expect("Couldn't parse joining node config")
+        let node_config_yml = payload
+            .decode_payload()
+            .expect("Couldn't decode node payload");
+        let node_config = NodeConfig::from_yaml(node_config_yml.as_slice())
+            .expect("Couldn't parse joining node config");
+
+        (node_config, payload.reply_pin, payload.reply_token)
     };
 
     let mut cell_node = CellNodeConfig {
-        node: Some(node_config),
+        node: Some(new_node_config.clone()),
         roles: vec![],
     };
 
@@ -347,8 +354,7 @@ async fn cmd_node_add(
             .push(cell_node_config::Role::StoreRole.into());
     }
 
-    // TODO: Should replace if already exists
-    cell_config.nodes.push(cell_node);
+    cell_config.add_node(cell_node);
 
     print_action(format!(
         "Writing cell config to {}",
@@ -365,14 +371,19 @@ async fn cmd_node_add(
             .to_yaml()
             .expect("Couldn't convert cell config to yaml");
 
-        let create_resp = disco_client
-            .create(cell_config_inlined.as_bytes())
+        disco_client
+            .reply(
+                reply_pin.expect("Expected reply pin, but didn't find one"),
+                reply_token.expect("Expected reply reply, but didn't find one"),
+                cell_config_inlined.as_bytes(),
+                false,
+            )
             .await
             .expect("Couldn't create payload on discovery server");
 
-        print_action(format!(
-            "On the joining node, enter this discovery pin:\n\n\t\t{}",
-            style_value(create_resp.id.to_formatted_string())
+        print_success(format!(
+            "Node {} has been added to the cell",
+            style_value(new_node_config.name)
         ));
     }
 
@@ -399,23 +410,24 @@ async fn cmd_join(
 
     let cell_config = if !join_opts.manual {
         let create_resp = disco_client
-            .create(cell_node_yaml.as_bytes())
+            .create(cell_node_yaml.as_bytes(), true)
             .await
             .expect("Couldn't create payload on discovery server");
 
         print_action(format!(
             "On the host node, enter this discovery pin:\n\n\t\t{}",
-            style_value(create_resp.id.to_formatted_string())
+            style_value(create_resp.pin.to_formatted_string())
         ));
 
-        print_spacer();
-        let pin = prompt_discovery_pin(ctx, "Enter the host discovery PIN");
-        let cell_config = disco_client
-            .get(pin)
+        let payload = disco_client
+            .get_loop(create_resp.reply_pin.unwrap(), Duration::from_secs(60))
             .await
             .expect("Couldn't find host node using the given discovery pin");
 
-        CellConfig::from_yaml(cell_config.as_slice())
+        let cell_config_yml = payload
+            .decode_payload()
+            .expect("Couldn't decode cell config payload");
+        CellConfig::from_yaml(cell_config_yml.as_slice())
             .expect("Couldn't parse cell config from host node")
     } else {
         edit_string(

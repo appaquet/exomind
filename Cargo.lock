@@ -1028,6 +1028,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-logger",
+ "web-sys",
 ]
 
 [[package]]
@@ -1084,6 +1085,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
+ "wasm-timer",
 ]
 
 [[package]]

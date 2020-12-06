@@ -1,4 +1,4 @@
-import { exocore, Exocore, matchTrait, MutationBuilder, QueryBuilder, WatchedQuery } from 'exocore';
+import { exocore, Exocore, matchTrait, MutationBuilder, QueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React, { ChangeEvent } from 'react';
 
 interface IListProps {
@@ -15,7 +15,7 @@ interface IListState {
 }
 
 export default class List extends React.Component<IListProps, IListState> {
-    private watchedQuery: WatchedQuery;
+    private watchedQuery: WatchedQueryWrapper;
 
     constructor(props: IListProps) {
         super(props);

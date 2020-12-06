@@ -8,6 +8,9 @@
         },
         {
             "pattern": "^https://codecov.io"
+        },
+        {
+            "pattern": "badge.svg"
         }
     ]
 }

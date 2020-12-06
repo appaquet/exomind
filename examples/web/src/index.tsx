@@ -1,4 +1,4 @@
-import { Exocore, exocore } from "exocore";
+import { Exocore, exocore, LocalNode } from "exocore";
 import React, { ChangeEvent } from 'react';
 import ReactDOM from 'react-dom';
 import List from './list';
@@ -7,7 +7,8 @@ interface IAppProps { }
 
 interface IAppState {
     status: string;
-    config?: any;
+    join_pin?: string;
+    node?: LocalNode;
 }
 
 class App extends React.Component<IAppProps, IAppState> {
@@ -18,24 +19,22 @@ class App extends React.Component<IAppProps, IAppState> {
             status: 'disconnected',
         };
 
-        const configJson = localStorage.getItem('config');
-        if (!!configJson) {
-            state.config = JSON.parse(configJson);
-            this.connect(state.config);
-        }
+        Exocore.ensureLoaded().then(() => {
+            this.configure();
+        });
 
         this.state = state;
     }
 
     render() {
-        if (!this.state.config) {
-            return <ConfigInput onSet={this.setConfig.bind(this)} />;
+        if (this.state.join_pin) {
+            return <JoinPin pin={this.state.join_pin} />;
         }
 
         if (this.state.status === 'connected') {
             return (
                 <div>
-                    <button onClick={this.disconnect.bind(this)}>Reset</button>
+                    <button onClick={this.rejoin.bind(this)}>Rejoin</button>
 
                     <List />
                 </div>
@@ -49,80 +48,81 @@ class App extends React.Component<IAppProps, IAppState> {
         return (<div>
             <h3>Connecting...</h3>
 
-            <button onClick={this.disconnect.bind(this)}>Reset</button>
+            <button onClick={this.rejoin.bind(this)}>Rejoin</button>
         </div>);
     }
 
-    disconnect() {
-        this.setState({ config: null });
-        localStorage.clear();
-    }
+    private async configure(rejoin?: boolean) {
+        let node: LocalNode;
+        try {
+            node = Exocore.node.from_storage(localStorage)
+        } catch { }
 
-    setConfig(configJson: string) {
-        let config = JSON.parse(configJson);
-        localStorage.setItem('config', configJson);
-        this.setState({
-            config: config,
-        });
-
-        this.connect(config);
-    }
-
-    connect(config: any) {
-        Exocore.initialize(config).then((instance) => {
-            Exocore.registry.registerMessage(exocore.test.TestMessage, 'exocore.test.TestMessage');
-            Exocore.registry.registerMessage(exocore.test.TestMessage2, 'exocore.test.TestMessage2');
-
-            instance.onChange = () => {
-                this.setState({ status: Exocore.defaultInstance.status });
-            }
-        });
-    }
-}
-
-interface IConfigInputProps {
-    onSet: (text: string) => void;
-}
-
-interface IConfigInputState {
-    text: string;
-}
-
-class ConfigInput extends React.Component<IConfigInputProps, IConfigInputState> {
-    constructor(props: IConfigInputProps) {
-        super(props);
-
-        this.state = {
-            text: ''
+        if (!node) {
+            node = Exocore.node.generate();
+            node.save_to_storage(localStorage);
         }
+
+        if (rejoin || !node.has_configured_cell()) {
+            const disco = Exocore.discovery.create();
+
+            try {
+                node = await disco.push_node_config(node, (pin: string) => {
+                    this.setState({
+                        join_pin: pin,
+                    })
+                });
+                node.save_to_storage(localStorage);
+            } finally {
+                disco.free();
+            }
+        }
+
+        await this.createInstance(node);
+    }
+
+    private async createInstance(node: LocalNode) {
+        const instance = await Exocore.initialize(node);
+        instance.registry.registerMessage(exocore.test.TestMessage, 'exocore.test.TestMessage');
+        instance.registry.registerMessage(exocore.test.TestMessage2, 'exocore.test.TestMessage2');
+        instance.onChange = () => {
+            this.setState({ status: instance.status });
+        }
+
+        this.setState({
+            node,
+            join_pin: undefined,
+        });
+    }
+
+    private rejoin() {
+        this.setState({ node: null });
+        this.configure(true);
+    }
+
+    componentWillUnmount() {
+        if (this.state.node) {
+            this.state.node.free();
+        }
+    }
+}
+
+interface IJoinPinProps {
+    pin: string;
+}
+
+class JoinPin extends React.Component<IJoinPinProps, {}> {
+    constructor(props: IJoinPinProps) {
+        super(props);
     }
 
     render() {
-        const textStyle = {
-            width: 500 + 'px',
-            height: 300 + 'px',
-        };
-
         return (
             <div>
-                <h3>Paste JSON node config</h3>
-                <div><textarea value={this.state.text} onChange={this.onTextChange.bind(this)} style={textStyle} /></div>
-                <button onClick={this.onAddClick.bind(this)}>Save</button>
+                <h3>Discovery PIN: {this.props.pin}</h3>
+                <h4>Enter this pin on host node (see exo cell node add --help)</h4>
             </div>
         )
-    }
-
-    onTextChange(e: ChangeEvent<HTMLInputElement>) {
-        this.setState({
-            text: e.target.value
-        });
-    }
-
-    onAddClick() {
-        this.props.onSet(this.state.text);
-        this.setState({
-            text: ''
-        });
     }
 }
 
