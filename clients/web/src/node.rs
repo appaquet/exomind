@@ -67,6 +67,7 @@ impl LocalNode {
             .map_err(|err| into_js_error("couldn't convert to yaml config", err))
     }
 
+    #[wasm_bindgen(getter)]
     pub fn has_configured_cell(&self) -> bool {
         !self.config.cells.is_empty()
     }

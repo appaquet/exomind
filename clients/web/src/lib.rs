@@ -11,8 +11,8 @@ mod js;
 use std::sync::Once;
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-pub fn init() {
+#[wasm_bindgen(start)]
+pub fn start() {
     static INIT: Once = Once::new();
     INIT.call_once(|| {
         wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));

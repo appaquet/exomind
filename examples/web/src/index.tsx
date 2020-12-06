@@ -63,7 +63,7 @@ class App extends React.Component<IAppProps, IAppState> {
             node.save_to_storage(localStorage);
         }
 
-        if (rejoin || !node.has_configured_cell()) {
+        if (rejoin || !node.has_configured_cell) {
             const disco = Exocore.discovery.create();
 
             try {

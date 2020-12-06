@@ -17,6 +17,7 @@ pub struct Discovery {
 
 #[wasm_bindgen]
 impl Discovery {
+    #[wasm_bindgen(constructor)]
     pub fn new(disco_url: Option<String>) -> Discovery {
         let disco_url = disco_url.as_deref().unwrap_or(DEFAULT_DISCO_SERVER);
         let client = Client::new(disco_url).expect("couldn't create discovery client");

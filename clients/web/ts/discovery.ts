@@ -4,6 +4,6 @@ import { Discovery } from './wasm';
 export class DiscoveryAccessor {
     create(discoveryServiceUrl?: string): Discovery {
         const module = wasm.getModule();
-        return module.Discovery.new(discoveryServiceUrl);
+        return new module.Discovery(discoveryServiceUrl);
     }
 }
