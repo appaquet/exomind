@@ -859,7 +859,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "tokio 0.2.24",
+ "tokio 0.3.5",
  "yup-oauth2",
 ]
 
@@ -875,7 +875,7 @@ dependencies = [
  "serde_derive",
  "serde_yaml",
  "structopt",
- "tokio 0.2.24",
+ "tokio 0.3.5",
 ]
 
 [[package]]
@@ -3303,6 +3303,16 @@ dependencies = [
  "pin-project-lite 0.1.11",
  "slab",
  "tokio-macros",
+]
+
+[[package]]
+name = "tokio"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a12a3eb39ee2c231be64487f1fcbe726c8f2514876a55480a5ab8559fc374252"
+dependencies = [
+ "autocfg 1.0.1",
+ "pin-project-lite 0.2.0",
 ]
 
 [[package]]
