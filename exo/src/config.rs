@@ -29,11 +29,13 @@ pub struct PrintOptions {
     #[clap(long, default_value = "yaml")]
     pub format: String,
 
-    /// Print configuration in `NodeConfig` format to be used to configure cell nodes.
+    /// Print configuration in `NodeConfig` format to be used to configure cell
+    /// nodes.
     #[clap(long)]
     pub cell: bool,
 
-    /// Inline configuration instead of pointing to external objects (cells / apps).
+    /// Inline configuration instead of pointing to external objects (cells /
+    /// apps).
     #[clap(long)]
     pub inline: bool,
 
@@ -66,7 +68,7 @@ fn cmd_validate(ctx: &Context, _conf_opts: &ConfigOptions) -> anyhow::Result<()>
     let config = ctx.options.read_configuration();
 
     // create instance to validate the config
-    let (_cells, _node) = exocore_core::cell::Cell::new_from_local_node_config(config)?;
+    let (_cells, _node) = exocore_core::cell::Cell::from_local_node_config(config)?;
 
     Ok(())
 }

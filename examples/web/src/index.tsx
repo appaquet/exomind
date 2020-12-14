@@ -67,7 +67,7 @@ class App extends React.Component<IAppProps, IAppState> {
             const disco = Exocore.discovery.create();
 
             try {
-                node = await disco.push_node_config(node, (pin: string) => {
+                node = await disco.join_cell(node, (pin: string) => {
                     this.setState({
                         join_pin: pin,
                     })

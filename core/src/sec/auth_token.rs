@@ -1,6 +1,11 @@
-use crate::protos::core::{AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto};
-use crate::protos::prost::{ProstDateTimeExt, ProstMessageExt, ProstTimestampExt};
-use crate::{cell::Cell, cell::CellId, cell::NodeId, time::Clock, time::ConsistentTimestamp};
+use crate::{
+    cell::{Cell, CellId, NodeId},
+    protos::{
+        core::{AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto},
+        prost::{ProstDateTimeExt, ProstMessageExt, ProstTimestampExt},
+    },
+    time::{Clock, ConsistentTimestamp},
+};
 use prost::Message;
 
 /// Authentication token that can be used as an alternative authentication
@@ -38,7 +43,7 @@ impl AuthToken {
             expiration_date: expiration_date.map(|d| d.to_proto_timestamp()),
         };
 
-        let token_proto = data.encode_to_vec()?;
+        let token_proto = data.encode_to_vec();
         let signature = cell.local_node().keypair().sign(&token_proto)?;
 
         let signed = AuthTokenProto {
@@ -106,10 +111,7 @@ impl AuthToken {
 
     /// Encodes the signed token into a base58 representation.
     pub fn encode_base58_string(&self) -> String {
-        let signed_encoded = self
-            .signed
-            .encode_to_vec()
-            .expect("Couldn't encore signed token");
+        let signed_encoded = self.signed.encode_to_vec();
         bs58::encode(&signed_encoded).into_string()
     }
 
@@ -187,8 +189,10 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
-    use crate::cell::{FullCell, LocalNode};
-    use crate::time::Instant;
+    use crate::{
+        cell::{FullCell, LocalNode},
+        time::Instant,
+    };
 
     #[test]
     fn token_validity() -> anyhow::Result<()> {

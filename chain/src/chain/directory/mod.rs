@@ -431,16 +431,16 @@ impl Default for DirectoryChainStoreConfig {
 }
 
 /// Iterator over blocks stored in this directory based chain persistence.
-struct DirectoryBlockIterator<'pers> {
-    directory: &'pers DirectoryChainStore,
+struct DirectoryBlockIterator<'s> {
+    directory: &'s DirectoryChainStore,
     current_offset: BlockOffset,
-    current_segment: Option<&'pers DirectorySegment>,
+    current_segment: Option<&'s DirectorySegment>,
     last_error: Option<Error>,
     done: bool,
 }
 
-impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
-    type Item = BlockRef<'pers>;
+impl<'s> Iterator for DirectoryBlockIterator<'s> {
+    type Item = BlockRef<'s>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.done {
@@ -488,16 +488,16 @@ impl<'pers> Iterator for DirectoryBlockIterator<'pers> {
 
 /// Reverse iterator over blocks stored in this directory based chain
 /// persistence.
-struct DirectoryBlockReverseIterator<'pers> {
-    directory: &'pers DirectoryChainStore,
+struct DirectoryBlockReverseIterator<'s> {
+    directory: &'s DirectoryChainStore,
     current_offset: BlockOffset,
-    current_segment: Option<&'pers DirectorySegment>,
+    current_segment: Option<&'s DirectorySegment>,
     last_error: Option<Error>,
     done: bool,
 }
 
-impl<'pers> Iterator for DirectoryBlockReverseIterator<'pers> {
-    type Item = BlockRef<'pers>;
+impl<'s> Iterator for DirectoryBlockReverseIterator<'s> {
+    type Item = BlockRef<'s>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.done {
@@ -929,7 +929,7 @@ pub mod tests {
         Ok(())
     }
 
-    pub fn create_block(cell: &FullCell, offset: BlockOffset) -> BlockOwned {
+    pub fn create_block(full_cell: &FullCell, offset: BlockOffset) -> BlockOwned {
         let operation_data_size = ((offset >> 3) % 831311) as usize;
         let operation_data: Vec<u8> = b"d".repeat(operation_data_size % 13 + 1);
 
@@ -938,10 +938,10 @@ pub mod tests {
         let operations = vec![
             crate::operation::OperationBuilder::new_entry(
                 operation_id,
-                cell.local_node().id(),
+                full_cell.cell().local_node().id(),
                 &operation_data,
             )
-            .sign_and_build(cell.local_node())
+            .sign_and_build(full_cell.cell().local_node())
             .unwrap()
             .frame,
         ];
@@ -949,7 +949,7 @@ pub mod tests {
         let proposed_operation_id = offset as u64;
         let block_operations = BlockOperations::from_operations(operations.into_iter()).unwrap();
         BlockOwned::new_with_prev_info(
-            &cell,
+            full_cell.cell(),
             offset,
             0,
             0,

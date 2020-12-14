@@ -12,7 +12,8 @@ pub struct ServerConfig {
     /// Maximum payload size.
     pub max_payload_size: usize,
 
-    /// Maximum delay at which a payload can be retrieved before it expires and gets cleaned up.
+    /// Maximum delay at which a payload can be retrieved before it expires and
+    /// gets cleaned up.
     pub payload_expiration: Duration,
 
     /// Maximum delay a reply can be made after the initial payload creation.

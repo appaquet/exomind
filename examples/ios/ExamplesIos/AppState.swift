@@ -9,55 +9,85 @@ class AppState: ObservableObject {
 
     let objectWillChange = PassthroughSubject<AppState, Never>()
 
-    var currentView: Page = .bootstrap {
-        didSet {
-            self.objectWillChange.send(self)
+    @Published var node: LocalNode?
+    @Published var nodeConfig: Exocore_Core_LocalNodeConfig?
+    @Published var currentError: String?
+    @Published var forceDiscovery: Bool = false
+
+    var currentView: Page {
+        get {
+            if forceDiscovery || !nodeHasCell {
+                return .discovery
+            }
+
+            return .list
         }
     }
 
-    @Published var config: String?
-    @Published var configError: String?
+    var nodeHasCell: Bool {
+        get {
+            (self.nodeConfig?.cells.count ?? 0) > 0
+        }
+    }
 
     static func fromPersisted() -> AppState {
         let state = AppState()
 
-        state.config = state.keychain.get("config")
-        state.configureExocore()
-
-        if state.config != nil {
-            state.currentView = .list
+        if let configData = state.keychain.getData("node"),
+           let nodeConfig = try? Exocore_Core_LocalNodeConfig(serializedData: configData),
+           let node = try? LocalNode.from(config: nodeConfig) {
+            state.node = node
+            state.nodeConfig = nodeConfig
         }
+
+        if state.node == nil {
+            state.node = try? LocalNode.generate()
+            state.refreshNodeConfig()
+        }
+
+        state.maybeInitializeExocore()
+        state.triggerChanged()
 
         return state
     }
 
-    func saveConfig() {
-        self.configureExocore()
+    func refreshNodeConfig() {
+        // update latest config
+        if let node = self.node,
+           let newConfig = try? node.config() {
+            self.nodeConfig = newConfig
+        }
 
-        if let config = self.config {
-            self.keychain.set(config, forKey: "config")
-            self.currentView = .list
-            self.objectWillChange.send(self)
+        // save config to keychain
+        if let config = self.nodeConfig {
+            let configData = try! config.serializedData()
+            self.keychain.set(configData, forKey: "node")
+        }
+
+        self.maybeInitializeExocore()
+        self.triggerChanged()
+    }
+
+    func maybeInitializeExocore() {
+        if let node = self.node, self.nodeHasCell {
+            do {
+                try ExocoreClient.initialize(node: node)
+                self.currentError = nil
+            } catch {
+                print("Error initializing client with configured node: \(error)")
+                self.node = nil
+                self.nodeConfig = nil
+                self.currentError = error.localizedDescription
+            }
         }
     }
 
-    func configureExocore() {
-        if let config = self.config {
-            do {
-                try ExocoreClient.initialize(yamlConfig: config)
-                self.configError = nil
-            } catch {
-                print("Error loading client with given config: \(error)")
-                self.config = nil
-                self.configError = error.localizedDescription
-            }
-
-            self.objectWillChange.send(self)
-        }
+    func triggerChanged() {
+        self.objectWillChange.send(self)
     }
 }
 
 enum Page {
-    case bootstrap
+    case discovery
     case list
 }

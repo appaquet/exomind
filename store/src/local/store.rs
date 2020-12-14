@@ -286,7 +286,7 @@ where
                 }
             }
 
-            let encoded = mutation.encode_to_vec()?;
+            let encoded = mutation.encode_to_vec();
             let operation_id = self.chain_handle.write_entry_operation(&encoded)?;
 
             operation_ids.push(operation_id);

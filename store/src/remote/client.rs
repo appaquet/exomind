@@ -744,7 +744,7 @@ mod tests {
 
         let node1 = LocalNode::generate();
         {
-            let mut cell_nodes = full_cell.nodes_mut();
+            let mut cell_nodes = full_cell.cell().nodes_mut();
             cell_nodes.add(node1.node().clone());
             let cell_node1 = cell_nodes.get_mut(node1.id()).unwrap();
             cell_node1.add_role(CellNodeRole::Store);
@@ -770,7 +770,7 @@ mod tests {
         // add a second store node to the cell
         let node2 = LocalNode::generate();
         {
-            let mut cell_nodes = full_cell.nodes_mut();
+            let mut cell_nodes = full_cell.cell().nodes_mut();
             cell_nodes.add(node2.node().clone());
             let cell_node2 = cell_nodes.get_mut(node2.id()).unwrap();
             cell_node2.add_role(CellNodeRole::Store);

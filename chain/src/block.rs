@@ -275,9 +275,9 @@ impl BlockOwned {
         }
     }
 
-    pub fn new_genesis(cell: &FullCell) -> Result<BlockOwned, Error> {
+    pub fn new_genesis(full_cell: &FullCell) -> Result<BlockOwned, Error> {
         let operations = BlockOperations::empty();
-        let block = Self::new_with_prev_info(cell, 0, 0, 0, &[], 0, operations)?;
+        let block = Self::new_with_prev_info(full_cell.cell(), 0, 0, 0, &[], 0, operations)?;
         // TODO: Add master signature after doing https://github.com/appaquet/exocore/issues/46
         Ok(block)
     }
@@ -805,11 +805,11 @@ mod tests {
     #[test]
     fn block_create_and_read() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let full_cell = FullCell::generate(local_node.clone());
 
         {
             // local node is chain node
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = full_cell.cell().nodes_mut();
             let local_cell_node = nodes.get_mut(local_node.id()).unwrap();
             local_cell_node.add_role(CellNodeRole::Chain);
 
@@ -817,7 +817,7 @@ mod tests {
             nodes.add(Node::generate_temporary());
         }
 
-        let genesis = BlockOwned::new_genesis(&cell)?;
+        let genesis = BlockOwned::new_genesis(&full_cell)?;
 
         let operations = vec![
             OperationBuilder::new_entry(123, local_node.id(), b"some_data")
@@ -826,7 +826,8 @@ mod tests {
         ];
         let operations = BlockOperations::from_operations(operations.into_iter())?;
 
-        let second_block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, operations)?;
+        let second_block =
+            BlockOwned::new_with_prev_block(full_cell.cell(), &genesis, 0, operations)?;
 
         let mut data = [0u8; 5000];
         second_block.copy_data_into(&mut data);
@@ -872,11 +873,16 @@ mod tests {
     #[test]
     fn block_operations() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
-        let genesis = BlockOwned::new_genesis(&cell)?;
+        let full_cell = FullCell::generate(local_node.clone());
+        let genesis = BlockOwned::new_genesis(&full_cell)?;
 
         // 0 operations
-        let block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, BlockOperations::empty())?;
+        let block = BlockOwned::new_with_prev_block(
+            full_cell.cell(),
+            &genesis,
+            0,
+            BlockOperations::empty(),
+        )?;
         assert_eq!(block.operations_iter()?.count(), 0);
 
         // 5 operations
@@ -888,7 +894,8 @@ mod tests {
         });
 
         let block_operations = BlockOperations::from_operations(operations)?;
-        let block = BlockOwned::new_with_prev_block(&cell, &genesis, 0, block_operations)?;
+        let block =
+            BlockOwned::new_with_prev_block(full_cell.cell(), &genesis, 0, block_operations)?;
         assert_eq!(block.operations_iter()?.count(), 5);
 
         Ok(())

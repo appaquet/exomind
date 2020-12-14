@@ -307,7 +307,7 @@ pub struct EntityResult {
     //// but it may be useful to compare ordering queries (ex.: to merge different pages)
     #[prost(message, optional, tag = "3")]
     pub ordering_value: ::std::option::Option<OrderingValue>,
-    //// Hash of the tntiy result. Can be used to compare if the entity has changed since last results.
+    //// Hash of the entity result. Can be used to compare if the entity has changed since last results.
     #[prost(uint64, tag = "4")]
     pub hash: u64,
 }

@@ -251,23 +251,23 @@ mod tests {
     #[test]
     fn nodes_add_get() {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node.clone());
+        let full_cell = FullCell::generate(local_node.clone());
 
         {
-            let nodes = cell.nodes();
+            let nodes = full_cell.cell().nodes();
             assert!(!nodes.is_empty());
             assert_eq!(nodes.count(), 1); // self
         }
 
         {
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = full_cell.cell().nodes_mut();
             nodes.add(Node::generate_temporary());
             assert_eq!(nodes.count(), 2);
             assert_eq!(nodes.iter().all().count(), 2);
         }
 
         {
-            let nodes = cell.nodes();
+            let nodes = full_cell.cell().nodes();
             assert_eq!(nodes.count(), 2);
             assert_eq!(nodes.iter().all().count(), 2);
             assert_eq!(nodes.iter().all_except(local_node.id()).count(), 1);
@@ -283,7 +283,7 @@ mod tests {
         }
 
         {
-            let nodes = cell.nodes().to_owned();
+            let nodes = full_cell.cell().nodes().to_owned();
             assert_eq!(nodes.count(), 2);
         }
     }
@@ -291,11 +291,11 @@ mod tests {
     #[test]
     fn nodes_quorum() {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node);
+        let full_cell = FullCell::generate(local_node);
 
         {
             // 1 node
-            let nodes = cell.nodes();
+            let nodes = full_cell.cell().nodes();
             assert!(!nodes.is_quorum(0, None));
             assert!(nodes.is_quorum(1, None));
             assert!(!nodes.is_quorum(0, Some(CellNodeRole::Chain)));
@@ -304,7 +304,7 @@ mod tests {
 
         {
             // 2 nodes
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = full_cell.cell().nodes_mut();
             nodes.add(Node::generate_temporary());
             assert!(!nodes.is_quorum(1, None));
             assert!(nodes.is_quorum(2, None));
@@ -312,7 +312,7 @@ mod tests {
 
         {
             // 3 nodes
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = full_cell.cell().nodes_mut();
             nodes.add(Node::generate_temporary());
             assert!(!nodes.is_quorum(1, None));
             assert!(nodes.is_quorum(2, None));
@@ -320,7 +320,7 @@ mod tests {
 
         {
             // 3 nodes with roles
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = full_cell.cell().nodes_mut();
             let ids = nodes
                 .iter()
                 .all()

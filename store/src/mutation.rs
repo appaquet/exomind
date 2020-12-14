@@ -156,7 +156,7 @@ pub fn mutation_to_request_frame(
     let mut frame_builder = CapnpFrameBuilder::<mutation_request::Owned>::new();
     let mut msg_builder = frame_builder.get_builder();
 
-    let buf = request.encode_to_vec()?;
+    let buf = request.encode_to_vec();
     msg_builder.set_request(&buf);
 
     Ok(frame_builder)
@@ -181,7 +181,7 @@ pub fn mutation_result_to_response_frame(
 
     match result {
         Ok(res) => {
-            let buf = res.encode_to_vec()?;
+            let buf = res.encode_to_vec();
             msg_builder.set_response(&buf);
         }
         Err(err) => {

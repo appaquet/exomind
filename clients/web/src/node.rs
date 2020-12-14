@@ -15,15 +15,13 @@ pub struct LocalNode {
 impl LocalNode {
     pub fn generate() -> LocalNode {
         let node = CoreLocalNode::generate();
+        let config = LocalNodeConfig {
+            name: format!("web-{}", node.name()),
+            ..node.config().clone()
+        };
         LocalNode {
-            _node: node.clone(),
-            config: LocalNodeConfig {
-                keypair: node.keypair().encode_base58_string(),
-                public_key: node.public_key().encode_base58_string(),
-                name: format!("web-{}", node.name()),
-                id: node.id().to_string(),
-                ..Default::default()
-            },
+            _node: node,
+            config,
         }
     }
 

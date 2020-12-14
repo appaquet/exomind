@@ -650,7 +650,7 @@ mod tests {
         let config_path = root_test_fixtures_path("examples/node.yaml");
         let config = LocalNodeConfig::from_yaml_file(config_path)?;
 
-        let (cells, node) = Cell::new_from_local_node_config(config)?;
+        let (cells, node) = Cell::from_local_node_config(config)?;
         assert_eq!(2, cells.len());
         assert_eq!(2, node.p2p_addresses().len());
 
@@ -659,7 +659,7 @@ mod tests {
             let cell = cells[1].clone().unwrap_full();
 
             {
-                let nodes = cell.nodes();
+                let nodes = cell.cell().nodes();
                 assert_eq!(2, nodes.count());
 
                 let nodes_iter = nodes.iter();
@@ -669,6 +669,7 @@ mod tests {
 
             {
                 let schemas = cell
+                    .cell()
                     .schemas()
                     .get_message_descriptor("exocore.example_app.Task");
                 assert!(schemas.is_ok());
@@ -680,12 +681,13 @@ mod tests {
             let cell = cells[1].clone().unwrap_full();
 
             {
-                let nodes = cell.nodes();
+                let nodes = cell.cell().nodes();
                 assert_eq!(2, nodes.count());
             }
 
             {
                 let schemas = cell
+                    .cell()
                     .schemas()
                     .get_message_descriptor("exocore.example_app.Task");
                 assert!(schemas.is_ok());
@@ -759,7 +761,7 @@ mod tests {
         }
 
         // should be able to load cell inlined
-        assert!(Cell::new_from_local_node_config(inlined_config).is_ok());
+        assert!(Cell::from_local_node_config(inlined_config).is_ok());
 
         Ok(())
     }
@@ -857,7 +859,7 @@ cells:
 
         let config = LocalNodeConfig::from_yaml_reader(yaml.as_bytes())?;
 
-        let (cells, node) = Cell::new_from_local_node_config(config)?;
+        let (cells, node) = Cell::from_local_node_config(config)?;
         assert_eq!(1, cells.len());
         assert_eq!(2, node.p2p_addresses().len());
         assert_eq!(1, node.http_addresses().len());

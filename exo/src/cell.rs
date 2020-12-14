@@ -269,8 +269,8 @@ fn cmd_init(
     if !init_opts.no_genesis {
         // Create genesis block
         let node_config = ctx.options.read_configuration();
-        let (either_cells, _local_node) = Cell::new_from_local_node_config(node_config)
-            .expect("Couldn't create cell from config");
+        let (either_cells, _local_node) =
+            Cell::from_local_node_config(node_config).expect("Couldn't create cell from config");
 
         let cell = extract_cell_by_pk(either_cells, &cell_config.public_key)
             .expect("Couldn't find just created cell in config");
@@ -493,7 +493,7 @@ fn cmd_print(
 fn cmd_list(ctx: &Context, _cell_opts: &CellOptions) -> anyhow::Result<()> {
     let config = ctx.options.read_configuration();
     let (either_cells, _local_node) =
-        Cell::new_from_local_node_config(config).expect("Couldn't create cell from config");
+        Cell::from_local_node_config(config).expect("Couldn't create cell from config");
 
     print_spacer();
     let mut rows = Vec::new();
@@ -632,6 +632,7 @@ fn cmd_import_chain(
     let full_cell = cell.unwrap_full();
 
     let chain_dir = full_cell
+        .cell()
         .chain_directory()
         .expect("Cell doesn't have a path configured");
 
@@ -674,7 +675,7 @@ fn cmd_import_chain(
             let operations = BlockOperations::from_operations(operations_buffer.iter())
                 .expect("Couldn't create BlockOperations from operations buffer");
             let block = BlockOwned::new_with_prev_block(
-                &full_cell,
+                full_cell.cell(),
                 &previous_block,
                 block_op_id,
                 operations,
@@ -778,7 +779,7 @@ fn cmd_create_genesis_block(ctx: &Context, cell_opts: &CellOptions) -> anyhow::R
 fn get_cell(ctx: &Context, cell_opts: &CellOptions) -> (LocalNodeConfig, EitherCell) {
     let config = ctx.options.read_configuration();
     let (either_cells, _local_node) =
-        Cell::new_from_local_node_config(config.clone()).expect("Couldn't create cell from config");
+        Cell::from_local_node_config(config.clone()).expect("Couldn't create cell from config");
 
     let cell = if let Some(pk) = &cell_opts.public_key {
         extract_cell_by_pk(either_cells, pk.as_str())
@@ -820,12 +821,13 @@ fn cell_config_path(cell: &Cell) -> PathBuf {
 
 fn create_genesis_block(cell: FullCell) -> anyhow::Result<()> {
     let chain_dir = cell
+        .cell()
         .chain_directory()
         .expect("Couldn't find chain directory");
 
     print_step(format!(
         "Creating genesis block for cell {}",
-        style_value(cell.public_key().encode_base58_string())
+        style_value(cell.cell().public_key().encode_base58_string())
     ));
 
     std::fs::create_dir_all(&chain_dir)

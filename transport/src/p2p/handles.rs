@@ -67,8 +67,8 @@ pub(super) struct ServiceHandle {
     pub(super) out_receiver: Option<mpsc::Receiver<OutEvent>>,
 }
 
-/// Handle taken by a Cell service to receive and send message for a given node &
-/// cell.
+/// Handle taken by a Cell service to receive and send message for a given node
+/// & cell.
 pub struct Libp2pTransportServiceHandle {
     pub(super) cell_id: CellId,
     pub(super) service_type: ServiceType,

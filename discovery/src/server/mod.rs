@@ -15,8 +15,9 @@ pub use config::ServerConfig;
 
 /// Discovery service server.
 ///
-/// The discovery service is a simple REST API on which clients can push temporary payload for which the server
-/// generates a random code. Another client can then retrieve that payload by using the generated random code.
+/// The discovery service is a simple REST API on which clients can push
+/// temporary payload for which the server generates a random PIN. Another
+/// client can then retrieve that payload by using the generated random PIN.
 /// Once a payload is consumed, it is deleted.
 ///
 /// Payloads expires after a certain configured delay.
@@ -26,12 +27,14 @@ pub struct Server {
 
 impl Server {
     /// Creates an instance of the server.
-    /// Needs to be started using the `start` method in order to start listening for requests.
+    /// Needs to be started using the `start` method in order to start listening
+    /// for requests.
     pub fn new(config: ServerConfig) -> Self {
         Self { config }
     }
 
-    /// Starts the server that will listens for requests and block forever or until failure.
+    /// Starts the server that will listens for requests and block forever or
+    /// until failure.
     pub async fn start(&self) -> anyhow::Result<()> {
         let config = self.config;
         let store = store::Store::new(config);

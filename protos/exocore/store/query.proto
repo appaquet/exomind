@@ -208,7 +208,7 @@ message EntityResult {
     /// but it may be useful to compare ordering queries (ex.: to merge different pages)
     OrderingValue ordering_value = 3;
 
-    /// Hash of the tntiy result. Can be used to compare if the entity has changed since last results.
+    /// Hash of the entity result. Can be used to compare if the entity has changed since last results.
     uint64 hash = 4;
 }
 

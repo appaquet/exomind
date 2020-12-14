@@ -43,17 +43,17 @@ impl ProstDateTimeExt for ConsistentTimestamp {
 }
 
 pub trait ProstMessageExt {
-    fn encode_to_vec(&self) -> Result<Vec<u8>, Error>;
+    fn encode_to_vec(&self) -> Vec<u8>;
 }
 
 impl<M> ProstMessageExt for M
 where
     M: Message,
 {
-    fn encode_to_vec(&self) -> Result<Vec<u8>, Error> {
+    fn encode_to_vec(&self) -> Vec<u8> {
         let mut buf = Vec::new();
-        self.encode(&mut buf)?;
-        Ok(buf)
+        self.encode(&mut buf).expect("Couldn't encode into Vec");
+        buf
     }
 }
 

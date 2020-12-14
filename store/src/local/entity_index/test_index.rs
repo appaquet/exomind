@@ -145,7 +145,7 @@ impl TestEntityIndex {
         mutation: M,
     ) -> Result<OperationId, anyhow::Error> {
         let request = mutation.into();
-        let buf = request.mutations[0].encode_to_vec()?;
+        let buf = request.mutations[0].encode_to_vec();
         let op_id = self.cluster.get_handle(0).write_entry_operation(&buf)?;
         Ok(op_id)
     }

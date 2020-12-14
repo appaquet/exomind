@@ -1,7 +1,7 @@
 use serde::{Deserialize, Deserializer, Serializer};
 
 // Used to allow base64 encoding of bytes in serde
-// Ex: #[serde(serialize_with = "crate::protos::base64::as_base64", deserialize_with = "crate::protos::base64::from_base64")]
+// Ex: `#[serde(serialize_with = "crate::protos::base64::as_base64", deserialize_with = "crate::protos::base64::from_base64")]`
 // Inspired from https://github.com/serde-rs/serde/issues/661
 
 pub fn as_base64<T, S>(key: &T, serializer: S) -> Result<S::Ok, S::Error>

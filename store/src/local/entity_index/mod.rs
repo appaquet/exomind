@@ -1,34 +1,45 @@
-use std::borrow::Borrow;
-use std::collections::{HashMap, HashSet};
-use std::hash::Hasher;
-use std::path::PathBuf;
-use std::rc::Rc;
-use std::{sync::Arc, time::Instant};
+use std::{
+    borrow::Borrow,
+    collections::{HashMap, HashSet},
+    hash::Hasher,
+    path::PathBuf,
+    rc::Rc,
+    sync::Arc,
+    time::Instant,
+};
 
 use itertools::Itertools;
 use prost::Message;
 
-use exocore_chain::block::{BlockHeight, BlockOffset};
-use exocore_chain::engine::Event;
-use exocore_chain::operation::{Operation, OperationId};
-use exocore_chain::{chain, pending};
-use exocore_chain::{EngineHandle, EngineOperationStatus};
-use exocore_core::cell::FullCell;
-use exocore_core::protos::generated::exocore_store::entity_mutation::Mutation;
-use exocore_core::protos::generated::exocore_store::{
-    Entity, EntityMutation, EntityQuery, EntityResult as EntityResultProto, EntityResultSource,
-    EntityResults, Trait,
+use exocore_chain::{
+    block::{BlockHeight, BlockOffset},
+    chain,
+    engine::Event,
+    operation::{Operation, OperationId},
+    pending, EngineHandle, EngineOperationStatus,
 };
-use exocore_core::protos::{prost::ProstDateTimeExt, registry::Registry};
+use exocore_core::{
+    cell::FullCell,
+    protos::{
+        generated::exocore_store::{
+            entity_mutation::Mutation, Entity, EntityMutation, EntityQuery,
+            EntityResult as EntityResultProto, EntityResultSource, EntityResults, Trait,
+        },
+        prost::ProstDateTimeExt,
+        registry::Registry,
+    },
+};
 
-use crate::error::Error;
 use crate::{
     entity::EntityId,
+    error::Error,
     ordering::{OrderingValueExt, OrderingValueWrapper},
 };
 
-use super::mutation_index::{IndexOperation, MutationIndex, MutationMetadata};
-use super::top_results::RescoredTopResultsIterable;
+use super::{
+    mutation_index::{IndexOperation, MutationIndex, MutationMetadata},
+    top_results::ReScoredTopResultsIterable,
+};
 
 mod config;
 pub use config::*;
@@ -60,7 +71,7 @@ where
     chain_index_dir: PathBuf,
     chain_index: MutationIndex,
     chain_index_last_block: Option<BlockOffset>,
-    cell: FullCell,
+    full_cell: FullCell,
     chain_handle: EngineHandle<CS, PS>,
 }
 
@@ -75,11 +86,14 @@ where
         config: EntityIndexConfig,
         chain_handle: EngineHandle<CS, PS>,
     ) -> Result<EntityIndex<CS, PS>, Error> {
-        let pending_index =
-            MutationIndex::create_in_memory(config.pending_index_config, cell.schemas().clone())?;
+        let pending_index = MutationIndex::create_in_memory(
+            config.pending_index_config,
+            cell.cell().schemas().clone(),
+        )?;
 
         // make sure directories are created
         let mut chain_index_dir = cell
+            .cell()
             .store_directory()
             .ok_or_else(|| Error::Other("Cell doesn't have an path configured".to_string()))?;
         chain_index_dir.push("chain");
@@ -87,14 +101,15 @@ where
             std::fs::create_dir_all(&chain_index_dir)?;
         }
 
-        let chain_index = Self::create_chain_index(config, cell.schemas(), &chain_index_dir)?;
+        let chain_index =
+            Self::create_chain_index(config, cell.cell().schemas(), &chain_index_dir)?;
         let mut index = EntityIndex {
             config,
             pending_index,
             chain_index_dir,
             chain_index,
             chain_index_last_block: None,
-            cell,
+            full_cell: cell,
             chain_handle,
         };
 
@@ -304,15 +319,15 @@ where
                 if (entity_mutations.deletion_date.is_some() || !operation_still_present)
                     && !query_include_deleted
                 {
-                    // we are here if the entity has been deleted (ex: explicitely or no traits remaining)
+                    // we are here if the entity has been deleted (ex: explicitly or no traits remaining)
                     // or if the mutation metadata that was returned by the mutation index is not active anymore,
-                    // which means that it got overriden by a subsequent operation.
+                    // which means that it got overridden by a subsequent operation.
                     return None;
                 }
 
                 matched_entities.insert(matched_mutation.entity_id.clone());
 
-                // TODO: Support for negative rescoring https://github.com/appaquet/exocore/issues/143
+                // TODO: Support for negative re-scoring https://github.com/appaquet/exocore/issues/143
                 let ordering_value = matched_mutation.sort_value.clone();
                 if ordering_value.value.is_within_page_bound(&current_page) {
                     got_results = true;
@@ -331,7 +346,7 @@ where
                                 creation_date,
                                 modification_date,
                                 deletion_date,
-                                last_operation_id: entity_mutations.last_operatin_id,
+                                last_operation_id: entity_mutations.last_operation_id,
                             }),
                             source: index_source.into(),
                             ordering_value: Some(ordering_value.value),
@@ -450,7 +465,7 @@ where
     fn reindex_pending(&mut self) -> Result<(), Error> {
         self.pending_index = MutationIndex::create_in_memory(
             self.config.pending_index_config,
-            self.cell.schemas().clone(),
+            self.full_cell.cell().schemas().clone(),
         )?;
 
         let last_chain_indexed_offset = self
@@ -459,7 +474,7 @@ where
             .unwrap_or(0);
 
         info!(
-            "Clearing & reindexing pending index. last_chain_indexed_offset={}",
+            "Clearing & re-indexing pending index. last_chain_indexed_offset={}",
             last_chain_indexed_offset
         );
 
@@ -511,7 +526,7 @@ where
         // create temporary in-memory to wipe directory
         self.chain_index = MutationIndex::create_in_memory(
             self.config.pending_index_config,
-            self.cell.schemas().clone(),
+            self.full_cell.cell().schemas().clone(),
         )?;
 
         // remove and re-create data dir
@@ -519,8 +534,11 @@ where
         std::fs::create_dir_all(&self.chain_index_dir)?;
 
         // re-create index, and force re-index of chain
-        self.chain_index =
-            Self::create_chain_index(self.config, self.cell.schemas(), &self.chain_index_dir)?;
+        self.chain_index = Self::create_chain_index(
+            self.config,
+            self.full_cell.cell().schemas(),
+            &self.chain_index_dir,
+        )?;
         self.index_chain_new_blocks(None)?;
 
         self.reindex_pending()?;
@@ -681,7 +699,7 @@ where
             creation_date: mutations.creation_date.map(|t| t.to_proto_timestamp()),
             modification_date: mutations.modification_date.map(|t| t.to_proto_timestamp()),
             deletion_date: mutations.deletion_date.map(|t| t.to_proto_timestamp()),
-            last_operation_id: mutations.last_operatin_id,
+            last_operation_id: mutations.last_operation_id,
         })
     }
 
@@ -761,8 +779,11 @@ where
                 }?;
 
                 if let Some(projection) = &agg.projection {
-                    let res =
-                        project_trait(self.cell.schemas().as_ref(), &mut trt, projection.as_ref());
+                    let res = project_trait(
+                        self.full_cell.cell().schemas().as_ref(),
+                        &mut trt,
+                        projection.as_ref(),
+                    );
 
                     if let Err(err) = res {
                         error!(

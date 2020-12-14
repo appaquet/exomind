@@ -126,9 +126,9 @@ impl EngineTestCluster {
 
         // Add each node to all other nodes' cell
         for cell in &cells {
-            let mut cell_nodes = cell.nodes_mut();
+            let mut cell_nodes = cell.cell().nodes_mut();
             for node in &nodes {
-                if cell.local_node().id() != node.id() {
+                if cell.cell().local_node().id() != node.id() {
                     cell_nodes.add(node.node().clone());
                 }
             }
@@ -176,7 +176,7 @@ impl EngineTestCluster {
     pub fn add_node_role(&mut self, node_idx: usize, role: CellNodeRole) {
         let node_id = self.nodes[node_idx].id().clone();
         for cell in &mut self.cells {
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = cell.cell().nodes_mut();
             let node = nodes.get_mut(&node_id).unwrap();
             node.add_role(role);
         }
@@ -185,7 +185,7 @@ impl EngineTestCluster {
     pub fn remove_node_role(&mut self, node_idx: usize, role: CellNodeRole) {
         let node_id = self.nodes[node_idx].id().clone();
         for cell in &mut self.cells {
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = cell.cell().nodes_mut();
             let node = nodes.get_mut(&node_id).unwrap();
             node.remove_role(role);
         }
@@ -286,7 +286,7 @@ impl EngineTestCluster {
         let block_operation_id = self.consistent_timestamp(node_idx).into();
         let block_operations = BlockOperations::from_operations(operations)?;
         let block = BlockOwned::new_with_prev_block(
-            &self.cells[node_idx],
+            &self.cells[node_idx].cell(),
             &last_block,
             block_operation_id,
             block_operations,

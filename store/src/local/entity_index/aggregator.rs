@@ -35,13 +35,13 @@ pub struct EntityAggregator {
     // date of the creation of entity, based on put trait creation date OR first operation
     pub creation_date: Option<DateTime<Utc>>,
 
-    // date of the modification of entity, based on put trait modifcation date OR last operation
+    // date of the modification of entity, based on put trait modification date OR last operation
     pub modification_date: Option<DateTime<Utc>>,
 
     // date of the deletion of the entity if all traits are deleted once all mutations are applied
     pub deletion_date: Option<DateTime<Utc>>,
 
-    pub last_operatin_id: OperationId,
+    pub last_operation_id: OperationId,
 }
 
 impl EntityAggregator {
@@ -80,7 +80,7 @@ impl EntityAggregator {
 
                     if let Some(last_operation_id) = agg.last_operation_id {
                         // discard the new mutation if it happened before the last mutation, but got
-                        // commited late, to prevent inconsistency
+                        // committed late, to prevent inconsistency
                         if current_operation_id < last_operation_id {
                             continue;
                         }
@@ -100,7 +100,7 @@ impl EntityAggregator {
 
                     if let Some(last_operation_id) = agg.last_operation_id {
                         // discard the new mutation if it happened before the last mutation, but got
-                        // commited late, to prevent inconsistency
+                        // committed late, to prevent inconsistency
                         if current_operation_id < last_operation_id {
                             continue;
                         }
@@ -153,7 +153,7 @@ impl EntityAggregator {
             creation_date: entity_creation_date,
             modification_date: entity_modification_date,
             deletion_date: entity_deletion_date,
-            last_operatin_id: last_operation_id.unwrap_or_default(),
+            last_operation_id: last_operation_id.unwrap_or_default(),
         })
     }
 

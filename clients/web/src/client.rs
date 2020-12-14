@@ -40,7 +40,7 @@ impl ExocoreClient {
         status_change_callback: Option<js_sys::Function>,
     ) -> Result<ExocoreClient, JsValue> {
         let (either_cells, local_node) =
-            Cell::new_from_local_node_config(node.config).expect("Couldn't create cell");
+            Cell::from_local_node_config(node.config).expect("Couldn't create cell");
 
         let either_cell = either_cells
             .first()
@@ -158,9 +158,7 @@ impl ExocoreClient {
                 .await
                 .map_err(|err| into_js_error("mutating", err))?;
 
-            let results_data = result
-                .encode_to_vec()
-                .map_err(|err| into_js_error("converting mutation result", err))?;
+            let results_data = result.encode_to_vec();
             Ok(js_sys::Uint8Array::from(results_data.as_ref()).into())
         };
 
@@ -179,9 +177,7 @@ impl ExocoreClient {
                 .await
                 .map_err(|err| into_js_error("querying", err))?;
 
-            let results_data = result
-                .encode_to_vec()
-                .map_err(|err| into_js_error("converting query result", err))?;
+            let results_data = result.encode_to_vec();
             Ok(js_sys::Uint8Array::from(results_data.as_ref()).into())
         };
 

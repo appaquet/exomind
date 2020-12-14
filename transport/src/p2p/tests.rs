@@ -22,8 +22,8 @@ async fn test_integration() -> anyhow::Result<()> {
     n2.add_p2p_address("/ip4/127.0.0.1/tcp/3004".parse()?);
     let n2_cell = n1_cell.clone().with_local_node(n2.clone());
 
-    n1_cell.nodes_mut().add(n2.node().clone());
-    n2_cell.nodes_mut().add(n1.node().clone());
+    n1_cell.cell().nodes_mut().add(n2.node().clone());
+    n2_cell.cell().nodes_mut().add(n1.node().clone());
 
     let mut transport1 = Libp2pTransport::new(n1.clone(), Libp2pTransportConfig::default());
     let handle1 = transport1.get_handle(n1_cell.cell().clone(), ServiceType::Chain)?;
@@ -117,8 +117,8 @@ async fn should_queue_message_until_connected() -> anyhow::Result<()> {
     n2.add_p2p_address("/ip4/127.0.0.1/tcp/3006".parse()?);
     let n2_cell = n1_cell.clone().with_local_node(n2.clone());
 
-    n1_cell.nodes_mut().add(n2.node().clone());
-    n2_cell.nodes_mut().add(n1.node().clone());
+    n1_cell.cell().nodes_mut().add(n2.node().clone());
+    n2_cell.cell().nodes_mut().add(n1.node().clone());
 
     let mut t2 = Libp2pTransport::new(n1, Libp2pTransportConfig::default());
     let h1 = t2.get_handle(n1_cell.cell().clone(), ServiceType::Chain)?;
@@ -133,7 +133,7 @@ async fn should_queue_message_until_connected() -> anyhow::Result<()> {
 
     // send 1 to 2, but with expired message, which shouldn't be delivered
     let msg_frame = TestableTransportHandle::empty_message_frame();
-    let msg = OutMessage::from_framed_message(&n1_cell, ServiceType::Chain, msg_frame)?
+    let msg = OutMessage::from_framed_message(n1_cell.cell(), ServiceType::Chain, msg_frame)?
         .with_expiration(Some(Instant::now() - Duration::from_secs(5)))
         .with_rendez_vous_id(ConsistentTimestamp(2))
         .with_to_nodes(vec![n2.node().clone()]);

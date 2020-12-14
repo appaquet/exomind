@@ -1,9 +1,9 @@
 use crate::{term::*, Context};
 use clap::Clap;
+use exocore_core::cell::LocalNode;
 use exocore_core::{
-    cell::{LocalNodeConfigExt, Node},
+    cell::LocalNodeConfigExt,
     protos::core::{LocalNodeConfig, NodeAddresses},
-    sec::keys::Keypair,
 };
 use std::fs::File;
 
@@ -48,8 +48,8 @@ fn cmd_init(ctx: &Context, init_opts: &InitOptions) -> anyhow::Result<()> {
         std::fs::create_dir_all(home_path).expect("Couldn't create home directory");
     }
 
-    let keypair = Keypair::generate_ed25519();
-    let node = Node::new_from_public_key(keypair.public());
+    let local_node = LocalNode::generate();
+    let node = local_node.node();
 
     let mut node_name = node.name().to_string();
     if init_opts.name.is_none() {
@@ -61,11 +61,7 @@ fn cmd_init(ctx: &Context, init_opts: &InitOptions) -> anyhow::Result<()> {
     }
 
     let local_node_config = LocalNodeConfig {
-        keypair: keypair.encode_base58_string(),
-        public_key: keypair.public().encode_base58_string(),
-        id: node.id().to_string(),
         name: node_name,
-
         addresses: Some(NodeAddresses {
             p2p: vec![
                 "/ip4/0.0.0.0/tcp/3330".to_string(),
@@ -73,7 +69,8 @@ fn cmd_init(ctx: &Context, init_opts: &InitOptions) -> anyhow::Result<()> {
             ],
             http: vec!["http://0.0.0.0:8030".to_string()],
         }),
-        ..Default::default()
+
+        ..local_node.config().clone()
     };
 
     print_action(format!(

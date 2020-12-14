@@ -318,10 +318,11 @@ mod tests {
             // force message to node 2 via transport 2 if it has a connection annotation on
             // message
             let frame_builder = TestableTransportHandle::empty_message_frame();
-            let msg = OutMessage::from_framed_message(&cell1, ServiceType::Chain, frame_builder)?
-                .with_rendez_vous_id(2.into())
-                .with_connection(ConnectionID::Either(Side::Right, None))
-                .with_to_nodes(vec![node2.node().clone()]);
+            let msg =
+                OutMessage::from_framed_message(cell1.cell(), ServiceType::Chain, frame_builder)?
+                    .with_rendez_vous_id(2.into())
+                    .with_connection(ConnectionID::Either(Side::Right, None))
+                    .with_to_nodes(vec![node2.node().clone()]);
             node1_either.send_message(msg).await;
 
             let msg = node2_t2.recv_msg().await;

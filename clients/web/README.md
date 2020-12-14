@@ -3,17 +3,18 @@
 ## Dependencies
 * Install Rust's WASM target
     * `rustup target add wasm32-unknown-unknown`
+
+* Install [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
     
 * Install Clang
     * On Ubuntu: 
         * `apt install clang`
     * On MacOS: 
-        * Xcode 12.2+
+        * Xcode 12.2+ (macOS Big Sur+)
           * Make sure Xcode command line tools are installed.
 
-        * For Xcode prior to 12.2, unfortunately, clang installed by Xcode isn't recent enough to compile to WASM. 
-          Follow instructions on [this page](https://00f.net/2019/04/07/compiling-to-webassembly-with-llvm-and-clang/)
-          to install LLVM 9 from HomeBrew.
+        * For Xcode prior to 12.2, clang installed by Xcode isn't recent enough to compile to WASM. 
+          Follow instructions on [this page](https://00f.net/2019/04/07/compiling-to-webassembly-with-llvm-and-clang/) to install LLVM 9 from HomeBrew.
             * `brew install llvm`
             * Use LLVM from HomeBrew:
                 * Bash `export PATH=/usr/local/opt/llvm/bin:$PATH`

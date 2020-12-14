@@ -26,8 +26,8 @@ const CHANNELS_SIZE: usize = 1000;
 
 type HandleKey = (NodeId, ServiceType);
 
-/// In memory transport used by all services of Exocore through handles. There is
-/// one handle per cell per service.
+/// In memory transport used by all services of Exocore through handles. There
+/// is one handle per cell per service.
 pub struct MockTransport {
     service_sinks: Arc<Mutex<HashMap<HandleKey, ServiceSink>>>,
     handle_set: HandleSet,

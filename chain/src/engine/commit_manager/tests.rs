@@ -353,7 +353,7 @@ fn test_is_node_commit_turn() -> anyhow::Result<()> {
 
     {
         // test normal with all nodes having full chain
-        let nodes = cluster.cells[0].nodes();
+        let nodes = cluster.cells[0].cell().nodes();
         let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
         assert!(!is_node_commit_turn(&nodes, sec_node.id(), now, &config)?);
@@ -375,7 +375,7 @@ fn test_is_node_commit_turn() -> anyhow::Result<()> {
         // only node 0 has full chain
         cluster.remove_node_role(sec_node_idx, CellNodeRole::Chain);
 
-        let nodes = cluster.cells[0].nodes();
+        let nodes = cluster.cells[0].cell().nodes();
         let now = ConsistentTimestamp::from_unix_elapsed(Duration::from_millis(0));
         assert!(is_node_commit_turn(&nodes, first_node.id(), now, &config)?);
 
@@ -489,7 +489,7 @@ fn dont_cleanup_operations_from_commit_refused_blocks() -> anyhow::Result<()> {
     let block_operations = BlockOperations::from_operations(operations)?;
     let block_id = cluster.consistent_timestamp(0).into();
     let invalid_block = BlockOwned::new_with_prev_block(
-        &cluster.cells[0],
+        &cluster.cells[0].cell(),
         &preceding_valid_block,
         block_id,
         block_operations,
@@ -613,7 +613,7 @@ fn append_block_proposal_from_operations(
     let block_operations = BlockOperations::from_operations(block_operations)?;
     let block_operation_id = cluster.clocks[0].consistent_time(&node).into();
     let block = BlockOwned::new_with_prev_block(
-        &cluster.cells[0],
+        &cluster.cells[0].cell(),
         &previous_block,
         block_operation_id,
         block_operations,
@@ -631,7 +631,7 @@ fn get_pending_blocks(cluster: &EngineTestCluster) -> Result<PendingBlocks, Engi
     PendingBlocks::new(
         &cluster.commit_managers[0].config,
         &cluster.clocks[0],
-        &cluster.cells[0],
+        &cluster.cells[0].cell(),
         &cluster.pending_stores[0],
         &cluster.chains[0],
     )

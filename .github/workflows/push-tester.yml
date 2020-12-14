@@ -110,8 +110,8 @@ jobs:
       - name: Build example project
         run: |
           cd $GITHUB_WORKSPACE/examples/web
-          yarn install
-          yarn build
+          npm install
+          npm run build
 
 
   ios_client_build:

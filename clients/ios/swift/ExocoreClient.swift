@@ -4,8 +4,8 @@ public class ExocoreClient {
     public static var defaultInstance: ClientInstance?
 
     @discardableResult
-    public static func initialize(config: Exocore_Core_LocalNodeConfig, defaultInstance: Bool = true) throws -> ClientInstance {
-        let instance = try ClientInstance(config: config)
+    public static func initialize(node: LocalNode, defaultInstance: Bool = true) throws -> ClientInstance {
+        let instance = try ClientInstance(node: node)
         if (defaultInstance) {
             ExocoreClient.defaultInstance = instance
         }
@@ -13,25 +13,9 @@ public class ExocoreClient {
     }
 
     @discardableResult
-    public static func initialize(yamlConfig: String, defaultInstance: Bool = true) throws -> ClientInstance {
-        let instance = try ClientInstance(yamlConfig: yamlConfig)
-        if (defaultInstance) {
-            ExocoreClient.defaultInstance = instance
-        }
-        return instance
-    }
-
-    static func contextFromConfig(configData: Data, format: UInt8) throws -> OpaquePointer {
-        try configData.withUnsafeBytes { (ptr) -> OpaquePointer in
-            let addr = ptr.bindMemory(to: UInt8.self).baseAddress
-            let res = exocore_context_new(addr, UInt(configData.count), format);
-
-            if res.status == UInt8(ExocoreQueryStatus_Success.rawValue) {
-                return res.context
-            } else {
-                throw ExocoreError.initialization
-            }
-        }
+    public static func initialize(config: Exocore_Core_LocalNodeConfig, defaultInstance: Bool = true) throws -> ClientInstance {
+        let node = try LocalNode.from(config: config)
+        return try initialize(node: node)
     }
 
     public static var cell: Cell {
@@ -48,21 +32,16 @@ public class ExocoreClient {
 }
 
 public class ClientInstance {
-    var context: OpaquePointer?
+    var client: OpaquePointer?
 
-    public init(config: Exocore_Core_LocalNodeConfig) throws {
-        let configData = try config.serializedData()
+    public init(node: LocalNode) throws {
+        let res = exocore_client_new(node.ptr)
 
-        self.context = try ExocoreClient.contextFromConfig(configData: configData, format: UInt8(ExocoreConfigFormat_Protobuf.rawValue))
-    }
-
-    public init(yamlConfig: String) throws {
-        guard let configData = yamlConfig.data(using: .utf8) else {
-            print("ExocoreClient > Couldn't get data from YAML string")
+        if res.status == UInt8(ExocoreQueryStatus_Error.rawValue) {
             throw ExocoreError.initialization
         }
 
-        self.context = try ExocoreClient.contextFromConfig(configData: configData, format: UInt8(ExocoreConfigFormat_Yaml.rawValue))
+        self.client = res.client
     }
 
     public lazy var cell: Cell = {
@@ -74,9 +53,9 @@ public class ClientInstance {
     }()
 
     deinit {
-        if self.context != nil {
-            // free context, which will trigger all query to fail and get freed
-            exocore_context_free(self.context)
+        if self.client != nil {
+            // free client, which will trigger all query to fail and get freed
+            exocore_client_free(self.client)
         }
     }
 }

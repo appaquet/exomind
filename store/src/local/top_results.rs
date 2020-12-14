@@ -109,7 +109,7 @@ fn is_reserve_peek_higher<E, S: Ord>(
 }
 
 /// Add `top_negatively_rescored_results` function to any iterator.
-pub trait RescoredTopResultsIterable: Iterator {
+pub trait ReScoredTopResultsIterable: Iterator {
     /// Iterator that extracts top results from underlying descend sorted
     /// iterator, but taking into account a scoring function that returns an
     /// original ordering and a penalized ordering.  This property
@@ -134,7 +134,7 @@ pub trait RescoredTopResultsIterable: Iterator {
     }
 }
 
-impl<T> RescoredTopResultsIterable for T where T: Iterator {}
+impl<T> ReScoredTopResultsIterable for T where T: Iterator {}
 
 #[cfg(test)]
 mod tests {

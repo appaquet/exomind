@@ -121,7 +121,7 @@ pub trait FrameBuilder {
     }
 }
 
-/// Implementation of FrameBuilder for a bytes array allow wrapping the content
+/// Implementation of FrameBuilder for a byte array allow wrapping the content
 /// of the array into another frame
 impl FrameBuilder for Vec<u8> {
     type OwnedFrameType = Vec<u8>;

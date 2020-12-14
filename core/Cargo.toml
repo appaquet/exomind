@@ -52,6 +52,9 @@ rand = "0.7"
 url = "2.2"
 base64 = "0.13"
 
+# TODO: Force 0.8.0 because later version fails to compile to WASM. See https://github.com/Amanieu/parking_lot/issues/267
+parking_lot_core = "=0.8.0"
+
 # console_logger
 log4rs = { version = "0.13", optional = true }
 

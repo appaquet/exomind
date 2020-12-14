@@ -437,7 +437,7 @@ pub fn query_to_request_frame(
     let mut frame_builder = CapnpFrameBuilder::<query_request::Owned>::new();
     let mut msg_builder = frame_builder.get_builder();
 
-    let buf = query.encode_to_vec()?;
+    let buf = query.encode_to_vec();
     msg_builder.set_request(&buf);
 
     Ok(frame_builder)
@@ -463,7 +463,7 @@ pub fn watched_query_to_request_frame(
     let mut frame_builder = CapnpFrameBuilder::<watched_query_request::Owned>::new();
     let mut msg_builder = frame_builder.get_builder();
 
-    let buf = query.encode_to_vec()?;
+    let buf = query.encode_to_vec();
     msg_builder.set_request(&buf);
 
     Ok(frame_builder)
@@ -491,7 +491,7 @@ pub fn query_results_to_response_frame(
 
     match result {
         Ok(res) => {
-            let buf = res.encode_to_vec()?;
+            let buf = res.encode_to_vec();
             msg_builder.set_response(&buf);
         }
         Err(err) => {

@@ -38,10 +38,6 @@ A cell consists of:
     * On MacOS: Install Xcode and command lines tools
     * On Ubuntu: `apt install build-essential pkg-config libssl-dev`
 
-* This repository uses [git-lfs](https://git-lfs.github.com/) to store binaries.
-  * On MacOS: `brew install git-lfs`
-  * On Ubuntu: `apt install git-lfs`
-    
 * [Rust](https://www.rust-lang.org/learn/get-started)
   * Install using [rustup](https://www.rust-lang.org/learn/get-started)
   * Clippy and Rustfmt: `rustup component add clippy rustfmt`

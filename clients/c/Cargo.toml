@@ -12,6 +12,7 @@ crate-type = ["staticlib", "cdylib"]
 exocore-core = { path = "../../core", features = ["runtime", "logger"] }
 exocore-transport = { path = "../../transport", features = ["p2p-full"] }
 exocore-store = { path = "../../store", default-features = false }
+exocore-discovery = { path = "../../discovery", default-features = false }
 libc = "0.2"
 log4rs = "0.13"
 log = "0.4"

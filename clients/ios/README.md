@@ -26,14 +26,8 @@
 
 * Build the universal lib: `./tools/build.sh`
 
-## Example project
-
-* `cd ../../examples/ios`
-* `pod install`
-* Open the project in XCode / AppCode
-* Generate a node configuration and copy it to the app:
-
-  `exo -d ./config config print --inline`
+## Usage
+* See [iOS example](../../examples/ios/README.md)
 
 ## Known issues
 * App gets terminated due to signal 13 when resuming from background.

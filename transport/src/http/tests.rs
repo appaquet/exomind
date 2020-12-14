@@ -2,10 +2,9 @@ use exocore_core::{
     cell::{FullCell, LocalNode},
     framing::CapnpFrameBuilder,
     futures::spawn_future,
-    protos::generated::store_transport_capnp::mutation_request,
-    protos::generated::store_transport_capnp::mutation_response,
-    protos::generated::store_transport_capnp::query_request,
-    protos::generated::store_transport_capnp::query_response,
+    protos::generated::store_transport_capnp::{
+        mutation_request, mutation_response, query_request, query_response,
+    },
     sec::auth_token::AuthToken,
     time::Clock,
 };
@@ -18,10 +17,10 @@ use super::*;
 #[tokio::test]
 async fn invalid_requests() -> anyhow::Result<()> {
     let node = LocalNode::generate();
-    let cell = FullCell::generate(node.clone());
+    let full_cell = FullCell::generate(node.clone());
     let clock = Clock::new();
 
-    let _handle = start_server(&cell, &clock, 3007).await;
+    let _handle = start_server(&full_cell, &clock, 3007).await;
 
     {
         // invalid authentication token
@@ -34,7 +33,7 @@ async fn invalid_requests() -> anyhow::Result<()> {
     {
         // valid token, but invalid signature
         let auth_token = {
-            let auth_token = AuthToken::new(cell.cell(), &clock, None)?;
+            let auth_token = AuthToken::new(full_cell.cell(), &clock, None)?;
             let mut auth_token_proto = auth_token.as_proto().clone();
             auth_token_proto.signature = vec![1, 3, 3, 7];
             let auth_token = AuthToken::from_proto(auth_token_proto)?;
@@ -60,7 +59,7 @@ async fn invalid_requests() -> anyhow::Result<()> {
 
     {
         // invalid request type
-        let auth_token = AuthToken::new(cell.cell(), &clock, None)?;
+        let auth_token = AuthToken::new(full_cell.cell(), &clock, None)?;
         let auth_token = auth_token.encode_base58_string();
         let url = format!("http://127.0.0.1:3007/invalid/type?token={}", auth_token);
         let resp_chan = send_http_request(url, b"query body");
@@ -74,13 +73,13 @@ async fn invalid_requests() -> anyhow::Result<()> {
 #[tokio::test]
 async fn entities_query() -> anyhow::Result<()> {
     let node = LocalNode::generate();
-    let cell = FullCell::generate(node.clone());
+    let full_cell = FullCell::generate(node.clone());
     let clock = Clock::new();
 
-    let auth_token = AuthToken::new(cell.cell(), &clock, None)?;
+    let auth_token = AuthToken::new(full_cell.cell(), &clock, None)?;
     let auth_token = auth_token.encode_base58_string();
 
-    let mut entities_handle = start_server(&cell, &clock, 3008).await;
+    let mut entities_handle = start_server(&full_cell, &clock, 3008).await;
 
     let url = format!("http://127.0.0.1:3008/store/query?token={}", auth_token);
     let resp_chan = send_http_request(url, b"query");
@@ -97,13 +96,13 @@ async fn entities_query() -> anyhow::Result<()> {
 #[tokio::test]
 async fn entities_mutation() -> anyhow::Result<()> {
     let node = LocalNode::generate();
-    let cell = FullCell::generate(node.clone());
+    let full_cell = FullCell::generate(node.clone());
     let clock = Clock::new();
 
-    let auth_token = AuthToken::new(cell.cell(), &clock, None)?;
+    let auth_token = AuthToken::new(full_cell.cell(), &clock, None)?;
     let auth_token = auth_token.encode_base58_string();
 
-    let mut entities_handle = start_server(&cell, &clock, 3009).await;
+    let mut entities_handle = start_server(&full_cell, &clock, 3009).await;
 
     let url = format!("http://127.0.0.1:3009/store/mutate?token={}", auth_token);
     let resp_chan = send_http_request(url, b"mutation");
@@ -130,7 +129,7 @@ async fn entities_mutation() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn start_server(cell: &FullCell, clock: &Clock, port: u16) -> TestableTransportHandle {
+async fn start_server(full_cell: &FullCell, clock: &Clock, port: u16) -> TestableTransportHandle {
     let listen_addr = format!("http://127.0.0.1:{}", port);
 
     let config = HTTPTransportConfig {
@@ -138,9 +137,10 @@ async fn start_server(cell: &FullCell, clock: &Clock, port: u16) -> TestableTran
         ..Default::default()
     };
 
-    let mut server = HTTPTransportServer::new(cell.local_node().clone(), config, clock.clone());
+    let mut server =
+        HTTPTransportServer::new(full_cell.cell().local_node().clone(), config, clock.clone());
     let handle = server
-        .get_handle(cell.cell().clone(), ServiceType::Store)
+        .get_handle(full_cell.cell().clone(), ServiceType::Store)
         .unwrap();
 
     spawn_future(async move {
@@ -149,7 +149,7 @@ async fn start_server(cell: &FullCell, clock: &Clock, port: u16) -> TestableTran
 
     handle.on_started().await;
 
-    TestableTransportHandle::new(handle, cell.cell().clone())
+    TestableTransportHandle::new(handle, full_cell.cell().clone())
 }
 
 fn send_http_request<T: Into<String>>(

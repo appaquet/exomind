@@ -88,7 +88,7 @@ impl WatchedQuery {
         let res = self.result_cell.borrow();
         let res = res.as_ref().unwrap();
         let res = res.as_ref().unwrap();
-        let results_data = res.encode_to_vec().unwrap();
+        let results_data = res.encode_to_vec();
         js_sys::Uint8Array::from(results_data.as_ref())
     }
 }

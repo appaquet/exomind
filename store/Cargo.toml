@@ -11,7 +11,7 @@ license = "Apache-2.0"
 
 [features]
 default = ["local"]
-local = ["tantivy", "exocore-chain/engine", "crc"]
+local = ["tantivy", "exocore-chain/engine", "crc", "lru"]
 tests-utils = []
 
 [dependencies]
@@ -26,12 +26,12 @@ futures = "0.3"
 prost = "0.6"
 bytes = "0.6"
 chrono = { version = "0.4", features = ["serde"] }
-smallvec = "1.4"
-lru = "0.6"
+smallvec = "1.5"
 
 # Local store
 tantivy = { version = "0.13", optional = true }
 crc = { version = "1.8", optional = true }
+lru = { version = "0.6", optional = true }
 
 [dev-dependencies]
 tempfile = "3.1"

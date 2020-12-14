@@ -1,5 +1,8 @@
 # Web client example
 
+## Dependencies
+* Install dependencies for [Web client](../../clients/web/README.md#Dependencies)
+
 ## Running
 * Build WASM web client
   

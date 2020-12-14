@@ -1,27 +1,33 @@
 use super::error::Error;
-use crate::protos::generated::exocore_core::{LocalNodeConfig, NodeConfig};
-use crate::sec::signature::Signature;
 use crate::{
-    protos::core::NodeAddresses,
-    sec::keys::{Keypair, PublicKey},
+    protos::{
+        core::NodeAddresses,
+        generated::exocore_core::{LocalNodeConfig, NodeConfig},
+    },
+    sec::{
+        keys::{Keypair, PublicKey},
+        signature::Signature,
+    },
 };
 use libp2p::core::{Multiaddr, PeerId};
-use std::collections::HashSet;
-use std::fmt::{Debug, Display};
-use std::ops::Deref;
-use std::str::FromStr;
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashSet,
+    fmt::{Debug, Display},
+    ops::Deref,
+    str::FromStr,
+    sync::{Arc, RwLock},
+};
 use url::Url;
 
 /// Represents a machine / process on which Exocore runs. A node can host
 /// multiple `Cell`.
 #[derive(Clone)]
 pub struct Node {
-    identity: Arc<Identity>,
+    identity: Arc<NodeIdentity>,
     inner: Arc<RwLock<SharedInner>>,
 }
 
-struct Identity {
+struct NodeIdentity {
     node_id: NodeId,
     peer_id: PeerId,
     consistent_clock_id: u16,
@@ -75,7 +81,7 @@ impl Node {
         let name = name.unwrap_or_else(|| public_key.generate_name());
 
         Node {
-            identity: Arc::new(Identity {
+            identity: Arc::new(NodeIdentity {
                 node_id,
                 peer_id,
                 consistent_clock_id,
@@ -168,29 +174,45 @@ impl Display for Node {
 #[derive(Clone)]
 pub struct LocalNode {
     node: Node,
-    keypair: Arc<Keypair>,
+    identity: Arc<LocalNodeIdentity>,
+}
+
+struct LocalNodeIdentity {
+    keypair: Keypair,
+    config: LocalNodeConfig,
 }
 
 impl LocalNode {
-    pub fn new_from_keypair(keypair: Keypair) -> LocalNode {
-        LocalNode {
-            node: Node::new_from_public_key(keypair.public()),
-            keypair: Arc::new(keypair),
-        }
+    pub fn generate() -> LocalNode {
+        let keypair = Keypair::generate_ed25519();
+        let node = Node::new_from_public_key(keypair.public());
+        let node_name = node.name().to_string();
+
+        let config = LocalNodeConfig {
+            keypair: keypair.encode_base58_string(),
+            public_key: keypair.public().encode_base58_string(),
+            id: node.id().to_string(),
+            name: node_name,
+            ..Default::default()
+        };
+
+        Self::new_from_config(config).expect("Couldn't create node config generated config")
     }
 
     pub fn new_from_config(config: LocalNodeConfig) -> Result<Self, Error> {
         let keypair = Keypair::decode_base58_string(&config.keypair)
             .map_err(|err| Error::Cell(format!("Couldn't decode local node keypair: {}", err)))?;
 
-        let node = Self::new_from_keypair(keypair);
-        parse_node_addresses(node.node(), &config.addresses.unwrap_or_default())?;
+        let node = LocalNode {
+            node: Node::new_from_public_key(keypair.public()),
+            identity: Arc::new(LocalNodeIdentity { keypair, config }),
+        };
+
+        if let Some(addresses) = &node.identity.config.addresses {
+            parse_node_addresses(node.node(), addresses)?;
+        }
 
         Ok(node)
-    }
-
-    pub fn generate() -> LocalNode {
-        LocalNode::new_from_keypair(Keypair::generate_ed25519())
     }
 
     pub fn node(&self) -> &Node {
@@ -198,13 +220,17 @@ impl LocalNode {
     }
 
     pub fn keypair(&self) -> &Keypair {
-        &self.keypair
+        &self.identity.keypair
     }
 
     pub fn sign_message(&self, _message: &[u8]) -> Signature {
         // TODO: Signature ticket: https://github.com/appaquet/exocore/issues/46
         //       Make sure we're local and we have access to private key
         Signature::empty()
+    }
+
+    pub fn config(&self) -> &LocalNodeConfig {
+        &self.identity.config
     }
 }
 
@@ -235,7 +261,7 @@ impl Debug for LocalNode {
 impl Display for LocalNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_str("LocalNode{")?;
-        f.write_str(&self.identity.name)?;
+        f.write_str(&self.identity.config.name)?;
         f.write_str("}")
     }
 }
@@ -343,5 +369,14 @@ mod tests {
         let node = Node::new_from_public_key(pk);
         assert_eq!("early-settled-ram", node.identity.name);
         assert_eq!("Node{early-settled-ram}", node.to_string());
+    }
+
+    #[test]
+    fn local_node_from_generated_config() {
+        let node1 = LocalNode::generate();
+        let node2 = LocalNode::new_from_config(node1.config().clone()).unwrap();
+
+        assert_eq!(node1.keypair().public(), node2.keypair().public());
+        assert_eq!(node1.config(), node2.config());
     }
 }

@@ -2,13 +2,13 @@
 import SwiftUI
 
 struct MainView: View {
-    @EnvironmentObject var viewRouter: AppState
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
         VStack {
-            if viewRouter.currentView == .bootstrap {
-                BootstrapView()
-            } else if viewRouter.currentView == .list {
+            if appState.currentView == .discovery {
+                DiscoveryView()
+            } else if appState.currentView == .list {
                 ListView()
             }
         }

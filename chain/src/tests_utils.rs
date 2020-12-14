@@ -99,10 +99,10 @@ impl TestChainCluster {
         // Add each node to all other nodes' cell
         // All nodes have full chain access
         for cell in &cells {
-            let mut cell_nodes = cell.nodes_mut();
+            let mut cell_nodes = cell.cell().nodes_mut();
 
             for node in &nodes {
-                if cell.local_node().id() != node.id() {
+                if cell.cell().local_node().id() != node.id() {
                     let mut cell_node = CellNode::new(node.node().clone());
                     cell_node.add_role(CellNodeRole::Chain);
                     cell_nodes.add_cell_node(cell_node);
@@ -190,7 +190,7 @@ impl TestChainCluster {
     pub fn add_node_role(&mut self, node_idx: usize, role: CellNodeRole) {
         let node_id = self.nodes[node_idx].id().clone();
         for cell in &mut self.cells {
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = cell.cell().nodes_mut();
             let node = nodes.get_mut(&node_id).unwrap();
             node.add_role(role);
         }
@@ -199,7 +199,7 @@ impl TestChainCluster {
     pub fn remove_node_role(&mut self, node_idx: usize, role: CellNodeRole) {
         let node_id = self.nodes[node_idx].id().clone();
         for cell in &mut self.cells {
-            let mut nodes = cell.nodes_mut();
+            let mut nodes = cell.cell().nodes_mut();
             let node = nodes.get_mut(&node_id).unwrap();
             node.remove_role(role);
         }
