@@ -9,7 +9,7 @@ license = "Apache-2.0"
 google-gmail1 = { git = "https://github.com/appaquet/generated.git", branch = "gmail-labels-fix" }
 google_api_auth = { git = "https://github.com/google-apis-rs/generator", features = ["with-yup-oauth2"] }
 yup-oauth2 = "4.1.2"
-tokio = "0.2"
+tokio = "0.3"
 exocore = { git = "https://github.com/appaquet/exocore.git", default-features = false, features = ["client", "logger"] }
 log = "0.4"
 exomind-core = { path = "../../core" }
