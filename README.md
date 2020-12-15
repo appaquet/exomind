@@ -8,6 +8,9 @@ Exocore is a distributed applications framework with private and encrypted data 
 a user to own his own personal cloud that is extensible via WebAssembly applications and accessible via Web/Mobile SDKs. It is designed 
 to be resilient to failures, allow offline usage (ex: on mobile). 
 
+Exocore is primarily built for [Exomind](https://github.com/appaquet/exomind), a personal knowledge management tool built in parallel
+of this project. Exocore is the application framework for Exomind.
+
 The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data.
 
 A cell consists of:
@@ -40,14 +43,14 @@ A cell consists of:
 
 * [Rust](https://www.rust-lang.org/learn/get-started)
   * Install using [rustup](https://www.rust-lang.org/learn/get-started)
-  * Clippy and Rustfmt: `rustup component add clippy rustfmt`
+  * Install `clippy` and `rustfmt`: `rustup component add clippy rustfmt`
   
 * [Cap'n Proto](https://capnproto.org/install.html)
     * On MacOS: `brew install capnp` 
     * On Ubuntu: `apt install capnproto` 
 
 * [Protobuf](https://developers.google.com/protocol-buffers/)
-    * On MacOS: `brew install protobuf` 
+    * On MacOS: `brew install protobuf swift-protobuf` 
     * On Ubuntu: `apt install protobuf-compiler` 
     
 
