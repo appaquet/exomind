@@ -8880,10 +8880,10 @@ webpack-log@^2.0.0:
     ansi-colors "^3.0.0"
     uuid "^3.3.2"
 
-webpack-merge@^5.3.0:
-  version "5.6.1"
-  resolved "https://registry.yarnpkg.com/webpack-merge/-/webpack-merge-5.6.1.tgz#93c886a6871486a799e5dd32d312008109694b5b"
-  integrity sha512-5n19s1YcyQkBJkYtE+Tq3br/Ax6ofQjMA4U8PUfpcaRB2cvxJNoikUK4RQN3sEJt1Fl4Dym3qc2AnODgGK0vKg==
+webpack-merge@^5.7.1:
+  version "5.7.1"
+  resolved "https://registry.yarnpkg.com/webpack-merge/-/webpack-merge-5.7.1.tgz#61fbd4bd754e40d7cf5e77b6c72117a13ac119fc"
+  integrity sha512-0oU4fWXTSRaZ+ePos9eMeCprmfDFOQgfbEa9fzeX2HAAUuILjj/eI1H+j62YdaCwTMIgE5DHctIhTVrKA6aDyw==
   dependencies:
     clone-deep "^4.0.1"
     wildcard "^2.0.0"
