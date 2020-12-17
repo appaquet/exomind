@@ -101,7 +101,7 @@ impl MutationIndex {
             schemas,
             fields,
             storage: Storage::Disk,
-            entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size),
+            entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size as usize),
         })
     }
 
@@ -134,7 +134,7 @@ impl MutationIndex {
             schemas,
             fields,
             storage: Storage::Memory,
-            entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size),
+            entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size as usize),
         })
     }
 
@@ -278,7 +278,7 @@ impl MutationIndex {
             total_results: results.total,
             current_results: results.mutations.into_iter(),
             next_page: results.next_page,
-            max_pages: self.config.iterator_max_pages,
+            max_pages: self.config.iterator_max_pages as usize,
         })
     }
 

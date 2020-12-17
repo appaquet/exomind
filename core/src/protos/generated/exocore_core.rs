@@ -35,6 +35,9 @@ pub struct LocalNodeConfig {
     pub addresses: ::std::option::Option<NodeAddresses>,
     #[prost(message, repeated, tag = "7")]
     pub cells: ::std::vec::Vec<NodeCellConfig>,
+    #[prost(message, optional, tag = "8")]
+    #[serde(default)]
+    pub store: ::std::option::Option<NodeStoreConfig>,
 }
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
 pub struct NodeAddresses {
@@ -60,6 +63,43 @@ pub mod node_cell_config {
         #[prost(string, tag = "2")]
         Path(std::string::String),
     }
+}
+#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+pub struct NodeStoreConfig {
+    #[prost(message, optional, tag = "1")]
+    #[serde(default)]
+    pub index: ::std::option::Option<EntityIndexConfig>,
+}
+//// Configuration of the entities index
+#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+pub struct EntityIndexConfig {
+    #[prost(uint64, tag = "1")]
+    pub chain_index_min_depth: u64,
+    #[prost(uint64, tag = "2")]
+    pub chain_index_depth_leeway: u64,
+    #[prost(message, optional, tag = "3")]
+    pub pending_index: ::std::option::Option<MutationIndexConfig>,
+    #[prost(message, optional, tag = "4")]
+    pub chain_index: ::std::option::Option<MutationIndexConfig>,
+}
+//// Trait index configuration
+#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+pub struct MutationIndexConfig {
+    #[prost(uint32, tag = "1")]
+    #[serde(default)]
+    pub indexer_num_threads: u32,
+    #[prost(uint32, tag = "2")]
+    #[serde(default)]
+    pub indexer_heap_size_bytes: u32,
+    #[prost(uint32, tag = "3")]
+    #[serde(default)]
+    pub iterator_page_size: u32,
+    #[prost(uint32, tag = "4")]
+    #[serde(default)]
+    pub iterator_max_pages: u32,
+    #[prost(uint32, tag = "5")]
+    #[serde(default)]
+    pub entity_mutations_cache_size: u32,
 }
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
 pub struct CellConfig {

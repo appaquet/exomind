@@ -1,5 +1,6 @@
 use crate::local::mutation_index::MutationIndexConfig;
 use exocore_chain::block::BlockHeight;
+use exocore_core::protos::generated::exocore_core::EntityIndexConfig as ProtoEntityIndexConfig;
 
 /// Configuration of the entities index
 #[derive(Clone, Copy, Debug)]
@@ -35,6 +36,18 @@ impl Default for EntityIndexConfig {
             pending_index_config: MutationIndexConfig::default(),
             chain_index_config: MutationIndexConfig::default(),
             chain_index_in_memory: false,
+        }
+    }
+}
+
+impl From<ProtoEntityIndexConfig> for EntityIndexConfig {
+    fn from(proto: ProtoEntityIndexConfig) -> Self {
+        EntityIndexConfig {
+            chain_index_min_depth: proto.chain_index_min_depth,
+            chain_index_depth_leeway: proto.chain_index_depth_leeway,
+            pending_index_config: proto.pending_index.map(|m| m.into()).unwrap_or_default(),
+            chain_index_config: proto.chain_index.map(|m| m.into()).unwrap_or_default(),
+            ..EntityIndexConfig::default()
         }
     }
 }

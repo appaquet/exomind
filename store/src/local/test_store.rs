@@ -11,6 +11,7 @@ use crate::local::EntityIndexConfig;
 use crate::mutation::{MutationBuilder, MutationRequestLike};
 
 use super::*;
+
 use chrono::Utc;
 use exocore_core::protos::generated::exocore_store::{
     EntityQuery, EntityResults, MutationResult, Trait,

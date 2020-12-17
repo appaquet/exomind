@@ -1,3 +1,4 @@
+use exocore_core::protos::generated::exocore_core::MutationIndexConfig as ProtoMutationIndexConfig;
 /// Trait index configuration
 #[derive(Clone, Copy, Debug)]
 pub struct MutationIndexConfig {
@@ -32,6 +33,19 @@ impl Default for MutationIndexConfig {
             dynamic_i64_sortable_fields: 2,
             dynamic_u64_fields: 2,
             dynamic_u64_sortable_fields: 2,
+        }
+    }
+}
+
+impl From<ProtoMutationIndexConfig> for MutationIndexConfig {
+    fn from(proto: ProtoMutationIndexConfig) -> Self {
+        MutationIndexConfig {
+            indexer_num_threads: Some(proto.indexer_num_threads as usize).filter(|&n| n == 0),
+            indexer_heap_size_bytes: proto.indexer_heap_size_bytes as usize,
+            iterator_page_size: proto.iterator_page_size,
+            iterator_max_pages: proto.iterator_max_pages as usize,
+            entity_mutations_cache_size: proto.entity_mutations_cache_size as usize,
+            ..MutationIndexConfig::default()
         }
     }
 }
