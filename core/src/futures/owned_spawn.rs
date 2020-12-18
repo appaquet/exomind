@@ -1,10 +1,13 @@
 use super::spawn_future;
-use futures::channel::oneshot;
-use futures::channel::oneshot::Canceled;
-use futures::prelude::*;
-use futures::FutureExt;
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use futures::{
+    channel::{oneshot, oneshot::Canceled},
+    prelude::*,
+    FutureExt,
+};
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 /// Spawns a future on current executor that can be cancelled by dropping the
 /// `OwnedSpawn` handle. It is also possible to get the result of the spawned
@@ -143,86 +146,76 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::super::{delay_for, Runtime};
-    use super::*;
-    use std::sync::atomic::AtomicBool;
-    use std::sync::atomic::Ordering;
-    use std::sync::Arc;
-    use std::time::Duration;
+    use super::{super::sleep, *};
+    use std::{
+        sync::{
+            atomic::{AtomicBool, Ordering},
+            Arc,
+        },
+        time::Duration,
+    };
 
-    #[test]
-    fn propagate_spawned_result() -> anyhow::Result<()> {
-        let mut ret = Runtime::new()?;
-        ret.block_on(async move {
-            let spawned = owned_spawn(async move { 1 + 1 });
-            assert_eq!(2, spawned.await?);
+    #[tokio::test]
+    async fn propagate_spawned_result() -> anyhow::Result<()> {
+        let spawned = owned_spawn(async move { 1 + 1 });
+        assert_eq!(2, spawned.await?);
 
-            Ok::<(), anyhow::Error>(())
-        })?;
-        Ok(())
+        Ok::<(), anyhow::Error>(())
     }
 
-    #[test]
-    fn owner_drop_cancels_spawned() -> anyhow::Result<()> {
-        let mut ret = Runtime::new()?;
-        ret.block_on(async move {
-            let dropper = Dropper::default();
-            let dropped = dropper.dropped.clone();
+    #[tokio::test]
+    async fn owner_drop_cancels_spawned() -> anyhow::Result<()> {
+        let dropper = Dropper::default();
+        let dropped = dropper.dropped.clone();
 
-            let spawned = owned_spawn(async move {
-                let _ = dropper;
-                delay_for(Duration::from_secs(3600)).await;
-                Ok::<(), ()>(())
-            });
+        let spawned = owned_spawn(async move {
+            let _ = dropper;
+            sleep(Duration::from_secs(3600)).await;
+            Ok::<(), ()>(())
+        });
 
-            delay_for(Duration::from_millis(100)).await;
+        sleep(Duration::from_millis(100)).await;
 
-            assert!(!dropped.load(Ordering::SeqCst));
+        assert!(!dropped.load(Ordering::SeqCst));
 
-            drop(spawned);
+        drop(spawned);
 
-            delay_for(Duration::from_millis(100)).await;
-            assert!(dropped.load(Ordering::SeqCst));
+        sleep(Duration::from_millis(100)).await;
+        assert!(dropped.load(Ordering::SeqCst));
 
-            Ok::<(), anyhow::Error>(())
-        })?;
-        Ok(())
+        Ok::<(), anyhow::Error>(())
     }
 
-    #[test]
-    fn spawn_set_cleanup() -> anyhow::Result<()> {
-        let mut ret = Runtime::new()?;
-        ret.block_on(async move {
-            let mut set = OwnedSpawnSet::<i32>::new();
+    #[tokio::test]
+    async fn spawn_set_cleanup() -> anyhow::Result<()> {
+        let mut set = OwnedSpawnSet::<i32>::new();
 
-            set = set.cleanup().await;
+        set = set.cleanup().await;
 
-            set.spawn(async { 1 + 1 });
-            assert_eq!(1, set.spawns.len());
+        set.spawn(async { 1 + 1 });
+        assert_eq!(1, set.spawns.len());
 
-            delay_for(Duration::from_millis(100)).await;
-            set = set.cleanup().await;
-            assert_eq!(0, set.spawns.len());
+        sleep(Duration::from_millis(100)).await;
+        set = set.cleanup().await;
+        assert_eq!(0, set.spawns.len());
 
-            let dropper = Dropper::default();
-            let dropped = dropper.dropped.clone();
-            set.spawn(async move {
-                let _ = dropper;
-                delay_for(Duration::from_secs(3600)).await;
-                1 + 1
-            });
+        let dropper = Dropper::default();
+        let dropped = dropper.dropped.clone();
+        set.spawn(async move {
+            let _ = dropper;
+            sleep(Duration::from_secs(3600)).await;
+            1 + 1
+        });
 
-            set = set.cleanup().await;
-            assert_eq!(1, set.spawns.len());
+        set = set.cleanup().await;
+        assert_eq!(1, set.spawns.len());
 
-            drop(set);
+        drop(set);
 
-            delay_for(Duration::from_millis(100)).await;
-            assert!(dropped.load(Ordering::SeqCst));
+        sleep(Duration::from_millis(100)).await;
+        assert!(dropped.load(Ordering::SeqCst));
 
-            Ok::<(), anyhow::Error>(())
-        })?;
-        Ok(())
+        Ok::<(), anyhow::Error>(())
     }
 
     struct Dropper {

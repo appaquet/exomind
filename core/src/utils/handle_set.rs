@@ -1,8 +1,12 @@
-use futures::channel::{mpsc, oneshot};
-use futures::future::Shared;
-use futures::{Future, FutureExt, StreamExt};
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use futures::{
+    channel::{mpsc, oneshot},
+    future::Shared,
+    Future, FutureExt, StreamExt,
+};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
 
 /// Manages a set of handles so that their lifetime is managed along their
 /// parent's lifetime.
@@ -126,15 +130,14 @@ mod tests {
     use super::*;
     use crate::futures::*;
 
-    #[test]
-    fn on_all_handles_dropped() -> anyhow::Result<()> {
-        let rt = Runtime::new()?;
+    #[tokio::test(flavor = "multi_thread")]
+    async fn on_all_handles_dropped() -> anyhow::Result<()> {
         let set = HandleSet::new();
 
         let handle = set.get_handle();
 
         let (sender, receiver) = oneshot::channel();
-        rt.spawn(async move {
+        spawn_future(async move {
             set.on_handles_dropped().await;
             let _ = sender.send(());
         });
@@ -158,15 +161,14 @@ mod tests {
         assert_ne!(handle1.id(), handle3.id());
     }
 
-    #[test]
-    fn set_started() -> anyhow::Result<()> {
-        let rt = Runtime::new()?;
+    #[tokio::test(flavor = "multi_thread")]
+    async fn set_started() -> anyhow::Result<()> {
         let set = HandleSet::new();
 
         let handle = set.get_handle();
         assert!(!handle.set_is_started());
 
-        rt.spawn(async move {
+        spawn_future(async move {
             set.on_handles_dropped().await;
         });
 

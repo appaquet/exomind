@@ -558,7 +558,7 @@ pub mod tests {
     use futures::executor::block_on_stream;
 
     use exocore_core::protos::prost::ProstAnyPackMessageExt;
-    use exocore_core::{futures::delay_for, protos::store::Trait, protos::test::TestMessage};
+    use exocore_core::{futures::sleep, protos::store::Trait, protos::test::TestMessage};
 
     use crate::mutation::MutationBuilder;
     use crate::query::QueryBuilder;
@@ -566,7 +566,7 @@ pub mod tests {
     use super::super::TestStore;
     use super::*;
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn store_mutate_query_via_handle() -> anyhow::Result<()> {
         let mut test_store = TestStore::new().await?;
         test_store.start_store().await?;
@@ -585,7 +585,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn store_mutate_return_entities() -> anyhow::Result<()> {
         let mut test_store = TestStore::new().await?;
         test_store.start_store().await?;
@@ -602,7 +602,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn store_mutate_generate_ids() -> anyhow::Result<()> {
         let mut test_store = TestStore::new().await?;
         test_store.start_store().await?;
@@ -654,7 +654,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn query_error_propagating() -> anyhow::Result<()> {
         let mut test_store = TestStore::new().await?;
         test_store.start_store().await?;
@@ -665,7 +665,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn mutation_error_propagating() -> anyhow::Result<()> {
         let mut test_store = TestStore::new().await?;
         test_store.start_store().await?;
@@ -676,7 +676,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn watched_query() -> anyhow::Result<()> {
         let mut test_store = TestStore::new().await?;
         test_store.start_store().await?;
@@ -704,7 +704,7 @@ pub mod tests {
             .wait_operation_committed(0, response.operation_ids[0]);
 
         let mut stream = stream.into_inner();
-        let delay = delay_for(Duration::from_secs(1));
+        let delay = sleep(Duration::from_secs(1));
 
         futures::select! {
             _ = stream.next().fuse() => {
@@ -718,7 +718,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn watched_query_failure() -> anyhow::Result<()> {
         let mut test_store = TestStore::new().await?;
         test_store.start_store().await?;

@@ -25,7 +25,7 @@ impl Keypair {
         match self.keypair {
             libp2p_Keypair::Ed25519(_) => Algorithm::ED25519,
             libp2p_Keypair::Secp256k1(_) => Algorithm::SECP256K1,
-            #[cfg(not(any(target_os = "emscripten", target_os = "unknown")))]
+            #[cfg(not(target_arch = "wasm32"))]
             libp2p_Keypair::Rsa(_) => Algorithm::RSA,
         }
     }
@@ -215,7 +215,7 @@ fn decode_base58(input: &str) -> Result<Vec<u8>, Error> {
 pub enum Algorithm {
     ED25519,
     SECP256K1,
-    #[cfg(not(any(target_os = "emscripten", target_os = "unknown")))]
+    #[cfg(not(target_arch = "wasm32"))]
     RSA,
 }
 
@@ -224,7 +224,7 @@ impl Algorithm {
         match self {
             Algorithm::ED25519 => b'e',
             Algorithm::SECP256K1 => b'c',
-            #[cfg(not(any(target_os = "emscripten", target_os = "unknown")))]
+            #[cfg(not(target_arch = "wasm32"))]
             Algorithm::RSA => b'r',
         }
     }
@@ -233,7 +233,7 @@ impl Algorithm {
         match code {
             b'e' => Ok(Algorithm::ED25519),
             b'c' => Ok(Algorithm::SECP256K1),
-            #[cfg(not(any(target_os = "emscripten", target_os = "unknown")))]
+            #[cfg(not(target_arch = "wasm32"))]
             b'r' => Ok(Algorithm::RSA),
             _ => Err(Error::InvalidAlgorithmCode(code)),
         }

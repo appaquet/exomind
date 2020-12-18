@@ -15,7 +15,7 @@ use crate::{
 
 use super::*;
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn index_full_pending_to_chain() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index when block is at depth 1 or more
@@ -67,7 +67,7 @@ async fn index_full_pending_to_chain() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_chain_index_block_depth_leeway() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1,    // index up to the depth 1 (last block in chain)
@@ -110,7 +110,7 @@ async fn test_chain_index_block_depth_leeway() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn reopen_chain_index() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear
@@ -136,7 +136,7 @@ async fn reopen_chain_index() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 2,
@@ -172,7 +172,7 @@ async fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn reindex_pending_on_discontinuity() -> anyhow::Result<()> {
     let mut test_index = TestEntityIndex::new().await?;
 
@@ -199,7 +199,7 @@ async fn reindex_pending_on_discontinuity() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn chain_divergence() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear
@@ -248,7 +248,7 @@ async fn chain_divergence() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn delete_entity_trait() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
@@ -283,7 +283,7 @@ async fn delete_entity_trait() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn delete_all_entity_traits() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
@@ -327,7 +327,7 @@ async fn delete_all_entity_traits() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn delete_entity() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
@@ -375,7 +375,7 @@ async fn delete_entity() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn traits_compaction() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
@@ -477,7 +477,7 @@ async fn traits_compaction() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn query_paging() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
@@ -567,7 +567,7 @@ async fn query_paging() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn query_multiple_mutations_paging() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
@@ -614,7 +614,7 @@ async fn query_multiple_mutations_paging() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn query_ordering() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
@@ -660,7 +660,7 @@ async fn query_ordering() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn skip_results_hash() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
@@ -681,7 +681,7 @@ async fn skip_results_hash() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn query_projection() -> anyhow::Result<()> {
     let config = TestEntityIndex::create_test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;

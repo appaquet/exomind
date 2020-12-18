@@ -1,5 +1,5 @@
 use crate::OutMessage;
-use exocore_core::futures::{block_on, delay_for};
+use exocore_core::futures::{block_on, sleep};
 use futures::{channel::oneshot, lock::Mutex, FutureExt};
 use std::{
     collections::HashMap, sync::atomic::AtomicU64, sync::atomic::Ordering, sync::Arc, sync::Weak,
@@ -90,7 +90,7 @@ impl TrackedRequest {
 
     pub async fn get_response_or_timeout(mut self) -> Result<OutMessage, ()> {
         let receiver = self.receiver.take().ok_or(())?;
-        let timeout = delay_for(self.receive_timeout);
+        let timeout = sleep(self.receive_timeout);
 
         futures::select! {
             resp = receiver.fuse() => {

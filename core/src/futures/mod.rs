@@ -1,11 +1,11 @@
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+#[cfg(not(target_arch = "wasm32"))]
 mod spawn_tokio;
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+#[cfg(not(target_arch = "wasm32"))]
 pub use spawn_tokio::*;
 
-#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+#[cfg(target_arch = "wasm32")]
 mod spawn_wasm;
-#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+#[cfg(target_arch = "wasm32")]
 pub use spawn_wasm::*;
 
 pub use futures::executor::block_on;

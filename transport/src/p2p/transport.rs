@@ -103,7 +103,7 @@ impl Libp2pTransport {
                 .upgrade(libp2p::core::upgrade::Version::V1)
                 .authenticate(libp2p::noise::NoiseConfig::xx(noise_keys).into_authenticated())
                 .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
-                    libp2p::yamux::Config::default(),
+                    libp2p::yamux::YamuxConfig::default(),
                     libp2p::mplex::MplexConfig::new(),
                 ))
                 .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)))

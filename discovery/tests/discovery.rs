@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use exocore_discovery::{client::Error, Client, Server, ServerConfig};
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn create_and_get() -> anyhow::Result<()> {
     let config = ServerConfig {
         port: 3010,
@@ -14,7 +14,7 @@ async fn create_and_get() -> anyhow::Result<()> {
         server.start().await.unwrap();
     });
 
-    tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
     let client = Client::new("http://127.0.0.1:3010")?;
     let create_resp = client.create(b"hello world", false).await?;
@@ -35,7 +35,7 @@ async fn create_and_get() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn create_and_reply_and_reply() -> anyhow::Result<()> {
     let config = ServerConfig {
         port: 3011,
@@ -47,7 +47,7 @@ async fn create_and_reply_and_reply() -> anyhow::Result<()> {
         server.start().await.unwrap();
     });
 
-    tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
     let client = Client::new("http://127.0.0.1:3011")?;
 
@@ -96,7 +96,7 @@ async fn create_and_reply_and_reply() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn payloads_expiration() -> anyhow::Result<()> {
     let config = ServerConfig {
         port: 3012,
@@ -110,12 +110,12 @@ async fn payloads_expiration() -> anyhow::Result<()> {
         server.start().await.unwrap();
     });
 
-    tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
     let client = Client::new("http://127.0.0.1:3012")?;
     let _create_resp = client.create(b"hello world", false).await?;
 
-    tokio::time::delay_for(std::time::Duration::from_millis(110)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(110)).await;
 
     let get_resp = client.get(100_000_000).await;
     match get_resp {

@@ -353,7 +353,7 @@ impl Client {
 
         let cell = either_cell.cell().clone();
 
-        let mut runtime = Runtime::new().map_err(|err| {
+        let runtime = Runtime::new().map_err(|err| {
             error!("Couldn't start a tokio Runtime: {}", err);
             ClientStatus::Error
         })?;

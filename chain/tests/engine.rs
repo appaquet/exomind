@@ -12,7 +12,7 @@ extern crate anyhow;
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/42
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn single_node_full_chain_write_read() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
@@ -75,7 +75,7 @@ async fn single_node_full_chain_write_read() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn single_node_chain_iteration() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
@@ -107,7 +107,7 @@ async fn single_node_chain_iteration() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn single_node_restart() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(1)?;
     cluster.create_node(0)?;
@@ -138,7 +138,7 @@ async fn single_node_restart() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn two_nodes_full_replication() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
@@ -172,7 +172,7 @@ async fn two_nodes_full_replication() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn two_nodes_pending_store_cleanup() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;
@@ -223,7 +223,7 @@ async fn two_nodes_pending_store_cleanup() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn two_nodes_one_data_node() -> anyhow::Result<()> {
     let mut cluster = TestChainCluster::new(2)?;
     cluster.create_node(0)?;

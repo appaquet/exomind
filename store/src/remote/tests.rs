@@ -18,7 +18,7 @@ use crate::remote::server::{Server, ServerConfiguration};
 
 use super::*;
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn mutation_and_query() -> anyhow::Result<()> {
     let test_remote_store = Arc::new(Mutex::new(TestRemoteStore::new().await?));
     {
@@ -45,7 +45,7 @@ async fn mutation_and_query() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn mutation_error_propagation() -> anyhow::Result<()> {
     let mut test_remote_store = TestRemoteStore::new().await?;
     test_remote_store.start_server().await?;
@@ -58,7 +58,7 @@ async fn mutation_error_propagation() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn query_error_propagation() -> anyhow::Result<()> {
     let mut test_remote_store = TestRemoteStore::new().await?;
     test_remote_store.start_server().await?;
@@ -76,7 +76,7 @@ async fn query_error_propagation() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn query_timeout() -> anyhow::Result<()> {
     let client_config = ClientConfiguration {
         query_timeout: Duration::from_millis(500),
@@ -96,7 +96,7 @@ async fn query_timeout() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn mutation_timeout() -> anyhow::Result<()> {
     let client_config = ClientConfiguration {
         mutation_timeout: Duration::from_millis(500),
@@ -118,7 +118,7 @@ async fn mutation_timeout() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn watched_query() -> anyhow::Result<()> {
     let mut test_remote_store = TestRemoteStore::new().await?;
     test_remote_store.start_server().await?;
@@ -146,7 +146,7 @@ async fn watched_query() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn watched_query_error_propagation() -> anyhow::Result<()> {
     let mut test_remote_store = TestRemoteStore::new().await?;
     test_remote_store.start_server().await?;
@@ -165,7 +165,7 @@ async fn watched_query_error_propagation() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn watched_query_timeout() -> anyhow::Result<()> {
     let server_config = ServerConfiguration {
         management_timer_interval: Duration::from_millis(100),
@@ -213,7 +213,7 @@ async fn watched_query_timeout() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn watched_drop_unregisters() -> anyhow::Result<()> {
     let mut test_remote_store = TestRemoteStore::new().await?;
     test_remote_store.start_server().await?;
@@ -240,7 +240,7 @@ async fn watched_drop_unregisters() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn watched_cancel() -> anyhow::Result<()> {
     let mut test_remote_store = TestRemoteStore::new().await?;
     test_remote_store.start_server().await?;
@@ -267,7 +267,7 @@ async fn watched_cancel() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn client_drop_stops_watched_stream() -> anyhow::Result<()> {
     let mut test_remote_store = TestRemoteStore::new().await?;
     test_remote_store.start_server().await?;

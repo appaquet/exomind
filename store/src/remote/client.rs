@@ -1,33 +1,36 @@
-use std::collections::HashMap;
-use std::pin::Pin;
-use std::sync::{Arc, RwLock, Weak};
-use std::task::{Context, Poll};
-use std::time::Duration;
-
-use futures::channel::{mpsc, oneshot};
-use futures::prelude::*;
-
-use exocore_core::cell::Node;
-use exocore_core::cell::{Cell, CellNodeRole, NodeId};
-use exocore_core::framing::CapnpFrameBuilder;
-use exocore_core::futures::interval;
-use exocore_core::protos::generated::exocore_store::{
-    EntityQuery, EntityResults, MutationRequest, MutationResult,
+use std::{
+    collections::HashMap,
+    pin::Pin,
+    sync::{Arc, RwLock, Weak},
+    task::{Context, Poll},
+    time::Duration,
 };
-use exocore_core::protos::generated::store_transport_capnp::{
-    mutation_response, query_response, unwatch_query_request, watched_query_response,
+
+use futures::{
+    channel::{mpsc, oneshot},
+    prelude::*,
 };
-use exocore_core::protos::generated::MessageType;
-use exocore_core::time::Instant;
-use exocore_core::time::{Clock, ConsistentTimestamp};
-use exocore_core::utils::handle_set::{Handle, HandleSet};
+
+use exocore_core::{
+    cell::{Cell, CellNodeRole, Node, NodeId},
+    framing::CapnpFrameBuilder,
+    futures::interval,
+    protos::generated::{
+        exocore_store::{EntityQuery, EntityResults, MutationRequest, MutationResult},
+        store_transport_capnp::{
+            mutation_response, query_response, unwatch_query_request, watched_query_response,
+        },
+        MessageType,
+    },
+    time::{Clock, ConsistentTimestamp, Instant},
+    utils::handle_set::{Handle, HandleSet},
+};
 use exocore_transport::{
     transport::ConnectionStatus, InEvent, InMessage, OutEvent, OutMessage, ServiceType,
     TransportServiceHandle,
 };
 
-use crate::error::Error;
-use crate::{mutation::MutationRequestLike, query::WatchToken};
+use crate::{error::Error, mutation::MutationRequestLike, query::WatchToken};
 
 /// This implementation of the AsyncStore allow sending all queries and
 /// mutations to a remote node's local store running the `Server` component.
@@ -729,14 +732,13 @@ mod tests {
     use super::*;
     use exocore_core::{
         cell::{FullCell, LocalNode},
-        futures::Runtime,
+        futures::spawn_future,
         tests_utils::expect_eventually,
     };
     use exocore_transport::testing::MockTransport;
 
-    #[test]
-    fn connects_to_online_node() -> anyhow::Result<()> {
-        let rt = Runtime::new()?;
+    #[tokio::test(flavor = "multi_thread")]
+    async fn connects_to_online_node() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let full_cell = FullCell::generate(local_node.clone());
         let clock = Clock::new();
@@ -756,7 +758,7 @@ mod tests {
         let client_inner = client.inner.clone();
         let _client_handle = client.get_handle();
 
-        rt.spawn(async move {
+        spawn_future(async move {
             let _ = client.run().await;
         });
 

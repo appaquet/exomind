@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use exocore_core::cell::{FullCell, LocalNode};
-use exocore_core::futures::delay_for;
+use exocore_core::futures::sleep;
 use exocore_core::futures::spawn_future;
 use exocore_core::tests_utils::async_expect_eventually;
 use exocore_core::time::{ConsistentTimestamp, Instant};
@@ -12,7 +12,7 @@ use crate::{
 
 use super::*;
 
-#[tokio::test(threaded_scheduler)]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_integration() -> anyhow::Result<()> {
     let n1 = LocalNode::generate();
     n1.add_p2p_address("/ip4/127.0.0.1/tcp/3003".parse()?);
@@ -152,7 +152,7 @@ async fn should_queue_message_until_connected() -> anyhow::Result<()> {
     });
 
     // leave some time to start listening and connect
-    delay_for(Duration::from_millis(100)).await;
+    sleep(Duration::from_millis(100)).await;
 
     // send another message to force redial
     h1.send_rdv(vec![n2.node().clone()], 3).await;

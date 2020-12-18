@@ -3,7 +3,6 @@ use super::{
     requests::{RequestTracker, TrackedRequest},
     HTTPTransportConfig, HTTPTransportServiceHandle,
 };
-
 use crate::{transport::ConnectionID, Error, InMessage, OutEvent, OutMessage, ServiceType};
 
 use exocore_core::{
@@ -21,11 +20,12 @@ use exocore_core::{
 
 use futures::{channel::mpsc, lock::Mutex, FutureExt, StreamExt};
 use hyper::{
+    server::conn::AddrIncoming,
     service::{make_service_fn, service_fn},
     Body, Request, Response, Server, StatusCode,
 };
-
 use std::{borrow::Cow, sync::Arc};
+use tokio_compat_02::FutureExt as CompatFutureExt;
 
 /// Unidirectional HTTP transport server used for request-response type of
 /// communication by clients for which a full libp2p transport is impossible.
@@ -116,34 +116,56 @@ impl HTTPTransportServer {
                 let service_handles = self.service_handles.clone();
                 let clock = self.clock.clone();
 
-                let server = Server::bind(&addr).serve(make_service_fn(move |_socket| {
-                    let request_tracker = request_tracker.clone();
-                    let service_handles = service_handles.clone();
-                    let clock = clock.clone();
-                    async move {
-                        Ok::<_, hyper::Error>(service_fn(move |req| {
+                // TODO: To remove when tokio compat is removed
+                let incoming_bind = async { AddrIncoming::bind(&addr) }.compat().await;
+                let incoming = match incoming_bind {
+                    Ok(i) => i,
+                    Err(err) => {
+                        error!(
+                            "Couldn't bind to listening address {} ({}:{}): {}",
+                            listen_url, host, port, err
+                        );
+                        continue;
+                    }
+                };
+                let server = async {
+                    Server::builder(incoming)
+                        .executor(Tokio03Executor)
+                        .serve(make_service_fn(move |_socket| {
                             let request_tracker = request_tracker.clone();
                             let service_handles = service_handles.clone();
                             let clock = clock.clone();
+                            async move {
+                                Ok::<_, hyper::Error>(service_fn(move |req| {
+                                    let request_tracker = request_tracker.clone();
+                                    let service_handles = service_handles.clone();
+                                    let clock = clock.clone();
 
-                            async {
-                                let resp =
-                                    handle_request(request_tracker, service_handles, clock, req)
+                                    async {
+                                        let resp = handle_request(
+                                            request_tracker,
+                                            service_handles,
+                                            clock,
+                                            req,
+                                        )
                                         .await;
 
-                                let resp = match resp {
-                                    Ok(resp) => resp,
-                                    Err(err) => {
-                                        error!("Error handling request: {}", err);
-                                        err.to_response()
-                                    }
-                                };
+                                        let resp = match resp {
+                                            Ok(resp) => resp,
+                                            Err(err) => {
+                                                error!("Error handling request: {}", err);
+                                                err.to_response()
+                                            }
+                                        };
 
-                                Ok::<_, hyper::Error>(resp)
+                                        Ok::<_, hyper::Error>(resp)
+                                    }
+                                }))
                             }
                         }))
-                    }
-                }));
+                        .await
+                }
+                .compat();
 
                 futures.push(server);
             }
@@ -191,7 +213,7 @@ impl HTTPTransportServer {
 
         info!("HTTP transport now running");
         futures::select! {
-            _ = servers.fuse() => {},
+            _ = servers.compat().fuse() => {},
             _ = handles_dispatcher.fuse() => {},
             _ = self.handle_set.on_handles_dropped().fuse() => {},
         };
@@ -469,5 +491,20 @@ impl RequestError {
 
         *resp.status_mut() = status;
         resp
+    }
+}
+
+// See: https://github.com/LucioFranco/tokio-compat-02/blob/main/examples/hyper_server.rs
+#[derive(Clone)]
+struct Tokio03Executor;
+
+impl<F> hyper::rt::Executor<F> for Tokio03Executor
+where
+    F: std::future::Future + Send + 'static,
+{
+    fn execute(&self, fut: F) {
+        exocore_core::futures::spawn_future(async move {
+            fut.compat().await;
+        });
     }
 }

@@ -48,7 +48,7 @@ where
                 );
             }
 
-            crate::futures::delay_for(Duration::from_millis(100)).await;
+            crate::futures::sleep(Duration::from_millis(100)).await;
         }
     }
 }

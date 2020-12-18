@@ -9,6 +9,7 @@ use exocore_core::{
     time::Clock,
 };
 use hyper::{body::Buf, Body, Client, Request, Response, StatusCode};
+use tokio_compat_02::FutureExt;
 
 use crate::{testing::TestableTransportHandle, ServiceType, TransportServiceHandle};
 
@@ -165,7 +166,7 @@ fn send_http_request<T: Into<String>>(
     let (req_sender, req_recv) = futures::channel::oneshot::channel();
     spawn_future(async move {
         let http_client = Client::new();
-        let resp = http_client.request(req).await;
+        let resp = http_client.request(req).compat().await;
         req_sender.send(resp).unwrap();
     });
 

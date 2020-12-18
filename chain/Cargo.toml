@@ -20,7 +20,7 @@ memory-pending = []
 exocore-core = { path = "../core" }
 exocore-transport = { path = "../transport", default-features = false }
 log = "0.4"
-byteorder = "1.2"
+byteorder = "1.3"
 thiserror = "1.0"
 anyhow = "1.0"
 itertools = "0.9"
@@ -38,7 +38,7 @@ tempfile = { version = "3.1", optional = true }
 exocore-core = { path = "../core", features = ["tests-utils"] }
 exocore-transport = { path = "../transport", features = ["tests-utils"] }
 tempfile = "3.1"
-tokio = { version = "0.2", default-features = false, features = ["macros"] } 
+tokio = { version = "0.3", features = ["macros"], default-features = false }
 
 [[test]]
 name = "engine"

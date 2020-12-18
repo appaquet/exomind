@@ -8,6 +8,7 @@ use hyper::{
     service::{make_service_fn, service_fn},
     Body, Method, Request, Response, StatusCode,
 };
+use tokio_compat_02::FutureExt;
 
 mod config;
 mod store;
@@ -39,10 +40,10 @@ impl Server {
         let config = self.config;
         let store = store::Store::new(config);
 
-        let server = {
+        let server = async {
             let store = store.clone();
             let addr = format!("0.0.0.0:{}", config.port).parse()?;
-            hyper::Server::bind(&addr).serve(make_service_fn(move |_socket| {
+            let server = hyper::Server::bind(&addr).serve(make_service_fn(move |_socket| {
                 let store = store.clone();
 
                 async move {
@@ -62,8 +63,12 @@ impl Server {
                         }
                     }))
                 }
-            }))
-        };
+            }));
+
+            Ok::<_, anyhow::Error>(server)
+        }
+        .compat()
+        .await?;
 
         let cleaner = {
             let store = store.clone();
@@ -77,7 +82,7 @@ impl Server {
 
         info!("Discovery server started on port {}", config.port);
         futures::select! {
-            _ = server.fuse() => {},
+            _ = server.compat().fuse() => {},
             _ = cleaner.fuse() => {},
         };
 

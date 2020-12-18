@@ -19,6 +19,6 @@ pub fn interval(interval: std::time::Duration) -> Interval {
     Interval::new(interval)
 }
 
-pub fn delay_for(duration: std::time::Duration) -> Delay {
+pub fn sleep(duration: std::time::Duration) -> Delay {
     Delay::new(duration)
 }
