@@ -17,7 +17,7 @@ exocore-transport = { path = "../transport", features = ["http-server"] }
 exocore-discovery = { path = "../discovery", features = ["server"] }
 log = "0.4"
 clap = "3.0.0-beta.2"
-log4rs = "0.13"
+log4rs = "1.0"
 thiserror = "1.0"
 anyhow = "1.0"
 futures = "0.3"
