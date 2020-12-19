@@ -323,7 +323,7 @@ impl SegmentMetadata {
 struct SegmentFile {
     path: PathBuf,
     file: File,
-    mmap: memmap::MmapMut,
+    mmap: memmap2::MmapMut,
     current_size: u64,
 }
 
@@ -350,7 +350,7 @@ impl SegmentFile {
         }
 
         let mmap = unsafe {
-            memmap::MmapOptions::new().map_mut(&file).map_err(|err| {
+            memmap2::MmapOptions::new().map_mut(&file).map_err(|err| {
                 Error::new_io(err, format!("Error mmaping segment file {:?}", path))
             })?
         };
@@ -367,7 +367,7 @@ impl SegmentFile {
         // On Windows, we can't resize a file while it's currently being mapped. We
         // close the mmap first by replacing it by an anonymous mmmap.
         if cfg!(target_os = "windows") {
-            self.mmap = memmap::MmapOptions::new()
+            self.mmap = memmap2::MmapOptions::new()
                 .len(1)
                 .map_anon()
                 .map_err(|err| Error::new_io(err, "Error creating anonymous mmap"))?;
@@ -381,7 +381,7 @@ impl SegmentFile {
         })?;
 
         self.mmap = unsafe {
-            memmap::MmapOptions::new()
+            memmap2::MmapOptions::new()
                 .map_mut(&self.file)
                 .map_err(|err| {
                     Error::new_io(err, format!("Error mmaping segment file {:?}", self.path))
