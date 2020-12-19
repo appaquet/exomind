@@ -32,7 +32,7 @@ pub struct ExomindClient {
 impl ExomindClient {
     pub async fn new(config: &cli::Config) -> anyhow::Result<ExomindClient> {
         let config = LocalNodeConfig::from_yaml_file(&config.node_config)?;
-        let (cells, local_node) = Cell::new_from_local_node_config(config)?;
+        let (cells, local_node) = Cell::from_local_node_config(config)?;
         let either_cell = cells
             .first()
             .ok_or_else(|| anyhow!("Node doesn't have any cell configured"))?;
