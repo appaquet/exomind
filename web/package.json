@@ -32,7 +32,7 @@
     "fbemitter": "^2.1.1",
     "font-awesome": "^4.4.0",
     "htmlparser2": "^5.0.1",
-    "less": "^3.13.0",
+    "less": "^4.0.0",
     "linkifyjs": "^2.1.9",
     "lodash": "^4.17.19",
     "mobx": "^5.15.7",
