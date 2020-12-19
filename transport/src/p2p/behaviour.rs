@@ -54,7 +54,7 @@ impl ExocoreBehaviour {
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             if peer.status == PeerStatus::Connected {
                 let event = NetworkBehaviourAction::NotifyHandler {
-                    peer_id: peer_id.clone(),
+                    peer_id,
                     handler,
                     event: ExocoreProtoMessage { data },
                 };
@@ -69,7 +69,7 @@ impl ExocoreBehaviour {
                 // Node is disconnected, push the event to a queue and try to connect
                 peer.temp_queue.push_back(QueuedPeerEvent {
                     event: NetworkBehaviourAction::NotifyHandler {
-                        peer_id: peer_id.clone(),
+                        peer_id,
                         handler,
                         event: ExocoreProtoMessage { data },
                     },
@@ -87,7 +87,7 @@ impl ExocoreBehaviour {
     }
 
     pub fn add_node_peer(&mut self, node: &Node) {
-        let peer_id = node.peer_id().clone();
+        let peer_id = *node.peer_id();
         let addresses = node.p2p_addresses();
 
         if let Some(current_peer) = self.peers.get(&peer_id) {
@@ -98,7 +98,7 @@ impl ExocoreBehaviour {
         }
 
         self.peers.insert(
-            peer_id.clone(),
+            peer_id,
             Peer {
                 addresses,
                 node: node.clone(),
@@ -149,7 +149,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
 
             self.actions
                 .push_back(NetworkBehaviourAction::GenerateEvent(
-                    ExocoreBehaviourEvent::PeerStatus(peer_id.clone(), peer.status),
+                    ExocoreBehaviourEvent::PeerStatus(*peer_id, peer.status),
                 ));
 
             // send any messages that were queued while node was disconnected, but that
@@ -172,13 +172,13 @@ impl NetworkBehaviour for ExocoreBehaviour {
 
             self.actions
                 .push_back(NetworkBehaviourAction::GenerateEvent(
-                    ExocoreBehaviourEvent::PeerStatus(peer_id.clone(), peer.status),
+                    ExocoreBehaviourEvent::PeerStatus(*peer_id, peer.status),
                 ));
 
             // check if we need to reconnect
             peer.cleanup_expired();
             if !peer.temp_queue.is_empty() {
-                self.dial_peer(peer_id.clone());
+                self.dial_peer(*peer_id);
             }
         }
     }

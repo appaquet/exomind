@@ -1,12 +1,16 @@
-use crate::block::{Block, BlockOperations, BlockOwned, BlockSignature, BlockSignatures};
-use crate::chain;
-use crate::engine::{pending_sync, EngineError, Event, SyncContext};
-use crate::operation::{Operation, OperationBuilder, OperationId, OperationType};
-use crate::pending;
-use crate::pending::CommitStatus;
-use exocore_core::cell::NodeId;
-use exocore_core::cell::{Cell, CellNodeRole, CellNodes, CellNodesRead};
-use exocore_core::time::{Clock, ConsistentTimestamp};
+use crate::{
+    block::{Block, BlockOperations, BlockOwned, BlockSignature, BlockSignatures},
+    chain,
+    engine::{pending_sync, EngineError, Event, SyncContext},
+    operation::{Operation, OperationBuilder, OperationId, OperationType},
+    pending,
+    pending::CommitStatus,
+};
+use exocore_core::{
+    cell::{Cell, CellNodeRole, CellNodes, CellNodesRead, NodeId},
+    sec::hash::Multihash,
+    time::{Clock, ConsistentTimestamp},
+};
 use itertools::Itertools;
 
 use block::{BlockStatus, PendingBlock, PendingBlockRefusal, PendingBlockSignature, PendingBlocks};
@@ -192,7 +196,19 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let block_operations = Self::get_block_operations(block, pending_store)?.map(|op| op.frame);
         let operations_hash = BlockOperations::hash_operations(block_operations)?;
         let block_header_reader = block_frame.get_reader()?;
-        if operations_hash.as_bytes() != block_header_reader.get_operations_hash()? {
+        let block_header_multihash =
+            match Multihash::from_bytes(block_header_reader.get_operations_hash()?) {
+                Ok(hash) => hash,
+                Err(err) => {
+                    info!(
+                        "{}: Refusing block {:?} hash in header couldn't be decoded: {}",
+                        self.cell, block, err
+                    );
+                    return Ok(false);
+                }
+            };
+
+        if operations_hash != block_header_multihash {
             info!(
                 "{}: Refusing block {:?} because entries hash didn't match our local hash for block",
                 self.cell,
@@ -426,8 +442,12 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // make sure that the hash of operations is same as defined by the block
         // this should never happen since we wouldn't have signed the block if hash
         // didn't match
+        let header_multihash_bytes = block_header_reader.get_operations_hash()?;
+        let header_multihash = Multihash::from_bytes(header_multihash_bytes).map_err(|err| {
+            EngineError::Fatal(format!("Couldn't decode hash from block header: {}", err))
+        })?;
         let block_operations = BlockOperations::from_operations(block_operations)?;
-        if block_operations.multihash_bytes() != block_header_reader.get_operations_hash()? {
+        if block_operations.multihash() != header_multihash {
             return Err(EngineError::Fatal(
                 "Block hash for local entries didn't match block hash, but was previously signed"
                     .to_string(),

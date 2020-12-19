@@ -16,10 +16,18 @@ pub enum Error {
 
     #[error("Capnp serialization error: {0}")]
     Capnp(#[from] capnp::Error),
+
+    #[error("Multihash error: {0:?}")]
+    Multihash(#[from] Arc<multihash::Error>),
 }
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Error::IO(Arc::new(err))
+    }
+}
+impl From<multihash::Error> for Error {
+    fn from(err: multihash::Error) -> Self {
+        Error::Multihash(Arc::new(err))
     }
 }

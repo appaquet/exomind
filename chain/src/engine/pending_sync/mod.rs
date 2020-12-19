@@ -1,19 +1,24 @@
-use crate::block::BlockHeight;
-use crate::engine::{request_tracker, EngineError, Event, SyncContext};
-use crate::operation::{NewOperation, Operation, OperationId};
-use crate::pending::{CommitStatus, PendingStore, StoredOperation};
-use exocore_core::cell::{Cell, CellNodeRole, CellNodes};
-use exocore_core::cell::{Node, NodeId};
-use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_core::protos::generated::data_chain_capnp::chain_operation_header;
-use exocore_core::protos::generated::data_transport_capnp::{
-    pending_sync_range, pending_sync_request,
+use crate::{
+    block::BlockHeight,
+    engine::{request_tracker, EngineError, Event, SyncContext},
+    operation::{NewOperation, Operation, OperationId},
+    pending::{CommitStatus, PendingStore, StoredOperation},
 };
-use exocore_core::sec::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
-use exocore_core::time::Clock;
+use exocore_core::{
+    cell::{Cell, CellNodeRole, CellNodes, Node, NodeId},
+    framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame},
+    protos::generated::{
+        data_chain_capnp::chain_operation_header,
+        data_transport_capnp::{pending_sync_range, pending_sync_request},
+    },
+    sec::hash::{Multihash, MultihashDigestExt, Sha3_256},
+    time::Clock,
+};
 use itertools::{EitherOrBoth, Itertools};
-use std::collections::{HashMap, HashSet};
-use std::ops::{Bound, RangeBounds};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::{Bound, RangeBounds},
+};
 
 pub use config::PendingSyncConfig;
 pub use error::PendingSyncError;
@@ -235,9 +240,12 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             // everything is synchronized
             let (local_hash, local_count) =
                 self.local_store_range_info(store, bounds_range, operations_from_height)?;
-            let remote_hash = sync_range_reader.get_operations_hash()?;
+            let remote_hash_bytes = sync_range_reader.get_operations_hash()?;
+            let remote_hash = Multihash::from_bytes(remote_hash_bytes).map_err(|err| {
+                PendingSyncError::InvalidSyncRequest(format!("Invalid hash in header: {}", err))
+            })?;
             let remote_count = sync_range_reader.get_operations_count();
-            if remote_hash == &local_hash[..] && local_count == remote_count as usize {
+            if remote_hash == local_hash && local_count == remote_count as usize {
                 // we are equal to remote, nothing to do
                 out_ranges.push_range(SyncRangeBuilder::new_hashed(
                     bounds_range,
@@ -344,7 +352,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         store: &PS,
         range: R,
         operations_from_height: Option<BlockHeight>,
-    ) -> Result<(Vec<u8>, usize), EngineError>
+    ) -> Result<(Multihash, usize), EngineError>
     where
         R: RangeBounds<OperationId>,
     {
@@ -358,7 +366,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             count += 1;
         }
 
-        Ok((frame_hasher.result().into_bytes(), count))
+        Ok((frame_hasher.to_multihash(), count))
     }
 
     /// Do a diff of the local and remote data based on the headers in the sync

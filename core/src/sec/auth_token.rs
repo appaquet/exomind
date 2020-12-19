@@ -9,7 +9,7 @@ use crate::{
 use prost::Message;
 
 /// Authentication token that can be used as an alternative authentication
-/// method for a node of a cell when using a transport authentified transport
+/// method for a node of a cell when using a transport authenticated transport
 /// like `libp2p`. Since not all clients can use a `libp2p` based transport, a
 /// token can be used by a fat client to authentify further calls by a thi
 /// client.
@@ -38,7 +38,7 @@ impl AuthToken {
 
         let data = AutoTokenDataProto {
             cell_id: cell.id().as_bytes().to_vec(),
-            node_id: cell.local_node().id().as_bytes().to_vec(),
+            node_id: cell.local_node().id().to_bytes().to_vec(),
             signature_date: Some(now.to_proto_timestamp()),
             expiration_date: expiration_date.map(|d| d.to_proto_timestamp()),
         };
@@ -177,7 +177,7 @@ pub enum Error {
     #[error("Token was signed by an unknown node")]
     UnknownNode,
 
-    #[error("Token signatute is invalid")]
+    #[error("Token signature is invalid")]
     InvalidSignature,
 
     #[error("Token has expired")]

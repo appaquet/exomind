@@ -1,31 +1,47 @@
 use crate::framing;
-pub use multihash::{
-    BoxedMultihashDigest, Code, MultihashDigest, MultihashGeneric, Sha3_256, Sha3_512,
-};
+use multihash::{Code, StatefulHasher};
+pub use multihash::{Hasher, Multihash, MultihashDigest, Sha3_256, Sha3_512};
 
 const MULTIHASH_CODE_SIZE: usize = 2;
 /// Multihash digest extension.
-pub trait MultihashDigestExt: MultihashDigest<Code> + Default {
-    fn size() -> usize;
-
+pub trait MultihashDigestExt: StatefulHasher + Default {
     fn input_signed_frame<I: framing::FrameReader>(
         &mut self,
         frame: &framing::MultihashFrame<Self, I>,
     ) {
-        self.input(frame.multihash_bytes());
+        self.update(frame.multihash_bytes());
+    }
+
+    fn multihash_size() -> usize {
+        MULTIHASH_CODE_SIZE + usize::from(Self::size())
+    }
+
+    fn to_multihash(&self) -> Multihash;
+}
+
+impl<T> MultihashDigestExt for T
+where
+    T: StatefulHasher,
+    Code: for<'a> From<&'a T::Digest>,
+{
+    fn to_multihash(&self) -> Multihash {
+        let digest = self.finalize();
+        Code::multihash_from_digest(&digest)
     }
 }
 
-impl MultihashDigestExt for Sha3_256 {
-    fn size() -> usize {
-        // see `Code` variants
-        MULTIHASH_CODE_SIZE + 32
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl MultihashDigestExt for Sha3_512 {
-    fn size() -> usize {
-        // see `Code` variants
-        MULTIHASH_CODE_SIZE + 64
+    #[test]
+    fn test_to_multihash() {
+        let stateless = Code::Sha3_256.digest(b"Hello world");
+
+        let mut hasher = Sha3_256::default();
+        hasher.update(b"Hello world");
+        let stateful = hasher.to_multihash();
+
+        assert_eq!(stateful, stateless);
     }
 }

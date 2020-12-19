@@ -1,10 +1,10 @@
 use super::{OperationDetailsLevel, PendingSyncConfig};
-use crate::engine::EngineError;
-use crate::operation::OperationId;
-use crate::pending::StoredOperation;
-use exocore_core::framing::FrameReader;
-use exocore_core::protos::generated::data_transport_capnp::pending_sync_range;
-use exocore_core::sec::hash::{MultihashDigest, MultihashDigestExt, Sha3_256};
+use crate::{engine::EngineError, operation::OperationId, pending::StoredOperation};
+use exocore_core::{
+    framing::FrameReader,
+    protos::generated::data_transport_capnp::pending_sync_range,
+    sec::hash::{Multihash, MultihashDigestExt, Sha3_256},
+};
 use std::ops::Bound;
 
 /// Collection of SyncRangeBuilder, taking into account maximum operations we
@@ -90,7 +90,7 @@ pub struct SyncRangeBuilder {
     pub operations_count: u32,
 
     pub hasher: Option<Sha3_256>,
-    pub hash: Option<Vec<u8>>,
+    pub hash: Option<Multihash>,
 }
 
 impl SyncRangeBuilder {
@@ -111,7 +111,7 @@ impl SyncRangeBuilder {
 
     pub(crate) fn new_hashed(
         operations_range: (Bound<OperationId>, Bound<OperationId>),
-        operations_hash: Vec<u8>,
+        operations_hash: Multihash,
         operations_count: u32,
     ) -> SyncRangeBuilder {
         SyncRangeBuilder {
@@ -207,10 +207,10 @@ impl SyncRangeBuilder {
 
         match (self.hash, self.hasher) {
             (Some(hash), _) => {
-                range_msg_builder.set_operations_hash(&hash);
+                range_msg_builder.set_operations_hash(hash.to_bytes().as_ref());
             }
             (_, Some(hasher)) => {
-                range_msg_builder.set_operations_hash(&hasher.result().into_bytes());
+                range_msg_builder.set_operations_hash(hasher.to_multihash().to_bytes().as_ref());
             }
             _ => {}
         }

@@ -1,18 +1,19 @@
 use crate::operation::OperationId;
-use exocore_core::capnp;
-use exocore_core::cell::{Cell, FullCell};
-use exocore_core::cell::{CellNodeRole, NodeId};
-use exocore_core::framing::{
-    CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
-    PaddedFrame, PaddedFrameBuilder, SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
+use exocore_core::{
+    capnp,
+    cell::{Cell, CellNodeRole, FullCell, NodeId},
+    framing::{
+        CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
+        PaddedFrame, PaddedFrameBuilder, SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
+    },
+    protos::generated::data_chain_capnp::{
+        block_header, block_operation_header, block_signature, block_signatures,
+    },
+    sec::{
+        hash::{Multihash, MultihashDigestExt, Sha3_256},
+        signature::Signature,
+    },
 };
-use exocore_core::protos::generated::data_chain_capnp::{
-    block_header, block_operation_header, block_signature, block_signatures,
-};
-use exocore_core::sec::hash::{
-    Code, MultihashDigest, MultihashDigestExt, MultihashGeneric, Sha3_256,
-};
-use exocore_core::sec::signature::Signature;
 use std::borrow::Borrow;
 
 pub type BlockOffset = u64;
@@ -180,8 +181,12 @@ pub trait Block {
 
         if ops_size_header > 0 {
             let operations = self.operations_iter()?;
-            let ops_hash_stored = BlockOperations::hash_operations(operations)?.into_bytes();
-            let ops_hash_header = header_reader.get_operations_hash()?;
+            let ops_hash_stored = BlockOperations::hash_operations(operations)?;
+            let ops_hash_header = Multihash::from_bytes(header_reader.get_operations_hash()?)
+                .map_err(|err| {
+                    Error::Integrity(format!("Hash in block header couldn't be decoded: {}", err))
+                })?;
+
             if ops_hash_stored != ops_hash_header {
                 return Err(Error::Integrity(format!(
                     "Operations hash don't match: ops_hash_header={:?}, ops_hash_stored={:?}",
@@ -332,7 +337,7 @@ impl BlockOwned {
         header_msg_builder.set_proposed_operation_id(proposed_operation_id);
         header_msg_builder.set_proposed_node_id(&local_node.id().to_string());
         header_msg_builder.set_operations_size(operations_data_size);
-        header_msg_builder.set_operations_hash(&operations.multihash_bytes);
+        header_msg_builder.set_operations_hash(&operations.hash.to_bytes());
 
         let mut operations_builder = header_msg_builder
             .reborrow()
@@ -510,7 +515,7 @@ impl<'a> Iterator for ChainBlockIterator<'a> {
 
 /// Wraps operations header stored in a block.
 pub struct BlockOperations {
-    multihash_bytes: Vec<u8>,
+    hash: Multihash,
     headers: Vec<BlockOperationHeader>,
     data: Vec<u8>,
 }
@@ -518,7 +523,7 @@ pub struct BlockOperations {
 impl BlockOperations {
     pub fn empty() -> BlockOperations {
         BlockOperations {
-            multihash_bytes: Vec::new(),
+            hash: Multihash::default(),
             headers: Vec::new(),
             data: Vec::new(),
         }
@@ -550,13 +555,13 @@ impl BlockOperations {
         }
 
         Ok(BlockOperations {
-            multihash_bytes: hasher.result().into_bytes(),
+            hash: hasher.to_multihash(),
             headers,
             data,
         })
     }
 
-    pub fn hash_operations<I, M, F>(sorted_operations: I) -> Result<MultihashGeneric<Code>, Error>
+    pub fn hash_operations<I, M, F>(sorted_operations: I) -> Result<Multihash, Error>
     where
         I: Iterator<Item = M>,
         M: Borrow<crate::operation::OperationFrame<F>>,
@@ -566,7 +571,7 @@ impl BlockOperations {
         for operation in sorted_operations {
             hasher.input_signed_frame(&operation.borrow().inner().inner());
         }
-        Ok(hasher.result())
+        Ok(hasher.to_multihash())
     }
 
     pub fn operations_count(&self) -> usize {
@@ -577,8 +582,8 @@ impl BlockOperations {
         self.headers.iter().map(|header| header.operation_id)
     }
 
-    pub fn multihash_bytes(&self) -> &[u8] {
-        &self.multihash_bytes
+    pub fn multihash(&self) -> Multihash {
+        self.hash
     }
 
     pub fn data(&self) -> &[u8] {
@@ -796,11 +801,14 @@ impl From<capnp::NotInSchema> for Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::block::{Block, BlockOperations, BlockOwned, BlockRef};
-    use crate::operation::OperationBuilder;
-    use exocore_core::cell::LocalNode;
-    use exocore_core::cell::{FullCell, Node};
-    use exocore_core::framing::FrameReader;
+    use crate::{
+        block::{Block, BlockOperations, BlockOwned, BlockRef},
+        operation::OperationBuilder,
+    };
+    use exocore_core::{
+        cell::{FullCell, LocalNode, Node},
+        framing::FrameReader,
+    };
 
     #[test]
     fn block_create_and_read() -> anyhow::Result<()> {

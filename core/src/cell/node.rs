@@ -69,9 +69,9 @@ impl Node {
 
     fn build(public_key: PublicKey, name: Option<String>) -> Node {
         let node_id = NodeId::from_public_key(&public_key);
-        let peer_id = node_id.to_peer_id().clone();
+        let peer_id = *node_id.to_peer_id();
 
-        let node_id_bytes = node_id.0.as_bytes();
+        let node_id_bytes = node_id.0.to_bytes();
         let node_id_bytes_len = node_id_bytes.len();
         let consistent_clock_id = u16::from_le_bytes([
             node_id_bytes[node_id_bytes_len - 1],
@@ -291,13 +291,13 @@ impl NodeId {
     }
 
     pub fn from_bytes(id: Vec<u8>) -> Result<NodeId, Error> {
-        let peer_id = PeerId::from_bytes(id)
+        let peer_id = PeerId::from_bytes(id.as_ref())
             .map_err(|_| Error::Node("Couldn't convert bytes to peer id".to_string()))?;
         Ok(NodeId(peer_id))
     }
 
-    pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.0.to_bytes()
     }
 }
 
@@ -354,10 +354,10 @@ mod tests {
         let node1 = LocalNode::generate();
         let node2 = LocalNode::generate();
 
-        assert_ne!(node1.id().as_bytes(), node2.id().as_bytes());
-        assert_eq!(node1.id().as_bytes(), node1.id().as_bytes());
+        assert_ne!(node1.id().to_bytes(), node2.id().to_bytes());
+        assert_eq!(node1.id().to_bytes(), node1.id().to_bytes());
 
-        let n1_bytes = node1.id().as_bytes();
+        let n1_bytes = node1.id().to_bytes();
         let n1_id_bytes = NodeId::from_bytes(n1_bytes.to_vec()).unwrap();
         assert_eq!(n1_id_bytes, *node1.id());
     }
