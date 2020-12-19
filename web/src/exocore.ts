@@ -1,4 +1,4 @@
-import { Exocore } from 'exocore';
+import { Exocore, LocalNode, WasmModule } from 'exocore';
 import { exomind } from './protos';
 import { autorun } from 'mobx';
 import { StoresInstance } from './store/stores';
@@ -7,6 +7,8 @@ let currentConfig: Record<string, unknown> | null = null;
 autorun(() => {
     if (StoresInstance.settings.exocoreConfig && currentConfig != StoresInstance.settings.exocoreConfig) {
         currentConfig = StoresInstance.settings.exocoreConfig;
+
+
 
         StoresInstance.session.exocoreInitialized = false;
         initialize(currentConfig)
@@ -19,13 +21,12 @@ autorun(() => {
     }
 })
 
-export async function ensureLoaded(): Promise<void> {
+export async function ensureLoaded(): Promise<WasmModule> {
     return await Exocore.ensureLoaded();
 }
 
-async function initialize(config: Record<string, unknown>): Promise<void> {
+async function initialize(config: LocalNode): Promise<Exocore> {
     const instance = await Exocore.initialize(config);
-    Exocore.defaultInstance = instance;
 
     instance.registry.registerMessage(exomind.base.EmailThread, 'exomind.base.EmailThread');
     instance.registry.registerMessage(exomind.base.Email, 'exomind.base.Email');
@@ -38,4 +39,6 @@ async function initialize(config: Record<string, unknown>): Promise<void> {
     instance.registry.registerMessage(exomind.base.Note, 'exomind.base.Note');
     instance.registry.registerMessage(exomind.base.Link, 'exomind.base.Link');
     instance.registry.registerMessage(exomind.base.Snoozed, 'exomind.base.Snoozed');
+
+    return instance;
 }

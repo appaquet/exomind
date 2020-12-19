@@ -4,12 +4,10 @@ import React from 'react';
 
 export interface ISettingsStore {
     exocoreConfig?: Record<string, unknown>;
-    test: boolean;
 }
 
 export class SettingsStore implements ISettingsStore {
     @observable exocoreConfig?: Record<string, unknown>;
-    @observable test: boolean;
 
     constructor(syncLocalStorage?: boolean) {
         if (window.localStorage && (syncLocalStorage ?? true)) {
@@ -20,13 +18,11 @@ export class SettingsStore implements ISettingsStore {
     @computed get asJson(): ISettingsStore {
         return {
             exocoreConfig: this.exocoreConfig,
-            test: this.test,
         }
     }
 
     @action updateFromJson(json: ISettingsStore): void {
         this.exocoreConfig = json.exocoreConfig;
-        this.test = json.test;
     }
 
     private setupLocalStorageSync() {

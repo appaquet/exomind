@@ -1,6 +1,6 @@
 
 import classNames from 'classnames';
-import { Exocore, QueryBuilder, TraitQueryBuilder, WatchedQuery } from 'exocore';
+import { Exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import { exomind } from '../../../protos';
 import React from 'react';
 import Navigation from '../../../navigation';
@@ -17,7 +17,7 @@ interface IState {
 }
 
 export default class Hamburger extends React.Component<IProps, IState> {
-  private favoritesQuery: WatchedQuery;
+  private favoritesQuery: WatchedQueryWrapper;
 
   constructor(props: IProps) {
     super(props);

@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, TraitQueryBuilder, WatchedQuery } from 'exocore';
+import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React from 'react';
 import { exomind } from "../../../protos";
 import { EntityTraits } from '../../../store/entities';
@@ -36,7 +36,7 @@ interface IState {
 
 export class Children extends React.Component<IProps, IState> {
     private entityQuery: ExpandableQuery;
-    private parentQuery: WatchedQuery;
+    private parentQuery: WatchedQueryWrapper;
     private parentId: string;
 
     constructor(props: IProps) {
