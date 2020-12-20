@@ -4,32 +4,45 @@ import Exocore
 import KeychainSwift
 
 class ExocoreUtils {
-    static var initialized: Bool = false
-    static var error: String?
+    static var node: LocalNode? = nil
 
-    static var cellConfig: String? {
-        get {
+    static func bootNode() throws {
+        if self.node == nil {
             let keyChain = KeychainSwift()
-            return keyChain.get("cell_config")
-        }
-        set {
-            let keyChain = KeychainSwift()
-            if let newValue = newValue {
-                keyChain.set(newValue, forKey: "cell_config")
-            } else {
-                keyChain.delete("cell_config")
+            if let configData = keyChain.getData("node"),
+               let nodeConfig = try? Exocore_Core_LocalNodeConfig(serializedData: configData),
+               let node = try? LocalNode.from(config: nodeConfig) {
+                self.node = node
             }
+        }
+
+        if self.node == nil {
+            self.node = try LocalNode.generate()
+            self.saveNode(node: self.node!)
+        }
+
+        if let node = self.node, self.nodeHasCell {
+            try ExocoreClient.initialize(node: node)
         }
     }
 
-    static func initialize() {
-        self.initialized = false
+    static func saveNode(node: LocalNode) {
+        if let config = try? node.config(),
+           let configData = try? config.serializedData() {
+            let keychain = KeychainSwift()
+            keychain.set(configData, forKey: "node")
+            self.node = node
+        }
+    }
 
-        do {
-            try ExocoreClient.initialize(yamlConfig: cellConfig ?? "")
-            self.initialized = true
-        } catch {
-            self.error = error.localizedDescription
+    static var nodeHasCell: Bool {
+        get {
+            if let node = self.node,
+               let config = try? node.config() {
+                return !config.cells.isEmpty
+            }
+
+            return false
         }
     }
 }

@@ -14,7 +14,7 @@ class RootNavigationController: UINavigationController {
     }
 
     @objc func showStateView() {
-        if !ExocoreUtils.initialized {
+        if !ExocoreUtils.nodeHasCell {
             self.showBootstrap(fromRoot: true)
         } else {
             self.showTabBar()

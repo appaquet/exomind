@@ -8,7 +8,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         HttpUtils.copyCookiesToKeychain()
-        ExocoreUtils.initialize()
+        try? ExocoreUtils.bootNode()
         JSBridge.instance = JSBridge()
 
         // see https://github.com/tokio-rs/mio/issues/949

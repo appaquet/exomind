@@ -14,7 +14,7 @@ PODS:
 DEPENDENCIES:
   - CLTokenInputView
   - Dwifft (~> 0.9)
-  - "Exocore (from `{:http=>\"https://github.com/appaquet/exocore/releases/download/v0.1.0/exocore-ios.tar.gz\"}`)"
+  - Exocore (from `../../exocore`)
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
   - KeychainSwift (~> 19.0)
   - MCSwipeTableViewCell
@@ -36,13 +36,11 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   Exocore:
-    :http: https://github.com/appaquet/exocore/releases/download/v0.1.0/exocore-ios.tar.gz
+    :path: "../../exocore"
   FontAwesome.swift:
     :git: https://github.com/thii/FontAwesome.swift.git
 
 CHECKOUT OPTIONS:
-  Exocore:
-    :http: https://github.com/appaquet/exocore/releases/download/v0.1.0/exocore-ios.tar.gz
   FontAwesome.swift:
     :commit: 70da3c6af1eb397113d0f9bd9cfc96ae406d9c84
     :git: https://github.com/thii/FontAwesome.swift.git
@@ -59,6 +57,6 @@ SPEC CHECKSUMS:
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: 3c37ad6dbf8925b279fbe776ba79acf2309660f3
+PODFILE CHECKSUM: 564aee03ea26fbde4cf6d1c101b44cebb3e39a70
 
 COCOAPODS: 1.9.3
