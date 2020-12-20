@@ -64,6 +64,13 @@ export class Exocore {
     static node = new NodeAccessor();
 
     static discovery = new DiscoveryAccessor();
+
+    static reset(): void {
+        if (Exocore.default) {
+            Exocore.default.free();
+            Exocore.default = null;
+        }
+    }
 }
 
 export class ExocoreInstance {
@@ -81,6 +88,10 @@ export class ExocoreInstance {
         this.store = new Store(client);
         this.registry = new Registry();
         this.node = node;
+    }
+
+    free() {
+        this.wasmClient.free();
     }
 
     _triggerStatusChange(status: string): void {

@@ -6,6 +6,7 @@ use exocore_core::{
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct LocalNode {
     _node: CoreLocalNode,
     pub(crate) config: LocalNodeConfig,

@@ -68,17 +68,17 @@ class DiscoveryState: ObservableObject {
             self.pin = nil
             self.error = nil
 
-            discovery.joinCell(localNode: node) { (stage) in
+            discovery.joinCell(localNode: node) { [weak self] (stage) in
                 DispatchQueue.main.async {
                     switch stage {
                     case .pin(let pin):
-                        self.pin = pin
+                        self?.pin = pin
                     case .success(let newNode):
                         appState.node = newNode
                         appState.forceDiscovery = false
                         appState.refreshNodeConfig()
                     case .error(let err):
-                        self.error = err.localizedDescription
+                        self?.error = err.localizedDescription
                     }
                 }
             }
