@@ -5,7 +5,7 @@ import App from './app';
 import Navigation from './navigation';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { ensureLoaded } from './exocore';
+import { initNode } from './exocore';
 
 class ClientApp extends React.Component {
     constructor(props) {
@@ -38,7 +38,7 @@ Promise.all([
             window.attachEvent('onload', resolve);
         }
     }),
-    ensureLoaded()
+    initNode()
 ]).then(() => {
     ReactDOM.render(<ClientApp />, document.getElementById('body'));
 

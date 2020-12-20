@@ -1,44 +1,72 @@
 import { Exocore, LocalNode, WasmModule } from 'exocore';
 import { exomind } from './protos';
-import { autorun } from 'mobx';
 import { StoresInstance } from './store/stores';
 
-let currentConfig: Record<string, unknown> | null = null;
-autorun(() => {
-    if (StoresInstance.settings.exocoreConfig && currentConfig != StoresInstance.settings.exocoreConfig) {
-        currentConfig = StoresInstance.settings.exocoreConfig;
+export async function initNode(): Promise<WasmModule> {
+    const module = await Exocore.ensureLoaded();
 
-
-
-        StoresInstance.session.exocoreInitialized = false;
-        initialize(currentConfig)
-            .then(() => {
-                StoresInstance.session.exocoreInitialized = true;
-            })
-            .catch((err) => {
-                console.log('Error loading exocore', err);
-            });
+    let node: LocalNode;
+    try {
+        node = Exocore.node.from_storage(localStorage)
+    } catch (e) {
+        console.log('Couldn\'t load node from storage', e);
     }
-})
 
-export async function ensureLoaded(): Promise<WasmModule> {
-    return await Exocore.ensureLoaded();
+    if (!node) {
+        node = Exocore.node.generate();
+        node.save_to_storage(localStorage);
+    }
+
+    StoresInstance.session.node = node;
+    if (node.has_configured_cell) {
+        bootNode();
+    } else {
+        StoresInstance.session.showDiscovery = true;
+    }
+
+    return module;
 }
 
-async function initialize(config: LocalNode): Promise<Exocore> {
-    const instance = await Exocore.initialize(config);
+export async function resetNode(): Promise<void> {
+    const node = Exocore.node.generate();
+    node.save_to_storage(localStorage);
 
-    instance.registry.registerMessage(exomind.base.EmailThread, 'exomind.base.EmailThread');
-    instance.registry.registerMessage(exomind.base.Email, 'exomind.base.Email');
-    instance.registry.registerMessage(exomind.base.EmailPart, 'exomind.base.EmailPart');
-    instance.registry.registerMessage(exomind.base.DraftEmail, 'exomind.base.DraftEmail');
-    instance.registry.registerMessage(exomind.base.Account, 'exomind.base.Account');
-    instance.registry.registerMessage(exomind.base.Collection, 'exomind.base.Collection');
-    instance.registry.registerMessage(exomind.base.CollectionChild, 'exomind.base.CollectionChild');
-    instance.registry.registerMessage(exomind.base.Task, 'exomind.base.Task');
-    instance.registry.registerMessage(exomind.base.Note, 'exomind.base.Note');
-    instance.registry.registerMessage(exomind.base.Link, 'exomind.base.Link');
-    instance.registry.registerMessage(exomind.base.Snoozed, 'exomind.base.Snoozed');
+    const sessionStore = StoresInstance.session;
+    sessionStore.node = node;
+    sessionStore.cellInitialized = false;
+    sessionStore.cellError = null;
+    sessionStore.showDiscovery = true;
 
-    return instance;
+    Exocore.reset();
+}
+
+export async function bootNode(): Promise<Exocore | null> {
+    const sessionStore = StoresInstance.session;
+
+    try {
+        const instance = await Exocore.initialize(sessionStore.node);
+
+        instance.registry.registerMessage(exomind.base.EmailThread, 'exomind.base.EmailThread');
+        instance.registry.registerMessage(exomind.base.Email, 'exomind.base.Email');
+        instance.registry.registerMessage(exomind.base.EmailPart, 'exomind.base.EmailPart');
+        instance.registry.registerMessage(exomind.base.DraftEmail, 'exomind.base.DraftEmail');
+        instance.registry.registerMessage(exomind.base.Account, 'exomind.base.Account');
+        instance.registry.registerMessage(exomind.base.Collection, 'exomind.base.Collection');
+        instance.registry.registerMessage(exomind.base.CollectionChild, 'exomind.base.CollectionChild');
+        instance.registry.registerMessage(exomind.base.Task, 'exomind.base.Task');
+        instance.registry.registerMessage(exomind.base.Note, 'exomind.base.Note');
+        instance.registry.registerMessage(exomind.base.Link, 'exomind.base.Link');
+        instance.registry.registerMessage(exomind.base.Snoozed, 'exomind.base.Snoozed');
+
+        sessionStore.cellInitialized = true;
+        sessionStore.cellError = null;
+        sessionStore.showDiscovery = false;
+
+        return instance;
+
+    } catch (e) {
+        console.log('Couldn\'t initialize exocore', e);
+        sessionStore.cellInitialized = false;
+        sessionStore.cellError = e;
+    }
 }

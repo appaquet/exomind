@@ -92,8 +92,8 @@ export default class Navigation {
     return '/s/' + entityId;
   }
 
-  static pathForBootstrap(): string {
-    return '/bootstrap';
+  static pathForNodeConfig(): string {
+    return '/nc';
   }
 
   static isColumnsPath(path: Path): boolean {
@@ -104,8 +104,8 @@ export default class Navigation {
     return new Path(path).take(1).toString() === 's';
   }
 
-  static isBootstrapPath(path: Path): boolean {
-    return new Path(path).take(1).toString() === 'bootstrap';
+  static isNodeConfigPath(path: Path): boolean {
+    return new Path(path).take(1).toString() === 'nc';
   }
 
   static isSettingsPath(path: Path): boolean {

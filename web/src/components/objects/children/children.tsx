@@ -32,6 +32,7 @@ interface IProps {
 interface IState {
     parent?: exocore.store.IEntity;
     hovered: boolean;
+    error?: string;
 }
 
 export class Children extends React.Component<IProps, IState> {
@@ -72,6 +73,13 @@ export class Children extends React.Component<IProps, IState> {
             const parentQuery = QueryBuilder.withIds(props.parentId).build();
             this.parentQuery = Exocore.store.watchedQuery(parentQuery);
             this.parentQuery.onChange((res) => {
+                if (res.entities.length === 0) {
+                    this.setState({
+                        error: `Couldn't find parent entity '${props.parentId}'`,
+                    });
+                    return;
+                }
+
                 this.setState({
                     parent: res.entities[0].entity,
                 });
@@ -93,6 +101,10 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
+        if (this.state.error) {
+            return <Message text={this.state.error} error={true} />;
+        }
+
         if (this.entityQuery.hasResults && this.state.parent) {
             const classes = classNames({
                 'entity-component': true,

@@ -4,7 +4,7 @@ import React from 'react';
 import Navigation from '../../navigation';
 import { Stores, StoresContext } from '../../store/stores';
 import Path from '../../utils/path';
-import Bootstrap from '../pages/bootstrap/bootstrap';
+import NodeConfig from '../pages/node-config/node-config';
 import { ColumnsConfig } from '../pages/columns/columns-config';
 import Columns from '../pages/columns/columns.js';
 import Fullscreen from '../pages/fullscreen/fullscreen';
@@ -60,12 +60,8 @@ export default class Layout extends React.Component<IProps> {
     );
   }
 
-  private get exocoreInitialized(): boolean {
-    return this.context.session.exocoreInitialized;
-  }
-
   private get showHamburger(): boolean {
-    return !this.isFullscreen && this.context.session.exocoreInitialized;
+    return !this.isFullscreen && this.context.session.cellInitialized;
   }
 
   private get isFullscreen(): boolean {
@@ -84,16 +80,16 @@ export default class Layout extends React.Component<IProps> {
 
   private renderPath(): React.ReactNode {
     const path = this.props.path;
-    if (Navigation.isBootstrapPath(path) || !this.exocoreInitialized) {
-      return <Bootstrap />;
+    if (Navigation.isNodeConfigPath(path) || this.context.session.showDiscovery) {
+      return <NodeConfig />;
 
     } else if (this.props.path.isRoot()) {
-      if (this.exocoreInitialized) {
+      if (this.context.session.cellInitialized) {
         Navigation.navigate(Navigation.pathForInbox());
       }
       return <Home />;
 
-    } else if (Navigation.isColumnsPath(path) && this.exocoreInitialized) {
+    } else if (Navigation.isColumnsPath(path) && this.context.session.cellInitialized) {
       const config = path.drop(1).toString();
       return <Columns
         config={config}
