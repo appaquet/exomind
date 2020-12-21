@@ -1,6 +1,6 @@
 [package]
 name = "exocore-client-android"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
@@ -8,8 +8,8 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-exocore-core = { path = "../../core", features = ["runtime", "logger"] }
-exocore-transport = { path = "../../transport", features = ["p2p-full"] }
-exocore-store = { path = "../../store" }
+exocore-core = { version = "0.1.1", path = "../../core", features = ["runtime", "logger"] }
+exocore-transport = { version = "0.1.1", path = "../../transport", features = ["p2p-full"] }
+exocore-store = { version = "0.1.1", path = "../../store" }
 thiserror = "1.0"
 anyhow = "1.0"

@@ -6,9 +6,7 @@ use std::{
 use chrono::{DateTime, Utc};
 use rand::Rng;
 
-#[derive(
-    Clone, Copy, Ord, PartialOrd, Eq, PartialEq, serde::Serialize, serde::Deserialize, Debug, Hash,
-)]
+#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, Debug, Hash)]
 pub struct Pin(u32);
 
 impl Into<u32> for Pin {
@@ -58,7 +56,7 @@ impl Pin {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct CreatePayloadRequest {
     /// Payload
     pub data: String,
@@ -72,7 +70,7 @@ pub struct CreatePayloadRequest {
 /// authenticate the reply.
 pub type ReplyToken = u64;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct CreatePayloadResponse {
     /// Pin of the payload
     pub pin: Pin,
@@ -86,7 +84,7 @@ pub struct CreatePayloadResponse {
     pub reply_pin: Option<Pin>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ReplyPayloadRequest {
     /// Payload
     pub data: String,
@@ -99,7 +97,7 @@ pub struct ReplyPayloadRequest {
     pub expect_reply: bool,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Payload {
     /// Pin of the payload
     pub pin: Pin,

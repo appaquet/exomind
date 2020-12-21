@@ -970,7 +970,7 @@ dependencies = [
 
 [[package]]
 name = "exo"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap 3.0.0-beta.2",
@@ -993,7 +993,7 @@ dependencies = [
 
 [[package]]
 name = "exocore"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -1003,7 +1003,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-chain"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1022,7 +1022,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-android"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "exocore-core",
@@ -1033,7 +1033,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-c"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytes 0.6.0",
  "exocore-core",
@@ -1050,7 +1050,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-web"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -1071,7 +1071,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -1110,7 +1110,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-discovery"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -1121,6 +1121,7 @@ dependencies = [
  "rand 0.7.3",
  "reqwest",
  "serde",
+ "serde_derive",
  "serde_json",
  "thiserror",
  "tokio 0.3.6",
@@ -1130,7 +1131,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-store"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "bytes 0.6.0",
@@ -1153,7 +1154,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-transport"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -2151,9 +2152,9 @@ dependencies = [
 
 [[package]]
 name = "memmap2"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b70ca2a6103ac8b665dc150b142ef0e4e89df640c9e6cf295d189c3caebe5a"
+checksum = "e73be3b7d04a0123e933fea1d50d126cc7196bbc0362c0ce426694f777194eee"
 dependencies = [
  "libc",
 ]
@@ -2795,9 +2796,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.7"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa563d17ecb180e500da1cfd2b028310ac758de548efdd203e18f283af693f37"
+checksum = "991431c3519a3f36861882da93630ce66b52918dcf1b8e2fd66b397fc96f28df"
 dependencies = [
  "proc-macro2",
 ]
@@ -3387,9 +3388,9 @@ checksum = "1e81da0851ada1f3e9d4312c704aa4f8806f0f9d69faaf8df2f3464b4a9437c2"
 
 [[package]]
 name = "syn"
-version = "1.0.54"
+version = "1.0.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a2af957a63d6bd42255c359c93d9bfdb97076bd3b820897ce55ffbfbf107f44"
+checksum = "a571a711dddd09019ccc628e1b17fe87c59b09d513c06c026877aa708334f37a"
 dependencies = [
  "proc-macro2",
  "quote",
