@@ -8,7 +8,10 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
   exit 1
 fi
 
-CRATES=("core" "transport" "chain" "store"  "." "exo" "discovery")
+VERSION=`cat package.json | grep version | sed -nE 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'`
+echo "Preparing publishing for version $VERSION"
+
+CRATES=("core" "transport" "chain" "store"  "." "discovery" "exo")
 
 echo "Checking crates..."
 for CRATE in "${CRATES[@]}"; do
@@ -18,11 +21,10 @@ for CRATE in "${CRATES[@]}"; do
 done
 
 echo "Checking npm..."
-npm run build
-npm publish --dry-run
+npm publish "https://github.com/appaquet/exocore/releases/download/v${VERSION}/exocore-web.tar.gz" --dry-run
 
 echo "Checking pod..."
-pod spec lint Exocore.podspec
+pod spec lint Exocore.podspec --allow-warnings
 
 ####
 
@@ -35,12 +37,15 @@ fi
 echo "Publishing to crates.io..."
 for CRATE in "${CRATES[@]}"; do
   pushd $CUR_DIR/../$CRATE
-  cargo publish
+  cargo publish --no-verify # no verify since we check build before
+
+  echo "Waiting 30 seconds for crates.io to publish before next crate..."
+  sleep 30
   popd
 done
 
 echo "Publishing to npm..."
-npm publish
+npm publish "https://github.com/appaquet/exocore/releases/download/v${VERSION}/exocore-web.tar.gz"
 
 echo "Publishing to cocoapod..."
-pod trunk push Exocore.podspec
+pod trunk push Exocore.podspec --allow-warnings
