@@ -1,5 +1,5 @@
 
-import { Exocore, exocore, WatchedQuery } from 'exocore';
+import { Exocore, exocore, WatchedQueryWrapper } from 'exocore';
 
 export class ExpandableQuery {
     query: exocore.store.IEntityQuery;
@@ -8,7 +8,7 @@ export class ExpandableQuery {
     hasResults: boolean;
 
     queries: exocore.store.IEntityQuery[] = [];
-    watched_queries: WatchedQuery[] = [];
+    watched_queries: WatchedQueryWrapper[] = [];
     queries_results: exocore.store.IEntityResults[] = [];
 
     constructor(query: exocore.store.IEntityQuery, onChange: () => void) {

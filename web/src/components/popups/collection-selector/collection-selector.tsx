@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQuery } from 'exocore';
+import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import * as _ from 'lodash';
 import React from 'react';
 import { exomind } from '../../../protos';
@@ -25,8 +25,8 @@ interface IState {
 export class CollectionSelector extends React.Component<IProps, IState> {
     private searchDebouncer: Debouncer;
 
-    private entityQuery: WatchedQuery;
-    private entityParentsQuery: WatchedQuery;
+    private entityQuery: WatchedQueryWrapper;
+    private entityParentsQuery: WatchedQueryWrapper;
     private entityParentsQueryIds?: string[];
     private collectionsQuery?: ExpandableQuery;
     private collectionsQueryKeywords?: string;

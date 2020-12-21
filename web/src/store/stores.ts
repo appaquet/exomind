@@ -1,15 +1,14 @@
 
+import { LocalNode } from 'exocore';
 import { observable, action, computed, autorun } from 'mobx';
 import React from 'react';
 
 export interface ISettingsStore {
     exocoreConfig?: Record<string, unknown>;
-    test: boolean;
 }
 
 export class SettingsStore implements ISettingsStore {
     @observable exocoreConfig?: Record<string, unknown>;
-    @observable test: boolean;
 
     constructor(syncLocalStorage?: boolean) {
         if (window.localStorage && (syncLocalStorage ?? true)) {
@@ -20,13 +19,11 @@ export class SettingsStore implements ISettingsStore {
     @computed get asJson(): ISettingsStore {
         return {
             exocoreConfig: this.exocoreConfig,
-            test: this.test,
         }
     }
 
     @action updateFromJson(json: ISettingsStore): void {
         this.exocoreConfig = json.exocoreConfig;
-        this.test = json.test;
     }
 
     private setupLocalStorageSync() {
@@ -46,7 +43,24 @@ export class SettingsStore implements ISettingsStore {
 }
 
 export class SessionStore {
-    @observable exocoreInitialized = false;
+    @observable private _node: LocalNode = null;
+
+    get node(): LocalNode {
+        return this._node;
+    }
+
+    set node(n: LocalNode) {
+        if (this._node) {
+            this._node.free();
+        }
+        this._node = n;
+    }
+
+    @observable showDiscovery = false;
+
+    @observable cellInitialized = false;
+
+    @observable cellError?: string;
 }
 
 export class Stores {

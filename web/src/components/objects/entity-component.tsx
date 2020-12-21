@@ -1,4 +1,4 @@
-import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, WatchedQuery } from 'exocore';
+import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, WatchedQueryWrapper } from 'exocore';
 import React from 'react';
 import { exomind } from '../../protos';
 import { EntityTrait, EntityTraits } from "../../store/entities";
@@ -36,7 +36,7 @@ interface State {
 }
 
 export class EntityComponent extends React.Component<Props, State> {
-    private entityQuery: WatchedQuery;
+    private entityQuery: WatchedQueryWrapper;
 
     constructor(props: Props) {
         super(props);

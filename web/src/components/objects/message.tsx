@@ -1,7 +1,10 @@
+import classNames from 'classnames';
 import * as React from 'react';
+import './message.less';
 
 interface IProps {
     text: string;
+    error?: boolean;
     showAfterMs?: number;
 }
 
@@ -36,9 +39,14 @@ export class Message extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
+        const classes = classNames({
+            message: true,
+            error: this.props.error ?? false,
+        });
+
         return (
             <div className="entity-component">
-                <div className="empty">
+                <div className={classes}>
                     {this.state.show ? this.props.text : ''}
                 </div>
             </div>

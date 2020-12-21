@@ -69,7 +69,7 @@ export class Header extends React.Component<IProps, IState> {
             <span className="text">Exomind</span>
           </div>
 
-          {this.context.session.exocoreInitialized ? this.renderSearchbox() : undefined}
+          {this.context.session.cellInitialized ? this.renderSearchbox() : undefined}
         </div>
       </nav>
     );
