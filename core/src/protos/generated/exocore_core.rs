@@ -73,12 +73,23 @@ pub struct NodeStoreConfig {
 //// Configuration of the entities index
 #[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
 pub struct EntityIndexConfig {
+    //// What is the minimum depth that a block needs to be the chain to be
+    //// indexed. This is required to lower the odds that we are going to
+    //// revert the block if our local chain forked.
+    ////
+    //// `CommitManagerConfig`.`operations_cleanup_after_block_depth`
     #[prost(uint64, tag = "1")]
     pub chain_index_min_depth: u64,
+    //// If specified, prevent indexing every new block on each commit.
+    //// Operations will be kept in pending index for a bit longer and
+    //// preventing the costly chain index modification.
     #[prost(uint64, tag = "2")]
     pub chain_index_depth_leeway: u64,
+    //// Configuration for the in-memory traits index that are in the pending
+    //// store
     #[prost(message, optional, tag = "3")]
     pub pending_index: ::std::option::Option<MutationIndexConfig>,
+    //// Configuration for the persisted traits index that are in the chain
     #[prost(message, optional, tag = "4")]
     pub chain_index: ::std::option::Option<MutationIndexConfig>,
 }

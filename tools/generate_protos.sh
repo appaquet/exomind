@@ -5,7 +5,7 @@ CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export EXOCORE_ROOT="$CUR_DIR/.."
 export GENERATE_PROTOS=1
 cargo clean -p exocore-core
-cargo build -p exocore-core
+cargo build -p exocore-core || true # we only care about build.rs being run
 
 # # Capnp files
 for proto_path in `find $EXOCORE_ROOT/target/debug/build/ -name '*_capnp.rs'`; do
