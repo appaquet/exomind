@@ -1,8 +1,8 @@
 import classNames from 'classnames';
-import { Exocore, exocore, MutationBuilder, QueryBuilder } from 'exocore';
+import { Exocore, exocore, fromProtoTimestamp, MutationBuilder, QueryBuilder } from 'exocore';
 import { exomind } from '../../../protos';
 import React from 'react';
-import { EntityTraits } from '../../../store/entities';
+import { EntityTrait, EntityTraits } from '../../../store/entities';
 import { ExpandableQuery } from '../../../store/queries';
 import { ContainerController } from '../container-controller';
 import EntityAction from '../entity-list/entity-action';
@@ -10,6 +10,7 @@ import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './snoozed.less';
+import DateUtil from '../../../utils/date-util';
 
 interface IProps {
     selection?: Selection;
@@ -30,13 +31,17 @@ export default class Snoozed extends React.Component<IProps> {
             .count(30)
             .project(
                 new exocore.store.Projection({
+                    package: ["exomind.base.Snoozed"],
+                }),
+                new exocore.store.Projection({
                     fieldGroupIds: [1],
                     package: ["exomind.base"],
-                }),
+                }), 
                 new exocore.store.Projection({
                     skip: true,
                 })
             )
+            // TODO: Put back when entity compaction is done .orderByField('until_date', true)
             .build();
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
             this.setState({});
@@ -78,6 +83,8 @@ export default class Snoozed extends React.Component<IProps> {
 
                         draggable={false}
                         droppable={false}
+
+                        renderEntityDate={this.renderEntityDate.bind(this)}
                     />
                 </div>
             );
@@ -85,6 +92,23 @@ export default class Snoozed extends React.Component<IProps> {
         } else {
             return <Message text="Loading..." showAfterMs={200} />;
         }
+    }
+
+    private renderEntityDate(entity: EntityTrait<unknown>): React.ReactFragment {
+        const snoozedTrait = entity.et.traitOfType<exomind.base.ISnoozed>(exomind.base.Snoozed);
+        if (!snoozedTrait) {
+            return 'Invalid';
+        }
+
+        let strDate;
+        if (snoozedTrait.message.untilDate) {
+            const date = fromProtoTimestamp(snoozedTrait.message.untilDate);
+            strDate = DateUtil.toShortFormat(date);
+        } else {
+            strDate = 'unknown';
+        }
+
+        return 'Snoozed until ' + strDate;
     }
 
     private handleLoadMore() {

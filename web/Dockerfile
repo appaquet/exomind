@@ -1,10 +1,6 @@
-FROM node:alpine
+FROM nginx:latest
 
-ADD . /app/
-WORKDIR /app/
-RUN npm install && \
-    npm run build
+RUN echo "Building for platform $TARGETPLATFORM arch $TARGETARCH"
 
-EXPOSE 8000
-CMD ["npm", "start"]
-
+ADD nginx.conf /etc/nginx/nginx.conf
+ADD dist/ /etc/nginx/html/
