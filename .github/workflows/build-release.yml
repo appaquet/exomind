@@ -16,19 +16,19 @@ jobs:
         pair:
           - target: armv7-unknown-linux-gnueabihf
             os: ubuntu-latest
-            bin: exomind_server
+            bin: exomind-server
             cross: true
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            bin: exomind_server
+            bin: exomind-server
             cross: true
           - target: x86_64-apple-darwin
             os: macOS-latest
-            bin: exomind_server
+            bin: exomind-server
             cross: false
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            bin: exomind_server.exe
+            bin: exomind-server.exe
             cross: false
 
     runs-on: ${{ matrix.pair.os }}
