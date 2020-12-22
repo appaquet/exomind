@@ -7,8 +7,8 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::task::block_in_place;
-use yup_oauth2::{AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 use tokio_compat_02::FutureExt;
+use yup_oauth2::{AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 
 const CLIENT_REFRESH_INTERVAL: Duration = Duration::from_secs(5 * 60);
 
@@ -40,7 +40,9 @@ impl GmailClient {
         info!("Creating gmail client for account {}", account.email());
 
         let token_file = account_token_file(config, account.email())?;
-        let secret = yup_oauth2::read_application_secret(&config.client_secret).compat().await?;
+        let secret = yup_oauth2::read_application_secret(&config.client_secret)
+            .compat()
+            .await?;
         let auth =
             InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::Interactive)
                 .persist_tokens_to_disk(token_file)
