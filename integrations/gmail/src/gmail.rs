@@ -1,7 +1,11 @@
-use crate::cli;
+use crate::config::Config;
 use exomind_core::protos::base::{Account, AccountScope, AccountType};
 use google_gmail1::schemas::ModifyThreadRequest;
-use std::{collections::HashSet, path::PathBuf, time::Duration, time::Instant};
+use std::{
+    collections::HashSet,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 use tokio::task::block_in_place;
 use yup_oauth2::{AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 
@@ -11,13 +15,13 @@ pub type HistoryId = u64;
 
 pub struct GmailClient {
     account: GmailAccount,
-    config: cli::Config,
+    config: Config,
     client: google_gmail1::Client,
     last_refresh: Instant,
 }
 
 impl GmailClient {
-    pub async fn new(config: &cli::Config, account: GmailAccount) -> anyhow::Result<GmailClient> {
+    pub async fn new(config: &Config, account: GmailAccount) -> anyhow::Result<GmailClient> {
         let client = Self::create_client(config, &account).await?;
 
         Ok(GmailClient {
@@ -29,7 +33,7 @@ impl GmailClient {
     }
 
     async fn create_client(
-        config: &cli::Config,
+        config: &Config,
         account: &GmailAccount,
     ) -> anyhow::Result<google_gmail1::Client> {
         info!("Creating gmail client for account {}", account.email());
@@ -295,7 +299,7 @@ pub enum GmailHistoryAction {
     RemoveFromInbox(HistoryId, String),
 }
 
-pub fn account_token_file(config: &cli::Config, email: &str) -> anyhow::Result<PathBuf> {
+pub fn account_token_file(config: &Config, email: &str) -> anyhow::Result<PathBuf> {
     let token_dir = PathBuf::from(&config.tokens_directory);
     if !token_dir.exists() {
         std::fs::create_dir(&token_dir)?;

@@ -7,7 +7,6 @@ and be organized in collections.
 
 It is built on top of [Exocore](https://github.com/appaquet/exocore), a distributed application framework, and is meant to be hosted in a 
 decentralized fashion on user's selected servers (ex: Raspberry Pi, VPS, etc.).
-
 ## Roadmap
 Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#roadmap) since Exocore is being developed for Exomind. 
 
@@ -31,6 +30,8 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 * Install dependencies from [Exocore](https://github.com/appaquet/exocore) and follow web and iOS.
 
 ## Usage
+
+* See [Server README](./server/README.md)
 
 * See [Web README](./web/README.md)
 

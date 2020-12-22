@@ -6,12 +6,14 @@ edition = "2018"
 license = "Apache-2.0"
 
 [dependencies]
-tokio = { version = "0.3", features = ["macros", "rt-multi-thread", "time"] }
-exocore = { git = "https://github.com/appaquet/exocore.git", default-features = false, features = ["client", "logger"] }
+exocore = { version = "0.1.1", default-features = false, features = ["client", "logger"] }
+exomind-core = { version = "0.1.0", path = "../core" }
+exomind-gmail = { version = "0.1.0", path = "../integrations/gmail" }
 log = "0.4"
-exomind-core = { path = "../core" }
+tokio = { version = "0.3", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1.0"
 structopt = "0.3"
 serde = "1.0"
 serde_yaml = "0.8"
 serde_derive = "1.0"
+futures = "0.3"

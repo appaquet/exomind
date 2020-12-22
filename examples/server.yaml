@@ -1,0 +1,14 @@
+
+# Path to Exocore node configuration
+node_config: node.yaml
+
+# Gmail synchronization config. Comment to disable.
+gmail:
+  # Path to Google API client secret file (downloaded from Google API Console. See gmail's integration README.md)
+  client_secret: client_secret.json
+
+  # Path to directory where oauth tokens will be saved
+  tokens_directory: gmail_tokens
+
+  # Save synchronized fixtures to disk to be used for tests
+  save_fixtures: false

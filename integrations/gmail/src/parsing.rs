@@ -129,7 +129,7 @@ fn parse_part(part: &google_gmail1::schemas::MessagePart, email: &mut Email) -> 
         }
         "multipart/mixed" | "multipart/alternative" | "multipart/related" | "multipart/signed" => {
             let empty_parts = Vec::new();
-            let sub_parts = part.parts.as_ref().unwrap_or_else(|| &empty_parts);
+            let sub_parts = part.parts.as_ref().unwrap_or(&empty_parts);
             for sub_part in sub_parts {
                 parse_part(sub_part, email)?;
             }
@@ -178,7 +178,7 @@ fn parse_part_headers(
     email: &mut Email,
 ) -> anyhow::Result<()> {
     let empty_headers = Vec::new();
-    let headers = part.headers.as_ref().unwrap_or_else(|| &empty_headers);
+    let headers = part.headers.as_ref().unwrap_or(&empty_headers);
 
     for header in headers {
         let name = if let Some(name) = &header.name {

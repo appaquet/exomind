@@ -21,11 +21,14 @@ pub struct Options {
 #[derive(StructOpt)]
 pub enum SubCommand {
     start,
+    gmail(exomind_gmail::cli::Options),
 }
 
 #[derive(Clone, Deserialize)]
 pub struct Config {
     pub node_config: PathBuf,
+
+    pub gmail: Option<exomind_gmail::config::Config>,
 }
 
 impl Config {
@@ -38,6 +41,10 @@ impl Config {
             .ok_or_else(|| anyhow!("Couldn't get config parent directory"))?;
 
         config.node_config = child_to_abs_path(config_dir, &config.node_config);
+
+        if let Some(gmail_config) = config.gmail.as_mut() {
+            gmail_config.make_abs_path(config_dir);
+        }
 
         Ok(config)
     }
