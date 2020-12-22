@@ -1,16 +1,16 @@
 use std::{str::FromStr, time::Duration};
 
 use exocore::{
-    core::protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
-    core::time::Utc,
-    protos::store::Entity,
-    protos::store::Reference,
-    protos::store::Trait,
-    store::entity::EntityExt,
-    store::mutation::MutationBuilder,
+    core::{
+        protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
+        time::Utc,
+    },
+    protos::store::{Entity, Reference, Trait},
+    store::{entity::EntityExt, mutation::MutationBuilder},
 };
 use exomind::ExomindClient;
 use exomind_core::protos::base::{CollectionChild, Snoozed};
+use futures::FutureExt;
 use log::LevelFilter;
 use structopt::StructOpt;
 use tokio::time::sleep;
@@ -37,21 +37,60 @@ async fn main() {
         cli::SubCommand::start => {
             start(config).await.unwrap();
         }
+        cli::SubCommand::gmail(gmail_opt) => {
+            let gmail_config = config
+                .gmail
+                .clone()
+                .expect("Config didn't contain a gmail section");
+
+            let exm = ExomindClient::new(&config)
+                .await
+                .expect("Couldn't create exomind client");
+            exomind_gmail::cli::exec(exm.store.clone(), gmail_config, gmail_opt)
+                .await
+                .unwrap();
+        }
     }
 }
 
 async fn start(config: cli::Config) -> anyhow::Result<()> {
-    let exm = ExomindClient::new(&config).await?;
+    let exm = ExomindClient::new(&config)
+        .await
+        .expect("Couldn't create exomind client");
 
-    exm.create_base_entities().await?;
-
-    loop {
-        if let Err(err) = check_snoozed(&exm).await {
-            error!("Error checking for snoozed entity: {}", err);
+    let gmail_store_handle = exm.store.clone();
+    let gmail_server = async move {
+        if let Some(gmail_config) = config.gmail {
+            exomind_gmail::server::run(gmail_config, gmail_store_handle).await?;
+        } else {
+            futures::future::pending::<()>().await;
         }
 
-        sleep(Duration::from_secs(60)).await;
+        Ok::<(), anyhow::Error>(())
+    };
+
+    let snooze_loop = async move {
+        exm.create_base_entities().await?;
+
+        loop {
+            if let Err(err) = check_snoozed(&exm).await {
+                error!("Error checking for snoozed entity: {}", err);
+            }
+
+            sleep(Duration::from_secs(60)).await;
+        }
+
+        // types the async block
+        #[allow(unreachable_code)]
+        Ok::<(), anyhow::Error>(())
+    };
+
+    futures::select! {
+        _ = snooze_loop.fuse() => {},
+        _ = gmail_server.fuse() => {},
     }
+
+    Ok(())
 }
 
 async fn check_snoozed(exm: &ExomindClient) -> anyhow::Result<()> {

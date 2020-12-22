@@ -761,7 +761,8 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.1"
-source = "git+https://github.com/appaquet/exocore.git#b74791e3689e95d33ab0673fbf913e361ad5e31c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39eff84f2505f09aecca0c096bcfee4fe6a6812adf7917a7d23dfc138346624c"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -772,7 +773,8 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.1"
-source = "git+https://github.com/appaquet/exocore.git#b74791e3689e95d33ab0673fbf913e361ad5e31c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04677aac900e23994315bba2562e3d15c646ba8d7fed3a4a8dbeb75e019db371"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -788,7 +790,8 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.1"
-source = "git+https://github.com/appaquet/exocore.git#b74791e3689e95d33ab0673fbf913e361ad5e31c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa8fbe7bddbfd4eb564eff8322794330529bc951f28d3222c8ca7aae5e7a6187"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -826,7 +829,8 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.1"
-source = "git+https://github.com/appaquet/exocore.git#b74791e3689e95d33ab0673fbf913e361ad5e31c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b3ddd91ba1a670f90153ed4ebcd94939de3b9f10729f6c7f37ece390e9a1810"
 dependencies = [
  "anyhow",
  "bytes 0.6.0",
@@ -845,7 +849,8 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.1"
-source = "git+https://github.com/appaquet/exocore.git#b74791e3689e95d33ab0673fbf913e361ad5e31c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29f970f9e29e35a60c9b8e99e7c8da53df2a39259e1bf07c0a990864fd420d0a"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -904,6 +909,8 @@ dependencies = [
  "anyhow",
  "exocore",
  "exomind-core",
+ "exomind-gmail",
+ "futures 0.3.8",
  "log",
  "serde",
  "serde_derive",
@@ -1289,9 +1296,9 @@ checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
 
 [[package]]
 name = "heck"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"
+checksum = "87cbf45460356b7deeb5e3415b5563308c0a9b057c85e12b06ad551f98d0a6ac"
 dependencies = [
  "unicode-segmentation",
 ]
@@ -2529,9 +2536,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.7"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa563d17ecb180e500da1cfd2b028310ac758de548efdd203e18f283af693f37"
+checksum = "991431c3519a3f36861882da93630ce66b52918dcf1b8e2fd66b397fc96f28df"
 dependencies = [
  "proc-macro2",
 ]
@@ -3126,9 +3133,9 @@ dependencies = [
 
 [[package]]
 name = "socket2"
-version = "0.3.18"
+version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97e0e9fd577458a4f61fb91fcb559ea2afecc54c934119421f9f5d3d5b1a1057"
+checksum = "122e570113d28d773067fab24266b66753f6ea915758651696b6e35e49f88d6e"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
@@ -3226,9 +3233,9 @@ checksum = "1e81da0851ada1f3e9d4312c704aa4f8806f0f9d69faaf8df2f3464b4a9437c2"
 
 [[package]]
 name = "syn"
-version = "1.0.54"
+version = "1.0.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a2af957a63d6bd42255c359c93d9bfdb97076bd3b820897ce55ffbfbf107f44"
+checksum = "a571a711dddd09019ccc628e1b17fe87c59b09d513c06c026877aa708334f37a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3402,7 +3409,7 @@ dependencies = [
  "num_cpus",
  "pin-project-lite 0.2.0",
  "slab",
- "tokio-macros 0.3.1",
+ "tokio-macros 0.3.2",
 ]
 
 [[package]]
@@ -3460,9 +3467,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-macros"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21d30fdbb5dc2d8f91049691aa1a9d4d4ae422a21c334ce8936e5886d30c5c45"
+checksum = "46dfffa59fc3c8aad216ed61bdc2c263d2b9d87a9c8ac9de0c11a813e51b6db7"
 dependencies = [
  "proc-macro2",
  "quote",
