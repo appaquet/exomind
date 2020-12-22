@@ -88,7 +88,9 @@ jobs:
           cd $GITHUB_WORKSPACE/web
           yarn install
           yarn build
-          tar -zcf ../exomind-web.tar.gz .
+
+          cd $GITHUB_WORKSPACE/web/dist
+          tar -czf ../exomind-web.tar.gz *
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2.2.1
