@@ -45,9 +45,6 @@
     .item-container {
       min-height: @item-min-height;
 
-      /**
-       * Picture
-       */
       .picture {
         .bubble {
           border: 1px solid transparent;
@@ -147,8 +144,12 @@
     // Background for hover and selected states
     &.hover {
       background: @entity-component-bg-hover;
-      .item-actions, .date {
+      .item-actions {
         background: @entity-component-bg-hover;
+      }
+      .date {
+        // hide date since it may overflow from actions
+        display: none;
       }
     }
 

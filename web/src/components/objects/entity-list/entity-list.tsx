@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import { exocore } from 'exocore';
 import React from 'react';
-import { EntityTraits } from "../../../store/entities";
+import { EntityTrait, EntityTraits } from "../../../store/entities";
 import DragAndDrop from "../../interaction/drag-and-drop/drag-and-drop";
 import Scrollable from "../../interaction/scrollable/scrollable";
 import { ContainerController } from "../container-controller";
@@ -27,6 +27,8 @@ interface IProps {
     onDropIn?: (e: IDroppedItem) => void;
 
     containerController?: ContainerController,
+
+    renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
 }
 
 export interface IDroppedItem {
@@ -89,6 +91,8 @@ export class EntityList extends React.Component<IProps> {
                     draggable={this.props.draggable}
                     droppable={this.props.droppable}
                     onDropIn={this.handleDropIn.bind(this, entity, previousEntity)}
+
+                    renderEntityDate={this.props.renderEntityDate}
                 />;
 
                 previousEntity = entity;

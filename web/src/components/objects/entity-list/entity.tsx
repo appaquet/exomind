@@ -23,6 +23,8 @@ interface IProps {
     droppable?: boolean;
     onDropOut?: (object: exocore.store.IEntity, effect: string, parentObject: exocore.store.IEntity) => void;
     onDropIn?: (object: exocore.store.IEntity, effect: string, parentObject: exocore.store.IEntity) => void;
+
+    renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
 }
 
 interface IState {
@@ -325,8 +327,12 @@ export class Entity extends React.Component<IProps, IState> {
         </div>;
     }
 
-    private entityDate(entityTrait: EntityTrait<unknown>): string {
-        return DateUtil.toShortFormat(entityTrait.modificationDate ?? entityTrait.creationDate);
+    private entityDate(entityTrait: EntityTrait<unknown>): React.ReactFragment {
+        if (this.props.renderEntityDate) {
+            return this.props.renderEntityDate(entityTrait);
+        } else {
+            return DateUtil.toShortFormat(entityTrait.modificationDate ?? entityTrait.creationDate);
+        }
     }
 
     private removeItem(): void {
