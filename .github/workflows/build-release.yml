@@ -86,6 +86,7 @@ jobs:
       - name: Build client
         run: |
           cd $GITHUB_WORKSPACE/web
+          yarn install
           yarn build
           tar -zcf ../exomind-web.tar.gz .
 
