@@ -46,20 +46,20 @@ jobs:
         with:
           use-cross: ${{ matrix.pair.cross }}
           command: build
-          args: -p exo --release --target ${{ matrix.pair.target }}
+          args: -p exomind-server --release --target ${{ matrix.pair.target }}
 
       - name: Create binary
         run: |
           mkdir archive
           cp target/${{ matrix.pair.target }}/release/${{ matrix.pair.bin }} archive
           cd archive/
-          tar -czf ../exo.${{ matrix.pair.target }}.tar.gz *
+          tar -czf ../exomind-server.${{ matrix.pair.target }}.tar.gz *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2.2.1
         with:
           name: ${{ matrix.pair.target }}-artifact
-          path: exo.${{ matrix.pair.target }}.tar.gz
+          path: exomind-server.${{ matrix.pair.target }}.tar.gz
 
   web_client:
     runs-on: ubuntu-20.04
