@@ -9,7 +9,7 @@ on:
       ref:
         description: 'Tag'
         default: 'v0.X.X'
-      publish:
+      latest:
         description: 'Latest'  
         default: true
 
@@ -94,7 +94,7 @@ jobs:
         mkdir $GITHUB_WORKSPACE/tmp && cd $GITHUB_WORKSPACE/tmp
         cp $GITHUB_WORKSPACE/web/nginx.conf .
         mkdir dist
-        tar -zxf $GITHUB_WORKSPACE/assets/exomind-web.tar.gz dist/
+        tar -zxf $GITHUB_WORKSPACE/assets/exomind-web.tar.gz -C dist/
 
         export DOCKER_CLI_EXPERIMENTAL=enabled
         docker buildx build \

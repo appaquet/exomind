@@ -60,6 +60,7 @@ jobs:
         with:
           name: ${{ matrix.pair.target }}-artifact
           path: exomind-server.${{ matrix.pair.target }}.tar.gz
+          if-no-files-found: error
 
   web_client:
     runs-on: ubuntu-20.04
@@ -90,13 +91,14 @@ jobs:
           yarn build
 
           cd $GITHUB_WORKSPACE/web/dist
-          tar -czf ../exomind-web.tar.gz *
+          tar -czf $GITHUB_WORKSPACE/exomind-web.tar.gz *
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2.2.1
         with:
           name: client-web-artifact
           path: exomind-web.tar.gz
+          if-no-files-found: error
 
   release:
     runs-on: ubuntu-latest
