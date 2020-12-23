@@ -367,8 +367,8 @@ mod tests {
         let pk = PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
             .unwrap();
         let node = Node::new_from_public_key(pk);
-        assert_eq!("early-settled-ram", node.identity.name);
-        assert_eq!("Node{early-settled-ram}", node.to_string());
+        assert_eq!("wholly-proud-gannet", node.identity.name);
+        assert_eq!("Node{wholly-proud-gannet}", node.to_string());
     }
 
     #[test]

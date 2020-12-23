@@ -383,13 +383,13 @@ struct StoredIndexKey {
     operation_id: OperationId,
 }
 
-impl Encodable<StoredIndexKey> for StoredIndexKey {
-    fn encode_size(_item: &StoredIndexKey) -> Option<usize> {
+impl Encodable for StoredIndexKey {
+    fn encoded_size(&self) -> Option<usize> {
         Some(8) // u64
     }
 
-    fn encode<W: Write>(item: &StoredIndexKey, write: &mut W) -> Result<(), std::io::Error> {
-        write.write_u64::<LittleEndian>(item.operation_id)
+    fn encode<W: Write>(&self, write: &mut W) -> Result<(), std::io::Error> {
+        write.write_u64::<LittleEndian>(self.operation_id)
     }
 
     fn decode<R: Read>(data: &mut R, _size: usize) -> Result<StoredIndexKey, std::io::Error> {
@@ -404,13 +404,13 @@ struct StoredIndexValue {
     offset: BlockOffset,
 }
 
-impl Encodable<StoredIndexValue> for StoredIndexValue {
-    fn encode_size(_item: &StoredIndexValue) -> Option<usize> {
+impl Encodable for StoredIndexValue {
+    fn encoded_size(&self) -> Option<usize> {
         Some(8) // u64
     }
 
-    fn encode<W: Write>(item: &StoredIndexValue, write: &mut W) -> Result<(), std::io::Error> {
-        write.write_u64::<LittleEndian>(item.offset)
+    fn encode<W: Write>(&self, write: &mut W) -> Result<(), std::io::Error> {
+        write.write_u64::<LittleEndian>(self.offset)
     }
 
     fn decode<R: Read>(data: &mut R, _size: usize) -> Result<StoredIndexValue, std::io::Error> {
