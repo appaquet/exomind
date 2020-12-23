@@ -8,7 +8,7 @@ license = "Apache-2.0"
 [dependencies]
 google-gmail1 = { git = "https://github.com/appaquet/generated.git", branch = "gmail-labels-fix" }
 google_api_auth = { git = "https://github.com/google-apis-rs/generator", features = ["with-yup-oauth2"] }
-reqwest = { version = "0.9", default-features = false, features = ["rustls-tls"] } # to prevent linking w/ openssl
+reqwest = { version = "0.10", default-features = false, features = ["rustls-tls"] } # to prevent linking w/ openssl
 yup-oauth2 = "4.1.2"
 exocore = { version = "0.1.1", default-features = false, features = ["client", "logger"] }
 log = "0.4"
