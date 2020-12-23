@@ -1,7 +1,7 @@
 [package]
 name = "exo"
 description = "CLI for Exocore (Distributed applications framework)"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 keywords = ["networking", "mobile", "webassembly", "storage", "database"]
@@ -10,11 +10,11 @@ repository = "https://github.com/appaquet/exocore"
 license = "Apache-2.0"
 
 [dependencies]
-exocore-core = { version = "0.1.1", path = "../core", features = ["runtime", "logger"] }
-exocore-chain = { version = "0.1.1", path = "../chain" }
-exocore-store = { version = "0.1.1", path = "../store" }
-exocore-transport = { version = "0.1.1", path = "../transport", features = ["http-server"] }
-exocore-discovery = { version = "0.1.1", path = "../discovery", features = ["server"] }
+exocore-core = { version = "0.1.2", path = "../core", features = ["runtime", "logger"] }
+exocore-chain = { version = "0.1.2", path = "../chain" }
+exocore-store = { version = "0.1.2", path = "../store" }
+exocore-transport = { version = "0.1.2", path = "../transport", features = ["http-server"] }
+exocore-discovery = { version = "0.1.2", path = "../discovery", features = ["server"] }
 log = "0.4"
 clap = "3.0.0-beta.2"
 log4rs = "1.0"

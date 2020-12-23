@@ -1,10 +1,10 @@
 Pod::Spec.new do |spec|
     spec.name         = 'Exocore'
-    spec.version      = '0.1.1'
+    spec.version      = '0.1.2'
     spec.license      = { :type => 'Apache-2.0' }
     spec.summary      = 'Distributed applications framework'
     spec.authors      = { 'Andre-Philippe Paquet' => 'appaquet@gmail.com' }
-    spec.source       = { :http => 'https://github.com/appaquet/exocore/releases/download/v' + spec.version.to_s + '/exocore-ios.tar.gz', :type => 'tgz' }
+    spec.source       = { :http => 'https://github.com/appaquet/exocore/releases/download/v' + spec.version.to_s + '/exocore-ios.tar.gz', :type = '0.1.2'
     spec.homepage     = 'https://github.com/appaquet/exocore'
 
     spec.swift_version = '4.2'

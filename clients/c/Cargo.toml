@@ -1,6 +1,6 @@
 [package]
 name = "exocore-client-c"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 
@@ -9,10 +9,10 @@ name = "exocore"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-exocore-core = { version = "0.1.1", path = "../../core", features = ["runtime", "logger"] }
-exocore-transport = { version = "0.1.1", path = "../../transport", features = ["p2p-full"] }
-exocore-store = { version = "0.1.1", path = "../../store", default-features = false }
-exocore-discovery = { version = "0.1.1", path = "../../discovery", default-features = false }
+exocore-core = { version = "0.1.2", path = "../../core", features = ["runtime", "logger"] }
+exocore-transport = { version = "0.1.2", path = "../../transport", features = ["p2p-full"] }
+exocore-store = { version = "0.1.2", path = "../../store", default-features = false }
+exocore-discovery = { version = "0.1.2", path = "../../discovery", default-features = false }
 libc = "0.2"
 log4rs = "1.0"
 log = "0.4"
