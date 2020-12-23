@@ -1,20 +1,22 @@
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
-use exocore_core::cell::{CellNodeRole, LocalNode};
-use exocore_core::futures::spawn_future;
-use exocore_core::protos::generated::exocore_store::{EntityQuery, EntityResults, MutationResult};
-use exocore_core::tests_utils::{async_expect_eventually, expect_eventually};
-use exocore_transport::testing::MockTransportServiceHandle;
-use exocore_transport::ServiceType;
+use exocore_core::{
+    cell::{CellNodeRole, LocalNode},
+    futures::spawn_future,
+    protos::generated::exocore_store::{EntityQuery, EntityResults, MutationResult},
+    tests_utils::{async_expect_eventually, expect_eventually},
+};
+use exocore_transport::{testing::MockTransportServiceHandle, ServiceType};
 use futures::executor::block_on_stream;
 
-use crate::error::Error;
-use crate::local::TestStore;
-use crate::mutation::{MutationBuilder, MutationRequestLike};
-use crate::query::QueryBuilder;
-use crate::remote::server::{Server, ServerConfiguration};
+use crate::{
+    error::Error,
+    local::TestStore,
+    mutation::{MutationBuilder, MutationRequestLike},
+    query::QueryBuilder,
+    remote::server::{Server, ServerConfiguration},
+};
 
 use super::*;
 
@@ -41,6 +43,30 @@ async fn mutation_and_query() -> anyhow::Result<()> {
         })
         .await;
     }
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn mutation_return_entities() -> anyhow::Result<()> {
+    let test_remote_store = Arc::new(Mutex::new(TestRemoteStore::new().await?));
+    let mut test_remote_store = test_remote_store.lock().await;
+    test_remote_store.start_server().await?;
+    test_remote_store.start_client().await?;
+
+    let mutation = test_remote_store
+        .local_store
+        .create_put_contact_mutation("entity1", "trait1", "hello")
+        .return_entities();
+    let mutation_resp = test_remote_store.send_and_await_mutation(mutation).await?;
+
+    assert_eq!(mutation_resp.entities.len(), 1);
+    let entity = &mutation_resp.entities[0];
+    assert_eq!("entity1", &entity.id);
+
+    assert_eq!(entity.traits.len(), 1);
+    let trt = &entity.traits[0];
+    assert_eq!("trait1", &trt.id);
 
     Ok(())
 }
@@ -126,7 +152,8 @@ async fn watched_query() -> anyhow::Result<()> {
 
     let mutation = test_remote_store
         .local_store
-        .create_put_contact_mutation("entity1", "trait1", "hello");
+        .create_put_contact_mutation("entity1", "trait1", "hello")
+        .return_entities();
     test_remote_store.send_and_await_mutation(mutation).await?;
 
     let query = QueryBuilder::matches("hello").build();
@@ -186,7 +213,8 @@ async fn watched_query_timeout() -> anyhow::Result<()> {
 
     let mutation = test_remote_store
         .local_store
-        .create_put_contact_mutation("entity1", "trait1", "hello");
+        .create_put_contact_mutation("entity1", "trait1", "hello")
+        .return_entities();
     test_remote_store.send_and_await_mutation(mutation).await?;
 
     let query = QueryBuilder::matches("hello").build();
