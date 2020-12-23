@@ -1,27 +1,28 @@
 PODS:
-  - Exocore (0.1.0):
+  - Exocore (0.1.2):
     - SwiftProtobuf (~> 1.10)
   - KeychainSwift (19.0.0)
-  - SwiftProtobuf (1.10.0)
+  - SwiftProtobuf (1.14.0)
 
 DEPENDENCIES:
-  - Exocore (from `../../`)
+  - Exocore (from `../../Exocore.podspec`)
   - KeychainSwift
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - KeychainSwift
+  trunk:
     - SwiftProtobuf
 
 EXTERNAL SOURCES:
   Exocore:
-    :path: "../../"
+    :path: "../../Exocore.podspec"
 
 SPEC CHECKSUMS:
-  Exocore: b2a4f725279a78aaa6da97c45628fe70946295dd
+  Exocore: 558b0357efe01efb2de8fb88dc6888b42e579df6
   KeychainSwift: a06190cf933ad46b1e0abc3d77d29c06331715c7
-  SwiftProtobuf: bfafffa9e26d1561c3bd0045e188c4fab5f527ae
+  SwiftProtobuf: ed465ed18402f998fd117f631da27e0168e6b59c
 
-PODFILE CHECKSUM: 0512a294c76c4958d04d7c9794715f8aae378440
+PODFILE CHECKSUM: 3d4a76dfa495030d7af633e173ab8eb82874d49d
 
 COCOAPODS: 1.9.3
