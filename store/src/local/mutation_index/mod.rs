@@ -42,7 +42,7 @@ mod schema;
 #[cfg(test)]
 mod tests;
 
-const ENTITY_MAX_TRAITS: u32 = 1_000_000;
+const ENTITY_MAX_TRAITS: u32 = 100_000;
 
 /// Index (full-text & fields) for entities & traits mutations stored in the
 /// chain. Each mutation is individually indexed as a single document.

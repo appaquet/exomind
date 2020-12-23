@@ -30,27 +30,6 @@ jobs:
           args: --all-features
 
 
-  rust_tests_coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.3.4
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2020-10-17
-          profile: minimal
-
-      - name: Install grcov
-        run: |
-          curl -L https://github.com/mozilla/grcov/releases/download/v0.5.9/grcov-linux-x86_64.tar.bz2 | tar jxf -
-          echo `pwd` >> $GITHUB_PATH
-
-      - name: Test coverage
-        run: |
-          CODECOV_TOKEN="${{ secrets.CODECOV_TOKEN }}"
-          ./tools/coverage.sh codecov_io
-
-
   rust_tests:
     strategy:
       fail-fast: true
@@ -78,6 +57,27 @@ jobs:
         with:
           command: test
           args: --all --all-features
+
+
+  rust_tests_coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2020-10-17
+          profile: minimal
+
+      - name: Install grcov
+        run: |
+          curl -L https://github.com/mozilla/grcov/releases/download/v0.5.9/grcov-linux-x86_64.tar.bz2 | tar jxf -
+          echo `pwd` >> $GITHUB_PATH
+
+      - name: Test coverage
+        run: |
+          CODECOV_TOKEN="${{ secrets.CODECOV_TOKEN }}"
+          ./tools/coverage.sh codecov_io
 
 
   web_client_build:

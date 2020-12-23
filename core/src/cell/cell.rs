@@ -244,6 +244,8 @@ impl std::fmt::Display for Cell {
 }
 
 /// Unique identifier of a cell, which is built by hashing the public key
+///
+/// For now, this ID is generated the same way as node IDs.
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct CellId(String);
 

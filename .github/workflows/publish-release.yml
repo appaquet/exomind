@@ -9,6 +9,9 @@ on:
       ref:
         description: 'Tag'
         default: 'v0.X.X'
+      latest:
+        description: 'Latest'  
+        default: true
 
 jobs:
   docker_build:
@@ -25,7 +28,7 @@ jobs:
         set -x
         TAG="${{ github.event.inputs.ref }}"
 
-        mkdir assets && cd assets
+        mkdir $GITHUB_WORKSPACE/assets && cd $GITHUB_WORKSPACE/assets
         hub release download $TAG
 
         tar -zxf exo.x86_64-unknown-linux-gnu.tar.gz
@@ -34,29 +37,39 @@ jobs:
         tar -zxf exo.armv7-unknown-linux-gnueabihf.tar.gz
         mv exo exo-arm
 
+    - name: Setup Docker
+      run: |
+        set -x
+
+        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+        # Allows build in arm for qemu
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+        # Create builder
+        export DOCKER_CLI_EXPERIMENTAL=enabled
+        docker buildx create --use --name exocore-builder 
+
     - name: Build & publish Docker
       run: |
         set -x
         TAG="${{ github.event.inputs.ref }}"
 
-        # Allows build in arm for qemu
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        docker buildx create --use --name exocore-builder 
+        cd $GITHUB_WORKSPACE/assets/
 
         BUILD_PARAMS=""
         if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
           BUILD_PARAMS="--push"
         fi
 
-        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
+          BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exocore:latest"
+        fi
 
-        cd assets/
+        export DOCKER_CLI_EXPERIMENTAL=enabled
         docker buildx build \
           --tag appaquet/exocore:$TAG \
-          --tag appaquet/exocore:latest \
           --platform linux/amd64,linux/arm \
-          --file ../.github/Dockerfile.buildx \
+          --file $GITHUB_WORKSPACE/exo/Dockerfile.buildx \
           $BUILD_PARAMS \
           .

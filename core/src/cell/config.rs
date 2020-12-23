@@ -186,7 +186,7 @@ impl LocalNodeConfigExt for LocalNodeConfig {
                     }
                 }
                 (Some(Location::Inline(other_cell)), Some(Location::Inline(cell))) => {
-                    if other_cell.id == cell.id {
+                    if other_cell.public_key == cell.public_key {
                         current_position = Some(idx);
                         break;
                     }
@@ -393,13 +393,13 @@ impl CellConfigExt for CellConfig {
     }
 
     fn add_node(&mut self, node: CellNodeConfig) {
-        let new_node_id = node.node.as_ref().map(|n| n.id.as_str());
+        let new_node_pk = node.node.as_ref().map(|n| n.public_key.as_str());
 
         // check if node exists first
         for cell_node in &mut self.nodes {
             let is_node = {
-                let node_id = cell_node.node.as_ref().map(|n| n.id.as_str());
-                new_node_id == node_id
+                let node_pk = cell_node.node.as_ref().map(|n| n.public_key.as_str());
+                new_node_pk == node_pk
             };
 
             if is_node {
@@ -819,7 +819,7 @@ mod tests {
 
             config.add_cell(NodeCellConfig {
                 location: Some(node_cell_config::Location::Inline(CellConfig {
-                    id: "id1".to_string(),
+                    public_key: "pk1".to_string(),
                     ..Default::default()
                 })),
             });
@@ -827,7 +827,7 @@ mod tests {
 
             config.add_cell(NodeCellConfig {
                 location: Some(node_cell_config::Location::Inline(CellConfig {
-                    id: "id1".to_string(),
+                    public_key: "pk1".to_string(),
                     ..Default::default()
                 })),
             });
@@ -835,7 +835,7 @@ mod tests {
 
             config.add_cell(NodeCellConfig {
                 location: Some(node_cell_config::Location::Inline(CellConfig {
-                    id: "id2".to_string(),
+                    public_key: "pk2".to_string(),
                     ..Default::default()
                 })),
             });
@@ -999,7 +999,7 @@ store:
 
         let node1 = CellNodeConfig {
             node: Some(NodeConfig {
-                id: "id1".to_string(),
+                public_key: "pk1".to_string(),
                 ..Default::default()
             }),
             ..Default::default()
@@ -1010,7 +1010,7 @@ store:
 
         let node1_changed = CellNodeConfig {
             node: Some(NodeConfig {
-                id: "id1".to_string(),
+                public_key: "pk1".to_string(),
                 name: "new name".to_string(),
                 ..Default::default()
             }),
@@ -1022,7 +1022,7 @@ store:
 
         let node2 = CellNodeConfig {
             node: Some(NodeConfig {
-                id: "id2".to_string(),
+                public_key: "pk2".to_string(),
                 ..Default::default()
             }),
             ..Default::default()

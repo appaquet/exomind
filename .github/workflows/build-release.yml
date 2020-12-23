@@ -58,6 +58,7 @@ jobs:
         with:
           name: ${{ matrix.pair.target }}-artifact
           path: exo.${{ matrix.pair.target }}.tar.gz
+          if-no-files-found: error
 
   web_client:
     runs-on: ubuntu-20.04
@@ -83,6 +84,7 @@ jobs:
 
       - name: Build client
         run: |
+          yarn install
           yarn build
           yarn pack
           mv exocore-v*.tgz exocore-web.tar.gz
@@ -92,6 +94,7 @@ jobs:
         with:
           name: client-web-artifact
           path: exocore-web.tar.gz
+          if-no-files-found: error
 
   ios_client:
     runs-on: macOS-latest # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
