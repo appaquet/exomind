@@ -1,14 +1,14 @@
 [package]
 name = "exomind-server"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
 
 [dependencies]
 exocore = { version = "0.1.1", default-features = false, features = ["client", "logger"] }
-exomind-core = { version = "0.1.0", path = "../core" }
-exomind-gmail = { version = "0.1.0", path = "../integrations/gmail" }
+exomind-core = { version = "0.1.1", path = "../core" }
+exomind-gmail = { version = "0.1.1", path = "../integrations/gmail" }
 log = "0.4"
 tokio = { version = "0.3", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1.0"

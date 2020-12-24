@@ -6,7 +6,6 @@ import { ModalStore } from '../../../store/modal-store';
 import TimeSelector from '../../popups/time-selector/time-selector';
 import { Selection } from "./selection";
 
-
 interface IProps {
     parent: exocore.store.IEntity;
 
@@ -28,7 +27,7 @@ export class ListActions extends React.Component<IProps> {
     }
 
     private renderCreationActions(): React.ReactNode {
-        return <div className="object-actions">
+        return <div className="list-actions">
             <ul>
                 <li onClick={this.handleNewNoteClick.bind(this)}><i className="new-note" /></li>
                 <li onClick={this.handleNewEmailClick.bind(this)}><i className="new-email" /></li>
@@ -40,7 +39,7 @@ export class ListActions extends React.Component<IProps> {
     }
 
     private renderSelectionActions(): React.ReactNode {
-        return <div className="object-actions">
+        return <div className="list-actions">
             <ul>
                 <li onClick={this.handleDoneClick.bind(this)}><i className="done" /></li>
                 <li onClick={this.handlePostponeClick.bind(this)}><i className="postpone" /></li>

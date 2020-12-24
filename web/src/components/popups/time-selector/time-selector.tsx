@@ -36,7 +36,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
 
         return (
             <div className={classes} onMouseOver={this.handlePreventDefault.bind(this)}>
-                <div className="time-selector-header">Postpone until</div>
+                <div className="time-selector-header">Snooze until...</div>
                 {body}
             </div>
         );
