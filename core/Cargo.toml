@@ -11,4 +11,4 @@ prost-types = "0.6"
 exocore = { version = "0.1.1", default-features = false, features = ["client"] }
 
 [build-dependencies]
-prost-build = "0.6"
+prost-build = "0.7"
