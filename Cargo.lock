@@ -566,6 +566,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "console"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7cc80946b3480f421c2f17ed1cb841753a371c7c5104f51d507e13f532c856aa"
+dependencies = [
+ "encode_unicode",
+ "lazy_static",
+ "libc",
+ "regex",
+ "terminal_size",
+ "unicode-width",
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "console_error_panic_hook"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -864,7 +879,7 @@ version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "70f807b2943dc90f9747497d9d65d7e92472149be0b88bf4ce1201b4ac979c26"
 dependencies = [
- "console",
+ "console 0.13.0",
  "lazy_static",
  "tempfile",
  "zeroize 0.9.3",
@@ -986,7 +1001,7 @@ version = "0.1.2"
 dependencies = [
  "anyhow",
  "clap 3.0.0-beta.2",
- "console",
+ "console 0.14.0",
  "dialoguer",
  "dirs-next",
  "exocore-chain",
@@ -1731,7 +1746,7 @@ version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7baab56125e25686df467fe470785512329883aab42696d661247aca2a2896e4"
 dependencies = [
- "console",
+ "console 0.14.0",
  "lazy_static",
  "number_prefix",
  "regex",

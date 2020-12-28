@@ -25,5 +25,5 @@ dirs-next = "2.0"
 tempfile = "3.1"
 tokio = { version = "0.3", features = ["macros"], default-features = false }
 dialoguer = "0.7"
-console = "0.13"
+console = "0.14"
 indicatif = "0.15"
