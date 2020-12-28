@@ -1023,7 +1023,7 @@ dependencies = [
  "exocore-transport",
  "extindex",
  "futures",
- "itertools 0.9.0",
+ "itertools 0.10.0",
  "log",
  "memmap2",
  "serde",
@@ -1154,7 +1154,7 @@ dependencies = [
  "exocore-core",
  "exocore-transport",
  "futures",
- "itertools 0.9.0",
+ "itertools 0.10.0",
  "log",
  "lru",
  "prost",
@@ -1795,6 +1795,15 @@ name = "itertools"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37d572918e350e82412fe766d24b15e6682fb2ed2bbe018280caa810397cb319"
 dependencies = [
  "either",
 ]
