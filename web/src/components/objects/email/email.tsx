@@ -98,7 +98,7 @@ export default class Email extends React.Component<IProps, IState> {
     }
 
     private renderEmailControls(): React.ReactNode {
-        return <div className="object-actions">
+        return <div className="list-actions">
             <ul>
                 <li onClick={this.handleReplyAllEmail.bind(this)}><i className="reply-all" /></li>
                 <li onClick={this.handleReplyEmail.bind(this)}><i className="reply" /></li>

@@ -313,7 +313,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         }
 
         return (
-            <div className="object-actions">
+            <div className="list-actions">
                 <ul>
                     {doneAction}
                     <li onClick={this.handleReplyAllEmail.bind(this)}><i className="reply-all" /></li>

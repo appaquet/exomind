@@ -41,13 +41,14 @@
     }
   }
 
-  .object-actions {
+  .list-actions {
     .center-horizontal-element();
     bottom: 10px;
     background: @tools-popup-bg;
     height: 45px;
     padding: 5px;
     position: absolute;
+    white-space: nowrap; // prevent line break and icons wrapping on second line
     .shadow-z-3();
 
     ul {

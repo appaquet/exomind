@@ -24,7 +24,7 @@ export class Header extends React.Component {
 
 
     var rightActions;
-    if (!_.isEmpty(this.props.actions)) {
+    if (this.props.actions) {
       rightActions = <div className="right-actions">{this.renderActions()}</div>;
     }
 
