@@ -1,19 +1,19 @@
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestMessage {
     #[prost(string, tag = "1")]
-    pub string1: std::string::String,
+    pub string1: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub string2: std::string::String,
+    pub string2: ::prost::alloc::string::String,
     #[prost(string, tag = "12")]
-    pub string3: std::string::String,
+    pub string3: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "3")]
-    pub struct1: ::std::option::Option<TestStruct>,
+    pub struct1: ::core::option::Option<TestStruct>,
     #[prost(message, optional, tag = "8")]
-    pub date1: ::std::option::Option<::prost_types::Timestamp>,
+    pub date1: ::core::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "9")]
-    pub date2: ::std::option::Option<::prost_types::Timestamp>,
+    pub date2: ::core::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "17")]
-    pub date3: ::std::option::Option<::prost_types::Timestamp>,
+    pub date3: ::core::option::Option<::prost_types::Timestamp>,
     #[prost(uint32, tag = "10")]
     pub uint1: u32,
     #[prost(uint32, tag = "11")]
@@ -27,21 +27,22 @@ pub struct TestMessage {
     #[prost(int32, tag = "19")]
     pub int3: i32,
     #[prost(message, optional, tag = "13")]
-    pub ref1: ::std::option::Option<super::store::Reference>,
+    pub ref1: ::core::option::Option<super::store::Reference>,
     #[prost(message, optional, tag = "14")]
-    pub ref2: ::std::option::Option<super::store::Reference>,
+    pub ref2: ::core::option::Option<super::store::Reference>,
     #[prost(string, tag = "20")]
-    pub grouped1: std::string::String,
+    pub grouped1: ::prost::alloc::string::String,
     #[prost(string, tag = "21")]
-    pub grouped2: std::string::String,
+    pub grouped2: ::prost::alloc::string::String,
     #[prost(oneof = "test_message::Fields", tags = "4, 5")]
-    pub fields: ::std::option::Option<test_message::Fields>,
+    pub fields: ::core::option::Option<test_message::Fields>,
 }
+/// Nested message and enum types in `TestMessage`.
 pub mod test_message {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Fields {
         #[prost(string, tag = "4")]
-        OneofString1(std::string::String),
+        OneofString1(::prost::alloc::string::String),
         #[prost(uint32, tag = "5")]
         OneofInt1(u32),
     }
@@ -49,12 +50,12 @@ pub mod test_message {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestStruct {
     #[prost(string, tag = "1")]
-    pub string1: std::string::String,
+    pub string1: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestMessage2 {
     #[prost(string, tag = "1")]
-    pub string1: std::string::String,
+    pub string1: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub string2: std::string::String,
+    pub string2: ::prost::alloc::string::String,
 }

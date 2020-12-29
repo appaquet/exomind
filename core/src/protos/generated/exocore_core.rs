@@ -1,77 +1,79 @@
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AuthToken {
-    #[prost(bytes, tag = "1")]
-    pub data: std::vec::Vec<u8>,
-    #[prost(bytes, tag = "2")]
-    pub signature: std::vec::Vec<u8>,
+    #[prost(bytes = "vec", tag = "1")]
+    pub data: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes = "vec", tag = "2")]
+    pub signature: ::prost::alloc::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AuthTokenData {
-    #[prost(bytes, tag = "1")]
-    pub cell_id: std::vec::Vec<u8>,
-    #[prost(bytes, tag = "2")]
-    pub node_id: std::vec::Vec<u8>,
+    #[prost(bytes = "vec", tag = "1")]
+    pub cell_id: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes = "vec", tag = "2")]
+    pub node_id: ::prost::alloc::vec::Vec<u8>,
     #[prost(message, optional, tag = "3")]
-    pub signature_date: ::std::option::Option<::prost_types::Timestamp>,
+    pub signature_date: ::core::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "4")]
-    pub expiration_date: ::std::option::Option<::prost_types::Timestamp>,
+    pub expiration_date: ::core::option::Option<::prost_types::Timestamp>,
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct LocalNodeConfig {
     #[prost(string, tag = "1")]
-    pub keypair: std::string::String,
+    pub keypair: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub public_key: std::string::String,
+    pub public_key: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     #[serde(default)]
-    pub name: std::string::String,
+    pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
     #[serde(default)]
-    pub id: std::string::String,
+    pub id: ::prost::alloc::string::String,
     #[prost(string, tag = "5")]
     #[serde(default)]
-    pub path: std::string::String,
+    pub path: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "6")]
-    pub addresses: ::std::option::Option<NodeAddresses>,
+    pub addresses: ::core::option::Option<NodeAddresses>,
     #[prost(message, repeated, tag = "7")]
-    pub cells: ::std::vec::Vec<NodeCellConfig>,
+    pub cells: ::prost::alloc::vec::Vec<NodeCellConfig>,
     #[prost(message, optional, tag = "8")]
     #[serde(default)]
-    pub store: ::std::option::Option<NodeStoreConfig>,
+    pub store: ::core::option::Option<NodeStoreConfig>,
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NodeAddresses {
     #[prost(string, repeated, tag = "1")]
     #[serde(default)]
-    pub p2p: ::std::vec::Vec<std::string::String>,
+    pub p2p: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, repeated, tag = "2")]
     #[serde(default)]
-    pub http: ::std::vec::Vec<std::string::String>,
+    pub http: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NodeCellConfig {
     #[prost(oneof = "node_cell_config::Location", tags = "1, 2")]
     #[serde(flatten)]
-    pub location: ::std::option::Option<node_cell_config::Location>,
+    pub location: ::core::option::Option<node_cell_config::Location>,
 }
+/// Nested message and enum types in `NodeCellConfig`.
 pub mod node_cell_config {
-    #[derive(Clone, PartialEq, ::prost::Oneof, Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "lowercase")]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Location {
         #[prost(message, tag = "1")]
         Inline(super::CellConfig),
         #[prost(string, tag = "2")]
-        Path(std::string::String),
+        Path(::prost::alloc::string::String),
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NodeStoreConfig {
     #[prost(message, optional, tag = "1")]
     #[serde(default)]
-    pub index: ::std::option::Option<EntityIndexConfig>,
+    pub index: ::core::option::Option<EntityIndexConfig>,
 }
 //// Configuration of the entities index
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct EntityIndexConfig {
     //// What is the minimum depth that a block needs to be the chain to be
     //// indexed. This is required to lower the odds that we are going to
@@ -88,13 +90,13 @@ pub struct EntityIndexConfig {
     //// Configuration for the in-memory traits index that are in the pending
     //// store
     #[prost(message, optional, tag = "3")]
-    pub pending_index: ::std::option::Option<MutationIndexConfig>,
+    pub pending_index: ::core::option::Option<MutationIndexConfig>,
     //// Configuration for the persisted traits index that are in the chain
     #[prost(message, optional, tag = "4")]
-    pub chain_index: ::std::option::Option<MutationIndexConfig>,
+    pub chain_index: ::core::option::Option<MutationIndexConfig>,
 }
 //// Trait index configuration
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct MutationIndexConfig {
     #[prost(uint32, tag = "1")]
     #[serde(default)]
@@ -112,72 +114,86 @@ pub struct MutationIndexConfig {
     #[serde(default)]
     pub entity_mutations_cache_size: u32,
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CellConfig {
     #[prost(string, tag = "1")]
-    pub public_key: std::string::String,
+    pub public_key: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     #[serde(default)]
-    pub keypair: std::string::String,
+    pub keypair: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     #[serde(default)]
-    pub name: std::string::String,
+    pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
     #[serde(default)]
-    pub id: std::string::String,
+    pub id: ::prost::alloc::string::String,
     #[prost(string, tag = "5")]
     #[serde(default)]
-    pub path: std::string::String,
+    pub path: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "6")]
-    pub nodes: ::std::vec::Vec<CellNodeConfig>,
+    pub nodes: ::prost::alloc::vec::Vec<CellNodeConfig>,
     #[prost(message, repeated, tag = "7")]
     #[serde(default)]
-    pub apps: ::std::vec::Vec<CellApplicationConfig>,
+    pub apps: ::prost::alloc::vec::Vec<CellApplicationConfig>,
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CellNodeConfig {
     #[prost(message, optional, tag = "1")]
-    pub node: ::std::option::Option<NodeConfig>,
+    pub node: ::core::option::Option<NodeConfig>,
     #[prost(enumeration = "cell_node_config::Role", repeated, tag = "2")]
     #[serde(default)]
-    pub roles: ::std::vec::Vec<i32>,
+    pub roles: ::prost::alloc::vec::Vec<i32>,
 }
+/// Nested message and enum types in `CellNodeConfig`.
 pub mod cell_node_config {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        Serialize,
+        Deserialize,
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration,
+    )]
     #[repr(i32)]
-    #[derive(Serialize, Deserialize)]
     pub enum Role {
         InvalidRole = 0,
         ChainRole = 1,
         StoreRole = 2,
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NodeConfig {
     #[prost(string, tag = "1")]
-    pub public_key: std::string::String,
+    pub public_key: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     #[serde(default)]
-    pub name: std::string::String,
+    pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     #[serde(default)]
-    pub id: std::string::String,
+    pub id: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "4")]
-    pub addresses: ::std::option::Option<NodeAddresses>,
+    pub addresses: ::core::option::Option<NodeAddresses>,
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CellApplicationConfig {
     #[prost(oneof = "cell_application_config::Location", tags = "1, 2")]
     #[serde(flatten)]
-    pub location: ::std::option::Option<cell_application_config::Location>,
+    pub location: ::core::option::Option<cell_application_config::Location>,
 }
+/// Nested message and enum types in `CellApplicationConfig`.
 pub mod cell_application_config {
-    #[derive(Clone, PartialEq, ::prost::Oneof, Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "lowercase")]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Location {
         #[prost(message, tag = "1")]
         Inline(super::super::apps::Manifest),
         #[prost(string, tag = "2")]
-        Path(std::string::String),
+        Path(::prost::alloc::string::String),
     }
 }

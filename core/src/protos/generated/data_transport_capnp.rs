@@ -62,7 +62,7 @@ pub mod pending_sync_request {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -151,10 +151,10 @@ pub mod pending_sync_request {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -291,7 +291,7 @@ pub mod pending_sync_range {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -416,10 +416,10 @@ pub mod pending_sync_range {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -466,7 +466,7 @@ pub mod pending_sync_range {
             )
         }
         #[inline]
-        pub fn set_operations_hash(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_operations_hash(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -634,7 +634,7 @@ pub mod chain_sync_request {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -719,10 +719,10 @@ pub mod chain_sync_request {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -870,7 +870,7 @@ pub mod chain_sync_response {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -970,10 +970,10 @@ pub mod chain_sync_response {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 

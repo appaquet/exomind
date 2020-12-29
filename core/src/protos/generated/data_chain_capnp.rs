@@ -62,7 +62,7 @@ pub mod block_header {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -201,10 +201,10 @@ pub mod block_header {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -243,7 +243,7 @@ pub mod block_header {
             )
         }
         #[inline]
-        pub fn set_previous_hash(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_previous_hash(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -269,7 +269,7 @@ pub mod block_header {
             )
         }
         #[inline]
-        pub fn set_proposed_node_id(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_proposed_node_id(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(1).set_text(value);
         }
         #[inline]
@@ -337,7 +337,7 @@ pub mod block_header {
             )
         }
         #[inline]
-        pub fn set_operations_hash(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_operations_hash(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(3).set_data(value);
         }
         #[inline]
@@ -435,7 +435,7 @@ pub mod block_partial_header {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -561,10 +561,10 @@ pub mod block_partial_header {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -603,7 +603,7 @@ pub mod block_partial_header {
             )
         }
         #[inline]
-        pub fn set_previous_hash(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_previous_hash(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -629,7 +629,7 @@ pub mod block_partial_header {
             )
         }
         #[inline]
-        pub fn set_proposed_node_id(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_proposed_node_id(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(1).set_text(value);
         }
         #[inline]
@@ -655,7 +655,7 @@ pub mod block_partial_header {
             )
         }
         #[inline]
-        pub fn set_block_hash(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_block_hash(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(2).set_data(value);
         }
         #[inline]
@@ -761,7 +761,7 @@ pub mod block_operation_header {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -841,10 +841,10 @@ pub mod block_operation_header {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -955,7 +955,7 @@ pub mod block_signatures {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -1041,10 +1041,10 @@ pub mod block_signatures {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -1178,7 +1178,7 @@ pub mod block_signature {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -1266,10 +1266,10 @@ pub mod block_signature {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -1284,7 +1284,7 @@ pub mod block_signature {
             )
         }
         #[inline]
-        pub fn set_node_id(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_node_id(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(0).set_text(value);
         }
         #[inline]
@@ -1302,7 +1302,7 @@ pub mod block_signature {
             )
         }
         #[inline]
-        pub fn set_node_signature(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_node_signature(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(1).set_data(value);
         }
         #[inline]
@@ -1392,7 +1392,7 @@ pub mod chain_operation {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -1484,10 +1484,10 @@ pub mod chain_operation {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -1518,7 +1518,7 @@ pub mod chain_operation {
             )
         }
         #[inline]
-        pub fn set_node_id(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_node_id(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(0).set_text(value);
         }
         #[inline]
@@ -1629,7 +1629,7 @@ pub mod chain_operation {
         }
 
         impl<'a> Reader<'a> {
-            pub fn reborrow(&self) -> Reader {
+            pub fn reborrow(&self) -> Reader<'_> {
                 Reader { ..*self }
             }
 
@@ -1751,10 +1751,10 @@ pub mod chain_operation {
             pub fn into_reader(self) -> Reader<'a> {
                 ::capnp::traits::FromStructReader::new(self.builder.into_reader())
             }
-            pub fn reborrow(&mut self) -> Builder {
+            pub fn reborrow(&mut self) -> Builder<'_> {
                 Builder { ..*self }
             }
-            pub fn reborrow_as_reader(&self) -> Reader {
+            pub fn reborrow_as_reader(&self) -> Reader<'_> {
                 ::capnp::traits::FromStructReader::new(self.builder.into_reader())
             }
 
@@ -1762,9 +1762,9 @@ pub mod chain_operation {
                 self.builder.into_reader().total_size()
             }
             #[inline]
-            pub fn set_entry<'b>(
+            pub fn set_entry(
                 &mut self,
-                value: crate::data_chain_capnp::operation_entry::Reader<'b>,
+                value: crate::data_chain_capnp::operation_entry::Reader<'_>,
             ) -> ::capnp::Result<()> {
                 self.builder.set_data_field::<u16>(8, 0);
                 ::capnp::traits::SetPointerBuilder::set_pointer_builder(
@@ -1788,9 +1788,9 @@ pub mod chain_operation {
                 !self.builder.get_pointer_field(1).is_null()
             }
             #[inline]
-            pub fn set_block_propose<'b>(
+            pub fn set_block_propose(
                 &mut self,
-                value: crate::data_chain_capnp::operation_block_propose::Reader<'b>,
+                value: crate::data_chain_capnp::operation_block_propose::Reader<'_>,
             ) -> ::capnp::Result<()> {
                 self.builder.set_data_field::<u16>(8, 1);
                 ::capnp::traits::SetPointerBuilder::set_pointer_builder(
@@ -1816,9 +1816,9 @@ pub mod chain_operation {
                 !self.builder.get_pointer_field(1).is_null()
             }
             #[inline]
-            pub fn set_block_sign<'b>(
+            pub fn set_block_sign(
                 &mut self,
-                value: crate::data_chain_capnp::operation_block_sign::Reader<'b>,
+                value: crate::data_chain_capnp::operation_block_sign::Reader<'_>,
             ) -> ::capnp::Result<()> {
                 self.builder.set_data_field::<u16>(8, 2);
                 ::capnp::traits::SetPointerBuilder::set_pointer_builder(
@@ -1844,9 +1844,9 @@ pub mod chain_operation {
                 !self.builder.get_pointer_field(1).is_null()
             }
             #[inline]
-            pub fn set_block_refuse<'b>(
+            pub fn set_block_refuse(
                 &mut self,
-                value: crate::data_chain_capnp::operation_block_refuse::Reader<'b>,
+                value: crate::data_chain_capnp::operation_block_refuse::Reader<'_>,
             ) -> ::capnp::Result<()> {
                 self.builder.set_data_field::<u16>(8, 3);
                 ::capnp::traits::SetPointerBuilder::set_pointer_builder(
@@ -2000,7 +2000,7 @@ pub mod chain_operation_header {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -2086,10 +2086,10 @@ pub mod chain_operation_header {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -2120,7 +2120,7 @@ pub mod chain_operation_header {
             )
         }
         #[inline]
-        pub fn set_operation_signature(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_operation_signature(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -2210,7 +2210,7 @@ pub mod operation_entry {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -2288,10 +2288,10 @@ pub mod operation_entry {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -2306,7 +2306,7 @@ pub mod operation_entry {
             )
         }
         #[inline]
-        pub fn set_data(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_data(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -2396,7 +2396,7 @@ pub mod operation_block_propose {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -2474,10 +2474,10 @@ pub mod operation_block_propose {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -2492,7 +2492,7 @@ pub mod operation_block_propose {
             )
         }
         #[inline]
-        pub fn set_block(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_block(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -2582,7 +2582,7 @@ pub mod operation_block_sign {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -2662,10 +2662,10 @@ pub mod operation_block_sign {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -2682,9 +2682,9 @@ pub mod operation_block_sign {
             )
         }
         #[inline]
-        pub fn set_signature<'b>(
+        pub fn set_signature(
             &mut self,
-            value: crate::data_chain_capnp::block_signature::Reader<'b>,
+            value: crate::data_chain_capnp::block_signature::Reader<'_>,
         ) -> ::capnp::Result<()> {
             ::capnp::traits::SetPointerBuilder::set_pointer_builder(
                 self.builder.get_pointer_field(0),
@@ -2783,7 +2783,7 @@ pub mod operation_block_refuse {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -2851,10 +2851,10 @@ pub mod operation_block_refuse {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 

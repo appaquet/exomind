@@ -74,7 +74,6 @@ mod tests {
     use crate::futures::block_on;
     use futures::channel::mpsc;
     use futures::SinkExt;
-    use tokio::stream::StreamExt;
 
     #[test]
     fn should_batch_items() {

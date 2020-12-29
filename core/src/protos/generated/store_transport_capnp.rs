@@ -62,7 +62,7 @@ pub mod mutation_request {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -140,10 +140,10 @@ pub mod mutation_request {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -158,7 +158,7 @@ pub mod mutation_request {
             )
         }
         #[inline]
-        pub fn set_request(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_request(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -248,7 +248,7 @@ pub mod mutation_response {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -336,10 +336,10 @@ pub mod mutation_response {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -354,7 +354,7 @@ pub mod mutation_response {
             )
         }
         #[inline]
-        pub fn set_response(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_response(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -372,7 +372,7 @@ pub mod mutation_response {
             )
         }
         #[inline]
-        pub fn set_error(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_error(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(1).set_text(value);
         }
         #[inline]
@@ -462,7 +462,7 @@ pub mod query_request {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -540,10 +540,10 @@ pub mod query_request {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -558,7 +558,7 @@ pub mod query_request {
             )
         }
         #[inline]
-        pub fn set_request(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_request(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -648,7 +648,7 @@ pub mod query_response {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -736,10 +736,10 @@ pub mod query_response {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -754,7 +754,7 @@ pub mod query_response {
             )
         }
         #[inline]
-        pub fn set_response(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_response(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -772,7 +772,7 @@ pub mod query_response {
             )
         }
         #[inline]
-        pub fn set_error(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_error(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(1).set_text(value);
         }
         #[inline]
@@ -862,7 +862,7 @@ pub mod watched_query_request {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -940,10 +940,10 @@ pub mod watched_query_request {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -958,7 +958,7 @@ pub mod watched_query_request {
             )
         }
         #[inline]
-        pub fn set_request(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_request(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -1048,7 +1048,7 @@ pub mod watched_query_response {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -1136,10 +1136,10 @@ pub mod watched_query_response {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -1154,7 +1154,7 @@ pub mod watched_query_response {
             )
         }
         #[inline]
-        pub fn set_response(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_response(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -1172,7 +1172,7 @@ pub mod watched_query_response {
             )
         }
         #[inline]
-        pub fn set_error(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_error(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(1).set_text(value);
         }
         #[inline]
@@ -1262,7 +1262,7 @@ pub mod unwatch_query_request {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -1334,10 +1334,10 @@ pub mod unwatch_query_request {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 

@@ -1,33 +1,35 @@
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Manifest {
     #[prost(string, tag = "1")]
-    pub name: std::string::String,
+    pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub public_key: std::string::String,
+    pub public_key: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     #[serde(default)]
-    pub path: std::string::String,
+    pub path: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "4")]
     #[serde(default)]
-    pub schemas: ::std::vec::Vec<ManifestSchema>,
+    pub schemas: ::prost::alloc::vec::Vec<ManifestSchema>,
 }
-#[derive(Clone, PartialEq, ::prost::Message, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ManifestSchema {
     #[prost(oneof = "manifest_schema::Source", tags = "1, 2")]
     #[serde(flatten)]
-    pub source: ::std::option::Option<manifest_schema::Source>,
+    pub source: ::core::option::Option<manifest_schema::Source>,
 }
+/// Nested message and enum types in `ManifestSchema`.
 pub mod manifest_schema {
-    #[derive(Clone, PartialEq, ::prost::Oneof, Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "lowercase")]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Source {
         #[prost(string, tag = "1")]
-        File(std::string::String),
+        File(::prost::alloc::string::String),
         #[prost(bytes, tag = "2")]
         #[serde(
             serialize_with = "crate::protos::base64::as_base64",
             deserialize_with = "crate::protos::base64::from_base64"
         )]
-        Bytes(std::vec::Vec<u8>),
+        Bytes(::prost::alloc::vec::Vec<u8>),
     }
 }

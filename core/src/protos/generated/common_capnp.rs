@@ -62,7 +62,7 @@ pub mod envelope {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -172,10 +172,10 @@ pub mod envelope {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -190,7 +190,7 @@ pub mod envelope {
             )
         }
         #[inline]
-        pub fn set_cell_id(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_cell_id(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(0).set_data(value);
         }
         #[inline]
@@ -232,7 +232,7 @@ pub mod envelope {
             )
         }
         #[inline]
-        pub fn set_from_node_id(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_from_node_id(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(1).set_text(value);
         }
         #[inline]
@@ -250,7 +250,7 @@ pub mod envelope {
             )
         }
         #[inline]
-        pub fn set_data(&mut self, value: ::capnp::data::Reader) {
+        pub fn set_data(&mut self, value: ::capnp::data::Reader<'_>) {
             self.builder.get_pointer_field(2).set_data(value);
         }
         #[inline]
@@ -340,7 +340,7 @@ pub mod node {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -442,10 +442,10 @@ pub mod node {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -460,7 +460,7 @@ pub mod node {
             )
         }
         #[inline]
-        pub fn set_id(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_id(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(0).set_text(value);
         }
         #[inline]
@@ -478,7 +478,7 @@ pub mod node {
             )
         }
         #[inline]
-        pub fn set_public_key(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_public_key(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(1).set_text(value);
         }
         #[inline]
@@ -603,7 +603,7 @@ pub mod node_address {
     }
 
     impl<'a> Reader<'a> {
-        pub fn reborrow(&self) -> Reader {
+        pub fn reborrow(&self) -> Reader<'_> {
             Reader { ..*self }
         }
 
@@ -681,10 +681,10 @@ pub mod node_address {
         pub fn into_reader(self) -> Reader<'a> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
-        pub fn reborrow(&mut self) -> Builder {
+        pub fn reborrow(&mut self) -> Builder<'_> {
             Builder { ..*self }
         }
-        pub fn reborrow_as_reader(&self) -> Reader {
+        pub fn reborrow_as_reader(&self) -> Reader<'_> {
             ::capnp::traits::FromStructReader::new(self.builder.into_reader())
         }
 
@@ -699,7 +699,7 @@ pub mod node_address {
             )
         }
         #[inline]
-        pub fn set_data(&mut self, value: ::capnp::text::Reader) {
+        pub fn set_data(&mut self, value: ::capnp::text::Reader<'_>) {
             self.builder.get_pointer_field(0).set_text(value);
         }
         #[inline]
