@@ -58,8 +58,11 @@ async fn start(config: cli::Config) -> anyhow::Result<()> {
         .await
         .expect("Couldn't create exomind client");
 
+    // give some time for client to connect
+    sleep(Duration::from_secs(1)).await;
+
     let gmail_store_handle = exm.store.clone();
-    let gmail_server = async move {
+    let gmail_sync = async move {
         if let Some(gmail_config) = config.gmail {
             exomind_gmail::server::run(gmail_config, gmail_store_handle).await?;
         } else {
@@ -86,8 +89,12 @@ async fn start(config: cli::Config) -> anyhow::Result<()> {
     };
 
     futures::select! {
-        _ = snooze_loop.fuse() => {},
-        _ = gmail_server.fuse() => {},
+        res = snooze_loop.fuse() => {
+            info!("Snooze loop done: {:?}", res);
+        },
+        res = gmail_sync.fuse() => {
+            info!("Gmail synchronizer done: {:?}", res);
+        },
     }
 
     Ok(())
