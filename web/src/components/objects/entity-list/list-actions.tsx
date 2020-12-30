@@ -152,11 +152,9 @@ export class ListActions extends React.Component<IProps> {
     }
 
     private handlePostponeClick() {
-        ModalStore.showModal(this.showTimeSelector.bind(this));
-    }
-
-    private showTimeSelector() {
-        return <TimeSelector onSelectionDone={this.handleTimeSelectorDone.bind(this)} />;
+        ModalStore.showModal(() => {
+            return <TimeSelector onSelectionDone={this.handleTimeSelectorDone.bind(this)} />;
+        });
     }
 
     private handleTimeSelectorDone(/*date: Date*/) {

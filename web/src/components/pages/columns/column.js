@@ -140,7 +140,6 @@ export default class Column extends React.Component {
 
   expandFullscreen() {
     let entityId = this.props.columnConfig.value;
-    let url = Constants.webUrl + Navigation.pathForFullscreen(entityId);
-    window.open(url, '_blank', 'menubar=no,location=no,status=no,titlebar=no,toolbar=no');
+    Navigation.navigatePopup(Navigation.pathForFullscreen(entityId));
   }
 }

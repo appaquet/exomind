@@ -24,7 +24,7 @@ export default class Modal extends React.Component {
     ModalStore.hideModal();
   }
 
-  UNSAFE_componentWillMount() {
+  componentDidMount() {
     document.addEventListener('keydown', this.handleKeyDown, false);
   }
 
