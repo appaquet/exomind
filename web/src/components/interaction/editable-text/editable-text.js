@@ -2,7 +2,7 @@
 import React from 'react';
 import './editable-text.less';
 import PropTypes from 'prop-types';
-
+import * as _ from 'lodash';
 export default class EditableText extends React.Component {
   static propTypes = {
     text: PropTypes.string,

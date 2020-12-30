@@ -1,12 +1,22 @@
 import { EventEmitter } from 'fbemitter';
-import Constants from './constants';
 import { ColumnsConfig } from './components/pages/columns/columns-config';
 import { EntityTraits } from './store/entities';
 import Path from './utils/path';
 
+export interface INavigationHost {
+  initialPath: Path,
+  pushHistory(path: Path, replace: boolean): void;
+  openPopup(path: Path): void;
+}
 export default class Navigation {
   static currentPath: Path = null;
   static emitter = new EventEmitter();
+  static host: INavigationHost;
+
+  static initialize(host: INavigationHost) {
+    Navigation.currentPath = host.initialPath;
+    Navigation.host = host;
+  }
 
   static onNavigate(cb: () => void, ctx: unknown): void {
     Navigation.emitter.addListener('change', cb, ctx);
@@ -19,16 +29,10 @@ export default class Navigation {
     }, 1);
   }
 
-  static navigate(path: string, replace = false): void {
+  static navigate(path: string | Path, replace = false): void {
     const obj = new Path(path);
 
-    if (window.history) {
-      if (replace) {
-        window.history.replaceState({}, null, Constants.basePath + obj.toString());
-      } else {
-        window.history.pushState({}, null, Constants.basePath + obj.toString());
-      }
-    }
+    Navigation.host.pushHistory(obj, replace);
     Navigation.currentPath = obj;
     Navigation.notifyChange();
   }
@@ -45,8 +49,9 @@ export default class Navigation {
     }
   }
 
-  static getBrowserCurrentPath(): Path {
-    return new Path(window.location.pathname.replace(Constants.basePath, ''));
+  static navigatePopup(path: string | Path): void {
+    const obj = new Path(path);
+    Navigation.host.openPopup(obj);
   }
 
   static pathForInbox(): string {
@@ -112,10 +117,3 @@ export default class Navigation {
     return new Path(path).take(1).toString() === 't';
   }
 }
-
-window.onpopstate = () => {
-  Navigation.currentPath = Navigation.getBrowserCurrentPath();
-  Navigation.notifyChange();
-};
-
-Navigation.currentPath = Navigation.getBrowserCurrentPath();

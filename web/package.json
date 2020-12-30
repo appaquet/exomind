@@ -14,8 +14,28 @@
     "build_dev": "webpack --config webpack.dev.js",
     "build_ios": "webpack --config webpack.ios.js",
     "build_ios_watch": "webpack-dev-server --config webpack.ios.js --dev",
+    "electron_dev": "electron-webpack dev",
+    "electron_build": "electron-webpack",
+    "electron": "yarn electron_build && electron-builder --dir",
+    "electron_dist": "yarn electron_build && electron-builder",
     "test": "jest",
     "lint": "tsc --noEmit && eslint 'src/**/*.ts' 'src/**/*.tsx'"
+  },
+  "electronWebpack": {
+    "main": {
+      "sourceDirectory": "src/electron/main"
+    },
+    "whiteListedModules": [
+      "exocore"
+    ],
+    "renderer": {
+      "sourceDirectory": "src/electron/renderer",
+      "template": "src/electron/renderer/index.html"
+    }
+  },
+  "build": {
+    "appId": "io.exomind.exomind-electron",
+    "productName": "Exomind"
   },
   "dependencies": {
     "@babel/preset-typescript": "^7.10.1",
@@ -42,6 +62,7 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "sanitize-html": "^2.3.0",
+    "source-map-support": "^0.5.19",
     "webpack": "^4.44.2"
   },
   "devDependencies": {
@@ -70,6 +91,9 @@
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "cookie-parser": "^1.4.5",
     "css-loader": "^5.0.0",
+    "electron": "^11.1.1",
+    "electron-builder": "^22.9.1",
+    "electron-webpack": "^2.8.2",
     "eslint": "^7.10.0",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jsx-a11y": "^6.4.1",

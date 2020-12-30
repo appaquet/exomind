@@ -1,23 +1,21 @@
 
-import PropTypes from 'prop-types';
 import React from 'react';
 import Layout from './components/layout/layout';
+import Navigation from './navigation';
 import { ModalStore } from './store/modal-store.js';
 import { StoresInstance, StoresContext } from './store/stores';
 
 export default class App extends React.Component {
-  static propTypes = {
-    path: PropTypes.object.isRequired
-  };
-
   constructor(props) {
     super(props);
 
     this.state = {
+      path: Navigation.currentPath,
       modalRenderer: null
     };
 
     ModalStore.onChange(this.onModalChange, this);
+    Navigation.onNavigate(this.onNavigate, this);
   }
 
   onModalChange() {
@@ -26,11 +24,17 @@ export default class App extends React.Component {
     });
   }
 
+  onNavigate() {
+    this.setState({
+      path: Navigation.currentPath
+    });
+  }
+
   render() {
     return (
       <StoresContext.Provider value={StoresInstance}>
         <Layout
-          path={this.props.path}
+          path={this.state.path}
           modalRenderer={this.state.modalRenderer} />
       </StoresContext.Provider>
     );
