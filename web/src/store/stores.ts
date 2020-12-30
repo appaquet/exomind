@@ -1,16 +1,16 @@
-
 import { LocalNode } from 'exocore';
-import { observable, action, computed, autorun } from 'mobx';
+import { observable, action, computed, autorun, makeAutoObservable } from 'mobx';
 import React from 'react';
-
 export interface ISettingsStore {
-    exocoreConfig?: Record<string, unknown>;
+    darkMode: boolean;
 }
 
-export class SettingsStore implements ISettingsStore {
-    @observable exocoreConfig?: Record<string, unknown>;
+export class PersistedStore implements ISettingsStore {
+    @observable darkMode = false;
 
     constructor(syncLocalStorage?: boolean) {
+        makeAutoObservable(this);
+
         if (window.localStorage && (syncLocalStorage ?? true)) {
             this.setupLocalStorageSync();
         }
@@ -18,12 +18,16 @@ export class SettingsStore implements ISettingsStore {
 
     @computed get asJson(): ISettingsStore {
         return {
-            exocoreConfig: this.exocoreConfig,
+            darkMode: this.darkMode,
         }
     }
 
     @action updateFromJson(json: ISettingsStore): void {
-        this.exocoreConfig = json.exocoreConfig;
+        this.darkMode = json.darkMode;
+    }
+
+    @action setDarkMode(dark: boolean): void {
+        this.darkMode = dark;
     }
 
     private setupLocalStorageSync() {
@@ -45,11 +49,15 @@ export class SettingsStore implements ISettingsStore {
 export class SessionStore {
     @observable private _node: LocalNode = null;
 
+    constructor() {
+        makeAutoObservable(this);
+    }
+
     get node(): LocalNode {
         return this._node;
     }
 
-    set node(n: LocalNode) {
+    @action set node(n: LocalNode) {
         if (this._node) {
             this._node.free();
         }
@@ -64,12 +72,12 @@ export class SessionStore {
 }
 
 export class Stores {
-    constructor(public settings: SettingsStore, public session: SessionStore) {
+    constructor(public settings: PersistedStore, public session: SessionStore) {
     }
 }
 
 export const StoresInstance: Stores = {
-    settings: new SettingsStore(),
+    settings: new PersistedStore(),
     session: new SessionStore(),
 }
 

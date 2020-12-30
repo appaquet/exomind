@@ -1,4 +1,5 @@
 import { Exocore, LocalNode, WasmModule } from 'exocore';
+import { runInAction } from 'mobx';
 import { exomind } from './protos';
 import { StoresInstance } from './store/stores';
 
@@ -21,7 +22,9 @@ export async function initNode(): Promise<WasmModule> {
     if (node.has_configured_cell) {
         bootNode();
     } else {
-        StoresInstance.session.showDiscovery = true;
+        runInAction(() => {
+            StoresInstance.session.showDiscovery = true;
+        })
     }
 
     return module;
@@ -32,10 +35,12 @@ export async function resetNode(): Promise<void> {
     node.save_to_storage(localStorage);
 
     const sessionStore = StoresInstance.session;
-    sessionStore.node = node;
-    sessionStore.cellInitialized = false;
-    sessionStore.cellError = null;
-    sessionStore.showDiscovery = true;
+    runInAction(() => {
+        sessionStore.node = node;
+        sessionStore.cellInitialized = false;
+        sessionStore.cellError = null;
+        sessionStore.showDiscovery = true;
+    });
 
     Exocore.reset();
 }
@@ -58,15 +63,19 @@ export async function bootNode(): Promise<Exocore | null> {
         instance.registry.registerMessage(exomind.base.Link, 'exomind.base.Link');
         instance.registry.registerMessage(exomind.base.Snoozed, 'exomind.base.Snoozed');
 
-        sessionStore.cellInitialized = true;
-        sessionStore.cellError = null;
-        sessionStore.showDiscovery = false;
+        runInAction(() => {
+            sessionStore.cellInitialized = true;
+            sessionStore.cellError = null;
+            sessionStore.showDiscovery = false;
+        });
 
         return instance;
 
     } catch (e) {
         console.log('Couldn\'t initialize exocore', e);
-        sessionStore.cellInitialized = false;
-        sessionStore.cellError = e;
+        runInAction(() => {
+            sessionStore.cellInitialized = false;
+            sessionStore.cellError = e;
+        });
     }
 }
