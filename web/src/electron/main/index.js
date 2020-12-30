@@ -11,9 +11,8 @@ let mainWindow
 
 function createMainWindow() {
   const window = new BrowserWindow({
-    webPreferences: {nodeIntegration: true},
+    webPreferences: { nodeIntegration: true },
   });
-
   window.setMenuBarVisibility(isDevelopment);
 
   if (isDevelopment) {
@@ -66,12 +65,12 @@ app.on('ready', () => {
 })
 
 ipcMain.on('open-popup', (event, navPath) => {
-  const window = new BrowserWindow({webPreferences: {nodeIntegration: true}})
+  const window = new BrowserWindow({ webPreferences: { nodeIntegration: true } })
+  window.setMenuBarVisibility(isDevelopment);
 
   if (isDevelopment) {
     window.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`)
-  }
-  else {
+  } else {
     window.loadURL(formatUrl({
       pathname: path.join(__dirname, 'index.html'),
       protocol: 'file',
