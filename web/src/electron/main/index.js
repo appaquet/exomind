@@ -10,7 +10,11 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 let mainWindow
 
 function createMainWindow() {
-  const window = new BrowserWindow({webPreferences: {nodeIntegration: true}})
+  const window = new BrowserWindow({
+    webPreferences: {nodeIntegration: true},
+  });
+
+  window.setMenuBarVisibility(isDevelopment);
 
   if (isDevelopment) {
     window.webContents.openDevTools()
@@ -23,7 +27,7 @@ function createMainWindow() {
     window.loadURL(formatUrl({
       pathname: path.join(__dirname, 'index.html'),
       protocol: 'file',
-      slashes: true
+      slashes: true,
     }))
   }
 
