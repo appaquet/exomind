@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { StoresInstance } from '../../../store/stores';
+import { Stores, StoresContext, StoresInstance } from '../../../store/stores';
 import { observer } from 'mobx-react';
 import { Discovery, Exocore } from 'exocore';
 import { bootNode, resetNode } from '../../../exocore';
@@ -17,6 +17,9 @@ interface IState {
 export default class NodeConfig extends React.Component<IProps, IState> {
   private mounted = true;
   private disco: Discovery;
+
+  static contextType = StoresContext;
+  context: Stores;
 
   constructor(props: IProps) {
     super(props);
