@@ -12,7 +12,6 @@ interface LinkProps {
 export const Link = (props: LinkProps): ReactNode => {
     const { url } = props.contentState.getEntity(props.entityKey).getData();
     const handleClick = (e: MouseEvent) => {
-        console.log(url, props.editor.props.onLinkClick);
         if (props.editor.props.onLinkClick) {
             props.editor.props.onLinkClick(url, e);
         }
