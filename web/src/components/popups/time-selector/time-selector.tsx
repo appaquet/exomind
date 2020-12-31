@@ -2,6 +2,8 @@ import classNames from 'classnames';
 import moment from 'moment';
 import React from 'react';
 import TimeLogic from '../../../logic/time-logic.js';
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/themes/light.css";
 import './time-selector.less';
 
 interface IProps {
@@ -63,20 +65,21 @@ export default class TimeSelector extends React.Component<IProps, IState> {
 
 
     private renderPicker(): React.ReactNode {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const DateTimeField = require('@blen/react-bootstrap-datetimepicker');
         return (
             <div>
                 <div className="field">
-                    <DateTimeField dateTime={moment(this.state.date).format('x')}
-                        inputFormat='MMMM Do YYYY, h:mm:ss a'
-                        onChange={this.handlePickerChange.bind(this)} />
+                    <Flatpickr
+                        data-enable-time
+                        value={this.state.date}
+                        onChange={this.handlePickerChange.bind(this)}
+                    />
                 </div>
-                <button className="done" onClick={this.handlePickerDone.bind(this)}>
-                    <span>Done</span>
-                </button>
+                <div className="button">
+                    <button onClick={this.handlePickerDone.bind(this)}>
+                        <span>Done</span>
+                    </button>
+                </div>
             </div>
-
         );
     }
 
@@ -85,10 +88,8 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         e.stopPropagation();
     }
 
-    private handlePickerChange(timestamp: string): void {
-        this.setState({
-            date: new Date(parseInt(timestamp))
-        });
+    private handlePickerChange(dates: Date[]): void {
+        this.setState({ date: dates[0] });
     }
 
     private handlePickerDone(): void {
