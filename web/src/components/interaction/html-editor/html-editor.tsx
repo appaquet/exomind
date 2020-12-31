@@ -5,8 +5,10 @@ import Debouncer from '../../../utils/debouncer';
 import 'draft-js/dist/Draft.css';
 import './html-editor.less';
 import { Commands } from './commands';
-import { findLinkEntities, Link, toggleLink } from './link';
+import { extractCurrentLink, findLinkEntities, Link, toggleLink } from './link';
 import { convertOldHTML, fromHTML, toHTML } from './convert';
+import { ModalStore } from '../../../store/modal-store';
+import InputModal from '../../modals/input-modal/input-modal';
 
 const defaultInitialFocus = true;
 const listMaxDepth = 4;
@@ -178,10 +180,24 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       e.preventDefault();
 
       setTimeout(() => {
-        const link = prompt('Enter link');
-        if (link) {
+        const done = (link?: string) => {
+          ModalStore.hideModal();
+
+          if (!link) {
+            return;
+          }
+
           this.toggleLink(link);
+        };
+
+        let currentLink = extractCurrentLink(this.state.editorState);
+        if (!currentLink) {
+          currentLink = 'https://';
         }
+
+        ModalStore.showModal(() => {
+          return <InputModal text='Enter link' initialValue={currentLink} onDone={done} />;
+        })
       });
       return;
     }

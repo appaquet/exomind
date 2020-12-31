@@ -13,7 +13,7 @@ export default class Navigation {
   static emitter = new EventEmitter();
   static host: INavigationHost;
 
-  static initialize(host: INavigationHost) {
+  static initialize(host: INavigationHost): void {
     Navigation.currentPath = host.initialPath;
     Navigation.host = host;
   }

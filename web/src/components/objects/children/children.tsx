@@ -5,9 +5,9 @@ import { exomind } from "../../../protos";
 import { EntityTraits } from '../../../store/entities';
 import { ModalStore } from "../../../store/modal-store";
 import { ExpandableQuery } from "../../../store/queries";
-import { CollectionSelector } from "../../popups/collection-selector/collection-selector";
-import TimeSelector from "../../popups/time-selector/time-selector";
-import EntityAction from '../entity-list/entity-action';
+import { CollectionSelector } from "../../modals/collection-selector/collection-selector";
+import TimeSelector from "../../modals/time-selector/time-selector";
+import { ButtonAction, EntityActions, InlineAction } from '../entity-list/entity-action';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
 import { ListActions } from "../entity-list/list-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
@@ -33,6 +33,7 @@ interface IState {
     parent?: exocore.store.IEntity;
     hovered: boolean;
     error?: string;
+    editedEntity?: EntityTraits;
 }
 
 export class Children extends React.Component<IProps, IState> {
@@ -168,33 +169,43 @@ export class Children extends React.Component<IProps, IState> {
         });
     }
 
-    private actionsForEntity(et: EntityTraits): EntityAction[] {
+    private actionsForEntity(et: EntityTraits): EntityActions {
         if (!this.props.actionsForSection) {
-            return [];
+            return new EntityActions();
         }
 
         const actions = this.props.actionsForSection(this.props.section);
-        return actions.map((action) => {
+        const buttonActions = actions.map((action) => {
             switch (action) {
                 case 'done':
-                    return new EntityAction('check', this.handleEntityDone.bind(this, et));
+                    return new ButtonAction('check', this.handleEntityDone.bind(this, et));
                 case 'postpone':
-                    return new EntityAction('clock-o', this.handleEntityPostpone.bind(this, et));
+                    return new ButtonAction('clock-o', this.handleEntityPostpone.bind(this, et));
                 case 'move':
-                    return new EntityAction('folder-open-o', this.handleEntityMoveCollection.bind(this, et));
+                    return new ButtonAction('folder-open-o', this.handleEntityMoveCollection.bind(this, et));
                 case 'inbox':
-                    return new EntityAction('inbox', this.handleEntityMoveInbox.bind(this, et));
+                    return new ButtonAction('inbox', this.handleEntityMoveInbox.bind(this, et));
                 case 'restore': {
                     const icon = (this.props.parentId == 'inbox') ? 'inbox' : 'folder-o';
-                    return new EntityAction(icon, this.handleEntityRestore.bind(this, et));
+                    return new ButtonAction(icon, this.handleEntityRestore.bind(this, et));
                 }
             }
         });
+
+        // when we just created an entity that require it to be edited right away (ex: task)
+        let inlineEdit;
+        if (this.state.editedEntity && this.state.editedEntity.id == et.id) {
+            inlineEdit = new InlineAction(() => {
+                this.setState({
+                    editedEntity: null,
+                });
+            });
+        }
+
+        return new EntityActions(buttonActions, inlineEdit);
     }
 
-    private handleEntityDone(et: EntityTraits, childAction: EntityAction) {
-        childAction.shouldRemove = true;
-
+    private handleEntityDone(et: EntityTraits) {
         const mutationBuilder = MutationBuilder.updateEntity(et.entity.id);
         const colsChildren = et
             .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
@@ -211,6 +222,8 @@ export class Children extends React.Component<IProps, IState> {
         if (this.props.onEntityAction) {
             this.props.onEntityAction('done', et.entity);
         }
+
+        return 'remove';
     }
 
     private handleEntityPostpone(et: EntityTraits) {
@@ -338,8 +351,15 @@ export class Children extends React.Component<IProps, IState> {
 
     private handleCreatedEntity(entity: exocore.store.IEntity) {
         if (this.props.onSelectionChange && this.props.selection) {
-            const newSelection = this.props.selection.withItem(SelectedItem.fromEntity(entity));
-            this.props.onSelectionChange(newSelection);
+            const et = new EntityTraits(entity);
+            if (et.traitOfType(exomind.base.Task)) {
+                this.setState({
+                    editedEntity: et,
+                });
+            } else {
+                const newSelection = this.props.selection.withItem(SelectedItem.fromEntity(entity));
+                this.props.onSelectionChange(newSelection);
+            }
         }
     }
 

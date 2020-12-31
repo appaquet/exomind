@@ -5,7 +5,7 @@ import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
 import { ExpandableQuery } from '../../../store/queries';
 import { ContainerController } from '../container-controller';
-import EntityAction from '../entity-list/entity-action';
+import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
@@ -115,10 +115,10 @@ export default class Snoozed extends React.Component<IProps> {
         this.entityQuery.expand();
     }
 
-    private actionsForEntity(et: EntityTraits): EntityAction[] {
-        return [
-            new EntityAction('inbox', this.handleEntityMoveInbox.bind(this, et)),
-        ];
+    private actionsForEntity(et: EntityTraits): EntityActions {
+        return new EntityActions([
+            new ButtonAction('inbox', this.handleEntityMoveInbox.bind(this, et)),
+        ]);
     }
 
     private handleEntityMoveInbox(et: EntityTraits) {

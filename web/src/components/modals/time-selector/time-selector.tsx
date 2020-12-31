@@ -1,5 +1,4 @@
 import classNames from 'classnames';
-import moment from 'moment';
 import React from 'react';
 import TimeLogic from '../../../logic/time-logic.js';
 import Flatpickr from "react-flatpickr";
@@ -9,6 +8,7 @@ import './time-selector.less';
 interface IProps {
     onSelectionDone: (date: Date) => void;
 }
+
 interface IState {
     picker: boolean;
     date: Date;

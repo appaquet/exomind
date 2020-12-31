@@ -66,11 +66,11 @@ export default class Column extends React.Component {
     }
 
     if (this.props.columnConfig.isEntity) {
-      headerActions.push(new HeaderAction('arrows-alt', this.expandFullscreen.bind(this)));
+      headerActions.push(new HeaderAction('external-link', this.expandFullscreen.bind(this)));
     }
 
     if (this.props.columnId !== 0) {
-      headerActions.push(new HeaderAction('times', this.props.onClose));
+      headerActions.push(new HeaderAction('close', this.props.onClose));
     }
 
     return (

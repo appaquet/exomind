@@ -8,7 +8,7 @@ import { EntityTrait, EntityTraits } from '../../../store/entities';
 import DateUtil from '../../../utils/date-util';
 import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
 import EditableText from '../../interaction/editable-text/editable-text';
-import EntityAction from './entity-action';
+import { EntityActions } from './entity-action';
 import './entity.less';
 
 interface IProps {
@@ -17,7 +17,7 @@ interface IProps {
 
     selected?: boolean;
     onClick?: (e: MouseEvent) => void;
-    actionsForEntity?: (entity: EntityTraits) => EntityAction[];
+    actionsForEntity?: (entity: EntityTraits) => EntityActions;
 
     draggable?: boolean;
     droppable?: boolean;
@@ -56,11 +56,16 @@ export class Entity extends React.Component<IProps, IState> {
 
         const entityTraits = this.getEntityTraits(this.props.entity);
         let actionsComponent = null;
-        if (this.state.hovered && this.props.actionsForEntity) {
-            const actions = this.props.actionsForEntity(entityTraits);
-            if (actions.length > 0) {
+        let actions;
+        if (this.props.actionsForEntity) {
+            actions = this.props.actionsForEntity(entityTraits);
+            if (this.state.hovered && !actions.isEmpty) {
                 actionsComponent = this.renderActions(entityTraits, actions);
             }
+        }
+
+        if (!actions) {
+            actions = new EntityActions();
         }
 
         return (
@@ -79,7 +84,7 @@ export class Entity extends React.Component<IProps, IState> {
                         onDropOut={this.props.onDropOut}>
 
                         {actionsComponent}
-                        {this.renderElement(entityTraits)}
+                        {this.renderElement(entityTraits, actions)}
                     </DragAndDrop>
                 </div>
             </li>
@@ -88,18 +93,18 @@ export class Entity extends React.Component<IProps, IState> {
 
     private getEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
 
-    private renderActions(entityTraits: EntityTraits, actions: EntityAction[]): React.ReactNode {
-        const actionsComponents = actions.map((action) => {
+    private renderActions(entityTraits: EntityTraits, actions: EntityActions): React.ReactNode {
+        const actionsComponents = actions.buttons.map((action) => {
             const classes = classNames({
                 'action-icon': true,
                 fa: true,
                 ['fa-' + action.icon]: true
             });
             const cb = (e: MouseEvent) => {
-                action.trigger(e);
+                const result = action.trigger(e);
                 e.stopPropagation();
 
-                if (action.shouldRemove) {
+                if (result == 'remove') {
                     this.removeItem();
                 }
             };
@@ -119,13 +124,13 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderElement(entityTraits: EntityTraits): React.ReactNode {
+    private renderElement(entityTraits: EntityTraits, actions: EntityActions): React.ReactNode {
         return entityTraits.priorityMatch({
             emailThread: this.renderEmailThreadElement.bind(this, entityTraits),
             draftEmail: this.renderDraftEmailElement.bind(this),
             email: this.renderEmailElement.bind(this),
             collection: this.renderCollectionElement.bind(this),
-            task: this.renderTaskElement.bind(this),
+            task: this.renderTaskElement.bind(this, actions),
             note: this.renderNoteElement.bind(this),
             link: this.renderLinkElement.bind(this),
             default: () => {
@@ -241,7 +246,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderTaskElement(entityTrait: EntityTrait<exomind.base.ITask>): React.ReactNode {
+    private renderTaskElement(actions: EntityActions, entityTrait: EntityTrait<exomind.base.ITask>): React.ReactNode {
         const task = entityTrait.message;
 
         return (
@@ -252,7 +257,8 @@ export class Entity extends React.Component<IProps, IState> {
                     <div className="title1">
                         <EditableText
                             text={task.title}
-                            onChange={this.handleTaskChange.bind(this, entityTrait)}
+                            initEdit={actions.inlineEdit}
+                            onChange={this.handleTaskChange.bind(this, entityTrait, actions)}
                         />
                     </div>
                 </div>
@@ -359,7 +365,11 @@ export class Entity extends React.Component<IProps, IState> {
         });
     }
 
-    private handleTaskChange(task: EntityTrait<exomind.base.ITask>, newTitle: string): void {
+    private handleTaskChange(task: EntityTrait<exomind.base.ITask>, actions: EntityActions, newTitle: string): void {
         task.rename(newTitle);
+
+        if (actions.inlineEdit) {
+            actions.inlineEdit.trigger();
+        }
     }
 }

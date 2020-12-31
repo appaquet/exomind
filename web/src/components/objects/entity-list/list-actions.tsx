@@ -1,9 +1,9 @@
 import { Exocore, exocore, MutationBuilder } from 'exocore';
-import * as _ from 'lodash';
 import React from 'react';
 import { exomind } from '../../../protos';
 import { ModalStore } from '../../../store/modal-store';
-import TimeSelector from '../../popups/time-selector/time-selector';
+import InputModal from '../../modals/input-modal/input-modal';
+import TimeSelector from '../../modals/time-selector/time-selector';
 import { Selection } from "./selection";
 
 interface IProps {
@@ -19,7 +19,7 @@ interface IProps {
 
 export class ListActions extends React.Component<IProps> {
     render(): React.ReactNode {
-        if (_.size(this.props.selection) <= 1) {
+        if (this.props.selection.length <= 1) {
             return this.renderCreationActions();
         } else {
             return this.renderSelectionActions();
@@ -48,7 +48,6 @@ export class ListActions extends React.Component<IProps> {
     }
 
     private handleNewNoteClick() {
-
         const mutation = MutationBuilder
             .createEntity()
             .putTrait(new exomind.base.Note({
@@ -101,29 +100,29 @@ export class ListActions extends React.Component<IProps> {
     }
 
     private handleNewTaskClick() {
-        const title = prompt('Name of the task');
-        if (!_.isEmpty(title)) {
-            const mutation = MutationBuilder
-                .createEntity()
-                .putTrait(new exomind.base.Task({
-                    title: title,
-                }))
-                .putTrait(new exomind.base.CollectionChild({
-                    collection: new exocore.store.Reference({
-                        entityId: this.props.parent.id,
-                    }),
-                    weight: new Date().getTime(),
-                }), `child_${this.props.parent.id}`)
-                .returnEntities()
-                .build();
+        const mutation = MutationBuilder
+            .createEntity()
+            .putTrait(new exomind.base.Task())
+            .putTrait(new exomind.base.CollectionChild({
+                collection: new exocore.store.Reference({
+                    entityId: this.props.parent.id,
+                }),
+                weight: new Date().getTime(),
+            }), `child_${this.props.parent.id}`)
+            .returnEntities()
+            .build();
 
-            this.executeNewEntityMutation(mutation);
-        }
+        this.executeNewEntityMutation(mutation);
     }
 
     private handleNewLinkClick() {
-        const url = prompt('URL');
-        if (!_.isEmpty(url)) {
+        const createLink = (url?: string) => {
+            ModalStore.hideModal();
+
+            if (!url) {
+                return;
+            }
+
             const mutation = MutationBuilder
                 .createEntity()
                 .putTrait(new exomind.base.Link({
@@ -140,6 +139,12 @@ export class ListActions extends React.Component<IProps> {
 
             this.executeNewEntityMutation(mutation);
         }
+
+        ModalStore.showModal(() => {
+            return <InputModal 
+                text="URL of the link"
+                onDone={createLink} />;
+        });
     }
 
     private handleDoneClick() {
