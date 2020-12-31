@@ -268,7 +268,7 @@ where
             }
 
             // if mutation doesn't have an entity id, generate one
-            if mutation.entity_id == "" {
+            if mutation.entity_id.is_empty() {
                 if request.common_entity_id && last_entity_id.is_some() {
                     mutation.entity_id = last_entity_id.unwrap_or_default();
                 } else {
@@ -280,7 +280,7 @@ where
             // if a put mutation doesn't have a trait id, generate one
             if let Some(Mutation::PutTrait(put_mutation)) = &mut mutation.mutation {
                 if let Some(trt) = &mut put_mutation.r#trait {
-                    if trt.id == "" {
+                    if trt.id.is_empty() {
                         trt.id = exocore_core::utils::id::generate_prefixed_id("trt");
                     }
                 }

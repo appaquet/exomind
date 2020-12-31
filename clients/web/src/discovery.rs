@@ -62,9 +62,9 @@ impl Discovery {
                 .await
                 .map_err(|err| into_js_error("getting config to discovery service", err))?;
 
-            let get_cell_payload = get_cell_resp
-                .decode_payload()
-                .map_err(|_| "couldn't decode payload from discovery service")?;
+            let get_cell_payload = get_cell_resp.decode_payload().map_err(|err| {
+                into_js_error("couldn't decode payload from discovery service", err)
+            })?;
             let cell_config =
                 CellConfig::from_yaml(get_cell_payload.as_slice()).map_err(|err| {
                     into_js_error("couldn't decode config retrieved from discovery", err)

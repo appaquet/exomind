@@ -1,8 +1,9 @@
 use super::{Cell, Error, LocalNode, Node, NodeId};
 use crate::protos::generated::exocore_core::cell_node_config;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::sync::{RwLockReadGuard, RwLockWriteGuard};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::{RwLockReadGuard, RwLockWriteGuard},
+};
 
 /// Common methods collection of nodes of a `Cell`
 pub trait CellNodes {
@@ -119,12 +120,12 @@ impl<'cn, N: CellNodes> CellNodesIter<'cn, N> {
             .filter(move |n| n.node.id() != node_id)
     }
 
-    pub fn all_except_local<'a>(&'a self) -> impl Iterator<Item = &'a CellNode> + 'a {
+    pub fn all_except_local(&self) -> impl Iterator<Item = &CellNode> {
         let local_node = self.nodes.cell().local_node();
         self.all_except(local_node.id())
     }
 
-    pub fn with_role<'a>(&'a self, role: CellNodeRole) -> impl Iterator<Item = &'a CellNode> + 'a {
+    pub fn with_role(&self, role: CellNodeRole) -> impl Iterator<Item = &CellNode> {
         self.nodes
             .nodes_map()
             .values()
@@ -245,8 +246,7 @@ impl CellNodeRole {
 
 #[cfg(test)]
 mod tests {
-    use super::super::FullCell;
-    use super::*;
+    use super::{super::FullCell, *};
 
     #[test]
     fn nodes_add_get() {

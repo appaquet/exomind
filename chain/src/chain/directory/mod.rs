@@ -1,19 +1,23 @@
-use std::cmp::Ordering;
-use std::path::{Path, PathBuf};
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    cmp::Ordering,
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use crate::operation::OperationId;
 use segment::DirectorySegment;
 
-use crate::block::{Block, BlockOffset, BlockRef};
-use crate::chain::{ChainStore, Error, Segment, StoredBlockIterator};
+use crate::{
+    block::{Block, BlockOffset, BlockRef},
+    chain::{ChainStore, Error, Segment, StoredBlockIterator},
+};
 
 mod operations_index;
 mod segment;
 
 use super::Segments;
-use exocore_core::simple_store::json_disk_store::JsonDiskStore;
-use exocore_core::simple_store::SimpleStore;
+use exocore_core::simple_store::{json_disk_store::JsonDiskStore, SimpleStore};
 use operations_index::OperationsIndex;
 
 const METADATA_FILE: &str = "metadata.json";
@@ -560,8 +564,7 @@ pub enum DirectoryError {
 
 #[cfg(test)]
 pub mod tests {
-    use exocore_core::cell::LocalNode;
-    use exocore_core::utils::range;
+    use exocore_core::{cell::LocalNode, utils::range};
     use itertools::Itertools;
 
     use crate::block::{Block, BlockOperations, BlockOwned};
@@ -659,9 +662,11 @@ pub mod tests {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
         let dir = tempfile::tempdir()?;
-        let mut config: DirectoryChainStoreConfig = Default::default();
-        config.segment_max_size = 350_000;
-        config.segment_over_allocate_size = 10_000;
+        let config = DirectoryChainStoreConfig {
+            segment_max_size: 350_000,
+            segment_over_allocate_size: 10_000,
+            ..Default::default()
+        };
 
         let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;
         append_blocks(&cell, &mut directory_chain, 1000, 0);
@@ -683,9 +688,11 @@ pub mod tests {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
         let dir = tempfile::tempdir()?;
-        let mut config: DirectoryChainStoreConfig = Default::default();
-        config.segment_max_size = 350_000;
-        config.segment_over_allocate_size = 10_000;
+        let config = DirectoryChainStoreConfig {
+            segment_max_size: 350_000,
+            segment_over_allocate_size: 10_000,
+            ..Default::default()
+        };
 
         fn validate_directory(directory_chain: &DirectoryChainStore) -> anyhow::Result<()> {
             let segments = directory_chain
@@ -750,9 +757,11 @@ pub mod tests {
     fn directory_chain_truncate() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
-        let mut config: DirectoryChainStoreConfig = Default::default();
-        config.segment_max_size = 1000;
-        config.segment_over_allocate_size = 1500;
+        let config = DirectoryChainStoreConfig {
+            segment_max_size: 1000,
+            segment_over_allocate_size: 1600,
+            ..Default::default()
+        };
 
         // we cutoff the directory at different position to make sure of its integrity
         for cutoff in 1..30 {
@@ -830,9 +839,11 @@ pub mod tests {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
         let dir = tempfile::tempdir()?;
-        let mut config: DirectoryChainStoreConfig = Default::default();
-        config.segment_max_size = 3000;
-        config.segment_over_allocate_size = 3500;
+        let config = DirectoryChainStoreConfig {
+            segment_max_size: 3000,
+            segment_over_allocate_size: 3500,
+            ..Default::default()
+        };
 
         {
             let mut directory_chain = DirectoryChainStore::create(config, dir.path())?;

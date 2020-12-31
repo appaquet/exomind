@@ -2,13 +2,19 @@ use super::{
     config::CellConfigExt, CellApplications, CellNode, CellNodeRole, CellNodes, CellNodesRead,
     CellNodesWrite, Error, LocalNode, Node, NodeId,
 };
-use crate::protos::generated::exocore_core::{CellConfig, LocalNodeConfig};
-use crate::protos::registry::Registry;
-use crate::sec::keys::{Keypair, PublicKey};
+use crate::{
+    protos::{
+        generated::exocore_core::{CellConfig, LocalNodeConfig},
+        registry::Registry,
+    },
+    sec::keys::{Keypair, PublicKey},
+};
 use libp2p::core::PeerId;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::{Arc, RwLock},
+};
 
 /// A Cell represents a private enclosure in which the data and applications of
 /// a user are hosted. A Cell resides on multiple nodes.
@@ -38,11 +44,7 @@ impl Cell {
             let keypair = Keypair::decode_base58_string(&config.keypair)
                 .map_err(|err| Error::Cell(format!("Couldn't parse cell keypair: {}", err)))?;
 
-            let name = if config.name != "" {
-                Some(config.name.clone())
-            } else {
-                None
-            };
+            let name = Some(config.name.clone()).filter(String::is_empty);
 
             let path = if !config.path.is_empty() {
                 Some(PathBuf::from(config.path.clone()))
@@ -56,11 +58,7 @@ impl Cell {
             let public_key = PublicKey::decode_base58_string(&config.public_key)
                 .map_err(|err| Error::Cell(format!("Couldn't parse cell public key: {}", err)))?;
 
-            let name = if config.name != "" {
-                Some(config.name.clone())
-            } else {
-                None
-            };
+            let name = Some(config.name.clone()).filter(String::is_empty);
 
             let path = if !config.path.is_empty() {
                 Some(PathBuf::from(config.path.clone()))

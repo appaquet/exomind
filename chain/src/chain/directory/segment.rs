@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::fs::{File, OpenOptions};
-use std::ops::Range;
-use std::path::{Path, PathBuf};
+use std::{
+    fs::{File, OpenOptions},
+    ops::Range,
+    path::{Path, PathBuf},
+};
 
 use super::Error;
 use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};
@@ -395,10 +397,8 @@ impl SegmentFile {
 
 #[cfg(test)]
 mod tests {
-    use super::super::tests::create_block;
-    use super::*;
-    use exocore_core::cell::FullCell;
-    use exocore_core::cell::LocalNode;
+    use super::{super::tests::create_block, *};
+    use exocore_core::cell::{FullCell, LocalNode};
 
     #[test]
     fn directory_segment_create_and_open() -> anyhow::Result<()> {
@@ -568,8 +568,10 @@ mod tests {
     fn directory_segment_grow_and_truncate() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
-        let mut config: DirectoryChainStoreConfig = Default::default();
-        config.segment_over_allocate_size = 100_000;
+        let config = DirectoryChainStoreConfig {
+            segment_over_allocate_size: 100_000,
+            ..Default::default()
+        };
 
         let dir = tempfile::tempdir()?;
         let mut next_offset = 0;
@@ -604,8 +606,10 @@ mod tests {
         let local_node = LocalNode::generate();
         let cell = FullCell::generate(local_node);
         let dir = tempfile::tempdir()?;
-        let mut config: DirectoryChainStoreConfig = Default::default();
-        config.segment_over_allocate_size = 100_000;
+        let config = DirectoryChainStoreConfig {
+            segment_over_allocate_size: 100_000,
+            ..Default::default()
+        };
 
         let mut next_offset = 1000;
 

@@ -5,7 +5,6 @@ use exocore_core::protos::store::MutationResult;
 use exocore_core::time::Instant;
 use futures::channel::oneshot;
 use std::collections::{HashMap, HashSet};
-use std::iter::FromIterator;
 use std::sync::Mutex;
 
 type RequestId = usize;
@@ -53,7 +52,7 @@ impl MutationTracker {
             request_id,
             WatchedMutationRequest {
                 received_time: Instant::now(),
-                operation_ids: HashSet::from_iter(operation_ids.iter().cloned()),
+                operation_ids: operation_ids.iter().cloned().collect(),
                 completed_operation_ids: HashSet::new(),
                 response_channel,
             },
@@ -92,7 +91,7 @@ impl MutationTracker {
             if let Some(request) = inner.remove_request(request_id) {
                 debug!("Request id={} completed", request_id);
 
-                let operation_ids = Vec::from_iter(request.operation_ids.iter().cloned());
+                let operation_ids = request.operation_ids.iter().cloned().collect();
                 let res = request.response_channel.send(Ok(MutationResult {
                     operation_ids,
                     ..Default::default()

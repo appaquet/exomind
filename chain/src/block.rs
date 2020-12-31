@@ -578,7 +578,7 @@ impl BlockOperations {
         self.headers.len()
     }
 
-    pub fn operations_id<'o>(&'o self) -> impl Iterator<Item = OperationId> + 'o {
+    pub fn operations_id(&self) -> impl Iterator<Item = OperationId> + '_ {
         self.headers.iter().map(|header| header.operation_id)
     }
 

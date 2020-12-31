@@ -337,6 +337,8 @@ fn parse_node_addresses(node: &Node, addresses: &NodeAddresses) -> Result<(), Er
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::eq_op)] // since we test node's equality
+
     use super::*;
 
     #[test]

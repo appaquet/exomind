@@ -1,19 +1,21 @@
 use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetadata};
-use crate::entity::TraitId;
-use crate::error::Error;
-use crate::query::ResultHash;
+use crate::{entity::TraitId, error::Error, query::ResultHash};
 use chrono::{DateTime, Utc};
 use exocore_chain::operation::OperationId;
-use exocore_core::protos::{
-    reflect::{FieldId, MutableReflectMessage, ReflectMessage},
-    registry::Registry,
-    store::{Projection, Trait, TraitDetails},
+use exocore_core::{
+    protos::{
+        reflect::{FieldId, MutableReflectMessage, ReflectMessage},
+        registry::Registry,
+        store::{Projection, Trait, TraitDetails},
+    },
+    time::ConsistentTimestamp,
 };
-use exocore_core::time::ConsistentTimestamp;
 use itertools::Itertools;
-use std::collections::{HashMap, HashSet};
-use std::iter::FromIterator;
-use std::{hash::Hasher, rc::Rc};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hasher,
+    rc::Rc,
+};
 
 /// Aggregates mutations metadata of an entity retrieved from the mutations
 /// index. Once merged, only the latest / active mutations are remaining, and
@@ -301,9 +303,8 @@ pub fn project_trait(
 
     let mut dyn_msg = exocore_core::protos::reflect::from_prost_any(registry, any_msg)?;
 
-    let field_ids_set: HashSet<FieldId> = HashSet::from_iter(projection.field_ids.iter().cloned());
-    let field_groups_set: HashSet<FieldId> =
-        HashSet::from_iter(projection.field_group_ids.iter().cloned());
+    let field_ids_set: HashSet<FieldId> = projection.field_ids.iter().cloned().collect();
+    let field_groups_set: HashSet<FieldId> = projection.field_group_ids.iter().cloned().collect();
 
     let mut fields_to_clear = Vec::new();
     for (field_id, field) in dyn_msg.fields() {
@@ -346,8 +347,10 @@ mod tests {
     use super::*;
     use crate::ordering::OrderingValueWrapper;
     use exocore_chain::block::BlockOffset;
-    use exocore_core::protos::prost::ProstAnyPackMessageExt;
-    use exocore_core::protos::{reflect::FieldGroupId, store::OrderingValue, test::TestMessage};
+    use exocore_core::protos::{
+        prost::ProstAnyPackMessageExt, reflect::FieldGroupId, store::OrderingValue,
+        test::TestMessage,
+    };
     use prost::Message;
 
     const TYPE1: &str = "exocore.test.TestMessage";

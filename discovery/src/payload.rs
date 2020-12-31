@@ -19,7 +19,7 @@ impl TryFrom<u32> for Pin {
     type Error = ();
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        if value < 100_000_000 || value > 999_999_999 {
+        if !(100_000_000..=999_999_999).contains(&value) {
             return Err(());
         }
 
@@ -115,10 +115,16 @@ pub struct Payload {
 }
 
 impl Payload {
-    pub fn decode_payload(&self) -> Result<Vec<u8>, ()> {
-        let b64_payload = base64::decode(&self.data).map_err(|_| ())?;
+    pub fn decode_payload(&self) -> Result<Vec<u8>, PayloadError> {
+        let b64_payload = base64::decode(&self.data)?;
         Ok(b64_payload)
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum PayloadError {
+    #[error("Base64 decoding error: {0}")]
+    Decode(#[from] base64::DecodeError),
 }
 
 #[cfg(test)]

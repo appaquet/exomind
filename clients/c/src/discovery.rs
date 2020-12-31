@@ -204,7 +204,7 @@ async fn join_cell(
 
     let get_cell_payload = get_cell_resp
         .decode_payload()
-        .map_err(|_| error!("Couldn't decode payload from discovery service"))?;
+        .map_err(|err| error!("Couldn't decode payload from discovery service: {}", err))?;
     let cell_config = CellConfig::from_yaml(get_cell_payload.as_slice())
         .map_err(|err| error!("Couldn't decode config retrieved from discovery: {}", err))?;
 
