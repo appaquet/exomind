@@ -32,11 +32,11 @@ export class Selection {
         return new Selection();
     }
 
-    isEmpty(): boolean {
-        return this.length() == 0;
+    get isEmpty(): boolean {
+        return this.length == 0;
     }
 
-    length(): number {
+    get length(): number {
         return this.items.length;
     }
 

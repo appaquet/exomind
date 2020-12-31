@@ -6,7 +6,7 @@ import DragAndDrop from "../../interaction/drag-and-drop/drag-and-drop";
 import Scrollable from "../../interaction/scrollable/scrollable";
 import { ContainerController } from "../container-controller";
 import { Entity } from './entity';
-import EntityAction from "./entity-action";
+import { EntityActions } from "./entity-action";
 import './entity-list.less';
 import { SelectedItem, Selection } from "./selection";
 
@@ -18,7 +18,7 @@ interface IProps {
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    actionsForEntity?: (entity: EntityTraits) => EntityAction[];
+    actionsForEntity?: (entity: EntityTraits) => EntityActions;
 
     header?: React.ReactNode;
 

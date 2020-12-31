@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import * as _ from 'lodash';
 export default class EditableText extends React.Component {
   static propTypes = {
+    initEdit: PropTypes.bool,
     text: PropTypes.string,
     multiline: PropTypes.bool,
     doubleClick: PropTypes.bool,
@@ -22,24 +23,24 @@ export default class EditableText extends React.Component {
     super(props);
 
     this.state = {
-      editMode: false,
+      editMode: !!props.initEdit,
       value: props.text || ''
     };
-  }
-
-  UNSAFE_componentWillReceiveProps(newProps) {
-    this.setState({
-      value: newProps.text
-    });
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.editMode) {
       this.ensureFocus();
     }
+
+    if (this.props.text != prevProps.text) {
+      this.setState({
+        value: this.props.text
+      });
+    }
   }
 
-  UNSAFE_componentWillMount() {
+  componentDidMount() {
     if (this.state.editMode) {
       this.ensureFocus();
     }
@@ -61,7 +62,10 @@ export default class EditableText extends React.Component {
     let singleClick = !this.props.doubleClick;
     let value = _.isEmpty(this.state.value) ? <span className="empty">{this.props.placeholder}</span> : this.state.value;
     return (
-      <span className="editable-text" onClick={singleClick ? this.handleReadClick.bind(this) : null} onDoubleClick={this.handleReadClick.bind(this)}>
+      <span
+        className="editable-text"
+        onClick={singleClick ? this.handleReadClick.bind(this) : null}
+        onDoubleClick={this.handleReadClick.bind(this)}>
         {value}
       </span>
     );
@@ -76,18 +80,18 @@ export default class EditableText extends React.Component {
 
   renderSingleEdit() {
     return <span className="editable-text"><input type="text" ref="inputText"
-                        onBlur={this.handleEditBlur.bind(this)}
-                        onChange={this.handleEditChange.bind(this)}
-                        onKeyUp={this.handleEditKeyPress.bind(this)}
-                        value={this.state.value}/></span>;
+      onBlur={this.handleEditBlur.bind(this)}
+      onChange={this.handleEditChange.bind(this)}
+      onKeyUp={this.handleEditKeyPress.bind(this)}
+      value={this.state.value} /></span>;
   }
 
   renderMultiEdit() {
     return <span className="editable-text"><textarea ref="inputText"
-                        onBlur={this.handleEditBlur.bind(this)}
-                        onChange={this.handleEditChange.bind(this)}
-                        onKeyUp={this.handleEditKeyPress.bind(this)}
-                        value={this.state.value}/></span>;
+      onBlur={this.handleEditBlur.bind(this)}
+      onChange={this.handleEditChange.bind(this)}
+      onKeyUp={this.handleEditKeyPress.bind(this)}
+      value={this.state.value} /></span>;
   }
 
   handleEditChange(event) {
@@ -122,6 +126,4 @@ export default class EditableText extends React.Component {
       element.select();
     }
   }
-
 }
-

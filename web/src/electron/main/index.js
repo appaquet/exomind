@@ -1,4 +1,5 @@
 'use strict'
+/* eslint-env node */
 
 import { app, BrowserWindow, ipcMain } from 'electron'
 import * as path from 'path'
@@ -12,8 +13,9 @@ let mainWindow
 function createMainWindow() {
   const window = new BrowserWindow({
     webPreferences: { nodeIntegration: true },
+    autoHideMenuBar: true,
   });
-  window.setMenuBarVisibility(isDevelopment);
+  window.setMenuBarVisibility(false);
 
   if (isDevelopment) {
     window.webContents.openDevTools()

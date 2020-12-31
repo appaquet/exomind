@@ -57,3 +57,21 @@ export function toggleLink(editorState: EditorState, url: string | null): Editor
 
     return newEditorState;
 }
+
+export function extractCurrentLink(editorState: EditorState): string | null {
+    const curContent = editorState.getCurrentContent();
+    const curSel = editorState.getSelection();
+
+    const selStartKey = curSel.getStartKey();
+    const selectedBlock = curContent.getBlockForKey(selStartKey);
+
+    const linkKey = selectedBlock.getEntityAt(0);
+    if (!linkKey) {
+        return;
+    }
+
+    const linkInstance = curContent.getEntity(linkKey);
+    const { url } = linkInstance.getData();
+
+    return url;
+}

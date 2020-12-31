@@ -4,9 +4,9 @@ import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../store/entities';
 import { ModalStore } from '../../../store/modal-store';
 import { ExpandableQuery } from '../../../store/queries';
-import { CollectionSelector } from '../../popups/collection-selector/collection-selector';
+import { CollectionSelector } from '../../modals/collection-selector/collection-selector';
 import { ContainerController } from '../container-controller';
-import EntityAction from '../entity-list/entity-action';
+import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
@@ -102,11 +102,11 @@ export class Search extends React.Component<IProps> {
     this.entityQuery?.expand();
   }
 
-  private actionsForEntity(et: EntityTraits): EntityAction[] {
-    return [
-      new EntityAction('folder-open-o', this.handleEntityMoveCollection.bind(this, et)),
-      new EntityAction('inbox', this.handleEntityMoveInbox.bind(this, et))
-    ];
+  private actionsForEntity(et: EntityTraits): EntityActions {
+    return new EntityActions([
+      new ButtonAction('folder-open-o', this.handleEntityMoveCollection.bind(this, et)),
+      new ButtonAction('inbox', this.handleEntityMoveInbox.bind(this, et))
+    ]);
   }
 
   private handleEntityMoveCollection(et: EntityTraits) {

@@ -70,7 +70,7 @@ export default class Columns extends React.Component {
 
     handleColumnItemSelect(colId, objs) {
         let columnsConfig = this.getConfig();
-        if (objs && !objs.isEmpty()) {
+        if (objs && !objs.isEmpty) {
             // TODO: support for multiple selections + entity traits
             let firstSel = objs.items[0];
 

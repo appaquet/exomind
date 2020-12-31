@@ -24,11 +24,7 @@ electron.ipcRenderer.on('navigate', (event, path) => {
 
 Promise.all([
     new Promise((resolve) => {
-        if (window.addEventListener) {
-            window.addEventListener('DOMContentLoaded', resolve);
-        } else {
-            window.attachEvent('onload', resolve);
-        }
+        window.addEventListener('DOMContentLoaded', resolve);
     }),
     initNode()
 ]).then(() => {

@@ -184,12 +184,16 @@
       padding-top: 5px;
       padding-right: 10px;
       padding-left: 15px;
-      text-align: right;
       opacity: 0.95;
 
       ul {
         .make-list();
         .center-vertical-element();
+
+        // make list take 100% so that text-alignment works
+        text-align: right;
+        left: 5px;
+        right: 10px; 
 
         li {
           .make-list-item();

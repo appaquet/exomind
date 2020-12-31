@@ -1,11 +1,29 @@
 
-export default class EntityAction {
-    public shouldRemove = false;
+type ActionResult = 'remove' | void;
 
-    constructor(public icon: string, public callback: (action: EntityAction, e: unknown) => void) {
+export class EntityActions {
+    constructor(public buttons: ButtonAction[] = [], public inlineEdit: InlineAction | null = null) {
     }
 
-    trigger(e: MouseEvent): void {
-        this.callback(this, e);
+    get isEmpty(): boolean {
+        return this.buttons.length == 0;
+    }
+}
+
+export class ButtonAction {
+    constructor(public icon: string, public callback: (action: ButtonAction, e: unknown) => ActionResult) {
+    }
+
+    trigger(e: MouseEvent): ActionResult {
+        return this.callback(this, e);
+    }
+}
+
+export class InlineAction {
+    constructor(public callback: (action: InlineAction) => void) {
+    }
+
+    trigger(): void {
+        return this.callback(this);
     }
 }
