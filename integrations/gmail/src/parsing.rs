@@ -33,14 +33,16 @@ pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThre
                 continue;
             }
 
-            let mut email = exomind_core::protos::base::Email::default();
-            email.snippet = message.snippet.clone().unwrap_or_default();
-            email.source_id = message.id.clone().unwrap_or_default();
-            email.read = message
-                .label_ids
-                .as_ref()
-                .map(|lbls| !lbls.iter().any(|l| l == "UNREAD"))
-                .unwrap_or(true);
+            let mut email = exomind_core::protos::base::Email {
+                snippet: message.snippet.clone().unwrap_or_default(),
+                source_id: message.id.clone().unwrap_or_default(),
+                read: message
+                    .label_ids
+                    .as_ref()
+                    .map(|labels| !labels.iter().any(|l| l == "UNREAD"))
+                    .unwrap_or(true),
+                ..Default::default()
+            };
 
             match parse_part(&part, &mut email) {
                 Ok(()) => {
