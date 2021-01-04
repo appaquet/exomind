@@ -325,25 +325,25 @@ pub enum EntityResultSource {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MutationRequest {
-    //// Mutations to apply.
+    /// Mutations to apply.
     #[prost(message, repeated, tag = "1")]
     pub mutations: ::prost::alloc::vec::Vec<EntityMutation>,
-    //// Waits for mutation to be indexed.
+    /// Waits for mutation to be indexed.
     #[prost(bool, tag = "2")]
     pub wait_indexed: bool,
-    //// Waits for mutation to be indexed and returns the mutated entities.
+    /// Waits for mutation to be indexed and returns the mutated entities.
     #[prost(bool, tag = "3")]
     pub return_entities: bool,
-    //// If an entity ID is generated for the mutated entities, reuse the same ID for all mutations.
+    /// If an entity ID is generated for the mutated entities, reuse the same ID for all mutations.
     #[prost(bool, tag = "4")]
     pub common_entity_id: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MutationResult {
-    //// Unique operation ids for each mutations.
+    /// Unique operation ids for each mutations.
     #[prost(uint64, repeated, tag = "1")]
     pub operation_ids: ::prost::alloc::vec::Vec<u64>,
-    //// Mutated entities if requested.
+    /// Mutated entities if requested.
     #[prost(message, repeated, tag = "2")]
     pub entities: ::prost::alloc::vec::Vec<Entity>,
 }
@@ -351,7 +351,7 @@ pub struct MutationResult {
 pub struct EntityMutation {
     #[prost(string, tag = "1")]
     pub entity_id: ::prost::alloc::string::String,
-    #[prost(oneof = "entity_mutation::Mutation", tags = "2, 3, 4, 5, 6, 99")]
+    #[prost(oneof = "entity_mutation::Mutation", tags = "2, 3, 4, 7, 99")]
     pub mutation: ::core::option::Option<entity_mutation::Mutation>,
 }
 /// Nested message and enum types in `EntityMutation`.
@@ -364,56 +364,37 @@ pub mod entity_mutation {
         DeleteTrait(super::DeleteTraitMutation),
         #[prost(message, tag = "4")]
         DeleteEntity(super::DeleteEntityMutation),
-        #[prost(message, tag = "5")]
-        UpdateTrait(super::UpdateTraitMutation),
-        #[prost(message, tag = "6")]
-        CompactTrait(super::CompactTraitMutation),
+        #[prost(message, tag = "7")]
+        DeleteOperations(super::DeleteOperationsMutation),
         #[prost(message, tag = "99")]
         Test(super::TestMutation),
     }
 }
+/// Creates or overrides a trait of the entity.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PutTraitMutation {
     #[prost(message, optional, tag = "1")]
     pub r#trait: ::core::option::Option<Trait>,
 }
+/// Deletes a trait of an entity.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteTraitMutation {
     #[prost(string, tag = "1")]
     pub trait_id: ::prost::alloc::string::String,
 }
+/// Deletes all the traits of an entity, effectively deleting the entity itself.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteEntityMutation {}
+/// Deletes mutations of an entity that have an operation id specified in the given list.
+/// This mutation is used for index management purpose only since the mutations are not
+/// actually deleted from the chain. Since the chain indices are built in a semi-versioned
+/// way, this actually delete the mutations from the indices.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateTraitMutation {
-    #[prost(string, tag = "1")]
-    pub trait_id: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "2")]
-    pub r#trait: ::core::option::Option<Trait>,
-    #[prost(message, optional, tag = "3")]
-    pub field_mask: ::core::option::Option<::prost_types::FieldMask>,
-    /// Updates is only valid if the last mutation operation on trait this given operation id.
-    #[prost(uint64, tag = "4")]
-    pub if_last_operation_id: u64,
+pub struct DeleteOperationsMutation {
+    #[prost(uint64, repeated, tag = "1")]
+    pub operation_ids: ::prost::alloc::vec::Vec<u64>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CompactTraitMutation {
-    /// List of operations that are compacted by this compaction. The compaction will only succeed
-    /// if there were no operations between these operations and the compaction's operation itself.
-    #[prost(message, repeated, tag = "1")]
-    pub compacted_operations: ::prost::alloc::vec::Vec<compact_trait_mutation::Operation>,
-    /// Trait with merged values from compacted operations
-    #[prost(message, optional, tag = "2")]
-    pub r#trait: ::core::option::Option<Trait>,
-}
-/// Nested message and enum types in `CompactTraitMutation`.
-pub mod compact_trait_mutation {
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct Operation {
-        #[prost(uint64, tag = "1")]
-        pub operation_id: u64,
-    }
-}
+/// Mutation used in tests.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestMutation {
     #[prost(bool, tag = "1")]

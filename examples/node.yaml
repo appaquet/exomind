@@ -47,3 +47,22 @@ cells:
 
   # Cell defined in a directory
   - path: ./cell
+
+store:
+  index:
+    chain_index_min_depth: 3
+    chain_index_depth_leeway: 10
+
+    pending_index:
+      indexer_num_threads: 2
+      indexer_heap_size_bytes: 30000000
+      entity_mutations_cache_size: 1000
+
+    chain_index:
+      indexer_num_threads: 2
+      indexer_heap_size_bytes: 30000000
+      entity_mutations_cache_size: 1000
+
+    garbage_collector:
+      run_interval_secs: 30
+      queue_size: 100

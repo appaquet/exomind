@@ -1,9 +1,12 @@
 use crate::entity::{EntityId, TraitId};
-use exocore_chain::block::BlockOffset;
-use exocore_chain::engine::EngineOperation;
-use exocore_chain::operation::{Operation, OperationId};
-use exocore_core::protos::generated::exocore_store::entity_mutation::Mutation;
-use exocore_core::protos::generated::exocore_store::{EntityMutation, Trait};
+use exocore_chain::{
+    block::BlockOffset,
+    engine::EngineOperation,
+    operation::{Operation, OperationId},
+};
+use exocore_core::protos::generated::exocore_store::{
+    entity_mutation::Mutation, EntityMutation, Trait,
+};
 use prost::Message;
 use smallvec::SmallVec;
 
@@ -21,6 +24,11 @@ pub enum IndexOperation {
 
     /// Delete an indexed mutation by its operation id.
     DeleteOperation(OperationId),
+
+    /// Delete an indexed mutation for specified entity id by its operation id.
+    /// Independent from `DeleteOperation` so that we can indicate flush entity
+    /// cache.
+    DeleteEntityOperation(EntityId, OperationId),
 }
 
 pub struct PutTraitMutation {
@@ -76,25 +84,6 @@ impl IndexOperation {
                     trt,
                 })]
             }
-            Mutation::CompactTrait(cmpt_mut) => {
-                let trt = if let Some(trt) = cmpt_mut.r#trait {
-                    trt
-                } else {
-                    return smallvec![];
-                };
-
-                smallvec![IndexOperation::PutTrait(PutTraitMutation {
-                    block_offset: None,
-                    operation_id: operation.operation_id,
-                    entity_id: entity_mutation.entity_id,
-                    trt,
-                })]
-            }
-            Mutation::UpdateTrait(_) => {
-                // An update is handled at the store level where it will be succeeded by a put
-                // created of the current value
-                smallvec![]
-            }
             Mutation::DeleteTrait(trt_del) => smallvec![IndexOperation::PutTraitTombstone(
                 PutTraitTombstoneMutation {
                     block_offset: None,
@@ -110,6 +99,11 @@ impl IndexOperation {
                     entity_id: entity_mutation.entity_id,
                 }
             )],
+            Mutation::DeleteOperations(_) => {
+                // we don't actually delete until we are in chain index since operation may not
+                // be valid at this point
+                smallvec![]
+            }
             Mutation::Test(_mutation) => smallvec![],
         }
     }
@@ -147,35 +141,9 @@ impl IndexOperation {
                     trt,
                 })]
             }
-            Mutation::CompactTrait(trait_compact) => {
-                let trt = if let Some(trt) = trait_compact.r#trait {
-                    trt
-                } else {
-                    return smallvec![];
-                };
-
-                let mut index_mutations = SmallVec::new();
-                for op in trait_compact.compacted_operations {
-                    index_mutations.push(IndexOperation::DeleteOperation(op.operation_id));
-                }
-
-                index_mutations.push(IndexOperation::PutTrait(PutTraitMutation {
-                    block_offset: Some(block_offset),
-                    operation_id: operation.operation_id,
-                    entity_id: entity_mutation.entity_id,
-                    trt,
-                }));
-
-                index_mutations
-            }
-            Mutation::UpdateTrait(_trt_up) => {
-                // An update is handled at the store level where it will be succeeded by a put
-                // created of the current value
-                smallvec![]
-            }
             Mutation::DeleteTrait(trt_del) => smallvec![IndexOperation::PutTraitTombstone(
                 PutTraitTombstoneMutation {
-                    block_offset: None,
+                    block_offset: Some(block_offset),
                     operation_id: operation.operation_id,
                     entity_id: entity_mutation.entity_id,
                     trait_id: trt_del.trait_id,
@@ -183,11 +151,21 @@ impl IndexOperation {
             )],
             Mutation::DeleteEntity(_) => smallvec![IndexOperation::PutEntityTombstone(
                 PutEntityTombstoneMutation {
-                    block_offset: None,
+                    block_offset: Some(block_offset),
                     operation_id: operation.operation_id,
                     entity_id: entity_mutation.entity_id,
                 }
             )],
+            Mutation::DeleteOperations(del_mut) => {
+                let mut index_mutations = SmallVec::with_capacity(del_mut.operation_ids.len());
+                for op_id in del_mut.operation_ids {
+                    index_mutations.push(IndexOperation::DeleteEntityOperation(
+                        entity_mutation.entity_id.clone(),
+                        op_id,
+                    ));
+                }
+                index_mutations
+            }
             Mutation::Test(_) => smallvec![],
         }
     }

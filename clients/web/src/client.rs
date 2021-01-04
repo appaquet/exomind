@@ -101,8 +101,11 @@ impl ExocoreClient {
 
                     let inner = inner_clone.lock().unwrap();
                     if let Some(func) = &inner.status_change_callback {
-                        func.call1(&JsValue::null(), &JsValue::from_str(str_status))
-                            .unwrap();
+                        if let Err(err) =
+                            func.call1(&JsValue::null(), &JsValue::from_str(str_status))
+                        {
+                            error!("Error calling status report callback: {:?}", err);
+                        }
                     }
                 }
             }

@@ -1,7 +1,14 @@
+use chrono::{DateTime, TimeZone, Utc};
+
 use super::{ConsistentTimestamp, Instant, SystemTime};
 use crate::cell::Node;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::{
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/6
 
@@ -52,6 +59,11 @@ impl Clock {
         }
     }
 
+    pub fn now_chrono(&self) -> DateTime<Utc> {
+        let unix_elapsed = self.unix_elapsed();
+        Utc.timestamp_nanos(unix_elapsed.as_nanos() as i64)
+    }
+
     pub fn consistent_time(&self, node: &Node) -> ConsistentTimestamp {
         let counter = loop {
             let counter = self.consistent_counter.fetch_add(1, Ordering::SeqCst);
@@ -75,34 +87,27 @@ impl Clock {
             }
         };
 
+        let unix_elapsed = self.unix_elapsed();
+        ConsistentTimestamp::from_context(unix_elapsed, counter as u64, node.consistent_clock_id())
+    }
+
+    pub fn unix_elapsed(&self) -> Duration {
         match &self.source {
             Source::System => {
                 let now_system = SystemTime::now();
-                let unix_elapsed = now_system.duration_since(wasm_timer::UNIX_EPOCH).unwrap();
-                ConsistentTimestamp::from_context(
-                    unix_elapsed,
-                    counter as u64,
-                    node.consistent_clock_id(),
-                )
+                now_system.duration_since(wasm_timer::UNIX_EPOCH).unwrap()
             }
             #[cfg(any(test, feature = "tests-utils"))]
             Source::Mocked(time) => {
                 let mocked_instant = time.read().expect("Couldn't acquire read lock");
 
-                let unix_elapsed = if let Some((_fixed_instant, fixed_unix_elaps)) = *mocked_instant
-                {
+                if let Some((_fixed_instant, fixed_unix_elaps)) = *mocked_instant {
                     fixed_unix_elaps
                 } else {
                     SystemTime::now()
                         .duration_since(wasm_timer::UNIX_EPOCH)
                         .unwrap()
-                };
-
-                ConsistentTimestamp::from_context(
-                    unix_elapsed,
-                    counter as u64,
-                    node.consistent_clock_id(),
-                )
+                }
             }
         }
     }
@@ -166,11 +171,9 @@ enum Source {
 
 #[cfg(test)]
 mod tests {
-    use super::super::Duration;
-    use super::*;
+    use super::{super::Duration, *};
     use crate::cell::LocalNode;
-    use std::sync::Arc;
-    use std::thread;
+    use std::{sync::Arc, thread};
 
     #[test]
     fn non_mocked_clock() {
@@ -278,5 +281,21 @@ mod tests {
         .unwrap();
 
         assert_eq!(mocked_clock.instant(), now);
+    }
+
+    #[test]
+    fn chrono_datetime() {
+        let clock = Clock::new();
+
+        let now1 = clock.now_chrono();
+        let now2 = clock.now_chrono();
+        assert!(now2 > now1);
+
+        let fixed_clock = Clock::new_fixed_mocked(Instant::now());
+        let now3 = fixed_clock.now_chrono();
+        assert!(now3 > now2);
+
+        let now4 = fixed_clock.now_chrono();
+        assert_eq!(now3, now4);
     }
 }

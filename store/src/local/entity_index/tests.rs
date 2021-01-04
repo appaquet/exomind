@@ -1,15 +1,16 @@
-use exocore_core::protos::generated::exocore_store::Paging;
-use exocore_core::protos::generated::exocore_test::TestMessage;
 use exocore_core::{
-    protos::{prost::ProstTimestampExt, test::TestMessage2},
+    protos::{
+        generated::{exocore_store::Paging, exocore_test::TestMessage},
+        test::TestMessage2,
+    },
     tests_utils::{expect_result_eventually, result_assert_equal, result_assert_true},
 };
 use test_index::*;
 
-use crate::mutation::MutationBuilder;
-use crate::ordering::{value_from_u64, value_max};
 use crate::{
     local::mutation_index::MutationType,
+    mutation::MutationBuilder,
+    ordering::{value_from_u64, value_max},
     query::{ProjectionBuilder, QueryBuilder as Q},
 };
 
@@ -19,7 +20,7 @@ use super::*;
 async fn index_full_pending_to_chain() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index when block is at depth 1 or more
-        ..TestEntityIndex::create_test_config()
+        ..TestEntityIndex::test_config()
     };
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
     test_index.handle_engine_events()?;
@@ -72,7 +73,7 @@ async fn test_chain_index_block_depth_leeway() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1,    // index up to the depth 1 (last block in chain)
         chain_index_depth_leeway: 5, // only index once we reach depth of 5 in chain
-        ..TestEntityIndex::create_test_config()
+        ..TestEntityIndex::test_config()
     };
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
     test_index.handle_engine_events()?;
@@ -115,7 +116,7 @@ async fn reopen_chain_index() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear
         chain_index_in_memory: false,
-        ..TestEntityIndex::create_test_config()
+        ..TestEntityIndex::test_config()
     };
 
     // index a few traits & make sure it's in the chain index
@@ -141,7 +142,7 @@ async fn reopen_chain_and_pending_transition() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 2,
         chain_index_in_memory: false,
-        ..TestEntityIndex::create_test_config()
+        ..TestEntityIndex::test_config()
     };
 
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
@@ -203,7 +204,7 @@ async fn reindex_pending_on_discontinuity() -> anyhow::Result<()> {
 async fn chain_divergence() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 0, // index as soon as new block appear
-        ..TestEntityIndex::create_test_config()
+        ..TestEntityIndex::test_config()
     };
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
@@ -252,7 +253,7 @@ async fn chain_divergence() -> anyhow::Result<()> {
 async fn delete_entity_trait() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
-        ..TestEntityIndex::create_test_config()
+        ..TestEntityIndex::test_config()
     };
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
@@ -285,7 +286,7 @@ async fn delete_entity_trait() -> anyhow::Result<()> {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn delete_all_entity_traits() -> anyhow::Result<()> {
-    let config = TestEntityIndex::create_test_config();
+    let config = TestEntityIndex::test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "name1")?;
@@ -331,7 +332,7 @@ async fn delete_all_entity_traits() -> anyhow::Result<()> {
 async fn delete_entity() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
         chain_index_min_depth: 1, // index in chain as soon as another block is after
-        ..TestEntityIndex::create_test_config()
+        ..TestEntityIndex::test_config()
     };
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
@@ -376,10 +377,10 @@ async fn delete_entity() -> anyhow::Result<()> {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn traits_compaction() -> anyhow::Result<()> {
+async fn operations_deletion() -> anyhow::Result<()> {
     let config = EntityIndexConfig {
-        chain_index_min_depth: 1, // index in chain as soon as another block is after
-        ..TestEntityIndex::create_test_config()
+        chain_index_min_depth: 0, // index in chain as soon as a block is committed
+        ..TestEntityIndex::test_config()
     };
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
@@ -390,17 +391,11 @@ async fn traits_compaction() -> anyhow::Result<()> {
     test_index.handle_engine_events()?;
 
     // we have 3 mutations on same trait
-    let pending_res = test_index
+    let chain_res = test_index
         .index
-        .pending_index
+        .chain_index
         .fetch_entity_mutations("entity1")?;
-    let ops: Vec<OperationId> = pending_res
-        .mutations
-        .iter()
-        .map(|r| r.operation_id)
-        .unique()
-        .collect();
-    assert_eq!(vec![op1, op2, op3], ops);
+    assert_eq!(chain_res.mutations.len(), 3);
 
     // mut entity has only 1 trait since all ops are on same trait
     let query = Q::with_id("entity1").build();
@@ -409,77 +404,37 @@ async fn traits_compaction() -> anyhow::Result<()> {
     let traits_msgs = extract_result_messages(&res.entities[0]);
     assert_eq!(traits_msgs.len(), 1);
 
-    // last version of trait should have been ket
-    assert_eq!("op3", traits_msgs[0].1.string1);
-
-    assert_eq!(
-        op1,
-        traits_msgs[0]
-            .0
-            .creation_date
-            .as_ref()
-            .unwrap()
-            .to_timestamp_nanos()
-    );
-    assert_eq!(
-        op3,
-        traits_msgs[0]
-            .0
-            .modification_date
-            .as_ref()
-            .unwrap()
-            .to_timestamp_nanos()
-    );
-
-    // push a compaction operation
-    let mut new_trait = TestEntityIndex::new_test_trait("trait1", "op4")?;
-    new_trait.creation_date = traits_msgs[0].0.creation_date.clone();
-    new_trait.modification_date = traits_msgs[0].0.modification_date.clone();
-    let op_id = test_index.write_mutation(MutationBuilder::new().compact_traits(
-        "entity1",
-        new_trait,
-        vec![op1, op2, op3],
-    ))?;
+    // push operations deletion
+    let op_id = test_index
+        .write_mutation(MutationBuilder::new().delete_operations("entity1", vec![op1, op2, op3]))?;
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
 
-    // make sure compaction gets indexed by appending another op
-    let op4 = test_index.put_test_trait("entity_other", "trait1", "op3")?;
+    // we don't actually delete from pending yet, only in chain
+    let pending_res = test_index
+        .index
+        .pending_index
+        .fetch_entity_mutations("entity1")?;
+    assert_eq!(pending_res.mutations.len(), 3);
+
+    // make sure deletion gets indexed by appending another op
+    let op4 = test_index.put_test_trait("entity_other", "trait1", "op4")?;
     test_index.wait_operations_committed(&[op4]);
     test_index.handle_engine_events()?;
 
-    // re-query, dates should still be the same even if we compacted the traits
-    let query = Q::with_id("entity1").build();
-    let res = test_index.index.search(query)?;
-    assert_eq!(res.entities.len(), 1);
-    let traits_msgs = extract_result_messages(&res.entities[0]);
-    assert_eq!(traits_msgs.len(), 1);
-
-    assert_eq!(
-        traits_msgs[0]
-            .0
-            .creation_date
-            .as_ref()
-            .unwrap()
-            .to_timestamp_nanos(),
-        op1,
-    );
-    assert_eq!(
-        traits_msgs[0]
-            .0
-            .modification_date
-            .as_ref()
-            .unwrap()
-            .to_timestamp_nanos(),
-        op3,
-    );
+    // shouldn't be in chain index anymore
+    let chain_res = test_index
+        .index
+        .chain_index
+        .fetch_entity_mutations("entity1")?;
+    assert_eq!(chain_res.mutations.len(), 0);
 
     Ok(())
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn query_paging() -> anyhow::Result<()> {
-    let config = TestEntityIndex::create_test_config();
+    let config = TestEntityIndex::test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     // add traits in 3 batch so that we have pending & chain items
@@ -569,7 +524,7 @@ async fn query_paging() -> anyhow::Result<()> {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn query_multiple_mutations_paging() -> anyhow::Result<()> {
-    let config = TestEntityIndex::create_test_config();
+    let config = TestEntityIndex::test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     // add traits in 2 batch so that we have pending & chain items
@@ -616,7 +571,7 @@ async fn query_multiple_mutations_paging() -> anyhow::Result<()> {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn query_ordering() -> anyhow::Result<()> {
-    let config = TestEntityIndex::create_test_config();
+    let config = TestEntityIndex::test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let ops_id = test_index.put_test_traits(0..10)?;
@@ -662,7 +617,7 @@ async fn query_ordering() -> anyhow::Result<()> {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn skip_results_hash() -> anyhow::Result<()> {
-    let config = TestEntityIndex::create_test_config();
+    let config = TestEntityIndex::test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "name")?;
@@ -683,7 +638,7 @@ async fn skip_results_hash() -> anyhow::Result<()> {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn query_projection() -> anyhow::Result<()> {
-    let config = TestEntityIndex::create_test_config();
+    let config = TestEntityIndex::test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;
 
     let op1 = test_index.put_test_trait("entity1", "trait1", "name 1")?;

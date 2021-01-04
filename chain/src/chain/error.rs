@@ -31,7 +31,10 @@ pub enum Error {
 
 impl Error {
     pub fn is_fatal(&self) -> bool {
-        matches!(self, Error::UnexpectedState(_) | Error::Integrity(_) | Error::IO(_, _))
+        matches!(
+            self,
+            Error::UnexpectedState(_) | Error::Integrity(_) | Error::IO(_, _)
+        )
     }
 
     pub fn new_io<S: Into<String>>(io: std::io::Error, msg: S) -> Error {

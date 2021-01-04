@@ -626,23 +626,22 @@ mod tests {
             }),
             store: Some(NodeStoreConfig {
                 index: Some(EntityIndexConfig {
-                    chain_index_min_depth: 3,
-                    chain_index_depth_leeway: 10,
+                    chain_index_min_depth: Some(3),
+                    chain_index_depth_leeway: Some(10),
                     pending_index: Some(MutationIndexConfig {
-                        indexer_num_threads: 2,
-                        indexer_heap_size_bytes: 30_000_000,
-                        iterator_page_size: 50,
-                        iterator_max_pages: 20,
-                        entity_mutations_cache_size: 2000,
+                        indexer_num_threads: Some(2),
+                        indexer_heap_size_bytes: Some(30_000_000),
+                        entity_mutations_cache_size: Some(2000),
                     }),
                     chain_index: Some(MutationIndexConfig {
-                        indexer_num_threads: 2,
-                        indexer_heap_size_bytes: 30_000_000,
-                        iterator_page_size: 50,
-                        iterator_max_pages: 20,
-                        entity_mutations_cache_size: 2000,
+                        indexer_num_threads: Some(2),
+                        indexer_heap_size_bytes: Some(30_000_000),
+                        entity_mutations_cache_size: Some(2000),
                     }),
+                    ..Default::default()
                 }),
+                query_parallelism: Some(5),
+                ..Default::default()
             }),
         };
 
@@ -896,20 +895,16 @@ store:
 
         {
             let index_entity = config.clone().store.unwrap().index.unwrap();
-            assert_eq!(2, index_entity.chain_index_min_depth);
-            assert_eq!(6, index_entity.chain_index_depth_leeway);
+            assert_eq!(Some(2), index_entity.chain_index_min_depth);
+            assert_eq!(Some(6), index_entity.chain_index_depth_leeway);
 
             let default_conf = MutationIndexConfig::default();
 
             let pending_mutation = index_entity.pending_index.unwrap();
-            assert_eq!(3, pending_mutation.indexer_num_threads);
-            assert_eq!(50000000, pending_mutation.indexer_heap_size_bytes);
-            assert_eq!(100, pending_mutation.iterator_page_size);
+            assert_eq!(Some(3), pending_mutation.indexer_num_threads);
+            assert_eq!(Some(50000000), pending_mutation.indexer_heap_size_bytes);
+
             // Not defined should be default
-            assert_eq!(
-                default_conf.iterator_max_pages,
-                pending_mutation.iterator_max_pages
-            );
             assert_eq!(
                 default_conf.entity_mutations_cache_size,
                 pending_mutation.entity_mutations_cache_size

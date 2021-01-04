@@ -2,6 +2,8 @@ use crate::local::mutation_index::MutationIndexConfig;
 use exocore_chain::block::BlockHeight;
 use exocore_core::protos::generated::exocore_core::EntityIndexConfig as ProtoEntityIndexConfig;
 
+use super::gc::GarbageCollectorConfig;
+
 /// Configuration of the entities index
 #[derive(Clone, Copy, Debug)]
 pub struct EntityIndexConfig {
@@ -26,6 +28,9 @@ pub struct EntityIndexConfig {
 
     /// For tests, allow not hitting the disk
     pub chain_index_in_memory: bool,
+
+    /// Configuration entity / mutation index garbage collector process.
+    pub garbage_collector: GarbageCollectorConfig,
 }
 
 impl Default for EntityIndexConfig {
@@ -36,18 +41,31 @@ impl Default for EntityIndexConfig {
             pending_index_config: MutationIndexConfig::default(),
             chain_index_config: MutationIndexConfig::default(),
             chain_index_in_memory: false,
+            garbage_collector: GarbageCollectorConfig::default(),
         }
     }
 }
 
 impl From<ProtoEntityIndexConfig> for EntityIndexConfig {
     fn from(proto: ProtoEntityIndexConfig) -> Self {
-        EntityIndexConfig {
-            chain_index_min_depth: proto.chain_index_min_depth,
-            chain_index_depth_leeway: proto.chain_index_depth_leeway,
+        let mut config = EntityIndexConfig {
             pending_index_config: proto.pending_index.map(|m| m.into()).unwrap_or_default(),
             chain_index_config: proto.chain_index.map(|m| m.into()).unwrap_or_default(),
             ..EntityIndexConfig::default()
+        };
+
+        if let Some(v) = proto.chain_index_min_depth {
+            config.chain_index_min_depth = v;
         }
+
+        if let Some(v) = proto.chain_index_depth_leeway {
+            config.chain_index_depth_leeway = v;
+        }
+
+        if let Some(gc) = proto.garbage_collector {
+            config.garbage_collector = gc.into();
+        }
+
+        config
     }
 }

@@ -5,6 +5,7 @@ use exocore_core::protos::{
 use prost::Message;
 
 pub type EntityId = String;
+pub type EntityIdRef<'s> = &'s str;
 pub type TraitId = String;
 
 pub struct TraitInstance<'e, M: NamedMessage + Message + Default> {

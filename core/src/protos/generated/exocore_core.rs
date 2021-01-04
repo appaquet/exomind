@@ -66,53 +66,81 @@ pub mod node_cell_config {
         Path(::prost::alloc::string::String),
     }
 }
+/// Entity store configuration for the node (i.e. not global)
 #[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NodeStoreConfig {
+    /// Entity index config.
     #[prost(message, optional, tag = "1")]
     #[serde(default)]
     pub index: ::core::option::Option<EntityIndexConfig>,
+    /// Maximum number fo queries to execute in parallel.
+    #[prost(message, optional, tag = "2")]
+    #[serde(default)]
+    pub query_parallelism: ::core::option::Option<u32>,
 }
-//// Configuration of the entities index
+/// Configuration of the entity index
 #[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct EntityIndexConfig {
-    //// What is the minimum depth that a block needs to be the chain to be
-    //// indexed. This is required to lower the odds that we are going to
-    //// revert the block if our local chain forked.
-    ////
-    //// `CommitManagerConfig`.`operations_cleanup_after_block_depth`
-    #[prost(uint64, tag = "1")]
-    pub chain_index_min_depth: u64,
-    //// If specified, prevent indexing every new block on each commit.
-    //// Operations will be kept in pending index for a bit longer and
-    //// preventing the costly chain index modification.
-    #[prost(uint64, tag = "2")]
-    pub chain_index_depth_leeway: u64,
-    //// Configuration for the in-memory traits index that are in the pending
-    //// store
+    /// What is the minimum depth that a block needs to be the chain to be
+    /// indexed. This is required to lower the odds that we are going to
+    /// revert the block if our local chain forked.
+    ///
+    /// `CommitManagerConfig`.`operations_cleanup_after_block_depth`
+    #[prost(message, optional, tag = "1")]
+    #[serde(default)]
+    pub chain_index_min_depth: ::core::option::Option<u64>,
+    /// If specified, prevent indexing every new block on each commit.
+    /// Operations will be kept in pending index for a bit longer and
+    /// preventing the costly chain index modification.
+    #[prost(message, optional, tag = "2")]
+    #[serde(default)]
+    pub chain_index_depth_leeway: ::core::option::Option<u64>,
+    /// Configuration for the in-memory traits index that are in the pending
+    /// store
     #[prost(message, optional, tag = "3")]
+    #[serde(default)]
     pub pending_index: ::core::option::Option<MutationIndexConfig>,
-    //// Configuration for the persisted traits index that are in the chain
+    /// Configuration for the persisted traits index that are in the chain
     #[prost(message, optional, tag = "4")]
+    #[serde(default)]
     pub chain_index: ::core::option::Option<MutationIndexConfig>,
+    /// Configuration for the entity garbage collector.
+    #[prost(message, optional, tag = "5")]
+    #[serde(default)]
+    pub garbage_collector: ::core::option::Option<EntityGarbageCollectorConfig>,
 }
-//// Trait index configuration
+/// Trait index configuration
 #[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct MutationIndexConfig {
-    #[prost(uint32, tag = "1")]
+    //// Number of indexing threads.
+    #[prost(message, optional, tag = "1")]
     #[serde(default)]
-    pub indexer_num_threads: u32,
-    #[prost(uint32, tag = "2")]
+    pub indexer_num_threads: ::core::option::Option<u32>,
+    //// Maximum heap size of each indexing thread.
+    #[prost(message, optional, tag = "2")]
     #[serde(default)]
-    pub indexer_heap_size_bytes: u32,
-    #[prost(uint32, tag = "3")]
+    pub indexer_heap_size_bytes: ::core::option::Option<u32>,
+    //// Page size of results iterator.
+    #[prost(message, optional, tag = "3")]
     #[serde(default)]
-    pub iterator_page_size: u32,
-    #[prost(uint32, tag = "4")]
+    pub entity_mutations_cache_size: ::core::option::Option<u32>,
+}
+/// Configuration for entity garbage collector.
+#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct EntityGarbageCollectorConfig {
+    /// How often the garbage collection process will run in seconds.
+    ///
+    /// Since garbage collection doesn't happen on the whole index, but only on entities
+    /// that got flagged during search, it is better to run more often than
+    /// less. `GarbageCollectorConfig::queue_size` can be tweaked to control
+    /// rate of collection.
+    #[prost(message, optional, tag = "1")]
     #[serde(default)]
-    pub iterator_max_pages: u32,
-    #[prost(uint32, tag = "5")]
+    pub run_interval_secs: ::core::option::Option<u32>,
+    //// Size of the queue of entities to be collected.
+    #[prost(message, optional, tag = "2")]
     #[serde(default)]
-    pub entity_mutations_cache_size: u32,
+    pub queue_size: ::core::option::Option<u32>,
 }
 #[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CellConfig {

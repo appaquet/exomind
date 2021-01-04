@@ -5,11 +5,12 @@ use std::{
     time::Duration,
 };
 
+use exocore_core::protos::core::NodeStoreConfig;
 use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
 use exocore_core::cell::Cell;
-use exocore_core::futures::{spawn_blocking, BatchingStream};
+use exocore_core::futures::{interval, spawn_blocking, BatchingStream};
 use exocore_core::protos::generated::exocore_store::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_store::{
     entity_query, EntityQuery, EntityResults, MutationRequest, MutationResult,
@@ -86,7 +87,7 @@ where
     pub async fn run(self) -> Result<(), Error> {
         let config = self.config;
 
-        // incoming queries execution
+        // Incoming queries execution
         let incoming_queries_receiver = self.incoming_queries_receiver;
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
@@ -132,7 +133,7 @@ where
             Ok::<(), Error>(())
         };
 
-        // schedule chain engine events stream
+        // Schedules chain engine events stream
         let mut events_stream = {
             let mut inner = self.inner.write()?;
             let events = inner.chain_handle.take_events_stream()?;
@@ -162,7 +163,7 @@ where
             Ok(())
         };
 
-        // checks if watched queries have their results changed
+        // Checks if watched queries have their results changed
         let weak_inner = Arc::downgrade(&self.inner);
         let watched_queries_checker = async move {
             while watch_check_receiver.next().await.is_some() {
@@ -200,13 +201,47 @@ where
             Ok::<(), Error>(())
         };
 
-        info!("Index store started");
+        // Runs a garbage collection pass on entity index, which will only get executed
+        // if entities to be collected got flagged in a previous search query and added
+        // to the garbage collector queue.
+        // See [GarbageCollector](super::entity_index::gc::GarbageCollector)
+        let mut gc_interval = interval(config.garbage_collect_interval);
+        let weak_inner = Arc::downgrade(&self.inner);
+        let garbage_collector = async move {
+            while gc_interval.next().await.is_some() {
+                let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+                let inner = inner.read()?;
+                match inner.index.run_garbage_collector() {
+                    Ok(deletions) => {
+                        let deletion_request = MutationRequest {
+                            mutations: deletions,
+                            ..Default::default()
+                        };
+
+                        if let Err(err) = inner.handle_mutation_request(deletion_request) {
+                            error!("Error executing mutations from garbage collection: {}", err);
+                        }
+                    }
+                    Err(err) => {
+                        error!("Error running garbage collection: {}", err);
+                        if err.is_fatal() {
+                            return Err(err);
+                        }
+                    }
+                }
+            }
+
+            Ok::<(), Error>(())
+        };
+
+        info!("Entity store started");
 
         futures::select! {
             _ = self.handle_set.on_handles_dropped().fuse() => {},
             _ = queries_executor.fuse() => {},
             _ = chain_events_handler.fuse() => {},
             _ = watched_queries_checker.fuse() => {},
+            _ = garbage_collector.fuse() => {},
         }
 
         Ok(())
@@ -216,11 +251,29 @@ where
 /// Configuration for `Store`.
 #[derive(Clone, Copy)]
 pub struct StoreConfig {
+    /// Size of the channel of queries to be executed.
     pub query_channel_size: usize,
+
+    /// Maximum number fo queries to execute in parallel.
     pub query_parallelism: usize,
+
+    /// Size of the result channel of each watched query.
     pub handle_watch_query_channel_size: usize,
+
+    /// Maximum number of events from chain engine to batch together if more are
+    /// available.
     pub chain_events_batch_size: usize,
+
+    /// Timeout for mutations that were awaiting for entities to be returned.
     pub mutation_tracker_timeout: Duration,
+
+    /// How often the garbage collection process will run.
+    ///
+    /// Since garbage collection doesn't happen on the whole index, but only on
+    /// entities that got flagged during search, it is better to run more
+    /// often than less. `GarbageCollectorConfig::queue_size` can be tweaked
+    /// to control rate of collection.
+    pub garbage_collect_interval: Duration,
 }
 
 impl Default for StoreConfig {
@@ -228,10 +281,31 @@ impl Default for StoreConfig {
         StoreConfig {
             query_channel_size: 1000,
             query_parallelism: 4,
-            handle_watch_query_channel_size: 1000,
+            handle_watch_query_channel_size: 100,
             chain_events_batch_size: 50,
             mutation_tracker_timeout: Duration::from_secs(5),
+            garbage_collect_interval: Duration::from_secs(33),
         }
+    }
+}
+
+impl From<NodeStoreConfig> for StoreConfig {
+    fn from(proto: NodeStoreConfig) -> Self {
+        let mut config = StoreConfig::default();
+
+        if let Some(v) = proto.query_parallelism {
+            config.query_parallelism = v as usize;
+        }
+
+        if let Some(index) = &proto.index {
+            if let Some(gc) = &index.garbage_collector {
+                if let Some(v) = gc.run_interval_secs {
+                    config.garbage_collect_interval = Duration::from_secs(v as u64);
+                }
+            }
+        }
+
+        config
     }
 }
 
@@ -555,11 +629,14 @@ impl QueryRequest {
 pub mod tests {
     use std::time::Duration;
 
+    use exocore_core::tests_utils::async_expect_eventually;
     use futures::executor::block_on_stream;
 
     use exocore_core::protos::prost::ProstAnyPackMessageExt;
     use exocore_core::{futures::sleep, protos::store::Trait, protos::test::TestMessage};
 
+    use crate::local::entity_index::GarbageCollectorConfig;
+    use crate::local::EntityIndexConfig;
     use crate::mutation::MutationBuilder;
     use crate::query::QueryBuilder;
 
@@ -571,7 +648,7 @@ pub mod tests {
         let mut test_store = TestStore::new().await?;
         test_store.start_store().await?;
 
-        let mutation = test_store.create_put_contact_mutation("entry1", "contact1", "Hello World");
+        let mutation = test_store.create_put_contact_mutation("entry1", "trt1", "Hello World");
         let result = test_store.mutate(mutation).await?;
         assert_eq!(result.entities.len(), 0);
         test_store
@@ -591,7 +668,7 @@ pub mod tests {
         test_store.start_store().await?;
 
         let mutation = test_store
-            .create_put_contact_mutation("entry1", "contact1", "Hello World")
+            .create_put_contact_mutation("entry1", "trt1", "Hello World")
             .return_entities();
         let result = test_store.mutate(mutation).await?;
         assert_eq!(result.entities.len(), 1);
@@ -612,7 +689,7 @@ pub mod tests {
         {
             // generate entity and trait ids if none are given
             let mutation = test_store
-                .create_put_contact_mutation("", "contact1", "Hello World")
+                .create_put_contact_mutation("", "trt1", "Hello World")
                 .return_entities();
             let result = test_store.mutate(mutation).await?;
             assert_eq!(result.entities.len(), 1);
@@ -687,7 +764,7 @@ pub mod tests {
         let result = stream.next().unwrap();
         assert_eq!(result.unwrap().entities.len(), 0);
 
-        let mutation = test_store.create_put_contact_mutation("entry1", "contact1", "Hello World");
+        let mutation = test_store.create_put_contact_mutation("entry1", "trt1", "Hello World");
         let response = test_store.mutate(mutation).await?;
         test_store
             .cluster
@@ -728,6 +805,66 @@ pub mod tests {
 
         let result = stream.next().unwrap();
         assert!(result.is_err());
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn garbage_collection() -> anyhow::Result<()> {
+        let store_config = StoreConfig {
+            garbage_collect_interval: Duration::from_millis(50),
+            ..Default::default()
+        };
+        let index_config = EntityIndexConfig {
+            chain_index_min_depth: 0, // index in chain as soon as a block is committed
+            chain_index_depth_leeway: 0, // for tests, we want to index as soon as possible
+            chain_index_in_memory: false,
+            garbage_collector: GarbageCollectorConfig {
+                deleted_entity_collection: Duration::from_millis(100),
+                ..Default::default()
+            },
+            ..TestStore::test_index_config()
+        };
+
+        let mut test_store = TestStore::new_with_config(store_config, index_config).await?;
+        test_store.start_store().await?;
+
+        {
+            // create an entity and then delete it
+            let mutation =
+                test_store.create_put_contact_mutation("entity1", "trt1", "Hello entity1");
+            test_store.mutate(mutation).await?;
+
+            let delete = MutationBuilder::new()
+                .delete_entity("entity1")
+                .return_entities()
+                .build();
+            let resp = test_store.mutate(delete).await?;
+            test_store
+                .cluster
+                .wait_operation_committed(0, resp.operation_ids[0]);
+        }
+
+        {
+            // entity should be deleted, but can still be returned if we request deleted
+            // ones
+            let query = QueryBuilder::all().build();
+            let res = test_store.query(query).await?;
+            assert_eq!(res.entities.len(), 0);
+
+            let query = QueryBuilder::all().include_deleted().build();
+            let res = test_store.query(query).await?;
+            assert_eq!(res.entities.len(), 1);
+        }
+
+        // entity should eventually be completely deleted
+        let store_handle = test_store.store_handle.clone();
+        async_expect_eventually(|| async {
+            let query = QueryBuilder::all().include_deleted().build();
+            let res = store_handle.query(query).await.unwrap();
+            res.entities.is_empty()
+        })
+        .await;
 
         Ok(())
     }

@@ -3,27 +3,26 @@ syntax = "proto3";
 package exocore.store;
 
 import "exocore/store/entity.proto";
-import "google/protobuf/field_mask.proto";
 
 message MutationRequest {
-    /// Mutations to apply.
+    // Mutations to apply.
     repeated EntityMutation mutations = 1;
 
-    /// Waits for mutation to be indexed.
+    // Waits for mutation to be indexed.
     bool wait_indexed = 2;
 
-    /// Waits for mutation to be indexed and returns the mutated entities.
+    // Waits for mutation to be indexed and returns the mutated entities.
     bool return_entities = 3;
 
-    /// If an entity ID is generated for the mutated entities, reuse the same ID for all mutations.
+    // If an entity ID is generated for the mutated entities, reuse the same ID for all mutations.
     bool common_entity_id = 4;
 }
 
 message MutationResult {
-    /// Unique operation ids for each mutations.
+    // Unique operation ids for each mutations.
     repeated uint64 operation_ids = 1;
 
-    /// Mutated entities if requested.
+    // Mutated entities if requested.
     repeated Entity entities = 2;
 }
 
@@ -34,47 +33,35 @@ message EntityMutation {
         PutTraitMutation put_trait = 2;
         DeleteTraitMutation delete_trait = 3;
         DeleteEntityMutation delete_entity = 4;
-        UpdateTraitMutation update_trait = 5;
-        CompactTraitMutation compact_trait = 6;
+        DeleteOperationsMutation delete_operations = 7;
+
         TestMutation test = 99;
     }
 }
 
+// Creates or overrides a trait of the entity.
 message PutTraitMutation {
     Trait trait = 1;
 }
 
+// Deletes a trait of an entity.
 message DeleteTraitMutation {
     string trait_id = 1;
 }
 
+// Deletes all the traits of an entity, effectively deleting the entity itself.
 message DeleteEntityMutation {
 }
 
-message UpdateTraitMutation {
-    string trait_id = 1;
-
-    Trait trait = 2;
-
-    google.protobuf.FieldMask field_mask = 3;
-
-    // Updates is only valid if the last mutation operation on trait this given operation id.
-    uint64 if_last_operation_id = 4;
+// Deletes mutations of an entity that have an operation id specified in the given list.
+// This mutation is used for index management purpose only since the mutations are not 
+// actually deleted from the chain. Since the chain indices are built in a semi-versioned
+// way, this actually delete the mutations from the indices.
+message DeleteOperationsMutation {
+    repeated uint64 operation_ids = 1;
 }
 
-message CompactTraitMutation {
-    // List of operations that are compacted by this compaction. The compaction will only succeed
-    // if there were no operations between these operations and the compaction's operation itself.
-    repeated Operation compacted_operations = 1;
-
-    // Trait with merged values from compacted operations
-    Trait trait = 2;
-
-    message Operation {
-        uint64 operation_id = 1;
-    }
-}
-
+// Mutation used in tests.
 message TestMutation {
     bool success = 1;
 }

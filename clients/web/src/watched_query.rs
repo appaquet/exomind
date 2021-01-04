@@ -41,7 +41,9 @@ impl WatchedQuery {
             {
                 let callback = callback_cell1.borrow();
                 if let Some(func) = &*callback {
-                    func.call0(&JsValue::null()).unwrap();
+                    if let Err(err) = func.call0(&JsValue::null()) {
+                        error!("Error calling watch query callback: {:?}", err);
+                    }
                 }
             }
         };

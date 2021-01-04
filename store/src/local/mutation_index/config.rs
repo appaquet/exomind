@@ -2,10 +2,19 @@ use exocore_core::protos::generated::exocore_core::MutationIndexConfig as ProtoM
 /// Trait index configuration
 #[derive(Clone, Copy, Debug)]
 pub struct MutationIndexConfig {
+    /// Number of indexing threads.
     pub indexer_num_threads: Option<usize>,
+
+    /// Maximum heap size of each indexing thread.
     pub indexer_heap_size_bytes: usize,
+
+    /// Page size of results iterator.
     pub iterator_page_size: u32,
+
+    /// Maximum number of pages returned by results iterator.
     pub iterator_max_pages: usize,
+
+    /// Size of the entity mutations cache in bytes.
     pub entity_mutations_cache_size: usize,
 
     pub dynamic_reference_fields: u32,
@@ -39,13 +48,20 @@ impl Default for MutationIndexConfig {
 
 impl From<ProtoMutationIndexConfig> for MutationIndexConfig {
     fn from(proto: ProtoMutationIndexConfig) -> Self {
-        MutationIndexConfig {
-            indexer_num_threads: Some(proto.indexer_num_threads as usize).filter(|&n| n == 0),
-            indexer_heap_size_bytes: proto.indexer_heap_size_bytes as usize,
-            iterator_page_size: proto.iterator_page_size,
-            iterator_max_pages: proto.iterator_max_pages as usize,
-            entity_mutations_cache_size: proto.entity_mutations_cache_size as usize,
-            ..MutationIndexConfig::default()
+        let mut config = MutationIndexConfig::default();
+
+        if let Some(v) = proto.indexer_num_threads {
+            config.indexer_num_threads = Some(v as usize);
         }
+
+        if let Some(v) = proto.indexer_heap_size_bytes {
+            config.indexer_heap_size_bytes = v as usize;
+        }
+
+        if let Some(v) = proto.entity_mutations_cache_size {
+            config.entity_mutations_cache_size = v as usize;
+        }
+
+        config
     }
 }

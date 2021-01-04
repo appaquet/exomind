@@ -3,6 +3,7 @@ syntax = "proto3";
 package exocore.core;
 
 import "exocore/apps/manifest.proto";
+import "google/protobuf/wrappers.proto";
 
 message LocalNodeConfig {
     string keypair = 1;
@@ -35,41 +36,64 @@ message NodeCellConfig {
     }
 }
 
+// Entity store configuration for the node (i.e. not global)
 message NodeStoreConfig {
+    // Entity index config.
     EntityIndexConfig index = 1;
+
+    // Maximum number fo queries to execute in parallel.
+    google.protobuf.UInt32Value query_parallelism = 2;
 }
 
-/// Configuration of the entities index
+// Configuration of the entity index
 message EntityIndexConfig {
-    /// What is the minimum depth that a block needs to be the chain to be
-    /// indexed. This is required to lower the odds that we are going to
-    /// revert the block if our local chain forked.
-    ///
-    /// `CommitManagerConfig`.`operations_cleanup_after_block_depth`
-    uint64 chain_index_min_depth = 1;
+    // What is the minimum depth that a block needs to be the chain to be
+    // indexed. This is required to lower the odds that we are going to
+    // revert the block if our local chain forked.
+    //
+    // `CommitManagerConfig`.`operations_cleanup_after_block_depth`
+    google.protobuf.UInt64Value chain_index_min_depth = 1;
 
-    /// If specified, prevent indexing every new block on each commit.
-    /// Operations will be kept in pending index for a bit longer and
-    /// preventing the costly chain index modification.
-    uint64 chain_index_depth_leeway = 2;
+    // If specified, prevent indexing every new block on each commit.
+    // Operations will be kept in pending index for a bit longer and
+    // preventing the costly chain index modification.
+    google.protobuf.UInt64Value chain_index_depth_leeway = 2;
 
-     /// Configuration for the in-memory traits index that are in the pending
-    /// store
+    // Configuration for the in-memory traits index that are in the pending
+    // store
     MutationIndexConfig pending_index = 3;
 
-    /// Configuration for the persisted traits index that are in the chain
+    // Configuration for the persisted traits index that are in the chain
     MutationIndexConfig chain_index = 4;
+
+    // Configuration for the entity garbage collector.
+    EntityGarbageCollectorConfig garbage_collector = 5;
 }
 
-/// Trait index configuration
+// Trait index configuration
 message MutationIndexConfig {        
-    uint32 indexer_num_threads = 1;
-    uint32 indexer_heap_size_bytes = 2;
+    /// Number of indexing threads.
+    google.protobuf.UInt32Value indexer_num_threads = 1;
 
-    uint32 iterator_page_size = 3;
-    uint32 iterator_max_pages = 4;
+    /// Maximum heap size of each indexing thread.
+    google.protobuf.UInt32Value indexer_heap_size_bytes = 2;
 
-    uint32 entity_mutations_cache_size = 5;
+    /// Page size of results iterator.
+    google.protobuf.UInt32Value entity_mutations_cache_size = 3;
+}
+
+// Configuration for entity garbage collector.
+message EntityGarbageCollectorConfig {
+    // How often the garbage collection process will run in seconds.
+    //
+    // Since garbage collection doesn't happen on the whole index, but only on entities
+    // that got flagged during search, it is better to run more often than
+    // less. `GarbageCollectorConfig::queue_size` can be tweaked to control
+    // rate of collection.
+    google.protobuf.UInt32Value run_interval_secs = 1;
+
+    /// Size of the queue of entities to be collected.
+    google.protobuf.UInt32Value queue_size = 2;
 }
 
 message CellConfig {

@@ -1,7 +1,9 @@
 use chrono::prelude::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::ops::{Add, Sub};
-use std::time::Duration;
+use std::{
+    ops::{Add, Sub},
+    time::Duration,
+};
 
 /// Timestamp that tries to be consistent and monotonic across cluster by
 /// incorporating node's unique id and a per-node counter.
@@ -75,6 +77,18 @@ impl Into<u64> for ConsistentTimestamp {
     }
 }
 
+impl From<DateTime<Utc>> for ConsistentTimestamp {
+    fn from(date: DateTime<Utc>) -> Self {
+        ConsistentTimestamp(date.timestamp_nanos() as u64)
+    }
+}
+
+impl Into<DateTime<Utc>> for ConsistentTimestamp {
+    fn into(self) -> DateTime<Utc> {
+        self.to_datetime()
+    }
+}
+
 impl Serialize for ConsistentTimestamp {
     fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
     where
@@ -109,7 +123,7 @@ mod tests {
     #[test]
     fn consistent_time_to_chrono() {
         let now: DateTime<Utc> = Utc::now();
-        let consistent = ConsistentTimestamp::from(now.timestamp_nanos() as u64);
+        let consistent = ConsistentTimestamp::from(now);
         let consistent_now = consistent.to_datetime();
         assert_eq!(now.timestamp_millis(), consistent_now.timestamp_millis());
     }

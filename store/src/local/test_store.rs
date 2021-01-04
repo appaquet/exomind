@@ -1,24 +1,28 @@
 use std::sync::Arc;
 
+use store::StoreConfig;
 use tempfile::TempDir;
 
-use exocore_chain::tests_utils::TestChainCluster;
-use exocore_chain::{DirectoryChainStore, MemoryPendingStore};
+use exocore_chain::{tests_utils::TestChainCluster, DirectoryChainStore, MemoryPendingStore};
 
-use crate::local::mutation_index::MutationIndexConfig;
-use crate::local::store::StoreHandle;
-use crate::local::EntityIndexConfig;
-use crate::mutation::{MutationBuilder, MutationRequestLike};
+use crate::{
+    local::{mutation_index::MutationIndexConfig, store::StoreHandle, EntityIndexConfig},
+    mutation::{MutationBuilder, MutationRequestLike},
+};
 
+use super::entity_index::test_index::TestEntityIndex;
 use super::*;
 
 use chrono::Utc;
-use exocore_core::protos::generated::exocore_store::{
-    EntityQuery, EntityResults, MutationResult, Trait,
+use exocore_core::protos::{
+    generated::{
+        exocore_store::{EntityQuery, EntityResults, MutationResult, Trait},
+        exocore_test::TestMessage,
+    },
+    prost::{ProstAnyPackMessageExt, ProstDateTimeExt},
+    registry::Registry,
+    store::TraitDetails,
 };
-use exocore_core::protos::generated::exocore_test::TestMessage;
-use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
-use exocore_core::protos::{registry::Registry, store::TraitDetails};
 
 /// Utility to test store
 pub struct TestStore {
@@ -32,30 +36,30 @@ pub struct TestStore {
 
 impl TestStore {
     pub async fn new() -> Result<TestStore, anyhow::Error> {
+        let store_config = StoreConfig::default();
+        let index_config = Self::test_index_config();
+
+        Self::new_with_config(store_config, index_config).await
+    }
+
+    pub async fn new_with_config(
+        store_config: StoreConfig,
+        index_config: EntityIndexConfig,
+    ) -> Result<TestStore, anyhow::Error> {
         let cluster = TestChainCluster::new_single_and_start().await?;
 
         let temp_dir = tempfile::tempdir()?;
         let registry = Arc::new(Registry::new_with_exocore_types());
 
-        let index_config = EntityIndexConfig {
-            pending_index_config: MutationIndexConfig {
-                indexer_num_threads: Some(1),
-                ..MutationIndexConfig::default()
-            },
-            chain_index_config: MutationIndexConfig {
-                indexer_num_threads: Some(1),
-                ..MutationIndexConfig::default()
-            },
-            ..EntityIndexConfig::default()
-        };
         let index = EntityIndex::<DirectoryChainStore, MemoryPendingStore>::open_or_create(
             cluster.cells[0].clone(),
             index_config,
             cluster.get_handle(0).clone(),
+            cluster.clocks[0].clone(),
         )?;
 
         let store = Store::new(
-            Default::default(),
+            store_config,
             cluster.cells[0].cell().clone(),
             cluster.clocks[0].clone(),
             cluster.get_new_handle(0),
@@ -70,6 +74,20 @@ impl TestStore {
             store_handle,
             _temp_dir: temp_dir,
         })
+    }
+
+    pub fn test_index_config() -> EntityIndexConfig {
+        EntityIndexConfig {
+            pending_index_config: MutationIndexConfig {
+                indexer_num_threads: Some(1),
+                ..MutationIndexConfig::default()
+            },
+            chain_index_config: MutationIndexConfig {
+                indexer_num_threads: Some(1),
+                ..MutationIndexConfig::default()
+            },
+            ..TestEntityIndex::test_config()
+        }
     }
 
     pub async fn start_store(&mut self) -> anyhow::Result<()> {

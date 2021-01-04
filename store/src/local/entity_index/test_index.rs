@@ -1,14 +1,17 @@
-use crate::entity::{EntityId, TraitId};
-use crate::local::EntityIndex;
-use crate::mutation::{MutationBuilder, MutationRequestLike};
-use crate::{error::Error, local::mutation_index::MutationIndexConfig};
-use exocore_chain::engine::Event;
-use exocore_chain::operation::OperationId;
-use exocore_chain::tests_utils::TestChainCluster;
-use exocore_chain::{DirectoryChainStore, MemoryPendingStore};
-use exocore_core::protos::generated::exocore_store::Trait;
-use exocore_core::protos::generated::exocore_test::TestMessage;
-use exocore_core::protos::prost::{ProstAnyPackMessageExt, ProstMessageExt};
+use crate::{
+    entity::{EntityId, TraitId},
+    error::Error,
+    local::{mutation_index::MutationIndexConfig, EntityIndex},
+    mutation::{MutationBuilder, MutationRequestLike},
+};
+use exocore_chain::{
+    engine::Event, operation::OperationId, tests_utils::TestChainCluster, DirectoryChainStore,
+    MemoryPendingStore,
+};
+use exocore_core::protos::{
+    generated::{exocore_store::Trait, exocore_test::TestMessage},
+    prost::{ProstAnyPackMessageExt, ProstMessageExt},
+};
 
 use super::EntityIndexConfig;
 
@@ -21,7 +24,7 @@ pub struct TestEntityIndex {
 
 impl TestEntityIndex {
     pub async fn new() -> Result<TestEntityIndex, anyhow::Error> {
-        Self::new_with_config(Self::create_test_config()).await
+        Self::new_with_config(Self::test_config()).await
     }
 
     pub async fn new_with_config(
@@ -30,7 +33,12 @@ impl TestEntityIndex {
         let cluster = TestChainCluster::new_single_and_start().await?;
 
         let chain_handle = cluster.get_handle(0).clone();
-        let index = EntityIndex::open_or_create(cluster.cells[0].clone(), config, chain_handle)?;
+        let index = EntityIndex::open_or_create(
+            cluster.cells[0].clone(),
+            config,
+            chain_handle,
+            cluster.clocks[0].clone(),
+        )?;
 
         Ok(TestEntityIndex {
             cluster,
@@ -55,6 +63,7 @@ impl TestEntityIndex {
             cluster.cells[0].clone(),
             config,
             cluster.get_handle(0).clone(),
+            cluster.clocks[0].clone(),
         )?;
 
         Ok(TestEntityIndex {
@@ -64,7 +73,7 @@ impl TestEntityIndex {
         })
     }
 
-    pub fn create_test_config() -> EntityIndexConfig {
+    pub fn test_config() -> EntityIndexConfig {
         EntityIndexConfig {
             chain_index_in_memory: true,
             chain_index_depth_leeway: 0, // for tests, we want to index as soon as possible

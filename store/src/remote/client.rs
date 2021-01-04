@@ -183,7 +183,7 @@ impl Default for ClientConfiguration {
     }
 }
 
-pub(crate) struct Inner {
+pub(super) struct Inner {
     config: ClientConfiguration,
     cell: Cell,
     clock: Clock,

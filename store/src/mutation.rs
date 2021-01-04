@@ -1,10 +1,11 @@
+use exocore_core::protos::store::DeleteOperationsMutation;
 use prost::Message;
 
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_store::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_store::{
-    compact_trait_mutation, CompactTraitMutation, DeleteEntityMutation, DeleteTraitMutation,
-    EntityMutation, MutationRequest, MutationResult, PutTraitMutation, Trait,
+    DeleteEntityMutation, DeleteTraitMutation, EntityMutation, MutationRequest, MutationResult,
+    PutTraitMutation, Trait,
 };
 use exocore_core::protos::generated::store_transport_capnp::{mutation_request, mutation_response};
 use exocore_core::protos::prost::ProstMessageExt;
@@ -74,22 +75,15 @@ impl MutationBuilder {
     }
 
     #[allow(unused)]
-    pub(crate) fn compact_traits<E: Into<TraitId>>(
+    pub(crate) fn delete_operations<E: Into<EntityId>>(
         mut self,
         entity_id: E,
-        trt: Trait,
-        compacted_operations: Vec<OperationId>,
+        operation_ids: Vec<OperationId>,
     ) -> MutationBuilder {
-        let operations = compacted_operations
-            .iter()
-            .map(|id| compact_trait_mutation::Operation { operation_id: *id })
-            .collect();
-
         self.request.mutations.push(EntityMutation {
             entity_id: entity_id.into(),
-            mutation: Some(Mutation::CompactTrait(CompactTraitMutation {
-                r#trait: Some(trt),
-                compacted_operations: operations,
+            mutation: Some(Mutation::DeleteOperations(DeleteOperationsMutation {
+                operation_ids,
             })),
         });
 

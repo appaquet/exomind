@@ -3,6 +3,7 @@ use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
 };
+use exocore_core::protos::core::LocalNodeConfig;
 use exocore_core::{
     cell::{Cell, CellNodeRole, EitherCell, FullCell},
     futures::owned_spawn,
@@ -91,15 +92,16 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
 
                 let entities_index_config: EntityIndexConfig = config
                     .store
-                    .as_ref()
-                    .and_then(|s| s.index.as_ref())
-                    .map(|e| EntityIndexConfig::from(e.clone()))
+                    .clone()
+                    .and_then(|s| s.index)
+                    .map(|e| e.into())
                     .unwrap_or_default();
 
                 let entities_index = EntityIndex::open_or_create(
                     full_cell.clone(),
                     entities_index_config,
                     store_engine_handle.clone(),
+                    clock.clone(),
                 )?;
 
                 // create a combined p2p + http transport for entities store so that it can
@@ -115,6 +117,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
 
                 store_completions.push(
                     create_local_store(
+                        &config,
                         entities_transport,
                         store_engine_handle,
                         full_cell,
@@ -159,13 +162,14 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
 }
 
 async fn create_local_store<T: TransportServiceHandle>(
+    config: &LocalNodeConfig,
     transport: T,
     chain_handle: EngineHandle<DirectoryChainStore, MemoryPendingStore>,
     full_cell: FullCell,
     clock: Clock,
     entities_index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
 ) -> anyhow::Result<impl Future<Output = ()>> {
-    let store_config = Default::default();
+    let store_config = config.store.clone().map(|c| c.into()).unwrap_or_default();
     let local_store = Store::new(
         store_config,
         full_cell.cell().clone(),

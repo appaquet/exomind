@@ -1,7 +1,7 @@
 use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetadata};
 use crate::{entity::TraitId, error::Error, query::ResultHash};
 use chrono::{DateTime, Utc};
-use exocore_chain::operation::OperationId;
+use exocore_chain::{block::BlockOffset, operation::OperationId};
 use exocore_core::{
     protos::{
         reflect::{FieldId, MutableReflectMessage, ReflectMessage},
@@ -28,22 +28,30 @@ pub struct EntityAggregator {
     /// traits aggregator
     pub traits: HashMap<TraitId, TraitAggregator>,
 
-    // ids of operations that are still active (ex: were not overridden by another mutation)
+    /// ids of operations that are still active (ex: were not overridden by
+    /// another mutation)
     pub active_operations: HashSet<OperationId>,
 
-    // hash of the operations of the entity
+    /// hash of the operations of the entity
     pub hash: ResultHash,
 
-    // date of the creation of entity, based on put trait creation date OR first operation
+    /// date of the creation of entity, based on put trait creation date OR
+    /// first operation
     pub creation_date: Option<DateTime<Utc>>,
 
-    // date of the modification of entity, based on put trait modification date OR last operation
+    /// date of the modification of entity, based on put trait modification date
+    /// OR last operation
     pub modification_date: Option<DateTime<Utc>>,
 
-    // date of the deletion of the entity if all traits are deleted once all mutations are applied
+    /// date of the deletion of the entity if all traits are deleted once all
+    /// mutations are applied
     pub deletion_date: Option<DateTime<Utc>>,
 
+    /// last operation that have affected the entity
     pub last_operation_id: OperationId,
+
+    /// offset of the last block in which last committed operation is
+    pub last_block_offset: Option<BlockOffset>,
 }
 
 impl EntityAggregator {
@@ -51,12 +59,7 @@ impl EntityAggregator {
     where
         I: Iterator<Item = MutationMetadata>,
     {
-        // Sort mutations in order they got committed (block offset/pending, then
-        // operation id)
-        let ordered_mutations_metadata = mutations_metadata.sorted_by_key(|result| {
-            let block_offset = result.block_offset.unwrap_or(std::u64::MAX);
-            (block_offset, result.operation_id)
-        });
+        let ordered_mutations_metadata = sort_mutations_commit_time(mutations_metadata);
 
         let mut entity_creation_date = None;
         let mut entity_modification_date = None;
@@ -66,11 +69,13 @@ impl EntityAggregator {
         let mut traits = HashMap::<TraitId, TraitAggregator>::new();
         let mut active_operation_ids = HashSet::<OperationId>::new();
         let mut last_operation_id = None;
+        let mut last_block_offset = None;
 
         for current_mutation in ordered_mutations_metadata {
             let current_operation_id = current_mutation.operation_id;
             let current_operation_time =
                 ConsistentTimestamp::from(current_operation_id).to_datetime();
+            let current_block_offset = current_mutation.block_offset;
 
             // hashing operations instead of traits content allow invalidating results as
             // soon as one operation is made since we can't guarantee anything
@@ -146,6 +151,12 @@ impl EntityAggregator {
             if current_operation_id > last_operation_id.unwrap_or(std::u64::MIN) {
                 last_operation_id = Some(current_operation_id);
             }
+
+            if let Some(block_offset) = current_block_offset {
+                // no need to check if current block is after since mutations are ordered by
+                // block offset
+                last_block_offset = Some(block_offset);
+            }
         }
 
         Ok(EntityAggregator {
@@ -156,6 +167,7 @@ impl EntityAggregator {
             modification_date: entity_modification_date,
             deletion_date: entity_deletion_date,
             last_operation_id: last_operation_id.unwrap_or_default(),
+            last_block_offset,
         })
     }
 
@@ -184,10 +196,10 @@ impl EntityAggregator {
     }
 }
 
-#[derive(Default)]
 /// Aggregates mutations metadata of an entity's trait retrieved from the
 /// mutations index. Once merged, only the latest / active mutations are
 /// remaining, and can then be fetched from the chain.
+#[derive(Default)]
 pub struct TraitAggregator {
     pub put_mutations: Vec<MutationMetadata>,
     pub last_operation_id: Option<OperationId>,
@@ -195,6 +207,7 @@ pub struct TraitAggregator {
     pub modification_date: Option<DateTime<Utc>>,
     pub deletion_date: Option<DateTime<Utc>>,
     pub projection: Option<Rc<Projection>>,
+    pub mutation_count: usize,
 }
 
 impl TraitAggregator {
@@ -239,6 +252,7 @@ impl TraitAggregator {
 
         self.put_mutations.push(mutation);
         self.last_operation_id = Some(op_id);
+        self.mutation_count += 1;
     }
 
     fn push_delete_mutation(&mut self, operation_id: OperationId) {
@@ -247,6 +261,7 @@ impl TraitAggregator {
         self.modification_date = None;
         self.deletion_date = Some(op_time);
         self.last_operation_id = Some(operation_id);
+        self.mutation_count += 1;
     }
 
     pub fn last_put_mutation(&self) -> Option<(&MutationMetadata, &PutTraitMetadata)> {
@@ -263,6 +278,7 @@ pub fn result_hasher() -> impl std::hash::Hasher {
     crc::crc64::Digest::new(crc::crc64::ECMA)
 }
 
+/// Checks if a projection specified in a query matches the given trait type.
 fn projection_matches_trait(trait_type: Option<&str>, projection: &Projection) -> bool {
     if projection.package.is_empty() {
         return true;
@@ -285,7 +301,9 @@ fn projection_matches_trait(trait_type: Option<&str>, projection: &Projection) -
     false
 }
 
-pub fn project_trait(
+/// Executes a projection on fields of a trait so that only desired fields are
+/// returned.
+pub fn project_trait_fields(
     registry: &Registry,
     trt: &mut Trait,
     projection: &Projection,
@@ -330,6 +348,17 @@ pub fn project_trait(
     Ok(())
 }
 
+/// Sorts mutations in order they got committed (block offset/pending, then
+/// operation id)
+pub fn sort_mutations_commit_time<M: Iterator<Item = MutationMetadata>>(
+    mutations: M,
+) -> impl Iterator<Item = MutationMetadata> {
+    mutations.sorted_by_key(|result| {
+        let block_offset = result.block_offset.unwrap_or(std::u64::MAX);
+        (block_offset, result.operation_id)
+    })
+}
+
 fn update_if_newer(current: &mut Option<DateTime<Utc>>, new: Option<DateTime<Utc>>) {
     if current.is_none() || new > *current {
         *current = new;
@@ -343,7 +372,7 @@ fn update_if_older(current: &mut Option<DateTime<Utc>>, new: Option<DateTime<Utc
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::ordering::OrderingValueWrapper;
     use exocore_chain::block::BlockOffset;
@@ -749,7 +778,7 @@ mod tests {
                 ..Default::default()
             };
 
-            project_trait(
+            project_trait_fields(
                 &registry,
                 &mut trt,
                 &Projection {
@@ -817,7 +846,7 @@ mod tests {
         Ok(())
     }
 
-    fn mock_put_trait<I: Into<String>, T: Into<String>>(
+    pub fn mock_put_trait<I: Into<String>, T: Into<String>>(
         trait_id: I,
         trait_type: T,
         block_offset: Option<BlockOffset>,
@@ -848,7 +877,7 @@ mod tests {
         }
     }
 
-    fn mock_delete_trait<T: Into<String>>(
+    pub fn mock_delete_trait<T: Into<String>>(
         trait_id: T,
         block_offset: Option<BlockOffset>,
         operation_id: OperationId,
@@ -866,7 +895,7 @@ mod tests {
         }
     }
 
-    fn mock_delete_entity(
+    pub fn mock_delete_entity(
         block_offset: Option<BlockOffset>,
         operation_id: OperationId,
     ) -> MutationMetadata {
