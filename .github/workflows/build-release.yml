@@ -54,7 +54,7 @@ jobs:
           tar -czf ../exo.${{ matrix.pair.target }}.tar.gz *
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v2.2.2
         with:
           name: ${{ matrix.pair.target }}-artifact
           path: exo.${{ matrix.pair.target }}.tar.gz
@@ -90,7 +90,7 @@ jobs:
           mv exocore-v*.tgz exocore-web.tar.gz
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v2.2.2
         with:
           name: client-web-artifact
           path: exocore-web.tar.gz
@@ -127,7 +127,7 @@ jobs:
           tar -czf $GITHUB_WORKSPACE/exocore-ios.tar.gz *
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v2.2.2
         with:
           name: client-ios-artifact
           path: exocore-ios.tar.gz
