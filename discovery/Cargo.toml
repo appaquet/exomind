@@ -32,7 +32,7 @@ hyper = { version = "0.13", optional = true }
 tokio = { version = "0.3", default-features = false, features = ["macros", "time"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio-compat-02 = "0.1"
+tokio-compat-02 = "0.2"
 
 [[test]]
 name = "discovery"
