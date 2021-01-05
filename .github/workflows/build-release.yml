@@ -54,7 +54,7 @@ jobs:
           tar -czf ../exomind-server.${{ matrix.pair.target }}.tar.gz *
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v2.2.2
         with:
           name: ${{ matrix.pair.target }}-artifact
           path: exomind-server.${{ matrix.pair.target }}.tar.gz
@@ -92,7 +92,7 @@ jobs:
           tar -czf $GITHUB_WORKSPACE/exomind-web.tar.gz *
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v2.2.2
         with:
           name: client-web-artifact
           path: exomind-web.tar.gz
