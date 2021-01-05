@@ -5,9 +5,14 @@ import Path from './utils/path';
 
 export interface INavigationHost {
   initialPath: Path,
+
   pushHistory(path: Path, replace: boolean): void;
+
   openPopup(path: Path): void;
+
+  openExternal(url: string): void;
 }
+
 export default class Navigation {
   static currentPath: Path = null;
   static emitter = new EventEmitter();
@@ -52,6 +57,10 @@ export default class Navigation {
   static navigatePopup(path: string | Path): void {
     const obj = new Path(path);
     Navigation.host.openPopup(obj);
+  }
+
+  static navigateExternal(url: string): void {
+    Navigation.host.openExternal(url);
   }
 
   static pathForInbox(): string {

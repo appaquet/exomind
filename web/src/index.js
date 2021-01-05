@@ -34,6 +34,10 @@ Navigation.initialize({
             window.history.pushState({}, null, Constants.basePath + path.toString());
         }
     },
+
+    openExternal: (url) => {
+        window.open(url, '_blank');
+    }
 });
 
 window.onpopstate = () => {

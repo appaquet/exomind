@@ -12,10 +12,18 @@ import Path from "../../utils/path";
 
 Navigation.initialize({
     initialPath: new Path('/'),
+
     openPopup: (path) => {
         electron.ipcRenderer.send('open-popup', path.toString());
     },
-    pushHistory: (_path, _replace) => { },
+
+    pushHistory: (_path, _replace) => { 
+        // not supported (yet?)
+    },
+
+    openExternal: (url) => {
+        electron.shell.openExternal(url);
+    }
 });
 
 electron.ipcRenderer.on('navigate', (event, path) => {

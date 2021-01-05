@@ -257,7 +257,7 @@ export class Entity extends React.Component<IProps, IState> {
                     <div className="title1">
                         <EditableText
                             text={task.title}
-                            initEdit={actions.inlineEdit}
+                            initEdit={!!actions.inlineEdit}
                             onChange={this.handleTaskChange.bind(this, entityTrait, actions)}
                         />
                     </div>

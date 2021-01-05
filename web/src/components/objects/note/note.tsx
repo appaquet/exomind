@@ -10,6 +10,7 @@ import HtmlEditorControls from '../../interaction/html-editor/html-editor-contro
 import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-editor';
 import { SelectedItem, Selection } from '../entity-list/selection';
 import './note.less';
+import Navigation from '../../../navigation';
 
 interface IProps {
     entity: EntityTraits;
@@ -123,7 +124,7 @@ export default class Note extends React.Component<IProps, IState> {
                 this.props.onSelectionChange(new Selection(SelectedItem.fromEntityId(entityId)));
             }
         } else {
-            window.open(url, '_blank');
+            Navigation.navigateExternal(url);
         }
     }
 

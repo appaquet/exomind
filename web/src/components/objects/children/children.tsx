@@ -12,6 +12,7 @@ import { EntityList, IDroppedItem } from "../entity-list/entity-list";
 import { ListActions } from "../entity-list/list-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
+import Long from "long";
 import './children.less';
 
 interface IProps {
@@ -302,7 +303,13 @@ export class Children extends React.Component<IProps, IState> {
 
         const getEntityParentWeight = (entity: exocore.store.IEntity): number => {
             const child = getEntityParentRelation(entity, this.parentId)
-            return child.message.weight as number;
+            const weight = child.message.weight;
+
+            if (Long.isLong(weight)) {
+                return weight.toNumber();
+            } else {
+                return weight;
+            }
         }
 
         const droppedEntity = droppedItem.droppedEntity;
