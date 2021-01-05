@@ -2861,9 +2861,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.18.1"
+version = "2.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da78e04bc0e40f36df43ecc6575e4f4b180e8156c4efd73f13d5619479b05696"
+checksum = "752bcc33744248486d11c056334a8c9f1763d86ed9a393d50ca4f23a86c9beba"
 
 [[package]]
 name = "pulldown-cmark"
