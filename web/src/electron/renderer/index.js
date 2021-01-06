@@ -2,11 +2,10 @@ import "core-js/stable";
 import "regenerator-runtime/runtime";
 
 import App from '../../app';
-import Navigation from '../../navigation';
+import Navigation, { setupLinkClickNavigation } from "../../navigation";
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { initNode } from '../../exocore';
-import { setupLinkClickNavigation } from '../../utils';
 import * as electron from 'electron';
 import Path from "../../utils/path";
 

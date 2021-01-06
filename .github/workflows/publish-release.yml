@@ -13,6 +13,9 @@ on:
         description: 'Latest'  
         default: true
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   docker_build:
     runs-on: ubuntu-latest

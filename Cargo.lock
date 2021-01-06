@@ -742,7 +742,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.2"
-source = "git+https://github.com/appaquet/exocore.git#57c59b380a5b92ebd197f08ea704d2c695564cea"
+source = "git+https://github.com/appaquet/exocore.git#1f8c00c1f032934a5ea1f1c1dd6cb4c796c7ac1e"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -753,7 +753,7 @@ dependencies = [
 [[package]]
 name = "exocore-chain"
 version = "0.1.2"
-source = "git+https://github.com/appaquet/exocore.git#57c59b380a5b92ebd197f08ea704d2c695564cea"
+source = "git+https://github.com/appaquet/exocore.git#1f8c00c1f032934a5ea1f1c1dd6cb4c796c7ac1e"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -769,7 +769,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.2"
-source = "git+https://github.com/appaquet/exocore.git#57c59b380a5b92ebd197f08ea704d2c695564cea"
+source = "git+https://github.com/appaquet/exocore.git#1f8c00c1f032934a5ea1f1c1dd6cb4c796c7ac1e"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -808,7 +808,7 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.2"
-source = "git+https://github.com/appaquet/exocore.git#57c59b380a5b92ebd197f08ea704d2c695564cea"
+source = "git+https://github.com/appaquet/exocore.git#1f8c00c1f032934a5ea1f1c1dd6cb4c796c7ac1e"
 dependencies = [
  "anyhow",
  "bytes 1.0.0",
@@ -827,7 +827,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.2"
-source = "git+https://github.com/appaquet/exocore.git#57c59b380a5b92ebd197f08ea704d2c695564cea"
+source = "git+https://github.com/appaquet/exocore.git#1f8c00c1f032934a5ea1f1c1dd6cb4c796c7ac1e"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -835,7 +835,7 @@ dependencies = [
  "futures 0.3.8",
  "libp2p",
  "log",
- "pin-project 1.0.2",
+ "pin-project 1.0.3",
  "thiserror",
  "wasm-bindgen",
 ]
@@ -1094,7 +1094,7 @@ dependencies = [
  "futures-sink",
  "futures-task",
  "memchr",
- "pin-project 1.0.2",
+ "pin-project 1.0.3",
  "pin-utils",
  "proc-macro-hack",
  "proc-macro-nested",
@@ -1420,7 +1420,7 @@ dependencies = [
  "httparse",
  "httpdate",
  "itoa",
- "pin-project 1.0.2",
+ "pin-project 1.0.3",
  "socket2",
  "tokio 0.2.24",
  "tower-service",
@@ -1634,7 +1634,7 @@ dependencies = [
  "libp2p-yamux",
  "parity-multiaddr",
  "parking_lot 0.11.1",
- "pin-project 1.0.2",
+ "pin-project 1.0.3",
  "smallvec 1.6.0",
  "wasm-timer",
 ]
@@ -1659,7 +1659,7 @@ dependencies = [
  "multistream-select",
  "parity-multiaddr",
  "parking_lot 0.11.1",
- "pin-project 1.0.2",
+ "pin-project 1.0.3",
  "prost 0.6.1",
  "prost-build 0.6.1",
  "rand 0.7.3",
@@ -2057,7 +2057,7 @@ dependencies = [
  "bytes 0.5.6",
  "futures 0.3.8",
  "log",
- "pin-project 1.0.2",
+ "pin-project 1.0.3",
  "smallvec 1.6.0",
  "unsigned-varint",
 ]
@@ -2269,11 +2269,11 @@ dependencies = [
 
 [[package]]
 name = "pin-project"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ccc2237c2c489783abd8c4c80e5450fc0e98644555b1364da68cc29aa151ca7"
+checksum = "5a83804639aad6ba65345661744708855f9fbcb71176ea8d28d05aeb11d975e7"
 dependencies = [
- "pin-project-internal 1.0.2",
+ "pin-project-internal 1.0.3",
 ]
 
 [[package]]
@@ -2289,9 +2289,9 @@ dependencies = [
 
 [[package]]
 name = "pin-project-internal"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8e8d2bf0b23038a4424865103a4df472855692821aab4e4f5c3312d461d9e5f"
+checksum = "b7bcc46b8f73443d15bc1c5fecbb315718491fa9187fa483f0e359323cde8b3a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2306,9 +2306,9 @@ checksum = "c917123afa01924fc84bb20c4c03f004d9c38e5127e3c039bbf7f4b9c76a2f6b"
 
 [[package]]
 name = "pin-project-lite"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b063f57ec186e6140e2b8b6921e5f1bd89c7356dda5b33acc5401203ca6131c"
+checksum = "e36743d754ccdf9954c2e352ce2d4b106e024c814f6499c2dadff80da9a442d8"
 
 [[package]]
 name = "pin-utils"
@@ -2507,9 +2507,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.18.1"
+version = "2.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da78e04bc0e40f36df43ecc6575e4f4b180e8156c4efd73f13d5619479b05696"
+checksum = "752bcc33744248486d11c056334a8c9f1763d86ed9a393d50ca4f23a86c9beba"
 
 [[package]]
 name = "publicsuffix"
@@ -3266,9 +3266,9 @@ checksum = "1e81da0851ada1f3e9d4312c704aa4f8806f0f9d69faaf8df2f3464b4a9437c2"
 
 [[package]]
 name = "syn"
-version = "1.0.57"
+version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4211ce9909eb971f111059df92c45640aad50a619cf55cd76476be803c4c68e6"
+checksum = "cc60a3d73ea6594cd712d830cc1f0390fd71542d8c8cd24e70cc54cdfd5e05d5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3441,7 +3441,7 @@ dependencies = [
  "memchr",
  "mio 0.7.7",
  "num_cpus",
- "pin-project-lite 0.2.0",
+ "pin-project-lite 0.2.1",
  "slab",
  "tokio-macros 0.3.2",
 ]
@@ -3680,7 +3680,7 @@ checksum = "9f47026cdc4080c07e49b37087de021820269d996f581aac150ef9e5583eefe3"
 dependencies = [
  "cfg-if 1.0.0",
  "log",
- "pin-project-lite 0.2.0",
+ "pin-project-lite 0.2.1",
  "tracing-core",
 ]
 
