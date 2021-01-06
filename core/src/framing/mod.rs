@@ -7,11 +7,12 @@ pub mod multihash;
 pub mod padded;
 pub mod sized;
 
-pub use self::capnp::{CapnpFrame, CapnpFrameBuilder, TypedCapnpFrame};
-pub use self::multihash::{MultihashFrame, MultihashFrameBuilder};
 pub use error::Error;
 pub use padded::{PaddedFrame, PaddedFrameBuilder};
 pub use sized::{IteratedSizedSliceFrame, SizedFrame, SizedFrameBuilder, SizedFrameSliceIterator};
+
+pub use self::capnp::{CapnpFrame, CapnpFrameBuilder, TypedCapnpFrame};
+pub use self::multihash::{MultihashFrame, MultihashFrameBuilder};
 
 /// Represents a frame that either wrap another frame or bytes (vec or slice).
 ///

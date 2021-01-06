@@ -3,15 +3,14 @@ use std::pin::Pin;
 use std::sync::{RwLock, Weak};
 use std::task::{Context, Poll};
 
+use exocore_core::cell::{Cell, CellId};
+use exocore_core::cell::{Node, NodeId};
+use exocore_core::utils::handle_set::Handle;
 use futures::channel::mpsc;
 use futures::channel::mpsc::SendError;
 use futures::prelude::*;
 use futures::sink::SinkMapErr;
 use futures::{FutureExt, SinkExt};
-
-use exocore_core::cell::{Cell, CellId};
-use exocore_core::cell::{Node, NodeId};
-use exocore_core::utils::handle_set::Handle;
 
 use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
 use crate::Error;

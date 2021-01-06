@@ -2,7 +2,6 @@
 extern crate criterion_bencher_compat;
 
 use criterion_bencher_compat::{black_box, Bencher};
-
 use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder, TypedCapnpFrame};
 use exocore_core::protos::generated::data_chain_capnp::block_header;
 

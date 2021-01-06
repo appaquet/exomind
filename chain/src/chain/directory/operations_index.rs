@@ -2,23 +2,21 @@ use std::collections::btree_map::BTreeMap;
 use std::io::{Read, Write};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use byteorder::LittleEndian;
 use byteorder::{ReadBytesExt, WriteBytesExt};
+use exocore_core::protos::generated::data_chain_capnp::block_header;
+use exocore_core::simple_store::json_disk_store::JsonDiskStore;
+use exocore_core::simple_store::SimpleStore;
 use extindex::{Builder, Encodable, Reader};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-use crate::operation::OperationId;
-use exocore_core::protos::generated::data_chain_capnp::block_header;
-use exocore_core::simple_store::json_disk_store::JsonDiskStore;
-use exocore_core::simple_store::SimpleStore;
-
+use super::{DirectoryChainStoreConfig, DirectoryError};
 use crate::block::{Block, BlockOffset};
 use crate::chain::Error;
-
-use super::{DirectoryChainStoreConfig, DirectoryError};
-use std::sync::Arc;
+use crate::operation::OperationId;
 
 /// Operation ID to Block offset index. This is used to retrieve the block
 /// offset in which a given operation ID has been stored.
@@ -421,11 +419,11 @@ impl Encodable for StoredIndexValue {
 
 #[cfg(test)]
 mod tests {
-    use crate::chain::directory::tests::create_block;
-
-    use super::*;
     use exocore_core::cell::FullCell;
     use exocore_core::cell::LocalNode;
+
+    use super::*;
+    use crate::chain::directory::tests::create_block;
 
     #[test]
     fn create_from_iterator() -> anyhow::Result<()> {

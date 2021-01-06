@@ -1,6 +1,7 @@
-use crate::Context;
 use clap::Clap;
 use exocore_discovery::{Client, Pin, Server, ServerConfig};
+
+use crate::Context;
 
 #[derive(Clap)]
 pub enum DiscoveryCommand {

@@ -1,3 +1,13 @@
+use block::{BlockStatus, PendingBlock, PendingBlockRefusal, PendingBlockSignature, PendingBlocks};
+pub use config::CommitManagerConfig;
+pub use error::CommitManagerError;
+use exocore_core::{
+    cell::{Cell, CellNodeRole, CellNodes, CellNodesRead, NodeId},
+    sec::hash::Multihash,
+    time::{Clock, ConsistentTimestamp},
+};
+use itertools::Itertools;
+
 use crate::{
     block::{Block, BlockOperations, BlockOwned, BlockSignature, BlockSignatures},
     chain,
@@ -6,16 +16,6 @@ use crate::{
     pending,
     pending::CommitStatus,
 };
-use exocore_core::{
-    cell::{Cell, CellNodeRole, CellNodes, CellNodesRead, NodeId},
-    sec::hash::Multihash,
-    time::{Clock, ConsistentTimestamp},
-};
-use itertools::Itertools;
-
-use block::{BlockStatus, PendingBlock, PendingBlockRefusal, PendingBlockSignature, PendingBlocks};
-pub use config::CommitManagerConfig;
-pub use error::CommitManagerError;
 
 mod block;
 mod config;

@@ -1,3 +1,16 @@
+use std::borrow::Borrow;
+use std::collections::HashMap;
+
+use exocore_core::cell::{CellNodeRole, FullCell};
+use exocore_core::cell::{LocalNode, Node, NodeId};
+use exocore_core::framing::{
+    CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
+};
+use exocore_core::protos::generated::data_chain_capnp::block_header;
+use exocore_core::sec::hash::Sha3_256;
+use exocore_core::time::{Clock, ConsistentTimestamp};
+use tempfile::TempDir;
+
 use super::commit_manager::CommitManager;
 use super::{chain_sync, SyncContext};
 use super::{pending_sync, SyncState};
@@ -10,17 +23,6 @@ use crate::chain::ChainStore;
 use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, OperationId};
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::PendingStore;
-use exocore_core::cell::{CellNodeRole, FullCell};
-use exocore_core::cell::{LocalNode, Node, NodeId};
-use exocore_core::framing::{
-    CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
-};
-use exocore_core::protos::generated::data_chain_capnp::block_header;
-use exocore_core::sec::hash::Sha3_256;
-use exocore_core::time::{Clock, ConsistentTimestamp};
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use tempfile::TempDir;
 
 pub(super) struct EngineTestCluster {
     pub cells: Vec<FullCell>,

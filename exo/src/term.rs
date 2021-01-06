@@ -1,5 +1,6 @@
-use console::style;
 use std::fmt::{Debug, Display};
+
+use console::style;
 
 pub fn print_spacer() {
     println!();

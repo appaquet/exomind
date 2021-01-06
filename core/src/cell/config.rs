@@ -1,3 +1,9 @@
+use std::{
+    fs::File,
+    io::prelude::*,
+    path::{Path, PathBuf},
+};
+
 use super::Error;
 use crate::{
     protos::{
@@ -11,11 +17,6 @@ use crate::{
         },
     },
     utils::path::{child_to_abs_path_string, child_to_relative_path_string},
-};
-use std::{
-    fs::File,
-    io::prelude::*,
-    path::{Path, PathBuf},
 };
 
 /// Extension for `LocalNodeConfig` proto.
@@ -641,7 +642,6 @@ mod tests {
                     ..Default::default()
                 }),
                 query_parallelism: Some(5),
-                ..Default::default()
             }),
         };
 

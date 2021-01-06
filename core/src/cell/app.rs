@@ -1,11 +1,14 @@
+use std::fs::File;
+use std::path::Path;
+use std::sync::Arc;
+
+use protobuf::descriptor::FileDescriptorSet;
+use protobuf::Message;
+
 use super::{Error, ManifestExt};
 use crate::protos::generated::exocore_apps::manifest_schema::Source;
 use crate::protos::generated::exocore_apps::Manifest;
 use crate::sec::keys::PublicKey;
-use protobuf::descriptor::FileDescriptorSet;
-use std::fs::File;
-use std::path::Path;
-use std::sync::Arc;
 
 /// Application that extends the capability of the cell by providing schemas and
 /// WebAssembly logic.
@@ -55,7 +58,7 @@ impl Application {
                 }
                 Some(Source::Bytes(bytes)) => {
                     let bytes = bytes.as_slice();
-                    let schema = protobuf::parse_from_bytes(bytes).map_err(|err| {
+                    let schema = FileDescriptorSet::parse_from_bytes(bytes).map_err(|err| {
                         Error::Application(
                             manifest.name.clone(),
                             format!(
@@ -161,7 +164,7 @@ fn read_file_descriptor_set_file<P: AsRef<Path>>(
         )
     })?;
 
-    let fdset = protobuf::parse_from_reader(&mut file).map_err(|err| {
+    let fdset = FileDescriptorSet::parse_from_reader(&mut file).map_err(|err| {
         Error::Application(
             app_name.to_string(),
             format!(

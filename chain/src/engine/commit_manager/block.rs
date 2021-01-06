@@ -1,16 +1,18 @@
-use crate::block::{Block, BlockOffset};
-use crate::engine::EngineError;
-use crate::operation::{GroupId, OperationId, OperationType};
-use crate::{chain, pending, CommitManagerConfig};
+use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet};
+use std::str::FromStr;
+
 use exocore_core::cell::{Cell, CellNodes, Node};
 use exocore_core::cell::{CellNodeRole, NodeId};
 use exocore_core::protos::generated::data_chain_capnp::chain_operation;
 use exocore_core::sec::signature::Signature;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use itertools::Itertools;
-use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
-use std::str::FromStr;
+
+use crate::block::{Block, BlockOffset};
+use crate::engine::EngineError;
+use crate::operation::{GroupId, OperationId, OperationType};
+use crate::{chain, pending, CommitManagerConfig};
 
 /// Structure that contains information on the pending store and blocks in it.
 /// It is used by the commit manager to know if it needs to propose, sign,

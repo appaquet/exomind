@@ -1,6 +1,7 @@
+use std::time::Duration;
+
 use exocore_core::time::{Clock, Instant};
 use exocore_core::utils::backoff::{BackoffCalculator, BackoffConfig};
-use std::time::Duration;
 
 /// Handles time tracking of synchronization request and response for timeouts,
 /// retries and backoff.
@@ -112,8 +113,9 @@ impl Default for RequestTrackerConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use exocore_core::time::Clock;
+
+    use super::*;
 
     #[test]
     fn test_can_send_request_interval() {

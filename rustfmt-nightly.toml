@@ -1,0 +1,5 @@
+comment_width = 80
+wrap_comments = true
+reorder_imports = true
+merge_imports = false
+group_imports = "StdExternalCrate"

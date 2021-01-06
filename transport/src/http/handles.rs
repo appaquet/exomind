@@ -7,13 +7,12 @@ use exocore_core::{
 };
 use futures::{channel::mpsc, lock::Mutex, Future, FutureExt};
 
+use super::server::RequestError;
 use crate::{
     streams::{MpscHandleSink, MpscHandleStream},
     transport::TransportHandleOnStart,
     InEvent, InMessage, OutEvent, ServiceType, TransportServiceHandle,
 };
-
-use super::server::RequestError;
 
 /// Services registered with the transport that can receive messages and reply
 /// to them.

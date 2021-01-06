@@ -1,13 +1,15 @@
-use super::spawn_future;
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
+
 use futures::{
     channel::{oneshot, oneshot::Canceled},
     prelude::*,
     FutureExt,
 };
-use std::{
-    pin::Pin,
-    task::{Context, Poll},
-};
+
+use super::spawn_future;
 
 /// Spawns a future on current executor that can be cancelled by dropping the
 /// `OwnedSpawn` handle. It is also possible to get the result of the spawned
@@ -146,7 +148,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{super::sleep, *};
     use std::{
         sync::{
             atomic::{AtomicBool, Ordering},
@@ -154,6 +155,8 @@ mod tests {
         },
         time::Duration,
     };
+
+    use super::{super::sleep, *};
 
     #[tokio::test]
     async fn propagate_spawned_result() -> anyhow::Result<()> {

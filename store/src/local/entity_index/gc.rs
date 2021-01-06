@@ -9,14 +9,13 @@ use exocore_core::protos::core::EntityGarbageCollectorConfig;
 use exocore_core::protos::store::EntityMutation;
 use exocore_core::time::Clock;
 
+use super::{sort_mutations_commit_time, EntityAggregator};
 use crate::{
     entity::{EntityId, EntityIdRef, TraitId},
     error::Error,
     local::mutation_index::{EntityMutationResults, MutationMetadata},
     mutation::MutationBuilder,
 };
-
-use super::{sort_mutations_commit_time, EntityAggregator};
 
 const DAY_SECS: u64 = 86_400;
 
@@ -425,14 +424,13 @@ mod tests {
         protos::store::{entity_mutation, OrderingValue},
     };
 
-    use crate::{
-        local::mutation_index::{MutationType, PutTraitMetadata},
-        ordering::OrderingValueWrapper,
-    };
-
     use super::{
         super::aggregator::tests::{mock_delete_entity, mock_delete_trait, mock_put_trait},
         *,
+    };
+    use crate::{
+        local::mutation_index::{MutationType, PutTraitMetadata},
+        ordering::OrderingValueWrapper,
     };
 
     #[test]

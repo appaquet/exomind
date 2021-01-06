@@ -1,6 +1,15 @@
-use crate::entity::EntityIdRef;
-use crate::{error::Error, ordering::OrderingValueWrapper};
+use std::{
+    borrow::Borrow,
+    ops::Deref,
+    path::Path,
+    result::Result,
+    sync::{atomic, atomic::AtomicUsize, Arc, Mutex},
+    time::Instant,
+};
 
+use chrono::{TimeZone, Utc};
+pub use config::*;
+use entity_cache::EntityMutationsCache;
 use exocore_chain::block::BlockOffset;
 use exocore_core::protos::{
     generated::exocore_store::{
@@ -15,17 +24,8 @@ use exocore_core::protos::{
     registry::Registry,
     store::AllPredicate,
 };
-
-use std::{
-    borrow::Borrow,
-    ops::Deref,
-    path::Path,
-    result::Result,
-    sync::{atomic, atomic::AtomicUsize, Arc, Mutex},
-    time::Instant,
-};
-
-use chrono::{TimeZone, Utc};
+pub use operations::*;
+pub use results::*;
 use tantivy::{
     collector::{Collector, TopDocs},
     directory::MmapDirectory,
@@ -35,10 +35,8 @@ use tantivy::{
     SegmentReader, Term,
 };
 
-pub use config::*;
-use entity_cache::EntityMutationsCache;
-pub use operations::*;
-pub use results::*;
+use crate::entity::EntityIdRef;
+use crate::{error::Error, ordering::OrderingValueWrapper};
 
 mod config;
 mod entity_cache;

@@ -9,11 +9,6 @@ use std::{
     time::Instant,
 };
 
-use exocore_core::time::Clock;
-use gc::GarbageCollector;
-use itertools::Itertools;
-use prost::Message;
-
 use exocore_chain::{
     block::{BlockHeight, BlockOffset},
     chain,
@@ -21,6 +16,7 @@ use exocore_chain::{
     operation::{Operation, OperationId},
     pending, EngineHandle, EngineOperationStatus,
 };
+use exocore_core::time::Clock;
 use exocore_core::{
     cell::FullCell,
     protos::{
@@ -32,16 +28,18 @@ use exocore_core::{
         registry::Registry,
     },
 };
-
-use crate::{
-    entity::EntityId,
-    error::Error,
-    ordering::{OrderingValueExt, OrderingValueWrapper},
-};
+use gc::GarbageCollector;
+use itertools::Itertools;
+use prost::Message;
 
 use super::{
     mutation_index::{IndexOperation, MutationIndex, MutationMetadata},
     top_results::ReScoredTopResultsIterable,
+};
+use crate::{
+    entity::EntityId,
+    error::Error,
+    ordering::{OrderingValueExt, OrderingValueWrapper},
 };
 
 mod config;

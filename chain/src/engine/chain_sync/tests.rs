@@ -1,13 +1,13 @@
 use std::time::{Duration, Instant};
 
-use crate::engine::testing::*;
-use crate::engine::{SyncContextMessage, SyncState};
+use exocore_core::framing::FrameBuilder;
+use itertools::Itertools;
 
 use super::*;
 use crate::chain::directory::DirectoryChainStore;
+use crate::engine::testing::*;
+use crate::engine::{SyncContextMessage, SyncState};
 use crate::operation::OperationBuilder;
-use exocore_core::framing::FrameBuilder;
-use itertools::Itertools;
 
 #[test]
 fn handle_sync_response_blocks() -> anyhow::Result<()> {

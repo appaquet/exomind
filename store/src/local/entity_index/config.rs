@@ -1,8 +1,8 @@
-use crate::local::mutation_index::MutationIndexConfig;
 use exocore_chain::block::BlockHeight;
 use exocore_core::protos::generated::exocore_core::EntityIndexConfig as ProtoEntityIndexConfig;
 
 use super::gc::GarbageCollectorConfig;
+use crate::local::mutation_index::MutationIndexConfig;
 
 /// Configuration of the entities index
 #[derive(Clone, Copy, Debug)]

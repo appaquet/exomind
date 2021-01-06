@@ -1,4 +1,3 @@
-use crate::entity::{EntityId, TraitId};
 use exocore_chain::{
     block::BlockOffset,
     engine::EngineOperation,
@@ -9,6 +8,8 @@ use exocore_core::protos::generated::exocore_store::{
 };
 use prost::Message;
 use smallvec::SmallVec;
+
+use crate::entity::{EntityId, TraitId};
 
 /// Operation to be executed on the entities mutations index.
 pub enum IndexOperation {

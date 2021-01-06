@@ -1,7 +1,9 @@
+use std::sync::Mutex;
+
+use lru::LruCache;
+
 use super::EntityMutationResults;
 use crate::entity::EntityId;
-use lru::LruCache;
-use std::sync::Mutex;
 
 // TODO: Fix useless cloning of &str to &String once https://github.com/jeromefroe/lru-rs/issues/85 is resolved
 

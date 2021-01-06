@@ -1,8 +1,10 @@
-use super::{check_into_size, Error, FrameBuilder, FrameReader};
-use crate::protos::generated::MessageType;
+use std::io;
+
 use capnp::message::{Builder, HeapAllocator};
 use capnp::traits::Owned;
-use std::io;
+
+use super::{check_into_size, Error, FrameBuilder, FrameReader};
+use crate::protos::generated::MessageType;
 
 /// Frame that wraps a Capnproto message
 pub struct CapnpFrame<I: FrameReader> {

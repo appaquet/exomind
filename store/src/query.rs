@@ -1,5 +1,3 @@
-use prost::Message;
-
 use exocore_chain::operation::OperationId;
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_store::{
@@ -15,6 +13,7 @@ use exocore_core::protos::{
     reflect::FieldId,
     store::{AllPredicate, IdsPredicate, OperationsPredicate, Projection, Reference},
 };
+use prost::Message;
 
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;

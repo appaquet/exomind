@@ -1,5 +1,6 @@
-use super::{ChainSyncConfig, CommitManagerConfig, PendingSyncConfig};
 use std::time::Duration;
+
+use super::{ChainSyncConfig, CommitManagerConfig, PendingSyncConfig};
 
 /// Chain engine's configuration
 #[derive(Clone)]

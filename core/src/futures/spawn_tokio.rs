@@ -1,16 +1,12 @@
 use futures::Future;
-
 pub use tokio;
-pub use tokio::task::spawn_blocking;
-
-#[cfg(any(test, feature = "tests-utils", feature = "runtime"))]
-pub use tokio::time::{interval, interval_at, sleep, sleep_until, Interval};
-
-#[cfg(any(test, feature = "tests-utils", feature = "runtime"))]
-pub use tokio::runtime::Runtime;
-
 #[cfg(any(test, feature = "tests-utils", feature = "runtime"))]
 pub use tokio::runtime::Builder;
+#[cfg(any(test, feature = "tests-utils", feature = "runtime"))]
+pub use tokio::runtime::Runtime;
+pub use tokio::task::spawn_blocking;
+#[cfg(any(test, feature = "tests-utils", feature = "runtime"))]
+pub use tokio::time::{interval, interval_at, sleep, sleep_until, Interval};
 
 pub fn spawn_future<F>(f: F)
 where

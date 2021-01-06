@@ -6,6 +6,9 @@ on:
       - 'v0.*'
       - 'v1.*'
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   exo:
     strategy:

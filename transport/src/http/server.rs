@@ -1,9 +1,4 @@
-use super::{
-    handles::{ServiceHandle, ServiceHandles},
-    requests::{RequestTracker, TrackedRequest},
-    HTTPTransportConfig, HTTPTransportServiceHandle,
-};
-use crate::{transport::ConnectionID, Error, InMessage, OutEvent, OutMessage, ServiceType};
+use std::{borrow::Cow, sync::Arc};
 
 use exocore_core::{
     capnp,
@@ -17,15 +12,20 @@ use exocore_core::{
     time::Clock,
     utils::handle_set::HandleSet,
 };
-
 use futures::{channel::mpsc, lock::Mutex, FutureExt, StreamExt};
 use hyper::{
     server::conn::AddrIncoming,
     service::{make_service_fn, service_fn},
     Body, Request, Response, Server, StatusCode,
 };
-use std::{borrow::Cow, sync::Arc};
 use tokio_compat_02::FutureExt as CompatFutureExt;
+
+use super::{
+    handles::{ServiceHandle, ServiceHandles},
+    requests::{RequestTracker, TrackedRequest},
+    HTTPTransportConfig, HTTPTransportServiceHandle,
+};
+use crate::{transport::ConnectionID, Error, InMessage, OutEvent, OutMessage, ServiceType};
 
 /// Unidirectional HTTP transport server used for request-response type of
 /// communication by clients for which a full libp2p transport is impossible.

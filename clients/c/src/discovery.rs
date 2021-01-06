@@ -1,12 +1,14 @@
-use crate::exocore_init;
-use crate::{node::LocalNode, utils::CallbackContext};
+use std::{ffi::CStr, sync::Arc, time::Duration};
+
 use exocore_core::{
     cell::{CellConfigExt, LocalNodeConfigExt},
     futures::Runtime,
     protos::core::{node_cell_config, CellConfig, LocalNodeConfig, NodeCellConfig},
 };
 use exocore_discovery::{Client, Pin, DEFAULT_DISCO_SERVER};
-use std::{ffi::CStr, sync::Arc, time::Duration};
+
+use crate::exocore_init;
+use crate::{node::LocalNode, utils::CallbackContext};
 
 pub struct Discovery {
     runtime: Runtime,

@@ -1,9 +1,10 @@
-use crate::{
-    block::BlockHeight,
-    engine::{request_tracker, EngineError, Event, SyncContext},
-    operation::{NewOperation, Operation, OperationId},
-    pending::{CommitStatus, PendingStore, StoredOperation},
+use std::{
+    collections::{HashMap, HashSet},
+    ops::{Bound, RangeBounds},
 };
+
+pub use config::PendingSyncConfig;
+pub use error::PendingSyncError;
 use exocore_core::{
     cell::{Cell, CellNodeRole, CellNodes, Node, NodeId},
     framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame},
@@ -15,14 +16,14 @@ use exocore_core::{
     time::Clock,
 };
 use itertools::{EitherOrBoth, Itertools};
-use std::{
-    collections::{HashMap, HashSet},
-    ops::{Bound, RangeBounds},
-};
-
-pub use config::PendingSyncConfig;
-pub use error::PendingSyncError;
 pub use sync_range::{SyncRangeBuilder, SyncRangesBuilder};
+
+use crate::{
+    block::BlockHeight,
+    engine::{request_tracker, EngineError, Event, SyncContext},
+    operation::{NewOperation, Operation, OperationId},
+    pending::{CommitStatus, PendingStore, StoredOperation},
+};
 
 mod config;
 mod error;

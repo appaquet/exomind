@@ -1,4 +1,5 @@
-use crate::operation::OperationId;
+use std::borrow::Borrow;
+
 use exocore_core::{
     capnp,
     cell::{Cell, CellNodeRole, FullCell, NodeId},
@@ -14,7 +15,8 @@ use exocore_core::{
         signature::Signature,
     },
 };
-use std::borrow::Borrow;
+
+use crate::operation::OperationId;
 
 pub type BlockOffset = u64;
 pub type BlockHeight = u64;
@@ -800,14 +802,15 @@ impl From<capnp::NotInSchema> for Error {
 
 #[cfg(test)]
 mod tests {
+    use exocore_core::{
+        cell::{FullCell, LocalNode, Node},
+        framing::FrameReader,
+    };
+
     use super::*;
     use crate::{
         block::{Block, BlockOperations, BlockOwned, BlockRef},
         operation::OperationBuilder,
-    };
-    use exocore_core::{
-        cell::{FullCell, LocalNode, Node},
-        framing::FrameReader,
     };
 
     #[test]

@@ -5,12 +5,9 @@ use std::{
     time::Duration,
 };
 
-use exocore_core::protos::core::NodeStoreConfig;
-use futures::channel::{mpsc, oneshot};
-use futures::prelude::*;
-
 use exocore_core::cell::Cell;
 use exocore_core::futures::{interval, spawn_blocking, BatchingStream};
+use exocore_core::protos::core::NodeStoreConfig;
 use exocore_core::protos::generated::exocore_store::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_store::{
     entity_query, EntityQuery, EntityResults, MutationRequest, MutationResult,
@@ -18,12 +15,13 @@ use exocore_core::protos::generated::exocore_store::{
 use exocore_core::protos::{prost::ProstMessageExt, store::OperationsPredicate};
 use exocore_core::time::Clock;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
+use futures::channel::{mpsc, oneshot};
+use futures::prelude::*;
 
+use super::entity_index::EntityIndex;
 use crate::error::Error;
 use crate::local::watched_queries::WatchedQueries;
 use crate::query::WatchToken;
-
-use super::entity_index::EntityIndex;
 use crate::{local::mutation_tracker::MutationTracker, mutation::MutationRequestLike};
 
 /// Locally persisted entities store allowing mutation and queries on entities
@@ -629,19 +627,17 @@ impl QueryRequest {
 pub mod tests {
     use std::time::Duration;
 
+    use exocore_core::protos::prost::ProstAnyPackMessageExt;
     use exocore_core::tests_utils::async_expect_eventually;
+    use exocore_core::{futures::sleep, protos::store::Trait, protos::test::TestMessage};
     use futures::executor::block_on_stream;
 
-    use exocore_core::protos::prost::ProstAnyPackMessageExt;
-    use exocore_core::{futures::sleep, protos::store::Trait, protos::test::TestMessage};
-
+    use super::super::TestStore;
+    use super::*;
     use crate::local::entity_index::GarbageCollectorConfig;
     use crate::local::EntityIndexConfig;
     use crate::mutation::MutationBuilder;
     use crate::query::QueryBuilder;
-
-    use super::super::TestStore;
-    use super::*;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn store_mutate_query_via_handle() -> anyhow::Result<()> {

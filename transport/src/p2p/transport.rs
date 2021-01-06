@@ -1,6 +1,11 @@
 use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll};
 
+use exocore_core::cell::{Cell, CellId, CellNodes};
+use exocore_core::cell::{LocalNode, Node, NodeId};
+use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
+use exocore_core::protos::generated::common_capnp::envelope;
+use exocore_core::utils::handle_set::HandleSet;
 use futures::channel::mpsc;
 use futures::prelude::*;
 use futures::{FutureExt, SinkExt, StreamExt};
@@ -12,12 +17,6 @@ use super::{
     handles::ServiceHandles,
     Libp2pTransportConfig,
 };
-use exocore_core::cell::{Cell, CellId, CellNodes};
-use exocore_core::cell::{LocalNode, Node, NodeId};
-use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
-use exocore_core::protos::generated::common_capnp::envelope;
-use exocore_core::utils::handle_set::HandleSet;
-
 use crate::transport::{ConnectionStatus, InEvent, OutEvent};
 use crate::Error;
 use crate::{messages::InMessage, Libp2pTransportServiceHandle};

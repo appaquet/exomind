@@ -1,12 +1,14 @@
-use super::MutationIndex;
-use crate::entity::{EntityId, TraitId};
-use crate::error::Error;
-use crate::ordering::OrderingValueWrapper;
+use std::borrow::Borrow;
+
 use chrono::{DateTime, Utc};
 use exocore_chain::block::BlockOffset;
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_store::{EntityQuery, Paging};
-use std::borrow::Borrow;
+
+use super::MutationIndex;
+use crate::entity::{EntityId, TraitId};
+use crate::error::Error;
+use crate::ordering::OrderingValueWrapper;
 
 /// Iterates through all results matching a given initial query using the
 /// next_page score when a page got emptied.

@@ -1,9 +1,5 @@
-use crate::{
-    disco::prompt_discovery_pin,
-    term::*,
-    utils::{edit_file, edit_string},
-    Context,
-};
+use std::{io::Write, path::PathBuf, time::Duration};
+
 use clap::Clap;
 use exocore_chain::{
     block::{Block, BlockOperations, BlockOwned},
@@ -27,7 +23,13 @@ use exocore_core::{
     sec::{auth_token::AuthToken, keys::Keypair},
     time::Clock,
 };
-use std::{io::Write, path::PathBuf, time::Duration};
+
+use crate::{
+    disco::prompt_discovery_pin,
+    term::*,
+    utils::{edit_file, edit_string},
+    Context,
+};
 
 #[derive(Clap)]
 pub struct CellOptions {

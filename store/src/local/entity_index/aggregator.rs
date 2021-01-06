@@ -1,5 +1,9 @@
-use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetadata};
-use crate::{entity::TraitId, error::Error, query::ResultHash};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hasher,
+    rc::Rc,
+};
+
 use chrono::{DateTime, Utc};
 use exocore_chain::{block::BlockOffset, operation::OperationId};
 use exocore_core::{
@@ -11,11 +15,9 @@ use exocore_core::{
     time::ConsistentTimestamp,
 };
 use itertools::Itertools;
-use std::{
-    collections::{HashMap, HashSet},
-    hash::Hasher,
-    rc::Rc,
-};
+
+use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetadata};
+use crate::{entity::TraitId, error::Error, query::ResultHash};
 
 /// Aggregates mutations metadata of an entity retrieved from the mutations
 /// index. Once merged, only the latest / active mutations are remaining, and
@@ -373,14 +375,15 @@ fn update_if_older(current: &mut Option<DateTime<Utc>>, new: Option<DateTime<Utc
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::*;
-    use crate::ordering::OrderingValueWrapper;
     use exocore_chain::block::BlockOffset;
     use exocore_core::protos::{
         prost::ProstAnyPackMessageExt, reflect::FieldGroupId, store::OrderingValue,
         test::TestMessage,
     };
     use prost::Message;
+
+    use super::*;
+    use crate::ordering::OrderingValueWrapper;
 
     const TYPE1: &str = "exocore.test.TestMessage";
     const TYPE2: &str = "exocore.test.TestMessage2";

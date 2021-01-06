@@ -11,9 +11,8 @@ use exocore_core::{
 use hyper::{body::Buf, Body, Client, Request, Response, StatusCode};
 use tokio_compat_02::FutureExt;
 
-use crate::{testing::TestableTransportHandle, ServiceType, TransportServiceHandle};
-
 use super::*;
+use crate::{testing::TestableTransportHandle, ServiceType, TransportServiceHandle};
 
 #[tokio::test]
 async fn invalid_requests() -> anyhow::Result<()> {

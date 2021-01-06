@@ -1,5 +1,6 @@
-use exocore_core::utils::id::{generate_id, generate_prefixed_id};
 use std::ffi::{CStr, CString};
+
+use exocore_core::utils::id::{generate_id, generate_prefixed_id};
 
 /// Generates a unique identifier, optionally prefixed by the given string.
 ///

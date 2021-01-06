@@ -1,3 +1,5 @@
+use prost::Message;
+
 use crate::{
     cell::{Cell, CellId, NodeId},
     protos::{
@@ -6,7 +8,6 @@ use crate::{
     },
     time::{Clock, ConsistentTimestamp},
 };
-use prost::Message;
 
 /// Authentication token that can be used as an alternative authentication
 /// method for a node of a cell when using a transport authenticated transport

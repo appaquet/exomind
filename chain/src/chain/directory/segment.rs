@@ -1,15 +1,15 @@
-use serde::{Deserialize, Serialize};
+use std::ffi::OsStr;
 use std::{
     fs::{File, OpenOptions},
     ops::Range,
     path::{Path, PathBuf},
 };
 
-use super::Error;
-use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};
+use serde::{Deserialize, Serialize};
 
 use super::DirectoryChainStoreConfig;
-use std::ffi::OsStr;
+use super::Error;
+use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};
 
 /// A segment of the chain, stored in its own file (`segment_file`) and that
 /// should not exceed a size specified by configuration.
@@ -397,8 +397,9 @@ impl SegmentFile {
 
 #[cfg(test)]
 mod tests {
-    use super::{super::tests::create_block, *};
     use exocore_core::cell::{FullCell, LocalNode};
+
+    use super::{super::tests::create_block, *};
 
     #[test]
     fn directory_segment_create_and_open() -> anyhow::Result<()> {

@@ -9,6 +9,7 @@ pub mod watched_query;
 mod js;
 
 use std::sync::Once;
+
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]

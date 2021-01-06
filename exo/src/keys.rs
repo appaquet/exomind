@@ -1,7 +1,8 @@
-use crate::Context;
 use clap::Clap;
 use exocore_core::cell::{Node, NodeId};
 use exocore_core::sec::keys::Keypair;
+
+use crate::Context;
 
 #[derive(Clap)]
 pub struct KeysOptions {

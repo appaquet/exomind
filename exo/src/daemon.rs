@@ -1,4 +1,3 @@
-use crate::Context;
 use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -20,6 +19,8 @@ use exocore_transport::{
     Libp2pTransport, ServiceType, TransportServiceHandle,
 };
 use futures::{Future, FutureExt};
+
+use crate::Context;
 
 pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
     let config = ctx.options.read_configuration();

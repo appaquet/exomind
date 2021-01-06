@@ -1,15 +1,17 @@
-use crate::{
-    js::{into_js_error, wrap_js_error},
-    node::LocalNode,
-};
+use std::{rc::Rc, time::Duration};
+
 use exocore_core::{
     cell::{CellConfigExt, LocalNodeConfigExt},
     protos::core::{node_cell_config, CellConfig, NodeCellConfig},
 };
 use exocore_discovery::{Client, DEFAULT_DISCO_SERVER};
 use futures::{channel::oneshot, future::Shared, FutureExt};
-use std::{rc::Rc, time::Duration};
 use wasm_bindgen::prelude::*;
+
+use crate::{
+    js::{into_js_error, wrap_js_error},
+    node::LocalNode,
+};
 
 #[wasm_bindgen]
 pub struct Discovery {

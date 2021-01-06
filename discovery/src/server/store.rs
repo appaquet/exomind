@@ -1,10 +1,12 @@
-use crate::payload::{Pin, ReplyToken};
-use chrono::{DateTime, Utc};
-use futures::lock::Mutex;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
 };
+
+use chrono::{DateTime, Utc};
+use futures::lock::Mutex;
+
+use crate::payload::{Pin, ReplyToken};
 
 /// Store in which payloads are temporarily saved.
 #[derive(Clone, Default)]

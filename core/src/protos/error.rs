@@ -1,5 +1,6 @@
-use super::reflect::FieldId;
 use std::sync::Arc;
+
+use super::reflect::FieldId;
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {

@@ -1,6 +1,8 @@
-use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io;
+
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+
+use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 
 /// Frame that wraps 2 underlying frame into a single frame (like a tuple)
 pub struct CompoundFrame<I: FrameReader> {

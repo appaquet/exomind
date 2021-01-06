@@ -1,6 +1,9 @@
 use std::collections::HashMap;
+use std::pin::Pin;
 use std::sync::{Arc, Mutex, Weak};
+use std::task::{Context, Poll};
 
+use exocore_core::utils::handle_set::{Handle, HandleSet};
 use exocore_core::{cell::Cell, framing::CapnpFrameBuilder};
 use exocore_core::{
     cell::{LocalNode, Node, NodeId},
@@ -12,15 +15,12 @@ use exocore_core::{
 };
 use futures::channel::mpsc;
 use futures::prelude::*;
+use futures::stream::Peekable;
+use futures::{FutureExt, StreamExt};
 
 use crate::streams::{MpscHandleSink, MpscHandleStream};
 use crate::transport::{ConnectionStatus, TransportHandleOnStart};
 use crate::{Error, InEvent, InMessage, OutEvent, OutMessage, ServiceType, TransportServiceHandle};
-use exocore_core::utils::handle_set::{Handle, HandleSet};
-use futures::stream::Peekable;
-use futures::{FutureExt, StreamExt};
-use std::pin::Pin;
-use std::task::{Context, Poll};
 
 const CHANNELS_SIZE: usize = 1000;
 
@@ -361,8 +361,9 @@ impl TestableTransportHandle {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use exocore_core::cell::{FullCell, LocalNode};
+
+    use super::*;
 
     #[tokio::test]
     async fn send_and_receive() {

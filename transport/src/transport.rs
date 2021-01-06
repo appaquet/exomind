@@ -1,7 +1,8 @@
-use crate::{Error, InMessage, OutMessage};
 use exocore_core::cell::NodeId;
 use futures::prelude::*;
 use futures::sink::Sink;
+
+use crate::{Error, InMessage, OutMessage};
 
 pub type TransportHandleOnStart = Box<dyn Future<Output = ()> + Send + Unpin + 'static>;
 

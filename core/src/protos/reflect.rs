@@ -1,6 +1,7 @@
-use super::registry::Registry;
-use super::Error;
-use crate::protos::generated::exocore_store::Reference;
+use std::convert::TryFrom;
+use std::fmt::Debug;
+use std::{collections::HashMap, sync::Arc};
+
 use protobuf::descriptor::DescriptorProto;
 use protobuf::types::{
     ProtobufType, ProtobufTypeInt32, ProtobufTypeInt64, ProtobufTypeMessage, ProtobufTypeString,
@@ -8,9 +9,10 @@ use protobuf::types::{
 };
 use protobuf::well_known_types::{Any, Empty, Timestamp};
 use protobuf::Message;
-use std::convert::TryFrom;
-use std::fmt::Debug;
-use std::{collections::HashMap, sync::Arc};
+
+use super::registry::Registry;
+use super::Error;
+use crate::protos::generated::exocore_store::Reference;
 
 pub trait ReflectMessage: Debug {
     fn descriptor(&self) -> &ReflectMessageDescriptor;
@@ -250,7 +252,7 @@ pub fn from_any_url_and_data(
     let full_name = any_url_to_full_name(url);
 
     let descriptor = registry.get_message_descriptor(&full_name)?;
-    let message = protobuf::parse_from_bytes::<Empty>(data)?;
+    let message = Empty::parse_from_bytes(data)?;
 
     Ok(DynamicMessage {
         message,
@@ -264,10 +266,11 @@ pub fn any_url_to_full_name(url: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use crate::protos::generated::exocore_test::TestMessage;
     use crate::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
-    use chrono::Utc;
 
     #[test]
     fn reflect_dyn_message() -> anyhow::Result<()> {

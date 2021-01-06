@@ -1,14 +1,16 @@
-use super::reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor};
-use super::Error;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::RwLock;
+
 use protobuf::descriptor::{
     DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto,
     FileDescriptorSet,
 };
 use protobuf::types::{ProtobufType, ProtobufTypeBool};
 use protobuf::Message;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::RwLock;
+
+use super::reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor};
+use super::Error;
 
 type MessageDescriptorsMap = HashMap<String, Arc<ReflectMessageDescriptor>>;
 
@@ -46,7 +48,7 @@ impl Registry {
         fd_set_bytes: R,
     ) -> Result<(), Error> {
         let mut bytes = fd_set_bytes;
-        let fd_set = protobuf::parse_from_reader(&mut bytes)
+        let fd_set = FileDescriptorSet::parse_from_reader(&mut bytes)
             .map_err(|err| Error::StepanProtobuf(Arc::new(err)))?;
 
         self.register_file_descriptor_set(&fd_set);

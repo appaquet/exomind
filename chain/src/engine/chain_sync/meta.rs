@@ -1,10 +1,11 @@
+use chain::Segments;
+use exocore_core::framing::FrameReader;
+use exocore_core::protos::generated::data_chain_capnp::{block_header, block_partial_header};
+
 use super::ChainSyncError;
 use crate::block::{Block, BlockHeight, BlockOffset, BlockSignaturesSize};
 use crate::chain;
 use crate::{engine::EngineError, ChainSyncConfig};
-use chain::Segments;
-use exocore_core::framing::FrameReader;
-use exocore_core::protos::generated::data_chain_capnp::{block_header, block_partial_header};
 
 /// Block metadata used for comparison between local and remote stores.
 #[derive(Debug)]

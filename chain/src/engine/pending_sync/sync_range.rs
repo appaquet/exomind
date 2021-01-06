@@ -1,11 +1,13 @@
-use super::{OperationDetailsLevel, PendingSyncConfig};
-use crate::{engine::EngineError, operation::OperationId, pending::StoredOperation};
+use std::ops::Bound;
+
 use exocore_core::{
     framing::FrameReader,
     protos::generated::data_transport_capnp::pending_sync_range,
     sec::hash::{Multihash, MultihashDigestExt, Sha3_256},
 };
-use std::ops::Bound;
+
+use super::{OperationDetailsLevel, PendingSyncConfig};
+use crate::{engine::EngineError, operation::OperationId, pending::StoredOperation};
 
 /// Collection of SyncRangeBuilder, taking into account maximum operations we
 /// want per range.

@@ -235,10 +235,10 @@ impl<'store> Iterator for OperationsIterator<'store> {
 
 #[cfg(test)]
 mod test {
-    use crate::engine::testing::create_dummy_new_entry_op;
+    use exocore_core::cell::LocalNode;
 
     use super::*;
-    use exocore_core::cell::LocalNode;
+    use crate::engine::testing::create_dummy_new_entry_op;
 
     #[test]
     fn put_and_retrieve_operation() -> anyhow::Result<()> {

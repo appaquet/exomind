@@ -1,11 +1,12 @@
+use std::pin::Pin;
+use std::task::{Context, Poll};
+
 use futures::channel::mpsc;
 use futures::channel::mpsc::SendError;
 use futures::prelude::*;
 use futures::sink::{Sink, SinkErrInto};
 use futures::StreamExt;
 use pin_project::pin_project;
-use std::pin::Pin;
-use std::task::{Context, Poll};
 
 use crate::{Error, InEvent, OutEvent};
 

@@ -1,9 +1,8 @@
-use crate::time::ConsistentTimestamp;
-
-use super::{Error, NamedMessage};
-
 pub use prost::Message;
 pub use prost_types::{Any, Timestamp};
+
+use super::{Error, NamedMessage};
+use crate::time::ConsistentTimestamp;
 
 pub trait ProstTimestampExt {
     fn to_chrono_datetime(&self) -> chrono::DateTime<chrono::Utc>;

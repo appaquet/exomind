@@ -1,6 +1,7 @@
-use crate::framing;
 use multihash::{Code, StatefulHasher};
 pub use multihash::{Hasher, Multihash, MultihashDigest, Sha3_256, Sha3_512};
+
+use crate::framing;
 
 const MULTIHASH_CODE_SIZE: usize = 2;
 /// Multihash digest extension.

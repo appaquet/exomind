@@ -6,11 +6,6 @@ use std::{
     time::Duration,
 };
 
-use futures::{
-    channel::{mpsc, oneshot},
-    prelude::*,
-};
-
 use exocore_core::{
     cell::{Cell, CellNodeRole, Node, NodeId},
     framing::CapnpFrameBuilder,
@@ -28,6 +23,10 @@ use exocore_core::{
 use exocore_transport::{
     transport::ConnectionStatus, InEvent, InMessage, OutEvent, OutMessage, ServiceType,
     TransportServiceHandle,
+};
+use futures::{
+    channel::{mpsc, oneshot},
+    prelude::*,
 };
 
 use crate::{error::Error, mutation::MutationRequestLike, query::WatchToken};
@@ -729,13 +728,14 @@ impl Drop for WatchedQueryStream {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use exocore_core::{
         cell::{FullCell, LocalNode},
         futures::spawn_future,
         tests_utils::expect_eventually,
     };
     use exocore_transport::testing::MockTransport;
+
+    use super::*;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn connects_to_online_node() -> anyhow::Result<()> {

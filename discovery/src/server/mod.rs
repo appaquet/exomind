@@ -1,14 +1,15 @@
 use std::convert::TryInto;
 
-use crate::payload::{
-    CreatePayloadRequest, CreatePayloadResponse, Payload, Pin, ReplyPayloadRequest,
-};
 use futures::prelude::*;
 use hyper::{
     service::{make_service_fn, service_fn},
     Body, Method, Request, Response, StatusCode,
 };
 use tokio_compat_02::FutureExt;
+
+use crate::payload::{
+    CreatePayloadRequest, CreatePayloadResponse, Payload, Pin, ReplyPayloadRequest,
+};
 
 mod config;
 mod store;

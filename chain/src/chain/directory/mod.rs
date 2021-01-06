@@ -5,9 +5,9 @@ use std::{
     sync::Arc,
 };
 
-use crate::operation::OperationId;
 use segment::DirectorySegment;
 
+use crate::operation::OperationId;
 use crate::{
     block::{Block, BlockOffset, BlockRef},
     chain::{ChainStore, Error, Segment, StoredBlockIterator},
@@ -16,9 +16,10 @@ use crate::{
 mod operations_index;
 mod segment;
 
-use super::Segments;
 use exocore_core::simple_store::{json_disk_store::JsonDiskStore, SimpleStore};
 use operations_index::OperationsIndex;
+
+use super::Segments;
 
 const METADATA_FILE: &str = "metadata.json";
 
@@ -564,13 +565,12 @@ pub enum DirectoryError {
 
 #[cfg(test)]
 pub mod tests {
+    use exocore_core::cell::FullCell;
     use exocore_core::{cell::LocalNode, utils::range};
     use itertools::Itertools;
 
-    use crate::block::{Block, BlockOperations, BlockOwned};
-
     use super::*;
-    use exocore_core::cell::FullCell;
+    use crate::block::{Block, BlockOperations, BlockOwned};
 
     #[test]
     fn directory_chain_create_and_open() -> anyhow::Result<()> {

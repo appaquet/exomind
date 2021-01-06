@@ -1,8 +1,10 @@
+use std::io;
+
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+
 use super::{
     check_from_size, check_into_size, check_offset_substract, Error, FrameBuilder, FrameReader,
 };
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::io;
 
 /// Frame that encode the size of the underlying frame so that it can expose the
 /// exact data when decoding. The size is prepended and appended to support to
@@ -234,10 +236,11 @@ pub struct IteratedSizedReaderFrame {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use super::*;
     use crate::framing::{assert_builder_equals, CapnpFrameBuilder, TypedCapnpFrame};
     use crate::protos::generated::data_chain_capnp::block_header;
-    use std::io::Cursor;
 
     #[test]
     fn can_build_and_read_sized_inner() -> anyhow::Result<()> {

@@ -1,6 +1,7 @@
-use futures::{Stream, StreamExt};
 use std::pin::Pin;
 use std::task::{Context, Poll};
+
+use futures::{Stream, StreamExt};
 
 /// Wraps a stream to batch all available capped number of items.
 ///
@@ -70,10 +71,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::futures::block_on;
     use futures::channel::mpsc;
     use futures::SinkExt;
+
+    use super::*;
+    use crate::futures::block_on;
 
     #[test]
     fn should_batch_items() {

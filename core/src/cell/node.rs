@@ -1,3 +1,14 @@
+use std::{
+    collections::HashSet,
+    fmt::{Debug, Display},
+    ops::Deref,
+    str::FromStr,
+    sync::{Arc, RwLock},
+};
+
+use libp2p::core::{Multiaddr, PeerId};
+use url::Url;
+
 use super::error::Error;
 use crate::{
     protos::{
@@ -9,15 +20,6 @@ use crate::{
         signature::Signature,
     },
 };
-use libp2p::core::{Multiaddr, PeerId};
-use std::{
-    collections::HashSet,
-    fmt::{Debug, Display},
-    ops::Deref,
-    str::FromStr,
-    sync::{Arc, RwLock},
-};
-use url::Url;
 
 /// Represents a machine / process on which Exocore runs. A node can host
 /// multiple `Cell`.

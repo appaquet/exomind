@@ -1,10 +1,12 @@
 extern crate log4rs;
 
+use std::sync::Once;
+
+use log::LevelFilter;
+
 use self::log4rs::append::console::ConsoleAppender;
 use self::log4rs::config::{Appender, Config, Logger, Root};
 use self::log4rs::encode::pattern::PatternEncoder;
-use log::LevelFilter;
-use std::sync::Once;
 
 static INIT: Once = Once::new();
 

@@ -1,5 +1,6 @@
-use crate::block::BlockHeight;
 use std::time::Duration;
+
+use crate::block::BlockHeight;
 
 /// CommitManager's configuration
 #[derive(Copy, Clone, Debug)]

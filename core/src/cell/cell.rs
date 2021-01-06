@@ -1,3 +1,11 @@
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::{Arc, RwLock},
+};
+
+use libp2p::core::PeerId;
+
 use super::{
     config::CellConfigExt, CellApplications, CellNode, CellNodeRole, CellNodes, CellNodesRead,
     CellNodesWrite, Error, LocalNode, Node, NodeId,
@@ -8,12 +16,6 @@ use crate::{
         registry::Registry,
     },
     sec::keys::{Keypair, PublicKey},
-};
-use libp2p::core::PeerId;
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-    sync::{Arc, RwLock},
 };
 
 /// A Cell represents a private enclosure in which the data and applications of

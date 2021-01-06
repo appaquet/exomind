@@ -1,6 +1,7 @@
+use std::cmp::Ordering;
+
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_store::{ordering_value, OrderingValue, Paging};
-use std::cmp::Ordering;
 
 /// Wraps a trait or entities search result's ordering value so that it can be
 /// easily reversed when required or ignored if it's outside of the requested
@@ -61,8 +62,9 @@ pub trait OrderingValueExt {
 
 impl OrderingValueExt for OrderingValue {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        use ordering_value::Value as V;
         use std::cmp::Ordering as O;
+
+        use ordering_value::Value as V;
 
         if self.value == other.value {
             return self.operation_id.partial_cmp(&other.operation_id);

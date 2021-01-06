@@ -1,12 +1,13 @@
-use crate::OutMessage;
-use exocore_core::futures::{block_on, sleep};
-use futures::{channel::oneshot, lock::Mutex, FutureExt};
 use std::{
     collections::HashMap, sync::atomic::AtomicU64, sync::atomic::Ordering, sync::Arc, sync::Weak,
     time::Duration,
 };
 
+use exocore_core::futures::{block_on, sleep};
+use futures::{channel::oneshot, lock::Mutex, FutureExt};
+
 use super::config::HTTPTransportConfig;
+use crate::OutMessage;
 
 pub type RequestID = u64;
 

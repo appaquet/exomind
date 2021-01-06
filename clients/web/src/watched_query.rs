@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc, sync::Arc};
+
 use exocore_core::{
     futures::spawn_future_non_send,
     protos::{
@@ -7,7 +9,6 @@ use exocore_core::{
 };
 use exocore_store::remote::ClientHandle;
 use futures::{channel::oneshot, prelude::*};
-use std::{cell::RefCell, rc::Rc, sync::Arc};
 use wasm_bindgen::prelude::*;
 
 type ResultCell = Rc<RefCell<Option<Result<EntityResults, exocore_store::error::Error>>>>;

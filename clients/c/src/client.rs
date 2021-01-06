@@ -1,3 +1,5 @@
+use std::{ffi::CString, os::raw::c_void, sync::Arc, time::Duration};
+
 use exocore_core::{
     cell::Cell,
     futures::Runtime,
@@ -12,7 +14,6 @@ use exocore_transport::{
 };
 use futures::StreamExt;
 use prost::Message;
-use std::{ffi::CString, os::raw::c_void, sync::Arc, time::Duration};
 
 use crate::exocore_init;
 use crate::node::LocalNode;

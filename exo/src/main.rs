@@ -13,10 +13,11 @@ extern crate log;
 #[macro_use]
 extern crate anyhow;
 
+use std::{path::PathBuf, str::FromStr};
+
 use clap::Clap;
 use exocore_core::{cell::LocalNodeConfigExt, protos::core::LocalNodeConfig};
 use log::LevelFilter;
-use std::{path::PathBuf, str::FromStr};
 use term::*;
 use utils::expand_tild;
 

@@ -1,11 +1,12 @@
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
+
 use futures::{
     channel::{mpsc, oneshot},
     future::Shared,
     Future, FutureExt, StreamExt,
-};
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Arc,
 };
 
 /// Manages a set of handles so that their lifetime is managed along their

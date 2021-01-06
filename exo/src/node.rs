@@ -1,11 +1,13 @@
-use crate::{term::*, Context};
+use std::fs::File;
+
 use clap::Clap;
 use exocore_core::cell::LocalNode;
 use exocore_core::{
     cell::LocalNodeConfigExt,
     protos::core::{LocalNodeConfig, NodeAddresses},
 };
-use std::fs::File;
+
+use crate::{term::*, Context};
 
 #[derive(Clap)]
 pub struct NodeOptions {

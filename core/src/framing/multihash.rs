@@ -1,8 +1,9 @@
+use std::io;
+
 use multihash::Multihash;
 
 use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 use crate::sec::hash::MultihashDigestExt;
-use std::io;
 
 /// Check summed frame using a multihash encoded digest
 pub struct MultihashFrame<D: MultihashDigestExt, I: FrameReader> {

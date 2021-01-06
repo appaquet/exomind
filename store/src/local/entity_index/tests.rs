@@ -7,14 +7,13 @@ use exocore_core::{
 };
 use test_index::*;
 
+use super::*;
 use crate::{
     local::mutation_index::MutationType,
     mutation::MutationBuilder,
     ordering::{value_from_u64, value_max},
     query::{ProjectionBuilder, QueryBuilder as Q},
 };
-
-use super::*;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn index_full_pending_to_chain() -> anyhow::Result<()> {

@@ -43,7 +43,7 @@ impl FromStr for Pin {
 impl Pin {
     pub fn generate() -> Pin {
         let mut rng = rand::thread_rng();
-        rng.gen_range(100_000_000, 999_999_999).try_into().unwrap()
+        rng.gen_range(100_000_000..999_999_999).try_into().unwrap()
     }
 
     pub fn to_formatted_string(&self) -> String {

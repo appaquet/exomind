@@ -1,6 +1,4 @@
-use exocore_core::protos::store::DeleteOperationsMutation;
-use prost::Message;
-
+use exocore_chain::operation::OperationId;
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
 use exocore_core::protos::generated::exocore_store::entity_mutation::Mutation;
 use exocore_core::protos::generated::exocore_store::{
@@ -9,10 +7,11 @@ use exocore_core::protos::generated::exocore_store::{
 };
 use exocore_core::protos::generated::store_transport_capnp::{mutation_request, mutation_response};
 use exocore_core::protos::prost::ProstMessageExt;
+use exocore_core::protos::store::DeleteOperationsMutation;
+use prost::Message;
 
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
-use exocore_chain::operation::OperationId;
 
 pub struct MutationBuilder {
     request: MutationRequest,

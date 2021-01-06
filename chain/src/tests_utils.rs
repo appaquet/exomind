@@ -3,23 +3,22 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use futures::prelude::*;
-use itertools::Itertools;
-use tempfile::TempDir;
-
+use exocore_core::cell::FullCell;
 use exocore_core::cell::{CellNode, CellNodeRole, LocalNode};
 use exocore_core::futures::spawn_future;
 use exocore_core::tests_utils::expect_result_eventually;
 use exocore_core::time::Clock;
+use exocore_transport::testing::MockTransport;
+use exocore_transport::ServiceType;
+use futures::prelude::*;
+use itertools::Itertools;
+use tempfile::TempDir;
 
 use crate::block::{BlockOffset, BlockOwned};
 use crate::chain::ChainStore;
 use crate::engine::{EngineHandle, EngineOperation, Event, RequestTrackerConfig};
 use crate::operation::OperationId;
 use crate::*;
-use exocore_core::cell::FullCell;
-use exocore_transport::testing::MockTransport;
-use exocore_transport::ServiceType;
 
 /// exocore-chain testing utility
 pub struct TestChainCluster {

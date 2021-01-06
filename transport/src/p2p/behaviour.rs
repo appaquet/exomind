@@ -1,16 +1,15 @@
 use std::collections::{HashMap, VecDeque};
+use std::time::Duration;
 
+use exocore_core::cell::Node;
+use exocore_core::time::Instant;
 use futures::task::{Context, Poll};
 use libp2p::core::{connection::ConnectionId, Multiaddr, PeerId};
 use libp2p::swarm::{
     DialPeerCondition, NetworkBehaviour, NetworkBehaviourAction, NotifyHandler, PollParameters,
 };
 
-use exocore_core::time::Instant;
-
 use super::protocol::{ExocoreProtoHandler, ExocoreProtoMessage};
-use exocore_core::cell::Node;
-use std::time::Duration;
 
 const MAX_PEER_QUEUE: usize = 20;
 const DEFAULT_DIALING_MESSAGE_TIMEOUT: Duration = Duration::from_secs(5);

@@ -1,13 +1,12 @@
 use exocore_core::cell::NodeId;
 use exocore_core::time::Clock;
 
+use super::BlockMetadata;
+use super::ChainSyncConfig;
 use crate::block::{Block, BlockHeight};
 use crate::chain::ChainStore;
 use crate::engine::error::EngineError;
 use crate::engine::request_tracker::RequestTracker;
-
-use super::BlockMetadata;
-use super::ChainSyncConfig;
 
 /// Synchronization information about a remote node
 pub struct NodeSyncInfo {

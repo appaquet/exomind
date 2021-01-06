@@ -1,7 +1,3 @@
-use chrono::{DateTime, TimeZone, Utc};
-
-use super::{ConsistentTimestamp, Instant, SystemTime};
-use crate::cell::Node;
 use std::{
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -9,6 +5,11 @@ use std::{
     },
     time::Duration,
 };
+
+use chrono::{DateTime, TimeZone, Utc};
+
+use super::{ConsistentTimestamp, Instant, SystemTime};
+use crate::cell::Node;
 
 // TODO: To be completed in https://github.com/appaquet/exocore/issues/6
 
@@ -171,9 +172,10 @@ enum Source {
 
 #[cfg(test)]
 mod tests {
+    use std::{sync::Arc, thread};
+
     use super::{super::Duration, *};
     use crate::cell::LocalNode;
-    use std::{sync::Arc, thread};
 
     #[test]
     fn non_mocked_clock() {

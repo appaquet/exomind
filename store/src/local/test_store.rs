@@ -1,19 +1,7 @@
 use std::sync::Arc;
 
-use store::StoreConfig;
-use tempfile::TempDir;
-
-use exocore_chain::{tests_utils::TestChainCluster, DirectoryChainStore, MemoryPendingStore};
-
-use crate::{
-    local::{mutation_index::MutationIndexConfig, store::StoreHandle, EntityIndexConfig},
-    mutation::{MutationBuilder, MutationRequestLike},
-};
-
-use super::entity_index::test_index::TestEntityIndex;
-use super::*;
-
 use chrono::Utc;
+use exocore_chain::{tests_utils::TestChainCluster, DirectoryChainStore, MemoryPendingStore};
 use exocore_core::protos::{
     generated::{
         exocore_store::{EntityQuery, EntityResults, MutationResult, Trait},
@@ -22,6 +10,15 @@ use exocore_core::protos::{
     prost::{ProstAnyPackMessageExt, ProstDateTimeExt},
     registry::Registry,
     store::TraitDetails,
+};
+use store::StoreConfig;
+use tempfile::TempDir;
+
+use super::entity_index::test_index::TestEntityIndex;
+use super::*;
+use crate::{
+    local::{mutation_index::MutationIndexConfig, store::StoreHandle, EntityIndexConfig},
+    mutation::{MutationBuilder, MutationRequestLike},
 };
 
 /// Utility to test store

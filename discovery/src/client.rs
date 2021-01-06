@@ -1,12 +1,13 @@
 use std::{convert::TryInto, time::Duration};
 
-use crate::payload::{
-    CreatePayloadRequest, CreatePayloadResponse, Payload, Pin, ReplyPayloadRequest, ReplyToken,
-};
 use futures::Future;
 pub use reqwest::Url;
 use reqwest::{IntoUrl, StatusCode};
 use wasm_timer::Instant;
+
+use crate::payload::{
+    CreatePayloadRequest, CreatePayloadResponse, Payload, Pin, ReplyPayloadRequest, ReplyToken,
+};
 
 /// Discovery service client.
 ///

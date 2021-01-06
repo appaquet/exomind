@@ -1,11 +1,13 @@
-use super::MutationIndexConfig;
-use crate::error::Error;
+use std::collections::HashMap;
+
 use exocore_core::protos::reflect::FieldType;
 use exocore_core::protos::registry::Registry;
-use std::collections::HashMap;
 use tantivy::schema::*;
 use tantivy::tokenizer::*;
 use tantivy::Document;
+
+use super::MutationIndexConfig;
+use crate::error::Error;
 
 /// Tantitvy schema fields
 pub(crate) struct Fields {

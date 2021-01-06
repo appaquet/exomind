@@ -6,11 +6,10 @@ use exocore_core::futures::spawn_future;
 use exocore_core::tests_utils::async_expect_eventually;
 use exocore_core::time::{ConsistentTimestamp, Instant};
 
+use super::*;
 use crate::{
     testing::TestableTransportHandle, transport::ConnectionStatus, OutMessage, ServiceType,
 };
-
-use super::*;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_integration() -> anyhow::Result<()> {

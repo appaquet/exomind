@@ -1,7 +1,8 @@
-use super::{EngineError, Event, SyncContext};
-use crate::block::{Block, BlockOffset, BlockRef};
-use crate::chain::ChainStore;
+use std::collections::HashMap;
+
 use capnp::traits::ToU16;
+pub use config::ChainSyncConfig;
+pub use error::ChainSyncError;
 use exocore_core::capnp;
 use exocore_core::cell::{Cell, CellNodeRole, CellNodes, CellNodesOwned};
 use exocore_core::cell::{Node, NodeId};
@@ -11,11 +12,11 @@ use exocore_core::protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
 };
 use exocore_core::time::Clock;
-use std::collections::HashMap;
-
-pub use config::ChainSyncConfig;
-pub use error::ChainSyncError;
 use node_info::{NodeStatus, NodeSyncInfo};
+
+use super::{EngineError, Event, SyncContext};
+use crate::block::{Block, BlockOffset, BlockRef};
+use crate::chain::ChainStore;
 
 mod meta;
 mod node_info;

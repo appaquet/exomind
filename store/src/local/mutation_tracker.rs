@@ -1,11 +1,13 @@
-use super::store::StoreConfig;
-use crate::error::Error;
+use std::collections::{HashMap, HashSet};
+use std::sync::Mutex;
+
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::store::MutationResult;
 use exocore_core::time::Instant;
 use futures::channel::oneshot;
-use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
+
+use super::store::StoreConfig;
+use crate::error::Error;
 
 type RequestId = usize;
 
@@ -169,8 +171,9 @@ pub struct WatchedMutationRequest {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use std::time::Duration;
+
+    use super::*;
 
     #[test]
     fn golden_path() {

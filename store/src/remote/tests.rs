@@ -1,5 +1,4 @@
 use std::{sync::Arc, time::Duration};
-use tokio::sync::Mutex;
 
 use exocore_core::{
     cell::{CellNodeRole, LocalNode},
@@ -9,7 +8,9 @@ use exocore_core::{
 };
 use exocore_transport::{testing::MockTransportServiceHandle, ServiceType};
 use futures::executor::block_on_stream;
+use tokio::sync::Mutex;
 
+use super::*;
 use crate::{
     error::Error,
     local::TestStore,
@@ -17,8 +18,6 @@ use crate::{
     query::QueryBuilder,
     remote::server::{Server, ServerConfiguration},
 };
-
-use super::*;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn mutation_and_query() -> anyhow::Result<()> {

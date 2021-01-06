@@ -1,7 +1,9 @@
-use crate::chain;
-use crate::operation;
-use crate::operation::NewOperation;
-use crate::pending;
+use std::sync::{Arc, RwLock, Weak};
+
+pub use chain_sync::ChainSyncConfig;
+pub use commit_manager::CommitManagerConfig;
+pub use config::EngineConfig;
+pub use error::EngineError;
 use exocore_core::cell::Cell;
 use exocore_core::framing::{FrameReader, TypedCapnpFrame};
 use exocore_core::futures::{interval, spawn_blocking};
@@ -15,16 +17,15 @@ use exocore_transport::{InEvent, InMessage, OutEvent, TransportServiceHandle};
 use futures::channel::mpsc;
 use futures::future::FutureExt;
 use futures::{SinkExt, StreamExt};
-use std::sync::{Arc, RwLock, Weak};
-
-pub use chain_sync::ChainSyncConfig;
-pub use commit_manager::CommitManagerConfig;
-pub use config::EngineConfig;
-pub use error::EngineError;
 pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
 pub use pending_sync::PendingSyncConfig;
 pub use request_tracker::RequestTrackerConfig;
 pub use sync_context::{SyncContext, SyncContextMessage, SyncState};
+
+use crate::chain;
+use crate::operation;
+use crate::operation::NewOperation;
+use crate::pending;
 
 mod chain_sync;
 mod commit_manager;

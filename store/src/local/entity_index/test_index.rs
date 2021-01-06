@@ -1,9 +1,3 @@
-use crate::{
-    entity::{EntityId, TraitId},
-    error::Error,
-    local::{mutation_index::MutationIndexConfig, EntityIndex},
-    mutation::{MutationBuilder, MutationRequestLike},
-};
 use exocore_chain::{
     engine::Event, operation::OperationId, tests_utils::TestChainCluster, DirectoryChainStore,
     MemoryPendingStore,
@@ -14,6 +8,12 @@ use exocore_core::protos::{
 };
 
 use super::EntityIndexConfig;
+use crate::{
+    entity::{EntityId, TraitId},
+    error::Error,
+    local::{mutation_index::MutationIndexConfig, EntityIndex},
+    mutation::{MutationBuilder, MutationRequestLike},
+};
 
 /// Utility to test entities index
 pub struct TestEntityIndex {

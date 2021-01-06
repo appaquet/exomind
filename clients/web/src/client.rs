@@ -1,4 +1,8 @@
-use crate::{js::into_js_error, node::LocalNode, watched_query::WatchedQuery};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+
 use exocore_core::{
     cell::Cell,
     futures::spawn_future_non_send,
@@ -14,11 +18,9 @@ use exocore_transport::{
 };
 use futures::StreamExt;
 use prost::Message;
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
 use wasm_bindgen::prelude::*;
+
+use crate::{js::into_js_error, node::LocalNode, watched_query::WatchedQuery};
 
 #[wasm_bindgen]
 pub struct ExocoreClient {
