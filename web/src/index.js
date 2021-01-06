@@ -5,8 +5,7 @@ import App from './app';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { initNode } from './exocore';
-import { setupLinkClickNavigation } from "./utils";
-import Navigation from "./navigation";
+import Navigation, { setupLinkClickNavigation } from "./navigation";
 import Constants from "./constants";
 import Path from "./utils/path";
 
