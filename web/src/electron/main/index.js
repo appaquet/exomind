@@ -1,7 +1,7 @@
 'use strict'
 /* eslint-env node */
 
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, MenuItem } from 'electron'
 import * as path from 'path'
 import { format as formatUrl } from 'url'
 
@@ -46,6 +46,31 @@ function createMainWindow() {
     setImmediate(() => {
       window.focus();
     })
+  })
+
+  // From https://www.electronjs.org/docs/tutorial/spellchecker
+  window.webContents.on('context-menu', (event, params) => {
+    const menu = new Menu()
+  
+    // Add each spelling suggestion
+    for (const suggestion of params.dictionarySuggestions) {
+      menu.append(new MenuItem({
+        label: suggestion,
+        click: () => mainWindow.webContents.replaceMisspelling(suggestion)
+      }));
+    }
+  
+    // Allow users to add the misspelled word to the dictionary
+    if (params.misspelledWord) {
+      menu.append(
+        new MenuItem({
+          label: 'Add to dictionary',
+          click: () => mainWindow.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord)
+        })
+      );
+    }
+  
+    menu.popup();
   })
 
   return window;

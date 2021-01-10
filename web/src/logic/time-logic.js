@@ -58,11 +58,19 @@ export default class TimeLogic {
       date.setHours(18);
       break;
     case 'weekend':
-      date.setDate(date.getDate()+6-date.getUTCDay()); // saturday
+      if (date.getUTCDay() < 6) {
+        date = DateUtil.addDays(date, 6 - date.getUTCDay()); // this saturday
+      } else {
+        date = DateUtil.addDays(date, 7); // we're saturday, so next one
+      }
       date.setHours(8);
       break;
     case 'next_week':
-      date.setDate(date.getDate()+(7-date.getUTCDay()+1)); // monday 8h
+      if (date.getUTCDay() < 1) {
+        date = DateUtil.addDays(date, 1); // we're sunday, so tomorrow
+      } else {
+        date = DateUtil.addDays(date, 8 - date.getUTCDay()); // next monday
+      }
       date.setHours(8);
       break;
     case 'next_month':

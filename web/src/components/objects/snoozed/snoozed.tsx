@@ -41,7 +41,7 @@ export default class Snoozed extends React.Component<IProps> {
                     skip: true,
                 })
             )
-            // TODO: Put back when entity compaction is done .orderByField('until_date', true)
+            .orderByField('until_date', true)
             .build();
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
             this.setState({});
