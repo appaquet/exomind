@@ -24,14 +24,14 @@ A cell consists of:
 * **Chain storage and replication layer**: Proof of concept
 * **Transport layer**: Proof of concept
 * **Store layer:** Proof of concept
-* **Encryption**: In development
 
 ### v0.2
 * **Cell management**
 * **Applications**  (WebAssembly)
-* **Android SDK**
+* **Encryption**
 
 ### v0.3 and beyond
+* **Android SDK**
 * **Blob storage**  (IPFS)
 * **Offline support**
 

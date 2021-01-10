@@ -175,7 +175,7 @@ impl GarbageCollector {
 
             // get all mutations for entity until block offset where we deemed the entity to
             // be collectable
-            let mutations = if let Ok(mut_res) = entity_fetcher(&entity_id) {
+            let mutations = if let Ok(mut_res) = entity_fetcher(entity_id) {
                 let mutations =
                     mut_res
                         .mutations
@@ -188,12 +188,12 @@ impl GarbageCollector {
                 continue;
             };
 
-            let opt_deletion = match op {
+            let opt_deletion = match &op {
                 Operation::DeleteEntity(_, entity_id) => {
-                    collect_delete_entity(&entity_id, mutations)
+                    collect_delete_entity(entity_id, mutations)
                 }
                 Operation::DeleteTrait(_, entity_id, trait_id) => {
-                    collect_delete_trait(&entity_id, &trait_id, mutations)
+                    collect_delete_trait(entity_id, trait_id, mutations)
                 }
                 Operation::CompactTrait(_, entity_id, trait_id) => collect_trait_versions(
                     &entity_id,

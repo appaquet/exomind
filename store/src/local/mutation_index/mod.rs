@@ -308,13 +308,13 @@ impl MutationIndex {
         &self,
         entity_id: EntityIdRef,
     ) -> Result<EntityMutationResults, Error> {
-        if let Some(results) = self.entity_cache.get(&entity_id) {
+        if let Some(results) = self.entity_cache.get(entity_id) {
             return Ok(results);
         }
 
         let searcher = self.index_reader.searcher();
 
-        let term = Term::from_field_text(self.fields.entity_id, &entity_id);
+        let term = Term::from_field_text(self.fields.entity_id, entity_id);
         let query = TermQuery::new(term, IndexRecordOption::Basic);
 
         let ordering = Ordering {
@@ -337,7 +337,7 @@ impl MutationIndex {
         let entity_mutations = EntityMutationResults {
             mutations: results.mutations.into_iter().collect(),
         };
-        self.entity_cache.put(&entity_id, entity_mutations.clone());
+        self.entity_cache.put(entity_id, entity_mutations.clone());
 
         Ok(entity_mutations)
     }
