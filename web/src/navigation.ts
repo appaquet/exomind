@@ -128,30 +128,36 @@ export default class Navigation {
 }
 
 export function setupLinkClickNavigation(fallback: (e: MouseEvent, el: HTMLElement) => void): void {
-    document.addEventListener('click', (e) => {
-        let el = e.target as HTMLElement;
+  document.addEventListener('click', (e) => {
+    let el = e.target as HTMLElement;
 
-        // if tagname is not a link, try to go up into the parenthood up 10 levels
-        for (let i = 0; el.tagName !== 'A' && i < 10; i++) {
-            if (el.parentNode) {
-                el = el.parentNode as HTMLElement;
-            }
-        }
+    // if tagname is not a link, try to go up into the parenthood up 10 levels
+    for (let i = 0; el.tagName !== 'A' && i < 10; i++) {
+      if (el.parentNode) {
+        el = el.parentNode as HTMLElement;
+      }
+    }
 
-        if (el.tagName === 'A') {
-            const url = el.getAttribute('href');
+    if (el.tagName === 'A') {
+      if (el.getAttribute('target') == 'local') {
+        // if target is marked as local, it means it's handled by another component
+        // Ex: `note.tsx`
+        return false;
+      }
 
-            // if it's a local URL, we catch it and send it to navigation
-            if (url.startsWith('/') || url.startsWith(window.location.origin) && !el.getAttribute('target')) {
-                Navigation.navigate(url);
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
+      const url = el.getAttribute('href');
 
-            if (fallback) {
-                fallback(e, el);
-            }
-        }
-    });
+      // if it's a local URL, we catch it and send it to navigation
+      if (url.startsWith('/') || url.startsWith(window.location.origin) && !el.getAttribute('target')) {
+        Navigation.navigate(url);
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      if (fallback) {
+        fallback(e, el);
+      }
+    }
+  });
 }

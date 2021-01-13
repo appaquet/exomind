@@ -16,8 +16,10 @@ export const Link = (props: LinkProps): ReactNode => {
             props.editor.props.onLinkClick(url, e);
         }
     };
+
     return (
-        <a href={url} onClick={handleClick} target="local">
+        // target local link is not handled by global navigation handler
+        <a href={url} onClick={handleClick} target="local"> 
             {props.children}
         </a>
     );
