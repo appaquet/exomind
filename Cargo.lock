@@ -383,9 +383,9 @@ checksum = "e0dcbc35f504eb6fc275a6d20e4ebcda18cf50d40ba6fabff8c711fa16cb3b16"
 
 [[package]]
 name = "bytes"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad1f8e949d755f9d79112b5bb46938e0ef9d3804a0b16dfab13aafcaa5f0fa72"
+checksum = "b700ce4376041dcd0a327fd0097c41095743c4c8af8887265942faf1100bd040"
 
 [[package]]
 name = "bzip2"
@@ -1006,7 +1006,7 @@ name = "exo"
 version = "0.1.2"
 dependencies = [
  "anyhow",
- "bytes 1.0.0",
+ "bytes 1.0.1",
  "clap 3.0.0-beta.2",
  "console 0.14.0",
  "dialoguer",
@@ -1113,7 +1113,7 @@ dependencies = [
  "base64 0.13.0",
  "bs58",
  "byteorder",
- "bytes 1.0.0",
+ "bytes 1.0.1",
  "capnp",
  "capnpc",
  "chrono",
@@ -1171,7 +1171,7 @@ name = "exocore-store"
 version = "0.1.2"
 dependencies = [
  "anyhow",
- "bytes 1.0.0",
+ "bytes 1.0.1",
  "chrono",
  "crc",
  "exocore-chain",
@@ -1509,10 +1509,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fc3cb4d91f53b50155bdcfd23f6a4c39ae1969c2ae85982b135750cccaf5fce"
 dependencies = [
  "cfg-if 1.0.0",
- "js-sys",
  "libc",
  "wasi 0.9.0+wasi-snapshot-preview1",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -1636,7 +1634,7 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7245cd7449cc792608c3c8a9eaf69bd4eabbabf802713748fd739c98b82f0747"
 dependencies = [
- "bytes 1.0.0",
+ "bytes 1.0.1",
  "fnv",
  "itoa",
 ]
@@ -2137,9 +2135,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.11"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fabed175da42fed1fa0746b0ea71f412aa9d35e76e95e59b192c64b9dc2bf8b"
+checksum = "fcf3805d4480bb5b86070dcfeb9e2cb2ebc148adb753c5cca5f884d1d65a42b2"
 dependencies = [
  "cfg-if 0.1.10",
  "serde",
@@ -2804,7 +2802,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e6984d2f1a23009bd270b8bb56d0926810a3d483f59c987d77969e9d8e840b2"
 dependencies = [
- "bytes 1.0.0",
+ "bytes 1.0.1",
  "prost-derive 0.7.0",
 ]
 
@@ -2832,7 +2830,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32d3ebd75ac2679c2af3a92246639f9fcc8a442ee420719cc4fe195b98dd5fa3"
 dependencies = [
- "bytes 1.0.0",
+ "bytes 1.0.1",
  "heck",
  "itertools 0.9.0",
  "log",
@@ -2886,7 +2884,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b518d7cdd93dab1d1122cf07fa9a60771836c668dde9d9e2a139f957f0d9f1bb"
 dependencies = [
- "bytes 1.0.0",
+ "bytes 1.0.1",
  "prost 0.7.0",
 ]
 
@@ -4062,11 +4060,11 @@ checksum = "b4ae116fef2b7fea257ed6440d3cfcff7f190865f170cdad00bb6465bf18ecba"
 
 [[package]]
 name = "uuid"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fde2f6a4bea1d6e007c4ad38c6839fa71cbb63b6dbf5b595aa38dc9b1093c11"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 dependencies = [
- "rand 0.7.3",
+ "getrandom 0.2.1",
  "serde",
 ]
 
