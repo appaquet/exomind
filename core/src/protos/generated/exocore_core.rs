@@ -112,15 +112,15 @@ pub struct EntityIndexConfig {
 /// Trait index configuration
 #[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct MutationIndexConfig {
-    //// Number of indexing threads.
+    /// Number of indexing threads.
     #[prost(message, optional, tag = "1")]
     #[serde(default)]
     pub indexer_num_threads: ::core::option::Option<u32>,
-    //// Maximum heap size of each indexing thread.
+    /// Maximum heap size of each indexing thread.
     #[prost(message, optional, tag = "2")]
     #[serde(default)]
     pub indexer_heap_size_bytes: ::core::option::Option<u32>,
-    //// Page size of results iterator.
+    /// Page size of results iterator.
     #[prost(message, optional, tag = "3")]
     #[serde(default)]
     pub entity_mutations_cache_size: ::core::option::Option<u32>,
@@ -137,7 +137,7 @@ pub struct EntityGarbageCollectorConfig {
     #[prost(message, optional, tag = "1")]
     #[serde(default)]
     pub run_interval_secs: ::core::option::Option<u32>,
-    //// Size of the queue of entities to be collected.
+    /// Size of the queue of entities to be collected.
     #[prost(message, optional, tag = "2")]
     #[serde(default)]
     pub queue_size: ::core::option::Option<u32>,

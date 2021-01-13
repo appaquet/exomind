@@ -72,13 +72,13 @@ message EntityIndexConfig {
 
 // Trait index configuration
 message MutationIndexConfig {        
-    /// Number of indexing threads.
+    // Number of indexing threads.
     google.protobuf.UInt32Value indexer_num_threads = 1;
 
-    /// Maximum heap size of each indexing thread.
+    // Maximum heap size of each indexing thread.
     google.protobuf.UInt32Value indexer_heap_size_bytes = 2;
 
-    /// Page size of results iterator.
+    // Page size of results iterator.
     google.protobuf.UInt32Value entity_mutations_cache_size = 3;
 }
 
@@ -92,7 +92,7 @@ message EntityGarbageCollectorConfig {
     // rate of collection.
     google.protobuf.UInt32Value run_interval_secs = 1;
 
-    /// Size of the queue of entities to be collected.
+    // Size of the queue of entities to be collected.
     google.protobuf.UInt32Value queue_size = 2;
 }
 
