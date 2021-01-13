@@ -34,7 +34,7 @@ crc = { version = "1.8", optional = true }
 lru = { version = "0.6", optional = true }
 
 [dev-dependencies]
-tempfile = "3.1"
+tempfile = "3.2"
 exocore-chain = { version = "0.1.2", path = "../chain", features = ["tests-utils"] }
 exocore-core = { version = "0.1.2", path = "../core", features = ["tests-utils"] }
 tokio = { version = "0.3", features = ["macros"], default-features = false }

@@ -67,7 +67,7 @@ capnpc = "0.14"
 prost-build = "0.7"
 
 [dev-dependencies]
-tempfile = "3.1"
+tempfile = "3.2"
 log4rs = "1.0"
 criterion_bencher_compat = "0.3"
 
