@@ -876,7 +876,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "tokio 0.3.6",
+ "tokio 1.0.1",
  "tokio-compat-02",
  "yup-oauth2",
 ]
@@ -895,7 +895,7 @@ dependencies = [
  "serde_derive",
  "serde_yaml",
  "structopt",
- "tokio 0.3.6",
+ "tokio 1.0.1",
 ]
 
 [[package]]
@@ -3459,7 +3459,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d258221f566b6c803c7b4714abadc080172b272090cdc5e244a6d4dd13c3a6bd"
 dependencies = [
  "autocfg 1.0.1",
+ "num_cpus",
  "pin-project-lite 0.2.4",
+ "tokio-macros 1.0.0",
 ]
 
 [[package]]
@@ -3534,6 +3536,17 @@ name = "tokio-macros"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "46dfffa59fc3c8aad216ed61bdc2c263d2b9d87a9c8ac9de0c11a813e51b6db7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42517d2975ca3114b22a16192634e8241dc5cc1f130be194645970cc1c371494"
 dependencies = [
  "proc-macro2",
  "quote",
