@@ -23,11 +23,11 @@ anyhow = "1.0"
 futures = "0.3"
 dirs-next = "2.0"
 tempfile = "3.2"
-tokio = { version = "0.3", features = ["macros"], default-features = false }
+tokio = { version = "1.0", features = ["macros"], default-features = false }
 dialoguer = "0.7"
 console = "0.14"
 indicatif = "0.15"
 zip = "0.5"
-reqwest = { version = "0.10", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
 url = "2.2"
 bytes = "1.0"

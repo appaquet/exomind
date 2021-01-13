@@ -15,7 +15,6 @@ runtime = [
     "tokio/io-util",
     "tokio/io-std",
     "tokio/net",
-    "tokio/stream",
     "tokio/rt",
     "tokio/rt-multi-thread",
     "tokio/sync",
@@ -36,7 +35,7 @@ capnp = { version = "0.14", features = ["sync_reader"] }
 byteorder = "1.3"
 thiserror = "1.0"
 anyhow = "1.0"
-libp2p = { version = "0.33", features = ["noise"], default-features = false }
+libp2p = { version = "0.34", features = ["noise"], default-features = false }
 chrono = "0.4"
 wasm-timer = "0.2"
 futures = { version = "0.3", features = ["async-await"] }
@@ -60,7 +59,7 @@ getrandom = { version = "0.2", features = ["js"] } # see https://docs.rs/getrand
 parking_lot = { version = "0.11", features = ["wasm-bindgen"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "0.3", features = ["rt"], default-features = false }
+tokio = { version = "1.0", features = ["rt"], default-features = false }
 
 [build-dependencies]
 capnpc = "0.14"

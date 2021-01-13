@@ -106,9 +106,13 @@ where
         let management_timer_interval = self.config.management_timer_interval;
         let management_timer = async move {
             let mut interval = interval(management_timer_interval);
-            while interval.next().await.is_some() {
+            loop {
+                interval.tick().await;
                 Self::management_timer_process(&weak_inner)?;
             }
+
+            // types the async block
+            #[allow(unreachable_code)]
             Ok::<(), Error>(())
         };
 

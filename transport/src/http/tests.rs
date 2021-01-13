@@ -9,7 +9,6 @@ use exocore_core::{
     time::Clock,
 };
 use hyper::{body::Buf, Body, Client, Request, Response, StatusCode};
-use tokio_compat_02::FutureExt;
 
 use super::*;
 use crate::{testing::TestableTransportHandle, ServiceType, TransportServiceHandle};
@@ -88,7 +87,7 @@ async fn entities_query() -> anyhow::Result<()> {
 
     let resp_body = resp_chan.await??;
     let body = hyper::body::aggregate(resp_body).await?;
-    assert_eq!(body.bytes(), b"response");
+    assert_eq!(body.chunk(), b"response");
 
     Ok(())
 }
@@ -124,7 +123,7 @@ async fn entities_mutation() -> anyhow::Result<()> {
 
     let resp_body = resp_chan.await??;
     let body = hyper::body::aggregate(resp_body).await?;
-    assert_eq!(body.bytes(), b"response");
+    assert_eq!(body.chunk(), b"response");
 
     Ok(())
 }
@@ -165,7 +164,7 @@ fn send_http_request<T: Into<String>>(
     let (req_sender, req_recv) = futures::channel::oneshot::channel();
     spawn_future(async move {
         let http_client = Client::new();
-        let resp = http_client.request(req).compat().await;
+        let resp = http_client.request(req).await;
         req_sender.send(resp).unwrap();
     });
 

@@ -1,6 +1,5 @@
 use std::{convert::TryInto, time::Duration};
 
-use futures::Future;
 pub use reqwest::Url;
 use reqwest::{IntoUrl, StatusCode};
 use wasm_timer::Instant;
@@ -41,14 +40,12 @@ impl Client {
             expect_reply,
         };
 
-        let http_resp = compat(
-            reqwest::Client::builder()
-                .build()?
-                .post(self.base_url.clone())
-                .json(&create_request)
-                .send(),
-        )
-        .await?;
+        let http_resp = reqwest::Client::builder()
+            .build()?
+            .post(self.base_url.clone())
+            .json(&create_request)
+            .send()
+            .await?;
 
         if http_resp.status() != StatusCode::OK {
             return Err(Error::ServerError(http_resp.status()));
@@ -67,7 +64,7 @@ impl Client {
             .base_url
             .join(&format!("/{}", pin_u32))
             .expect("Couldn't create URL");
-        let http_resp = compat(reqwest::Client::builder().build()?.get(url).send()).await?;
+        let http_resp = reqwest::Client::builder().build()?.get(url).send().await?;
 
         match http_resp.status() {
             reqwest::StatusCode::OK => {}
@@ -132,14 +129,12 @@ impl Client {
             reply_token,
         };
 
-        let http_resp = compat(
-            reqwest::Client::builder()
-                .build()?
-                .put(url)
-                .json(&reply_request)
-                .send(),
-        )
-        .await?;
+        let http_resp = reqwest::Client::builder()
+            .build()?
+            .put(url)
+            .json(&reply_request)
+            .send()
+            .await?;
 
         match http_resp.status() {
             reqwest::StatusCode::OK => {}
@@ -173,22 +168,4 @@ pub enum Error {
 
     #[error("Received an invalid pin")]
     InvalidPin,
-}
-
-// See: https://github.com/LucioFranco/tokio-compat-02/blob/main/examples/hyper_server.rs
-#[cfg(not(target_arch = "wasm32"))]
-fn compat<F, O>(fut: F) -> impl Future<Output = O>
-where
-    F: Future<Output = O>,
-{
-    use tokio_compat_02::FutureExt;
-    fut.compat()
-}
-
-#[cfg(target_arch = "wasm32")]
-fn compat<F, O>(fut: F) -> impl Future<Output = O>
-where
-    F: Future<Output = O>,
-{
-    fut
 }

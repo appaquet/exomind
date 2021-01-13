@@ -141,10 +141,13 @@ where
         let management_timer = async move {
             let mut timer = interval(management_interval);
 
-            while timer.next().await.is_some() {
+            loop {
+                timer.tick().await;
                 Inner::management_timer_process(&weak_inner)?;
             }
 
+            // types the async block
+            #[allow(unreachable_code)]
             Ok::<(), Error>(())
         };
 

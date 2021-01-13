@@ -144,7 +144,8 @@ where
         let weak_inner = Arc::downgrade(&self.inner);
         let management_timer = async move {
             let mut interval = interval(config.manager_timer_interval);
-            while interval.next().await.is_some() {
+            loop {
+                interval.tick().await;
                 let result = Self::handle_management_timer_tick(weak_inner.clone()).await;
                 if let Err(err) = result {
                     error!("Error in management timer: {}", err);

@@ -5,7 +5,6 @@ use hyper::{
     service::{make_service_fn, service_fn},
     Body, Method, Request, Response, StatusCode,
 };
-use tokio_compat_02::FutureExt;
 
 use crate::payload::{
     CreatePayloadRequest, CreatePayloadResponse, Payload, Pin, ReplyPayloadRequest,
@@ -68,14 +67,14 @@ impl Server {
 
             Ok::<_, anyhow::Error>(server)
         }
-        .compat()
         .await?;
 
         let cleaner = {
             let store = store.clone();
             async move {
                 let mut interval_stream = tokio::time::interval(config.cleanup_interval);
-                while interval_stream.next().await.is_some() {
+                loop {
+                    interval_stream.tick().await;
                     store.cleanup().await;
                 }
             }
@@ -83,7 +82,7 @@ impl Server {
 
         info!("Discovery server started on port {}", config.port);
         futures::select! {
-            _ = server.compat().fuse() => {},
+            _ = server.fuse() => {},
             _ = cleaner.fuse() => {},
         };
 

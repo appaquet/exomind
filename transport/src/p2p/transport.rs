@@ -155,7 +155,7 @@ impl Libp2pTransport {
         // Spawn the main Future which will take care of the swarm
         let inner = Arc::clone(&self.service_handles);
         let swarm_task = future::poll_fn(move |cx: &mut Context| -> Poll<()> {
-            if let Poll::Ready(_) = nodes_update_interval.poll_next_unpin(cx) {
+            if let Poll::Ready(_) = nodes_update_interval.poll_tick(cx) {
                 if let Ok(inner) = inner.read() {
                     for node in inner.all_peer_nodes().values() {
                         swarm.add_node_peer(node);

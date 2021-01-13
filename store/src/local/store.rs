@@ -206,7 +206,9 @@ where
         let mut gc_interval = interval(config.garbage_collect_interval);
         let weak_inner = Arc::downgrade(&self.inner);
         let garbage_collector = async move {
-            while gc_interval.next().await.is_some() {
+            loop {
+                gc_interval.tick().await;
+
                 let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
                 let inner = inner.read()?;
                 match inner.index.run_garbage_collector() {
@@ -229,6 +231,8 @@ where
                 }
             }
 
+            // types the async block
+            #[allow(unreachable_code)]
             Ok::<(), Error>(())
         };
 
