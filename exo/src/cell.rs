@@ -7,6 +7,7 @@ use exocore_chain::{
     operation::{OperationFrame, OperationId},
     DirectoryChainStore, DirectoryChainStoreConfig,
 };
+use exocore_core::protos::core::{cell_application_config, CellApplicationConfig};
 use exocore_core::{
     cell::{
         Cell, CellConfigExt, CellId, EitherCell, FullCell, LocalNode, LocalNodeConfigExt,
@@ -24,6 +25,7 @@ use exocore_core::{
     time::Clock,
 };
 
+use crate::app::{fetch_package_url, read_package_path};
 use crate::{
     disco::prompt_discovery_pin,
     term::*,
@@ -61,11 +63,14 @@ enum CellCommand {
     /// Join a cell.
     Join(JoinOptions),
 
-    /// Cell nodes options.
+    /// Cell nodes related commands.
     Node(NodeOptions),
 
     /// Print cell configuration.
     Print(PrintOptions),
+
+    /// Cell apps related commands.
+    App(AppOptions),
 
     /// Check the cell's chain integrity.
     CheckChain,
@@ -168,11 +173,40 @@ struct GenerateAuthTokenOptions {
     expiration_days: u16,
 }
 
+#[derive(Clap)]
+struct AppOptions {
+    #[clap(subcommand)]
+    command: AppCommand,
+}
+
+#[derive(Clap)]
+enum AppCommand {
+    List,
+    Install(AppInstallOptions),
+}
+
+#[derive(Clap)]
+struct AppInstallOptions {
+    /// URL to application package to install.
+    #[clap(long)]
+    url: Option<url::Url>,
+
+    /// Path to application package to install.
+    #[clap(long)]
+    path: Option<PathBuf>,
+}
+
 pub async fn handle_cmd(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()> {
     match &cell_opts.command {
         CellCommand::Init(init_opts) => cmd_init(ctx, cell_opts, init_opts),
         CellCommand::Node(node_opts) => match &node_opts.command {
             NodeCommand::Add(add_opts) => cmd_node_add(ctx, cell_opts, add_opts).await,
+        },
+        CellCommand::App(app_opts) => match &app_opts.command {
+            AppCommand::List => cmd_app_list(ctx, cell_opts, app_opts),
+            AppCommand::Install(install_opts) => {
+                cmd_app_install(ctx, cell_opts, app_opts, install_opts).await
+            }
         },
         CellCommand::Join(join_opts) => cmd_join(ctx, cell_opts, join_opts).await,
         CellCommand::List => cmd_list(ctx, cell_opts),
@@ -774,6 +808,79 @@ fn cmd_create_genesis_block(ctx: &Context, cell_opts: &CellOptions) -> anyhow::R
     let full_cell = cell.unwrap_full();
 
     create_genesis_block(full_cell)?;
+
+    Ok(())
+}
+
+fn cmd_app_list(
+    ctx: &Context,
+    cell_opts: &CellOptions,
+    _app_opts: &AppOptions,
+) -> anyhow::Result<()> {
+    let (_, cell) = get_cell(ctx, cell_opts);
+    let cell = cell.cell();
+
+    let cell_apps = cell.applications().applications();
+    if cell_apps.is_empty() {
+        print_warning("No applications installed in cell.");
+        return Ok(());
+    }
+
+    print_spacer();
+    let mut rows = Vec::new();
+    for cell_app in cell_apps {
+        let app = cell_app.application();
+        rows.push(vec![
+            app.name().to_string(),
+            app.public_key().encode_base58_string(),
+        ]);
+    }
+
+    print_table(vec!["Name".to_string(), "Public key".to_string()], rows);
+    Ok(())
+}
+
+async fn cmd_app_install(
+    ctx: &Context,
+    cell_opts: &CellOptions,
+    _app_opts: &AppOptions,
+    install_opts: &AppInstallOptions,
+) -> anyhow::Result<()> {
+    let (_, cell) = get_cell(ctx, cell_opts);
+    let full_cell = cell.unwrap_full();
+
+    let config_path = cell_config_path(full_cell.cell());
+    let mut cell_config =
+        CellConfig::from_yaml_file(&config_path).expect("Couldn't read cell config");
+
+    let app = match (&install_opts.url, &install_opts.path) {
+        (Some(url), _) => fetch_package_url(url.clone()).await?,
+        (_, Some(file)) => read_package_path(file)?,
+        _ => {
+            panic!("Expected package URL or package path");
+        }
+    };
+
+    cell_config.add_application(CellApplicationConfig {
+        location: Some(cell_application_config::Location::Inline(
+            app.manifest().clone(),
+        )),
+    });
+
+    print_action(format!(
+        "Writing cell config to {}",
+        style_value(&config_path)
+    ));
+    cell_config
+        .to_yaml_file(&config_path)
+        .expect("Couldn't write cell config");
+
+    let manifest = app.manifest();
+    print_success(format!(
+        "Application {} version {} got installed into cell.",
+        style_value(&manifest.name),
+        style_value(&manifest.version),
+    ));
 
     Ok(())
 }

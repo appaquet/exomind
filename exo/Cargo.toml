@@ -27,3 +27,7 @@ tokio = { version = "0.3", features = ["macros"], default-features = false }
 dialoguer = "0.7"
 console = "0.14"
 indicatif = "0.15"
+zip = "0.5"
+reqwest = { version = "0.10", default-features = false, features = ["rustls-tls"] }
+url = "2.2"
+bytes = "1.0"

@@ -5,6 +5,8 @@ package exocore.apps;
 message Manifest {
     string name = 1;
 
+    string version = 5;
+
     string public_key = 2;
 
     string path = 3;

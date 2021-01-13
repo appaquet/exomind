@@ -1,3 +1,4 @@
+mod app;
 mod cell;
 mod config;
 mod daemon;
@@ -97,6 +98,9 @@ pub enum Commands {
     /// Cells related commands.
     Cell(cell::CellOptions),
 
+    /// Applications related commands.
+    App(app::AppOptions),
+
     /// Keys releated commands.
     Keys(keys::KeysOptions),
 
@@ -124,10 +128,11 @@ async fn main() -> anyhow::Result<()> {
 
     let result = match &ctx.options.subcommand {
         Commands::Node(node_opts) => node::handle_cmd(&ctx, node_opts),
-        Commands::Daemon => daemon::cmd_daemon(&ctx).await,
-        Commands::Keys(keys_opts) => keys::handle_cmd(&ctx, keys_opts),
         Commands::Cell(cell_opts) => cell::handle_cmd(&ctx, cell_opts).await,
+        Commands::App(app_opts) => app::handle_cmd(&ctx, app_opts).await,
+        Commands::Keys(keys_opts) => keys::handle_cmd(&ctx, keys_opts),
         Commands::Config(config_opts) => config::handle_cmd(&ctx, config_opts),
+        Commands::Daemon => daemon::cmd_daemon(&ctx).await,
         Commands::Discovery(disco_opts) => disco::cmd_daemon(&ctx, disco_opts).await,
     };
 

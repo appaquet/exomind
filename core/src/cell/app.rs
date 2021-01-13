@@ -29,7 +29,7 @@ impl Application {
         let mut manifest_path = dir.as_ref().to_path_buf();
         manifest_path.push("app.yaml");
 
-        let mut manifest = Manifest::read_yaml_file(manifest_path)?;
+        let mut manifest = Manifest::from_yaml_file(manifest_path)?;
         manifest.path = dir.as_ref().to_string_lossy().to_string();
 
         Self::build(manifest)

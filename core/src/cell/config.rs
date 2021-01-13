@@ -5,6 +5,7 @@ use std::{
 };
 
 use super::Error;
+use crate::protos::core::CellApplicationConfig;
 use crate::{
     protos::{
         apps::manifest_schema,
@@ -247,6 +248,8 @@ pub trait CellConfigExt {
     fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P);
 
     fn add_node(&mut self, node: CellNodeConfig);
+
+    fn add_application(&mut self, cell_app: CellApplicationConfig);
 }
 
 impl CellConfigExt for CellConfig {
@@ -290,7 +293,7 @@ impl CellConfigExt for CellConfig {
                 Some(crate::protos::core::cell_application_config::Location::Path(dir)) => {
                     let mut manifest_path = PathBuf::from(dir);
                     manifest_path.push("app.yaml");
-                    let mut manifest = Manifest::read_yaml_file(manifest_path)?;
+                    let mut manifest = Manifest::from_yaml_file(manifest_path)?;
                     manifest.path = String::new();
                     manifest
                 }
@@ -412,6 +415,30 @@ impl CellConfigExt for CellConfig {
         // otherwise it doesn't exist, we just add it
         self.nodes.push(node);
     }
+
+    /// Adds application to the cell. Only support deduping on inline apps.
+    fn add_application(&mut self, cell_app: CellApplicationConfig) {
+        // if new application is not inline, we cannot dedup it.
+        use cell_application_config::Location;
+        let new_manifest = if let Some(Location::Inline(manifest)) = cell_app.location.as_ref() {
+            manifest
+        } else {
+            self.apps.push(cell_app);
+            return;
+        };
+
+        // check if app exists, and replace with newer is so
+        for ext_cell_app in &mut self.apps {
+            if let Some(Location::Inline(ext_manifest)) = ext_cell_app.location.as_mut() {
+                if ext_manifest.public_key == new_manifest.public_key {
+                    *ext_manifest = new_manifest.clone();
+                    return;
+                }
+            }
+        }
+
+        self.apps.push(cell_app);
+    }
 }
 
 /// Extension for `NodeConfig` proto.
@@ -442,7 +469,11 @@ pub trait ManifestExt {
 
     fn inlined(&self) -> Result<Manifest, Error>;
 
-    fn read_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error>;
+    fn from_yaml<R: Read>(bytes: R) -> Result<Manifest, Error>;
+
+    fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error>;
+
+    fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error>;
 
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
 
@@ -499,7 +530,14 @@ impl ManifestExt for Manifest {
         Ok(app_manifest)
     }
 
-    fn read_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error> {
+    fn from_yaml<R: Read>(bytes: R) -> Result<Manifest, Error> {
+        let config: Manifest = serde_yaml::from_reader(bytes)
+            .map_err(|err| Error::Config(format!("Couldn't decode YAML manifest: {}", err)))?;
+
+        Ok(config)
+    }
+
+    fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<Manifest, Error> {
         let path = path.as_ref();
 
         let file = File::open(path).map_err(|err| {
@@ -512,7 +550,7 @@ impl ManifestExt for Manifest {
             )
         })?;
 
-        let mut manifest = serde_yaml::from_reader::<_, Manifest>(file).map_err(|err| {
+        let mut manifest = Self::from_yaml(file).map_err(|err| {
             Error::Application(
                 "unnamed".to_string(),
                 format!(
@@ -526,6 +564,15 @@ impl ManifestExt for Manifest {
         manifest.make_absolute_paths(file_directory);
 
         Ok(manifest)
+    }
+
+    fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error> {
+        serde_yaml::to_writer(write, self.manifest()).map_err(|err| {
+            Error::Config(format!(
+                "Couldn't encode application manifest to YAML: {}",
+                err
+            ))
+        })
     }
 
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P) {
@@ -878,6 +925,7 @@ cells:
       apps:
         - inline:
              name: some application
+             version: 0.0.1
              public_key: peHZC1CM51uAugeMNxbXkVukFzCwMJY52m1xDCfLmm1pc1
 
 store:
@@ -1025,6 +1073,39 @@ store:
 
         config.add_node(node2);
         assert_eq!(config.nodes.len(), 2);
+
+        Ok(())
+    }
+
+    #[test]
+    fn cell_config_add_app() -> anyhow::Result<()> {
+        let mut config = CellConfig {
+            ..Default::default()
+        };
+
+        config.add_application(CellApplicationConfig {
+            location: Some(cell_application_config::Location::Inline(Manifest {
+                public_key: "pk1".to_string(),
+                ..Default::default()
+            })),
+        });
+        assert_eq!(config.apps.len(), 1);
+
+        config.add_application(CellApplicationConfig {
+            location: Some(cell_application_config::Location::Inline(Manifest {
+                public_key: "pk1".to_string(),
+                ..Default::default()
+            })),
+        });
+        assert_eq!(config.apps.len(), 1);
+
+        config.add_application(CellApplicationConfig {
+            location: Some(cell_application_config::Location::Inline(Manifest {
+                public_key: "pk2".to_string(),
+                ..Default::default()
+            })),
+        });
+        assert_eq!(config.apps.len(), 2);
 
         Ok(())
     }

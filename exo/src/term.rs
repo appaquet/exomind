@@ -15,11 +15,15 @@ pub fn print_action<S: Display>(text: S) {
 }
 
 pub fn print_info<S: Display>(text: S) {
-    println!("\n{} {}", style("i").yellow().bold(), text);
+    println!("\n{} {}", style("i").blue().bold(), text);
 }
 
 pub fn print_success<S: Display>(text: S) {
     println!("\n{} {}", style("✔").bold().green(), text);
+}
+
+pub fn print_warning<S: Display>(text: S) {
+    println!("\n{} {}", style("!").bold().yellow(), text);
 }
 
 pub fn print_error<S: Display>(text: S) {

@@ -2,6 +2,8 @@
 pub struct Manifest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub version: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub public_key: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]

@@ -54,8 +54,14 @@ impl CellApplications {
         apps.insert(application.id().clone(), CellApplication { application });
         Ok(())
     }
+
+    pub fn applications(&self) -> Vec<CellApplication> {
+        let apps = self.applications.read().expect("couldn't lock inner");
+        apps.values().cloned().collect()
+    }
 }
 
+#[derive(Clone)]
 pub struct CellApplication {
     application: Application,
 }
