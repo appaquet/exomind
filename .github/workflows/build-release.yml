@@ -109,11 +109,11 @@ jobs:
           toolchain: stable
           profile: minimal
 
-      - name: Install cargo-lipo
+      - name: Install dependencies
         run: |
-          brew install swift-protobuf
+          HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
           rustup target add aarch64-apple-ios x86_64-apple-ios # actions-rs don't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
-          cargo install cargo-lipo
+          cargo install cargo-lipo --debug # make build faster, no need for speed from it
 
       - name: Build client & pod
         run: |
