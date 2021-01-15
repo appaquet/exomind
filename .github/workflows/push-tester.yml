@@ -121,6 +121,7 @@ jobs:
 
       - name: Build app package
         run: |
+          cd $GITHUB_WORKSPACE/
           exo app package
 
   markdown_links_check:
