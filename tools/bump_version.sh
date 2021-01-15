@@ -10,8 +10,10 @@ if [[ -z $VERSION ]]; then
 fi
 
 ROOT_DIR="$CUR_DIR/.."
+VERSION_RE="[0-9]+\.[0-9]+\.[0-9]+(|\-dev|\-pre[0-9]+)"
 
 sed -i.bak "s/\(\"version\":\).*/\1 \"$VERSION\",/g" $ROOT_DIR/web/package.json
+sed -i.bak "s/\(version:\).*/\1 $VERSION/g" $ROOT_DIR/app.yaml
 
 CRATES=( \
   "." \
@@ -23,5 +25,5 @@ CRATES=( \
 for CRATE in "${CRATES[@]}"; do
   TOML_PATH="$ROOT_DIR/${CRATE}/Cargo.toml"
   sed -i.bak "s/^\(version = \).*/\1\"$VERSION\"/g" $TOML_PATH
-  sed -i.bak -E "s/(exomind.*version.*\")([0-9]+\.[0-9]+\.[0-9]+)(\".*)/\1$VERSION\3/g" $TOML_PATH
+  sed -i.bak -E "s/(exomind.*version.*\")(${VERSION_RE})(\".*)/\1${VERSION}\4/g" $TOML_PATH
 done

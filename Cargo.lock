@@ -871,14 +871,14 @@ dependencies = [
 
 [[package]]
 name = "exomind"
-version = "0.1.1"
+version = "0.1.1-pre0"
 dependencies = [
  "exomind-core",
 ]
 
 [[package]]
 name = "exomind-core"
-version = "0.1.1"
+version = "0.1.1-pre0"
 dependencies = [
  "exocore",
  "prost",
@@ -888,7 +888,7 @@ dependencies = [
 
 [[package]]
 name = "exomind-gmail"
-version = "0.1.1"
+version = "0.1.1-pre0"
 dependencies = [
  "anyhow",
  "chardetng",
@@ -912,7 +912,7 @@ dependencies = [
 
 [[package]]
 name = "exomind-server"
-version = "0.1.1"
+version = "0.1.1-pre0"
 dependencies = [
  "anyhow",
  "exocore",

@@ -101,9 +101,30 @@ jobs:
           path: exomind-web.tar.gz
           if-no-files-found: error
 
+  app_package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download exo
+        run: |
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.2-pre0/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          echo `pwd` >> $GITHUB_PATH
+
+      - name: Build app package
+        run: |
+          exo app package
+          mv exomind.zip exomind-app.zip
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: app-package-artifact
+          path: exomind-app.zip
+          if-no-files-found: error
+
   release:
     runs-on: ubuntu-latest
-    needs: [exomind_server, web_client]
+    needs: [exomind_server, web_client, app_package]
     steps:
       - uses: actions/checkout@v2.3.4
 

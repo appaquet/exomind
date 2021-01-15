@@ -1,6 +1,6 @@
 [package]
 name = "exomind-gmail"
-version = "0.1.1"
+version = "0.1.1-pre0"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -12,7 +12,7 @@ reqwest = { version = "0.9", default-features = false, features = ["rustls-tls"]
 yup-oauth2 = "4.1.2"
 exocore = { version = "0.1.1", default-features = false, features = ["client", "logger"] }
 log = "0.4"
-exomind-core = { version = "0.1.1", path = "../../core" }
+exomind-core = { version = "0.1.1-pre0", path = "../../core" }
 mailparse = "0.13"
 anyhow = "1.0"
 charset = "0.1"
