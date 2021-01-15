@@ -105,6 +105,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v2.3.4
+
       - name: Download exo
         run: |
           wget https://github.com/appaquet/exocore/releases/download/v0.1.2-pre0/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
