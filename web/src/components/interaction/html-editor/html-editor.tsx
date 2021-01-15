@@ -190,11 +190,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
           this.toggleLink(link);
         };
 
-        let currentLink = extractCurrentLink(this.state.editorState);
-        if (!currentLink) {
-          currentLink = 'https://';
-        }
-
+        const currentLink = extractCurrentLink(this.state.editorState);
         ModalStore.showModal(() => {
           return <InputModal text='Enter link' initialValue={currentLink} onDone={done} />;
         })
