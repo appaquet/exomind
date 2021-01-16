@@ -47,7 +47,7 @@
     "domutils": "^2.4.2",
     "draft-convert": "^2.1.10",
     "draft-js": "^0.11.7",
-    "exocore": "^0.1.1",
+    "exocore": "^0.1.2",
     "fbemitter": "^3.0.0",
     "font-awesome": "^4.4.0",
     "htmlparser2": "^6.0.0",

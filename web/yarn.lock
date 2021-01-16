@@ -4426,10 +4426,10 @@ exit@^0.1.2:
   resolved "https://registry.yarnpkg.com/exit/-/exit-0.1.2.tgz#0632638f8d877cc82107d30a0fff1a17cba1cd0c"
   integrity sha1-BjJjj42HfMghB9MKD/8aF8uhzQw=
 
-exocore@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.1.tgz#7d6ccced6516a508098bf30a3308f63de6cd41e6"
-  integrity sha512-umHPoDSMLpiEkObVxaiDiz/G+bU0+AoRVASAqiklQ/0rQck9++jHoRpPUMcFSUpXAO0eOIFd7diXPyzxhEj+lw==
+exocore@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.2.tgz#1f5b59635163f1271bc14a258dfb0866c7842c97"
+  integrity sha512-fhBFqT78mpZt2v7FSCwXweoTCwQ+cq2vu2WLdcpkB+yFNoGMtap/L5/+AuLglCer8rc1blQvLvgJOpF8MO+a4g==
   dependencies:
     protobufjs "^6.10.2"
 

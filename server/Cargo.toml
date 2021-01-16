@@ -6,7 +6,7 @@ edition = "2018"
 license = "Apache-2.0"
 
 [dependencies]
-exocore = { version = "0.1.1", default-features = false, features = ["client", "logger"] }
+exocore = { version = "0.1.2", default-features = false, features = ["client", "logger"] }
 exomind-core = { version = "0.1.1", path = "../core" }
 exomind-gmail = { version = "0.1.1", path = "../integrations/gmail" }
 log = "0.4"
