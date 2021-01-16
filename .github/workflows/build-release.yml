@@ -144,7 +144,7 @@ jobs:
           set -x
 
           assets=()
-          for asset in ./artifacts/*/*.tar.gz; do
+          for asset in ./artifacts/*/*; do
             assets+=("-a" "$asset")
           done
 
