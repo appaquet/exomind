@@ -112,6 +112,9 @@ A cell consists of:
 ### Join the example web client
 * See [Web example README](./examples/web/README.md#Running)
 
+### Install & run Exomind
+* See [Exomind README](https://github.com/appaquet/exomind)
+
 ## Clients
 #### Web
 * See [Web WASM client README](./clients/web/README.md)
