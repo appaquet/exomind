@@ -18,5 +18,9 @@
 
 * Open the project in XCode / AppCode
 
-* Generate a node configuration and copy it to the app:
-  * `exo -d ./node/path config print --inline`
+* Create and join an [Exomind server](../server/README.md) node.
+
+## Running
+* On first app start, note the discovery code.
+
+* On the main node, add the iOS node with `exo cell node add` and paste the discovery code.

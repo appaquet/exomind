@@ -10,7 +10,7 @@
 * Edit the gmail config in the server configuration.
 
 * Login to your Gmail account (at repo root) 
-  `cargo run -p exomind-server -- -c path/to/server.yaml login <youremail@gmail.com>` 
+  `cargo run -p exomind-server -- -c path/to/server.yaml gmail login <youremail@gmail.com>` 
   and follow console instruction for authentication with Gmail.
 
-* Start server.
+* Start server: `cargo run -p exomind-server -- -c path/to/server.yaml start`
