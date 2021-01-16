@@ -19,4 +19,4 @@
     * `Auth token` is a token that authenticate the extension's calls gainst the endpoint.
       Generate a token using Web client's configuration: 
       
-      `exo cell -c ./local_conf/conf.web.yaml generate-auth-token`
+      `exo cell generate-auth-token`
