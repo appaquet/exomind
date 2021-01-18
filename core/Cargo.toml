@@ -44,7 +44,7 @@ prost = "0.7"
 prost-types = "0.7"
 bytes = "1.0"
 uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
-petname = "1.0"
+petname = "1.1"
 rand = "0.8"
 url = "2.2"
 base64 = "0.13"
