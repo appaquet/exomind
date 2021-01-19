@@ -6,7 +6,6 @@ extern crate log;
 #[macro_use]
 extern crate anyhow;
 
-/// Modules
 pub mod block;
 pub mod chain;
 #[cfg(feature = "engine")]
@@ -17,7 +16,6 @@ pub mod pending;
 #[cfg(feature = "tests-utils")]
 pub mod tests_utils;
 
-/// Re-exports
 #[cfg(feature = "directory-chain")]
 pub use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
 #[cfg(feature = "engine")]

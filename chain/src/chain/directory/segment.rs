@@ -140,10 +140,10 @@ impl DirectorySegment {
 
         let block_offset = block.offset();
         if next_block_offset != block_offset {
-            return Err(Error::Integrity(format!(
-                "Trying to write a block at an offset that wasn't next offset: next_block_offset={} block_offset={}",
-                next_block_offset, block_offset
-            )));
+            return Err(Error::InvalidNextBlock {
+                offset: block_offset,
+                expected_offset: next_block_offset,
+            });
         }
 
         {

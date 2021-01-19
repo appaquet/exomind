@@ -41,7 +41,7 @@ pub trait CellNodes {
         self.nodes_map().get(node_id)
     }
 
-    fn is_quorum(&self, count: usize, role: Option<CellNodeRole>) -> bool {
+    fn has_quorum(&self, count: usize, role: Option<CellNodeRole>) -> bool {
         let nb_nodes = if let Some(role) = role {
             self.count_with_role(role)
         } else {
@@ -297,26 +297,26 @@ mod tests {
         {
             // 1 node
             let nodes = full_cell.cell().nodes();
-            assert!(!nodes.is_quorum(0, None));
-            assert!(nodes.is_quorum(1, None));
-            assert!(!nodes.is_quorum(0, Some(CellNodeRole::Chain)));
-            assert!(!nodes.is_quorum(1, Some(CellNodeRole::Chain)));
+            assert!(!nodes.has_quorum(0, None));
+            assert!(nodes.has_quorum(1, None));
+            assert!(!nodes.has_quorum(0, Some(CellNodeRole::Chain)));
+            assert!(!nodes.has_quorum(1, Some(CellNodeRole::Chain)));
         }
 
         {
             // 2 nodes
             let mut nodes = full_cell.cell().nodes_mut();
             nodes.add(Node::generate_temporary());
-            assert!(!nodes.is_quorum(1, None));
-            assert!(nodes.is_quorum(2, None));
+            assert!(!nodes.has_quorum(1, None));
+            assert!(nodes.has_quorum(2, None));
         }
 
         {
             // 3 nodes
             let mut nodes = full_cell.cell().nodes_mut();
             nodes.add(Node::generate_temporary());
-            assert!(!nodes.is_quorum(1, None));
-            assert!(nodes.is_quorum(2, None));
+            assert!(!nodes.has_quorum(1, None));
+            assert!(nodes.has_quorum(2, None));
         }
 
         {
@@ -337,8 +337,8 @@ mod tests {
                 .unwrap()
                 .add_role(CellNodeRole::Chain);
 
-            assert!(!nodes.is_quorum(1, Some(CellNodeRole::Chain)));
-            assert!(nodes.is_quorum(2, Some(CellNodeRole::Chain)));
+            assert!(!nodes.has_quorum(1, Some(CellNodeRole::Chain)));
+            assert!(nodes.has_quorum(2, Some(CellNodeRole::Chain)));
         }
     }
 }

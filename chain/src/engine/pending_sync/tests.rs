@@ -7,8 +7,8 @@ use exocore_core::protos::generated::data_chain_capnp::{chain_operation, chain_o
 
 use super::*;
 use crate::engine::testing::*;
-use crate::engine::{SyncContextMessage, SyncState};
-use crate::operation::{NewOperation, OperationType};
+use crate::engine::SyncState;
+use crate::operation::OperationType;
 use crate::pending::memory::MemoryPendingStore;
 use crate::pending::CommitStatus;
 
@@ -117,7 +117,7 @@ fn new_operation_after_last_operation() -> anyhow::Result<()> {
 
     // should send the new operation directly, without requiring further requests
     let (count_a_to_b, count_b_to_a) =
-        sync_nodes_with_initial_request(&mut cluster, 0, 1, request)?;
+        cluster.sync_pending_node_to_node_with_request(0, 1, request)?;
     assert_eq!(count_a_to_b, 1);
     assert_eq!(count_b_to_a, 0);
 
@@ -158,7 +158,7 @@ fn new_operation_among_current_operations() -> anyhow::Result<()> {
 
     // should send the new operation directly, without requiring further requests
     let (count_a_to_b, count_b_to_a) =
-        sync_nodes_with_initial_request(&mut cluster, 0, 1, request)?;
+        cluster.sync_pending_node_to_node_with_request(0, 1, request)?;
     assert_eq!(count_a_to_b, 1);
     assert_eq!(count_b_to_a, 0);
 
@@ -177,7 +177,7 @@ fn handle_sync_equals() -> anyhow::Result<()> {
     cluster.pending_generate_dummy(0, 0, 100);
     cluster.pending_generate_dummy(1, 0, 100);
 
-    let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
+    let (count_a_to_b, count_b_to_a) = cluster.sync_pending_node_to_node(0, 1)?;
     assert_eq!(count_a_to_b, 1);
     assert_eq!(count_b_to_a, 0);
 
@@ -189,7 +189,7 @@ fn handle_sync_empty_to_many() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(0, 0, 100);
 
-    let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
+    let (count_a_to_b, count_b_to_a) = cluster.sync_pending_node_to_node(0, 1)?;
     assert_eq!(count_a_to_b, 2);
     assert_eq!(count_b_to_a, 1);
 
@@ -201,7 +201,7 @@ fn handle_sync_many_to_empty() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
     cluster.pending_generate_dummy(1, 1, 100);
 
-    let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
+    let (count_a_to_b, count_b_to_a) = cluster.sync_pending_node_to_node(0, 1)?;
     assert_eq!(count_a_to_b, 1);
     assert_eq!(count_b_to_a, 1);
 
@@ -215,13 +215,13 @@ fn handle_sync_full_to_some() -> anyhow::Result<()> {
 
     // insert 1/2 operations in second node
     let generator_node = &cluster.nodes[0];
-    for operation in pending_ops_generator(generator_node, 100) {
+    for operation in dummy_pending_ops_generator(generator_node, 100) {
         if operation.get_id()? % 2 == 0 {
             cluster.pending_stores[1].put_operation(operation)?;
         }
     }
 
-    let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
+    let (count_a_to_b, count_b_to_a) = cluster.sync_pending_node_to_node(0, 1)?;
     assert_eq!(count_a_to_b, 2);
     assert_eq!(count_b_to_a, 1);
 
@@ -235,13 +235,13 @@ fn handle_sync_some_to_all() -> anyhow::Result<()> {
 
     // insert 1/2 operations in first node
     let generator_node = &cluster.nodes[1];
-    for operation in pending_ops_generator(generator_node, 100) {
+    for operation in dummy_pending_ops_generator(generator_node, 100) {
         if operation.get_id()? % 2 == 0 {
             cluster.pending_stores[0].put_operation(operation)?;
         }
     }
 
-    let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
+    let (count_a_to_b, count_b_to_a) = cluster.sync_pending_node_to_node(0, 1)?;
     assert_eq!(count_a_to_b, 2);
     assert_eq!(count_b_to_a, 2);
 
@@ -253,7 +253,7 @@ fn handle_sync_different_some_to_different_some() -> anyhow::Result<()> {
     let mut cluster = EngineTestCluster::new(2);
 
     let generator_node = &cluster.nodes[0];
-    for operation in pending_ops_generator(generator_node, 10) {
+    for operation in dummy_pending_ops_generator(generator_node, 10) {
         if operation.get_id()? % 2 == 0 {
             cluster.pending_stores[0].put_operation(operation)?;
         } else if operation.get_id()? % 3 == 0 {
@@ -261,7 +261,7 @@ fn handle_sync_different_some_to_different_some() -> anyhow::Result<()> {
         }
     }
 
-    let (count_a_to_b, count_b_to_a) = sync_nodes(&mut cluster, 0, 1)?;
+    let (count_a_to_b, count_b_to_a) = cluster.sync_pending_node_to_node(0, 1)?;
     assert_eq!(count_a_to_b, 2);
     assert_eq!(count_b_to_a, 2);
 
@@ -284,7 +284,7 @@ fn handle_sync_cleaned_up_depth() -> anyhow::Result<()> {
 
     // syncing 0 to 1 without height filter should sync all operations
     cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
-    sync_nodes(&mut cluster, 0, 1)?;
+    cluster.sync_pending_node_to_node(0, 1)?;
     assert_eq!(100, cluster.pending_stores[1].operations_count());
 
     // clear node 1 operations
@@ -294,12 +294,12 @@ fn handle_sync_cleaned_up_depth() -> anyhow::Result<()> {
     // syncing should not sync non-matching operations to node 1
     cluster.sync_states[0].pending_last_cleanup_block = Some((3, 3));
     cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
-    sync_nodes(&mut cluster, 0, 1)?;
+    cluster.sync_pending_node_to_node(0, 1)?;
     assert_eq!(51, cluster.pending_stores[1].operations_count());
 
     // syncing 1 to 0 without height should not revive cleaned up operations
     cluster.clocks[0].add_fixed_instant_duration(Duration::from_secs(30));
-    sync_nodes(&mut cluster, 1, 0)?;
+    cluster.sync_pending_node_to_node(1, 0)?;
     assert_eq!(51, cluster.pending_stores[1].operations_count());
 
     Ok(())
@@ -485,91 +485,6 @@ fn sync_range_to_frame_builder_with_data() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn sync_nodes(
-    cluster: &mut EngineTestCluster,
-    node_id_a: usize,
-    node_id_b: usize,
-) -> Result<(usize, usize), anyhow::Error> {
-    // tick the first node, which will generate a sync request
-    let sync_context = cluster.tick_pending_synchronizer(node_id_a)?;
-    let (_to_node, initial_request) = extract_request_from_result(&sync_context);
-
-    sync_nodes_with_initial_request(cluster, node_id_a, node_id_b, initial_request)
-}
-
-fn sync_nodes_with_initial_request(
-    cluster: &mut EngineTestCluster,
-    node_id_a: usize,
-    node_id_b: usize,
-    initial_request: TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
-) -> Result<(usize, usize), anyhow::Error> {
-    let node_a = cluster.get_node(node_id_a);
-    let node_b = cluster.get_node(node_id_b);
-
-    let mut count_a_to_b = 0;
-    let mut count_b_to_a = 0;
-
-    let mut next_request = initial_request;
-    debug!("Request from a={} to b={}", node_id_a, node_id_b);
-    print_sync_request(&next_request);
-
-    loop {
-        if count_a_to_b > 100 {
-            panic!(
-                "Seem to be stucked in an infinite sync loop (a_to_b={} b_to_a={})",
-                count_a_to_b, count_b_to_a
-            );
-        }
-
-        //
-        // B to A
-        //
-        count_a_to_b += 1;
-        let mut sync_context = SyncContext::new(cluster.sync_states[node_id_b]);
-        cluster.pending_stores_synchronizer[node_id_b].handle_incoming_sync_request(
-            &node_a,
-            &mut sync_context,
-            &mut cluster.pending_stores[node_id_b],
-            next_request,
-        )?;
-        if sync_context.messages.is_empty() {
-            debug!("No request from b={} to a={}", node_id_b, node_id_a);
-            break;
-        }
-        cluster.sync_states[node_id_b] = sync_context.sync_state;
-
-        count_b_to_a += 1;
-        let (to_node, request) = extract_request_from_result(&sync_context);
-        assert_eq!(&to_node, node_a.id());
-        debug!("Request from b={} to a={}", node_id_b, node_id_a);
-        print_sync_request(&request);
-
-        //
-        // A to B
-        //
-        let mut sync_context = SyncContext::new(cluster.sync_states[node_id_a]);
-        cluster.pending_stores_synchronizer[node_id_a].handle_incoming_sync_request(
-            &node_b,
-            &mut sync_context,
-            &mut cluster.pending_stores[node_id_a],
-            request,
-        )?;
-        if sync_context.messages.is_empty() {
-            debug!("No request from a={} to b={}", node_id_a, node_id_b);
-            break;
-        }
-        cluster.sync_states[node_id_a] = sync_context.sync_state;
-
-        let (to_node, request) = extract_request_from_result(&sync_context);
-        assert_eq!(&to_node, node_b.id());
-        debug!("Request from a={} to b={}", node_id_a, node_id_b);
-        next_request = request;
-        print_sync_request(&next_request);
-    }
-
-    Ok((count_a_to_b, count_b_to_a))
-}
-
 fn build_sync_ranges_frames(
     local_node: &LocalNode,
     count: usize,
@@ -593,31 +508,6 @@ fn build_sync_ranges_frames(
         .collect()
 }
 
-fn extract_request_from_result(
-    sync_context: &SyncContext,
-) -> (
-    NodeId,
-    TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
-) {
-    match sync_context.messages.last().unwrap() {
-        SyncContextMessage::PendingSyncRequest(node_id, req) => {
-            (node_id.clone(), req.as_owned_frame())
-        }
-        _other => panic!("Expected a pending sync request, got another type of message"),
-    }
-}
-
-fn pending_ops_generator(
-    local_node: &LocalNode,
-    count: usize,
-) -> impl Iterator<Item = NewOperation> {
-    let local_node = local_node.clone();
-    (1..=count).map(move |i| {
-        let (group_id, operation_id) = ((i % 10 + 1) as u64, i as u64);
-        create_dummy_new_entry_op(&local_node, operation_id, group_id)
-    })
-}
-
 fn stored_ops_generator(
     local_node: &LocalNode,
     count: usize,
@@ -636,34 +526,4 @@ fn stored_ops_generator(
             frame,
         }
     })
-}
-
-fn print_sync_request<F: FrameReader>(request: &TypedCapnpFrame<F, pending_sync_request::Owned>) {
-    let reader: pending_sync_request::Reader = request.get_reader().unwrap();
-    let ranges = reader.get_ranges().unwrap();
-
-    for range in ranges.iter() {
-        let ((bound_from, bound_to), _from, _to) = extract_sync_bounds(&range).unwrap();
-        debug!("  Range {:?} to {:?}", bound_from, bound_to,);
-        debug!("    Hash={:?}", range.get_operations_hash().unwrap());
-        debug!("    Count={}", range.get_operations_count());
-
-        if range.has_operations_headers() {
-            debug!(
-                "    Headers={}",
-                range.get_operations_headers().unwrap().len()
-            );
-        } else {
-            debug!("    Headers=None");
-        }
-
-        if range.has_operations_frames() {
-            debug!(
-                "    Frames={}",
-                range.get_operations_frames().unwrap().len()
-            );
-        } else {
-            debug!("    Frames=None");
-        }
-    }
 }

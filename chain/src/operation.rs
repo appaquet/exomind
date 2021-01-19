@@ -64,6 +64,7 @@ pub enum OperationType {
 
 /// Chain operation frame building helper
 pub struct OperationBuilder {
+    pub operation_id: OperationId,
     pub frame_builder: CapnpFrameBuilder<chain_operation::Owned>,
 }
 
@@ -81,7 +82,10 @@ impl OperationBuilder {
         let mut new_entry_builder = inner_operation_builder.init_entry();
         new_entry_builder.set_data(data);
 
-        OperationBuilder { frame_builder }
+        OperationBuilder {
+            operation_id,
+            frame_builder,
+        }
     }
 
     pub fn new_block_proposal<B: Block>(
@@ -100,7 +104,10 @@ impl OperationBuilder {
         let mut new_block_builder = inner_operation_builder.init_block_propose();
         new_block_builder.set_block(&block.as_data_vec());
 
-        Ok(OperationBuilder { frame_builder })
+        Ok(OperationBuilder {
+            operation_id,
+            frame_builder,
+        })
     }
 
     pub fn new_signature_for_block<I: FrameReader>(
@@ -127,7 +134,10 @@ impl OperationBuilder {
         sig_builder.set_node_id(&node_id.to_string());
         sig_builder.set_node_signature(signature.get_bytes());
 
-        Ok(OperationBuilder { frame_builder })
+        Ok(OperationBuilder {
+            operation_id,
+            frame_builder,
+        })
     }
 
     pub fn new_refusal(
@@ -145,7 +155,10 @@ impl OperationBuilder {
         let inner_operation_builder = operation_builder.init_operation();
         let _new_refuse_builder = inner_operation_builder.init_block_refuse();
 
-        Ok(OperationBuilder { frame_builder })
+        Ok(OperationBuilder {
+            operation_id,
+            frame_builder,
+        })
     }
 
     pub fn sign_and_build(self, _local_node: &LocalNode) -> Result<NewOperation, Error> {
@@ -156,7 +169,7 @@ impl OperationBuilder {
         let sized_frame_builder = SizedFrameBuilder::new(signed_frame_builder);
         let final_frame = read_operation_frame(sized_frame_builder.as_bytes())?;
 
-        Ok(NewOperation::from_frame(final_frame))
+        Ok(NewOperation::from_frame(self.operation_id, final_frame))
     }
 }
 
@@ -170,12 +183,16 @@ pub fn read_operation_frame<I: FrameReader>(inner: I) -> Result<OperationFrame<I
 /// Operation to be added or replaced in the store
 #[derive(Clone)]
 pub struct NewOperation {
+    pub operation_id: OperationId,
     pub frame: OperationFrame<Vec<u8>>,
 }
 
 impl NewOperation {
-    pub fn from_frame(frame: OperationFrame<Vec<u8>>) -> NewOperation {
-        NewOperation { frame }
+    pub fn from_frame(operation_id: OperationId, frame: OperationFrame<Vec<u8>>) -> NewOperation {
+        NewOperation {
+            operation_id,
+            frame,
+        }
     }
 }
 

@@ -205,16 +205,17 @@ impl LocalNode {
         let keypair = Keypair::decode_base58_string(&config.keypair)
             .map_err(|err| Error::Cell(format!("Couldn't decode local node keypair: {}", err)))?;
 
-        let node = LocalNode {
-            node: Node::new_from_public_key(keypair.public()),
+        let local_node = LocalNode {
+            node: Node::new_from_config(NodeConfig {
+                public_key: config.public_key.clone(),
+                name: config.name.clone(),
+                id: config.id.clone(),
+                addresses: config.addresses.clone(),
+            })?,
             identity: Arc::new(LocalNodeIdentity { keypair, config }),
         };
 
-        if let Some(addresses) = &node.identity.config.addresses {
-            parse_node_addresses(node.node(), addresses)?;
-        }
-
-        Ok(node)
+        Ok(local_node)
     }
 
     pub fn node(&self) -> &Node {

@@ -1,3 +1,5 @@
+use crate::block::BlockOffset;
+
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
     #[error("Block related error: {0}")]
@@ -8,6 +10,12 @@ pub enum Error {
 
     #[error("The store has an integrity problem: {0}")]
     Integrity(String),
+
+    #[error("Tried to write a block at offset {offset}, but next offset was {expected_offset}")]
+    InvalidNextBlock {
+        offset: BlockOffset,
+        expected_offset: BlockOffset,
+    },
 
     #[error("Error in capnp serialization: {0}")]
     Serialization(#[from] exocore_core::capnp::Error),

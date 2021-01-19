@@ -471,9 +471,9 @@ where
 
         let last_run_block_height = self.gc_last_run_block_height.load(Ordering::Acquire);
         if last_run_block_height == 0 {
-            // GC didn't run since start of process. We wait for next chain re-indexation to make sure
-            // they aren't deletion mutations that haven't been applied to chain index yet because of
-            // min depth constraint.
+            // GC didn't run since start of process. We wait for next chain re-indexation to
+            // make sure they aren't deletion mutations that haven't been
+            // applied to chain index yet because of min depth constraint.
             self.gc_last_run_block_height
                 .store(last_chain_index_height, Ordering::Release);
             return Ok(Vec::new());

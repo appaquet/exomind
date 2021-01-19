@@ -27,7 +27,7 @@ use crate::operation;
 use crate::operation::NewOperation;
 use crate::pending;
 
-mod chain_sync;
+pub(super) mod chain_sync;
 mod commit_manager;
 mod config;
 mod error;
@@ -382,20 +382,32 @@ where
         self.chain_synchronizer
             .tick(&mut sync_context, &self.chain_store)?;
 
-        // to prevent synchronizing operations that may have added to the chain, we
-        // should only start doing commit management & pending synchronization
-        // once the chain is synchronized
+        // to prevent synchronizing operations that may have been added to the chain, we
+        // should only start doing commit management & pending synchronization once the
+        // chain is synchronized
+
         if self.chain_is_synchronized() {
             // commit manager should always be ticked before pending synchronizer so that it
             // may remove operations that don't need to be synchronized anymore
             // (ex: been committed)
-            self.commit_manager.tick(
+            match self.commit_manager.tick(
                 &mut sync_context,
                 &mut self.pending_synchronizer,
                 &mut self.pending_store,
                 &mut self.chain_store,
-            )?;
+            ) {
+                Ok(_) => {}
+                Err(EngineError::OutOfSync) => {
+                    warn!("Commit manager detected is out of sync with cluster. Resetting chain synchronizer.");
+                    self.chain_synchronizer.reset_state();
+                }
+                Err(err) => return Err(err),
+            }
+        }
 
+        // check if chain is still synchronized after commit manager since it may have
+        // detected that we are out of sync
+        if self.chain_is_synchronized() {
             self.pending_synchronizer
                 .tick(&mut sync_context, &self.pending_store)?;
         }

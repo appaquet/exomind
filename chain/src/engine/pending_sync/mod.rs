@@ -228,7 +228,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                     let operation_id = operation_frame_reader.get_operation_id();
                     included_operations.insert(operation_id);
 
-                    let new_operation = NewOperation::from_frame(operation_frame);
+                    let new_operation = NewOperation::from_frame(operation_id, operation_frame);
                     let existed = store.put_operation(new_operation)?;
                     if !existed {
                         sync_context.push_event(Event::NewPendingOperation(operation_id));
@@ -503,7 +503,7 @@ impl NodeSyncInfo {
 }
 
 /// Converts bounds from sync_request range to SyncBounds
-fn extract_sync_bounds(
+pub(super) fn extract_sync_bounds(
     sync_range_reader: &pending_sync_range::Reader,
 ) -> Result<SyncBounds, EngineError> {
     let (from, from_included, to, to_included) = (

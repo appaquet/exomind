@@ -118,33 +118,43 @@ impl PendingBlocks {
                 };
             }
 
-            let proposal: PendingBlockProposal =
-                proposal.expect("Couldn't find proposal operation within a group of the proposal");
+            let proposal = proposal.expect("no proposal operation for group of the proposal");
+
+            let nodes = cell.nodes();
             let has_my_refusal = refusals.iter().any(|sig| sig.node_id == *local_node.id());
             let has_my_signature = signatures.iter().any(|sig| sig.node_id == *local_node.id());
+            let has_sigs_quorum = nodes.has_quorum(signatures.len(), Some(CellNodeRole::Chain));
+            let has_refusal_quorum = nodes.has_quorum(refusals.len(), Some(CellNodeRole::Chain));
             let has_expired = proposal.has_expired(config, now);
 
             let status = match chain_store.get_block(proposal.offset).ok() {
                 Some(block) => {
                     if block.get_proposed_operation_id()? == *group_id {
+                        // we found the block and it has the same operation id, so it's valid past
+                        // block
                         BlockStatus::PastCommitted
+                    } else if has_sigs_quorum {
+                        // we found a different block at the offset, and it had quorum. it means we
+                        // diverged
+                        BlockStatus::PastDiverged
                     } else {
+                        // another proposal for the same block offset was made, but not accepted
                         BlockStatus::PastRefused
                     }
                 }
                 None => {
-                    let nodes = cell.nodes();
-                    if proposal.offset < last_stored_block.next_offset() {
-                        // means it was a proposed block for a diverged chain
-                        BlockStatus::PastRefused
-                    } else if nodes.is_quorum(refusals.len(), Some(CellNodeRole::Chain))
-                        || has_my_refusal
-                    {
+                    let expected_next_offset = last_stored_block.next_offset();
+                    if has_refusal_quorum || has_my_refusal {
                         BlockStatus::NextRefused
                     } else if has_expired {
                         BlockStatus::NextExpired
-                    } else {
+                    } else if proposal.offset < expected_next_offset {
+                        // means it was a proposed block for a diverged chain
+                        BlockStatus::PastRefused
+                    } else if proposal.offset >= expected_next_offset {
                         BlockStatus::NextPotential
+                    } else {
+                        BlockStatus::NextRefused
                     }
                 }
             };
@@ -312,6 +322,7 @@ impl std::fmt::Debug for PendingBlock {
 pub enum BlockStatus {
     PastRefused,
     PastCommitted,
+    PastDiverged,
     NextExpired,
     NextPotential,
     NextRefused,

@@ -51,7 +51,8 @@ fn cmd_package(
     let manifest_abs =
         Manifest::from_yaml_file(manifest_path).expect("Couldn't read manifest file");
 
-    // for now we inline the manifest so that it's easier to read, but at some point should write dependencies to zip
+    // for now we inline the manifest so that it's easier to read, but at some point
+    // should write dependencies to zip
     let mut manifest_zip = manifest_abs.inlined().expect("Couldn't inline manifest");
     manifest_zip.make_relative_paths(&app_dir);
 

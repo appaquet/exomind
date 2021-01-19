@@ -1,6 +1,9 @@
 use block::{BlockStatus, PendingBlock, PendingBlockRefusal, PendingBlockSignature, PendingBlocks};
+use chain::ChainStore;
 pub use config::CommitManagerConfig;
 pub use error::CommitManagerError;
+use exocore_core::cell::LocalNode;
+use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_core::{
     cell::{Cell, CellNodeRole, CellNodes, CellNodesRead, NodeId},
     sec::hash::Multihash,
@@ -8,6 +11,7 @@ use exocore_core::{
 };
 use itertools::Itertools;
 
+use crate::operation::NewOperation;
 use crate::{
     block::{Block, BlockOperations, BlockOwned, BlockSignature, BlockSignatures},
     chain,
@@ -80,50 +84,23 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 (next_block.has_my_signature, next_block.has_my_refusal)
             };
 
+            // if we didn't sign or refuse the block yet, we do it
             if !has_my_signature && !has_my_refusal {
-                if let Ok(should_sign) = self.check_should_sign_block(
+                self.sign_or_refuse_block(
+                    sync_context,
                     next_block_id,
-                    &pending_blocks,
+                    &mut pending_blocks,
+                    pending_synchronizer,
                     chain_store,
                     pending_store,
-                ) {
-                    let mut_next_block = pending_blocks.get_block_mut(&next_block_id);
-                    if should_sign {
-                        self.sign_block(
-                            sync_context,
-                            pending_synchronizer,
-                            pending_store,
-                            mut_next_block,
-                        )?;
-                    } else {
-                        self.refuse_block(
-                            sync_context,
-                            pending_synchronizer,
-                            pending_store,
-                            mut_next_block,
-                        )?;
-                    }
-                }
+                )?;
             }
 
+            // check if we can commit block if it has enough signatures
             let next_block = pending_blocks.get_block(&next_block_id);
-            let valid_signatures = next_block
-                .signatures
-                .iter()
-                .filter(|sig| next_block.validate_signature(&self.cell, sig));
-
-            let nodes = self.cell.nodes();
-            if next_block.has_my_signature
-                && nodes.is_quorum(valid_signatures.count(), Some(CellNodeRole::Chain))
-            {
-                debug!(
-                    "{}: Block has enough signatures, we should commit",
-                    self.cell,
-                );
-                self.commit_block(sync_context, next_block, pending_store, chain_store)?;
-            }
+            self.maybe_commit_block(sync_context, next_block, pending_store, chain_store)?;
         } else if self.should_propose_block(chain_store, &pending_blocks)? {
-            debug!("{}: No current block, and we can propose one", self.cell,);
+            debug!("{}: No current block, and we can propose one", self.cell);
             self.propose_block(
                 sync_context,
                 &pending_blocks,
@@ -143,6 +120,51 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
+    /// Checks if we should sign a block that was previously proposed and then
+    /// sign or refuse it.
+    fn sign_or_refuse_block(
+        &self,
+        sync_context: &mut SyncContext,
+        block_id: OperationId,
+        pending_blocks: &mut PendingBlocks,
+        pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
+        chain_store: &CS,
+        pending_store: &mut PS,
+    ) -> Result<(), EngineError> {
+        match self.check_should_sign_block(block_id, &pending_blocks, chain_store, pending_store) {
+            Ok(should_sign) => {
+                let mut_next_block = pending_blocks.get_block_mut(&block_id);
+                if should_sign {
+                    self.sign_block(
+                        sync_context,
+                        pending_synchronizer,
+                        pending_store,
+                        mut_next_block,
+                    )?;
+                } else {
+                    self.refuse_block(
+                        sync_context,
+                        pending_synchronizer,
+                        pending_store,
+                        mut_next_block,
+                    )?;
+                }
+                Ok(())
+            }
+            Err(EngineError::OutOfSync) => Err(EngineError::OutOfSync),
+            Err(err) if err.is_fatal() => Err(err),
+            Err(err) => {
+                // we ignore any non-fatal error since it may just mean that block is invalid
+                // for some reason
+                warn!(
+                    "Couldn't sign or refuse block {} because of an error: {}",
+                    block_id, err,
+                );
+                Ok(())
+            }
+        }
+    }
+
     /// Checks if we should sign a block that was previously proposed. We need
     /// to make sure all operations are valid and not already in the chain
     /// and then validate the hash of the block with local version of the
@@ -156,6 +178,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     ) -> Result<bool, EngineError> {
         let block = pending_blocks.get_block(&block_id);
         let block_frame = block.proposal.get_block()?;
+        let block_header = block_frame.get_reader()?;
 
         // make sure we don't have operations that are already committed
         for operation_id in &block.operations {
@@ -192,12 +215,13 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             }
         }
 
+        validate_block_previous_hash(&block_header, chain_store)?;
+
         // validate hash of operations of block
         let block_operations = Self::get_block_operations(block, pending_store)?.map(|op| op.frame);
         let operations_hash = BlockOperations::hash_operations(block_operations)?;
-        let block_header_reader = block_frame.get_reader()?;
         let block_header_multihash =
-            match Multihash::from_bytes(block_header_reader.get_operations_hash()?) {
+            match Multihash::from_bytes(block_header.get_operations_hash()?) {
                 Ok(hash) => hash,
                 Err(err) => {
                     info!(
@@ -226,24 +250,12 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         sync_context: &mut SyncContext,
         pending_synchronizer: &mut pending_sync::PendingSynchronizer<PS>,
         pending_store: &mut PS,
-        next_block: &mut PendingBlock,
+        block: &mut PendingBlock,
     ) -> Result<(), EngineError> {
         let local_node = self.cell.local_node();
 
-        let operation_id = self.clock.consistent_time(&local_node);
-        let signature_frame_builder = OperationBuilder::new_signature_for_block(
-            next_block.group_id,
-            operation_id.into(),
-            local_node.id(),
-            &next_block.proposal.get_block()?,
-        )?;
-
-        let signature_operation = signature_frame_builder.sign_and_build(&local_node)?;
-
-        let signature_reader = signature_operation.get_operation_reader()?;
-        let pending_signature = PendingBlockSignature::from_operation(signature_reader)?;
-        debug!("{}: Signing block {:?}", self.cell, next_block,);
-        next_block.add_my_signature(pending_signature);
+        let signature_operation = create_block_signature(local_node, &self.clock, block)?;
+        debug!("{}: Signing block {:?}", self.cell, block);
 
         pending_synchronizer.handle_new_operation(
             sync_context,
@@ -421,28 +433,56 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         Ok(())
     }
 
+    /// Checks if we can commit the block to chain by checking if it has enough
+    /// signature.
+    fn maybe_commit_block(
+        &self,
+        sync_context: &mut SyncContext,
+        block: &PendingBlock,
+        pending_store: &mut PS,
+        chain_store: &mut CS,
+    ) -> Result<(), EngineError> {
+        let valid_signatures = block
+            .signatures
+            .iter()
+            .filter(|sig| block.validate_signature(&self.cell, sig));
+
+        let nodes = self.cell.nodes();
+        if block.has_my_signature
+            && nodes.has_quorum(valid_signatures.count(), Some(CellNodeRole::Chain))
+        {
+            debug!(
+                "{}: Block has enough signatures, we should commit",
+                self.cell,
+            );
+            self.commit_block(sync_context, block, pending_store, chain_store)?;
+        }
+
+        Ok(())
+    }
+
     /// Commits (write) the given block to the chain.
     fn commit_block(
         &self,
         sync_context: &mut SyncContext,
-        next_block: &PendingBlock,
+        block: &PendingBlock,
         pending_store: &mut PS,
         chain_store: &mut CS,
     ) -> Result<(), EngineError> {
-        let block_frame = next_block.proposal.get_block()?;
-        let block_header_reader = block_frame.get_reader()?;
+        let block_frame = block.proposal.get_block()?;
+        let block_header = block_frame.get_reader()?;
 
-        let block_offset = next_block.proposal.offset;
-        let block_height = block_header_reader.get_height();
+        let block_offset = block.proposal.offset;
+        let block_height = block_header.get_height();
 
         // fetch block's operations from the pending store
         let block_operations =
-            Self::get_block_operations(next_block, pending_store)?.map(|operation| operation.frame);
+            Self::get_block_operations(block, pending_store)?.map(|operation| operation.frame);
 
         // make sure that the hash of operations is same as defined by the block
         // this should never happen since we wouldn't have signed the block if hash
         // didn't match
-        let header_multihash_bytes = block_header_reader.get_operations_hash()?;
+        let header_multihash_bytes = block_header.get_operations_hash()?;
         let header_multihash = Multihash::from_bytes(header_multihash_bytes).map_err(|err| {
             EngineError::Fatal(format!("Couldn't decode hash from block header: {}", err))
         })?;
@@ -454,12 +494,14 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             ));
         }
 
+        validate_block_previous_hash(&block_header, chain_store)?;
+
         // build signatures frame
-        let signatures = next_block
+        let signatures = block
             .signatures
             .iter()
             .filter_map(|pending_signature| {
-                if next_block.validate_signature(&self.cell, pending_signature) {
+                if block.validate_signature(&self.cell, pending_signature) {
                     Some(BlockSignature::new(
                         pending_signature.node_id.clone(),
                         pending_signature.signature.clone(),
@@ -470,29 +512,36 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             })
             .collect::<Vec<_>>();
         let block_signatures = BlockSignatures::new_from_signatures(signatures);
-        let signatures_frame =
-            block_signatures.to_frame_for_existing_block(&block_header_reader)?;
+        let signatures_frame = block_signatures.to_frame_for_existing_block(&block_header)?;
 
         // finally build the frame
-        let block = BlockOwned::new(
+        let chain_block = BlockOwned::new(
             block_offset,
             block_frame.to_owned(),
             block_operations.data().to_vec(),
             signatures_frame,
         );
 
-        info!(
-            "{}: Writing new block to chain: {:?}",
-            self.cell, next_block
-        );
-        chain_store.write_block(&block)?;
+        info!("{}: Writing new block to chain: {:?}", self.cell, block);
+        match chain_store.write_block(&chain_block) {
+            Ok(_) => {}
+            Err(chain::Error::InvalidNextBlock {
+                offset: attempt_offset,
+                expected_offset: next_offset,
+            }) => {
+                warn!("{}: Tried to write new block to offset {}, but chain next offset was {}. We're out of sync.", self.cell, attempt_offset, next_offset);
+                return Err(EngineError::OutOfSync);
+            }
+            Err(err) => return Err(err.into()),
+        }
+
         for operation_id in block_operations.operations_id() {
             pending_store.update_operation_commit_status(
                 operation_id,
                 CommitStatus::Committed(block_offset, block_height),
             )?;
         }
-        sync_context.push_event(Event::NewChainBlock(next_block.proposal.offset));
+        sync_context.push_event(Event::NewChainBlock(block.proposal.offset));
 
         Ok(())
     }
@@ -548,7 +597,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                 let block_offset = block_header_reader.get_offset();
                 let block_height = block_header_reader.get_height();
 
-                let height_diff = last_stored_block_height - block_height;
+                let height_diff = last_stored_block_height.saturating_sub(block_height);
                 if height_diff >= self.config.operations_cleanup_after_block_depth {
                     debug!(
                         "Block {:?} can be cleaned up (last_stored_block_height={})",
@@ -640,4 +689,48 @@ fn is_node_commit_turn(
     let epoch = (now.0 as f64 / commit_interval as f64).floor() as u64;
     let node_turn = epoch % (sorted_nodes.len() as u64);
     Ok(node_turn == my_node_position)
+}
+
+pub(super) fn create_block_signature(
+    node: &LocalNode,
+    clock: &Clock,
+    block: &mut PendingBlock,
+) -> Result<NewOperation, EngineError> {
+    let operation_id = clock.consistent_time(&node);
+    let signature_frame_builder = OperationBuilder::new_signature_for_block(
+        block.group_id,
+        operation_id.into(),
+        node.id(),
+        &block.proposal.get_block()?,
+    )?;
+
+    let signature_operation = signature_frame_builder.sign_and_build(&node)?;
+
+    let signature_reader = signature_operation.get_operation_reader()?;
+    let pending_signature = PendingBlockSignature::from_operation(signature_reader)?;
+    block.add_my_signature(pending_signature);
+
+    Ok(signature_operation)
+}
+
+fn validate_block_previous_hash<CS: ChainStore>(
+    block_header: &block_header::Reader,
+    chain_store: &CS,
+) -> Result<(), EngineError> {
+    if block_header.get_height() > 0 {
+        let prev_block_offset = block_header.get_previous_offset();
+        let previous_block = chain_store.get_block(prev_block_offset).map_err(|err| {
+            error!("Tried to commit new block at offset {}, but got error getting previous block in chain at offset {}: {}", block_header.get_offset(), prev_block_offset, err);
+            EngineError::OutOfSync
+        })?;
+
+        let prev_header = previous_block.header();
+        let prev_hash = prev_header.inner().inner().multihash_bytes();
+        if prev_hash != block_header.get_previous_hash()? {
+            error!("Tried to commit new block with previous hash not matching");
+            return Err(EngineError::OutOfSync);
+        }
+    }
+
+    Ok(())
 }

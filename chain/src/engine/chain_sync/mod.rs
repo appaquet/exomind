@@ -83,7 +83,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let nodes = self.cell.nodes().to_owned();
 
         let (nb_nodes_metadata_sync, nb_nodes) = self.check_nodes_status(&nodes);
-        let majority_nodes_metadata_sync = nodes.is_quorum(
+        let majority_nodes_metadata_sync = nodes.has_quorum(
             usize::from(nb_nodes_metadata_sync),
             Some(CellNodeRole::Chain),
         );
@@ -158,7 +158,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 }
             }
 
-            if nodes.is_quorum(nb_non_divergent, Some(CellNodeRole::Chain)) {
+            if nodes.has_quorum(nb_non_divergent, Some(CellNodeRole::Chain)) {
                 if self.leader.is_none() {
                     self.find_leader_node(store)?;
 
@@ -317,6 +317,17 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         self.leader
             .as_ref()
             .map_or(false, |leader| leader == node_id)
+    }
+
+    /// Resets chain synchronization state to unknown state.
+    ///
+    /// This will force resynchronization with other nodes. This may be
+    /// called if other components of the engine determine that our chain
+    /// may have diverged (ex: commit manager trying to write an invalid block).
+    pub fn reset_state(&mut self) {
+        self.status = Status::Unknown;
+        self.nodes_info.clear();
+        self.leader = None;
     }
 
     /// Sends a sync request to each node that has elapsed the periodic check

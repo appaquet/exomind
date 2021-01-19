@@ -1,18 +1,24 @@
 use std::borrow::Borrow;
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
 use exocore_core::cell::{CellNodeRole, FullCell};
 use exocore_core::cell::{LocalNode, Node, NodeId};
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
+    TypedCapnpFrame,
 };
+use exocore_core::protos::core::LocalNodeConfig;
 use exocore_core::protos::generated::data_chain_capnp::block_header;
+use exocore_core::protos::generated::data_transport_capnp::{
+    chain_sync_request, chain_sync_response, pending_sync_request,
+};
 use exocore_core::sec::hash::Sha3_256;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use tempfile::TempDir;
 
 use super::commit_manager::CommitManager;
-use super::{chain_sync, SyncContext};
+use super::{chain_sync, SyncContext, SyncContextMessage};
 use super::{pending_sync, SyncState};
 use crate::block::{
     Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignatures,
@@ -87,7 +93,11 @@ impl EngineTestCluster {
         let mut sync_states = Vec::new();
 
         for i in 0..config.nodes_count {
-            let local_node = LocalNode::generate();
+            let node_config = LocalNodeConfig {
+                name: format!("test-node-{}", i),
+                ..LocalNode::generate().config().clone()
+            };
+            let local_node = LocalNode::new_from_config(node_config).unwrap();
 
             let cell = FullCell::generate(local_node.clone());
             cells.push(cell.clone());
@@ -318,6 +328,91 @@ impl EngineTestCluster {
         Ok(sync_context)
     }
 
+    pub fn sync_pending_node_to_node(
+        &mut self,
+        node_id_a: usize,
+        node_id_b: usize,
+    ) -> Result<(usize, usize), anyhow::Error> {
+        // tick the first node, which will generate a sync request
+        let sync_context = self.tick_pending_synchronizer(node_id_a)?;
+        let (_to_node, initial_request) = extract_request_from_result(&sync_context);
+
+        self.sync_pending_node_to_node_with_request(node_id_a, node_id_b, initial_request)
+    }
+
+    pub fn sync_pending_node_to_node_with_request(
+        &mut self,
+        node_id_a: usize,
+        node_id_b: usize,
+        initial_request: TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
+    ) -> Result<(usize, usize), anyhow::Error> {
+        let node_a = self.get_node(node_id_a);
+        let node_b = self.get_node(node_id_b);
+
+        let mut count_a_to_b = 0;
+        let mut count_b_to_a = 0;
+
+        let mut next_request = initial_request;
+        debug!("Request from a={} to b={}", node_id_a, node_id_b);
+        print_pending_sync_request(&next_request);
+
+        loop {
+            if count_a_to_b > 100 {
+                panic!(
+                    "Seem to be stuck in an infinite sync loop (a_to_b={} b_to_a={})",
+                    count_a_to_b, count_b_to_a
+                );
+            }
+
+            //
+            // B to A
+            //
+            count_a_to_b += 1;
+            let mut sync_context = SyncContext::new(self.sync_states[node_id_b]);
+            self.pending_stores_synchronizer[node_id_b].handle_incoming_sync_request(
+                &node_a,
+                &mut sync_context,
+                &mut self.pending_stores[node_id_b],
+                next_request,
+            )?;
+            if sync_context.messages.is_empty() {
+                debug!("No request from b={} to a={}", node_id_b, node_id_a);
+                break;
+            }
+            self.sync_states[node_id_b] = sync_context.sync_state;
+
+            count_b_to_a += 1;
+            let (to_node, request) = extract_request_from_result(&sync_context);
+            assert_eq!(&to_node, node_a.id());
+            debug!("Request from b={} to a={}", node_id_b, node_id_a);
+            print_pending_sync_request(&request);
+
+            //
+            // A to B
+            //
+            let mut sync_context = SyncContext::new(self.sync_states[node_id_a]);
+            self.pending_stores_synchronizer[node_id_a].handle_incoming_sync_request(
+                &node_b,
+                &mut sync_context,
+                &mut self.pending_stores[node_id_a],
+                request,
+            )?;
+            if sync_context.messages.is_empty() {
+                debug!("No request from a={} to b={}", node_id_a, node_id_b);
+                break;
+            }
+            self.sync_states[node_id_a] = sync_context.sync_state;
+
+            let (to_node, request) = extract_request_from_result(&sync_context);
+            assert_eq!(&to_node, node_b.id());
+            debug!("Request from a={} to b={}", node_id_a, node_id_b);
+            next_request = request;
+            print_pending_sync_request(&next_request);
+        }
+
+        Ok((count_a_to_b, count_b_to_a))
+    }
+
     pub fn tick_chain_synchronizer(
         &mut self,
         node_idx: usize,
@@ -327,6 +422,84 @@ impl EngineTestCluster {
         self.apply_sync_state(node_idx, &sync_context);
 
         Ok(sync_context)
+    }
+
+    pub fn sync_chain_node_to_node(
+        &mut self,
+        node_id_a: usize,
+        node_id_b: usize,
+    ) -> Result<(usize, usize), crate::engine::EngineError> {
+        let sync_context = self.tick_chain_synchronizer(node_id_a)?;
+        if sync_context.messages.is_empty() {
+            return Ok((0, 0));
+        }
+
+        let node2 = &self.nodes[node_id_b];
+        let message = extract_chain_sync_request_frame_sync_context(&sync_context, node2.id());
+
+        self.sync_chain_node_to_node_with_request(node_id_a, node_id_b, message)
+    }
+
+    pub fn sync_chain_node_to_all(
+        &mut self,
+        node_id_from: usize,
+    ) -> Result<(), crate::engine::EngineError> {
+        let sync_context = self.tick_chain_synchronizer(node_id_from)?;
+        for sync_message in sync_context.messages {
+            if let SyncContextMessage::ChainSyncRequest(to_node, req) = sync_message {
+                let request_frame = req.as_owned_frame();
+                let node_id_to = self.get_node_index(&to_node);
+                self.sync_chain_node_to_node_with_request(node_id_from, node_id_to, request_frame)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn sync_chain_node_to_node_with_request(
+        &mut self,
+        node_id_a: usize,
+        node_id_b: usize,
+        first_request: TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned>,
+    ) -> Result<(usize, usize), crate::engine::EngineError> {
+        let node1 = self.get_node(node_id_a);
+        let node2 = self.get_node(node_id_b);
+
+        let mut count_1_to_2 = 0;
+        let mut count_2_to_1 = 0;
+
+        let mut request = Some(first_request);
+        loop {
+            count_1_to_2 += 1;
+            let mut sync_context = SyncContext::new(SyncState::default());
+            self.chains_synchronizer[node_id_b].handle_sync_request(
+                &mut sync_context,
+                &node1,
+                &mut self.chains[node_id_b],
+                request.take().unwrap(),
+            )?;
+            if sync_context.messages.is_empty() {
+                break;
+            }
+
+            count_2_to_1 += 1;
+            let (to_node, response) = extract_chain_sync_response_frame_sync_context(&sync_context);
+            assert_eq!(&to_node, node1.id());
+            let mut sync_context = SyncContext::new(SyncState::default());
+            self.chains_synchronizer[node_id_a].handle_sync_response(
+                &mut sync_context,
+                &node2,
+                &mut self.chains[node_id_a],
+                response,
+            )?;
+            if sync_context.messages.is_empty() {
+                break;
+            }
+            let message = extract_chain_sync_request_frame_sync_context(&sync_context, node2.id());
+            request = Some(message);
+        }
+
+        Ok((count_1_to_2, count_2_to_1))
     }
 
     pub fn tick_commit_manager(
@@ -347,6 +520,41 @@ impl EngineTestCluster {
 
     pub fn consistent_timestamp(&self, node_idx: usize) -> ConsistentTimestamp {
         self.clocks[node_idx].consistent_time(&self.nodes[node_idx])
+    }
+
+    pub fn set_clock_fixed_instant(&self, instant: Instant) {
+        for clock in &self.clocks {
+            clock.set_fixed_instant(instant);
+        }
+    }
+
+    pub fn add_fixed_instant_duration(&self, dur: Duration) {
+        for clock in &self.clocks {
+            clock.add_fixed_instant_duration(dur);
+        }
+    }
+
+    pub fn assert_node_chain_equals(&self, node0_idx: usize, node1_idx: usize) {
+        let chain0 = &self.chains[node0_idx];
+        let chain1 = &self.chains[node1_idx];
+
+        let node1_last_block = chain0
+            .get_last_block()
+            .unwrap()
+            .expect("Node 0 didn't have any data");
+        let node2_last_block = chain1
+            .get_last_block()
+            .unwrap()
+            .expect("Node 1 didn't have any data");
+        assert_eq!(node1_last_block.offset, node2_last_block.offset);
+        assert_eq!(
+            node1_last_block.header.whole_data(),
+            node2_last_block.header.whole_data()
+        );
+        assert_eq!(
+            node1_last_block.signatures.whole_data(),
+            node2_last_block.signatures.whole_data()
+        );
     }
 }
 
@@ -409,4 +617,78 @@ pub fn create_dummy_new_entry_op(
     frame_builder.set_group_id(group_id);
 
     builder.sign_and_build(local_node).unwrap()
+}
+
+pub fn extract_chain_sync_request_frame_sync_context(
+    sync_context: &SyncContext,
+    to_node: &NodeId,
+) -> TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned> {
+    for sync_message in &sync_context.messages {
+        match sync_message {
+            SyncContextMessage::ChainSyncRequest(msg_to_node, req) if msg_to_node == to_node => {
+                return req.as_owned_frame();
+            }
+            _ => {}
+        }
+    }
+
+    panic!("Couldn't find message for node {}", to_node);
+}
+
+pub fn extract_chain_sync_response_frame_sync_context(
+    sync_context: &SyncContext,
+) -> (NodeId, TypedCapnpFrame<Vec<u8>, chain_sync_response::Owned>) {
+    match sync_context.messages.last().unwrap() {
+        SyncContextMessage::ChainSyncResponse(to_node, req) => {
+            (to_node.clone(), req.as_owned_frame())
+        }
+        _other => panic!("Expected a chain sync response, got another type of message"),
+    }
+}
+
+pub fn extract_request_from_result(
+    sync_context: &SyncContext,
+) -> (
+    NodeId,
+    TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
+) {
+    match sync_context.messages.last().unwrap() {
+        SyncContextMessage::PendingSyncRequest(node_id, req) => {
+            (node_id.clone(), req.as_owned_frame())
+        }
+        _other => panic!("Expected a pending sync request, got another type of message"),
+    }
+}
+
+pub fn print_pending_sync_request<F: FrameReader>(
+    request: &TypedCapnpFrame<F, pending_sync_request::Owned>,
+) {
+    let reader: pending_sync_request::Reader = request.get_reader().unwrap();
+    let ranges = reader.get_ranges().unwrap();
+
+    for range in ranges.iter() {
+        let ((bound_from, bound_to), _from, _to) =
+            super::pending_sync::extract_sync_bounds(&range).unwrap();
+        trace!("  Range {:?} to {:?}", bound_from, bound_to,);
+        trace!("    Hash={:?}", range.get_operations_hash().unwrap());
+        trace!("    Count={}", range.get_operations_count());
+
+        if range.has_operations_headers() {
+            trace!(
+                "    Headers={}",
+                range.get_operations_headers().unwrap().len()
+            );
+        } else {
+            trace!("    Headers=None");
+        }
+
+        if range.has_operations_frames() {
+            trace!(
+                "    Frames={}",
+                range.get_operations_frames().unwrap().len()
+            );
+        } else {
+            trace!("    Frames=None");
+        }
+    }
 }

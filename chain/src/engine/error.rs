@@ -25,6 +25,9 @@ pub enum EngineError {
     #[error("Got an operation related error: {0:?}")]
     Operation(#[from] crate::operation::Error),
 
+    #[error("Out of sync with the rest of cluster")]
+    OutOfSync,
+
     #[error("Chain is not initialized")]
     UninitializedChain,
 
