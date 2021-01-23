@@ -8,40 +8,27 @@
   .container-fluid {
     .make-row();
 
-    .logo-col {
-      .make-xs-column(4);
-      .make-sm-column(3);
-      .make-md-column(2);
-
-      height: @navbar-height;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-
-      font-size: 20px;
-      font-weight: bold;
-      letter-spacing: 3px;
-      cursor: pointer;
-    }
-
     .search-col {
-      .make-xs-column(8);
-      .make-sm-column(9);
+      .make-sm-column-offset(2);
+      .make-md-column-offset(2);
+
+      .make-xs-column(12);
+      .make-sm-column(8);
       .make-md-column(8);
-      margin-top: 8px;
-      margin-bottom: 0;
+
+      .center-vertical-element();
 
       // Note: To fix alignment of search box with columns, see columns.less
 
       .input-group {
         width: 100%;
         position: relative;
-        background: fadeout(white, 80%);
+        background: fadeout(white, 90%);
 
         .icon {
           position: absolute;
-          color: #EFEFEF;
-          top: 4px;
+          color: #b9b9b9;
+          top: 1px;
           left: -2px;
           border: none;
           background: none;
@@ -50,11 +37,12 @@
         input {
           background: none;
           border: none;
+          height: 28px;
           color: #EFEFEF;
+          font-size: 13px;
           padding-left: 30px;
         }
       }
-
     }
   }
 }

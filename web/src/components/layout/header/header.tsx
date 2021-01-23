@@ -65,18 +65,10 @@ export class Header extends React.Component<IProps, IState> {
     return (
       <nav id="header" className="navbar navbar-fixed-top">
         <div className="container-fluid">
-          <div className="logo-col" onClick={this.handleLogoClick.bind(this)}>
-            <span className="text">Exomind</span>
-          </div>
-
           {this.context.session.cellInitialized ? this.renderSearchbox() : undefined}
         </div>
       </nav>
     );
-  }
-
-  private handleLogoClick() {
-    Navigation.navigate(Navigation.pathForInbox());
   }
 
   private renderSearchbox() {
