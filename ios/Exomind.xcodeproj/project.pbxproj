@@ -48,7 +48,6 @@
 		6D570A631DCC144700BD480F /* JSTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2661BC45B4F00F14571 /* JSTimer.swift */; };
 		6D5D077D1BC40D0A007D0011 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */; };
 		6D5D07821BC40D0A007D0011 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D5D07801BC40D0A007D0011 /* Main.storyboard */; };
-		6D5D07841BC40D0A007D0011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6D5D07831BC40D0A007D0011 /* Assets.xcassets */; };
 		6D5D07871BC40D0A007D0011 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D5D07851BC40D0A007D0011 /* LaunchScreen.storyboard */; };
 		6D5FE49E1C4ED47B006C6E3B /* LinkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5FE49D1C4ED47B006C6E3B /* LinkViewController.swift */; };
 		6D68E6CB1C8A673B007BB8F4 /* AutoLayoutWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D68E6CA1C8A673B007BB8F4 /* AutoLayoutWebView.swift */; };
@@ -63,6 +62,7 @@
 		6D7781C71C08AF1100D45299 /* TimeLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7781C61C08AF1100D45299 /* TimeLogic.swift */; };
 		6D7781C91C08B18E00D45299 /* TimeSelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7781C81C08B18E00D45299 /* TimeSelectionViewController.swift */; };
 		6D7781CC1C08BBDF00D45299 /* CollectionSelectorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7781CB1C08BBDF00D45299 /* CollectionSelectorViewController.swift */; };
+		6D98A91525BCD17C00C83429 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6D5D07831BC40D0A007D0011 /* Assets.xcassets */; };
 		6D9F68311C999AD100FFC7D9 /* DraftEmailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9F68301C999AD100FFC7D9 /* DraftEmailViewController.swift */; };
 		6D9F68331C99C78C00FFC7D9 /* LabelledFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9F68321C99C78C00FFC7D9 /* LabelledFieldView.swift */; };
 		6D9F68351C99E69200FFC7D9 /* MultilineTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9F68341C99E69200FFC7D9 /* MultilineTextField.swift */; };
@@ -664,8 +664,8 @@
 				6D00E16C1C03A3D000B2F7E0 /* js in Resources */,
 				6DCE042A1BFE6F4500DF8A34 /* FontAwesome.otf in Resources */,
 				6D5D07871BC40D0A007D0011 /* LaunchScreen.storyboard in Resources */,
-				6D5D07841BC40D0A007D0011 /* Assets.xcassets in Resources */,
 				6D5D07821BC40D0A007D0011 /* Main.storyboard in Resources */,
+				6D98A91525BCD17C00C83429 /* Assets.xcassets in Resources */,
 				6D3279B02204A64F00F39E04 /* Objects.storyboard in Resources */,
 				6DFC928D1C8F9D290024C960 /* EmailThreadOpenedTableViewCell.xib in Resources */,
 			);
