@@ -1,114 +1,122 @@
 {
-  "images": [
+  "images" : [
     {
-      "size": "20x20",
-      "idiom": "iphone",
-      "filename": "20 - iPhone notifications-1.png",
-      "scale": "2x"
+      "filename" : "exomind-20@2x.png",
+      "idiom" : "iphone",
+      "scale" : "2x",
+      "size" : "20x20"
     },
     {
-      "size": "20x20",
-      "idiom": "iphone",
-      "filename": "20 - iPhone notifications@3x.png",
-      "scale": "3x"
+      "filename" : "exomind-20@3x.png",
+      "idiom" : "iphone",
+      "scale" : "3x",
+      "size" : "20x20"
     },
     {
-      "size": "29x29",
-      "idiom": "iphone",
-      "filename": "58 - Settings.png",
-      "scale": "2x"
+      "filename" : "exomind-29@1x.png",
+      "idiom" : "iphone",
+      "scale" : "1x",
+      "size" : "29x29"
     },
     {
-      "size": "29x29",
-      "idiom": "iphone",
-      "filename": "87 - iPhone 3x.png",
-      "scale": "3x"
+      "filename" : "exomind-29@2x.png",
+      "idiom" : "iphone",
+      "scale" : "2x",
+      "size" : "29x29"
     },
     {
-      "size": "40x40",
-      "idiom": "iphone",
-      "filename": "80 - Spotlight-1.png",
-      "scale": "2x"
+      "filename" : "exomind-29@3x.png",
+      "idiom" : "iphone",
+      "scale" : "3x",
+      "size" : "29x29"
     },
     {
-      "size": "40x40",
-      "idiom": "iphone",
-      "filename": "120 - iPhone-1.png",
-      "scale": "3x"
+      "filename" : "exomind-40@2x.png",
+      "idiom" : "iphone",
+      "scale" : "2x",
+      "size" : "40x40"
     },
     {
-      "size": "60x60",
-      "idiom": "iphone",
-      "filename": "120 - iPhone.png",
-      "scale": "2x"
+      "filename" : "exomind-40@3x.png",
+      "idiom" : "iphone",
+      "scale" : "3x",
+      "size" : "40x40"
     },
     {
-      "size": "60x60",
-      "idiom": "iphone",
-      "filename": "180 - iPhone 6 Plus.png",
-      "scale": "3x"
+      "filename" : "exomind-60@2x.png",
+      "idiom" : "iphone",
+      "scale" : "2x",
+      "size" : "60x60"
     },
     {
-      "size": "20x20",
-      "idiom": "ipad",
-      "filename": "20 - iPhone notifications@1x.png",
-      "scale": "1x"
+      "filename" : "exomind-60@3x.png",
+      "idiom" : "iphone",
+      "scale" : "3x",
+      "size" : "60x60"
     },
     {
-      "size": "20x20",
-      "idiom": "ipad",
-      "filename": "20 - iPhone notifications-2.png",
-      "scale": "2x"
+      "filename" : "exomind-20@1x.png",
+      "idiom" : "ipad",
+      "scale" : "1x",
+      "size" : "20x20"
     },
     {
-      "size": "29x29",
-      "idiom": "ipad",
-      "filename": "29 - iPad settings.png",
-      "scale": "1x"
+      "filename" : "exomind-20@2x-1.png",
+      "idiom" : "ipad",
+      "scale" : "2x",
+      "size" : "20x20"
     },
     {
-      "size": "29x29",
-      "idiom": "ipad",
-      "filename": "58 - Settings-1.png",
-      "scale": "2x"
+      "filename" : "exomind-29@1x-1.png",
+      "idiom" : "ipad",
+      "scale" : "1x",
+      "size" : "29x29"
     },
     {
-      "size": "40x40",
-      "idiom": "ipad",
-      "filename": "40 - ipad spotlight 1x.png",
-      "scale": "1x"
+      "filename" : "exomind-29@2x-1.png",
+      "idiom" : "ipad",
+      "scale" : "2x",
+      "size" : "29x29"
     },
     {
-      "size": "40x40",
-      "idiom": "ipad",
-      "filename": "80 - Spotlight.png",
-      "scale": "2x"
+      "filename" : "exomind-40@1x.png",
+      "idiom" : "ipad",
+      "scale" : "1x",
+      "size" : "40x40"
     },
     {
-      "size": "76x76",
-      "idiom": "ipad",
-      "filename": "76 - iPad (@1x).png",
-      "scale": "1x"
+      "filename" : "exomind-40@2x-1.png",
+      "idiom" : "ipad",
+      "scale" : "2x",
+      "size" : "40x40"
     },
     {
-      "size": "76x76",
-      "idiom": "ipad",
-      "filename": "152 - iPad.png",
-      "scale": "2x"
+      "filename" : "exomind-76@1x.png",
+      "idiom" : "ipad",
+      "scale" : "1x",
+      "size" : "76x76"
     },
     {
-      "idiom": "ipad",
-      "size": "83.5x83.5",
-      "scale": "2x"
+      "filename" : "exomind-76@2x.png",
+      "idiom" : "ipad",
+      "scale" : "2x",
+      "size" : "76x76"
     },
     {
-      "idiom": "ios-marketing",
-      "size": "1024x1024",
-      "scale": "1x"
+      "filename" : "exomind-83.5@2x.png",
+      "idiom" : "ipad",
+      "scale" : "2x",
+      "size" : "83.5x83.5"
+    },
+    {
+      "filename" : "exomind-1024@1x.png",
+      "idiom" : "ios-marketing",
+      "scale" : "1x",
+      "size" : "1024x1024"
     }
   ],
-  "info": {
-    "version": 1,
-    "author": "xcode"
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
   }
 }
