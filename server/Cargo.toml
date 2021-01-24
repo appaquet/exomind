@@ -10,7 +10,7 @@ exocore = { version = "0.1.2", default-features = false, features = ["client", "
 exomind-core = { version = "0.1.1", path = "../core" }
 exomind-gmail = { version = "0.1.1", path = "../integrations/gmail" }
 log = "0.4"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread", "time"] }
+tokio = { version = "1.1", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1.0"
 structopt = "0.3"
 serde = "1.0"
