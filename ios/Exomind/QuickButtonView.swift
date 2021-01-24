@@ -38,7 +38,7 @@ class QuickButtonView: UIView {
         self.mainButtonView.translatesAutoresizingMaskIntoConstraints = false
         self.mainButtonView.alpha = Stylesheet.quickButtonAlphaClosed
 
-        let img = UIImage.fontAwesomeIcon(name: .bolt, style: .solid, textColor: Stylesheet.addButtonFg, size: CGSize(width: Stylesheet.quickButtonSize * 2, height: Stylesheet.quickButtonSize * 2))
+        let img = UIImage.fontAwesomeIcon(name: .bolt, style: .solid, textColor: Stylesheet.quickButtonFg, size: CGSize(width: Stylesheet.quickButtonSize * 2, height: Stylesheet.quickButtonSize * 2))
         let imgView = UIImageView(image: img)
         imgView.frame = self.frame
         imgView.autoresizingMask = [.flexibleWidth, .flexibleHeight]

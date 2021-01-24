@@ -2,7 +2,6 @@
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="VJs-Cu-oGS">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -398,18 +397,6 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Exomind" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9Xk-0s-r8B">
-                                <rect key="frame" x="120.5" y="310" width="134" height="47"/>
-                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="34"/>
-                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Take back the control." textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hs7-2D-vd9">
-                                <rect key="frame" x="114" y="360" width="147" height="21"/>
-                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="15"/>
-                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="iVo-Td-etx">
                                 <rect key="frame" x="333" y="637" width="46" height="30"/>
                                 <state key="normal" title="Button">
@@ -420,14 +407,19 @@
                                     <action selector="showBootstrap:" destination="acW-qF-gff" eventType="touchDown" id="URX-Jt-bNp"/>
                                 </connections>
                             </button>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="SplashNew" translatesAutoresizingMaskIntoConstraints="NO" id="G8F-xG-l4v">
+                                <rect key="frame" x="59.5" y="205.5" width="256" height="256"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="256" id="puP-qd-l7Y"/>
+                                    <constraint firstAttribute="height" constant="256" id="r0I-Cu-Que"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
-                        <color key="backgroundColor" red="0.086274509799999996" green="0.37254901959999998" blue="0.41960784309999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="9Xk-0s-r8B" firstAttribute="centerY" secondItem="5OY-Ef-vdD" secondAttribute="centerY" id="2AW-Nw-FOv"/>
-                            <constraint firstItem="hs7-2D-vd9" firstAttribute="centerX" secondItem="5OY-Ef-vdD" secondAttribute="centerX" id="2o8-cC-CpJ"/>
                             <constraint firstItem="qf0-YB-WkI" firstAttribute="top" secondItem="iVo-Td-etx" secondAttribute="bottom" id="2qw-eU-FBw"/>
-                            <constraint firstItem="9Xk-0s-r8B" firstAttribute="centerX" secondItem="5OY-Ef-vdD" secondAttribute="centerX" id="JzP-9t-BLR"/>
-                            <constraint firstItem="hs7-2D-vd9" firstAttribute="top" secondItem="9Xk-0s-r8B" secondAttribute="bottom" constant="3" id="PkZ-aW-QxO"/>
+                            <constraint firstItem="G8F-xG-l4v" firstAttribute="centerX" secondItem="5OY-Ef-vdD" secondAttribute="centerX" id="TaI-Ww-1jW"/>
+                            <constraint firstItem="G8F-xG-l4v" firstAttribute="centerY" secondItem="5OY-Ef-vdD" secondAttribute="centerY" id="UQa-8V-h1S"/>
                             <constraint firstAttribute="trailingMargin" secondItem="iVo-Td-etx" secondAttribute="trailing" constant="-20" id="XnU-G4-nf2"/>
                         </constraints>
                     </view>
@@ -520,6 +512,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="SplashNew" width="256" height="256"/>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

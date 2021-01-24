@@ -35,7 +35,10 @@
   },
   "build": {
     "appId": "io.exomind.exomind-electron",
-    "productName": "Exomind"
+    "productName": "Exomind",
+    "directories": {
+      "buildResources": "src/electron/build/"
+    }
   },
   "dependencies": {
     "@babel/preset-typescript": "^7.10.1",
