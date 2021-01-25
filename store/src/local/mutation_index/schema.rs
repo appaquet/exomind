@@ -102,7 +102,7 @@ pub(crate) fn build_tantivy_schema(
     let trait_id = schema_builder.add_text_field("trait_id", STRING | STORED);
     let entity_trait_id = schema_builder.add_text_field("entity_trait_id", STRING);
     let creation_date = schema_builder.add_u64_field("creation_date", STORED);
-    let modification_date = schema_builder.add_u64_field("modification_date", STORED);
+    let modification_date = schema_builder.add_u64_field("modification_date", STORED | FAST);
     let block_offset = schema_builder.add_u64_field("block_offset", STORED | FAST);
     let operation_id = schema_builder.add_u64_field("operation_id", INDEXED | STORED | FAST);
     let document_type = schema_builder.add_u64_field("document_type", STORED);

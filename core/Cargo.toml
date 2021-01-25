@@ -59,7 +59,7 @@ getrandom = { version = "0.2", features = ["js"] } # see https://docs.rs/getrand
 parking_lot = { version = "0.11", features = ["wasm-bindgen"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "1.0", features = ["rt"], default-features = false }
+tokio = { version = "1.1", features = ["rt"], default-features = false }
 
 [build-dependencies]
 capnpc = "0.14"

@@ -1,7 +1,8 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use exocore_chain::operation::OperationId;
 use exocore_core::protos::generated::exocore_store::{Reference, Trait};
 use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
+use exocore_core::protos::store::entity_query;
 use exocore_core::protos::{
     prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt},
     store::TraitDetails,
@@ -100,12 +101,14 @@ fn search_query_matches() -> anyhow::Result<()> {
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
 
+    let now = Utc::now();
     let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(1),
         operation_id: 10,
         entity_id: "entity_id1".to_string(),
         trt: Trait {
             id: "foo1".to_string(),
+            modification_date: Some(now.to_proto_timestamp()),
             message: Some(
                 TestMessage {
                     string1: "Foo Foo Foo Foo Bar".to_string(),
@@ -123,6 +126,7 @@ fn search_query_matches() -> anyhow::Result<()> {
         entity_id: "entity_id2".to_string(),
         trt: Trait {
             id: "foo2".to_string(),
+            modification_date: Some(now.to_proto_timestamp()),
             message: Some(
                 TestMessage {
                     string1: "Foo Bar Bar Bar Bar".to_string(),
@@ -185,6 +189,138 @@ fn search_query_matches() -> anyhow::Result<()> {
     assert_eq!(res.remaining, 0);
     assert_eq!(res.total, 2);
     assert_eq!(res.mutations[0].entity_id.as_str(), "entity_id1");
+
+    Ok(())
+}
+
+#[test]
+fn search_query_matches_no_fuzzy() -> anyhow::Result<()> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let mut index = MutationIndex::create_in_memory(config, registry)?;
+
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: Some(1),
+        operation_id: 10,
+        entity_id: "entity_id1".to_string(),
+        trt: Trait {
+            id: "foo1".to_string(),
+            message: Some(
+                TestMessage {
+                    string1: "abc abcde abcdefgh".to_string(),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    index.apply_operations(vec![trait1].into_iter())?;
+
+    let query = |query: &str, fuzzy: bool| EntityQuery {
+        predicate: Some(entity_query::Predicate::Match(MatchPredicate {
+            query: query.to_string(),
+            no_fuzzy: !fuzzy,
+        })),
+        ..Default::default()
+    };
+
+    // no fuzzy for small words
+    assert_eq!(index.search(query("abc", true))?.mutations.len(), 1);
+    assert_eq!(index.search(query("abZ", true))?.mutations.len(), 0);
+
+    // 1 char fuzzy for medium words
+    assert_eq!(index.search(query("abcde", true))?.mutations.len(), 1);
+    assert_eq!(index.search(query("abcdZ", true))?.mutations.len(), 1);
+    assert_eq!(index.search(query("abcZZ", true))?.mutations.len(), 0);
+
+    // 2 chars fuzzy for long words
+    assert_eq!(index.search(query("abcdefgh", true))?.mutations.len(), 1);
+    assert_eq!(index.search(query("abcdefgZ", true))?.mutations.len(), 1);
+    assert_eq!(index.search(query("abcdefZZ", true))?.mutations.len(), 1);
+    assert_eq!(index.search(query("abcdeZZZ", true))?.mutations.len(), 0);
+
+    Ok(())
+}
+
+#[test]
+fn search_query_matches_recent_boost() -> anyhow::Result<()> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let mut index = MutationIndex::create_in_memory(config, registry)?;
+
+    let now = Utc::now();
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: Some(1),
+        operation_id: 10,
+        entity_id: "entity_id1".to_string(),
+        trt: Trait {
+            id: "foo1".to_string(),
+            modification_date: Some(now.to_proto_timestamp()),
+            message: Some(
+                TestMessage {
+                    string1: "Foo".to_string(),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+
+    let two_year = Utc::now() - Duration::days(730);
+    let trait2 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: Some(2),
+        operation_id: 11,
+        entity_id: "entity_id2".to_string(),
+        trt: Trait {
+            id: "foo2".to_string(),
+            modification_date: Some(two_year.to_proto_timestamp()),
+            message: Some(
+                TestMessage {
+                    string1: "Foo".to_string(),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+
+    let one_year = Utc::now() - Duration::days(365);
+    let trait3 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: Some(3),
+        operation_id: 12,
+        entity_id: "entity_id3".to_string(),
+        trt: Trait {
+            id: "foo3".to_string(),
+            modification_date: Some(one_year.to_proto_timestamp()),
+            message: Some(
+                TestMessage {
+                    string1: "Foo".to_string(),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+
+    index.apply_operations(vec![trait1, trait2, trait3].into_iter())?;
+
+    // with recency boost
+    let query = Q::matches("foo").order_by_score(false, true).build();
+    let res = index.search(query)?;
+    assert_eq!(res.mutations[0].entity_id, "entity_id1");
+    assert_eq!(res.mutations[1].entity_id, "entity_id3");
+    assert_eq!(res.mutations[2].entity_id, "entity_id2");
+
+    // without recency boost
+    let query = Q::matches("foo").order_by_score(false, false).build();
+    let res = index.search(query)?;
+    assert_eq!(res.mutations[0].entity_id, "entity_id3"); // operation id is score breaker
+    assert_eq!(res.mutations[1].entity_id, "entity_id2");
+    assert_eq!(res.mutations[2].entity_id, "entity_id1");
 
     Ok(())
 }

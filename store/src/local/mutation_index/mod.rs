@@ -26,10 +26,11 @@ use exocore_core::protos::{
 };
 pub use operations::*;
 pub use results::*;
+use tantivy::query::FuzzyTermQuery;
 use tantivy::{
     collector::{Collector, TopDocs},
     directory::MmapDirectory,
-    query::{AllQuery, BooleanQuery, Occur, PhraseQuery, Query, QueryParser, TermQuery},
+    query::{AllQuery, BooleanQuery, Occur, PhraseQuery, Query, TermQuery},
     schema::{Field, IndexRecordOption},
     DocAddress, Document, Index as TantivyIndex, IndexReader, IndexWriter, ReloadPolicy, Searcher,
     SegmentReader, Term,
@@ -46,7 +47,7 @@ mod schema;
 #[cfg(test)]
 mod tests;
 
-const ENTITY_MAX_TRAITS: u32 = 100_000;
+const ENTITY_MAX_TRAITS: u32 = 10_000;
 
 /// Index (full-text & fields) for entities & traits mutations stored in the
 /// chain. Each mutation is individually indexed as a single document.
@@ -320,6 +321,7 @@ impl MutationIndex {
         let ordering = Ordering {
             ascending: true,
             value: Some(ordering::Value::OperationId(true)),
+            ..Default::default()
         };
         let paging = Paging {
             count: ENTITY_MAX_TRAITS,
@@ -666,8 +668,29 @@ impl MutationIndex {
         &self,
         predicate: &MatchPredicate,
     ) -> Result<Box<dyn tantivy::query::Query>, Error> {
-        let query_parser = QueryParser::for_index(&self.index, vec![self.fields.all_text]);
-        let query = query_parser.parse_query(&predicate.query)?;
+        let tok = self.index.tokenizer_for_field(self.fields.all_text)?;
+
+        let mut queries: Vec<(Occur, Box<dyn Query>)> = Vec::new();
+        let mut stream = tok.token_stream(&predicate.query);
+        while stream.advance() {
+            let token = stream.token().text.as_str();
+            let term = Term::from_field_text(self.fields.all_text, token);
+
+            if !predicate.no_fuzzy && token.len() > 3 {
+                let max_distance = if token.len() > 6 { 2 } else { 1 };
+                let query = Box::new(FuzzyTermQuery::new(term.clone(), max_distance, true));
+                queries.push((Occur::Should, query));
+            }
+
+            // even if fuzzy is enabled, we add the term again so that an exact match scores much
+            let query = Box::new(TermQuery::new(
+                term,
+                IndexRecordOption::WithFreqsAndPositions,
+            ));
+            queries.push((Occur::Should, query));
+        }
+
+        let query = Box::new(BooleanQuery::from(queries));
 
         Ok(query)
     }
@@ -775,6 +798,7 @@ impl MutationIndex {
                     match_count.clone(),
                     &paging,
                     ordering.ascending,
+                    ordering.no_recency_boost,
                 );
                 self.execute_tantity_query_with_collector(searcher, query, &collector)?
             }
@@ -974,6 +998,7 @@ impl MutationIndex {
         matching_count: Arc<AtomicUsize>,
         paging: &Paging,
         ascending: bool,
+        no_recency_boost: bool,
     ) -> impl Collector<Fruit = Vec<(OrderingValueWrapper, DocAddress)>> {
         let after_score = Arc::new(
             paging
@@ -991,7 +1016,9 @@ impl MutationIndex {
             },
         ));
 
+        let now = Utc::now().timestamp_nanos() as u64;
         let operation_id_field = self.fields.operation_id;
+        let modification_date_field = self.fields.modification_date;
         TopDocs::with_limit(paging.count as usize).tweak_score(
             move |segment_reader: &SegmentReader| {
                 let after_score = after_score.clone();
@@ -1004,8 +1031,21 @@ impl MutationIndex {
                     .u64(operation_id_field)
                     .unwrap();
 
+                let modification_date_reader = segment_reader
+                    .fast_fields()
+                    .u64(modification_date_field)
+                    .unwrap();
+
                 move |doc_id, score| {
                     total_docs.fetch_add(1, atomic::Ordering::SeqCst);
+
+                    // boost by date if needed
+                    let score = if !no_recency_boost {
+                        let modification_date = modification_date_reader.get(doc_id);
+                        score * boost_recent(now, modification_date)
+                    } else {
+                        score
+                    };
 
                     let mut ordering_value_wrapper = OrderingValueWrapper {
                         value: OrderingValue {
@@ -1027,5 +1067,65 @@ impl MutationIndex {
                 }
             },
         )
+    }
+}
+
+fn boost_recent(now_nano: u64, date_nano: u64) -> f32 {
+    // From: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay
+    // exp(λ * max(0, |value - origin| - offset))
+    // λ = ln(decay) / scale
+    //
+    // See curve at https://www.desmos.com/calculator/ktjtz8yeln
+
+    // TODO: optimize by using a shifted time scale instead of days
+    const OFFSET: f32 = 15.0; // time between [now - offset, now] at which score = 1.0
+    const DECAY_LN: f32 = -0.223_143_55; // = ln(0.8), where 0.8 = decay
+    const SCALE: f32 = 365.0; // score at (now - scale) = decay value
+    const LAMBDA: f32 = DECAY_LN / SCALE;
+
+    let now_days = (now_nano / 86_400_000_000_000) as f32;
+    let date_days = (date_nano / 86_400_000_000_000) as f32;
+
+    (LAMBDA * ((now_days - date_days).abs() - OFFSET).max(0.0)).exp()
+}
+
+#[cfg(test)]
+mod unit_tests {
+    use chrono::{DateTime, Duration};
+
+    use super::*;
+
+    macro_rules! approx_eq {
+        ($left:expr, $right:expr) => {
+            let diff = ($left - $right).abs();
+            assert!(
+                diff < f32::EPSILON,
+                "left = {}, right = {}, |left - right| = {}",
+                $left,
+                $right,
+                diff
+            );
+        };
+    }
+
+    #[test]
+    fn test_boost_recent() {
+        let now = Utc::now();
+
+        approx_eq!(1.0, boost_recent_chrono(now, now)); // same day should be 1.0
+        approx_eq!(1.0, boost_recent_chrono(now, now - Duration::days(15))); // within 15 days of now should be 1.0
+
+        // at 365d from now should equal decay
+        approx_eq!(0.80737, boost_recent_chrono(now, now - Duration::days(365)));
+
+        // at 730d from now, should be still decreasing
+        approx_eq!(
+            0.64589596,
+            boost_recent_chrono(now, now - Duration::days(730))
+        );
+    }
+
+    fn boost_recent_chrono(now: DateTime<Utc>, date: DateTime<Utc>) -> f32 {
+        boost_recent(now.timestamp_nanos() as u64, date.timestamp_nanos() as u64)
     }
 }

@@ -32,6 +32,7 @@ impl QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Match(MatchPredicate {
                     query: query.into(),
+                    ..Default::default()
                 })),
                 ..Default::default()
             },
@@ -212,6 +213,20 @@ impl QueryBuilder {
         self
     }
 
+    pub fn order_by_score(mut self, ascending: bool, recency_boost: bool) -> Self {
+        if self.query.ordering.is_none() {
+            self.query.ordering = Some(Ordering::default());
+        }
+
+        if let Some(ordering) = self.query.ordering.as_mut() {
+            ordering.value = Some(ordering::Value::Score(true));
+            ordering.ascending = ascending;
+            ordering.no_recency_boost = !recency_boost;
+        }
+
+        self
+    }
+
     pub fn order_ascending(mut self, ascending: bool) -> Self {
         if self.query.ordering.is_none() {
             self.query.ordering = Some(Ordering::default());
@@ -244,6 +259,7 @@ impl TraitQueryBuilder {
             query: TraitQuery {
                 predicate: Some(trait_query::Predicate::Match(MatchPredicate {
                     query: query.into(),
+                    ..Default::default()
                 })),
             },
         }

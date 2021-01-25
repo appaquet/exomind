@@ -56,7 +56,11 @@ message Projection {
 
 // Query entities by text match on all indexed fields across all traits.
 message MatchPredicate {
+    // Text query.
     string query = 1;
+
+    // Disable fuzzy matching.
+    bool no_fuzzy = 2;
 }
 
 // Query entities by IDs.
@@ -143,13 +147,16 @@ message Paging {
 message Ordering {
     // Value by which we want results to be ordered.
     oneof value {
-        bool score = 1;
-        bool operation_id = 2;
-        string field = 3;
+        bool score = 1; // by match score + date boost
+        bool operation_id = 2; // by operation id
+        string field = 3; // by field value
     }
 
     // Direction of ordering.
     bool ascending = 4;
+
+    // If match score used, don't boost recent documents
+    bool no_recency_boost = 5;
 }
 
 message OrderingValue {
