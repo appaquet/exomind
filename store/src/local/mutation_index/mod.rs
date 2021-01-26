@@ -1039,9 +1039,14 @@ impl MutationIndex {
                 move |doc_id, score| {
                     total_docs.fetch_add(1, atomic::Ordering::SeqCst);
 
+                    let operation_id = operation_id_reader.get(doc_id);
+
                     // boost by date if needed
                     let score = if !no_recency_boost {
-                        let modification_date = modification_date_reader.get(doc_id);
+                        let mut modification_date = modification_date_reader.get(doc_id);
+                        if modification_date == 0 {
+                            modification_date = operation_id;
+                        }
                         score * boost_recent(now, modification_date)
                     } else {
                         score
@@ -1050,7 +1055,7 @@ impl MutationIndex {
                     let mut ordering_value_wrapper = OrderingValueWrapper {
                         value: OrderingValue {
                             value: Some(ordering_value::Value::Float(score)),
-                            operation_id: operation_id_reader.get(doc_id),
+                            operation_id,
                         },
                         reverse: ascending,
                         ignore: false,

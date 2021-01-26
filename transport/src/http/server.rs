@@ -1,3 +1,4 @@
+use std::net::Ipv4Addr;
 use std::{borrow::Cow, sync::Arc};
 
 use exocore_core::{
@@ -94,7 +95,9 @@ impl HTTPTransportServer {
         let servers = {
             let mut futures = Vec::new();
             for listen_url in &self.config.listen_addresses(&self.local_node)? {
-                let host = listen_url.domain().unwrap_or("0.0.0.0");
+                let host = listen_url
+                    .host()
+                    .unwrap_or_else(|| url::Host::Ipv4(Ipv4Addr::new(0, 0, 0, 0)));
                 let port = listen_url.port().unwrap_or(80);
                 let addr_res = format!("{}:{}", host, port).parse();
                 let addr = match addr_res {
