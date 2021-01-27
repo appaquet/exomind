@@ -1,7 +1,6 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import Constants from '../../../constants';
 import Navigation from '../../../navigation';
 import { ContainerController, ModifiableText } from '../../objects/container-controller';
 import { EntityComponent } from '../../objects/entity-component';
@@ -14,6 +13,7 @@ import { Search } from '../../objects/search/search';
 import './column.less';
 import { ColumnConfig } from './columns-config';
 import { Message } from '../../objects/message';
+import copy from 'clipboard-copy';
 
 export default class Column extends React.Component {
   static propTypes = {
@@ -67,9 +67,13 @@ export default class Column extends React.Component {
 
     if (this.props.columnConfig.isEntity) {
       headerActions.push(new HeaderAction('external-link', this.expandFullscreen.bind(this)));
+
+      headerActions.push(new HeaderAction('copy', () => {
+        copy(this.props.columnConfig.value);
+      }));
     }
 
-    if (this.props.columnId !== 0) {
+    if (this.props.onClose) {
       headerActions.push(new HeaderAction('close', this.props.onClose));
     }
 

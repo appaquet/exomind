@@ -52,6 +52,9 @@ export default class Columns extends React.Component {
                 [colKey]: true
             });
 
+            // we allow closing any columns, as long as it is not the last one
+            const canClose = colId > 0 || nextColumnConfig; 
+
             return (
                 <div className={classes} key={colKey}>
                     <Column
@@ -62,17 +65,17 @@ export default class Columns extends React.Component {
 
                         selection={selection}
                         onSelectionChange={this.handleColumnItemSelect.bind(this, colId)}
-                        onClose={(colId !== 0) ? this.handleColumnClose.bind(this, colId) : null}
+                        onClose={canClose ? this.handleColumnClose.bind(this, colId) : null}
                     />
                 </div>);
         });
     }
 
-    handleColumnItemSelect(colId, objs) {
+    handleColumnItemSelect(colId, objects) {
         let columnsConfig = this.getConfig();
-        if (objs && !objs.isEmpty) {
+        if (objects && !objects.isEmpty) {
             // TODO: support for multiple selections + entity traits
-            let firstSel = objs.items[0];
+            let firstSel = objects.items[0];
 
             let columnConfig;
             if (firstSel.traitId) {
