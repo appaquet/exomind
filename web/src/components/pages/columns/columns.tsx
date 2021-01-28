@@ -1,30 +1,20 @@
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
 import React from 'react';
 import { SelectedItem, Selection } from '../../objects/entity-list/selection';
 import Column from './column';
 import { ColumnConfig, ColumnsConfig } from './columns-config';
 import './columns.less';
 
-export default class Columns extends React.Component {
-    static propTypes = {
-        config: PropTypes.string.isRequired,
-        onConfigChange: PropTypes.func.isRequired
-    };
+interface IProps {
+    config: string;
+    onConfigChange: (config: ColumnsConfig) => void;
+}
 
-    getConfig(props) {
-        props = props || this.props;
-        var config = ColumnsConfig.fromString(props.config);
-        if (config.empty) {
-            config = ColumnsConfig.forInbox();
-        }
-        return config;
-    }
-
-    render() {
-        let renderedColumns = this.renderColumns();
-        let nbColumns = renderedColumns.length;
-        let classes = `columns count-${nbColumns}`;
+export default class Columns extends React.Component<IProps> {
+    render(): React.ReactNode {
+        const renderedColumns = this.renderColumns();
+        const nbColumns = renderedColumns.length;
+        const classes = `columns count-${nbColumns}`;
         return (
             <div className={classes}>
                 {renderedColumns}
@@ -32,11 +22,11 @@ export default class Columns extends React.Component {
         );
     }
 
-    renderColumns() {
-        let config = this.getConfig();
+    private renderColumns() {
+        const config = this.getConfig();
         return config.parts.map((columnConfig, colId) => {
-            let selectionItems = [];
-            let nextColumnConfig = config.parts[colId + 1];
+            let selectionItems: SelectedItem[] = [];
+            const nextColumnConfig = config.parts[colId + 1];
             if (nextColumnConfig) {
                 if (nextColumnConfig.isEntity) {
                     selectionItems = [SelectedItem.fromEntityId(nextColumnConfig.value)];
@@ -44,16 +34,16 @@ export default class Columns extends React.Component {
                     selectionItems = [SelectedItem.fromEntityTraitId(nextColumnConfig.value, nextColumnConfig.extra)];
                 }
             }
-            let selection = new Selection(selectionItems);
+            const selection = new Selection(selectionItems);
 
-            let colKey = `column-container-${colId}`;
-            let classes = classNames({
+            const colKey = `column-container-${colId}`;
+            const classes = classNames({
                 'column-container': true,
                 [colKey]: true
             });
 
             // we allow closing any columns, as long as it is not the last one
-            const canClose = colId > 0 || nextColumnConfig; 
+            const canClose = colId > 0 || nextColumnConfig;
 
             return (
                 <div className={classes} key={colKey}>
@@ -61,7 +51,6 @@ export default class Columns extends React.Component {
                         columnId={colId}
                         columnConfig={columnConfig}
                         key={columnConfig.value}
-                        onColumnConfigChange={this.handleColumnConfigChange.bind(this, colId)}
 
                         selection={selection}
                         onSelectionChange={this.handleColumnItemSelect.bind(this, colId)}
@@ -71,11 +60,20 @@ export default class Columns extends React.Component {
         });
     }
 
-    handleColumnItemSelect(colId, objects) {
+    private getConfig(props?: IProps) {
+        props = props || this.props;
+        let config = ColumnsConfig.fromString(props.config);
+        if (config.empty) {
+            config = ColumnsConfig.forInbox();
+        }
+        return config;
+    }
+
+    private handleColumnItemSelect(colId: number, objects: Selection) {
         let columnsConfig = this.getConfig();
         if (objects && !objects.isEmpty) {
             // TODO: support for multiple selections + entity traits
-            let firstSel = objects.items[0];
+            const firstSel = objects.items[0];
 
             let columnConfig;
             if (firstSel.traitId) {
@@ -92,15 +90,9 @@ export default class Columns extends React.Component {
         this.props.onConfigChange(columnsConfig);
     }
 
-    handleColumnClose(colId) {
-        let columnsConfig = this.getConfig().pop(colId);
+    private handleColumnClose(colId: number) {
+        const columnsConfig = this.getConfig().pop(colId);
         this.props.onConfigChange(columnsConfig);
-    }
-
-    handleColumnConfigChange(colId, newColumnConfig) {
-        let curColumnsConfig = this.getConfig();
-        let newColumnsConfig = curColumnsConfig.set(colId, newColumnConfig.toString());
-        this.props.onConfigChange(newColumnsConfig);
     }
 }
 

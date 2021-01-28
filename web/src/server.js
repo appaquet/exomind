@@ -1,8 +1,8 @@
 /* eslint-env node */
 
-const path = require('path');
-const express = require('express');
-const cookieParser = require('cookie-parser');
+import path from 'path';
+import express from 'express';
+import cookieParser from 'cookie-parser';
 
 var server = express();
 server.set('port', (process.env.PORT || 8080));
@@ -10,7 +10,7 @@ server.use(express.static(path.join(__dirname)));
 server.use(cookieParser());
 
 // handle push state
-server.get('/*', function (req, res) {
+server.get('/*', function (_req, res) {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
