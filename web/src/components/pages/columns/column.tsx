@@ -1,5 +1,4 @@
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
 import React from 'react';
 import Navigation from '../../../navigation';
 import { ContainerController, ModifiableText } from '../../objects/container-controller';
@@ -15,21 +14,27 @@ import { ColumnConfig } from './columns-config';
 import { Message } from '../../objects/message';
 import copy from 'clipboard-copy';
 
-export default class Column extends React.Component {
-  static propTypes = {
-    columnConfig: PropTypes.instanceOf(ColumnConfig).isRequired,
-    columnId: PropTypes.number.isRequired,
+interface IProps {
+    columnConfig: ColumnConfig;
+    columnId: number;
 
-    selection: PropTypes.instanceOf(Selection),
-    onSelectionChange: PropTypes.func,
-    onClose: PropTypes.func
-  };
+    selection?: Selection;
 
-  constructor(props) {
+    onSelectionChange: () => void;
+    onClose: () => void;
+}
+
+interface IState {
+    value: string;
+    containerController: ContainerController;
+}
+
+export default class Column extends React.Component<IProps, IState> {
+  constructor(props: IProps) {
     super(props);
 
-      let containerController = new ContainerController();
-      containerController.onChange((key) => {
+      const containerController = new ContainerController();
+      containerController.onChange((key: string) => {
         if (key === 'closed') {
           props.onClose();
         }
@@ -42,9 +47,9 @@ export default class Column extends React.Component {
       }
   }
 
-  render() {
-    let colKey = `column-${this.props.columnId}`;
-    let classes = classNames({
+  render(): React.ReactNode {
+    const colKey = `column-${this.props.columnId}`;
+    const classes = classNames({
       column: true,
       [colKey]: true
     });
@@ -58,7 +63,7 @@ export default class Column extends React.Component {
       titleRenameHandler = null;
     }
 
-    let headerActions = [];
+    const headerActions = [];
     if (this.state.containerController.actions) {
       this.state.containerController.actions.forEach(action => {
         headerActions.push(action);
@@ -91,7 +96,7 @@ export default class Column extends React.Component {
     );
   }
 
-  renderContent() {
+  private renderContent() {
     if (this.props.columnConfig.isInbox) {
       return <Inbox
         containerController={this.state.containerController}
@@ -142,8 +147,8 @@ export default class Column extends React.Component {
     }
   }
 
-  expandFullscreen() {
-    let entityId = this.props.columnConfig.value;
+  private expandFullscreen() {
+    const entityId = this.props.columnConfig.value;
     Navigation.navigatePopup(Navigation.pathForFullscreen(entityId));
   }
 }

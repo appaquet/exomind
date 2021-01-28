@@ -3,18 +3,17 @@ import React from 'react';
 import EditableText from '../interaction/editable-text/editable-text.js';
 import classNames from 'classnames';
 import './header.less';
-import PropTypes from 'prop-types';
 
-export class Header extends React.Component {
-  static propTypes = {
-    title: PropTypes.string.isRequired,
-    icon: PropTypes.string,
-    actions: PropTypes.array,
-    onTitleRename: PropTypes.func
-  };
+interface IProps {
+  title: string;
+  icon?: string;
+  actions: HeaderAction[];
+  onTitleRename: (title: string) => void;
+}
 
-  render() {
-    var iconClasses;
+export class Header extends React.Component<IProps> {
+  render(): React.ReactNode  {
+    let iconClasses;
     if (this.props.icon) {
       iconClasses = classNames({
         'fa': true,
@@ -23,7 +22,7 @@ export class Header extends React.Component {
     }
 
 
-    var rightActions;
+    let rightActions;
     if (this.props.actions) {
       rightActions = <div className="right-actions">{this.renderActions()}</div>;
     }
@@ -37,7 +36,7 @@ export class Header extends React.Component {
     );
   }
 
-  renderTitle() {
+  private renderTitle() {
     if (this.props.onTitleRename) {
       return <EditableText text={this.props.title} doubleClick={true} onChange={this.handleTitleRename.bind(this)} />;
     } else {
@@ -45,23 +44,23 @@ export class Header extends React.Component {
     }
   }
 
-  handleTitleRename(newTitle) {
+  private handleTitleRename(newTitle: string) {
     this.props.onTitleRename(newTitle);
   }
 
-  renderActions() {
-    let actions = this.props.actions.map(action => {
-      let classes = classNames({
+  private renderActions() {
+    const actions = this.props.actions.map(action => {
+      const classes = classNames({
         'fa': true,
         ['fa-' + action.icon]: true
       });
-      return <li key={action.icon} onClick={this.handleActionClick.bind(this, action)}><i className={classes}/></li>;
+      return <li key={action.icon} onClick={this.handleActionClick.bind(this, action)}><i className={classes} /></li>;
     });
 
     return <ul className="actions">{actions}</ul>;
   }
 
-  handleActionClick(action) {
+  private handleActionClick(action: HeaderAction) {
     if (action.callback) {
       action.callback();
     }
@@ -69,8 +68,6 @@ export class Header extends React.Component {
 }
 
 export class HeaderAction {
-  constructor(icon, callback) {
-    this.icon = icon;
-    this.callback = callback;
+  constructor(public icon: string, public callback: () => void) {
   }
 }

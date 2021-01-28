@@ -6,7 +6,7 @@ import { Stores, StoresContext } from '../../store/stores';
 import Path from '../../utils/path';
 import NodeConfig from '../pages/node-config/node-config';
 import { ColumnsConfig } from '../pages/columns/columns-config';
-import Columns from '../pages/columns/columns.js';
+import Columns from '../pages/columns/columns';
 import Fullscreen from '../pages/fullscreen/fullscreen';
 import Home from '../pages/home/home.js';
 import NotFound from '../pages/not-found/not-found';
@@ -15,10 +15,11 @@ import Hamburger from './hamburger/hamburger';
 import { Header } from './header/header';
 import './layout.less';
 import Modal from './modal';
+import { ModalRenderer } from '../../store/modal-store';
 
 class IProps {
   path: Path;
-  modalRenderer?: () => React.ReactNode;
+  modalRenderer?: ModalRenderer;
 }
 
 @observer
