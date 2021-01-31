@@ -1,8 +1,6 @@
 use std::pin::Pin;
 use std::sync::{Arc, Mutex, RwLock, Weak};
-use std::{
-    task::{Context, Poll},
-};
+use std::task::{Context, Poll};
 
 use exocore_core::cell::Cell;
 use exocore_core::futures::{interval, spawn_blocking, BatchingStream};

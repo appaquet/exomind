@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use exocore_core::protos::core::NodeStoreConfig;
 
-
 /// Configuration for `Store`.
 #[derive(Clone, Copy)]
 pub struct StoreConfig {
