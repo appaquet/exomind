@@ -10,7 +10,6 @@ import { convertOldHTML, fromHTML, toHTML } from './convert';
 import { ModalStore } from '../../../store/modal-store';
 import InputModal from '../../modals/input-modal/input-modal';
 
-const defaultInitialFocus = true;
 const listMaxDepth = 4;
 
 interface IProps {
@@ -84,6 +83,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       this.props.onBound(this);
     }
 
+  const defaultInitialFocus = true;
     if (this.props.initialFocus ?? defaultInitialFocus) {
       this.editorRef.current.focus();
     }
@@ -185,6 +185,9 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
           if (!link) {
             return;
+          }
+          if (!link.includes("://")) {
+            link = 'entity://' + link;
           }
 
           this.toggleLink(link);

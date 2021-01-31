@@ -15,7 +15,6 @@ import Navigation from '../../../navigation';
 interface IProps {
     entity: EntityTraits;
     noteTrait: EntityTrait<exomind.base.INote>;
-
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 }
@@ -23,6 +22,7 @@ interface IProps {
 interface IState {
     savedNote: exomind.base.INote;
     currentNote: exomind.base.INote;
+    focused: boolean;
     editor?: HtmlEditor;
     cursor?: EditorCursor;
 }
@@ -34,6 +34,7 @@ export default class Note extends React.Component<IProps, IState> {
         super(props);
 
         this.state = {
+            focused: false,
             savedNote: props.noteTrait.message,
             currentNote: new exomind.base.Note(props.noteTrait.message),
         }
@@ -42,6 +43,15 @@ export default class Note extends React.Component<IProps, IState> {
     componentWillUnmount(): void {
         this.saveContent();
         this.mounted = false;
+    }
+
+    componentDidUpdate(): void {
+        const note = new exomind.base.Note(this.props.noteTrait.message);
+        if (!this.state.focused && !_.isEqual(this.state.currentNote, note)) {
+            this.setState({
+                currentNote: note,
+            });
+        }
     }
 
     render(): React.ReactNode {
@@ -62,13 +72,27 @@ export default class Note extends React.Component<IProps, IState> {
                         placeholder="Type your note here"
                         onBound={this.handleContentBound.bind(this)}
                         onChange={this.handleContentChange.bind(this)}
-                        onBlur={this.saveContent.bind(this)}
+                        onFocus={this.handleOnFocus.bind(this)}
+                        onBlur={this.handleOnBlur.bind(this)}
                         onCursorChange={this.handleCursorChange.bind(this)}
                         onLinkClick={this.handleLinkClick.bind(this)}
                     />
                 </div>
             </div>
         );
+    }
+
+    private handleOnFocus(): void {
+        this.setState({
+            focused: true,
+        });
+    }
+
+    private handleOnBlur(): void {
+        this.saveContent();
+        this.setState({
+            focused: false,
+        });
     }
 
     private handleContentBound(editor: HtmlEditor): void {
