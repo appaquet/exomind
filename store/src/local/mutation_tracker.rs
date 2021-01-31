@@ -6,7 +6,7 @@ use exocore_core::protos::store::MutationResult;
 use exocore_core::time::Instant;
 use futures::channel::oneshot;
 
-use super::store::StoreConfig;
+use super::StoreConfig;
 use crate::error::Error;
 
 type RequestId = usize;

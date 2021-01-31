@@ -11,7 +11,6 @@ use exocore_core::protos::{
     registry::Registry,
     store::TraitDetails,
 };
-use store::StoreConfig;
 use tempfile::TempDir;
 
 use super::entity_index::test_index::TestEntityIndex;
