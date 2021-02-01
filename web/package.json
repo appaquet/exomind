@@ -55,7 +55,7 @@
     "fbemitter": "^3.0.0",
     "font-awesome": "^4.4.0",
     "htmlparser2": "^6.0.0",
-    "less": "^4.1.0",
+    "less": "^4.1.1",
     "linkifyjs": "^2.1.9",
     "lodash": "^4.17.19",
     "mobx": "^6.1.1",
