@@ -851,7 +851,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "thiserror",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "url 2.2.0",
  "uuid 0.8.2",
  "wasm-bindgen",
@@ -952,7 +952,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "tokio-compat-02",
  "yup-oauth2",
 ]
@@ -971,7 +971,7 @@ dependencies = [
  "serde_derive",
  "serde_yaml",
  "structopt",
- "tokio 1.1.0",
+ "tokio 1.1.1",
 ]
 
 [[package]]
@@ -1378,7 +1378,7 @@ dependencies = [
  "http 0.2.3",
  "indexmap",
  "slab",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "tokio-util 0.6.2",
  "tracing",
  "tracing-futures",
@@ -1573,7 +1573,7 @@ dependencies = [
  "itoa",
  "pin-project 1.0.4",
  "socket2",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "tower-service",
  "tracing",
  "want 0.3.0",
@@ -1624,7 +1624,7 @@ dependencies = [
  "hyper 0.14.2",
  "log",
  "rustls 0.19.0",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "tokio-rustls 0.22.0",
  "webpki",
 ]
@@ -1939,7 +1939,7 @@ dependencies = [
  "libp2p-core",
  "log",
  "socket2",
- "tokio 1.1.0",
+ "tokio 1.1.1",
 ]
 
 [[package]]
@@ -3012,7 +3012,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded 0.7.0",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "tokio-rustls 0.22.0",
  "url 2.2.0",
  "wasm-bindgen",
@@ -3638,9 +3638,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8efab2086f17abcddb8f756117665c958feee6b2e39974c2f1600592ab3a4195"
+checksum = "6714d663090b6b0acb0fa85841c6d66233d150cdb2602c8f9b8abb03370beb3f"
 dependencies = [
  "autocfg 1.0.1",
  "bytes 1.0.1",
@@ -3673,7 +3673,7 @@ dependencies = [
  "once_cell",
  "pin-project-lite 0.2.4",
  "tokio 0.2.24",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "tokio-stream",
 ]
 
@@ -3782,7 +3782,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc6844de72e57df1980054b38be3a9f4702aba4858be64dd700181a8a6d0e1b6"
 dependencies = [
  "rustls 0.19.0",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "webpki",
 ]
 
@@ -3794,7 +3794,7 @@ checksum = "76066865172052eb8796c686f0b441a93df8b08d40a950b062ffb9a426f00edd"
 dependencies = [
  "futures-core",
  "pin-project-lite 0.2.4",
- "tokio 1.1.0",
+ "tokio 1.1.1",
 ]
 
 [[package]]
@@ -3876,7 +3876,7 @@ dependencies = [
  "futures-sink",
  "log",
  "pin-project-lite 0.2.4",
- "tokio 1.1.0",
+ "tokio 1.1.1",
  "tokio-stream",
 ]
 
