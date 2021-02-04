@@ -76,7 +76,7 @@
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
     "@babel/preset-env": "^7.9.6",
     "@babel/preset-flow": "^7.9.0",
-    "@babel/preset-react": "^7.9.4",
+    "@babel/preset-react": "^7.12.13",
     "@types/classnames": "^2.2.11",
     "@types/domhandler": "^2.4.1",
     "@types/draft-convert": "^2.1.1",
