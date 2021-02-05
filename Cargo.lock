@@ -553,7 +553,17 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57d24c7a13c43e870e37c1556b74555437870a04514f7685f5b354e090567171"
 dependencies = [
- "core-foundation-sys",
+ "core-foundation-sys 0.7.0",
+ "libc",
+]
+
+[[package]]
+name = "core-foundation"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a89e2ae426ea83155dccf10c0fa6b1463ef6d5fcb44cee0b224a408fa640a62"
+dependencies = [
+ "core-foundation-sys 0.8.2",
  "libc",
 ]
 
@@ -562,6 +572,12 @@ name = "core-foundation-sys"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b3a71ab494c0b5b860bdc8407ae08978052417070c2ced38573a9157ad75b8ac"
+
+[[package]]
+name = "core-foundation-sys"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea221b5284a47e40033bf9b66f35f984ec0ea2931eb03505246cd27a963f981b"
 
 [[package]]
 name = "cpuid-bool"
@@ -663,6 +679,15 @@ name = "ct-logs"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4d3686f5fa27dbc1d76c751300376e167c5a43387f44bb451fd1c24776e49113"
+dependencies = [
+ "sct",
+]
+
+[[package]]
+name = "ct-logs"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1a816186fa68d9e426e3cb4ae4dff1fcd8e4a2c34b781bf7a822574a0d0aac8"
 dependencies = [
  "sct",
 ]
@@ -933,7 +958,7 @@ dependencies = [
  "structopt",
  "tokio 1.1.1",
  "tokio-compat-02",
- "yup-oauth2",
+ "yup-oauth2 5.0.2",
 ]
 
 [[package]]
@@ -1274,7 +1299,7 @@ source = "git+https://github.com/google-apis-rs/generator#9ad1f063e5046f2f404ea7
 dependencies = [
  "hyper 0.13.9",
  "tokio 0.2.25",
- "yup-oauth2",
+ "yup-oauth2 4.1.3",
 ]
 
 [[package]]
@@ -1565,7 +1590,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "719d85c7df4a7f309a77d145340a063ea929dcb2e025bae46a80345cffec2952"
 dependencies = [
  "bytes 0.4.12",
- "ct-logs",
+ "ct-logs 0.6.0",
  "futures 0.1.30",
  "hyper 0.12.35",
  "rustls 0.16.0",
@@ -1582,12 +1607,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac965ea399ec3a25ac7d13b8affd4b8f39325cca00858ddf5eb29b79e6b14b08"
 dependencies = [
  "bytes 0.5.6",
- "ct-logs",
+ "ct-logs 0.6.0",
  "futures-util",
  "hyper 0.13.9",
  "log",
  "rustls 0.17.0",
- "rustls-native-certs",
+ "rustls-native-certs 0.3.0",
  "tokio 0.2.25",
  "tokio-rustls 0.13.1",
  "webpki",
@@ -1599,10 +1624,12 @@ version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f9f7a97316d44c0af9b0301e65010573a853a9fc97046d7331d7f6bc0fd5a64"
 dependencies = [
+ "ct-logs 0.8.0",
  "futures-util",
  "hyper 0.14.2",
  "log",
  "rustls 0.19.0",
+ "rustls-native-certs 0.5.0",
  "tokio 1.1.1",
  "tokio-rustls 0.22.0",
  "webpki",
@@ -3079,7 +3106,19 @@ dependencies = [
  "openssl-probe",
  "rustls 0.17.0",
  "schannel",
- "security-framework",
+ "security-framework 0.4.4",
+]
+
+[[package]]
+name = "rustls-native-certs"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a07b7c1885bd8ed3831c289b7870b13ef46fe0e856d288c30d9cc17d75a2092"
+dependencies = [
+ "openssl-probe",
+ "rustls 0.19.0",
+ "schannel",
+ "security-framework 2.0.0",
 ]
 
 [[package]]
@@ -3138,10 +3177,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64808902d7d99f78eaddd2b4e2509713babc3dc3c85ad6f4c447680f3c01e535"
 dependencies = [
  "bitflags",
- "core-foundation",
- "core-foundation-sys",
+ "core-foundation 0.7.0",
+ "core-foundation-sys 0.7.0",
  "libc",
- "security-framework-sys",
+ "security-framework-sys 0.4.3",
+]
+
+[[package]]
+name = "security-framework"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1759c2e3c8580017a484a7ac56d3abc5a6c1feadf88db2f3633f12ae4268c69"
+dependencies = [
+ "bitflags",
+ "core-foundation 0.9.1",
+ "core-foundation-sys 0.8.2",
+ "libc",
+ "security-framework-sys 2.0.0",
 ]
 
 [[package]]
@@ -3150,7 +3202,17 @@ version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17bf11d99252f512695eb468de5516e5cf75455521e69dfe343f3b74e4748405"
 dependencies = [
- "core-foundation-sys",
+ "core-foundation-sys 0.7.0",
+ "libc",
+]
+
+[[package]]
+name = "security-framework-sys"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f99b9d5e26d2a71633cc4f2ebae7cc9f874044e0c351a27e17892d76dce5678b"
+dependencies = [
+ "core-foundation-sys 0.8.2",
  "libc",
 ]
 
@@ -4390,6 +4452,28 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio 0.2.25",
+ "url 2.2.0",
+]
+
+[[package]]
+name = "yup-oauth2"
+version = "5.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01a1ff787510da0d5e5e79b49650f5353b955e2d773358629e5e9106d9a139c6"
+dependencies = [
+ "base64 0.12.3",
+ "chrono",
+ "futures 0.3.12",
+ "http 0.2.3",
+ "hyper 0.14.2",
+ "hyper-rustls 0.22.1",
+ "log",
+ "percent-encoding 2.1.0",
+ "rustls 0.19.0",
+ "seahash",
+ "serde",
+ "serde_json",
+ "tokio 1.1.1",
  "url 2.2.0",
 ]
 
