@@ -6,6 +6,7 @@ import "exocore/store/entity.proto";
 import "google/protobuf/timestamp.proto";
 
 message EntityQuery {
+    // Main search predicate on individual traits of the entity.
     oneof predicate {
         MatchPredicate match = 1;
         TraitPredicate trait = 2;
