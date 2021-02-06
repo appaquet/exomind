@@ -22,6 +22,7 @@ const DEFAULT_DIALING_MESSAGE_TIMEOUT: Duration = Duration::from_secs(5);
 ///     Exocore's transport.
 ///   * Outgoing messages from Exocore's transport to be dispatched to the
 ///     protocol handler.
+#[derive(Default)]
 pub struct ExocoreBehaviour {
     actions: VecDeque<BehaviourAction>,
     peers: HashMap<PeerId, Peer>,
@@ -30,13 +31,6 @@ pub struct ExocoreBehaviour {
 type BehaviourAction = NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehaviourEvent>;
 
 impl ExocoreBehaviour {
-    pub fn new() -> ExocoreBehaviour {
-        ExocoreBehaviour {
-            actions: VecDeque::new(),
-            peers: HashMap::new(),
-        }
-    }
-
     pub fn send_message(
         &mut self,
         peer_id: PeerId,
@@ -89,22 +83,25 @@ impl ExocoreBehaviour {
         let peer_id = *node.peer_id();
         let addresses = node.p2p_addresses();
 
-        if let Some(current_peer) = self.peers.get(&peer_id) {
+        if let Some(current_peer) = self.peers.get_mut(&peer_id) {
             if current_peer.addresses == addresses {
-                // no need to update, peer already exist with same addr
+                // we stop here if addresses match to prevent re-dialing again
                 return;
             }
-        }
 
-        self.peers.insert(
-            peer_id,
-            Peer {
-                addresses,
-                node: node.clone(),
-                temp_queue: VecDeque::new(),
-                status: PeerStatus::Disconnected,
-            },
-        );
+            // update peer addresses
+            current_peer.addresses = addresses;
+        } else {
+            self.peers.insert(
+                peer_id,
+                Peer {
+                    addresses,
+                    node: node.clone(),
+                    temp_queue: VecDeque::new(),
+                    status: PeerStatus::Disconnected,
+                },
+            );
+        }
 
         self.dial_peer(peer_id);
     }
@@ -114,12 +111,6 @@ impl ExocoreBehaviour {
             peer_id,
             condition: DialPeerCondition::Disconnected,
         });
-    }
-}
-
-impl Default for ExocoreBehaviour {
-    fn default() -> Self {
-        ExocoreBehaviour::new()
     }
 }
 

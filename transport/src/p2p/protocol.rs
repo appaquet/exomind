@@ -211,7 +211,7 @@ impl UpgradeInfo for ExocoreProtoConfig {
     type InfoIter = iter::Once<Self::Info>;
 
     fn protocol_info(&self) -> Self::InfoIter {
-        iter::once(b"/exocore/1.0.0")
+        iter::once(b"/exocore/0.1.0")
     }
 }
 

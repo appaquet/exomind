@@ -9,8 +9,11 @@ use exocore_core::utils::handle_set::HandleSet;
 use futures::channel::mpsc;
 use futures::prelude::*;
 use futures::{FutureExt, SinkExt, StreamExt};
-use libp2p::core::PeerId;
-use libp2p::swarm::Swarm;
+use libp2p::identify::{Identify, IdentifyEvent};
+use libp2p::ping::{Ping, PingEvent};
+use libp2p::swarm::{NetworkBehaviourEventProcess, Swarm};
+use libp2p::Multiaddr;
+use libp2p::{core::PeerId, NetworkBehaviour};
 
 use super::{
     behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage, PeerStatus},
@@ -83,7 +86,16 @@ impl Libp2pTransport {
 
     /// Runs the transport to completion.
     pub async fn run(self) -> Result<(), Error> {
-        let behaviour = ExocoreBehaviour::new();
+        let behaviour = CombinedBehaviour {
+            service_handles: Arc::clone(&self.service_handles),
+            exocore: ExocoreBehaviour::default(),
+            ping: Ping::default(),
+            identify: Identify::new(
+                "/exocore/0.1.0".into(),
+                "exocore".into(),
+                self.local_node.public_key().to_libp2p().clone(),
+            ),
+        };
 
         #[cfg(all(feature = "p2p-web", target_arch = "wasm32"))]
         let mut swarm = {
@@ -145,7 +157,7 @@ impl Libp2pTransport {
         {
             let inner = self.service_handles.read()?;
             for node in inner.all_peer_nodes().values() {
-                swarm.add_node_peer(node);
+                swarm.exocore.add_node_peer(node);
             }
         }
 
@@ -155,15 +167,16 @@ impl Libp2pTransport {
         // Spawn the main Future which will take care of the swarm
         let inner = Arc::clone(&self.service_handles);
         let swarm_task = future::poll_fn(move |cx: &mut Context| -> Poll<()> {
+            // At interval, re-add all nodes to make sure that their newer addresses are added.
             if let Poll::Ready(_) = nodes_update_interval.poll_tick(cx) {
                 if let Ok(inner) = inner.read() {
                     for node in inner.all_peer_nodes().values() {
-                        swarm.add_node_peer(node);
+                        swarm.exocore.add_node_peer(node);
                     }
                 }
             }
 
-            // we drain all messages coming from handles that need to be sent
+            // Drain all messages coming from handles that need to be sent to other nodes
             while let Poll::Ready(Some(event)) = out_receiver.poll_next_unpin(cx) {
                 match event {
                     OutEvent::Message(msg) => {
@@ -179,7 +192,7 @@ impl Libp2pTransport {
                         // prevent cloning frame if we only send to 1 node
                         if msg.to.len() == 1 {
                             let to_node = msg.to.first().unwrap();
-                            swarm.send_message(
+                            swarm.exocore.send_message(
                                 *to_node.peer_id(),
                                 msg.expiration,
                                 connection,
@@ -187,7 +200,7 @@ impl Libp2pTransport {
                             );
                         } else {
                             for to_node in msg.to {
-                                swarm.send_message(
+                                swarm.exocore.send_message(
                                     *to_node.peer_id(),
                                     msg.expiration,
                                     connection,
@@ -199,23 +212,8 @@ impl Libp2pTransport {
                 }
             }
 
-            // we poll the behaviour for incoming messages to be dispatched to handles
-            while let Poll::Ready(Some(data)) = swarm.poll_next_unpin(cx) {
-                match data {
-                    ExocoreBehaviourEvent::Message(msg) => {
-                        trace!("Got message from {}", msg.source);
-
-                        if let Err(err) = Self::dispatch_message(&inner, msg) {
-                            warn!("Couldn't dispatch message: {}", err);
-                        }
-                    }
-                    ExocoreBehaviourEvent::PeerStatus(peer_id, status) => {
-                        if let Err(err) = Self::dispatch_node_status(&inner, peer_id, status) {
-                            warn!("Couldn't dispatch node status: {}", err);
-                        }
-                    }
-                }
-            }
+            // Poll the swarm to complete its job
+            while let Poll::Ready(_event) = swarm.poll_next_unpin(cx) {}
 
             Poll::Pending
         });
@@ -251,84 +249,174 @@ impl Libp2pTransport {
 
         Ok(())
     }
+}
 
-    /// Dispatches a received message from libp2p to corresponding handle
-    fn dispatch_message(
-        inner: &RwLock<ServiceHandles>,
-        message: ExocoreBehaviourMessage,
-    ) -> Result<(), Error> {
-        let frame = TypedCapnpFrame::<_, envelope::Owned>::new(message.data)?;
-        let frame_reader: envelope::Reader = frame.get_reader()?;
-        let cell_id_bytes = frame_reader.get_cell_id()?;
+/// Behaviour that combines exocore, ping and identify behaviours.
+#[derive(NetworkBehaviour)]
+struct CombinedBehaviour {
+    #[behaviour(ignore)]
+    service_handles: Arc<RwLock<ServiceHandles>>,
 
-        let mut inner = inner.write()?;
+    exocore: ExocoreBehaviour,
+    ping: Ping,
+    identify: Identify,
+}
 
-        let cell_id = CellId::from_bytes(&cell_id_bytes);
-        let service_type = ServiceType::from_code(frame_reader.get_service()).ok_or_else(|| {
-            Error::Other(format!(
-                "Message has invalid service_type {}",
-                frame_reader.get_service()
-            ))
-        })?;
+impl NetworkBehaviourEventProcess<ExocoreBehaviourEvent> for CombinedBehaviour {
+    fn inject_event(&mut self, event: ExocoreBehaviourEvent) {
+        match event {
+            ExocoreBehaviourEvent::Message(msg) => {
+                trace!("Got message from {}", msg.source);
 
-        let key = (cell_id, service_type);
-        let service_handle = if let Some(service_handle) = inner.service_handles.get_mut(&key) {
-            service_handle
-        } else {
-            return Err(Error::Other(format!(
-                "Couldn't find transport for service & cell {:?}",
-                key
-            )));
-        };
-
-        let source_node = Self::get_node_by_peer(&service_handle.cell, message.source)?;
-        let mut msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
-        msg.connection = Some(ConnectionID::Libp2p(message.connection));
-
-        service_handle
-            .in_sender
-            .try_send(InEvent::Message(msg))
-            .map_err(|err| Error::Other(format!("Couldn't send message to cell service: {}", err)))
-    }
-
-    /// Dispatches a node status change.
-    fn dispatch_node_status(
-        inner: &RwLock<ServiceHandles>,
-        peer_id: PeerId,
-        peer_status: PeerStatus,
-    ) -> Result<(), Error> {
-        let mut inner = inner.write()?;
-
-        let status = match peer_status {
-            PeerStatus::Connected => ConnectionStatus::Connected,
-            PeerStatus::Disconnected => ConnectionStatus::Disconnected,
-        };
-
-        for handle in inner.service_handles.values_mut() {
-            if let Ok(node) = Self::get_node_by_peer(&handle.cell, peer_id) {
-                handle
-                    .in_sender
-                    .try_send(InEvent::NodeStatus(node.id().clone(), status))
-                    .map_err(|err| {
-                        Error::Other(format!("Couldn't send message to cell service: {}", err))
-                    })?;
+                if let Err(err) = dispatch_message(&self.service_handles, msg) {
+                    warn!("Couldn't dispatch message: {}", err);
+                }
+            }
+            ExocoreBehaviourEvent::PeerStatus(peer_id, status) => {
+                if let Err(err) = dispatch_node_status(&self.service_handles, peer_id, status) {
+                    warn!("Couldn't dispatch node status: {}", err);
+                }
             }
         }
+    }
+}
 
-        Ok(())
+impl NetworkBehaviourEventProcess<PingEvent> for CombinedBehaviour {
+    fn inject_event(&mut self, event: PingEvent) {
+        match event.result {
+            Ok(success) => {
+                // TODO: We could save round-trip time to node. Could be use for node selection.
+                debug!("Successfully pinged peer {}: {:?}", event.peer, success);
+            }
+            Err(failure) => {
+                debug!("Failed to ping peer {}: {}", event.peer, failure);
+            }
+        }
+    }
+}
+
+impl NetworkBehaviourEventProcess<IdentifyEvent> for CombinedBehaviour {
+    fn inject_event(&mut self, event: IdentifyEvent) {
+        match event {
+            IdentifyEvent::Received {
+                peer_id,
+                info: _,
+                observed_addr,
+            } => {
+                debug!(
+                    "Received identify response for node {} with address {}",
+                    peer_id, observed_addr
+                );
+                if let Err(err) = add_node_address(&self.service_handles, peer_id, observed_addr) {
+                    warn!(
+                        "Failed add potentially new address to identified peer: {}, {}",
+                        peer_id, err
+                    );
+                }
+            }
+            IdentifyEvent::Sent { peer_id: _ } => {}
+            IdentifyEvent::Error {
+                peer_id: _,
+                error: _,
+            } => {}
+        }
+    }
+}
+
+/// Dispatches a received message from libp2p to corresponding handle
+fn dispatch_message(
+    inner: &RwLock<ServiceHandles>,
+    message: ExocoreBehaviourMessage,
+) -> Result<(), Error> {
+    let frame = TypedCapnpFrame::<_, envelope::Owned>::new(message.data)?;
+    let frame_reader: envelope::Reader = frame.get_reader()?;
+    let cell_id_bytes = frame_reader.get_cell_id()?;
+
+    let mut inner = inner.write()?;
+
+    let cell_id = CellId::from_bytes(&cell_id_bytes);
+    let service_type = ServiceType::from_code(frame_reader.get_service()).ok_or_else(|| {
+        Error::Other(format!(
+            "Message has invalid service_type {}",
+            frame_reader.get_service()
+        ))
+    })?;
+
+    let key = (cell_id, service_type);
+    let service_handle = if let Some(service_handle) = inner.service_handles.get_mut(&key) {
+        service_handle
+    } else {
+        return Err(Error::Other(format!(
+            "Couldn't find transport for service & cell {:?}",
+            key
+        )));
+    };
+
+    let source_node = get_node_by_peer(&service_handle.cell, message.source)?;
+    let mut msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
+    msg.connection = Some(ConnectionID::Libp2p(message.connection));
+
+    service_handle
+        .in_sender
+        .try_send(InEvent::Message(msg))
+        .map_err(|err| Error::Other(format!("Couldn't send message to cell service: {}", err)))
+}
+
+/// Dispatches a node status change.
+fn dispatch_node_status(
+    inner: &RwLock<ServiceHandles>,
+    peer_id: PeerId,
+    peer_status: PeerStatus,
+) -> Result<(), Error> {
+    let mut inner = inner.write()?;
+
+    let status = match peer_status {
+        PeerStatus::Connected => ConnectionStatus::Connected,
+        PeerStatus::Disconnected => ConnectionStatus::Disconnected,
+    };
+
+    for handle in inner.service_handles.values_mut() {
+        if let Ok(node) = get_node_by_peer(&handle.cell, peer_id) {
+            handle
+                .in_sender
+                .try_send(InEvent::NodeStatus(node.id().clone(), status))
+                .map_err(|err| {
+                    Error::Other(format!("Couldn't send message to cell service: {}", err))
+                })?;
+        }
     }
 
-    fn get_node_by_peer(cell: &Cell, peer_id: PeerId) -> Result<Node, Error> {
-        let node_id = NodeId::from_peer_id(peer_id);
-        let cell_nodes = cell.nodes();
+    Ok(())
+}
 
-        if let Some(source_node) = cell_nodes.get(&node_id) {
-            Ok(source_node.node().clone())
-        } else {
-            Err(Error::Other(format!(
-                "Couldn't find node with id {} in local nodes",
-                node_id
-            )))
+/// Try to add a node address discovered through identify if it doesn't already exist.
+fn add_node_address(
+    inner: &RwLock<ServiceHandles>,
+    peer_id: PeerId,
+    addr: Multiaddr,
+) -> Result<(), Error> {
+    let inner = inner.read()?;
+
+    for handle in inner.service_handles.values() {
+        if let Ok(node) = get_node_by_peer(&handle.cell, peer_id) {
+            node.add_p2p_address(addr.clone());
         }
+    }
+
+    Ok(())
+}
+
+/// Returns the node of a cell that has the given libp2p peer id.
+fn get_node_by_peer(cell: &Cell, peer_id: PeerId) -> Result<Node, Error> {
+    let node_id = NodeId::from_peer_id(peer_id);
+    let cell_nodes = cell.nodes();
+
+    if let Some(source_node) = cell_nodes.get(&node_id) {
+        Ok(source_node.node().clone())
+    } else {
+        Err(Error::Other(format!(
+            "Couldn't find node with id {} in local nodes",
+            node_id
+        )))
     }
 }
