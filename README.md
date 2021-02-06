@@ -27,7 +27,7 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 * **File storage**
 
 ## Apps
-<img src="https://user-images.githubusercontent.com/129552/107126276-e4df3980-687c-11eb-8bf7-8d57afd46774.gif" height="350" />   <img src="https://user-images.githubusercontent.com/129552/107126280-e6a8fd00-687c-11eb-9a00-5e2405bfcc59.gif" height="350" />
+<img src="https://user-images.githubusercontent.com/129552/107126442-fb39c500-687d-11eb-8e61-39d66a3edf3d.gif" height="350" />   <img src="https://user-images.githubusercontent.com/129552/107126280-e6a8fd00-687c-11eb-9a00-5e2405bfcc59.gif" height="350" />
 
 ## Dependencies
 * Install dependencies from [Exocore](https://github.com/appaquet/exocore) and follow web and iOS.
