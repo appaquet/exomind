@@ -29,7 +29,7 @@ chrono = { version = "0.4", features = ["serde"] }
 smallvec = "1.6"
 
 # Local store
-tantivy = { version = "0.13", optional = true }
+tantivy = { version = "0.14", optional = true }
 crc = { version = "1.8", optional = true }
 lru = { version = "0.6", optional = true }
 
