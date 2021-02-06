@@ -26,6 +26,11 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 * **Node discovery** (i.e. no manual cell's nodes configuration)
 * **File storage**
 
+## Apps
+### Web/ Electron
+
+### iOS
+
 ## Dependencies
 * Install dependencies from [Exocore](https://github.com/appaquet/exocore) and follow web and iOS.
 
