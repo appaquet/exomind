@@ -1,7 +1,7 @@
 [package]
 name = "exocore-store"
 description = "Store layer of Exocore (Distributed applications framework)"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 keywords = ["networking", "mobile", "webassembly", "storage", "database"]
@@ -15,9 +15,9 @@ local = ["tantivy", "exocore-chain/engine", "crc", "lru"]
 tests-utils = []
 
 [dependencies]
-exocore-chain = { version = "0.1.2", path = "../chain", default-features = false }
-exocore-transport = {version = "0.1.2",  path = "../transport", default-features = false }
-exocore-core = { version = "0.1.2", path = "../core" }
+exocore-chain = { version = "0.1.3", path = "../chain", default-features = false }
+exocore-transport = {version = "0.1.3",  path = "../transport", default-features = false }
+exocore-core = { version = "0.1.3", path = "../core" }
 thiserror = "1.0"
 anyhow = "1.0"
 itertools = "0.10"
@@ -35,6 +35,6 @@ lru = { version = "0.6", optional = true }
 
 [dev-dependencies]
 tempfile = "3.2"
-exocore-chain = { version = "0.1.2", path = "../chain", features = ["tests-utils"] }
-exocore-core = { version = "0.1.2", path = "../core", features = ["tests-utils"] }
+exocore-chain = { version = "0.1.3", path = "../chain", features = ["tests-utils"] }
+exocore-core = { version = "0.1.3", path = "../core", features = ["tests-utils"] }
 tokio = { version = "1.1", features = ["macros"], default-features = false }

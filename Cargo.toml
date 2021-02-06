@@ -1,7 +1,7 @@
 [package]
 name = "exocore"
 description = "Distributed applications framework"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 keywords = ["networking", "mobile", "webassembly", "storage", "database"]
@@ -38,14 +38,14 @@ chain-memory-pending = ["exocore-chain/memory-pending"]
 discovery-server = ["exocore-discovery/server"]
 
 [dependencies]
-exocore-core = { version = "0.1.2", path = "./core", default-features = false }
-exocore-transport = { version = "0.1.2", path = "./transport", default-features = false }
-exocore-store = { version = "0.1.2", path = "./store", default-features = false }
-exocore-chain = { version = "0.1.2", path = "./chain", default-features = false }
-exocore-discovery = { version = "0.1.2", path = "./discovery", default-features = false }
+exocore-core = { version = "0.1.3", path = "./core", default-features = false }
+exocore-transport = { version = "0.1.3", path = "./transport", default-features = false }
+exocore-store = { version = "0.1.3", path = "./store", default-features = false }
+exocore-chain = { version = "0.1.3", path = "./chain", default-features = false }
+exocore-discovery = { version = "0.1.3", path = "./discovery", default-features = false }
 
 [dev-dependencies]
-exocore-core = { version = "0.1.2", path = "./core", features = ["tests-utils"] }
+exocore-core = { version = "0.1.3", path = "./core", features = ["tests-utils"] }
 
 [workspace]
 members = [
