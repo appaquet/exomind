@@ -99,6 +99,7 @@ impl ExocoreBehaviour {
                     node: node.clone(),
                     temp_queue: VecDeque::new(),
                     status: PeerStatus::Disconnected,
+                    last_dial: Instant::now(),
                 },
             );
         }
@@ -210,6 +211,21 @@ impl NetworkBehaviour for ExocoreBehaviour {
         _ctx: &mut Context,
         _params: &mut impl PollParameters,
     ) -> Poll<NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehaviourEvent>> {
+        // check if we could try to dial to disconnected nodes
+        for (peer_id, peer) in &mut self.peers {
+            let elapsed = peer.last_dial.elapsed();
+            if !peer.addresses.is_empty()
+                && peer.status == PeerStatus::Disconnected
+                && elapsed >= Duration::from_secs(5)
+            {
+                peer.last_dial = Instant::now();
+                self.actions.push_back(NetworkBehaviourAction::DialPeer {
+                    peer_id: *peer_id,
+                    condition: DialPeerCondition::Disconnected,
+                });
+            }
+        }
+
         if let Some(event) = self.actions.pop_front() {
             return Poll::Ready(event);
         }
@@ -225,6 +241,7 @@ struct Peer {
     node: Node,
     temp_queue: VecDeque<QueuedPeerEvent>,
     status: PeerStatus,
+    last_dial: Instant,
 }
 
 impl Peer {

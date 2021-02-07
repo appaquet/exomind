@@ -47,9 +47,13 @@ export class WatchedQueryWrapper {
 
     onChange(cb: (results: exocore.store.EntityResults) => void): WatchedQueryWrapper {
         this.inner.on_change(() => {
-            const resultsData: Uint8Array = this.inner.get();
-            const res = exocore.store.EntityResults.decode(resultsData);
-            cb(res);
+            try {
+                const resultsData: Uint8Array = this.inner.get();
+                const res = exocore.store.EntityResults.decode(resultsData);
+                cb(res);
+            } catch (e) {
+                console.log(`Failed to update watched query result: ${e}`);
+            }
         })
         return this;
     }
