@@ -770,9 +770,9 @@ dependencies = [
 
 [[package]]
 name = "exocore"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f2101cbc197db2026812c10d1767fe9e373f45ffb486724545c87e5cb06ade4"
+checksum = "9d6e0a3bbdd61abfe45168dbcef504ef6085400025478181cca25c1a30e3f1f1"
 dependencies = [
  "exocore-chain",
  "exocore-core",
@@ -783,9 +783,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-chain"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11789ddc9df30f449ce590faf3ecddb541bd2136d8aa992231bd5509fe9ee4dc"
+checksum = "a70d0034f9b121e4541f80a5b1e3ad8d1f2d2b8c0293c1d1f71316aa1e0a2793"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -800,9 +800,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-core"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7842ca6cc216fab97cc95aa7fabbace39106658e0d5a700c477b0fe24cbf1d30"
+checksum = "0a7dc040cede5d49972d02783d202a38ccf7c3b548c29cb4d9b4bd9a61448826"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -840,9 +840,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-discovery"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "297ad617aa5395b317595aaabd56a3bd96dec005e9eb77326e582881af342e6e"
+checksum = "f2d8bc4447d03d6a0bdc947a801e53f7904a1d575afce54671483b96d8fda793"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -860,9 +860,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-store"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c72a26e887dfe616fd6b3ad99b5ac942becc71c42d6ecee5f9e9b4fd34b8032"
+checksum = "6cfc10d304b04283ebe6f76ed0cb959255740fc6b94061b8c6a252de1ec8efb0"
 dependencies = [
  "anyhow",
  "bytes 1.0.1",
@@ -880,9 +880,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-transport"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5acaaea342fd697a4951f3e5f44b08cefbb2209236abeab4d166bb910de2dac"
+checksum = "129645beb3ec1f13ef1f1702190e1f3719cb7e9ffecb4b20013962c7f7d826c8"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1778,8 +1778,10 @@ dependencies = [
  "libp2p-core",
  "libp2p-core-derive",
  "libp2p-dns",
+ "libp2p-identify",
  "libp2p-mplex",
  "libp2p-noise",
+ "libp2p-ping",
  "libp2p-swarm",
  "libp2p-tcp",
  "libp2p-websocket",
@@ -1847,6 +1849,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "libp2p-identify"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b40fb36a059b7a8cce1514bd8b546fa612e006c9937caa7f5950cb20021fe91e"
+dependencies = [
+ "futures 0.3.12",
+ "libp2p-core",
+ "libp2p-swarm",
+ "log",
+ "prost",
+ "prost-build",
+ "smallvec 1.6.1",
+ "wasm-timer",
+]
+
+[[package]]
 name = "libp2p-mplex"
 version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1884,6 +1902,21 @@ dependencies = [
  "static_assertions",
  "x25519-dalek",
  "zeroize",
+]
+
+[[package]]
+name = "libp2p-ping"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f3813276d0708c8db0f500d8beda1bda9ad955723b9cb272c41f4727256f73c"
+dependencies = [
+ "futures 0.3.12",
+ "libp2p-core",
+ "libp2p-swarm",
+ "log",
+ "rand 0.7.3",
+ "void",
+ "wasm-timer",
 ]
 
 [[package]]
