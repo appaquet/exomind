@@ -41,7 +41,7 @@
     }
   },
   "dependencies": {
-    "@babel/preset-typescript": "^7.12.13",
+    "@babel/preset-typescript": "^7.12.16",
     "bootstrap": "^3.3.5",
     "classnames": "^2.2.6",
     "clipboard-copy": "^4.0.1",
