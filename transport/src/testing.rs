@@ -3,6 +3,7 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex, Weak};
 use std::task::{Context, Poll};
 
+use exocore_core::futures::spawn_future;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
 use exocore_core::{cell::Cell, framing::CapnpFrameBuilder};
 use exocore_core::{
@@ -10,9 +11,7 @@ use exocore_core::{
     futures::owned_spawn,
     futures::OwnedSpawn,
 };
-use exocore_core::{
-    futures::spawn_future, protos::generated::data_chain_capnp::block_operation_header,
-};
+use exocore_protos::generated::data_chain_capnp::block_operation_header;
 use futures::channel::mpsc;
 use futures::prelude::*;
 use futures::stream::Peekable;

@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use super::{Application, ApplicationId, Error};
-use crate::protos::generated::exocore_core::{cell_application_config, CellApplicationConfig};
-use crate::protos::registry::Registry;
+use exocore_protos::generated::exocore_core::{cell_application_config, CellApplicationConfig};
+use exocore_protos::registry::Registry;
 
 /// Applications installed in a cell.
 #[derive(Clone)]

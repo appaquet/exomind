@@ -1,10 +1,8 @@
 use std::{rc::Rc, time::Duration};
 
-use exocore_core::{
-    cell::{CellConfigExt, LocalNodeConfigExt},
-    protos::core::{node_cell_config, CellConfig, NodeCellConfig},
-};
+use exocore_core::cell::{CellConfigExt, LocalNodeConfigExt};
 use exocore_discovery::{Client, DEFAULT_DISCO_SERVER};
+use exocore_protos::core::{node_cell_config, CellConfig, NodeCellConfig};
 use futures::{channel::oneshot, future::Shared, FutureExt};
 use wasm_bindgen::prelude::*;
 

@@ -32,7 +32,7 @@ pub enum EngineError {
     UninitializedChain,
 
     #[error("Error in capnp serialization: {0}")]
-    Serialization(#[from] exocore_core::capnp::Error),
+    Serialization(#[from] exocore_protos::capnp::Error),
 
     #[error("Field is not in capnp schema: code={0}")]
     SerializationNotInSchema(u16),
@@ -81,8 +81,8 @@ impl<T> From<std::sync::PoisonError<T>> for EngineError {
     }
 }
 
-impl From<exocore_core::capnp::NotInSchema> for EngineError {
-    fn from(err: exocore_core::capnp::NotInSchema) -> Self {
+impl From<exocore_protos::capnp::NotInSchema> for EngineError {
+    fn from(err: exocore_protos::capnp::NotInSchema) -> Self {
         EngineError::SerializationNotInSchema(err.0)
     }
 }

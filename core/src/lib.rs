@@ -1,19 +1,14 @@
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate serde_derive;
 
 #[cfg(any(test, feature = "tests-utils"))]
 #[macro_use]
 extern crate anyhow;
 
-pub extern crate capnp;
-pub mod protos;
-pub(crate) use self::protos::generated::{common_capnp, data_chain_capnp, data_transport_capnp}; // generated capnp protos expect to be at root
-
 pub mod cell;
 pub mod framing;
 pub mod futures;
+
 #[cfg(feature = "logger")]
 pub mod logging;
 pub mod sec;

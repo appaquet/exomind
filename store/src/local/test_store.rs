@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use chrono::Utc;
 use exocore_chain::{tests_utils::TestChainCluster, DirectoryChainStore, MemoryPendingStore};
-use exocore_core::protos::{
+use exocore_protos::{
     generated::{
         exocore_store::{EntityQuery, EntityResults, MutationResult, Trait},
         exocore_test::TestMessage,

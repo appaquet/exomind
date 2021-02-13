@@ -10,15 +10,15 @@ use exocore_core::{
     cell::{Cell, CellNodeRole, Node, NodeId},
     framing::CapnpFrameBuilder,
     futures::interval,
-    protos::generated::{
-        exocore_store::{EntityQuery, EntityResults, MutationRequest, MutationResult},
-        store_transport_capnp::{
-            mutation_response, query_response, unwatch_query_request, watched_query_response,
-        },
-        MessageType,
-    },
     time::{Clock, ConsistentTimestamp, Instant},
     utils::handle_set::{Handle, HandleSet},
+};
+use exocore_protos::generated::{
+    exocore_store::{EntityQuery, EntityResults, MutationRequest, MutationResult},
+    store_transport_capnp::{
+        mutation_response, query_response, unwatch_query_request, watched_query_response,
+    },
+    MessageType,
 };
 use exocore_transport::{
     transport::ConnectionStatus, InEvent, InMessage, OutEvent, OutMessage, ServiceType,

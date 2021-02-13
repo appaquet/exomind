@@ -1,12 +1,12 @@
-use exocore_core::capnp;
 use exocore_core::cell::{LocalNode, NodeId};
 use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
     SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
 };
-use exocore_core::protos::generated::data_chain_capnp::{block_signature, chain_operation};
 use exocore_core::sec::hash::Sha3_256;
 use exocore_core::sec::signature::Signature;
+use exocore_protos::capnp;
+use exocore_protos::generated::data_chain_capnp::{block_signature, chain_operation};
 
 use crate::block::Block;
 

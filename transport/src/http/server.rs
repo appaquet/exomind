@@ -2,16 +2,18 @@ use std::net::Ipv4Addr;
 use std::{borrow::Cow, sync::Arc};
 
 use exocore_core::{
-    capnp,
     cell::{Cell, CellNodes, LocalNode, Node},
     framing::{CapnpFrameBuilder, FrameBuilder},
     futures::block_on,
-    protos::generated::store_transport_capnp::{
-        mutation_request, mutation_response, query_request, query_response,
-    },
     sec::auth_token::AuthToken,
     time::Clock,
     utils::handle_set::HandleSet,
+};
+use exocore_protos::{
+    capnp,
+    generated::store_transport_capnp::{
+        mutation_request, mutation_response, query_request, query_response,
+    },
 };
 use futures::{channel::mpsc, lock::Mutex, FutureExt, StreamExt};
 use hyper::{

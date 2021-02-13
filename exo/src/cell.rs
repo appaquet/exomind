@@ -7,22 +7,22 @@ use exocore_chain::{
     operation::{OperationFrame, OperationId},
     DirectoryChainStore, DirectoryChainStoreConfig,
 };
-use exocore_core::protos::core::{cell_application_config, CellApplicationConfig};
 use exocore_core::{
     cell::{
         Cell, CellConfigExt, CellId, EitherCell, FullCell, LocalNode, LocalNodeConfigExt,
         NodeConfigExt,
     },
     framing::{sized::SizedFrameReaderIterator, FrameReader},
-    protos::{
-        core::{
-            cell_node_config, node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig,
-            NodeCellConfig, NodeConfig,
-        },
-        generated::data_chain_capnp::block_header,
-    },
     sec::{auth_token::AuthToken, keys::Keypair},
     time::Clock,
+};
+use exocore_protos::core::{cell_application_config, CellApplicationConfig};
+use exocore_protos::{
+    core::{
+        cell_node_config, node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig,
+        NodeCellConfig, NodeConfig,
+    },
+    generated::data_chain_capnp::block_header,
 };
 
 use crate::app::{fetch_package_url, read_package_path};

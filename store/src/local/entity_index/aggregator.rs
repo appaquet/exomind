@@ -6,13 +6,11 @@ use std::{
 
 use chrono::{DateTime, Utc};
 use exocore_chain::{block::BlockOffset, operation::OperationId};
-use exocore_core::{
-    protos::{
-        reflect::{FieldId, MutableReflectMessage, ReflectMessage},
-        registry::Registry,
-        store::{Projection, Trait, TraitDetails},
-    },
-    time::ConsistentTimestamp,
+use exocore_core::time::ConsistentTimestamp;
+use exocore_protos::{
+    reflect::{FieldId, MutableReflectMessage, ReflectMessage},
+    registry::Registry,
+    store::{Projection, Trait, TraitDetails},
 };
 use itertools::Itertools;
 
@@ -321,7 +319,7 @@ pub fn project_trait_fields(
         return Ok(());
     }
 
-    let mut dyn_msg = exocore_core::protos::reflect::from_prost_any(registry, any_msg)?;
+    let mut dyn_msg = exocore_protos::reflect::from_prost_any(registry, any_msg)?;
 
     let field_ids_set: HashSet<FieldId> = projection.field_ids.iter().cloned().collect();
     let field_groups_set: HashSet<FieldId> = projection.field_group_ids.iter().cloned().collect();
@@ -376,11 +374,11 @@ fn update_if_older(current: &mut Option<DateTime<Utc>>, new: Option<DateTime<Utc
 #[cfg(test)]
 pub(crate) mod tests {
     use exocore_chain::block::BlockOffset;
-    use exocore_core::protos::{
+    use exocore_protos::prost::Message;
+    use exocore_protos::{
         prost::ProstAnyPackMessageExt, reflect::FieldGroupId, store::OrderingValue,
         test::TestMessage,
     };
-    use prost::Message;
 
     use super::*;
     use crate::ordering::OrderingValueWrapper;

@@ -4,9 +4,9 @@ use std::str::FromStr;
 
 use exocore_core::cell::{Cell, CellNodes, Node};
 use exocore_core::cell::{CellNodeRole, NodeId};
-use exocore_core::protos::generated::data_chain_capnp::chain_operation;
 use exocore_core::sec::signature::Signature;
 use exocore_core::time::{Clock, ConsistentTimestamp};
+use exocore_protos::generated::data_chain_capnp::chain_operation;
 use itertools::Itertools;
 
 use crate::block::{Block, BlockOffset};

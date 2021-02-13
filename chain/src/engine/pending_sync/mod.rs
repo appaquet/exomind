@@ -8,12 +8,12 @@ pub use error::PendingSyncError;
 use exocore_core::{
     cell::{Cell, CellNodeRole, CellNodes, Node, NodeId},
     framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame},
-    protos::generated::{
-        data_chain_capnp::chain_operation_header,
-        data_transport_capnp::{pending_sync_range, pending_sync_request},
-    },
     sec::hash::{Multihash, MultihashDigestExt, Sha3_256},
     time::Clock,
+};
+use exocore_protos::generated::{
+    data_chain_capnp::chain_operation_header,
+    data_transport_capnp::{pending_sync_range, pending_sync_request},
 };
 use itertools::{EitherOrBoth, Itertools};
 pub use sync_range::{SyncRangeBuilder, SyncRangesBuilder};

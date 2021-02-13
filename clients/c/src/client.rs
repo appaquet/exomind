@@ -3,17 +3,17 @@ use std::{ffi::CString, os::raw::c_void, sync::Arc, time::Duration};
 use exocore_core::{
     cell::Cell,
     futures::Runtime,
-    protos::{
-        generated::exocore_store::EntityQuery, prost::ProstMessageExt, store::MutationRequest,
-    },
     time::{Clock, ConsistentTimestamp},
+};
+use exocore_protos::prost::Message;
+use exocore_protos::{
+    generated::exocore_store::EntityQuery, prost::ProstMessageExt, store::MutationRequest,
 };
 use exocore_store::remote::{Client as StoreClient, ClientConfiguration, ClientHandle};
 use exocore_transport::{
     p2p::Libp2pTransportConfig, Libp2pTransport, ServiceType, TransportServiceHandle,
 };
 use futures::StreamExt;
-use prost::Message;
 
 use crate::exocore_init;
 use crate::node::LocalNode;

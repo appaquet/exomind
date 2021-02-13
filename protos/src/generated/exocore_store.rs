@@ -68,11 +68,13 @@ pub struct EntityQuery {
     /// `deletion_date` field with the date of the deletion.
     #[prost(bool, tag = "12")]
     pub include_deleted: bool,
+    /// Main search predicate on individual traits of the entity.
     #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4, 10, 11, 99")]
     pub predicate: ::core::option::Option<entity_query::Predicate>,
 }
 /// Nested message and enum types in `EntityQuery`.
 pub mod entity_query {
+    /// Main search predicate on individual traits of the entity.
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Predicate {
         #[prost(message, tag = "1")]

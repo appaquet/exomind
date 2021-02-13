@@ -1,7 +1,7 @@
 use exocore_core::cell::NodeId;
 use exocore_core::cell::{Cell, CellNodes};
 use exocore_core::framing::CapnpFrameBuilder;
-use exocore_core::protos::generated::data_transport_capnp::{
+use exocore_protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_response, pending_sync_request,
 };
 use exocore_transport::{OutMessage, ServiceType};

@@ -11,10 +11,10 @@ cp $EXOCORE_C_ROOT/exocore.h $EXOCORE_IOS_ROOT/swift/exocore.h
 
 rm -rf $EXOCORE_IOS_ROOT/swift/protos
 mkdir -p $EXOCORE_IOS_ROOT/swift/protos
-protoc -I "$EXOCORE_ROOT/protos/" \
+protoc -I "$EXOCORE_ROOT/protos/protobuf/" \
   --swift_opt=Visibility=Public \
   --swift_out=$EXOCORE_IOS_ROOT/swift/protos/ \
-  $EXOCORE_ROOT/protos/exocore/core/*.proto \
-  $EXOCORE_ROOT/protos/exocore/apps/*.proto \
-  $EXOCORE_ROOT/protos/exocore/store/*.proto \
-  $EXOCORE_ROOT/protos/exocore/test/*.proto
+  $EXOCORE_ROOT/protos/protobuf/exocore/core/*.proto \
+  $EXOCORE_ROOT/protos/protobuf/exocore/apps/*.proto \
+  $EXOCORE_ROOT/protos/protobuf/exocore/store/*.proto \
+  $EXOCORE_ROOT/protos/protobuf/exocore/test/*.proto

@@ -1,3 +1,6 @@
+pub use protobuf::descriptor::FileDescriptorSet;
+pub use protobuf::Message;
+
 use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::{collections::HashMap, sync::Arc};
@@ -8,11 +11,10 @@ use protobuf::types::{
     ProtobufTypeUint32, ProtobufTypeUint64,
 };
 use protobuf::well_known_types::{Any, Empty, Timestamp};
-use protobuf::Message;
 
 use super::registry::Registry;
 use super::Error;
-use crate::protos::generated::exocore_store::Reference;
+use crate::generated::exocore_store::Reference;
 
 pub trait ReflectMessage: Debug {
     fn descriptor(&self) -> &ReflectMessageDescriptor;
@@ -269,8 +271,8 @@ mod tests {
     use chrono::Utc;
 
     use super::*;
-    use crate::protos::generated::exocore_test::TestMessage;
-    use crate::protos::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
+    use crate::generated::exocore_test::TestMessage;
+    use crate::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
 
     #[test]
     fn reflect_dyn_message() -> anyhow::Result<()> {

@@ -90,6 +90,22 @@ impl Into<DateTime<Utc>> for ConsistentTimestamp {
     }
 }
 
+impl Into<exocore_protos::prost::Timestamp> for ConsistentTimestamp {
+    fn into(self) -> exocore_protos::prost::Timestamp {
+        let dt = self.to_datetime();
+        exocore_protos::prost::Timestamp {
+            seconds: dt.timestamp(),
+            nanos: dt.timestamp_subsec_nanos() as i32,
+        }
+    }
+}
+
+impl From<exocore_protos::prost::Timestamp> for ConsistentTimestamp {
+    fn from(ts: exocore_protos::prost::Timestamp) -> Self {
+        exocore_protos::prost::ProstTimestampExt::to_timestamp_nanos(&ts).into()
+    }
+}
+
 impl Serialize for ConsistentTimestamp {
     fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
     where

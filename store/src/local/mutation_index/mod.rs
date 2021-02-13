@@ -11,7 +11,7 @@ use chrono::{TimeZone, Utc};
 pub use config::*;
 use entity_cache::EntityMutationsCache;
 use exocore_chain::block::BlockOffset;
-use exocore_core::protos::{
+use exocore_protos::{
     generated::exocore_store::{
         entity_query::Predicate, ordering, ordering_value, trait_field_predicate, trait_query,
         EntityQuery, IdsPredicate, MatchPredicate, OperationsPredicate, Ordering, OrderingValue,

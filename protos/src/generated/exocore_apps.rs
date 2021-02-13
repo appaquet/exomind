@@ -29,8 +29,8 @@ pub mod manifest_schema {
         File(::prost::alloc::string::String),
         #[prost(bytes, tag = "2")]
         #[serde(
-            serialize_with = "crate::protos::base64::as_base64",
-            deserialize_with = "crate::protos::base64::from_base64"
+            serialize_with = "crate::base64::as_base64",
+            deserialize_with = "crate::base64::from_base64"
         )]
         Bytes(::prost::alloc::vec::Vec<u8>),
     }

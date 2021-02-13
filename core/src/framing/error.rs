@@ -15,7 +15,7 @@ pub enum Error {
     OffsetSubtract(usize, usize),
 
     #[error("Capnp serialization error: {0}")]
-    Capnp(#[from] capnp::Error),
+    Capnp(#[from] exocore_protos::capnp::Error),
 
     #[error("Multihash error: {0:?}")]
     Multihash(#[from] Arc<multihash::Error>),

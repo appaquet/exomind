@@ -1,6 +1,6 @@
 use chain::Segments;
 use exocore_core::framing::FrameReader;
-use exocore_core::protos::generated::data_chain_capnp::{block_header, block_partial_header};
+use exocore_protos::generated::data_chain_capnp::{block_header, block_partial_header};
 
 use super::ChainSyncError;
 use crate::block::{Block, BlockHeight, BlockOffset, BlockSignaturesSize};

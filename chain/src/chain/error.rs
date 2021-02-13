@@ -18,7 +18,7 @@ pub enum Error {
     },
 
     #[error("Error in capnp serialization: {0}")]
-    Serialization(#[from] exocore_core::capnp::Error),
+    Serialization(#[from] exocore_protos::capnp::Error),
 
     #[error("An offset is out of the chain data: {0}")]
     OutOfBound(String),

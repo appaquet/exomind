@@ -3,21 +3,18 @@ use std::{
     time::Duration,
 };
 
-use exocore_core::{
-    cell::Cell,
-    futures::spawn_future_non_send,
-    protos::{
-        generated::exocore_store::EntityQuery, prost::ProstMessageExt, store::MutationRequest,
-    },
-    time::Clock,
+use exocore_core::{cell::Cell, futures::spawn_future_non_send, time::Clock};
+use exocore_protos::{
+    generated::exocore_store::EntityQuery, prost::ProstMessageExt, store::MutationRequest,
 };
+
+use exocore_protos::prost::Message;
 use exocore_store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::{
     p2p::Libp2pTransportConfig, transport::ConnectionStatus, InEvent, Libp2pTransport, ServiceType,
     TransportServiceHandle,
 };
 use futures::StreamExt;
-use prost::Message;
 use wasm_bindgen::prelude::*;
 
 use crate::{js::into_js_error, node::LocalNode, watched_query::WatchedQuery};

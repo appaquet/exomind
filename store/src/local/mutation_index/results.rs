@@ -3,7 +3,7 @@ use std::borrow::Borrow;
 use chrono::{DateTime, Utc};
 use exocore_chain::block::BlockOffset;
 use exocore_chain::operation::OperationId;
-use exocore_core::protos::generated::exocore_store::{EntityQuery, Paging};
+use exocore_protos::generated::exocore_store::{EntityQuery, Paging};
 
 use super::MutationIndex;
 use crate::entity::{EntityId, TraitId};

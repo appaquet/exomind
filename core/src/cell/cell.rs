@@ -10,12 +10,10 @@ use super::{
     config::CellConfigExt, CellApplications, CellNode, CellNodeRole, CellNodes, CellNodesRead,
     CellNodesWrite, Error, LocalNode, Node, NodeId,
 };
-use crate::{
-    protos::{
-        generated::exocore_core::{CellConfig, LocalNodeConfig},
-        registry::Registry,
-    },
-    sec::keys::{Keypair, PublicKey},
+use crate::sec::keys::{Keypair, PublicKey};
+use exocore_protos::{
+    generated::exocore_core::{CellConfig, LocalNodeConfig},
+    registry::Registry,
 };
 
 /// A Cell represents a private enclosure in which the data and applications of

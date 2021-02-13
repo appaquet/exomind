@@ -5,19 +5,17 @@ use std::{
 };
 
 use super::Error;
-use crate::protos::core::CellApplicationConfig;
-use crate::{
-    protos::{
-        apps::manifest_schema,
-        core::{cell_application_config, NodeConfig},
-        generated::{
-            exocore_apps::Manifest,
-            exocore_core::{
-                node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
-            },
+use crate::utils::path::{child_to_abs_path_string, child_to_relative_path_string};
+use exocore_protos::core::CellApplicationConfig;
+use exocore_protos::{
+    apps::manifest_schema,
+    core::{cell_application_config, NodeConfig},
+    generated::{
+        exocore_apps::Manifest,
+        exocore_core::{
+            node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig,
         },
     },
-    utils::path::{child_to_abs_path_string, child_to_relative_path_string},
 };
 
 /// Extension for `LocalNodeConfig` proto.
@@ -290,14 +288,14 @@ impl CellConfigExt for CellConfig {
 
         for app in config.apps.iter_mut() {
             let app_manifest = match app.location.take() {
-                Some(crate::protos::core::cell_application_config::Location::Path(dir)) => {
+                Some(exocore_protos::core::cell_application_config::Location::Path(dir)) => {
                     let mut manifest_path = PathBuf::from(dir);
                     manifest_path.push("app.yaml");
                     let mut manifest = Manifest::from_yaml_file(manifest_path)?;
                     manifest.path = String::new();
                     manifest
                 }
-                Some(crate::protos::core::cell_application_config::Location::Inline(manifest)) => {
+                Some(exocore_protos::core::cell_application_config::Location::Inline(manifest)) => {
                     manifest
                 }
                 other => {
@@ -311,7 +309,7 @@ impl CellConfigExt for CellConfig {
             let app_manifest = app_manifest.inlined()?;
 
             app.location =
-                Some(crate::protos::core::cell_application_config::Location::Inline(app_manifest));
+                Some(exocore_protos::core::cell_application_config::Location::Inline(app_manifest));
         }
 
         Ok(config)
@@ -492,7 +490,7 @@ impl ManifestExt for Manifest {
         let app_name = app_manifest.name.clone();
         for schema in app_manifest.schemas.iter_mut() {
             let final_source = match schema.source.take() {
-                Some(crate::protos::apps::manifest_schema::Source::File(schema_path)) => {
+                Some(exocore_protos::apps::manifest_schema::Source::File(schema_path)) => {
                     let mut file = File::open(&schema_path).map_err(|err| {
                         Error::Application(
                             app_name.clone(),
@@ -513,9 +511,9 @@ impl ManifestExt for Manifest {
                             ),
                         )
                     })?;
-                    crate::protos::apps::manifest_schema::Source::Bytes(content)
+                    exocore_protos::apps::manifest_schema::Source::Bytes(content)
                 }
-                Some(src @ crate::protos::apps::manifest_schema::Source::Bytes(_)) => src,
+                Some(src @ exocore_protos::apps::manifest_schema::Source::Bytes(_)) => src,
                 other => {
                     return Err(Error::Application(
                         app_name,
@@ -602,24 +600,22 @@ mod tests {
         super::{Cell, CellNodeRole, CellNodes},
         *,
     };
-    use crate::{
-        protos::{
-            apps::manifest_schema,
-            core::{
-                cell_application_config, CellApplicationConfig, EntityIndexConfig,
-                MutationIndexConfig, NodeAddresses,
-            },
-            generated::exocore_core::{
-                cell_node_config, node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig,
-                NodeCellConfig, NodeConfig,
-            },
+    use crate::tests_utils::root_test_fixtures_path;
+    use exocore_protos::{
+        apps::manifest_schema,
+        core::{
+            cell_application_config, CellApplicationConfig, EntityIndexConfig, MutationIndexConfig,
+            NodeAddresses,
         },
-        tests_utils::root_test_fixtures_path,
+        generated::exocore_core::{
+            cell_node_config, node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig,
+            NodeCellConfig, NodeConfig,
+        },
     };
 
     #[test]
     fn parse_node_config_yaml_ser_deser() -> anyhow::Result<()> {
-        use crate::protos::generated::exocore_core::NodeStoreConfig;
+        use exocore_protos::generated::exocore_core::NodeStoreConfig;
 
         let conf_ser = LocalNodeConfig {
             keypair: "keypair".to_string(),

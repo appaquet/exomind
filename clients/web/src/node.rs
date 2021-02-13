@@ -1,7 +1,5 @@
-use exocore_core::{
-    cell::{LocalNode as CoreLocalNode, LocalNodeConfigExt},
-    protos::core::LocalNodeConfig,
-};
+use exocore_core::cell::{LocalNode as CoreLocalNode, LocalNodeConfigExt};
+use exocore_protos::core::LocalNodeConfig;
 use wasm_bindgen::prelude::*;
 
 use crate::js::into_js_error;

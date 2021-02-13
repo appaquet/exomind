@@ -3,12 +3,12 @@ use chain::ChainStore;
 pub use config::CommitManagerConfig;
 pub use error::CommitManagerError;
 use exocore_core::cell::LocalNode;
-use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_core::{
     cell::{Cell, CellNodeRole, CellNodes, CellNodesRead, NodeId},
     sec::hash::Multihash,
     time::{Clock, ConsistentTimestamp},
 };
+use exocore_protos::generated::data_chain_capnp::block_header;
 use itertools::Itertools;
 
 use crate::operation::NewOperation;

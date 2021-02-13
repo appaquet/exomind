@@ -2,12 +2,12 @@ use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
 };
-use exocore_core::protos::core::LocalNodeConfig;
 use exocore_core::{
     cell::{Cell, CellNodeRole, EitherCell, FullCell},
     futures::owned_spawn,
     time::Clock,
 };
+use exocore_protos::core::LocalNodeConfig;
 use exocore_store::{
     local::{EntityIndex, EntityIndexConfig, Store},
     remote::server::Server,

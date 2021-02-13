@@ -25,10 +25,10 @@ pub enum Error {
     Transport(#[from] exocore_transport::Error),
 
     #[error("Error in capnp serialization: {0}")]
-    Serialization(#[from] exocore_core::capnp::Error),
+    Serialization(#[from] exocore_protos::capnp::Error),
 
     #[error("Protobuf error: {0}")]
-    Proto(#[from] exocore_core::protos::Error),
+    Proto(#[from] exocore_protos::Error),
 
     #[error("A protobuf field was expected, but was empty: {0}")]
     ProtoFieldExpected(&'static str),
@@ -99,14 +99,14 @@ impl From<tantivy::directory::error::OpenDirectoryError> for Error {
     }
 }
 
-impl From<prost::DecodeError> for Error {
-    fn from(err: prost::DecodeError) -> Self {
+impl From<exocore_protos::prost::DecodeError> for Error {
+    fn from(err: exocore_protos::prost::DecodeError) -> Self {
         Error::Proto(err.into())
     }
 }
 
-impl From<prost::EncodeError> for Error {
-    fn from(err: prost::EncodeError) -> Self {
+impl From<exocore_protos::prost::EncodeError> for Error {
+    fn from(err: exocore_protos::prost::EncodeError) -> Self {
         Error::Proto(err.into())
     }
 }

@@ -2,7 +2,7 @@ use exocore_chain::{
     engine::Event, operation::OperationId, tests_utils::TestChainCluster, DirectoryChainStore,
     MemoryPendingStore,
 };
-use exocore_core::protos::{
+use exocore_protos::{
     generated::{exocore_store::Trait, exocore_test::TestMessage},
     prost::{ProstAnyPackMessageExt, ProstMessageExt},
 };

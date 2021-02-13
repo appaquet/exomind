@@ -4,10 +4,10 @@ fn main() {
     if env::var("GENERATE_PROTOS").is_ok() {
         {
             let capn_protos_file = vec![
-                "../protos/common.capnp",
-                "../protos/data_chain.capnp",
-                "../protos/data_transport.capnp",
-                "../protos/store_transport.capnp",
+                "./capn/common.capnp",
+                "./capn/data_chain.capnp",
+                "./capn/data_transport.capnp",
+                "./capn/store_transport.capnp",
             ];
             for proto_file in capn_protos_file {
                 capnpc::CompilerCommand::new()
@@ -19,13 +19,13 @@ fn main() {
 
         {
             let prost_protos_file = vec![
-                "../protos/exocore/store/entity.proto",
-                "../protos/exocore/store/query.proto",
-                "../protos/exocore/store/mutation.proto",
-                "../protos/exocore/test/test.proto",
-                "../protos/exocore/core/auth.proto",
-                "../protos/exocore/core/config.proto",
-                "../protos/exocore/apps/manifest.proto",
+                "./protobuf/exocore/store/entity.proto",
+                "./protobuf/exocore/store/query.proto",
+                "./protobuf/exocore/store/mutation.proto",
+                "./protobuf/exocore/test/test.proto",
+                "./protobuf/exocore/core/auth.proto",
+                "./protobuf/exocore/core/config.proto",
+                "./protobuf/exocore/apps/manifest.proto",
             ];
 
             let mut config = prost_build::Config::new();
@@ -101,7 +101,7 @@ fn main() {
                 .field_attribute("Manifest.schemas", "#[serde(default)]");
 
             config
-                .compile_protos(&prost_protos_file, &["../protos/"])
+                .compile_protos(&prost_protos_file, &["./protobuf/"])
                 .expect("prost error");
         }
     }

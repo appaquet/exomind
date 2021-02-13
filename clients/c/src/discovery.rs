@@ -3,9 +3,9 @@ use std::{ffi::CStr, sync::Arc, time::Duration};
 use exocore_core::{
     cell::{CellConfigExt, LocalNodeConfigExt},
     futures::Runtime,
-    protos::core::{node_cell_config, CellConfig, LocalNodeConfig, NodeCellConfig},
 };
 use exocore_discovery::{Client, Pin, DEFAULT_DISCO_SERVER};
+use exocore_protos::core::{node_cell_config, CellConfig, LocalNodeConfig, NodeCellConfig};
 
 use crate::exocore_init;
 use crate::{node::LocalNode, utils::CallbackContext};

@@ -8,13 +8,13 @@ use exocore_core::framing::{
     CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
     TypedCapnpFrame,
 };
-use exocore_core::protos::core::LocalNodeConfig;
-use exocore_core::protos::generated::data_chain_capnp::block_header;
-use exocore_core::protos::generated::data_transport_capnp::{
-    chain_sync_request, chain_sync_response, pending_sync_request,
-};
 use exocore_core::sec::hash::Sha3_256;
 use exocore_core::time::{Clock, ConsistentTimestamp};
+use exocore_protos::core::LocalNodeConfig;
+use exocore_protos::generated::data_chain_capnp::block_header;
+use exocore_protos::generated::data_transport_capnp::{
+    chain_sync_request, chain_sync_response, pending_sync_request,
+};
 use tempfile::TempDir;
 
 use super::commit_manager::CommitManager;

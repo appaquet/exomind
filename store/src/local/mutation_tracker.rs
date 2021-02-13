@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
 use exocore_chain::operation::OperationId;
-use exocore_core::protos::store::MutationResult;
 use exocore_core::time::Instant;
+use exocore_protos::store::MutationResult;
 use futures::channel::oneshot;
 
 use super::StoreConfig;

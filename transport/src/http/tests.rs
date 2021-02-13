@@ -2,11 +2,11 @@ use exocore_core::{
     cell::{FullCell, LocalNode},
     framing::CapnpFrameBuilder,
     futures::spawn_future,
-    protos::generated::store_transport_capnp::{
-        mutation_request, mutation_response, query_request, query_response,
-    },
     sec::auth_token::AuthToken,
     time::Clock,
+};
+use exocore_protos::generated::store_transport_capnp::{
+    mutation_request, mutation_response, query_request, query_response,
 };
 use hyper::{body::Buf, Body, Client, Request, Response, StatusCode};
 

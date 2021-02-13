@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use exocore_core::protos::reflect::FieldType;
-use exocore_core::protos::registry::Registry;
+use exocore_protos::reflect::FieldType;
+use exocore_protos::registry::Registry;
 use tantivy::schema::*;
 use tantivy::tokenizer::*;
 use tantivy::Document;

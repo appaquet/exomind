@@ -3,7 +3,7 @@ extern crate criterion_bencher_compat;
 
 use criterion_bencher_compat::{black_box, Bencher};
 use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder, TypedCapnpFrame};
-use exocore_core::protos::generated::data_chain_capnp::block_header;
+use exocore_protos::generated::data_chain_capnp::block_header;
 
 fn bench_build_message(b: &mut Bencher) {
     let mut data = vec![0; 1000];

@@ -17,7 +17,8 @@ extern crate anyhow;
 use std::{path::PathBuf, str::FromStr};
 
 use clap::Clap;
-use exocore_core::{cell::LocalNodeConfigExt, protos::core::LocalNodeConfig};
+use exocore_core::cell::LocalNodeConfigExt;
+use exocore_protos::core::LocalNodeConfig;
 use log::LevelFilter;
 use term::*;
 use utils::expand_tild;

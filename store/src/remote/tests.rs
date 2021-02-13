@@ -3,9 +3,9 @@ use std::{sync::Arc, time::Duration};
 use exocore_core::{
     cell::{CellNodeRole, LocalNode},
     futures::spawn_future,
-    protos::generated::exocore_store::{EntityQuery, EntityResults, MutationResult},
     tests_utils::{async_expect_eventually, expect_eventually},
 };
+use exocore_protos::generated::exocore_store::{EntityQuery, EntityResults, MutationResult};
 use exocore_transport::{testing::MockTransportServiceHandle, ServiceType};
 use futures::executor::block_on_stream;
 use tokio::sync::Mutex;

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exocore_core::protos::core::NodeStoreConfig;
+use exocore_protos::core::NodeStoreConfig;
 
 /// Configuration for `Store`.
 #[derive(Clone, Copy)]

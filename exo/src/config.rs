@@ -1,7 +1,7 @@
 use clap::Clap;
-use exocore_core::{
-    cell::{LocalNodeConfigExt, NodeConfigExt},
-    protos::core::{cell_application_config, node_cell_config, LocalNodeConfig, NodeConfig},
+use exocore_core::cell::{LocalNodeConfigExt, NodeConfigExt};
+use exocore_protos::core::{
+    cell_application_config, node_cell_config, LocalNodeConfig, NodeConfig,
 };
 
 use crate::{utils::edit_file, Context};

@@ -21,6 +21,7 @@ CRATES=( \
   "clients/android" \
   "clients/c" \
   "transport" \
+  "protos" \
   "core" \
   "exo" \
   "discovery" \

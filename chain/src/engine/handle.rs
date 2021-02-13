@@ -1,8 +1,8 @@
 use std::ops::RangeBounds;
 use std::sync::{Arc, RwLock, Weak};
 
-use exocore_core::protos::generated::data_chain_capnp::chain_operation;
 use exocore_core::utils::handle_set::Handle;
+use exocore_protos::generated::data_chain_capnp::chain_operation;
 use futures::prelude::*;
 
 use super::{EngineError, Inner};

@@ -1,8 +1,8 @@
-use exocore_core::protos::{
+use exocore_protos::prost::Message;
+use exocore_protos::{
     store::{Entity, Trait},
     NamedMessage,
 };
-use prost::Message;
 
 pub type EntityId = String;
 pub type EntityIdRef<'s> = &'s str;

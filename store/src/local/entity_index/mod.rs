@@ -16,21 +16,19 @@ use exocore_chain::{
     operation::{Operation, OperationId},
     pending, EngineHandle, EngineOperationStatus,
 };
+use exocore_core::cell::FullCell;
 use exocore_core::time::Clock;
-use exocore_core::{
-    cell::FullCell,
-    protos::{
-        generated::exocore_store::{
-            entity_mutation::Mutation, Entity, EntityMutation, EntityQuery,
-            EntityResult as EntityResultProto, EntityResultSource, EntityResults, Trait,
-        },
-        prost::ProstDateTimeExt,
-        registry::Registry,
+use exocore_protos::prost::Message;
+use exocore_protos::{
+    generated::exocore_store::{
+        entity_mutation::Mutation, Entity, EntityMutation, EntityQuery,
+        EntityResult as EntityResultProto, EntityResultSource, EntityResults, Trait,
     },
+    prost::ProstDateTimeExt,
+    registry::Registry,
 };
 use gc::GarbageCollector;
 use itertools::Itertools;
-use prost::Message;
 
 use super::{
     mutation_index::{IndexOperation, MutationIndex, MutationMetadata},

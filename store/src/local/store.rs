@@ -4,13 +4,13 @@ use std::task::{Context, Poll};
 
 use exocore_core::cell::Cell;
 use exocore_core::futures::{interval, spawn_blocking, BatchingStream};
-use exocore_core::protos::generated::exocore_store::entity_mutation::Mutation;
-use exocore_core::protos::generated::exocore_store::{
-    entity_query, EntityQuery, EntityResults, MutationRequest, MutationResult,
-};
-use exocore_core::protos::{prost::ProstMessageExt, store::OperationsPredicate};
 use exocore_core::time::Clock;
 use exocore_core::utils::handle_set::{Handle, HandleSet};
+use exocore_protos::generated::exocore_store::entity_mutation::Mutation;
+use exocore_protos::generated::exocore_store::{
+    entity_query, EntityQuery, EntityResults, MutationRequest, MutationResult,
+};
+use exocore_protos::{prost::ProstMessageExt, store::OperationsPredicate};
 use futures::channel::{mpsc, oneshot};
 use futures::prelude::*;
 
@@ -567,9 +567,10 @@ impl QueryRequest {
 pub mod tests {
     use std::time::Duration;
 
-    use exocore_core::protos::prost::ProstAnyPackMessageExt;
+    use exocore_core::futures::sleep;
     use exocore_core::tests_utils::async_expect_eventually;
-    use exocore_core::{futures::sleep, protos::store::Trait, protos::test::TestMessage};
+    use exocore_protos::prost::ProstAnyPackMessageExt;
+    use exocore_protos::{store::Trait, test::TestMessage};
     use futures::executor::block_on_stream;
 
     use super::super::TestStore;

@@ -1,18 +1,20 @@
 use std::borrow::Borrow;
 
 use exocore_core::{
-    capnp,
     cell::{Cell, CellNodeRole, FullCell, NodeId},
     framing::{
         CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrame, MultihashFrameBuilder,
         PaddedFrame, PaddedFrameBuilder, SizedFrame, SizedFrameBuilder, TypedCapnpFrame,
     },
-    protos::generated::data_chain_capnp::{
-        block_header, block_operation_header, block_signature, block_signatures,
-    },
     sec::{
         hash::{Multihash, MultihashDigestExt, Sha3_256},
         signature::Signature,
+    },
+};
+use exocore_protos::{
+    capnp,
+    generated::data_chain_capnp::{
+        block_header, block_operation_header, block_signature, block_signatures,
     },
 };
 

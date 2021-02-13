@@ -1,9 +1,9 @@
-use exocore_core::{
-    protos::{
-        generated::{exocore_store::Paging, exocore_test::TestMessage},
-        test::TestMessage2,
-    },
-    tests_utils::{expect_result_eventually, result_assert_equal, result_assert_true},
+use exocore_core::tests_utils::{
+    expect_result_eventually, result_assert_equal, result_assert_true,
+};
+use exocore_protos::{
+    generated::{exocore_store::Paging, exocore_test::TestMessage},
+    test::TestMessage2,
 };
 use test_index::*;
 

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use clap::Clap;
 use exocore_core::cell::{Application, ManifestExt};
-use exocore_core::protos::apps::Manifest;
+use exocore_protos::apps::Manifest;
 use zip::write::FileOptions;
 
 use crate::term::{print_success, style_value};

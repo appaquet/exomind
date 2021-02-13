@@ -1,17 +1,16 @@
 use std::collections::HashMap;
 
-use capnp::traits::ToU16;
 pub use config::ChainSyncConfig;
 pub use error::ChainSyncError;
-use exocore_core::capnp;
 use exocore_core::cell::{Cell, CellNodeRole, CellNodes, CellNodesOwned};
 use exocore_core::cell::{Node, NodeId};
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_core::protos::generated::data_chain_capnp::block_partial_header;
-use exocore_core::protos::generated::data_transport_capnp::{
+use exocore_core::time::Clock;
+use exocore_protos::capnp::traits::ToU16;
+use exocore_protos::generated::data_chain_capnp::block_partial_header;
+use exocore_protos::generated::data_transport_capnp::{
     chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
 };
-use exocore_core::time::Clock;
 use node_info::{NodeStatus, NodeSyncInfo};
 
 use super::{EngineError, Event, SyncContext};

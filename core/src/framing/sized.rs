@@ -240,7 +240,7 @@ mod tests {
 
     use super::*;
     use crate::framing::{assert_builder_equals, CapnpFrameBuilder, TypedCapnpFrame};
-    use crate::protos::generated::data_chain_capnp::block_header;
+    use exocore_protos::generated::data_chain_capnp::block_header;
 
     #[test]
     fn can_build_and_read_sized_inner() -> anyhow::Result<()> {

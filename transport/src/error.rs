@@ -6,7 +6,7 @@ pub enum Error {
     Libp2pTransport(#[from] std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>),
 
     #[error("Error in capnp serialization: {0}")]
-    Serialization(#[from] exocore_core::capnp::Error),
+    Serialization(#[from] exocore_protos::capnp::Error),
 
     #[error("Field is not in capnp schema: code={0}")]
     SerializationNotInSchema(u16),
@@ -34,8 +34,8 @@ where
     }
 }
 
-impl From<exocore_core::capnp::NotInSchema> for Error {
-    fn from(err: exocore_core::capnp::NotInSchema) -> Self {
+impl From<exocore_protos::capnp::NotInSchema> for Error {
+    fn from(err: exocore_protos::capnp::NotInSchema) -> Self {
         Error::SerializationNotInSchema(err.0)
     }
 }

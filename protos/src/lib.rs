@@ -1,3 +1,7 @@
+pub extern crate capnp;
+#[macro_use]
+extern crate serde_derive;
+
 pub mod base64;
 pub mod prost;
 pub mod reflect;
@@ -12,3 +16,6 @@ pub use error::*;
 
 pub mod generated;
 pub use generated::{apps, core, store, test};
+pub(crate) use generated::{common_capnp, data_chain_capnp, data_transport_capnp}; // generated capnp protos expect to be at root
+
+mod time;

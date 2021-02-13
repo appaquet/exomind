@@ -38,6 +38,7 @@ chain-memory-pending = ["exocore-chain/memory-pending"]
 discovery-server = ["exocore-discovery/server"]
 
 [dependencies]
+exocore-protos = { version = "0.1.3", path = "./protos", default-features = false }
 exocore-core = { version = "0.1.3", path = "./core", default-features = false }
 exocore-transport = { version = "0.1.3", path = "./transport", default-features = false }
 exocore-store = { version = "0.1.3", path = "./store", default-features = false }
@@ -53,6 +54,7 @@ members = [
   "store",
   "chain",
   "core",
+  "protos",
   "transport",
   "clients/web",
   "clients/android",

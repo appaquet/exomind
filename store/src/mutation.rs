@@ -1,14 +1,14 @@
 use exocore_chain::operation::OperationId;
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_core::protos::generated::exocore_store::entity_mutation::Mutation;
-use exocore_core::protos::generated::exocore_store::{
+use exocore_protos::generated::exocore_store::entity_mutation::Mutation;
+use exocore_protos::generated::exocore_store::{
     DeleteEntityMutation, DeleteTraitMutation, EntityMutation, MutationRequest, MutationResult,
     PutTraitMutation, Trait,
 };
-use exocore_core::protos::generated::store_transport_capnp::{mutation_request, mutation_response};
-use exocore_core::protos::prost::ProstMessageExt;
-use exocore_core::protos::store::DeleteOperationsMutation;
-use prost::Message;
+use exocore_protos::generated::store_transport_capnp::{mutation_request, mutation_response};
+use exocore_protos::prost::Message;
+use exocore_protos::prost::ProstMessageExt;
+use exocore_protos::store::DeleteOperationsMutation;
 
 use crate::entity::{EntityId, TraitId};
 use crate::error::Error;
@@ -94,7 +94,7 @@ impl MutationBuilder {
         self.request.mutations.push(EntityMutation {
             entity_id: entity_id.into(),
             mutation: Some(Mutation::Test(
-                exocore_core::protos::generated::exocore_store::TestMutation { success: false },
+                exocore_protos::generated::exocore_store::TestMutation { success: false },
             )),
         });
 

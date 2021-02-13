@@ -14,11 +14,11 @@ $EXOCORE_ROOT/node_modules/.bin/pbjs \
     -t static-module \
     -w es6 \
     -o $EXOCORE_WEB_ROOT/protos/index.js \
-    -p $EXOCORE_ROOT/protos/ \
+    -p $EXOCORE_ROOT/protos/protobuf/ \
     --es6 \
     -r 'exocore-root' \
-    $EXOCORE_ROOT/protos/exocore/store/*.proto \
-    $EXOCORE_ROOT/protos/exocore/test/*.proto
+    $EXOCORE_ROOT/protos/protobuf/exocore/store/*.proto \
+    $EXOCORE_ROOT/protos/protobuf/exocore/test/*.proto
 
 # Generate typescript definition for protos
 $EXOCORE_ROOT/node_modules/.bin/pbts $EXOCORE_WEB_ROOT/protos/index.js -o $EXOCORE_WEB_ROOT/protos/index.d.ts

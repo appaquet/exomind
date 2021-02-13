@@ -7,12 +7,12 @@ pub use error::EngineError;
 use exocore_core::cell::Cell;
 use exocore_core::framing::{FrameReader, TypedCapnpFrame};
 use exocore_core::futures::{interval, spawn_blocking};
-use exocore_core::protos::generated::data_transport_capnp::{
-    chain_sync_request, chain_sync_response, pending_sync_request,
-};
-use exocore_core::protos::generated::MessageType;
 use exocore_core::time::Clock;
 use exocore_core::utils::handle_set::HandleSet;
+use exocore_protos::generated::data_transport_capnp::{
+    chain_sync_request, chain_sync_response, pending_sync_request,
+};
+use exocore_protos::generated::MessageType;
 use exocore_transport::{InEvent, InMessage, OutEvent, TransportServiceHandle};
 use futures::channel::mpsc;
 use futures::future::FutureExt;

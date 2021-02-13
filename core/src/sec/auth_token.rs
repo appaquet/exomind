@@ -1,12 +1,11 @@
-use prost::Message;
+use exocore_protos::prost::{Message, ProstMessageExt};
 
 use crate::{
     cell::{Cell, CellId, NodeId},
-    protos::{
-        core::{AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto},
-        prost::{ProstDateTimeExt, ProstMessageExt, ProstTimestampExt},
-    },
     time::{Clock, ConsistentTimestamp},
+};
+use exocore_protos::generated::core::{
+    AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto,
 };
 
 /// Authentication token that can be used as an alternative authentication
@@ -40,8 +39,8 @@ impl AuthToken {
         let data = AutoTokenDataProto {
             cell_id: cell.id().as_bytes().to_vec(),
             node_id: cell.local_node().id().to_bytes().to_vec(),
-            signature_date: Some(now.to_proto_timestamp()),
-            expiration_date: expiration_date.map(|d| d.to_proto_timestamp()),
+            signature_date: Some(now.into()),
+            expiration_date: expiration_date.map(|d| d.into()),
         };
 
         let token_proto = data.encode_to_vec();
@@ -64,7 +63,7 @@ impl AuthToken {
     /// Unmarshal a token from the given protobuf message.
     pub fn from_proto(token: AuthTokenProto) -> Result<AuthToken, Error> {
         let token_data: AutoTokenDataProto = AutoTokenDataProto::decode(token.data.as_slice())
-            .map_err(crate::protos::Error::ProstDecodeError)?;
+            .map_err(exocore_protos::Error::ProstDecodeError)?;
 
         let cell_id = CellId::from_bytes(&token_data.cell_id);
         let node_id = NodeId::from_bytes(token_data.node_id)
@@ -72,10 +71,8 @@ impl AuthToken {
         let signature_date = token_data
             .signature_date
             .ok_or_else(|| Error::Invalid("Invalid token signature".to_string()))?
-            .to_consistent_timestamp();
-        let expiration_date = token_data
-            .expiration_date
-            .map(|d| d.to_consistent_timestamp());
+            .into();
+        let expiration_date = token_data.expiration_date.map(|d| d.into());
 
         Ok(AuthToken {
             cell_id,
@@ -90,7 +87,7 @@ impl AuthToken {
     pub fn decode_base58_string(token: &str) -> Result<AuthToken, Error> {
         let token_proto_bytes = bs58::decode(token).into_vec()?;
         let token_proto = AuthTokenProto::decode(token_proto_bytes.as_slice())
-            .map_err(crate::protos::Error::ProstDecodeError)?;
+            .map_err(exocore_protos::Error::ProstDecodeError)?;
 
         Self::from_proto(token_proto)
     }
@@ -170,7 +167,7 @@ pub enum Error {
     Invalid(String),
 
     #[error("Proto serialization error: {0}")]
-    ProtoSerialization(#[from] crate::protos::Error),
+    ProtoSerialization(#[from] exocore_protos::Error),
 
     #[error("Base58 decoding error: {0}")]
     Base58Decoding(#[from] bs58::decode::Error),

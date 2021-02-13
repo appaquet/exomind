@@ -1,4 +1,4 @@
-use exocore_core::protos::generated::exocore_core::MutationIndexConfig as ProtoMutationIndexConfig;
+use exocore_protos::generated::exocore_core::MutationIndexConfig as ProtoMutationIndexConfig;
 /// Trait index configuration
 #[derive(Clone, Copy, Debug)]
 pub struct MutationIndexConfig {

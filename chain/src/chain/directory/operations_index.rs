@@ -6,9 +6,9 @@ use std::sync::Arc;
 
 use byteorder::LittleEndian;
 use byteorder::{ReadBytesExt, WriteBytesExt};
-use exocore_core::protos::generated::data_chain_capnp::block_header;
 use exocore_core::simple_store::json_disk_store::JsonDiskStore;
 use exocore_core::simple_store::SimpleStore;
+use exocore_protos::generated::data_chain_capnp::block_header;
 use extindex::{Builder, Encodable, Reader};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};

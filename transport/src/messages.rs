@@ -1,9 +1,9 @@
 use exocore_core::cell::Node;
 use exocore_core::cell::{Cell, CellId};
 use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_core::protos::generated::common_capnp::envelope;
-use exocore_core::protos::generated::MessageType;
 use exocore_core::time::{ConsistentTimestamp, Instant};
+use exocore_protos::generated::common_capnp::envelope;
+use exocore_protos::generated::MessageType;
 
 use crate::{transport::ConnectionID, Error, ServiceType};
 

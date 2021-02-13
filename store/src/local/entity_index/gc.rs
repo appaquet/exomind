@@ -5,9 +5,9 @@ use std::{
 };
 
 use exocore_chain::{block::BlockOffset, operation::OperationId};
-use exocore_core::protos::core::EntityGarbageCollectorConfig;
-use exocore_core::protos::store::EntityMutation;
 use exocore_core::time::Clock;
+use exocore_protos::core::EntityGarbageCollectorConfig;
+use exocore_protos::store::EntityMutation;
 
 use super::{sort_mutations_commit_time, EntityAggregator};
 use crate::{
@@ -419,10 +419,8 @@ impl Operation {
 mod tests {
     use std::time::Instant;
 
-    use exocore_core::{
-        cell::LocalNode,
-        protos::store::{entity_mutation, OrderingValue},
-    };
+    use exocore_core::cell::LocalNode;
+    use exocore_protos::store::{entity_mutation, OrderingValue};
 
     use super::{
         super::aggregator::tests::{mock_delete_entity, mock_delete_trait, mock_put_trait},

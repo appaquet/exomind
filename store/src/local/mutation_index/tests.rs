@@ -1,9 +1,9 @@
 use chrono::{DateTime, Duration, Utc};
 use exocore_chain::operation::OperationId;
-use exocore_core::protos::generated::exocore_store::{Reference, Trait};
-use exocore_core::protos::generated::exocore_test::{TestMessage, TestMessage2};
-use exocore_core::protos::store::entity_query;
-use exocore_core::protos::{
+use exocore_protos::generated::exocore_store::{Reference, Trait};
+use exocore_protos::generated::exocore_test::{TestMessage, TestMessage2};
+use exocore_protos::store::entity_query;
+use exocore_protos::{
     prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt},
     store::TraitDetails,
 };

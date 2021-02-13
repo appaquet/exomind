@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use exocore_core::protos::generated::exocore_store::{EntityQuery, EntityResults};
+use exocore_protos::generated::exocore_store::{EntityQuery, EntityResults};
 use futures::channel::mpsc;
 
 use crate::error::Error;

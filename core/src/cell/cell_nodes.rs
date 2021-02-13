@@ -4,7 +4,7 @@ use std::{
 };
 
 use super::{Cell, Error, LocalNode, Node, NodeId};
-use crate::protos::generated::exocore_core::cell_node_config;
+use exocore_protos::generated::exocore_core::cell_node_config;
 
 /// Common methods collection of nodes of a `Cell`
 pub trait CellNodes {
