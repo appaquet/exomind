@@ -500,9 +500,7 @@ fn build_sync_ranges_frames(
         .map(|range| {
             let mut range_frame_builder = CapnpFrameBuilder::<pending_sync_range::Owned>::new();
             let mut range_msg_builder = range_frame_builder.get_builder();
-            range
-                .write_into_sync_range_builder(&mut range_msg_builder)
-                .unwrap();
+            range.write_into_sync_range_builder(&mut range_msg_builder);
             range_frame_builder
         })
         .collect()

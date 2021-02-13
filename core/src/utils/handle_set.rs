@@ -132,7 +132,7 @@ mod tests {
     use crate::futures::*;
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn on_all_handles_dropped() -> anyhow::Result<()> {
+    async fn on_all_handles_dropped() {
         let set = HandleSet::new();
 
         let handle = set.get_handle();
@@ -146,8 +146,6 @@ mod tests {
         drop(handle);
 
         let _ = block_on(receiver);
-
-        Ok(())
     }
 
     #[test]
@@ -163,7 +161,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn set_started() -> anyhow::Result<()> {
+    async fn set_started() {
         let set = HandleSet::new();
 
         let handle = set.get_handle();
@@ -176,12 +174,10 @@ mod tests {
         block_on(handle.on_set_started());
 
         assert!(handle.set_is_started());
-
-        Ok(())
     }
 
     #[test]
-    fn set_dropped() -> anyhow::Result<()> {
+    fn set_dropped() {
         let set = HandleSet::new();
 
         let handle = set.get_handle();
@@ -189,7 +185,5 @@ mod tests {
         drop(set);
 
         block_on(handle.on_set_dropped());
-
-        Ok(())
     }
 }

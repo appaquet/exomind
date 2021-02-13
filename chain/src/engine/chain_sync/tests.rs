@@ -30,7 +30,7 @@ fn handle_sync_response_blocks() -> anyhow::Result<()> {
         10,
         0,
         blocks_iter,
-    )?;
+    );
     let response_frame = response.as_owned_frame();
     let mut sync_context = SyncContext::new(SyncState::default());
     let result = cluster.chains_synchronizer[0].handle_sync_response(
@@ -49,7 +49,7 @@ fn handle_sync_response_blocks() -> anyhow::Result<()> {
         10,
         0,
         blocks_iter,
-    )?;
+    );
     let response_frame = response.as_owned_frame();
     let mut sync_context = SyncContext::new(SyncState::default());
     let result = cluster.chains_synchronizer[0].handle_sync_response(
@@ -67,7 +67,7 @@ fn handle_sync_response_blocks() -> anyhow::Result<()> {
         10,
         0,
         blocks_iter,
-    )?;
+    );
     let response_frame = response.as_owned_frame();
     let mut sync_context = SyncContext::new(SyncState::default());
     cluster.chains_synchronizer[0].handle_sync_response(

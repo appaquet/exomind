@@ -167,7 +167,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 .init_ranges(out_ranges.ranges.len() as u32);
             for (i, range) in out_ranges.ranges.into_iter().enumerate() {
                 let mut builder = ranges_builder.reborrow().get(i as u32);
-                range.write_into_sync_range_builder(&mut builder)?;
+                range.write_into_sync_range_builder(&mut builder);
             }
 
             sync_context
@@ -206,7 +206,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
 
         for sync_range_reader in sync_range_iterator {
             let ((bounds_from, bounds_to), from_numeric, to_numeric) =
-                extract_sync_bounds(&sync_range_reader)?;
+                extract_sync_bounds(&sync_range_reader);
             let bounds_range = (bounds_from, bounds_to);
             if to_numeric != 0 && to_numeric < from_numeric {
                 return Err(PendingSyncError::InvalidSyncRequest(format!(
@@ -340,7 +340,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             .init_ranges(sync_ranges.ranges.len() as u32);
         for (i, range) in sync_ranges.ranges.into_iter().enumerate() {
             let mut builder = ranges_builder.reborrow().get(i as u32);
-            range.write_into_sync_range_builder(&mut builder)?;
+            range.write_into_sync_range_builder(&mut builder);
         }
 
         Ok(sync_request_frame_builder)
@@ -503,9 +503,7 @@ impl NodeSyncInfo {
 }
 
 /// Converts bounds from sync_request range to SyncBounds
-pub(super) fn extract_sync_bounds(
-    sync_range_reader: &pending_sync_range::Reader,
-) -> Result<SyncBounds, EngineError> {
+pub(super) fn extract_sync_bounds(sync_range_reader: &pending_sync_range::Reader) -> SyncBounds {
     let (from, from_included, to, to_included) = (
         sync_range_reader.get_from_operation(),
         sync_range_reader.get_from_included(),
@@ -524,7 +522,7 @@ pub(super) fn extract_sync_bounds(
         (bound, false) => Bound::Excluded(bound),
     };
 
-    Ok(((from_bound, to_bound), from, to))
+    ((from_bound, to_bound), from, to)
 }
 
 type SyncBounds = (

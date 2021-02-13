@@ -165,11 +165,9 @@ mod tests {
     }
 
     #[test]
-    fn can_build_to_owned() -> anyhow::Result<()> {
+    fn can_build_to_owned() {
         let builder = PaddedFrameBuilder::new(vec![1; 10], 0);
         let frame = builder.as_owned_frame();
         assert_eq!(vec![1; 10], frame.exposed_data());
-
-        Ok(())
     }
 }

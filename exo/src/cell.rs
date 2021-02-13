@@ -203,20 +203,33 @@ pub async fn handle_cmd(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Resul
             NodeCommand::Add(add_opts) => cmd_node_add(ctx, cell_opts, add_opts).await,
         },
         CellCommand::App(app_opts) => match &app_opts.command {
-            AppCommand::List => cmd_app_list(ctx, cell_opts, app_opts),
+            AppCommand::List => {
+                cmd_app_list(ctx, cell_opts, app_opts);
+                Ok(())
+            }
             AppCommand::Install(install_opts) => {
                 cmd_app_install(ctx, cell_opts, app_opts, install_opts).await
             }
         },
         CellCommand::Join(join_opts) => cmd_join(ctx, cell_opts, join_opts).await,
-        CellCommand::List => cmd_list(ctx, cell_opts),
-        CellCommand::Edit => cmd_edit(ctx, cell_opts),
-        CellCommand::Print(opts) => cmd_print(ctx, cell_opts, opts),
+        CellCommand::List => {
+            cmd_list(ctx, cell_opts);
+            Ok(())
+        }
+        CellCommand::Edit => {
+            cmd_edit(ctx, cell_opts);
+            Ok(())
+        }
+        CellCommand::Print(opts) => {
+            cmd_print(ctx, cell_opts, opts);
+            Ok(())
+        }
         CellCommand::CheckChain => cmd_check_chain(ctx, cell_opts),
         CellCommand::ExportChain(export_opts) => cmd_export_chain(ctx, cell_opts, export_opts),
         CellCommand::ImportChain(import_opts) => cmd_import_chain(ctx, cell_opts, import_opts),
         CellCommand::GenerateAuthToken(gen_opts) => {
-            cmd_generate_auth_token(ctx, cell_opts, gen_opts)
+            cmd_generate_auth_token(ctx, cell_opts, gen_opts);
+            Ok(())
         }
         CellCommand::CreateGenesisBlock => cmd_create_genesis_block(ctx, cell_opts),
     }
@@ -488,7 +501,7 @@ async fn cmd_join(
     Ok(())
 }
 
-fn cmd_edit(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()> {
+fn cmd_edit(ctx: &Context, cell_opts: &CellOptions) {
     let (_, cell) = get_cell(ctx, cell_opts);
     let cell = cell.cell();
 
@@ -497,15 +510,9 @@ fn cmd_edit(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()> {
         CellConfig::from_yaml_file(temp_path)?;
         Ok(())
     });
-
-    Ok(())
 }
 
-fn cmd_print(
-    ctx: &Context,
-    cell_opts: &CellOptions,
-    print_opts: &PrintOptions,
-) -> anyhow::Result<()> {
+fn cmd_print(ctx: &Context, cell_opts: &CellOptions, print_opts: &PrintOptions) {
     let (_, cell) = get_cell(ctx, cell_opts);
     let cell = cell.cell();
 
@@ -522,11 +529,9 @@ fn cmd_print(
             .to_yaml()
             .expect("Couldn't convert cell config to yaml")
     );
-
-    Ok(())
 }
 
-fn cmd_list(ctx: &Context, _cell_opts: &CellOptions) -> anyhow::Result<()> {
+fn cmd_list(ctx: &Context, _cell_opts: &CellOptions) {
     let config = ctx.options.read_configuration();
     let (either_cells, _local_node) =
         Cell::from_local_node_config(config).expect("Couldn't create cell from config");
@@ -541,8 +546,6 @@ fn cmd_list(ctx: &Context, _cell_opts: &CellOptions) -> anyhow::Result<()> {
     }
 
     print_table(vec!["Name".to_string(), "Public key".to_string()], rows);
-
-    Ok(())
 }
 
 fn cmd_check_chain(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()> {
@@ -779,7 +782,7 @@ fn cmd_generate_auth_token(
     ctx: &Context,
     cell_opts: &CellOptions,
     gen_opts: &GenerateAuthTokenOptions,
-) -> anyhow::Result<()> {
+) {
     let (_, cell) = get_cell(ctx, cell_opts);
     let cell = cell.cell();
 
@@ -799,8 +802,6 @@ fn cmd_generate_auth_token(
         "Token: {}",
         style_value(token.encode_base58_string())
     ));
-
-    Ok(())
 }
 
 fn cmd_create_genesis_block(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()> {
@@ -812,18 +813,14 @@ fn cmd_create_genesis_block(ctx: &Context, cell_opts: &CellOptions) -> anyhow::R
     Ok(())
 }
 
-fn cmd_app_list(
-    ctx: &Context,
-    cell_opts: &CellOptions,
-    _app_opts: &AppOptions,
-) -> anyhow::Result<()> {
+fn cmd_app_list(ctx: &Context, cell_opts: &CellOptions, _app_opts: &AppOptions) {
     let (_, cell) = get_cell(ctx, cell_opts);
     let cell = cell.cell();
 
     let cell_apps = cell.applications().applications();
     if cell_apps.is_empty() {
         print_warning("No applications installed in cell.");
-        return Ok(());
+        return;
     }
 
     print_spacer();
@@ -837,7 +834,6 @@ fn cmd_app_list(
     }
 
     print_table(vec!["Name".to_string(), "Public key".to_string()], rows);
-    Ok(())
 }
 
 async fn cmd_app_install(

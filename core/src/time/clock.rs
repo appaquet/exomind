@@ -80,10 +80,11 @@ impl Clock {
             // counter is higher than MAX, we try to swap it with 0.
             // if the previous value after swap wasn't equal to what we expected, it
             // means another thread swapped / increased the value, and we need to retry
-            let before_swap =
-                self.consistent_counter
-                    .compare_and_swap(counter + 1, 0, Ordering::SeqCst);
-            if before_swap == counter {
+            if self
+                .consistent_counter
+                .compare_exchange(counter + 1, 0, Ordering::SeqCst, Ordering::Relaxed)
+                .is_ok()
+            {
                 break 0;
             }
         };

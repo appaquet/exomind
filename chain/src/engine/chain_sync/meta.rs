@@ -262,7 +262,7 @@ mod tests {
     };
 
     #[test]
-    fn from_segment_boundaries() -> anyhow::Result<()> {
+    fn from_segment_boundaries() {
         let config = EngineTestClusterConfig {
             nodes_count: 1,
             chain_config: DirectoryChainStoreConfig {
@@ -337,8 +337,6 @@ mod tests {
                 vec![0, 1, 2, 3, 4, 13, 26, 39, 52, 65],
             );
         }
-
-        Ok(())
     }
 
     #[test]

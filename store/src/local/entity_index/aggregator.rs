@@ -764,7 +764,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn traits_projection() -> anyhow::Result<()> {
+    fn traits_projection() {
         let registry = Registry::new_with_exocore_types();
 
         let msg = TestMessage {
@@ -845,8 +845,6 @@ pub(crate) mod tests {
                 TraitDetails::Partial
             )
         );
-
-        Ok(())
     }
 
     pub fn mock_put_trait<I: Into<String>, T: Into<String>>(

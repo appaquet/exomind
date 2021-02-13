@@ -104,7 +104,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // make sure we are still in sync with the leader
         if self.status == Status::Synchronized && !self.im_leader() {
             if let Some(leader_node_id) = self.leader.clone() {
-                let leader_node_disp = nodes
+                let leader_node_name = nodes
                     .get(&leader_node_id)
                     .map(|cn| cn.node().to_string())
                     .unwrap_or_else(|| String::from("NOT_FOUND"));
@@ -116,11 +116,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 let lost_leadership = if sync_status != NodeStatus::Synchronized {
                     info!(
                         "Node {} lost leadership status because it isn't sync anymore",
-                        leader_node_disp,
+                        leader_node_name,
                     );
                     true
                 } else if common_block_delta > self.config.max_leader_common_block_height_delta {
-                    info!("Node {} lost leadership status because of common block height delta is too high (height {} > height {})", leader_node_disp, common_block_delta, self.config.max_leader_common_block_height_delta);
+                    info!("Node {} lost leadership status because of common block height delta is too high (height {} > height {})", leader_node_name, common_block_delta, self.config.max_leader_common_block_height_delta);
                     true
                 } else {
                     false
@@ -165,11 +165,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     if self.im_leader() {
                         info!("I'm the leader");
                     } else if let Some(leader_node_id) = self.leader.clone() {
-                        let leader_node_disp = nodes
+                        let leader_node_name = nodes
                             .get(&leader_node_id)
                             .map(|cn| cn.node().to_string())
                             .unwrap_or_else(|| String::from("NOT_FOUND"));
-                        info!("Our leader node is {}", leader_node_disp);
+                        info!("Our leader node is {}", leader_node_name);
                     } else {
                         warn!("Couldn't find any leader node");
                     }
@@ -178,7 +178,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 self.start_leader_downloading(sync_context, store, &nodes)?;
             } else {
                 return Err(ChainSyncError::Diverged(format!(
-                    "Our local chain is divergent with a majority of nodes (only {} non divergents out of {})",
+                    "Our local chain is divergent with a majority of nodes (only {} non divergent out of {})",
                     nb_non_divergent,
                     nb_total,
                 ))
@@ -187,7 +187,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         }
 
         // synchronize chain state with nodes
-        self.synchronize_nodes_metadata(sync_context, &nodes)?;
+        self.synchronize_nodes_metadata(sync_context, &nodes);
 
         if status_start != self.status {
             info!(
@@ -246,7 +246,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             let blocks_metadata =
                 BlockMetadata::from_store(store, from_offset_opt, to_offset_opt, &self.config)?;
             let response =
-                Self::create_sync_response_for_metadata(from_offset, to_offset, blocks_metadata)?;
+                Self::create_sync_response_for_metadata(from_offset, to_offset, blocks_metadata);
             sync_context.push_chain_sync_response(from_node.id().clone(), response);
         } else if requested_details == chain_sync_request::RequestedDetails::Blocks {
             let blocks_iter = store
@@ -257,7 +257,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 from_offset,
                 to_offset,
                 blocks_iter,
-            )?;
+            );
             sync_context.push_chain_sync_response(from_node.id().clone(), response);
         } else {
             return Err(ChainSyncError::InvalidSyncRequest(format!(
@@ -337,7 +337,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         &mut self,
         sync_context: &mut SyncContext,
         nodes: &CellNodesOwned,
-    ) -> Result<(), EngineError> {
+    ) {
         for cell_node in nodes
             .iter()
             .all_except_local()
@@ -349,14 +349,11 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
             if node_info.request_tracker.can_send_request() {
                 debug!("Sending metadata sync request to {}", node);
-                let request =
-                    Self::create_sync_request(node_info, RequestedDetails::Headers, None)?;
+                let request = Self::create_sync_request(node_info, RequestedDetails::Headers, None);
                 sync_context.push_chain_sync_request(node.id().clone(), request);
                 node_info.request_tracker.set_last_send_now();
             }
         }
-
-        Ok(())
     }
 
     /// Starts chain downloading from current leader if needed. If leader is the
@@ -430,7 +427,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 leader_node_info,
                 RequestedDetails::Blocks,
                 Some(to_offset),
-            )?;
+            );
             leader_node_info.request_tracker.set_last_send_now();
             sync_context.push_chain_sync_request(leader_node.id().clone(), request);
             self.status = Status::Downloading;
@@ -447,7 +444,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         node_info: &NodeSyncInfo,
         requested_details: RequestedDetails,
         to_offset: Option<BlockOffset>,
-    ) -> Result<CapnpFrameBuilder<chain_sync_request::Owned>, EngineError> {
+    ) -> CapnpFrameBuilder<chain_sync_request::Owned> {
         let mut frame_builder = CapnpFrameBuilder::new();
         let mut request_builder: chain_sync_request::Builder = frame_builder.get_builder();
 
@@ -475,7 +472,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             requested_details.to_u16(),
         );
 
-        Ok(frame_builder)
+        frame_builder
     }
 
     /// Creates a response to a request for blocks metadata from a remote node.
@@ -483,7 +480,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_offset: BlockOffset,
         to_offset: BlockOffset,
         blocks_metadata: Vec<BlockMetadata>,
-    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, EngineError> {
+    ) -> CapnpFrameBuilder<chain_sync_response::Owned> {
         let mut frame_builder = CapnpFrameBuilder::new();
         let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder();
         response_builder.set_from_offset(from_offset);
@@ -501,7 +498,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             to_offset,
         );
 
-        Ok(frame_builder)
+        frame_builder
     }
 
     /// Creates a response to request for blocks data from a remote node.
@@ -511,7 +508,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         from_offset: BlockOffset,
         to_offset: BlockOffset,
         blocks_iter: I,
-    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, EngineError> {
+    ) -> CapnpFrameBuilder<chain_sync_response::Owned> {
         let mut frame_builder = CapnpFrameBuilder::new();
         let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder();
         response_builder.set_from_offset(from_offset);
@@ -546,7 +543,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             );
         }
 
-        Ok(frame_builder)
+        frame_builder
     }
 
     /// Manages blocks metadata response by comparing to local blocks and
@@ -575,7 +572,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             let offset = metadata_reader.get_offset();
             let height = metadata_reader.get_height();
 
-            // check if metedata are contiguous blocks, which would mean we can take for
+            // check if metadata are contiguous blocks, which would mean we can take for
             // granted that no block are missing between the first and last
             // given metadata
             if let Some(last_block_height) = last_block_height {
@@ -633,7 +630,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             );
 
             let request =
-                Self::create_sync_request(from_node_info, RequestedDetails::Headers, to_offset)?;
+                Self::create_sync_request(from_node_info, RequestedDetails::Headers, to_offset);
             sync_context.push_chain_sync_request(from_node_info.node_id.clone(), request);
         } else if !from_node_info.last_common_is_known {
             debug!(
@@ -714,7 +711,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 from_node_info,
                 RequestedDetails::Blocks,
                 Some(to_offset),
-            )?;
+            );
             sync_context.push_chain_sync_request(from_node_info.node_id.clone(), request);
             from_node_info.request_tracker.set_last_send_now();
         }

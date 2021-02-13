@@ -700,7 +700,7 @@ mod tests {
     }
 
     #[test]
-    fn node_config_absolute_relative_paths() -> anyhow::Result<()> {
+    fn node_config_absolute_relative_paths() {
         let mut config = LocalNodeConfig {
             path: "path".to_string(),
             ..Default::default()
@@ -712,8 +712,6 @@ mod tests {
         config.make_relative_paths("parent");
 
         assert_eq!(PathBuf::from(&config.path), PathBuf::from("path"));
-
-        Ok(())
     }
 
     #[test]
@@ -838,7 +836,7 @@ mod tests {
     }
 
     #[test]
-    fn node_config_add_cell() -> anyhow::Result<()> {
+    fn node_config_add_cell() {
         {
             // cell by path
             let mut config = LocalNodeConfig::default();
@@ -887,8 +885,6 @@ mod tests {
             });
             assert_eq!(2, config.cells.len());
         }
-
-        Ok(())
     }
 
     #[test]
@@ -999,7 +995,7 @@ store:
     }
 
     #[test]
-    fn cell_config_absolute_relative_paths() -> anyhow::Result<()> {
+    fn cell_config_absolute_relative_paths() {
         let mut config = CellConfig {
             path: "path".to_string(),
             ..Default::default()
@@ -1011,8 +1007,6 @@ store:
         config.make_relative_paths("parent");
 
         assert_eq!(PathBuf::from(&config.path), PathBuf::from("path"));
-
-        Ok(())
     }
 
     #[test]
@@ -1035,7 +1029,7 @@ store:
     }
 
     #[test]
-    fn cell_config_add_node() -> anyhow::Result<()> {
+    fn cell_config_add_node() {
         let mut config = CellConfig {
             ..Default::default()
         };
@@ -1073,12 +1067,10 @@ store:
 
         config.add_node(node2);
         assert_eq!(config.nodes.len(), 2);
-
-        Ok(())
     }
 
     #[test]
-    fn cell_config_add_app() -> anyhow::Result<()> {
+    fn cell_config_add_app() {
         let mut config = CellConfig {
             ..Default::default()
         };
@@ -1106,7 +1098,5 @@ store:
             })),
         });
         assert_eq!(config.apps.len(), 2);
-
-        Ok(())
     }
 }

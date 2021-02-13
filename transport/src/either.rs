@@ -253,15 +253,15 @@ where
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut this = self.project();
-        if let Poll::Ready(_) = this.left.poll(cx) {
+        if this.left.poll(cx).is_ready() {
             return Poll::Ready(());
         }
 
-        if let Poll::Ready(_) = this.right.poll(cx) {
+        if this.right.poll(cx).is_ready() {
             return Poll::Ready(());
         }
 
-        if let Poll::Ready(_) = this.completion_receiver.next().poll_unpin(cx) {
+        if this.completion_receiver.next().poll_unpin(cx).is_ready() {
             return Poll::Ready(());
         }
 

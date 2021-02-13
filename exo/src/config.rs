@@ -47,21 +47,25 @@ pub struct PrintOptions {
 
 pub fn handle_cmd(ctx: &Context, config_opts: &ConfigOptions) -> anyhow::Result<()> {
     match &config_opts.command {
-        ConfigCommand::Edit => cmd_edit(ctx, config_opts),
-        ConfigCommand::Print(print_opts) => cmd_print(ctx, config_opts, print_opts),
+        ConfigCommand::Edit => {
+            cmd_edit(ctx, config_opts);
+            Ok(())
+        }
+        ConfigCommand::Print(print_opts) => {
+            cmd_print(ctx, config_opts, print_opts);
+            Ok(())
+        }
         ConfigCommand::Validate => cmd_validate(ctx, config_opts),
     }
 }
 
-fn cmd_edit(ctx: &Context, _conf_opts: &ConfigOptions) -> anyhow::Result<()> {
+fn cmd_edit(ctx: &Context, _conf_opts: &ConfigOptions) {
     let config_path = ctx.options.conf_path();
 
     edit_file(config_path, |temp_path| {
         LocalNodeConfig::from_yaml_file(temp_path)?;
         Ok(())
     });
-
-    Ok(())
 }
 
 fn cmd_validate(ctx: &Context, _conf_opts: &ConfigOptions) -> anyhow::Result<()> {
@@ -74,11 +78,7 @@ fn cmd_validate(ctx: &Context, _conf_opts: &ConfigOptions) -> anyhow::Result<()>
     Ok(())
 }
 
-fn cmd_print(
-    ctx: &Context,
-    _conf_opts: &ConfigOptions,
-    print_opts: &PrintOptions,
-) -> anyhow::Result<()> {
+fn cmd_print(ctx: &Context, _conf_opts: &ConfigOptions, print_opts: &PrintOptions) {
     let node_config = ctx.options.read_configuration();
 
     if !print_opts.cell {
@@ -86,8 +86,6 @@ fn cmd_print(
     } else {
         cmd_print_cell_node_config(node_config);
     }
-
-    Ok(())
 }
 
 fn cmd_print_node_config(config: LocalNodeConfig, print_opts: &PrintOptions) {

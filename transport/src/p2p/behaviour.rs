@@ -99,7 +99,7 @@ impl ExocoreBehaviour {
                     node: node.clone(),
                     temp_queue: VecDeque::new(),
                     status: PeerStatus::Disconnected,
-                    last_dial: Instant::now(),
+                    last_dial: None,
                 },
             );
         }
@@ -108,10 +108,13 @@ impl ExocoreBehaviour {
     }
 
     fn dial_peer(&mut self, peer_id: PeerId) {
-        self.actions.push_back(NetworkBehaviourAction::DialPeer {
-            peer_id,
-            condition: DialPeerCondition::Disconnected,
-        });
+        if let Some(current_peer) = self.peers.get_mut(&peer_id) {
+            current_peer.last_dial = Some(Instant::now());
+            self.actions.push_back(NetworkBehaviourAction::DialPeer {
+                peer_id,
+                condition: DialPeerCondition::Disconnected,
+            });
+        }
     }
 }
 
@@ -159,18 +162,17 @@ impl NetworkBehaviour for ExocoreBehaviour {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             info!("Disconnected from peer {}", peer.node);
 
-            peer.status = PeerStatus::Disconnected;
-
             self.actions
                 .push_back(NetworkBehaviourAction::GenerateEvent(
                     ExocoreBehaviourEvent::PeerStatus(*peer_id, peer.status),
                 ));
 
-            // check if we need to reconnect
+            // cleanup old messages
             peer.cleanup_expired();
-            if !peer.temp_queue.is_empty() {
-                self.dial_peer(*peer_id);
-            }
+
+            // trigger reconnection
+            peer.status = PeerStatus::Disconnected;
+            self.dial_peer(*peer_id);
         }
     }
 
@@ -213,12 +215,12 @@ impl NetworkBehaviour for ExocoreBehaviour {
     ) -> Poll<NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehaviourEvent>> {
         // check if we could try to dial to disconnected nodes
         for (peer_id, peer) in &mut self.peers {
-            let elapsed = peer.last_dial.elapsed();
-            if !peer.addresses.is_empty()
-                && peer.status == PeerStatus::Disconnected
-                && elapsed >= Duration::from_secs(5)
+            let dial_expired = peer
+                .last_dial
+                .map_or(true, |i| i.elapsed() > Duration::from_secs(5));
+            if !peer.addresses.is_empty() && peer.status == PeerStatus::Disconnected && dial_expired
             {
-                peer.last_dial = Instant::now();
+                peer.last_dial = Some(Instant::now());
                 self.actions.push_back(NetworkBehaviourAction::DialPeer {
                     peer_id: *peer_id,
                     condition: DialPeerCondition::Disconnected,
@@ -241,7 +243,7 @@ struct Peer {
     node: Node,
     temp_queue: VecDeque<QueuedPeerEvent>,
     status: PeerStatus,
-    last_dial: Instant,
+    last_dial: Option<Instant>,
 }
 
 impl Peer {

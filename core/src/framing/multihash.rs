@@ -170,13 +170,11 @@ mod tests {
     }
 
     #[test]
-    fn different_hashes() -> anyhow::Result<()> {
+    fn different_hashes() {
         let inner = b"hello".to_vec();
         let sha3_256 = MultihashFrameBuilder::<Sha3_256, _>::new(inner.clone());
         let sha2_256 = MultihashFrameBuilder::<multihash::Sha2_256, _>::new(inner);
 
         assert_ne!(sha3_256.as_bytes(), sha2_256.as_bytes());
-
-        Ok(())
     }
 }

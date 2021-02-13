@@ -667,8 +667,7 @@ pub fn print_pending_sync_request<F: FrameReader>(
     let ranges = reader.get_ranges().unwrap();
 
     for range in ranges.iter() {
-        let ((bound_from, bound_to), _from, _to) =
-            super::pending_sync::extract_sync_bounds(&range).unwrap();
+        let ((bound_from, bound_to), _from, _to) = super::pending_sync::extract_sync_bounds(&range);
         trace!("  Range {:?} to {:?}", bound_from, bound_to,);
         trace!("    Hash={:?}", range.get_operations_hash().unwrap());
         trace!("    Count={}", range.get_operations_count());
