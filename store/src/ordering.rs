@@ -1,7 +1,7 @@
+use exocore_protos::generated::exocore_store::{ordering_value, OrderingValue, Paging};
 use std::cmp::Ordering;
 
-use exocore_chain::operation::OperationId;
-use exocore_protos::generated::exocore_store::{ordering_value, OrderingValue, Paging};
+use crate::mutation::OperationId;
 
 /// Wraps a trait or entities search result's ordering value so that it can be
 /// easily reversed when required or ignored if it's outside of the requested

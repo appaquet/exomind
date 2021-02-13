@@ -1,3 +1,4 @@
+#[cfg(any(feature = "local", feature = "remote"))]
 #[macro_use]
 extern crate log;
 
@@ -13,4 +14,5 @@ pub mod query;
 
 #[cfg(feature = "local")]
 pub mod local;
+#[cfg(feature = "remote")]
 pub mod remote;

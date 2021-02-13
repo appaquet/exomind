@@ -1,22 +1,16 @@
-use exocore_chain::operation::OperationId;
-use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
+use crate::mutation::OperationId;
 use exocore_protos::generated::exocore_store::{
-    entity_query, ordering, trait_field_predicate, trait_query, EntityQuery, EntityResults,
-    MatchPredicate, Ordering, Paging, ReferencePredicate, TraitFieldPredicate,
-    TraitFieldReferencePredicate, TraitPredicate, TraitQuery,
+    entity_query, ordering, trait_field_predicate, trait_query, EntityQuery, MatchPredicate,
+    Ordering, Paging, ReferencePredicate, TraitFieldPredicate, TraitFieldReferencePredicate,
+    TraitPredicate, TraitQuery,
 };
-use exocore_protos::generated::store_transport_capnp::watched_query_request;
-use exocore_protos::generated::store_transport_capnp::{query_request, query_response};
-use exocore_protos::prost::Message;
 use exocore_protos::{
     message::NamedMessage,
-    prost::ProstMessageExt,
     reflect::FieldId,
     store::{AllPredicate, IdsPredicate, OperationsPredicate, Projection, Reference},
 };
 
 use crate::entity::{EntityId, TraitId};
-use crate::error::Error;
 
 pub type WatchToken = u64;
 pub type ResultHash = u64;
@@ -443,92 +437,5 @@ pub fn default_paging() -> Paging {
 pub fn validate_paging(paging: &mut Paging) {
     if paging.count == 0 {
         paging.count = 10;
-    }
-}
-
-pub fn query_to_request_frame(
-    query: &EntityQuery,
-) -> Result<CapnpFrameBuilder<query_request::Owned>, Error> {
-    let mut frame_builder = CapnpFrameBuilder::<query_request::Owned>::new();
-    let mut msg_builder = frame_builder.get_builder();
-
-    let buf = query.encode_to_vec();
-    msg_builder.set_request(&buf);
-
-    Ok(frame_builder)
-}
-
-pub fn query_from_request_frame<I>(
-    frame: TypedCapnpFrame<I, query_request::Owned>,
-) -> Result<EntityQuery, Error>
-where
-    I: FrameReader,
-{
-    let reader = frame.get_reader()?;
-    let data = reader.get_request()?;
-
-    let query = EntityQuery::decode(data)?;
-
-    Ok(query)
-}
-
-pub fn watched_query_to_request_frame(
-    query: &EntityQuery,
-) -> Result<CapnpFrameBuilder<watched_query_request::Owned>, Error> {
-    let mut frame_builder = CapnpFrameBuilder::<watched_query_request::Owned>::new();
-    let mut msg_builder = frame_builder.get_builder();
-
-    let buf = query.encode_to_vec();
-    msg_builder.set_request(&buf);
-
-    Ok(frame_builder)
-}
-
-pub fn watched_query_from_request_frame<I>(
-    frame: TypedCapnpFrame<I, watched_query_request::Owned>,
-) -> Result<EntityQuery, Error>
-where
-    I: FrameReader,
-{
-    let reader = frame.get_reader()?;
-    let data = reader.get_request()?;
-
-    let query = EntityQuery::decode(data)?;
-
-    Ok(query)
-}
-
-pub fn query_results_to_response_frame(
-    result: Result<EntityResults, Error>,
-) -> Result<CapnpFrameBuilder<query_response::Owned>, Error> {
-    let mut frame_builder = CapnpFrameBuilder::<query_response::Owned>::new();
-    let mut msg_builder = frame_builder.get_builder();
-
-    match result {
-        Ok(res) => {
-            let buf = res.encode_to_vec();
-            msg_builder.set_response(&buf);
-        }
-        Err(err) => {
-            msg_builder.set_error(&err.to_string());
-        }
-    }
-
-    Ok(frame_builder)
-}
-
-pub fn query_results_from_response_frame<I>(
-    frame: TypedCapnpFrame<I, query_response::Owned>,
-) -> Result<EntityResults, Error>
-where
-    I: FrameReader,
-{
-    let reader = frame.get_reader()?;
-    if reader.has_error() {
-        Err(Error::Remote(reader.get_error()?.to_owned()))
-    } else {
-        let data = reader.get_response()?;
-        let res = EntityResults::decode(data)?;
-        Ok(res)
     }
 }

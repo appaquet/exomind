@@ -1,6 +1,6 @@
 [package]
 name = "exocore-chain"
-description = "Distributed applications framework"
+description = "Storage of Exocore (Distributed applications framework)"
 version = "0.1.3"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"

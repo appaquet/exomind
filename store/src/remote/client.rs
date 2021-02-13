@@ -31,6 +31,11 @@ use futures::{
 
 use crate::{error::Error, mutation::MutationRequestLike, query::WatchToken};
 
+use super::seri::{
+    mutation_result_from_response_frame, mutation_to_request_frame,
+    query_results_from_response_frame, query_to_request_frame, watched_query_to_request_frame,
+};
+
 /// This implementation of the AsyncStore allow sending all queries and
 /// mutations to a remote node's local store running the `Server` component.
 pub struct Client<T>
@@ -332,7 +337,7 @@ impl Inner {
         let store_node = self.store_node.as_ref().ok_or(Error::NotConnected)?;
 
         let request_id = self.clock.consistent_time(self.cell.local_node());
-        let request_frame = crate::mutation::mutation_to_request_frame(request)?;
+        let request_frame = mutation_to_request_frame(request)?;
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
                 .with_to_node(store_node.clone())
@@ -367,7 +372,7 @@ impl Inner {
         let store_node = self.store_node.as_ref().ok_or(Error::NotConnected)?;
 
         let request_id = self.clock.consistent_time(self.cell.local_node());
-        let request_frame = crate::query::query_to_request_frame(&query)?;
+        let request_frame = query_to_request_frame(&query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
                 .with_to_node(store_node.clone())
@@ -415,7 +420,7 @@ impl Inner {
     fn send_watch_query(&self, watched_query: &WatchedQueryRequest) -> Result<(), Error> {
         let store_node = self.store_node.as_ref().ok_or(Error::NotConnected)?;
 
-        let request_frame = crate::query::watched_query_to_request_frame(&watched_query.query)?;
+        let request_frame = watched_query_to_request_frame(&watched_query.query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
                 .with_to_node(store_node.clone())
@@ -505,14 +510,13 @@ impl IncomingMessage {
         match in_message.message_type {
             <mutation_response::Owned as MessageType>::MESSAGE_TYPE => {
                 let mutation_frame = in_message.get_data_as_framed_message()?;
-                let mutation_result =
-                    crate::mutation::mutation_result_from_response_frame(mutation_frame)?;
+                let mutation_result = mutation_result_from_response_frame(mutation_frame)?;
                 Ok(IncomingMessage::MutationResponse(mutation_result))
             }
             <query_response::Owned as MessageType>::MESSAGE_TYPE
             | <watched_query_response::Owned as MessageType>::MESSAGE_TYPE => {
                 let query_frame = in_message.get_data_as_framed_message()?;
-                let query_result = crate::query::query_results_from_response_frame(query_frame)?;
+                let query_result = query_results_from_response_frame(query_frame)?;
                 Ok(IncomingMessage::QueryResponse(query_result))
             }
             other => Err(Error::Other(format!(

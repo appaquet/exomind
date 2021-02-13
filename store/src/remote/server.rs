@@ -16,6 +16,11 @@ use futures::{FutureExt, SinkExt, StreamExt};
 use crate::error::Error;
 use crate::query::WatchToken;
 
+use super::seri::{
+    mutation_from_request_frame, mutation_result_to_response_frame, query_from_request_frame,
+    query_results_to_response_frame,
+};
+
 pub struct Server<CS, PS, T>
 where
     CS: exocore_chain::chain::ChainStore,
@@ -180,7 +185,7 @@ where
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
-            let resp_frame = crate::query::query_results_to_response_frame(result)?;
+            let resp_frame = query_results_to_response_frame(result)?;
             let message = in_message.to_response_message(&inner.cell, resp_frame)?;
             inner.send_message(message)?;
 
@@ -241,7 +246,7 @@ where
             let inner = weak_inner1.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
-            let resp_frame = crate::query::query_results_to_response_frame(result)?;
+            let resp_frame = query_results_to_response_frame(result)?;
             let message = reply_token.to_response_message(&inner.cell, resp_frame)?;
             inner.send_message(message)?;
 
@@ -296,7 +301,7 @@ where
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
-            let resp_frame = crate::mutation::mutation_result_to_response_frame(result)?;
+            let resp_frame = mutation_result_to_response_frame(result)?;
             let message = in_message.to_response_message(&inner.cell, resp_frame)?;
 
             inner.send_message(message)?;
@@ -411,17 +416,17 @@ impl IncomingMessage {
         match in_message.message_type {
             <mutation_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
-                let mutation = crate::mutation::mutation_from_request_frame(frame)?;
+                let mutation = mutation_from_request_frame(frame)?;
                 Ok(IncomingMessage::Mutation(Box::new(mutation)))
             }
             <query_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
-                let query = crate::query::query_from_request_frame(frame)?;
+                let query = query_from_request_frame(frame)?;
                 Ok(IncomingMessage::Query(Box::new(query)))
             }
             <watched_query_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
-                let query = crate::query::query_from_request_frame(frame)?;
+                let query = query_from_request_frame(frame)?;
                 Ok(IncomingMessage::WatchedQuery(Box::new(query)))
             }
             <unwatch_query_request::Owned as MessageType>::MESSAGE_TYPE => {

@@ -44,7 +44,6 @@ uuid = { version = "0.8", features = ["v4", "wasm-bindgen"] }
 petname = "1.1"
 rand = "0.8"
 url = "2.2"
-base64 = "0.13"
 
 # logger
 log4rs = { version = "1.0", optional = true }
