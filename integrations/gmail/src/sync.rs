@@ -9,8 +9,9 @@ use crate::{
     exomind::{email_trait_id, thread_entity_id, ExomindClient},
     parsing,
 };
-use exocore::core::{protos::prost::ProstTimestampExt, time::ConsistentTimestamp};
-use exocore::{chain::operation::OperationId, core::protos::store::Reference};
+use exocore::core::time::ConsistentTimestamp;
+use exocore::protos::{prost::ProstTimestampExt, store::Reference};
+use exocore::store::mutation::OperationId;
 use exocore::{core::time::Utc, store::entity::EntityId};
 use exocore::{protos::store::Entity, store::entity::EntityExt};
 use exomind_core::protos::base::{CollectionChild, Email, EmailThread};

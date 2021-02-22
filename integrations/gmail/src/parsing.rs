@@ -267,7 +267,7 @@ fn parse_contacts(value: &str) -> anyhow::Result<Vec<Contact>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use exocore::core::tests_utils::root_test_fixtures_path;
+    use exocore::core::tests_utils::find_test_fixture;
 
     #[test]
     fn parse_html_simple() -> anyhow::Result<()> {
@@ -354,7 +354,7 @@ mod tests {
     }
 
     fn read_thread_fixture(file: &str) -> Result<google_gmail1::schemas::Thread, anyhow::Error> {
-        let path = root_test_fixtures_path(&format!(
+        let path = find_test_fixture(&format!(
             "integrations/gmail/fixtures/threads/{}.json",
             file
         ));

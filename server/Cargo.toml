@@ -1,19 +1,19 @@
 [package]
-name = "exomind-server"
-version = "0.1.1"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
+name = "exomind-server"
+version = "0.1.1"
 
 [dependencies]
-exocore = { version = "0.1.2", default-features = false, features = ["client", "logger"] }
-exomind-core = { version = "0.1.1", path = "../core" }
-exomind-gmail = { version = "0.1.1", path = "../integrations/gmail" }
-log = "0.4"
-tokio = { version = "1.2", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1.0"
-structopt = "0.3"
-serde = "1.0"
-serde_yaml = "0.8"
-serde_derive = "1.0"
+exocore = {version = "0.1.2", default-features = false, features = ["client", "logger"]}
+exomind-core = {version = "0.1.1", path = "../core"}
+exomind-gmail = {version = "0.1.1", path = "../integrations/gmail"}
 futures = "0.3"
+log = "0.4"
+serde = "1.0"
+serde_derive = "1.0"
+serde_yaml = "0.8"
+structopt = "0.3"
+tokio = {version = "1.2", features = ["macros", "rt-multi-thread", "time"]}

@@ -14,7 +14,7 @@ PODS:
 DEPENDENCIES:
   - CLTokenInputView
   - Dwifft (~> 0.9)
-  - Exocore (~> 0.1.3)
+  - Exocore (from `../../exocore`)
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
   - KeychainSwift (~> 19.0)
   - MCSwipeTableViewCell
@@ -27,7 +27,6 @@ SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - CLTokenInputView
     - Dwifft
-    - Exocore
     - KeychainSwift
     - MCSwipeTableViewCell
     - SnapKit
@@ -36,6 +35,8 @@ SPEC REPOS:
     - UIColor_Hex_Swift
 
 EXTERNAL SOURCES:
+  Exocore:
+    :path: "../../exocore"
   FontAwesome.swift:
     :git: https://github.com/thii/FontAwesome.swift.git
 
@@ -56,6 +57,6 @@ SPEC CHECKSUMS:
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: b75cfbff20f0435c68f6fcf9dd81ce1e1f877216
+PODFILE CHECKSUM: e446e978cd5e0b8ab262b0e1af4bcf61b2997ed1
 
 COCOAPODS: 1.9.3

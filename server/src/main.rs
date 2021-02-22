@@ -1,10 +1,8 @@
 use std::{str::FromStr, time::Duration};
 
 use exocore::{
-    core::{
-        protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
-        time::Utc,
-    },
+    core::time::Utc,
+    protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
     protos::store::{Entity, Reference, Trait},
     store::{entity::EntityExt, mutation::MutationBuilder},
 };

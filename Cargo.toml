@@ -18,6 +18,6 @@ exclude = [
     "3rd"
 ]
 
-# [patch.crates-io]
-# exocore = { path = "../exocore" }
-# exocore = { git = "https://github.com/appaquet/exocore.git" }
+[patch.crates-io]
+#exocore = { path = "../exocore" }
+exocore = { git = "https://github.com/appaquet/exocore.git" }
