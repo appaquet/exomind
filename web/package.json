@@ -96,7 +96,7 @@
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "cookie-parser": "^1.4.5",
     "css-loader": "^5.0.2",
-    "electron": "^11.2.2",
+    "electron": "^11.3.0",
     "electron-builder": "^22.9.1",
     "electron-webpack": "^2.8.2",
     "eslint": "^7.20.0",
