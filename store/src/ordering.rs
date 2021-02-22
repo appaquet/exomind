@@ -1,5 +1,6 @@
-use exocore_protos::generated::exocore_store::{ordering_value, OrderingValue, Paging};
 use std::cmp::Ordering;
+
+use exocore_protos::generated::exocore_store::{ordering_value, OrderingValue, Paging};
 
 use crate::mutation::OperationId;
 

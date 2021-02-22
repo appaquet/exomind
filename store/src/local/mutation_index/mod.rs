@@ -682,7 +682,7 @@ impl MutationIndex {
                 queries.push((Occur::Should, query));
             }
 
-            // even if fuzzy is enabled, we add the term again so that an exact match scores much
+            // even if fuzzy is enabled, we add the term again so that an exact match scores more
             let query = Box::new(TermQuery::new(
                 term,
                 IndexRecordOption::WithFreqsAndPositions,

@@ -107,7 +107,7 @@ pub fn result_assert_false(value: bool) -> anyhow::Result<()> {
 /// Finds the given relative path from root of the project by popping current
 /// directory until we find the root directory. This is needed since tests may
 /// be executed from root directory, but also from test's file directory.
-pub fn root_test_fixtures_path(relative_path: &str) -> std::path::PathBuf {
+pub fn find_test_fixture(relative_path: &str) -> std::path::PathBuf {
     let cur_dir = std::env::current_dir().expect("Couldn't get current directory");
     for level in 0..5 {
         let mut abs_path = cur_dir.clone();

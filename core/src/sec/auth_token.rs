@@ -1,11 +1,11 @@
+use exocore_protos::generated::core::{
+    AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto,
+};
 use exocore_protos::prost::{Message, ProstMessageExt};
 
 use crate::{
     cell::{Cell, CellId, NodeId},
     time::{Clock, ConsistentTimestamp},
-};
-use exocore_protos::generated::core::{
-    AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto,
 };
 
 /// Authentication token that can be used as an alternative authentication

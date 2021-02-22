@@ -1,6 +1,3 @@
-pub use protobuf::descriptor::FileDescriptorSet;
-pub use protobuf::Message;
-
 use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::{collections::HashMap, sync::Arc};
@@ -11,6 +8,9 @@ use protobuf::types::{
     ProtobufTypeUint32, ProtobufTypeUint64,
 };
 use protobuf::well_known_types::{Any, Empty, Timestamp};
+
+pub use protobuf::descriptor::FileDescriptorSet;
+pub use protobuf::Message;
 
 use super::registry::Registry;
 use super::Error;

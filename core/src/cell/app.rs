@@ -2,12 +2,12 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
 
+use exocore_protos::generated::exocore_apps::manifest_schema::Source;
+use exocore_protos::generated::exocore_apps::Manifest;
 use exocore_protos::reflect::{FileDescriptorSet, Message};
 
 use super::{Error, ManifestExt};
 use crate::sec::keys::PublicKey;
-use exocore_protos::generated::exocore_apps::manifest_schema::Source;
-use exocore_protos::generated::exocore_apps::Manifest;
 
 /// Application that extends the capability of the cell by providing schemas and
 /// WebAssembly logic.

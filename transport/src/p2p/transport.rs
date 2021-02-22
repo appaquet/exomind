@@ -167,7 +167,8 @@ impl Libp2pTransport {
         // Spawn the main Future which will take care of the swarm
         let inner = Arc::clone(&self.service_handles);
         let swarm_task = future::poll_fn(move |cx: &mut Context| -> Poll<()> {
-            // At interval, re-add all nodes to make sure that their newer addresses are added.
+            // At interval, re-add all nodes to make sure that their newer addresses are
+            // added.
             if nodes_update_interval.poll_tick(cx).is_ready() {
                 if let Ok(inner) = inner.read() {
                     for node in inner.all_peer_nodes().values() {
@@ -389,7 +390,8 @@ fn dispatch_node_status(
     Ok(())
 }
 
-/// Try to add a node address discovered through identify if it doesn't already exist.
+/// Try to add a node address discovered through identify if it doesn't already
+/// exist.
 fn add_node_address(
     inner: &RwLock<ServiceHandles>,
     peer_id: PeerId,

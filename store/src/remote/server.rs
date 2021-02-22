@@ -13,13 +13,12 @@ use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportServi
 use futures::channel::{mpsc, oneshot};
 use futures::{FutureExt, SinkExt, StreamExt};
 
-use crate::error::Error;
-use crate::query::WatchToken;
-
 use super::seri::{
     mutation_from_request_frame, mutation_result_to_response_frame, query_from_request_frame,
     query_results_to_response_frame,
 };
+use crate::error::Error;
+use crate::query::WatchToken;
 
 pub struct Server<CS, PS, T>
 where

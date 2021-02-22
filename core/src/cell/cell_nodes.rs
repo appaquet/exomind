@@ -3,8 +3,9 @@ use std::{
     sync::{RwLockReadGuard, RwLockWriteGuard},
 };
 
-use super::{Cell, Error, LocalNode, Node, NodeId};
 use exocore_protos::generated::exocore_core::cell_node_config;
+
+use super::{Cell, Error, LocalNode, Node, NodeId};
 
 /// Common methods collection of nodes of a `Cell`
 pub trait CellNodes {

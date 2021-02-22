@@ -35,7 +35,7 @@ pub enum Error {
     ProtoFieldExpected(&'static str),
 
     #[error("IO error of kind {0}")]
-    IO(#[source] std::sync::Arc<std::io::Error>),
+    IO(#[from] std::sync::Arc<std::io::Error>),
 
     #[error("Error from remote store: {0}")]
     Remote(String),

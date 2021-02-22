@@ -4,6 +4,10 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use exocore_protos::{
+    generated::exocore_core::{CellConfig, LocalNodeConfig},
+    registry::Registry,
+};
 use libp2p::core::PeerId;
 
 use super::{
@@ -11,10 +15,6 @@ use super::{
     CellNodesWrite, Error, LocalNode, Node, NodeId,
 };
 use crate::sec::keys::{Keypair, PublicKey};
-use exocore_protos::{
-    generated::exocore_core::{CellConfig, LocalNodeConfig},
-    registry::Registry,
-};
 
 /// A Cell represents a private enclosure in which the data and applications of
 /// a user are hosted. A Cell resides on multiple nodes.

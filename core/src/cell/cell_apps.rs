@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use super::{Application, ApplicationId, Error};
 use exocore_protos::generated::exocore_core::{cell_application_config, CellApplicationConfig};
 use exocore_protos::registry::Registry;
+
+use super::{Application, ApplicationId, Error};
 
 /// Applications installed in a cell.
 #[derive(Clone)]

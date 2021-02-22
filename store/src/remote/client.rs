@@ -29,12 +29,11 @@ use futures::{
     prelude::*,
 };
 
-use crate::{error::Error, mutation::MutationRequestLike, query::WatchToken};
-
 use super::seri::{
     mutation_result_from_response_frame, mutation_to_request_frame,
     query_results_from_response_frame, query_to_request_frame, watched_query_to_request_frame,
 };
+use crate::{error::Error, mutation::MutationRequestLike, query::WatchToken};
 
 /// This implementation of the AsyncStore allow sending all queries and
 /// mutations to a remote node's local store running the `Server` component.
@@ -178,6 +177,7 @@ pub struct ClientConfiguration {
     pub watched_query_channel_size: usize,
 }
 
+/// Keep in sync with application SDK store.
 impl Default for ClientConfiguration {
     fn default() -> Self {
         ClientConfiguration {

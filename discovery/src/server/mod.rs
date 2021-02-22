@@ -275,7 +275,7 @@ enum RequestError {
     #[error("Payload is too large")]
     PayloadTooLarge,
     #[error("Invalid request body: {0}")]
-    Serialization(#[source] serde_json::Error),
+    Serialization(#[from] serde_json::Error),
     #[error("Hyper error: {0}")]
     Hyper(#[from] hyper::Error),
 }

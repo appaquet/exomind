@@ -6,6 +6,10 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use exocore_protos::{
+    core::NodeAddresses,
+    generated::exocore_core::{LocalNodeConfig, NodeConfig},
+};
 use libp2p::core::{Multiaddr, PeerId};
 use url::Url;
 
@@ -13,10 +17,6 @@ use super::error::Error;
 use crate::sec::{
     keys::{Keypair, PublicKey},
     signature::Signature,
-};
-use exocore_protos::{
-    core::NodeAddresses,
-    generated::exocore_core::{LocalNodeConfig, NodeConfig},
 };
 
 /// Represents a machine / process on which Exocore runs. A node can host

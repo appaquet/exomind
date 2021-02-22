@@ -3,9 +3,9 @@ use std::io;
 use capnp::message::{Builder, HeapAllocator};
 use capnp::traits::Owned;
 use exocore_protos::capnp;
+use exocore_protos::generated::MessageType;
 
 use super::{check_into_size, Error, FrameBuilder, FrameReader};
-use exocore_protos::generated::MessageType;
 
 /// Frame that wraps a Capnproto message
 pub struct CapnpFrame<I: FrameReader> {
@@ -194,9 +194,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use exocore_protos::generated::data_chain_capnp::block_header;
+
     use super::*;
     use crate::framing::assert_builder_equals;
-    use exocore_protos::generated::data_chain_capnp::block_header;
 
     #[test]
     fn assert_typed_frame_send_sync() -> anyhow::Result<()> {

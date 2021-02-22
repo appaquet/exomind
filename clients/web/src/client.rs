@@ -4,11 +4,10 @@ use std::{
 };
 
 use exocore_core::{cell::Cell, futures::spawn_future_non_send, time::Clock};
+use exocore_protos::prost::Message;
 use exocore_protos::{
     generated::exocore_store::EntityQuery, prost::ProstMessageExt, store::MutationRequest,
 };
-
-use exocore_protos::prost::Message;
 use exocore_store::remote::{Client, ClientConfiguration, ClientHandle};
 use exocore_transport::{
     p2p::Libp2pTransportConfig, transport::ConnectionStatus, InEvent, Libp2pTransport, ServiceType,

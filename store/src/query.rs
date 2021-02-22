@@ -1,4 +1,3 @@
-use crate::mutation::OperationId;
 use exocore_protos::generated::exocore_store::{
     entity_query, ordering, trait_field_predicate, trait_query, EntityQuery, MatchPredicate,
     Ordering, Paging, ReferencePredicate, TraitFieldPredicate, TraitFieldReferencePredicate,
@@ -11,6 +10,7 @@ use exocore_protos::{
 };
 
 use crate::entity::{EntityId, TraitId};
+use crate::mutation::OperationId;
 
 pub type WatchToken = u64;
 pub type ResultHash = u64;

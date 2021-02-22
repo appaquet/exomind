@@ -3,11 +3,16 @@ set -e
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$CUR_DIR"
 
+export EXOCORE_ROOT="$CUR_DIR/../"
+
 echo "Formatting..."
 ./format.sh
 
 echo "Cargo checking code, tests and benches"
 cargo check --workspace --tests --benches --all-features
+
+echo "Compiling sample app for tests"
+$EXOCORE_ROOT/apps/tools/build_fixtures.sh
 
 echo "Running tests..."
 cargo test --workspace --all-features
@@ -16,11 +21,9 @@ echo "Running clippy..."
 ./clippy.sh
 
 echo "Validating web compilation for exocore-client-web"
-pushd $CUR_DIR/../clients/web
+cd $EXOCORE_ROOT/clients/web
 cargo clippy --target "wasm32-unknown-unknown"
-popd
 
 echo "Validating exo compilation"
-pushd $CUR_DIR/../exo
+cd $EXOCORE_ROOT/exo
 cargo check
-popd

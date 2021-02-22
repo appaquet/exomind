@@ -238,9 +238,10 @@ pub struct IteratedSizedReaderFrame {
 mod tests {
     use std::io::Cursor;
 
+    use exocore_protos::generated::data_chain_capnp::block_header;
+
     use super::*;
     use crate::framing::{assert_builder_equals, CapnpFrameBuilder, TypedCapnpFrame};
-    use exocore_protos::generated::data_chain_capnp::block_header;
 
     #[test]
     fn can_build_and_read_sized_inner() -> anyhow::Result<()> {

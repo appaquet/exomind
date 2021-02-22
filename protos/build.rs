@@ -26,6 +26,7 @@ fn main() {
                 "./protobuf/exocore/core/auth.proto",
                 "./protobuf/exocore/core/config.proto",
                 "./protobuf/exocore/apps/manifest.proto",
+                "./protobuf/exocore/apps/runtime.proto",
             ];
 
             let mut config = prost_build::Config::new();
@@ -70,7 +71,7 @@ fn main() {
                     "#[serde(rename_all = \"lowercase\")]",
                 )
                 .field_attribute("ManifestSchema.source", "#[serde(flatten)]")
-                .field_attribute("ManifestSchema.source.bytes", "#[serde(serialize_with = \"crate::protos::base64::as_base64\", deserialize_with = \"crate::protos::base64::from_base64\")]")
+                .field_attribute("ManifestSchema.source.bytes", "#[serde(serialize_with = \"crate::base64::as_base64\", deserialize_with = \"crate::base64::from_base64\")]")
                 .field_attribute("LocalNodeConfig.name", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.id", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.path", "#[serde(default)]")
