@@ -4,28 +4,25 @@ pub use chain_sync::ChainSyncConfig;
 pub use commit_manager::CommitManagerConfig;
 pub use config::EngineConfig;
 pub use error::EngineError;
-use exocore_core::cell::Cell;
-use exocore_core::framing::{FrameReader, TypedCapnpFrame};
-use exocore_core::futures::{interval, spawn_blocking};
-use exocore_core::time::Clock;
-use exocore_core::utils::handle_set::HandleSet;
-use exocore_protos::generated::data_transport_capnp::{
-    chain_sync_request, chain_sync_response, pending_sync_request,
+use exocore_core::{
+    cell::Cell,
+    framing::{FrameReader, TypedCapnpFrame},
+    futures::{interval, spawn_blocking},
+    time::Clock,
+    utils::handle_set::HandleSet,
 };
-use exocore_protos::generated::MessageType;
+use exocore_protos::generated::{
+    data_transport_capnp::{chain_sync_request, chain_sync_response, pending_sync_request},
+    MessageType,
+};
 use exocore_transport::{InEvent, InMessage, OutEvent, TransportServiceHandle};
-use futures::channel::mpsc;
-use futures::future::FutureExt;
-use futures::{SinkExt, StreamExt};
+use futures::{channel::mpsc, future::FutureExt, SinkExt, StreamExt};
 pub use handle::{EngineHandle, EngineOperation, EngineOperationStatus, Event};
 pub use pending_sync::PendingSyncConfig;
 pub use request_tracker::RequestTrackerConfig;
 pub use sync_context::{SyncContext, SyncContextMessage, SyncState};
 
-use crate::chain;
-use crate::operation;
-use crate::operation::NewOperation;
-use crate::pending;
+use crate::{chain, operation, operation::NewOperation, pending};
 
 pub(super) mod chain_sync;
 mod commit_manager;

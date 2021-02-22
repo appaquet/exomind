@@ -6,9 +6,10 @@ extern crate log;
 
 use std::time::Duration;
 
-use exocore::apps::sdk::prelude::*;
-use exocore::store::mutation::MutationBuilder;
-use exocore::store::query::QueryBuilder;
+use exocore::{
+    apps::sdk::prelude::*,
+    store::{mutation::MutationBuilder, query::QueryBuilder},
+};
 
 #[exocore_app]
 pub struct TestApplication {}

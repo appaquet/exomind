@@ -1,16 +1,20 @@
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
-use exocore_core::cell::LocalNode;
-use exocore_core::framing::{CapnpFrameBuilder, FrameBuilder};
+use exocore_core::{
+    cell::LocalNode,
+    framing::{CapnpFrameBuilder, FrameBuilder},
+};
 use exocore_protos::generated::data_chain_capnp::{chain_operation, chain_operation_header};
 
 use super::*;
-use crate::engine::testing::*;
-use crate::engine::SyncState;
-use crate::operation::OperationType;
-use crate::pending::memory::MemoryPendingStore;
-use crate::pending::CommitStatus;
+use crate::{
+    engine::{testing::*, SyncState},
+    operation::OperationType,
+    pending::{memory::MemoryPendingStore, CommitStatus},
+};
 
 #[test]
 fn tick_send_to_other_nodes() -> anyhow::Result<()> {

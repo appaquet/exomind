@@ -1,10 +1,11 @@
 use std::{sync::Arc, time::Duration};
 
-use exocore_core::cell::{FullCell, LocalNode};
-use exocore_core::futures::sleep;
-use exocore_core::futures::spawn_future;
-use exocore_core::tests_utils::async_expect_eventually;
-use exocore_core::time::{ConsistentTimestamp, Instant};
+use exocore_core::{
+    cell::{FullCell, LocalNode},
+    futures::{sleep, spawn_future},
+    tests_utils::async_expect_eventually,
+    time::{ConsistentTimestamp, Instant},
+};
 
 use super::*;
 use crate::{

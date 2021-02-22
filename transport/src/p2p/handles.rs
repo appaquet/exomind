@@ -1,20 +1,25 @@
-use std::collections::HashMap;
-use std::pin::Pin;
-use std::sync::{RwLock, Weak};
-use std::task::{Context, Poll};
+use std::{
+    collections::HashMap,
+    pin::Pin,
+    sync::{RwLock, Weak},
+    task::{Context, Poll},
+};
 
-use exocore_core::cell::{Cell, CellId};
-use exocore_core::cell::{Node, NodeId};
-use exocore_core::utils::handle_set::Handle;
-use futures::channel::mpsc;
-use futures::channel::mpsc::SendError;
-use futures::prelude::*;
-use futures::sink::SinkMapErr;
-use futures::{FutureExt, SinkExt};
+use exocore_core::{
+    cell::{Cell, CellId, Node, NodeId},
+    utils::handle_set::Handle,
+};
+use futures::{
+    channel::{mpsc, mpsc::SendError},
+    prelude::*,
+    sink::SinkMapErr,
+    FutureExt, SinkExt,
+};
 
-use crate::transport::{InEvent, OutEvent, TransportHandleOnStart};
-use crate::Error;
-use crate::{ServiceType, TransportServiceHandle};
+use crate::{
+    transport::{InEvent, OutEvent, TransportHandleOnStart},
+    Error, ServiceType, TransportServiceHandle,
+};
 
 /// Transport handles created on the `Libp2pTransport` to be used by services.
 ///

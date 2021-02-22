@@ -1,15 +1,19 @@
-use std::fs::File;
-use std::io::{BufWriter, Cursor, Read, Seek};
-use std::path::{Path, PathBuf};
+use std::{
+    fs::File,
+    io::{BufWriter, Cursor, Read, Seek},
+    path::{Path, PathBuf},
+};
 
 use clap::Clap;
 use exocore_core::cell::{Application, ManifestExt};
 use exocore_protos::apps::Manifest;
 use zip::write::FileOptions;
 
-use crate::term::{print_success, style_value};
-use crate::utils::expand_tild;
-use crate::Context;
+use crate::{
+    term::{print_success, style_value},
+    utils::expand_tild,
+    Context,
+};
 
 #[derive(Clap)]
 pub struct AppOptions {

@@ -5,9 +5,10 @@ use exocore_core::{
     futures::Runtime,
     time::{Clock, ConsistentTimestamp},
 };
-use exocore_protos::prost::Message;
 use exocore_protos::{
-    generated::exocore_store::EntityQuery, prost::ProstMessageExt, store::MutationRequest,
+    generated::exocore_store::EntityQuery,
+    prost::{Message, ProstMessageExt},
+    store::MutationRequest,
 };
 use exocore_store::remote::{Client as StoreClient, ClientConfiguration, ClientHandle};
 use exocore_transport::{
@@ -15,9 +16,7 @@ use exocore_transport::{
 };
 use futures::StreamExt;
 
-use crate::exocore_init;
-use crate::node::LocalNode;
-use crate::utils::CallbackContext;
+use crate::{exocore_init, node::LocalNode, utils::CallbackContext};
 
 /// Creates a new exocore client instance of a node that has join a cell.
 ///

@@ -3,8 +3,10 @@ use exocore_chain::{
     engine::EngineOperation,
     operation::{Operation, OperationId},
 };
-use exocore_protos::generated::exocore_store::{entity_mutation::Mutation, EntityMutation, Trait};
-use exocore_protos::prost::Message;
+use exocore_protos::{
+    generated::exocore_store::{entity_mutation::Mutation, EntityMutation, Trait},
+    prost::Message,
+};
 use smallvec::SmallVec;
 
 use crate::entity::{EntityId, TraitId};

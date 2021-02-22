@@ -1,8 +1,7 @@
 use std::fs::File;
 
 use clap::Clap;
-use exocore_core::cell::LocalNode;
-use exocore_core::cell::LocalNodeConfigExt;
+use exocore_core::cell::{LocalNode, LocalNodeConfigExt};
 use exocore_protos::core::{LocalNodeConfig, NodeAddresses};
 
 use crate::{term::*, Context};

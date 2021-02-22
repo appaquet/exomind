@@ -1,8 +1,5 @@
-use exocore_chain::operation::Operation;
-use exocore_chain::tests_utils::*;
-use exocore_chain::*;
-use exocore_core::cell::CellNodeRole;
-use exocore_core::tests_utils::expect_result_eventually;
+use exocore_chain::{operation::Operation, tests_utils::*, *};
+use exocore_core::{cell::CellNodeRole, tests_utils::expect_result_eventually};
 use itertools::Itertools;
 
 #[macro_use]

@@ -1,19 +1,16 @@
-use std::convert::TryFrom;
-use std::fmt::Debug;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, convert::TryFrom, fmt::Debug, sync::Arc};
 
-use protobuf::descriptor::DescriptorProto;
-use protobuf::types::{
-    ProtobufType, ProtobufTypeInt32, ProtobufTypeInt64, ProtobufTypeMessage, ProtobufTypeString,
-    ProtobufTypeUint32, ProtobufTypeUint64,
+use protobuf::{
+    descriptor::DescriptorProto,
+    types::{
+        ProtobufType, ProtobufTypeInt32, ProtobufTypeInt64, ProtobufTypeMessage,
+        ProtobufTypeString, ProtobufTypeUint32, ProtobufTypeUint64,
+    },
+    well_known_types::{Any, Empty, Timestamp},
 };
-use protobuf::well_known_types::{Any, Empty, Timestamp};
+pub use protobuf::{descriptor::FileDescriptorSet, Message};
 
-pub use protobuf::descriptor::FileDescriptorSet;
-pub use protobuf::Message;
-
-use super::registry::Registry;
-use super::Error;
+use super::{registry::Registry, Error};
 use crate::generated::exocore_store::Reference;
 
 pub trait ReflectMessage: Debug {
@@ -271,8 +268,10 @@ mod tests {
     use chrono::Utc;
 
     use super::*;
-    use crate::generated::exocore_test::TestMessage;
-    use crate::prost::{ProstAnyPackMessageExt, ProstDateTimeExt};
+    use crate::{
+        generated::exocore_test::TestMessage,
+        prost::{ProstAnyPackMessageExt, ProstDateTimeExt},
+    };
 
     #[test]
     fn reflect_dyn_message() -> anyhow::Result<()> {

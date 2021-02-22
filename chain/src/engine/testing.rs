@@ -1,34 +1,43 @@
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::time::{Duration, Instant};
-
-use exocore_core::cell::{CellNodeRole, FullCell};
-use exocore_core::cell::{LocalNode, Node, NodeId};
-use exocore_core::framing::{
-    CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
-    TypedCapnpFrame,
+use std::{
+    borrow::Borrow,
+    collections::HashMap,
+    time::{Duration, Instant},
 };
-use exocore_core::sec::hash::Sha3_256;
-use exocore_core::time::{Clock, ConsistentTimestamp};
-use exocore_protos::core::LocalNodeConfig;
-use exocore_protos::generated::data_chain_capnp::block_header;
-use exocore_protos::generated::data_transport_capnp::{
-    chain_sync_request, chain_sync_response, pending_sync_request,
+
+use exocore_core::{
+    cell::{CellNodeRole, FullCell, LocalNode, Node, NodeId},
+    framing::{
+        CapnpFrameBuilder, FrameBuilder, FrameReader, MultihashFrameBuilder, SizedFrameBuilder,
+        TypedCapnpFrame,
+    },
+    sec::hash::Sha3_256,
+    time::{Clock, ConsistentTimestamp},
+};
+use exocore_protos::{
+    core::LocalNodeConfig,
+    generated::{
+        data_chain_capnp::block_header,
+        data_transport_capnp::{chain_sync_request, chain_sync_response, pending_sync_request},
+    },
 };
 use tempfile::TempDir;
 
-use super::commit_manager::CommitManager;
-use super::{chain_sync, SyncContext, SyncContextMessage};
-use super::{pending_sync, SyncState};
-use crate::block::{
-    Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignatures,
-    BlockSignaturesSize, SignaturesFrame,
+use super::{
+    chain_sync, commit_manager::CommitManager, pending_sync, SyncContext, SyncContextMessage,
+    SyncState,
 };
-use crate::chain::directory::{DirectoryChainStore, DirectoryChainStoreConfig};
-use crate::chain::ChainStore;
-use crate::operation::{GroupId, NewOperation, Operation, OperationBuilder, OperationId};
-use crate::pending::memory::MemoryPendingStore;
-use crate::pending::PendingStore;
+use crate::{
+    block::{
+        Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignatures,
+        BlockSignaturesSize, SignaturesFrame,
+    },
+    chain::{
+        directory::{DirectoryChainStore, DirectoryChainStoreConfig},
+        ChainStore,
+    },
+    operation::{GroupId, NewOperation, Operation, OperationBuilder, OperationId},
+    pending::{memory::MemoryPendingStore, PendingStore},
+};
 
 pub(super) struct EngineTestCluster {
     pub cells: Vec<FullCell>,

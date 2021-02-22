@@ -1,6 +1,8 @@
-use std::collections::{BTreeMap, HashMap};
-use std::ops::RangeBounds;
-use std::sync::Arc;
+use std::{
+    collections::{BTreeMap, HashMap},
+    ops::RangeBounds,
+    sync::Arc,
+};
 
 use super::*;
 use crate::operation::Operation;

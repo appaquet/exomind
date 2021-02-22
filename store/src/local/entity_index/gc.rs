@@ -1,13 +1,12 @@
-use std::collections::HashSet;
 use std::{
+    collections::HashSet,
     sync::{Arc, RwLock},
     time::Duration,
 };
 
 use exocore_chain::{block::BlockOffset, operation::OperationId};
 use exocore_core::time::Clock;
-use exocore_protos::core::EntityGarbageCollectorConfig;
-use exocore_protos::store::EntityMutation;
+use exocore_protos::{core::EntityGarbageCollectorConfig, store::EntityMutation};
 
 use super::{sort_mutations_commit_time, EntityAggregator};
 use crate::{

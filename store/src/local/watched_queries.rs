@@ -1,11 +1,15 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use exocore_protos::generated::exocore_store::{EntityQuery, EntityResults};
 use futures::channel::mpsc;
 
-use crate::error::Error;
-use crate::query::{ResultHash, WatchToken};
+use crate::{
+    error::Error,
+    query::{ResultHash, WatchToken},
+};
 
 pub struct WatchedQueries {
     inner: Mutex<Inner>,

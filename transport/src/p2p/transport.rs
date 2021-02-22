@@ -1,29 +1,33 @@
-use std::sync::{Arc, RwLock};
-use std::task::{Context, Poll};
+use std::{
+    sync::{Arc, RwLock},
+    task::{Context, Poll},
+};
 
-use exocore_core::cell::{Cell, CellId, CellNodes};
-use exocore_core::cell::{LocalNode, Node, NodeId};
-use exocore_core::framing::{FrameBuilder, TypedCapnpFrame};
-use exocore_core::utils::handle_set::HandleSet;
+use exocore_core::{
+    cell::{Cell, CellId, CellNodes, LocalNode, Node, NodeId},
+    framing::{FrameBuilder, TypedCapnpFrame},
+    utils::handle_set::HandleSet,
+};
 use exocore_protos::generated::common_capnp::envelope;
-use futures::channel::mpsc;
-use futures::prelude::*;
-use futures::{FutureExt, SinkExt, StreamExt};
-use libp2p::identify::{Identify, IdentifyEvent};
-use libp2p::ping::{Ping, PingEvent};
-use libp2p::swarm::{NetworkBehaviourEventProcess, Swarm};
-use libp2p::Multiaddr;
-use libp2p::{core::PeerId, NetworkBehaviour};
+use futures::{channel::mpsc, prelude::*, FutureExt, SinkExt, StreamExt};
+use libp2p::{
+    core::PeerId,
+    identify::{Identify, IdentifyEvent},
+    ping::{Ping, PingEvent},
+    swarm::{NetworkBehaviourEventProcess, Swarm},
+    Multiaddr, NetworkBehaviour,
+};
 
 use super::{
     behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage, PeerStatus},
     handles::ServiceHandles,
     Libp2pTransportConfig,
 };
-use crate::transport::{ConnectionStatus, InEvent, OutEvent};
-use crate::Error;
-use crate::{messages::InMessage, Libp2pTransportServiceHandle};
-use crate::{transport::ConnectionID, ServiceType};
+use crate::{
+    messages::InMessage,
+    transport::{ConnectionID, ConnectionStatus, InEvent, OutEvent},
+    Error, Libp2pTransportServiceHandle, ServiceType,
+};
 
 /// Libp2p transport used by all services of Exocore through handles. There is
 /// one handle per cell per service.
@@ -99,7 +103,10 @@ impl Libp2pTransport {
 
         #[cfg(all(feature = "p2p-web", target_arch = "wasm32"))]
         let mut swarm = {
-            use libp2p::{wasm_ext::ffi::websocket_transport, wasm_ext::ExtTransport, Transport};
+            use libp2p::{
+                wasm_ext::{ffi::websocket_transport, ExtTransport},
+                Transport,
+            };
 
             let noise_keys = libp2p::noise::Keypair::<libp2p::noise::X25519Spec>::new()
                 .into_authentic(self.local_node.keypair().to_libp2p())

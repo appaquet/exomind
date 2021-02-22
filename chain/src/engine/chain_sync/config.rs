@@ -1,5 +1,4 @@
-use crate::block::BlockHeight;
-use crate::engine::request_tracker;
+use crate::{block::BlockHeight, engine::request_tracker};
 
 /// Chain synchronizer's configuration
 #[derive(Clone, Debug)]

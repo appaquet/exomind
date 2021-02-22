@@ -1,8 +1,12 @@
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
-use exocore_protos::generated::exocore_core::{cell_application_config, CellApplicationConfig};
-use exocore_protos::registry::Registry;
+use exocore_protos::{
+    generated::exocore_core::{cell_application_config, CellApplicationConfig},
+    registry::Registry,
+};
 
 use super::{Application, ApplicationId, Error};
 

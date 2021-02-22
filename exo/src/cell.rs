@@ -16,17 +16,16 @@ use exocore_core::{
     sec::{auth_token::AuthToken, keys::Keypair},
     time::Clock,
 };
-use exocore_protos::core::{cell_application_config, CellApplicationConfig};
 use exocore_protos::{
     core::{
-        cell_node_config, node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig,
-        NodeCellConfig, NodeConfig,
+        cell_application_config, cell_node_config, node_cell_config, CellApplicationConfig,
+        CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig, NodeConfig,
     },
     generated::data_chain_capnp::block_header,
 };
 
-use crate::app::{fetch_package_url, read_package_path};
 use crate::{
+    app::{fetch_package_url, read_package_path},
     disco::prompt_discovery_pin,
     term::*,
     utils::{edit_file, edit_string},

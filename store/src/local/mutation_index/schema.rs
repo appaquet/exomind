@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 
-use exocore_protos::reflect::FieldType;
-use exocore_protos::registry::Registry;
-use tantivy::schema::*;
-use tantivy::tokenizer::*;
-use tantivy::Document;
+use exocore_protos::{reflect::FieldType, registry::Registry};
+use tantivy::{schema::*, tokenizer::*, Document};
 
 use super::MutationIndexConfig;
 use crate::error::Error;

@@ -1,9 +1,6 @@
-use std::collections::BinaryHeap;
-use std::sync::Mutex;
-use std::time::Duration;
+use std::{collections::BinaryHeap, sync::Mutex, time::Duration};
 
-use futures::channel::oneshot;
-use futures::{Future, FutureExt};
+use futures::{channel::oneshot, Future, FutureExt};
 
 use crate::binding::__exocore_host_now;
 

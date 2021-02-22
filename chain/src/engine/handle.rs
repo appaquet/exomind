@@ -1,16 +1,20 @@
-use std::ops::RangeBounds;
-use std::sync::{Arc, RwLock, Weak};
+use std::{
+    ops::RangeBounds,
+    sync::{Arc, RwLock, Weak},
+};
 
 use exocore_core::utils::handle_set::Handle;
 use exocore_protos::generated::data_chain_capnp::chain_operation;
 use futures::prelude::*;
 
 use super::{EngineError, Inner};
-use crate::block::{Block, BlockHeight, BlockOffset, BlockOwned, BlockRef};
-use crate::operation::{OperationBuilder, OperationId};
-use crate::pending;
-use crate::pending::CommitStatus;
-use crate::{chain, operation};
+use crate::{
+    block::{Block, BlockHeight, BlockOffset, BlockOwned, BlockRef},
+    chain, operation,
+    operation::{OperationBuilder, OperationId},
+    pending,
+    pending::CommitStatus,
+};
 
 /// Handle ot the Engine, allowing communication with the engine.
 /// The engine itself is owned by a future executor.

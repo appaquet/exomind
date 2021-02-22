@@ -26,18 +26,16 @@ use exocore_protos::{
 };
 pub use operations::*;
 pub use results::*;
-use tantivy::query::FuzzyTermQuery;
 use tantivy::{
     collector::{Collector, TopDocs},
     directory::MmapDirectory,
-    query::{AllQuery, BooleanQuery, Occur, PhraseQuery, Query, TermQuery},
+    query::{AllQuery, BooleanQuery, FuzzyTermQuery, Occur, PhraseQuery, Query, TermQuery},
     schema::{Field, IndexRecordOption},
     DocAddress, Document, Index as TantivyIndex, IndexReader, IndexWriter, ReloadPolicy, Searcher,
     SegmentReader, Term,
 };
 
-use crate::entity::EntityIdRef;
-use crate::{error::Error, ordering::OrderingValueWrapper};
+use crate::{entity::EntityIdRef, error::Error, ordering::OrderingValueWrapper};
 
 mod config;
 mod entity_cache;
@@ -682,7 +680,8 @@ impl MutationIndex {
                 queries.push((Occur::Should, query));
             }
 
-            // even if fuzzy is enabled, we add the term again so that an exact match scores more
+            // even if fuzzy is enabled, we add the term again so that an exact match scores
+            // more
             let query = Box::new(TermQuery::new(
                 term,
                 IndexRecordOption::WithFreqsAndPositions,

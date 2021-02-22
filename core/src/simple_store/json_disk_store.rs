@@ -1,6 +1,8 @@
-use std::fs::OpenOptions;
-use std::io::{Error, ErrorKind};
-use std::path::{Path, PathBuf};
+use std::{
+    fs::OpenOptions,
+    io::{Error, ErrorKind},
+    path::{Path, PathBuf},
+};
 
 use super::*;
 

@@ -1,9 +1,10 @@
 use std::io;
 
-use capnp::message::{Builder, HeapAllocator};
-use capnp::traits::Owned;
-use exocore_protos::capnp;
-use exocore_protos::generated::MessageType;
+use capnp::{
+    message::{Builder, HeapAllocator},
+    traits::Owned,
+};
+use exocore_protos::{capnp, generated::MessageType};
 
 use super::{check_into_size, Error, FrameBuilder, FrameReader};
 

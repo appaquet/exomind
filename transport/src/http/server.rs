@@ -1,5 +1,4 @@
-use std::net::Ipv4Addr;
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, net::Ipv4Addr, sync::Arc};
 
 use exocore_core::{
     cell::{Cell, CellNodes, LocalNode, Node},

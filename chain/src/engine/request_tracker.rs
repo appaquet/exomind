@@ -1,7 +1,9 @@
 use std::time::Duration;
 
-use exocore_core::time::{Clock, Instant};
-use exocore_core::utils::backoff::{BackoffCalculator, BackoffConfig};
+use exocore_core::{
+    time::{Clock, Instant},
+    utils::backoff::{BackoffCalculator, BackoffConfig},
+};
 
 /// Handles time tracking of synchronization request and response for timeouts,
 /// retries and backoff.

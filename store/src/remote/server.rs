@@ -1,24 +1,34 @@
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock, Weak};
-
-use exocore_core::cell::Cell;
-use exocore_core::futures::{interval, OwnedSpawnSet};
-use exocore_core::time::{Duration, Instant};
-use exocore_protos::generated::exocore_store::{EntityQuery, EntityResults, MutationRequest};
-use exocore_protos::generated::store_transport_capnp::{
-    mutation_request, query_request, unwatch_query_request, watched_query_request,
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock, Weak},
 };
-use exocore_protos::{generated::MessageType, store::MutationResult};
+
+use exocore_core::{
+    cell::Cell,
+    futures::{interval, OwnedSpawnSet},
+    time::{Duration, Instant},
+};
+use exocore_protos::{
+    generated::{
+        exocore_store::{EntityQuery, EntityResults, MutationRequest},
+        store_transport_capnp::{
+            mutation_request, query_request, unwatch_query_request, watched_query_request,
+        },
+        MessageType,
+    },
+    store::MutationResult,
+};
 use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportServiceHandle};
-use futures::channel::{mpsc, oneshot};
-use futures::{FutureExt, SinkExt, StreamExt};
+use futures::{
+    channel::{mpsc, oneshot},
+    FutureExt, SinkExt, StreamExt,
+};
 
 use super::seri::{
     mutation_from_request_frame, mutation_result_to_response_frame, query_from_request_frame,
     query_results_to_response_frame,
 };
-use crate::error::Error;
-use crate::query::WatchToken;
+use crate::{error::Error, query::WatchToken};
 
 pub struct Server<CS, PS, T>
 where

@@ -1,6 +1,8 @@
 use clap::Clap;
-use exocore_core::cell::{Node, NodeId};
-use exocore_core::sec::keys::Keypair;
+use exocore_core::{
+    cell::{Node, NodeId},
+    sec::keys::Keypair,
+};
 
 use crate::Context;
 

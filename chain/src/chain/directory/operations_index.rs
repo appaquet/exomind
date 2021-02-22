@@ -1,22 +1,24 @@
-use std::collections::btree_map::BTreeMap;
-use std::io::{Read, Write};
-use std::ops::Range;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::{
+    collections::btree_map::BTreeMap,
+    io::{Read, Write},
+    ops::Range,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
-use byteorder::LittleEndian;
-use byteorder::{ReadBytesExt, WriteBytesExt};
-use exocore_core::simple_store::json_disk_store::JsonDiskStore;
-use exocore_core::simple_store::SimpleStore;
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use exocore_core::simple_store::{json_disk_store::JsonDiskStore, SimpleStore};
 use exocore_protos::generated::data_chain_capnp::block_header;
 use extindex::{Builder, Encodable, Reader};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 use super::{DirectoryChainStoreConfig, DirectoryError};
-use crate::block::{Block, BlockOffset};
-use crate::chain::Error;
-use crate::operation::OperationId;
+use crate::{
+    block::{Block, BlockOffset},
+    chain::Error,
+    operation::OperationId,
+};
 
 /// Operation ID to Block offset index. This is used to retrieve the block
 /// offset in which a given operation ID has been stored.
@@ -419,8 +421,7 @@ impl Encodable for StoredIndexValue {
 
 #[cfg(test)]
 mod tests {
-    use exocore_core::cell::FullCell;
-    use exocore_core::cell::LocalNode;
+    use exocore_core::cell::{FullCell, LocalNode};
 
     use super::*;
     use crate::chain::directory::tests::create_block;

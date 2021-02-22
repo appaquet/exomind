@@ -1,17 +1,21 @@
-use std::collections::VecDeque;
-use std::task::{Context, Poll};
-use std::{io, iter};
+use std::{
+    collections::VecDeque,
+    io, iter,
+    task::{Context, Poll},
+};
 
 use byteorder::{ByteOrder, LittleEndian};
-use futures::future::BoxFuture;
-use futures::prelude::*;
-use futures::{AsyncReadExt, AsyncWriteExt};
-use libp2p::core::UpgradeInfo;
-use libp2p::core::{InboundUpgrade, OutboundUpgrade};
-use libp2p::swarm::protocols_handler::{
-    KeepAlive, ProtocolsHandler, ProtocolsHandlerEvent, ProtocolsHandlerUpgrErr, SubstreamProtocol,
+use futures::{future::BoxFuture, prelude::*, AsyncReadExt, AsyncWriteExt};
+use libp2p::{
+    core::{InboundUpgrade, OutboundUpgrade, UpgradeInfo},
+    swarm::{
+        protocols_handler::{
+            KeepAlive, ProtocolsHandler, ProtocolsHandlerEvent, ProtocolsHandlerUpgrErr,
+            SubstreamProtocol,
+        },
+        NegotiatedSubstream,
+    },
 };
-use libp2p::swarm::NegotiatedSubstream;
 
 const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024; // 10MB
 

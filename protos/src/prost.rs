@@ -1,5 +1,4 @@
-pub use prost;
-pub use prost::{DecodeError, EncodeError, Message};
+pub use prost::{self, DecodeError, EncodeError, Message};
 pub use prost_types::{Any, Timestamp};
 
 use super::{Error, NamedMessage};

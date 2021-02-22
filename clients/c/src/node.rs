@@ -4,8 +4,7 @@ use exocore_protos::{
     prost::{Message, ProstMessageExt},
 };
 
-use crate::exocore_init;
-use crate::utils::BytesVec;
+use crate::{exocore_init, utils::BytesVec};
 
 /// LocalNode that may or may not be part of a cell.
 ///

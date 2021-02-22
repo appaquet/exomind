@@ -374,9 +374,10 @@ fn update_if_older(current: &mut Option<DateTime<Utc>>, new: Option<DateTime<Utc
 #[cfg(test)]
 pub(crate) mod tests {
     use exocore_chain::block::BlockOffset;
-    use exocore_protos::prost::Message;
     use exocore_protos::{
-        prost::ProstAnyPackMessageExt, reflect::FieldGroupId, store::OrderingValue,
+        prost::{Message, ProstAnyPackMessageExt},
+        reflect::FieldGroupId,
+        store::OrderingValue,
         test::TestMessage,
     };
 

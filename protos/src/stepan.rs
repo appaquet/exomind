@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
-use protobuf::well_known_types::{Any, Timestamp};
-use protobuf::{Message, SingularPtrField};
+use protobuf::{
+    well_known_types::{Any, Timestamp},
+    Message, SingularPtrField,
+};
 
 use super::Error;
 

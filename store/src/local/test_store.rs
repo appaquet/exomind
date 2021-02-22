@@ -13,8 +13,7 @@ use exocore_protos::{
 };
 use tempfile::TempDir;
 
-use super::entity_index::test_index::TestEntityIndex;
-use super::*;
+use super::{entity_index::test_index::TestEntityIndex, *};
 use crate::{
     local::{mutation_index::MutationIndexConfig, store::StoreHandle, EntityIndexConfig},
     mutation::{MutationBuilder, MutationRequestLike},

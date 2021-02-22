@@ -1,4 +1,9 @@
-use std::{collections::HashMap, pin::Pin, sync::Weak, task::Context, task::Poll};
+use std::{
+    collections::HashMap,
+    pin::Pin,
+    sync::Weak,
+    task::{Context, Poll},
+};
 
 use exocore_core::{
     cell::{Cell, CellId},

@@ -1,9 +1,10 @@
-use exocore_protos::generated::exocore_store::entity_mutation::Mutation;
-use exocore_protos::generated::exocore_store::{
-    DeleteEntityMutation, DeleteTraitMutation, EntityMutation, MutationRequest, PutTraitMutation,
-    Trait,
+use exocore_protos::{
+    generated::exocore_store::{
+        entity_mutation::Mutation, DeleteEntityMutation, DeleteTraitMutation, EntityMutation,
+        MutationRequest, PutTraitMutation, Trait,
+    },
+    store::DeleteOperationsMutation,
 };
-use exocore_protos::store::DeleteOperationsMutation;
 
 use crate::entity::{EntityId, TraitId};
 

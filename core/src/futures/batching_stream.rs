@@ -1,5 +1,7 @@
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 use futures::{Stream, StreamExt};
 
@@ -71,8 +73,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use futures::channel::mpsc;
-    use futures::SinkExt;
+    use futures::{channel::mpsc, SinkExt};
 
     use super::*;
     use crate::futures::block_on;

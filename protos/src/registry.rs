@@ -1,16 +1,21 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::RwLock;
-
-use protobuf::descriptor::{
-    DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto,
-    FileDescriptorSet,
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
 };
-use protobuf::types::{ProtobufType, ProtobufTypeBool};
-use protobuf::Message;
 
-use super::reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor};
-use super::Error;
+use protobuf::{
+    descriptor::{
+        DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto,
+        FileDescriptorSet,
+    },
+    types::{ProtobufType, ProtobufTypeBool},
+    Message,
+};
+
+use super::{
+    reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor},
+    Error,
+};
 
 type MessageDescriptorsMap = HashMap<String, Arc<ReflectMessageDescriptor>>;
 

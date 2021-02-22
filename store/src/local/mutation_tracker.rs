@@ -1,5 +1,7 @@
-use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Mutex,
+};
 
 use exocore_chain::operation::OperationId;
 use exocore_core::time::Instant;

@@ -1,7 +1,7 @@
-use exocore_protos::generated::core::{
-    AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto,
+use exocore_protos::{
+    generated::core::{AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto},
+    prost::{Message, ProstMessageExt},
 };
-use exocore_protos::prost::{Message, ProstMessageExt};
 
 use crate::{
     cell::{Cell, CellId, NodeId},

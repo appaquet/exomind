@@ -1,5 +1,5 @@
-use exocore_protos::prost::Message;
 use exocore_protos::{
+    prost::Message,
     store::{Entity, Trait},
     NamedMessage,
 };

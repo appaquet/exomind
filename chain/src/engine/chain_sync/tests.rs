@@ -4,10 +4,11 @@ use exocore_core::framing::FrameBuilder;
 use itertools::Itertools;
 
 use super::*;
-use crate::chain::directory::DirectoryChainStore;
-use crate::engine::testing::*;
-use crate::engine::SyncState;
-use crate::operation::OperationBuilder;
+use crate::{
+    chain::directory::DirectoryChainStore,
+    engine::{testing::*, SyncState},
+    operation::OperationBuilder,
+};
 
 #[test]
 fn handle_sync_response_blocks() -> anyhow::Result<()> {

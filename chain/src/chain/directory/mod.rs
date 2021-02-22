@@ -7,10 +7,10 @@ use std::{
 
 use segment::DirectorySegment;
 
-use crate::operation::OperationId;
 use crate::{
     block::{Block, BlockOffset, BlockRef},
     chain::{ChainStore, Error, Segment, StoredBlockIterator},
+    operation::OperationId,
 };
 
 mod operations_index;
@@ -565,8 +565,10 @@ pub enum DirectoryError {
 
 #[cfg(test)]
 pub mod tests {
-    use exocore_core::cell::FullCell;
-    use exocore_core::{cell::LocalNode, utils::range};
+    use exocore_core::{
+        cell::{FullCell, LocalNode},
+        utils::range,
+    };
     use itertools::Itertools;
 
     use super::*;

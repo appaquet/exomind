@@ -4,10 +4,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use exocore_protos::core::CellApplicationConfig;
 use exocore_protos::{
     apps::manifest_schema,
-    core::{cell_application_config, NodeConfig},
+    core::{cell_application_config, CellApplicationConfig, NodeConfig},
     generated::{
         exocore_apps::Manifest,
         exocore_core::{

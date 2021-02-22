@@ -1,5 +1,5 @@
-use std::ffi::OsStr;
 use std::{
+    ffi::OsStr,
     fs::{File, OpenOptions},
     ops::Range,
     path::{Path, PathBuf},
@@ -7,8 +7,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use super::DirectoryChainStoreConfig;
-use super::Error;
+use super::{DirectoryChainStoreConfig, Error};
 use crate::block::{Block, BlockOffset, BlockRef, ChainBlockIterator};
 
 /// A segment of the chain, stored in its own file (`segment_file`) and that

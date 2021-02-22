@@ -1,6 +1,5 @@
 use exocore_core::cell::NodeId;
-use futures::prelude::*;
-use futures::sink::Sink;
+use futures::{prelude::*, sink::Sink};
 
 use crate::{Error, InMessage, OutMessage};
 

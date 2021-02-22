@@ -1,11 +1,13 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::{
     borrow::Borrow,
     collections::{HashMap, HashSet},
     hash::Hasher,
     path::PathBuf,
     rc::Rc,
-    sync::Arc,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
     time::Instant,
 };
 
@@ -16,15 +18,13 @@ use exocore_chain::{
     operation::{Operation, OperationId},
     pending, EngineHandle, EngineOperationStatus,
 };
-use exocore_core::cell::FullCell;
-use exocore_core::time::Clock;
-use exocore_protos::prost::Message;
+use exocore_core::{cell::FullCell, time::Clock};
 use exocore_protos::{
     generated::exocore_store::{
         entity_mutation::Mutation, Entity, EntityMutation, EntityQuery,
         EntityResult as EntityResultProto, EntityResultSource, EntityResults, Trait,
     },
-    prost::ProstDateTimeExt,
+    prost::{Message, ProstDateTimeExt},
     registry::Registry,
 };
 use gc::GarbageCollector;

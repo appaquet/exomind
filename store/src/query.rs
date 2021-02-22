@@ -1,16 +1,18 @@
-use exocore_protos::generated::exocore_store::{
-    entity_query, ordering, trait_field_predicate, trait_query, EntityQuery, MatchPredicate,
-    Ordering, Paging, ReferencePredicate, TraitFieldPredicate, TraitFieldReferencePredicate,
-    TraitPredicate, TraitQuery,
-};
 use exocore_protos::{
+    generated::exocore_store::{
+        entity_query, ordering, trait_field_predicate, trait_query, EntityQuery, MatchPredicate,
+        Ordering, Paging, ReferencePredicate, TraitFieldPredicate, TraitFieldReferencePredicate,
+        TraitPredicate, TraitQuery,
+    },
     message::NamedMessage,
     reflect::FieldId,
     store::{AllPredicate, IdsPredicate, OperationsPredicate, Projection, Reference},
 };
 
-use crate::entity::{EntityId, TraitId};
-use crate::mutation::OperationId;
+use crate::{
+    entity::{EntityId, TraitId},
+    mutation::OperationId,
+};
 
 pub type WatchToken = u64;
 pub type ResultHash = u64;

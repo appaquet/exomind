@@ -1,25 +1,35 @@
-use std::pin::Pin;
-use std::sync::{Arc, Mutex, RwLock, Weak};
-use std::task::{Context, Poll};
-
-use exocore_core::cell::Cell;
-use exocore_core::futures::{interval, spawn_blocking, BatchingStream};
-use exocore_core::time::Clock;
-use exocore_core::utils::handle_set::{Handle, HandleSet};
-use exocore_protos::generated::exocore_store::entity_mutation::Mutation;
-use exocore_protos::generated::exocore_store::{
-    entity_query, EntityQuery, EntityResults, MutationRequest, MutationResult,
+use std::{
+    pin::Pin,
+    sync::{Arc, Mutex, RwLock, Weak},
+    task::{Context, Poll},
 };
-use exocore_protos::{prost::ProstMessageExt, store::OperationsPredicate};
-use futures::channel::{mpsc, oneshot};
-use futures::prelude::*;
 
-use super::entity_index::EntityIndex;
-use super::StoreConfig;
-use crate::error::Error;
-use crate::local::watched_queries::WatchedQueries;
-use crate::query::WatchToken;
-use crate::{local::mutation_tracker::MutationTracker, mutation::MutationRequestLike};
+use exocore_core::{
+    cell::Cell,
+    futures::{interval, spawn_blocking, BatchingStream},
+    time::Clock,
+    utils::handle_set::{Handle, HandleSet},
+};
+use exocore_protos::{
+    generated::exocore_store::{
+        entity_mutation::Mutation, entity_query, EntityQuery, EntityResults, MutationRequest,
+        MutationResult,
+    },
+    prost::ProstMessageExt,
+    store::OperationsPredicate,
+};
+use futures::{
+    channel::{mpsc, oneshot},
+    prelude::*,
+};
+
+use super::{entity_index::EntityIndex, StoreConfig};
+use crate::{
+    error::Error,
+    local::{mutation_tracker::MutationTracker, watched_queries::WatchedQueries},
+    mutation::MutationRequestLike,
+    query::WatchToken,
+};
 
 /// Locally persisted entities store allowing mutation and queries on entities
 /// and their traits.
@@ -567,18 +577,16 @@ impl QueryRequest {
 pub mod tests {
     use std::time::Duration;
 
-    use exocore_core::futures::sleep;
-    use exocore_core::tests_utils::async_expect_eventually;
-    use exocore_protos::prost::ProstAnyPackMessageExt;
-    use exocore_protos::{store::Trait, test::TestMessage};
+    use exocore_core::{futures::sleep, tests_utils::async_expect_eventually};
+    use exocore_protos::{prost::ProstAnyPackMessageExt, store::Trait, test::TestMessage};
     use futures::executor::block_on_stream;
 
-    use super::super::TestStore;
-    use super::*;
-    use crate::local::entity_index::GarbageCollectorConfig;
-    use crate::local::EntityIndexConfig;
-    use crate::mutation::MutationBuilder;
-    use crate::query::QueryBuilder;
+    use super::{super::TestStore, *};
+    use crate::{
+        local::{entity_index::GarbageCollectorConfig, EntityIndexConfig},
+        mutation::MutationBuilder,
+        query::QueryBuilder,
+    };
 
     #[tokio::test(flavor = "multi_thread")]
     async fn store_mutate_query_via_handle() -> anyhow::Result<()> {

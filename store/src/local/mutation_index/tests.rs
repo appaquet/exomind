@@ -1,17 +1,20 @@
 use chrono::{DateTime, Duration, Utc};
 use exocore_chain::operation::OperationId;
-use exocore_protos::generated::exocore_store::{Reference, Trait};
-use exocore_protos::generated::exocore_test::{TestMessage, TestMessage2};
-use exocore_protos::store::entity_query;
 use exocore_protos::{
+    generated::{
+        exocore_store::{Reference, Trait},
+        exocore_test::{TestMessage, TestMessage2},
+    },
     prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt},
-    store::TraitDetails,
+    store::{entity_query, TraitDetails},
 };
 use itertools::Itertools;
 
 use super::*;
-use crate::ordering::{value_from_f32, value_from_u64, OrderingValueExt};
-use crate::query::{QueryBuilder as Q, TraitQueryBuilder as TQ};
+use crate::{
+    ordering::{value_from_f32, value_from_u64, OrderingValueExt},
+    query::{QueryBuilder as Q, TraitQueryBuilder as TQ},
+};
 
 #[test]
 fn fetch_entity_mutations() -> anyhow::Result<()> {

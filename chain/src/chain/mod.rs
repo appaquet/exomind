@@ -1,7 +1,9 @@
 use std::ops::Range;
 
-use crate::block::{Block, BlockOffset, BlockRef};
-use crate::operation::OperationId;
+use crate::{
+    block::{Block, BlockOffset, BlockRef},
+    operation::OperationId,
+};
 
 #[cfg(feature = "directory-chain")]
 pub mod directory;

@@ -1,25 +1,24 @@
-use std::collections::HashMap;
-use std::pin::Pin;
-use std::sync::{Arc, Mutex, Weak};
-use std::task::{Context, Poll};
+use std::{
+    collections::HashMap,
+    pin::Pin,
+    sync::{Arc, Mutex, Weak},
+    task::{Context, Poll},
+};
 
-use exocore_core::futures::spawn_future;
-use exocore_core::utils::handle_set::{Handle, HandleSet};
-use exocore_core::{cell::Cell, framing::CapnpFrameBuilder};
 use exocore_core::{
-    cell::{LocalNode, Node, NodeId},
-    futures::owned_spawn,
-    futures::OwnedSpawn,
+    cell::{Cell, LocalNode, Node, NodeId},
+    framing::CapnpFrameBuilder,
+    futures::{owned_spawn, spawn_future, OwnedSpawn},
+    utils::handle_set::{Handle, HandleSet},
 };
 use exocore_protos::generated::data_chain_capnp::block_operation_header;
-use futures::channel::mpsc;
-use futures::prelude::*;
-use futures::stream::Peekable;
-use futures::{FutureExt, StreamExt};
+use futures::{channel::mpsc, prelude::*, stream::Peekable, FutureExt, StreamExt};
 
-use crate::streams::{MpscHandleSink, MpscHandleStream};
-use crate::transport::{ConnectionStatus, TransportHandleOnStart};
-use crate::{Error, InEvent, InMessage, OutEvent, OutMessage, ServiceType, TransportServiceHandle};
+use crate::{
+    streams::{MpscHandleSink, MpscHandleStream},
+    transport::{ConnectionStatus, TransportHandleOnStart},
+    Error, InEvent, InMessage, OutEvent, OutMessage, ServiceType, TransportServiceHandle,
+};
 
 const CHANNELS_SIZE: usize = 1000;
 

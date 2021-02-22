@@ -1,12 +1,15 @@
 use exocore_core::framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame};
-use exocore_protos::generated::exocore_store::{EntityQuery, EntityResults};
-use exocore_protos::generated::store_transport_capnp::{
-    mutation_request, mutation_response, watched_query_request,
+use exocore_protos::{
+    generated::{
+        exocore_store::{EntityQuery, EntityResults},
+        store_transport_capnp::{
+            mutation_request, mutation_response, query_request, query_response,
+            watched_query_request,
+        },
+    },
+    prost::{Message, ProstMessageExt},
+    store::{MutationRequest, MutationResult},
 };
-use exocore_protos::generated::store_transport_capnp::{query_request, query_response};
-use exocore_protos::prost::Message;
-use exocore_protos::prost::ProstMessageExt;
-use exocore_protos::store::{MutationRequest, MutationResult};
 
 use crate::error::Error;
 

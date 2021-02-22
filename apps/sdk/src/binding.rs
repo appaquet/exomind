@@ -1,6 +1,7 @@
-use exocore_protos::apps::in_message::InMessageType;
-use exocore_protos::apps::{InMessage, MessageStatus};
-use exocore_protos::prost::Message;
+use exocore_protos::{
+    apps::{in_message::InMessageType, InMessage, MessageStatus},
+    prost::Message,
+};
 
 #[cfg(target_arch = "wasm32")]
 #[link(wasm_import_module = "exocore")]

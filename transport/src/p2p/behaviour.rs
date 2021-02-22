@@ -1,12 +1,15 @@
-use std::collections::{HashMap, VecDeque};
-use std::time::Duration;
+use std::{
+    collections::{HashMap, VecDeque},
+    time::Duration,
+};
 
-use exocore_core::cell::Node;
-use exocore_core::time::Instant;
+use exocore_core::{cell::Node, time::Instant};
 use futures::task::{Context, Poll};
-use libp2p::core::{connection::ConnectionId, Multiaddr, PeerId};
-use libp2p::swarm::{
-    DialPeerCondition, NetworkBehaviour, NetworkBehaviourAction, NotifyHandler, PollParameters,
+use libp2p::{
+    core::{connection::ConnectionId, Multiaddr, PeerId},
+    swarm::{
+        DialPeerCondition, NetworkBehaviour, NetworkBehaviourAction, NotifyHandler, PollParameters,
+    },
 };
 
 use super::protocol::{ExocoreProtoHandler, ExocoreProtoMessage};

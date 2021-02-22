@@ -2,21 +2,19 @@ use block::{BlockStatus, PendingBlock, PendingBlockRefusal, PendingBlockSignatur
 use chain::ChainStore;
 pub use config::CommitManagerConfig;
 pub use error::CommitManagerError;
-use exocore_core::cell::LocalNode;
 use exocore_core::{
-    cell::{Cell, CellNodeRole, CellNodes, CellNodesRead, NodeId},
+    cell::{Cell, CellNodeRole, CellNodes, CellNodesRead, LocalNode, NodeId},
     sec::hash::Multihash,
     time::{Clock, ConsistentTimestamp},
 };
 use exocore_protos::generated::data_chain_capnp::block_header;
 use itertools::Itertools;
 
-use crate::operation::NewOperation;
 use crate::{
     block::{Block, BlockOperations, BlockOwned, BlockSignature, BlockSignatures},
     chain,
     engine::{pending_sync, EngineError, Event, SyncContext},
-    operation::{Operation, OperationBuilder, OperationId, OperationType},
+    operation::{NewOperation, Operation, OperationBuilder, OperationId, OperationType},
     pending,
     pending::CommitStatus,
 };

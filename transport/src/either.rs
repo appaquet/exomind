@@ -1,18 +1,19 @@
-use std::collections::HashMap;
-use std::pin::Pin;
-use std::sync::{Arc, RwLock, Weak};
-use std::task::{Context, Poll};
+use std::{
+    collections::HashMap,
+    pin::Pin,
+    sync::{Arc, RwLock, Weak},
+    task::{Context, Poll},
+};
 
-use exocore_core::cell::NodeId;
-use exocore_core::futures::OwnedSpawnSet;
-use futures::channel::mpsc;
-use futures::prelude::*;
-use futures::{Future, FutureExt, Sink, SinkExt, Stream, StreamExt};
+use exocore_core::{cell::NodeId, futures::OwnedSpawnSet};
+use futures::{channel::mpsc, prelude::*, Future, FutureExt, Sink, SinkExt, Stream, StreamExt};
 use pin_project::pin_project;
 
-use crate::transport::TransportHandleOnStart;
-use crate::{error::Error, transport::ConnectionID, OutMessage};
-use crate::{InEvent, OutEvent, TransportServiceHandle};
+use crate::{
+    error::Error,
+    transport::{ConnectionID, TransportHandleOnStart},
+    InEvent, OutEvent, OutMessage, TransportServiceHandle,
+};
 
 /// Transport handle that wraps 2 other transport handles.
 ///
@@ -280,10 +281,10 @@ mod tests {
     use exocore_core::cell::{FullCell, LocalNode};
 
     use super::*;
-    use crate::ServiceType::Store;
     use crate::{
         testing::{MockTransport, TestableTransportHandle},
         ServiceType,
+        ServiceType::Store,
     };
 
     #[tokio::test]

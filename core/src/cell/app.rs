@@ -1,10 +1,9 @@
-use std::fs::File;
-use std::path::Path;
-use std::sync::Arc;
+use std::{fs::File, path::Path, sync::Arc};
 
-use exocore_protos::generated::exocore_apps::manifest_schema::Source;
-use exocore_protos::generated::exocore_apps::Manifest;
-use exocore_protos::reflect::{FileDescriptorSet, Message};
+use exocore_protos::{
+    generated::exocore_apps::{manifest_schema::Source, Manifest},
+    reflect::{FileDescriptorSet, Message},
+};
 
 use super::{Error, ManifestExt};
 use crate::sec::keys::PublicKey;

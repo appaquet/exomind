@@ -1,24 +1,27 @@
-use std::path::PathBuf;
-use std::sync::mpsc;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::{
+    path::PathBuf,
+    sync::{mpsc, Arc, Mutex},
+    time::Duration,
+};
 
-use exocore_core::cell::FullCell;
-use exocore_core::cell::{CellNode, CellNodeRole, LocalNode};
-use exocore_core::futures::spawn_future;
-use exocore_core::tests_utils::expect_result_eventually;
-use exocore_core::time::Clock;
-use exocore_transport::testing::MockTransport;
-use exocore_transport::ServiceType;
+use exocore_core::{
+    cell::{CellNode, CellNodeRole, FullCell, LocalNode},
+    futures::spawn_future,
+    tests_utils::expect_result_eventually,
+    time::Clock,
+};
+use exocore_transport::{testing::MockTransport, ServiceType};
 use futures::prelude::*;
 use itertools::Itertools;
 use tempfile::TempDir;
 
-use crate::block::{BlockOffset, BlockOwned};
-use crate::chain::ChainStore;
-use crate::engine::{EngineHandle, EngineOperation, Event, RequestTrackerConfig};
-use crate::operation::OperationId;
-use crate::*;
+use crate::{
+    block::{BlockOffset, BlockOwned},
+    chain::ChainStore,
+    engine::{EngineHandle, EngineOperation, Event, RequestTrackerConfig},
+    operation::OperationId,
+    *,
+};
 
 /// exocore-chain testing utility
 pub struct TestChainCluster {

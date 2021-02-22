@@ -1,10 +1,12 @@
 use std::time::{Duration, Instant};
 
 use super::*;
-use crate::chain::ChainStore;
-use crate::engine::testing::*;
-use crate::operation::{NewOperation, OperationBuilder};
-use crate::pending::PendingStore;
+use crate::{
+    chain::ChainStore,
+    engine::testing::*,
+    operation::{NewOperation, OperationBuilder},
+    pending::PendingStore,
+};
 
 #[test]
 fn should_propose_block_on_new_operations() -> anyhow::Result<()> {

@@ -1,10 +1,9 @@
-use std::ops::RangeBounds;
-use std::sync::Arc;
-use std::vec::Vec;
+use std::{ops::RangeBounds, sync::Arc, vec::Vec};
 
-use crate::block;
-use crate::operation;
-use crate::operation::{GroupId, OperationId};
+use crate::{
+    block, operation,
+    operation::{GroupId, OperationId},
+};
 
 pub mod error;
 pub use error::Error;

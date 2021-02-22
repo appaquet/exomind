@@ -3,9 +3,12 @@ use exocore_core::framing::FrameReader;
 use exocore_protos::generated::data_chain_capnp::{block_header, block_partial_header};
 
 use super::ChainSyncError;
-use crate::block::{Block, BlockHeight, BlockOffset, BlockSignaturesSize};
-use crate::chain;
-use crate::{engine::EngineError, ChainSyncConfig};
+use crate::{
+    block::{Block, BlockHeight, BlockOffset, BlockSignaturesSize},
+    chain,
+    engine::EngineError,
+    ChainSyncConfig,
+};
 
 /// Block metadata used for comparison between local and remote stores.
 #[derive(Debug)]
@@ -254,9 +257,9 @@ impl BlockMetadata {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::block::BlockOffset;
-    use crate::chain::ChainStore;
     use crate::{
+        block::BlockOffset,
+        chain::ChainStore,
         engine::testing::{EngineTestCluster, EngineTestClusterConfig},
         DirectoryChainStoreConfig,
     };
