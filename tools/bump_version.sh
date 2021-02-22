@@ -27,6 +27,9 @@ CRATES=( \
   "discovery" \
   "chain" \
   "store" \
+  "apps/runtime" \
+  "apps/macros" \
+  "apps/sdk" \
 )
 
 for CRATE in "${CRATES[@]}"; do
