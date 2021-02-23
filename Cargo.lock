@@ -771,25 +771,47 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.3"
-source = "git+https://github.com/appaquet/exocore.git#3114b8f9af46f48b8a00bc90f8660c0275493c48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d6e0a3bbdd61abfe45168dbcef504ef6085400025478181cca25c1a30e3f1f1"
 dependencies = [
+ "exocore-chain",
  "exocore-core",
- "exocore-protos",
+ "exocore-discovery",
  "exocore-store",
  "exocore-transport",
 ]
 
 [[package]]
-name = "exocore-core"
+name = "exocore-chain"
 version = "0.1.3"
-source = "git+https://github.com/appaquet/exocore.git#3114b8f9af46f48b8a00bc90f8660c0275493c48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a70d0034f9b121e4541f80a5b1e3ad8d1f2d2b8c0293c1d1f71316aa1e0a2793"
 dependencies = [
  "anyhow",
+ "byteorder",
+ "exocore-core",
+ "exocore-transport",
+ "futures 0.3.12",
+ "itertools 0.10.0",
+ "log",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "exocore-core"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a7dc040cede5d49972d02783d202a38ccf7c3b548c29cb4d9b4bd9a61448826"
+dependencies = [
+ "anyhow",
+ "base64 0.13.0",
  "bs58",
  "byteorder",
  "bytes 1.0.1",
+ "capnp",
+ "capnpc",
  "chrono",
- "exocore-protos",
  "futures 0.3.12",
  "getrandom 0.2.2",
  "libp2p",
@@ -798,6 +820,10 @@ dependencies = [
  "multihash",
  "parking_lot 0.11.1",
  "petname",
+ "prost",
+ "prost-build",
+ "prost-types",
+ "protobuf",
  "rand 0.8.3",
  "serde",
  "serde_derive",
@@ -813,38 +839,41 @@ dependencies = [
 ]
 
 [[package]]
-name = "exocore-protos"
+name = "exocore-discovery"
 version = "0.1.3"
-source = "git+https://github.com/appaquet/exocore.git#3114b8f9af46f48b8a00bc90f8660c0275493c48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2d8bc4447d03d6a0bdc947a801e53f7904a1d575afce54671483b96d8fda793"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
- "capnp",
- "capnpc",
  "chrono",
- "prost",
- "prost-build",
- "prost-types",
- "protobuf",
+ "futures 0.3.12",
+ "log",
+ "rand 0.8.3",
+ "reqwest 0.11.1",
  "serde",
  "serde_derive",
+ "serde_json",
  "thiserror",
+ "wasm-timer",
 ]
 
 [[package]]
 name = "exocore-store"
 version = "0.1.3"
-source = "git+https://github.com/appaquet/exocore.git#3114b8f9af46f48b8a00bc90f8660c0275493c48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cfc10d304b04283ebe6f76ed0cb959255740fc6b94061b8c6a252de1ec8efb0"
 dependencies = [
  "anyhow",
  "bytes 1.0.1",
  "chrono",
+ "exocore-chain",
  "exocore-core",
- "exocore-protos",
  "exocore-transport",
  "futures 0.3.12",
  "itertools 0.10.0",
  "log",
+ "prost",
  "smallvec 1.6.1",
  "thiserror",
 ]
@@ -852,12 +881,12 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.3"
-source = "git+https://github.com/appaquet/exocore.git#3114b8f9af46f48b8a00bc90f8660c0275493c48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "129645beb3ec1f13ef1f1702190e1f3719cb7e9ffecb4b20013962c7f7d826c8"
 dependencies = [
  "anyhow",
  "byteorder",
  "exocore-core",
- "exocore-protos",
  "futures 0.3.12",
  "libp2p",
  "log",
@@ -896,7 +925,7 @@ dependencies = [
  "google_api_auth",
  "log",
  "mailparse",
- "reqwest",
+ "reqwest 0.9.24",
  "serde",
  "serde_derive",
  "serde_json",
@@ -1232,7 +1261,7 @@ dependencies = [
  "google_field_selector",
  "mime",
  "percent-encoding 2.1.0",
- "reqwest",
+ "reqwest 0.9.24",
  "serde",
  "serde_json",
  "textnonce",
@@ -1309,7 +1338,27 @@ dependencies = [
  "indexmap",
  "slab",
  "tokio 0.2.25",
- "tokio-util",
+ "tokio-util 0.3.1",
+ "tracing",
+ "tracing-futures",
+]
+
+[[package]]
+name = "h2"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b67e66362108efccd8ac053abafc8b7a8d86a37e6e48fc4f6f7485eb5e9e6a5"
+dependencies = [
+ "bytes 1.0.1",
+ "fnv",
+ "futures-core",
+ "futures-sink",
+ "futures-util",
+ "http 0.2.3",
+ "indexmap",
+ "slab",
+ "tokio 1.2.0",
+ "tokio-util 0.6.3",
  "tracing",
  "tracing-futures",
 ]
@@ -1404,6 +1453,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "http-body"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2861bd27ee074e5ee891e8b539837a9430012e249d7f0ca2d795650f579c1994"
+dependencies = [
+ "bytes 1.0.1",
+ "http 0.2.3",
+]
+
+[[package]]
 name = "httparse"
 version = "1.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1476,6 +1535,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper"
+version = "0.14.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8e946c2b1349055e0b72ae281b238baf1a3ea7307c7e9f9d64673bdd9c26ac7"
+dependencies = [
+ "bytes 1.0.1",
+ "futures-channel",
+ "futures-core",
+ "futures-util",
+ "h2 0.3.0",
+ "http 0.2.3",
+ "http-body 0.4.0",
+ "httparse",
+ "httpdate",
+ "itoa",
+ "pin-project 1.0.5",
+ "socket2",
+ "tokio 1.2.0",
+ "tower-service",
+ "tracing",
+ "want 0.3.0",
+]
+
+[[package]]
 name = "hyper-rustls"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1507,6 +1590,21 @@ dependencies = [
  "rustls-native-certs",
  "tokio 0.2.25",
  "tokio-rustls 0.13.1",
+ "webpki",
+]
+
+[[package]]
+name = "hyper-rustls"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f9f7a97316d44c0af9b0301e65010573a853a9fc97046d7331d7f6bc0fd5a64"
+dependencies = [
+ "futures-util",
+ "hyper 0.14.4",
+ "log",
+ "rustls 0.19.0",
+ "tokio 1.2.0",
+ "tokio-rustls 0.22.0",
  "webpki",
 ]
 
@@ -1669,22 +1767,22 @@ checksum = "b7282d924be3275cec7f6756ff4121987bc6481325397dde6ba3e7802b1a8b1c"
 
 [[package]]
 name = "libp2p"
-version = "0.35.1"
+version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adc225a49973cf9ab10d0cdd6a4b8f0cda299df9b760824bbb623f15f8f0c95a"
+checksum = "d5133112ce42be9482f6a87be92a605dd6bbc9e93c297aee77d172ff06908f3a"
 dependencies = [
  "atomic",
  "bytes 1.0.1",
  "futures 0.3.12",
  "lazy_static",
  "libp2p-core",
+ "libp2p-core-derive",
  "libp2p-dns",
  "libp2p-identify",
  "libp2p-mplex",
  "libp2p-noise",
  "libp2p-ping",
  "libp2p-swarm",
- "libp2p-swarm-derive",
  "libp2p-tcp",
  "libp2p-websocket",
  "libp2p-yamux",
@@ -1727,6 +1825,16 @@ dependencies = [
  "unsigned-varint 0.7.0",
  "void",
  "zeroize",
+]
+
+[[package]]
+name = "libp2p-core-derive"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4bc40943156e42138d22ed3c57ff0e1a147237742715937622a99b10fbe0156"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1825,16 +1933,6 @@ dependencies = [
  "smallvec 1.6.1",
  "void",
  "wasm-timer",
-]
-
-[[package]]
-name = "libp2p-swarm-derive"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c564ebaa36a64839f51eaddb0243aaaa29ce64affb56129193cc3248b72af273"
-dependencies = [
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -2886,7 +2984,7 @@ dependencies = [
  "rustls 0.16.0",
  "serde",
  "serde_json",
- "serde_urlencoded",
+ "serde_urlencoded 0.5.5",
  "time",
  "tokio 0.1.22",
  "tokio-executor",
@@ -2897,7 +2995,43 @@ dependencies = [
  "url 1.7.2",
  "uuid 0.7.4",
  "webpki-roots 0.17.0",
- "winreg",
+ "winreg 0.6.2",
+]
+
+[[package]]
+name = "reqwest"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0460542b551950620a3648c6aa23318ac6b3cd779114bd873209e6e8b5eb1c34"
+dependencies = [
+ "base64 0.13.0",
+ "bytes 1.0.1",
+ "encoding_rs",
+ "futures-core",
+ "futures-util",
+ "http 0.2.3",
+ "http-body 0.4.0",
+ "hyper 0.14.4",
+ "hyper-rustls 0.22.1",
+ "ipnet",
+ "js-sys",
+ "lazy_static",
+ "log",
+ "mime",
+ "percent-encoding 2.1.0",
+ "pin-project-lite 0.2.4",
+ "rustls 0.19.0",
+ "serde",
+ "serde_json",
+ "serde_urlencoded 0.7.0",
+ "tokio 1.2.0",
+ "tokio-rustls 0.22.0",
+ "url 2.2.1",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "webpki-roots 0.21.0",
+ "winreg 0.7.0",
 ]
 
 [[package]]
@@ -3130,6 +3264,18 @@ dependencies = [
  "itoa",
  "serde",
  "url 1.7.2",
+]
+
+[[package]]
+name = "serde_urlencoded"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edfa57a7f8d9c1d260a549e7224100f6c43d43f9103e06dd8b4095a9b2b43ce9"
+dependencies = [
+ "form_urlencoded",
+ "itoa",
+ "ryu",
+ "serde",
 ]
 
 [[package]]
@@ -3642,6 +3788,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-rustls"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc6844de72e57df1980054b38be3a9f4702aba4858be64dd700181a8a6d0e1b6"
+dependencies = [
+ "rustls 0.19.0",
+ "tokio 1.2.0",
+ "webpki",
+]
+
+[[package]]
 name = "tokio-stream"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3717,6 +3874,20 @@ dependencies = [
  "log",
  "pin-project-lite 0.1.11",
  "tokio 0.2.25",
+]
+
+[[package]]
+name = "tokio-util"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebb7cb2f00c5ae8df755b252306272cd1790d39728363936e01827e11f0b017b"
+dependencies = [
+ "bytes 1.0.1",
+ "futures-core",
+ "futures-sink",
+ "log",
+ "pin-project-lite 0.2.4",
+ "tokio 1.2.0",
 ]
 
 [[package]]
@@ -4004,6 +4175,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55c0f7123de74f0dab9b7d00fd614e7b19349cd1e2f5252bbe9b1754b59433be"
 dependencies = [
  "cfg-if 1.0.0",
+ "serde",
+ "serde_json",
  "wasm-bindgen-macro",
 ]
 
@@ -4179,6 +4352,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "winreg"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0120db82e8a1e0b9fb3345a539c478767c0048d842860994d96113d5b667bd69"
+dependencies = [
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "ws2_32-sys"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4264,3 +4446,8 @@ dependencies = [
  "syn",
  "synstructure",
 ]
+
+[[patch.unused]]
+name = "exocore"
+version = "0.1.4-pre0"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre0#658950b367ef44ae0c5e6e8187d1eaaa7e2c5d52"
