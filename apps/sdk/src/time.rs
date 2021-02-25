@@ -174,11 +174,11 @@ mod tests {
                 break;
             }
 
-            tokio::time::sleep(Duration::from_millis(1)).await;
+            tokio::time::sleep(Duration::from_micros(100)).await;
             next = next_timer_time();
         }
         let next_dur = (next.unwrap() - now()).unwrap();
-        assert!(next_dur.as_millis() >= 5);
+        assert!(next_dur.as_millis() > 0);
 
         // shouldn't have received yet since timer hasn't been triggered
         assert!(receiver.try_recv().unwrap().is_none());
