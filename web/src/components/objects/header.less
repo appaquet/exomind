@@ -3,10 +3,10 @@
 
 .column > .header {
   position: relative;
-  background: @entity-component-header-bg;
+  background: var(--entity-component-header-bg);
   height: @entity-component-header-height;
   border-bottom: @entity-component-header-border;
-  color: @entity-component-header-fg;
+  color: var(--entity-component-header-fg);
   @icon-size: 14px;
 
   .icon {
@@ -50,9 +50,9 @@
         display: inline-block;
         cursor: pointer;
         margin-left: 10px;
-        color: @entity-component-header-actions-fg;
+        color: var(--entity-component-header-actions-fg);
         &:hover {
-          color: @entity-component-header-actions-hover-fg;
+          color: var(--entity-component-header-actions-hover-fg);
         }
       }
     }

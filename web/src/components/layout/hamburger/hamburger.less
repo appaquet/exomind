@@ -5,7 +5,7 @@
 #hamburger {
   overflow: hidden;
   padding-top: 20px + @navbar-height;
-  background: @hamburger-bg;
+  background: var(--hamburger-bg);
 
   & > ul {
     .make-list();
@@ -17,9 +17,9 @@
       margin: 0 10px;
       overflow: hidden;
       padding-left: 10px;
-      color: @hamburger-items-text-color;
+      color: var(--hamburger-items-text-color);
       cursor: pointer;
-      user-select: none; // prevent text from being selectionable
+      user-select: none; // prevent text from being selectable
 
       a {
         width: 100%;
@@ -44,27 +44,27 @@
         text-decoration: none;
       }
       a {
-        color: @hamburger-items-text-color;
+        color: var(--hamburger-items-text-color);
         outline: 0; // dotted border around active link
       }
       &:hover {
-        background: darken(@hamburger-bg, 2%);
+        background: var(--hamburger-bg-hover);
       }
       &.active {
-        background: @hamburger-active-bg;
+        background: var(--hamburger-active-bg);
         &:hover {
-          background: darken(@hamburger-active-bg, 2%);
+          background: var(--hamburger-active-bg-hover);
         }
         color: @hamburger-active-fg;
       }
 
       &.sep {
         height: 1px;
-        border-bottom: @hamburger-items-separator;
+        border-bottom: var(--hamburger-items-separator);
         margin: 4px 0;
 
         &:hover {
-          background: @hamburger-bg;
+          background: var(--hamburger-bg);
         }
       }
     }

@@ -35,6 +35,7 @@ export default class Layout extends React.Component<IProps> {
     const classes = classNames({
       'hamburger-open': this.showHamburger,
       'fullscreen': this.isFullscreen,
+      'dark-mode': this.context.settings.darkMode,
     });
 
     const hamburgerMenu = (this.showHamburger) ?

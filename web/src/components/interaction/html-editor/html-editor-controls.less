@@ -14,16 +14,16 @@
 
       &:hover {
         cursor: pointer;
-        background: #f0f0f0;
+        background: var(--entity-component-bg-hover);
       }
 
       &.active {
-        background: #d3d3d3;
+        background: var(--entity-component-bg-selected);
       }
 
       .icon {
         font-size: 14px !important;
-        color: #505050;
+        color: var(--entity-component-item-fg);
 
         &.bold {
           .icon-font-awesome('bold');
