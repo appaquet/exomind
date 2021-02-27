@@ -12,7 +12,7 @@
     &>li {
       @extra-padding-between: 5px;
       padding: @entity-component-padding-between + @extra-padding-between @entity-component-padding-side;
-      border-bottom: @entity-component-list-separator-border;
+      border-bottom: var(--entity-component-list-separator-border);
       position: relative;
       display: block;
 
@@ -91,7 +91,7 @@
         .line {
           width: 100%;
           margin: 5px 0;
-          border: 1px solid darken(@entity-component-list-separator-border-color, 4%);
+          border: var(--entity-component-list-separator-border);
           height: 0;
         }
 
