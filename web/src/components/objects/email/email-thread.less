@@ -31,8 +31,9 @@
         }
         .time {
           position: absolute;
-          top: 0; right: 15px;
-          background: white;
+          top: 3px; right: 15px;
+          background: var(--entity-component-bg);
+          color: var(--entity-component-item-fg);
           padding-left: 10px;
           padding-right: 5px;
           font-size: 11px;
@@ -43,12 +44,12 @@
           text-align: center;
           display: block;
           width: 15px;
-          background: white;
+          background: var(--entity-component-bg);
+          color: var(--entity-component-item-fg);
           cursor: pointer;
           .icon {
             .icon-font-awesome('plus-square-o');
             font-size: 14px;
-            color: #a0a0a0;
           }
         }
       }
@@ -110,6 +111,9 @@
 
       .object-body {
         padding-bottom: 50px; // enough space for email controls to appear non awklardly
+
+        background: @entity-component-bg;
+        color: @body-fg;
 
         .more {
           position: relative;
