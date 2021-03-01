@@ -30,6 +30,10 @@ export class PersistedStore implements ISettingsStore {
         this.darkMode = dark;
     }
 
+    @action toggleDarkMode(): void {
+        this.darkMode = !this.darkMode;
+    }
+
     private setupLocalStorageSync() {
         if (window.localStorage.settings) {
             try {
@@ -40,9 +44,16 @@ export class PersistedStore implements ISettingsStore {
             }
         }
 
+        this.checkTheme();
+
         autorun(() => {
             window.localStorage.settings = JSON.stringify(this.asJson);
+            this.checkTheme();
         });
+    }
+
+    private checkTheme() {
+        document.querySelector('html').dataset.theme = (this.darkMode) ? 'theme-dark' : '';
     }
 }
 

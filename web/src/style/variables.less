@@ -4,40 +4,49 @@
 @exomind-secondary: #E09626;
 
 @navbar-bg: #3D434F;
-@navbar-fg: #FFFFFF;
+@navbar-fg: #b9b9b9;
 @navbar-height: 40px;
 
 @body-bg: #E2E2E2;
+@body-bg-dark: #181a1d;
+@body-fg: #000000;
+@body-fg-dark: #e1e1e1;
 
 @tools-popup-bg: #404040;
 
 @entity-component-border: 1px solid #D3D3D3;
-@entity-component-list-separator-border-color: #ebebeb;
-@entity-component-list-separator-border: 1px solid @entity-component-list-separator-border-color;
+@entity-component-border-dark: 1px solid #505050;
+@entity-component-list-separator-border: 1px solid #ebebeb;
+@entity-component-list-separator-border-dark: 1px solid #616161;
 @entity-component-padding-side: 5px;
 @entity-component-padding-between: 5px;
 @entity-component-min-width: 250px;
 @entity-component-bg: #FFFFFF;
+@entity-component-bg-dark: #25292e;
 @entity-component-bg-selected: #e1e2d9;
+@entity-component-bg-selected-dark: #434c54;
 @entity-component-bg-done: #5CB296;
 @entity-component-bg-hover: #F0F0F0;
+@entity-component-bg-hover-dark: #1d2124;
 @entity-component-bg-disabled: #F3F3F3;
+@entity-component-bg-disabled-dark: #30373c;
 @entity-component-drag-placeholder-bg: #D3D3D3;
+
 @entity-component-header-bg: #F5F5F5;
+@entity-component-header-bg-dark: #3D434F;
 @entity-component-header-fg: #6A6A6A;
+@entity-component-header-fg-dark: #e1e1e1;
 @entity-component-header-actions-fg: #6A6A6A;
+@entity-component-header-actions-fg-dark: #e1e1e1;
 @entity-component-header-actions-hover-fg: @exomind-secondary;
 @entity-component-header-height: 35px;
 @entity-component-header-border: 1px solid #E0E0E0;
+@entity-component-header-border-dark: 1px solid #616161;
 
-@entity-component-item-actions-icon-fg: #6A6A6A;
-@entity-component-item-actions-icon-hover-fg: @exomind-secondary;
-
-@entity-component-children-type-switcher-border: 1px solid @exomind-primary;
-@entity-component-children-type-switcher-hover-bg: fadeout(black, 90%);
-@entity-component-children-type-switcher-normal-fg: @exomind-primary;
-@entity-component-children-type-switcher-active-bg: @exomind-primary;
-@entity-component-children-type-switcher-active-fg: white;
+@entity-component-item-fg: #000000;
+@entity-component-item-fg-dark: #e1e1e1;
+@entity-component-item-actions-icon-fg: #000000;
+@entity-component-item-actions-icon-fg-dark: #e1e1e1;
 
 @entity-component-field-pill-fg: #490A3D;
 @entity-component-field-pill-bg: rgba(233, 127, 2,  0.3);
@@ -59,8 +68,70 @@
 
 @hamburger-width: 175px;
 @hamburger-bg: #DDDDDD;
+@hamburger-bg-dark: #25292e;
+@hamburger-bg-hover: darken(@hamburger-bg, 2%);
+@hamburger-bg-hover-dark: darken(@hamburger-bg-dark, 2%);
 @hamburger-active-bg: #CCCCCC;
+@hamburger-active-bg-dark: #30363c;
+@hamburger-active-bg-hover: darken(@hamburger-active-bg, 2%);
+@hamburger-active-bg-hover-dark: darken(@hamburger-active-bg-dark, 2%);
 @hamburger-active-fg: @exomind-primary;
 @hamburger-items-text-color: #6A6A6A;
-@hamburger-items-action-text-color: #FFFFFF;
+@hamburger-items-text-color-dark: #9b9b9b;
 @hamburger-items-separator: 1px solid #D5D5D5;
+@hamburger-items-separator-dark: 1px solid #505050;
+
+
+:root {
+    --body-bg: @body-bg;
+    --body-fg: @body-fg;
+
+    --entity-component-border: @entity-component-border;
+    --entity-component-list-separator-border: @entity-component-list-separator-border;
+    --entity-component-bg: @entity-component-bg;
+    --entity-component-bg-selected: @entity-component-bg-selected;
+    --entity-component-bg-hover: @entity-component-bg-hover;
+    --entity-component-bg-disabled: @entity-component-bg-disabled;
+
+    --entity-component-header-bg : @entity-component-header-bg;
+    --entity-component-header-fg: @entity-component-header-fg;
+    --entity-component-header-actions-fg: @entity-component-header-actions-fg;
+    --entity-component-header-border: @entity-component-header-border;
+
+    --entity-component-item-fg: @entity-component-item-fg;
+    --entity-component-item-actions-icon-fg: @entity-component-item-actions-icon-fg;
+
+    --hamburger-bg: @hamburger-bg;
+    --hamburger-bg-hover: @hamburger-bg-hover;
+    --hamburger-active-bg: @hamburger-active-bg;
+    --hamburger-active-bg-hover: @hamburger-active-bg-hover;
+    --hamburger-items-text-color: @hamburger-items-text-color;
+    --hamburger-items-separator: @hamburger-items-separator;
+}
+
+:root[data-theme="theme-dark"] {
+    --body-bg: @body-bg-dark;
+    --body-fg: @body-fg-dark;
+
+    --entity-component-border: @entity-component-border-dark;
+    --entity-component-list-separator-border: @entity-component-list-separator-border-dark;
+    --entity-component-bg: @entity-component-bg-dark;
+    --entity-component-bg-selected: @entity-component-bg-selected-dark;
+    --entity-component-bg-hover: @entity-component-bg-hover-dark;
+    --entity-component-bg-disabled: @entity-component-bg-disabled-dark;
+
+    --entity-component-header-bg : @entity-component-header-bg-dark;
+    --entity-component-header-fg: @entity-component-header-fg-dark;
+    --entity-component-header-actions-fg: @entity-component-header-actions-fg-dark;
+    --entity-component-header-border: @entity-component-header-border-dark;
+
+    --entity-component-item-fg: @entity-component-item-fg-dark;
+    --entity-component-item-actions-icon-fg: @entity-component-item-actions-icon-fg-dark;
+
+    --hamburger-bg: @hamburger-bg-dark;
+    --hamburger-bg-hover: @hamburger-bg-hover-dark;
+    --hamburger-active-bg: @hamburger-active-bg-dark;
+    --hamburger-active-bg-hover: @hamburger-active-bg-hover-dark;
+    --hamburger-items-text-color: @hamburger-items-text-color-dark;
+    --hamburger-items-separator: @hamburger-items-separator-dark;
+}

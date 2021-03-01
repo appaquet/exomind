@@ -3,8 +3,9 @@
 
 .settings {
   .center-element();
-  background: white;
+  background: var(--entity-component-bg);
   padding: 5px;
+  border: var(--entity-component-border);
 
   ul {
     .make-list();
@@ -13,8 +14,8 @@
 
       a, a:hover, a:active {
         display: inline-block;
-        color: black;
         text-decoration: none;
+        color: var(--entity-component-item-fg);
         padding: 10px;
         width: 300px;
 
@@ -23,10 +24,10 @@
         }
       }
       a:hover {
-        background: #e0e0e0;
+        background: var(--entity-component-bg-hover);
       }
 
-      border-bottom: 1px solid #c0c0c0;
+      border-bottom: var(--entity-component-list-separator-border);
       &:last-child {
         border-bottom: none;
       }

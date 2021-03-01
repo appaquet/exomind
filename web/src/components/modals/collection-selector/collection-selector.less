@@ -2,19 +2,15 @@
 @import (reference) "../../../style/variables.less";
 
 .collection-selector {
-  @collection-selector-bg: @entity-component-header-bg;
-  @collection-selector-header-bg: @entity-component-header-bg;
   @collection-selector-header-height: 20px;
   @collection-selector-filter-height: 30px;
-  @collection-selector-list-bg: #fff;
-  @collection-selector-list-sep: 1px solid #ececec;
   @collection-selector-list-margin: 5px;
 
   position: absolute;
   height: 400px;
   width: 400px;
   max-width: 90%;
-  background: @collection-selector-bg;
+  background: var(--entity-component-header-bg);
   z-index: @zindex-popover;
   .shadow-z-3();
 
@@ -25,7 +21,7 @@
     height: @collection-selector-header-height;
     font-weight: bold;
     padding: 2px @collection-selector-list-margin;
-    background: @collection-selector-header-bg;
+    background: var(--entity-component-header-bg);
   }
 
   .filter {
@@ -33,7 +29,6 @@
     width: 100%;
     padding: 5px 5px 0 5px;
     input {
-      background: #fff;
       border: none;
       width: 100%;
       &:focus {
@@ -45,7 +40,7 @@
   .scrollable {
     @calc-minus: @collection-selector-list-margin*2 + @collection-selector-filter-height;
     height: ~"calc(100% - @{calc-minus})";
-    background: @collection-selector-list-bg;
+    background: var(--entity-component-bg);
   }
 
   ul {
@@ -57,7 +52,7 @@
       .make-list-item();
       height: 30px;
       padding: 5px;
-      border-bottom: @collection-selector-list-sep;
+      border-bottom: var(--entity-component-list-separator-border);
       .ellipsis-text-overflow();
       cursor: pointer;
 
