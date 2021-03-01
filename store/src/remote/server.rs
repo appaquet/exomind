@@ -28,7 +28,7 @@ use super::seri::{
     mutation_from_request_frame, mutation_result_to_response_frame, query_from_request_frame,
     query_results_to_response_frame,
 };
-use crate::{error::Error, query::WatchToken};
+use crate::{error::Error, query::WatchToken, store::Store};
 
 pub struct Server<CS, PS, T>
 where

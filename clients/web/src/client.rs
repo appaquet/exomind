@@ -9,7 +9,10 @@ use exocore_protos::{
     prost::{Message, ProstMessageExt},
     store::MutationRequest,
 };
-use exocore_store::remote::{Client, ClientConfiguration, ClientHandle};
+use exocore_store::{
+    remote::{Client, ClientConfiguration, ClientHandle},
+    store::Store,
+};
 use exocore_transport::{
     p2p::Libp2pTransportConfig, transport::ConnectionStatus, InEvent, Libp2pTransport, ServiceType,
     TransportServiceHandle,

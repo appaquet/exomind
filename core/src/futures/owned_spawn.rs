@@ -19,10 +19,23 @@ where
     F: Future<Output = O> + 'static + Send,
     O: Send + 'static,
 {
+    let (wrapped_future, spawn) = owned_future(fut);
+    spawn_future(wrapped_future);
+    spawn
+}
+
+/// Wraps a future that can be cancelled by dropping the `OwnedSpawn` handle.
+/// It is also possible to get the result of the spawned future by awaiting on
+/// the handle.
+pub fn owned_future<F, O>(fut: F) -> (impl Future<Output = ()> + 'static + Send, OwnedSpawn<O>)
+where
+    F: Future<Output = O> + 'static + Send,
+    O: Send + 'static,
+{
     let (owner_drop_sender, owner_drop_receiver) = oneshot::channel();
     let (spawned_drop_sender, spawned_drop_receiver) = oneshot::channel();
 
-    spawn_future(async move {
+    let wrapped = async move {
         let spawned_drop_sender = spawned_drop_sender;
 
         futures::select! {
@@ -33,15 +46,17 @@ where
                 let _ = spawned_drop_sender.send(result);
             },
         };
-    });
+    };
 
-    OwnedSpawn {
+    let spawn = OwnedSpawn {
         _owner_drop_sender: owner_drop_sender,
         spawned_drop_receiver,
-    }
+    };
+
+    (wrapped, spawn)
 }
 
-/// Result of `owned_spawn` function.
+/// Result of `owned_spawn` or `owned_future` function.
 pub struct OwnedSpawn<O>
 where
     O: Send + 'static,

@@ -17,6 +17,7 @@ use super::{entity_index::test_index::TestEntityIndex, *};
 use crate::{
     local::{mutation_index::MutationIndexConfig, store::StoreHandle, EntityIndexConfig},
     mutation::{MutationBuilder, MutationRequestLike},
+    store::Store as StoreTrait,
 };
 
 /// Utility to test store
@@ -99,7 +100,7 @@ impl TestStore {
         Ok(())
     }
 
-    pub async fn mutate<M: Into<MutationRequestLike>>(
+    pub async fn mutate<M: Into<MutationRequestLike> + Send>(
         &mut self,
         request: M,
     ) -> Result<MutationResult, anyhow::Error> {

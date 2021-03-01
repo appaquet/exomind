@@ -4,6 +4,7 @@ use std::{
     task::{Context, Poll},
 };
 
+use async_trait::async_trait;
 use exocore_core::{
     cell::Cell,
     futures::{interval, spawn_blocking, BatchingStream},
@@ -398,8 +399,17 @@ where
 
         tokens
     }
+}
 
-    pub async fn mutate<M: Into<MutationRequestLike>>(
+#[async_trait]
+impl<CS, PS> crate::store::Store for StoreHandle<CS, PS>
+where
+    CS: exocore_chain::chain::ChainStore,
+    PS: exocore_chain::pending::PendingStore,
+{
+    type WatchedQueryStream = WatchedQueryStream<CS, PS>;
+
+    async fn mutate<M: Into<MutationRequestLike> + Send>(
         &self,
         request: M,
     ) -> Result<MutationResult, Error> {
@@ -435,7 +445,7 @@ where
         Ok(mutation_result)
     }
 
-    pub async fn query(&self, query: EntityQuery) -> Result<EntityResults, Error> {
+    async fn query(&self, query: EntityQuery) -> Result<EntityResults, Error> {
         let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
 
         let receiver = {
@@ -455,10 +465,7 @@ where
         receiver.await.map_err(|_err| Error::Cancelled)?
     }
 
-    pub fn watched_query(
-        &self,
-        mut query: EntityQuery,
-    ) -> Result<WatchedQueryStream<CS, PS>, Error> {
+    fn watched_query(&self, mut query: EntityQuery) -> Result<Self::WatchedQueryStream, Error> {
         let inner = self.inner.upgrade().ok_or(Error::Dropped)?;
         let mut inner = inner.write().map_err(|_| Error::Dropped)?;
 
@@ -586,6 +593,7 @@ pub mod tests {
         local::{entity_index::GarbageCollectorConfig, EntityIndexConfig},
         mutation::MutationBuilder,
         query::QueryBuilder,
+        store::Store,
     };
 
     #[tokio::test(flavor = "multi_thread")]

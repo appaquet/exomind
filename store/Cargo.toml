@@ -11,12 +11,13 @@ version = "0.1.3"
 
 [features]
 default = ["local", "remote"]
-local = ["tantivy", "exocore-chain/engine", "crc", "lru", "futures", "exocore-core", "exocore-chain"]
-remote = ["exocore-core", "exocore-transport", "futures"]
+local = ["tantivy", "exocore-chain/engine", "crc", "lru", "exocore-core", "exocore-chain"]
+remote = ["exocore-core", "exocore-transport"]
 tests-utils = []
 
 [dependencies]
 anyhow = "1.0"
+async-trait = "0.1"
 bytes = "1.0"
 chrono = {version = "0.4", features = ["serde"]}
 crc = {version = "1.8", optional = true}
@@ -24,7 +25,7 @@ exocore-chain = {version = "0.1.3", path = "../chain", default-features = false,
 exocore-core = {version = "0.1.3", path = "../core", optional = true}
 exocore-protos = {version = "0.1.3", path = "../protos"}
 exocore-transport = {version = "0.1.3", path = "../transport", default-features = false, optional = true}
-futures = {version = "0.3", optional = true}
+futures = "0.3"
 itertools = "0.10"
 log = "0.4"
 lru = {version = "0.6", optional = true}

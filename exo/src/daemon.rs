@@ -1,3 +1,5 @@
+use std::pin::Pin;
+
 use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -39,8 +41,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
     };
 
     let mut engine_handles = Vec::new();
-    let mut engine_completions = Vec::new();
-    let mut store_completions = Vec::new();
+    let mut services_completion: Vec<Pin<Box<dyn Future<Output = ()>>>> = Vec::new();
 
     for either_cell in either_cells.iter() {
         let cell = either_cell.cell();
@@ -77,10 +78,14 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
             let store_engine_handle = engine.get_handle();
 
             // start the engine
-            engine_completions.push(owned_spawn(async move {
-                let res = engine.run().await;
-                info!("{}: Engine is done: {:?}", cell_name, res);
-            }));
+            services_completion.push(
+                owned_spawn(async move {
+                    let res = engine.run().await;
+                    info!("{}: Engine is done: {:?}", cell_name, res);
+                })
+                .map(|_| ())
+                .boxed(),
+            );
 
             // start an local store if needed
             if cell.local_node_has_role(CellNodeRole::Store) {
@@ -107,25 +112,24 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
 
                 // create a combined p2p + http transport for entities store so that it can
                 // received mutation / query over http
-                let entities_p2p_transport =
+                let store_p2p_transport =
                     p2p_transport.get_handle(cell.clone(), ServiceType::Store)?;
-                let entities_http_transport =
+                let store_http_transport =
                     http_transport.get_handle(cell.clone(), ServiceType::Store)?;
-                let entities_transport = EitherTransportServiceHandle::new(
-                    entities_p2p_transport,
-                    entities_http_transport,
-                );
+                let store_transport =
+                    EitherTransportServiceHandle::new(store_p2p_transport, store_http_transport);
 
-                store_completions.push(
+                services_completion.push(
                     create_local_store(
                         &config,
-                        entities_transport,
+                        store_transport,
                         store_engine_handle,
                         full_cell,
                         clock.clone(),
                         entities_index,
                     )
-                    .await?,
+                    .await?
+                    .boxed(),
                 );
             } else {
                 info!(
@@ -146,18 +150,17 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
         let res = p2p_transport.run().await;
         info!("libp2p transport done: {:?}", res);
     });
-    let http_transport = owned_spawn(async {
+    owned_spawn(async {
         let res = http_transport.run().await;
         info!("HTTP transport done: {:?}", res);
     });
 
-    // wait for anything to stop
+    // wait for any services or p2p transport to complete
     futures::select! {
         _ = p2p_transport.fuse() => {},
-        _ = http_transport.fuse() => {},
-        _ = futures::future::join_all(engine_completions).fuse() => {},
-        _ = futures::future::join_all(store_completions).fuse() => {},
+        _ = futures::future::join_all(services_completion).fuse() => {},
     }
+    info!("One service is done. Shutting down.");
 
     Ok(())
 }

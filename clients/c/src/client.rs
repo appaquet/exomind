@@ -1,20 +1,25 @@
-use std::{ffi::CString, os::raw::c_void, sync::Arc, time::Duration};
-
-use exocore_core::{
-    cell::Cell,
-    futures::Runtime,
-    time::{Clock, ConsistentTimestamp},
+use std::{
+    ffi::CString,
+    os::raw::c_void,
+    sync::{Arc, Weak},
+    time::Duration,
 };
+
+use exocore_core::{cell::Cell, futures::Runtime, time::Clock};
 use exocore_protos::{
     generated::exocore_store::EntityQuery,
     prost::{Message, ProstMessageExt},
     store::MutationRequest,
 };
-use exocore_store::remote::{Client as StoreClient, ClientConfiguration, ClientHandle};
+use exocore_store::{
+    remote::{Client as StoreClient, ClientConfiguration, ClientHandle},
+    store::Store,
+};
 use exocore_transport::{
     p2p::Libp2pTransportConfig, Libp2pTransport, ServiceType, TransportServiceHandle,
 };
-use futures::StreamExt;
+use futures::{channel::oneshot, select, FutureExt, StreamExt};
+use weak_table::WeakKeyHashMap;
 
 use crate::{exocore_init, node::LocalNode, utils::CallbackContext};
 
@@ -145,7 +150,7 @@ pub unsafe extern "C" fn exocore_store_query(
 /// Cancels a query for which results weren't returned yet.
 ///
 /// If the query is successfully cancelled, the callback will be called with an
-/// error status. and the context will need to be freed by caller.
+/// error status and the callback context will need to be freed by caller.
 ///
 /// # Safety
 /// * `client` needs to be a valid `Client`.
@@ -154,13 +159,7 @@ pub unsafe extern "C" fn exocore_store_query(
 #[no_mangle]
 pub unsafe extern "C" fn exocore_store_query_cancel(client: *mut Client, handle: QueryHandle) {
     let client = client.as_mut().unwrap();
-
-    if let Err(err) = client
-        .store_handle
-        .cancel_query(ConsistentTimestamp(handle.query_id))
-    {
-        error!("Error cancelling query: {}", err)
-    }
+    client.cancel_operation(handle.query_id);
 }
 
 #[repr(C)]
@@ -234,8 +233,8 @@ pub struct WatchedQueryHandle {
 ///
 /// It is OK to cancel a query even if it may have already been cancelled,
 /// closed or failed. If the query is successfully cancelled, the callback will
-/// be called with a `Done` status, and the context will need to be freed by
-/// caller.
+/// be called with a `Done` status, and the callback context will need to be
+/// freed by caller.
 ///
 /// # Safety
 /// * `client` needs to be a valid `Client`.
@@ -245,13 +244,7 @@ pub unsafe extern "C" fn exocore_store_watched_query_cancel(
     handle: WatchedQueryHandle,
 ) {
     let client = client.as_mut().unwrap();
-
-    if let Err(err) = client
-        .store_handle
-        .cancel_query(ConsistentTimestamp(handle.query_id))
-    {
-        error!("Error cancelling query stream: {}", err)
-    }
+    client.cancel_operation(handle.query_id);
 }
 
 /// Returns a list of HTTP endpoints available on nodes of the cell, returned as
@@ -329,12 +322,22 @@ pub unsafe extern "C" fn exocore_client_free(client: *mut Client) {
 /// Exocore client instance of a bootstrapped node.
 ///
 /// This structure is opaque to the client and is used as context for calls.
+///
+/// Queries can be cancelled thanks to `operations_canceller` weak map. It holds
+/// a weak reference to an operation id generated for each query, for
+/// which its strong counterpart is owned by the query's spawned future. The
+/// query future selects on the receiver channel to cancel.
 pub struct Client {
     _runtime: Runtime,
     clock: Clock,
     cell: Cell,
     store_handle: Arc<ClientHandle>,
+
+    operations_canceller: WeakKeyHashMap<Weak<SpawnedOperationId>, oneshot::Sender<()>>,
+    next_operation_id: SpawnedOperationId,
 }
+
+type SpawnedOperationId = u64;
 
 impl Client {
     unsafe fn new(node: *mut LocalNode) -> Result<Client, ClientStatus> {
@@ -406,6 +409,8 @@ impl Client {
             clock,
             cell,
             store_handle,
+            operations_canceller: WeakKeyHashMap::new(),
+            next_operation_id: 0,
         })
     }
 
@@ -420,18 +425,16 @@ impl Client {
         let mutation =
             MutationRequest::decode(mutation_bytes).map_err(|_| MutationStatus::Error)?;
 
-        let store_handle = self.store_handle.clone();
-
         debug!("Sending a mutation");
+
+        let store = self.store_handle.clone();
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         self._runtime.spawn(async move {
-            let future_result = store_handle.mutate(mutation);
+            let future_result = store.mutate(mutation);
 
-            let result = future_result.await;
-            match result {
+            match future_result.await {
                 Ok(res) => {
                     debug!("Mutation result received");
-
                     let encoded = res.encode_to_vec();
                     callback(
                         MutationStatus::Success,
@@ -440,7 +443,6 @@ impl Client {
                         callback_ctx.ctx,
                     );
                 }
-
                 Err(err) => {
                     warn!("Mutation future has failed: {}", err);
                     callback(MutationStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
@@ -463,17 +465,30 @@ impl Client {
         let query_bytes = std::slice::from_raw_parts(query_bytes, query_size);
         let query = EntityQuery::decode(query_bytes).map_err(|_| QueryStatus::Error)?;
 
-        let future_result = self.store_handle.query(query);
-        let query_id = future_result.query_id();
+        let operation_id = Arc::new(self.next_operation_id);
+        self.next_operation_id += 1;
+        debug!("Sending a query (id={})", operation_id);
 
-        debug!("Sending a query");
+        let (cancel_sender, cancel_receiver) = oneshot::channel();
         let callback_ctx = CallbackContext { ctx: callback_ctx };
+        let operation_id_clone = operation_id.clone(); // query keeps strong ref to it since it's used for cancellation
+        let store = self.store_handle.clone();
         self._runtime.spawn(async move {
-            let result = future_result.await;
+            let future_result = store.query(query);
+            let result = select! {
+                _ = cancel_receiver.fuse() => {
+                    debug!("Query got cancelled (id={})", operation_id_clone);
+                    callback(QueryStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
+                    return;
+                }
+                result = future_result.fuse() => {
+                    result
+                }
+            };
+
             match result {
                 Ok(res) => {
-                    debug!("Query results received");
-
+                    debug!("Query results received (id={})", operation_id_clone);
                     let encoded = res.encode_to_vec();
                     callback(
                         QueryStatus::Success,
@@ -482,17 +497,21 @@ impl Client {
                         callback_ctx.ctx,
                     );
                 }
-
                 Err(err) => {
-                    warn!("Query future has failed: {}", err);
+                    info!(
+                        "Query future has failed (id={}): {}",
+                        operation_id_clone, err
+                    );
                     callback(QueryStatus::Error, std::ptr::null(), 0, callback_ctx.ctx);
                 }
             }
         });
+        self.operations_canceller
+            .insert(operation_id.clone(), cancel_sender);
 
         Ok(QueryHandle {
             status: QueryStatus::Success,
-            query_id: query_id.0,
+            query_id: *operation_id,
         })
     }
 
@@ -511,19 +530,50 @@ impl Client {
         let query_bytes = std::slice::from_raw_parts(query_bytes, query_size);
         let query = EntityQuery::decode(query_bytes).map_err(|_| WatchedQueryStatus::Error)?;
 
-        let result_stream = self.store_handle.watched_query(query);
-        let query_id = result_stream.query_id();
+        let operation_id = Arc::new(self.next_operation_id);
+        self.next_operation_id += 1;
+        debug!("Sending a watch query (id={})", operation_id);
 
-        debug!("Sending a watch query");
+        let (cancel_sender, cancel_receiver) = oneshot::channel();
+        self.operations_canceller
+            .insert(operation_id.clone(), cancel_sender);
+
         let callback_ctx = CallbackContext { ctx: callback_ctx };
+        let store = self.store_handle.clone();
+        let operation_id_clone = operation_id.clone(); // query keeps strong ref to it since it's used for cancellation
         self._runtime.spawn(async move {
-            let mut stream = result_stream;
+            let mut result_stream = match store.watched_query(query) {
+                Ok(ok) => ok,
+                Err(err) => {
+                    info!(
+                        "Failed to start watched query (id={}): {}",
+                        operation_id_clone, err
+                    );
+                    callback(
+                        WatchedQueryStatus::Error,
+                        std::ptr::null(),
+                        0,
+                        callback_ctx.ctx,
+                    );
+                    return;
+                }
+            };
 
-            while let Some(result) = stream.next().await {
+            let mut cancel_receiver = cancel_receiver.fuse();
+            let status = loop {
+                let result = select! {
+                    _ = cancel_receiver => {
+                        debug!("Watched query cancelled (id={})", operation_id_clone);
+                        break WatchedQueryStatus::Done;
+                    }
+                    result = result_stream.next().fuse() => {
+                        result
+                    }
+                };
+
                 match result {
-                    Ok(res) => {
-                        debug!("Watched query results received");
-
+                    Some(Ok(res)) => {
+                        debug!("Watched query results received (id={})", operation_id_clone);
                         let encoded = res.encode_to_vec();
                         callback(
                             WatchedQueryStatus::Success,
@@ -532,32 +582,31 @@ impl Client {
                             callback_ctx.ctx,
                         );
                     }
-
-                    Err(err) => {
-                        warn!("Watched query has failed: {}", err);
-                        callback(
-                            WatchedQueryStatus::Error,
-                            std::ptr::null(),
-                            0,
-                            callback_ctx.ctx,
+                    Some(Err(err)) => {
+                        info!(
+                            "Watched query has failed (id={}): {}",
+                            operation_id_clone, err
                         );
-                        return;
+                        break WatchedQueryStatus::Error;
+                    }
+                    None => {
+                        debug!("Watched query done (id={})", operation_id_clone);
+                        break WatchedQueryStatus::Done;
                     }
                 }
-            }
+            };
 
-            info!("Watched query done");
-            callback(
-                WatchedQueryStatus::Done,
-                std::ptr::null(),
-                0,
-                callback_ctx.ctx,
-            );
+            callback(status, std::ptr::null(), 0, callback_ctx.ctx);
         });
 
         Ok(WatchedQueryHandle {
             status: WatchedQueryStatus::Success,
-            query_id: query_id.0,
+            query_id: *operation_id,
         })
+    }
+
+    fn cancel_operation(&mut self, operation_id: SpawnedOperationId) {
+        debug!("Cancelling operation {}", operation_id);
+        self.operations_canceller.remove(&operation_id);
     }
 }

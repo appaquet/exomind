@@ -5,7 +5,7 @@ use exocore_protos::{
     generated::exocore_store::{EntityQuery, EntityResults},
     prost::ProstMessageExt,
 };
-use exocore_store::remote::ClientHandle;
+use exocore_store::{remote::ClientHandle, store::Store};
 use futures::{channel::oneshot, prelude::*};
 use wasm_bindgen::prelude::*;
 
@@ -48,9 +48,14 @@ impl WatchedQuery {
         };
 
         let (drop_sender, drop_receiver) = oneshot::channel();
-
         spawn_future_non_send(async move {
-            let mut results = store_handle.watched_query(query);
+            let mut results = match store_handle.watched_query(query) {
+                Ok(ok) => ok,
+                Err(err) => {
+                    report_result(Err(err));
+                    return Ok(());
+                }
+            };
             let mut drop_receiver = drop_receiver.fuse();
 
             loop {

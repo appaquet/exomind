@@ -1,8 +1,7 @@
-pub mod client;
-pub use client::{Client, ClientConfiguration, ClientHandle};
-
 pub(self) mod seri;
 
+pub mod client;
+pub use client::{Client, ClientConfiguration, ClientHandle};
 #[cfg(feature = "local")]
 pub mod server;
 #[cfg(feature = "local")]

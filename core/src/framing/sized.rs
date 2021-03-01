@@ -3,7 +3,7 @@ use std::io;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 use super::{
-    check_from_size, check_into_size, check_offset_substract, Error, FrameBuilder, FrameReader,
+    check_from_size, check_into_size, check_offset_subtract, Error, FrameBuilder, FrameReader,
 };
 
 /// Frame that encode the size of the underlying frame so that it can expose the
@@ -51,12 +51,12 @@ impl SizedFrame<&[u8]> {
         buffer: &[u8],
         next_offset: usize,
     ) -> Result<SizedFrame<&[u8]>, Error> {
-        check_offset_substract(next_offset, 4)?;
+        check_offset_subtract(next_offset, 4)?;
         check_from_size(next_offset - 4, buffer)?;
 
         let inner_size = (&buffer[next_offset - 4..]).read_u32::<LittleEndian>()? as usize;
         let offset_subtract = 4 + inner_size + 4;
-        check_offset_substract(next_offset, offset_subtract)?;
+        check_offset_subtract(next_offset, offset_subtract)?;
         let offset = next_offset - offset_subtract;
 
         SizedFrame::new(&buffer[offset..])

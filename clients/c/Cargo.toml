@@ -14,6 +14,7 @@ exocore-discovery = {version = "0.1.3", path = "../../discovery", default-featur
 exocore-protos = {version = "0.1.3", path = "../../protos"}
 exocore-store = {version = "0.1.3", path = "../../store", default-features = false, features = ["remote"]}
 exocore-transport = {version = "0.1.3", path = "../../transport", features = ["p2p-full"]}
+weak-table = "0.3"
 futures = "0.3"
 libc = "0.2"
 log = "0.4"

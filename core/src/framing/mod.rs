@@ -168,7 +168,7 @@ fn check_from_size(needed: usize, from: &[u8]) -> Result<(), Error> {
 }
 
 /// Asserts that the given offset can be subtracted from an offset
-fn check_offset_substract(offset: usize, sub_offset: usize) -> Result<(), Error> {
+fn check_offset_subtract(offset: usize, sub_offset: usize) -> Result<(), Error> {
     if sub_offset > offset {
         Err(Error::OffsetSubtract(offset, sub_offset))
     } else {
