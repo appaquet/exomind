@@ -101,8 +101,19 @@ impl GmailClient {
                 continue;
             };
 
-            let thread = self.fetch_thread(thread_id, full).await?;
-            threads.push(thread);
+            match self.fetch_thread(thread_id, full).await {
+                Ok(thread) => {
+                    threads.push(thread);
+                }
+                Err(err) => {
+                    error!(
+                        "Error fetching thread {} for account {}: {}",
+                        thread_id,
+                        self.account.email(),
+                        err
+                    );
+                }
+            }
         }
 
         Ok(threads)
@@ -221,8 +232,20 @@ impl GmailClient {
                 if !imported_threads.contains(thread_id) {
                     imported_threads.insert(thread_id.to_string());
 
-                    let thread = self.fetch_thread(thread_id, true).await?;
-                    actions.push(GmailHistoryAction::AddToInbox(history.id.unwrap(), thread));
+                    match self.fetch_thread(thread_id, true).await {
+                        Ok(thread) => {
+                            actions
+                                .push(GmailHistoryAction::AddToInbox(history.id.unwrap(), thread));
+                        }
+                        Err(err) => {
+                            error!(
+                                "Error fetching thread {} for account {}: {}",
+                                thread_id,
+                                self.account.email(),
+                                err
+                            );
+                        }
+                    }
                 }
             }
 
@@ -239,8 +262,20 @@ impl GmailClient {
                 if !imported_threads.contains(thread_id) {
                     imported_threads.insert(thread_id.to_string());
 
-                    let thread = self.fetch_thread(thread_id, true).await?;
-                    actions.push(GmailHistoryAction::AddToInbox(history.id.unwrap(), thread));
+                    match self.fetch_thread(thread_id, true).await {
+                        Ok(thread) => {
+                            actions
+                                .push(GmailHistoryAction::AddToInbox(history.id.unwrap(), thread));
+                        }
+                        Err(err) => {
+                            error!(
+                                "Error fetching thread {} for account {}: {}",
+                                thread_id,
+                                self.account.email(),
+                                err
+                            );
+                        }
+                    }
                 }
             }
 
