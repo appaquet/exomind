@@ -3512,7 +3512,7 @@ css-loader@^3.4.2:
     schema-utils "^2.7.0"
     semver "^6.3.0"
 
-css-loader@^5.1.0:
+css-loader@^5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/css-loader/-/css-loader-5.1.1.tgz#9362d444a0f7c08c148a109596715c904e252879"
   integrity sha512-5FfhpjwtuRgxqmusDidowqmLlcb+1HgnEDMsi2JhiUrZUcoc+cqw+mUtMIF/+OfeMYaaFCLYp1TaIt9H6I/fKA==
