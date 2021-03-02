@@ -3,10 +3,12 @@
 @import (reference) "../../../style/font-awesome.less";
 
 #hamburger {
-  overflow-y: scroll;
-  overflow-x: hidden;
   padding-top: 20px + @navbar-height;
   background: var(--hamburger-bg);
+
+  overflow-y: scroll;
+  overflow-x: hidden;
+  .styled-scrollbar(var(--hamburger-bg), var(--hamburger-bg-hover), 5px);
 
   & > ul {
     .make-list();

@@ -21,13 +21,15 @@
 
     .html-editor-controls {
       padding-left: 5px;
-      border-bottom:var(--entity-component-border);
+      border-bottom: var(--entity-component-border);
       height: 30px;
     }
+
     .html-editor {
       padding: 10px;
       height: 100%;
       overflow-y: scroll;
+      .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
     }
   }
 }
