@@ -19,7 +19,7 @@ exocore-protos = {version = "0.1.3", path = "../../protos"}
 exocore-store = {version = "0.1.3", path = "../../store"}
 log = "0.4"
 thiserror = "1.0"
-wasmtime = "0.23.0"
+wasmtime = "0.24.0"
 
 [dev-dependencies]
 exocore-core = {version = "0.1.3", path = "../../core", features = ["tests-utils"]}
