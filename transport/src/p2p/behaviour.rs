@@ -29,6 +29,7 @@ const DEFAULT_DIALING_MESSAGE_TIMEOUT: Duration = Duration::from_secs(5);
 pub struct ExocoreBehaviour {
     actions: VecDeque<BehaviourAction>,
     peers: HashMap<PeerId, Peer>,
+    last_redial_check: Option<Instant>,
 }
 
 type BehaviourAction = NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehaviourEvent>;
@@ -77,12 +78,12 @@ impl ExocoreBehaviour {
                     peer.temp_queue.pop_front();
                 }
 
-                self.dial_peer(peer_id);
+                self.dial_peer(peer_id, false);
             }
         }
     }
 
-    pub fn add_node_peer(&mut self, node: &Node) {
+    pub fn add_node(&mut self, node: &Node) {
         let peer_id = *node.peer_id();
         let addresses = node.p2p_addresses();
 
@@ -107,39 +108,44 @@ impl ExocoreBehaviour {
             );
         }
 
-        self.dial_peer(peer_id);
-    }
-
-    pub fn reset_connections(&mut self) {
-        info!("Resetting connections");
-
-        for (peer_id, peer) in self.peers.iter_mut() {
-            peer.status = PeerStatus::Disconnected;
-            peer.last_dial = None;
-
-            // send disconnected status to handles to assume the peer is gone
-            self.actions
-                .push_back(NetworkBehaviourAction::GenerateEvent(
-                    ExocoreBehaviourEvent::PeerStatus(*peer_id, peer.status),
-                ));
-
-            self.actions.push_back(NetworkBehaviourAction::DialPeer {
-                peer_id: *peer_id,
-                condition: DialPeerCondition::NotDialing,
-            });
-        }
+        self.dial_peer(peer_id, true);
     }
 
     pub fn report_ping_success(&mut self, peer_id: &PeerId) {
         self.inject_connected(peer_id);
     }
 
-    fn dial_peer(&mut self, peer_id: PeerId) {
-        if let Some(current_peer) = self.peers.get_mut(&peer_id) {
-            current_peer.last_dial = Some(Instant::now());
+    pub fn reset_peers(&mut self) {
+        for peer in self.peers.values_mut() {
+            peer.last_dial = None;
+        }
+    }
+
+    fn dial_peer(&mut self, peer_id: PeerId, force_expire: bool) {
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            if peer.addresses.is_empty() {
+                return;
+            }
+
+            if peer.status != PeerStatus::Disconnected {
+                return;
+            }
+
+            let dial_expired = peer
+                .last_dial
+                .map_or(true, |i| i.elapsed() > Duration::from_secs(30));
+            if !dial_expired && !force_expire {
+                return;
+            }
+
+            debug!(
+                "Triggering dial of peer {} on addresses {:?}",
+                peer.node, peer.addresses
+            );
+            peer.last_dial = Some(Instant::now());
             self.actions.push_back(NetworkBehaviourAction::DialPeer {
                 peer_id,
-                condition: DialPeerCondition::Disconnected,
+                condition: DialPeerCondition::NotDialing,
             });
         }
     }
@@ -201,7 +207,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
             peer.cleanup_expired();
 
             // trigger reconnection
-            self.dial_peer(*peer_id);
+            self.dial_peer(*peer_id, true);
         }
     }
 
@@ -227,12 +233,23 @@ impl NetworkBehaviour for ExocoreBehaviour {
 
     fn inject_dial_failure(&mut self, peer_id: &PeerId) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
-            if !peer.temp_queue.is_empty() {
-                warn!(
-                    "Failed to connect to peer {}. {} messages in queue for node.",
-                    peer.node,
-                    peer.temp_queue.len()
-                );
+            info!(
+                "Failed to connect to peer {}. {} messages in queue for node.",
+                peer.node,
+                peer.temp_queue.len()
+            );
+        }
+    }
+
+    fn inject_addr_reach_failure(
+        &mut self,
+        peer_id: Option<&PeerId>,
+        addr: &Multiaddr,
+        _error: &dyn std::error::Error,
+    ) {
+        if let Some(peer_id) = peer_id {
+            if let Some(peer) = self.peers.get_mut(peer_id) {
+                debug!("Couldn't reach node {} on addr {}.", peer.node, addr,);
             }
         }
     }
@@ -243,17 +260,14 @@ impl NetworkBehaviour for ExocoreBehaviour {
         _params: &mut impl PollParameters,
     ) -> Poll<NetworkBehaviourAction<ExocoreProtoMessage, ExocoreBehaviourEvent>> {
         // check if we could try to dial to disconnected nodes
-        for (peer_id, peer) in &mut self.peers {
-            let dial_expired = peer
-                .last_dial
-                .map_or(true, |i| i.elapsed() > Duration::from_secs(5));
-            if !peer.addresses.is_empty() && peer.status == PeerStatus::Disconnected && dial_expired
-            {
-                peer.last_dial = Some(Instant::now());
-                self.actions.push_back(NetworkBehaviourAction::DialPeer {
-                    peer_id: *peer_id,
-                    condition: DialPeerCondition::Disconnected,
-                });
+        let redial_check = self
+            .last_redial_check
+            .map_or(true, |i| i.elapsed() > Duration::from_secs(5));
+        if redial_check {
+            self.last_redial_check = Some(Instant::now());
+            let peer_ids: Vec<PeerId> = self.peers.keys().cloned().collect();
+            for peer_id in peer_ids {
+                self.dial_peer(peer_id, false);
             }
         }
 

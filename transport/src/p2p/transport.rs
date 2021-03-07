@@ -12,10 +12,9 @@ use exocore_protos::generated::common_capnp::envelope;
 use futures::{channel::mpsc, prelude::*, FutureExt, SinkExt, StreamExt};
 use libp2p::{
     core::PeerId,
-    identify::{Identify, IdentifyEvent},
     ping::{Ping, PingEvent},
     swarm::{ExpandedSwarm, NetworkBehaviourEventProcess, Swarm},
-    Multiaddr, NetworkBehaviour,
+    NetworkBehaviour,
 };
 
 use super::{
@@ -94,11 +93,6 @@ impl Libp2pTransport {
             service_handles: Arc::clone(&self.service_handles),
             exocore: ExocoreBehaviour::default(),
             ping: Ping::default(),
-            identify: Identify::new(
-                "/exocore/0.1.0".into(),
-                "exocore".into(),
-                self.local_node.public_key().to_libp2p().clone(),
-            ),
         };
 
         #[cfg(all(feature = "p2p-web", target_arch = "wasm32"))]
@@ -164,7 +158,7 @@ impl Libp2pTransport {
         {
             let inner = self.service_handles.read()?;
             for node in inner.all_peer_nodes().values() {
-                swarm.exocore.add_node_peer(node);
+                swarm.exocore.add_node(node);
             }
         }
 
@@ -179,7 +173,7 @@ impl Libp2pTransport {
             if nodes_update_interval.poll_tick(cx).is_ready() {
                 let inner = inner.read().expect("Couldn't get inner lock");
                 for node in inner.all_peer_nodes().values() {
-                    swarm.exocore.add_node_peer(node);
+                    swarm.exocore.add_node(node);
                 }
             }
 
@@ -217,14 +211,15 @@ impl Libp2pTransport {
                         }
                     }
                     OutEvent::Reset => {
-                        // Kind of hack, but banning and unbanning peers will disconnect their active connections.
+                        info!("Resetting connections to peers...");
+                        // Kind of hack, but banning and unbanning peers will disconnect their
+                        // active connections.
                         let inner = inner.read().expect("Couldn't get inner lock");
                         for node in inner.all_peer_nodes().values() {
                             ExpandedSwarm::<_, _, _, _>::ban_peer_id(&mut swarm, *node.peer_id());
                             ExpandedSwarm::<_, _, _, _>::unban_peer_id(&mut swarm, *node.peer_id());
                         }
-
-                        swarm.exocore.reset_connections();
+                        swarm.exocore.reset_peers();
                     }
                 }
             }
@@ -269,7 +264,7 @@ impl Libp2pTransport {
     }
 }
 
-/// Behaviour that combines exocore, ping and identify behaviours.
+/// Behaviour that combines exocore and ping behaviours.
 #[derive(NetworkBehaviour)]
 struct CombinedBehaviour {
     #[behaviour(ignore)]
@@ -277,7 +272,6 @@ struct CombinedBehaviour {
 
     exocore: ExocoreBehaviour,
     ping: Ping,
-    identify: Identify,
 }
 
 impl NetworkBehaviourEventProcess<ExocoreBehaviourEvent> for CombinedBehaviour {
@@ -310,34 +304,6 @@ impl NetworkBehaviourEventProcess<PingEvent> for CombinedBehaviour {
             Err(failure) => {
                 debug!("Failed to ping peer {}: {}", event.peer, failure);
             }
-        }
-    }
-}
-
-impl NetworkBehaviourEventProcess<IdentifyEvent> for CombinedBehaviour {
-    fn inject_event(&mut self, event: IdentifyEvent) {
-        match event {
-            IdentifyEvent::Received {
-                peer_id,
-                info: _,
-                observed_addr,
-            } => {
-                debug!(
-                    "Received identify response for node {} with address {}",
-                    peer_id, observed_addr
-                );
-                if let Err(err) = add_node_address(&self.service_handles, peer_id, observed_addr) {
-                    warn!(
-                        "Failed add potentially new address to identified peer: {}, {}",
-                        peer_id, err
-                    );
-                }
-            }
-            IdentifyEvent::Sent { peer_id: _ } => {}
-            IdentifyEvent::Error {
-                peer_id: _,
-                error: _,
-            } => {}
         }
     }
 }
@@ -402,24 +368,6 @@ fn dispatch_node_status(
                 .map_err(|err| {
                     Error::Other(format!("Couldn't send message to cell service: {}", err))
                 })?;
-        }
-    }
-
-    Ok(())
-}
-
-/// Try to add a node address discovered through identify if it doesn't already
-/// exist.
-fn add_node_address(
-    inner: &RwLock<ServiceHandles>,
-    peer_id: PeerId,
-    addr: Multiaddr,
-) -> Result<(), Error> {
-    let inner = inner.read()?;
-
-    for handle in inner.service_handles.values() {
-        if let Ok(node) = get_node_by_peer(&handle.cell, peer_id) {
-            node.add_p2p_address(addr.clone());
         }
     }
 

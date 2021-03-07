@@ -42,6 +42,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
 
     let mut engine_handles = Vec::new();
     let mut services_completion: Vec<Pin<Box<dyn Future<Output = ()>>>> = Vec::new();
+    let mut http_handles = Vec::new();
 
     for either_cell in either_cells.iter() {
         let cell = either_cell.cell();
@@ -135,13 +136,15 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
                 info!(
                     "{}: Local node doesn't have store role. Not starting local store server.",
                     cell
-                )
+                );
+
+                http_handles.push(http_transport.get_handle(cell.clone(), ServiceType::None)?);
             }
         } else {
             info!(
                 "{}: Local node doesn't have chain role. Not starting chain engine.",
                 cell
-            )
+            );
         }
     }
 
@@ -150,7 +153,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
         let res = p2p_transport.run().await;
         info!("libp2p transport done: {:?}", res);
     });
-    owned_spawn(async {
+    let http_transport = owned_spawn(async {
         let res = http_transport.run().await;
         info!("HTTP transport done: {:?}", res);
     });
@@ -158,6 +161,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
     // wait for any services or p2p transport to complete
     futures::select! {
         _ = p2p_transport.fuse() => {},
+        _ = http_transport.fuse() => {},
         _ = futures::future::join_all(services_completion).fuse() => {},
     }
     info!("One service is done. Shutting down.");

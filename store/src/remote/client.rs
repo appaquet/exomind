@@ -397,7 +397,8 @@ impl Inner {
         ),
         Error,
     > {
-        let (result_sender, receiver) = mpsc::channel(self.config.watched_query_channel_size);
+        let (result_sender, result_receiver) =
+            mpsc::channel(self.config.watched_query_channel_size);
         let request_id = self.clock.consistent_time(self.cell.local_node());
         let watched_query = WatchedQueryRequest {
             request_id,
@@ -409,7 +410,7 @@ impl Inner {
         self.send_watch_query(&watched_query)?;
         self.watched_queries.insert(request_id, watched_query);
 
-        Ok((request_id, receiver))
+        Ok((request_id, result_receiver))
     }
 
     fn send_watch_query(&self, watched_query: &WatchedQueryRequest) -> Result<(), Error> {

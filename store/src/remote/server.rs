@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock, Weak},
+    sync::{Arc, Mutex, RwLock, Weak},
 };
 
 use exocore_core::{
@@ -18,7 +18,9 @@ use exocore_protos::{
     },
     store::MutationResult,
 };
-use exocore_transport::{InEvent, InMessage, OutEvent, OutMessage, TransportServiceHandle};
+use exocore_transport::{
+    messages::MessageReplyToken, InEvent, InMessage, OutEvent, OutMessage, TransportServiceHandle,
+};
 use futures::{
     channel::{mpsc, oneshot},
     FutureExt, SinkExt, StreamExt,
@@ -224,6 +226,11 @@ where
     ) -> Result<(), Error> {
         let watch_token = query.watch_token;
 
+        // wrap token used to reply to message in an arc mutex so that we can change it
+        // if we get registered again via another connection
+        let reply_token = in_message.get_reply_token()?;
+        let arc_reply_token = Arc::new(Mutex::new(reply_token.clone()));
+
         let weak_inner1 = weak_inner.clone();
         let (result_stream, drop_receiver) = {
             // check if this query already exists. if so, just update its last register
@@ -231,6 +238,7 @@ where
             let mut inner = inner.write()?;
             if let Some(watch_query) = inner.watched_queries.get_mut(&watch_token) {
                 watch_query.last_register = Instant::now();
+                watch_query.set_reply_token(reply_token);
                 return Ok(());
             }
 
@@ -238,6 +246,7 @@ where
             let (drop_sender, drop_receiver) = oneshot::channel();
             let registered_watched_query = RegisteredWatchedQuery {
                 last_register: Instant::now(),
+                reply_token: arc_reply_token.clone(),
                 _drop_sender: drop_sender,
             };
             inner
@@ -250,11 +259,11 @@ where
         };
 
         let weak_inner1 = weak_inner.clone();
-        let reply_token = in_message.get_reply_token()?;
         let send_response = move |result: Result<EntityResults, Error>| -> Result<(), Error> {
             let inner = weak_inner1.upgrade().ok_or(Error::Dropped)?;
             let inner = inner.read()?;
 
+            let reply_token = arc_reply_token.lock().unwrap();
             let resp_frame = query_results_to_response_frame(result)?;
             let message = reply_token.to_response_message(&inner.cell, resp_frame)?;
             inner.send_message(message)?;
@@ -455,7 +464,15 @@ impl IncomingMessage {
 
 struct RegisteredWatchedQuery {
     last_register: Instant,
+    reply_token: Arc<Mutex<MessageReplyToken>>,
 
     // selected by stream's future to get killed if we drop this query for timeout
     _drop_sender: oneshot::Sender<()>,
+}
+
+impl RegisteredWatchedQuery {
+    fn set_reply_token(&self, token: MessageReplyToken) {
+        let mut reply_token = self.reply_token.lock().unwrap();
+        *reply_token = token;
+    }
 }

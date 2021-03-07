@@ -26,6 +26,7 @@ pub fn setup<P: AsRef<Path>>(level: Option<LevelFilter>, file: Option<P>) {
         if let Some(file) = file {
             let file_appender = FileAppender::builder()
                 .encoder(encoder)
+                .append(false)
                 .build(file)
                 .expect("Couldn't create file appender");
 
