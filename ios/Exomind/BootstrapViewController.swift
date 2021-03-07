@@ -5,6 +5,7 @@ import Exocore
 class BootstrapViewController: UIViewController {
     @IBOutlet weak var errorLabel: UILabel!
     @IBOutlet weak var pinLabel: UILabel!
+    @IBOutlet weak var configText: UITextView!
 
     var disco: Discovery?
     var onDone: (() -> Void)?
@@ -13,6 +14,7 @@ class BootstrapViewController: UIViewController {
         super.viewDidLoad()
 
         startDiscovery()
+        self.refreshNodeConfig()
     }
 
     @IBAction func onReset(_ sender: Any) {
@@ -34,6 +36,19 @@ class BootstrapViewController: UIViewController {
         }
     }
 
+    @IBAction func onSave(_ sender: Any) {
+        do {
+            self.disco = nil
+            let configJson = self.configText.text ?? ""
+            let config = try Exocore_Core_LocalNodeConfig(jsonString: configJson)
+            let node = try LocalNode.from(config: config)
+            ExocoreUtils.saveNode(node: node)
+            startDiscovery()
+        } catch {
+            self.errorLabel.text = error.localizedDescription
+        }
+    }
+    
     private func startDiscovery() {
         guard let node = ExocoreUtils.node else {
             self.errorLabel.text = "No node configured, but should had one"
@@ -72,6 +87,21 @@ class BootstrapViewController: UIViewController {
             self.onDone?()
         } catch {
             self.errorLabel.text = error.localizedDescription
+        }
+    }
+
+    private func refreshNodeConfig() {
+        let config = try? ExocoreUtils.node?.config().jsonString()
+        self.configText.text = self.jsonPrettyPrint(config ?? "")
+    }
+
+    private func jsonPrettyPrint(_ jsonStr: String) -> String {
+        if let data = jsonStr.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
+           let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) {
+            return String(decoding: jsonData, as: UTF8.self)
+        } else {
+            return jsonStr
         }
     }
 }

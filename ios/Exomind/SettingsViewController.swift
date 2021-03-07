@@ -27,6 +27,11 @@ class SettingsViewController: UITableViewController {
             configureExtension()
             self.tableView.deselectRow(at: indexPath, animated: false)
 
+        case (1, 2): // logs
+            let logs = self.storyboard!.instantiateViewController(withIdentifier: "LogsViewController") as! LogsViewController
+            self.navigationController?.pushViewController(logs, animated: true)
+            self.tableView.deselectRow(at: indexPath, animated: false)
+
         default:
             print("SettingsViewController > Unhandled setting \(indexPath)")
         }

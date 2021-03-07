@@ -6,6 +6,15 @@ import KeychainSwift
 class ExocoreUtils {
     static var node: LocalNode? = nil
 
+    static var logFile: String = {
+        NSTemporaryDirectory() + "/log.txt"
+    }()
+
+    static func initialize() throws {
+        Exocore.initialize(logLevel: LogLevel.debug, logFile: logFile)
+        try bootNode()
+    }
+
     static func bootNode() throws {
         if self.node == nil {
             let keyChain = KeychainSwift()
@@ -33,6 +42,10 @@ class ExocoreUtils {
             keychain.set(configData, forKey: "node")
             self.node = node
         }
+    }
+
+    static func resetTransport() {
+        ExocoreClient.defaultInstance?.resetTransport()
     }
 
     static var nodeHasCell: Bool {
