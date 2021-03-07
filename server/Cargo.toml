@@ -7,7 +7,7 @@ version = "0.1.1"
 
 [dependencies]
 anyhow = "1.0"
-exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre0", default-features = false, features = ["client", "logger"]}
+exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre1", default-features = false, features = ["client", "logger"]}
 exomind-core = {version = "0.1.1", path = "../core"}
 exomind-gmail = {version = "0.1.1", path = "../integrations/gmail"}
 futures = "0.3"

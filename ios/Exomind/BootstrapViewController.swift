@@ -2,7 +2,7 @@ import UIKit
 import WebKit
 import Exocore
 
-class BootstrapViewController: UIViewController {
+class BootstrapViewController: UIViewController, UITextViewDelegate {
     @IBOutlet weak var errorLabel: UILabel!
     @IBOutlet weak var pinLabel: UILabel!
     @IBOutlet weak var configText: UITextView!
@@ -15,17 +15,9 @@ class BootstrapViewController: UIViewController {
 
         startDiscovery()
         self.refreshNodeConfig()
-    }
 
-    @IBAction func onReset(_ sender: Any) {
-        do {
-            self.disco = nil
-            let node = try LocalNode.generate()
-            ExocoreUtils.saveNode(node: node)
-            startDiscovery()
-        } catch {
-            self.errorLabel.text = error.localizedDescription
-        }
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardShown), name: UIResponder.keyboardDidShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardHidden), name: UIResponder.keyboardDidHideNotification, object: nil)
     }
 
     @IBAction func onClose(_ sender: Any) {
@@ -103,6 +95,37 @@ class BootstrapViewController: UIViewController {
         } else {
             return jsonStr
         }
+    }
+
+    // Change inset of config text view when keyboard shows up so that bottom can be edited.
+    // From https://stackoverflow.com/questions/13161666/how-do-i-scroll-the-uiscrollview-when-the-keyboard-appears
+    @objc func handleKeyboardShown(_ notification: Notification) {
+        let userInfo: NSDictionary = notification.userInfo! as NSDictionary
+        let keyboardInfo = userInfo[UIResponder.keyboardFrameBeginUserInfoKey] as! NSValue
+        let keyboardSize = keyboardInfo.cgRectValue.size
+        let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: keyboardSize.height, right: 0)
+        self.configText.contentInset = contentInsets
+        self.configText.scrollIndicatorInsets = contentInsets
+    }
+
+    @objc func handleKeyboardHidden(_ notification: Notification) {
+        self.configText.contentInset = .zero
+        self.configText.scrollIndicatorInsets = .zero
+    }
+
+    @IBAction func onReset(_ sender: Any) {
+        do {
+            self.disco = nil
+            let node = try LocalNode.generate()
+            ExocoreUtils.saveNode(node: node)
+            startDiscovery()
+        } catch {
+            self.errorLabel.text = error.localizedDescription
+        }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
 

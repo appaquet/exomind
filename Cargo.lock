@@ -151,6 +151,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-trait"
+version = "0.1.42"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d3a45e77e34375a7923b1e8febb049bb011f064714a8e17a1a616fef01da13d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "asynchronous-codec"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -761,8 +772,8 @@ dependencies = [
 
 [[package]]
 name = "exocore"
-version = "0.1.4-pre0"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre0#658950b367ef44ae0c5e6e8187d1eaaa7e2c5d52"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre1#6942d1c06a233a9b4dc183d4db80cc9e7c8e0a31"
 dependencies = [
  "exocore-core",
  "exocore-protos",
@@ -772,8 +783,8 @@ dependencies = [
 
 [[package]]
 name = "exocore-core"
-version = "0.1.4-pre0"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre0#658950b367ef44ae0c5e6e8187d1eaaa7e2c5d52"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre1#6942d1c06a233a9b4dc183d4db80cc9e7c8e0a31"
 dependencies = [
  "anyhow",
  "bs58",
@@ -805,8 +816,8 @@ dependencies = [
 
 [[package]]
 name = "exocore-protos"
-version = "0.1.4-pre0"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre0#658950b367ef44ae0c5e6e8187d1eaaa7e2c5d52"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre1#6942d1c06a233a9b4dc183d4db80cc9e7c8e0a31"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -824,10 +835,11 @@ dependencies = [
 
 [[package]]
 name = "exocore-store"
-version = "0.1.4-pre0"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre0#658950b367ef44ae0c5e6e8187d1eaaa7e2c5d52"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre1#6942d1c06a233a9b4dc183d4db80cc9e7c8e0a31"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bytes 1.0.1",
  "chrono",
  "exocore-core",
@@ -842,8 +854,8 @@ dependencies = [
 
 [[package]]
 name = "exocore-transport"
-version = "0.1.4-pre0"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre0#658950b367ef44ae0c5e6e8187d1eaaa7e2c5d52"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre1#6942d1c06a233a9b4dc183d4db80cc9e7c8e0a31"
 dependencies = [
  "anyhow",
  "byteorder",

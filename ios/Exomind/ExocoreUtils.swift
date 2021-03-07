@@ -11,7 +11,7 @@ class ExocoreUtils {
     }()
 
     static func initialize() throws {
-        Exocore.initialize(logLevel: LogLevel.debug, logFile: logFile)
+        Exocore.initialize(logLevel: LogLevel.info, logFile: logFile)
         try bootNode()
     }
 
