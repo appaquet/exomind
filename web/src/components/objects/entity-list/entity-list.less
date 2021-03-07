@@ -4,6 +4,10 @@
 .entity-list {
   .scrollable {
     height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+
+    .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
   }
 
   .children-type-switcher {

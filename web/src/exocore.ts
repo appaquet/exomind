@@ -34,9 +34,13 @@ export async function resetNode(): Promise<void> {
     const node = Exocore.node.generate();
     node.save_to_storage(localStorage);
 
+    restartNode();
+}
+
+export function restartNode(): void {
     const sessionStore = StoresInstance.session;
+
     runInAction(() => {
-        sessionStore.node = node;
         sessionStore.cellInitialized = false;
         sessionStore.cellError = null;
         sessionStore.showDiscovery = true;

@@ -1,16 +1,18 @@
 
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 import { Stores, StoresContext, StoresInstance } from '../../../store/stores';
 import { observer } from 'mobx-react';
 import { Discovery, Exocore } from 'exocore';
-import { bootNode, resetNode } from '../../../exocore';
+import { bootNode, initNode, resetNode } from '../../../exocore';
 import './node-config.less';
 import Navigation from '../../../navigation';
 
 type IProps = Record<string, unknown>;
+
 interface IState {
   join_pin?: string;
   error?: string;
+  config: string;
 }
 
 @observer
@@ -26,7 +28,9 @@ export default class NodeConfig extends React.Component<IProps, IState> {
 
     this.startDiscovery();
 
-    this.state = {};
+    this.state = {
+      config: window.localStorage.node_config
+    };
   }
 
   render(): React.ReactNode {
@@ -34,17 +38,23 @@ export default class NodeConfig extends React.Component<IProps, IState> {
       <div className="node-config">
         <h2>Node config</h2>
 
-        {this.renderError()}
+        <div className="body">
+          {this.renderError()}
 
-        <div className="discovery">
-          <h3>Join cell</h3>
-          <span className="text">Discovery PIN: </span>
-          <span className="pin">{this.state.join_pin}</span>
-        </div>
+          <div className="discovery">
+            <span className="text">Discovery PIN: </span>
+            <span className="pin">{this.state.join_pin}</span>
+          </div>
 
-        <div className="actions">
-          <h3>Actions</h3>
-          <button onClick={this.handleNodeReset.bind(this)}>Reset node</button>
+          <div className="config">
+            <span className="title">Config</span>
+            <textarea onChange={this.handleConfigChange.bind(this)} value={this.state.config} />
+          </div>
+
+          <div className="actions">
+            <button onClick={this.handleNodeReset.bind(this)}>Reset node</button>
+            <button onClick={this.handleConfigSave.bind(this)}>Save</button>
+          </div>
         </div>
       </div>
     );
@@ -92,6 +102,20 @@ export default class NodeConfig extends React.Component<IProps, IState> {
   private async handleNodeReset(): Promise<void> {
     await resetNode();
     this.startDiscovery();
+    this.setState({
+      config: window.localStorage.node_config,
+    });
+  }
+
+  private handleConfigSave(): void {
+      window.localStorage.node_config = this.state.config;
+      initNode();
+  }
+
+  private handleConfigChange(e: ChangeEvent<HTMLTextAreaElement>) {
+    this.setState({
+      config: e.target.value,
+    });
   }
 
   componentWillUnmount(): void {

@@ -16,7 +16,7 @@ Navigation.initialize({
         electron.ipcRenderer.send('open-popup', path.toString());
     },
 
-    pushHistory: (_path, _replace) => { 
+    pushHistory: (/*_path, _replace*/) => { 
         // not supported (yet?)
     },
 
@@ -25,7 +25,7 @@ Navigation.initialize({
     }
 });
 
-electron.ipcRenderer.on('navigate', (event, path) => {
+electron.ipcRenderer.on('navigate', (_event, path) => {
     Navigation.navigate(path);
 });
 

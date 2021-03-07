@@ -2,18 +2,13 @@
 @import (reference) "../../../style/variables.less";
 
 .time-selector {
-  @time-selector-bg: @entity-component-header-bg;
-  @time-selector-header-bg: @entity-component-header-bg;
   @time-selector-header-height: 20px;
-  @time-selector-list-bg: #fff;
   @time-selector-list-margin: 5px;
-  @time-selector-item-border: 1px solid #ececec;
-  @time-selector-item-hover-bg: #e0e0e0;
   @time-selector-box-size: 86px;
 
   position: absolute;
   max-width: 90%;
-  background: @time-selector-bg;
+  background: var(--entity-component-header-bg);
   z-index: @zindex-popover;
   .shadow-z-3();
 
@@ -24,7 +19,7 @@
     height: @time-selector-header-height;
     font-weight: bold;
     padding: 2px @time-selector-list-margin;
-    background: @time-selector-header-bg;
+    background: var(--entity-component-header-bg);
   }
 
   &.picker {
@@ -47,7 +42,7 @@
       @calc-minus: @time-selector-list-margin*2;
       height: ~"calc(100% - @{calc-minus})";
       margin: @time-selector-list-margin;
-      background: @time-selector-list-bg;
+      background: var(--entity-component-bg);
       .make-list();
 
       li {
@@ -58,11 +53,11 @@
         height: @time-selector-box-size;
         cursor: pointer;
         padding: 5px;
-        border: @time-selector-item-border;
+        border: var(--entity-component-list-separator-border);
         margin: 5px;
         font-size: 15px;
         &:hover {
-          background: @time-selector-item-hover-bg;
+          background: var(--entity-component-bg-hover);
         }
 
         // position text in middle

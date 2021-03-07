@@ -5,7 +5,6 @@
   min-height: 500px;
   position: relative;
 
-
   // see entity-component.less for rest of styles
   .object-summary {
     overflow: hidden;
@@ -20,8 +19,13 @@
     padding-left: @entity-component-padding-side;
     padding-right: @entity-component-padding-side;
     height: 100%;
-    overflow: scroll;
 
+    overflow: scroll;
+    .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
+
+    // always want email to be on white background to respect their style
+    background: @entity-component-bg; 
+    color: @body-fg;
 
     blockquote {
       font-size: 1em;

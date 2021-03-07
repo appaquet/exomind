@@ -6,19 +6,57 @@
   .make-row();
   .make-md-column(8);
 
-  .discovery {
-    margin: 30px 0;
+  background: var(--entity-component-bg);
+  border: var(--entity-component-border);
+  padding-left: 0;
+  padding-right: 0;
 
-    .text, .pin {
-      font-size: 20px;
-    }
-
-    .pin {
-        font-weight: bold;
-    }
+  h2 {
+    background: var(--entity-component-header-bg);
+    color: var(--entity-component-header-fg);
+    margin: 0;
+    padding: 9px 5px;
+    height: @entity-component-header-height;
+    font-size: 15px;
   }
+  
+  .body {
+    margin: 5px;
 
-  .error {
-      color: red;
+    .discovery {
+      margin: 20px 0;
+
+      .text, .pin {
+        font-size: 20px;
+      }
+
+      .pin {
+          font-weight: bold;
+      }
+    }
+
+    .config {
+      .title {
+        font-size: 15px;
+        font-weight: bold;
+      }
+
+      textarea {
+        margin-top: 5px;
+        width: 100%;
+        height: 500px;
+      }
+    }
+
+    .actions {
+      text-align: right;
+      button {
+        margin-left: 5px;
+      }
+    }
+
+    .error {
+        color: red;
+    }
   }
 }

@@ -11,7 +11,7 @@ const autoDevTool = false;
 
 function createNewWindow() {
   const window = new BrowserWindow({
-    webPreferences: { nodeIntegration: true },
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
     autoHideMenuBar: true,
   });
   window.setMenuBarVisibility(false);

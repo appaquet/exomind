@@ -5,14 +5,17 @@
 
   .thread {
     .make-list();
+
     overflow: scroll;
+    .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
+    
     padding-bottom: @entity-component-header-height; // make sure we have plenty of space bellow for scroll
     height: 100%;
 
     &>li {
       @extra-padding-between: 5px;
       padding: @entity-component-padding-between + @extra-padding-between @entity-component-padding-side;
-      border-bottom: @entity-component-list-separator-border;
+      border-bottom: var(--entity-component-list-separator-border);
       position: relative;
       display: block;
 
@@ -31,8 +34,9 @@
         }
         .time {
           position: absolute;
-          top: 0; right: 15px;
-          background: white;
+          top: 3px; right: 15px;
+          background: var(--entity-component-bg);
+          color: var(--entity-component-item-fg);
           padding-left: 10px;
           padding-right: 5px;
           font-size: 11px;
@@ -43,33 +47,33 @@
           text-align: center;
           display: block;
           width: 15px;
-          background: white;
+          background: var(--entity-component-bg);
+          color: var(--entity-component-item-fg);
           cursor: pointer;
           .icon {
             .icon-font-awesome('plus-square-o');
             font-size: 14px;
-            color: #a0a0a0;
           }
         }
       }
 
       &.closed:hover {
-        background: @entity-component-bg-hover;
+        background: var(--entity-component-bg-hover);
         .time {
-          background: @entity-component-bg-hover;
+          background: var(--entity-component-bg-hover);
         }
         .header-controls {
-          background: @entity-component-bg-hover;
+          background: var(--entity-component-bg-hover);
         }
       }
 
       &.closed {
-        background: @entity-component-bg-disabled;
+        background: var(--entity-component-bg-disabled);
         .time {
-          background: @entity-component-bg-disabled;
+          background: var(--entity-component-bg-disabled);
         }
         .header-controls {
-          background: @entity-component-bg-disabled;
+          background: var(--entity-component-bg-disabled);
         }
       }
 
@@ -86,12 +90,12 @@
 
       &.collapsed {
         padding: 5px 0;
-        background: @entity-component-bg-disabled;
+        background: var(--entity-component-bg-disabled);
 
         .line {
           width: 100%;
           margin: 5px 0;
-          border: 1px solid darken(@entity-component-list-separator-border-color, 4%);
+          border: var(--entity-component-list-separator-border);
           height: 0;
         }
 
@@ -110,6 +114,10 @@
 
       .object-body {
         padding-bottom: 50px; // enough space for email controls to appear non awklardly
+
+        // always want email to be on white background to respect their style
+        background: @entity-component-bg; 
+        color: @body-fg;
 
         .more {
           position: relative;
