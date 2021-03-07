@@ -82,6 +82,18 @@ pub struct Libp2pTransportServiceHandle {
     pub(super) handle: Handle,
 }
 
+impl Libp2pTransportServiceHandle {
+    pub fn reset(&mut self) {
+        if let Some(sink) = self.sink.as_mut() {
+            if let Err(err) = sink.try_send(OutEvent::Reset) {
+                error!("Fail to send transport reset event: {}", err);
+            }
+        } else {
+            error!("Fail to send transport reset event. Sink was consumed.");
+        }
+    }
+}
+
 impl TransportServiceHandle for Libp2pTransportServiceHandle {
     type Sink = SinkMapErr<mpsc::Sender<OutEvent>, fn(SendError) -> Error>;
     type Stream = mpsc::Receiver<InEvent>;

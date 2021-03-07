@@ -7,7 +7,7 @@ use exocore_core::{
 use exocore_discovery::{Client, Pin, DEFAULT_DISCO_SERVER};
 use exocore_protos::core::{node_cell_config, CellConfig, LocalNodeConfig, NodeCellConfig};
 
-use crate::{exocore_init, node::LocalNode, utils::CallbackContext};
+use crate::{node::LocalNode, utils::CallbackContext};
 
 pub struct Discovery {
     runtime: Runtime,
@@ -30,8 +30,6 @@ pub struct Discovery {
 pub unsafe extern "C" fn exocore_discovery_new(
     service_url: *const libc::c_char,
 ) -> DiscoveryResult {
-    exocore_init();
-
     let service_url = if service_url.is_null() {
         DEFAULT_DISCO_SERVER.to_string()
     } else {

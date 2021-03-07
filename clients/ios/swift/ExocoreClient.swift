@@ -1,5 +1,21 @@
 import UIKit
 
+public enum LogLevel: UInt {
+    case none = 0
+    case error
+    case warn
+    case info
+    case debug
+    case trace
+}
+
+public func initialize(logLevel: LogLevel = .info, logFile: String? = nil) {
+    // see https://github.com/tokio-rs/mio/issues/949
+    signal(SIGPIPE, SIG_IGN)
+
+    exocore_init(logLevel.rawValue, logFile)
+}
+
 public class ExocoreClient {
     public static var defaultInstance: ClientInstance?
 
@@ -51,6 +67,10 @@ public class ClientInstance {
     public lazy var store: Store = {
         Store(client: self)
     }()
+
+    public func resetTransport() {
+        exocore_reset_transport(self.client)
+    }
 
     deinit {
         if self.client != nil {

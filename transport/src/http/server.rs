@@ -171,16 +171,21 @@ impl HTTPTransportServer {
                     let connections = request_tracker.clone();
                     futures.push(async move {
                         while let Some(event) = out_receiver.next().await {
-                            let  OutEvent::Message(message) = event;
-                            let connection_id = match message.connection {
-                                Some(ConnectionID::HTTPServer(id)) => id,
-                                _ => {
-                                    warn!("Couldn't find connection id in message to be send back to connection");
-                                    continue;
+                            match event {
+                                OutEvent::Message(message) => {
+                                    let connection_id = match message.connection {
+                                        Some(ConnectionID::HTTPServer(id)) => id,
+                                        _ => {
+                                            warn!("Couldn't find connection id in message to be send back to connection");
+                                            continue;
+                                        }
+                                    };
+                                    connections.reply(connection_id, message).await;
                                 }
-                            };
-
-                            connections.reply(connection_id, message).await;
+                                OutEvent::Reset => {
+                                    // Nothing to do
+                                }
+                            }
                         }
                     });
                 }

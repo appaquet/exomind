@@ -14,7 +14,7 @@ use libp2p::{
     core::PeerId,
     identify::{Identify, IdentifyEvent},
     ping::{Ping, PingEvent},
-    swarm::{NetworkBehaviourEventProcess, Swarm},
+    swarm::{ExpandedSwarm, NetworkBehaviourEventProcess, Swarm},
     Multiaddr, NetworkBehaviour,
 };
 
@@ -177,10 +177,9 @@ impl Libp2pTransport {
             // At interval, re-add all nodes to make sure that their newer addresses are
             // added.
             if nodes_update_interval.poll_tick(cx).is_ready() {
-                if let Ok(inner) = inner.read() {
-                    for node in inner.all_peer_nodes().values() {
-                        swarm.exocore.add_node_peer(node);
-                    }
+                let inner = inner.read().expect("Couldn't get inner lock");
+                for node in inner.all_peer_nodes().values() {
+                    swarm.exocore.add_node_peer(node);
                 }
             }
 
@@ -217,6 +216,16 @@ impl Libp2pTransport {
                             }
                         }
                     }
+                    OutEvent::Reset => {
+                        // Kind of hack, but banning and unbanning peers will disconnect their active connections.
+                        let inner = inner.read().expect("Couldn't get inner lock");
+                        for node in inner.all_peer_nodes().values() {
+                            ExpandedSwarm::<_, _, _, _>::ban_peer_id(&mut swarm, *node.peer_id());
+                            ExpandedSwarm::<_, _, _, _>::unban_peer_id(&mut swarm, *node.peer_id());
+                        }
+
+                        swarm.exocore.reset_connections();
+                    }
                 }
             }
 
@@ -242,6 +251,7 @@ impl Libp2pTransport {
                     while let Some(event) = out_receiver.next().await {
                         let _ = out_sender.send(event).await;
                     }
+                    error!("Handle out receiver has returned none.");
                 });
             }
             futures::future::join_all(futures)
@@ -295,6 +305,7 @@ impl NetworkBehaviourEventProcess<PingEvent> for CombinedBehaviour {
             Ok(success) => {
                 // TODO: We could save round-trip time to node. Could be use for node selection.
                 debug!("Successfully pinged peer {}: {:?}", event.peer, success);
+                self.exocore.report_ping_success(&event.peer);
             }
             Err(failure) => {
                 debug!("Failed to ping peer {}: {}", event.peer, failure);

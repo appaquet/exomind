@@ -174,9 +174,9 @@ where
         self.owned_spawn_set.spawn(
             async move {
                 while let Some(mut event) = receiver.next().await {
-                    let side = match &mut event {
+                    match &mut event {
                         OutEvent::Message(msg) => {
-                            match Self::extract_out_message_connection_side(msg) {
+                            let side = match Self::extract_out_message_connection_side(msg) {
                                 Some(explicit_side) => Some(explicit_side),
                                 None => {
                                     let node = msg.to.first().ok_or_else(|| {
@@ -188,19 +188,29 @@ where
 
                                     Self::get_side(&nodes_side, node.id())?
                                 }
+                            };
+
+                            // default to left side if we didn't find node
+                            if let Some(Side::Right) = side {
+                                right_sender.unbounded_send(event).map_err(|err| {
+                                    Error::Other(format!("Couldn't send to right sink: {}", err))
+                                })?;
+                            } else {
+                                left_sender.unbounded_send(event).map_err(|err| {
+                                    Error::Other(format!("Couldn't send to left sink: {}", err))
+                                })?;
                             }
                         }
-                    };
-
-                    // default to left side if we didn't find node
-                    if let Some(Side::Right) = side {
-                        right_sender.unbounded_send(event).map_err(|err| {
-                            Error::Other(format!("Couldn't send to right sink: {}", err))
-                        })?;
-                    } else {
-                        left_sender.unbounded_send(event).map_err(|err| {
-                            Error::Other(format!("Couldn't send to left sink: {}", err))
-                        })?;
+                        OutEvent::Reset => {
+                            right_sender
+                                .unbounded_send(OutEvent::Reset)
+                                .map_err(|err| {
+                                    Error::Other(format!("Couldn't send to right sink: {}", err))
+                                })?;
+                            left_sender.unbounded_send(OutEvent::Reset).map_err(|err| {
+                                Error::Other(format!("Couldn't send to left sink: {}", err))
+                            })?;
+                        }
                     }
                 }
 

@@ -325,7 +325,6 @@ mod tests {
     /// to follow the sequence.
     #[test]
     fn example_golden_path() {
-        exocore_core::logging::setup(None);
         let example_path = find_test_fixture("fixtures/example.wasm");
         let env = Arc::new(TestEnv::new());
 

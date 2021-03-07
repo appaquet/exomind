@@ -1,7 +1,7 @@
 use std::{
     ffi::CString,
     os::raw::c_void,
-    sync::{Arc, Weak},
+    sync::{Arc, Mutex, Weak},
     time::Duration,
 };
 
@@ -16,12 +16,13 @@ use exocore_store::{
     store::Store,
 };
 use exocore_transport::{
-    p2p::Libp2pTransportConfig, Libp2pTransport, ServiceType, TransportServiceHandle,
+    p2p::Libp2pTransportConfig, Libp2pTransport, Libp2pTransportServiceHandle, ServiceType,
+    TransportServiceHandle,
 };
 use futures::{channel::oneshot, select, FutureExt, StreamExt};
 use weak_table::WeakKeyHashMap;
 
-use crate::{exocore_init, node::LocalNode, utils::CallbackContext};
+use crate::{node::LocalNode, utils::CallbackContext};
 
 /// Creates a new exocore client instance of a node that has join a cell.
 ///
@@ -34,8 +35,6 @@ use crate::{exocore_init, node::LocalNode, utils::CallbackContext};
 ///   freed with `exocore_client_free`.
 #[no_mangle]
 pub unsafe extern "C" fn exocore_client_new(node: *mut LocalNode) -> ClientResult {
-    exocore_init();
-
     let client = match Client::new(node) {
         Ok(client) => client,
         Err(err) => {
@@ -216,6 +215,16 @@ pub unsafe extern "C" fn exocore_store_watched_query(
     }
 }
 
+/// Resets transport by disconnecting and reconnecting all connections.
+///
+/// # Safety
+/// * `client` needs to be a valid `Client`.
+#[no_mangle]
+pub unsafe extern "C" fn exocore_reset_transport(client: *mut Client) {
+    let client = client.as_mut().unwrap();
+    client.reset_transport();
+}
+
 #[repr(u8)]
 pub enum WatchedQueryStatus {
     Success = 0,
@@ -328,11 +337,16 @@ pub unsafe extern "C" fn exocore_client_free(client: *mut Client) {
 /// which its strong counterpart is owned by the query's spawned future. The
 /// query future selects on the receiver channel to cancel.
 pub struct Client {
+    // ! should only be sync members !
     _runtime: Runtime,
     clock: Clock,
     cell: Cell,
     store_handle: Arc<ClientHandle>,
+    inner: Mutex<SyncInner>,
+}
 
+struct SyncInner {
+    transport_handle: Libp2pTransportServiceHandle,
     operations_canceller: WeakKeyHashMap<Weak<SpawnedOperationId>, oneshot::Sender<()>>,
     next_operation_id: SpawnedOperationId,
 }
@@ -409,13 +423,16 @@ impl Client {
             clock,
             cell,
             store_handle,
-            operations_canceller: WeakKeyHashMap::new(),
-            next_operation_id: 0,
+            inner: Mutex::new(SyncInner {
+                transport_handle: management_transport_handle,
+                operations_canceller: WeakKeyHashMap::new(),
+                next_operation_id: 0,
+            }),
         })
     }
 
     unsafe fn mutate(
-        &mut self,
+        &self,
         mutation_bytes: *const libc::c_uchar,
         mutation_size: usize,
         callback: extern "C" fn(status: MutationStatus, *const libc::c_uchar, usize, *const c_void),
@@ -456,7 +473,7 @@ impl Client {
     }
 
     unsafe fn query(
-        &mut self,
+        &self,
         query_bytes: *const libc::c_uchar,
         query_size: usize,
         callback: extern "C" fn(status: QueryStatus, *const libc::c_uchar, usize, *const c_void),
@@ -465,11 +482,20 @@ impl Client {
         let query_bytes = std::slice::from_raw_parts(query_bytes, query_size);
         let query = EntityQuery::decode(query_bytes).map_err(|_| QueryStatus::Error)?;
 
-        let operation_id = Arc::new(self.next_operation_id);
-        self.next_operation_id += 1;
+        let (cancel_sender, cancel_receiver) = oneshot::channel();
+        let operation_id = {
+            let mut inner = self.inner.lock().unwrap();
+            let operation_id = Arc::new(inner.next_operation_id);
+            inner.next_operation_id += 1;
+
+            inner
+                .operations_canceller
+                .insert(operation_id.clone(), cancel_sender);
+
+            operation_id
+        };
         debug!("Sending a query (id={})", operation_id);
 
-        let (cancel_sender, cancel_receiver) = oneshot::channel();
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         let operation_id_clone = operation_id.clone(); // query keeps strong ref to it since it's used for cancellation
         let store = self.store_handle.clone();
@@ -506,8 +532,6 @@ impl Client {
                 }
             }
         });
-        self.operations_canceller
-            .insert(operation_id.clone(), cancel_sender);
 
         Ok(QueryHandle {
             status: QueryStatus::Success,
@@ -516,7 +540,7 @@ impl Client {
     }
 
     unsafe fn watched_query(
-        &mut self,
+        &self,
         query_bytes: *const libc::c_uchar,
         query_size: usize,
         callback: extern "C" fn(
@@ -530,13 +554,19 @@ impl Client {
         let query_bytes = std::slice::from_raw_parts(query_bytes, query_size);
         let query = EntityQuery::decode(query_bytes).map_err(|_| WatchedQueryStatus::Error)?;
 
-        let operation_id = Arc::new(self.next_operation_id);
-        self.next_operation_id += 1;
-        debug!("Sending a watch query (id={})", operation_id);
-
         let (cancel_sender, cancel_receiver) = oneshot::channel();
-        self.operations_canceller
-            .insert(operation_id.clone(), cancel_sender);
+        let operation_id = {
+            let mut inner = self.inner.lock().unwrap();
+            let operation_id = Arc::new(inner.next_operation_id);
+            inner.next_operation_id += 1;
+
+            inner
+                .operations_canceller
+                .insert(operation_id.clone(), cancel_sender);
+
+            operation_id
+        };
+        debug!("Sending a watch query (id={})", operation_id);
 
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         let store = self.store_handle.clone();
@@ -605,8 +635,14 @@ impl Client {
         })
     }
 
-    fn cancel_operation(&mut self, operation_id: SpawnedOperationId) {
+    fn cancel_operation(&self, operation_id: SpawnedOperationId) {
         debug!("Cancelling operation {}", operation_id);
-        self.operations_canceller.remove(&operation_id);
+        let mut inner = self.inner.lock().unwrap();
+        inner.operations_canceller.remove(&operation_id);
+    }
+
+    fn reset_transport(&self) {
+        let mut inner = self.inner.lock().unwrap();
+        inner.transport_handle.reset();
     }
 }

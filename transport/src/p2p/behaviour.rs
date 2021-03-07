@@ -110,6 +110,30 @@ impl ExocoreBehaviour {
         self.dial_peer(peer_id);
     }
 
+    pub fn reset_connections(&mut self) {
+        info!("Resetting connections");
+
+        for (peer_id, peer) in self.peers.iter_mut() {
+            peer.status = PeerStatus::Disconnected;
+            peer.last_dial = None;
+
+            // send disconnected status to handles to assume the peer is gone
+            self.actions
+                .push_back(NetworkBehaviourAction::GenerateEvent(
+                    ExocoreBehaviourEvent::PeerStatus(*peer_id, peer.status),
+                ));
+
+            self.actions.push_back(NetworkBehaviourAction::DialPeer {
+                peer_id: *peer_id,
+                condition: DialPeerCondition::NotDialing,
+            });
+        }
+    }
+
+    pub fn report_ping_success(&mut self, peer_id: &PeerId) {
+        self.inject_connected(peer_id);
+    }
+
     fn dial_peer(&mut self, peer_id: PeerId) {
         if let Some(current_peer) = self.peers.get_mut(&peer_id) {
             current_peer.last_dial = Some(Instant::now());
@@ -140,10 +164,12 @@ impl NetworkBehaviour for ExocoreBehaviour {
 
     fn inject_connected(&mut self, peer_id: &PeerId) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
+            if peer.status == PeerStatus::Connected {
+                return;
+            }
+
             info!("Connected to peer {}", peer.node);
-
             peer.status = PeerStatus::Connected;
-
             self.actions
                 .push_back(NetworkBehaviourAction::GenerateEvent(
                     ExocoreBehaviourEvent::PeerStatus(*peer_id, peer.status),
@@ -165,6 +191,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             info!("Disconnected from peer {}", peer.node);
 
+            peer.status = PeerStatus::Disconnected;
             self.actions
                 .push_back(NetworkBehaviourAction::GenerateEvent(
                     ExocoreBehaviourEvent::PeerStatus(*peer_id, peer.status),
@@ -174,7 +201,6 @@ impl NetworkBehaviour for ExocoreBehaviour {
             peer.cleanup_expired();
 
             // trigger reconnection
-            peer.status = PeerStatus::Disconnected;
             self.dial_peer(*peer_id);
         }
     }

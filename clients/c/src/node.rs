@@ -4,7 +4,7 @@ use exocore_protos::{
     prost::{Message, ProstMessageExt},
 };
 
-use crate::{exocore_init, utils::BytesVec};
+use crate::utils::BytesVec;
 
 /// LocalNode that may or may not be part of a cell.
 ///
@@ -39,8 +39,6 @@ impl LocalNode {
 ///   shouldn't be freed.
 #[no_mangle]
 pub unsafe extern "C" fn exocore_local_node_generate() -> LocalNodeResult {
-    exocore_init();
-
     let core_local_node = CoreLocalNode::generate();
     let config = core_local_node.config().clone();
 
@@ -63,8 +61,6 @@ pub unsafe extern "C" fn exocore_local_node_new(
     config_bytes: *const libc::c_uchar,
     config_bytes_size: usize,
 ) -> LocalNodeResult {
-    exocore_init();
-
     let config_bytes = std::slice::from_raw_parts(config_bytes, config_bytes_size);
     let config = match LocalNodeConfig::decode(config_bytes) {
         Ok(cfg) => cfg,

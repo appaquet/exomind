@@ -120,7 +120,7 @@ async fn main() -> anyhow::Result<()> {
     let mut options: Options = Options::parse();
     options.validate()?;
 
-    exocore_core::logging::setup(Some(LevelFilter::from_str(&options.log)?));
+    exocore_core::logging::setup::<String>(Some(LevelFilter::from_str(&options.log)?), None);
 
     let ctx = Context {
         options,
