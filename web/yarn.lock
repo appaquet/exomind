@@ -4518,9 +4518,9 @@ exit@^0.1.2:
   resolved "https://registry.yarnpkg.com/exit/-/exit-0.1.2.tgz#0632638f8d877cc82107d30a0fff1a17cba1cd0c"
   integrity sha1-BjJjj42HfMghB9MKD/8aF8uhzQw=
 
-"exocore@https://github.com/appaquet/exocore/releases/download/v0.1.4-pre0/exocore-web.tar.gz":
-  version "0.1.4-pre0"
-  resolved "https://github.com/appaquet/exocore/releases/download/v0.1.4-pre0/exocore-web.tar.gz#49338d85c208c17f80bf0497c08debeca0e82e7e"
+"exocore@https://github.com/appaquet/exocore/releases/download/v0.1.4-pre2/exocore-web.tar.gz":
+  version "0.1.4"
+  resolved "https://github.com/appaquet/exocore/releases/download/v0.1.4-pre2/exocore-web.tar.gz#854d74fa0b5a44897570af6e287d75129c3c6b7c"
   dependencies:
     protobufjs "^6.10.2"
 

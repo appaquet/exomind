@@ -120,7 +120,7 @@ class ExpandableQuery {
                 return
             }
 
-            if status == .error {
+            if status == .error || status == .done {
                 this.handleQueryError(queryIndex: queryIndex)
                 return
             }
@@ -170,5 +170,9 @@ class ExpandableQuery {
             idx += 1
         }
         self.onChange()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
