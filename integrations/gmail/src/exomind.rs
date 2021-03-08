@@ -2,11 +2,8 @@ use std::collections::HashMap;
 
 use crate::{gmail::GmailAccount, sync::SynchronizedThread};
 use exocore::{
-    chain::operation::OperationId,
-    core::{
-        protos::prost::ProstAnyPackMessageExt,
-        time::{ConsistentTimestamp, DateTime, Utc},
-    },
+    core::time::{ConsistentTimestamp, DateTime, Utc},
+    protos::prost::ProstAnyPackMessageExt,
     protos::{
         prost::{Message, ProstTimestampExt},
         store::{Entity, EntityResult, Reference, Trait},
@@ -14,9 +11,10 @@ use exocore::{
     },
     store::{
         entity::EntityExt,
-        mutation::MutationBuilder,
+        mutation::{MutationBuilder, OperationId},
         query::{ProjectionBuilder, QueryBuilder, TraitQueryBuilder},
         remote::ClientHandle,
+        store::Store,
     },
 };
 use exomind_core::protos::base::{Account, AccountType, CollectionChild, Email, EmailThread};

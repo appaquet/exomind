@@ -8,7 +8,7 @@ use exocore::{
     store::mutation::MutationBuilder,
     store::query::QueryBuilder,
     store::remote::Client,
-    store::remote::ClientHandle,
+    store::{remote::ClientHandle, store::Store},
     transport::Libp2pTransport,
     transport::ServiceType,
 };

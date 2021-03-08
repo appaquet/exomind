@@ -1,23 +1,25 @@
 PODS:
   - CLTokenInputView (2.3.0)
   - Dwifft (0.9)
-  - Exocore (0.1.3):
+  - Exocore (0.1.4):
     - SwiftProtobuf (~> 1.10)
   - FontAwesome.swift (1.9.1)
   - KeychainSwift (19.0.0)
   - MCSwipeTableViewCell (2.1.4)
+  - ReachabilitySwift (5.0.0)
   - SnapKit (4.2.0)
-  - SwiftProtobuf (1.14.0)
+  - SwiftProtobuf (1.15.0)
   - SwiftyJSON (4.3.0)
   - UIColor_Hex_Swift (4.2.0)
 
 DEPENDENCIES:
   - CLTokenInputView
   - Dwifft (~> 0.9)
-  - Exocore (~> 0.1.3)
+  - "Exocore (from `{:http=>\"https://github.com/appaquet/exocore/releases/download/v0.1.4-pre2/exocore-ios.tar.gz\"}`)"
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
   - KeychainSwift (~> 19.0)
   - MCSwipeTableViewCell
+  - ReachabilitySwift
   - SnapKit (~> 4.2.0)
   - SwiftProtobuf (~> 1.10)
   - SwiftyJSON (~> 4.2)
@@ -27,19 +29,23 @@ SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - CLTokenInputView
     - Dwifft
-    - Exocore
     - KeychainSwift
     - MCSwipeTableViewCell
+    - ReachabilitySwift
     - SnapKit
     - SwiftProtobuf
     - SwiftyJSON
     - UIColor_Hex_Swift
 
 EXTERNAL SOURCES:
+  Exocore:
+    :http: https://github.com/appaquet/exocore/releases/download/v0.1.4-pre2/exocore-ios.tar.gz
   FontAwesome.swift:
     :git: https://github.com/thii/FontAwesome.swift.git
 
 CHECKOUT OPTIONS:
+  Exocore:
+    :http: https://github.com/appaquet/exocore/releases/download/v0.1.4-pre2/exocore-ios.tar.gz
   FontAwesome.swift:
     :commit: 07883a32d49dfc7bdedbeea115067b53dfbeeb43
     :git: https://github.com/thii/FontAwesome.swift.git
@@ -47,15 +53,16 @@ CHECKOUT OPTIONS:
 SPEC CHECKSUMS:
   CLTokenInputView: 9dc1ffb7c9d2d81787e69a63c75bd97b0b2d1e76
   Dwifft: 42912068ed2a8146077d1a1404df18625bd086e1
-  Exocore: 6b1c7e4c364f7717c6a1a3cc494a5f94343ec055
+  Exocore: 4dc34dded81477271a3fc1e76844cbc7a21a3356
   FontAwesome.swift: 6b52cb7be66eacd28cbfaa0ca7ffd0de4a186a1d
   KeychainSwift: a06190cf933ad46b1e0abc3d77d29c06331715c7
   MCSwipeTableViewCell: 1b303e16c3a26b1982f3a68386e9b8c5fc8344c3
+  ReachabilitySwift: 985039c6f7b23a1da463388634119492ff86c825
   SnapKit: fe8a619752f3f27075cc9a90244d75c6c3f27e2a
-  SwiftProtobuf: ed465ed18402f998fd117f631da27e0168e6b59c
+  SwiftProtobuf: 3320217e9d8fb75f36b40282e78c482640fd75dd
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: b75cfbff20f0435c68f6fcf9dd81ce1e1f877216
+PODFILE CHECKSUM: dc2edd00da4c8b08bf19d0ce296bcd74671c5ad6
 
 COCOAPODS: 1.9.3

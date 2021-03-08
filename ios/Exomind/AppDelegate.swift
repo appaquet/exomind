@@ -1,18 +1,19 @@
 import UIKit
 import KeychainSwift
+import Reachability
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     var inForeground: Bool = true
+    var reach: Reachability?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         HttpUtils.copyCookiesToKeychain()
-        try? ExocoreUtils.bootNode()
         JSBridge.instance = JSBridge()
 
-        // see https://github.com/tokio-rs/mio/issues/949
-        signal(SIGPIPE, SIG_IGN)
+        try? ExocoreUtils.initialize()
+        self.startNetworkMonitoring()
 
         return true
     }
@@ -71,9 +72,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("AppDelegate > App active")
     }
 
+    func startNetworkMonitoring() {
+        self.reach = try? Reachability()
+        self.reach?.whenReachable = { reachability in
+            if reachability.connection == .wifi {
+                print("AppDelegate > Reachable via WiFi")
+            } else {
+                print("AppDelegate > Reachable via Cellular")
+            }
+
+            ExocoreUtils.resetTransport()
+        }
+
+        do {
+            try self.reach?.startNotifier()
+        } catch {
+            print("AppDelegate > Unable to start notifier")
+        }
+    }
+
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
-
 }
-

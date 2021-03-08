@@ -5,7 +5,7 @@ use crate::{
 };
 use exocore::{
     protos::{prost::ProstAnyPackMessageExt, store::Trait},
-    store::{mutation::MutationBuilder, remote::ClientHandle},
+    store::{mutation::MutationBuilder, remote::ClientHandle, store::Store},
 };
 use structopt::StructOpt;
 
