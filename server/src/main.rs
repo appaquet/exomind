@@ -1,6 +1,11 @@
 use std::{str::FromStr, time::Duration};
 
-use exocore::{core::time::Utc, protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt}, protos::store::{Entity, Reference, Trait}, store::{entity::EntityExt, mutation::MutationBuilder, store::Store}};
+use exocore::{
+    core::time::Utc,
+    protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
+    protos::store::{Entity, Reference, Trait},
+    store::{entity::EntityExt, mutation::MutationBuilder, store::Store},
+};
 use exomind::ExomindClient;
 use exomind_core::protos::base::{CollectionChild, Snoozed};
 use futures::FutureExt;
@@ -21,7 +26,10 @@ extern crate serde_derive;
 #[tokio::main]
 async fn main() {
     let opt: cli::Options = cli::Options::from_args();
-    exocore::core::logging::setup::<String>(Some(LevelFilter::from_str(&opt.logging_level).unwrap()), None);
+    exocore::core::logging::setup::<String>(
+        Some(LevelFilter::from_str(&opt.logging_level).unwrap()),
+        None,
+    );
 
     let config = cli::Config::from_file(&opt.config)
         .unwrap_or_else(|err| panic!("Couldn't parse config {:?}: {}", &opt.config, err));

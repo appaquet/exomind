@@ -3,7 +3,10 @@ use crate::{
     exomind::ExomindClient,
     gmail::{self, GmailAccount, GmailClient},
 };
-use exocore::{protos::{prost::ProstAnyPackMessageExt, store::Trait}, store::{mutation::MutationBuilder, remote::ClientHandle, store::Store}};
+use exocore::{
+    protos::{prost::ProstAnyPackMessageExt, store::Trait},
+    store::{mutation::MutationBuilder, remote::ClientHandle, store::Store},
+};
 use structopt::StructOpt;
 
 #[derive(StructOpt)]

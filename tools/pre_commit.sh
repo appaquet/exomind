@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$CUR_DIR"
 
 EXOMIND_ROOT="$CUR_DIR/.."
 
 echo "Formatting..."
-$CUR_DIR/clippy.sh
+$CUR_DIR/format.sh
 
 echo "Cargo checking code, tests and benches"
 cd $EXOMIND_ROOT
