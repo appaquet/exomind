@@ -1,0 +1,534 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		6DC825B225F5BF7A0097D4DF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC825B125F5BF7A0097D4DF /* AppDelegate.swift */; };
+		6DC825B525F5BF7A0097D4DF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825B325F5BF7A0097D4DF /* Main.storyboard */; };
+		6DC825B725F5BF7A0097D4DF /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC825B625F5BF7A0097D4DF /* ViewController.swift */; };
+		6DC825B925F5BF7C0097D4DF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825B825F5BF7C0097D4DF /* Assets.xcassets */; };
+		6DC825C025F5BF7C0097D4DF /* Exomind Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 6DC825BF25F5BF7C0097D4DF /* Exomind Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6DC825C525F5BF7C0097D4DF /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DC825C425F5BF7C0097D4DF /* Cocoa.framework */; };
+		6DC825C825F5BF7C0097D4DF /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC825C725F5BF7C0097D4DF /* SafariWebExtensionHandler.swift */; };
+		6DC825DD25F5BF7D0097D4DF /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825D525F5BF7D0097D4DF /* icon.png */; };
+		6DC825DE25F5BF7D0097D4DF /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825D625F5BF7D0097D4DF /* popup.js */; };
+		6DC825DF25F5BF7D0097D4DF /* event.js in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825D725F5BF7D0097D4DF /* event.js */; };
+		6DC825E025F5BF7D0097D4DF /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825D825F5BF7D0097D4DF /* popup.html */; };
+		6DC825E125F5BF7D0097D4DF /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825D925F5BF7D0097D4DF /* manifest.json */; };
+		6DC825E225F5BF7D0097D4DF /* protos.js in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825DA25F5BF7D0097D4DF /* protos.js */; };
+		6DC825E325F5BF7D0097D4DF /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825DB25F5BF7D0097D4DF /* content.js */; };
+		6DC825E425F5BF7D0097D4DF /* protobuf.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 6DC825DC25F5BF7D0097D4DF /* protobuf.min.js */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6DC825C125F5BF7C0097D4DF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6DC825A525F5BF7A0097D4DF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6DC825BE25F5BF7C0097D4DF;
+			remoteInfo = "Exomind Extension";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6DC825D025F5BF7C0097D4DF /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6DC825C025F5BF7C0097D4DF /* Exomind Extension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		6DC825AD25F5BF7A0097D4DF /* Exomind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Exomind.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6DC825B025F5BF7A0097D4DF /* Exomind.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Exomind.entitlements; sourceTree = "<group>"; };
+		6DC825B125F5BF7A0097D4DF /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		6DC825B425F5BF7A0097D4DF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		6DC825B625F5BF7A0097D4DF /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		6DC825B825F5BF7C0097D4DF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6DC825BA25F5BF7C0097D4DF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6DC825BF25F5BF7C0097D4DF /* Exomind Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Exomind Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6DC825C425F5BF7C0097D4DF /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		6DC825C725F5BF7C0097D4DF /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		6DC825C925F5BF7C0097D4DF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6DC825CA25F5BF7C0097D4DF /* Exomind_Extension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Exomind_Extension.entitlements; sourceTree = "<group>"; };
+		6DC825D525F5BF7D0097D4DF /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = icon.png; path = ../../chrome/icon.png; sourceTree = "<group>"; };
+		6DC825D625F5BF7D0097D4DF /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = popup.js; path = ../../chrome/popup.js; sourceTree = "<group>"; };
+		6DC825D725F5BF7D0097D4DF /* event.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = event.js; path = ../../chrome/event.js; sourceTree = "<group>"; };
+		6DC825D825F5BF7D0097D4DF /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = popup.html; path = ../../chrome/popup.html; sourceTree = "<group>"; };
+		6DC825D925F5BF7D0097D4DF /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../chrome/manifest.json; sourceTree = "<group>"; };
+		6DC825DA25F5BF7D0097D4DF /* protos.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = protos.js; path = ../../chrome/protos.js; sourceTree = "<group>"; };
+		6DC825DB25F5BF7D0097D4DF /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = ../../chrome/content.js; sourceTree = "<group>"; };
+		6DC825DC25F5BF7D0097D4DF /* protobuf.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = protobuf.min.js; path = ../../chrome/protobuf.min.js; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		6DC825AA25F5BF7A0097D4DF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6DC825BC25F5BF7C0097D4DF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6DC825C525F5BF7C0097D4DF /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		6DC825A425F5BF7A0097D4DF = {
+			isa = PBXGroup;
+			children = (
+				6DC825AF25F5BF7A0097D4DF /* Exomind */,
+				6DC825C625F5BF7C0097D4DF /* Exomind Extension */,
+				6DC825C325F5BF7C0097D4DF /* Frameworks */,
+				6DC825AE25F5BF7A0097D4DF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6DC825AE25F5BF7A0097D4DF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6DC825AD25F5BF7A0097D4DF /* Exomind.app */,
+				6DC825BF25F5BF7C0097D4DF /* Exomind Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6DC825AF25F5BF7A0097D4DF /* Exomind */ = {
+			isa = PBXGroup;
+			children = (
+				6DC825B025F5BF7A0097D4DF /* Exomind.entitlements */,
+				6DC825B125F5BF7A0097D4DF /* AppDelegate.swift */,
+				6DC825B325F5BF7A0097D4DF /* Main.storyboard */,
+				6DC825B625F5BF7A0097D4DF /* ViewController.swift */,
+				6DC825B825F5BF7C0097D4DF /* Assets.xcassets */,
+				6DC825BA25F5BF7C0097D4DF /* Info.plist */,
+			);
+			path = Exomind;
+			sourceTree = "<group>";
+		};
+		6DC825C325F5BF7C0097D4DF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6DC825C425F5BF7C0097D4DF /* Cocoa.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6DC825C625F5BF7C0097D4DF /* Exomind Extension */ = {
+			isa = PBXGroup;
+			children = (
+				6DC825D425F5BF7D0097D4DF /* Resources */,
+				6DC825C725F5BF7C0097D4DF /* SafariWebExtensionHandler.swift */,
+				6DC825C925F5BF7C0097D4DF /* Info.plist */,
+				6DC825CA25F5BF7C0097D4DF /* Exomind_Extension.entitlements */,
+			);
+			path = "Exomind Extension";
+			sourceTree = "<group>";
+		};
+		6DC825D425F5BF7D0097D4DF /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6DC825D525F5BF7D0097D4DF /* icon.png */,
+				6DC825D625F5BF7D0097D4DF /* popup.js */,
+				6DC825D725F5BF7D0097D4DF /* event.js */,
+				6DC825D825F5BF7D0097D4DF /* popup.html */,
+				6DC825D925F5BF7D0097D4DF /* manifest.json */,
+				6DC825DA25F5BF7D0097D4DF /* protos.js */,
+				6DC825DB25F5BF7D0097D4DF /* content.js */,
+				6DC825DC25F5BF7D0097D4DF /* protobuf.min.js */,
+			);
+			name = Resources;
+			path = "Exomind Extension";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6DC825AC25F5BF7A0097D4DF /* Exomind */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6DC825D125F5BF7C0097D4DF /* Build configuration list for PBXNativeTarget "Exomind" */;
+			buildPhases = (
+				6DC825A925F5BF7A0097D4DF /* Sources */,
+				6DC825AA25F5BF7A0097D4DF /* Frameworks */,
+				6DC825AB25F5BF7A0097D4DF /* Resources */,
+				6DC825D025F5BF7C0097D4DF /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6DC825C225F5BF7C0097D4DF /* PBXTargetDependency */,
+			);
+			name = Exomind;
+			productName = Exomind;
+			productReference = 6DC825AD25F5BF7A0097D4DF /* Exomind.app */;
+			productType = "com.apple.product-type.application";
+		};
+		6DC825BE25F5BF7C0097D4DF /* Exomind Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6DC825CD25F5BF7C0097D4DF /* Build configuration list for PBXNativeTarget "Exomind Extension" */;
+			buildPhases = (
+				6DC825BB25F5BF7C0097D4DF /* Sources */,
+				6DC825BC25F5BF7C0097D4DF /* Frameworks */,
+				6DC825BD25F5BF7C0097D4DF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Exomind Extension";
+			productName = "Exomind Extension";
+			productReference = 6DC825BF25F5BF7C0097D4DF /* Exomind Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6DC825A525F5BF7A0097D4DF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1240;
+				LastUpgradeCheck = 1240;
+				TargetAttributes = {
+					6DC825AC25F5BF7A0097D4DF = {
+						CreatedOnToolsVersion = 12.4;
+					};
+					6DC825BE25F5BF7C0097D4DF = {
+						CreatedOnToolsVersion = 12.4;
+					};
+				};
+			};
+			buildConfigurationList = 6DC825A825F5BF7A0097D4DF /* Build configuration list for PBXProject "Exomind" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 6DC825A425F5BF7A0097D4DF;
+			productRefGroup = 6DC825AE25F5BF7A0097D4DF /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6DC825AC25F5BF7A0097D4DF /* Exomind */,
+				6DC825BE25F5BF7C0097D4DF /* Exomind Extension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6DC825AB25F5BF7A0097D4DF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6DC825B925F5BF7C0097D4DF /* Assets.xcassets in Resources */,
+				6DC825B525F5BF7A0097D4DF /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6DC825BD25F5BF7C0097D4DF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6DC825DD25F5BF7D0097D4DF /* icon.png in Resources */,
+				6DC825E025F5BF7D0097D4DF /* popup.html in Resources */,
+				6DC825E125F5BF7D0097D4DF /* manifest.json in Resources */,
+				6DC825DE25F5BF7D0097D4DF /* popup.js in Resources */,
+				6DC825DF25F5BF7D0097D4DF /* event.js in Resources */,
+				6DC825E425F5BF7D0097D4DF /* protobuf.min.js in Resources */,
+				6DC825E325F5BF7D0097D4DF /* content.js in Resources */,
+				6DC825E225F5BF7D0097D4DF /* protos.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6DC825A925F5BF7A0097D4DF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6DC825B725F5BF7A0097D4DF /* ViewController.swift in Sources */,
+				6DC825B225F5BF7A0097D4DF /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6DC825BB25F5BF7C0097D4DF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6DC825C825F5BF7C0097D4DF /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6DC825C225F5BF7C0097D4DF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6DC825BE25F5BF7C0097D4DF /* Exomind Extension */;
+			targetProxy = 6DC825C125F5BF7C0097D4DF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		6DC825B325F5BF7A0097D4DF /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6DC825B425F5BF7A0097D4DF /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		6DC825CB25F5BF7C0097D4DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		6DC825CC25F5BF7C0097D4DF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.1;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		6DC825CE25F5BF7C0097D4DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Exomind Extension/Exomind_Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
+				INFOPLIST_FILE = "Exomind Extension/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.safari.Exomind.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		6DC825CF25F5BF7C0097D4DF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Exomind Extension/Exomind_Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
+				INFOPLIST_FILE = "Exomind Extension/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.safari.Exomind.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		6DC825D225F5BF7C0097D4DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Exomind/Exomind.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
+				INFOPLIST_FILE = Exomind/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.safari.Exomind;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		6DC825D325F5BF7C0097D4DF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Exomind/Exomind.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
+				INFOPLIST_FILE = Exomind/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.safari.Exomind;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6DC825A825F5BF7A0097D4DF /* Build configuration list for PBXProject "Exomind" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6DC825CB25F5BF7C0097D4DF /* Debug */,
+				6DC825CC25F5BF7C0097D4DF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6DC825CD25F5BF7C0097D4DF /* Build configuration list for PBXNativeTarget "Exomind Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6DC825CE25F5BF7C0097D4DF /* Debug */,
+				6DC825CF25F5BF7C0097D4DF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6DC825D125F5BF7C0097D4DF /* Build configuration list for PBXNativeTarget "Exomind" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6DC825D225F5BF7C0097D4DF /* Debug */,
+				6DC825D325F5BF7C0097D4DF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6DC825A525F5BF7A0097D4DF /* Project object */;
+}
