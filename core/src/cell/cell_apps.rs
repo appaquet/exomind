@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    ops::Deref,
     sync::{Arc, RwLock},
 };
 
@@ -73,6 +74,14 @@ pub struct CellApplication {
 
 impl CellApplication {
     pub fn application(&self) -> &Application {
+        &self.application
+    }
+}
+
+impl Deref for CellApplication {
+    type Target = Application;
+
+    fn deref(&self) -> &Self::Target {
         &self.application
     }
 }

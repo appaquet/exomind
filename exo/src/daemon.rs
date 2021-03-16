@@ -1,5 +1,6 @@
 use std::pin::Pin;
 
+use exocore_apps_runtime::{Applications, Config as ApplicationsConfig};
 use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -120,18 +121,33 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
                 let store_transport =
                     EitherTransportServiceHandle::new(store_p2p_transport, store_http_transport);
 
-                services_completion.push(
-                    create_local_store(
-                        &config,
-                        store_transport,
-                        store_engine_handle,
-                        full_cell,
-                        clock.clone(),
-                        entities_index,
-                    )
-                    .await?
-                    .boxed(),
-                );
+                let (store_handle, store_task) = create_local_store(
+                    &config,
+                    store_transport,
+                    store_engine_handle,
+                    full_cell,
+                    clock.clone(),
+                    entities_index,
+                )
+                .await?;
+                services_completion.push(store_task.boxed());
+
+                if cell.local_node_has_role(CellNodeRole::AppHost) {
+                    let apps_config = ApplicationsConfig::default();
+                    let apps =
+                        Applications::new(apps_config, clock.clone(), cell.clone(), store_handle)
+                            .await?;
+                    services_completion.push(
+                        async move {
+                            let res = apps.run().await;
+                            info!(
+                                "{}: Applications runtime completed with result {:?}",
+                                cell, res
+                            );
+                        }
+                        .boxed(),
+                    );
+                }
             } else {
                 info!(
                     "{}: Local node doesn't have store role. Not starting local store server.",
@@ -176,7 +192,7 @@ async fn create_local_store<T: TransportServiceHandle>(
     full_cell: FullCell,
     clock: Clock,
     entities_index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
-) -> anyhow::Result<impl Future<Output = ()>> {
+) -> anyhow::Result<(impl exocore_store::store::Store, impl Future<Output = ()>)> {
     let store_config = config.store.clone().map(|c| c.into()).unwrap_or_default();
     let local_store = Store::new(
         store_config,
@@ -200,7 +216,7 @@ async fn create_local_store<T: TransportServiceHandle>(
     let remote_store_server = Server::new(
         server_config,
         full_cell.cell().clone(),
-        store_handle,
+        store_handle.clone(),
         transport,
     )?;
     let remote_store_complete = owned_spawn(async move {
@@ -210,10 +226,12 @@ async fn create_local_store<T: TransportServiceHandle>(
         }
     });
 
-    Ok(async move {
+    let store_task = async move {
         futures::select! {
             _ = local_store_complete.fuse() => {},
             _ = remote_store_complete.fuse() => {},
         }
-    })
+    };
+
+    Ok((store_handle, store_task))
 }

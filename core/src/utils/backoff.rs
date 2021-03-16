@@ -1,5 +1,6 @@
 use crate::time::{Clock, Duration, Instant};
 
+#[derive(Clone, Copy)]
 pub struct BackoffConfig {
     pub normal_constant: Duration,
     pub failure_constant: Duration,
@@ -61,12 +62,13 @@ impl BackoffCalculator {
         if self.consecutive_failures_count == 0 {
             self.config.normal_constant
         } else {
-            let mult = self
-                .config
-                .failure_exp_base
-                .powi((self.consecutive_failures_count - 1) as i32) as u32;
+            let multiplier =
+                self.config
+                    .failure_exp_base
+                    .powi((self.consecutive_failures_count - 1) as i32) as u32;
 
-            let duration = self.config.failure_constant + self.config.failure_exp_multiplier * mult;
+            let duration =
+                self.config.failure_constant + self.config.failure_exp_multiplier * multiplier;
 
             duration.min(self.config.failure_maximum)
         }

@@ -375,7 +375,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
         // check if we're leader, and return right away if we are
         if self.im_leader() {
-            info!("I'm the leader. Switching status to synchronized");
+            info!("Changing status to synchronized. I'm the leader.");
             self.status = Status::Synchronized;
             return Ok(());
         }
@@ -391,7 +391,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         let leader_node_info = self.get_or_create_node_info_mut(&leader_node_id);
 
         if leader_node_info.chain_fully_downloaded() {
-            info!("Changing status to synchronized, as chain is fully synchronized with leader");
+            info!(
+                "Changing status to synchronized. Fully synchronized with leader {}",
+                leader_node_info.node_id
+            );
             self.status = Status::Synchronized;
             return Ok(());
         }

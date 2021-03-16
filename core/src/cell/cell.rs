@@ -231,6 +231,16 @@ impl Cell {
             None
         }
     }
+
+    pub fn apps_directory(&self) -> Option<PathBuf> {
+        if let Some(path) = &self.identity.path {
+            let mut app_dir = PathBuf::from(path);
+            app_dir.push("apps");
+            Some(app_dir)
+        } else {
+            None
+        }
+    }
 }
 
 impl std::fmt::Display for Cell {

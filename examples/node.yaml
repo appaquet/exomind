@@ -1,5 +1,5 @@
 # Node's keypair and public key
-# Use `exo keys generate` to generate node's keys
+# Use `exo sec generate-key` to generate node's keys
 name: Optional Node Name
 public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
@@ -13,7 +13,7 @@ addresses:
     - http://0.0.0.0:8888
 
 # Cells that the node is part of
-# Use `exo keys generate` to generate cell's keys
+# Use `exo sec generate-key` to generate cell's keys
 cells:
   # Cell defined inline
   - inline:

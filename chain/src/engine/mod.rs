@@ -40,7 +40,7 @@ pub(crate) mod testing;
 ///
 /// It contains 2 stores:
 ///   * Pending store: temporary store in which operations are stored until they
-///     get commited to chain
+///     get committed to chain
 ///   * Chain store: persistent store using a block-chain like data structure
 pub struct Engine<T, CS, PS>
 where

@@ -64,6 +64,7 @@ fn main() {
                 )
                 .field_attribute("CellApplicationConfig.location", "#[serde(flatten)]")
                 .type_attribute("Manifest", "#[derive(Serialize, Deserialize)]")
+                .type_attribute("ManifestModule", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("ManifestSchema", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("ManifestSchema.source", "#[derive(Serialize, Deserialize)]")
                 .type_attribute(

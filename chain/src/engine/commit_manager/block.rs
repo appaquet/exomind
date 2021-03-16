@@ -312,15 +312,20 @@ impl PendingBlock {
 
 impl std::fmt::Debug for PendingBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        f.debug_struct("PendingBlock")
-            .field("offset", &self.proposal.offset)
+        let mut d = f.debug_struct("PendingBlock");
+
+        d.field("offset", &self.proposal.offset)
             .field("group_id", &self.group_id)
             .field("status", &self.status)
             .field("nb_signatures", &self.signatures.len())
             .field("has_my_signature", &self.has_my_signature)
-            .field("has_my_refusal", &self.has_my_refusal)
-            .field("node", &self.proposal.node)
-            .finish()
+            .field("has_my_refusal", &self.has_my_refusal);
+
+        if let Some(node) = &self.proposal.node {
+            d.field("node", &node.to_string());
+        }
+
+        d.finish()
     }
 }
 

@@ -8,7 +8,7 @@ use crate::{error::Error, mutation::MutationRequestLike};
 /// the moment: the local store and the remote store. The local store is a
 /// locally hosted store, while the remote is a store that is on a remote node.
 #[async_trait]
-pub trait Store {
+pub trait Store: Clone + Send + 'static {
     type WatchedQueryStream: Stream<Item = Result<EntityResults, Error>>;
 
     async fn mutate<M: Into<MutationRequestLike> + Send>(

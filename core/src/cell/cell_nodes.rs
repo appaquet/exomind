@@ -234,6 +234,9 @@ pub enum CellNodeRole {
 
     /// Indicates that the node is running a full entities store.
     Store,
+
+    /// Indicates that the node is an applications host.
+    AppHost,
 }
 
 impl CellNodeRole {
@@ -241,7 +244,10 @@ impl CellNodeRole {
         match config {
             cell_node_config::Role::ChainRole => Ok(CellNodeRole::Chain),
             cell_node_config::Role::StoreRole => Ok(CellNodeRole::Store),
-            v => Err(Error::Cell(format!("Invalid cell node role: {:?}", v))),
+            cell_node_config::Role::AppHostRole => Ok(CellNodeRole::AppHost),
+            cell_node_config::Role::InvalidRole => {
+                Err(Error::Cell("Invalid cell node role".to_string()))
+            }
         }
     }
 }

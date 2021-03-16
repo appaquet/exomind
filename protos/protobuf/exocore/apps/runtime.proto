@@ -17,6 +17,8 @@ message InMessage {
   uint32 rendez_vous_id = 2;
 
   bytes data = 3;
+
+  string error = 4;
 }
 
 // Message sent from application running in WASM to runtime.

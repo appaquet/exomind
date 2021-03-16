@@ -41,7 +41,7 @@ struct Inner {
 }
 
 struct OneshotRequest<T> {
-    sender: oneshot::Sender<T>,
+    sender: oneshot::Sender<Result<T, StoreError>>,
     timeout: Timestamp,
 }
 
@@ -80,7 +80,7 @@ impl Store {
 
         self.send_host_message(msg)?;
 
-        receiver.await.map_err(StoreError::from)
+        receiver.await.map_err(StoreError::from)?
     }
 
     pub async fn query(self: &Arc<Store>, query: EntityQuery) -> Result<EntityResults, StoreError> {
@@ -104,7 +104,7 @@ impl Store {
 
         self.send_host_message(msg)?;
 
-        receiver.await.map_err(StoreError::from)
+        receiver.await.map_err(StoreError::from)?
     }
 
     pub(crate) fn handle_mutation_result(&self, msg: InMessage) -> Result<(), MessageStatus> {
@@ -112,10 +112,14 @@ impl Store {
         let rdv = msg.rendez_vous_id as usize;
 
         if let Some(req) = inner.pending_mutations.remove(&rdv) {
-            let results = MutationResult::decode(msg.data.as_ref()).map_err(|err| {
-                error!("Error decoding incoming mutation result: {}", err);
-                MessageStatus::DecodeError
-            })?;
+            let results = if msg.error.is_empty() {
+                Ok(MutationResult::decode(msg.data.as_ref()).map_err(|err| {
+                    error!("Error decoding incoming mutation result: {}", err);
+                    MessageStatus::DecodeError
+                })?)
+            } else {
+                Err(StoreError::Remote(msg.error))
+            };
             let _ = req.sender.send(results);
         }
 
@@ -127,10 +131,14 @@ impl Store {
         let rdv = msg.rendez_vous_id as usize;
 
         if let Some(req) = inner.pending_queries.remove(&rdv) {
-            let results = EntityResults::decode(msg.data.as_ref()).map_err(|err| {
-                error!("Error decoding incoming query results: {}", err);
-                MessageStatus::DecodeError
-            })?;
+            let results = if msg.error.is_empty() {
+                Ok(EntityResults::decode(msg.data.as_ref()).map_err(|err| {
+                    error!("Error decoding incoming query results: {}", err);
+                    MessageStatus::DecodeError
+                })?)
+            } else {
+                Err(StoreError::Remote(msg.error))
+            };
             let _ = req.sender.send(results);
         }
 
@@ -207,6 +215,8 @@ pub enum StoreError {
     Unknown(#[from] anyhow::Error),
     #[error("Host message error: {0:?}")]
     HostMessage(MessageStatus),
+    #[error("Remote store error: {0:?}")]
+    Remote(String),
     #[error("Query or mutation got cancelled or timed out")]
     Cancelled(#[from] oneshot::Canceled),
 }
@@ -261,6 +271,7 @@ mod tests {
                 }
                 .encode_to_vec(),
                 rendez_vous_id: out_msg.rendez_vous_id,
+                error: String::new(),
             })
             .unwrap();
 
@@ -299,6 +310,7 @@ mod tests {
                 }
                 .encode_to_vec(),
                 rendez_vous_id: out_msg.rendez_vous_id,
+                error: String::new(),
             })
             .unwrap();
 

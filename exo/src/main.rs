@@ -3,8 +3,8 @@ mod cell;
 mod config;
 mod daemon;
 mod disco;
-mod keys;
 mod node;
+mod sec;
 mod term;
 mod utils;
 
@@ -102,8 +102,8 @@ pub enum Commands {
     /// Applications related commands.
     App(app::AppOptions),
 
-    /// Keys related commands.
-    Keys(keys::KeysOptions),
+    /// Security related commands.
+    Sec(sec::SecOptions),
 
     /// Node configuration related commands.
     Config(config::ConfigOptions),
@@ -131,8 +131,8 @@ async fn main() -> anyhow::Result<()> {
         Commands::Node(node_opts) => node::handle_cmd(&ctx, node_opts),
         Commands::Cell(cell_opts) => cell::handle_cmd(&ctx, cell_opts).await,
         Commands::App(app_opts) => app::handle_cmd(&ctx, app_opts).await,
-        Commands::Keys(keys_opts) => {
-            keys::handle_cmd(&ctx, keys_opts);
+        Commands::Sec(keys_opts) => {
+            sec::handle_cmd(&ctx, keys_opts);
             Ok(())
         }
         Commands::Config(config_opts) => config::handle_cmd(&ctx, config_opts),
