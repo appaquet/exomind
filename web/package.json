@@ -80,7 +80,7 @@
     "@types/classnames": "^2.2.11",
     "@types/domhandler": "^2.4.1",
     "@types/draft-convert": "^2.1.1",
-    "@types/draft-js": "^0.10.44",
+    "@types/draft-js": "^0.10.45",
     "@types/fbemitter": "^2.0.32",
     "@types/jest": "^26.0.20",
     "@types/linkifyjs": "^2.1.3",
