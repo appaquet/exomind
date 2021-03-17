@@ -2,12 +2,14 @@ use std::{str::FromStr, time::Duration};
 
 use exocore::{
     core::time::Utc,
-    protos::prost::{ProstAnyPackMessageExt, ProstTimestampExt},
-    protos::store::{Entity, Reference, Trait},
+    protos::{
+        prost::{ProstAnyPackMessageExt, ProstTimestampExt},
+        store::{Entity, Reference, Trait},
+    },
     store::{entity::EntityExt, mutation::MutationBuilder, store::Store},
 };
 use exomind::ExomindClient;
-use exomind_core::protos::base::{CollectionChild, Snoozed};
+use exomind_protos::base::{CollectionChild, Snoozed};
 use futures::FutureExt;
 use log::LevelFilter;
 use structopt::StructOpt;
@@ -35,10 +37,10 @@ async fn main() {
         .unwrap_or_else(|err| panic!("Couldn't parse config {:?}: {}", &opt.config, err));
 
     match opt.subcommand {
-        cli::SubCommand::start => {
+        cli::SubCommand::Start => {
             start(config).await.unwrap();
         }
-        cli::SubCommand::gmail(gmail_opt) => {
+        cli::SubCommand::Gmail(gmail_opt) => {
             let gmail_config = config
                 .gmail
                 .clone()

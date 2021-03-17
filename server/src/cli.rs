@@ -20,8 +20,8 @@ pub struct Options {
 
 #[derive(StructOpt)]
 pub enum SubCommand {
-    start,
-    gmail(exomind_gmail::cli::Options),
+    Start,
+    Gmail(exomind_gmail::cli::Options),
 }
 
 #[derive(Clone, Deserialize)]

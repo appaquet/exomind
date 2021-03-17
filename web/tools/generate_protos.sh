@@ -15,10 +15,10 @@ $EXOMIND_WEB_ROOT/node_modules/.bin/pbjs \
     -w es6 \
     --sparse \
     -o $EXOMIND_WEB_ROOT/src/protos/index.js \
-    -p "$EXOMIND_ROOT/protos/" \
+    -p "$EXOMIND_ROOT/protos/protobuf/" \
     -r 'exomind-root' \
     --es6 \
-    $EXOMIND_ROOT/protos/exomind/*.proto
+    $EXOMIND_ROOT/protos/protobuf/exomind/*.proto
 
 # Generate typescript definition for protos
 $EXOMIND_WEB_ROOT/node_modules/.bin/pbts $EXOMIND_WEB_ROOT/src/protos/index.js -o $EXOMIND_WEB_ROOT/src/protos/index.d.ts

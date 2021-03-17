@@ -1,0 +1,16 @@
+[package]
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+edition = "2018"
+license = "Apache-2.0"
+name = "exomind-app"
+version = "0.1.1"
+
+[lib]
+crate-type = ['cdylib']
+
+[dependencies]
+anyhow = "1.0"
+exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre2", default-features = false, features = ["apps-sdk"]}
+exomind-protos = {version = "0.1.1", path = "../protos"}
+futures = "0.3"
+log = "0.4"

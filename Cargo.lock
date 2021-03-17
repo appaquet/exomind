@@ -775,10 +775,39 @@ name = "exocore"
 version = "0.1.4"
 source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
 dependencies = [
+ "exocore-apps-sdk",
  "exocore-core",
  "exocore-protos",
  "exocore-store",
  "exocore-transport",
+]
+
+[[package]]
+name = "exocore-apps-macros"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
+dependencies = [
+ "anyhow",
+ "futures 0.3.13",
+ "log",
+ "quote",
+ "syn",
+ "thiserror",
+]
+
+[[package]]
+name = "exocore-apps-sdk"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
+dependencies = [
+ "anyhow",
+ "exocore-apps-macros",
+ "exocore-protos",
+ "futures 0.3.13",
+ "lazy_static",
+ "log",
+ "quote",
+ "thiserror",
 ]
 
 [[package]]
@@ -873,17 +902,18 @@ dependencies = [
 name = "exomind"
 version = "0.1.1"
 dependencies = [
- "exomind-core",
+ "exomind-protos",
 ]
 
 [[package]]
-name = "exomind-core"
+name = "exomind-app"
 version = "0.1.1"
 dependencies = [
+ "anyhow",
  "exocore",
- "prost",
- "prost-build",
- "prost-types",
+ "exomind-protos",
+ "futures 0.3.13",
+ "log",
 ]
 
 [[package]]
@@ -894,7 +924,7 @@ dependencies = [
  "chardetng",
  "charset",
  "exocore",
- "exomind-core",
+ "exomind-protos",
  "google-gmail1",
  "google_api_auth",
  "log",
@@ -911,13 +941,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "exomind-protos"
+version = "0.1.1"
+dependencies = [
+ "exocore",
+ "prost",
+ "prost-build",
+ "prost-types",
+]
+
+[[package]]
 name = "exomind-server"
 version = "0.1.1"
 dependencies = [
  "anyhow",
  "exocore",
- "exomind-core",
  "exomind-gmail",
+ "exomind-protos",
  "futures 0.3.13",
  "log",
  "serde",

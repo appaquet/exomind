@@ -12,7 +12,7 @@ $EXOMIND_WEB_ROOT/node_modules/.bin/pbjs \
     -t static-module \
     -w closure \
     -o $EXOMIND_BROWSER_ROOT/chrome/protos.js \
-    -p "$EXOMIND_ROOT/protos/" \
+    -p "$EXOMIND_ROOT/protos/protobuf/" \
     -r 'exomind-root' \
-    $EXOMIND_ROOT/protos/exomind/base.proto \
-    $EXOMIND_ROOT/protos/exocore/store/mutation.proto
+    $EXOMIND_ROOT/protos/protobuf/exomind/base.proto \
+    $EXOMIND_ROOT/protos/protobuf/exocore/store/mutation.proto

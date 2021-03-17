@@ -12,6 +12,8 @@ message Manifest {
     string path = 3;
 
     repeated ManifestSchema schemas = 4;
+
+    ManifestModule module = 6;
 }
 
 message ManifestSchema {
@@ -20,4 +22,10 @@ message ManifestSchema {
 
         bytes bytes = 2;
     }
+}
+
+message ManifestModule {
+    string url = 1;
+
+    string multihash = 2;
 }

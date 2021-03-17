@@ -2,11 +2,11 @@
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
-name = "exomind-core"
+name = "exomind-protos"
 version = "0.1.1"
 
 [dependencies]
-exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre2", default-features = false, features = ["client"]}
+exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre2", default-features = false, features = ["protos"]}
 prost = "0.7"
 prost-types = "0.7"
 

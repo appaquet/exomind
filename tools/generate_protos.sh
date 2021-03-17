@@ -13,14 +13,14 @@ fi
 # Update exocore protos to latest
 if [[ -d "$EXOCORE_REPO" ]]; then
   rm -rf $EXOMIND_ROOT/protos/protobuf/exocore
-  cp -r $EXOCORE_REPO/protos/protobuf/exocore $EXOMIND_ROOT/protos/
+  cp -r $EXOCORE_REPO/protos/protobuf/exocore $EXOMIND_ROOT/protos/protobuf/
 fi
 
 # Generate exomind app file descriptor
 protoc \
-  -I"$EXOMIND_ROOT/protos/" \
+  -I"$EXOMIND_ROOT/protos/protobuf/" \
   -I"$EXOCORE_REPO/protos/protobuf/" \
-  $EXOMIND_ROOT/protos/exomind/*.proto \
+  $EXOMIND_ROOT/protos/protobuf/exomind/*.proto \
   -o "$EXOMIND_ROOT/exomind.fd"
 
 # Validate Prost protos

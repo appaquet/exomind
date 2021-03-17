@@ -121,6 +121,7 @@ message CellNodeConfig {
         INVALID_ROLE = 0;
         CHAIN_ROLE = 1;
         STORE_ROLE = 2;
+        APP_HOST_ROLE = 3;
     }
 }
 

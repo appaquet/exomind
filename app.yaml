@@ -1,7 +1,6 @@
 name: exomind
 version: 0.1.1
 public_key: pe5PPd5U5t44CrECvDzbwBNeeeWWXwQkbGNoBoAMb3LjoJ
-#TODO: to remove: aekRs33KHr7rdcMfK1m8i9GobnVN1BFvJcpWNgFHFHv5mByE3fiuD2vbpj3NYTKo59TFuXwGGUsxSFrp7gWw4dCVA
 
 schemas:
   - file: exomind.fd

@@ -1,21 +1,22 @@
 [package]
-name = "exomind"
-version = "0.1.1"
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
+name = "exomind"
+version = "0.1.1"
 
 [dependencies]
-exomind-core = { path = "./core" }
+exomind-protos = {path = "./protos"}
 
 [workspace]
-members = [
-  "core",
-  "server",
-  "integrations/gmail"
-]
 exclude = [
-    "3rd"
+  "3rd",
+]
+members = [
+  "app",
+  "server",
+  "protos",
+  "integrations/gmail",
 ]
 
 #[patch.crates-io]
