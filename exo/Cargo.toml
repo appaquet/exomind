@@ -22,7 +22,6 @@ exocore-discovery = {version = "0.1.4", path = "../discovery", features = ["serv
 exocore-protos = {version = "0.1.4", path = "../protos"}
 exocore-store = {version = "0.1.4", path = "../store"}
 exocore-transport = {version = "0.1.4", path = "../transport", features = ["http-server"]}
-exocore-apps-runtime = {version = "0.1.4", path = "../apps/runtime"}
 futures = "0.3"
 indicatif = "0.15"
 log = "0.4"
@@ -33,3 +32,6 @@ thiserror = "1.0"
 tokio = {version = "1.3", features = ["macros"], default-features = false}
 url = "2.2"
 zip = "0.5"
+
+[target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"darwin\", target_os = \"windows\")), all(target_arch = \"x86_64\", target_os = \"linux\") ))".dependencies]
+exocore-apps-runtime = {version = "0.1.4", path = "../apps/runtime"}

@@ -9,12 +9,15 @@ use wasmtime::*;
 
 use crate::error::Error;
 
+type FuncSendMessage = TypedFunc<(i32, i32), u32>;
+type FuncTick = TypedFunc<(), u64>;
+
 /// Runtime for an application WASM module.
 #[derive(Clone)]
 pub struct AppRuntime<E: HostEnvironment> {
     instance: Instance,
-    func_send_message: Func,
-    func_tick: Func,
+    func_send_message: FuncSendMessage,
+    func_tick: FuncTick,
     env: Arc<E>,
 }
 
@@ -44,9 +47,8 @@ impl<E: HostEnvironment> AppRuntime<E> {
 
     // Runs an iteration on the WASM module.
     pub fn tick(&self) -> Result<Option<Duration>, Error> {
-        let exocore_tick = self.func_tick.get0::<u64>()?;
         let now = unix_timestamp();
-        let next_tick_time = exocore_tick()?;
+        let next_tick_time = self.func_tick.call(())?;
 
         if next_tick_time > now {
             Ok(Some(Duration::from_nanos(next_tick_time - now)))
@@ -59,9 +61,8 @@ impl<E: HostEnvironment> AppRuntime<E> {
     pub fn send_message(&self, message: InMessage) -> Result<(), Error> {
         let message_bytes = message.encode_to_vec();
 
-        let func = self.func_send_message.get2::<i32, i32, u32>()?;
         let (message_ptr, message_size) = wasm_alloc(&self.instance, &message_bytes)?;
-        let res = func(message_ptr, message_size);
+        let res = self.func_send_message.call((message_ptr, message_size));
         wasm_free(&self.instance, message_ptr, message_size)?;
 
         match MessageStatus::from_i32(res? as i32) {
@@ -134,35 +135,32 @@ pub trait HostEnvironment: Send + Sync + 'static {
     fn handle_log(&self, level: log::Level, msg: &str);
 }
 
-fn bootstrap_module(instance: &Instance) -> Result<(Func, Func), Error> {
+fn bootstrap_module(instance: &Instance) -> Result<(FuncTick, FuncSendMessage), Error> {
     // Initialize environment
     let exocore_init = instance
-        .get_func("__exocore_init")
-        .ok_or(Error::MissingFunction("__exocore_init"))?;
-    let exocore_init = exocore_init.get0::<()>()?;
-    exocore_init()?;
+        .get_typed_func::<(), ()>("__exocore_init")
+        .map_err(|err| Error::MissingFunction(err, "__exocore_init"))?;
+    exocore_init.call(())?;
 
     // Create application instance
     let exocore_app_init = instance
-        .get_func("__exocore_app_init")
-        .ok_or(Error::MissingFunction("__exocore_app_init"))?;
-    let exocore_app_init = exocore_app_init.get0::<()>()?;
-    exocore_app_init()?;
+        .get_typed_func::<(), ()>("__exocore_app_init")
+        .map_err(|err| Error::MissingFunction(err, "__exocore_app_init"))?;
+    exocore_app_init.call(())?;
 
     // Boot the application
     let exocore_app_boot = instance
-        .get_func("__exocore_app_boot")
-        .ok_or(Error::MissingFunction("__exocore_app_boot"))?;
-    let exocore_app_boot = exocore_app_boot.get0::<()>()?;
-    exocore_app_boot()?;
+        .get_typed_func::<(), ()>("__exocore_app_boot")
+        .map_err(|err| Error::MissingFunction(err, "__exocore_app_boot"))?;
+    exocore_app_boot.call(())?;
 
     // Extract tick & message sending functions
     let exocore_tick = instance
-        .get_func("__exocore_tick")
-        .ok_or(Error::MissingFunction("__exocore_tick"))?;
+        .get_typed_func::<(), u64>("__exocore_tick")
+        .map_err(|err| Error::MissingFunction(err, "__exocore_tick"))?;
     let exocore_send_message = instance
-        .get_func("__exocore_in_message")
-        .ok_or(Error::MissingFunction("__exocore_in_message"))?;
+        .get_typed_func::<(i32, i32), u32>("__exocore_in_message")
+        .map_err(|err| Error::MissingFunction(err, "__exocore_in_message"))?;
 
     Ok((exocore_tick, exocore_send_message))
 }
@@ -232,17 +230,9 @@ fn wasm_alloc(instance: &Instance, bytes: &[u8]) -> Result<(i32, i32), Error> {
     };
 
     let alloc = instance
-        .get_func("__exocore_alloc")
-        .ok_or(Error::MissingFunction("__exocore_alloc"))?;
-    let alloc_result = alloc.call(&[Val::from(bytes.len() as i32)])?;
-
-    let ptr_val = alloc_result
-        .get(0)
-        .ok_or(Error::Runtime("__exocore_alloc didn't return pointer"))?;
-    let ptr = match ptr_val {
-        Val::I32(val) => *val,
-        _ => return Err(Error::Runtime("__exocore_alloc returned a non-i32 pointer")),
-    };
+        .get_typed_func::<i32, i32>("__exocore_alloc")
+        .map_err(|err| Error::MissingFunction(err, "__exocore_alloc"))?;
+    let ptr = alloc.call(bytes.len() as i32)?;
 
     unsafe {
         let raw = mem.data_ptr().offset(ptr as isize);
@@ -254,9 +244,9 @@ fn wasm_alloc(instance: &Instance, bytes: &[u8]) -> Result<(i32, i32), Error> {
 
 fn wasm_free(instance: &Instance, ptr: i32, size: i32) -> Result<(), Error> {
     let alloc = instance
-        .get_func("__exocore_free")
-        .ok_or(Error::MissingFunction("__exocore_free"))?;
-    alloc.call(&[Val::from(ptr), Val::from(size)])?;
+        .get_typed_func::<(i32, i32), ()>("__exocore_free")
+        .map_err(|err| Error::MissingFunction(err, "__exocore_free"))?;
+    alloc.call((ptr, size))?;
 
     Ok(())
 }

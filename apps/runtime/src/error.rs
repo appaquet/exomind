@@ -5,7 +5,7 @@ use wasmtime::Trap;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("The application is missing function '{0}'. Did you include SDK and implement #[exocore_app]?")]
-    MissingFunction(&'static str),
+    MissingFunction(#[source] anyhow::Error, &'static str),
 
     #[error("WASM runtime error '{0}'")]
     Runtime(&'static str),

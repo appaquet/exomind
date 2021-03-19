@@ -1,6 +1,5 @@
 use std::pin::Pin;
 
-use exocore_apps_runtime::{Applications, Config as ApplicationsConfig};
 use exocore_chain::{
     DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
     MemoryPendingStore,
@@ -133,20 +132,13 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
                 services_completion.push(store_task.boxed());
 
                 if cell.local_node_has_role(CellNodeRole::AppHost) {
-                    let apps_config = ApplicationsConfig::default();
-                    let apps =
-                        Applications::new(apps_config, clock.clone(), cell.clone(), store_handle)
-                            .await?;
-                    services_completion.push(
-                        async move {
-                            let res = apps.run().await;
-                            info!(
-                                "{}: Applications runtime completed with result {:?}",
-                                cell, res
-                            );
-                        }
-                        .boxed(),
-                    );
+                    create_app_host(
+                        clock.clone(),
+                        cell.clone(),
+                        store_handle.clone(),
+                        &mut services_completion,
+                    )
+                    .await?;
                 }
             } else {
                 info!(
@@ -181,6 +173,53 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
         _ = futures::future::join_all(services_completion).fuse() => {},
     }
     info!("One service is done. Shutting down.");
+
+    Ok(())
+}
+
+async fn create_app_host(
+    clock: Clock,
+    cell: Cell,
+    store_handle: impl exocore_store::store::Store,
+    services_completion: &mut Vec<Pin<Box<dyn Future<Output = ()>>>>,
+) -> anyhow::Result<()> {
+    // See https://github.com/bytecodealliance/wasmtime/blob/5c1d728e3ae8ee7aa329e294999a2c3086b21676/docs/stability-platform-support.md
+    #[cfg(any(
+        all(
+            target_arch = "x86_64",
+            any(target_os = "linux", target_os = "darwin", target_os = "windows")
+        ),
+        all(target_arch = "x86_64", target_os = "linux")
+    ))]
+    {
+        use exocore_apps_runtime::{Applications, Config as ApplicationsConfig};
+
+        let apps_config = ApplicationsConfig::default();
+        let apps =
+            Applications::new(apps_config, clock.clone(), cell.clone(), store_handle).await?;
+
+        services_completion.push(
+            async move {
+                let res = apps.run().await;
+                info!(
+                    "{}: Applications runtime completed with result {:?}",
+                    cell, res
+                );
+            }
+            .boxed(),
+        );
+    }
+
+    #[cfg(not(any(
+        all(
+            target_arch = "x86_64",
+            any(target_os = "linux", target_os = "darwin", target_os = "windows")
+        ),
+        all(target_arch = "x86_64", target_os = "linux")
+    )))]
+    {
+        return Err(anyhow!("Cannot host app on this target."));
+    }
 
     Ok(())
 }

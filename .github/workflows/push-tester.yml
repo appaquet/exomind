@@ -38,6 +38,35 @@ jobs:
           args: --all-features
 
 
+  # Make sure that `exo` compiles on some targets that we don't run tests on.
+  exo_build_check:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
+
+    runs-on: ${{ matrix.pair.os }}
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - uses: Swatinem/rust-cache@v1
+
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.pair.cross }}
+          command: check
+          args: -p exo --target ${{ matrix.pair.target }}
+
+
   rust_tests:
     strategy:
       fail-fast: true

@@ -366,7 +366,7 @@ impl SegmentFile {
 
     fn set_len(&mut self, new_size: u64) -> Result<(), Error> {
         // On Windows, we can't resize a file while it's currently being mapped. We
-        // close the mmap first by replacing it by an anonymous mmmap.
+        // close the mmap first by replacing it by an anonymous mmap.
         if cfg!(target_os = "windows") {
             self.mmap = memmap2::MmapOptions::new()
                 .len(1)
