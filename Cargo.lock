@@ -775,17 +775,26 @@ name = "exocore"
 version = "0.1.4"
 source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
 dependencies = [
- "exocore-apps-sdk",
  "exocore-core",
- "exocore-protos",
- "exocore-store",
+ "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
+ "exocore-store 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
  "exocore-transport",
+]
+
+[[package]]
+name = "exocore"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
+dependencies = [
+ "exocore-apps-sdk",
+ "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
+ "exocore-store 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
 ]
 
 [[package]]
 name = "exocore-apps-macros"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
 dependencies = [
  "anyhow",
  "futures 0.3.13",
@@ -798,11 +807,11 @@ dependencies = [
 [[package]]
 name = "exocore-apps-sdk"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
 dependencies = [
  "anyhow",
  "exocore-apps-macros",
- "exocore-protos",
+ "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
  "futures 0.3.13",
  "lazy_static",
  "log",
@@ -820,7 +829,7 @@ dependencies = [
  "byteorder",
  "bytes 1.0.1",
  "chrono",
- "exocore-protos",
+ "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
  "futures 0.3.13",
  "getrandom 0.2.2",
  "libp2p",
@@ -863,6 +872,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "exocore-protos"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
+dependencies = [
+ "anyhow",
+ "base64 0.13.0",
+ "capnp",
+ "capnpc",
+ "chrono",
+ "prost",
+ "prost-build",
+ "prost-types",
+ "protobuf",
+ "serde",
+ "serde_derive",
+ "thiserror",
+]
+
+[[package]]
 name = "exocore-store"
 version = "0.1.4"
 source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
@@ -872,8 +900,25 @@ dependencies = [
  "bytes 1.0.1",
  "chrono",
  "exocore-core",
- "exocore-protos",
+ "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
  "exocore-transport",
+ "futures 0.3.13",
+ "itertools 0.10.0",
+ "log",
+ "smallvec 1.6.1",
+ "thiserror",
+]
+
+[[package]]
+name = "exocore-store"
+version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bytes 1.0.1",
+ "chrono",
+ "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
  "futures 0.3.13",
  "itertools 0.10.0",
  "log",
@@ -889,7 +934,7 @@ dependencies = [
  "anyhow",
  "byteorder",
  "exocore-core",
- "exocore-protos",
+ "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
  "futures 0.3.13",
  "libp2p",
  "log",
@@ -910,7 +955,7 @@ name = "exomind-app"
 version = "0.1.1"
 dependencies = [
  "anyhow",
- "exocore",
+ "exocore 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
  "exomind-protos",
  "futures 0.3.13",
  "log",
@@ -923,7 +968,7 @@ dependencies = [
  "anyhow",
  "chardetng",
  "charset",
- "exocore",
+ "exocore 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
  "exomind-protos",
  "google-gmail1",
  "google_api_auth",
@@ -944,7 +989,7 @@ dependencies = [
 name = "exomind-protos"
 version = "0.1.1"
 dependencies = [
- "exocore",
+ "exocore 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
  "prost",
  "prost-build",
  "prost-types",
@@ -955,7 +1000,7 @@ name = "exomind-server"
 version = "0.1.1"
 dependencies = [
  "anyhow",
- "exocore",
+ "exocore 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
  "exomind-gmail",
  "exomind-protos",
  "futures 0.3.13",

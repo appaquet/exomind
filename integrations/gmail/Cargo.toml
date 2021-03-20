@@ -9,7 +9,7 @@ version = "0.1.1"
 anyhow = "1.0"
 chardetng = "0.1"
 charset = "0.1"
-exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre2", default-features = false, features = ["client", "logger"]}
+exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre3", default-features = false, features = ["client", "logger"]}
 exomind-protos = {version = "0.1.1", path = "../../protos"}
 google-gmail1 = {git = "https://github.com/appaquet/generated.git", branch = "gmail-labels-fix"}
 google_api_auth = {git = "https://github.com/google-apis-rs/generator", features = ["with-yup-oauth2"]}
@@ -26,4 +26,4 @@ tokio-compat-02 = "0.2"
 yup-oauth2 = "4.1.2"
 
 [dev-dependencies]
-exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre2", default-features = false, features = ["client", "logger", "tests-utils"]}
+exocore = {git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre3", default-features = false, features = ["client", "logger", "tests-utils"]}
