@@ -1,4 +1,3 @@
-
 // create a structure of modules so that generated files can reference exocore's generated code
 pub(crate) use exocore::protos as exocore_proto;
 pub(crate) mod generated {

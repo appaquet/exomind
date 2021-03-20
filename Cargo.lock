@@ -773,22 +773,13 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
-dependencies = [
- "exocore-core",
- "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
- "exocore-store 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
- "exocore-transport",
-]
-
-[[package]]
-name = "exocore"
-version = "0.1.4"
 source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
 dependencies = [
  "exocore-apps-sdk",
- "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
- "exocore-store 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
+ "exocore-core",
+ "exocore-protos",
+ "exocore-store",
+ "exocore-transport",
 ]
 
 [[package]]
@@ -811,7 +802,7 @@ source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c9
 dependencies = [
  "anyhow",
  "exocore-apps-macros",
- "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
+ "exocore-protos",
  "futures 0.3.13",
  "lazy_static",
  "log",
@@ -822,14 +813,14 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
 dependencies = [
  "anyhow",
  "bs58",
  "byteorder",
  "bytes 1.0.1",
  "chrono",
- "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
+ "exocore-protos",
  "futures 0.3.13",
  "getrandom 0.2.2",
  "libp2p",
@@ -844,7 +835,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "thiserror",
- "tokio 1.2.0",
+ "tokio 1.4.0",
  "url 2.2.1",
  "uuid 0.8.2",
  "wasm-bindgen",
@@ -855,25 +846,6 @@ dependencies = [
 [[package]]
 name = "exocore-protos"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
-dependencies = [
- "anyhow",
- "base64 0.13.0",
- "capnp",
- "capnpc",
- "chrono",
- "prost",
- "prost-build",
- "prost-types",
- "protobuf",
- "serde",
- "serde_derive",
- "thiserror",
-]
-
-[[package]]
-name = "exocore-protos"
-version = "0.1.4"
 source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
 dependencies = [
  "anyhow",
@@ -893,32 +865,15 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
 dependencies = [
  "anyhow",
  "async-trait",
  "bytes 1.0.1",
  "chrono",
  "exocore-core",
- "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
+ "exocore-protos",
  "exocore-transport",
- "futures 0.3.13",
- "itertools 0.10.0",
- "log",
- "smallvec 1.6.1",
- "thiserror",
-]
-
-[[package]]
-name = "exocore-store"
-version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
-dependencies = [
- "anyhow",
- "async-trait",
- "bytes 1.0.1",
- "chrono",
- "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
  "futures 0.3.13",
  "itertools 0.10.0",
  "log",
@@ -929,12 +884,12 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2#2c880931125c913d01fc4b9128d0893bb33f9eaf"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3#4312f4a3c95db7e5f42f46f96eb121aee4b321ed"
 dependencies = [
  "anyhow",
  "byteorder",
  "exocore-core",
- "exocore-protos 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
+ "exocore-protos",
  "futures 0.3.13",
  "libp2p",
  "log",
@@ -955,7 +910,7 @@ name = "exomind-app"
 version = "0.1.1"
 dependencies = [
  "anyhow",
- "exocore 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
+ "exocore",
  "exomind-protos",
  "futures 0.3.13",
  "log",
@@ -968,7 +923,7 @@ dependencies = [
  "anyhow",
  "chardetng",
  "charset",
- "exocore 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
+ "exocore",
  "exomind-protos",
  "google-gmail1",
  "google_api_auth",
@@ -980,7 +935,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "tokio 1.2.0",
+ "tokio 1.4.0",
  "tokio-compat-02",
  "yup-oauth2",
 ]
@@ -989,7 +944,7 @@ dependencies = [
 name = "exomind-protos"
 version = "0.1.1"
 dependencies = [
- "exocore 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre3)",
+ "exocore",
  "prost",
  "prost-build",
  "prost-types",
@@ -1000,7 +955,7 @@ name = "exomind-server"
 version = "0.1.1"
 dependencies = [
  "anyhow",
- "exocore 0.1.4 (git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre2)",
+ "exocore",
  "exomind-gmail",
  "exomind-protos",
  "futures 0.3.13",
@@ -1009,7 +964,7 @@ dependencies = [
  "serde_derive",
  "serde_yaml",
  "structopt",
- "tokio 1.2.0",
+ "tokio 1.4.0",
 ]
 
 [[package]]
@@ -1938,7 +1893,7 @@ dependencies = [
  "libp2p-core",
  "log",
  "socket2",
- "tokio 1.2.0",
+ "tokio 1.4.0",
 ]
 
 [[package]]
@@ -3586,9 +3541,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.2.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8190d04c665ea9e6b6a0dc45523ade572c088d2e6566244c1122671dbf4ae3a"
+checksum = "134af885d758d645f0f0505c9a8b3f9bf8a348fd822e112ab5248138348f1722"
 dependencies = [
  "autocfg 1.0.1",
  "bytes 1.0.1",
@@ -3621,7 +3576,7 @@ dependencies = [
  "once_cell",
  "pin-project-lite 0.2.4",
  "tokio 0.2.25",
- "tokio 1.2.0",
+ "tokio 1.4.0",
  "tokio-stream",
 ]
 
@@ -3731,7 +3686,7 @@ checksum = "1981ad97df782ab506a1f43bf82c967326960d278acf3bf8279809648c3ff3ea"
 dependencies = [
  "futures-core",
  "pin-project-lite 0.2.4",
- "tokio 1.2.0",
+ "tokio 1.4.0",
 ]
 
 [[package]]
