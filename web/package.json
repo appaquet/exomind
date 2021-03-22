@@ -65,7 +65,7 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-flatpickr": "^3.10.6",
-    "sanitize-html": "^2.3.1",
+    "sanitize-html": "^2.3.3",
     "source-map-support": "^0.5.19",
     "webpack": "^4.44.2"
   },
