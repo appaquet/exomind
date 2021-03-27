@@ -183,7 +183,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
                 self.start_leader_downloading(sync_context, store, &nodes)?;
             } else {
-                return Err(ChainSyncError::Diverged(format!(
+                return Err(ChainSyncError::Diverged(anyhow!(
                     "Our local chain is divergent with a majority of nodes (only {} non divergent out of {})",
                     nb_non_divergent,
                     nb_total,
@@ -267,7 +267,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             )?;
             sync_context.push_chain_sync_response(from_node.id().clone(), response);
         } else {
-            return Err(ChainSyncError::InvalidSyncRequest(format!(
+            return Err(ChainSyncError::InvalidSyncRequest(anyhow!(
                 "Unsupported requested details: {:?}",
                 requested_details.to_u16()
             ))
@@ -406,7 +406,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                     "Leader node has no common block with us. Our last block is at offset {}",
                     last_block.offset
                 );
-                return Err(ChainSyncError::Diverged(format!(
+                return Err(ChainSyncError::Diverged(anyhow!(
                     "Diverged from leader {}",
                     leader_node_id
                 ))
@@ -418,7 +418,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             let leader_node = nodes
                 .get(&leader_node_id)
                 .ok_or_else(|| {
-                    ChainSyncError::Other(format!(
+                    ChainSyncError::Other(anyhow!(
                         "Couldn't find leader node {} in nodes list",
                         node_id
                     ))
@@ -680,10 +680,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     ) -> Result<(), EngineError> {
         if !self.is_leader(from_node.id()) {
             warn!("Got data from a non-lead node {}", from_node.id());
-            return Err(EngineError::Other(format!(
-                "Got data from a non-lead node {}",
-                from_node.id()
-            )));
+            return Err(anyhow!("Got data from a non-lead node {}", from_node.id()).into());
         }
 
         let from_node_info = self.get_or_create_node_info_mut(&from_node.id());
@@ -711,7 +708,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 let new_block_partial_metadata = BlockMetadata::from_stored_block(block)?;
                 last_local_block = Some(new_block_partial_metadata);
             } else {
-                return Err(ChainSyncError::InvalidSyncResponse(format!(
+                return Err(ChainSyncError::InvalidSyncResponse(anyhow!(
                     "Got a block with data at an invalid offset. \
                      expected_offset={} block_offset={}",
                     next_local_offset,

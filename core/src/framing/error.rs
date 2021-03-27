@@ -1,9 +1,7 @@
-use std::sync::Arc;
-
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("IO error of kind: {0}")]
-    Io(#[from] Arc<std::io::Error>),
+    Io(#[from] std::io::Error),
 
     #[error("Destination buffer too small (needed={0} actual={1})")]
     DestinationTooSmall(usize, usize),
@@ -18,16 +16,5 @@ pub enum Error {
     Capnp(#[from] exocore_protos::capnp::Error),
 
     #[error("Multihash error: {0:?}")]
-    Multihash(#[from] Arc<multihash::Error>),
-}
-
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::Io(Arc::new(err))
-    }
-}
-impl From<multihash::Error> for Error {
-    fn from(err: multihash::Error) -> Self {
-        Error::Multihash(Arc::new(err))
-    }
+    Multihash(#[from] multihash::Error),
 }

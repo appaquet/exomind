@@ -209,9 +209,10 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 extract_sync_bounds(&sync_range_reader);
             let bounds_range = (bounds_from, bounds_to);
             if to_numeric != 0 && to_numeric < from_numeric {
-                return Err(PendingSyncError::InvalidSyncRequest(format!(
+                return Err(PendingSyncError::InvalidSyncRequest(anyhow!(
                     "Request from={} > to={}",
-                    from_numeric, to_numeric
+                    from_numeric,
+                    to_numeric
                 ))
                 .into());
             }
@@ -243,7 +244,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
                 self.local_store_range_info(store, bounds_range, operations_from_height)?;
             let remote_hash_bytes = sync_range_reader.get_operations_hash()?;
             let remote_hash = Multihash::from_bytes(remote_hash_bytes).map_err(|err| {
-                PendingSyncError::InvalidSyncRequest(format!("Invalid hash in header: {}", err))
+                PendingSyncError::InvalidSyncRequest(anyhow!("Invalid hash in header: {}", err))
             })?;
             let remote_count = sync_range_reader.get_operations_count();
             if remote_hash == local_hash && local_count == remote_count as usize {
@@ -414,7 +415,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         }
         if !diff_has_difference {
             return Err(PendingSyncError::InvalidSyncState(
-                "Got into diff branch, but didn't result in any changes, which shouldn't have happened".to_string(),
+                anyhow!("Got into diff branch, but didn't result in any changes, which shouldn't have happened"),
             )
             .into());
         }

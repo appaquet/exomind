@@ -6,6 +6,9 @@ extern crate log;
 #[macro_use]
 extern crate smallvec;
 
+#[macro_use]
+extern crate anyhow;
+
 pub mod entity;
 pub mod error;
 pub mod mutation;

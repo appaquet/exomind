@@ -1,9 +1,9 @@
 /// Pending Synchronization Error
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum PendingSyncError {
     #[error("Got into an invalid synchronization state: {0}")]
-    InvalidSyncState(String),
+    InvalidSyncState(#[source] anyhow::Error),
 
     #[error("Got an invalid sync request: {0}")]
-    InvalidSyncRequest(String),
+    InvalidSyncRequest(#[source] anyhow::Error),
 }

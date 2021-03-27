@@ -98,12 +98,8 @@ impl PendingBlocks {
                         }
 
                         let node_id_str = operation_reader.get_node_id()?;
-                        let node_id = NodeId::from_str(node_id_str).map_err(|_| {
-                            EngineError::Other(format!(
-                                "Couldn't convert to NodeID: {}",
-                                node_id_str
-                            ))
-                        })?;
+                        let node_id = NodeId::from_str(node_id_str)
+                            .map_err(|_| anyhow!("Couldn't convert to NodeID: {}", node_id_str))?;
                         let node = cell.nodes().get(&node_id).map(|cn| cn.node().clone());
 
                         proposal = Some(PendingBlockProposal {
@@ -357,10 +353,10 @@ impl PendingBlockProposal {
             chain_operation::operation::Which::BlockPropose(block_prop) => {
                 Ok(crate::block::read_header_frame(block_prop?.get_block()?)?)
             }
-            _ => Err(EngineError::Other(
+            _ => Err(anyhow!(
                 "Expected block sign pending op to create block signature, but got something else"
-                    .to_string(),
-            )),
+            )
+            .into()),
         }
     }
 
@@ -383,15 +379,14 @@ impl PendingBlockRefusal {
         match inner_operation.which()? {
             chain_operation::operation::Which::BlockRefuse(_sig) => {
                 let node_id_str = operation_reader.get_node_id()?;
-                let node_id = NodeId::from_str(node_id_str).map_err(|_| {
-                    EngineError::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
-                })?;
+                let node_id = NodeId::from_str(node_id_str)
+                    .map_err(|_| anyhow!("Couldn't convert to NodeID: {}", node_id_str))?;
                 Ok(PendingBlockRefusal { node_id })
             }
-            _ => Err(EngineError::Other(
+            _ => Err(anyhow!(
                 "Expected block refuse pending op to create block refusal, but got something else"
-                    .to_string(),
-            )),
+            )
+            .into()),
         }
     }
 }
@@ -413,17 +408,16 @@ impl PendingBlockSignature {
                 let signature_reader = op_signature_reader.get_signature()?;
 
                 let node_id_str = operation_reader.get_node_id()?;
-                let node_id = NodeId::from_str(node_id_str).map_err(|_| {
-                    EngineError::Other(format!("Couldn't convert to NodeID: {}", node_id_str))
-                })?;
+                let node_id = NodeId::from_str(node_id_str)
+                    .map_err(|_| anyhow!("Couldn't convert to NodeID: {}", node_id_str))?;
                 let signature = Signature::from_bytes(signature_reader.get_node_signature()?);
 
                 Ok(PendingBlockSignature { node_id, signature })
             }
-            _ => Err(EngineError::Other(
+            _ => Err(anyhow!(
                 "Expected block sign pending op to create block signature, but got something else"
-                    .to_string(),
-            )),
+            )
+            .into()),
         }
     }
 }

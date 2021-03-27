@@ -47,7 +47,7 @@ impl Node {
 
     pub fn new_from_config(config: NodeConfig) -> Result<Node, Error> {
         let public_key = PublicKey::decode_base58_string(&config.public_key)
-            .map_err(|err| Error::Cell(format!("Couldn't decode node public key: {}", err)))?;
+            .map_err(|err| Error::Cell(anyhow!("Couldn't decode node public key: {}", err)))?;
 
         let name = if !config.name.is_empty() {
             Some(config.name)
@@ -201,7 +201,7 @@ impl LocalNode {
 
     pub fn new_from_config(config: LocalNodeConfig) -> Result<Self, Error> {
         let keypair = Keypair::decode_base58_string(&config.keypair)
-            .map_err(|err| Error::Cell(format!("Couldn't decode local node keypair: {}", err)))?;
+            .map_err(|err| Error::Cell(anyhow!("Couldn't decode local node keypair: {}", err)))?;
 
         let local_node = LocalNode {
             node: Node::new_from_config(NodeConfig {
@@ -293,7 +293,7 @@ impl NodeId {
 
     pub fn from_bytes(id: Vec<u8>) -> Result<NodeId, Error> {
         let peer_id = PeerId::from_bytes(id.as_ref())
-            .map_err(|_| Error::Node("Couldn't convert bytes to peer id".to_string()))?;
+            .map_err(|_| Error::Node(anyhow!("Couldn't convert bytes to peer id")))?;
         Ok(NodeId(peer_id))
     }
 
@@ -322,14 +322,14 @@ fn parse_node_addresses(node: &Node, addresses: &NodeAddresses) -> Result<(), Er
     for maddr_str in &addresses.p2p {
         let maddr = maddr_str
             .parse()
-            .map_err(|err| Error::Cell(format!("Couldn't parse p2p multi-address: {}", err)))?;
+            .map_err(|err| Error::Cell(anyhow!("Couldn't parse p2p multi-address: {}", err)))?;
         node.add_p2p_address(maddr);
     }
 
     for url_str in &addresses.http {
         let url = url_str
             .parse()
-            .map_err(|err| Error::Cell(format!("Couldn't parse http url: {}", err)))?;
+            .map_err(|err| Error::Cell(anyhow!("Couldn't parse http url: {}", err)))?;
         node.add_http_address(url);
     }
 

@@ -1,15 +1,15 @@
 use crate::block::BlockOffset;
 
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Block related error: {0}")]
     Block(#[from] crate::block::Error),
 
     #[error("The store is in an unexpected state: {0}")]
-    UnexpectedState(String),
+    UnexpectedState(#[source] anyhow::Error),
 
     #[error("The store has an integrity problem: {0}")]
-    Integrity(String),
+    Integrity(#[source] anyhow::Error),
 
     #[error("Tried to write a block at offset {offset}, but next offset was {expected_offset}")]
     InvalidNextBlock {
@@ -21,10 +21,10 @@ pub enum Error {
     Serialization(#[from] exocore_protos::capnp::Error),
 
     #[error("An offset is out of the chain data: {0}")]
-    OutOfBound(String),
+    OutOfBound(#[source] anyhow::Error),
 
     #[error("IO error of kind {0}: {1}")]
-    Io(std::sync::Arc<std::io::Error>, String),
+    Io(std::io::Error, String),
 
     #[cfg(feature = "directory-chain")]
     #[error("Error in directory chain store: {0}")]
@@ -33,8 +33,8 @@ pub enum Error {
     #[error("Try to lock a mutex that was poisoned")]
     Poisoned,
 
-    #[error("An error occurred: {0}")]
-    Other(String),
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
 
 impl Error {
@@ -46,7 +46,7 @@ impl Error {
     }
 
     pub fn new_io<S: Into<String>>(io: std::io::Error, msg: S) -> Error {
-        Error::Io(std::sync::Arc::new(io), msg.into())
+        Error::Io(io, msg.into())
     }
 }
 

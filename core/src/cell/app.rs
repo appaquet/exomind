@@ -41,7 +41,7 @@ impl Application {
         let public_key = PublicKey::decode_base58_string(&manifest.public_key).map_err(|err| {
             Error::Application(
                 manifest.name.clone(),
-                format!("Error parsing application public_key: {}", err),
+                anyhow!("Error parsing application public_key: {}", err),
             )
         })?;
 
@@ -59,7 +59,7 @@ impl Application {
                     let schema = FileDescriptorSet::parse_from_bytes(bytes).map_err(|err| {
                         Error::Application(
                             manifest.name.clone(),
-                            format!(
+                            anyhow!(
                                 "Couldn't parse application schema file descriptor set: {}",
                                 err
                             ),
@@ -71,7 +71,7 @@ impl Application {
                 other => {
                     return Err(Error::Application(
                         manifest.name.clone(),
-                        format!("Unsupported application schema source: {:?}", other),
+                        anyhow!("Unsupported application schema source: {:?}", other),
                     ));
                 }
             }
@@ -155,7 +155,7 @@ fn read_file_descriptor_set_file<P: AsRef<Path>>(
     let mut file = File::open(path).map_err(|err| {
         Error::Application(
             app_name.to_string(),
-            format!(
+            anyhow!(
                 "Couldn't open application file descriptor set file: {}",
                 err
             ),
@@ -165,7 +165,7 @@ fn read_file_descriptor_set_file<P: AsRef<Path>>(
     let fdset = FileDescriptorSet::parse_from_reader(&mut file).map_err(|err| {
         Error::Application(
             app_name.to_string(),
-            format!(
+            anyhow!(
                 "Couldn't parse application schema file descriptor set: {}",
                 err
             ),

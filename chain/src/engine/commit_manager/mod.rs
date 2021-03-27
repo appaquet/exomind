@@ -483,14 +483,13 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // didn't match
         let header_multihash_bytes = block_header.get_operations_hash()?;
         let header_multihash = Multihash::from_bytes(header_multihash_bytes).map_err(|err| {
-            EngineError::Fatal(format!("Couldn't decode hash from block header: {}", err))
+            EngineError::Fatal(anyhow!("Couldn't decode hash from block header: {}", err))
         })?;
         let block_operations = BlockOperations::from_operations(block_operations)?;
         if block_operations.multihash() != header_multihash {
-            return Err(EngineError::Fatal(
+            return Err(EngineError::Fatal(anyhow!(
                 "Block hash for local entries didn't match block hash, but was previously signed"
-                    .to_string(),
-            ));
+            )));
         }
 
         validate_block_previous_hash(&block_header, chain_store)?;

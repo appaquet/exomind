@@ -246,7 +246,7 @@ impl CellNodeRole {
             cell_node_config::Role::StoreRole => Ok(CellNodeRole::Store),
             cell_node_config::Role::AppHostRole => Ok(CellNodeRole::AppHost),
             cell_node_config::Role::InvalidRole => {
-                Err(Error::Cell("Invalid cell node role".to_string()))
+                Err(Error::Cell(anyhow!("Invalid cell node role")))
             }
         }
     }

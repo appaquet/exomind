@@ -98,7 +98,7 @@ impl BlockMetadata {
         let to_offset = to_offset
             .or_else(|| last_chain_block.map(|b| b.next_offset()))
             .ok_or_else(|| {
-                ChainSyncError::InvalidSyncRequest(format!(
+                ChainSyncError::InvalidSyncRequest(anyhow!(
                     "Couldn't find last to offset block {:?}",
                     to_offset
                 ))
@@ -158,7 +158,7 @@ impl BlockMetadata {
             None => store.get_last_block(),
         }?
         .ok_or_else(|| {
-            ChainSyncError::Other("Expected a last block since ranges were not empty".to_string())
+            ChainSyncError::Other(anyhow!("Expected a last block since ranges were not empty"))
         })?;
 
         let last_block_reader: block_header::Reader = last_block.header.get_reader()?;
@@ -176,11 +176,12 @@ impl BlockMetadata {
         let first_block = match blocks_iter.peek() {
             Some(Ok(block)) => block,
             None => {
-                return Err(EngineError::Other(
-                    "Expected a first block since ranges were not empty".to_string(),
-                ));
+                return Err(anyhow!("Expected a first block since ranges were not empty").into());
             }
-            Some(Err(err)) => return Err(err.clone().into()),
+            Some(Err(_err)) => match blocks_iter.next() {
+                Some(Err(err)) => return Err(err.into()),
+                _ => unreachable!(),
+            },
         };
 
         let first_block_reader: block_header::Reader = first_block.header.get_reader()?;

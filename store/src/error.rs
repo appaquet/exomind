@@ -1,21 +1,21 @@
 use std::time::Duration;
 
-#[derive(Debug, thiserror::Error, Clone)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Query parsing error: {0}")]
-    QueryParsing(String),
+    QueryParsing(#[source] anyhow::Error),
 
     #[cfg(feature = "local")]
     #[error("Error in Tantivy: {0}")]
-    Tantivy(std::sync::Arc<tantivy::TantivyError>),
+    Tantivy(#[from] tantivy::TantivyError),
 
     #[cfg(feature = "local")]
     #[error("Error opening Tantivy directory: {0:?}")]
-    TantivyOpenDirectoryError(std::sync::Arc<tantivy::directory::error::OpenDirectoryError>),
+    TantivyOpenDirectoryError(#[from] tantivy::directory::error::OpenDirectoryError),
 
     #[cfg(feature = "local")]
     #[error("Error parsing Tantivy query: {0:?}")]
-    TantitvyQueryParsing(std::sync::Arc<tantivy::query::QueryParserError>),
+    TantitvyQueryParsing(#[from] tantivy::query::QueryParserError),
 
     #[cfg(feature = "local")]
     #[error("Chain engine error: {0}")]
@@ -35,7 +35,7 @@ pub enum Error {
     ProtoFieldExpected(&'static str),
 
     #[error("IO error of kind {0}")]
-    Io(#[from] std::sync::Arc<std::io::Error>),
+    Io(#[from] std::io::Error),
 
     #[error("Error from remote store: {0}")]
     Remote(String),
@@ -55,11 +55,11 @@ pub enum Error {
     #[error("Dropped or couldn't get locked")]
     Dropped,
 
-    #[error("Other error occurred: {0}")]
-    Other(String),
-
     #[error("A fatal error occurred: {0}")]
-    Fatal(String),
+    Fatal(#[source] anyhow::Error),
+
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
 
 impl Error {
@@ -79,27 +79,6 @@ impl Error {
     }
 }
 
-#[cfg(feature = "local")]
-impl From<tantivy::TantivyError> for Error {
-    fn from(err: tantivy::TantivyError) -> Self {
-        Error::Tantivy(std::sync::Arc::new(err))
-    }
-}
-
-#[cfg(feature = "local")]
-impl From<tantivy::query::QueryParserError> for Error {
-    fn from(err: tantivy::query::QueryParserError) -> Self {
-        Error::TantitvyQueryParsing(std::sync::Arc::new(err))
-    }
-}
-
-#[cfg(feature = "local")]
-impl From<tantivy::directory::error::OpenDirectoryError> for Error {
-    fn from(err: tantivy::directory::error::OpenDirectoryError) -> Self {
-        Error::TantivyOpenDirectoryError(std::sync::Arc::new(err))
-    }
-}
-
 impl From<exocore_protos::prost::DecodeError> for Error {
     fn from(err: exocore_protos::prost::DecodeError) -> Self {
         Error::Proto(err.into())
@@ -109,12 +88,6 @@ impl From<exocore_protos::prost::DecodeError> for Error {
 impl From<exocore_protos::prost::EncodeError> for Error {
     fn from(err: exocore_protos::prost::EncodeError) -> Self {
         Error::Proto(err.into())
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::Io(std::sync::Arc::new(err))
     }
 }
 

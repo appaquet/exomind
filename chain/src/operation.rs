@@ -207,7 +207,7 @@ impl crate::operation::Operation for NewOperation {
 }
 
 /// Operations related error
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("The operation is not any entry operation")]
     NotAnEntry,

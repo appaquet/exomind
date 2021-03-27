@@ -1,8 +1,6 @@
-use std::sync::Arc;
-
 use super::reflect::FieldId;
 
-#[derive(Debug, Clone, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Message type is not in registry: {0}")]
     NotInRegistry(String),
@@ -17,17 +15,11 @@ pub enum Error {
     NotSupported,
 
     #[error("Protobuf error: {0}")]
-    StepanProtobuf(#[from] Arc<protobuf::ProtobufError>),
+    StepanProtobuf(#[from] protobuf::ProtobufError),
 
     #[error("Protobuf encode error: {0}")]
     ProstEncodeError(#[from] prost::EncodeError),
 
     #[error("Protobuf decode error: {0}")]
     ProstDecodeError(#[from] prost::DecodeError),
-}
-
-impl From<protobuf::ProtobufError> for Error {
-    fn from(err: protobuf::ProtobufError) -> Self {
-        Error::StepanProtobuf(Arc::new(err))
-    }
 }

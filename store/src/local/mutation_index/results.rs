@@ -110,7 +110,7 @@ impl MutationType {
                 modification_date: None,
             })),
             Self::ENTITY_TOMBSTONE_ID => Ok(MutationType::EntityTombstone),
-            _ => Err(Error::Fatal(format!(
+            _ => Err(Error::Fatal(anyhow!(
                 "Invalid document type id {}",
                 document_type_id
             ))),

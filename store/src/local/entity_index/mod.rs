@@ -100,7 +100,7 @@ where
         let mut chain_index_dir = cell
             .cell()
             .store_directory()
-            .ok_or_else(|| Error::Other("Cell doesn't have an path configured".to_string()))?;
+            .ok_or_else(|| anyhow!("Cell doesn't have an path configured"))?;
         chain_index_dir.push("chain");
         if std::fs::metadata(&chain_index_dir).is_err() {
             std::fs::create_dir_all(&chain_index_dir)?;
@@ -215,7 +215,7 @@ where
                             // way to rollback to the diverged offset, and will require a re-index.
                             // this can be prevented by tweaking the
                             // `EntitiesIndexConfig`.`chain_index_min_depth` value
-                            return Err(Error::Fatal(format!(
+                            return Err(Error::Fatal(anyhow!(
                                 "Chain has diverged at an offset={}, which is before last indexed block at offset {}",
                                 diverged_block_offset, last_indexed_offset
                             )));
@@ -457,9 +457,9 @@ where
     /// Calls the garbage collector to run a pass on entities that got flagged
     /// to be collector.
     pub fn run_garbage_collector(&self) -> Result<Vec<EntityMutation>, Error> {
-        let last_chain_indexed_block = self.last_chain_indexed_block().map_err(|err| {
-            Error::Other(format!("Couldn't get last chain indexed block: {}", err))
-        })?;
+        let last_chain_indexed_block = self
+            .last_chain_indexed_block()
+            .map_err(|err| anyhow!("Couldn't get last chain indexed block: {}", err))?;
         let (_, last_chain_index_height) = if let Some(info) = last_chain_indexed_block {
             info
         } else {
@@ -621,9 +621,7 @@ where
         let (_last_chain_block_offset, last_chain_block_height) = self
             .chain_handle
             .get_chain_last_block_info()?
-            .ok_or_else(|| {
-                Error::Other("Tried to index chain, but it had no blocks in it".to_string())
-            })?;
+            .ok_or_else(|| anyhow!("Tried to index chain, but it had no blocks in it"))?;
 
         let chain_index_min_depth = self.config.chain_index_min_depth;
         let chain_index_depth_leeway = self.config.chain_index_depth_leeway;

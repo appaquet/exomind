@@ -1,17 +1,17 @@
 /// Chain synchronizer specific error
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum ChainSyncError {
     #[error("Got an invalid sync request: {0}")]
-    InvalidSyncRequest(String),
+    InvalidSyncRequest(#[source] anyhow::Error),
 
     #[error("Got an invalid sync response: {0}")]
-    InvalidSyncResponse(String),
+    InvalidSyncResponse(#[source] anyhow::Error),
 
     #[error("Our local chain has diverged from leader node: {0}")]
-    Diverged(String),
+    Diverged(#[source] anyhow::Error),
 
-    #[error("Got an error: {0}")]
-    Other(String),
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
 
 impl ChainSyncError {

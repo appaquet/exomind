@@ -52,14 +52,14 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 
     fn from_yaml_reader<R: Read>(reader: R) -> Result<LocalNodeConfig, Error> {
         let config = serde_yaml::from_reader(reader)
-            .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
+            .map_err(|err| Error::Config(anyhow!("Couldn't decode YAML node config: {}", err)))?;
 
         Ok(config)
     }
 
     fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<LocalNodeConfig, Error> {
         let file = File::open(path.as_ref()).map_err(|err| {
-            Error::Config(format!(
+            Error::Config(anyhow!(
                 "Couldn't open YAML node file at path '{:?}': {}",
                 path.as_ref(),
                 err
@@ -79,24 +79,24 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 
     fn from_json_reader<R: Read>(bytes: R) -> Result<LocalNodeConfig, Error> {
         let config = serde_json::from_reader(bytes)
-            .map_err(|err| Error::Config(format!("Couldn't decode JSON node config: {}", err)))?;
+            .map_err(|err| Error::Config(anyhow!("Couldn't decode JSON node config: {}", err)))?;
 
         Ok(config)
     }
 
     fn to_yaml(&self) -> Result<String, Error> {
         serde_yaml::to_string(self.config())
-            .map_err(|err| Error::Config(format!("Couldn't encode node config to YAML: {}", err)))
+            .map_err(|err| Error::Config(anyhow!("Couldn't encode node config to YAML: {}", err)))
     }
 
     fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error> {
         serde_yaml::to_writer(write, self.config())
-            .map_err(|err| Error::Config(format!("Couldn't encode node config to YAML: {}", err)))
+            .map_err(|err| Error::Config(anyhow!("Couldn't encode node config to YAML: {}", err)))
     }
 
     fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
         let file = File::create(path.as_ref()).map_err(|err| {
-            Error::Config(format!(
+            Error::Config(anyhow!(
                 "Couldn't create YAML node file at path '{:?}': {}",
                 path.as_ref(),
                 err
@@ -117,7 +117,7 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 
     fn to_json(&self) -> Result<String, Error> {
         serde_json::to_string_pretty(self.config())
-            .map_err(|err| Error::Config(format!("Couldn't encode node config to JSON: {}", err)))
+            .map_err(|err| Error::Config(anyhow!("Couldn't encode node config to JSON: {}", err)))
     }
 
     fn inlined(&self) -> Result<LocalNodeConfig, Error> {
@@ -217,7 +217,7 @@ impl CellNodeConfigExt for CellNodeConfig {
 
     fn from_yaml<R: Read>(bytes: R) -> Result<CellNodeConfig, Error> {
         let config = serde_yaml::from_reader(bytes).map_err(|err| {
-            Error::Config(format!("Couldn't decode YAML cell node config: {}", err))
+            Error::Config(anyhow!("Couldn't decode YAML cell node config: {}", err))
         })?;
 
         Ok(config)
@@ -257,14 +257,14 @@ impl CellConfigExt for CellConfig {
 
     fn from_yaml<R: Read>(bytes: R) -> Result<CellConfig, Error> {
         let config: CellConfig = serde_yaml::from_reader(bytes)
-            .map_err(|err| Error::Config(format!("Couldn't decode YAML cell config: {}", err)))?;
+            .map_err(|err| Error::Config(anyhow!("Couldn't decode YAML cell config: {}", err)))?;
 
         Ok(config)
     }
 
     fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<CellConfig, Error> {
         let file = File::open(path.as_ref()).map_err(|err| {
-            Error::Config(format!(
+            Error::Config(anyhow!(
                 "Couldn't open YAML cell config at path '{:?}': {}",
                 path.as_ref(),
                 err
@@ -301,7 +301,7 @@ impl CellConfigExt for CellConfig {
                 other => {
                     return Err(Error::Application(
                         "unnamed".to_string(),
-                        format!("Unsupported application location: {:?}", other),
+                        anyhow!("Unsupported application location: {:?}", other),
                     ));
                 }
             };
@@ -317,17 +317,17 @@ impl CellConfigExt for CellConfig {
 
     fn to_yaml(&self) -> Result<String, Error> {
         serde_yaml::to_string(self.config())
-            .map_err(|err| Error::Config(format!("Couldn't encode cell config to YAML: {}", err)))
+            .map_err(|err| Error::Config(anyhow!("Couldn't encode cell config to YAML: {}", err)))
     }
 
     fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error> {
         serde_yaml::to_writer(write, self.config())
-            .map_err(|err| Error::Config(format!("Couldn't encode cell config to YAML: {}", err)))
+            .map_err(|err| Error::Config(anyhow!("Couldn't encode cell config to YAML: {}", err)))
     }
 
     fn to_yaml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
         let file = File::create(path.as_ref()).map_err(|err| {
-            Error::Config(format!(
+            Error::Config(anyhow!(
                 "Couldn't open YAML node file at path '{:?}': {}",
                 path.as_ref(),
                 err
@@ -355,7 +355,7 @@ impl CellConfigExt for CellConfig {
 
                 Self::from_yaml_file(config_path)
             }
-            other => Err(Error::Config(format!(
+            other => Err(Error::Config(anyhow!(
                 "Invalid cell instance config: {:?}",
                 other
             ))),
@@ -449,14 +449,14 @@ pub trait NodeConfigExt {
 impl NodeConfigExt for NodeConfig {
     fn from_yaml<R: Read>(bytes: R) -> Result<NodeConfig, Error> {
         let config: NodeConfig = serde_yaml::from_reader(bytes)
-            .map_err(|err| Error::Config(format!("Couldn't decode YAML node config: {}", err)))?;
+            .map_err(|err| Error::Config(anyhow!("Couldn't decode YAML node config: {}", err)))?;
 
         Ok(config)
     }
 
     fn to_yaml(&self) -> Result<String, Error> {
         serde_yaml::to_string(self).map_err(|err| {
-            Error::Config(format!("Couldn't encode cell node config to YAML: {}", err))
+            Error::Config(anyhow!("Couldn't encode cell node config to YAML: {}", err))
         })
     }
 }
@@ -494,9 +494,10 @@ impl ManifestExt for Manifest {
                     let mut file = File::open(&schema_path).map_err(|err| {
                         Error::Application(
                             app_name.clone(),
-                            format!(
+                            anyhow!(
                                 "Couldn't open application schema at path '{:?}': {}",
-                                schema_path, err
+                                schema_path,
+                                err
                             ),
                         )
                     })?;
@@ -505,9 +506,10 @@ impl ManifestExt for Manifest {
                     file.read_to_end(&mut content).map_err(|err| {
                         Error::Application(
                             app_name.clone(),
-                            format!(
+                            anyhow!(
                                 "Couldn't read application schema at path '{:?}': {}",
-                                schema_path, err
+                                schema_path,
+                                err
                             ),
                         )
                     })?;
@@ -517,7 +519,7 @@ impl ManifestExt for Manifest {
                 other => {
                     return Err(Error::Application(
                         app_name,
-                        format!("Unsupported application schema type: {:?}", other),
+                        anyhow!("Unsupported application schema type: {:?}", other),
                     ));
                 }
             };
@@ -530,7 +532,7 @@ impl ManifestExt for Manifest {
 
     fn from_yaml<R: Read>(bytes: R) -> Result<Manifest, Error> {
         let config: Manifest = serde_yaml::from_reader(bytes)
-            .map_err(|err| Error::Config(format!("Couldn't decode YAML manifest: {}", err)))?;
+            .map_err(|err| Error::Config(anyhow!("Couldn't decode YAML manifest: {}", err)))?;
 
         Ok(config)
     }
@@ -541,9 +543,10 @@ impl ManifestExt for Manifest {
         let file = File::open(path).map_err(|err| {
             Error::Application(
                 "unnamed".to_string(),
-                format!(
+                anyhow!(
                     "Couldn't open application manifest at path '{:?}': {}",
-                    path, err
+                    path,
+                    err
                 ),
             )
         })?;
@@ -551,9 +554,10 @@ impl ManifestExt for Manifest {
         let mut manifest = Self::from_yaml(file).map_err(|err| {
             Error::Application(
                 "unnamed".to_string(),
-                format!(
+                anyhow!(
                     "Couldn't decode YAML manifest at path '{:?}': {}",
-                    path, err
+                    path,
+                    err
                 ),
             )
         })?;
@@ -566,7 +570,7 @@ impl ManifestExt for Manifest {
 
     fn to_yaml_writer<W: Write>(&self, write: W) -> Result<(), Error> {
         serde_yaml::to_writer(write, self.manifest()).map_err(|err| {
-            Error::Config(format!(
+            Error::Config(anyhow!(
                 "Couldn't encode application manifest to YAML: {}",
                 err
             ))

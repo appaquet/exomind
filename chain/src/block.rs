@@ -822,7 +822,7 @@ impl BlockSignature {
 }
 
 /// Block related errors
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Block integrity error: {0}")]
     Integrity(String),

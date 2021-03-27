@@ -86,9 +86,7 @@ impl NodeSyncInfo {
             };
 
             let last_local_block = local_store.get_last_block()?.ok_or_else(|| {
-                EngineError::Other(String::from(
-                    "Expected a common block to be in stored since it had previously been",
-                ))
+                anyhow!("Expected a common block to be in stored since it had previously been")
             })?;
             let last_local_height = last_local_block.get_height()?;
 

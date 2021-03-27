@@ -69,7 +69,7 @@ impl DirectoryChainStore {
         directory_path: &Path,
     ) -> Result<DirectoryChainStore, Error> {
         if !directory_path.exists() {
-            return Err(Error::UnexpectedState(format!(
+            return Err(Error::UnexpectedState(anyhow!(
                 "Tried to create directory at {:?}, but it didn't exist",
                 directory_path
             )));
@@ -86,7 +86,7 @@ impl DirectoryChainStore {
         })?;
 
         if paths.count() > 0 {
-            return Err(Error::UnexpectedState(format!(
+            return Err(Error::UnexpectedState(anyhow!(
                 "Tried to create directory at {:?}, but it's not empty",
                 directory_path
             )));
@@ -121,7 +121,7 @@ impl DirectoryChainStore {
         directory_path: &Path,
     ) -> Result<DirectoryChainStore, Error> {
         if !directory_path.exists() {
-            return Err(Error::UnexpectedState(format!(
+            return Err(Error::UnexpectedState(anyhow!(
                 "Tried to open directory at {:?}, but it didn't exist",
                 directory_path
             )));
@@ -338,7 +338,7 @@ impl ChainStore for DirectoryChainStore {
 
     fn get_block(&self, offset: BlockOffset) -> Result<DataBlock<ChainData>, Error> {
         let segment = self.get_segment_for_block_offset(offset).ok_or_else(|| {
-            Error::OutOfBound(format!("No segment has block with offset {}", offset))
+            Error::OutOfBound(anyhow!("No segment has block with offset {}", offset))
         })?;
 
         segment.get_block(offset)
@@ -351,7 +351,7 @@ impl ChainStore for DirectoryChainStore {
         let segment = self
             .get_segment_for_next_block_offset(next_offset)
             .ok_or_else(|| {
-                Error::OutOfBound(format!(
+                Error::OutOfBound(anyhow!(
                     "No segment has block with next offset {}",
                     next_offset
                 ))
@@ -392,7 +392,7 @@ impl ChainStore for DirectoryChainStore {
     fn truncate_from_offset(&mut self, offset: BlockOffset) -> Result<(), Error> {
         let segment_index = self
             .get_segment_index_for_block_offset(offset)
-            .ok_or_else(|| Error::OutOfBound(format!("No segment has offset {}", offset)))?;
+            .ok_or_else(|| Error::OutOfBound(anyhow!("No segment has offset {}", offset)))?;
 
         let truncate_to = {
             let segment = &mut self.segments[segment_index];
@@ -560,7 +560,7 @@ impl<'s> Iterator for DirectoryBlockReverseIterator<'s> {
 }
 
 /// Directory chain store specific errors
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum DirectoryError {
     #[error("Error building operation index: {0:?}")]
     OperationIndexBuild(Arc<extindex::BuilderError>),

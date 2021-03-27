@@ -1,9 +1,9 @@
 /// Transport related error
-#[derive(Debug, thiserror::Error, Clone)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[cfg(feature = "p2p-base")]
     #[error("libp2p transport error: {0:?}")]
-    Libp2pTransport(#[from] std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>),
+    Libp2pTransport(#[source] std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>),
 
     #[error("Error in capnp serialization: {0}")]
     Serialization(#[from] exocore_protos::capnp::Error),
@@ -12,7 +12,7 @@ pub enum Error {
     SerializationNotInSchema(u16),
 
     #[error("IO error: {0}")]
-    Io(#[from] std::sync::Arc<std::io::Error>),
+    Io(#[from] std::io::Error),
 
     #[error("Could not upgrade a weak reference")]
     Upgrade,
@@ -43,11 +43,5 @@ impl From<exocore_protos::capnp::NotInSchema> for Error {
 impl<T> From<std::sync::PoisonError<T>> for Error {
     fn from(_err: std::sync::PoisonError<T>) -> Self {
         Error::Poisoned
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::Io(std::sync::Arc::new(err))
     }
 }

@@ -45,7 +45,7 @@ impl DirectorySegment {
 
         let segment_path = Self::segment_path(directory, first_block_offset);
         if segment_path.exists() {
-            return Err(Error::UnexpectedState(format!(
+            return Err(Error::UnexpectedState(anyhow!(
                 "Tried to create a new segment at path {:?}, but already existed",
                 segment_path
             )));
@@ -82,9 +82,10 @@ impl DirectorySegment {
         let segment = Self::open(config, &segment_path, tracker)?;
 
         if segment.first_block_offset != first_offset {
-            return Err(Error::Integrity(format!(
+            return Err(Error::Integrity(anyhow!(
                 "First block offset != segment first_offset ({} != {})",
-                segment.first_block_offset, first_offset
+                segment.first_block_offset,
+                first_offset
             )));
         }
 
@@ -168,16 +169,18 @@ impl DirectorySegment {
     pub fn get_block(&self, offset: BlockOffset) -> Result<DataBlock<ChainData>, Error> {
         let first_block_offset = self.first_block_offset;
         if offset < first_block_offset {
-            return Err(Error::OutOfBound(format!(
+            return Err(Error::OutOfBound(anyhow!(
                 "Tried to read block at {}, but first offset was at {}",
-                offset, first_block_offset
+                offset,
+                first_block_offset
             )));
         }
 
         if offset >= self.next_block_offset {
-            return Err(Error::OutOfBound(format!(
+            return Err(Error::OutOfBound(anyhow!(
                 "Tried to read block at {}, but next offset was at {}",
-                offset, self.next_block_offset
+                offset,
+                self.next_block_offset
             )));
         }
 
@@ -191,16 +194,18 @@ impl DirectorySegment {
     ) -> Result<DataBlock<ChainData>, Error> {
         let first_block_offset = self.first_block_offset;
         if next_offset < first_block_offset {
-            return Err(Error::OutOfBound(format!(
+            return Err(Error::OutOfBound(anyhow!(
                 "Tried to read block from next offset {}, but first offset was at {}",
-                next_offset, first_block_offset
+                next_offset,
+                first_block_offset
             )));
         }
 
         if next_offset > self.next_block_offset {
-            return Err(Error::OutOfBound(format!(
+            return Err(Error::OutOfBound(anyhow!(
                 "Tried to read block from next offset {}, but next offset was at {}",
-                next_offset, self.next_block_offset
+                next_offset,
+                self.next_block_offset
             )));
         }
 
@@ -210,9 +215,10 @@ impl DirectorySegment {
 
     pub fn truncate_from_block_offset(&mut self, block_offset: BlockOffset) -> Result<(), Error> {
         if block_offset < self.first_block_offset {
-            return Err(Error::OutOfBound(format!(
+            return Err(Error::OutOfBound(anyhow!(
                 "Offset {} is before first block offset of segment {}",
-                block_offset, self.first_block_offset
+                block_offset,
+                self.first_block_offset
             )));
         }
         self.next_block_offset = block_offset;
@@ -317,9 +323,9 @@ impl SegmentMetadata {
         // iterate through segments and find the last block and its offset
         let blocks_iterator = SegmentBlockIterator::new(segment);
         let last_block = blocks_iterator.last().ok_or_else(|| {
-            Error::Integrity(
-                "Couldn't find last block of segment: no blocks returned by iterator".to_string(),
-            )
+            Error::Integrity(anyhow!(
+                "Couldn't find last block of segment: no blocks returned by iterator"
+            ))
         })?;
 
         let next_block_offset = last_block.offset + last_block.total_size() as BlockOffset;
@@ -445,9 +451,7 @@ impl SegmentFile {
 
                     // then, if it's still open, we're still reading and should bail out
                     if mmap.upgrade().is_some() {
-                        return Err(Error::UnexpectedState(
-                            "Segment is in read-only".to_string(),
-                        ));
+                        return Err(Error::UnexpectedState(anyhow!("Segment is in read-only")));
                     }
                 }
                 SegmentMmap::Closed => {}
@@ -494,9 +498,7 @@ impl SegmentFile {
                 let data = ChainData::Mmap(data);
                 Ok(DataBlock::new(data.view(offset..))?)
             }
-            _ => Err(Error::UnexpectedState(
-                "Expected map to be open".to_string(),
-            )),
+            _ => Err(Error::UnexpectedState(anyhow!("Expected map to be open"))),
         }
     }
 
@@ -518,9 +520,7 @@ impl SegmentFile {
                 let data = ChainData::Mmap(data);
                 Ok(DataBlock::new_from_next_offset(data, next_offset)?)
             }
-            _ => Err(Error::UnexpectedState(
-                "Expected map to be open".to_string(),
-            )),
+            _ => Err(Error::UnexpectedState(anyhow!("Expected map to be open"))),
         }
     }
 
@@ -531,9 +531,9 @@ impl SegmentFile {
         let mmap = if let SegmentMmap::Write(mmap) = &mut *mmap {
             mmap
         } else {
-            return Err(Error::UnexpectedState(
-                "Expected map to be writable".to_string(),
-            ));
+            return Err(Error::UnexpectedState(anyhow!(
+                "Expected map to be writable"
+            )));
         };
 
         block.copy_data_into(&mut mmap[offset..]);

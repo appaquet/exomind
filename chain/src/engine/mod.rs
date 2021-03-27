@@ -222,10 +222,12 @@ where
                     inner.handle_incoming_chain_sync_response(&message, sync_response)?;
                 }
                 msg_type => {
-                    return Err(EngineError::Other(format!(
+                    return Err(anyhow!(
                         "Got an unknown message type: message_type={} service_type={:?}",
-                        msg_type, message.service_type,
-                    )));
+                        msg_type,
+                        message.service_type,
+                    )
+                    .into());
                 }
             }
 
@@ -235,7 +237,7 @@ where
 
         match join_result {
             Ok(res) => res,
-            Err(err) => Err(EngineError::Fatal(format!(
+            Err(err) => Err(EngineError::Fatal(anyhow!(
                 "Error joining blocking spawn: {}",
                 err
             ))),
@@ -256,7 +258,7 @@ where
 
         match join_result {
             Ok(res) => res,
-            Err(err) => Err(EngineError::Fatal(format!(
+            Err(err) => Err(EngineError::Fatal(anyhow!(
                 "Error joining blocking spawn: {}",
                 err
             ))),

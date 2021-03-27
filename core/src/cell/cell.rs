@@ -42,7 +42,7 @@ impl Cell {
     pub fn from_config(config: CellConfig, local_node: LocalNode) -> Result<EitherCell, Error> {
         let either_cell = if !config.keypair.is_empty() {
             let keypair = Keypair::decode_base58_string(&config.keypair)
-                .map_err(|err| Error::Cell(format!("Couldn't parse cell keypair: {}", err)))?;
+                .map_err(|err| Error::Cell(anyhow!("Couldn't parse cell keypair: {}", err)))?;
 
             let name = Some(config.name.clone()).filter(String::is_empty);
 
@@ -56,7 +56,7 @@ impl Cell {
             EitherCell::Full(Box::new(full_cell))
         } else {
             let public_key = PublicKey::decode_base58_string(&config.public_key)
-                .map_err(|err| Error::Cell(format!("Couldn't parse cell public key: {}", err)))?;
+                .map_err(|err| Error::Cell(anyhow!("Couldn't parse cell public key: {}", err)))?;
 
             let name = Some(config.name.clone()).filter(String::is_empty);
 
@@ -75,7 +75,7 @@ impl Cell {
             let mut nodes = either_cell.nodes_mut();
             for node_config in &config.nodes {
                 let node = Node::new_from_config(node_config.node.clone().ok_or_else(|| {
-                    Error::Config("Cell node config node is not defined".to_string())
+                    Error::Config(anyhow!("Cell node config node is not defined"))
                 })?)?;
 
                 let mut cell_node = CellNode::new(node);

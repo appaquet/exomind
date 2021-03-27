@@ -273,7 +273,7 @@ impl MutationIndex {
             Predicate::Reference(inner) => self.search_reference(inner, paging, ordering),
             Predicate::Operations(inner) => self.search_operations(inner, paging, ordering),
             Predicate::All(inner) => self.search_all(inner, paging, ordering),
-            Predicate::Test(_inner) => Err(Error::Other("Query failed for tests".to_string())),
+            Predicate::Test(_inner) => Err(anyhow!("Query failed for tests").into()),
         }?;
 
         Ok(results)
@@ -714,7 +714,7 @@ impl MutationIndex {
             (ft, pv) => {
                 Err(
                     Error::QueryParsing(
-                        format!(
+                        anyhow!(
                             "Incompatible field type vs field value in predicate: trait_name={} field={}, field_type={:?}, value={:?}",
                             trait_name,
                             predicate.field,
@@ -814,18 +814,17 @@ impl MutationIndex {
             }
             ordering::Value::Field(field_name) => {
                 let trait_name = trait_name.ok_or_else(|| {
-                    Error::QueryParsing(String::from(
-                        "Ordering by field only supported in trait query",
-                    ))
+                    Error::QueryParsing(anyhow!("Ordering by field only supported in trait query",))
                 })?;
 
                 let sort_field = self
                     .fields
                     .get_dynamic_trait_field(trait_name, &field_name)?;
                 if !sort_field.is_fast_field {
-                    return Err(Error::QueryParsing(format!(
+                    return Err(Error::QueryParsing(anyhow!(
                         "Cannot sort by field '{}' as it's not sortable in  trait '{}'",
-                        field_name, trait_name,
+                        field_name,
+                        trait_name,
                     )));
                 }
 

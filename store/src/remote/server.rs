@@ -413,9 +413,9 @@ where
         self.transport_out_sender
             .unbounded_send(OutEvent::Message(message))
             .map_err(|_err| {
-                Error::Fatal(
-                    "Tried to send message, but transport_out channel is closed".to_string(),
-                )
+                Error::Fatal(anyhow!(
+                    "Tried to send message, but transport_out channel is closed"
+                ))
             })?;
 
         Ok(())
@@ -454,10 +454,7 @@ impl IncomingMessage {
                 let watch_token = reader.get_token();
                 Ok(IncomingMessage::UnwatchQuery(watch_token))
             }
-            other => Err(Error::Other(format!(
-                "Received message of unknown type: {}",
-                other
-            ))),
+            other => Err(anyhow!("Received message of unknown type: {}", other).into()),
         }
     }
 }

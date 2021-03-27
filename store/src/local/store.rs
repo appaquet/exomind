@@ -339,7 +339,7 @@ where
         })
         .await;
 
-        result.map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
+        result.map_err(|err| anyhow!("Couldn't launch blocking query: {}", err))?
     }
 
     async fn handle_chain_engine_events(
@@ -362,8 +362,7 @@ where
         })
         .await;
 
-        indexed_operations
-            .map_err(|err| Error::Other(format!("Couldn't launch blocking query: {}", err)))?
+        indexed_operations.map_err(|err| anyhow!("Couldn't launch blocking query: {}", err))?
     }
 }
 

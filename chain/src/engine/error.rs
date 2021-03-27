@@ -1,5 +1,5 @@
 /// Engine errors
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum EngineError {
     #[error("Error in transport: {0:?}")]
     Transport(#[from] exocore_transport::Error),
@@ -47,10 +47,10 @@ pub enum EngineError {
     Poisoned,
 
     #[error("A fatal error occurred: {0}")]
-    Fatal(String),
+    Fatal(#[source] anyhow::Error),
 
-    #[error("An error occurred: {0}")]
-    Other(String),
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
 
 impl EngineError {

@@ -271,10 +271,12 @@ impl Inner {
         let request_id = if let Some(rendez_vous_id) = in_message.rendez_vous_id {
             rendez_vous_id
         } else {
-            return Err(Error::Other(format!(
+            return Err(anyhow!(
                 "Got an InMessage without a rendez_vous_id (type={:?} from={:?})",
-                in_message.message_type, in_message.from
-            )));
+                in_message.message_type,
+                in_message.from
+            )
+            .into());
         };
 
         match IncomingMessage::parse_incoming_message(&in_message) {
@@ -282,10 +284,10 @@ impl Inner {
                 if let Some(pending_request) = inner.pending_mutations.remove(&request_id) {
                     let _ = pending_request.result_sender.send(Ok(mutation));
                 } else {
-                    return Err(Error::Other(format!(
+                    return Err(anyhow!(
                         "Couldn't find pending mutation for mutation response (request_id={:?} type={:?} from={:?})",
                         request_id, in_message.message_type, in_message.from
-                    )));
+                    ).into());
                 }
             }
             Ok(IncomingMessage::QueryResponse(result)) => {
@@ -294,10 +296,10 @@ impl Inner {
                 } else if let Some(watched_query) = inner.watched_queries.get_mut(&request_id) {
                     let _ = watched_query.result_sender.try_send(Ok(result));
                 } else {
-                    return Err(Error::Other(format!(
+                    return Err(anyhow!(
                         "Couldn't find pending query for query response (request_id={:?} type={:?} from={:?})",
                         request_id, in_message.message_type, in_message.from
-                    )));
+                    ).into());
                 }
             }
             Err(err) => {
@@ -480,15 +482,15 @@ impl Inner {
 
     fn send_message(&self, message: OutMessage) -> Result<(), Error> {
         let transport = self.transport_out.as_ref().ok_or_else(|| {
-            Error::Fatal("Tried to send message, but transport_out was none".to_string())
+            Error::Fatal(anyhow!("Tried to send message, but transport_out was none"))
         })?;
 
         transport
             .unbounded_send(OutEvent::Message(message))
             .map_err(|_err| {
-                Error::Fatal(
-                    "Tried to send message, but transport_out channel is closed".to_string(),
-                )
+                Error::Fatal(anyhow!(
+                    "Tried to send message, but transport_out channel is closed"
+                ))
             })?;
 
         Ok(())
@@ -515,10 +517,7 @@ impl IncomingMessage {
                 let query_result = query_results_from_response_frame(query_frame)?;
                 Ok(IncomingMessage::QueryResponse(query_result))
             }
-            other => Err(Error::Other(format!(
-                "Received message of unknown type: {}",
-                other
-            ))),
+            other => Err(anyhow!("Received message of unknown type: {}", other).into()),
         }
     }
 }

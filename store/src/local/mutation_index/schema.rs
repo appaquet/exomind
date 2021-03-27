@@ -38,16 +38,17 @@ impl Fields {
         field_name: &str,
     ) -> Result<&MappedDynamicField, Error> {
         let fields_mapping = self.dynamic_mappings.get(trait_name).ok_or_else(|| {
-            Error::QueryParsing(format!(
+            Error::QueryParsing(anyhow!(
                 "Trait '{}' doesn\'t have any dynamic fields",
                 trait_name
             ))
         })?;
 
         let field = fields_mapping.get(field_name).ok_or_else(|| {
-            Error::QueryParsing(format!(
+            Error::QueryParsing(anyhow!(
                 "Trait '{}' doesn\'t have any dynamic field with name '{}'",
-                trait_name, field_name
+                trait_name,
+                field_name
             ))
         })?;
 

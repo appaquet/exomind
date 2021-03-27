@@ -110,7 +110,7 @@ impl OperationIndex {
                 )
             })?
             .ok_or_else(|| {
-                Error::UnexpectedState(String::from("Operation index metadata file didn't exist"))
+                Error::UnexpectedState(anyhow!("Operation index metadata file didn't exist"))
             })?;
 
         let mut stored_indices = Vec::new();
@@ -173,7 +173,7 @@ impl OperationIndex {
     /// if it can still fit in the in-memory index.
     pub fn index_block<B: Block>(&mut self, block: &B) -> Result<(), Error> {
         if self.next_expected_offset != block.offset() {
-            return Err(Error::Integrity(format!(
+            return Err(Error::Integrity(anyhow!(
                 "Tried to index operations from a block with unexpected offset: block={} != expected={}",
                 block.offset(),
                 self.next_expected_offset
