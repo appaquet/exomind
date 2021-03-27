@@ -2,7 +2,6 @@
 #[macro_use]
 extern crate log;
 
-#[cfg(any(test, feature = "tests-utils"))]
 #[macro_use]
 extern crate anyhow;
 
