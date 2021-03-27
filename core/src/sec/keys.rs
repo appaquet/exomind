@@ -23,10 +23,10 @@ impl Keypair {
 
     pub fn algorithm(&self) -> Algorithm {
         match self.keypair {
-            libp2p_Keypair::Ed25519(_) => Algorithm::ED25519,
-            libp2p_Keypair::Secp256k1(_) => Algorithm::SECP256K1,
+            libp2p_Keypair::Ed25519(_) => Algorithm::Ed25519,
+            libp2p_Keypair::Secp256k1(_) => Algorithm::Secp256K1,
             #[cfg(not(target_arch = "wasm32"))]
-            libp2p_Keypair::Rsa(_) => Algorithm::RSA,
+            libp2p_Keypair::Rsa(_) => Algorithm::Rsa,
         }
     }
 
@@ -52,7 +52,7 @@ impl Keypair {
             libp2p_Keypair::Ed25519(kp) => {
                 let mut vec = vec![0; 66];
                 vec[0] = ENCODE_KEYPAIR_CODE;
-                vec[1] = Algorithm::ED25519.to_code();
+                vec[1] = Algorithm::Ed25519.to_code();
                 vec[2..].copy_from_slice(&kp.encode());
                 vec
             }
@@ -77,7 +77,7 @@ impl Keypair {
         }
 
         match Algorithm::from_code(bytes[1])? {
-            Algorithm::ED25519 => {
+            Algorithm::Ed25519 => {
                 let keypair = libp2p_ed25519::Keypair::decode(&mut bytes[2..])
                     .map_err(|err| Error::Libp2pDecode(err.to_string()))?;
 
@@ -123,7 +123,7 @@ impl PublicKey {
             libp2p_PublicKey::Ed25519(pk) => {
                 let mut vec = vec![0; 34];
                 vec[0] = ENCODE_PUBLIC_KEY_CODE;
-                vec[1] = Algorithm::ED25519.to_code();
+                vec[1] = Algorithm::Ed25519.to_code();
                 vec[2..].copy_from_slice(&pk.encode());
                 vec
             }
@@ -147,7 +147,7 @@ impl PublicKey {
         }
 
         match Algorithm::from_code(bytes[1])? {
-            Algorithm::ED25519 => {
+            Algorithm::Ed25519 => {
                 let pk = libp2p_ed25519::PublicKey::decode(&bytes[2..])
                     .map_err(|err| Error::Libp2pDecode(err.to_string()))?;
 
@@ -213,28 +213,28 @@ fn decode_base58(input: &str) -> Result<Vec<u8>, Error> {
 /// Encryption / signature algorithm type
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Algorithm {
-    ED25519,
-    SECP256K1,
+    Ed25519,
+    Secp256K1,
     #[cfg(not(target_arch = "wasm32"))]
-    RSA,
+    Rsa,
 }
 
 impl Algorithm {
     fn to_code(self) -> u8 {
         match self {
-            Algorithm::ED25519 => b'e',
-            Algorithm::SECP256K1 => b'c',
+            Algorithm::Ed25519 => b'e',
+            Algorithm::Secp256K1 => b'c',
             #[cfg(not(target_arch = "wasm32"))]
-            Algorithm::RSA => b'r',
+            Algorithm::Rsa => b'r',
         }
     }
 
     fn from_code(code: u8) -> Result<Algorithm, Error> {
         match code {
-            b'e' => Ok(Algorithm::ED25519),
-            b'c' => Ok(Algorithm::SECP256K1),
+            b'e' => Ok(Algorithm::Ed25519),
+            b'c' => Ok(Algorithm::Secp256K1),
             #[cfg(not(target_arch = "wasm32"))]
-            b'r' => Ok(Algorithm::RSA),
+            b'r' => Ok(Algorithm::Rsa),
             _ => Err(Error::InvalidAlgorithmCode(code)),
         }
     }

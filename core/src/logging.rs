@@ -17,7 +17,7 @@ pub fn setup<P: AsRef<Path>>(level: Option<LevelFilter>, file: Option<P>) {
     INIT.call_once(|| {
         let level = level.unwrap_or(LevelFilter::Info);
         let encoder = Box::new(PatternEncoder::new(
-            "{d(%d %H:%M:%S%.3f)} {h({l})} {t:30.30} - {m}{n}",
+            "{d(%d %H:%M:%S%.3f)} {h({l:5.5})} {t:30.30} - {m}{n}",
         ));
 
         let mut appenders = vec!["console_output"];

@@ -3,6 +3,7 @@ use std::{
     time::Duration,
 };
 
+use bytes::Bytes;
 use exocore_core::{cell::Node, time::Instant};
 use futures::task::{Context, Poll};
 use libp2p::{
@@ -40,7 +41,7 @@ impl ExocoreBehaviour {
         peer_id: PeerId,
         expiration: Option<Instant>,
         connection: Option<ConnectionId>,
-        data: Vec<u8>,
+        data: Bytes,
     ) {
         let handler = if let Some(connection_id) = connection {
             NotifyHandler::One(connection_id)
@@ -333,7 +334,7 @@ pub enum ExocoreBehaviourEvent {
 pub struct ExocoreBehaviourMessage {
     pub source: PeerId,
     pub connection: ConnectionId,
-    pub data: Vec<u8>,
+    pub data: Bytes,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]

@@ -7,6 +7,7 @@ pub mod multihash;
 pub mod padded;
 pub mod sized;
 
+use bytes::{Buf, Bytes};
 pub use error::Error;
 pub use padded::{PaddedFrame, PaddedFrameBuilder};
 pub use sized::{IteratedSizedSliceFrame, SizedFrame, SizedFrameBuilder, SizedFrameSliceIterator};
@@ -60,35 +61,19 @@ pub trait FrameReader {
     }
 }
 
-impl FrameReader for Vec<u8> {
-    type OwnedType = Vec<u8>;
+impl<B: Buf> FrameReader for B {
+    type OwnedType = Bytes;
 
     fn exposed_data(&self) -> &[u8] {
-        self.as_slice()
+        self.chunk()
     }
 
     fn whole_data(&self) -> &[u8] {
-        self.as_slice()
+        self.chunk()
     }
 
     fn to_owned_frame(&self) -> Self::OwnedType {
-        self.clone()
-    }
-}
-
-impl FrameReader for &[u8] {
-    type OwnedType = Vec<u8>;
-
-    fn exposed_data(&self) -> &[u8] {
-        self
-    }
-
-    fn whole_data(&self) -> &[u8] {
-        self
-    }
-
-    fn to_owned_frame(&self) -> Self::OwnedType {
-        self.to_vec()
+        self.chunk().to_vec().into()
     }
 }
 
@@ -116,36 +101,36 @@ pub trait FrameBuilder {
     fn as_owned_frame(&self) -> Self::OwnedFrameType;
 
     /// Writes the frame into a in-memory buffer and returns it.
-    fn as_bytes(&self) -> Vec<u8> {
+    fn as_bytes(&self) -> Bytes {
         let mut buffer = Vec::new();
         self.write_to(&mut buffer)
             .expect("Couldn't write frame into in-memory vec");
-        buffer
+        buffer.into()
     }
 }
 
 /// Implementation of FrameBuilder for a byte array allow wrapping the content
 /// of the array into another frame
-impl FrameBuilder for Vec<u8> {
-    type OwnedFrameType = Vec<u8>;
+impl<B: Buf> FrameBuilder for B {
+    type OwnedFrameType = Bytes;
 
     fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
-        writer.write_all(&self)?;
-        Ok(self.len())
+        writer.write_all(self.chunk())?;
+        Ok(self.remaining())
     }
 
     fn write_into(&self, into: &mut [u8]) -> Result<usize, Error> {
-        check_into_size(self.len(), into)?;
-        into[0..self.len()].copy_from_slice(&self);
-        Ok(self.len())
+        check_into_size(self.remaining(), into)?;
+        into[0..self.remaining()].copy_from_slice(self.chunk());
+        Ok(self.remaining())
     }
 
     fn expected_size(&self) -> Option<usize> {
-        Some(self.len())
+        Some(self.remaining())
     }
 
     fn as_owned_frame(&self) -> Self::OwnedFrameType {
-        self.clone()
+        self.chunk().to_vec().into()
     }
 }
 

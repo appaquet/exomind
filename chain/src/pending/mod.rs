@@ -6,6 +6,7 @@ use crate::{
 };
 
 pub mod error;
+use bytes::Bytes;
 pub use error::Error;
 #[cfg(feature = "memory-pending")]
 pub mod memory;
@@ -66,7 +67,7 @@ pub struct StoredOperation {
     pub operation_id: OperationId,
     pub operation_type: operation::OperationType,
     pub commit_status: CommitStatus,
-    pub frame: Arc<operation::OperationFrame<Vec<u8>>>,
+    pub frame: Arc<operation::OperationFrame<Bytes>>,
 }
 
 /// A group of operations related by their `group_id`.

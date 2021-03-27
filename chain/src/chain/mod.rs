@@ -1,15 +1,16 @@
 use std::ops::Range;
 
 use crate::{
-    block::{Block, BlockOffset, BlockRef},
+    block::{Block, BlockOffset, DataBlock},
     operation::OperationId,
 };
 
 #[cfg(feature = "directory-chain")]
 pub mod directory;
-
 pub mod error;
 pub use error::Error;
+pub mod data;
+pub use data::ChainData;
 
 /// Persistence for the chain
 pub trait ChainStore: Send + Sync + 'static {
@@ -17,23 +18,23 @@ pub trait ChainStore: Send + Sync + 'static {
 
     fn write_block<B: Block>(&mut self, block: &B) -> Result<BlockOffset, Error>;
 
-    fn blocks_iter(&self, from_offset: BlockOffset) -> Result<StoredBlockIterator, Error>;
+    fn blocks_iter(&self, from_offset: BlockOffset) -> StoredBlockIterator;
 
-    fn blocks_iter_reverse(
+    fn blocks_iter_reverse(&self, from_next_offset: BlockOffset) -> StoredBlockIterator;
+
+    fn get_block(&self, offset: BlockOffset) -> Result<DataBlock<ChainData>, Error>;
+
+    fn get_block_from_next_offset(
         &self,
-        from_next_offset: BlockOffset,
-    ) -> Result<StoredBlockIterator, Error>;
+        next_offset: BlockOffset,
+    ) -> Result<DataBlock<ChainData>, Error>;
 
-    fn get_block(&self, offset: BlockOffset) -> Result<BlockRef, Error>;
-
-    fn get_block_from_next_offset(&self, next_offset: BlockOffset) -> Result<BlockRef, Error>;
-
-    fn get_last_block(&self) -> Result<Option<BlockRef>, Error>;
+    fn get_last_block(&self) -> Result<Option<DataBlock<ChainData>>, Error>;
 
     fn get_block_by_operation_id(
         &self,
         operation_id: OperationId,
-    ) -> Result<Option<BlockRef>, Error>;
+    ) -> Result<Option<DataBlock<ChainData>>, Error>;
 
     fn truncate_from_offset(&mut self, offset: BlockOffset) -> Result<(), Error>;
 }
@@ -57,9 +58,9 @@ impl From<Vec<Segment>> for Segments {
     }
 }
 
-impl Into<Vec<Segment>> for Segments {
-    fn into(self) -> Vec<Segment> {
-        self.0
+impl From<Segments> for Vec<Segment> {
+    fn from(s: Segments) -> Self {
+        s.0
     }
 }
 
@@ -106,7 +107,7 @@ impl std::iter::IntoIterator for Segments {
 }
 
 /// Iterator over stored blocks.
-type StoredBlockIterator<'pers> = Box<dyn Iterator<Item = BlockRef<'pers>> + 'pers>;
+type StoredBlockIterator<'p> = Box<dyn Iterator<Item = Result<DataBlock<ChainData>, Error>> + 'p>;
 
 #[cfg(test)]
 mod tests {

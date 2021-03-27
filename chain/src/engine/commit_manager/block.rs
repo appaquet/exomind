@@ -133,8 +133,11 @@ impl PendingBlocks {
             let has_refusal_quorum = nodes.has_quorum(refusals.len(), Some(CellNodeRole::Chain));
             let has_expired = proposal.has_expired(config, now);
 
-            let status = match chain_store.get_block(proposal.offset).ok() {
-                Some(block) => {
+            let status = match chain_store.get_block(proposal.offset) {
+                Err(err) if err.is_fatal() => {
+                    return Err(err.into());
+                }
+                Ok(block) => {
                     if block.get_proposed_operation_id()? == *group_id {
                         // we found the block and it has the same operation id, so it's valid past
                         // block
@@ -148,7 +151,7 @@ impl PendingBlocks {
                         BlockStatus::PastRefused
                     }
                 }
-                None => {
+                _ => {
                     let expected_next_offset = last_stored_block.next_offset();
                     if has_refusal_quorum || has_my_refusal {
                         BlockStatus::NextRefused

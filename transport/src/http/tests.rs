@@ -131,13 +131,13 @@ async fn entities_mutation() -> anyhow::Result<()> {
 async fn start_server(full_cell: &FullCell, clock: &Clock, port: u16) -> TestableTransportHandle {
     let listen_addr = format!("http://127.0.0.1:{}", port);
 
-    let config = HTTPTransportConfig {
+    let config = HttpTransportConfig {
         listen_addresses: vec![listen_addr.parse().unwrap()],
         ..Default::default()
     };
 
     let mut server =
-        HTTPTransportServer::new(full_cell.cell().local_node().clone(), config, clock.clone());
+        HttpTransportServer::new(full_cell.cell().local_node().clone(), config, clock.clone());
     let handle = server
         .get_handle(full_cell.cell().clone(), ServiceType::Store)
         .unwrap();

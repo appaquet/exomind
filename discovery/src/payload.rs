@@ -9,9 +9,9 @@ use rand::Rng;
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, Debug, Hash)]
 pub struct Pin(u32);
 
-impl Into<u32> for Pin {
-    fn into(self) -> u32 {
-        self.0
+impl From<Pin> for u32 {
+    fn from(pin: Pin) -> Self {
+        pin.0
     }
 }
 

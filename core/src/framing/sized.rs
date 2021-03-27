@@ -1,6 +1,7 @@
 use std::io;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use bytes::Bytes;
 
 use super::{
     check_from_size, check_into_size, check_offset_subtract, Error, FrameBuilder, FrameReader,
@@ -11,6 +12,7 @@ use super::{
 /// support iteration in both directions.
 pub struct SizedFrame<I: FrameReader> {
     inner: I,
+    offset: usize, // offset from beginning of frame (including size)
     inner_size: usize,
 }
 
@@ -22,7 +24,28 @@ impl<I: FrameReader> SizedFrame<I> {
         let inner_size = inner_data.read_u32::<LittleEndian>()? as usize;
         check_from_size(4 + inner_size, inner_data)?;
 
-        Ok(SizedFrame { inner, inner_size })
+        Ok(SizedFrame {
+            inner,
+            offset: 0,
+            inner_size,
+        })
+    }
+
+    pub fn new_from_next_offset(inner: I, next_offset: usize) -> Result<SizedFrame<I>, Error> {
+        let inner_data = inner.exposed_data();
+        check_offset_subtract(next_offset, 4)?;
+        check_from_size(next_offset - 4, inner_data)?;
+
+        let inner_size = (&inner_data[next_offset - 4..]).read_u32::<LittleEndian>()? as usize;
+        let offset_subtract = 4 + inner_size + 4;
+        check_offset_subtract(next_offset, offset_subtract)?;
+        let offset = next_offset - offset_subtract;
+
+        Ok(SizedFrame {
+            inner,
+            offset,
+            inner_size,
+        })
     }
 
     pub fn size(&self) -> usize {
@@ -30,8 +53,8 @@ impl<I: FrameReader> SizedFrame<I> {
     }
 }
 
-impl SizedFrame<Vec<u8>> {
-    pub fn new_from_reader<R: std::io::Read>(reader: &mut R) -> Result<SizedFrame<Vec<u8>>, Error> {
+impl SizedFrame<Bytes> {
+    pub fn new_from_reader<R: std::io::Read>(reader: &mut R) -> Result<SizedFrame<Bytes>, Error> {
         let inner_size = reader.read_u32::<LittleEndian>()? as usize;
 
         let mut buf = vec![0u8; inner_size + 8];
@@ -40,43 +63,28 @@ impl SizedFrame<Vec<u8>> {
         reader.read_exact(&mut buf[4..8 + inner_size])?;
 
         Ok(SizedFrame {
-            inner: buf,
+            inner: Bytes::from(buf),
+            offset: 0,
             inner_size,
         })
     }
 }
 
-impl SizedFrame<&[u8]> {
-    pub fn new_from_next_offset(
-        buffer: &[u8],
-        next_offset: usize,
-    ) -> Result<SizedFrame<&[u8]>, Error> {
-        check_offset_subtract(next_offset, 4)?;
-        check_from_size(next_offset - 4, buffer)?;
-
-        let inner_size = (&buffer[next_offset - 4..]).read_u32::<LittleEndian>()? as usize;
-        let offset_subtract = 4 + inner_size + 4;
-        check_offset_subtract(next_offset, offset_subtract)?;
-        let offset = next_offset - offset_subtract;
-
-        SizedFrame::new(&buffer[offset..])
-    }
-}
-
 impl<I: FrameReader> FrameReader for SizedFrame<I> {
-    type OwnedType = SizedFrame<I::OwnedType>;
+    type OwnedType = SizedFrame<Bytes>;
 
     fn exposed_data(&self) -> &[u8] {
-        &self.inner.exposed_data()[4..4 + self.inner_size]
+        &self.inner.exposed_data()[self.offset + 4..self.offset + 4 + self.inner_size]
     }
 
     fn whole_data(&self) -> &[u8] {
-        &self.inner.whole_data()[0..self.inner_size + 8]
+        &self.inner.whole_data()[self.offset..self.offset + self.inner_size + 8]
     }
 
     fn to_owned_frame(&self) -> Self::OwnedType {
         SizedFrame {
-            inner: self.inner.to_owned_frame(),
+            inner: Bytes::from(self.whole_data().to_vec()),
+            offset: self.offset,
             inner_size: self.inner_size,
         }
     }
@@ -86,6 +94,7 @@ impl<I: FrameReader + Clone> Clone for SizedFrame<I> {
     fn clone(&self) -> Self {
         SizedFrame {
             inner: self.inner.clone(),
+            offset: self.offset,
             inner_size: self.inner_size,
         }
     }
@@ -107,7 +116,7 @@ impl<I: FrameBuilder> SizedFrameBuilder<I> {
 }
 
 impl<I: FrameBuilder> FrameBuilder for SizedFrameBuilder<I> {
-    type OwnedFrameType = SizedFrame<Vec<u8>>;
+    type OwnedFrameType = SizedFrame<Bytes>;
 
     fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         if let Some(inner_size) = self.inner.expected_size() {
@@ -231,7 +240,7 @@ impl<R: std::io::Read> Iterator for SizedFrameReaderIterator<R> {
 
 pub struct IteratedSizedReaderFrame {
     pub offset: usize,
-    pub frame: SizedFrame<Vec<u8>>,
+    pub frame: SizedFrame<Bytes>,
 }
 
 #[cfg(test)]
@@ -245,7 +254,7 @@ mod tests {
 
     #[test]
     fn can_build_and_read_sized_inner() -> anyhow::Result<()> {
-        let inner = vec![8u8; 100];
+        let inner = Bytes::from(vec![8u8; 100]);
         let builder = SizedFrameBuilder::new(inner.clone());
         assert_builder_equals(&builder)?;
 
@@ -289,7 +298,7 @@ mod tests {
 
     #[test]
     fn can_build_to_owned() {
-        let builder = SizedFrameBuilder::new(vec![1; 10]);
+        let builder = SizedFrameBuilder::new(Bytes::from(vec![1; 10]));
 
         let frame = builder.as_owned_frame();
         assert_eq!(vec![1; 10], frame.exposed_data());
@@ -302,10 +311,10 @@ mod tests {
             let buffer = Vec::new();
             let mut buffer_cursor = Cursor::new(buffer);
 
-            let frame1 = SizedFrameBuilder::new(vec![1u8; 10]);
+            let frame1 = SizedFrameBuilder::new(Bytes::from(vec![1u8; 10]));
             frame1.write_to(&mut buffer_cursor)?;
 
-            let frame2 = SizedFrameBuilder::new(vec![2u8; 10]);
+            let frame2 = SizedFrameBuilder::new(Bytes::from(vec![2u8; 10]));
             frame2.write_to(&mut buffer_cursor)?;
 
             buffer_cursor.into_inner()
@@ -330,10 +339,10 @@ mod tests {
             let buffer = Vec::new();
             let mut buffer_cursor = Cursor::new(buffer);
 
-            let frame1 = SizedFrameBuilder::new(vec![1u8; 10]);
+            let frame1 = SizedFrameBuilder::new(Bytes::from(vec![1u8; 10]));
             frame1.write_to(&mut buffer_cursor)?;
 
-            let frame2 = SizedFrameBuilder::new(vec![2u8; 10]);
+            let frame2 = SizedFrameBuilder::new(Bytes::from(vec![2u8; 10]));
             frame2.write_to(&mut buffer_cursor)?;
 
             buffer_cursor.into_inner()
@@ -358,10 +367,10 @@ mod tests {
             let buffer = Vec::new();
             let mut buffer_cursor = Cursor::new(buffer);
 
-            let frame1 = SizedFrameBuilder::new(vec![1u8; 10]);
+            let frame1 = SizedFrameBuilder::new(Bytes::from(vec![1u8; 10]));
             frame1.write_to(&mut buffer_cursor)?;
 
-            let frame2 = SizedFrameBuilder::new(vec![2u8; 10]);
+            let frame2 = SizedFrameBuilder::new(Bytes::from(vec![2u8; 10]));
             frame2.write_to(&mut buffer_cursor)?;
 
             buffer_cursor.into_inner()
@@ -380,7 +389,7 @@ mod tests {
 
     #[test]
     fn invalid_from_next_offset() {
-        let frame1 = SizedFrameBuilder::new(vec![1u8; 10]);
+        let frame1 = SizedFrameBuilder::new(Bytes::from(vec![1u8; 10]));
         let buffer = frame1.as_bytes();
 
         let result = SizedFrame::new_from_next_offset(&buffer[..], 1);

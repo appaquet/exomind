@@ -356,76 +356,76 @@ impl ProjectionBuilder {
 
 pub struct FieldPredicateValueWrapper(trait_field_predicate::Value);
 
-impl Into<FieldPredicateValueWrapper> for EntityId {
-    fn into(self) -> FieldPredicateValueWrapper {
-        FieldPredicateValueWrapper(trait_field_predicate::Value::String(self))
+impl From<EntityId> for FieldPredicateValueWrapper {
+    fn from(id: EntityId) -> Self {
+        FieldPredicateValueWrapper(trait_field_predicate::Value::String(id))
     }
 }
 
-impl Into<FieldPredicateValueWrapper> for &str {
-    fn into(self) -> FieldPredicateValueWrapper {
-        FieldPredicateValueWrapper(trait_field_predicate::Value::String(self.to_string()))
+impl From<&str> for FieldPredicateValueWrapper {
+    fn from(s: &str) -> Self {
+        FieldPredicateValueWrapper(trait_field_predicate::Value::String(s.to_string()))
     }
 }
 
 pub struct ReferencePredicateWrapper(ReferencePredicate);
 
-impl Into<ReferencePredicateWrapper> for EntityId {
-    fn into(self) -> ReferencePredicateWrapper {
+impl From<EntityId> for ReferencePredicateWrapper {
+    fn from(id: EntityId) -> Self {
         ReferencePredicateWrapper(ReferencePredicate {
-            entity_id: self,
+            entity_id: id,
             trait_id: String::new(),
         })
     }
 }
 
-impl Into<ReferencePredicateWrapper> for (EntityId, TraitId) {
-    fn into(self) -> ReferencePredicateWrapper {
+impl From<(EntityId, TraitId)> for ReferencePredicateWrapper {
+    fn from(tup: (EntityId, TraitId)) -> Self {
         ReferencePredicateWrapper(ReferencePredicate {
-            entity_id: self.0,
-            trait_id: self.1,
+            entity_id: tup.0,
+            trait_id: tup.1,
         })
     }
 }
 
-impl Into<ReferencePredicateWrapper> for &str {
-    fn into(self) -> ReferencePredicateWrapper {
+impl From<&str> for ReferencePredicateWrapper {
+    fn from(s: &str) -> Self {
         ReferencePredicateWrapper(ReferencePredicate {
-            entity_id: self.to_string(),
+            entity_id: s.to_string(),
             trait_id: String::new(),
         })
     }
 }
 
-impl Into<ReferencePredicateWrapper> for (&str, &str) {
-    fn into(self) -> ReferencePredicateWrapper {
+impl From<(&str, &str)> for ReferencePredicateWrapper {
+    fn from(tup: (&str, &str)) -> Self {
         ReferencePredicateWrapper(ReferencePredicate {
-            entity_id: self.0.to_string(),
-            trait_id: self.1.to_string(),
+            entity_id: tup.0.to_string(),
+            trait_id: tup.1.to_string(),
         })
     }
 }
 
-impl Into<ReferencePredicateWrapper> for Reference {
-    fn into(self) -> ReferencePredicateWrapper {
+impl From<Reference> for ReferencePredicateWrapper {
+    fn from(r: Reference) -> Self {
         ReferencePredicateWrapper(ReferencePredicate {
-            entity_id: self.entity_id,
-            trait_id: self.trait_id,
+            entity_id: r.entity_id,
+            trait_id: r.trait_id,
         })
     }
 }
 
 pub struct ProjectionWrapper(Projection);
 
-impl Into<ProjectionWrapper> for Projection {
-    fn into(self) -> ProjectionWrapper {
-        ProjectionWrapper(self)
+impl From<Projection> for ProjectionWrapper {
+    fn from(p: Projection) -> Self {
+        ProjectionWrapper(p)
     }
 }
 
-impl Into<ProjectionWrapper> for ProjectionBuilder {
-    fn into(self) -> ProjectionWrapper {
-        ProjectionWrapper(self.build())
+impl From<ProjectionBuilder> for ProjectionWrapper {
+    fn from(b: ProjectionBuilder) -> Self {
+        ProjectionWrapper(b.build())
     }
 }
 

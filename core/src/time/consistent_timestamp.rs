@@ -72,9 +72,9 @@ impl From<u64> for ConsistentTimestamp {
     }
 }
 
-impl Into<u64> for ConsistentTimestamp {
-    fn into(self) -> u64 {
-        self.0
+impl From<ConsistentTimestamp> for u64 {
+    fn from(ts: ConsistentTimestamp) -> Self {
+        ts.0
     }
 }
 
@@ -84,15 +84,15 @@ impl From<DateTime<Utc>> for ConsistentTimestamp {
     }
 }
 
-impl Into<DateTime<Utc>> for ConsistentTimestamp {
-    fn into(self) -> DateTime<Utc> {
-        self.to_datetime()
+impl From<ConsistentTimestamp> for DateTime<Utc> {
+    fn from(s: ConsistentTimestamp) -> Self {
+        s.to_datetime()
     }
 }
 
-impl Into<exocore_protos::prost::Timestamp> for ConsistentTimestamp {
-    fn into(self) -> exocore_protos::prost::Timestamp {
-        let dt = self.to_datetime();
+impl From<ConsistentTimestamp> for exocore_protos::prost::Timestamp {
+    fn from(ts: ConsistentTimestamp) -> Self {
+        let dt = ts.to_datetime();
         exocore_protos::prost::Timestamp {
             seconds: dt.timestamp(),
             nanos: dt.timestamp_subsec_nanos() as i32,

@@ -21,7 +21,7 @@ fn bench_read_message_from_slice_with_parsing(b: &mut Bencher) {
     let data = builder.as_bytes();
 
     b.iter(|| {
-        let message = TypedCapnpFrame::<_, block_header::Owned>::new(data.as_slice()).unwrap();
+        let message = TypedCapnpFrame::<_, block_header::Owned>::new(data.as_ref()).unwrap();
         let header_reader = message.get_reader().unwrap();
         let _ = black_box(header_reader.get_previous_hash());
     });
@@ -33,7 +33,7 @@ fn bench_read_message_from_slice_no_parsing(b: &mut Bencher) {
     let data = builder.as_bytes();
 
     b.iter(|| {
-        let message = TypedCapnpFrame::<_, block_header::Owned>::new(data.as_slice()).unwrap();
+        let message = TypedCapnpFrame::<_, block_header::Owned>::new(data.as_ref()).unwrap();
         let _ = black_box(message);
     });
 }

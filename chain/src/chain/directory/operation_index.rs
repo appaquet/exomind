@@ -31,7 +31,7 @@ use crate::{
 /// using the `next_expected_offset` value.
 ///
 /// The index maintains the list of persisted index in a "Metadata" file.
-pub struct OperationsIndex {
+pub struct OperationIndex {
     config: DirectoryChainStoreConfig,
     directory: PathBuf,
 
@@ -45,24 +45,24 @@ pub struct OperationsIndex {
     stored_indices: Vec<StoredIndex>,
 }
 
-impl OperationsIndex {
+impl OperationIndex {
     /// Creates a new operation index that will be stored in given directory.
     pub fn create(
         config: DirectoryChainStoreConfig,
         directory_path: &Path,
-    ) -> Result<OperationsIndex, Error> {
+    ) -> Result<OperationIndex, Error> {
         let metadata_path = Metadata::file_path(directory_path);
         let metadata_store = JsonDiskStore::<Metadata>::new(&metadata_path).map_err(|err| {
             Error::new_io(
                 err,
                 format!(
-                    "Error creating operations index metadata file {:?}",
+                    "Error creating operation index metadata file {:?}",
                     metadata_path
                 ),
             )
         })?;
 
-        let operations_index = OperationsIndex {
+        let operation_index = OperationIndex {
             config,
             directory: directory_path.to_path_buf(),
 
@@ -77,22 +77,22 @@ impl OperationsIndex {
         };
 
         // we write even if it's empty because `open` expects it to exist
-        operations_index.write_metadata()?;
+        operation_index.write_metadata()?;
 
-        Ok(operations_index)
+        Ok(operation_index)
     }
 
     /// Open an existing operation index stored in given directory.
     pub fn open(
         config: DirectoryChainStoreConfig,
         directory_path: &Path,
-    ) -> Result<OperationsIndex, Error> {
+    ) -> Result<OperationIndex, Error> {
         let metadata_path = Metadata::file_path(directory_path);
         let metadata_store = JsonDiskStore::<Metadata>::new(&metadata_path).map_err(|err| {
             Error::new_io(
                 err,
                 format!(
-                    "Error creating operations index metadata file {:?}",
+                    "Error creating operation index metadata file {:?}",
                     metadata_path
                 ),
             )
@@ -104,20 +104,20 @@ impl OperationsIndex {
                 Error::new_io(
                     err,
                     format!(
-                        "Error reading operations index metadata file {:?}",
+                        "Error reading operation index metadata file {:?}",
                         metadata_path
                     ),
                 )
             })?
             .ok_or_else(|| {
-                Error::UnexpectedState(String::from("Operations index metadata file didn't exist"))
+                Error::UnexpectedState(String::from("Operation index metadata file didn't exist"))
             })?;
 
         let mut stored_indices = Vec::new();
         for index_file_metadata in metadata.files.iter() {
             let index_file_path = directory_path.join(&index_file_metadata.file_name);
             let index_reader = Reader::open(index_file_path)
-                .map_err(|err| DirectoryError::OperationsIndexRead(Arc::new(err)))?;
+                .map_err(|err| DirectoryError::OperationIndexRead(Arc::new(err)))?;
 
             stored_indices.push(StoredIndex {
                 range: index_file_metadata.offset_from..index_file_metadata.offset_to,
@@ -133,7 +133,7 @@ impl OperationsIndex {
         let memory_offset_from = next_expected_offset;
         let memory_index = BTreeMap::new();
 
-        Ok(OperationsIndex {
+        Ok(OperationIndex {
             config,
             directory: directory_path.to_path_buf(),
 
@@ -155,11 +155,12 @@ impl OperationsIndex {
     /// Indexes an iterator of blocks. There is no guarantee that they will be
     /// actually stored to disk if they can still fit in the in-memory
     /// index.
-    pub fn index_blocks<I: Iterator<Item = B>, B: Block>(
+    pub fn index_blocks<I: Iterator<Item = Result<B, Error>>, B: Block>(
         &mut self,
         iterator: I,
     ) -> Result<(), Error> {
         for block in iterator {
+            let block = block?;
             if block.offset() >= self.memory_offset_from {
                 self.index_block(&block)?;
             }
@@ -215,7 +216,7 @@ impl OperationsIndex {
             let opt_entry = index
                 .index_reader
                 .find(&needle)
-                .map_err(|err| DirectoryError::OperationsIndexRead(Arc::new(err)))?;
+                .map_err(|err| DirectoryError::OperationIndexRead(Arc::new(err)))?;
 
             if let Some(entry) = opt_entry {
                 return Ok(Some(entry.value().offset));
@@ -272,7 +273,7 @@ impl OperationsIndex {
     /// Checks the size of the in-memory index and flush it to disk if it
     /// exceeds configured maximum.
     fn maybe_flush_to_disk(&mut self) -> Result<(), Error> {
-        if self.memory_index.len() > self.config.operations_index_max_memory_items {
+        if self.memory_index.len() > self.config.operation_index_max_memory_items {
             debug!(
                 "Storing in-memory index of operations to disk ({} items)",
                 self.memory_index.len()
@@ -298,11 +299,11 @@ impl OperationsIndex {
                 Builder::<StoredIndexKey, StoredIndexValue>::new(index_file.clone());
             index_builder
                 .build_from_sorted(ops_iter, ops_count)
-                .map_err(|err| DirectoryError::OperationsIndexBuild(Arc::new(err)))?;
+                .map_err(|err| DirectoryError::OperationIndexBuild(Arc::new(err)))?;
 
             // open the index we just created
             let index_reader = Reader::open(index_file)
-                .map_err(|err| DirectoryError::OperationsIndexRead(Arc::new(err)))?;
+                .map_err(|err| DirectoryError::OperationIndexRead(Arc::new(err)))?;
             let stored_index = StoredIndex {
                 range,
                 index_reader,
@@ -337,7 +338,7 @@ impl OperationsIndex {
 
         self.metadata_store
             .write(&metadata)
-            .map_err(|err| Error::new_io(err, "Error storing into operations index metadata file"))
+            .map_err(|err| Error::new_io(err, "Error storing into operation index metadata file"))
     }
 }
 
@@ -432,11 +433,11 @@ mod tests {
         let cell = FullCell::generate(local_node);
         let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
-            operations_index_max_memory_items: 100,
+            operation_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
         };
 
-        let mut index = OperationsIndex::create(config, dir.path())?;
+        let mut index = OperationIndex::create(config, dir.path())?;
         let generated_ops = generate_index_blocks(&cell, &mut index, 0, 1000)?;
 
         // 19 because there is 2 ops per block (block itself + op inside)
@@ -459,17 +460,17 @@ mod tests {
         let cell = FullCell::generate(local_node);
         let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
-            operations_index_max_memory_items: 100,
+            operation_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
         };
 
         let (memory_offset_from, generated_ops) = {
-            let mut index = OperationsIndex::create(config, dir.path())?;
+            let mut index = OperationIndex::create(config, dir.path())?;
             let generated_ops = generate_index_blocks(&cell, &mut index, 0, 1000)?;
             (index.memory_offset_from, generated_ops)
         };
 
-        let mut index = OperationsIndex::open(config, dir.path())?;
+        let mut index = OperationIndex::open(config, dir.path())?;
 
         // all data that was previously stored in memory is lost
         assert_eq!(memory_offset_from, index.memory_offset_from);
@@ -500,11 +501,11 @@ mod tests {
         let cell = FullCell::generate(local_node);
         let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
-            operations_index_max_memory_items: 100,
+            operation_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
         };
 
-        let mut index = OperationsIndex::create(config, dir.path())?;
+        let mut index = OperationIndex::create(config, dir.path())?;
         generate_index_blocks(&cell, &mut index, 0, 1000)?;
 
         let files_count_before = index.stored_indices.len();
@@ -521,12 +522,12 @@ mod tests {
         let cell = FullCell::generate(local_node);
         let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
-            operations_index_max_memory_items: 100,
+            operation_index_max_memory_items: 100,
             ..DirectoryChainStoreConfig::default()
         };
 
         let next_expected_offset = {
-            let mut index = OperationsIndex::create(config, dir.path())?;
+            let mut index = OperationIndex::create(config, dir.path())?;
             let generated_ops = generate_index_blocks(&cell, &mut index, 0, 1000)?;
 
             let operation_ids = generated_ops.keys().collect_vec();
@@ -543,7 +544,7 @@ mod tests {
         };
 
         {
-            let index = OperationsIndex::open(config, dir.path())?;
+            let index = OperationIndex::open(config, dir.path())?;
             assert_eq!(next_expected_offset, index.next_expected_offset);
         }
 
@@ -552,7 +553,7 @@ mod tests {
 
     fn generate_index_blocks(
         full_cell: &FullCell,
-        index: &mut OperationsIndex,
+        index: &mut OperationIndex,
         from_offset: BlockOffset,
         count: usize,
     ) -> Result<BTreeMap<OperationId, BlockOffset>, Error> {
@@ -567,7 +568,7 @@ mod tests {
             generated_ops.insert(next_offset + 1, next_offset);
 
             next_offset = block.next_offset();
-            block
+            Ok(block)
         });
 
         index.index_blocks(blocks_iter)?;

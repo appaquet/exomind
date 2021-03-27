@@ -6,7 +6,7 @@ mod server;
 #[cfg(test)]
 mod tests;
 
-pub use config::HTTPTransportConfig;
-pub use handles::HTTPTransportServiceHandle;
-pub use requests::RequestID;
-pub use server::HTTPTransportServer;
+pub use config::HttpTransportConfig;
+pub use handles::HttpTransportServiceHandle;
+pub use requests::RequestId;
+pub use server::HttpTransportServer;

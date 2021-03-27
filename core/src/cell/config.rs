@@ -599,8 +599,8 @@ mod tests {
     use exocore_protos::{
         apps::manifest_schema,
         core::{
-            cell_application_config, CellApplicationConfig, EntityIndexConfig, MutationIndexConfig,
-            NodeAddresses,
+            cell_application_config, CellApplicationConfig, ChainConfig, EntityIndexConfig,
+            MutationIndexConfig, NodeAddresses,
         },
         generated::exocore_core::{
             cell_node_config, node_cell_config, CellConfig, CellNodeConfig, LocalNodeConfig,
@@ -639,7 +639,7 @@ mod tests {
                                 id: String::new(),
                                 addresses: Some(NodeAddresses {
                                     p2p: vec!["maddr".to_string()],
-                                    http: vec!["httpaddr".to_string()],
+                                    http: vec!["http_addr".to_string()],
                                 }),
                             }),
                             roles: vec![cell_node_config::Role::ChainRole.into()],
@@ -667,7 +667,7 @@ mod tests {
             ],
             addresses: Some(NodeAddresses {
                 p2p: vec!["maddr".to_string()],
-                http: vec!["httpaddr".to_string()],
+                http: vec!["http_addr".to_string()],
             }),
             store: Some(NodeStoreConfig {
                 index: Some(EntityIndexConfig {
@@ -686,6 +686,10 @@ mod tests {
                     ..Default::default()
                 }),
                 query_parallelism: Some(5),
+            }),
+            chain: Some(ChainConfig {
+                segment_max_size: Some(1_000),
+                segment_max_open_mmap: Some(2),
             }),
         };
 

@@ -1,5 +1,6 @@
 use std::borrow::Borrow;
 
+use bytes::{Bytes, BytesMut};
 use exocore_core::{
     cell::{Cell, CellNodeRole, FullCell, NodeId},
     framing::{
@@ -18,7 +19,7 @@ use exocore_protos::{
     },
 };
 
-use crate::operation::OperationId;
+use crate::{data::Data, operation::OperationId};
 
 pub type BlockOffset = u64;
 pub type BlockHeight = u64;
@@ -46,7 +47,7 @@ pub type SignaturesFrame<I> = TypedCapnpFrame<PaddedFrame<SizedFrame<I>>, block_
 /// means that not all signatures may fit. But in theory, it should always
 /// contain enough space for all nodes to add their own signature.
 pub trait Block {
-    type UnderlyingFrame: FrameReader<OwnedType = Vec<u8>>;
+    type UnderlyingFrame: FrameReader<OwnedType = Bytes>;
 
     fn offset(&self) -> BlockOffset;
     fn header(&self) -> &BlockHeaderFrame<Self::UnderlyingFrame>;
@@ -82,20 +83,22 @@ pub trait Block {
             .expect("Couldn't write signatures into given buffer");
     }
 
-    fn as_data_vec(&self) -> Vec<u8> {
-        vec![
-            self.header().whole_data(),
-            self.operations_data(),
-            self.signatures().whole_data(),
-        ]
-        .concat()
+    fn as_data_vec(&self) -> Bytes {
+        Bytes::from(
+            vec![
+                self.header().whole_data(),
+                self.operations_data(),
+                self.signatures().whole_data(),
+            ]
+            .concat(),
+        )
     }
 
     fn to_owned(&self) -> BlockOwned {
         BlockOwned {
             offset: self.offset(),
             header: self.header().to_owned(),
-            operations_data: self.operations_data().to_vec(),
+            operations_data: Bytes::from(self.operations_data().to_vec()),
             signatures: self.signatures().to_owned(),
         }
     }
@@ -211,11 +214,11 @@ pub fn read_header_frame<I: FrameReader>(inner: I) -> Result<BlockHeaderFrame<I>
     Ok(frame)
 }
 
-pub fn read_header_frame_from_next_offset(
-    data: &[u8],
+pub fn read_header_frame_from_next_offset<I: FrameReader>(
+    inner: I,
     next_offset: usize,
-) -> Result<BlockHeaderFrame<&[u8]>, Error> {
-    let sized_frame = SizedFrame::new_from_next_offset(data, next_offset)?;
+) -> Result<BlockHeaderFrame<I>, Error> {
+    let sized_frame = SizedFrame::new_from_next_offset(inner, next_offset)?;
     let multihash_frame = MultihashFrame::new(sized_frame)?;
     let frame = TypedCapnpFrame::new(multihash_frame)?;
     Ok(frame)
@@ -264,17 +267,17 @@ impl<'a> Iterator for BlockOperationsIterator<'a> {
 /// In-memory block.
 pub struct BlockOwned {
     pub offset: BlockOffset,
-    pub header: BlockHeaderFrame<Vec<u8>>,
-    pub operations_data: Vec<u8>,
-    pub signatures: SignaturesFrame<Vec<u8>>,
+    pub header: BlockHeaderFrame<Bytes>,
+    pub operations_data: Bytes,
+    pub signatures: SignaturesFrame<Bytes>,
 }
 
 impl BlockOwned {
     pub fn new(
         offset: BlockOffset,
-        header: BlockHeaderFrame<Vec<u8>>,
-        operations_data: Vec<u8>,
-        signatures: SignaturesFrame<Vec<u8>>,
+        header: BlockHeaderFrame<Bytes>,
+        operations_data: Bytes,
+        signatures: SignaturesFrame<Bytes>,
     ) -> BlockOwned {
         BlockOwned {
             offset,
@@ -362,7 +365,7 @@ impl BlockOwned {
 
         // serialize block header and then re-read it
         let final_frame_builder = build_header_frame(header_frame_builder);
-        let final_frame_data: Vec<u8> = final_frame_builder.as_bytes();
+        let final_frame_data = final_frame_builder.as_bytes();
         let block_header = read_header_frame(final_frame_data)?;
 
         Ok(BlockOwned {
@@ -375,7 +378,7 @@ impl BlockOwned {
 }
 
 impl Block for BlockOwned {
-    type UnderlyingFrame = Vec<u8>;
+    type UnderlyingFrame = Bytes;
 
     fn offset(&self) -> u64 {
         self.offset
@@ -394,6 +397,7 @@ impl Block for BlockOwned {
     }
 }
 
+/// TODO: Replace by DataBlock
 /// A referenced block
 pub struct BlockRef<'a> {
     pub offset: BlockOffset,
@@ -478,42 +482,89 @@ impl<'a> Block for BlockRef<'a> {
     }
 }
 
-/// Block iterator over a slice of data.
-pub struct ChainBlockIterator<'a> {
-    current_offset: usize,
-    data: &'a [u8],
-    last_error: Option<Error>,
+pub struct DataBlock<D: Data> {
+    pub offset: BlockOffset,
+    pub header: BlockHeaderFrame<D>,
+    pub operations_data: D,
+    pub signatures: SignaturesFrame<D>,
 }
 
-impl<'a> ChainBlockIterator<'a> {
-    pub fn new(data: &'a [u8]) -> ChainBlockIterator<'a> {
-        ChainBlockIterator {
-            current_offset: 0,
-            data,
-            last_error: None,
+impl<D: Data> DataBlock<D> {
+    pub fn new(data: D) -> Result<DataBlock<D>, Error> {
+        let header = read_header_frame(data.clone())?;
+        let header_reader: block_header::Reader = header.get_reader()?;
+
+        let operations_offset = header.whole_data_size();
+        let operations_size = header_reader.get_operations_size() as usize;
+        let signatures_offset = operations_offset + operations_size;
+        let signatures_size = header_reader.get_signatures_size() as usize;
+
+        if signatures_offset >= data.len() {
+            return Err(Error::OutOfBound(format!(
+                "Signature offset {} is after data len {}",
+                signatures_offset,
+                data.len()
+            )));
         }
+
+        let signatures_data = data.view(signatures_offset..signatures_offset + signatures_size);
+        let signatures = BlockSignatures::read_frame(signatures_data)?;
+
+        let operations_data = data.view(operations_offset..signatures_offset);
+
+        Ok(DataBlock {
+            offset: header_reader.get_offset(),
+            header,
+            operations_data,
+            signatures,
+        })
+    }
+
+    pub fn new_from_next_offset(data: D, next_offset: usize) -> Result<DataBlock<D>, Error> {
+        let signatures = BlockSignatures::read_frame_from_next_offset(data.clone(), next_offset)?;
+        let signatures_reader: block_signatures::Reader = signatures.get_reader()?;
+        let signatures_offset = next_offset - signatures.whole_data_size();
+
+        let operations_size = signatures_reader.get_operations_size() as usize;
+        if operations_size > signatures_offset {
+            return Err(Error::OutOfBound(format!(
+                "Tried to read block from next offset {}, but its operations size would exceed beginning of file (operations_size={} signatures_offset={})",
+                next_offset, operations_size, signatures_offset,
+            )));
+        }
+
+        let operations_offset = signatures_offset - operations_size;
+        let operations_data = data.view(operations_offset..signatures_offset);
+
+        let header = read_header_frame_from_next_offset(data, operations_offset)?;
+        let header_reader: block_header::Reader = header.get_reader()?;
+
+        Ok(DataBlock {
+            offset: header_reader.get_offset(),
+            operations_data,
+            header,
+            signatures,
+        })
     }
 }
 
-impl<'a> Iterator for ChainBlockIterator<'a> {
-    type Item = BlockRef<'a>;
+impl<D: Data> Block for DataBlock<D> {
+    type UnderlyingFrame = D;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current_offset >= self.data.len() {
-            return None;
-        }
+    fn offset(&self) -> u64 {
+        self.offset
+    }
 
-        let block_res = BlockRef::new(&self.data[self.current_offset..]);
-        match block_res {
-            Ok(block) => {
-                self.current_offset += block.total_size() as usize;
-                Some(block)
-            }
-            Err(other) => {
-                self.last_error = Some(other);
-                None
-            }
-        }
+    fn header(&self) -> &BlockHeaderFrame<Self::UnderlyingFrame> {
+        &self.header
+    }
+
+    fn operations_data(&self) -> &[u8] {
+        self.operations_data.slice(..)
+    }
+
+    fn signatures(&self) -> &SignaturesFrame<Self::UnderlyingFrame> {
+        &self.signatures
     }
 }
 
@@ -521,7 +572,7 @@ impl<'a> Iterator for ChainBlockIterator<'a> {
 pub struct BlockOperations {
     hash: Multihash,
     headers: Vec<BlockOperationHeader>,
-    data: Vec<u8>,
+    data: Bytes,
 }
 
 impl BlockOperations {
@@ -529,7 +580,7 @@ impl BlockOperations {
         BlockOperations {
             hash: Multihash::default(),
             headers: Vec::new(),
-            data: Vec::new(),
+            data: Bytes::new(),
         }
     }
 
@@ -541,7 +592,7 @@ impl BlockOperations {
     {
         let mut hasher = Sha3_256::default();
         let mut headers = Vec::new();
-        let mut data = Vec::new();
+        let mut data = BytesMut::new();
 
         for operation in sorted_operations {
             let operation = operation.borrow();
@@ -561,7 +612,7 @@ impl BlockOperations {
         Ok(BlockOperations {
             hash: hasher.to_multihash(),
             headers,
-            data,
+            data: data.into(),
         })
     }
 
@@ -679,7 +730,7 @@ impl BlockSignatures {
     pub fn to_frame_for_new_block(
         &self,
         operations_size: BlockOperationsSize,
-    ) -> Result<SignaturesFrame<Vec<u8>>, Error> {
+    ) -> Result<SignaturesFrame<Bytes>, Error> {
         let mut signatures_frame_builder = self.to_frame_builder();
         let mut signatures_builder = signatures_frame_builder.get_builder();
         signatures_builder.set_operations_size(operations_size);
@@ -693,7 +744,7 @@ impl BlockSignatures {
     pub fn to_frame_for_existing_block(
         &self,
         header_reader: &block_header::Reader,
-    ) -> Result<SignaturesFrame<Vec<u8>>, Error> {
+    ) -> Result<SignaturesFrame<Bytes>, Error> {
         let expected_signatures_size = usize::from(header_reader.get_signatures_size());
 
         // create capnp frame
@@ -741,11 +792,11 @@ impl BlockSignatures {
         Ok(frame)
     }
 
-    pub fn read_frame_from_next_offset(
-        data: &[u8],
+    pub fn read_frame_from_next_offset<I: FrameReader>(
+        inner: I,
         next_offset: usize,
-    ) -> Result<SignaturesFrame<&[u8]>, Error> {
-        let sized_frame = SizedFrame::new_from_next_offset(data, next_offset)?;
+    ) -> Result<SignaturesFrame<I>, Error> {
+        let sized_frame = SizedFrame::new_from_next_offset(inner, next_offset)?;
         let padded_frame = PaddedFrame::new(sized_frame)?;
         let frame = TypedCapnpFrame::new(padded_frame)?;
         Ok(frame)

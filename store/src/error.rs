@@ -35,7 +35,7 @@ pub enum Error {
     ProtoFieldExpected(&'static str),
 
     #[error("IO error of kind {0}")]
-    IO(#[from] std::sync::Arc<std::io::Error>),
+    Io(#[from] std::sync::Arc<std::io::Error>),
 
     #[error("Error from remote store: {0}")]
     Remote(String),
@@ -66,7 +66,7 @@ impl Error {
     pub fn is_fatal(&self) -> bool {
         #![allow(clippy::match_like_matches_macro)]
         match self {
-            Error::Fatal(_) | Error::Poisoned | Error::Dropped | Error::IO(_) => true,
+            Error::Fatal(_) | Error::Poisoned | Error::Dropped | Error::Io(_) => true,
 
             #[cfg(feature = "local")]
             Error::TantivyOpenDirectoryError(_) => true,
@@ -114,7 +114,7 @@ impl From<exocore_protos::prost::EncodeError> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
-        Error::IO(std::sync::Arc::new(err))
+        Error::Io(std::sync::Arc::new(err))
     }
 }
 

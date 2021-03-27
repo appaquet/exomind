@@ -1,5 +1,6 @@
 use std::io;
 
+use bytes::Bytes;
 use multihash::Multihash;
 
 use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
@@ -88,7 +89,7 @@ impl<D: MultihashDigestExt, I: FrameBuilder> MultihashFrameBuilder<D, I> {
 }
 
 impl<D: MultihashDigestExt, I: FrameBuilder> FrameBuilder for MultihashFrameBuilder<D, I> {
-    type OwnedFrameType = MultihashFrame<D, Vec<u8>>;
+    type OwnedFrameType = MultihashFrame<D, Bytes>;
 
     fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         // TODO: optimize by creating a proxied writer that digests in streaming
@@ -132,12 +133,14 @@ impl<D: MultihashDigestExt, I: FrameBuilder> FrameBuilder for MultihashFrameBuil
 
 #[cfg(test)]
 mod tests {
+    use bytes::BytesMut;
+
     use super::*;
     use crate::{framing::assert_builder_equals, sec::hash::Sha3_256};
 
     #[test]
     fn can_build_and_read_multihash() -> anyhow::Result<()> {
-        let inner = b"hello".to_vec();
+        let inner = Bytes::from_static(b"hello");
         let builder = MultihashFrameBuilder::<Sha3_256, _>::new(inner.clone());
 
         assert_builder_equals(&builder)?;
@@ -148,7 +151,7 @@ mod tests {
         assert_eq!(inner, reader1.exposed_data());
         assert!(reader1.verify()?);
 
-        let mut modified_buffer = frame_bytes.clone();
+        let mut modified_buffer = BytesMut::from(frame_bytes.as_ref());
         modified_buffer[0..5].copy_from_slice(b"world");
         let reader2 = MultihashFrame::<Sha3_256, _>::new(&modified_buffer[..])?;
         assert!(!reader2.verify()?);
@@ -158,7 +161,7 @@ mod tests {
 
     #[test]
     fn can_build_to_owned() -> anyhow::Result<()> {
-        let inner = b"hello".to_vec();
+        let inner = Bytes::from_static(b"hello");
         let builder = MultihashFrameBuilder::<Sha3_256, _>::new(inner);
 
         let frame = builder.as_owned_frame();
@@ -171,7 +174,7 @@ mod tests {
 
     #[test]
     fn different_hashes() {
-        let inner = b"hello".to_vec();
+        let inner = Bytes::from_static(b"hello");
         let sha3_256 = MultihashFrameBuilder::<Sha3_256, _>::new(inner.clone());
         let sha2_256 = MultihashFrameBuilder::<multihash::Sha2_256, _>::new(inner);
 

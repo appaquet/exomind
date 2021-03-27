@@ -11,7 +11,7 @@ use pin_project::pin_project;
 
 use crate::{
     error::Error,
-    transport::{ConnectionID, TransportHandleOnStart},
+    transport::{ConnectionId, TransportHandleOnStart},
     InEvent, OutEvent, OutMessage, TransportServiceHandle,
 };
 
@@ -73,7 +73,7 @@ where
 
     fn extract_out_message_connection_side(msg: &mut OutMessage) -> Option<Side> {
         match msg.connection.take() {
-            Some(ConnectionID::Either(side, inner)) => {
+            Some(ConnectionId::Either(side, inner)) => {
                 msg.connection = inner.map(|i| *i);
                 Some(side)
             }
@@ -87,7 +87,7 @@ where
     fn add_in_message_connection_side(msg: &mut InEvent, side: Side) {
         if let InEvent::Message(msg) = msg {
             let prev_connection = msg.connection.take().map(Box::new);
-            msg.connection = Some(ConnectionID::Either(side, prev_connection));
+            msg.connection = Some(ConnectionId::Either(side, prev_connection));
         }
     }
 
@@ -335,7 +335,7 @@ mod tests {
             let msg =
                 OutMessage::from_framed_message(cell1.cell(), ServiceType::Chain, frame_builder)?
                     .with_rendez_vous_id(2.into())
-                    .with_connection(ConnectionID::Either(Side::Right, None))
+                    .with_connection(ConnectionId::Either(Side::Right, None))
                     .with_to_nodes(vec![node2.node().clone()]);
             node1_either.send_message(msg).await;
 
@@ -351,7 +351,7 @@ mod tests {
             assert_eq!(msg.from.id(), node2.id());
             assert_eq!(msg.rendez_vous_id, Some(3.into()));
             match &msg.connection {
-                Some(ConnectionID::Either(Side::Left, _)) => {}
+                Some(ConnectionId::Either(Side::Left, _)) => {}
                 other => panic!(
                     "Expected a ConnectionID::Either(Side::Left) on received message: {:?}",
                     other
@@ -363,7 +363,7 @@ mod tests {
             assert_eq!(msg.from.id(), node2.id());
             assert_eq!(msg.rendez_vous_id, Some(4.into()));
             match &msg.connection {
-                Some(ConnectionID::Either(Side::Right, _)) => {}
+                Some(ConnectionId::Either(Side::Right, _)) => {}
                 other => panic!(
                     "Expected a ConnectionID::Either(Side::Right) on received message: {:?}",
                     other

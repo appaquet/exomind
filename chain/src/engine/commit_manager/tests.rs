@@ -552,7 +552,7 @@ fn should_cleanup_past_committed_operations() -> anyhow::Result<()> {
     assert_not_in_pending(&cluster, first_op_id);
 
     // check if the block, signatures are still in pending
-    let block: crate::block::BlockRef = cluster.chains[0]
+    let block = cluster.chains[0]
         .get_block_by_operation_id(first_op_id)?
         .unwrap();
     let block_frame = block.header.get_reader()?;
@@ -581,8 +581,8 @@ fn should_not_cleanup_operations_from_commit_refused_blocks() -> anyhow::Result<
     cluster.tick_chain_synchronizer(0)?;
 
     let preceding_valid_block = cluster.chains[0]
-        .blocks_iter(0)?
-        .map(|b| b.to_owned())
+        .blocks_iter(0)
+        .map(|b| b.unwrap().to_owned())
         .nth(2)
         .unwrap();
 
@@ -679,7 +679,7 @@ fn should_cleanup_dangling_operations() -> anyhow::Result<()> {
 
     // revive old operation
     let first_op_id = *operations_id.first().unwrap();
-    let block: crate::block::BlockRef = cluster.chains[0]
+    let block = cluster.chains[0]
         .get_block_by_operation_id(first_op_id)?
         .unwrap();
     let operation = block.get_operation(first_op_id)?.unwrap();

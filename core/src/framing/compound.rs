@@ -1,6 +1,7 @@
 use std::io;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use bytes::Bytes;
 
 use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 
@@ -44,7 +45,7 @@ pub struct CompoundSideReader<'p, I: FrameReader> {
 }
 
 impl<'p, I: FrameReader> FrameReader for CompoundSideReader<'p, I> {
-    type OwnedType = Vec<u8>;
+    type OwnedType = Bytes;
 
     fn exposed_data(&self) -> &[u8] {
         let exposed_data = self.frame.inner.exposed_data();
@@ -60,7 +61,7 @@ impl<'p, I: FrameReader> FrameReader for CompoundSideReader<'p, I> {
     }
 
     fn to_owned_frame(&self) -> Self::OwnedType {
-        self.exposed_data().to_vec()
+        self.exposed_data().to_vec().into()
     }
 }
 
@@ -81,7 +82,7 @@ impl<A: FrameBuilder, B: FrameBuilder> CompoundFrameBuilder<A, B> {
 }
 
 impl<A: FrameBuilder, B: FrameBuilder> FrameBuilder for CompoundFrameBuilder<A, B> {
-    type OwnedFrameType = CompoundFrame<Vec<u8>>;
+    type OwnedFrameType = CompoundFrame<Bytes>;
 
     fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         let left_size = self.left.write_to(writer)?;
@@ -121,14 +122,15 @@ mod tests {
 
     #[test]
     fn can_build_and_read() -> anyhow::Result<()> {
-        let left = vec![1; 10];
-        let right = vec![2; 15];
+        let left = Bytes::from(vec![1; 10]);
+        let right = Bytes::from(vec![2; 15]);
 
         let builder = CompoundFrameBuilder::new(left, right);
         assert_builder_equals(&builder)?;
 
         let mut buffer = Vec::new();
         builder.write_to(&mut buffer)?;
+        let buffer = Bytes::from(buffer);
 
         let frame = CompoundFrame::new(buffer)?;
         assert_eq!(vec![1; 10], frame.reader_left().exposed_data());
@@ -139,8 +141,8 @@ mod tests {
 
     #[test]
     fn can_build_to_owned() -> anyhow::Result<()> {
-        let left = vec![1; 10];
-        let right = vec![2; 15];
+        let left = Bytes::from(vec![1; 10]);
+        let right = Bytes::from(vec![2; 15]);
 
         let builder = CompoundFrameBuilder::new(left, right);
         assert_builder_equals(&builder)?;

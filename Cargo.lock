@@ -1224,6 +1224,7 @@ version = "0.1.4"
 dependencies = [
  "anyhow",
  "byteorder",
+ "bytes 1.0.1",
  "exocore-core",
  "exocore-protos",
  "exocore-transport",
@@ -1390,6 +1391,7 @@ version = "0.1.4"
 dependencies = [
  "anyhow",
  "byteorder",
+ "bytes 1.0.1",
  "exocore-core",
  "exocore-protos",
  "futures",

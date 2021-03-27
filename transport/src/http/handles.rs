@@ -76,7 +76,7 @@ impl ServiceHandle {
 }
 
 /// Handle to the HTTP transport to be used by a service of a cell.
-pub struct HTTPTransportServiceHandle {
+pub struct HttpTransportServiceHandle {
     pub(super) cell_id: CellId,
     pub(super) service_type: ServiceType,
     pub(super) inner: Weak<Mutex<ServiceHandles>>,
@@ -85,7 +85,7 @@ pub struct HTTPTransportServiceHandle {
     pub(super) handle: Handle,
 }
 
-impl TransportServiceHandle for HTTPTransportServiceHandle {
+impl TransportServiceHandle for HttpTransportServiceHandle {
     type Sink = MpscHandleSink;
     type Stream = MpscHandleStream;
 
@@ -102,7 +102,7 @@ impl TransportServiceHandle for HTTPTransportServiceHandle {
     }
 }
 
-impl Future for HTTPTransportServiceHandle {
+impl Future for HttpTransportServiceHandle {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -110,7 +110,7 @@ impl Future for HTTPTransportServiceHandle {
     }
 }
 
-impl Drop for HTTPTransportServiceHandle {
+impl Drop for HttpTransportServiceHandle {
     fn drop(&mut self) {
         debug!(
             "Transport handle for cell {} service type {:?} got dropped. Removing it from transport",

@@ -69,9 +69,10 @@ impl BlockMetadata {
         // include N blocks from the requested from offset
         let from_offset = from_offset.unwrap_or(0);
         let blocks_iter = store
-            .blocks_iter(from_offset)?
+            .blocks_iter(from_offset)
             .take(config.metadata_sync_begin_count);
         for block in blocks_iter {
+            let block = block?;
             let block_meta = BlockMetadata::from_stored_block(block)?;
             blocks_meta.push(block_meta);
         }
@@ -102,13 +103,14 @@ impl BlockMetadata {
                     to_offset
                 ))
             })?;
-        let blocks_iter = store.blocks_iter_reverse(to_offset);
-        if let Ok(blocks_iter) = blocks_iter {
+        if store.get_block_from_next_offset(to_offset).is_ok() {
+            let blocks_iter = store.blocks_iter_reverse(to_offset);
             let mut blocks = blocks_iter
                 .take(config.metadata_sync_end_count)
                 .collect::<Vec<_>>();
             blocks.reverse();
             for block in blocks {
+                let block = block?;
                 let block_meta = BlockMetadata::from_stored_block(block)?;
 
                 // make sure that we don't add a block that is before last added block
@@ -163,14 +165,24 @@ impl BlockMetadata {
         let last_block_height = last_block_reader.get_height();
 
         let from_offset = from_offset.unwrap_or(0);
-        let mut blocks_iter = store
-            .blocks_iter(from_offset)
-            .or_else(|_| store.blocks_iter(0))?
-            .peekable();
+        let mut blocks_iter = match store.get_block(from_offset) {
+            Ok(_block) => store.blocks_iter(from_offset).peekable(),
+            Err(err) if err.is_fatal() => {
+                return Err(err.into());
+            }
+            _ => store.blocks_iter(0).peekable(),
+        };
 
-        let first_block = blocks_iter.peek().ok_or_else(|| {
-            ChainSyncError::Other("Expected a first block since ranges were not empty".to_string())
-        })?;
+        let first_block = match blocks_iter.peek() {
+            Some(Ok(block)) => block,
+            None => {
+                return Err(EngineError::Other(
+                    "Expected a first block since ranges were not empty".to_string(),
+                ));
+            }
+            Some(Err(err)) => return Err(err.clone().into()),
+        };
+
         let first_block_reader: block_header::Reader = first_block.header.get_reader()?;
         let first_block_height = first_block_reader.get_height();
 
@@ -187,6 +199,8 @@ impl BlockMetadata {
             .enumerate()
             .take(range_blocks_count as usize + 1)
         {
+            let current_block = current_block?;
+
             // we always include metadata if the block is within the first `begin_count` or
             // in the last `end_count` otherwise, we include if it falls within
             // sampling condition
@@ -348,8 +362,8 @@ mod tests {
         cluster.chain_generate_dummy(0, 100, 3424);
 
         let offsets: Vec<BlockOffset> = cluster.chains[0]
-            .blocks_iter(0)?
-            .map(|b| b.offset)
+            .blocks_iter(0)
+            .map(|b| b.unwrap().offset)
             .collect();
 
         {

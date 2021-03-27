@@ -1,4 +1,5 @@
 use block::{BlockStatus, PendingBlock, PendingBlockRefusal, PendingBlockSignature, PendingBlocks};
+use bytes::Bytes;
 use chain::ChainStore;
 pub use config::CommitManagerConfig;
 pub use error::CommitManagerError;
@@ -516,7 +517,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let chain_block = BlockOwned::new(
             block_offset,
             block_frame.to_owned(),
-            block_operations.data().to_vec(),
+            Bytes::from(block_operations.data().to_vec()),
             signatures_frame,
         );
 

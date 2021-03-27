@@ -23,9 +23,9 @@ use hyper::{
 use super::{
     handles::{ServiceHandle, ServiceHandles},
     requests::{RequestTracker, TrackedRequest},
-    HTTPTransportConfig, HTTPTransportServiceHandle,
+    HttpTransportConfig, HttpTransportServiceHandle,
 };
-use crate::{transport::ConnectionID, Error, InMessage, OutEvent, OutMessage, ServiceType};
+use crate::{transport::ConnectionId, Error, InMessage, OutEvent, OutMessage, ServiceType};
 
 /// Unidirectional HTTP transport server used for request-response type of
 /// communication by clients for which a full libp2p transport is impossible.
@@ -35,22 +35,22 @@ use crate::{transport::ConnectionID, Error, InMessage, OutEvent, OutMessage, Ser
 /// cell.
 ///
 /// At the moment, this transport is only used for entity queries and mutations.
-pub struct HTTPTransportServer {
+pub struct HttpTransportServer {
     local_node: LocalNode,
-    config: HTTPTransportConfig,
+    config: HttpTransportConfig,
     clock: Clock,
     service_handles: Arc<Mutex<ServiceHandles>>,
     handle_set: HandleSet,
 }
 
-impl HTTPTransportServer {
+impl HttpTransportServer {
     /// Creates a new HTTP server with the given configuration and clock.
     pub fn new(
         local_node: LocalNode,
-        config: HTTPTransportConfig,
+        config: HttpTransportConfig,
         clock: Clock,
-    ) -> HTTPTransportServer {
-        HTTPTransportServer {
+    ) -> HttpTransportServer {
+        HttpTransportServer {
             local_node,
             config,
             clock,
@@ -65,7 +65,7 @@ impl HTTPTransportServer {
         &mut self,
         cell: Cell,
         service_type: ServiceType,
-    ) -> Result<HTTPTransportServiceHandle, Error> {
+    ) -> Result<HttpTransportServiceHandle, Error> {
         let (in_sender, in_receiver) = mpsc::channel(self.config.handle_in_channel_size);
         let (out_sender, out_receiver) = mpsc::channel(self.config.handle_out_channel_size);
 
@@ -78,7 +78,7 @@ impl HTTPTransportServer {
             cell, service_type
         );
 
-        Ok(HTTPTransportServiceHandle {
+        Ok(HttpTransportServiceHandle {
             cell_id: cell.id().clone(),
             service_type,
             inner: Arc::downgrade(&self.service_handles),
@@ -92,7 +92,7 @@ impl HTTPTransportServer {
     pub async fn run(self) -> Result<(), Error> {
         let request_tracker = Arc::new(RequestTracker::new(self.config.clone()));
 
-        // Listen on all addresess
+        // Listen on all addresses
         let servers = {
             let mut futures = Vec::new();
             for listen_url in &self.config.listen_addresses(&self.local_node)? {
@@ -174,7 +174,7 @@ impl HTTPTransportServer {
                             match event {
                                 OutEvent::Message(message) => {
                                     let connection_id = match message.connection {
-                                        Some(ConnectionID::HTTPServer(id)) => id,
+                                        Some(ConnectionId::HttpServer(id)) => id,
                                         _ => {
                                             warn!("Couldn't find connection id in message to be send back to connection");
                                             continue;
@@ -317,7 +317,7 @@ async fn send_entity_query(
         OutMessage::from_framed_message(&service.cell, ServiceType::Store, frame_builder)?
             .with_to_node(local_node)
             .with_rendez_vous_id(clock.consistent_time(service.cell.local_node()))
-            .with_connection(ConnectionID::HTTPServer(tracked_request.id()))
+            .with_connection(ConnectionId::HttpServer(tracked_request.id()))
             .to_in_message(from_node)?;
 
     service.send_message(message)?;
@@ -366,7 +366,7 @@ async fn send_entity_mutation(
         OutMessage::from_framed_message(&service.cell, ServiceType::Store, frame_builder)?
             .with_to_node(local_node)
             .with_rendez_vous_id(clock.consistent_time(service.cell.local_node()))
-            .with_connection(ConnectionID::HTTPServer(tracked_request.id()))
+            .with_connection(ConnectionId::HttpServer(tracked_request.id()))
             .to_in_message(from_node)?;
 
     service.send_message(message)?;

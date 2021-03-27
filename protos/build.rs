@@ -46,6 +46,7 @@ fn main() {
                 )
                 .field_attribute("NodeCellConfig.location", "#[serde(flatten)]")
                 .type_attribute("NodeStoreConfig", "#[derive(Serialize, Deserialize)]")
+                .type_attribute("ChainConfig", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("EntityIndexConfig", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("MutationIndexConfig", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("EntityGarbageCollectorConfig", "#[derive(Serialize, Deserialize)]")

@@ -3,14 +3,16 @@ use std::{
     sync::{Arc, RwLock, Weak},
 };
 
+use bytes::Bytes;
 use exocore_core::utils::handle_set::Handle;
 use exocore_protos::generated::data_chain_capnp::chain_operation;
 use futures::prelude::*;
 
 use super::{EngineError, Inner};
 use crate::{
-    block::{Block, BlockHeight, BlockOffset, BlockOwned, BlockRef},
-    chain, operation,
+    block::{Block, BlockHeight, BlockOffset, DataBlock},
+    chain::{self, ChainData},
+    operation,
     operation::{OperationBuilder, OperationId},
     pending,
     pending::CommitStatus,
@@ -101,25 +103,32 @@ where
     ) -> Result<Option<(BlockOffset, BlockHeight)>, EngineError> {
         let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
-        let block = unlocked_inner.chain_store.get_block(offset).ok();
-
-        if let Some(block) = block {
-            let height = block.get_height()?;
-            Ok(Some((block.offset, height)))
-        } else {
-            Ok(None)
+        match unlocked_inner.chain_store.get_block(offset) {
+            Ok(block) => {
+                let height = block.get_height()?;
+                Ok(Some((block.offset, height)))
+            }
+            Err(err) if err.is_fatal() => Err(err.into()),
+            Err(_err) => {
+                // non-fatal just mean we didn't find block
+                Ok(None)
+            }
         }
     }
 
-    pub fn get_chain_block(&self, offset: BlockOffset) -> Result<Option<BlockOwned>, EngineError> {
+    pub fn get_chain_block(
+        &self,
+        offset: BlockOffset,
+    ) -> Result<Option<DataBlock<ChainData>>, EngineError> {
         let inner = self.inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
         let unlocked_inner = inner.read()?;
-        let block = unlocked_inner.chain_store.get_block(offset).ok();
-
-        if let Some(block) = block {
-            Ok(Some(block.to_owned()))
-        } else {
-            Ok(None)
+        match unlocked_inner.chain_store.get_block(offset) {
+            Ok(block) => Ok(Some(block)),
+            Err(err) if err.is_fatal() => Err(err.into()),
+            Err(_err) => {
+                // non-fatal just mean we didn't find block
+                Ok(None)
+            }
         }
     }
 
@@ -255,7 +264,7 @@ pub enum Event {
 pub struct EngineOperation {
     pub operation_id: OperationId,
     pub status: EngineOperationStatus,
-    pub operation_frame: Arc<super::operation::OperationFrame<Vec<u8>>>,
+    pub operation_frame: Arc<super::operation::OperationFrame<Bytes>>,
 }
 
 impl EngineOperation {
@@ -274,15 +283,15 @@ impl EngineOperation {
         }
     }
 
-    fn from_chain(
-        block: BlockRef,
+    fn from_chain<B: Block>(
+        block: B,
         operation_id: OperationId,
     ) -> Result<Option<EngineOperation>, EngineError> {
         if let Some(operation) = block.get_operation(operation_id)? {
             let height = block.get_height()?;
             return Ok(Some(EngineOperation {
                 operation_id,
-                status: EngineOperationStatus::Committed(block.offset, height),
+                status: EngineOperationStatus::Committed(block.offset(), height),
                 operation_frame: Arc::new(operation.to_owned()),
             }));
         }

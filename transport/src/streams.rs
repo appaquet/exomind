@@ -69,8 +69,8 @@ impl Sink<OutEvent> for MpscHandleSink {
     }
 }
 
-impl Into<Error> for SendError {
-    fn into(self) -> Error {
-        Error::Other(format!("Sink error: {}", self))
+impl From<SendError> for Error {
+    fn from(s: SendError) -> Self {
+        Error::Other(format!("Sink error: {}", s))
     }
 }

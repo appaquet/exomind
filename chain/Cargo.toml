@@ -11,9 +11,10 @@ version = "0.1.4"
 
 [features]
 default = ["engine", "directory-chain", "memory-pending"]
-directory-chain = ["memmap2", "extindex"]
+directory-chain = ["mmap", "extindex"]
 engine = []
 memory-pending = []
+mmap = ["memmap2"]
 tests-utils = ["engine", "tempfile", "directory-chain", "memory-pending", "exocore-core/tests-utils", "exocore-transport/tests-utils"]
 
 [dependencies]
@@ -27,6 +28,7 @@ itertools = "0.10"
 log = "0.4"
 serde = {version = "1.0", features = ["derive"]}
 thiserror = "1.0"
+bytes = "1.0"
 
 # For directory chain
 extindex = {version = "0.4", optional = true}

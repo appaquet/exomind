@@ -1,6 +1,7 @@
 use std::io;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use bytes::Bytes;
 
 use super::{check_from_size, check_into_size, Error, FrameBuilder, FrameReader};
 
@@ -79,7 +80,7 @@ impl<I: FrameBuilder> PaddedFrameBuilder<I> {
 }
 
 impl<I: FrameBuilder> FrameBuilder for PaddedFrameBuilder<I> {
-    type OwnedFrameType = PaddedFrame<Vec<u8>>;
+    type OwnedFrameType = PaddedFrame<Bytes>;
 
     fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         let inner_size = self.inner.write_to(writer)?;
@@ -142,19 +143,19 @@ mod tests {
 
     #[test]
     fn can_build_and_read() -> anyhow::Result<()> {
-        let builder = PaddedFrameBuilder::new(vec![1; 10], 0);
+        let builder = PaddedFrameBuilder::new(Bytes::from(vec![1; 10]), 0);
         assert_builder_equals(&builder)?;
 
         let frame = PaddedFrame::new(builder.as_bytes())?;
         assert_eq!(vec![1; 10], frame.exposed_data());
 
-        let builder = PaddedFrameBuilder::new(vec![1; 10], 10);
+        let builder = PaddedFrameBuilder::new(Bytes::from(vec![1; 10]), 10);
         assert_builder_equals(&builder)?;
         let frame = PaddedFrame::new(builder.as_bytes())?;
         assert_eq!(0, frame.padding_size);
         assert_eq!(vec![1; 10], frame.exposed_data());
 
-        let builder = PaddedFrameBuilder::new(vec![1; 10], 20);
+        let builder = PaddedFrameBuilder::new(Bytes::from(vec![1; 10]), 20);
         assert_builder_equals(&builder)?;
         let frame = PaddedFrame::new(builder.as_bytes())?;
         assert_eq!(vec![1; 10], frame.exposed_data());
@@ -166,7 +167,7 @@ mod tests {
 
     #[test]
     fn can_build_to_owned() {
-        let builder = PaddedFrameBuilder::new(vec![1; 10], 0);
+        let builder = PaddedFrameBuilder::new(Bytes::from(vec![1; 10]), 0);
         let frame = builder.as_owned_frame();
         assert_eq!(vec![1; 10], frame.exposed_data());
     }

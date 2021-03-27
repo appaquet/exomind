@@ -4,6 +4,8 @@ use std::{
     sync::Arc,
 };
 
+use bytes::Bytes;
+
 use super::*;
 use crate::operation::Operation;
 
@@ -210,7 +212,7 @@ struct GroupOperation {
     operation_id: OperationId,
     operation_type: operation::OperationType,
     commit_status: CommitStatus,
-    frame: Arc<crate::operation::OperationFrame<Vec<u8>>>,
+    frame: Arc<crate::operation::OperationFrame<Bytes>>,
 }
 
 struct OperationsIterator<'store> {

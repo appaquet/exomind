@@ -24,7 +24,7 @@ use super::{
 };
 use crate::{
     messages::InMessage,
-    transport::{ConnectionID, ConnectionStatus, InEvent, OutEvent},
+    transport::{ConnectionId, ConnectionStatus, InEvent, OutEvent},
     Error, Libp2pTransportServiceHandle, ServiceType,
 };
 
@@ -184,7 +184,7 @@ impl Libp2pTransport {
                         let frame_data = msg.envelope_builder.as_bytes();
 
                         let connection =
-                            if let Some(ConnectionID::Libp2p(connection)) = msg.connection {
+                            if let Some(ConnectionId::Libp2p(connection)) = msg.connection {
                                 Some(connection)
                             } else {
                                 None
@@ -339,7 +339,7 @@ fn dispatch_message(
 
     let source_node = get_node_by_peer(&service_handle.cell, message.source)?;
     let mut msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
-    msg.connection = Some(ConnectionID::Libp2p(message.connection));
+    msg.connection = Some(ConnectionId::Libp2p(message.connection));
 
     service_handle
         .in_sender

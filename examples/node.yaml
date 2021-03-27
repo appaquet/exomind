@@ -66,3 +66,7 @@ store:
     garbage_collector:
       run_interval_secs: 30
       queue_size: 100
+
+chain:
+  segment_max_size: 209715200 # 200mb
+  segment_max_open_mmap: 10   # Max 2gb concurrently opened 

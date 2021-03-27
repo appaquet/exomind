@@ -1,5 +1,6 @@
 use std::{io::Write, path::PathBuf, time::Duration};
 
+use bytes::Bytes;
 use clap::Clap;
 use exocore_chain::{
     block::{Block, BlockOperations, BlockOwned},
@@ -548,6 +549,7 @@ fn cmd_list(ctx: &Context, _cell_opts: &CellOptions) {
 }
 
 fn cmd_check_chain(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()> {
+    let config = ctx.options.read_configuration();
     let (_, cell) = get_cell(ctx, cell_opts);
 
     let chain_dir = cell
@@ -556,11 +558,14 @@ fn cmd_check_chain(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()>
         .expect("Cell doesn't have a path configured");
 
     print_spacer();
-    let chain_store =
-        DirectoryChainStore::create_or_open(DirectoryChainStoreConfig::default(), &chain_dir)?;
+    let chain_config = config.chain.unwrap_or_default();
+    let chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)
+        .expect("Couldn't open chain");
 
     let mut block_count = 0;
-    for block in chain_store.blocks_iter(0)? {
+    for block in chain_store.blocks_iter(0) {
+        let block = block?;
+
         block_count += 1;
         if let Err(err) = block.validate() {
             let block_header_reader = block.header().get_reader();
@@ -591,6 +596,7 @@ fn cmd_export_chain(
     cell_opts: &CellOptions,
     export_opts: &ChainExportOptions,
 ) -> anyhow::Result<()> {
+    let config = ctx.options.read_configuration();
     let (_, cell) = get_cell(ctx, cell_opts);
 
     let chain_dir = cell
@@ -598,9 +604,9 @@ fn cmd_export_chain(
         .chain_directory()
         .expect("Cell doesn't have a path configured");
 
-    let chain_store =
-        DirectoryChainStore::create_or_open(DirectoryChainStoreConfig::default(), &chain_dir)
-            .expect("Couldn't open chain");
+    let chain_config = config.chain.unwrap_or_default();
+    let chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)
+        .expect("Couldn't open chain");
 
     let mut operations_count = 0;
     let mut blocks_count = 0;
@@ -621,7 +627,9 @@ fn cmd_export_chain(
     print_spacer();
     let bar = indicatif::ProgressBar::new(last_block.get_height()?);
 
-    for block in chain_store.blocks_iter(0)? {
+    for block in chain_store.blocks_iter(0) {
+        let block = block?;
+
         blocks_count += 1;
 
         let operations = block
@@ -666,6 +674,7 @@ fn cmd_import_chain(
     cell_opts: &CellOptions,
     import_opts: &ChainImportOptions,
 ) -> anyhow::Result<()> {
+    let config = ctx.options.read_configuration();
     let (_, cell) = get_cell(ctx, cell_opts);
     let full_cell = cell.unwrap_full();
 
@@ -674,9 +683,10 @@ fn cmd_import_chain(
         .chain_directory()
         .expect("Cell doesn't have a path configured");
 
-    let mut chain_store =
-        DirectoryChainStore::create_or_open(DirectoryChainStoreConfig::default(), &chain_dir)
-            .expect("Couldn't open chain");
+    let chain_config = config.chain.unwrap_or_default();
+    let mut chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)
+        .expect("Couldn't open chain");
+
     if let Some(last_block) = chain_store.get_last_block()? {
         print_info(format!(
             "A chain is already initialized and contains {} blocks.",
@@ -709,7 +719,7 @@ fn cmd_import_chain(
     let mut blocks_count = 0;
 
     let mut flush_buffer =
-        |block_op_id: OperationId, operations_buffer: &mut Vec<OperationFrame<Vec<u8>>>| {
+        |block_op_id: OperationId, operations_buffer: &mut Vec<OperationFrame<Bytes>>| {
             let operations = BlockOperations::from_operations(operations_buffer.iter())
                 .expect("Couldn't create BlockOperations from operations buffer");
             let block = BlockOwned::new_with_prev_block(

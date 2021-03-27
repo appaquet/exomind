@@ -24,7 +24,7 @@ pub enum Error {
     OutOfBound(String),
 
     #[error("IO error of kind {0}: {1}")]
-    IO(std::sync::Arc<std::io::Error>, String),
+    Io(std::sync::Arc<std::io::Error>, String),
 
     #[cfg(feature = "directory-chain")]
     #[error("Error in directory chain store: {0}")]
@@ -41,12 +41,12 @@ impl Error {
     pub fn is_fatal(&self) -> bool {
         matches!(
             self,
-            Error::UnexpectedState(_) | Error::Integrity(_) | Error::IO(_, _)
+            Error::UnexpectedState(_) | Error::Integrity(_) | Error::Io(_, _)
         )
     }
 
     pub fn new_io<S: Into<String>>(io: std::io::Error, msg: S) -> Error {
-        Error::IO(std::sync::Arc::new(io), msg.into())
+        Error::Io(std::sync::Arc::new(io), msg.into())
     }
 }
 

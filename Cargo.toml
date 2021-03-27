@@ -76,6 +76,6 @@ members = [
   "clients/c",
 ]
 
-[profile.release]
-codegen-units = 1
-lto = "thin"
+#[profile.release]
+#codegen-units = 1
+#lto = "thin"

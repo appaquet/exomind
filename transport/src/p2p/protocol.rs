@@ -5,6 +5,7 @@ use std::{
 };
 
 use byteorder::{ByteOrder, LittleEndian};
+use bytes::Bytes;
 use futures::{future::BoxFuture, prelude::*, AsyncReadExt, AsyncWriteExt};
 use libp2p::{
     core::{InboundUpgrade, OutboundUpgrade, UpgradeInfo},
@@ -250,7 +251,7 @@ where
 /// `ExocoreProtoHandler`
 #[derive(Clone)]
 pub struct ExocoreProtoMessage {
-    pub(crate) data: Vec<u8>,
+    pub(crate) data: Bytes,
 }
 
 /// Wraps a stream to expose reading and writing message capability.
@@ -289,10 +290,10 @@ where
             return Err(io::ErrorKind::InvalidData.into());
         }
 
-        let mut msg = ExocoreProtoMessage {
-            data: vec![0; size],
-        };
-        self.socket.read_exact(&mut msg.data).await?;
+        let mut data = vec![0; size];
+        self.socket.read_exact(&mut data).await?;
+
+        let msg = ExocoreProtoMessage { data: data.into() };
 
         Ok((msg, self))
     }

@@ -12,7 +12,7 @@ pub enum Error {
     SerializationNotInSchema(u16),
 
     #[error("IO error: {0}")]
-    IO(#[from] std::sync::Arc<std::io::Error>),
+    Io(#[from] std::sync::Arc<std::io::Error>),
 
     #[error("Could not upgrade a weak reference")]
     Upgrade,
@@ -48,6 +48,6 @@ impl<T> From<std::sync::PoisonError<T>> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
-        Error::IO(std::sync::Arc::new(err))
+        Error::Io(std::sync::Arc::new(err))
     }
 }

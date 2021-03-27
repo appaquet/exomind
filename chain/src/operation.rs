@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use exocore_core::{
     cell::{LocalNode, NodeId},
     framing::{
@@ -187,11 +188,11 @@ pub fn read_operation_frame<I: FrameReader>(inner: I) -> Result<OperationFrame<I
 #[derive(Clone)]
 pub struct NewOperation {
     pub operation_id: OperationId,
-    pub frame: OperationFrame<Vec<u8>>,
+    pub frame: OperationFrame<Bytes>,
 }
 
 impl NewOperation {
-    pub fn from_frame(operation_id: OperationId, frame: OperationFrame<Vec<u8>>) -> NewOperation {
+    pub fn from_frame(operation_id: OperationId, frame: OperationFrame<Bytes>) -> NewOperation {
         NewOperation {
             operation_id,
             frame,

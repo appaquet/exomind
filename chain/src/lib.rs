@@ -8,6 +8,7 @@ extern crate anyhow;
 
 pub mod block;
 pub mod chain;
+pub mod data;
 #[cfg(feature = "engine")]
 pub mod engine;
 pub mod operation;

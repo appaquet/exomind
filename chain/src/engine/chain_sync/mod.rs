@@ -255,15 +255,16 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 Self::create_sync_response_for_metadata(from_offset, to_offset, blocks_metadata);
             sync_context.push_chain_sync_response(from_node.id().clone(), response);
         } else if requested_details == chain_sync_request::RequestedDetails::Blocks {
-            let blocks_iter = store
-                .blocks_iter(from_offset)?
-                .filter(|b| to_offset == 0 || b.offset <= to_offset);
+            let blocks_iter = store.blocks_iter(from_offset).filter(|b| match b {
+                Ok(b) => to_offset == 0 || b.offset <= to_offset,
+                Err(_err) => true,
+            });
             let response = Self::create_sync_response_for_blocks(
                 &self.config,
                 from_offset,
                 to_offset,
                 blocks_iter,
-            );
+            )?;
             sync_context.push_chain_sync_response(from_node.id().clone(), response);
         } else {
             return Err(ChainSyncError::InvalidSyncRequest(format!(
@@ -512,12 +513,15 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
     /// Creates a response to request for blocks data from a remote node.
     /// If we're asked for data, this means we're the lead.
-    fn create_sync_response_for_blocks<'s, I: Iterator<Item = BlockRef<'s>>>(
+    fn create_sync_response_for_blocks<
+        B: Block,
+        I: Iterator<Item = Result<B, crate::chain::Error>>,
+    >(
         config: &ChainSyncConfig,
         from_offset: BlockOffset,
         to_offset: BlockOffset,
         blocks_iter: I,
-    ) -> CapnpFrameBuilder<chain_sync_response::Owned> {
+    ) -> Result<CapnpFrameBuilder<chain_sync_response::Owned>, EngineError> {
         let mut frame_builder = CapnpFrameBuilder::new();
         let mut response_builder: chain_sync_response::Builder = frame_builder.get_builder();
         response_builder.set_from_offset(from_offset);
@@ -525,15 +529,21 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
 
         // accumulate blocks' data until we reach max packet size
         let mut data_size = 0;
-        let blocks = blocks_iter
+        let blocks: Result<Vec<_>, crate::chain::Error> = blocks_iter
             .take_while(|block| {
-                // check if we reached max at first so that we send at least 1 block even if it
-                // max out
-                let is_full = data_size < config.blocks_max_send_size;
-                data_size += block.total_size();
-                is_full
+                match block {
+                    Ok(block) => {
+                        // check if we reached max at first so that we send at least 1 block even if
+                        // it max out
+                        let is_full = data_size < config.blocks_max_send_size;
+                        data_size += block.total_size();
+                        is_full
+                    }
+                    Err(_err) => true, // will be handled by collect
+                }
             })
-            .collect::<Vec<_>>();
+            .collect();
+        let blocks = blocks?;
         let blocks_len = blocks.len() as u32;
 
         if blocks_len > 0 {
@@ -547,12 +557,12 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
                 "Sending {} block(s) data with total size {} bytes from offset {:?} to offset {:?}",
                 blocks.len(),
                 data_size,
-                blocks.first().map(|b| b.offset),
-                blocks.last().map(|b| b.offset)
+                blocks.first().map(|b| b.offset()),
+                blocks.last().map(|b| b.offset()),
             );
         }
 
-        frame_builder
+        Ok(frame_builder)
     }
 
     /// Manages blocks metadata response by comparing to local blocks and
@@ -594,25 +604,30 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             // if we haven't encountered a block we didn't have in common, we keep checking
             // if we have the block locally, and update the last_common_block
             if first_non_common_block.is_none() {
-                if let Ok(local_block) = store.get_block(offset) {
-                    let local_block_signature =
-                        local_block.header.inner().inner().multihash_bytes();
-                    if metadata_reader.get_block_hash()? == local_block_signature {
-                        let is_latest_common_offset = from_node_info
-                            .last_common_block
-                            .as_ref()
-                            .map_or(true, |b| b.offset < offset);
-                        if is_latest_common_offset {
-                            from_node_info.last_common_block = Some(
-                                BlockMetadata::from_block_partial_metadata_reader(metadata_reader)?,
-                            );
-                            has_new_common_block = true;
+                match store.get_block(offset) {
+                    Ok(local_block) => {
+                        let local_block_signature =
+                            local_block.header.inner().inner().multihash_bytes();
+                        if metadata_reader.get_block_hash()? == local_block_signature {
+                            let is_latest_common_offset = from_node_info
+                                .last_common_block
+                                .as_ref()
+                                .map_or(true, |b| b.offset < offset);
+                            if is_latest_common_offset {
+                                from_node_info.last_common_block =
+                                    Some(BlockMetadata::from_block_partial_metadata_reader(
+                                        metadata_reader,
+                                    )?);
+                                has_new_common_block = true;
+                            }
+                        } else {
+                            first_non_common_block = Some(offset);
                         }
-                    } else {
+                    }
+                    Err(err) if err.is_fatal() => return Err(err.into()),
+                    Err(_err) => {
                         first_non_common_block = Some(offset);
                     }
-                } else {
-                    first_non_common_block = Some(offset);
                 }
             }
 

@@ -7,14 +7,14 @@ use crate::Error;
 
 /// Configuration for HTTP transport.
 #[derive(Clone)]
-pub struct HTTPTransportConfig {
+pub struct HttpTransportConfig {
     pub listen_addresses: Vec<Url>,
     pub handle_in_channel_size: usize,
     pub handle_out_channel_size: usize,
     pub request_timeout: Duration,
 }
 
-impl HTTPTransportConfig {
+impl HttpTransportConfig {
     pub fn listen_addresses(&self, local_node: &LocalNode) -> Result<Vec<Url>, Error> {
         let mut conf_addresses = self.listen_addresses.clone();
         let mut node_addresses = local_node.http_addresses();
@@ -25,9 +25,9 @@ impl HTTPTransportConfig {
     }
 }
 
-impl Default for HTTPTransportConfig {
+impl Default for HttpTransportConfig {
     fn default() -> Self {
-        HTTPTransportConfig {
+        HttpTransportConfig {
             listen_addresses: Vec::new(),
             handle_in_channel_size: 1000,
             handle_out_channel_size: 1000,

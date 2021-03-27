@@ -1,9 +1,6 @@
 use std::pin::Pin;
 
-use exocore_chain::{
-    DirectoryChainStore, DirectoryChainStoreConfig, Engine, EngineConfig, EngineHandle,
-    MemoryPendingStore,
-};
+use exocore_chain::{DirectoryChainStore, Engine, EngineConfig, EngineHandle, MemoryPendingStore};
 use exocore_core::{
     cell::{Cell, CellNodeRole, EitherCell, FullCell},
     futures::owned_spawn,
@@ -16,7 +13,7 @@ use exocore_store::{
 };
 use exocore_transport::{
     either::EitherTransportServiceHandle,
-    http::{HTTPTransportConfig, HTTPTransportServer},
+    http::{HttpTransportConfig, HttpTransportServer},
     p2p::Libp2pTransportConfig,
     Libp2pTransport, ServiceType, TransportServiceHandle,
 };
@@ -36,8 +33,8 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
     };
 
     let mut http_transport = {
-        let http_config = HTTPTransportConfig::default();
-        HTTPTransportServer::new(local_node, http_config, clock.clone())
+        let http_config = HttpTransportConfig::default();
+        HttpTransportServer::new(local_node, http_config, clock.clone())
     };
 
     let mut engine_handles = Vec::new();
@@ -56,8 +53,8 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
             std::fs::create_dir_all(&chain_dir)?;
 
             // create chain store
-            let chain_config = DirectoryChainStoreConfig::default();
-            let chain_store = DirectoryChainStore::create_or_open(chain_config, &chain_dir)?;
+            let chain_config = config.chain.clone().unwrap_or_default();
+            let chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)?;
             let pending_store = MemoryPendingStore::new();
 
             // create the engine
@@ -177,51 +174,53 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
     Ok(())
 }
 
+// See https://github.com/bytecodealliance/wasmtime/blob/5c1d728e3ae8ee7aa329e294999a2c3086b21676/docs/stability-platform-support.md
+#[cfg(any(
+    all(
+        target_arch = "x86_64",
+        any(target_os = "linux", target_os = "darwin", target_os = "windows")
+    ),
+    all(target_arch = "x86_64", target_os = "linux")
+))]
 async fn create_app_host(
     clock: Clock,
     cell: Cell,
     store_handle: impl exocore_store::store::Store,
     services_completion: &mut Vec<Pin<Box<dyn Future<Output = ()>>>>,
 ) -> anyhow::Result<()> {
-    // See https://github.com/bytecodealliance/wasmtime/blob/5c1d728e3ae8ee7aa329e294999a2c3086b21676/docs/stability-platform-support.md
-    #[cfg(any(
-        all(
-            target_arch = "x86_64",
-            any(target_os = "linux", target_os = "darwin", target_os = "windows")
-        ),
-        all(target_arch = "x86_64", target_os = "linux")
-    ))]
-    {
-        use exocore_apps_runtime::{Applications, Config as ApplicationsConfig};
+    use exocore_apps_runtime::{Applications, Config as ApplicationsConfig};
 
-        let apps_config = ApplicationsConfig::default();
-        let apps =
-            Applications::new(apps_config, clock.clone(), cell.clone(), store_handle).await?;
+    let apps_config = ApplicationsConfig::default();
+    let apps = Applications::new(apps_config, clock.clone(), cell.clone(), store_handle).await?;
 
-        services_completion.push(
-            async move {
-                let res = apps.run().await;
-                info!(
-                    "{}: Applications runtime completed with result {:?}",
-                    cell, res
-                );
-            }
-            .boxed(),
-        );
-    }
-
-    #[cfg(not(any(
-        all(
-            target_arch = "x86_64",
-            any(target_os = "linux", target_os = "darwin", target_os = "windows")
-        ),
-        all(target_arch = "x86_64", target_os = "linux")
-    )))]
-    {
-        return Err(anyhow!("Cannot host app on this target."));
-    }
+    services_completion.push(
+        async move {
+            let res = apps.run().await;
+            info!(
+                "{}: Applications runtime completed with result {:?}",
+                cell, res
+            );
+        }
+        .boxed(),
+    );
 
     Ok(())
+}
+
+#[cfg(not(any(
+    all(
+        target_arch = "x86_64",
+        any(target_os = "linux", target_os = "darwin", target_os = "windows")
+    ),
+    all(target_arch = "x86_64", target_os = "linux")
+)))]
+async fn create_app_host(
+    _clock: Clock,
+    _cell: Cell,
+    _store_handle: impl exocore_store::store::Store,
+    _services_completion: &mut Vec<Pin<Box<dyn Future<Output = ()>>>>,
+) -> anyhow::Result<()> {
+    return Err(anyhow!("Cannot host app on this target."));
 }
 
 async fn create_local_store<T: TransportServiceHandle>(

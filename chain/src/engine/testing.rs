@@ -4,6 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use bytes::Bytes;
 use exocore_core::{
     cell::{CellNodeRole, FullCell, LocalNode, Node, NodeId},
     framing::{
@@ -261,7 +262,12 @@ impl EngineTestCluster {
                 prev_block_msg,
                 seed,
             );
-            let block = BlockOwned::new(next_offset, block_frame, operations_data, signatures);
+            let block = BlockOwned::new(
+                next_offset,
+                block_frame,
+                Bytes::from(operations_data),
+                signatures,
+            );
             next_offset = self.chains[node_idx].write_block(&block).unwrap();
         }
     }
@@ -353,7 +359,7 @@ impl EngineTestCluster {
         &mut self,
         node_id_a: usize,
         node_id_b: usize,
-        initial_request: TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
+        initial_request: TypedCapnpFrame<Bytes, pending_sync_request::Owned>,
     ) -> Result<(usize, usize), anyhow::Error> {
         let node_a = self.get_node(node_id_a);
         let node_b = self.get_node(node_id_b);
@@ -469,7 +475,7 @@ impl EngineTestCluster {
         &mut self,
         node_id_a: usize,
         node_id_b: usize,
-        first_request: TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned>,
+        first_request: TypedCapnpFrame<Bytes, chain_sync_request::Owned>,
     ) -> Result<(usize, usize), crate::engine::EngineError> {
         let node1 = self.get_node(node_id_a);
         let node2 = self.get_node(node_id_b);
@@ -574,7 +580,7 @@ pub fn create_dummy_block<I: FrameReader>(
     signatures_size: u16,
     previous_block: Option<crate::block::BlockHeaderFrame<I>>,
     seed: u64,
-) -> crate::block::BlockHeaderFrame<Vec<u8>> {
+) -> crate::block::BlockHeaderFrame<Bytes> {
     let mut msg_builder = CapnpFrameBuilder::<block_header::Owned>::new();
 
     {
@@ -598,7 +604,7 @@ pub fn create_dummy_block<I: FrameReader>(
     crate::block::read_header_frame(block_frame_data.as_bytes()).unwrap()
 }
 
-pub fn create_dummy_block_sigs(operations_size: u32) -> SignaturesFrame<Vec<u8>> {
+pub fn create_dummy_block_sigs(operations_size: u32) -> SignaturesFrame<Bytes> {
     let block_signatures = BlockSignatures::new_from_signatures(vec![]);
     block_signatures
         .to_frame_for_new_block(operations_size)
@@ -631,7 +637,7 @@ pub fn create_dummy_new_entry_op(
 pub fn extract_chain_sync_request_frame_sync_context(
     sync_context: &SyncContext,
     to_node: &NodeId,
-) -> TypedCapnpFrame<Vec<u8>, chain_sync_request::Owned> {
+) -> TypedCapnpFrame<Bytes, chain_sync_request::Owned> {
     for sync_message in &sync_context.messages {
         match sync_message {
             SyncContextMessage::ChainSyncRequest(msg_to_node, req) if msg_to_node == to_node => {
@@ -646,7 +652,7 @@ pub fn extract_chain_sync_request_frame_sync_context(
 
 pub fn extract_chain_sync_response_frame_sync_context(
     sync_context: &SyncContext,
-) -> (NodeId, TypedCapnpFrame<Vec<u8>, chain_sync_response::Owned>) {
+) -> (NodeId, TypedCapnpFrame<Bytes, chain_sync_response::Owned>) {
     match sync_context.messages.last().unwrap() {
         SyncContextMessage::ChainSyncResponse(to_node, req) => {
             (to_node.clone(), req.as_owned_frame())
@@ -657,10 +663,7 @@ pub fn extract_chain_sync_response_frame_sync_context(
 
 pub fn extract_request_from_result(
     sync_context: &SyncContext,
-) -> (
-    NodeId,
-    TypedCapnpFrame<Vec<u8>, pending_sync_request::Owned>,
-) {
+) -> (NodeId, TypedCapnpFrame<Bytes, pending_sync_request::Owned>) {
     match sync_context.messages.last().unwrap() {
         SyncContextMessage::PendingSyncRequest(node_id, req) => {
             (node_id.clone(), req.as_owned_frame())

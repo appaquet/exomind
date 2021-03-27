@@ -1,5 +1,6 @@
 use std::io;
 
+use bytes::Bytes;
 use capnp::{
     message::{Builder, HeapAllocator},
     traits::Owned,
@@ -157,7 +158,7 @@ impl<T> FrameBuilder for CapnpFrameBuilder<T>
 where
     T: for<'a> MessageType<'a>,
 {
-    type OwnedFrameType = TypedCapnpFrame<Vec<u8>, T>;
+    type OwnedFrameType = TypedCapnpFrame<Bytes, T>;
 
     fn write_to<W: io::Write>(&self, writer: &mut W) -> Result<usize, Error> {
         let mut buffer = Vec::new();

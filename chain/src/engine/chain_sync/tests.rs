@@ -25,13 +25,13 @@ fn handle_sync_response_blocks() -> anyhow::Result<()> {
     assert!(cluster.chains_synchronizer[0].is_leader(node1.id()));
 
     // response from non-leader should result in an error
-    let blocks_iter = cluster.chains[1].blocks_iter(0)?;
+    let blocks_iter = cluster.chains[1].blocks_iter(0);
     let response = ChainSynchronizer::<DirectoryChainStore>::create_sync_response_for_blocks(
         &cluster.chains_synchronizer[1].config,
         10,
         0,
         blocks_iter,
-    );
+    )?;
     let response_frame = response.as_owned_frame();
     let mut sync_context = SyncContext::new(SyncState::default());
     let result = cluster.chains_synchronizer[0].handle_sync_response(
@@ -44,13 +44,13 @@ fn handle_sync_response_blocks() -> anyhow::Result<()> {
     assert!(sync_context.messages.is_empty());
 
     // response from leader with blocks that aren't next should fail
-    let blocks_iter = cluster.chains[1].blocks_iter(0)?;
+    let blocks_iter = cluster.chains[1].blocks_iter(0);
     let response = ChainSynchronizer::<DirectoryChainStore>::create_sync_response_for_blocks(
         &cluster.chains_synchronizer[1].config,
         10,
         0,
         blocks_iter,
-    );
+    )?;
     let response_frame = response.as_owned_frame();
     let mut sync_context = SyncContext::new(SyncState::default());
     let result = cluster.chains_synchronizer[0].handle_sync_response(
@@ -62,13 +62,13 @@ fn handle_sync_response_blocks() -> anyhow::Result<()> {
     assert!(result.is_err());
 
     // response from leader with blocks at right position should succeed and append
-    let blocks_iter = cluster.chains[1].blocks_iter(0).unwrap().skip(10); // skip 10 will go to 10th block
+    let blocks_iter = cluster.chains[1].blocks_iter(0).skip(10); // skip 10 will go to 10th block
     let response = ChainSynchronizer::<DirectoryChainStore>::create_sync_response_for_blocks(
         &cluster.chains_synchronizer[0].config,
         10,
         0,
         blocks_iter,
-    );
+    )?;
     let response_frame = response.as_owned_frame();
     let mut sync_context = SyncContext::new(SyncState::default());
     cluster.chains_synchronizer[0].handle_sync_response(

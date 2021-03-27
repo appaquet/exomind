@@ -10,21 +10,21 @@ use std::{
 use exocore_core::futures::{block_on, sleep};
 use futures::{channel::oneshot, lock::Mutex, FutureExt};
 
-use super::config::HTTPTransportConfig;
+use super::config::HttpTransportConfig;
 use crate::OutMessage;
 
-pub type RequestID = u64;
+pub type RequestId = u64;
 
 /// Tracks incoming HTTP requests for which we are waiting a reply from a
 /// service.
 pub struct RequestTracker {
-    requests: Mutex<HashMap<RequestID, oneshot::Sender<OutMessage>>>,
+    requests: Mutex<HashMap<RequestId, oneshot::Sender<OutMessage>>>,
     next_id: AtomicU64,
-    config: HTTPTransportConfig,
+    config: HttpTransportConfig,
 }
 
 impl RequestTracker {
-    pub fn new(config: HTTPTransportConfig) -> RequestTracker {
+    pub fn new(config: HttpTransportConfig) -> RequestTracker {
         RequestTracker {
             requests: Mutex::new(HashMap::new()),
             next_id: AtomicU64::new(0),
@@ -52,7 +52,7 @@ impl RequestTracker {
     }
 
     /// Handles a reply from a service to be sent back to a request.
-    pub async fn reply(&self, request_id: RequestID, message: OutMessage) {
+    pub async fn reply(&self, request_id: RequestId, message: OutMessage) {
         let sender = {
             let mut requests = self.requests.lock().await;
             requests.remove(&request_id)
@@ -73,7 +73,7 @@ impl RequestTracker {
         }
     }
 
-    pub async fn remove(&self, request_id: RequestID) {
+    pub async fn remove(&self, request_id: RequestId) {
         let mut requests = self.requests.lock().await;
         requests.remove(&request_id);
     }
@@ -82,14 +82,14 @@ impl RequestTracker {
 /// Receiving end of a the tracked request. This is used in the HTTP request
 /// handler to wait for a reply from a service.
 pub struct TrackedRequest {
-    id: RequestID,
+    id: RequestId,
     requests: Weak<RequestTracker>,
     receiver: Option<oneshot::Receiver<OutMessage>>,
     receive_timeout: Duration,
 }
 
 impl TrackedRequest {
-    pub fn id(&self) -> RequestID {
+    pub fn id(&self) -> RequestId {
         self.id
     }
 

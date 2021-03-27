@@ -2,7 +2,7 @@ use std::{
     borrow::Borrow,
     collections::{HashMap, HashSet},
     hash::Hasher,
-    path::PathBuf,
+    path::{Path, PathBuf},
     rc::Rc,
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -500,16 +500,16 @@ where
     }
 
     /// Creates the chain index based on configuration.
-    fn create_chain_index(
+    fn create_chain_index<P: AsRef<Path>>(
         config: EntityIndexConfig,
         schemas: &Arc<Registry>,
-        chain_index_dir: &PathBuf,
+        chain_index_dir: P,
     ) -> Result<MutationIndex, Error> {
         if !config.chain_index_in_memory {
             MutationIndex::open_or_create_mmap(
                 config.chain_index_config,
                 schemas.clone(),
-                &chain_index_dir,
+                chain_index_dir.as_ref(),
             )
         } else {
             MutationIndex::create_in_memory(config.chain_index_config, schemas.clone())
@@ -707,9 +707,13 @@ where
             last_indexed_offset = self.chain_index.highest_indexed_block()?;
         }
 
-        Ok(last_indexed_offset
-            .and_then(|offset| self.chain_handle.get_chain_block_info(offset).ok())
-            .and_then(|opt| opt))
+        match last_indexed_offset {
+            Some(offset) => {
+                let block_info = self.chain_handle.get_chain_block_info(offset)?;
+                Ok(block_info)
+            }
+            None => Ok(None),
+        }
     }
 
     /// Handles new pending store operations events from the chain layer by
