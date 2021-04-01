@@ -43,7 +43,7 @@
   "dependencies": {
     "@babel/preset-typescript": "^7.13.0",
     "bootstrap": "^3.3.5",
-    "classnames": "^2.2.6",
+    "classnames": "^2.3.0",
     "clipboard-copy": "^4.0.1",
     "core-js": "^3.10.0",
     "dom-serializer": "1.2.0",
