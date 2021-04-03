@@ -4,20 +4,10 @@ use exocore::{
         futures::spawn_future,
         time::Clock,
     },
-    protos::{
-        core::LocalNodeConfig,
-        prost::ProstAnyPackMessageExt,
-        store::{Entity, Trait},
-    },
-    store::{
-        mutation::MutationBuilder,
-        query::QueryBuilder,
-        remote::{Client, ClientHandle},
-        store::Store,
-    },
+    protos::core::LocalNodeConfig,
+    store::remote::{Client, ClientHandle},
     transport::{Libp2pTransport, ServiceType},
 };
-use exomind_protos::base::{Collection, Snoozed};
 
 use crate::cli;
 
@@ -58,51 +48,5 @@ impl ExomindClient {
         Ok(ExomindClient {
             store: store_handle,
         })
-    }
-
-    pub async fn create_base_entities(&self) -> anyhow::Result<()> {
-        let inbox_trait = Trait {
-            id: "inbox".to_string(),
-            message: Some(
-                Collection {
-                    name: "Inbox".to_string(),
-                }
-                .pack_to_any()?,
-            ),
-            ..Default::default()
-        };
-        let fav_trait = Trait {
-            id: "favorites".to_string(),
-            message: Some(
-                Collection {
-                    name: "Favorites".to_string(),
-                }
-                .pack_to_any()?,
-            ),
-            ..Default::default()
-        };
-
-        let mutations = MutationBuilder::new()
-            .put_trait("inbox", inbox_trait)
-            .put_trait("favorites", fav_trait);
-        let _ = self.store.mutate(mutations).await?;
-
-        Ok(())
-    }
-
-    pub async fn get_snoozed(&self) -> anyhow::Result<Vec<Entity>> {
-        let query = QueryBuilder::with_trait::<Snoozed>()
-            .count(100)
-            .order_by_field("until_date", true)
-            .build();
-
-        let results = self.store.query(query).await?;
-        let entities = results
-            .entities
-            .into_iter()
-            .flat_map(|res| res.entity)
-            .collect();
-
-        Ok(entities)
     }
 }
