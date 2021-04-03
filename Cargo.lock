@@ -903,14 +903,14 @@ dependencies = [
 
 [[package]]
 name = "exomind"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "exomind-protos",
 ]
 
 [[package]]
 name = "exomind-app"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "exocore",
@@ -921,7 +921,7 @@ dependencies = [
 
 [[package]]
 name = "exomind-gmail"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "chardetng",
@@ -945,7 +945,7 @@ dependencies = [
 
 [[package]]
 name = "exomind-protos"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "exocore",
  "prost",
@@ -955,7 +955,7 @@ dependencies = [
 
 [[package]]
 name = "exomind-server"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "exocore",
