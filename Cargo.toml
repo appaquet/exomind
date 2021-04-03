@@ -21,4 +21,4 @@ members = [
 
 [patch.crates-io]
 exocore = { path = "../exocore" }
-#exocore = {  version = "0.1.4" }
+#exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre4" }
