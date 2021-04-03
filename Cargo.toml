@@ -65,7 +65,7 @@ members = [
   "transport",
   "store",
   "chain",
-  "apps/runtime",
+  "apps/host",
   "apps/macros",
   "apps/sdk",
   "apps/example",

@@ -11,9 +11,6 @@ echo "Formatting..."
 echo "Cargo checking code, tests and benches"
 cargo check --workspace --tests --benches --all-features
 
-echo "Compiling sample app for tests"
-$EXOCORE_ROOT/apps/tools/build_fixtures.sh
-
 echo "Running tests..."
 cargo test --workspace --all-features
 

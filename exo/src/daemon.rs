@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use exocore_chain::{DirectoryChainStore, Engine, EngineConfig, EngineHandle, MemoryPendingStore};
 use exocore_core::{
-    cell::{Cell, CellNodeRole, EitherCell, FullCell},
+    cell::{Cell, CellNodeRole, CellNodes, EitherCell, FullCell},
     futures::owned_spawn,
     time::Clock,
 };
@@ -19,7 +19,7 @@ use exocore_transport::{
 };
 use futures::{Future, FutureExt};
 
-use crate::Context;
+use crate::{term::print_error, Context};
 
 pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
     let config = ctx.options.read_configuration();
@@ -174,13 +174,14 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
     Ok(())
 }
 
+// Application host can only run on targets supported by wasmtime.
 // See https://github.com/bytecodealliance/wasmtime/blob/5c1d728e3ae8ee7aa329e294999a2c3086b21676/docs/stability-platform-support.md
 #[cfg(any(
     all(
         target_arch = "x86_64",
         any(target_os = "linux", target_os = "darwin", target_os = "windows")
     ),
-    all(target_arch = "x86_64", target_os = "linux")
+    all(target_arch = "aarch64", target_os = "linux")
 ))]
 async fn create_app_host(
     clock: Clock,
@@ -188,10 +189,32 @@ async fn create_app_host(
     store_handle: impl exocore_store::store::Store,
     services_completion: &mut Vec<Pin<Box<dyn Future<Output = ()>>>>,
 ) -> anyhow::Result<()> {
-    use exocore_apps_runtime::{Applications, Config as ApplicationsConfig};
+    use exocore_apps_host::{runtime::Applications, Config as ApplicationsConfig};
+
+    // make sure that we are the only node with app host role.
+    // TODO: Support for multiple app host nodes https://github.com/appaquet/exocore/issues/619
+    {
+        let nodes = cell.nodes();
+        let app_host_count = nodes.count_with_role(CellNodeRole::AppHost);
+        if app_host_count != 1 {
+            return Err(anyhow!(
+                "{}: Only one node can be an application host",
+                cell
+            ));
+        }
+    }
 
     let apps_config = ApplicationsConfig::default();
-    let apps = Applications::new(apps_config, clock.clone(), cell.clone(), store_handle).await?;
+    let apps = match Applications::new(apps_config, clock.clone(), cell.clone(), store_handle).await
+    {
+        Ok(apps) => apps,
+        Err(err) => {
+            print_error(
+                "Couldn't start application host. Make sure apps are installed and unpacked.",
+            );
+            return Err(err.into());
+        }
+    };
 
     services_completion.push(
         async move {
@@ -212,7 +235,7 @@ async fn create_app_host(
         target_arch = "x86_64",
         any(target_os = "linux", target_os = "darwin", target_os = "windows")
     ),
-    all(target_arch = "x86_64", target_os = "linux")
+    all(target_arch = "aarch64", target_os = "linux")
 )))]
 async fn create_app_host(
     _clock: Clock,

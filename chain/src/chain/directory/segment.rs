@@ -437,7 +437,7 @@ impl SegmentFile {
         self.registered_segment.access();
 
         {
-            // first check if it's already open for write or it's closed
+            // first check if it's already open for write or if it's closed
             let mmap = self.mmap.read().unwrap();
             match &*mmap {
                 SegmentMmap::Write(_) => {

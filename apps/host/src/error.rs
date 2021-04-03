@@ -1,5 +1,4 @@
 use exocore_protos::apps::MessageStatus;
-use wasmtime::Trap;
 
 /// Application runtime error.
 #[derive(Debug, thiserror::Error)]
@@ -10,8 +9,15 @@ pub enum Error {
     #[error("WASM runtime error '{0}'")]
     Runtime(&'static str),
 
+    #[cfg(any(
+        all(
+            target_arch = "x86_64",
+            any(target_os = "linux", target_os = "darwin", target_os = "windows")
+        ),
+        all(target_arch = "aarch64", target_os = "linux")
+    ))]
     #[error("WASM execution aborted: {0}")]
-    Trap(#[from] Trap),
+    Trap(#[from] wasmtime::Trap),
 
     #[error("Message handling error: status={0:?}")]
     MessageStatus(Option<MessageStatus>),
@@ -24,13 +30,4 @@ pub enum Error {
 
     #[error(transparent)]
     Other(#[from] anyhow::Error),
-}
-
-impl From<Error> for Trap {
-    fn from(err: Error) -> Self {
-        match err {
-            Error::Trap(t) => t,
-            other => Trap::new(other.to_string()),
-        }
-    }
 }

@@ -101,7 +101,8 @@ fn main() {
                 .field_attribute("CellConfig.apps", "#[serde(default)]")
                 .field_attribute("CellNodeConfig.roles", "#[serde(default)]")
                 .field_attribute("Manifest.path", "#[serde(default)]")
-                .field_attribute("Manifest.schemas", "#[serde(default)]");
+                .field_attribute("Manifest.schemas", "#[serde(default)]")
+                .field_attribute("ManifestModule.multihash", "#[serde(default)]");
 
             config
                 .compile_protos(&prost_protos_file, &["./protobuf/"])

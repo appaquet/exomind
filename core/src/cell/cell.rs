@@ -5,6 +5,7 @@ use std::{
 };
 
 use exocore_protos::{
+    apps::Manifest,
     generated::exocore_core::{CellConfig, LocalNodeConfig},
     registry::Registry,
 };
@@ -240,6 +241,14 @@ impl Cell {
         } else {
             None
         }
+    }
+
+    pub fn app_directory(&self, app_manifest: &Manifest) -> Option<PathBuf> {
+        let app_dir = self.apps_directory()?;
+        Some(app_dir.join(format!(
+            "{}_{}",
+            app_manifest.public_key, app_manifest.version
+        )))
     }
 }
 

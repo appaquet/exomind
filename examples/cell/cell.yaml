@@ -23,4 +23,8 @@ nodes:
       public_key: peHdrwp1ZXicF1v7RQRRC4ursqgE1oM9nuVijCmrf74n7E
 
 apps:
-  - path: ../app
+  - name: Some Application
+    version: 0.0.1
+    public_key: peVpKYaERNKGhHRm7jEC1XXe4CUBWGv8g1QuDyDr76U1q 
+    package_url: https://some/path/to/package.zip
+    path: ../app

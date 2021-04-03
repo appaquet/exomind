@@ -1,10 +1,9 @@
-use std::{fs::File, io::Write, path::PathBuf, sync::Arc, time::Duration};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::anyhow;
 use exocore_core::{
     cell::Cell,
     futures::{block_on, owned_spawn, sleep, spawn_blocking, spawn_future, BatchingStream},
-    sec::hash::{multihash_decode_bs58, MultihashDigestExt, MultihashExt, Sha3_256},
     time::Clock,
     utils::backoff::BackoffCalculator,
 };
@@ -21,7 +20,8 @@ use futures::{
     Future, SinkExt, StreamExt,
 };
 
-use crate::{runtime::AppRuntime, Config, Error};
+use super::wasmtime::WasmTimeRuntime;
+use crate::{Config, Error};
 
 const MSG_BUFFER_SIZE: usize = 5000;
 const RUNTIME_MSG_BATCH_SIZE: usize = 1000;
@@ -47,31 +47,27 @@ impl<S: Store> Applications<S> {
         cell: Cell,
         store: S,
     ) -> Result<Applications<S>, Error> {
-        let apps_directory = cell
-            .apps_directory()
-            .ok_or_else(|| anyhow!("Cell {}: No apps directory configured", cell))?;
-
         let mut apps = Vec::new();
         for app in cell.applications().applications() {
             let cell_app = app.application();
-            let app_manifest = cell_app.manifest();
 
-            let module_manifest = if let Some(module) = &app_manifest.module {
-                module.clone()
-            } else {
+            let app_manifest = cell_app.manifest();
+            if app_manifest.module.is_none() {
                 continue;
             };
+
+            let module_path = cell_app
+                .module_path()
+                .ok_or_else(|| anyhow!("Couldn't find module path"))?;
 
             let app = Application {
                 cell: cell.clone(),
                 cell_app: cell_app.clone(),
-                module_manifest,
-                module_path: apps_directory.join(format!(
-                    "{}_{}/module.wasm",
-                    app_manifest.name, app_manifest.version
-                )),
+                module_path,
             };
-            app.ensure_downloaded().await?;
+            app.cell_app
+                .validate()
+                .map_err(|err| anyhow!("Couldn't validate module: {}", err))?;
 
             apps.push(app);
         }
@@ -142,7 +138,7 @@ impl<S: Store> Applications<S> {
             let app_module_path = app.module_path.clone();
             let app_prefix = app.to_string();
             spawn_blocking(move || -> Result<(), Error> {
-                let app_runtime = AppRuntime::from_file(app_module_path, env)?;
+                let app_runtime = WasmTimeRuntime::from_file(app_module_path, env)?;
                 let mut batch_receiver = BatchingStream::new(in_receiver, RUNTIME_MSG_BATCH_SIZE);
 
                 let mut next_tick = sleep(APP_MIN_TICK_TIME);
@@ -278,7 +274,7 @@ struct WiredEnvironment {
     sender: std::sync::Mutex<mpsc::Sender<exocore_protos::apps::OutMessage>>,
 }
 
-impl crate::runtime::HostEnvironment for WiredEnvironment {
+impl super::wasmtime::HostEnvironment for WiredEnvironment {
     fn handle_message(&self, msg: exocore_protos::apps::OutMessage) {
         let mut sender = self.sender.lock().unwrap();
         if let Err(err) = sender.try_send(msg) {
@@ -294,129 +290,7 @@ impl crate::runtime::HostEnvironment for WiredEnvironment {
 struct Application {
     cell: Cell,
     cell_app: exocore_core::cell::Application,
-    module_manifest: exocore_protos::apps::ManifestModule,
     module_path: PathBuf,
-}
-
-impl Application {
-    async fn ensure_downloaded(&self) -> Result<(), Error> {
-        if self.is_module_downloaded() {
-            return Ok(());
-        }
-
-        if let Some(parent) = self.module_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|err| {
-                anyhow!(
-                    "{}: Couldn't create module directory '{:?}': {}",
-                    self,
-                    parent,
-                    err
-                )
-            })?;
-        }
-
-        if self.module_manifest.url.starts_with("file://") {
-            let source_path = self.module_manifest.url.strip_prefix("file://").unwrap();
-            std::fs::copy(source_path, &self.module_path).map_err(|err| {
-                anyhow!(
-                    "{}: Couldn't copy app module from '{:?}' to path '{:?}': {}",
-                    self,
-                    source_path,
-                    self.module_path,
-                    err
-                )
-            })?;
-        } else {
-            let body = reqwest::get(&self.module_manifest.url)
-                .await
-                .map_err(|err| {
-                    anyhow!(
-                        "{}: Couldn't download app module from {}: {}",
-                        self,
-                        self.module_manifest.url,
-                        err
-                    )
-                })?
-                .bytes()
-                .await
-                .map_err(|err| {
-                    anyhow!(
-                        "{}: Couldn't download app module from {}: {}",
-                        self,
-                        self.module_manifest.url,
-                        err
-                    )
-                })?;
-
-            let mut file = File::create(&self.module_path)
-                .map_err(|err| anyhow!("Couldn't create module app file: {}", err))?;
-            file.write_all(body.as_ref())
-                .map_err(|err| anyhow!("Couldn't write app file: {}", err))?;
-        }
-
-        if !self.is_module_downloaded() {
-            return Err(anyhow!(
-                "{}: Module file not downloaded or not matching multihash",
-                self
-            )
-            .into());
-        }
-
-        Ok(())
-    }
-
-    fn is_module_downloaded(&self) -> bool {
-        let module_exists = std::fs::metadata(&self.module_path).is_ok();
-        if !module_exists {
-            debug!("{}: Module doesn't exist at {:?}", self, self.module_path);
-            return false;
-        }
-
-        let file = match File::open(&self.module_path) {
-            Ok(file) => file,
-            Err(err) => {
-                debug!(
-                    "{}: Couldn't open module from disk at {:?}: {}",
-                    self, self.module_path, err
-                );
-                return false;
-            }
-        };
-
-        let expected_multihash = match multihash_decode_bs58(&self.module_manifest.multihash) {
-            Ok(mh) => mh,
-            Err(err) => {
-                warn!(
-                    "{}: Couldn't decode expected module multihash in manifest: {}",
-                    self, err
-                );
-                return false;
-            }
-        };
-
-        let mut hasher = Sha3_256::default();
-        match hasher.update_from_reader(file) {
-            Ok(mh) if mh == expected_multihash => true,
-            Ok(mh) => {
-                let mh_bs58 = mh.encode_bs58();
-
-                warn!(
-                    "{}: Module multihash in manifest doesn't match module file (expected={} module={})",
-                    self,
-                    self.module_manifest.multihash,
-                    mh_bs58,
-                );
-                false
-            }
-            Err(err) => {
-                warn!(
-                    "{}: Couldn't compute multihash of {:?}: {}",
-                    self, self.module_path, err
-                );
-                false
-            }
-        }
-    }
 }
 
 impl std::fmt::Display for Application {

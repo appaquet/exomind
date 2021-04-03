@@ -1,4 +1,8 @@
-use std::{fs::File, path::Path, sync::Arc};
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use exocore_protos::{
     generated::exocore_apps::{manifest_schema::Source, Manifest},
@@ -6,7 +10,10 @@ use exocore_protos::{
 };
 
 use super::{Error, ManifestExt};
-use crate::sec::keys::PublicKey;
+use crate::sec::{
+    hash::{multihash_decode_bs58, multihash_sha3_256_file, MultihashExt},
+    keys::PublicKey,
+};
 
 /// Application that extends the capability of the cell by providing schemas and
 /// WebAssembly logic.
@@ -99,12 +106,65 @@ impl Application {
         &self.identity.manifest.name
     }
 
+    pub fn version(&self) -> &str {
+        &self.identity.manifest.version
+    }
+
     pub fn manifest(&self) -> &Manifest {
         &self.identity.manifest
     }
 
     pub fn schemas(&self) -> &[FileDescriptorSet] {
         self.schemas.as_ref()
+    }
+
+    pub fn module_path(&self) -> Option<PathBuf> {
+        let module = self.manifest().module.as_ref()?;
+
+        let app_path = PathBuf::from(&self.manifest().path);
+        Some(app_path.join(&module.file))
+    }
+
+    pub fn validate(&self) -> Result<(), Error> {
+        // validate module
+        if let Some(module) = &self.manifest().module {
+            let module_path = self.module_path().unwrap();
+
+            let module_multihash = multihash_sha3_256_file(&module_path).map_err(|err| {
+                Error::Application(
+                    self.name().to_string(),
+                    anyhow!(
+                        "Couldn't multihash module file at {:?}: {}",
+                        module_path,
+                        err
+                    ),
+                )
+            })?;
+
+            let expected_multihash = multihash_decode_bs58(&module.multihash).map_err(|err| {
+                Error::Application(
+                    self.name().to_string(),
+                    anyhow!(
+                        "{}: Couldn't decode expected module multihash in manifest: {}",
+                        self.name(),
+                        err
+                    ),
+                )
+            })?;
+
+            if expected_multihash != module_multihash {
+                return Err(Error::Application(
+                    self.name().to_string(),
+                    anyhow!(
+                        "Module multihash in manifest doesn't match module file (expected={} module={})",
+                        expected_multihash.encode_bs58(),
+                        module_multihash.encode_bs58(),
+                    ),
+                ));
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -162,7 +222,7 @@ fn read_file_descriptor_set_file<P: AsRef<Path>>(
         )
     })?;
 
-    let fdset = FileDescriptorSet::parse_from_reader(&mut file).map_err(|err| {
+    let fd_set = FileDescriptorSet::parse_from_reader(&mut file).map_err(|err| {
         Error::Application(
             app_name.to_string(),
             anyhow!(
@@ -172,5 +232,5 @@ fn read_file_descriptor_set_file<P: AsRef<Path>>(
         )
     })?;
 
-    Ok(fdset)
+    Ok(fd_set)
 }

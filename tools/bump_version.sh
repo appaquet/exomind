@@ -27,7 +27,7 @@ CRATES=( \
   "discovery" \
   "chain" \
   "store" \
-  "apps/runtime" \
+  "apps/host" \
   "apps/macros" \
   "apps/sdk" \
 )

@@ -416,22 +416,11 @@ impl CellConfigExt for CellConfig {
 
     /// Adds application to the cell. Only support deduping on inline apps.
     fn add_application(&mut self, cell_app: CellApplicationConfig) {
-        // if new application is not inline, we cannot dedup it.
-        use cell_application_config::Location;
-        let new_manifest = if let Some(Location::Inline(manifest)) = cell_app.location.as_ref() {
-            manifest
-        } else {
-            self.apps.push(cell_app);
-            return;
-        };
-
         // check if app exists, and replace with newer is so
-        for ext_cell_app in &mut self.apps {
-            if let Some(Location::Inline(ext_manifest)) = ext_cell_app.location.as_mut() {
-                if ext_manifest.public_key == new_manifest.public_key {
-                    *ext_manifest = new_manifest.clone();
-                    return;
-                }
+        for existing_cell_app in &mut self.apps {
+            if cell_app.public_key == existing_cell_app.public_key {
+                *existing_cell_app = cell_app;
+                return;
             }
         }
 
@@ -458,6 +447,23 @@ impl NodeConfigExt for NodeConfig {
         serde_yaml::to_string(self).map_err(|err| {
             Error::Config(anyhow!("Couldn't encode cell node config to YAML: {}", err))
         })
+    }
+}
+
+/// Extension for `CellApplicationConfig` proto.
+pub trait CellApplicationConfigExt {
+    fn from_manifest(manifest: Manifest) -> CellApplicationConfig;
+}
+
+impl CellApplicationConfigExt for CellApplicationConfig {
+    fn from_manifest(manifest: Manifest) -> CellApplicationConfig {
+        CellApplicationConfig {
+            name: manifest.name.clone(),
+            version: manifest.version.clone(),
+            public_key: manifest.public_key.clone(),
+            package_url: String::new(),
+            location: Some(cell_application_config::Location::Inline(manifest)),
+        }
     }
 }
 
@@ -650,14 +656,22 @@ mod tests {
                         }],
                         apps: vec![
                             CellApplicationConfig {
+                                name: "app1".to_string(),
+                                version: "0.0.1".to_string(),
+                                public_key: "pk1".to_string(),
+                                package_url: "https://somewhere/package.zip".to_string(),
                                 location: Some(cell_application_config::Location::Inline(
                                     Manifest {
-                                        name: "name".to_string(),
+                                        name: "app1".to_string(),
                                         ..Default::default()
                                     },
                                 )),
                             },
                             CellApplicationConfig {
+                                name: "app2".to_string(),
+                                version: "0.0.1".to_string(),
+                                public_key: "pk2".to_string(),
+                                package_url: "https://somewhere/package.zip".to_string(),
                                 location: Some(cell_application_config::Location::Path(
                                     "some_path".to_string(),
                                 )),
@@ -792,9 +806,9 @@ mod tests {
     }
 
     #[test]
-    fn node_config_inlined() -> anyhow::Result<()> {
+    fn node_config_inlined() {
         let config_path = find_test_fixture("examples/node.yaml");
-        let config = LocalNodeConfig::from_yaml_file(config_path)?;
+        let config = LocalNodeConfig::from_yaml_file(config_path).unwrap();
 
         let inlined_config = config.inlined().unwrap();
 
@@ -836,8 +850,6 @@ mod tests {
 
         // should be able to load cell inlined
         assert!(Cell::from_local_node_config(inlined_config).is_ok());
-
-        Ok(())
     }
 
     #[test]
@@ -893,7 +905,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_node_config_from_yaml() -> anyhow::Result<()> {
+    pub fn parse_node_config_from_yaml() {
         let yaml = r#"
 name: node name
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
@@ -924,7 +936,12 @@ cells:
           roles:
             - 1
       apps:
-        - inline:
+        - id: test
+          name: some application
+          version: 0.0.1
+          public_key: peHZC1CM51uAugeMNxbXkVukFzCwMJY52m1xDCfLmm1pc1
+          package_url: ""
+          inline:
              name: some application
              version: 0.0.1
              public_key: peHZC1CM51uAugeMNxbXkVukFzCwMJY52m1xDCfLmm1pc1
@@ -940,7 +957,7 @@ store:
 
 "#;
 
-        let config = LocalNodeConfig::from_yaml_reader(yaml.as_bytes())?;
+        let config = LocalNodeConfig::from_yaml_reader(yaml.as_bytes()).unwrap();
 
         {
             let index_entity = config.clone().store.unwrap().index.unwrap();
@@ -962,7 +979,7 @@ store:
             assert_eq!(None, index_entity.chain_index);
         }
 
-        let (cells, node) = Cell::from_local_node_config(config)?;
+        let (cells, node) = Cell::from_local_node_config(config).unwrap();
         assert_eq!(1, cells.len());
         assert_eq!(2, node.p2p_addresses().len());
         assert_eq!(1, node.http_addresses().len());
@@ -995,8 +1012,6 @@ store:
             assert!(cell.local_node_has_role(CellNodeRole::Chain));
             assert!(!cell.local_node_has_role(CellNodeRole::Store));
         }
-
-        Ok(())
     }
 
     #[test]
@@ -1081,24 +1096,33 @@ store:
         };
 
         config.add_application(CellApplicationConfig {
+            name: "name".to_string(),
+            version: "0.0.1".to_string(),
+            public_key: "pk1".to_string(),
+            package_url: "https://some/location/package.zip".to_string(),
             location: Some(cell_application_config::Location::Inline(Manifest {
-                public_key: "pk1".to_string(),
                 ..Default::default()
             })),
         });
         assert_eq!(config.apps.len(), 1);
 
         config.add_application(CellApplicationConfig {
+            name: "name".to_string(),
+            version: "0.0.1".to_string(),
+            public_key: "pk1".to_string(),
+            package_url: "https://some/location/package.zip".to_string(),
             location: Some(cell_application_config::Location::Inline(Manifest {
-                public_key: "pk1".to_string(),
                 ..Default::default()
             })),
         });
         assert_eq!(config.apps.len(), 1);
 
         config.add_application(CellApplicationConfig {
+            name: "name".to_string(),
+            version: "0.0.1".to_string(),
+            public_key: "pk2".to_string(),
+            package_url: "https://some/location/package.zip".to_string(),
             location: Some(cell_application_config::Location::Inline(Manifest {
-                public_key: "pk2".to_string(),
                 ..Default::default()
             })),
         });

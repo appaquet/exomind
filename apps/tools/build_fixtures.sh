@@ -7,4 +7,4 @@ EXOCORE_ROOT="$APPS_DIR/../"
 
 pushd $APPS_DIR/example/
 cargo build --target wasm32-unknown-unknown --release
-cp $EXOCORE_ROOT/target/wasm32-unknown-unknown/release/exocore_apps_example.wasm $APPS_DIR/runtime/fixtures/example.wasm
+cp $EXOCORE_ROOT/target/wasm32-unknown-unknown/release/exocore_apps_example.wasm $APPS_DIR/host/fixtures/example.wasm

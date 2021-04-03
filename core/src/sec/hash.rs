@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::{fs::File, io::Read, path::Path};
 
 use multihash::Code;
 pub use multihash::{Hasher, Multihash, MultihashDigest, Sha3_256, Sha3_512, StatefulHasher};
@@ -58,17 +58,27 @@ pub fn multihash_decode_bs58(str: &str) -> Result<Multihash, HashError> {
     Ok(mh)
 }
 
+pub fn multihash_sha3_256_file<P: AsRef<Path>>(path: P) -> Result<Multihash, HashError> {
+    let file = File::open(path.as_ref())?;
+    let mut digest = Sha3_256::default();
+    let mh = digest.update_from_reader(file)?;
+    Ok(mh)
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum HashError {
     #[error("Base58 decoding error: {0}")]
     Bs58(#[from] bs58::decode::Error),
     #[error("Multihash error: {0}")]
     Multihash(#[from] multihash::Error),
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 #[cfg(test)]
 mod tests {
     use std::io::{Seek, SeekFrom, Write};
+    use tempfile::tempdir;
 
     use super::*;
 
@@ -105,5 +115,21 @@ mod tests {
         let bs58 = mh_init.encode_bs58();
         let mh_decoded = multihash_decode_bs58(&bs58).unwrap();
         assert_eq!(mh_init, mh_decoded);
+    }
+
+    #[test]
+    fn multihash_file() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("file.txt");
+
+        {
+            let mut file = File::create(&file_path).unwrap();
+            file.write_all(b"Hello world").unwrap();
+        }
+
+        let file_hash = multihash_sha3_256_file(file_path).unwrap();
+        let hw_hash = Code::Sha3_256.digest(b"Hello world");
+
+        assert_eq!(hw_hash, file_hash);
     }
 }

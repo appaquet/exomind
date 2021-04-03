@@ -31,9 +31,15 @@ impl CellApplications {
         I: Iterator<Item = &'c CellApplicationConfig> + 'c,
     {
         for cell_app in iter {
-            let app_location = cell_app.location.as_ref().ok_or_else(|| {
-                Error::Cell(anyhow!("CellApplication needs a manifest to be defined"))
-            })?;
+            let app_location = if let Some(loc) = &cell_app.location {
+                loc
+            } else {
+                warn!(
+                    "Cannot load application {} (version {}). No location configured.",
+                    cell_app.name, cell_app.version
+                );
+                continue;
+            };
 
             match app_location {
                 cell_application_config::Location::Inline(manifest) => {

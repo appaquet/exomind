@@ -154,9 +154,19 @@ message NodeConfig {
 }
 
 message CellApplicationConfig {
-    oneof location {
-        exocore.apps.Manifest inline = 1;
+    string name = 1;
 
-        string path = 2;
+    string version = 2;
+
+    string public_key = 3;
+
+    string package_url = 4;
+
+    oneof location {
+        // Manifest is inline within the config.
+        exocore.apps.Manifest inline = 5;
+
+        // Application is unpack into a local directory.
+        string path = 6;
     }
 }

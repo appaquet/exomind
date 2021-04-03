@@ -3,8 +3,8 @@ use std::ops::{Bound, Range, RangeBounds};
 use bytes::{Buf, Bytes};
 use exocore_core::framing::FrameReader;
 
-/// Trait to be implemented on different sources of data / bytes (in memory
-/// owned bytes, in memory data reference, mmap file, etc.)
+/// Abstraction for sources of data / bytes (in memory owned bytes, in memory
+/// data reference, mmap file, etc.)
 pub trait Data: FrameReader<OwnedType = Bytes> + Clone {
     fn slice<R: RangeBounds<usize>>(&self, r: R) -> &[u8];
 

@@ -115,7 +115,7 @@ pub enum Commands {
     Discovery(disco::DiscoveryCommand),
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
     let mut options: Options = Options::parse();
     options.validate()?;
@@ -130,7 +130,10 @@ async fn main() -> anyhow::Result<()> {
     let result = match &ctx.options.subcommand {
         Commands::Node(node_opts) => node::handle_cmd(&ctx, node_opts),
         Commands::Cell(cell_opts) => cell::handle_cmd(&ctx, cell_opts).await,
-        Commands::App(app_opts) => app::handle_cmd(&ctx, app_opts).await,
+        Commands::App(app_opts) => {
+            app::handle_cmd(&ctx, app_opts).await;
+            Ok(())
+        }
         Commands::Sec(keys_opts) => {
             sec::handle_cmd(&ctx, keys_opts);
             Ok(())

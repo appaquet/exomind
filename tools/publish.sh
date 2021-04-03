@@ -11,7 +11,7 @@ fi
 VERSION=`cat package.json | grep version | sed -nE 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'`
 echo "Preparing publishing for version $VERSION"
 
-CRATES=("protos" "core" "transport" "chain" "store" "apps/runtime" "apps/macros" "apps/sdk" "." "discovery" "exo")
+CRATES=("protos" "core" "transport" "chain" "store" "apps/host" "apps/macros" "apps/sdk" "." "discovery" "exo")
 
 echo "Checking crates..."
 for CRATE in "${CRATES[@]}"; do

@@ -16,6 +16,7 @@ clap = "3.0.0-beta.2"
 console = "0.14"
 dialoguer = "0.8"
 dirs-next = "2.0"
+exocore-apps-host = {version = "0.1.4", path = "../apps/host"}
 exocore-chain = {version = "0.1.4", path = "../chain"}
 exocore-core = {version = "0.1.4", path = "../core", features = ["runtime", "logger"]}
 exocore-discovery = {version = "0.1.4", path = "../discovery", features = ["server"]}
@@ -31,7 +32,4 @@ tempfile = "3.2"
 thiserror = "1.0"
 tokio = {version = "1.4", features = ["macros"], default-features = false}
 url = "2.2"
-zip = "0.5"
-
-[target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"darwin\", target_os = \"windows\")), all(target_arch = \"x86_64\", target_os = \"linux\") ))".dependencies]
-exocore-apps-runtime = {version = "0.1.4", path = "../apps/runtime"}
+zip = "0.5.11"

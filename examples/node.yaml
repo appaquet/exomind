@@ -31,19 +31,23 @@ cells:
               http:
                 - http://127.0.0.1:8888
 
-          # Role of the node
-          # Chain = 1
-          # Store = 2
+          # Roles of the node in the cell
+          # See `CellNodeConfig` `Role` enum in: https://github.com/appaquet/exocore/blob/master/protos/protobuf/exocore/core/config.proto
           roles:
-            - 1
-            - 2
+            - 1 # Chain
+            - 2 # Store
+            - 3 # App host
 
         - node:
             name: Some Client Node
             public_key: peHdrwp1ZXicF1v7RQRRC4ursqgE1oM9nuVijCmrf74n7E
 
       apps:
-        - path: ./app
+        - name: Some Application
+          version: 0.0.1
+          public_key: peVpKYaERNKGhHRm7jEC1XXe4CUBWGv8g1QuDyDr76U1q 
+          package_url: https://some/path/to/package.zip
+          path: ./app
 
   # Cell defined in a directory
   - path: ./cell

@@ -1,10 +1,10 @@
-use std::{fs::File, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::Clap;
 use exocore_core::{
     cell::{Node, NodeId},
     sec::{
-        hash::{MultihashDigestExt, MultihashExt, Sha3_256},
+        hash::{multihash_sha3_256_file, MultihashExt},
         keys::Keypair,
     },
 };
@@ -53,11 +53,6 @@ fn cmd_generate(_ctx: &Context, _keys_opts: &SecOptions) {
 }
 
 fn cmd_multihash_file(_ctx: &Context, _keys_opts: &SecOptions, opt: &MultihashFileOpt) {
-    let file = File::open(&opt.file).expect("Couldn't open file");
-    let mut digest = Sha3_256::default();
-    let mh = digest
-        .update_from_reader(file)
-        .expect("Couldn't multihash file");
-    let bs58_mh = mh.encode_bs58();
-    println!("Multihash: {}", bs58_mh);
+    let bs58_mh = multihash_sha3_256_file(&opt.file).expect("Couldn't multihash file");
+    println!("Multihash: {}", bs58_mh.encode_bs58());
 }

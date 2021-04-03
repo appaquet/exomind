@@ -14,15 +14,15 @@ type FuncTick = TypedFunc<(), u64>;
 
 /// Runtime for an application WASM module.
 #[derive(Clone)]
-pub struct AppRuntime<E: HostEnvironment> {
+pub struct WasmTimeRuntime<E: HostEnvironment> {
     instance: Instance,
     func_send_message: FuncSendMessage,
     func_tick: FuncTick,
     env: Arc<E>,
 }
 
-impl<E: HostEnvironment> AppRuntime<E> {
-    pub fn from_file<P>(file: P, env: Arc<E>) -> Result<AppRuntime<E>, Error>
+impl<E: HostEnvironment> WasmTimeRuntime<E> {
+    pub fn from_file<P>(file: P, env: Arc<E>) -> Result<WasmTimeRuntime<E>, Error>
     where
         P: AsRef<Path>,
     {
@@ -37,7 +37,7 @@ impl<E: HostEnvironment> AppRuntime<E> {
 
         let (func_tick, func_send_message) = bootstrap_module(&instance)?;
 
-        Ok(AppRuntime {
+        Ok(WasmTimeRuntime {
             instance,
             func_tick,
             func_send_message,
@@ -259,6 +259,15 @@ fn unix_timestamp() -> u64 {
         .as_nanos() as u64
 }
 
+impl From<Error> for wasmtime::Trap {
+    fn from(err: Error) -> Self {
+        match err {
+            Error::Trap(t) => t,
+            other => wasmtime::Trap::new(other.to_string()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{sync::Mutex, thread::sleep};
@@ -278,7 +287,7 @@ mod tests {
         let example_path = find_test_fixture("fixtures/example.wasm");
         let env = Arc::new(TestEnv::new());
 
-        let app = AppRuntime::from_file(example_path, env.clone()).unwrap();
+        let app = WasmTimeRuntime::from_file(example_path, env.clone()).unwrap();
 
         // first tick should execute up to sleep
         app.tick().unwrap();

@@ -228,7 +228,15 @@ pub struct NodeConfig {
 }
 #[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CellApplicationConfig {
-    #[prost(oneof = "cell_application_config::Location", tags = "1, 2")]
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub version: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub public_key: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub package_url: ::prost::alloc::string::String,
+    #[prost(oneof = "cell_application_config::Location", tags = "5, 6")]
     #[serde(flatten)]
     pub location: ::core::option::Option<cell_application_config::Location>,
 }
@@ -238,9 +246,11 @@ pub mod cell_application_config {
     #[serde(rename_all = "lowercase")]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Location {
-        #[prost(message, tag = "1")]
+        /// Manifest is inline within the config.
+        #[prost(message, tag = "5")]
         Inline(super::super::apps::Manifest),
-        #[prost(string, tag = "2")]
+        /// Application is unpack into a local directory.
+        #[prost(string, tag = "6")]
         Path(::prost::alloc::string::String),
     }
 }
