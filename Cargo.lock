@@ -1208,8 +1208,10 @@ name = "exocore-apps-sdk"
 version = "0.1.4"
 dependencies = [
  "anyhow",
+ "chrono",
  "exocore-apps-macros",
  "exocore-protos",
+ "exocore-store",
  "futures",
  "lazy_static",
  "log",

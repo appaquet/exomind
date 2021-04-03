@@ -4,9 +4,17 @@ use futures::{channel::oneshot, Future, FutureExt};
 
 use crate::binding::__exocore_host_now;
 
+use chrono::{DateTime, TimeZone, Utc};
+
 /// Unix timestamp in nanoseconds.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct Timestamp(pub u64);
+
+impl Timestamp {
+    pub fn to_chrono_datetime(&self) -> DateTime<Utc> {
+        (*self).into()
+    }
+}
 
 impl std::ops::Add<Duration> for Timestamp {
     type Output = Timestamp;
@@ -33,6 +41,18 @@ impl From<u64> for Timestamp {
 impl From<Timestamp> for u64 {
     fn from(ts: Timestamp) -> Self {
         ts.0
+    }
+}
+
+impl From<Timestamp> for DateTime<Utc> {
+    fn from(ts: Timestamp) -> Self {
+        Utc.timestamp_nanos(ts.0 as i64)
+    }
+}
+
+impl From<DateTime<Utc>> for Timestamp {
+    fn from(dt: DateTime<Utc>) -> Self {
+        Timestamp(dt.timestamp_nanos() as u64)
     }
 }
 

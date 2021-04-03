@@ -13,11 +13,13 @@ version = "0.1.4"
 anyhow = "1.0"
 exocore-apps-macros = {version = "0.1.4", path = "../macros"}
 exocore-protos = {version = "0.1.4", path = "../../protos"}
+exocore-store = {version = "0.1.4", path = "../../store", default-features = false}
 futures = "0.3"
 lazy_static = "1.4"
 log = "0.4"
 quote = "1.0"
 thiserror = "1.0"
+chrono = "0.4"
 
 [dev-dependencies]
 tokio = {version = "1.4", features = ["macros"], default-features = false}

@@ -11,8 +11,9 @@ use exocore_protos::{
     apps::{out_message::OutMessageType, InMessage, MessageStatus, OutMessage},
     generated::store::{EntityQuery, EntityResults},
     prost::{Message, ProstMessageExt},
-    store::{MutationRequest, MutationResult},
+    store::MutationResult,
 };
+use exocore_store::mutation::MutationRequestLike;
 use futures::channel::oneshot;
 
 use crate::{
@@ -58,8 +59,10 @@ impl Store {
 
     pub async fn mutate(
         self: &Arc<Store>,
-        mutation: MutationRequest,
+        mutation: impl Into<MutationRequestLike>,
     ) -> Result<MutationResult, StoreError> {
+        let mutation = mutation.into();
+
         let rdv = self.next_rdv.fetch_add(1, Ordering::SeqCst);
         let msg_type = OutMessageType::StoreMutationRequest;
         let msg = OutMessage {
@@ -236,7 +239,7 @@ impl StoreError {
 
 #[cfg(test)]
 mod tests {
-    use exocore_protos::apps::in_message::InMessageType;
+    use exocore_protos::{apps::in_message::InMessageType, store::MutationRequest};
     use futures::{channel::mpsc, StreamExt};
 
     use super::*;

@@ -797,18 +797,6 @@ pub mod tests {
                 .wait_operation_committed(0, resp.operation_ids[0]);
         }
 
-        {
-            // entity should be deleted, but can still be returned if we request deleted
-            // ones
-            let query = QueryBuilder::all().build();
-            let res = test_store.query(query).await?;
-            assert_eq!(res.entities.len(), 0);
-
-            let query = QueryBuilder::all().include_deleted().build();
-            let res = test_store.query(query).await?;
-            assert_eq!(res.entities.len(), 1);
-        }
-
         // entity should eventually be completely deleted
         let store_handle = test_store.store_handle.clone();
         async_expect_eventually(|| async {

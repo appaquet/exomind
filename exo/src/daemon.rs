@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use exocore_chain::{DirectoryChainStore, Engine, EngineConfig, EngineHandle, MemoryPendingStore};
 use exocore_core::{
-    cell::{Cell, CellNodeRole, CellNodes, EitherCell, FullCell},
+    cell::{Cell, CellNodeRole, EitherCell, FullCell},
     futures::owned_spawn,
     time::Clock,
 };
@@ -19,7 +19,7 @@ use exocore_transport::{
 };
 use futures::{Future, FutureExt};
 
-use crate::{term::print_error, Context};
+use crate::Context;
 
 pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
     let config = ctx.options.read_configuration();
@@ -190,6 +190,7 @@ async fn create_app_host(
     services_completion: &mut Vec<Pin<Box<dyn Future<Output = ()>>>>,
 ) -> anyhow::Result<()> {
     use exocore_apps_host::{runtime::Applications, Config as ApplicationsConfig};
+    use exocore_core::cell::CellNodes;
 
     // make sure that we are the only node with app host role.
     // TODO: Support for multiple app host nodes https://github.com/appaquet/exocore/issues/619
@@ -209,7 +210,7 @@ async fn create_app_host(
     {
         Ok(apps) => apps,
         Err(err) => {
-            print_error(
+            crate::term::print_error(
                 "Couldn't start application host. Make sure apps are installed and unpacked.",
             );
             return Err(err.into());

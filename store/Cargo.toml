@@ -20,18 +20,22 @@ anyhow = "1.0"
 async-trait = "0.1"
 bytes = "1.0"
 chrono = {version = "0.4", features = ["serde"]}
-crc = {version = "1.8", optional = true}
-exocore-chain = {version = "0.1.4", path = "../chain", default-features = false, optional = true}
-exocore-core = {version = "0.1.4", path = "../core", optional = true}
 exocore-protos = {version = "0.1.4", path = "../protos"}
-exocore-transport = {version = "0.1.4", path = "../transport", default-features = false, optional = true}
 futures = "0.3"
 itertools = "0.10"
 log = "0.4"
-lru = {version = "0.6", optional = true}
 smallvec = "1.6"
-tantivy = {version = "0.14", optional = true}
 thiserror = "1.0"
+
+# local or remote
+exocore-chain = {version = "0.1.4", path = "../chain", default-features = false, optional = true}
+exocore-core = {version = "0.1.4", path = "../core", optional = true}
+exocore-transport = {version = "0.1.4", path = "../transport", default-features = false, optional = true}
+
+# local 
+crc = {version = "1.8", optional = true}
+lru = {version = "0.6", optional = true}
+tantivy = {version = "0.14", optional = true}
 
 [dev-dependencies]
 exocore-chain = {version = "0.1.4", path = "../chain", features = ["tests-utils"]}

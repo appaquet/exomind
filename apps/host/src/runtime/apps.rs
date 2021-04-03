@@ -108,7 +108,11 @@ impl<S: Store> Applications<S> {
     async fn start_app_loop(clock: Clock, config: Config, app: Application, store: S) {
         let mut backoff = BackoffCalculator::new(clock, config.restart_backoff);
         loop {
-            info!("{}: Starting application", app);
+            info!(
+                "{}: Starting application (version {})",
+                app,
+                app.cell_app.version()
+            );
 
             let store = store.clone();
             Self::start_app(&app, store).await;
@@ -141,6 +145,7 @@ impl<S: Store> Applications<S> {
                 let app_runtime = WasmTimeRuntime::from_file(app_module_path, env)?;
                 let mut batch_receiver = BatchingStream::new(in_receiver, RUNTIME_MSG_BATCH_SIZE);
 
+                let mut started = false;
                 let mut next_tick = sleep(APP_MIN_TICK_TIME);
                 loop {
                     let in_messages: Option<Vec<InMessage>> = block_on(async {
@@ -166,6 +171,11 @@ impl<S: Store> Applications<S> {
 
                     let next_tick_duration = app_runtime.tick()?.unwrap_or(APP_MIN_TICK_TIME);
                     next_tick = sleep(next_tick_duration);
+
+                    if !started {
+                        info!("{}: Application started", app_prefix);
+                        started = true;
+                    }
                 }
             })
         };
@@ -283,7 +293,7 @@ impl super::wasmtime::HostEnvironment for WiredEnvironment {
     }
 
     fn handle_log(&self, level: log::Level, msg: &str) {
-        log!(level, "{}: WASM - {}", self.log_prefix, msg);
+        log!(level, "{}: WASM: {}", self.log_prefix, msg);
     }
 }
 

@@ -1,4 +1,4 @@
-#[cfg(any(feature = "local", feature = "remote"))]
+#[allow(unused_imports)]
 #[macro_use]
 extern crate log;
 
@@ -6,6 +6,7 @@ extern crate log;
 #[macro_use]
 extern crate smallvec;
 
+#[allow(unused_imports)]
 #[macro_use]
 extern crate anyhow;
 
