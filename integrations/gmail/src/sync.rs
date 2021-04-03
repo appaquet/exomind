@@ -1,20 +1,26 @@
-use std::{collections::HashMap, collections::HashSet, io::Write};
+use std::{
+    collections::{HashMap, HashSet},
+    io::Write,
+};
 
 use crate::{
     capped_hashset::CappedHashSet,
-    exomind::ExomindHistoryAction,
+    exomind::{email_trait_id, thread_entity_id, ExomindClient, ExomindHistoryAction},
     gmail::{GmailAccount, GmailClient, GmailHistoryAction, HistoryId},
-};
-use crate::{
-    exomind::{email_trait_id, thread_entity_id, ExomindClient},
     parsing,
 };
-use exocore::core::time::ConsistentTimestamp;
-use exocore::protos::{prost::ProstTimestampExt, store::Reference};
-use exocore::store::mutation::OperationId;
-use exocore::{core::time::Utc, store::entity::EntityId};
-use exocore::{protos::store::Entity, store::entity::EntityExt};
-use exomind_core::protos::base::{CollectionChild, Email, EmailThread};
+use exocore::{
+    core::time::{ConsistentTimestamp, Utc},
+    protos::{
+        prost::ProstTimestampExt,
+        store::{Entity, Reference},
+    },
+    store::{
+        entity::{EntityExt, EntityId},
+        mutation::OperationId,
+    },
+};
+use exomind_protos::base::{CollectionChild, Email, EmailThread};
 
 pub struct AccountSynchronizer {
     pub account: GmailAccount,

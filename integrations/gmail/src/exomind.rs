@@ -17,7 +17,7 @@ use exocore::{
         store::Store,
     },
 };
-use exomind_core::protos::base::{Account, AccountType, CollectionChild, Email, EmailThread};
+use exomind_protos::base::{Account, AccountType, CollectionChild, Email, EmailThread};
 
 #[derive(Clone)]
 pub struct ExomindClient {

@@ -1,5 +1,5 @@
 use crate::config::Config;
-use exomind_core::protos::base::{Account, AccountScope, AccountType};
+use exomind_protos::base::{Account, AccountScope, AccountType};
 use google_gmail1::schemas::ModifyThreadRequest;
 use std::{
     collections::HashSet,

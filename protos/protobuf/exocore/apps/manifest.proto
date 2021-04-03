@@ -5,13 +5,15 @@ package exocore.apps;
 message Manifest {
     string name = 1;
 
-    string version = 5;
+    string version = 2;
 
-    string public_key = 2;
-
-    string path = 3;
+    string public_key = 3;
 
     repeated ManifestSchema schemas = 4;
+
+    ManifestModule module = 5;
+
+    string path = 6;
 }
 
 message ManifestSchema {
@@ -20,4 +22,10 @@ message ManifestSchema {
 
         bytes bytes = 2;
     }
+}
+
+message ManifestModule {
+    string file = 1;
+
+    string multihash = 2;
 }

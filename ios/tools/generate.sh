@@ -7,7 +7,7 @@ EXOMIND_ROOT="$EXOMIND_IOS_ROOT/../"
 
 rm -rf $EXOMIND_IOS_ROOT/Exomind/protos
 mkdir -p $EXOMIND_IOS_ROOT/Exomind/protos
-protoc -I "$EXOMIND_ROOT/protos/" \
+protoc -I "$EXOMIND_ROOT/protos/protobuf/" \
   --swift_opt=ProtoPathModuleMappings=$EXOMIND_IOS_ROOT/protobuf_mapping.asciipb \
   --swift_out=$EXOMIND_IOS_ROOT/Exomind/protos/ \
-  $EXOMIND_ROOT/protos/exomind/*.proto 
+  $EXOMIND_ROOT/protos/protobuf/exomind/*.proto 

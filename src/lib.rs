@@ -1,3 +1,1 @@
-pub extern crate exomind_core as core;
-
-pub use core::protos;
+pub extern crate exomind_protos as protos;
