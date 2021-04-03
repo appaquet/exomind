@@ -3,13 +3,13 @@ authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
 name = "exomind-server"
-version = "0.1.1"
+version = "0.1.2"
 
 [dependencies]
 anyhow = "1.0"
 exocore = { version = "0.1.4", default-features = false, features = ["client", "logger"]}
-exomind-protos = {version = "0.1.1", path = "../protos"}
-exomind-gmail = {version = "0.1.1", path = "../integrations/gmail"}
+exomind-protos = {version = "0.1.2", path = "../protos"}
+exomind-gmail = {version = "0.1.2", path = "../integrations/gmail"}
 futures = "0.3"
 log = "0.4"
 serde = "1.0"
