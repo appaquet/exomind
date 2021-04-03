@@ -773,6 +773,7 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre4#ba3a00a0753ac58e33e8adcc8bdc6a2c39dd32bf"
 dependencies = [
  "exocore-apps-sdk",
  "exocore-core",
@@ -784,6 +785,7 @@ dependencies = [
 [[package]]
 name = "exocore-apps-macros"
 version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre4#ba3a00a0753ac58e33e8adcc8bdc6a2c39dd32bf"
 dependencies = [
  "anyhow",
  "futures 0.3.13",
@@ -796,6 +798,7 @@ dependencies = [
 [[package]]
 name = "exocore-apps-sdk"
 version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre4#ba3a00a0753ac58e33e8adcc8bdc6a2c39dd32bf"
 dependencies = [
  "anyhow",
  "chrono",
@@ -812,6 +815,7 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre4#ba3a00a0753ac58e33e8adcc8bdc6a2c39dd32bf"
 dependencies = [
  "anyhow",
  "bs58",
@@ -844,6 +848,7 @@ dependencies = [
 [[package]]
 name = "exocore-protos"
 version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre4#ba3a00a0753ac58e33e8adcc8bdc6a2c39dd32bf"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -862,6 +867,7 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre4#ba3a00a0753ac58e33e8adcc8bdc6a2c39dd32bf"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -880,6 +886,7 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.4"
+source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre4#ba3a00a0753ac58e33e8adcc8bdc6a2c39dd32bf"
 dependencies = [
  "anyhow",
  "byteorder",
