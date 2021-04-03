@@ -16,6 +16,10 @@ echo "Running tests..."
 cd $EXOMIND_ROOT
 cargo test --workspace --all-features
 
+echo "Validating wasm app..."
+cd $EXOMIND_ROOT
+./app/tools./build.sh
+
 echo "Running clippy..."
 $CUR_DIR/clippy.sh
 

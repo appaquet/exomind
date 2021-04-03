@@ -26,9 +26,10 @@ $SEDBIN -i.bak "s/\(version:\).*/\1 $VERSION/g" $ROOT_DIR/app.yaml
 
 CRATES=( \
   "." \
-  "integrations/gmail" \
-  "core" \
+  "app" \
   "server" \
+  "protos" \
+  "integrations/gmail" \
 )
 
 for CRATE in "${CRATES[@]}"; do

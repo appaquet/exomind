@@ -21,6 +21,8 @@ message LocalNodeConfig {
     repeated NodeCellConfig cells = 7;
 
     NodeStoreConfig store = 8;
+
+    ChainConfig chain = 9;
 }
 
 message NodeAddresses {
@@ -32,6 +34,7 @@ message NodeAddresses {
 message NodeCellConfig {
     oneof location {
        CellConfig inline = 1;
+
        string path = 2;
     }
 }
@@ -43,6 +46,21 @@ message NodeStoreConfig {
 
     // Maximum number fo queries to execute in parallel.
     google.protobuf.UInt32Value query_parallelism = 2;
+}
+
+message ChainConfig {
+    // Maximum size in bytes per segment. This is a soft limit since the last
+    // block could overflow that maximum. This should be small enough so
+    // that a few segments can fit in allocable virtual space on 32b
+    // systems. See `segment_max_open` for maximum concurrently opened
+    // segments.
+    google.protobuf.UInt64Value segment_max_size = 1;
+
+    // Maximum number of segments concurrently mmap. On 64b systems, where
+    // virtual memory isn't a problem, this can be high. But on 32b
+    // systems, one should aim to have maximum ~1-2gb of concurrently mmap
+    // segments. See `segment_max_size` for maximum size per segment.
+    google.protobuf.UInt32Value segment_max_open_mmap = 2;
 }
 
 // Configuration of the entity index
@@ -136,8 +154,19 @@ message NodeConfig {
 }
 
 message CellApplicationConfig {
+    string name = 1;
+
+    string version = 2;
+
+    string public_key = 3;
+
+    string package_url = 4;
+
     oneof location {
-        exocore.apps.Manifest inline = 1;
-        string path = 2;
+        // Manifest is inline within the config.
+        exocore.apps.Manifest inline = 5;
+
+        // Application is unpack into a local directory.
+        string path = 6;
     }
 }
