@@ -16,14 +16,12 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 * **Basic web client**
 * **Basic iOS client**
 * **Gmail synchronization server** (read-only, except for labels assignations and read flags)
-* **Business logic server** (i.e. not hosted by Exocore)
+* **WASM business logic** (hosted by Exocore)
 
 ### v0.2
-* **WASM business logic** (replaces the business logic server, hosted in Exocore)
 * **Gmail attachments**
 
 ### v0.3 and beyond
-* **Node discovery** (i.e. no manual cell's nodes configuration)
 * **File storage**
 
 ## Apps

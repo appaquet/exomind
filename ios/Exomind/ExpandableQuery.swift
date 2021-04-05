@@ -115,8 +115,16 @@ class ExpandableQuery {
     }
 
     private func execQuery(query: Exocore_Store_EntityQuery, queryIndex: Int) -> QueryStreamHandle {
-        let handle = ExocoreClient.store.watchedQuery(query: query) { [weak self] status, results in
+        print("ExpandableQuery> Executing new query \(queryIndex)")
+
+        var handle: QueryStreamHandle?
+        handle = ExocoreClient.store.watchedQuery(query: query) { [weak self] status, results in
             guard let this = self else {
+                return
+            }
+
+            if handle !== this.queryHandles[queryIndex] {
+                // if handle changed, query got replaced by another one and this isn't valid anymore
                 return
             }
 
@@ -129,12 +137,13 @@ class ExpandableQuery {
                 this.handleQueryResults(queryIndex: queryIndex, results: results)
             }
         }
-        return handle
+
+        return handle!
     }
 
     private func handleQueryResults(queryIndex: Int, results: Exocore_Store_EntityResults) {
         self.queryResults[queryIndex] = results
-        aggregateAndTrigger()
+        self.aggregateAndTrigger()
     }
 
     private func handleQueryError(queryIndex: Int) {
