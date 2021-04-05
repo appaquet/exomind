@@ -44,12 +44,12 @@ export class EntityComponent extends React.Component<Props, State> {
         const query = QueryBuilder.withIds(props.entityId).build();
         this.entityQuery = Exocore.store
             .watchedQuery(query)
-            .onChange(this.handleNewResults.bind(this));
+            .onChange(this.handleNewResults);
 
         if (props.containerController) {
             props.containerController.actions = [
-                new HeaderAction('clock-o', this.handleShowTimeSelector.bind(this)),
-                new HeaderAction('folder-open-o', this.handleShowCollectionSelector.bind(this))
+                new HeaderAction('clock-o', this.handleShowTimeSelector),
+                new HeaderAction('folder-open-o', this.handleShowCollectionSelector)
             ];
         }
 
@@ -136,7 +136,7 @@ export class EntityComponent extends React.Component<Props, State> {
         }
     }
 
-    private handleNewResults(results: exocore.store.EntityResults): void {
+    private handleNewResults = (results: exocore.store.EntityResults): void => {
         if (results && results.entities.length > 0) {
             const et = new EntityTraits(results.entities[0].entity)
 
@@ -174,19 +174,19 @@ export class EntityComponent extends React.Component<Props, State> {
     }
 
 
-    private handleShowCollectionSelector(): void {
+    private handleShowCollectionSelector = (): void => {
         if (this.state.results && this.state.results.entities.length > 0) {
             const entity = this.state.results.entities[0].entity;
-            ModalStore.showModal(this.renderCollectionSelector.bind(this, entity));
+            ModalStore.showModal(() => {
+                return <CollectionSelector entity={entity} />;
+            });
         }
     }
 
-    private renderCollectionSelector(): React.ReactNode {
-        return <CollectionSelector entity={this.state.results.entities[0].entity} />;
-    }
-
-    private handleShowTimeSelector(): void {
-        ModalStore.showModal(this.renderTimeSelector.bind(this));
+    private handleShowTimeSelector = (): void => {
+        ModalStore.showModal(() => {
+            return <TimeSelector onSelectionDone={(date) => this.handleCloseTimeSelector(date)} />;
+        });
     }
 
     private handleCloseTimeSelector(date: Date): void {
@@ -207,11 +207,6 @@ export class EntityComponent extends React.Component<Props, State> {
         }
 
         Exocore.store.mutate(mb.build());
-
-    }
-
-    private renderTimeSelector(): React.ReactNode {
-        return <TimeSelector onSelectionDone={this.handleCloseTimeSelector.bind(this)} />;
     }
 
     componentWillUnmount(): void {

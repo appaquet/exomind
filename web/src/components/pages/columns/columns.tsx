@@ -53,8 +53,8 @@ export default class Columns extends React.Component<IProps> {
                         key={columnConfig.value}
 
                         selection={selection}
-                        onSelectionChange={this.handleColumnItemSelect.bind(this, colId)}
-                        onClose={canClose ? this.handleColumnClose.bind(this, colId) : null}
+                        onSelectionChange={(selection) => this.handleColumnItemSelect(colId, selection)}
+                        onClose={canClose ? () => this.handleColumnClose(colId) : null}
                     />
                 </div>);
         });
@@ -69,11 +69,11 @@ export default class Columns extends React.Component<IProps> {
         return config;
     }
 
-    private handleColumnItemSelect(colId: number, objects: Selection) {
+    private handleColumnItemSelect(colId: number, selection: Selection) {
         let columnsConfig = this.getConfig();
-        if (objects && !objects.isEmpty) {
+        if (selection && !selection.isEmpty) {
             // TODO: support for multiple selections + entity traits
-            const firstSel = objects.items[0];
+            const firstSel = selection.items[0];
 
             let columnConfig;
             if (firstSel.traitId) {

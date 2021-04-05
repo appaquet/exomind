@@ -11,18 +11,20 @@ import EditableText from '../../interaction/editable-text/editable-text';
 import { EntityActions } from './entity-action';
 import './entity.less';
 
+export type DropEffect = ('move' | 'copy');
+
 interface IProps {
     entity: exocore.store.IEntity;
     parentEntity?: exocore.store.IEntity;
 
     selected?: boolean;
-    onClick?: (e: MouseEvent) => void;
+    onClick?: (e: React.MouseEvent) => void;
     actionsForEntity?: (entity: EntityTraits) => EntityActions;
 
     draggable?: boolean;
     droppable?: boolean;
-    onDropOut?: (object: exocore.store.IEntity, effect: string, parentObject: exocore.store.IEntity) => void;
-    onDropIn?: (object: exocore.store.IEntity, effect: string, parentObject: exocore.store.IEntity) => void;
+    onDropOut?: (droppedEntity: exocore.store.IEntity, effect: DropEffect, droppedEntityParent: exocore.store.IEntity) => void;
+    onDropIn?: (droppedEntity: exocore.store.IEntity, effect: DropEffect, droppedEntityParent: exocore.store.IEntity) => void;
 
     renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
 }
@@ -60,7 +62,7 @@ export class Entity extends React.Component<IProps, IState> {
         if (this.props.actionsForEntity) {
             actions = this.props.actionsForEntity(entityTraits);
             if (this.state.hovered && !actions.isEmpty) {
-                actionsComponent = this.renderActions(entityTraits, actions);
+                actionsComponent = this.renderActions(actions);
             }
         }
 
@@ -70,9 +72,9 @@ export class Entity extends React.Component<IProps, IState> {
 
         return (
             <li className={classes}
-                onClick={this.handleItemClick.bind(this)}
-                onMouseOver={this.handleItemMouseOver.bind(this)}
-                onMouseLeave={this.handleItemMouseLeave.bind(this)}>
+                onClick={this.handleItemClick}
+                onMouseOver={this.handleItemMouseOver}
+                onMouseLeave={this.handleItemMouseLeave}>
 
                 <div className="swipe-container">
                     <DragAndDrop
@@ -93,14 +95,14 @@ export class Entity extends React.Component<IProps, IState> {
 
     private getEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
 
-    private renderActions(entityTraits: EntityTraits, actions: EntityActions): React.ReactNode {
+    private renderActions(actions: EntityActions): React.ReactNode {
         const actionsComponents = actions.buttons.map((action) => {
             const classes = classNames({
                 'action-icon': true,
                 fa: true,
                 ['fa-' + action.icon]: true
             });
-            const cb = (e: MouseEvent) => {
+            const cb = (e: React.MouseEvent) => {
                 const result = action.trigger(e);
                 e.stopPropagation();
 
@@ -109,7 +111,7 @@ export class Entity extends React.Component<IProps, IState> {
                 }
             };
             return (
-                <li key={action.icon} onClick={cb.bind(this)}>
+                <li key={action.icon} onClick={cb}>
                     <span className={classes} />
                 </li>
             );
@@ -126,13 +128,27 @@ export class Entity extends React.Component<IProps, IState> {
 
     private renderElement(entityTraits: EntityTraits, actions: EntityActions): React.ReactNode {
         return entityTraits.priorityMatch({
-            emailThread: this.renderEmailThreadElement.bind(this, entityTraits),
-            draftEmail: this.renderDraftEmailElement.bind(this),
-            email: this.renderEmailElement.bind(this),
-            collection: this.renderCollectionElement.bind(this),
-            task: this.renderTaskElement.bind(this, actions),
-            note: this.renderNoteElement.bind(this),
-            link: this.renderLinkElement.bind(this),
+            emailThread: (entityTrait) => {
+                return this.renderEmailThreadElement(entityTraits, entityTrait);
+            },
+            draftEmail: (entityTrait) => {
+                return this.renderDraftEmailElement(entityTrait);
+            },
+            email: (entityTrait) => {
+                return this.renderEmailElement(entityTrait);
+            },
+            collection: (entityTrait) => {
+                return this.renderCollectionElement(entityTrait);
+            },
+            task: (entityTrait) => {
+                return this.renderTaskElement(actions, entityTrait);
+            },
+            note: (entityTrait) => {
+                return this.renderNoteElement(entityTrait);
+            },
+            link: (entityTrait) => {
+                return this.renderLinkElement(entityTrait);
+            },
             default: () => {
                 const firstTraitId = entityTraits.entity.traits[0].id;
                 const entityTrait = entityTraits.trait(firstTraitId);
@@ -248,6 +264,9 @@ export class Entity extends React.Component<IProps, IState> {
 
     private renderTaskElement(actions: EntityActions, entityTrait: EntityTrait<exomind.base.ITask>): React.ReactNode {
         const task = entityTrait.message;
+        const onTitleChange = (newTitle: string) => {
+            this.handleTaskChange(entityTrait, actions, newTitle);
+        };
 
         return (
             <div className="task item-container with-picture">
@@ -258,7 +277,7 @@ export class Entity extends React.Component<IProps, IState> {
                         <EditableText
                             text={task.title}
                             initEdit={!!actions.inlineEdit}
-                            onChange={this.handleTaskChange.bind(this, entityTrait, actions)}
+                            onChange={onTitleChange}
                         />
                     </div>
                 </div>
@@ -347,19 +366,19 @@ export class Entity extends React.Component<IProps, IState> {
         });
     }
 
-    private handleItemClick(e: MouseEvent): void {
+    private handleItemClick = (e: React.MouseEvent): void => {
         if (this.props.onClick) {
             this.props.onClick(e);
         }
     }
 
-    private handleItemMouseOver(): void {
+    private handleItemMouseOver = (): void => {
         this.setState({
             hovered: true
         });
     }
 
-    private handleItemMouseLeave(): void {
+    private handleItemMouseLeave = (): void => {
         this.setState({
             hovered: false
         });

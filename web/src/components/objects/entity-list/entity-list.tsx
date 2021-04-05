@@ -5,7 +5,7 @@ import { EntityTrait, EntityTraits } from "../../../store/entities";
 import DragAndDrop from "../../interaction/drag-and-drop/drag-and-drop";
 import Scrollable from "../../interaction/scrollable/scrollable";
 import { ContainerController } from "../container-controller";
-import { Entity } from './entity';
+import { DropEffect, Entity } from './entity';
 import { EntityActions } from "./entity-action";
 import './entity-list.less';
 import { SelectedItem, Selection } from "./selection";
@@ -41,9 +41,6 @@ export interface IDroppedItem {
 
     effect: DropEffect,
 }
-
-export type DropEffect = ('move' | 'copy');
-
 export class EntityList extends React.Component<IProps> {
     constructor(props: IProps) {
         super(props);
@@ -79,18 +76,22 @@ export class EntityList extends React.Component<IProps> {
             const items = this.props.entities.map((entity) => {
                 const selected = this.props.selection?.contains(SelectedItem.fromEntity(entity)) ?? false;
 
+                const entityCopy = entity;
+                const previousEntityCopy = previousEntity;
                 const item = <Entity
                     key={entity.id}
                     entity={entity}
                     parentEntity={this.props.parentEntity}
 
                     selected={selected}
-                    onClick={this.handleItemClick.bind(this, entity)}
+                    onClick={(e) => this.handleItemClick(entity, e)}
                     actionsForEntity={this.props.actionsForEntity}
 
                     draggable={this.props.draggable}
                     droppable={this.props.droppable}
-                    onDropIn={this.handleDropIn.bind(this, entity, previousEntity)}
+                    onDropIn={(droppedEntity, effect, droppedEntityParent) => {
+                        this.handleDropIn(entityCopy, previousEntityCopy, droppedEntity, effect, droppedEntityParent);
+                    }}
 
                     renderEntityDate={this.props.renderEntityDate}
                 />;
@@ -113,7 +114,9 @@ export class EntityList extends React.Component<IProps> {
             <div className="empty">
                 <DragAndDrop
                     parentObject={this.props.parentEntity}
-                    onDropIn={this.handleDropIn.bind(this, null, null)}
+                    onDropIn={(droppedEntity: exocore.store.IEntity, effect: DropEffect, parent: exocore.store.IEntity) => {
+                        return this.handleDropIn(null, null, droppedEntity, effect, parent)
+                    }}
                     draggable={false} droppable={this.props.droppable}>
 
                     This collection is empty
@@ -122,19 +125,25 @@ export class EntityList extends React.Component<IProps> {
         );
     }
 
-    private handleDropIn(overEntity: exocore.store.IEntity, previousEntity: exocore.store.IEntity, entity: exocore.store.IEntity, effect: DropEffect, parentEntity: exocore.store.IEntity): void {
+    private handleDropIn(
+        overEntity: exocore.store.IEntity,
+        previousEntity: exocore.store.IEntity,
+        droppedEntity: exocore.store.IEntity,
+        effect: DropEffect,
+        parentEntity: exocore.store.IEntity,
+    ): void {
         if (this.props.onDropIn != null) {
             this.props.onDropIn({
                 effect: effect,
                 fromParentEntity: parentEntity,
-                droppedEntity: entity,
+                droppedEntity: droppedEntity,
                 previousEntity: previousEntity,
                 overEntity: overEntity,
             });
         }
     }
 
-    private handleItemClick(entity: exocore.store.IEntity, e: MouseEvent): void {
+    private handleItemClick(entity: exocore.store.IEntity, e: React.MouseEvent): void {
         if (this.props.onSelectionChange) {
             const special = e.shiftKey || e.altKey || e.metaKey;
 

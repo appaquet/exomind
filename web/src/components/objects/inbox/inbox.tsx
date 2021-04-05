@@ -25,7 +25,7 @@ export class Inbox extends React.Component<IProps> {
             <Children
                 parentId="inbox"
 
-                actionsForSection={this.actionsForChildrenType.bind(this)}
+                actionsForSection={this.actionsForChildrenType}
 
                 selection={this.props.selection}
                 onSelectionChange={this.props.onSelectionChange}
@@ -35,7 +35,7 @@ export class Inbox extends React.Component<IProps> {
         );
     }
 
-    private actionsForChildrenType(): string[] {
+    private actionsForChildrenType = (): string[] => {
         return ['done', 'postpone', 'move'];
     }
 }

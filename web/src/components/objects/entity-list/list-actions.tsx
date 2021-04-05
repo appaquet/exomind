@@ -29,11 +29,11 @@ export class ListActions extends React.Component<IProps> {
     private renderCreationActions(): React.ReactNode {
         return <div className="list-actions">
             <ul>
-                <li onClick={this.handleNewNoteClick.bind(this)}><i className="new-note" /></li>
-                <li onClick={this.handleNewEmailClick.bind(this)}><i className="new-email" /></li>
-                <li onClick={this.handleNewCollectionClick.bind(this)}><i className="new-collection" /></li>
-                <li onClick={this.handleNewTaskClick.bind(this)}><i className="new-task" /></li>
-                <li onClick={this.handleNewLinkClick.bind(this)}><i className="new-link" /></li>
+                <li onClick={this.handleNewNoteClick}><i className="new-note" /></li>
+                <li onClick={this.handleNewEmailClick}><i className="new-email" /></li>
+                <li onClick={this.handleNewCollectionClick}><i className="new-collection" /></li>
+                <li onClick={this.handleNewTaskClick}><i className="new-task" /></li>
+                <li onClick={this.handleNewLinkClick}><i className="new-link" /></li>
             </ul>
         </div>
     }
@@ -41,13 +41,13 @@ export class ListActions extends React.Component<IProps> {
     private renderSelectionActions(): React.ReactNode {
         return <div className="list-actions">
             <ul>
-                <li onClick={this.handleDoneClick.bind(this)}><i className="done" /></li>
-                <li onClick={this.handlePostponeClick.bind(this)}><i className="postpone" /></li>
+                <li onClick={this.handleDoneClick}><i className="done" /></li>
+                <li onClick={this.handlePostponeClick}><i className="postpone" /></li>
             </ul>
         </div>
     }
 
-    private handleNewNoteClick() {
+    private handleNewNoteClick = () => {
         const mutation = MutationBuilder
             .createEntity()
             .putTrait(new exomind.base.Note({
@@ -65,7 +65,7 @@ export class ListActions extends React.Component<IProps> {
         this.executeNewEntityMutation(mutation);
     }
 
-    private handleNewEmailClick() {
+    private handleNewEmailClick = () => {
         const mutation = MutationBuilder
             .createEntity()
             .putTrait(new exomind.base.DraftEmail())
@@ -81,7 +81,7 @@ export class ListActions extends React.Component<IProps> {
         this.executeNewEntityMutation(mutation);
     }
 
-    private handleNewCollectionClick() {
+    private handleNewCollectionClick = () => {
         const mutation = MutationBuilder
             .createEntity()
             .putTrait(new exomind.base.Collection({
@@ -99,7 +99,7 @@ export class ListActions extends React.Component<IProps> {
         this.executeNewEntityMutation(mutation);
     }
 
-    private handleNewTaskClick() {
+    private handleNewTaskClick = () => {
         const mutation = MutationBuilder
             .createEntity()
             .putTrait(new exomind.base.Task())
@@ -115,7 +115,7 @@ export class ListActions extends React.Component<IProps> {
         this.executeNewEntityMutation(mutation);
     }
 
-    private handleNewLinkClick() {
+    private handleNewLinkClick = () => {
         const createLink = (url?: string) => {
             ModalStore.hideModal();
 
@@ -147,7 +147,7 @@ export class ListActions extends React.Component<IProps> {
         });
     }
 
-    private handleDoneClick() {
+    private handleDoneClick = () => {
         // TODO: Done all selected
         // _.forEach(this.props.selection, (entity) => {
         //   ExomindDSL.on(entity).relations.removeParent(this.props.parent);
@@ -156,13 +156,14 @@ export class ListActions extends React.Component<IProps> {
         this.props.onSelectionChange(this.props.selection.cleared());
     }
 
-    private handlePostponeClick() {
+    private handlePostponeClick = () => {
+
         ModalStore.showModal(() => {
-            return <TimeSelector onSelectionDone={this.handleTimeSelectorDone.bind(this)} />;
+            return <TimeSelector onSelectionDone={this.handleTimeSelectorDone} />;
         });
     }
 
-    private handleTimeSelectorDone(/*date: Date*/) {
+    private handleTimeSelectorDone = (/*date: Date*/) => {
         ModalStore.hideModal();
 
         // TODO: Postpone all selected

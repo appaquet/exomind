@@ -11,8 +11,8 @@ export default class Modal extends React.Component<IProps> {
   render(): React.ReactNode {
     if (this.props.children) {
       return (
-        <div id='modal' onClick={this.handleBackgroundClick.bind(this)}>
-          <div className='content' onClick={this.handleContentClick.bind(this)}>
+        <div id='modal' onClick={this.handleBackgroundClick}>
+          <div className='content' onClick={this.handleContentClick}>
             {this.props.children}
           </div>
         </div>
@@ -28,11 +28,11 @@ export default class Modal extends React.Component<IProps> {
     document.removeEventListener('keydown', this.handleKeyDown, false);
   }
 
-  private handleContentClick(e: MouseEvent) {
+  private handleContentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   }
 
-  private handleBackgroundClick() {
+  private handleBackgroundClick = () => {
     ModalStore.hideModal();
   }
 
@@ -42,4 +42,3 @@ export default class Modal extends React.Component<IProps> {
     }
   }
 }
-
