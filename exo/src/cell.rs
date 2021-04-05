@@ -3,7 +3,7 @@ use std::{io::Write, path::PathBuf, time::Duration};
 use bytes::Bytes;
 use clap::Clap;
 use exocore_chain::{
-    block::{Block, BlockOperations, BlockOwned},
+    block::{Block, BlockBuilder, BlockOperations},
     chain::ChainStore,
     operation::{OperationFrame, OperationId},
     DirectoryChainStore, DirectoryChainStoreConfig,
@@ -144,6 +144,10 @@ struct NodeAddOptions {
     /// The node will host entities store.
     #[clap(long)]
     store: bool,
+
+    /// The node will host applications.
+    #[clap(long)]
+    app_host: bool,
 
     /// Manually add the node using its node configuration yaml.
     #[clap(long)]
@@ -417,6 +421,16 @@ async fn cmd_node_add(
         cell_node
             .roles
             .push(cell_node_config::Role::StoreRole.into());
+    }
+
+    if add_opts.app_host {
+        print_action(format!(
+            "The node will have {} role",
+            style_emphasis("application host")
+        ));
+        cell_node
+            .roles
+            .push(cell_node_config::Role::AppHostRole.into());
     }
 
     cell_config.add_node(cell_node);
@@ -722,7 +736,7 @@ fn cmd_import_chain(
         }
     }
 
-    let genesis_block = exocore_chain::block::BlockOwned::new_genesis(&full_cell)
+    let genesis_block = exocore_chain::block::BlockBuilder::build_genesis(&full_cell)
         .expect("Couldn't create genesis block");
     chain_store
         .write_block(&genesis_block)
@@ -738,7 +752,7 @@ fn cmd_import_chain(
         |block_op_id: OperationId, operations_buffer: &mut Vec<OperationFrame<Bytes>>| {
             let operations = BlockOperations::from_operations(operations_buffer.iter())
                 .expect("Couldn't create BlockOperations from operations buffer");
-            let block = BlockOwned::new_with_prev_block(
+            let block = BlockBuilder::build_with_prev_block(
                 full_cell.cell(),
                 &previous_block,
                 block_op_id,
@@ -1028,7 +1042,7 @@ fn create_genesis_block(cell: FullCell) -> anyhow::Result<()> {
         panic!("Chain is already initialized");
     }
 
-    let genesis_block = exocore_chain::block::BlockOwned::new_genesis(&cell)
+    let genesis_block = exocore_chain::block::BlockBuilder::build_genesis(&cell)
         .map_err(|err| anyhow!("Couldn't create genesis block: {}", err))?;
 
     chain_store

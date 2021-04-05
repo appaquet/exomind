@@ -94,8 +94,8 @@ pub trait Block {
         )
     }
 
-    fn to_owned(&self) -> BlockOwned {
-        BlockOwned {
+    fn to_owned(&self) -> DataBlock<Bytes> {
+        DataBlock {
             offset: self.offset(),
             header: self.header().to_owned(),
             operations_data: Bytes::from(self.operations_data().to_vec()),
@@ -230,258 +230,7 @@ pub fn build_header_frame(
     SizedFrameBuilder::new(MultihashFrameBuilder::<Sha3_256, _>::new(header))
 }
 
-/// Iterator over operations stored in a block.
-pub struct BlockOperationsIterator<'a> {
-    index: usize,
-    operations_header: Vec<BlockOperationHeader>,
-    operations_data: &'a [u8],
-    last_error: Option<Error>,
-}
-
-impl<'a> Iterator for BlockOperationsIterator<'a> {
-    type Item = crate::operation::OperationFrame<&'a [u8]>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.operations_header.len() {
-            return None;
-        }
-
-        let header = &self.operations_header[self.index];
-        self.index += 1;
-
-        let frame_res = header.read_frame(self.operations_data);
-        match frame_res {
-            Ok(frame) => Some(frame),
-            Err(err) => {
-                self.last_error = Some(err);
-                None
-            }
-        }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.index, Some(self.operations_data.len()))
-    }
-}
-
-/// In-memory block.
-pub struct BlockOwned {
-    pub offset: BlockOffset,
-    pub header: BlockHeaderFrame<Bytes>,
-    pub operations_data: Bytes,
-    pub signatures: SignaturesFrame<Bytes>,
-}
-
-impl BlockOwned {
-    pub fn new(
-        offset: BlockOffset,
-        header: BlockHeaderFrame<Bytes>,
-        operations_data: Bytes,
-        signatures: SignaturesFrame<Bytes>,
-    ) -> BlockOwned {
-        BlockOwned {
-            offset,
-            header,
-            operations_data,
-            signatures,
-        }
-    }
-
-    pub fn new_genesis(full_cell: &FullCell) -> Result<BlockOwned, Error> {
-        let operations = BlockOperations::empty();
-        let block = Self::new_with_prev_info(full_cell.cell(), 0, 0, 0, &[], 0, operations)?;
-        // TODO: Add master signature after doing https://github.com/appaquet/exocore/issues/46
-        Ok(block)
-    }
-
-    pub fn new_with_prev_block<B>(
-        cell: &Cell,
-        previous_block: &B,
-        proposed_operation_id: u64,
-        operations: BlockOperations,
-    ) -> Result<BlockOwned, Error>
-    where
-        B: Block,
-    {
-        let previous_block_header_reader = previous_block.header().get_reader()?;
-
-        let previous_offset = previous_block.offset();
-        let previous_hash = previous_block.header().inner().inner().multihash_bytes();
-
-        let offset = previous_block.next_offset();
-        let height = previous_block_header_reader.get_height();
-
-        Self::new_with_prev_info(
-            cell,
-            offset,
-            height,
-            previous_offset,
-            previous_hash,
-            proposed_operation_id,
-            operations,
-        )
-    }
-
-    pub fn new_with_prev_info(
-        cell: &Cell,
-        offset: BlockOffset,
-        height: BlockHeight,
-        previous_offset: BlockOffset,
-        previous_hash: &[u8],
-        proposed_operation_id: u64,
-        operations: BlockOperations,
-    ) -> Result<BlockOwned, Error> {
-        let local_node = cell.local_node();
-        let operations_data_size = operations.data.len() as u32;
-
-        // initialize block header
-        let mut header_frame_builder = CapnpFrameBuilder::<block_header::Owned>::new();
-        let mut header_msg_builder = header_frame_builder.get_builder();
-        header_msg_builder.set_offset(offset);
-        header_msg_builder.set_height(height + 1);
-        header_msg_builder.set_previous_offset(previous_offset);
-        header_msg_builder.set_previous_hash(previous_hash);
-        header_msg_builder.set_proposed_operation_id(proposed_operation_id);
-        header_msg_builder.set_proposed_node_id(&local_node.id().to_string());
-        header_msg_builder.set_operations_size(operations_data_size);
-        header_msg_builder.set_operations_hash(&operations.hash.to_bytes());
-
-        let mut operations_builder = header_msg_builder
-            .reborrow()
-            .init_operations_header(operations.headers.len() as u32);
-        for (i, header_builder) in operations.headers.iter().enumerate() {
-            let mut entry_builder = operations_builder.reborrow().get(i as u32);
-            header_builder.copy_into_builder(&mut entry_builder);
-        }
-
-        // create an empty signature for each node as a placeholder to find the size
-        // required for signatures
-        let signature_frame = BlockSignatures::empty_signatures_for_nodes(cell)
-            .to_frame_for_new_block(operations_data_size)?;
-
-        // set required signatures size in block
-        header_msg_builder
-            .set_signatures_size(signature_frame.whole_data_size() as BlockSignaturesSize);
-
-        // serialize block header and then re-read it
-        let final_frame_builder = build_header_frame(header_frame_builder);
-        let final_frame_data = final_frame_builder.as_bytes();
-        let block_header = read_header_frame(final_frame_data)?;
-
-        Ok(BlockOwned {
-            offset,
-            header: block_header,
-            operations_data: operations.data,
-            signatures: signature_frame,
-        })
-    }
-}
-
-impl Block for BlockOwned {
-    type UnderlyingFrame = Bytes;
-
-    fn offset(&self) -> u64 {
-        self.offset
-    }
-
-    fn header(&self) -> &BlockHeaderFrame<Self::UnderlyingFrame> {
-        &self.header
-    }
-
-    fn operations_data(&self) -> &[u8] {
-        &self.operations_data
-    }
-
-    fn signatures(&self) -> &SignaturesFrame<Self::UnderlyingFrame> {
-        &self.signatures
-    }
-}
-
-/// TODO: Replace by DataBlock
-/// A referenced block
-pub struct BlockRef<'a> {
-    pub offset: BlockOffset,
-    pub header: BlockHeaderFrame<&'a [u8]>,
-    pub operations_data: &'a [u8],
-    pub signatures: SignaturesFrame<&'a [u8]>,
-}
-
-impl<'a> BlockRef<'a> {
-    pub fn new(data: &[u8]) -> Result<BlockRef, Error> {
-        let header = read_header_frame(data)?;
-        let header_reader: block_header::Reader = header.get_reader()?;
-
-        let operations_offset = header.whole_data_size();
-        let operations_size = header_reader.get_operations_size() as usize;
-        let signatures_offset = operations_offset + operations_size;
-
-        if signatures_offset >= data.len() {
-            return Err(Error::OutOfBound(format!(
-                "Signature offset {} is after data len {}",
-                signatures_offset,
-                data.len()
-            )));
-        }
-
-        let operations_data = &data[operations_offset..operations_offset + operations_size];
-        let signatures = BlockSignatures::read_frame(&data[signatures_offset..])?;
-
-        Ok(BlockRef {
-            offset: header_reader.get_offset(),
-            header,
-            operations_data,
-            signatures,
-        })
-    }
-
-    pub fn new_from_next_offset(data: &[u8], next_offset: usize) -> Result<BlockRef, Error> {
-        let signatures = BlockSignatures::read_frame_from_next_offset(data, next_offset)?;
-        let signatures_reader: block_signatures::Reader = signatures.get_reader()?;
-        let signatures_offset = next_offset - signatures.whole_data_size();
-
-        let operations_size = signatures_reader.get_operations_size() as usize;
-        if operations_size > signatures_offset {
-            return Err(Error::OutOfBound(format!(
-                "Tried to read block from next offset {}, but its operations size would exceed beginning of file (operations_size={} signatures_offset={})",
-                next_offset, operations_size, signatures_offset,
-            )));
-        }
-
-        let operations_offset = signatures_offset - operations_size;
-        let operations_data = &data[operations_offset..operations_offset + operations_size];
-
-        let header = read_header_frame_from_next_offset(data, operations_offset)?;
-        let header_reader: block_header::Reader = header.get_reader()?;
-
-        Ok(BlockRef {
-            offset: header_reader.get_offset(),
-            operations_data,
-            header,
-            signatures,
-        })
-    }
-}
-
-impl<'a> Block for BlockRef<'a> {
-    type UnderlyingFrame = &'a [u8];
-
-    fn offset(&self) -> u64 {
-        self.offset
-    }
-
-    fn header(&self) -> &BlockHeaderFrame<Self::UnderlyingFrame> {
-        &self.header
-    }
-
-    fn operations_data(&self) -> &[u8] {
-        &self.operations_data
-    }
-
-    fn signatures(&self) -> &SignaturesFrame<Self::UnderlyingFrame> {
-        &self.signatures
-    }
-}
-
+/// Block from an arbitrary type of data.
 pub struct DataBlock<D: Data> {
     pub offset: BlockOffset,
     pub header: BlockHeaderFrame<D>,
@@ -565,6 +314,148 @@ impl<D: Data> Block for DataBlock<D> {
 
     fn signatures(&self) -> &SignaturesFrame<Self::UnderlyingFrame> {
         &self.signatures
+    }
+}
+
+/// In-memory block.
+pub struct BlockBuilder;
+
+impl BlockBuilder {
+    pub fn build(
+        offset: BlockOffset,
+        header: BlockHeaderFrame<Bytes>,
+        operations_data: Bytes,
+        signatures: SignaturesFrame<Bytes>,
+    ) -> DataBlock<Bytes> {
+        DataBlock {
+            offset,
+            header,
+            operations_data,
+            signatures,
+        }
+    }
+
+    pub fn build_genesis(full_cell: &FullCell) -> Result<DataBlock<Bytes>, Error> {
+        let operations = BlockOperations::empty();
+        let block = Self::build_with_prev_info(full_cell.cell(), 0, 0, 0, &[], 0, operations)?;
+        // TODO: Add master signature after doing https://github.com/appaquet/exocore/issues/46
+        Ok(block)
+    }
+
+    pub fn build_with_prev_block<B>(
+        cell: &Cell,
+        previous_block: &B,
+        proposed_operation_id: u64,
+        operations: BlockOperations,
+    ) -> Result<DataBlock<Bytes>, Error>
+    where
+        B: Block,
+    {
+        let previous_block_header_reader = previous_block.header().get_reader()?;
+
+        let previous_offset = previous_block.offset();
+        let previous_hash = previous_block.header().inner().inner().multihash_bytes();
+
+        let offset = previous_block.next_offset();
+        let height = previous_block_header_reader.get_height();
+
+        Self::build_with_prev_info(
+            cell,
+            offset,
+            height,
+            previous_offset,
+            previous_hash,
+            proposed_operation_id,
+            operations,
+        )
+    }
+
+    pub fn build_with_prev_info(
+        cell: &Cell,
+        offset: BlockOffset,
+        height: BlockHeight,
+        previous_offset: BlockOffset,
+        previous_hash: &[u8],
+        proposed_operation_id: u64,
+        operations: BlockOperations,
+    ) -> Result<DataBlock<Bytes>, Error> {
+        let local_node = cell.local_node();
+        let operations_data_size = operations.data.len() as u32;
+
+        // initialize block header
+        let mut header_frame_builder = CapnpFrameBuilder::<block_header::Owned>::new();
+        let mut header_msg_builder = header_frame_builder.get_builder();
+        header_msg_builder.set_offset(offset);
+        header_msg_builder.set_height(height + 1);
+        header_msg_builder.set_previous_offset(previous_offset);
+        header_msg_builder.set_previous_hash(previous_hash);
+        header_msg_builder.set_proposed_operation_id(proposed_operation_id);
+        header_msg_builder.set_proposed_node_id(&local_node.id().to_string());
+        header_msg_builder.set_operations_size(operations_data_size);
+        header_msg_builder.set_operations_hash(&operations.hash.to_bytes());
+
+        let mut operations_builder = header_msg_builder
+            .reborrow()
+            .init_operations_header(operations.headers.len() as u32);
+        for (i, header_builder) in operations.headers.iter().enumerate() {
+            let mut entry_builder = operations_builder.reborrow().get(i as u32);
+            header_builder.copy_into_builder(&mut entry_builder);
+        }
+
+        // create an empty signature for each node as a placeholder to find the size
+        // required for signatures
+        let signature_frame = BlockSignatures::empty_signatures_for_nodes(cell)
+            .to_frame_for_new_block(operations_data_size)?;
+
+        // set required signatures size in block
+        header_msg_builder
+            .set_signatures_size(signature_frame.whole_data_size() as BlockSignaturesSize);
+
+        // serialize block header and then re-read it
+        let final_frame_builder = build_header_frame(header_frame_builder);
+        let final_frame_data = final_frame_builder.as_bytes();
+        let block_header = read_header_frame(final_frame_data)?;
+
+        Ok(DataBlock {
+            offset,
+            header: block_header,
+            operations_data: operations.data,
+            signatures: signature_frame,
+        })
+    }
+}
+
+/// Iterator over operations stored in a block.
+pub struct BlockOperationsIterator<'a> {
+    index: usize,
+    operations_header: Vec<BlockOperationHeader>,
+    operations_data: &'a [u8],
+    last_error: Option<Error>,
+}
+
+impl<'a> Iterator for BlockOperationsIterator<'a> {
+    type Item = crate::operation::OperationFrame<&'a [u8]>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.operations_header.len() {
+            return None;
+        }
+
+        let header = &self.operations_header[self.index];
+        self.index += 1;
+
+        let frame_res = header.read_frame(self.operations_data);
+        match frame_res {
+            Ok(frame) => Some(frame),
+            Err(err) => {
+                self.last_error = Some(err);
+                None
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.index, Some(self.operations_data.len()))
     }
 }
 
@@ -861,7 +752,8 @@ mod tests {
 
     use super::*;
     use crate::{
-        block::{Block, BlockOperations, BlockOwned, BlockRef},
+        block::{Block, BlockBuilder, BlockOperations},
+        data::RefData,
         operation::OperationBuilder,
     };
 
@@ -880,7 +772,7 @@ mod tests {
             nodes.add(Node::generate_temporary());
         }
 
-        let genesis = BlockOwned::new_genesis(&full_cell)?;
+        let genesis = BlockBuilder::build_genesis(&full_cell)?;
 
         let operations = vec![
             OperationBuilder::new_entry(123, local_node.id(), b"some_data")
@@ -890,19 +782,21 @@ mod tests {
         let operations = BlockOperations::from_operations(operations.into_iter())?;
 
         let second_block =
-            BlockOwned::new_with_prev_block(full_cell.cell(), &genesis, 0, operations)?;
+            BlockBuilder::build_with_prev_block(full_cell.cell(), &genesis, 0, operations)?;
 
         let mut data = [0u8; 5000];
         second_block.copy_data_into(&mut data);
 
-        let read_second_block = BlockRef::new(&data[0..second_block.total_size()])?;
+        let block_data = RefData::new(&data[0..second_block.total_size()]);
+        let read_second_block = DataBlock::new(block_data)?;
         assert_eq!(
             second_block.header.whole_data(),
             read_second_block.header.whole_data()
         );
+
         assert_eq!(
-            second_block.operations_data,
-            read_second_block.operations_data
+            second_block.operations_data.as_ref(),
+            read_second_block.operations_data.slice(..),
         );
         assert_eq!(
             second_block.signatures.whole_data(),
@@ -937,10 +831,10 @@ mod tests {
     fn block_operations() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
         let full_cell = FullCell::generate(local_node.clone());
-        let genesis = BlockOwned::new_genesis(&full_cell)?;
+        let genesis = BlockBuilder::build_genesis(&full_cell)?;
 
         // 0 operations
-        let block = BlockOwned::new_with_prev_block(
+        let block = BlockBuilder::build_with_prev_block(
             full_cell.cell(),
             &genesis,
             0,
@@ -958,7 +852,7 @@ mod tests {
 
         let block_operations = BlockOperations::from_operations(operations)?;
         let block =
-            BlockOwned::new_with_prev_block(full_cell.cell(), &genesis, 0, block_operations)?;
+            BlockBuilder::build_with_prev_block(full_cell.cell(), &genesis, 0, block_operations)?;
         assert_eq!(block.operations_iter()?.count(), 5);
 
         Ok(())
@@ -982,11 +876,11 @@ mod tests {
             node2
         };
 
-        let genesis_block = BlockOwned::new_genesis(&full_cell)?;
+        let genesis_block = BlockBuilder::build_genesis(&full_cell)?;
 
         // only first node is chain node
         let block_ops = BlockOperations::empty();
-        let block1 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;
+        let block1 = BlockBuilder::build_with_prev_block(cell, &genesis_block, 0, block_ops)?;
         assert!(block1.signatures.whole_data_size() > 100);
 
         // make second node chain node, should now have more signature size
@@ -997,7 +891,7 @@ mod tests {
         }
 
         let block_ops = BlockOperations::empty();
-        let block2 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;
+        let block2 = BlockBuilder::build_with_prev_block(cell, &genesis_block, 0, block_ops)?;
         assert!(block2.signatures.whole_data_size() > block1.signatures.whole_data_size());
 
         Ok(())
@@ -1008,10 +902,10 @@ mod tests {
         let local_node = LocalNode::generate();
         let full_cell = FullCell::generate(local_node);
         let cell = full_cell.cell();
-        let genesis_block = BlockOwned::new_genesis(&full_cell)?;
+        let genesis_block = BlockBuilder::build_genesis(&full_cell)?;
 
         let block_ops = BlockOperations::empty();
-        let block1 = BlockOwned::new_with_prev_block(cell, &genesis_block, 0, block_ops)?;
+        let block1 = BlockBuilder::build_with_prev_block(cell, &genesis_block, 0, block_ops)?;
         let block1_reader: block_header::Reader = block1.header().get_reader()?;
 
         // generate new signatures for existing block

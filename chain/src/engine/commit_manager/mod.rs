@@ -12,7 +12,7 @@ use exocore_protos::generated::data_chain_capnp::block_header;
 use itertools::Itertools;
 
 use crate::{
-    block::{Block, BlockOperations, BlockOwned, BlockSignature, BlockSignatures},
+    block::{Block, BlockBuilder, BlockOperations, BlockSignature, BlockSignatures},
     chain,
     engine::{pending_sync, EngineError, Event, SyncContext},
     operation::{NewOperation, Operation, OperationBuilder, OperationId, OperationType},
@@ -399,7 +399,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
 
         let block_operations = BlockOperations::from_operations(block_operations)?;
         let block_operation_id = self.clock.consistent_time(&local_node);
-        let block = BlockOwned::new_with_prev_block(
+        let block = BlockBuilder::build_with_prev_block(
             &self.cell,
             &previous_block,
             block_operation_id.into(),
@@ -513,7 +513,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let signatures_frame = block_signatures.to_frame_for_existing_block(&block_header)?;
 
         // finally build the frame
-        let chain_block = BlockOwned::new(
+        let chain_block = BlockBuilder::build(
             block_offset,
             block_frame.to_owned(),
             Bytes::from(block_operations.data().to_vec()),

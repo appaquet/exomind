@@ -16,7 +16,7 @@ use itertools::Itertools;
 use tempfile::TempDir;
 
 use crate::{
-    block::{BlockOffset, BlockOwned},
+    block::{BlockBuilder, BlockOffset},
     chain::ChainStore,
     engine::{EngineHandle, EngineOperation, Event, RequestTrackerConfig},
     operation::OperationId,
@@ -181,7 +181,7 @@ impl TestChainCluster {
     }
 
     pub fn create_chain_genesis_block(&mut self, node_idx: usize) {
-        let block = BlockOwned::new_genesis(&self.cells[node_idx]).unwrap();
+        let block = BlockBuilder::build_genesis(&self.cells[node_idx]).unwrap();
         self.chain_stores[node_idx]
             .as_mut()
             .unwrap()

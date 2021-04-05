@@ -4,7 +4,7 @@ use futures::Stream;
 
 use crate::{error::Error, mutation::MutationRequestLike};
 
-/// Trait implemented by entities store. There are two main implementation at
+/// Abstraction for an entity store. There are two main implementation at
 /// the moment: the local store and the remote store. The local store is a
 /// locally hosted store, while the remote is a store that is on a remote node.
 #[async_trait]

@@ -29,7 +29,7 @@ use super::{
 };
 use crate::{
     block::{
-        Block, BlockHeight, BlockOffset, BlockOperations, BlockOwned, BlockSignatures,
+        Block, BlockBuilder, BlockHeight, BlockOffset, BlockOperations, BlockSignatures,
         BlockSignaturesSize, SignaturesFrame,
     },
     chain::{
@@ -262,7 +262,7 @@ impl EngineTestCluster {
                 prev_block_msg,
                 seed,
             );
-            let block = BlockOwned::new(
+            let block = BlockBuilder::build(
                 next_offset,
                 block_frame,
                 Bytes::from(operations_data),
@@ -290,7 +290,7 @@ impl EngineTestCluster {
     }
 
     pub fn chain_add_genesis_block(&mut self, node_idx: usize) {
-        let block = BlockOwned::new_genesis(&self.cells[node_idx]).unwrap();
+        let block = BlockBuilder::build_genesis(&self.cells[node_idx]).unwrap();
         self.chains[node_idx].write_block(&block).unwrap();
     }
 
@@ -312,7 +312,7 @@ impl EngineTestCluster {
 
         let block_operation_id = self.consistent_timestamp(node_idx).into();
         let block_operations = BlockOperations::from_operations(operations)?;
-        let block = BlockOwned::new_with_prev_block(
+        let block = BlockBuilder::build_with_prev_block(
             &self.cells[node_idx].cell(),
             &last_block,
             block_operation_id,

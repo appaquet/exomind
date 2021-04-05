@@ -10,7 +10,7 @@ use exocore_core::{
 use exocore_protos::{
     apps::{in_message::InMessageType, out_message::OutMessageType, InMessage, OutMessage},
     prost::{Message, ProstMessageExt},
-    store::{EntityMutation, EntityQuery},
+    store::{EntityQuery, MutationRequest},
 };
 use exocore_store::store::Store;
 use futures::{
@@ -164,6 +164,7 @@ impl<S: Store> Applications<S> {
                         );
                         return Ok(());
                     };
+                    let in_messages_count = in_messages.len();
 
                     for in_message in in_messages {
                         app_runtime.send_message(in_message)?;
@@ -171,6 +172,11 @@ impl<S: Store> Applications<S> {
 
                     let next_tick_duration = app_runtime.tick()?.unwrap_or(APP_MIN_TICK_TIME);
                     next_tick = sleep(next_tick_duration);
+
+                    debug!(
+                        "{}: App ticked. {} incoming message, next tick in {:?}",
+                        app_prefix, in_messages_count, next_tick_duration
+                    );
 
                     if !started {
                         info!("{}: Application started", app_prefix);
@@ -272,7 +278,7 @@ async fn handle_entity_mutation<S: Store>(
     out_message: OutMessage,
     store: S,
 ) -> Result<Vec<u8>, Error> {
-    let mutation = EntityMutation::decode(out_message.data.as_ref())?;
+    let mutation = MutationRequest::decode(out_message.data.as_ref())?;
     let res = store.mutate(mutation);
     let res = res.await?;
 

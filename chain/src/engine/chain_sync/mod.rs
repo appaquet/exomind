@@ -20,8 +20,9 @@ use node_info::{NodeStatus, NodeSyncInfo};
 
 use super::{EngineError, Event, SyncContext};
 use crate::{
-    block::{Block, BlockOffset, BlockRef},
+    block::{Block, BlockOffset, DataBlock},
     chain::ChainStore,
+    data::RefData,
 };
 
 mod meta;
@@ -696,7 +697,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             let data = data_res?;
 
             // read block from data
-            let block = BlockRef::new(data)?;
+            let block = DataBlock::new(RefData::new(data))?;
 
             // make sure the block was expected in our chain, then add it
             let next_local_offset = last_local_block

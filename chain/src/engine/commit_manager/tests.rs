@@ -602,7 +602,7 @@ fn should_not_cleanup_operations_from_commit_refused_blocks() -> anyhow::Result<
     // there is already a block a this position
     let block_operations = BlockOperations::from_operations(operations)?;
     let block_id = cluster.consistent_timestamp(0).into();
-    let invalid_block = BlockOwned::new_with_prev_block(
+    let invalid_block = BlockBuilder::build_with_prev_block(
         &cluster.cells[0].cell(),
         &preceding_valid_block,
         block_id,
@@ -749,7 +749,7 @@ fn create_block_proposal(
     });
     let block_operations = BlockOperations::from_operations(block_operations).unwrap();
     let block_operation_id = cluster.clocks[node_idx].consistent_time(&node).into();
-    let block = BlockOwned::new_with_prev_block(
+    let block = BlockBuilder::build_with_prev_block(
         &cluster.cells[node_idx].cell(),
         &previous_block,
         block_operation_id,

@@ -571,6 +571,7 @@ pub enum DirectoryError {
 
 #[cfg(test)]
 pub mod tests {
+    use bytes::Bytes;
     use exocore_core::{
         cell::{FullCell, LocalNode},
         utils::range,
@@ -578,7 +579,7 @@ pub mod tests {
     use itertools::Itertools;
 
     use super::*;
-    use crate::block::{Block, BlockOperations, BlockOwned};
+    use crate::block::{Block, BlockBuilder, BlockOperations};
 
     #[test]
     fn directory_chain_create_and_open() -> anyhow::Result<()> {
@@ -962,7 +963,7 @@ pub mod tests {
         Ok(())
     }
 
-    pub fn create_block(full_cell: &FullCell, offset: BlockOffset) -> BlockOwned {
+    pub fn create_block(full_cell: &FullCell, offset: BlockOffset) -> DataBlock<Bytes> {
         let operation_data_size = ((offset >> 3) % 831311) as usize;
         let operation_data: Vec<u8> = b"d".repeat(operation_data_size % 13 + 1);
 
@@ -981,7 +982,7 @@ pub mod tests {
 
         let proposed_operation_id = offset as u64;
         let block_operations = BlockOperations::from_operations(operations.into_iter()).unwrap();
-        BlockOwned::new_with_prev_info(
+        BlockBuilder::build_with_prev_info(
             full_cell.cell(),
             offset,
             0,

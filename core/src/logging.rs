@@ -39,10 +39,14 @@ pub fn setup<P: AsRef<Path>>(level: Option<LevelFilter>, file: Option<P>) {
         }
 
         if level < LevelFilter::Debug {
+            // tantivy is quite chatty on info level
             config = config
                 .logger(Logger::builder().build("tantivy::directory", LevelFilter::Warn))
                 .logger(Logger::builder().build("tantivy::indexer", LevelFilter::Warn));
         }
+
+        // cranelift debug is more like trace
+        config = config.logger(Logger::builder().build("cranelift_codegen", LevelFilter::Info));
 
         let config = config
             .build(Root::builder().appenders(appenders).build(level))

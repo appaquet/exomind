@@ -23,11 +23,11 @@ A cell consists of:
 ### v0.1 (in progress)
 * **Chain storage and replication layer**: Proof of concept
 * **Transport layer**: Proof of concept
-* **Store layer:** Proof of concept
+* **Store layer**: Proof of concept
+* **Applications (wasm host)**:  Proof of concept
 
 ### v0.2
 * **Cell management**
-* **Applications**  (WebAssembly)
 * **Encryption**
 
 ### v0.3 and beyond
