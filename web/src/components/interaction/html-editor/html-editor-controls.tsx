@@ -21,8 +21,8 @@ export default class HtmlEditorControls extends React.Component<IProps> {
       <ul>
         {this.renderInlineStyleControls()}
         {this.renderBlockControls()}
-        <li onMouseDown={this.handleOutdent.bind(this, 'outdent')}><i className="icon outdent" /></li>
-        <li onMouseDown={this.handleIndent.bind(this, 'indent')}><i className="icon indent" /></li> 
+        <li onMouseDown={(e) => this.handleOutdent('outdent', e)}><i className="icon outdent" /></li>
+        <li onMouseDown={(e) => this.handleIndent('indent', e)}><i className="icon indent" /></li> 
       </ul>
     </div>;
   }

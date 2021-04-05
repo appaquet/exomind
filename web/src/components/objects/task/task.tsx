@@ -34,7 +34,7 @@ export default class Task extends React.Component<IProps, IState> {
                     <div className="name field">
                         <span className="field-label">Name</span>
                         <span className="field-content">
-                            <EditableText text={this.state.currentTask.title} onChange={this.handleNameChange.bind(this)} />
+                            <EditableText text={this.state.currentTask.title} onChange={this.handleNameChange} />
                         </span>
                     </div>
                 </div>
@@ -42,7 +42,7 @@ export default class Task extends React.Component<IProps, IState> {
         );
     }
 
-    private handleNameChange(newTitle: string): void {
+    private handleNameChange = (newTitle: string): void => {
         const task = this.state.currentTask;
         task.title = newTitle;
 

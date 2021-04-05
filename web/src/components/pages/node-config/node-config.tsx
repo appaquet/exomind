@@ -48,12 +48,12 @@ export default class NodeConfig extends React.Component<IProps, IState> {
 
           <div className="config">
             <span className="title">Config</span>
-            <textarea onChange={this.handleConfigChange.bind(this)} value={this.state.config} />
+            <textarea onChange={this.handleConfigChange} value={this.state.config} />
           </div>
 
           <div className="actions">
-            <button onClick={this.handleNodeReset.bind(this)}>Reset node</button>
-            <button onClick={this.handleConfigSave.bind(this)}>Save</button>
+            <button onClick={this.handleNodeReset}>Reset node</button>
+            <button onClick={this.handleConfigSave}>Save</button>
           </div>
         </div>
       </div>
@@ -99,7 +99,7 @@ export default class NodeConfig extends React.Component<IProps, IState> {
     });
   }
 
-  private async handleNodeReset(): Promise<void> {
+  private handleNodeReset = async (): Promise<void> => {
     await resetNode();
     this.startDiscovery();
     this.setState({
@@ -107,12 +107,12 @@ export default class NodeConfig extends React.Component<IProps, IState> {
     });
   }
 
-  private handleConfigSave(): void {
-      window.localStorage.node_config = this.state.config;
-      initNode();
+  private handleConfigSave = (): void => {
+    window.localStorage.node_config = this.state.config;
+    initNode();
   }
 
-  private handleConfigChange(e: ChangeEvent<HTMLTextAreaElement>) {
+  private handleConfigChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     this.setState({
       config: e.target.value,
     });

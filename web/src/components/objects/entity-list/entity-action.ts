@@ -1,5 +1,6 @@
+import { MouseEvent } from "react";
 
-type ActionResult = 'remove' | void;
+export type ActionResult = 'remove' | void;
 
 export class EntityActions {
     constructor(public buttons: ButtonAction[] = [], public inlineEdit: InlineAction | null = null) {

@@ -7,7 +7,7 @@ import { ModalStore } from "../../../store/modal-store";
 import { ExpandableQuery } from "../../../store/queries";
 import { CollectionSelector } from "../../modals/collection-selector/collection-selector";
 import TimeSelector from "../../modals/time-selector/time-selector";
-import { ButtonAction, EntityActions, InlineAction } from '../entity-list/entity-action';
+import { ActionResult, ButtonAction, EntityActions, InlineAction } from '../entity-list/entity-action';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
 import { ListActions } from "../entity-list/list-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
@@ -122,26 +122,26 @@ export class Children extends React.Component<IProps, IState> {
                     parent={this.state.parent}
                     selection={this.props.selection}
                     onSelectionChange={this.props.onSelectionChange}
-                    onCreated={this.handleCreatedEntity.bind(this)}
+                    onCreated={(entity) => this.handleCreatedEntity(entity)}
                     removeOnPostpone={this.props.removeOnPostpone}
                 /> : null;
 
             return (
                 <div className={classes}
-                    onMouseEnter={this.handleMouseEnter.bind(this)}
-                    onMouseLeave={this.handleMouseLeave.bind(this)}>
+                    onMouseEnter={this.handleMouseEnter}
+                    onMouseLeave={this.handleMouseLeave}>
 
                     <EntityList
                         entities={entities}
                         parentEntity={this.state.parent}
 
-                        onRequireLoadMore={this.handleLoadMore.bind(this)}
+                        onRequireLoadMore={this.handleLoadMore}
 
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        actionsForEntity={this.actionsForEntity.bind(this)}
+                        actionsForEntity={this.actionsForEntity}
 
-                        onDropIn={this.handleDropInEntity.bind(this)}
+                        onDropIn={this.handleDropInEntity}
                     />
 
                     {controls}
@@ -154,23 +154,23 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private handleLoadMore() {
+    private handleLoadMore = () => {
         this.entityQuery.expand();
     }
 
-    private handleMouseEnter() {
+    private handleMouseEnter = () => {
         this.setState({
             hovered: true
         });
     }
 
-    private handleMouseLeave() {
+    private handleMouseLeave = () => {
         this.setState({
             hovered: false
         });
     }
 
-    private actionsForEntity(et: EntityTraits): EntityActions {
+    private actionsForEntity = (et: EntityTraits): EntityActions => {
         if (!this.props.actionsForSection) {
             return new EntityActions();
         }
@@ -179,16 +179,16 @@ export class Children extends React.Component<IProps, IState> {
         const buttonActions = actions.map((action) => {
             switch (action) {
                 case 'done':
-                    return new ButtonAction('check', this.handleEntityDone.bind(this, et));
+                    return new ButtonAction('check', () => { return this.handleEntityDone(et) });
                 case 'postpone':
-                    return new ButtonAction('clock-o', this.handleEntityPostpone.bind(this, et));
+                    return new ButtonAction('clock-o', () => { return this.handleEntityPostpone(et) });
                 case 'move':
-                    return new ButtonAction('folder-open-o', this.handleEntityMoveCollection.bind(this, et));
+                    return new ButtonAction('folder-open-o', () => { return this.handleEntityMoveCollection(et) });
                 case 'inbox':
-                    return new ButtonAction('inbox', this.handleEntityMoveInbox.bind(this, et));
+                    return new ButtonAction('inbox', () => { return this.handleEntityMoveInbox(et) });
                 case 'restore': {
                     const icon = (this.props.parentId == 'inbox') ? 'inbox' : 'folder-o';
-                    return new ButtonAction(icon, this.handleEntityRestore.bind(this, et));
+                    return new ButtonAction(icon, () => { return this.handleEntityRestore(et) });
                 }
             }
         });
@@ -206,7 +206,7 @@ export class Children extends React.Component<IProps, IState> {
         return new EntityActions(buttonActions, inlineEdit);
     }
 
-    private handleEntityDone(et: EntityTraits) {
+    private handleEntityDone(et: EntityTraits): ActionResult {
         const mutationBuilder = MutationBuilder.updateEntity(et.entity.id);
         const colsChildren = et
             .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
@@ -227,12 +227,10 @@ export class Children extends React.Component<IProps, IState> {
         return 'remove';
     }
 
-    private handleEntityPostpone(et: EntityTraits) {
-        ModalStore.showModal(this.showTimeSelector.bind(this, et));
-    }
-
-    private showTimeSelector(et: EntityTraits) {
-        return <TimeSelector onSelectionDone={this.handleTimeSelectorDone.bind(this, et)} />;
+    private handleEntityPostpone(et: EntityTraits): ActionResult {
+        ModalStore.showModal(() => {
+            return <TimeSelector onSelectionDone={(date) => this.handleTimeSelectorDone(et, date)} />;
+        });
     }
 
     private handleTimeSelectorDone(et: EntityTraits, date: Date) {
@@ -262,11 +260,9 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private handleEntityMoveCollection(et: EntityTraits) {
-        ModalStore.showModal(this.showCollectionsSelector.bind(this, et));
-    }
-
-    private showCollectionsSelector(et: EntityTraits) {
-        return <CollectionSelector entity={et.entity} />;
+        ModalStore.showModal(() => {
+            return <CollectionSelector entity={et.entity} />;
+        });
     }
 
     private handleEntityMoveInbox(et: EntityTraits) {
@@ -293,7 +289,7 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private handleDropInEntity(droppedItem: IDroppedItem) {
+    private handleDropInEntity = (droppedItem: IDroppedItem) => {
         const getEntityParentRelation = (entity: exocore.store.IEntity, parentId: string) => {
             return new EntityTraits(entity)
                 .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)

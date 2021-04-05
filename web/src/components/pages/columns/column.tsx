@@ -20,7 +20,7 @@ interface IProps {
 
     selection?: Selection;
 
-    onSelectionChange: () => void;
+    onSelectionChange: (sel: Selection) => void;
     onClose: () => void;
 }
 
@@ -71,7 +71,7 @@ export default class Column extends React.Component<IProps, IState> {
     }
 
     if (this.props.columnConfig.isEntity) {
-      headerActions.push(new HeaderAction('external-link', this.expandFullscreen.bind(this)));
+      headerActions.push(new HeaderAction('external-link', this.expandFullscreen));
 
       headerActions.push(new HeaderAction('copy', () => {
         copy(this.props.columnConfig.value);
@@ -147,7 +147,7 @@ export default class Column extends React.Component<IProps, IState> {
     }
   }
 
-  private expandFullscreen() {
+  private expandFullscreen = () => {
     const entityId = this.props.columnConfig.value;
     Navigation.navigatePopup(Navigation.pathForFullscreen(entityId));
   }

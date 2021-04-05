@@ -76,7 +76,7 @@ export class Header extends React.Component<IProps, IState> {
       <div className="search-col form-group">
         <div className="input-group">
           <span className="glyphicon glyphicon-search input-group-addon icon" />
-          <input type="text" className="form-control" value={this.state.fieldKeywords} onChange={this.handleSearchChange.bind(this)} />
+          <input type="text" className="form-control" value={this.state.fieldKeywords} onChange={(event) => this.handleSearchChange(event)} />
         </div>
       </div>
     );

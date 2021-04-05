@@ -110,11 +110,9 @@ export class Search extends React.Component<IProps> {
   }
 
   private handleEntityMoveCollection(et: EntityTraits) {
-    ModalStore.showModal(this.showCollectionsSelector.bind(this, et));
-  }
-
-  private showCollectionsSelector(et: EntityTraits) {
-    return <CollectionSelector entity={et.entity} />;
+    ModalStore.showModal(() => {
+      return <CollectionSelector entity={et.entity} />;
+    });
   }
 
   private handleEntityMoveInbox(et: EntityTraits): void {
