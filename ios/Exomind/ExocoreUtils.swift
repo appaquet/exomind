@@ -7,7 +7,10 @@ class ExocoreUtils {
     static var node: LocalNode? = nil
 
     static var logFile: String = {
-        NSTemporaryDirectory() + "/log.txt"
+        let folder = try! FileManager.default.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        let logFile = folder.path + "/log.txt"
+
+        return logFile
     }()
 
     static func initialize() throws {
