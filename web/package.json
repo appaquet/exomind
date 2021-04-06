@@ -91,7 +91,7 @@
     "@types/react-flatpickr": "^3.8.3",
     "@types/sanitize-html": "^1.27.2",
     "@typescript-eslint/eslint-plugin": "^4.21.0",
-    "@typescript-eslint/parser": "^4.20.0",
+    "@typescript-eslint/parser": "^4.21.0",
     "babel-loader": "^8.2.2",
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "cookie-parser": "^1.4.5",
