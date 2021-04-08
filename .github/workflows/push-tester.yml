@@ -105,7 +105,7 @@ jobs:
 
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2020-10-17
+          toolchain: nightly-2021-04-07
           profile: minimal
 
       - uses: Swatinem/rust-cache@v1
