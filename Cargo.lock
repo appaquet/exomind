@@ -458,9 +458,9 @@ dependencies = [
 
 [[package]]
 name = "chardetng"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f866cba7596c2e70200523e399101d460514a5e59191223aa87d579e49e52025"
+checksum = "a31c30fa8ad1996252e2b6e0d0499af2542422ccc3f96a892e46132bb5d2b5b5"
 dependencies = [
  "cfg-if 0.1.10",
  "encoding_rs",
