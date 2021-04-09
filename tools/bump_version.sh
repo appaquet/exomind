@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$CUR_DIR"
 
 VERSION=$1
 if [[ -z $VERSION ]]; then

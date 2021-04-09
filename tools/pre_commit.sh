@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$CUR_DIR"
+
+cd "$CUR_DIR/.."
 
 export EXOCORE_ROOT="$CUR_DIR/../"
 

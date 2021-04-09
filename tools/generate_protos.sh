@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 export EXOCORE_ROOT="$CUR_DIR/.."

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-set -eu
+set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd $CUR_DIR/../
+
 COVERAGE_DIR="$CUR_DIR/../coverage"
 OUTPUT=${1:-Html}
 
@@ -21,6 +21,7 @@ export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Co
 export CARGO_OPTIONS="--all --all-features --exclude=exo --exclude=exocore-client-web"
 export CARGO_OPTIONS="$CARGO_OPTIONS --exclude=exocore-client-android --exclude=exocore-client-c --exclude=exocore-apps-macros"
 
+cd $CUR_DIR/../
 cargo clean -p exocore-protos
 cargo test $CARGO_OPTIONS
 
