@@ -75,7 +75,7 @@ jobs:
         docker buildx build \
           --tag appaquet/exomind-gmail:$TAG \
           --platform linux/amd64,linux/arm \
-          --file $GITHUB_WORKSPACE/server/Dockerfile.buildx \
+          --file $GITHUB_WORKSPACE/integrations/gmail/Dockerfile.buildx \
           $BUILD_PARAMS \
           .
 
