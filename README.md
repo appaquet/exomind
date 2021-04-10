@@ -4,31 +4,30 @@
 
 **Warning: Exocore is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
 
-Exocore is a distributed applications framework with private and encrypted data storage. Think of like an infrastructure that allows
-a user to own his own personal cloud that is extensible via WebAssembly applications and accessible via Web/Mobile SDKs. It is designed 
-to be resilient to failures, allow offline usage (ex: on mobile). 
+Exocore is a distributed applications framework with private and encrypted data storage. Think of it like an infrastructure that allows
+a user to own his own personal cloud that is extensible via WebAssembly applications and accessible via Web/Mobile/Backend SDKs. It is
+designed to be resilient to failures and will eventually allow offline usage (ex: on mobile). 
 
 Exocore is primarily built for [Exomind](https://github.com/appaquet/exomind), a personal knowledge management tool built in parallel
-of this project. Exocore is the application framework for Exomind.
+to this project. Exocore is the application framework for Exomind.
 
 The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data.
 
 A cell consists of:
 * Chain nodes managing replication and storage by using a blockchain data structure.
 * Store nodes managing indexation, querying and mutation of the data (collocated with chain node).
-* Applications nodes run applications written in WebAssembly (that can be collocated with store nodes)
-* Clients (fat or thin) that can also act as index, data and partially run applications' WebAssembly.
+* Application host nodes run applications written in WebAssembly (collocated with store nodes)
 
 ## Roadmap
 ### v0.1 (in progress)
-* **Chain storage and replication layer**: Proof of concept
-* **Transport layer**: Proof of concept
-* **Store layer**: Proof of concept
-* **Applications (wasm host)**:  Proof of concept
+* **Chain storage and replication**: Proof of concept
+* **Transport**: Proof of concept
+* **Entity store**: Proof of concept
+* **Applications (WASM host)**:  Proof of concept
 
 ### v0.2
-* **Cell management**
-* **Encryption**
+* **Cell management** (Configuration replication)
+* **Enhanced security** (Chain encryption, configuration signatures, etc.)
 
 ### v0.3 and beyond
 * **Android SDK**
@@ -62,7 +61,7 @@ A cell consists of:
     * Most commands requires a node configuration file, for which an example can be found in here: [`./examples/node.yaml`].
       `exo` can also generate and manage configurations. See [Quick start](#quick-start).
     * At minimum, the config requires 2 keypair: one for the node, one for the cell.
-    * The node keypair is unique per server/node, while the cell keypair is shared among servers that host the cell.
+    * The node keypair is unique per node, while the cell keypair is shared among servers that host the cell.
     * See [Quick start](#quick-start) section for example 2 nodes setup.
     
 ## Quick start
@@ -92,7 +91,7 @@ A cell consists of:
     `exo -d ./node2 config edit`
 
   * Request to join the cell. 
-    This will use exocore's discovery server (`disco.exocore.io`), but this can overriden:
+    This will use exocore's discovery server (`disco.exocore.io`), but this can overridden:
 
     `exo -d ./node2 cell join`
 

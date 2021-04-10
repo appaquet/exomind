@@ -24,12 +24,14 @@
 * Generate headers & protobuf
     * `./tools/generate.sh`
 
-* Build the universal lib: `./tools/build.sh`
+* Build the universal lib: 
+    * `./tools/build.sh`
 
 ## Usage
 * See [iOS example](../../examples/ios/README.md)
 
 ## Known issues
+
 * App gets terminated due to signal 13 when resuming from background.
   * Mio doesn't handle `SIGPIPE` signal when Tokio tries to write to a closed connection. See (here)[https://github.com/tokio-rs/mio/issues/949].
   * You can ignore the the signal by adding this in your app (ex: in `didFinishLaunchingWithOptions`):

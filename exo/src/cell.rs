@@ -99,9 +99,13 @@ struct InitOptions {
     #[clap(long)]
     no_chain: bool,
 
-    /// The node will not expose an entity store server.
+    /// The node will not host an entity store.
     #[clap(long)]
     no_store: bool,
+
+    /// The node will not host applications.
+    #[clap(long)]
+    no_app_host: bool,
 
     /// Don't create genesis block.
     #[clap(long)]
@@ -311,6 +315,16 @@ fn cmd_init(
             cell_node
                 .roles
                 .push(cell_node_config::Role::StoreRole.into());
+        }
+
+        if !init_opts.no_app_host {
+            print_action(format!(
+                "The node will have {} role",
+                style_emphasis("app host")
+            ));
+            cell_node
+                .roles
+                .push(cell_node_config::Role::AppHostRole.into());
         }
 
         cell_node

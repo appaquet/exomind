@@ -11,20 +11,15 @@ version = "0.1.4"
 
 [features]
 default = [
-  "core-runtime",
-  "core-logger",
-  "transport-p2p",
-  "transport-http-server",
-  "store-local",
-  "chain-engine",
-  "chain-directory-chain",
-  "chain-memory-pending",
-  "protos",
+  "apps-sdk",
+  "client",
+  "logger",
+  "web",
 ]
 
 # Top level features
 apps-sdk = ["exocore-apps-sdk", "exocore-store", "protos"]
-client = ["core-runtime", "transport-p2p", "store-remote", "protos"]
+client = ["core-runtime", "transport-p2p", "store-remote", "protos", "anyhow"]
 logger = ["core-logger"]
 tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils", "exocore-store/tests-utils"]
 web = ["transport-p2p-web", "protos"]
@@ -44,6 +39,7 @@ transport-p2p = ["exocore-transport/p2p-full"]
 transport-p2p-web = ["exocore-transport/p2p-web"]
 
 [dependencies]
+anyhow = {version = "1.0", optional = true}
 exocore-apps-sdk = {version = "0.1.4", path = "./apps/sdk", default-features = false, optional = true}
 exocore-chain = {version = "0.1.4", path = "./chain", default-features = false, optional = true}
 exocore-core = {version = "0.1.4", path = "./core", default-features = false, optional = true}
@@ -51,6 +47,7 @@ exocore-discovery = {version = "0.1.4", path = "./discovery", default-features =
 exocore-protos = {version = "0.1.4", path = "./protos", default-features = false, optional = true}
 exocore-store = {version = "0.1.4", path = "./store", default-features = false, optional = true}
 exocore-transport = {version = "0.1.4", path = "./transport", default-features = false, optional = true}
+log = "0.4"
 
 [dev-dependencies]
 exocore-core = {version = "0.1.4", path = "./core", features = ["tests-utils"]}

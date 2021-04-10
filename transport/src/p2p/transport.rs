@@ -68,7 +68,7 @@ impl Libp2pTransport {
         handles.push_handle(cell.clone(), service_type, in_sender, out_receiver);
 
         info!(
-            "Registering transport for cell {} and service_type {:?}",
+            "Registering transport for cell {} and service type {:?}",
             cell, service_type
         );
 

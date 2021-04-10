@@ -45,8 +45,10 @@ pub fn setup<P: AsRef<Path>>(level: Option<LevelFilter>, file: Option<P>) {
                 .logger(Logger::builder().build("tantivy::indexer", LevelFilter::Warn));
         }
 
-        // cranelift debug is more like trace
-        config = config.logger(Logger::builder().build("cranelift_codegen", LevelFilter::Info));
+        // wasmtime related cranelift and regalloc are quite chatty...
+        config = config
+            .logger(Logger::builder().build("cranelift_codegen", LevelFilter::Info))
+            .logger(Logger::builder().build("regalloc", LevelFilter::Warn));
 
         let config = config
             .build(Root::builder().appenders(appenders).build(level))

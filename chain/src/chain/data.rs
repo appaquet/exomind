@@ -3,13 +3,13 @@ use std::ops::RangeBounds;
 use bytes::Bytes;
 use exocore_core::framing::FrameReader;
 
-use crate::data::{Data, MmapData};
+use crate::data::Data;
 
 /// Data from the chain that can be from a mmap file or owned bytes.
 #[derive(Clone)]
 pub enum ChainData {
     #[cfg(feature = "mmap")]
-    Mmap(MmapData),
+    Mmap(crate::data::MmapData),
     Bytes(Bytes),
 }
 

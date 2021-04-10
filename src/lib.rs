@@ -13,3 +13,6 @@ pub extern crate exocore_transport as transport;
 pub mod apps {
     pub extern crate exocore_apps_sdk as sdk;
 }
+
+#[cfg(feature = "client")]
+pub mod client;

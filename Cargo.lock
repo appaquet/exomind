@@ -1158,6 +1158,7 @@ dependencies = [
 name = "exocore"
 version = "0.1.4"
 dependencies = [
+ "anyhow",
  "exocore-apps-sdk",
  "exocore-chain",
  "exocore-core",
@@ -1165,6 +1166,7 @@ dependencies = [
  "exocore-protos",
  "exocore-store",
  "exocore-transport",
+ "log",
 ]
 
 [[package]]
