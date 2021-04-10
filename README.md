@@ -33,7 +33,8 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 
 ## Quick start
 
-1. Bootstrap an exocore node. Make sure one node has the `app_host` role. (see [Exocore's quick start](https://github.com/appaquet/exocore#quick-start)) 
+1. Bootstrap an exocore node. (see [Exocore's quick start](https://github.com/appaquet/exocore#quick-start)) 
+   If you already have an Exocore cluster, make sure one node has the `app_host` role.
     * `exo node init`
     * `exo cell init`
 

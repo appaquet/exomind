@@ -30,12 +30,9 @@ use tokio::time::sleep;
 #[tokio::main]
 async fn main() {
     let opt: cli::Options = cli::Options::from_args();
-    exocore::core::logging::setup::<String>(
-        Some(LevelFilter::from_str(&opt.logging_level).unwrap()),
-        None,
-    );
+    exocore::core::logging::setup::<String>(Some(LevelFilter::from_str(&opt.log).unwrap()), None);
 
-    let config = Config::from_file(&opt.config).expect("Failed to parse config");
+    let config = Config::from_file(opt.conf_path()).expect("Failed to parse config");
     let exm = ExomindClient::new(&opt)
         .await
         .expect("Couldn't create exomind client");

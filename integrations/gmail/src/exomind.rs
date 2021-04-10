@@ -26,8 +26,10 @@ pub struct ExomindClient {
 
 impl ExomindClient {
     pub async fn new(opts: &Options) -> anyhow::Result<ExomindClient> {
-        let client = exocore::client::Client::from_node_config_file(&opts.node_config).await?;
+        let client = exocore::client::Client::from_node_config_file(opts.node_conf_path()).await?;
         let store = client.store.clone();
+
+        store.on_start().await;
 
         Ok(ExomindClient { client, store })
     }

@@ -14,8 +14,9 @@
 
 * [Load the unpacked extension in Chrome](https://developer.chrome.com/extensions/getstarted)
 
-* Configure the extension by triggering it:
+* Configure the extension by triggering it and filling the following fields:
     * `Endpoint` is the URL to a `store` node exposing HTTP transport.
+
     * `Auth token` is a token that authenticate the extension's calls gainst the endpoint.
       Generate a token using Web client's configuration: 
       

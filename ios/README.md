@@ -21,4 +21,4 @@
 ## Running
 * On first app start, note the discovery code.
 
-* On the main node, add the iOS node with `exo cell node add` and paste the discovery code.
+* On the main node, add the iOS node with `exo cell node add`, paste the discovery code. Restart your main node.

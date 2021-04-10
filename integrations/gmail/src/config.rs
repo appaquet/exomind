@@ -11,11 +11,12 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: &Path) -> anyhow::Result<Config> {
-        let file = std::fs::File::open(path)?;
+    pub fn from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Config> {
+        let file = std::fs::File::open(path.as_ref())?;
         let mut config: Config = serde_yaml::from_reader(file)?;
 
         let config_dir = path
+            .as_ref()
             .parent()
             .ok_or_else(|| anyhow!("Couldn't get config parent directory"))?;
 

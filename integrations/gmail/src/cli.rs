@@ -6,18 +6,40 @@ use structopt::StructOpt;
 pub struct Options {
     #[structopt(long, short, default_value = "info")]
     /// Logging level (off, error, warn, info, debug, trace)
-    pub logging_level: String,
+    pub log: String,
 
-    /// Path to gmail configuration.
+    /// Path to gmail configuration, relative to directory.
     #[structopt(long, short = "c", default_value = "gmail.yaml")]
-    pub config: PathBuf,
+    pub conf: PathBuf,
 
-    /// Path to node configuration.
+    /// Path to node directory.
+    #[structopt(long, short = "d")]
+    pub dir: Option<PathBuf>,
+
+    /// Path to node configuration, relative to directory.
     #[structopt(long, short = "n", default_value = "node.yaml")]
-    pub node_config: PathBuf,
+    pub node: PathBuf,
 
     #[structopt(subcommand)]
     pub subcommand: SubCommand,
+}
+
+impl Options {
+    pub fn conf_path(&self) -> PathBuf {
+        if let Some(dir) = &self.dir {
+            dir.join(&self.conf)
+        } else {
+            self.conf.clone()
+        }
+    }
+
+    pub fn node_conf_path(&self) -> PathBuf {
+        if let Some(dir) = &self.dir {
+            dir.join(&self.node)
+        } else {
+            self.node.clone()
+        }
+    }
 }
 
 #[derive(StructOpt)]
