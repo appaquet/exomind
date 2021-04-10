@@ -18,8 +18,6 @@
 
 * Open the project in XCode / AppCode
 
-* Create and join an [Exomind server](../server/README.md) node.
-
 ## Running
 * On first app start, note the discovery code.
 

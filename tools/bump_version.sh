@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$CUR_DIR"
 
@@ -27,7 +27,6 @@ $SEDBIN -i.bak "s/\(version:\).*/\1 $VERSION/g" $ROOT_DIR/app.yaml
 CRATES=( \
   "." \
   "app" \
-  "server" \
   "protos" \
   "integrations/gmail" \
 )

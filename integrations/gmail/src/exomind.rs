@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{gmail::GmailAccount, sync::SynchronizedThread};
+use crate::{cli::Options, gmail::GmailAccount, sync::SynchronizedThread};
 use exocore::{
     core::time::{ConsistentTimestamp, DateTime, Utc},
-    protos::prost::ProstAnyPackMessageExt,
     protos::{
-        prost::{Message, ProstTimestampExt},
+        prost::{Message, ProstAnyPackMessageExt, ProstTimestampExt},
         store::{Entity, EntityResult, Reference, Trait},
         NamedMessage,
     },
@@ -21,14 +20,16 @@ use exomind_protos::base::{Account, AccountType, CollectionChild, Email, EmailTh
 
 #[derive(Clone)]
 pub struct ExomindClient {
+    pub client: exocore::client::Client,
     pub store: ClientHandle,
 }
 
 impl ExomindClient {
-    pub async fn new(store_handle: ClientHandle) -> anyhow::Result<ExomindClient> {
-        Ok(ExomindClient {
-            store: store_handle,
-        })
+    pub async fn new(opts: &Options) -> anyhow::Result<ExomindClient> {
+        let client = exocore::client::Client::from_node_config_file(&opts.node_config).await?;
+        let store = client.store.clone();
+
+        Ok(ExomindClient { client, store })
     }
 
     pub async fn get_accounts(&self, only_gmail: bool) -> anyhow::Result<Vec<GmailAccount>> {

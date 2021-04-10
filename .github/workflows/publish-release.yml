@@ -35,11 +35,11 @@ jobs:
         mkdir $GITHUB_WORKSPACE/assets && cd $GITHUB_WORKSPACE/assets
         hub release download $TAG
 
-        tar -zxf exomind-server.x86_64-unknown-linux-gnu.tar.gz
-        mv exomind-server exomind-server-amd64
+        tar -zxf exomind-gmail.x86_64-unknown-linux-gnu.tar.gz
+        mv exomind-gmail exomind-gmail-amd64
 
-        tar -zxf exomind-server.armv7-unknown-linux-gnueabihf.tar.gz
-        mv exomind-server exomind-server-arm
+        tar -zxf exomind-gmail.armv7-unknown-linux-gnueabihf.tar.gz
+        mv exomind-gmail exomind-gmail-arm
 
 
     - name: Setup Docker
@@ -56,7 +56,7 @@ jobs:
         docker buildx create --use --name exocore-builder 
 
 
-    - name: Build & publish exomind-server Docker
+    - name: Build & publish exomind-gmail Docker
       run: |
         set -x
         TAG="${{ github.event.inputs.ref }}"
@@ -68,14 +68,14 @@ jobs:
         fi
 
         if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
-          BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exomind-server:latest"
+          BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exomind-gmail:latest"
         fi
 
         export DOCKER_CLI_EXPERIMENTAL=enabled
         docker buildx build \
-          --tag appaquet/exomind-server:$TAG \
+          --tag appaquet/exomind-gmail:$TAG \
           --platform linux/amd64,linux/arm \
-          --file $GITHUB_WORKSPACE/server/Dockerfile.buildx \
+          --file $GITHUB_WORKSPACE/integrations/gmail/Dockerfile.buildx \
           $BUILD_PARAMS \
           .
 
