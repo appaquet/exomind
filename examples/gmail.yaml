@@ -1,9 +1,4 @@
 
-# Path to Exocore node configuration
-node_config: node.yaml
-
-# Gmail synchronization config. Comment to disable.
-gmail:
   # Path to Google API client secret file (downloaded from Google API Console. See gmail's integration README.md)
   client_secret: client_secret.json
 

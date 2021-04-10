@@ -4,7 +4,7 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 
 RUN echo "Building for platform $TARGETPLATFORM arch $TARGETARCH"
-COPY "exomind-server-$TARGETARCH" /usr/local/bin/exomind-server
+COPY "exomind-gmail-$TARGETARCH" /usr/local/bin/exomind-gmail
 
 WORKDIR /volume
-ENTRYPOINT ["/usr/local/bin/exomind-server"]
+ENTRYPOINT ["/usr/local/bin/exomind-gmail"]

@@ -2,7 +2,7 @@
 
 **Warning: Exomind is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
 
-Exomind is personal knowledge management tool. It is an unified inbox in which your emails, your notes, your tasks and your bookmarks can live
+Exomind is a personal knowledge management tool. It is a unified inbox in which your emails, your notes, your tasks and your bookmarks can live
 and be organized in collections. 
 
 It is built on top of [Exocore](https://github.com/appaquet/exocore), a distributed application framework, and is meant to be hosted in a 
@@ -29,6 +29,21 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 
 ## Dependencies
 * Install dependencies from [Exocore](https://github.com/appaquet/exocore) and follow web and iOS.
+
+
+## Quick start
+
+1. Bootstrap an exocore node. Make sure one node has the `app_host` role. (see [Exocore's quick start](https://github.com/appaquet/exocore#quick-start)) 
+    * `exo node init`
+    * `exo cell init`
+
+2. Install Exomind in the cell.
+    * `exo cell app install https://github.com/appaquet/exomind/releases/download/<VERSION>/exomind-app.zip`
+
+3. Start your node.
+    * `exo daemon`
+
+4. Follow [Web client](./web/README.md) and/or [iOS client](./ios/README.md) instructions.
 
 ## Usage
 

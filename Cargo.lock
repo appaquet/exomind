@@ -773,19 +773,19 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre5#abe3b9dca83bfb1a44b3d8b1838cccec298a3e60"
 dependencies = [
+ "anyhow",
  "exocore-apps-sdk",
  "exocore-core",
  "exocore-protos",
  "exocore-store",
  "exocore-transport",
+ "log",
 ]
 
 [[package]]
 name = "exocore-apps-macros"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre5#abe3b9dca83bfb1a44b3d8b1838cccec298a3e60"
 dependencies = [
  "anyhow",
  "futures 0.3.13",
@@ -798,7 +798,6 @@ dependencies = [
 [[package]]
 name = "exocore-apps-sdk"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre5#abe3b9dca83bfb1a44b3d8b1838cccec298a3e60"
 dependencies = [
  "anyhow",
  "chrono",
@@ -815,7 +814,6 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre5#abe3b9dca83bfb1a44b3d8b1838cccec298a3e60"
 dependencies = [
  "anyhow",
  "bs58",
@@ -848,7 +846,6 @@ dependencies = [
 [[package]]
 name = "exocore-protos"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre5#abe3b9dca83bfb1a44b3d8b1838cccec298a3e60"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -867,7 +864,6 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre5#abe3b9dca83bfb1a44b3d8b1838cccec298a3e60"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -886,7 +882,6 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre5#abe3b9dca83bfb1a44b3d8b1838cccec298a3e60"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -951,23 +946,6 @@ dependencies = [
  "prost",
  "prost-build",
  "prost-types",
-]
-
-[[package]]
-name = "exomind-server"
-version = "0.1.2"
-dependencies = [
- "anyhow",
- "exocore",
- "exomind-gmail",
- "exomind-protos",
- "futures 0.3.13",
- "log",
- "serde",
- "serde_derive",
- "serde_yaml",
- "structopt",
- "tokio 1.4.0",
 ]
 
 [[package]]

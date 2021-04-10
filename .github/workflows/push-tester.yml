@@ -94,6 +94,7 @@ jobs:
           yarn test
           yarn lint
 
+
   ios_build:
     runs-on: macOS-latest
     steps:
@@ -112,6 +113,7 @@ jobs:
           cd $GITHUB_WORKSPACE/ios
           pod install
           xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO 
+
 
   app_package:
     runs-on: ubuntu-latest
