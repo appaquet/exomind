@@ -1,8 +1,0 @@
-[package]
-authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
-edition = "2018"
-license = "Apache-2.0"
-name = "exomind-server"
-version = "0.1.2"
-
-[dependencies]
