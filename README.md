@@ -47,8 +47,6 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 
 ## Usage
 
-* See [Server README](./server/README.md)
-
 * See [Gmail integration README](./integrations/gmail/README.md)
 
 * See [Web / Electron README](./web/README.md)

@@ -6,8 +6,6 @@
     * [Install Node](https://github.com/nodesource/distributions/blob/master/README.md#debinstall)
     * Install yarn: `npm install -g yarn`
 
-* Create and join an [Exomind server](../server/README.md) node.
-
 ## Development
 ### Web client
 * Start in developer mode: `yarn start_dev` 
