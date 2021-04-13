@@ -18,6 +18,6 @@ members = [
   "integrations/gmail",
 ]
 
-[patch.crates-io]
+#[patch.crates-io]
 #exocore = {path = "../exocore"}
-exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre6" }
+#exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre6" }cka

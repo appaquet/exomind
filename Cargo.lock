@@ -773,7 +773,8 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre6#011885b717f01ab8057830f5814f7ef4e7ece81c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9c27c252c8f2bca978f228b01f871f5be908742b7c1b6b2fff7c71d121c40a7"
 dependencies = [
  "anyhow",
  "exocore-apps-sdk",
@@ -787,7 +788,8 @@ dependencies = [
 [[package]]
 name = "exocore-apps-macros"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre6#011885b717f01ab8057830f5814f7ef4e7ece81c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "476243d6a6ab44747fa87681be4624313fc429eafb8f8dad5a5ce774083a204d"
 dependencies = [
  "anyhow",
  "futures 0.3.14",
@@ -800,7 +802,8 @@ dependencies = [
 [[package]]
 name = "exocore-apps-sdk"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre6#011885b717f01ab8057830f5814f7ef4e7ece81c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "114b93ac523fda8fa8ab87eea18976c307662d566032fcc5db1a871c6b195fbc"
 dependencies = [
  "anyhow",
  "chrono",
@@ -817,7 +820,8 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre6#011885b717f01ab8057830f5814f7ef4e7ece81c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4f4c893fe26025362abc0ac83f2761a027c6b40d45c9440d9873db05680bd2c"
 dependencies = [
  "anyhow",
  "bs58",
@@ -839,7 +843,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "thiserror",
- "tokio 1.4.0",
+ "tokio 1.5.0",
  "url 2.2.1",
  "uuid 0.8.2",
  "wasm-bindgen",
@@ -850,7 +854,8 @@ dependencies = [
 [[package]]
 name = "exocore-protos"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre6#011885b717f01ab8057830f5814f7ef4e7ece81c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "168bb186d75df2fa7af121039977f4e6a7efbf1a3c35f81e38b0e838089774cf"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -869,7 +874,8 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre6#011885b717f01ab8057830f5814f7ef4e7ece81c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c79d22a813778dc3ae9da9d12341fec6e04c2d57c6dfc866c4d9712979703ee0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -888,7 +894,8 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.4"
-source = "git+https://github.com/appaquet/exocore.git?tag=v0.1.4-pre6#011885b717f01ab8057830f5814f7ef4e7ece81c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ae49910de1b5341571a4503825646b27c949128022a03a1923aee87937bd4f9"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -940,7 +947,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "tokio 1.4.0",
+ "tokio 1.5.0",
  "tokio-compat-02",
  "yup-oauth2",
 ]
@@ -1881,7 +1888,7 @@ dependencies = [
  "libp2p-core",
  "log",
  "socket2 0.3.19",
- "tokio 1.4.0",
+ "tokio 1.5.0",
 ]
 
 [[package]]
@@ -2011,9 +2018,9 @@ dependencies = [
 
 [[package]]
 name = "mailparse"
-version = "0.13.2"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31de1f9043c582efde7dbd93de56600df12b6c4488a67eeaefa74ea364019b22"
+checksum = "30286c2f0c485ae66dc96864ec64cd0b60497d8e0bc2073ead6999eff5c7b7a6"
 dependencies = [
  "base64 0.12.3",
  "charset",
@@ -3039,9 +3046,9 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "sct"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3042af939fca8c3453b7af0f1c66e533a15a86169e39de2657310ade8f98d3c"
+checksum = "b362b83898e0e69f38515b82ee15aa80636befe47c3b6d3d89a911e78fc228ce"
 dependencies = [
  "ring",
  "untrusted",
@@ -3528,9 +3535,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "134af885d758d645f0f0505c9a8b3f9bf8a348fd822e112ab5248138348f1722"
+checksum = "83f0c8e7c0addab50b663055baf787d0af7f413a46e6e7fb9559a4e4db7137a5"
 dependencies = [
  "autocfg 1.0.1",
  "bytes 1.0.1",
@@ -3563,7 +3570,7 @@ dependencies = [
  "once_cell",
  "pin-project-lite 0.2.6",
  "tokio 0.2.25",
- "tokio 1.4.0",
+ "tokio 1.5.0",
  "tokio-stream",
 ]
 
@@ -3673,7 +3680,7 @@ checksum = "e177a5d8c3bf36de9ebe6d58537d8879e964332f93fb3339e43f618c81361af0"
 dependencies = [
  "futures-core",
  "pin-project-lite 0.2.6",
- "tokio 1.4.0",
+ "tokio 1.5.0",
 ]
 
 [[package]]
