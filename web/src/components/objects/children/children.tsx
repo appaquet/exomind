@@ -15,6 +15,8 @@ import { Message } from "../message";
 import Long from "long";
 import './children.less';
 
+const PINNED_WEIGHT = 9999999999999;
+
 interface IProps {
     parent?: exocore.store.IEntity;
     parentId?: string;
@@ -23,9 +25,7 @@ interface IProps {
     onSelectionChange?: (sel: Selection) => void;
     onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
 
-    sections?: string[];
-    section?: string;
-    actionsForSection?: (section: string) => string[];
+    actionsForEntity?: (et: EntityTraits) => string[];
 
     removeOnPostpone?: boolean;
 }
@@ -171,11 +171,11 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private actionsForEntity = (et: EntityTraits): EntityActions => {
-        if (!this.props.actionsForSection) {
+        if (!this.props.actionsForEntity) {
             return new EntityActions();
         }
 
-        const actions = this.props.actionsForSection(this.props.section);
+        const actions = this.props.actionsForEntity(et);
         const buttonActions = actions.map((action) => {
             switch (action) {
                 case 'done':
@@ -186,6 +186,8 @@ export class Children extends React.Component<IProps, IState> {
                     return new ButtonAction('folder-open-o', () => { return this.handleEntityMoveCollection(et) });
                 case 'inbox':
                     return new ButtonAction('inbox', () => { return this.handleEntityMoveInbox(et) });
+                case 'pin':
+                    return new ButtonAction(this.isPinned(et) ? 'caret-down' : 'thumb-tack', () => { return this.handleEntityPin(et) });
                 case 'restore': {
                     const icon = (this.props.parentId == 'inbox') ? 'inbox' : 'folder-o';
                     return new ButtonAction(icon, () => { return this.handleEntityRestore(et) });
@@ -279,6 +281,37 @@ export class Children extends React.Component<IProps, IState> {
         if (this.props.onEntityAction) {
             this.props.onEntityAction('inbox', et.entity);
         }
+    }
+
+    private isPinned(et: EntityTraits): boolean {
+        const child = et
+            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .filter((child) => child.message.collection.entityId == this.state.parent?.id)?.[0];
+        if (!child) {
+            return false;
+        }
+
+        return child.message.weight >= PINNED_WEIGHT;
+    }
+
+    private handleEntityPin(et: EntityTraits) {
+        const child = et
+            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .filter((child) => child.message.collection.entityId == this.state.parent?.id)?.[0];
+        if (!child) {
+            return;
+        }
+
+        if (child.message.weight >= PINNED_WEIGHT) {
+            child.message.weight = new Date().getTime();
+        } else {
+            child.message.weight = PINNED_WEIGHT;
+        }
+
+        const mb = MutationBuilder
+            .updateEntity(et.id)
+            .putTrait(child.message, child.id);
+        Exocore.store.mutate(mb.build());
     }
 
     private handleEntityRestore(et: EntityTraits) {
