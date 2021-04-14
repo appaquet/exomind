@@ -15,7 +15,7 @@ import { Message } from "../message";
 import Long from "long";
 import './children.less';
 
-const PINNED_WEIGHT = 9999999999999;
+const PINNED_WEIGHT = 5000000000000;
 
 interface IProps {
     parent?: exocore.store.IEntity;
@@ -283,6 +283,7 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
+
     private isPinned(et: EntityTraits): boolean {
         const child = et
             .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
@@ -305,7 +306,7 @@ export class Children extends React.Component<IProps, IState> {
         if (child.message.weight >= PINNED_WEIGHT) {
             child.message.weight = new Date().getTime();
         } else {
-            child.message.weight = PINNED_WEIGHT;
+            child.message.weight = new Date().getTime() + PINNED_WEIGHT;
         }
 
         const mb = MutationBuilder
