@@ -1612,12 +1612,12 @@
     "@types/scheduler" "*"
     csstype "^3.0.2"
 
-"@types/sanitize-html@^1.27.2":
-  version "1.27.2"
-  resolved "https://registry.yarnpkg.com/@types/sanitize-html/-/sanitize-html-1.27.2.tgz#f7bf16ca4b1408278f97ae737f0377a08a10b35c"
-  integrity sha512-DrH26m7CV6PB4YVckjbSIx+xloB7HBolr9Ctm0gZBffSu5dDV4yJKFQGPquJlReVW+xmg59gx+b/8/qYHxZEuw==
+"@types/sanitize-html@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@types/sanitize-html/-/sanitize-html-2.3.0.tgz#bf6555bf233b8325e2068d83a75903f4c5e6d465"
+  integrity sha512-q+Xg5t8Yn0KeomXMyVMoxtKyvh2u1ywkPqFlMy/5luF8D+DN+HhFN9pesJ6BsuoLuDCukR8p922KkCZnkTHOpg==
   dependencies:
-    htmlparser2 "^4.1.0"
+    htmlparser2 "^6.0.0"
 
 "@types/scheduler@*":
   version "0.16.1"
