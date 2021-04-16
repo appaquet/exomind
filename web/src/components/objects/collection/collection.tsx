@@ -28,7 +28,7 @@ export default class Collection extends React.Component<IProps> {
             <Children
                 parent={this.props.entity}
 
-                actionsForSection={this.actionsForChildrenType}
+                actionsForEntity={this.actionsForChildrenType}
 
                 selection={this.props.selection}
                 onSelectionChange={this.props.onSelectionChange}
@@ -37,6 +37,6 @@ export default class Collection extends React.Component<IProps> {
     }
 
     private actionsForChildrenType = (): string[] => {
-        return ['done', 'postpone', 'move'];
+        return ['done', 'postpone', 'move', 'pin'];
     }
 }

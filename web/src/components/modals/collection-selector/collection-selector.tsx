@@ -108,6 +108,9 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                 .map((colResult) => {
                     const et = new EntityTraits(colResult.entity);
                     const colTrait = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
+                    if (!colTrait) {
+                        return null;
+                    }
 
                     const iconClasses = classNames({
                         'icon': true,

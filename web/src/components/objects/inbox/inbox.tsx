@@ -25,7 +25,7 @@ export class Inbox extends React.Component<IProps> {
             <Children
                 parentId="inbox"
 
-                actionsForSection={this.actionsForChildrenType}
+                actionsForEntity={this.actionsForChildrenType}
 
                 selection={this.props.selection}
                 onSelectionChange={this.props.onSelectionChange}
