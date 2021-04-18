@@ -1,4 +1,3 @@
-import classNames from 'classnames';
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import * as _ from 'lodash';
 import React from 'react';

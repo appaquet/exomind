@@ -1,7 +1,6 @@
 import classNames from "classnames";
 import React from "react";
 import { EntityTrait, TraitIcon } from "../../store/entities";
-import Emojis from "../../logic/emojis";
 
 interface IProps {
     trait?: EntityTrait<unknown>;
@@ -14,19 +13,7 @@ export default class EntityIcon extends React.Component<IProps> {
             return this.renderTraitIcon(this.props.icon);
         }
 
-        return this.props.trait.match({
-            collection: (col) => {
-                if (Emojis.startsWithEmoji(col.message)) {
-                    const [icon,] = Emojis.extractEmoji(col.message);
-                    return this.renderEmoji(icon);
-                } else {
-                    return this.renderTraitIcon(this.props.trait.icon);
-                }
-            },
-            default: () => {
-                return this.renderTraitIcon(this.props.trait.icon);
-            },
-        })
+        return this.renderTraitIcon(this.props.trait.icon);
     }
 
     private renderTraitIcon(icon: TraitIcon): React.ReactFragment {

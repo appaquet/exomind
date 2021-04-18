@@ -5,7 +5,7 @@ import { exomind } from '../../../protos';
 import * as _ from 'lodash';
 import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
-import EditableText from '../../interaction/editable-text/editable-text.js';
+import EditableText from '../../interaction/editable-text/editable-text';
 import HtmlEditorControls from '../../interaction/html-editor/html-editor-controls';
 import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-editor';
 import { SelectedItem, Selection } from '../entity-list/selection';

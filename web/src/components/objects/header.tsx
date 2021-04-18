@@ -1,6 +1,6 @@
 
 import React from 'react';
-import EditableText from '../interaction/editable-text/editable-text.js';
+import EditableText from '../interaction/editable-text/editable-text';
 import classNames from 'classnames';
 import './header.less';
 import { TraitIcon } from '../../store/entities.js';

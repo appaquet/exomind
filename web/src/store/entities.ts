@@ -302,8 +302,8 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
             const col = trait as exomind.base.ICollection;
 
             if (col.name) {
-                if (Emojis.startsWithEmoji(col)) {
-                    const [, title] = Emojis.extractEmoji(col);
+                if (Emojis.startsWithEmoji(col.name)) {
+                    const [, title] = Emojis.extractEmoji(col.name);
                     return title;
                 } else {
                     return col.name;
@@ -315,8 +315,8 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         },
         icon: (trait) => {
             const col = trait as exomind.base.ICollection;
-            if (Emojis.startsWithEmoji(col)) {
-                const [emoji] = Emojis.extractEmoji(col);
+            if (Emojis.startsWithEmoji(col.name)) {
+                const [emoji] = Emojis.extractEmoji(col.name);
                 return { emoji };
             } else {
                 return { fa: 'folder-o' }

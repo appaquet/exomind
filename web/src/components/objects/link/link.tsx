@@ -3,7 +3,7 @@ import { Exocore, MutationBuilder } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
-import EditableText from '../../interaction/editable-text/editable-text.js';
+import EditableText from '../../interaction/editable-text/editable-text';
 import { Selection } from '../entity-list/selection';
 import './link.less';
 
