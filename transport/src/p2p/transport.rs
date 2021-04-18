@@ -12,7 +12,7 @@ use exocore_protos::generated::common_capnp::envelope;
 use futures::{channel::mpsc, prelude::*, FutureExt, SinkExt, StreamExt};
 use libp2p::{
     core::PeerId,
-    ping::{Ping, PingEvent},
+    ping::{Ping, PingEvent, PingSuccess},
     swarm::{ExpandedSwarm, NetworkBehaviourEventProcess, Swarm},
     NetworkBehaviour,
 };
@@ -296,11 +296,11 @@ impl NetworkBehaviourEventProcess<ExocoreBehaviourEvent> for CombinedBehaviour {
 impl NetworkBehaviourEventProcess<PingEvent> for CombinedBehaviour {
     fn inject_event(&mut self, event: PingEvent) {
         match event.result {
-            Ok(success) => {
+            Ok(PingSuccess::Ping { rtt }) => {
                 // TODO: We could save round-trip time to node. Could be use for node selection.
-                debug!("Successfully pinged peer {}: {:?}", event.peer, success);
-                self.exocore.report_ping_success(&event.peer);
+                self.exocore.report_ping_success(&event.peer, rtt);
             }
+            Ok(PingSuccess::Pong) => {}
             Err(failure) => {
                 debug!("Failed to ping peer {}: {}", event.peer, failure);
             }

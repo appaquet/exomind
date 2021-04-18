@@ -9,6 +9,8 @@ use exocore_store::{remote::ClientHandle, store::Store};
 use futures::{channel::oneshot, prelude::*};
 use wasm_bindgen::prelude::*;
 
+use crate::js::into_js_error;
+
 type ResultCell = Rc<RefCell<Option<Result<EntityResults, exocore_store::error::Error>>>>;
 type CallbackCell = Rc<RefCell<Option<js_sys::Function>>>;
 
@@ -90,12 +92,14 @@ impl WatchedQuery {
     }
 
     #[wasm_bindgen]
-    pub fn get(&self) -> js_sys::Uint8Array {
+    pub fn get(&self) -> Result<js_sys::Uint8Array, JsValue> {
         let res = self.result_cell.borrow();
-        let res = res.as_ref().unwrap();
-        let res = res.as_ref().unwrap();
+        let res = res.as_ref().ok_or("couldn't borrow inner results")?;
+        let res = res
+            .as_ref()
+            .map_err(|err| into_js_error("query is an error", err))?;
         let results_data = res.encode_to_vec();
-        js_sys::Uint8Array::from(results_data.as_ref())
+        Ok(js_sys::Uint8Array::from(results_data.as_ref()))
     }
 }
 

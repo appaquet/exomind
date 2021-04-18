@@ -112,8 +112,11 @@ impl ExocoreBehaviour {
         self.dial_peer(peer_id, true);
     }
 
-    pub fn report_ping_success(&mut self, peer_id: &PeerId) {
-        self.inject_connected(peer_id);
+    pub fn report_ping_success(&mut self, peer_id: &PeerId, rtt: Duration) {
+        if let Some(peer) = self.peers.get(&peer_id) {
+            debug!("Successfully ping peer {}: {:?}", peer.node, rtt);
+            self.inject_connected(peer_id);
+        }
     }
 
     pub fn reset_peers(&mut self) {
