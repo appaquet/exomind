@@ -3,17 +3,17 @@ import React, { MouseEvent } from 'react';
 import './editable-text.less';
 
 interface IProps {
-  initEdit?: boolean;
   text: string;
   editText?: string;
   placeholder?: string;
   multiline?: boolean;
   doubleClick?: boolean;
   onChange?: (value: string) => void;
+  initializeEditing?: boolean;
 }
 
 interface IState {
-  editMode: boolean;
+  editing: boolean;
   value: string;
 }
 
@@ -30,13 +30,13 @@ export default class EditableText extends React.Component<IProps, IState> {
     super(props);
 
     this.state = {
-      editMode: !!props.initEdit,
+      editing: !!props.initializeEditing,
       value: props.text || ''
     };
   }
 
   componentDidUpdate(): void {
-    if (this.state.editMode) {
+    if (this.state.editing) {
       this.ensureFocus();
       return;
     }
@@ -49,13 +49,13 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   componentDidMount(): void {
-    if (this.state.editMode) {
+    if (this.state.editing) {
       this.ensureFocus();
     }
   }
 
   render(): React.ReactNode {
-    if (this.state.editMode) {
+    if (this.state.editing) {
       if (this.props.multiline) {
         return this.renderMultiEdit();
       } else {
@@ -66,7 +66,7 @@ export default class EditableText extends React.Component<IProps, IState> {
     }
   }
 
-  renderRead(): React.ReactFragment {
+  private renderRead(): React.ReactFragment {
     const placeholder = this.props.placeholder || 'Click to change';
     const singleClick = !this.props.doubleClick;
     const value = !this.state.value ? <span className="empty">{placeholder}</span> : this.state.value;
@@ -82,7 +82,7 @@ export default class EditableText extends React.Component<IProps, IState> {
 
   private handleReadClick = (e: MouseEvent) => {
     this.setState({
-      editMode: true,
+      editing: true,
       value: this.props.editText || this.props.text,
     });
     e.stopPropagation();
@@ -133,7 +133,7 @@ export default class EditableText extends React.Component<IProps, IState> {
 
   private editFinish() {
     this.setState({
-      editMode: false
+      editing: false
     });
     if (this.props.onChange) {
       this.props.onChange(this.state.value);

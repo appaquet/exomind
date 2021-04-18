@@ -2,7 +2,7 @@
 
 import { Exocore, MutationBuilder } from 'exocore';
 import { exomind } from '../../../protos';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
 import EditableText from '../../interaction/editable-text/editable-text';

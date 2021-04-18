@@ -8,7 +8,7 @@ import EntityIcon from './entity-icon';
 
 interface IProps {
   title: string;
-  editableTitle?: string;
+  editableTitle?: string; // if title to be edited is different from displayed title (ex: emoji prefix)
   icon?: TraitIcon;
   actions: HeaderAction[];
   onTitleRename: (title: string) => void;
@@ -34,7 +34,11 @@ export class Header extends React.Component<IProps> {
 
   private renderTitle() {
     if (this.props.onTitleRename) {
-      return <EditableText text={this.props.title} editText={this.props.editableTitle} doubleClick={true} onChange={this.handleTitleRename.bind(this)} />;
+      return <EditableText
+        text={this.props.title}
+        editText={this.props.editableTitle}
+        doubleClick={true}
+        onChange={this.handleTitleRename.bind(this)} />;
     } else {
       return this.props.title;
     }

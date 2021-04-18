@@ -3,7 +3,7 @@ import emojiRegex from "emoji-regex";
 const emojiRe = emojiRegex();
 
 export default class Emojis {
-    static startsWithEmoji(str: string): boolean {
+    static hasEmojiPrefix(str: string): boolean {
         const match = str.match(emojiRe);
         if (!match) {
             return false;
@@ -13,7 +13,7 @@ export default class Emojis {
         return str.startsWith(emoji);
     }
 
-    static extractEmoji(str: string): [string, string] {
+    static extractEmojiPrefix(str: string): [string, string] {
         const match = str.match(emojiRe);
         if (!match) {
             return ['', str];
@@ -28,8 +28,8 @@ export default class Emojis {
         return [match[0], remain];
     }
 
-    static stripEmoji(title: string): string {
-        const [, ext] = Emojis.extractEmoji(title);
+    static stripEmojiPrefix(title: string): string {
+        const [, ext] = Emojis.extractEmojiPrefix(title);
         return ext;
     }
 }
