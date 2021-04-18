@@ -54,10 +54,11 @@ export default class Column extends React.Component<IProps, IState> {
       [colKey]: true
     });
 
-    let title, titleRenameHandler;
+    let title, editableTitle, titleRenameHandler;
     if (this.state.containerController.title instanceof ModifiableText) {
       title = this.state.containerController.title.value || '';
       titleRenameHandler = this.state.containerController.title.onChange;
+      editableTitle = this.state.containerController.title.editValue || title;
     } else {
       title = this.state.containerController.title || '';
       titleRenameHandler = null;
@@ -86,6 +87,7 @@ export default class Column extends React.Component<IProps, IState> {
       <div className={classes}>
         <Header
           title={title}
+          editableTitle={editableTitle}
           onTitleRename={titleRenameHandler}
           icon={this.state.containerController.icon}
           actions={headerActions}

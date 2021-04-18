@@ -7,6 +7,7 @@ import { EntityTraits } from '../../../store/entities';
 import { ExpandableQuery } from '../../../store/queries';
 import Debouncer from '../../../utils/debouncer';
 import Scrollable from '../../interaction/scrollable/scrollable';
+import EntityIcon from '../../objects/entity-icon';
 import { Message } from '../../objects/message';
 import './collection-selector.less';
 
@@ -112,16 +113,12 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                         return null;
                     }
 
-                    const iconClasses = classNames({
-                        'icon': true,
-                        'fa': true,
-                        ['fa-' + colTrait.constants.icon]: true
-                    });
-
                     const checked = _.includes(parentsIds, et.id);
                     return <li key={colResult.entity.id} onClick={this.handleItemCheck.bind(this, et, colResult)}>
                         <input type="checkbox" checked={checked} onChange={this.handleItemCheck.bind(this, et, colResult)} />
-                        <span className={iconClasses} />
+
+                        <EntityIcon trait={colTrait} />
+
                         {colTrait.displayName}
                     </li>
                 })
@@ -151,7 +148,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
             this.collectionsQueryKeywords = this.state.debouncedKeywords;
         }
 
-        // Get entity current parrents
+        // Get entity current parents
         if (this.state.entityParentsIds && this.entityParentsQueryIds != this.state.entityParentsIds) {
             this.entityParentsQuery?.free();
 

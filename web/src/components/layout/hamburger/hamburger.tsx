@@ -4,9 +4,10 @@ import { Exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'e
 import { exomind } from '../../../protos';
 import React from 'react';
 import Navigation from '../../../navigation';
-import { EntityTraits } from '../../../store/entities';
+import { EntityTrait, EntityTraits, TraitIcon } from '../../../store/entities';
 import Path from '../../../utils/path';
 import './hamburger.less';
+import EntityIcon from '../../objects/entity-icon';
 
 interface IProps {
   path: Path;
@@ -53,18 +54,18 @@ export default class Hamburger extends React.Component<IProps, IState> {
     return (
       <div id="hamburger" className={classes}>
         <ul>
-          <HamburgerLink path={this.props.path} link={Navigation.pathForInbox()} label="Inbox" icon="inbox" />
+          <HamburgerLink path={this.props.path} link={Navigation.pathForInbox()} label="Inbox" icon={{ fa: "inbox" }} />
           <li className="sep" key={'inbox_sep'} />
 
-          <HamburgerLink path={this.props.path} link={Navigation.pathForSnoozed()} label="Snoozed" icon="clock-o" />
+          <HamburgerLink path={this.props.path} link={Navigation.pathForSnoozed()} label="Snoozed" icon={{ fa: "clock-o" }} />
           <li className="sep" key={'snoozed_sep'} />
 
-          <HamburgerLink path={this.props.path} link={Navigation.pathForRecent()} label="Recent" icon="history" />
+          <HamburgerLink path={this.props.path} link={Navigation.pathForRecent()} label="Recent" icon={{ fa: "history" }} />
           <li className="sep" key={'recent_sep'} />
 
           {this.renderFavorites()}
 
-          <HamburgerLink path={this.props.path} link={Navigation.pathForSettings()} label="Settings" icon="cog" />
+          <HamburgerLink path={this.props.path} link={Navigation.pathForSettings()} label="Settings" icon={{ fa: "cog" }} />
         </ul>
       </div>
     );
@@ -81,6 +82,7 @@ export default class Hamburger extends React.Component<IProps, IState> {
             key={entity.id}
             link={Navigation.pathForEntity(entity)}
             label={priorityTrait.displayName}
+            trait={priorityTrait}
             icon={priorityTrait.icon} />,
 
           <li className="sep" key={entity.id + '_sep'} />
@@ -89,19 +91,16 @@ export default class Hamburger extends React.Component<IProps, IState> {
   }
 }
 
-const HamburgerLink = (props: { path: Path, link: string, label: string, icon: string }) => {
+const HamburgerLink = (props: { path: Path, link: string, label: string, icon?: TraitIcon, trait?: EntityTrait<unknown> }) => {
   const classes = classNames({
     active: ('/' + props.path.toString()).startsWith(props.link)
-  });
-  const iconClasses = classNames({
-    [`fa-${props.icon}`]: true,
-    fa: true,
-    icon: true
   });
 
   return (
     <li className={classes}>
-      <a href={props.link}><span className={iconClasses} />
+      <a href={props.link}>
+        <EntityIcon icon={props.icon} trait={props.trait} />
+
         <span className="text">{props.label}</span>
       </a>
     </li>

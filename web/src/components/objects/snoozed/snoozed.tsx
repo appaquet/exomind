@@ -49,7 +49,7 @@ export default class Snoozed extends React.Component<IProps> {
 
         if (props.containerController) {
             props.containerController.title = 'Snoozed';
-            props.containerController.icon = 'clock-o';
+            props.containerController.icon = { fa: 'clock-o' };
         }
 
         this.state = {};

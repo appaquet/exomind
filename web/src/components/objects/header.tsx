@@ -3,25 +3,19 @@ import React from 'react';
 import EditableText from '../interaction/editable-text/editable-text.js';
 import classNames from 'classnames';
 import './header.less';
+import { TraitIcon } from '../../store/entities.js';
+import EntityIcon from './entity-icon';
 
 interface IProps {
   title: string;
-  icon?: string;
+  editableTitle?: string;
+  icon?: TraitIcon;
   actions: HeaderAction[];
   onTitleRename: (title: string) => void;
 }
 
 export class Header extends React.Component<IProps> {
-  render(): React.ReactNode  {
-    let iconClasses;
-    if (this.props.icon) {
-      iconClasses = classNames({
-        'fa': true,
-        ['fa-' + this.props.icon]: true
-      });
-    }
-
-
+  render(): React.ReactNode {
     let rightActions;
     if (this.props.actions) {
       rightActions = <div className="right-actions">{this.renderActions()}</div>;
@@ -29,7 +23,9 @@ export class Header extends React.Component<IProps> {
 
     return (
       <div className="header">
-        <div className="icon"><span className={iconClasses} /></div>
+        <div className="icon">
+          {this.props.icon && <EntityIcon icon={this.props.icon} />}
+        </div>
         <div className="title">{this.renderTitle()}</div>
         {rightActions}
       </div>
@@ -38,7 +34,7 @@ export class Header extends React.Component<IProps> {
 
   private renderTitle() {
     if (this.props.onTitleRename) {
-      return <EditableText text={this.props.title} doubleClick={true} onChange={this.handleTitleRename.bind(this)} />;
+      return <EditableText text={this.props.title} editText={this.props.editableTitle} doubleClick={true} onChange={this.handleTitleRename.bind(this)} />;
     } else {
       return this.props.title;
     }

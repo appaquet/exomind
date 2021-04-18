@@ -4148,6 +4148,11 @@ emoji-regex@^9.0.0:
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-9.1.1.tgz#1d5ffce26d8191e6c3f3a9d27987b1c5bba7d20a"
   integrity sha512-AaWyDiNO9rbtMIcGl7tdxMcNu8SOLaDLxmQEFT5JhgKufOJzPPkYmgN2QwqTgw4doWMZZQttC6sUWVQjb+1VdA==
 
+emoji-regex@^9.2.2:
+  version "9.2.2"
+  resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-9.2.2.tgz#840c8803b0d8047f4ff0cf963176b32d4ef3ed72"
+  integrity sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==
+
 emojis-list@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/emojis-list/-/emojis-list-3.0.0.tgz#5570662046ad29e2e916e71aae260abdff4f6a78"
@@ -8608,6 +8613,11 @@ regenerator-transform@^0.14.2:
   dependencies:
     "@babel/runtime" "^7.8.4"
 
+regex-emoji@^2.0.0:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/regex-emoji/-/regex-emoji-2.0.8.tgz#b20ae0ef4e223fa99de445b6acb6deda5902f31d"
+  integrity sha512-Bf9GqaXWL3HTyFKGXjkziGsfA8e6YM+NEGf4ZJMl7/AdDD4HwnR4o7JtsIcCOSxaNrVEr3CME7VQJtJviiiVLA==
+
 regex-not@^1.0.0, regex-not@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/regex-not/-/regex-not-1.0.2.tgz#1f4ece27e00b0b65e0247a6810e6a85d83a5752c"
@@ -8615,6 +8625,11 @@ regex-not@^1.0.0, regex-not@^1.0.2:
   dependencies:
     extend-shallow "^3.0.2"
     safe-regex "^1.1.0"
+
+regex-parser@^2.2.0:
+  version "2.2.11"
+  resolved "https://registry.yarnpkg.com/regex-parser/-/regex-parser-2.2.11.tgz#3b37ec9049e19479806e878cabe7c1ca83ccfe58"
+  integrity sha512-jbD/FT0+9MBU2XAZluI7w2OBs1RBi6p9M83nkoZayQXXU9e8Robt69FcZc7wU4eJD/YFTjn1JdCk3rbMJajz8Q==
 
 regexp.prototype.flags@^1.2.0:
   version "1.3.0"
@@ -9430,6 +9445,14 @@ stack-utils@^2.0.2:
   integrity sha512-0H7QK2ECz3fyZMzQ8rH0j2ykpfbnd20BFtfg/SqVC2+sCTtcw0aDTGB7dk+de4U4uUeuz6nOtJcrkFFLG1B0Rg==
   dependencies:
     escape-string-regexp "^2.0.0"
+
+starts-with-emoji@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/starts-with-emoji/-/starts-with-emoji-2.0.0.tgz#ed94be84641df8aa9eba7639a98bad9b3e300eda"
+  integrity sha512-qIJhL2rMltS48xHtBSyJsTRL9ybmKyCSVrFsCCYmYDzMzlYATMAKJo6zARI6j8T5lyoPHALiYTLEo9cshFegQg==
+  dependencies:
+    regex-emoji "^2.0.0"
+    regex-parser "^2.2.0"
 
 stat-mode@^1.0.0:
   version "1.0.0"

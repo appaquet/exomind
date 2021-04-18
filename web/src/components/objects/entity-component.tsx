@@ -148,10 +148,10 @@ export class EntityComponent extends React.Component<Props, State> {
             }
 
             this.props.containerController.icon = trait.icon;
-            if (trait.canRename) {
+            if (trait.canEditName) {
                 this.props.containerController.title = new ModifiableText(trait.displayName, (newTitle: string) => {
                     trait.rename(newTitle);
-                });
+                }, trait.editableName);
             } else {
                 this.props.containerController.title = trait.displayName;
             }

@@ -52,12 +52,18 @@
           height: 40px;
           border-radius: 40px;
           position: relative;
-          font-size: 17px;
-          font-weight: bold;
 
-          .bubble-icon {
+          .entity-icon {
             .center-element();
-            color: white;
+
+            &.emoji {
+              font-size: 23px;
+            }
+
+            &.fa {
+              color: @object-color-fg;
+              font-size: 17px;
+            }
           }
         }
       }

@@ -3,10 +3,12 @@ import React from 'react';
 import './editable-text.less';
 import PropTypes from 'prop-types';
 import * as _ from 'lodash';
+
 export default class EditableText extends React.Component {
   static propTypes = {
     initEdit: PropTypes.bool,
     text: PropTypes.string,
+    editText: PropTypes.string,
     multiline: PropTypes.bool,
     doubleClick: PropTypes.bool,
     placeholder: PropTypes.string,
@@ -28,12 +30,13 @@ export default class EditableText extends React.Component {
     };
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     if (this.state.editMode) {
       this.ensureFocus();
+      return;
     }
 
-    if (this.props.text != prevProps.text) {
+    if (this.props.text != this.state.value) {
       this.setState({
         value: this.props.text
       });
@@ -73,7 +76,8 @@ export default class EditableText extends React.Component {
 
   handleReadClick(e) {
     this.setState({
-      editMode: true
+      editMode: true,
+      value: this.props.editText || this.props.text,
     });
     e.stopPropagation();
   }

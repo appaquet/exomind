@@ -46,7 +46,7 @@ export default class Recent extends React.Component<IProps> {
 
         if (props.containerController) {
             props.containerController.title = 'Recent';
-            props.containerController.icon = 'history';
+            props.containerController.icon = { fa: 'history' };
         }
 
         this.state = {};

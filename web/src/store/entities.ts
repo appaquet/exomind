@@ -1,4 +1,5 @@
 import { Exocore, exocore, fromProtoTimestamp, MutationBuilder } from 'exocore';
+import Emojis from '../logic/emojis';
 import { exomind } from '../protos';
 
 export class EntityTraits {
@@ -159,21 +160,25 @@ export class EntityTrait<T> {
     }
 
     get displayName(): string {
+        if (this.constants.nameFunction) {
+            return this.constants.nameFunction(this.message);
+        }
+
         if (this.constants.name) {
             return this.constants.name;
         }
 
-        if (this.constants.name_field) {
+        if (this.constants.nameField) {
             const dict = this.message as unknown as { [p: string]: string; };
-            const name = dict[this.constants.name_field];
-            return name ?? this.constants.name_default ?? '*UNTITLED*';
+            const name = dict[this.constants.nameField];
+            return name ?? this.constants.nameDefault ?? '*UNTITLED*';
         }
 
         return '*UNTITLED*';
     }
 
-    get icon(): string {
-        return this.constants.icon;
+    get icon(): TraitIcon {
+        return this.constants.icon(this.message);
     }
 
     match(matcher: ITraitMatcher): unknown {
@@ -196,8 +201,16 @@ export class EntityTrait<T> {
         }
     }
 
-    get canRename(): boolean {
+    get canEditName(): boolean {
         return !!this.constants.rename;
+    }
+
+    get editableName(): string {
+        if (this.constants.renameValue) {
+            return this.constants.renameValue(this.message);
+        } else {
+            return this.displayName;
+        }
     }
 
     async rename(newName: string): Promise<exocore.store.IMutationResult> {
@@ -229,20 +242,24 @@ export interface ITraitMatcher {
 export interface ITraitConstants {
     key: string;
     name?: string;
-    name_field?: string;
-    name_default?: string;
-    icon: string;
+    nameField?: string;
+    nameDefault?: string;
+    nameFunction?: (trait: unknown) => string;
+    icon: (trait: unknown) => TraitIcon;
     color: number;
     order: number;
     collectionLike?: boolean;
+    renameValue?: (trait: unknown) => string;
     rename?: (trait: unknown, newName: string) => void;
 }
+
+export type TraitIcon = { fa: string } | { emoji: string };
 
 export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     'inbox': {
         key: 'inbox',
         name: 'Inbox',
-        icon: 'inbox',
+        icon: () => { return { fa: 'inbox' } },
         collectionLike: true,
         color: 4,
         order: 0
@@ -250,52 +267,77 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     'favorites': {
         key: 'favorites',
         name: 'Favorites',
-        icon: 'star',
+        icon: () => { return { fa: 'star' } },
         collectionLike: true,
         color: 4,
         order: 1
     },
     'exomind.base.EmailThread': {
         key: 'exomind.base.EmailThread',
-        name_field: 'subject',
-        name_default: 'Untitled email',
-        icon: 'envelope-o',
+        nameField: 'subject',
+        nameDefault: 'Untitled email',
+        icon: () => { return { fa: 'envelope-o' } },
         color: 1,
         order: 2
     },
     'exomind.base.DraftEmail': {
         key: 'exomind.base.DraftEmail',
-        name_field: 'subject',
-        name_default: 'Untitled email',
-        icon: 'envelope-o',
+        nameField: 'subject',
+        nameDefault: 'Untitled email',
+        icon: () => { return { fa: 'envelope-o' } },
         color: 6,
         order: 3
     },
     'exomind.base.Email': {
         key: 'exomind.base.Email',
-        name_field: 'subject',
-        name_default: 'Untitled email',
-        icon: 'envelope-o',
+        nameField: 'subject',
+        nameDefault: 'Untitled email',
+        icon: () => { return { fa: 'envelope-o' } },
         color: 6,
         order: 4
     },
     'exomind.base.Collection': {
         key: 'exomind.base.Collection',
-        name_field: 'name',
-        name_default: 'Untitled collection',
-        icon: 'folder-o',
+        nameFunction: (trait) => {
+            const col = trait as exomind.base.ICollection;
+
+            if (col.name) {
+                if (Emojis.startsWithEmoji(col)) {
+                    const [, title] = Emojis.extractEmoji(col);
+                    return title;
+                } else {
+                    return col.name;
+                }
+            } else {
+                console.log(trait);
+                return 'Untitled collection';
+            }
+        },
+        icon: (trait) => {
+            const col = trait as exomind.base.ICollection;
+            if (Emojis.startsWithEmoji(col)) {
+                const [emoji] = Emojis.extractEmoji(col);
+                return { emoji };
+            } else {
+                return { fa: 'folder-o' }
+            }
+        },
         color: 2,
         order: 5,
-        rename: (entity: unknown, newName: string): void => {
-            const collection = entity as exomind.base.ICollection;
+        renameValue: (trait: unknown) => {
+            const col = trait as exomind.base.ICollection;
+            return col.name;
+        },
+        rename: (trait: unknown, newName: string): void => {
+            const collection = trait as exomind.base.ICollection;
             collection.name = newName;
         },
     },
     'exomind.base.Task': {
         key: 'exomind.base.Task',
-        name_field: 'title',
-        name_default: 'Untitled task',
-        icon: 'check-square-o',
+        nameField: 'title',
+        nameDefault: 'Untitled task',
+        icon: () => { return { fa: 'check-square-o' } },
         color: 7,
         order: 6,
         rename: (entity: unknown, newName: string): void => {
@@ -305,9 +347,9 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     },
     'exomind.base.Note': {
         key: 'exomind.base.Note',
-        name_field: 'title',
-        name_default: 'Untitled note',
-        icon: 'pencil',
+        nameField: 'title',
+        nameDefault: 'Untitled note',
+        icon: () => { return { fa: 'pencil' } },
         color: 3,
         order: 7,
         rename: (entity: unknown, newName: string): void => {
@@ -317,16 +359,16 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     },
     'exomind.base.Link': {
         key: 'exomind.base.Link',
-        name_field: 'title',
-        name_default: 'Untitled link',
-        icon: 'link',
+        nameField: 'title',
+        nameDefault: 'Untitled link',
+        icon: () => { return { fa: 'link' } },
         color: 9,
         order: 8
     },
     'unknown': {
         key: 'unknown',
-        name_field: '*UNKNOWN*',
-        icon: 'question',
+        nameField: '*UNKNOWN*',
+        icon: () => { return { fa: 'question' } },
         color: 0,
         order: 9
     }
