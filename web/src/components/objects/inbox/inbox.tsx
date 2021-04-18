@@ -16,7 +16,7 @@ export class Inbox extends React.Component<IProps> {
 
         if (props.containerController) {
             props.containerController.title = 'Inbox';
-            props.containerController.icon = 'inbox';
+            props.containerController.icon = { fa: 'inbox' };
         }
     }
 

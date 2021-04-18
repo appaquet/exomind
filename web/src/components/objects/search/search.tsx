@@ -133,7 +133,7 @@ export class Search extends React.Component<IProps> {
   private updateContainerTitle(props: IProps): void {
     if (props.containerController) {
       props.containerController.title = `Search ${props.query}`;
-      props.containerController.icon = 'search';
+      props.containerController.icon = { fa: 'search' };
     }
   }
 }

@@ -1,3 +1,4 @@
+import { TraitIcon } from '../../store/entities';
 import ObservableDictionary from '../../utils/observable-dictionary';
 import { HeaderAction } from './header';
 
@@ -11,11 +12,11 @@ export class ContainerController extends ObservableDictionary {
         return this.get('title');
     }
 
-    set icon(value: string) {
+    set icon(value: TraitIcon) {
         this.set('icon', value);
     }
 
-    get icon(): string {
+    get icon(): TraitIcon {
         return this.get('icon');
     }
 
@@ -37,12 +38,7 @@ export class ContainerController extends ObservableDictionary {
 }
 
 export class ModifiableText {
-    value: string;
-    onChange: (value: string) => void;
-
-    constructor(value: string, onChange: (value: string) => void) {
-        this.value = value;
-        this.onChange = onChange;
+    constructor(public value: string, public onChange: (value: string) => void, public editValue?: string) {
     }
 
     toString(): string {

@@ -67,6 +67,8 @@
     "react-flatpickr": "^3.10.6",
     "sanitize-html": "^2.3.3",
     "source-map-support": "^0.5.19",
+    "starts-with-emoji": "^2.0.0",
+    "emoji-regex": "^9.2.2",
     "webpack": "^4.44.2"
   },
   "devDependencies": {
@@ -92,6 +94,7 @@
     "@types/sanitize-html": "^2.3.0",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
+    "babel-jest": "^26.6.3",
     "babel-loader": "^8.2.2",
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "cookie-parser": "^1.4.5",

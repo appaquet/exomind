@@ -8,6 +8,7 @@ import { EntityTrait, EntityTraits } from '../../../store/entities';
 import DateUtil from '../../../utils/date-util';
 import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
 import EditableText from '../../interaction/editable-text/editable-text';
+import EntityIcon from '../entity-icon';
 import { EntityActions } from './entity-action';
 import './entity.less';
 
@@ -247,14 +248,12 @@ export class Entity extends React.Component<IProps, IState> {
     }
 
     private renderCollectionElement(entityTrait: EntityTrait<exomind.base.ICollection>): React.ReactNode {
-        const collection = entityTrait.message;
-
         return (
             <div className="item-container with-picture collection">
                 {this.renderEntityImage(entityTrait)}
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
-                    <div className="title1"><span className="name">{collection.name}</span></div>
+                    <div className="title1"><span className="name">{entityTrait.displayName}</span></div>
                 </div>
 
                 <div className="clearfix" />
@@ -276,7 +275,7 @@ export class Entity extends React.Component<IProps, IState> {
                     <div className="title1">
                         <EditableText
                             text={task.title}
-                            initEdit={!!actions.inlineEdit}
+                            initializeEditing={!!actions.inlineEdit}
                             onChange={onTitleChange}
                         />
                     </div>
@@ -339,15 +338,10 @@ export class Entity extends React.Component<IProps, IState> {
             bubble: true,
             ['object-color-' + entityTrait.constants.color]: true
         });
-        const iconClasses = classNames({
-            'fa': true,
-            'bubble-icon': true,
-            ['fa-' + entityTrait.constants.icon]: true
-        });
 
         return <div className="picture">
             <div className={bubbleClasses}>
-                <div className={iconClasses} />
+                <EntityIcon trait={entityTrait} />
             </div>
         </div>;
     }
