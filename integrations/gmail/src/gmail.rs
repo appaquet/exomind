@@ -1,23 +1,22 @@
 use crate::config::Config;
 use exomind_protos::base::{Account, AccountScope, AccountType};
-use google_gmail1::schemas::ModifyThreadRequest;
+use google_gmail1::api::ModifyThreadRequest;
 use std::{
     collections::HashSet,
     path::PathBuf,
     time::{Duration, Instant},
 };
-use tokio::task::block_in_place;
-use tokio_compat_02::FutureExt;
-use yup_oauth2::{AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
+use yup_oauth2::{InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 
 const CLIENT_REFRESH_INTERVAL: Duration = Duration::from_secs(5 * 60);
+const FULL_ACCESS_SCOPE: &str = "https://mail.google.com/";
 
 pub type HistoryId = u64;
 
 pub struct GmailClient {
     account: GmailAccount,
     config: Config,
-    client: google_gmail1::Client,
+    client: google_gmail1::Gmail,
     last_refresh: Instant,
 }
 
@@ -36,24 +35,25 @@ impl GmailClient {
     async fn create_client(
         config: &Config,
         account: &GmailAccount,
-    ) -> anyhow::Result<google_gmail1::Client> {
+    ) -> anyhow::Result<google_gmail1::Gmail> {
         info!("Creating gmail client for account {}", account.email());
 
         let token_file = account_token_file(config, account.email())?;
-        let secret = yup_oauth2::read_application_secret(&config.client_secret)
-            .compat()
-            .await?;
+        let app_secret = yup_oauth2::read_application_secret(&config.client_secret).await?;
         let auth =
-            InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::Interactive)
+            InstalledFlowAuthenticator::builder(app_secret, InstalledFlowReturnMethod::Interactive)
                 .persist_tokens_to_disk(token_file)
                 .build()
-                .compat()
                 .await?;
 
-        let scopes = &["https://mail.google.com/"];
-        let token = auth.token(scopes).compat().await?;
+        auth.token(&[FULL_ACCESS_SCOPE]).await?;
 
-        Ok(google_gmail1::Client::new(YupAuth { token }))
+        let client = google_gmail1::Gmail::new(
+            hyper::Client::builder().build(hyper_rustls::HttpsConnector::with_native_roots()),
+            auth,
+        );
+
+        Ok(client)
     }
 
     pub async fn maybe_refresh(&mut self) -> anyhow::Result<()> {
@@ -71,8 +71,14 @@ impl GmailClient {
         Ok(())
     }
 
-    pub async fn get_profile(&self) -> anyhow::Result<google_gmail1::schemas::Profile> {
-        let profile = block_in_place(|| self.client.users().get_profile("me").execute())?;
+    pub async fn get_profile(&self) -> anyhow::Result<google_gmail1::api::Profile> {
+        let (_resp, profile) = self
+            .client
+            .users()
+            .get_profile("me")
+            .add_scope(FULL_ACCESS_SCOPE)
+            .doit()
+            .await?;
 
         Ok(profile)
     }
@@ -80,16 +86,16 @@ impl GmailClient {
     pub async fn list_inbox_threads(
         &self,
         full: bool,
-    ) -> anyhow::Result<Vec<google_gmail1::schemas::Thread>> {
-        let list: google_gmail1::schemas::ListThreadsResponse = block_in_place(|| {
-            self.client
-                .users()
-                .threads()
-                .list("me")
-                .label_ids("INBOX".to_string())
-                .max_results(100) // TODO: Should be done via paging instead
-                .execute()
-        })?;
+    ) -> anyhow::Result<Vec<google_gmail1::api::Thread>> {
+        let (_resp, list) = self
+            .client
+            .users()
+            .threads_list("me")
+            .add_label_ids("INBOX")
+            .max_results(100) // TODO: Should be done via paging instead
+            .add_scope(FULL_ACCESS_SCOPE)
+            .doit()
+            .await?;
 
         let partial_threads = list.threads.unwrap_or_default();
 
@@ -123,22 +129,17 @@ impl GmailClient {
         &self,
         thread_id: &str,
         full: bool,
-    ) -> anyhow::Result<google_gmail1::schemas::Thread> {
-        use google_gmail1::resources::users::threads::params::GetFormat;
-        let format = if full {
-            GetFormat::Full
-        } else {
-            GetFormat::Metadata
-        };
+    ) -> anyhow::Result<google_gmail1::api::Thread> {
+        let format = if full { "full" } else { "metadata" };
 
-        let thread: google_gmail1::schemas::Thread = block_in_place(|| {
-            self.client
-                .users()
-                .threads()
-                .get("me", thread_id)
-                .format(format)
-                .execute()
-        })?;
+        let (_resp, thread) = self
+            .client
+            .users()
+            .threads_get("me", thread_id)
+            .format(format)
+            .add_scope(FULL_ACCESS_SCOPE)
+            .doit()
+            .await?;
 
         Ok(thread)
     }
@@ -147,7 +148,7 @@ impl GmailClient {
         &self,
         thread_id: &str,
         label: String,
-    ) -> anyhow::Result<google_gmail1::schemas::Thread> {
+    ) -> anyhow::Result<google_gmail1::api::Thread> {
         info!(
             "Adding label {} to {} in account {}",
             label,
@@ -155,18 +156,17 @@ impl GmailClient {
             self.account.email()
         );
 
-        let thread: google_gmail1::schemas::Thread = block_in_place(|| {
-            let req = ModifyThreadRequest {
-                add_label_ids: Some(vec![label]),
-                remove_label_ids: None,
-            };
-
-            self.client
-                .users()
-                .threads()
-                .modify(req, "me", thread_id)
-                .execute()
-        })?;
+        let req = ModifyThreadRequest {
+            add_label_ids: Some(vec![label]),
+            remove_label_ids: None,
+        };
+        let (_resp, thread) = self
+            .client
+            .users()
+            .threads_modify(req, "me", thread_id)
+            .add_scope(FULL_ACCESS_SCOPE)
+            .doit()
+            .await?;
 
         Ok(thread)
     }
@@ -175,26 +175,25 @@ impl GmailClient {
         &self,
         thread_id: &str,
         label: String,
-    ) -> anyhow::Result<google_gmail1::schemas::Thread> {
+    ) -> anyhow::Result<google_gmail1::api::Thread> {
         info!(
             "Removing label {} to {} in account {}",
             label,
             thread_id,
             self.account.email()
         );
+        let req = ModifyThreadRequest {
+            add_label_ids: None,
+            remove_label_ids: Some(vec![label]),
+        };
 
-        let thread: google_gmail1::schemas::Thread = block_in_place(|| {
-            let req = ModifyThreadRequest {
-                add_label_ids: None,
-                remove_label_ids: Some(vec![label]),
-            };
-
-            self.client
-                .users()
-                .threads()
-                .modify(req, "me", thread_id)
-                .execute()
-        })?;
+        let (_resp, thread) = self
+            .client
+            .users()
+            .threads_modify(req, "me", thread_id)
+            .add_scope(FULL_ACCESS_SCOPE)
+            .doit()
+            .await?;
 
         Ok(thread)
     }
@@ -203,15 +202,15 @@ impl GmailClient {
         &self,
         history: HistoryId,
     ) -> anyhow::Result<Vec<GmailHistoryAction>> {
-        let history_resp: google_gmail1::schemas::ListHistoryResponse = block_in_place(|| {
-            self.client
-                .users()
-                .history()
-                .list("me")
-                .label_id("INBOX")
-                .start_history_id(history)
-                .execute()
-        })?;
+        let (_resp, history_resp) = self
+            .client
+            .users()
+            .history_list("me")
+            .label_id("INBOX")
+            .start_history_id(&format!("{}", history))
+            .add_scope(FULL_ACCESS_SCOPE)
+            .doit()
+            .await?;
 
         if history_resp.next_page_token.is_some() {
             // TODO: Implement history paging
@@ -224,6 +223,7 @@ impl GmailClient {
 
         let history_list = history_resp.history.unwrap_or_default();
         for history in history_list {
+            let history_id: HistoryId = history.id.as_ref().unwrap().parse().unwrap();
             let messages_added = history.messages_added.unwrap_or_default();
             for added in messages_added {
                 let msg = added.message.as_ref().unwrap();
@@ -234,8 +234,7 @@ impl GmailClient {
 
                     match self.fetch_thread(thread_id, true).await {
                         Ok(thread) => {
-                            actions
-                                .push(GmailHistoryAction::AddToInbox(history.id.unwrap(), thread));
+                            actions.push(GmailHistoryAction::AddToInbox(history_id, thread));
                         }
                         Err(err) => {
                             error!(
@@ -264,8 +263,7 @@ impl GmailClient {
 
                     match self.fetch_thread(thread_id, true).await {
                         Ok(thread) => {
-                            actions
-                                .push(GmailHistoryAction::AddToInbox(history.id.unwrap(), thread));
+                            actions.push(GmailHistoryAction::AddToInbox(history_id, thread));
                         }
                         Err(err) => {
                             error!(
@@ -293,7 +291,7 @@ impl GmailClient {
                     removed_threads.insert(thread_id.to_string());
 
                     actions.push(GmailHistoryAction::RemoveFromInbox(
-                        history.id.unwrap(),
+                        history_id,
                         thread_id.to_string(),
                     ))
                 }
@@ -334,7 +332,7 @@ impl GmailAccount {
 }
 
 pub enum GmailHistoryAction {
-    AddToInbox(HistoryId, google_gmail1::schemas::Thread),
+    AddToInbox(HistoryId, google_gmail1::api::Thread),
     RemoveFromInbox(HistoryId, String),
 }
 
@@ -345,15 +343,4 @@ pub fn account_token_file(config: &Config, email: &str) -> anyhow::Result<PathBu
     }
 
     Ok(token_dir.join(format!("token_{}.json", email)))
-}
-
-#[derive(Debug)]
-struct YupAuth {
-    token: AccessToken,
-}
-
-impl google_api_auth::GetAccessToken for YupAuth {
-    fn access_token(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.token.as_str().to_string())
-    }
 }
