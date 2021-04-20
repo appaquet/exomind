@@ -338,7 +338,8 @@ mod tests {
         assert_eq!(1, parsed.emails.len());
         assert_eq!(1, parsed.emails[0].parts.len());
 
-        let body_bytes = base64::decode_config(&parsed.emails[0].parts[0].body, base64::URL_SAFE).unwrap();
+        let body_bytes =
+            base64::decode_config(&parsed.emails[0].parts[0].body, base64::URL_SAFE).unwrap();
         let body = String::from_utf8_lossy(&body_bytes);
         assert!(body.contains("Découvrir"));
     }
@@ -352,7 +353,8 @@ mod tests {
 
         // The email is marked as ISO-8859, but is actually UTF8.
         // The detector should have detected correct encoding.
-        let body_bytes = base64::decode_config(&parsed.emails[0].parts[0].body, base64::URL_SAFE).unwrap();
+        let body_bytes =
+            base64::decode_config(&parsed.emails[0].parts[0].body, base64::URL_SAFE).unwrap();
         let body = String::from_utf8_lossy(&body_bytes);
         assert!(body.contains("reportées"));
     }
