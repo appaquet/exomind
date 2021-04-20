@@ -100,8 +100,10 @@ fn parse_part(part: &google_gmail1::api::MessagePart, email: &mut Email) -> anyh
                         "Expected the part to have a body, but got none. Mime:{}",
                         mime_type
                     )
-                })?
-                .as_ref();
+                })?;
+
+            let body_bytes = base64::decode_config(body_bytes, base64::URL_SAFE)
+                .map_err(|err| anyhow!("Couldn't base64 decode body: {}", err))?;
 
             let encoding = mailparse::parse_content_type(content_type);
             let utf8_charset = Charset::for_label(b"UTF-8").unwrap();
@@ -112,20 +114,20 @@ fn parse_part(part: &google_gmail1::api::MessagePart, email: &mut Email) -> anyh
             // this case, we try to detect the right encoding. See https://stackoverflow.com/questions/27037816/can-an-email-header-have-different-character-encoding-than-the-body-of-the-email
             let charset = if charset != utf8_charset {
                 let mut detector = chardetng::EncodingDetector::new();
-                detector.feed(body_bytes, true);
+                detector.feed(&body_bytes, true);
                 let encoding = detector.guess(None, true);
                 Charset::for_encoding(encoding)
             } else {
                 charset
             };
 
-            let (decoded, _detected_charset, had_errors) = charset.decode(body_bytes);
+            let (decoded, _detected_charset, had_errors) = charset.decode(&body_bytes);
 
             if had_errors {
                 warn!(
                     "Error decoding body: charset={:?} body={}",
                     charset,
-                    String::from_utf8_lossy(body_bytes)
+                    String::from_utf8_lossy(&body_bytes)
                 );
             }
 
@@ -338,9 +340,7 @@ mod tests {
         assert_eq!(1, parsed.emails.len());
         assert_eq!(1, parsed.emails[0].parts.len());
 
-        let body_bytes =
-            base64::decode_config(&parsed.emails[0].parts[0].body, base64::URL_SAFE).unwrap();
-        let body = String::from_utf8_lossy(&body_bytes);
+        let body = &parsed.emails[0].parts[0].body;
         assert!(body.contains("Découvrir"));
     }
 
@@ -353,9 +353,7 @@ mod tests {
 
         // The email is marked as ISO-8859, but is actually UTF8.
         // The detector should have detected correct encoding.
-        let body_bytes =
-            base64::decode_config(&parsed.emails[0].parts[0].body, base64::URL_SAFE).unwrap();
-        let body = String::from_utf8_lossy(&body_bytes);
+        let body = &parsed.emails[0].parts[0].body;
         assert!(body.contains("reportées"));
     }
 
