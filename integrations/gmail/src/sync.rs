@@ -321,9 +321,12 @@ impl SynchronizedThread {
 
     pub fn from_gmail(
         account: GmailAccount,
-        thread: google_gmail1::schemas::Thread,
+        thread: google_gmail1::api::Thread,
     ) -> Option<SynchronizedThread> {
-        let history_id = thread.history_id;
+        let history_id = thread
+            .history_id
+            .as_ref()
+            .and_then(|history| history.parse::<HistoryId>().ok());
         let thread_id = thread.id.clone()?;
         let parsed = parsing::parse_thread(thread);
         if let Err(err) = &parsed {
@@ -399,7 +402,10 @@ impl SynchronizedThread {
 
     pub async fn add_to_gmail_inbox(&self, gmc: &GmailClient) -> anyhow::Result<Option<HistoryId>> {
         let thread = gmc.add_label(self.thread_id(), "INBOX".to_string()).await?;
-        Ok(thread.history_id)
+        let history_id = thread
+            .history_id
+            .and_then(|history| history.parse::<HistoryId>().ok());
+        Ok(history_id)
     }
 
     pub async fn remove_from_gmail_inbox(
@@ -409,6 +415,9 @@ impl SynchronizedThread {
         let thread = gmc
             .remove_label(self.thread_id(), "INBOX".to_string())
             .await?;
-        Ok(thread.history_id)
+        let history_id = thread
+            .history_id
+            .and_then(|history| history.parse::<HistoryId>().ok());
+        Ok(history_id)
     }
 }

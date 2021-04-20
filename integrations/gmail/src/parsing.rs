@@ -9,7 +9,7 @@ pub struct ParsedThread {
     pub labels: Vec<String>,
 }
 
-pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThread, anyhow::Error> {
+pub fn parse_thread(thread: google_gmail1::api::Thread) -> Result<ParsedThread, anyhow::Error> {
     let mut parsed_thread = ParsedThread::default();
     parsed_thread.thread.source_id = thread.id.unwrap_or_default();
 
@@ -20,7 +20,12 @@ pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThre
     }
 
     let mut messages = thread.messages.unwrap_or_else(Vec::new);
-    messages.sort_by_key(|m| m.internal_date.unwrap_or(0));
+    messages.sort_by_key(|m| {
+        m.internal_date
+            .as_ref()
+            .and_then(|d| d.parse::<u64>().ok())
+            .unwrap_or_default()
+    });
 
     for message in messages {
         if let Some(part) = message.payload {
@@ -68,7 +73,7 @@ pub fn parse_thread(thread: google_gmail1::schemas::Thread) -> Result<ParsedThre
     Ok(parsed_thread)
 }
 
-fn parse_part(part: &google_gmail1::schemas::MessagePart, email: &mut Email) -> anyhow::Result<()> {
+fn parse_part(part: &google_gmail1::api::MessagePart, email: &mut Email) -> anyhow::Result<()> {
     parse_part_headers(part, email)?;
 
     let mime_type = part
@@ -102,9 +107,9 @@ fn parse_part(part: &google_gmail1::schemas::MessagePart, email: &mut Email) -> 
             let utf8_charset = Charset::for_label(b"UTF-8").unwrap();
             let charset = Charset::for_label(encoding.charset.as_bytes()).unwrap_or(utf8_charset);
 
-            // Sometimes, the header indicates a charset, but then the HTML indicates another charset.
-            // This happens mostly on non-UTF-8 charsets, so in this case, we try to detect the right encoding.
-            // See https://stackoverflow.com/questions/27037816/can-an-email-header-have-different-character-encoding-than-the-body-of-the-email
+            // Sometimes, the header indicates a charset, but then the HTML indicates
+            // another charset. This happens mostly on non-UTF-8 charsets, so in
+            // this case, we try to detect the right encoding. See https://stackoverflow.com/questions/27037816/can-an-email-header-have-different-character-encoding-than-the-body-of-the-email
             let charset = if charset != utf8_charset {
                 let mut detector = chardetng::EncodingDetector::new();
                 detector.feed(body_bytes, true);
@@ -145,7 +150,7 @@ fn parse_part(part: &google_gmail1::schemas::MessagePart, email: &mut Email) -> 
 }
 
 fn parse_attachment(
-    part: &google_gmail1::schemas::MessagePart,
+    part: &google_gmail1::api::MessagePart,
     email: &mut Email,
     mime_type: &str,
     filename: &str,
@@ -176,7 +181,7 @@ fn parse_attachment(
 }
 
 fn parse_part_headers(
-    part: &google_gmail1::schemas::MessagePart,
+    part: &google_gmail1::api::MessagePart,
     email: &mut Email,
 ) -> anyhow::Result<()> {
     let empty_headers = Vec::new();
@@ -223,10 +228,7 @@ fn parse_part_headers(
     Ok(())
 }
 
-fn get_part_header<'p>(
-    part: &'p google_gmail1::schemas::MessagePart,
-    key: &str,
-) -> Option<&'p str> {
+fn get_part_header<'p>(part: &'p google_gmail1::api::MessagePart, key: &str) -> Option<&'p str> {
     let headers = part.headers.as_ref()?;
 
     headers
@@ -336,7 +338,8 @@ mod tests {
         assert_eq!(1, parsed.emails.len());
         assert_eq!(1, parsed.emails[0].parts.len());
 
-        let body: &str = &parsed.emails[0].parts[0].body;
+        let body_bytes = base64::decode_config(&parsed.emails[0].parts[0].body, base64::URL_SAFE).unwrap();
+        let body = String::from_utf8_lossy(&body_bytes);
         assert!(body.contains("Découvrir"));
     }
 
@@ -349,11 +352,12 @@ mod tests {
 
         // The email is marked as ISO-8859, but is actually UTF8.
         // The detector should have detected correct encoding.
-        let body: &str = &parsed.emails[0].parts[0].body;
+        let body_bytes = base64::decode_config(&parsed.emails[0].parts[0].body, base64::URL_SAFE).unwrap();
+        let body = String::from_utf8_lossy(&body_bytes);
         assert!(body.contains("reportées"));
     }
 
-    fn read_thread_fixture(file: &str) -> Result<google_gmail1::schemas::Thread, anyhow::Error> {
+    fn read_thread_fixture(file: &str) -> Result<google_gmail1::api::Thread, anyhow::Error> {
         let path = find_test_fixture(&format!(
             "integrations/gmail/fixtures/threads/{}.json",
             file
