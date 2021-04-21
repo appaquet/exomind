@@ -79,7 +79,7 @@
     "@babel/preset-env": "^7.13.15",
     "@babel/preset-flow": "^7.13.13",
     "@babel/preset-react": "^7.13.13",
-    "@types/classnames": "^2.2.11",
+    "@types/classnames": "^2.3.1",
     "@types/domhandler": "^2.4.1",
     "@types/draft-convert": "^2.1.1",
     "@types/draft-js": "^0.11.1",
