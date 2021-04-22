@@ -3,42 +3,49 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const dist = path.resolve(__dirname, "dist");
 
 module.exports = {
-    entry: "./src/index.tsx",
+  mode: 'development',
 
-    output: {
-        path: dist,
-        filename: "bundle.js"
-    },
+  entry: "./src/index.tsx",
 
-    devServer: {
-        contentBase: dist,
-    },
+  experiments: {
+    // WebAssembly is disabled in webpack 5 by default
+    syncWebAssembly: true
+  },
 
-    module: {
-        rules: [
-            {
-                test: /\.(js|jsx)$/,
-                exclude: /node_modules/,
-                use: {
-                    loader: 'babel-loader'
-                }
-            },
+  output: {
+    path: dist,
+    filename: "bundle.js"
+  },
 
-            {
-                test: /\.tsx?$/,
-                use: 'ts-loader',
-                exclude: /node_modules/
-            },
-        ]
-    },
+  devServer: {
+    contentBase: dist,
+  },
 
-    resolve: {
-        extensions: ['.js', '.jsx', '.ts', '.tsx']
-    },
+  module: {
+    rules: [
+      {
+        test: /\.js?$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader'
+        }
+      },
 
-    plugins: [
-        new HtmlWebpackPlugin({
-            template: 'index.html'
-        })
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/
+      },
     ]
+  },
+
+  resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx']
+  },
+
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: 'index.html'
+    })
+  ]
 };
