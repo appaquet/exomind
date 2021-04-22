@@ -5,7 +5,6 @@ import * as domutils from 'domutils';
 import { exomind } from '../protos';
 import * as htmlparser from 'htmlparser2';
 import domSerializerRender from "dom-serializer";
-import linkify from 'linkifyjs';
 import linkifyHtml from 'linkifyjs/html';
 import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
@@ -171,7 +170,6 @@ export default class EmailsLogic {
   }
 
   static plainTextToHtml(text: string) {
-    const _ = linkify;
     return linkifyHtml(text.replace(/\n/g, '</br>'), {
       defaultProtocol: 'https',
     });

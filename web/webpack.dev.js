@@ -16,14 +16,6 @@ module.exports = merge(common, {
     historyApiFallback: true, // allow history push on front-end
     clientLogLevel: 'debug',
     open: false,
-    proxy: {
-      '/v1': {
-        target: 'https://exomind.io',
-        secure: false,
-        changeOrigin: true,
-        ws: true
-      }
-    }
   },
 
   optimization: {
