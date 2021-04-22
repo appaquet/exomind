@@ -9,9 +9,11 @@ module.exports = merge(common, {
     store: ["./src/ios/store.js"],
     hybrid: ["./src/ios/hybrid.js"]
   },
+
   devServer: {
     writeToDisk: true
   },
+
   plugins: [
     new HtmlWebPackPlugin({
       inject: true,
