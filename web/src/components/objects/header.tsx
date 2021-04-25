@@ -54,7 +54,11 @@ export class Header extends React.Component<IProps> {
         'fa': true,
         ['fa-' + action.icon]: true
       });
-      return <li key={action.icon} onClick={this.handleActionClick.bind(this, action)}><i className={classes} /></li>;
+      return (
+        <li key={action.icon} onClick={this.handleActionClick.bind(this, action)}>
+          <i className={classes} />
+        </li>
+      );
     });
 
     return <ul className="actions">{actions}</ul>;

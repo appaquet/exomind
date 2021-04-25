@@ -1,4 +1,4 @@
-import { exocore, Exocore, ExocoreInstance, LocalNode, WasmModule } from 'exocore';
+import { Exocore, ExocoreInstance, LocalNode, WasmModule } from 'exocore';
 import { runInAction } from 'mobx';
 import { exomind } from './protos';
 import { StoresInstance } from './store/stores';

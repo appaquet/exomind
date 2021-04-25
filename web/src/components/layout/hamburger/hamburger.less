@@ -3,12 +3,14 @@
 @import (reference) "../../../style/font-awesome.less";
 
 #hamburger {
+  @scrollbar-width: 5px;
+
   padding-top: 20px + @navbar-height;
   background: var(--hamburger-bg);
 
   overflow-y: scroll;
   overflow-x: hidden;
-  .styled-scrollbar(var(--hamburger-bg), var(--hamburger-bg-hover), 5px);
+  .styled-scrollbar(var(--hamburger-bg), var(--hamburger-bg-hover), @scrollbar-width);
 
   & > ul {
     .make-list();
@@ -17,12 +19,14 @@
     & > li {
       .make-list-item();
 
-      margin: 0 10px;
-      overflow: hidden;
+      margin-left: 10px;
+      margin-right: 10px - @scrollbar-width;
       padding-left: 10px;
+
       color: var(--hamburger-items-text-color);
       cursor: pointer;
       user-select: none; // prevent text from being selectable
+      overflow: hidden;
 
       a {
         width: 100%;
