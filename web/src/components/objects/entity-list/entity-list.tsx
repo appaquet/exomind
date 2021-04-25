@@ -10,7 +10,7 @@ import { EntityActions } from "./entity-action";
 import './entity-list.less';
 import { SelectedItem, Selection } from "./selection";
 
-interface IProps {
+export interface IProps {
     entities: exocore.store.IEntity[];
     parentEntity?: exocore.store.IEntity;
 

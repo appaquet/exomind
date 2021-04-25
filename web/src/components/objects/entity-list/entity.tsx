@@ -14,7 +14,7 @@ import './entity.less';
 
 export type DropEffect = ('move' | 'copy');
 
-interface IProps {
+export interface IProps {
     entity: exocore.store.IEntity;
     parentEntity?: exocore.store.IEntity;
 
@@ -310,7 +310,7 @@ export class Entity extends React.Component<IProps, IState> {
                 {this.renderEntityImage(entityTrait)}
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
-                    <div className="title1">{entityTrait.displayName}</div>
+                    {entityTrait.displayName && <div className="title1">{entityTrait.displayName}</div>}
                     <div className="text">{link.url}</div>
                 </div>
 
