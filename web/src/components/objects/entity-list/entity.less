@@ -14,66 +14,55 @@
     .swipe-container {
       min-height: @item-min-height;
       border-bottom: var(--entity-component-list-separator-border);
-      position: relative;
       padding: 5px 5px;
-      display: block;
+      position: relative; // for date and actions absolute position
     }
 
-    // Sets layout inside item container
     .item-container {
-      position: relative;
+      display: flex;
+      flex-direction: row;
+      min-height: @item-min-height;
 
       &.with-picture {
         .picture {
-          .center-vertical-element();
-          left: 0;
-          max-width: 45px;
-          padding-left: 5px;
-          margin-top: -(@entity-component-padding-between/2);
-        }
-        .content {
-          margin-left: 55px;
-        }
-      }
-      &.no-picture {
-        .picture {
-          display: none;
-        }
-      }
-    }
+          .flex-center();
 
-    .item-container {
-      min-height: @item-min-height;
+          .bubble {
+            .flex-center();
 
-      .picture {
-        .bubble {
-          border: 1px solid transparent;
-          width: 40px;
-          height: 40px;
-          border-radius: 40px;
-          position: relative;
+            width: 40px;
+            height: 40px;
 
-          .entity-icon {
-            .center-element();
+            border: 1px solid transparent;
+            border-radius: 40px;
 
-            &.emoji {
-              font-size: 23px;
-            }
+            .entity-icon {
+              &.emoji {
+                font-size: 24px;
+              }
 
-            &.fa {
-              color: @object-color-fg;
-              font-size: 17px;
+              &.fa {
+                color: @object-color-fg;
+                font-size: 17px;
+              }
             }
           }
         }
       }
 
+      &.no-picture {
+        .picture {
+          display: none;
+        }
+      }
+
       .date {
         position: absolute;
-        top: 0; right: 10px;
+        top: 5px; right: 10px;
         text-align: right;
-        background: var(--entity-component-bg);
         padding-left: 5px;
+
+        background: var(--entity-component-bg);
         font-size: 11px;
         height: 14px;
         color: var(--entity-component-item-fg);
@@ -84,6 +73,9 @@
         margin: 0 @entity-component-padding-side;
         overflow: hidden;
         padding-right: 5px;
+        margin-left: 10px; 
+
+        flex-grow: 1; // make content cell in flex take the rest of the space
 
         display: flex;
         flex-direction: column;
@@ -171,7 +163,7 @@
       .transition(~"margin-left 0.1s ease-in");
     }
     &.done {
-      background: var(--entity-component-bg-done);
+      background: @entity-component-bg-done;
       .swipe-container {
         margin-left: 100%;
         background: var(--entity-component-bg);
@@ -181,29 +173,24 @@
       }
     }
 
-
     // Item actions
     .item-actions {
       position: absolute;
       top: 0; right: 0; bottom: 0;
-      width: 150px;
-      padding-top: 5px;
       padding-right: 10px;
       padding-left: 15px;
       opacity: 0.95;
+      .flex-center-vertical();
 
       ul {
         .make-list();
-        .center-vertical-element();
-
-        // make list take 100% so that text-alignment works
-        text-align: right;
-        left: 5px;
-        right: 10px; 
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
 
         li {
           .make-list-item();
-          display: inline-block;
+
           color: var(--entity-component-item-actions-icon-fg);
           &:hover {
             color: var(--entity-component-item-actions-icon-fg);

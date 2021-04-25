@@ -2,45 +2,44 @@
 @import (reference) "../../style/font-awesome.less";
 
 .column > .header {
-  position: relative;
   background: var(--entity-component-header-bg);
   height: @entity-component-header-height;
   border-bottom: var(--entity-component-header-border);
   color: var(--entity-component-header-fg);
-  @icon-size: 14px;
+
+  display: flex;
+  flex-direction: row;
 
   .icon {
-    .center-vertical-element();
-    left: @entity-component-padding-side;
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border: 1px solid transparent;
-    border-radius: 14px;
+    .flex-center();
+    padding-left: @entity-component-padding-side;
+    padding-right: @entity-component-padding-side;
+    height: 100%;
 
     span {
-      .center-element();
-      font-size: @icon-size;
+      font-size: 14px;
     }
   }
 
   .title {
-    .center-vertical-element();
+    .flex-center-vertical();
+    flex-grow: 2;
+    height: 100%;
+
     .ellipsis-text-overflow();
     font-weight: bold;
-    margin-left: @icon-size + @entity-component-padding-side*2;
     font-size: 14px;
-    width: 70%;
+    line-height: 14px;
 
     // title edit input box
     input {
-      width: 70%;
+      width: 100%;
     }
   }
 
   .right-actions {
-    .center-vertical-element();
-    right: @entity-component-padding-side + 5px;
+    .flex-center-vertical();
+    padding-right: @entity-component-padding-side;
 
     ul {
       .make-list();
@@ -51,6 +50,7 @@
         cursor: pointer;
         margin-left: 10px;
         color: var(--entity-component-header-actions-fg);
+
         &:hover {
           color: var(--entity-component-header-actions-hover-fg);
         }

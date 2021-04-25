@@ -5,11 +5,12 @@
  * List resets
  */
 .make-list() {
-  margin-bottom: 0;
+  margin: 0;
   padding-left: 0;
 }
 .make-list-item() {
   list-style-type: none;
+  margin: 0;
 }
 
 /*
@@ -46,7 +47,7 @@
 /*
  * Scrollbar
  */
-.styled-scrollbar(@bg, @fg, @width: 8px) {
+.styled-scrollbar(@bg, @fg, @width: 6px) {
   // https://stackoverflow.com/questions/59588519/how-do-you-make-your-own-customize-the-scroll-bar-in-electron
   &::-webkit-scrollbar {
     background-color: @bg;
@@ -90,6 +91,28 @@
   left: 50%;
   .translate(-50%, 0);
 }
+
+
+.flex-center() {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-center-vertical() {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.flex-center-horizontal() {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+
 
 /*
  * Misc

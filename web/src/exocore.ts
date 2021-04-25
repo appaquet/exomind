@@ -1,4 +1,4 @@
-import { Exocore, LocalNode, WasmModule } from 'exocore';
+import { Exocore, ExocoreInstance, LocalNode, WasmModule } from 'exocore';
 import { runInAction } from 'mobx';
 import { exomind } from './protos';
 import { StoresInstance } from './store/stores';
@@ -54,18 +54,7 @@ export async function bootNode(): Promise<Exocore | null> {
 
     try {
         const instance = await Exocore.initialize(sessionStore.node);
-
-        instance.registry.registerMessage(exomind.base.EmailThread, 'exomind.base.EmailThread');
-        instance.registry.registerMessage(exomind.base.Email, 'exomind.base.Email');
-        instance.registry.registerMessage(exomind.base.EmailPart, 'exomind.base.EmailPart');
-        instance.registry.registerMessage(exomind.base.DraftEmail, 'exomind.base.DraftEmail');
-        instance.registry.registerMessage(exomind.base.Account, 'exomind.base.Account');
-        instance.registry.registerMessage(exomind.base.Collection, 'exomind.base.Collection');
-        instance.registry.registerMessage(exomind.base.CollectionChild, 'exomind.base.CollectionChild');
-        instance.registry.registerMessage(exomind.base.Task, 'exomind.base.Task');
-        instance.registry.registerMessage(exomind.base.Note, 'exomind.base.Note');
-        instance.registry.registerMessage(exomind.base.Link, 'exomind.base.Link');
-        instance.registry.registerMessage(exomind.base.Snoozed, 'exomind.base.Snoozed');
+        registerTypes(instance);
 
         runInAction(() => {
             sessionStore.cellInitialized = true;
@@ -82,4 +71,22 @@ export async function bootNode(): Promise<Exocore | null> {
             sessionStore.cellError = e;
         });
     }
+}
+
+export function registerTypes(instance?: ExocoreInstance): void {
+    if (!instance) {
+        instance = Exocore.default;
+    }
+
+    instance.registry.registerMessage(exomind.base.EmailThread, 'exomind.base.EmailThread');
+    instance.registry.registerMessage(exomind.base.Email, 'exomind.base.Email');
+    instance.registry.registerMessage(exomind.base.EmailPart, 'exomind.base.EmailPart');
+    instance.registry.registerMessage(exomind.base.DraftEmail, 'exomind.base.DraftEmail');
+    instance.registry.registerMessage(exomind.base.Account, 'exomind.base.Account');
+    instance.registry.registerMessage(exomind.base.Collection, 'exomind.base.Collection');
+    instance.registry.registerMessage(exomind.base.CollectionChild, 'exomind.base.CollectionChild');
+    instance.registry.registerMessage(exomind.base.Task, 'exomind.base.Task');
+    instance.registry.registerMessage(exomind.base.Note, 'exomind.base.Note');
+    instance.registry.registerMessage(exomind.base.Link, 'exomind.base.Link');
+    instance.registry.registerMessage(exomind.base.Snoozed, 'exomind.base.Snoozed');
 }
