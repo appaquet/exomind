@@ -4,6 +4,7 @@ import { memoize } from 'lodash';
 import * as React from 'react';
 import EmailFlows from '../../../logic/emails-logic';
 import { exomind } from '../../../protos';
+import { Collections, Parents } from '../../../store/collections';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
 import DateUtil from '../../../utils/date-util';
 import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
@@ -35,11 +36,16 @@ interface IState {
     selected: boolean;
     hovered: boolean;
     beingDragged: boolean;
+    parents?: Parents,
 }
 
 export class Entity extends React.Component<IProps, IState> {
     constructor(props: IProps) {
         super(props);
+
+        Collections.default.getParents(new EntityTraits(props.entity)).then((parents) => {
+            this.setState({ parents });
+        });
 
         this.state = {
             removed: false,
@@ -194,9 +200,8 @@ export class Entity extends React.Component<IProps, IState> {
                     {title1Markup}
                     {title2Markup}
                     {snippetMarkup}
+                    {this.renderParents()}
                 </div>
-
-                <div className="clearfix" />
             </div>
         );
     }
@@ -217,9 +222,8 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="content">
                     <div className="title1"><span className="name">Me</span></div>
                     <div className="title2">{draft.subject ?? '(No subject)'}</div>
+                    {this.renderParents()}
                 </div>
-
-                <div className="clearfix" />
             </div>
         );
     }
@@ -240,9 +244,8 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="content">
                     <div className="title1"><span className="name">{EmailFlows.formatContact(email.from)}</span></div>
                     <div className="title2">{email.subject ?? '(No subject)'}</div>
+                    {this.renderParents()}
                 </div>
-
-                <div className="clearfix" />
             </div>
         );
     }
@@ -254,9 +257,8 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
                     <div className="title1"><span className="name">{entityTrait.displayName}</span></div>
+                    {this.renderParents()}
                 </div>
-
-                <div className="clearfix" />
             </div>
         );
     }
@@ -279,9 +281,8 @@ export class Entity extends React.Component<IProps, IState> {
                             onChange={onTitleChange}
                         />
                     </div>
+                    {this.renderParents()}
                 </div>
-
-                <div className="clearfix" />
             </div>
         );
     }
@@ -295,9 +296,8 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
                     <div className="title1"><span className="name">{note.title}</span></div>
+                    {this.renderParents()}
                 </div>
-
-                <div className="clearfix" />
             </div>
         );
     }
@@ -312,9 +312,37 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="content">
                     {entityTrait.displayName && <div className="title1">{entityTrait.displayName}</div>}
                     <div className="text">{link.url}</div>
+                    {this.renderParents()}
                 </div>
+            </div>
+        );
+    }
 
-                <div className="clearfix" />
+    // TODO: Should probably be a reusable component
+    private renderParents(): React.ReactNode {
+        if (!this.state.parents) {
+            return;
+        }
+
+        // TODO: Should collapse parents. Expand on mouse hover
+
+        const list = this.state.parents.get().flatMap((parent) => {
+            // TODO: Should parents whole hierarchy
+            if (parent.et.id == this.props.parentEntity?.id || parent.et.id == 'favorites') {
+                return [];
+            }
+            
+            // TODO: Should use display name and render icon separately
+            return [<li key={parent.id}>{parent.message.name}</li>];
+        });
+
+        if (list.length == 0) {
+            return;
+        }
+
+        return (
+            <div className="parents">
+                <ul>{list}</ul>
             </div>
         );
     }
@@ -327,8 +355,6 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="content">
                     <div className="title1">Unknown entity {entityTrait.et.id}</div>
                 </div>
-
-                <div className="clearfix" />
             </div>
         );
     }

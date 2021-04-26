@@ -35,11 +35,16 @@
     input {
       width: 100%;
     }
+    span {
+      .ellipsis-text-overflow();
+    }
   }
 
   .right-actions {
     .flex-center-vertical();
     padding-right: @entity-component-padding-side;
+    flex-shrink: 0; // prevent actions from being shrunk onto 2 lines
+    text-align: right;
 
     ul {
       .make-list();
