@@ -2456,10 +2456,10 @@
   resolved "https://registry.yarnpkg.com/@types/domhandler/-/domhandler-2.4.1.tgz#7b3b347f7762180fbcb1ece1ce3dd0ebbb8c64cf"
   integrity sha512-cfBw6q6tT5sa1gSPFSRKzF/xxYrrmeiut7E0TxNBObiLSBTuFEHibcfEe3waQPEDbqBsq+ql/TOniw65EyDFMA==
 
-"@types/draft-convert@^2.1.1":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@types/draft-convert/-/draft-convert-2.1.1.tgz#c0bd544fb9fa448cf85b44403ed50d309c70595a"
-  integrity sha512-ENqhZ3ut0lUb8xcJt/v4cXb3BlYA3bMiSqEZZpuDD3dS2AI6q2V/cKDe6jsC2CSLLgv/AmAEhucXfMgyBETB2g==
+"@types/draft-convert@^2.1.2":
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/@types/draft-convert/-/draft-convert-2.1.2.tgz#fbefe53d1f93385b6889a33a0996dc1429be6fb6"
+  integrity sha512-XjGY+hcvHimvUQhoZ0s6PmilayESMGk8ASHMXjH8ZU+Fm1ZuD8tCqqD1CXRecf2Ylfn5474JRpyE3omJ2zGilg==
   dependencies:
     "@types/draft-js" "*"
     "@types/react" "*"

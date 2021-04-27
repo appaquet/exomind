@@ -87,7 +87,7 @@
     "@storybook/react": "^6.2.9",
     "@types/classnames": "^2.3.1",
     "@types/domhandler": "^2.4.1",
-    "@types/draft-convert": "^2.1.1",
+    "@types/draft-convert": "^2.1.2",
     "@types/draft-js": "^0.11.1",
     "@types/fbemitter": "^2.0.32",
     "@types/jest": "^26.0.23",
