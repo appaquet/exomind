@@ -125,9 +125,8 @@ impl Libp2pTransport {
 
         #[cfg(feature = "p2p-full")]
         let mut swarm = {
-            let transport = libp2p::build_tcp_ws_noise_mplex_yamux(
-                self.local_node.keypair().to_libp2p().clone(),
-            )?;
+            let transport =
+                libp2p::tokio_development_transport(self.local_node.keypair().to_libp2p().clone())?;
 
             // Create our own libp2p executor since by default it spawns its own thread pool
             // to spawn tcp related futures, but Tokio requires to be spawn from
@@ -158,7 +157,7 @@ impl Libp2pTransport {
         {
             let inner = self.service_handles.read()?;
             for node in inner.all_peer_nodes().values() {
-                swarm.exocore.add_node(node);
+                swarm.behaviour_mut().exocore.add_node(node);
             }
         }
 
@@ -173,7 +172,7 @@ impl Libp2pTransport {
             if nodes_update_interval.poll_tick(cx).is_ready() {
                 let inner = inner.read().expect("Couldn't get inner lock");
                 for node in inner.all_peer_nodes().values() {
-                    swarm.exocore.add_node(node);
+                    swarm.behaviour_mut().exocore.add_node(node);
                 }
             }
 
@@ -193,7 +192,7 @@ impl Libp2pTransport {
                         // prevent cloning frame if we only send to 1 node
                         if msg.to.len() == 1 {
                             let to_node = msg.to.first().unwrap();
-                            swarm.exocore.send_message(
+                            swarm.behaviour_mut().exocore.send_message(
                                 *to_node.peer_id(),
                                 msg.expiration,
                                 connection,
@@ -201,7 +200,7 @@ impl Libp2pTransport {
                             );
                         } else {
                             for to_node in msg.to {
-                                swarm.exocore.send_message(
+                                swarm.behaviour_mut().exocore.send_message(
                                     *to_node.peer_id(),
                                     msg.expiration,
                                     connection,
@@ -219,7 +218,7 @@ impl Libp2pTransport {
                             ExpandedSwarm::<_, _, _, _>::ban_peer_id(&mut swarm, *node.peer_id());
                             ExpandedSwarm::<_, _, _, _>::unban_peer_id(&mut swarm, *node.peer_id());
                         }
-                        swarm.exocore.reset_peers();
+                        swarm.behaviour_mut().exocore.reset_peers();
                     }
                 }
             }
