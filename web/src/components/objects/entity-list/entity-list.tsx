@@ -84,6 +84,7 @@ export class EntityList extends React.Component<IProps> {
                     parentEntity={this.props.parentEntity}
 
                     selected={selected}
+                    onSelectionChange={this.props.onSelectionChange}
                     onClick={(e) => this.handleItemClick(entity, e)}
                     actionsForEntity={this.props.actionsForEntity}
 

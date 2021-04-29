@@ -5,9 +5,9 @@ import { IProps, EntityList } from './entity-list';
 import { Exocore, exocore, ExocoreInstance, toProtoTimestamp } from 'exocore';
 import { exomind } from '../../../protos';
 import { registerTypes } from '../../../exocore';
-import '../../../style/style.less';
 import { ButtonAction, EntityActions } from './entity-action';
 import { EntityTraits } from '../../../store/entities';
+import '../../../style/style.less';
 
 Exocore.default = new ExocoreInstance(null, null);
 registerTypes(Exocore.default);

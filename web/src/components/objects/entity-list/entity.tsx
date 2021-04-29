@@ -4,12 +4,14 @@ import { memoize } from 'lodash';
 import * as React from 'react';
 import EmailFlows from '../../../logic/emails-logic';
 import { exomind } from '../../../protos';
-import { Collections, Parents } from '../../../store/collections';
+import { Collections, ICollection, Parents } from '../../../store/collections';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
 import DateUtil from '../../../utils/date-util';
 import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
 import EditableText from '../../interaction/editable-text/editable-text';
 import EntityIcon from '../entity-icon';
+import { HierarchyPills } from '../hierarchy-pills/hierarchy-pills';
+import { SelectedItem, Selection } from "./selection";
 import { EntityActions } from './entity-action';
 import './entity.less';
 
@@ -20,6 +22,7 @@ export interface IProps {
     parentEntity?: exocore.store.IEntity;
 
     selected?: boolean;
+    onSelectionChange?: (sel: Selection) => void;
     onClick?: (e: React.MouseEvent) => void;
     actionsForEntity?: (entity: EntityTraits) => EntityActions;
 
@@ -318,33 +321,25 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    // TODO: Should probably be a reusable component
     private renderParents(): React.ReactNode {
         if (!this.state.parents) {
             return;
         }
 
-        // TODO: Should collapse parents. Expand on mouse hover
+        const collections = this.state.parents.get().filter((col) => {
+            return col.entityId != this.props.parentEntity?.id;
+        })
 
-        const list = this.state.parents.get().flatMap((parent) => {
-            // TODO: Should parents whole hierarchy
-            if (parent.et.id == this.props.parentEntity?.id || parent.et.id == 'favorites') {
-                return [];
+        const onClick = (e: React.MouseEvent, col: ICollection) => {
+            if (this.props.onSelectionChange) {
+                const item = SelectedItem.fromEntityId(col.entityId);
+                this.props.onSelectionChange(new Selection(item));
+                e.preventDefault();
+                e.stopPropagation();
             }
-            
-            // TODO: Should use display name and render icon separately
-            return [<li key={parent.id}>{parent.message.name}</li>];
-        });
+        };
 
-        if (list.length == 0) {
-            return;
-        }
-
-        return (
-            <div className="parents">
-                <ul>{list}</ul>
-            </div>
-        );
+        return <HierarchyPills collections={collections} onCollectionClick={onClick} />;
     }
 
     private renderDefaultElement(entityTrait: EntityTrait<unknown>): React.ReactNode {

@@ -1,6 +1,6 @@
 import { Exocore, QueryBuilder } from "exocore";
 import { exomind } from "../protos";
-import { EntityTrait, EntityTraits } from "./entities";
+import { EntityTrait, EntityTraits, TraitIcon } from "./entities";
 
 
 export class Collections {
@@ -8,15 +8,17 @@ export class Collections {
 
     private cache: Map<string, EntityTrait<exomind.base.ICollection>> = new Map();
 
-    async getParents(entity: EntityTraits, parents: Parents = null): Promise<Parents> {
-        if (!parents) {
-            parents = new Parents();
-        }
+    async getParents(entity: EntityTraits, lineage?: Set<string>): Promise<Parents> {
+        const parents = new Parents();
 
         const colChildren = entity.traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild);
         for (const colChild of colChildren) {
             const parentId = colChild.message.collection.entityId;
-            if (parents.contains(parentId)) {
+            if (parentId == 'favorites') {
+                continue
+            }
+
+            if ((lineage?.has(parentId) ?? false) || parents.isFetched(parentId)) {
                 continue;
             }
 
@@ -25,11 +27,18 @@ export class Collections {
                 continue;
             }
 
-            // TODO: Should attach grand parents to child
-            parents.add(collection);
+            const col: ICollection = {
+                entityId: collection.et.id,
+                icon: collection.icon,
+                name: collection.displayName,
+                collection: collection.message,
+            };
+            parents.add(col);
 
-            const grandParents = await this.getParents(collection.et, parents);
-            parents.merge(grandParents);
+            const thisLineage = lineage || new Set();
+            thisLineage.add(parentId);
+            const grandParents = await this.getParents(collection.et, thisLineage);
+            col.parents = grandParents.get();
         }
 
         return parents;
@@ -53,25 +62,26 @@ export class Collections {
     }
 }
 
+export interface ICollection {
+    entityId: string,
+    icon: TraitIcon,
+    name: string,
+    collection: exomind.base.ICollection,
+    parents?: ICollection[],
+}
+
 export class Parents {
-    parents: Map<string, EntityTrait<exomind.base.ICollection>> = new Map();
+    parents: Map<string, ICollection> = new Map();
 
-    merge(other: Parents): void {
-        for (const id in other.parents) {
-            this.parents.set(id, other.parents.get(id));
-        }
+    add(col: ICollection): void {
+        this.parents.set(col.entityId, col);
     }
 
-    add(col: EntityTrait<exomind.base.ICollection>): void {
-        this.parents.set(col.et.id, col);
-    }
-
-    contains(id: string): boolean {
-        return this.parents.has(id);
-    }
-
-    get(): EntityTrait<exomind.base.ICollection>[] {
-        // TODO: Should be ordered by most important first
+    get(): ICollection[] {
         return Array.from(this.parents.values());
+    }
+
+    isFetched(id: string): boolean {
+        return this.parents.has(id);
     }
 }
