@@ -24,7 +24,7 @@ exocore-protos = {version = "0.1.4", path = "../protos"}
 exocore-store = {version = "0.1.4", path = "../store"}
 exocore-transport = {version = "0.1.4", path = "../transport", features = ["http-server"]}
 futures = "0.3"
-indicatif = "0.15"
+indicatif = "0.16"
 log = "0.4"
 log4rs = "1.0"
 reqwest = {version = "0.11", default-features = false, features = ["rustls-tls"]}
