@@ -1,6 +1,6 @@
 import classNames from "classnames";
-import React, { useState } from "react";
-import { ICollection, } from "../../../store/collections";
+import React from "react";
+import { ICollection, flattenHierarchy } from "../../../store/collections";
 import EntityIcon from "../entity-icon";
 import './hierarchy-pills.less';
 
@@ -16,7 +16,7 @@ export class HierarchyPills extends React.Component<IProps> {
 
     render(): React.ReactNode {
         const list = this.props.collections.flatMap((collection) => {
-            const hierarchy = getHierarchy(collection);
+            const hierarchy = flattenHierarchy(collection);
             if (hierarchy.length == 0) {
                 return [];
             }
@@ -65,23 +65,4 @@ function Pill(props: { hierarchy: ICollection[], onClick?: (e: React.MouseEvent,
             </ul>
         </li>
     );
-}
-
-function getHierarchy(collection: ICollection) {
-    const out = [];
-
-    while (collection != null) {
-        if (collection.entityId == 'favorites') {
-            break;
-        }
-
-        out.push(collection);
-
-        if (!collection.minParent) {
-            break;
-        }
-        collection = collection.minParent;
-    }
-
-    return out.reverse();
 }

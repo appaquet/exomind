@@ -4,7 +4,7 @@ import { memoize } from 'lodash';
 import * as React from 'react';
 import EmailFlows from '../../../logic/emails-logic';
 import { exomind } from '../../../protos';
-import { Collections, ICollection, Parents } from '../../../store/collections';
+import { ICollection, Parents } from '../../../store/collections';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
 import DateUtil from '../../../utils/date-util';
 import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
@@ -13,6 +13,8 @@ import EntityIcon from '../entity-icon';
 import { HierarchyPills } from '../hierarchy-pills/hierarchy-pills';
 import { SelectedItem, Selection } from "./selection";
 import { EntityActions } from './entity-action';
+import { observer } from 'mobx-react';
+import { Stores, StoresContext } from '../../../store/stores';
 import './entity.less';
 
 export type DropEffect = ('move' | 'copy');
@@ -45,10 +47,6 @@ interface IState {
 export class Entity extends React.Component<IProps, IState> {
     constructor(props: IProps) {
         super(props);
-
-        Collections.default.getParents(new EntityTraits(props.entity)).then((parents) => {
-            this.setState({ parents });
-        });
 
         this.state = {
             removed: false,
@@ -83,7 +81,7 @@ export class Entity extends React.Component<IProps, IState> {
         return (
             <li className={classes}
                 onClick={this.handleItemClick}
-                onMouseOver={this.handleItemMouseOver}
+                onMouseEnter={this.handleItemMouseEnter}
                 onMouseLeave={this.handleItemMouseLeave}>
 
                 <div className="swipe-container">
@@ -203,7 +201,7 @@ export class Entity extends React.Component<IProps, IState> {
                     {title1Markup}
                     {title2Markup}
                     {snippetMarkup}
-                    {this.renderParents()}
+                    {this.renderParents(entityTrait.et)}
                 </div>
             </div>
         );
@@ -225,7 +223,7 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="content">
                     <div className="title1"><span className="name">Me</span></div>
                     <div className="title2">{draft.subject ?? '(No subject)'}</div>
-                    {this.renderParents()}
+                    {this.renderParents(entityTrait.et)}
                 </div>
             </div>
         );
@@ -247,7 +245,7 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="content">
                     <div className="title1"><span className="name">{EmailFlows.formatContact(email.from)}</span></div>
                     <div className="title2">{email.subject ?? '(No subject)'}</div>
-                    {this.renderParents()}
+                    {this.renderParents(entityTrait.et)}
                 </div>
             </div>
         );
@@ -260,7 +258,7 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
                     <div className="title1"><span className="name">{entityTrait.displayName}</span></div>
-                    {this.renderParents()}
+                    {this.renderParents(entityTrait.et)}
                 </div>
             </div>
         );
@@ -284,7 +282,7 @@ export class Entity extends React.Component<IProps, IState> {
                             onChange={onTitleChange}
                         />
                     </div>
-                    {this.renderParents()}
+                    {this.renderParents(entityTrait.et)}
                 </div>
             </div>
         );
@@ -299,7 +297,7 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
                     <div className="title1"><span className="name">{note.title}</span></div>
-                    {this.renderParents()}
+                    {this.renderParents(entityTrait.et)}
                 </div>
             </div>
         );
@@ -315,31 +313,14 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="content">
                     {entityTrait.displayName && <div className="title1">{entityTrait.displayName}</div>}
                     <div className="text">{link.url}</div>
-                    {this.renderParents()}
+                    {this.renderParents(entityTrait.et)}
                 </div>
             </div>
         );
     }
 
-    private renderParents(): React.ReactNode {
-        if (!this.state.parents) {
-            return;
-        }
-
-        const collections = this.state.parents.get().filter((col) => {
-            return col.entityId != this.props.parentEntity?.id;
-        })
-
-        const onClick = (e: React.MouseEvent, col: ICollection) => {
-            if (this.props.onSelectionChange) {
-                const item = SelectedItem.fromEntityId(col.entityId);
-                this.props.onSelectionChange(new Selection(item));
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        };
-
-        return <HierarchyPills collections={collections} onCollectionClick={onClick} />;
+    private renderParents(entity: EntityTraits): React.ReactNode {
+        return <EntityParents entity={entity} parentEntity={this.props.parentEntity} onSelectionChange={this.props.onSelectionChange} />;
     }
 
     private renderDefaultElement(entityTrait: EntityTrait<unknown>): React.ReactNode {
@@ -387,7 +368,7 @@ export class Entity extends React.Component<IProps, IState> {
         }
     }
 
-    private handleItemMouseOver = (): void => {
+    private handleItemMouseEnter = (): void => {
         this.setState({
             hovered: true
         });
@@ -405,5 +386,51 @@ export class Entity extends React.Component<IProps, IState> {
         if (actions.inlineEdit) {
             actions.inlineEdit.trigger();
         }
+    }
+}
+
+interface EntityParentsProps {
+    entity: EntityTraits;
+    parentEntity?: exocore.store.IEntity;
+    onSelectionChange?: (sel: Selection) => void;
+}
+
+interface EntityParentsState {
+    parents?: Parents,
+}
+
+@observer
+class EntityParents extends React.Component<EntityParentsProps, EntityParentsState> {
+    static contextType = StoresContext;
+    context: Stores;
+
+    constructor(props: EntityParentsProps) {
+        super(props);
+
+        this.state = {
+        };
+    }
+
+    render(): React.ReactNode {
+        const parents = this.context.collections.getParents(this.props.entity);
+
+        if (!parents) {
+            return <span className="loading"></span>;
+        }
+
+        const collections = parents.get().filter((col) => {
+            return col.entityId != this.props.parentEntity?.id;
+        })
+
+        const onClick = (e: React.MouseEvent, col: ICollection) => {
+            if (this.props.onSelectionChange) {
+                const item = SelectedItem.fromEntityId(col.entityId);
+                this.props.onSelectionChange(new Selection(item));
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+
+        return <HierarchyPills collections={collections} onCollectionClick={onClick} />;
     }
 }

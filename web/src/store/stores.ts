@@ -1,6 +1,8 @@
 import { LocalNode } from 'exocore';
 import { observable, action, computed, autorun, makeAutoObservable } from 'mobx';
 import React from 'react';
+import { CollectionStore } from './collections';
+
 export interface ISettingsStore {
     darkMode: boolean;
 }
@@ -82,14 +84,16 @@ export class SessionStore {
     @observable cellError?: string;
 }
 
-export class Stores {
-    constructor(public settings: PersistedStore, public session: SessionStore) {
-    }
+export interface Stores {
+    readonly settings: PersistedStore;
+    readonly session: SessionStore;
+    readonly collections: CollectionStore;
 }
 
 export const StoresInstance: Stores = {
     settings: new PersistedStore(),
     session: new SessionStore(),
+    collections: new CollectionStore(),
 }
 
 export const StoresContext = React.createContext<Stores | null>(null);

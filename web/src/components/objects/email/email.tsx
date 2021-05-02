@@ -33,7 +33,8 @@ export default class Email extends React.Component<IProps, IState> {
         const emailControls = (this.state.hovered) ? this.renderEmailControls() : null;
 
         return (
-            <div className="entity-component email" onMouseOver={this.handleMouseOver.bind(this)}
+            <div className="entity-component email"
+                onMouseEnter={this.handleMouseEnter.bind(this)}
                 onMouseLeave={this.handleMouseLeave.bind(this)}>
                 <div className="object-summary">
                     <div className="from field">
@@ -56,7 +57,7 @@ export default class Email extends React.Component<IProps, IState> {
         );
     }
 
-    private handleMouseOver(): void {
+    private handleMouseEnter(): void {
         if (!this.state.hovered) {
             this.setState({
                 hovered: true

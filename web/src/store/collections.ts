@@ -1,19 +1,42 @@
 import { Exocore, QueryBuilder } from "exocore";
-import { observable, ObservableMap } from "mobx";
-import { cpuUsage } from "node:process";
+import { makeAutoObservable, observable, ObservableMap, ObservableSet, runInAction } from "mobx";
 import { exomind } from "../protos";
 import { EntityTrait, EntityTraits, TraitIcon } from "./entities";
 
+export class CollectionStore {
+    private colResults: Map<string, Promise<EntityTrait<exomind.base.ICollection>>> = new Map();
+    private parentCache: ObservableMap<string, Parents> = observable.map();
+    private parentProcessing: ObservableSet<string> = observable.set();
 
-export class Collections {
-    // TODO: Should be part of the stores
-    public static default: Collections = new Collections();
+    constructor() {
+        makeAutoObservable(this);
+    }
 
-    private cache: Map<string, EntityTrait<exomind.base.ICollection>> = new Map();
-    private _cache: ObservableMap<string, EntityTrait<exomind.base.ICollection>> = observable.map();
+    getParents(entity: EntityTraits): Parents | null {
+        const cacheKey = `${entity.id}${entity.entity.lastOperationId}`;
 
-    async getParents(entity: EntityTraits, lineage?: Set<string>): Promise<Parents> {
-        // TODO: Should contain the lineage length so that we can choose which parents to show first
+        if (this.parentCache.has(cacheKey)) {
+            return this.parentCache.get(cacheKey);
+        }
+
+        if (this.parentProcessing.has(cacheKey) || this.parentProcessing.size > 2) {
+            return null;
+        }
+
+        runInAction(() => {
+            this.parentProcessing.add(cacheKey);
+        });
+        this.getParentsAsync(entity).then((parents) => {
+            runInAction(() => {
+                this.parentCache.set(cacheKey, parents);
+                this.parentProcessing.delete(cacheKey);
+            });
+        })
+
+        return null;
+    }
+
+    async getParentsAsync(entity: EntityTraits, lineage?: Set<string>): Promise<Parents> {
         const parents = new Parents();
 
         const colChildren = entity.traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild);
@@ -38,7 +61,7 @@ export class Collections {
 
             const thisLineage = new Set(lineage);
             thisLineage.add(parentId);
-            const grandParents = await this.getParents(collection.et, thisLineage);
+            const grandParents = await this.getParentsAsync(collection.et, thisLineage);
 
             col.parents = grandParents.get();
             sortCollections(col.parents);
@@ -51,20 +74,39 @@ export class Collections {
     }
 
     async getCollection(id: string): Promise<EntityTrait<exomind.base.ICollection> | null> {
-        // TODO: Should batch and use watched query
+        // TODO: Should batch queries
 
-        if (this.cache.has(id)) {
-            return this.cache.get(id);
+        if (this.colResults.has(id)) {
+            return this.colResults.get(id);
         }
+        console.log('getting for collection', id);
 
-        const result = await Exocore.store.query(QueryBuilder.withIds(id).build());
-        for (const entity of result.entities) {
-            const et = new EntityTraits(entity.entity);
-            const col = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
-            this.cache.set(et.id, col);
+        let firstResult = true;
+        const colPromise = new Promise<EntityTrait<exomind.base.ICollection>>((resolve) => {
+            const query = Exocore.store.watchedQuery(QueryBuilder.withIds(id).build());
+            query.onChange((results) => {
+                for (const entity of results.entities) {
+                    const et = new EntityTraits(entity.entity);
+                    const col = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
 
-            return col;
-        }
+                    if (firstResult) {
+                        resolve(col);
+                        firstResult = false;
+                        return;
+                    } else {
+                        runInAction(() => {
+                            this.colResults.set(id, Promise.resolve(col));
+                            // this.parentCache.clear();
+                        });
+                    }
+                }
+
+                resolve(null);
+            });
+        });
+        this.colResults.set(id, colPromise);
+
+        return await colPromise;
     }
 }
 
@@ -104,7 +146,7 @@ function minLineage(cols: ICollection[], init = 0): [number, ICollection | null]
     let minLength = 0;
     let minCol: ICollection = null;
     for (const col of cols) {
-        const [length, ] = minLineage(col.parents, init + 1);
+        const [length,] = minLineage(col.parents, init + 1);
         if (!minCol || length < minLength) {
             minLength = length;
             minCol = col;
@@ -128,4 +170,23 @@ function sortCollections(cols: ICollection[]): void {
             return aLin - bLin;
         }
     });
+}
+
+export function flattenHierarchy(collection: ICollection): ICollection[] {
+    const out = [];
+
+    while (collection != null) {
+        if (collection.entityId == 'favorites') {
+            break;
+        }
+
+        out.push(collection);
+
+        if (!collection.minParent) {
+            break;
+        }
+        collection = collection.minParent;
+    }
+
+    return out.reverse();
 }

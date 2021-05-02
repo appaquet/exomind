@@ -1,12 +1,16 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import * as _ from 'lodash';
+import { memoize } from 'lodash';
+import { observer } from 'mobx-react';
 import React from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../store/entities';
 import { ExpandableQuery } from '../../../store/queries';
+import { Stores, StoresContext } from '../../../store/stores';
 import Debouncer from '../../../utils/debouncer';
 import Scrollable from '../../interaction/scrollable/scrollable';
 import EntityIcon from '../../objects/entity-icon';
+import { HierarchyPills } from '../../objects/hierarchy-pills/hierarchy-pills';
 import { Message } from '../../objects/message';
 import './collection-selector.less';
 
@@ -22,7 +26,11 @@ interface IState {
     debouncedKeywords?: string;
 }
 
+@observer
 export class CollectionSelector extends React.Component<IProps, IState> {
+    static contextType = StoresContext;
+    context: Stores;
+
     private searchDebouncer: Debouncer;
 
     private entityQuery: WatchedQueryWrapper;
@@ -100,18 +108,21 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         );
     }
 
+    private getEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
+
     private renderCollections(collectionResults: exocore.store.IEntityResult[]): React.ReactNode {
         if (collectionResults.length > 0) {
             const parentsIds = _.keyBy(this.state.entityParentsIds ?? [])
             return _.chain(collectionResults)
                 .uniqBy(col => col.entity.id)
                 .map((colResult) => {
-                    const et = new EntityTraits(colResult.entity);
+                    const et = this.getEntityTraits(colResult.entity);
                     const colTrait = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
                     if (!colTrait) {
                         return null;
                     }
 
+                    const parents = this.context.collections.getParents(et);
                     const checked = _.includes(parentsIds, et.id);
                     return <li key={colResult.entity.id} onClick={this.handleItemCheck.bind(this, et, colResult)}>
                         <input type="checkbox" checked={checked} onChange={this.handleItemCheck.bind(this, et, colResult)} />
@@ -119,6 +130,8 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                         <EntityIcon trait={colTrait} />
 
                         {colTrait.displayName}
+
+                        {parents && <HierarchyPills collections={parents.get()} />}
                     </li>
                 })
                 .value();
