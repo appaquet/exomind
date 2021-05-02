@@ -22,12 +22,18 @@ export default {
 const Template: Story<IProps> = (args) => <HierarchyPills {...args} />;
 
 const getCol = (icon: TraitIcon, name: string, parents?: ICollection[]): ICollection => {
+    let minParent: ICollection;
+    if (parents && parents.length > 0) {
+        minParent = parents[0];
+    }
+
     return {
         entityId: name,
         icon,
         name,
         collection: new exomind.base.Collection({ name }),
         parents,
+        minParent,
     }
 };
 
@@ -36,7 +42,7 @@ Pill.args = {
     collections: [
         getCol({ fa: 'star' }, 'col1'),
         getCol({ emoji: '😬' }, 'col2'),
-        getCol({ emoji: '😬' }, 'col3', [getCol({ emoji: '📥' }, 'parent')]),
+        getCol({ fa: 'folder-o' }, 'col3', [getCol({ fa: 'folder-o' }, 'col3', [getCol({ emoji: '📥' }, 'parent')])]),
         getCol({ emoji: '😬' }, 'child long long', [getCol({ emoji: '🎤' }, 'parent long long', [getCol({ emoji: '📥' }, 'grand parent long long')])]),
     ]
 };

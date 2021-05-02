@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import React, { useState } from "react";
-import { ICollection } from "../../../store/collections";
+import { ICollection, } from "../../../store/collections";
 import EntityIcon from "../entity-icon";
 import './hierarchy-pills.less';
 
@@ -15,9 +15,17 @@ export class HierarchyPills extends React.Component<IProps> {
     }
 
     render(): React.ReactNode {
-        const list = this.props.collections.map((collection) => {
-            return <Pill key={collection.entityId} collection={collection} onClick={this.props.onCollectionClick} />;
+        const list = this.props.collections.flatMap((collection) => {
+            const hierarchy = getHierarchy(collection);
+            if (hierarchy.length == 0) {
+                return [];
+            }
+
+            return [<Pill key={collection.entityId} hierarchy={hierarchy} onClick={this.props.onCollectionClick} />];
         });
+        if (list.length == 0) {
+            return null;
+        }
 
         const classes = classNames({
             'hierarchy-pills': true,
@@ -31,25 +39,22 @@ export class HierarchyPills extends React.Component<IProps> {
     }
 }
 
-function Pill(props: { collection: ICollection, onClick?: (e: React.MouseEvent, col: ICollection)=>void }) {
-    const [hovered, setHovered] = useState(false);
-    const hierarchy = getHierarchy(props.collection);
-
-    const inner = hierarchy.map((col) => {
+function Pill(props: { hierarchy: ICollection[], onClick?: (e: React.MouseEvent, col: ICollection) => void }) {
+    const inner = props.hierarchy.map((col) => {
         const innerOnClick = (e: React.MouseEvent) => {
             props.onClick(e, col);
         };
 
         return (
-            <li key={col.entityId} onMouseOver={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onClick={innerOnClick}>
-                <EntityIcon icon={col.icon} />
+            <li key={col.entityId} onClick={innerOnClick}>
+                <span className="icon"><EntityIcon icon={col.icon} /></span>
                 <span className="name">{col.name}</span>
             </li>
         );
     });
 
     const classes = classNames({
-        hovered: hovered,
+        pill: true,
         clickable: !!props.onClick,
     })
 
@@ -66,14 +71,16 @@ function getHierarchy(collection: ICollection) {
     const out = [];
 
     while (collection != null) {
-        out.push(collection);
-
-        const parents = collection.parents ?? [];
-        if (parents.length > 0) {
-            collection = collection.parents[0];
-        } else {
+        if (collection.entityId == 'favorites') {
             break;
         }
+
+        out.push(collection);
+
+        if (!collection.minParent) {
+            break;
+        }
+        collection = collection.minParent;
     }
 
     return out.reverse();

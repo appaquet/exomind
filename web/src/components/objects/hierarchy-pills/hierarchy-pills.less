@@ -5,56 +5,76 @@
   & > ul {
     .make-list();
 
-    & > li {
+    li.pill {
       .make-list-item();
-      color: @entity-component-item-fg;
+
+      color: var(--hierarchy-pills-fg);
+      background-color: var(--hierarchy-pills-bg);
+
       display: inline-block;
-      background-color: @object-color-2;
+
       border-radius: 12px;
       margin-right: 5px;
-      padding: 5px;
+      padding: 0px 5px;
+      height: 20px;
 
       white-space: nowrap;
       overflow: hidden;
 
-      max-width: 300px;
-      &.hovered {
-        &.clickable {
-          cursor: pointer;
-        }
-
-        max-width: inherit;
-
-        li {
-          .name {
-            display: inline-block;
-          }
-        }
-        li:last-of-type {
-          max-width: inherit;
-        }
+      max-width: 400px;
+      &:hover {
+        cursor: pointer;
+        max-width: inherit
       }
 
       ul {
         .make-list();
         display: flex;
+        justify-content: flex-start;
+        height: inherit;
 
         li {
           .make-list-item();
           overflow: hidden;
-          flex-shrink: 0;
           padding: 0 1px;
+          height: inherit;
+
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
 
           .name {
             display: none;
             padding: 0 5px;
+          }
+
+          .icon {
+            width: 20px; height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            .entity-icon {
+              display: inline-block;
+
+              // we render at twice the size, but scale back, to improve alignment
+              // see https://stackoverflow.com/questions/44142464/how-do-i-horizontally-center-an-emoji
+              font-size: 2em; 
+              transform: scale(0.5);
+            }
+          }
+
+          &:hover {
+            .name {
+              display: inline-block;
+            }
           }
         }
 
         li:last-of-type {
           flex-grow: 1;
           flex-shrink: 0;
-          max-width: 200px;
+          max-width: 300px;
 
           .name {
             display: inline-block;
