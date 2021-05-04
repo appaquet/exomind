@@ -412,7 +412,7 @@ class EntityParents extends React.Component<EntityParentsProps, EntityParentsSta
     }
 
     render(): React.ReactNode {
-        const parents = this.context.collections.getParents(this.props.entity);
+        const parents = this.context.collections.getEntityParents(this.props.entity);
 
         if (!parents) {
             return <span className="loading"></span>;

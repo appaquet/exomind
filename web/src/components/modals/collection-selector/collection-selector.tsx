@@ -122,7 +122,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                         return null;
                     }
 
-                    const parents = this.context.collections.getParents(et);
+                    const parents = this.context.collections.getEntityParents(et);
                     const checked = _.includes(parentsIds, et.id);
                     return <li key={colResult.entity.id} onClick={this.handleItemCheck.bind(this, et, colResult)}>
                         <input type="checkbox" checked={checked} onChange={this.handleItemCheck.bind(this, et, colResult)} />

@@ -1,48 +1,54 @@
 import { Exocore, QueryBuilder } from "exocore";
-import { makeAutoObservable, observable, ObservableMap, ObservableSet, runInAction } from "mobx";
+import { memoize } from "lodash";
+import { observable, ObservableMap, ObservableSet, runInAction } from "mobx";
 import { exomind } from "../protos";
 import { EntityTrait, EntityTraits, TraitIcon } from "./entities";
 
+const MaxSyncParallelism = 10;
+
 export class CollectionStore {
     private colResults: Map<string, Promise<EntityTrait<exomind.base.ICollection>>> = new Map();
-    private parentCache: ObservableMap<string, Parents> = observable.map();
-    private parentProcessing: ObservableSet<string> = observable.set();
+    private entityParents: ObservableMap<string, Parents> = observable.map();
+    private entityProcessing: ObservableSet<string> = observable.set();
 
-    constructor() {
-        makeAutoObservable(this);
-    }
-
-    getParents(entity: EntityTraits): Parents | null {
+    getEntityParents(entity: EntityTraits): Parents | null {
         const cacheKey = `${entity.id}${entity.entity.lastOperationId}`;
 
-        if (this.parentCache.has(cacheKey)) {
-            return this.parentCache.get(cacheKey);
+        const parents = this.entityParents.get(cacheKey)
+        if (parents) {
+            return parents;
         }
 
-        if (this.parentProcessing.has(cacheKey) || this.parentProcessing.size > 2) {
+        // make sure we aren't already fetching for this parent, and that we aren't fetching too many at same time
+        if (this.entityProcessing.has(cacheKey) || this.entityProcessing.size > MaxSyncParallelism) {
             return null;
         }
 
-        runInAction(() => {
-            this.parentProcessing.add(cacheKey);
-        });
-        this.getParentsAsync(entity).then((parents) => {
+        // prevent notifying components that call `getParents` in their render
+        setTimeout(() => {
             runInAction(() => {
-                this.parentCache.set(cacheKey, parents);
-                this.parentProcessing.delete(cacheKey);
+                this.entityProcessing.add(cacheKey);
             });
-        })
+
+            this.getEntityParentsAsync(entity).then((parents) => {
+                runInAction(() => {
+                    this.entityParents.set(cacheKey, parents);
+                    this.entityProcessing.delete(cacheKey);
+                });
+            })
+        });
 
         return null;
     }
 
-    async getParentsAsync(entity: EntityTraits, lineage?: Set<string>): Promise<Parents> {
+    async getEntityParentsAsync(entity: EntityTraits, lineage?: Set<string>): Promise<Parents> {
         const parents = new Parents();
 
         const colChildren = entity.traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild);
         for (const colChild of colChildren) {
             const parentId = colChild.message.collection.entityId;
-            if ((lineage?.has(parentId) ?? false) || parents.isFetched(parentId)) {
+            if (parents.isFetched(parentId) || (lineage?.has(parentId) ?? false)) {
+                // the collection got already fetched, either because we have it twice in our parents, or because it's part of the lineage already
                 continue;
             }
 
@@ -61,7 +67,7 @@ export class CollectionStore {
 
             const thisLineage = new Set(lineage);
             thisLineage.add(parentId);
-            const grandParents = await this.getParentsAsync(collection.et, thisLineage);
+            const grandParents = await this.getEntityParentsAsync(collection.et, thisLineage);
 
             col.parents = grandParents.get();
             sortCollections(col.parents);
@@ -79,7 +85,6 @@ export class CollectionStore {
         if (this.colResults.has(id)) {
             return this.colResults.get(id);
         }
-        console.log('getting for collection', id);
 
         let firstResult = true;
         const colPromise = new Promise<EntityTrait<exomind.base.ICollection>>((resolve) => {
@@ -93,10 +98,19 @@ export class CollectionStore {
                         resolve(col);
                         firstResult = false;
                         return;
+
                     } else {
                         runInAction(() => {
                             this.colResults.set(id, Promise.resolve(col));
-                            // this.parentCache.clear();
+
+                            // invalidate cache for all entities for which we fetched parents in which we are
+                            for (const parentId of this.entityParents.keys()) {
+                                const parent = this.entityParents.get(parentId);
+                                const ids = parent.allIds();
+                                if (ids.has(id)) {
+                                    this.entityParents.delete(parentId);
+                                }
+                            }
                         });
                     }
                 }
@@ -132,6 +146,25 @@ export class Parents {
         sortCollections(parents);
         return parents;
     }
+
+    allIds= memoize((): Set<string> => {
+        const ids = new Set<string>();
+
+        const getParents = (col: ICollection) => {
+            ids.add(col.entityId);
+            for (const parent of col.parents) {
+                if (!ids.has(parent.entityId)) {
+                    ids.add(parent.entityId);
+                    getParents(parent);
+                }
+            }
+        };
+        for (const parent of this.parents.values()) {
+            getParents(parent);
+        }
+
+        return ids;
+    });
 
     isFetched(id: string): boolean {
         return this.parents.has(id);
