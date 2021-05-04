@@ -137,8 +137,8 @@ export default class EmailThread extends React.Component<IProps, IState> {
         return (
             <li key={email.id}
                 className={classes}
-                onMouseOver={this.handleEmailMouseOver.bind(this, emailState, email)}
-                onMouseLeave={this.handleEmailMouseOut.bind(this)}>
+                onMouseEnter={this.handleEmailMouseEnter.bind(this, emailState, email)}
+                onMouseLeave={this.handleEmailMouseLeave.bind(this)}>
 
                 <div className="preview-header" onClick={this.handleEmailClick.bind(this, emailState, email)}>
                     <span className="from">{EmailsLogic.formatContact(email.message.from)}</span>
@@ -266,14 +266,14 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
     }
 
-    private handleEmailMouseOver(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): void {
+    private handleEmailMouseEnter(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): void {
         this.setState({
             hoveredEmailId: email.id,
             controlledEmailId: emailState.isOpen ? email.id : this.state.controlledEmailId // show control if we mouse over email and it's open
         });
     }
 
-    private handleEmailMouseOut(): void {
+    private handleEmailMouseLeave(): void {
         this.setState({
             hoveredEmailId: null,
         });

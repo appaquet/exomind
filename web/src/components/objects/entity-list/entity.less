@@ -58,13 +58,15 @@
 
       .date {
         position: absolute;
-        top: 5px; right: 10px;
+        top: 10px;
+        right: 10px;
         text-align: right;
-        padding-left: 5px;
+        padding-left: 10px;
 
         background: var(--entity-component-bg);
+        opacity: 0.95;
         font-size: 11px;
-        height: 14px;
+        height: 20px;
         color: var(--entity-component-item-fg);
         z-index: 1; // make sure times appear on top of titles
       }
@@ -73,7 +75,7 @@
         margin: 0 @entity-component-padding-side;
         overflow: hidden;
         padding-right: 5px;
-        margin-left: 10px; 
+        margin-left: 10px;
 
         flex-grow: 1; // make content cell in flex take the rest of the space
 
@@ -83,12 +85,16 @@
         min-height: @item-min-height;
         color: var(--entity-component-item-fg);
 
-        .title1, .title2, .text {
+        .title1,
+        .title2,
+        .text,
+        .parents {
           // add some space between lines
           margin: 4px 0;
         }
 
-        .title1, .title2 {
+        .title1,
+        .title2 {
           .ellipsis-text-overflow();
           .icon {
             margin-right: 3px;
@@ -96,7 +102,9 @@
         }
 
         .title1 {
-          .name, .handle, .subject {
+          .name,
+          .handle,
+          .subject {
             display: inline-block;
             margin-right: 3px;
             height: 15px;
@@ -112,15 +120,31 @@
           max-height: 60px;
           font-size: 12px;
         }
+
+        .hierarchy-pills {
+          // limit to 1 line
+          white-space: nowrap;
+          overflow: hidden;
+
+          padding-top: 3px;
+          .pill {
+            font-size: 13px;
+          }
+        }
       }
 
-      &.email.unread, &.email-thread.unread {
-        .title1, .title2 {
+      &.email.unread,
+      &.email-thread.unread {
+        .title1,
+        .title2 {
           font-weight: bold;
         }
       }
 
-      &.collection, &.note, &.task, &.default {
+      &.collection,
+      &.note,
+      &.task,
+      &.default {
         .content {
           .title1 {
             font-weight: bold;
@@ -133,7 +157,7 @@
         .title1 {
           max-height: 30px;
           input {
-            width: 80%
+            width: 80%;
           }
         }
       }
@@ -153,7 +177,8 @@
 
     &.selected {
       background: var(--entity-component-bg-selected);
-      .item-actions, .date {
+      .item-actions,
+      .date {
         background: var(--entity-component-bg-selected);
       }
     }
@@ -168,7 +193,8 @@
         margin-left: 100%;
         background: var(--entity-component-bg);
       }
-      .item-actions, .date {
+      .item-actions,
+      .date {
         display: none;
       }
     }
@@ -176,7 +202,9 @@
     // Item actions
     .item-actions {
       position: absolute;
-      top: 0; right: 0; bottom: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
       padding-right: 10px;
       padding-left: 15px;
       opacity: 0.95;
@@ -205,7 +233,8 @@
     }
 
     // EntityList and time selector popup
-    .collection-selector, .time-selector {
+    .collection-selector,
+    .time-selector {
       right: 15px;
       top: 50%;
       .translate(0, 15px);
