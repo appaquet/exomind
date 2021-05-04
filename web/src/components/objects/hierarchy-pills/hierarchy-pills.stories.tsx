@@ -6,7 +6,7 @@ import { registerTypes } from '../../../exocore';
 
 import '../../../style/style.less';
 import { HierarchyPills, IProps } from './hierarchy-pills';
-import { ICollection } from '../../../store/collections';
+import { EntityParent } from '../../../store/collections';
 import { exomind } from '../../../protos';
 import { TraitIcon } from '../../../store/entities';
 
@@ -21,8 +21,8 @@ export default {
 
 const Template: Story<IProps> = (args) => <HierarchyPills {...args} />;
 
-const getCol = (icon: TraitIcon, name: string, parents?: ICollection[]): ICollection => {
-    let minParent: ICollection;
+const getCol = (icon: TraitIcon, name: string, parents?: EntityParent[]): EntityParent => {
+    let minParent: EntityParent;
     if (parents && parents.length > 0) {
         minParent = parents[0];
     }

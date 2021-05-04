@@ -4,7 +4,7 @@ import { memoize } from 'lodash';
 import * as React from 'react';
 import EmailFlows from '../../../logic/emails-logic';
 import { exomind } from '../../../protos';
-import { ICollection, Parents } from '../../../store/collections';
+import { EntityParent, Parents } from '../../../store/collections';
 import { EntityTrait, EntityTraits } from '../../../store/entities';
 import DateUtil from '../../../utils/date-util';
 import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
@@ -422,7 +422,7 @@ class EntityParents extends React.Component<EntityParentsProps, EntityParentsSta
             return col.entityId != this.props.parentEntity?.id;
         })
 
-        const onClick = (e: React.MouseEvent, col: ICollection) => {
+        const onClick = (e: React.MouseEvent, col: EntityParent) => {
             if (this.props.onSelectionChange) {
                 const item = SelectedItem.fromEntityId(col.entityId);
                 this.props.onSelectionChange(new Selection(item));

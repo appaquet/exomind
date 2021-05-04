@@ -4,12 +4,12 @@ import { observable, ObservableMap, ObservableSet, runInAction } from "mobx";
 import { exomind } from "../protos";
 import { EntityTrait, EntityTraits, TraitIcon } from "./entities";
 
-const MaxSyncParallelism = 10;
+const MaxSyncParallelism = 25;
 
 export class CollectionStore {
-    private colResults: Map<string, Promise<EntityTrait<exomind.base.ICollection>>> = new Map();
     private entityParents: ObservableMap<string, Parents> = observable.map();
-    private entityProcessing: ObservableSet<string> = observable.set();
+    private entityFetching: ObservableSet<string> = observable.set();
+    private parentQueries: Map<string, Promise<EntityTrait<exomind.base.ICollection>>> = new Map();
 
     getEntityParents(entity: EntityTraits): Parents | null {
         const cacheKey = `${entity.id}${entity.entity.lastOperationId}`;
@@ -20,20 +20,20 @@ export class CollectionStore {
         }
 
         // make sure we aren't already fetching for this parent, and that we aren't fetching too many at same time
-        if (this.entityProcessing.has(cacheKey) || this.entityProcessing.size > MaxSyncParallelism) {
+        if (this.entityFetching.has(cacheKey) || this.entityFetching.size > MaxSyncParallelism) {
             return null;
         }
 
         // prevent notifying components that call `getParents` in their render
         setTimeout(() => {
             runInAction(() => {
-                this.entityProcessing.add(cacheKey);
+                this.entityFetching.add(cacheKey);
             });
 
             this.getEntityParentsAsync(entity).then((parents) => {
                 runInAction(() => {
                     this.entityParents.set(cacheKey, parents);
-                    this.entityProcessing.delete(cacheKey);
+                    this.entityFetching.delete(cacheKey);
                 });
             })
         });
@@ -57,22 +57,22 @@ export class CollectionStore {
                 continue;
             }
 
-            const col: ICollection = {
+            const parent: EntityParent = {
                 entityId: collection.et.id,
                 icon: collection.icon,
                 name: collection.displayName,
                 collection: collection.message,
             };
-            parents.add(col);
+            parents.add(parent);
 
             const thisLineage = new Set(lineage);
             thisLineage.add(parentId);
             const grandParents = await this.getEntityParentsAsync(collection.et, thisLineage);
 
-            col.parents = grandParents.get();
-            sortCollections(col.parents);
-            if (col.parents.length > 0) {
-                col.minParent = col.parents[0];
+            parent.parents = grandParents.get();
+            sortCollections(parent.parents);
+            if (parent.parents.length > 0) {
+                parent.minParent = parent.parents[0];
             }
         }
 
@@ -82,66 +82,79 @@ export class CollectionStore {
     async getCollection(id: string): Promise<EntityTrait<exomind.base.ICollection> | null> {
         // TODO: Should batch queries
 
-        if (this.colResults.has(id)) {
-            return this.colResults.get(id);
+        if (this.parentQueries.has(id)) {
+            return this.parentQueries.get(id);
         }
 
-        let firstResult = true;
-        const colPromise = new Promise<EntityTrait<exomind.base.ICollection>>((resolve) => {
+        let firstTime = true;
+        const colPromise = new Promise<EntityTrait<exomind.base.ICollection>>((resolve, failure) => {
             const query = Exocore.store.watchedQuery(QueryBuilder.withIds(id).build());
             query.onChange((results) => {
+                if (!results) {
+                    this.updateEntityCollection(id, null);
+                    failure(`couldn't fetch entity ${id}`);
+                    return;
+                }
+
                 for (const entity of results.entities) {
                     const et = new EntityTraits(entity.entity);
                     const col = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
 
-                    if (firstResult) {
+                    if (firstTime) {
                         resolve(col);
-                        firstResult = false;
+                        firstTime = false;
                         return;
-
                     } else {
-                        runInAction(() => {
-                            this.colResults.set(id, Promise.resolve(col));
-
-                            // invalidate cache for all entities for which we fetched parents in which we are
-                            for (const parentId of this.entityParents.keys()) {
-                                const parent = this.entityParents.get(parentId);
-                                const ids = parent.allIds();
-                                if (ids.has(id)) {
-                                    this.entityParents.delete(parentId);
-                                }
-                            }
-                        });
+                        this.updateEntityCollection(id, col);
                     }
                 }
 
                 resolve(null);
             });
         });
-        this.colResults.set(id, colPromise);
+        this.parentQueries.set(id, colPromise);
 
         return await colPromise;
     }
+
+    private updateEntityCollection(entityId: string, col: EntityTrait<exomind.base.ICollection> | null) {
+        runInAction(() => {
+            if (col) {
+                this.parentQueries.set(entityId, Promise.resolve(col));
+            } else {
+                this.parentQueries.delete(entityId);
+            }
+
+            // invalidate cache for all entities for which we fetched parents in which we are
+            for (const parentId of this.entityParents.keys()) {
+                const parent = this.entityParents.get(parentId);
+                const ids = parent.allIds();
+                if (ids.has(entityId)) {
+                    this.entityParents.delete(parentId);
+                }
+            }
+        });
+    }
 }
 
-export interface ICollection {
+export interface EntityParent {
     entityId: string;
     icon: TraitIcon;
     name: string;
     collection: exomind.base.ICollection;
-    parents?: ICollection[];
+    parents?: EntityParent[];
 
-    minParent?: ICollection;
+    minParent?: EntityParent;
 }
 
 export class Parents {
-    parents: Map<string, ICollection> = new Map();
+    parents: Map<string, EntityParent> = new Map();
 
-    add(col: ICollection): void {
-        this.parents.set(col.entityId, col);
+    add(parent: EntityParent): void {
+        this.parents.set(parent.entityId, parent);
     }
 
-    get(): ICollection[] {
+    get(): EntityParent[] {
         const parents = Array.from(this.parents.values());
         sortCollections(parents);
         return parents;
@@ -150,12 +163,12 @@ export class Parents {
     allIds= memoize((): Set<string> => {
         const ids = new Set<string>();
 
-        const getParents = (col: ICollection) => {
-            ids.add(col.entityId);
-            for (const parent of col.parents) {
-                if (!ids.has(parent.entityId)) {
-                    ids.add(parent.entityId);
-                    getParents(parent);
+        const getParents = (parent: EntityParent) => {
+            ids.add(parent.entityId);
+            for (const gParent of parent.parents) {
+                if (!ids.has(gParent.entityId)) {
+                    ids.add(gParent.entityId);
+                    getParents(gParent);
                 }
             }
         };
@@ -171,30 +184,30 @@ export class Parents {
     }
 }
 
-function minLineage(cols: ICollection[], init = 0): [number, ICollection | null] {
-    if (cols.length == 0) {
+function minLineage(parents: EntityParent[], init = 0): [number, EntityParent | null] {
+    if (parents.length == 0) {
         return [init, null];
     }
 
     let minLength = 0;
-    let minCol: ICollection = null;
-    for (const col of cols) {
-        const [length,] = minLineage(col.parents, init + 1);
+    let minCol: EntityParent = null;
+    for (const parent of parents) {
+        const [length,] = minLineage(parent.parents, init + 1);
         if (!minCol || length < minLength) {
             minLength = length;
-            minCol = col;
+            minCol = parent;
         }
     }
 
     return [init + minLength, minCol];
 }
 
-function sortCollections(cols: ICollection[]): void {
-    if (cols.length <= 1) {
+function sortCollections(parents: EntityParent[]): void {
+    if (parents.length <= 1) {
         return;
     }
 
-    cols.sort((a, b) => {
+    parents.sort((a, b) => {
         const [aLin,] = minLineage(a.parents);
         const [bLin,] = minLineage(b.parents);
         if (aLin == bLin) {
@@ -205,20 +218,20 @@ function sortCollections(cols: ICollection[]): void {
     });
 }
 
-export function flattenHierarchy(collection: ICollection): ICollection[] {
+export function flattenHierarchy(parent: EntityParent): EntityParent[] {
     const out = [];
 
-    while (collection != null) {
-        if (collection.entityId == 'favorites') {
+    while (parent != null) {
+        if (parent.entityId == 'favorites') {
             break;
         }
 
-        out.push(collection);
+        out.push(parent);
 
-        if (!collection.minParent) {
+        if (!parent.minParent) {
             break;
         }
-        collection = collection.minParent;
+        parent = parent.minParent;
     }
 
     return out.reverse();

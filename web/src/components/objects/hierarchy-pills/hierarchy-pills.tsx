@@ -1,12 +1,12 @@
 import classNames from "classnames";
 import React from "react";
-import { ICollection, flattenHierarchy } from "../../../store/collections";
+import { EntityParent, flattenHierarchy } from "../../../store/collections";
 import EntityIcon from "../entity-icon";
 import './hierarchy-pills.less';
 
 export interface IProps {
-    collections: ICollection[],
-    onCollectionClick?: (e: React.MouseEvent, collection: ICollection) => void,
+    collections: EntityParent[],
+    onCollectionClick?: (e: React.MouseEvent, collection: EntityParent) => void,
 }
 
 export class HierarchyPills extends React.Component<IProps> {
@@ -39,7 +39,7 @@ export class HierarchyPills extends React.Component<IProps> {
     }
 }
 
-function Pill(props: { hierarchy: ICollection[], onClick?: (e: React.MouseEvent, col: ICollection) => void }) {
+function Pill(props: { hierarchy: EntityParent[], onClick?: (e: React.MouseEvent, col: EntityParent) => void }) {
     const inner = props.hierarchy.map((col) => {
         const innerOnClick = (e: React.MouseEvent) => {
             props.onClick(e, col);
