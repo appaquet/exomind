@@ -16,10 +16,10 @@ export class EntityTraits {
         // check if it's a special entity (ex: inbox)
         let priorityTrait: [exocore.store.ITrait, ITraitConstants] = null;
         if (this.entity.id in TRAITS_CONSTANTS) {
-            const traitsConsts = TRAITS_CONSTANTS[this.entity.id];
+            const traitsConstants = TRAITS_CONSTANTS[this.entity.id];
             for (const trait of this.entity.traits) {
                 if (trait.id == this.entity.id) {
-                    priorityTrait = [trait, traitsConsts];
+                    priorityTrait = [trait, traitsConstants];
                     break;
                 }
             }
@@ -36,16 +36,16 @@ export class EntityTraits {
 
             this.idTraits[trait.id] = trait;
 
-            let traitConsts;
+            let traitConstants;
             if (this.entity.id == trait.id && this.entity.id in TRAITS_CONSTANTS) {
                 // special entity
-                traitConsts = TRAITS_CONSTANTS[this.entity.id];
+                traitConstants = TRAITS_CONSTANTS[this.entity.id];
             } else if (msgType in TRAITS_CONSTANTS) {
-                traitConsts = TRAITS_CONSTANTS[msgType];
+                traitConstants = TRAITS_CONSTANTS[msgType];
             }
 
-            if (traitConsts && ((priorityTrait == null || traitConsts.order < priorityTrait[1].order))) {
-                priorityTrait = [trait, traitConsts];
+            if (traitConstants && ((priorityTrait == null || traitConstants.order < priorityTrait[1].order))) {
+                priorityTrait = [trait, traitConstants];
             }
         }
 

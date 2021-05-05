@@ -21,7 +21,11 @@ interface IProps {
   containerController?: ContainerController;
 }
 
-export class Search extends React.Component<IProps> {
+interface IState {
+    entities?: EntityTraits[],
+}
+
+export class Search extends React.Component<IProps, IState> {
   private entityQuery?: ExpandableQuery;
 
   constructor(props: IProps) {
@@ -36,7 +40,7 @@ export class Search extends React.Component<IProps> {
       this.updateContainerTitle(this.props);
       this.query(this.props.query);
       this.setState({
-        results: null,
+        entities: null,
       });
     }
   }
@@ -51,14 +55,10 @@ export class Search extends React.Component<IProps> {
 
   render(): React.ReactNode {
     if (this.entityQuery?.hasResults ?? false) {
-      const entities = Array.from(this.entityQuery.results()).map((entityResult) => {
-        return entityResult.entity;
-      });
-
       return (
         <div className="search">
           <EntityList
-            entities={entities}
+            entities={this.state.entities}
 
             onRequireLoadMore={this.handleLoadMore.bind(this)}
 
@@ -94,7 +94,11 @@ export class Search extends React.Component<IProps> {
       )
       .build();
     this.entityQuery = new ExpandableQuery(childrenQuery, () => {
-      this.setState({});
+      const entities = Array.from(this.entityQuery.results()).map((res) => {
+          return new EntityTraits(res.entity);
+      });
+
+      this.setState({ entities });
     })
   }
 
@@ -111,7 +115,7 @@ export class Search extends React.Component<IProps> {
 
   private handleEntityMoveCollection(et: EntityTraits) {
     ModalStore.showModal(() => {
-      return <CollectionSelector entity={et.entity} />;
+      return <CollectionSelector entity={et} />;
     });
   }
 

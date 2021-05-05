@@ -65,7 +65,7 @@ export class EntityComponent extends React.Component<Props, State> {
             const inner = this.state.trait.match({
                 collection: (col) => {
                     return <Collection
-                        entity={this.state.entityTraits.entity}
+                        entity={this.state.entityTraits}
                         collection={col}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
@@ -97,7 +97,7 @@ export class EntityComponent extends React.Component<Props, State> {
                 },
                 emailThread: () => {
                     return <EmailThread
-                        entity={this.state.entityTraits.entity}
+                        entity={this.state.entityTraits}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
                         containerController={this.props.containerController}
@@ -176,7 +176,7 @@ export class EntityComponent extends React.Component<Props, State> {
 
     private handleShowCollectionSelector = (): void => {
         if (this.state.results && this.state.results.entities.length > 0) {
-            const entity = this.state.results.entities[0].entity;
+            const entity = new EntityTraits(this.state.results.entities[0].entity);
             ModalStore.showModal(() => {
                 return <CollectionSelector entity={entity} />;
             });

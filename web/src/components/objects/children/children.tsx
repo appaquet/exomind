@@ -18,12 +18,12 @@ import './children.less';
 const PINNED_WEIGHT = 5000000000000;
 
 interface IProps {
-    parent?: exocore.store.IEntity;
+    parent?: EntityTraits;
     parentId?: string;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
+    onEntityAction?: (action: string, entity: EntityTraits) => void;
 
     actionsForEntity?: (et: EntityTraits) => string[];
 
@@ -31,7 +31,8 @@ interface IProps {
 }
 
 interface IState {
-    parent?: exocore.store.IEntity;
+    parent?: EntityTraits;
+    entities?: EntityTraits[],
     hovered: boolean;
     error?: string;
     editedEntity?: EntityTraits;
@@ -64,7 +65,11 @@ export class Children extends React.Component<IProps, IState> {
             .build();
 
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
-            this.setState({});
+            const entities = Array.from(this.entityQuery.results()).map((res) => {
+                return new EntityTraits(res.entity);
+            });
+
+            this.setState({ entities });
         })
 
         if (!props.parent) {
@@ -83,7 +88,7 @@ export class Children extends React.Component<IProps, IState> {
                 }
 
                 this.setState({
-                    parent: res.entities[0].entity,
+                    parent: new EntityTraits(res.entities[0].entity),
                 });
             });
         }
@@ -113,10 +118,6 @@ export class Children extends React.Component<IProps, IState> {
                 'children': true,
             });
 
-            const entities = Array.from(this.entityQuery.results()).map((res) => {
-                return res.entity;
-            });
-
             const controls = (this.state.hovered) ?
                 <ListActions
                     parent={this.state.parent}
@@ -132,7 +133,7 @@ export class Children extends React.Component<IProps, IState> {
                     onMouseLeave={this.handleMouseLeave}>
 
                     <EntityList
-                        entities={entities}
+                        entities={this.state.entities}
                         parentEntity={this.state.parent}
 
                         onRequireLoadMore={this.handleLoadMore}
@@ -220,10 +221,10 @@ export class Children extends React.Component<IProps, IState> {
             Exocore.store.mutate(mutationBuilder.build());
         }
 
-        this.removeFromSelection(et.entity);
+        this.removeFromSelection(et);
 
         if (this.props.onEntityAction) {
-            this.props.onEntityAction('done', et.entity);
+            this.props.onEntityAction('done', et);
         }
 
         return 'remove';
@@ -257,13 +258,13 @@ export class Children extends React.Component<IProps, IState> {
         Exocore.store.mutate(mb.build());
 
         if (this.props.onEntityAction) {
-            this.props.onEntityAction('postpone', et.entity);
+            this.props.onEntityAction('postpone', et);
         }
     }
 
     private handleEntityMoveCollection(et: EntityTraits) {
         ModalStore.showModal(() => {
-            return <CollectionSelector entity={et.entity} />;
+            return <CollectionSelector entity={et} />;
         });
     }
 
@@ -279,7 +280,7 @@ export class Children extends React.Component<IProps, IState> {
         Exocore.store.mutate(mb.build());
 
         if (this.props.onEntityAction) {
-            this.props.onEntityAction('inbox', et.entity);
+            this.props.onEntityAction('inbox', et);
         }
     }
 
@@ -319,19 +320,19 @@ export class Children extends React.Component<IProps, IState> {
         // TODO: ExomindDSL.on(entity).relations.addParent(this.state.parentEntity);
 
         if (this.props.onEntityAction) {
-            this.props.onEntityAction('restore', et.entity);
+            this.props.onEntityAction('restore', et);
         }
     }
 
     private handleDropInEntity = (droppedItem: IDroppedItem) => {
-        const getEntityParentRelation = (entity: exocore.store.IEntity, parentId: string) => {
-            return new EntityTraits(entity)
+        const getEntityParentRelation = (entity: EntityTraits, parentId: string) => {
+            return entity
                 .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
                 .filter((e) => e.message.collection.entityId == parentId)
                 .shift();
         }
 
-        const getEntityParentWeight = (entity: exocore.store.IEntity): number => {
+        const getEntityParentWeight = (entity: EntityTraits): number => {
             const child = getEntityParentRelation(entity, this.parentId)
             const weight = child.message.weight;
 
@@ -386,12 +387,11 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private handleCreatedEntity(entity: exocore.store.IEntity) {
+    private handleCreatedEntity(entity: EntityTraits) {
         if (this.props.onSelectionChange && this.props.selection) {
-            const et = new EntityTraits(entity);
-            if (et.traitOfType(exomind.base.Task)) {
+            if (entity.traitOfType(exomind.base.Task)) {
                 this.setState({
-                    editedEntity: et,
+                    editedEntity: entity,
                 });
             } else {
                 const newSelection = this.props.selection.withItem(SelectedItem.fromEntity(entity));
@@ -400,7 +400,7 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private removeFromSelection(entity: exocore.store.IEntity) {
+    private removeFromSelection(entity: EntityTraits) {
         if (this.props.onSelectionChange && this.props.selection) {
             const newSelection = this.props.selection.withoutItem(SelectedItem.fromEntity(entity));
             this.props.onSelectionChange(newSelection);

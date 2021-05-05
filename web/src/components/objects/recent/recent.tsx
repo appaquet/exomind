@@ -14,12 +14,15 @@ import './recent.less';
 interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
 
     containerController?: ContainerController;
 }
 
-export default class Recent extends React.Component<IProps> {
+interface IState {
+    entities?: EntityTraits[],
+}
+
+export default class Recent extends React.Component<IProps, IState> {
     private entityQuery: ExpandableQuery;
 
     constructor(props: IProps) {
@@ -41,7 +44,11 @@ export default class Recent extends React.Component<IProps> {
             )
             .build();
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
-            this.setState({});
+            const entities = Array.from(this.entityQuery.results()).map((res) => {
+                return new EntityTraits(res.entity);
+            });
+
+            this.setState({ entities });
         })
 
         if (props.containerController) {
@@ -63,14 +70,10 @@ export default class Recent extends React.Component<IProps> {
                 'recent': true,
             });
 
-            const entities = Array.from(this.entityQuery.results()).map((res) => {
-                return res.entity;
-            });
-
             return (
                 <div className={classes}>
                     <EntityList
-                        entities={entities}
+                        entities={this.state.entities}
 
                         onRequireLoadMore={this.handleLoadMore.bind(this)}
 
@@ -110,9 +113,5 @@ export default class Recent extends React.Component<IProps> {
             }), 'child_inbox')
             .build();
         Exocore.store.mutate(mb);
-
-        if (this.props.onEntityAction) {
-            this.props.onEntityAction('inbox', et.entity);
-        }
     }
 }

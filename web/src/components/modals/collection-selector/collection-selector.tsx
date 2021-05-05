@@ -15,7 +15,7 @@ import { Message } from '../../objects/message';
 import './collection-selector.less';
 
 interface IProps {
-    entity: exocore.store.IEntity;
+    entity: EntityTraits;
 }
 
 interface IState {

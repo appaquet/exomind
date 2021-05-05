@@ -1,18 +1,19 @@
 import { Exocore, exocore, MutationBuilder } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
+import { EntityTraits } from '../../../store/entities';
 import { ModalStore } from '../../../store/modal-store';
 import InputModal from '../../modals/input-modal/input-modal';
 import TimeSelector from '../../modals/time-selector/time-selector';
 import { Selection } from "./selection";
 
 interface IProps {
-    parent: exocore.store.IEntity;
+    parent: EntityTraits;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    onCreated: (et: exocore.store.IEntity) => void;
+    onCreated: (et: EntityTraits) => void;
 
     removeOnPostpone?: boolean;
 }
@@ -182,7 +183,7 @@ export class ListActions extends React.Component<IProps> {
     private executeNewEntityMutation(mutation: exocore.store.MutationRequest) {
         Exocore.store.mutate(mutation).then(result => {
             if (result.entities.length > 0 && this.props.onCreated) {
-                this.props.onCreated(result.entities[0]);
+                this.props.onCreated(new EntityTraits(result.entities[0]));
             }
         });
     }

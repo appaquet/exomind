@@ -1,14 +1,11 @@
 import { Exocore, QueryBuilder } from "exocore";
 import { memoize } from "lodash";
-import { observable, ObservableMap, ObservableSet, runInAction } from "mobx";
+import { observable, ObservableMap, runInAction } from "mobx";
 import { exomind } from "../protos";
 import { EntityTrait, EntityTraits, TraitIcon } from "./entities";
 
-const MaxSyncParallelism = 25;
-
 export class CollectionStore {
     private entityParents: ObservableMap<string, Parents> = observable.map();
-    private entityFetching: ObservableSet<string> = observable.set();
     private parentQueries: Map<string, Promise<EntityTrait<exomind.base.ICollection>>> = new Map();
 
     getEntityParents(entity: EntityTraits): Parents | null {
@@ -19,21 +16,11 @@ export class CollectionStore {
             return parents;
         }
 
-        // make sure we aren't already fetching for this parent, and that we aren't fetching too many at same time
-        if (this.entityFetching.has(cacheKey) || this.entityFetching.size > MaxSyncParallelism) {
-            return null;
-        }
-
         // prevent notifying components that call `getParents` in their render
         setTimeout(() => {
-            runInAction(() => {
-                this.entityFetching.add(cacheKey);
-            });
-
             this.getEntityParentsAsync(entity).then((parents) => {
                 runInAction(() => {
                     this.entityParents.set(cacheKey, parents);
-                    this.entityFetching.delete(cacheKey);
                 });
             })
         });

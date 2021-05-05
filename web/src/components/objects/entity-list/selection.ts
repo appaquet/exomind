@@ -1,5 +1,5 @@
-import { exocore } from 'exocore';
 import * as _ from 'lodash';
+import { EntityTrait, EntityTraits } from '../../../store/entities';
 
 export class Selection {
     items: SelectedItem[];
@@ -61,9 +61,9 @@ export class Selection {
 }
 
 export class SelectedItem {
-    private _entity?: exocore.store.IEntity;
+    private _entity?: EntityTraits;
     private _entityId?: string;
-    private _trait?: exocore.store.ITrait;
+    private _trait?: EntityTrait<unknown>;
     private _traitId?: string;
 
     static fromEntityId(entityId: string): SelectedItem {
@@ -79,13 +79,13 @@ export class SelectedItem {
         return item;
     }
 
-    static fromEntity(entity: exocore.store.IEntity): SelectedItem {
+    static fromEntity(entity: EntityTraits): SelectedItem {
         const item = new SelectedItem();
         item._entity = entity;
         return item;
     }
 
-    static fromEntityTrait(entity: exocore.store.IEntity, trait: exocore.store.ITrait): SelectedItem {
+    static fromEntityTrait(entity: EntityTraits, trait: EntityTrait<unknown>): SelectedItem {
         const item = new SelectedItem();
         item._entity = entity;
         item._trait = trait;

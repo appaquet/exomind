@@ -15,12 +15,15 @@ import DateUtil from '../../../utils/date-util';
 interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
 
     containerController?: ContainerController;
 }
 
-export default class Snoozed extends React.Component<IProps> {
+interface IState {
+    entities?: EntityTraits[],
+}
+
+export default class Snoozed extends React.Component<IProps, IState> {
     private entityQuery: ExpandableQuery;
 
     constructor(props: IProps) {
@@ -36,7 +39,7 @@ export default class Snoozed extends React.Component<IProps> {
                 new exocore.store.Projection({
                     fieldGroupIds: [1],
                     package: ["exomind.base"],
-                }), 
+                }),
                 new exocore.store.Projection({
                     skip: true,
                 })
@@ -44,7 +47,11 @@ export default class Snoozed extends React.Component<IProps> {
             .orderByField('until_date', true)
             .build();
         this.entityQuery = new ExpandableQuery(childrenQuery, () => {
-            this.setState({});
+            const entities = Array.from(this.entityQuery.results()).map((res) => {
+                return new EntityTraits(res.entity);
+            });
+
+            this.setState({ entities });
         })
 
         if (props.containerController) {
@@ -66,14 +73,10 @@ export default class Snoozed extends React.Component<IProps> {
                 'snoozed': true,
             });
 
-            const entities = Array.from(this.entityQuery.results()).map((res) => {
-                return res.entity;
-            });
-
             return (
                 <div className={classes}>
                     <EntityList
-                        entities={entities}
+                        entities={this.state.entities}
 
                         onRequireLoadMore={this.handleLoadMore.bind(this)}
 
@@ -138,9 +141,5 @@ export default class Snoozed extends React.Component<IProps> {
             .deleteTrait(snoozedTrait.id)
             .build();
         Exocore.store.mutate(mb);
-
-        if (this.props.onEntityAction) {
-            this.props.onEntityAction('inbox', et.entity);
-        }
     }
 }

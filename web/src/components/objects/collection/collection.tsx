@@ -1,17 +1,16 @@
-import { exocore } from 'exocore';
 import { exomind } from "../../../protos";
 import React from 'react';
-import { EntityTrait } from '../../../store/entities';
+import { EntityTrait, EntityTraits } from '../../../store/entities';
 import { Children } from '../children/children';
 import { Selection } from '../entity-list/selection';
 
 interface IProps {
-    entity: exocore.store.IEntity;
+    entity: EntityTraits;
     collection: EntityTrait<exomind.base.ICollection>;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: exocore.store.IEntity) => void;
+    onEntityAction?: (action: string, entity: EntityTraits) => void;
 
     sections?: string[];
     section?: string;

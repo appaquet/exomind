@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { exocore, fromProtoTimestamp, MutationBuilder, Exocore } from 'exocore';
+import { fromProtoTimestamp, MutationBuilder, Exocore } from 'exocore';
 import { exomind } from '../../../protos';
 import _ from 'lodash';
 import React from 'react';
@@ -12,7 +12,7 @@ import { ContainerController } from '../container-controller';
 
 
 interface IProps {
-    entity?: exocore.store.IEntity;
+    entity?: EntityTraits;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
@@ -36,19 +36,17 @@ interface EmailState {
 }
 
 export default class EmailThread extends React.Component<IProps, IState> {
-    entityTraits: EntityTraits;
     threadTrait: EntityTrait<exomind.base.EmailThread>;
     draftTrait?: EntityTrait<exomind.base.DraftEmail>;
 
     constructor(props: IProps) {
         super(props);
 
-        this.entityTraits = new EntityTraits(props.entity);
-        this.threadTrait = this.entityTraits.traitOfType(exomind.base.EmailThread);
-        this.draftTrait = this.entityTraits.traitOfType(exomind.base.DraftEmail);
+        this.threadTrait = props.entity.traitOfType(exomind.base.EmailThread);
+        this.draftTrait = props.entity.traitOfType(exomind.base.DraftEmail);
 
         let count = 0;
-        const emailStates = _.chain(this.entityTraits.traitsOfType<exomind.base.Email>(exomind.base.Email))
+        const emailStates = _.chain(props.entity.traitsOfType<exomind.base.Email>(exomind.base.Email))
             .map((trait) => {
                 return { index: count++, trait: trait, isOpen: !trait.message.read } as EmailState;
             })
@@ -223,7 +221,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
                     [current, original] = [body, ''];
                 }
 
-                const currentWithAttachment = EmailsLogic.injectInlineImages(this.entityTraits, email, current);
+                const currentWithAttachment = EmailsLogic.injectInlineImages(this.props.entity, email, current);
                 emailState.cleanedCurrent = EmailsLogic.sanitizeHtml(currentWithAttachment);
                 emailState.original = original;
             }
@@ -242,7 +240,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
             <div className="object-body">
                 <div dangerouslySetInnerHTML={markup} />
                 {more}
-                <EmailAttachments entity={this.entityTraits} email={email} />
+                <EmailAttachments entity={this.props.entity} email={email} />
             </div>
         );
     }
@@ -255,7 +253,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     private handleOpenEmailClick(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): void {
         if (this.props.onSelectionChange) {
-            const item = SelectedItem.fromEntityTraitId(this.entityTraits.entity.id, email.id);
+            const item = SelectedItem.fromEntityTraitId(this.props.entity.entity.id, email.id);
             this.props.onSelectionChange(this.props.selection.withItem(item));
         }
     }
@@ -296,14 +294,14 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     private handleDraftClick(draft: EntityTrait<exomind.base.IDraftEmail>): void {
         if (this.props.onSelectionChange) {
-            const item = SelectedItem.fromEntityTraitId(this.entityTraits.entity.id, draft.id);
+            const item = SelectedItem.fromEntityTraitId(this.props.entity.entity.id, draft.id);
             this.props.onSelectionChange(this.props.selection.withItem(item));
         }
     }
 
     private renderEmailControls(): React.ReactNode {
         let doneAction = null;
-        const inboxChild = this.entityTraits
+        const inboxChild = this.props.entity
             .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
             .find((trt) => trt.message.collection.entityId == 'inbox');
         if (inboxChild) {
@@ -326,7 +324,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     private handleDoneEmail(child: EntityTrait<exomind.base.CollectionChild>): void {
         const mutation = MutationBuilder
-            .updateEntity(this.entityTraits.id)
+            .updateEntity(this.props.entity.id)
             .deleteTrait(child.id)
             .build();
         Exocore.store.mutate(mutation);

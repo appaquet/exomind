@@ -1,6 +1,4 @@
 import classNames from 'classnames';
-import { exocore } from 'exocore';
-import { memoize } from 'lodash';
 import * as React from 'react';
 import EmailFlows from '../../../logic/emails-logic';
 import { exomind } from '../../../protos';
@@ -20,8 +18,8 @@ import './entity.less';
 export type DropEffect = ('move' | 'copy');
 
 export interface IProps {
-    entity: exocore.store.IEntity;
-    parentEntity?: exocore.store.IEntity;
+    entity: EntityTraits;
+    parentEntity?: EntityTraits;
 
     selected?: boolean;
     onSelectionChange?: (sel: Selection) => void;
@@ -30,8 +28,8 @@ export interface IProps {
 
     draggable?: boolean;
     droppable?: boolean;
-    onDropOut?: (droppedEntity: exocore.store.IEntity, effect: DropEffect, droppedEntityParent: exocore.store.IEntity) => void;
-    onDropIn?: (droppedEntity: exocore.store.IEntity, effect: DropEffect, droppedEntityParent: exocore.store.IEntity) => void;
+    onDropOut?: (droppedEntity: EntityTraits, effect: DropEffect, droppedEntityParent: EntityTraits) => void;
+    onDropIn?: (droppedEntity: EntityTraits, effect: DropEffect, droppedEntityParent: EntityTraits) => void;
 
     renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
 }
@@ -64,11 +62,10 @@ export class Entity extends React.Component<IProps, IState> {
             hover: this.state.hovered
         });
 
-        const entityTraits = this.getEntityTraits(this.props.entity);
         let actionsComponent = null;
         let actions;
         if (this.props.actionsForEntity) {
-            actions = this.props.actionsForEntity(entityTraits);
+            actions = this.props.actionsForEntity(this.props.entity);
             if (this.state.hovered && !actions.isEmpty) {
                 actionsComponent = this.renderActions(actions);
             }
@@ -94,14 +91,12 @@ export class Entity extends React.Component<IProps, IState> {
                         onDropOut={this.props.onDropOut}>
 
                         {actionsComponent}
-                        {this.renderElement(entityTraits, actions)}
+                        {this.renderElement(this.props.entity, actions)}
                     </DragAndDrop>
                 </div>
             </li>
         );
     }
-
-    private getEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
 
     private renderActions(actions: EntityActions): React.ReactNode {
         const actionsComponents = actions.buttons.map((action) => {
@@ -391,7 +386,7 @@ export class Entity extends React.Component<IProps, IState> {
 
 interface EntityParentsProps {
     entity: EntityTraits;
-    parentEntity?: exocore.store.IEntity;
+    parentEntity?: EntityTraits;
     onSelectionChange?: (sel: Selection) => void;
 }
 

@@ -1,5 +1,4 @@
 import classNames from "classnames";
-import { exocore } from 'exocore';
 import React from 'react';
 import { EntityTrait, EntityTraits } from "../../../store/entities";
 import DragAndDrop from "../../interaction/drag-and-drop/drag-and-drop";
@@ -11,8 +10,8 @@ import './entity-list.less';
 import { SelectedItem, Selection } from "./selection";
 
 export interface IProps {
-    entities: exocore.store.IEntity[];
-    parentEntity?: exocore.store.IEntity;
+    entities: EntityTraits[];
+    parentEntity?: EntityTraits;
 
     onRequireLoadMore?: () => void;
 
@@ -32,12 +31,12 @@ export interface IProps {
 }
 
 export interface IDroppedItem {
-    droppedEntity?: exocore.store.IEntity;
-    fromParentEntity?: exocore.store.IEntity;
+    droppedEntity?: EntityTraits;
+    fromParentEntity?: EntityTraits;
 
-    previousEntity?: exocore.store.IEntity;
-    overEntity?: exocore.store.IEntity;
-    nextEntity?: exocore.store.IEntity;
+    previousEntity?: EntityTraits;
+    overEntity?: EntityTraits;
+    nextEntity?: EntityTraits;
 
     effect: DropEffect,
 }
@@ -72,7 +71,7 @@ export class EntityList extends React.Component<IProps> {
     private renderCollection(): React.ReactNode {
         if (this.props.entities.length > 0) {
 
-            let previousEntity: exocore.store.IEntity = null;
+            let previousEntity: EntityTraits = null;
             const items = this.props.entities.map((entity) => {
                 const selected = this.props.selection?.contains(SelectedItem.fromEntity(entity)) ?? false;
 
@@ -115,7 +114,7 @@ export class EntityList extends React.Component<IProps> {
             <div className="empty">
                 <DragAndDrop
                     parentObject={this.props.parentEntity}
-                    onDropIn={(droppedEntity: exocore.store.IEntity, effect: DropEffect, parent: exocore.store.IEntity) => {
+                    onDropIn={(droppedEntity: EntityTraits, effect: DropEffect, parent: EntityTraits) => {
                         return this.handleDropIn(null, null, droppedEntity, effect, parent)
                     }}
                     draggable={false} droppable={this.props.droppable}>
@@ -127,11 +126,11 @@ export class EntityList extends React.Component<IProps> {
     }
 
     private handleDropIn(
-        overEntity: exocore.store.IEntity,
-        previousEntity: exocore.store.IEntity,
-        droppedEntity: exocore.store.IEntity,
+        overEntity: EntityTraits,
+        previousEntity: EntityTraits,
+        droppedEntity: EntityTraits,
         effect: DropEffect,
-        parentEntity: exocore.store.IEntity,
+        parentEntity: EntityTraits,
     ): void {
         if (this.props.onDropIn != null) {
             this.props.onDropIn({
@@ -144,7 +143,7 @@ export class EntityList extends React.Component<IProps> {
         }
     }
 
-    private handleItemClick(entity: exocore.store.IEntity, e: React.MouseEvent): void {
+    private handleItemClick(entity: EntityTraits, e: React.MouseEvent): void {
         if (this.props.onSelectionChange) {
             const special = e.shiftKey || e.altKey || e.metaKey;
 
