@@ -12,7 +12,7 @@ export class CollectionStore {
     private parentQueries: Map<string, Promise<EntityTrait<exomind.base.ICollection>>> = new Map();
 
     getEntityParents(entity: EntityTraits): Parents | null {
-        const cacheKey = `${entity.id}${entity.entity.lastOperationId}`;
+        const cacheKey = this.uniqueEntityId(entity);
 
         const parents = this.entityParents.get(cacheKey)
         if (parents) {
@@ -115,6 +115,16 @@ export class CollectionStore {
         this.parentQueries.set(id, colPromise);
 
         return await colPromise;
+    }
+
+    // create a unique cache key with entity id and operation id of collection child relations
+    private uniqueEntityId(entity: EntityTraits): string {
+        let key = entity.id;
+        const colChildren = entity.traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild);
+        for (const childOf of colChildren) {
+            key += childOf.trait.lastOperationId;
+        }
+        return key;
     }
 
     private updateEntityCollection(entityId: string, col: EntityTrait<exomind.base.ICollection> | null) {

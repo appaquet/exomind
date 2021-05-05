@@ -81,7 +81,7 @@ export class Entity extends React.Component<IProps, IState> {
         return (
             <li className={classes}
                 onClick={this.handleItemClick}
-                onMouseEnter={this.handleItemMouseEnter}
+                onMouseOver={this.handleItemMouseOver}
                 onMouseLeave={this.handleItemMouseLeave}>
 
                 <div className="swipe-container">
@@ -368,7 +368,7 @@ export class Entity extends React.Component<IProps, IState> {
         }
     }
 
-    private handleItemMouseEnter = (): void => {
+    private handleItemMouseOver = (): void => {
         this.setState({
             hovered: true
         });
@@ -395,25 +395,13 @@ interface EntityParentsProps {
     onSelectionChange?: (sel: Selection) => void;
 }
 
-interface EntityParentsState {
-    parents?: Parents,
-}
-
 @observer
-class EntityParents extends React.Component<EntityParentsProps, EntityParentsState> {
+class EntityParents extends React.Component<EntityParentsProps> {
     static contextType = StoresContext;
     context: Stores;
 
-    constructor(props: EntityParentsProps) {
-        super(props);
-
-        this.state = {
-        };
-    }
-
     render(): React.ReactNode {
         const parents = this.context.collections.getEntityParents(this.props.entity);
-
         if (!parents) {
             return <span className="loading"></span>;
         }
