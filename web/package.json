@@ -123,7 +123,7 @@
     "storybook-less-loader": "^0.1.0",
     "style-loader": "^2.0.0",
     "ts-jest": "^26.5.5",
-    "ts-loader": "^8.1.0",
+    "ts-loader": "^9.1.2",
     "typescript": "^4.2.4",
     "url-loader": "^4.1.0",
     "webpack-cli": "^3.3.12",
