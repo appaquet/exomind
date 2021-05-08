@@ -10,6 +10,7 @@ import './entity-component.less';
 import { Selection } from "./entity-list/selection";
 import { HeaderAction } from "./header";
 import { Message } from "./message";
+import { runInAction } from 'mobx';
 
 const Task = React.lazy(() => import(/*webpackChunkName: "component-task"*/'./task/task'));
 const Note = React.lazy(() => import(/*webpackChunkName: "component-note"*/'./note/note'));
@@ -47,10 +48,12 @@ export class EntityComponent extends React.Component<Props, State> {
             .onChange(this.handleNewResults);
 
         if (props.containerController) {
-            props.containerController.actions = [
-                new HeaderAction('clock-o', this.handleShowTimeSelector),
-                new HeaderAction('folder-open-o', this.handleShowCollectionSelector)
-            ];
+            runInAction(() => {
+                props.containerController.actions = [
+                    new HeaderAction('clock-o', this.handleShowTimeSelector),
+                    new HeaderAction('folder-open-o', this.handleShowCollectionSelector)
+                ];
+            });
         }
 
         this.state = {};
@@ -147,14 +150,16 @@ export class EntityComponent extends React.Component<Props, State> {
                 trait = et.priorityTrait;
             }
 
-            this.props.containerController.icon = trait.icon;
-            if (trait.canEditName) {
-                this.props.containerController.title = new ModifiableText(trait.displayName, (newTitle: string) => {
-                    trait.rename(newTitle);
-                }, trait.editableName);
-            } else {
-                this.props.containerController.title = trait.displayName;
-            }
+            runInAction(() => {
+                this.props.containerController.icon = trait.icon;
+                if (trait.canEditName) {
+                    this.props.containerController.title = new ModifiableText(trait.displayName, (newTitle: string) => {
+                        trait.rename(newTitle);
+                    }, trait.editableName);
+                } else {
+                    this.props.containerController.title = trait.displayName;
+                }
+            });
 
             this.setState({
                 results: results,

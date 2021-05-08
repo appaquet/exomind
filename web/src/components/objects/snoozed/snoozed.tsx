@@ -10,7 +10,8 @@ import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './snoozed.less';
-import DateUtil from '../../../utils/date';
+import DateUtil from '../../../utils/dates';
+import { runInAction } from 'mobx';
 
 interface IProps {
     selection?: Selection;
@@ -55,8 +56,10 @@ export default class Snoozed extends React.Component<IProps, IState> {
         })
 
         if (props.containerController) {
-            props.containerController.title = 'Snoozed';
-            props.containerController.icon = { fa: 'clock-o' };
+            runInAction(() => {
+                props.containerController.title = 'Snoozed';
+                props.containerController.icon = { fa: 'clock-o' };
+            });
         }
 
         this.state = {};

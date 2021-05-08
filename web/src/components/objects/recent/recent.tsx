@@ -10,6 +10,7 @@ import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './recent.less';
+import { runInAction } from 'mobx';
 
 interface IProps {
     selection?: Selection;
@@ -52,8 +53,10 @@ export default class Recent extends React.Component<IProps, IState> {
         })
 
         if (props.containerController) {
-            props.containerController.title = 'Recent';
-            props.containerController.icon = { fa: 'history' };
+            runInAction(() => {
+                props.containerController.title = 'Recent';
+                props.containerController.icon = { fa: 'history' };
+            });
         }
 
         this.state = {};

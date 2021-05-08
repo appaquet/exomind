@@ -4,7 +4,7 @@ import EmailFlows from '../../../utils/emails';
 import { exomind } from '../../../protos';
 import { EntityParent, Parents } from '../../../stores/collections';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
-import DateUtil from '../../../utils/date';
+import DateUtil from '../../../utils/dates';
 import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
 import EditableText from '../../interaction/editable-text/editable-text';
 import EntityIcon from '../entity-icon';
@@ -393,7 +393,7 @@ interface EntityParentsProps {
 @observer
 class EntityParents extends React.Component<EntityParentsProps> {
     static contextType = StoresContext;
-    context: Stores;
+    declare context: Stores;
 
     render(): React.ReactNode {
         const parents = this.context.collections.getEntityParents(this.props.entity);

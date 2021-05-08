@@ -8,7 +8,7 @@ import { Stores, StoresContext } from '../../../stores/stores';
 @observer
 export default class Settings extends React.Component {
   static contextType = StoresContext;
-  context: Stores;
+  declare context: Stores;
 
   render(): React.ReactNode {
     return (

@@ -17,11 +17,11 @@ interface IState {
 
 @observer
 export default class NodeConfig extends React.Component<IProps, IState> {
+  static contextType = StoresContext;
+  declare context: Stores;
+
   private mounted = true;
   private disco: Discovery;
-
-  static contextType = StoresContext;
-  context: Stores;
 
   constructor(props: IProps) {
     super(props);

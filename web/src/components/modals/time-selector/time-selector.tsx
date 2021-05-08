@@ -3,7 +3,7 @@ import React from 'react';
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/light.css";
 import './time-selector.less';
-import DateUtil, { SnoozeKey } from '../../../utils/date';
+import DateUtil, { SnoozeKey } from '../../../utils/dates';
 
 interface IProps {
     onSelectionDone: (date: Date) => void;

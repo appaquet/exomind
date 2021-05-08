@@ -10,6 +10,7 @@ import HtmlEditor from '../../interaction/html-editor/html-editor';
 import { ContainerController } from '../container-controller';
 import { Selection } from '../entity-list/selection';
 import './draft-email.less';
+import { runInAction } from 'mobx';
 
 interface IProps {
     entity: EntityTraits;
@@ -286,12 +287,16 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
     private handleDeleteDraft(): void {
         // TODO: ExomindDSL.on(this.props.entity).mutate.remove([this.props.draftTrait]).execute();
-        alert('not implemented');
+        // alert('not implemented');
 
         this.close();
     }
 
     private close(): void {
-        this.props.containerController?.close();
+        if (this.props.containerController) {
+            runInAction(() => {
+                this.props.containerController.closed = true;
+            });
+        }
     }
 }

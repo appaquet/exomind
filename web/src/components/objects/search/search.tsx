@@ -11,6 +11,7 @@ import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './search.less';
+import { runInAction } from 'mobx';
 
 interface IProps {
   query: string;
@@ -136,8 +137,10 @@ export class Search extends React.Component<IProps, IState> {
 
   private updateContainerTitle(props: IProps): void {
     if (props.containerController) {
-      props.containerController.title = `Search ${props.query}`;
-      props.containerController.icon = { fa: 'search' };
+      runInAction(() => {
+        props.containerController.title = `Search ${props.query}`;
+        props.containerController.icon = { fa: 'search' };
+      });
     }
   }
 }

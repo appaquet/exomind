@@ -19,7 +19,7 @@ interface IState {
 
 export class Header extends React.Component<IProps, IState> {
   static contextType = StoresContext;
-  context: Stores;
+  declare context: Stores;
 
   private debouncer: Debouncer;
 

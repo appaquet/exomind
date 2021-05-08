@@ -329,7 +329,9 @@ export default class EmailThread extends React.Component<IProps, IState> {
             .build();
         Exocore.store.mutate(mutation);
 
-        this.props.containerController?.close();
+        if (this.props.containerController) {
+            this.props.containerController.closed = true;
+        }
     }
 
     private handleReplyEmail(): void {

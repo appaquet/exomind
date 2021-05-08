@@ -25,7 +25,7 @@ class IProps {
 @observer
 export default class Layout extends React.Component<IProps> {
   static contextType = StoresContext;
-  context: Stores;
+  declare context: Stores;
 
   constructor(props: IProps) {
     super(props);

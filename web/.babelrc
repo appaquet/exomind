@@ -5,16 +5,17 @@
     "@babel/preset-flow"
   ],
   "plugins": [
+    // needed for mobx https://mobx.js.org/enabling-decorators.html#typescript
     [
       "@babel/plugin-proposal-decorators",
       {
-        "decoratorsBeforeExport": true
+        "legacy": true
       }
     ],
     [
       "@babel/plugin-proposal-class-properties",
       {
-        "loose": true
+        "loose": false
       }
     ]
   ]

@@ -11,7 +11,7 @@ import linkifyHtml from 'linkifyjs/html';
 import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
 import { EntityTrait, EntityTraits } from '../utils/entities';
-import DateUtil from './date';
+import DateUtil from './dates';
 import { fromProtoTimestamp } from 'exocore';
 
 export default class EmailUtil {

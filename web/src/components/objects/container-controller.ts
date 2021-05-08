@@ -1,39 +1,15 @@
+import { makeObservable, observable } from 'mobx';
 import { TraitIcon } from '../../utils/entities';
-import ObservableDictionary from '../../utils/observable-dictionary';
 import { HeaderAction } from './header';
 
-// TODO: Move to mobx observable
-export class ContainerController extends ObservableDictionary {
-    set title(value: string | ModifiableText) {
-        this.set('title', value);
-    }
+export class ContainerController {
+    @observable title: string | ModifiableText;
+    @observable icon: TraitIcon;
+    @observable actions: HeaderAction[];
+    @observable closed: boolean;
 
-    get title(): string | ModifiableText {
-        return this.get('title');
-    }
-
-    set icon(value: TraitIcon) {
-        this.set('icon', value);
-    }
-
-    get icon(): TraitIcon {
-        return this.get('icon');
-    }
-
-    set actions(value: HeaderAction[]) {
-        this.set('actions', value);
-    }
-
-    get actions(): HeaderAction[] {
-        return this.get('actions');
-    }
-
-    get closed(): boolean {
-        return this.get('closed');
-    }
-
-    close(): void {
-        this.set('closed', true);
+    constructor() {
+        makeObservable(this);
     }
 }
 

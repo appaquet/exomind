@@ -29,7 +29,7 @@ interface IState {
 @observer
 export class CollectionSelector extends React.Component<IProps, IState> {
     static contextType = StoresContext;
-    context: Stores;
+    declare context: Stores;
 
     private searchDebouncer: Debouncer;
 
