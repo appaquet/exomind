@@ -1,4 +1,4 @@
-import { TraitIcon } from '../../store/entities';
+import { TraitIcon } from '../../utils/entities';
 import ObservableDictionary from '../../utils/observable-dictionary';
 import { HeaderAction } from './header';
 

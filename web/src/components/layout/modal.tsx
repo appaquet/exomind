@@ -1,5 +1,5 @@
 import React from 'react';
-import { ModalStore } from '../../store/modal-store';
+import { ModalStore } from '../../stores/modal-store';
 import './modal.less';
 
 

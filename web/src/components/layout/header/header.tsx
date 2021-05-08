@@ -5,7 +5,7 @@ import Debouncer from '../../../utils/debouncer';
 import Path from '../../../utils/path';
 import { ColumnsConfig } from '../../pages/columns/columns-config';
 import './header.less';
-import { StoresContext, Stores } from '../../../store/stores';
+import { StoresContext, Stores } from '../../../stores/stores';
 
 interface IProps {
   path: Path;

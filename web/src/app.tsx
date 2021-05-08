@@ -2,8 +2,8 @@
 import React from 'react';
 import Layout from './components/layout/layout';
 import Navigation from './navigation';
-import { ModalRenderer, ModalStore } from './store/modal-store';
-import { StoresInstance, StoresContext } from './store/stores';
+import { ModalRenderer, ModalStore } from './stores/modal-store';
+import { StoresInstance, StoresContext } from './stores/stores';
 import Path from './utils/path';
 
 type IProps = Record<string, unknown>;

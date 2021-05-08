@@ -1,8 +1,8 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, WatchedQueryWrapper } from 'exocore';
 import React from 'react';
 import { exomind } from '../../protos';
-import { EntityTrait, EntityTraits } from "../../store/entities";
-import { ModalStore } from "../../store/modal-store";
+import { EntityTrait, EntityTraits } from "../../utils/entities";
+import { ModalStore } from "../../stores/modal-store";
 import { CollectionSelector } from '../modals/collection-selector/collection-selector';
 import TimeSelector from '../modals/time-selector/time-selector';
 import { ContainerController, ModifiableText } from "./container-controller";

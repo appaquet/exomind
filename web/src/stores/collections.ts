@@ -2,7 +2,7 @@ import { exocore, Exocore, QueryBuilder, WatchedQueryWrapper } from "exocore";
 import { memoize } from "lodash";
 import { observable, ObservableMap, runInAction } from "mobx";
 import { exomind } from "../protos";
-import { EntityTrait, EntityTraits, TraitIcon } from "./entities";
+import { EntityTrait, EntityTraits, TraitIcon } from "../utils/entities";
 
 export class CollectionStore {
     @observable private refreshAll = 0;

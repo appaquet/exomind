@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import { observer } from 'mobx-react';
 import React from 'react';
 import Navigation from '../../navigation';
-import { Stores, StoresContext } from '../../store/stores';
+import { Stores, StoresContext } from '../../stores/stores';
 import Path from '../../utils/path';
 import NodeConfig from '../pages/node-config/node-config';
 import { ColumnsConfig } from '../pages/columns/columns-config';
@@ -15,7 +15,7 @@ import Hamburger from './hamburger/hamburger';
 import { Header } from './header/header';
 import './layout.less';
 import Modal from './modal';
-import { ModalRenderer } from '../../store/modal-store';
+import { ModalRenderer } from '../../stores/modal-store';
 
 class IProps {
   path: Path;

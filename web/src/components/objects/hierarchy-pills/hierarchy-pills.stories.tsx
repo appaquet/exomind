@@ -6,9 +6,9 @@ import { registerTypes } from '../../../exocore';
 
 import '../../../style/style.less';
 import { HierarchyPills, IProps } from './hierarchy-pills';
-import { EntityParent } from '../../../store/collections';
+import { EntityParent } from '../../../stores/collections';
 import { exomind } from '../../../protos';
-import { TraitIcon } from '../../../store/entities';
+import { TraitIcon } from '../../../utils/entities';
 
 Exocore.default = new ExocoreInstance(null, null);
 registerTypes(Exocore.default);

@@ -1,6 +1,6 @@
 
 import React, { ChangeEvent } from 'react';
-import { Stores, StoresContext, StoresInstance } from '../../../store/stores';
+import { Stores, StoresContext, StoresInstance } from '../../../stores/stores';
 import { observer } from 'mobx-react';
 import { Discovery, Exocore } from 'exocore';
 import { bootNode, initNode, resetNode } from '../../../exocore';

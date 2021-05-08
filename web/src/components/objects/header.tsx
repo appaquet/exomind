@@ -3,7 +3,7 @@ import React from 'react';
 import EditableText from '../interaction/editable-text/editable-text';
 import classNames from 'classnames';
 import './header.less';
-import { TraitIcon } from '../../store/entities.js';
+import { TraitIcon } from '../../utils/entities.js';
 import EntityIcon from './entity-icon';
 
 interface IProps {

@@ -3,9 +3,9 @@ import classNames from 'classnames';
 import { Exocore, MutationBuilder, QueryBuilder } from 'exocore';
 import * as _ from 'lodash';
 import React, { ChangeEvent } from 'react';
-import EmailsLogic from '../../../logic/emails-logic';
+import EmailUtil from '../../../utils/emails';
 import { exocore, exomind } from '../../../protos';
-import { EntityTrait, EntityTraits } from '../../../store/entities';
+import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import HtmlEditor from '../../interaction/html-editor/html-editor';
 import { ContainerController } from '../container-controller';
 import { Selection } from '../entity-list/selection';
@@ -179,7 +179,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
             <span className="field-label">{displayName}</span>
             <span className="field-content">
                 <input
-                    type="text" value={EmailsLogic.formatContacts(fieldContacts, true)}
+                    type="text" value={EmailUtil.formatContacts(fieldContacts, true)}
                     onChange={this.handleContactFieldChange.bind(this, fieldName)}
                     onBlur={this.handleContactFieldBlur.bind(this, fieldName)}
                     placeholder="Type recipients" />
@@ -190,7 +190,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     private handleContactFieldChange(fieldName: string, e: ChangeEvent<HTMLInputElement>): void {
         const contactsString = e.target.value;
 
-        const contacts = EmailsLogic.parseContacts(contactsString)
+        const contacts = EmailUtil.parseContacts(contactsString)
 
         const lastChar = _.last(contactsString.trim());
         if (lastChar == ',') {
@@ -208,7 +208,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     }
 
     private handleContactFieldBlur(fieldName: string, e: ChangeEvent<HTMLInputElement>): void {
-        const contacts = EmailsLogic.parseContacts(e.target.value);
+        const contacts = EmailUtil.parseContacts(e.target.value);
         const draft = this.state.currentDraft as Record<string, exomind.base.IContact[]>;
         draft[fieldName] = contacts;
 
@@ -216,7 +216,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     }
 
     private renderBody(): React.ReactNode {
-        let editPart = EmailsLogic.extractHtmlPart(this.state.currentDraft.parts);
+        let editPart = EmailUtil.extractHtmlPart(this.state.currentDraft.parts);
         if (!editPart) {
             if (!_.isEmpty(this.state.currentDraft.parts)) {
                 editPart = _.first(this.state.currentDraft.parts);

@@ -1,9 +1,9 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
-import { EntityTraits } from '../../../store/entities';
-import { ModalStore } from '../../../store/modal-store';
-import { ExpandableQuery } from '../../../store/queries';
+import { EntityTraits } from '../../../utils/entities';
+import { ModalStore } from '../../../stores/modal-store';
+import { ExpandableQuery } from '../../../stores/queries';
 import { CollectionSelector } from '../../modals/collection-selector/collection-selector';
 import { ContainerController } from '../container-controller';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';

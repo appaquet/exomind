@@ -1,8 +1,7 @@
 import { Exocore, ExocoreInstance, LocalNode, WasmModule } from 'exocore';
 import { runInAction } from 'mobx';
-import Collection from './components/objects/collection/collection';
 import { exomind } from './protos';
-import { StoresInstance } from './store/stores';
+import { StoresInstance } from './stores/stores';
 
 export async function initNode(): Promise<WasmModule> {
     const module = await Exocore.ensureLoaded();

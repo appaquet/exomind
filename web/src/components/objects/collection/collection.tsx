@@ -1,6 +1,6 @@
 import { exomind } from "../../../protos";
 import React from 'react';
-import { EntityTrait, EntityTraits } from '../../../store/entities';
+import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { Children } from '../children/children';
 import { Selection } from '../entity-list/selection';
 

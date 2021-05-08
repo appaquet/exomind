@@ -1,5 +1,5 @@
 import { Exocore, exocore, fromProtoTimestamp, MutationBuilder } from 'exocore';
-import Emojis from '../logic/emojis';
+import Emojis from '../utils/emojis';
 import { exomind } from '../protos';
 
 export class EntityTraits {

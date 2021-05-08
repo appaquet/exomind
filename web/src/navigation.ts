@@ -1,6 +1,6 @@
 import { EventEmitter } from 'fbemitter';
 import { ColumnsConfig } from './components/pages/columns/columns-config';
-import { EntityTraits } from './store/entities';
+import { EntityTraits } from './utils/entities';
 import Path from './utils/path';
 
 export interface INavigationHost {

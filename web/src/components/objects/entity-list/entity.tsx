@@ -1,10 +1,10 @@
 import classNames from 'classnames';
 import * as React from 'react';
-import EmailFlows from '../../../logic/emails-logic';
+import EmailFlows from '../../../utils/emails';
 import { exomind } from '../../../protos';
-import { EntityParent, Parents } from '../../../store/collections';
-import { EntityTrait, EntityTraits } from '../../../store/entities';
-import DateUtil from '../../../utils/date-util';
+import { EntityParent, Parents } from '../../../stores/collections';
+import { EntityTrait, EntityTraits } from '../../../utils/entities';
+import DateUtil from '../../../utils/date';
 import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
 import EditableText from '../../interaction/editable-text/editable-text';
 import EntityIcon from '../entity-icon';
@@ -12,7 +12,7 @@ import { HierarchyPills } from '../hierarchy-pills/hierarchy-pills';
 import { SelectedItem, Selection } from "./selection";
 import { EntityActions } from './entity-action';
 import { observer } from 'mobx-react';
-import { Stores, StoresContext } from '../../../store/stores';
+import { Stores, StoresContext } from '../../../stores/stores';
 import './entity.less';
 
 export type DropEffect = ('move' | 'copy');

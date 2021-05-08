@@ -7,7 +7,7 @@ import './html-editor.less';
 import { Commands } from './commands';
 import { extractCurrentLink, findLinkEntities, Link, toggleLink } from './link';
 import { convertOldHTML, fromHTML, toHTML } from './convert';
-import { ModalStore } from '../../../store/modal-store';
+import { ModalStore } from '../../../stores/modal-store';
 import InputModal from '../../modals/input-modal/input-modal';
 
 const listMaxDepth = 4;

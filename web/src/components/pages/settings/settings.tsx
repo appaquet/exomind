@@ -3,7 +3,7 @@ import React from 'react';
 import './settings.less';
 import Navigation from '../../../navigation';
 import { observer } from 'mobx-react';
-import { Stores, StoresContext } from '../../../store/stores';
+import { Stores, StoresContext } from '../../../stores/stores';
 
 @observer
 export default class Settings extends React.Component {

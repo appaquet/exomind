@@ -1,8 +1,8 @@
 import { Exocore, exocore, MutationBuilder } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
-import { EntityTraits } from '../../../store/entities';
-import { ModalStore } from '../../../store/modal-store';
+import { EntityTraits } from '../../../utils/entities';
+import { ModalStore } from '../../../stores/modal-store';
 import InputModal from '../../modals/input-modal/input-modal';
 import TimeSelector from '../../modals/time-selector/time-selector';
 import { Selection } from "./selection";

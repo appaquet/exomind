@@ -4,7 +4,7 @@ import { Exocore, MutationBuilder } from 'exocore';
 import { exomind } from '../../../protos';
 import _ from 'lodash';
 import React from 'react';
-import { EntityTrait, EntityTraits } from '../../../store/entities';
+import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import EditableText from '../../interaction/editable-text/editable-text';
 import HtmlEditorControls from '../../interaction/html-editor/html-editor-controls';
 import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-editor';
