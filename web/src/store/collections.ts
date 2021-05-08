@@ -1,34 +1,68 @@
-import { Exocore, QueryBuilder } from "exocore";
+import { exocore, Exocore, QueryBuilder, WatchedQueryWrapper } from "exocore";
 import { memoize } from "lodash";
 import { observable, ObservableMap, runInAction } from "mobx";
 import { exomind } from "../protos";
 import { EntityTrait, EntityTraits, TraitIcon } from "./entities";
 
 export class CollectionStore {
-    private entityParents: ObservableMap<string, Parents> = observable.map();
-    private parentQueries: Map<string, Promise<EntityTrait<exomind.base.ICollection>>> = new Map();
+    @observable private refreshAll = 0;
+    private entityParents: Map<string, Parents> = observable.map();
+    private collections: ObservableMap<string, EntityTrait<exomind.base.ICollection>> = observable.map();
+    private query: WatchedQueryWrapper = null;
 
     getEntityParents(entity: EntityTraits): Parents | null {
+        this.refreshAll; // used to notify we need to refresh all
+
         const cacheKey = this.uniqueEntityId(entity);
 
-        const parents = this.entityParents.get(cacheKey)
+        let parents = this.entityParents.get(cacheKey)
         if (parents) {
             return parents;
         }
 
+        parents = this.getEntityParentsInner(entity);
+
         // prevent notifying components that call `getParents` in their render
         setTimeout(() => {
-            this.getEntityParentsAsync(entity).then((parents) => {
-                runInAction(() => {
-                    this.entityParents.set(cacheKey, parents);
-                });
-            })
+            runInAction(() => {
+                this.entityParents.set(cacheKey, parents);
+            });
         });
 
-        return null;
+        return parents;
     }
 
-    async getEntityParentsAsync(entity: EntityTraits, lineage?: Set<string>): Promise<Parents> {
+    fetchCollections(): void {
+        const query = QueryBuilder
+            .withTrait(exomind.base.Collection)
+            .count(9999)
+            .project(new exocore.store.Projection({
+                package: ["exomind.base.Collection"],
+            }))
+            .build();
+
+        if (this.query) {
+            this.query.free();
+            this.query  = null;
+        }
+
+        this.query = Exocore.store.watchedQuery(query);
+        this.query.onChange((results) => {
+            runInAction(() => {
+                for (const entity of results.entities) {
+                    const et = new EntityTraits(entity.entity);
+                    const col = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
+                    this.updateEntityCollection(entity.entity.id, col);
+                }
+
+                if (this.collections.size == 0) {
+                    this.refreshAll += 1;
+                }
+            });
+        });
+    }
+
+    private getEntityParentsInner(entity: EntityTraits, lineage?: Set<string>): (Parents | null) {
         const parents = new Parents();
 
         const colChildren = entity.traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild);
@@ -39,7 +73,7 @@ export class CollectionStore {
                 continue;
             }
 
-            const collection = await this.getCollection(parentId);
+            const collection = this.collections.get(parentId);
             if (!collection) {
                 continue;
             }
@@ -54,7 +88,7 @@ export class CollectionStore {
 
             const thisLineage = new Set(lineage);
             thisLineage.add(parentId);
-            const grandParents = await this.getEntityParentsAsync(collection.et, thisLineage);
+            const grandParents = this.getEntityParentsInner(collection.et, thisLineage);
 
             parent.parents = grandParents.get();
             sortCollections(parent.parents);
@@ -64,44 +98,6 @@ export class CollectionStore {
         }
 
         return parents;
-    }
-
-    async getCollection(id: string): Promise<EntityTrait<exomind.base.ICollection> | null> {
-        // TODO: Should batch queries
-
-        if (this.parentQueries.has(id)) {
-            return this.parentQueries.get(id);
-        }
-
-        let firstTime = true;
-        const colPromise = new Promise<EntityTrait<exomind.base.ICollection>>((resolve, failure) => {
-            const query = Exocore.store.watchedQuery(QueryBuilder.withIds(id).build());
-            query.onChange((results) => {
-                if (!results) {
-                    this.updateEntityCollection(id, null);
-                    failure(`couldn't fetch entity ${id}`);
-                    return;
-                }
-
-                for (const entity of results.entities) {
-                    const et = new EntityTraits(entity.entity);
-                    const col = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
-
-                    if (firstTime) {
-                        resolve(col);
-                        firstTime = false;
-                        return;
-                    } else {
-                        this.updateEntityCollection(id, col);
-                    }
-                }
-
-                resolve(null);
-            });
-        });
-        this.parentQueries.set(id, colPromise);
-
-        return await colPromise;
     }
 
     // create a unique cache key with entity id and operation id of collection child relations
@@ -115,22 +111,27 @@ export class CollectionStore {
     }
 
     private updateEntityCollection(entityId: string, col: EntityTrait<exomind.base.ICollection> | null) {
-        runInAction(() => {
-            if (col) {
-                this.parentQueries.set(entityId, Promise.resolve(col));
-            } else {
-                this.parentQueries.delete(entityId);
-            }
+        const current = this.collections.get(entityId);
+        if (current && current.trait.lastOperationId == col.trait.lastOperationId) {
+            // not changed
+            return;
+        }
 
-            // invalidate cache for all entities for which we fetched parents in which we are
-            for (const parentId of this.entityParents.keys()) {
-                const parent = this.entityParents.get(parentId);
-                const ids = parent.allIds();
-                if (ids.has(entityId)) {
-                    this.entityParents.delete(parentId);
-                }
+        if (col) {
+            // this.collectionQueries.set(entityId, Promise.resolve(col));
+            this.collections.set(entityId, col);
+        } else {
+            this.collections.delete(entityId);
+        }
+
+        // invalidate cache for all entities for which we fetched parents in which we are
+        for (const parentId of this.entityParents.keys()) {
+            const parent = this.entityParents.get(parentId);
+            const ids = parent.allIds();
+            if (ids.has(entityId)) {
+                this.entityParents.delete(parentId);
             }
-        });
+        }
     }
 }
 
@@ -157,7 +158,7 @@ export class Parents {
         return parents;
     }
 
-    allIds= memoize((): Set<string> => {
+    allIds = memoize((): Set<string> => {
         const ids = new Set<string>();
 
         const getParents = (parent: EntityParent) => {

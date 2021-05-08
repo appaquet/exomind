@@ -1,5 +1,6 @@
 import { Exocore, ExocoreInstance, LocalNode, WasmModule } from 'exocore';
 import { runInAction } from 'mobx';
+import Collection from './components/objects/collection/collection';
 import { exomind } from './protos';
 import { StoresInstance } from './store/stores';
 
@@ -61,6 +62,8 @@ export async function bootNode(): Promise<Exocore | null> {
             sessionStore.cellError = null;
             sessionStore.showDiscovery = false;
         });
+
+        StoresInstance.collections.fetchCollections();
 
         return instance;
 
