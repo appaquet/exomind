@@ -1,5 +1,5 @@
 import React from 'react';
-import { Stores, StoresContext } from '../../stores/stores';
+import { IStores, StoresContext } from '../../stores/stores';
 import './modal.less';
 
 
@@ -9,7 +9,7 @@ interface IProps {
 
 export default class Modal extends React.Component<IProps> {
   static contextType = StoresContext;
-  declare context: Stores;
+  declare context: IStores;
 
   render(): React.ReactNode {
     if (this.props.children) {

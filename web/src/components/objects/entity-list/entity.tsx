@@ -12,7 +12,7 @@ import { HierarchyPills } from '../hierarchy-pills/hierarchy-pills';
 import { SelectedItem, Selection } from "./selection";
 import { EntityActions } from './entity-action';
 import { observer } from 'mobx-react';
-import { Stores, StoresContext } from '../../../stores/stores';
+import { IStores, StoresContext } from '../../../stores/stores';
 import './entity.less';
 
 export type DropEffect = ('move' | 'copy');
@@ -393,7 +393,7 @@ interface EntityParentsProps {
 @observer
 class EntityParents extends React.Component<EntityParentsProps> {
     static contextType = StoresContext;
-    declare context: Stores;
+    declare context: IStores;
 
     render(): React.ReactNode {
         const parents = this.context.collections.getEntityParents(this.props.entity);

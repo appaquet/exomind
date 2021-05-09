@@ -10,7 +10,7 @@ import { Selection } from "./entity-list/selection";
 import { HeaderAction } from "./header";
 import { Message } from "./message";
 import { runInAction } from 'mobx';
-import { Stores, StoresContext } from '../../stores/stores';
+import { IStores, StoresContext } from '../../stores/stores';
 
 const Task = React.lazy(() => import(/*webpackChunkName: "component-task"*/'./task/task'));
 const Note = React.lazy(() => import(/*webpackChunkName: "component-note"*/'./note/note'));
@@ -38,7 +38,7 @@ interface State {
 
 export class EntityComponent extends React.Component<Props, State> {
     static contextType = StoresContext;
-    declare context: Stores;
+    declare context: IStores;
 
     private entityQuery: WatchedQueryWrapper;
 

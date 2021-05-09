@@ -3,12 +3,12 @@ import React from 'react';
 import './settings.less';
 import Navigation from '../../../navigation';
 import { observer } from 'mobx-react';
-import { Stores, StoresContext } from '../../../stores/stores';
+import { IStores, StoresContext } from '../../../stores/stores';
 
 @observer
 export default class Settings extends React.Component {
   static contextType = StoresContext;
-  declare context: Stores;
+  declare context: IStores;
 
   render(): React.ReactNode {
     return (

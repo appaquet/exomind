@@ -8,7 +8,7 @@ import { Commands } from './commands';
 import { extractCurrentLink, findLinkEntities, Link, toggleLink } from './link';
 import { convertOldHTML, fromHTML, toHTML } from './convert';
 import InputModal from '../../modals/input-modal/input-modal';
-import { Stores, StoresContext } from '../../../stores/stores';
+import { IStores, StoresContext } from '../../../stores/stores';
 
 const listMaxDepth = 4;
 
@@ -34,7 +34,7 @@ interface IState {
 
 export default class HtmlEditor extends React.Component<IProps, IState> {
   static contextType = StoresContext;
-  declare context: Stores;
+  declare context: IStores;
 
   private editorRef: RefObject<Editor>;
   private lastTriggeredChangeState?: ContentState;

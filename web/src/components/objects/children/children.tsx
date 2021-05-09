@@ -12,7 +12,7 @@ import { ListActions } from "../entity-list/list-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import Long from "long";
-import { Stores, StoresContext } from "../../../stores/stores";
+import { IStores, StoresContext } from "../../../stores/stores";
 import './children.less';
 
 const PINNED_WEIGHT = 5000000000000;
@@ -40,7 +40,7 @@ interface IState {
 
 export class Children extends React.Component<IProps, IState> {
     static contextType = StoresContext;
-    declare context: Stores;
+    declare context: IStores;
 
     private entityQuery: ExpandableQuery;
     private parentQuery: WatchedQueryWrapper;

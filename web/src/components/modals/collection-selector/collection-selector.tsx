@@ -6,7 +6,7 @@ import React from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
-import { Stores, StoresContext } from '../../../stores/stores';
+import { IStores, StoresContext } from '../../../stores/stores';
 import Debouncer from '../../../utils/debouncer';
 import Scrollable from '../../interaction/scrollable/scrollable';
 import EntityIcon from '../../objects/entity-icon';
@@ -29,7 +29,7 @@ interface IState {
 @observer
 export class CollectionSelector extends React.Component<IProps, IState> {
     static contextType = StoresContext;
-    declare context: Stores;
+    declare context: IStores;
 
     private searchDebouncer: Debouncer;
 

@@ -11,7 +11,7 @@ import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './search.less';
 import { runInAction } from 'mobx';
-import { Stores, StoresContext } from '../../../stores/stores';
+import { IStores, StoresContext } from '../../../stores/stores';
 
 interface IProps {
   query: string;
@@ -28,7 +28,7 @@ interface IState {
 
 export class Search extends React.Component<IProps, IState> {
   static contextType = StoresContext;
-  declare context: Stores;
+  declare context: IStores;
 
   private entityQuery?: ExpandableQuery;
 

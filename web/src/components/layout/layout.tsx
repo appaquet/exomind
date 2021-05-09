@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import { observer } from 'mobx-react';
 import React from 'react';
 import Navigation from '../../navigation';
-import { Stores, StoresContext } from '../../stores/stores';
+import { IStores, StoresContext } from '../../stores/stores';
 import NodeConfig from '../pages/node-config/node-config';
 import { ColumnsConfig } from '../pages/columns/columns-config';
 import Columns from '../pages/columns/columns';
@@ -18,7 +18,7 @@ import Modal from './modal';
 @observer
 export default class Layout extends React.Component {
   static contextType = StoresContext;
-  declare context: Stores;
+  declare context: IStores;
 
   render(): React.ReactNode {
     const classes = classNames({

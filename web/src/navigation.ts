@@ -1,6 +1,6 @@
 import { runInAction } from 'mobx';
 import { ColumnsConfig } from './components/pages/columns/columns-config';
-import { StoresInstance } from './stores/stores';
+import { Stores } from './stores/stores';
 import { EntityTraits } from './utils/entities';
 import Path from './utils/path';
 
@@ -23,12 +23,12 @@ export default class Navigation {
   }
 
   static get currentPath(): Path {
-    return StoresInstance.session.currentPath;
+    return Stores.session.currentPath;
   }
 
   static set currentPath(path: Path) {
     runInAction(() => {
-      StoresInstance.session.currentPath = path;
+      Stores.session.currentPath = path;
     });
   }
 

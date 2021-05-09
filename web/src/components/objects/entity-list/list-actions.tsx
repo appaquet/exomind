@@ -5,7 +5,7 @@ import { EntityTraits } from '../../../utils/entities';
 import InputModal from '../../modals/input-modal/input-modal';
 import TimeSelector from '../../modals/time-selector/time-selector';
 import { Selection } from "./selection";
-import { Stores, StoresContext } from '../../../stores/stores';
+import { IStores, StoresContext } from '../../../stores/stores';
 
 interface IProps {
     parent: EntityTraits;
@@ -20,7 +20,7 @@ interface IProps {
 
 export class ListActions extends React.Component<IProps> {
     static contextType = StoresContext;
-    declare context: Stores;
+    declare context: IStores;
 
     render(): React.ReactNode {
         if (this.props.selection.length <= 1) {
