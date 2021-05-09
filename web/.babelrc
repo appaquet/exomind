@@ -1,9 +1,5 @@
 {
-  "presets": [
-    "@babel/preset-env",
-    "@babel/preset-react",
-    "@babel/preset-flow"
-  ],
+  "presets": ["@babel/preset-env", "@babel/preset-typescript", "@babel/preset-react"],
   "plugins": [
     // needed for mobx https://mobx.js.org/enabling-decorators.html#typescript
     [
@@ -15,7 +11,19 @@
     [
       "@babel/plugin-proposal-class-properties",
       {
-        "loose": false
+        "loose": true
+      }
+    ],
+    [
+      "@babel/plugin-proposal-private-methods",
+      {
+        "loose": true
+      }
+    ],
+    [
+      "@babel/plugin-proposal-private-property-in-object", 
+      { 
+      "loose": true 
       }
     ]
   ]

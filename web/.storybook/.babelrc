@@ -1,0 +1,10 @@
+{
+  "presets": ["@babel/preset-env", "@babel/preset-typescript", "@babel/preset-react"],
+  "plugins": [
+    // decorators needed for mobx https://mobx.js.org/enabling-decorators.html#typescript
+    // but it then chokes in storybook, this fixes the issue
+    // see https://github.com/storybookjs/storybook/issues/12369#issuecomment-698221904
+    [ "@babel/plugin-proposal-decorators", { "decoratorsBeforeExport": true } ],
+    "@babel/plugin-proposal-class-properties"
+  ]
+}

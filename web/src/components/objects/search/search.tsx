@@ -2,7 +2,6 @@ import { Exocore, exocore, MutationBuilder, QueryBuilder } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
-import { ModalStore } from '../../../stores/modal-store';
 import { ExpandableQuery } from '../../../stores/queries';
 import { CollectionSelector } from '../../modals/collection-selector/collection-selector';
 import { ContainerController } from '../container-controller';
@@ -12,6 +11,7 @@ import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './search.less';
 import { runInAction } from 'mobx';
+import { Stores, StoresContext } from '../../../stores/stores';
 
 interface IProps {
   query: string;
@@ -27,6 +27,9 @@ interface IState {
 }
 
 export class Search extends React.Component<IProps, IState> {
+  static contextType = StoresContext;
+  declare context: Stores;
+
   private entityQuery?: ExpandableQuery;
 
   constructor(props: IProps) {
@@ -115,7 +118,7 @@ export class Search extends React.Component<IProps, IState> {
   }
 
   private handleEntityMoveCollection(et: EntityTraits) {
-    ModalStore.showModal(() => {
+    this.context.session.showModal(() => {
       return <CollectionSelector entity={et} />;
     });
   }

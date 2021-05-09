@@ -2,7 +2,6 @@ import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, Watc
 import React from 'react';
 import { exomind } from '../../protos';
 import { EntityTrait, EntityTraits } from "../../utils/entities";
-import { ModalStore } from "../../stores/modal-store";
 import { CollectionSelector } from '../modals/collection-selector/collection-selector';
 import TimeSelector from '../modals/time-selector/time-selector';
 import { ContainerController, ModifiableText } from "./container-controller";
@@ -11,6 +10,7 @@ import { Selection } from "./entity-list/selection";
 import { HeaderAction } from "./header";
 import { Message } from "./message";
 import { runInAction } from 'mobx';
+import { Stores, StoresContext } from '../../stores/stores';
 
 const Task = React.lazy(() => import(/*webpackChunkName: "component-task"*/'./task/task'));
 const Note = React.lazy(() => import(/*webpackChunkName: "component-note"*/'./note/note'));
@@ -37,6 +37,9 @@ interface State {
 }
 
 export class EntityComponent extends React.Component<Props, State> {
+    static contextType = StoresContext;
+    declare context: Stores;
+
     private entityQuery: WatchedQueryWrapper;
 
     constructor(props: Props) {
@@ -182,20 +185,20 @@ export class EntityComponent extends React.Component<Props, State> {
     private handleShowCollectionSelector = (): void => {
         if (this.state.results && this.state.results.entities.length > 0) {
             const entity = new EntityTraits(this.state.results.entities[0].entity);
-            ModalStore.showModal(() => {
+            this.context.session.showModal(() => {
                 return <CollectionSelector entity={entity} />;
             });
         }
     }
 
     private handleShowTimeSelector = (): void => {
-        ModalStore.showModal(() => {
+        this.context.session.showModal(() => {
             return <TimeSelector onSelectionDone={(date) => this.handleCloseTimeSelector(date)} />;
         });
     }
 
     private handleCloseTimeSelector(date: Date): void {
-        ModalStore.hideModal();
+        this.context.session.hideModal();
 
         let mb = MutationBuilder
             .updateEntity(this.state.entityTraits.id)

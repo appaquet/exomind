@@ -1,6 +1,7 @@
 import { LocalNode } from 'exocore';
 import { observable, action, computed, autorun, makeAutoObservable } from 'mobx';
 import React from 'react';
+import Path from '../utils/path';
 import { CollectionStore } from './collections';
 
 export interface ISettingsStore {
@@ -59,12 +60,16 @@ export class PersistedStore implements ISettingsStore {
     }
 }
 
+export type ModalRenderer = () => React.ReactNode;
+
 export class SessionStore {
     @observable private _node: LocalNode = null;
 
     constructor() {
         makeAutoObservable(this);
     }
+
+    @observable currentPath = new Path('/');
 
     get node(): LocalNode {
         return this._node;
@@ -82,6 +87,16 @@ export class SessionStore {
     @observable cellInitialized = false;
 
     @observable cellError?: string;
+
+    @observable currentModal?: ModalRenderer;
+
+    @action showModal(render: ModalRenderer): void {
+        this.currentModal = render;
+    }
+
+    @action hideModal(): void {
+        this.currentModal = null;
+    }
 }
 
 export interface Stores {

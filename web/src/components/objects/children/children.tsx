@@ -3,7 +3,6 @@ import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, Trai
 import React from 'react';
 import { exomind } from "../../../protos";
 import { EntityTraits } from '../../../utils/entities';
-import { ModalStore } from "../../../stores/modal-store";
 import { ExpandableQuery } from "../../../stores/queries";
 import { CollectionSelector } from "../../modals/collection-selector/collection-selector";
 import TimeSelector from "../../modals/time-selector/time-selector";
@@ -13,6 +12,7 @@ import { ListActions } from "../entity-list/list-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import Long from "long";
+import { Stores, StoresContext } from "../../../stores/stores";
 import './children.less';
 
 const PINNED_WEIGHT = 5000000000000;
@@ -39,6 +39,9 @@ interface IState {
 }
 
 export class Children extends React.Component<IProps, IState> {
+    static contextType = StoresContext;
+    declare context: Stores;
+
     private entityQuery: ExpandableQuery;
     private parentQuery: WatchedQueryWrapper;
     private parentId: string;
@@ -231,13 +234,13 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private handleEntityPostpone(et: EntityTraits): ActionResult {
-        ModalStore.showModal(() => {
+        this.context.session.showModal(() => {
             return <TimeSelector onSelectionDone={(date) => this.handleTimeSelectorDone(et, date)} />;
         });
     }
 
     private handleTimeSelectorDone(et: EntityTraits, date: Date) {
-        ModalStore.hideModal();
+        this.context.session.hideModal();
 
         let mb = MutationBuilder
             .updateEntity(et.id)
@@ -263,7 +266,7 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private handleEntityMoveCollection(et: EntityTraits) {
-        ModalStore.showModal(() => {
+        this.context.session.showModal(() => {
             return <CollectionSelector entity={et} />;
         });
     }

@@ -2,10 +2,10 @@ import { Exocore, exocore, MutationBuilder } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
-import { ModalStore } from '../../../stores/modal-store';
 import InputModal from '../../modals/input-modal/input-modal';
 import TimeSelector from '../../modals/time-selector/time-selector';
 import { Selection } from "./selection";
+import { Stores, StoresContext } from '../../../stores/stores';
 
 interface IProps {
     parent: EntityTraits;
@@ -19,6 +19,9 @@ interface IProps {
 }
 
 export class ListActions extends React.Component<IProps> {
+    static contextType = StoresContext;
+    declare context: Stores;
+
     render(): React.ReactNode {
         if (this.props.selection.length <= 1) {
             return this.renderCreationActions();
@@ -118,7 +121,7 @@ export class ListActions extends React.Component<IProps> {
 
     private handleNewLinkClick = () => {
         const createLink = (url?: string) => {
-            ModalStore.hideModal();
+            this.context.session.hideModal();
 
             if (!url) {
                 return;
@@ -141,7 +144,7 @@ export class ListActions extends React.Component<IProps> {
             this.executeNewEntityMutation(mutation);
         }
 
-        ModalStore.showModal(() => {
+        this.context.session.showModal(() => {
             return <InputModal 
                 text="URL of the link"
                 onDone={createLink} />;
@@ -159,13 +162,13 @@ export class ListActions extends React.Component<IProps> {
 
     private handlePostponeClick = () => {
 
-        ModalStore.showModal(() => {
+        this.context.session.showModal(() => {
             return <TimeSelector onSelectionDone={this.handleTimeSelectorDone} />;
         });
     }
 
     private handleTimeSelectorDone = (/*date: Date*/) => {
-        ModalStore.hideModal();
+        this.context.session.hideModal();
 
         // TODO: Postpone all selected
         // _.forEach(this.props.selection, (entity) => {

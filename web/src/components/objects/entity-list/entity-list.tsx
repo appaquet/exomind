@@ -40,6 +40,7 @@ export interface IDroppedItem {
 
     effect: DropEffect,
 }
+
 export class EntityList extends React.Component<IProps> {
     constructor(props: IProps) {
         super(props);

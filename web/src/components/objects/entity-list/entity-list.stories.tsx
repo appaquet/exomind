@@ -20,10 +20,11 @@ export default {
 
 const Template: Story<IProps> = (args) => <EntityList {...args} />;
 
+
 export const List = Template.bind({});
 List.args = {
     entities: [
-        new exocore.store.Entity({
+        new EntityTraits(new exocore.store.Entity({
             id: '1',
             traits: [
                 new exocore.store.Trait({
@@ -33,8 +34,8 @@ List.args = {
                     })),
                 })
             ]
-        }),
-        new exocore.store.Entity({
+        })),
+        new EntityTraits(new exocore.store.Entity({
             id: '2',
             traits: [
                 new exocore.store.Trait({
@@ -45,8 +46,8 @@ List.args = {
                     })),
                 })
             ]
-        }),
-        new exocore.store.Entity({
+        })),
+        new EntityTraits(new exocore.store.Entity({
             id: '3',
             traits: [
                 new exocore.store.Trait({
@@ -56,10 +57,10 @@ List.args = {
                         from: new exomind.base.Contact({ name: 'Some name' }),
                         snippet: 'Some snippet'
                     })),
-                })
-            ]
-        }),
-        new exocore.store.Entity({
+                }),
+            ],
+        })),
+        new EntityTraits(new exocore.store.Entity({
             id: '4',
             traits: [
                 new exocore.store.Trait({
@@ -69,8 +70,8 @@ List.args = {
                     })),
                 })
             ]
-        }),
-        new exocore.store.Entity({
+        })),
+        new EntityTraits(new exocore.store.Entity({
             id: '5',
             traits: [
                 new exocore.store.Trait({
@@ -80,7 +81,7 @@ List.args = {
                     })),
                 })
             ]
-        }),
+        }))
     ],
     actionsForEntity: (et: EntityTraits) => {
         const actions = new EntityActions([
@@ -98,4 +99,4 @@ List.args = {
 
         return actions;
     },
-};
+} as IProps;
