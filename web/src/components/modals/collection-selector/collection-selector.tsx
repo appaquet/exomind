@@ -1,5 +1,5 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { memoize } from 'lodash';
 import { observer } from 'mobx-react';
 import React from 'react';
