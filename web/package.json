@@ -19,9 +19,7 @@
     "electron": "yarn electron_build && electron-builder --dir",
     "electron_dist": "yarn electron_build && electron-builder",
     "test": "jest",
-    "lint": "tsc --noEmit && eslint 'src/**/*.ts' 'src/**/*.tsx'",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "lint": "tsc --noEmit && eslint 'src/**/*.ts' 'src/**/*.tsx'"
   },
   "electronWebpack": {
     "main": {
