@@ -1,7 +1,7 @@
 
 import classNames from 'classnames';
 import { Exocore, MutationBuilder, QueryBuilder } from 'exocore';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import React, { ChangeEvent } from 'react';
 import EmailUtil from '../../../utils/emails';
 import { exocore, exomind } from '../../../protos';
