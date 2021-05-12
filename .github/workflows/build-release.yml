@@ -43,7 +43,7 @@ jobs:
           target: ${{ matrix.pair.target }}
           override: true
 
-      - uses: actions-rs/cargo@v1
+      - uses: actions-rs/cargo@v1.0.3
         with:
           use-cross: ${{ matrix.pair.cross }}
           command: build

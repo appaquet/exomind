@@ -26,7 +26,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Check formatting
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.3
         with:
           command: fmt
           args: --all -- --check
@@ -60,7 +60,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - uses: actions-rs/cargo@v1
+      - uses: actions-rs/cargo@v1.0.3
         with:
           use-cross: ${{ matrix.pair.cross }}
           command: check
@@ -92,7 +92,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Tests
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.3
         with:
           command: test
           args: --all --all-features
@@ -139,7 +139,7 @@ jobs:
           ./apps/tools/build_fixtures.sh
 
       - name: Tests
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.3
         with:
           command: test
           args: --all --all-features
