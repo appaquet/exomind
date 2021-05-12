@@ -69,10 +69,6 @@
     "starts-with-emoji": "^2.0.0"
   },
   "devDependencies": {
-    "@storybook/addon-actions": "^6.2.9",
-    "@storybook/addon-essentials": "^6.2.9",
-    "@storybook/addon-links": "^6.2.9",
-    "@storybook/react": "^6.2.9",
     "@types/classnames": "^2.3.1",
     "@types/domhandler": "^2.4.1",
     "@types/draft-convert": "^2.1.2",
@@ -104,7 +100,6 @@
     "jest": "^26.5.3",
     "json-loader": "^0.5.7",
     "less-loader": "^7.3.0",
-    "storybook-less-loader": "^0.1.0",
     "style-loader": "^2.0.0",
     "ts-jest": "^26.5.6",
     "ts-loader": "^8.1.0",
