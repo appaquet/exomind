@@ -10,6 +10,7 @@ export default class DateUtil {
   static MaxEpoch = 32506380061000;
   static shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+  // Exposed to iOS
   static getSnoozeChoices(): ISnoozeChoice[] {
     return [
       { key: 'evening', copy: 'This Evening' },
@@ -23,6 +24,7 @@ export default class DateUtil {
     ];
   }
 
+  // Exposed to iOS
   static getSnoozeIcon(key: SnoozeKey): string {
     switch (key) {
       case 'evening':
@@ -44,6 +46,7 @@ export default class DateUtil {
     }
   }
 
+  // Exposed to iOS
   static snoozeDate(textDiff: SnoozeKey): Date {
     let date = new Date();
     date.setMinutes(0);
