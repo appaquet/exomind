@@ -13,41 +13,40 @@ import './column.less';
 import { ColumnConfig } from './columns-config';
 import { Message } from '../../objects/message';
 import copy from 'clipboard-copy';
+import { observer } from 'mobx-react';
+import { observable } from 'mobx';
 
 interface IProps {
-    columnConfig: ColumnConfig;
-    columnId: number;
+  columnConfig: ColumnConfig;
+  columnId: number;
 
-    selection?: Selection;
+  selection?: Selection;
 
-    onSelectionChange: (sel: Selection) => void;
-    onClose: () => void;
+  onSelectionChange: (sel: Selection) => void;
+  onClose: () => void;
 }
 
 interface IState {
-    value: string;
-    containerController: ContainerController;
+  value: string;
 }
 
+@observer
 export default class Column extends React.Component<IProps, IState> {
+  @observable private containerController: ContainerController = new ContainerController();
+
   constructor(props: IProps) {
     super(props);
 
-      const containerController = new ContainerController();
-      containerController.onChange((key: string) => {
-        if (key === 'closed') {
-          props.onClose();
-        }
-        this.forceUpdate();
-      });
-
-      this.state = {
-        value: props.columnConfig.value,
-        containerController: containerController
-      }
+    this.state = {
+      value: props.columnConfig.value,
+    }
   }
 
   render(): React.ReactNode {
+    if (this.containerController.closed) {
+      this.props.onClose();
+    }
+
     const colKey = `column-${this.props.columnId}`;
     const classes = classNames({
       column: true,
@@ -55,18 +54,18 @@ export default class Column extends React.Component<IProps, IState> {
     });
 
     let title, editableTitle, titleRenameHandler;
-    if (this.state.containerController.title instanceof ModifiableText) {
-      title = this.state.containerController.title.value || '';
-      titleRenameHandler = this.state.containerController.title.onChange;
-      editableTitle = this.state.containerController.title.editValue || title;
+    if (this.containerController.title instanceof ModifiableText) {
+      title = this.containerController.title.value || '';
+      titleRenameHandler = this.containerController.title.onChange;
+      editableTitle = this.containerController.title.editValue || title;
     } else {
-      title = this.state.containerController.title || '';
+      title = this.containerController.title || '';
       titleRenameHandler = null;
     }
 
     const headerActions = [];
-    if (this.state.containerController.actions) {
-      this.state.containerController.actions.forEach(action => {
+    if (this.containerController.actions) {
+      this.containerController.actions.forEach(action => {
         headerActions.push(action);
       });
     }
@@ -89,7 +88,7 @@ export default class Column extends React.Component<IProps, IState> {
           title={title}
           editableTitle={editableTitle}
           onTitleRename={titleRenameHandler}
-          icon={this.state.containerController.icon}
+          icon={this.containerController.icon}
           actions={headerActions}
         />
 
@@ -101,21 +100,21 @@ export default class Column extends React.Component<IProps, IState> {
   private renderContent() {
     if (this.props.columnConfig.isInbox) {
       return <Inbox
-        containerController={this.state.containerController}
+        containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
       />;
 
     } else if (this.props.columnConfig.isSnoozed) {
       return <Snoozed
-        containerController={this.state.containerController}
+        containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
       />;
 
     } else if (this.props.columnConfig.isHistory) {
       return <Recent
-        containerController={this.state.containerController}
+        containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
       />;
@@ -123,7 +122,7 @@ export default class Column extends React.Component<IProps, IState> {
     } else if (this.props.columnConfig.isSearch) {
       return <Search
         query={this.props.columnConfig.value}
-        containerController={this.state.containerController}
+        containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
       />;
@@ -131,7 +130,7 @@ export default class Column extends React.Component<IProps, IState> {
     } else if (this.props.columnConfig.isEntity) {
       return <EntityComponent
         entityId={this.props.columnConfig.value}
-        containerController={this.state.containerController}
+        containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
       />;
@@ -140,7 +139,7 @@ export default class Column extends React.Component<IProps, IState> {
       return <EntityComponent
         entityId={this.props.columnConfig.value}
         traitId={this.props.columnConfig.extra}
-        containerController={this.state.containerController}
+        containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
       />;

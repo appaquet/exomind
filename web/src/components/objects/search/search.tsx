@@ -1,9 +1,8 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
-import { EntityTraits } from '../../../store/entities';
-import { ModalStore } from '../../../store/modal-store';
-import { ExpandableQuery } from '../../../store/queries';
+import { EntityTraits } from '../../../utils/entities';
+import { ExpandableQuery } from '../../../stores/queries';
 import { CollectionSelector } from '../../modals/collection-selector/collection-selector';
 import { ContainerController } from '../container-controller';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
@@ -11,6 +10,8 @@ import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './search.less';
+import { runInAction } from 'mobx';
+import { IStores, StoresContext } from '../../../stores/stores';
 
 interface IProps {
   query: string;
@@ -26,6 +27,9 @@ interface IState {
 }
 
 export class Search extends React.Component<IProps, IState> {
+  static contextType = StoresContext;
+  declare context: IStores;
+
   private entityQuery?: ExpandableQuery;
 
   constructor(props: IProps) {
@@ -114,7 +118,7 @@ export class Search extends React.Component<IProps, IState> {
   }
 
   private handleEntityMoveCollection(et: EntityTraits) {
-    ModalStore.showModal(() => {
+    this.context.session.showModal(() => {
       return <CollectionSelector entity={et} />;
     });
   }
@@ -136,8 +140,10 @@ export class Search extends React.Component<IProps, IState> {
 
   private updateContainerTitle(props: IProps): void {
     if (props.containerController) {
-      props.containerController.title = `Search ${props.query}`;
-      props.containerController.icon = { fa: 'search' };
+      runInAction(() => {
+        props.containerController.title = `Search ${props.query}`;
+        props.containerController.icon = { fa: 'search' };
+      });
     }
   }
 }

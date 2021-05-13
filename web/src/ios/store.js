@@ -1,2 +1,2 @@
-exomind.timeLogic = require('../logic/time-logic').default;
-exomind.emailsLogic = require('../logic/emails-logic').default;
+exomind.dateUtil = require('../utils/dates').default;
+exomind.emailUtil = require('../utils/emails').default;

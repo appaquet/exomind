@@ -1,12 +1,12 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { memoize } from 'lodash';
 import { observer } from 'mobx-react';
 import React from 'react';
 import { exomind } from '../../../protos';
-import { EntityTraits } from '../../../store/entities';
-import { ExpandableQuery } from '../../../store/queries';
-import { Stores, StoresContext } from '../../../store/stores';
+import { EntityTraits } from '../../../utils/entities';
+import { ExpandableQuery } from '../../../stores/queries';
+import { IStores, StoresContext } from '../../../stores/stores';
 import Debouncer from '../../../utils/debouncer';
 import Scrollable from '../../interaction/scrollable/scrollable';
 import EntityIcon from '../../objects/entity-icon';
@@ -29,7 +29,7 @@ interface IState {
 @observer
 export class CollectionSelector extends React.Component<IProps, IState> {
     static contextType = StoresContext;
-    context: Stores;
+    declare context: IStores;
 
     private searchDebouncer: Debouncer;
 

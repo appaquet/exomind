@@ -1,8 +1,7 @@
 import { Exocore, ExocoreInstance, LocalNode, WasmModule } from 'exocore';
 import { runInAction } from 'mobx';
-import Collection from './components/objects/collection/collection';
 import { exomind } from './protos';
-import { StoresInstance } from './store/stores';
+import { Stores } from './stores/stores';
 
 export async function initNode(): Promise<WasmModule> {
     const module = await Exocore.ensureLoaded();
@@ -19,12 +18,12 @@ export async function initNode(): Promise<WasmModule> {
         node.save_to_storage(localStorage);
     }
 
-    StoresInstance.session.node = node;
+    Stores.session.node = node;
     if (node.has_configured_cell) {
         bootNode();
     } else {
         runInAction(() => {
-            StoresInstance.session.showDiscovery = true;
+            Stores.session.showDiscovery = true;
         })
     }
 
@@ -39,7 +38,7 @@ export async function resetNode(): Promise<void> {
 }
 
 export function restartNode(): void {
-    const sessionStore = StoresInstance.session;
+    const sessionStore = Stores.session;
 
     runInAction(() => {
         sessionStore.cellInitialized = false;
@@ -51,7 +50,7 @@ export function restartNode(): void {
 }
 
 export async function bootNode(): Promise<Exocore | null> {
-    const sessionStore = StoresInstance.session;
+    const sessionStore = Stores.session;
 
     try {
         const instance = await Exocore.initialize(sessionStore.node);
@@ -63,7 +62,7 @@ export async function bootNode(): Promise<Exocore | null> {
             sessionStore.showDiscovery = false;
         });
 
-        StoresInstance.collections.fetchCollections();
+        Stores.collections.fetchCollections();
 
         return instance;
 

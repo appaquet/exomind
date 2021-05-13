@@ -1,7 +1,4 @@
-import { LocalNode } from 'exocore';
-import { observable, action, computed, autorun, makeAutoObservable } from 'mobx';
-import React from 'react';
-import { CollectionStore } from './collections';
+import { action, autorun, computed, makeAutoObservable, observable } from "mobx";
 
 export interface ISettingsStore {
     darkMode: boolean;
@@ -58,42 +55,3 @@ export class PersistedStore implements ISettingsStore {
         document.querySelector('html').dataset.theme = (this.darkMode) ? 'theme-dark' : '';
     }
 }
-
-export class SessionStore {
-    @observable private _node: LocalNode = null;
-
-    constructor() {
-        makeAutoObservable(this);
-    }
-
-    get node(): LocalNode {
-        return this._node;
-    }
-
-    @action set node(n: LocalNode) {
-        if (this._node) {
-            this._node.free();
-        }
-        this._node = n;
-    }
-
-    @observable showDiscovery = false;
-
-    @observable cellInitialized = false;
-
-    @observable cellError?: string;
-}
-
-export interface Stores {
-    readonly settings: PersistedStore;
-    readonly session: SessionStore;
-    readonly collections: CollectionStore;
-}
-
-export const StoresInstance: Stores = {
-    settings: new PersistedStore(),
-    session: new SessionStore(),
-    collections: new CollectionStore(),
-}
-
-export const StoresContext = React.createContext<Stores | null>(null);

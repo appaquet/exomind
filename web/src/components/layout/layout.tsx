@@ -2,8 +2,7 @@ import classNames from 'classnames';
 import { observer } from 'mobx-react';
 import React from 'react';
 import Navigation from '../../navigation';
-import { Stores, StoresContext } from '../../store/stores';
-import Path from '../../utils/path';
+import { IStores, StoresContext } from '../../stores/stores';
 import NodeConfig from '../pages/node-config/node-config';
 import { ColumnsConfig } from '../pages/columns/columns-config';
 import Columns from '../pages/columns/columns';
@@ -15,21 +14,11 @@ import Hamburger from './hamburger/hamburger';
 import { Header } from './header/header';
 import './layout.less';
 import Modal from './modal';
-import { ModalRenderer } from '../../store/modal-store';
-
-class IProps {
-  path: Path;
-  modalRenderer?: ModalRenderer;
-}
 
 @observer
-export default class Layout extends React.Component<IProps> {
+export default class Layout extends React.Component {
   static contextType = StoresContext;
-  context: Stores;
-
-  constructor(props: IProps) {
-    super(props);
-  }
+  declare context: IStores;
 
   render(): React.ReactNode {
     const classes = classNames({
@@ -40,11 +29,11 @@ export default class Layout extends React.Component<IProps> {
 
     const hamburgerMenu = (this.showHamburger) ?
       <Hamburger
-        path={this.props.path} /> : null;
+        path={this.context.session.currentPath} /> : null;
 
     const header = (!this.isFullscreen) ? (
       <Header
-        path={this.props.path} />
+        path={this.context.session.currentPath} />
     ) : null;
 
     return (
@@ -67,7 +56,7 @@ export default class Layout extends React.Component<IProps> {
   }
 
   private get isFullscreen(): boolean {
-    return Navigation.isFullscreenPath(this.props.path);
+    return Navigation.isFullscreenPath(this.context.session.currentPath);
   }
 
   private handleColumnsChange(config: ColumnsConfig): void {
@@ -75,17 +64,17 @@ export default class Layout extends React.Component<IProps> {
   }
 
   private renderModal(): React.ReactNode | null {
-    if (this.props.modalRenderer) {
-      return <Modal>{this.props.modalRenderer()}</Modal>;
+    if (this.context.session.currentModal) {
+      return <Modal>{this.context.session.currentModal()}</Modal>;
     }
   }
 
   private renderPath(): React.ReactNode {
-    const path = this.props.path;
+    const path = this.context.session.currentPath;
     if (Navigation.isNodeConfigPath(path) || this.context.session.showDiscovery) {
       return <NodeConfig />;
 
-    } else if (this.props.path.isRoot()) {
+    } else if (this.context.session.currentPath.isRoot()) {
       if (this.context.session.cellInitialized) {
         Navigation.navigate(Navigation.pathForInbox());
       }

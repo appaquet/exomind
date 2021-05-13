@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import React from "react";
-import { EntityParent, flattenHierarchy } from "../../../store/collections";
+import { EntityParent, flattenHierarchy } from "../../../stores/collections";
 import EntityIcon from "../entity-icon";
 import './hierarchy-pills.less';
 

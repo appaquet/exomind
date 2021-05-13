@@ -1,9 +1,9 @@
 import classNames from 'classnames';
 import React from 'react';
-import TimeLogic from '../../../logic/time-logic.js';
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/light.css";
 import './time-selector.less';
+import DateUtil, { SnoozeKey } from '../../../utils/dates';
 
 interface IProps {
     onSelectionDone: (date: Date) => void;
@@ -53,7 +53,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
     }
 
     private renderLaterChoices(): React.ReactNode {
-        return TimeLogic.getLaterChoices()
+        return DateUtil.getSnoozeChoices()
             .map((choice) => {
                 return (
                     <li onClick={this.handleTimeClick.bind(this, choice.key)} key={choice.key}>
@@ -98,13 +98,13 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         }
     }
 
-    private handleTimeClick(key: string): void {
+    private handleTimeClick(key: SnoozeKey): void {
         if (key === 'pick') {
             this.setState({
                 picker: true
             });
         } else {
-            const date = TimeLogic.textDiffToDate(key);
+            const date = DateUtil.snoozeDate(key);
             if (this.props.onSelectionDone) {
                 this.props.onSelectionDone(date);
             }

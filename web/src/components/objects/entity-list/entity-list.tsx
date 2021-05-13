@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import React from 'react';
-import { EntityTrait, EntityTraits } from "../../../store/entities";
+import { EntityTrait, EntityTraits } from "../../../utils/entities";
 import DragAndDrop from "../../interaction/drag-and-drop/drag-and-drop";
 import Scrollable from "../../interaction/scrollable/scrollable";
 import { ContainerController } from "../container-controller";
@@ -40,6 +40,7 @@ export interface IDroppedItem {
 
     effect: DropEffect,
 }
+
 export class EntityList extends React.Component<IProps> {
     constructor(props: IProps) {
         super(props);

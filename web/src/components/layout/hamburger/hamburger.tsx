@@ -4,7 +4,7 @@ import { Exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'e
 import { exomind } from '../../../protos';
 import React from 'react';
 import Navigation from '../../../navigation';
-import { EntityTrait, EntityTraits, TraitIcon } from '../../../store/entities';
+import { EntityTrait, EntityTraits, TraitIcon } from '../../../utils/entities';
 import Path from '../../../utils/path';
 import './hamburger.less';
 import EntityIcon from '../../objects/entity-icon';

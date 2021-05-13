@@ -1,6 +1,6 @@
 import React from 'react';
-import EmailsLogic from '../../../logic/emails-logic';
-import {EntityTraits, EntityTrait} from "../../../store/entities";
+import EmailUtil from '../../../utils/emails';
+import {EntityTraits, EntityTrait} from "../../../utils/entities";
 import {exomind} from '../../../protos';
 import './email-attachments.less';
 
@@ -27,7 +27,7 @@ export class EmailAttachments extends React.Component<IProps> {
     private renderAttachment(attach: exomind.base.IEmailAttachment): React.ReactNode {
         return (
             <li key={attach.key}>
-                <a href={EmailsLogic.attachmentUrl(this.props.entity, this.props.email, attach)} target="_blank" rel="noreferrer">
+                <a href={EmailUtil.attachmentUrl(this.props.entity, this.props.email, attach)} target="_blank" rel="noreferrer">
                 <span className="icon"/>
                 <span className="text">{attach.name ?? 'Unnamed'}</span></a>
             </li>

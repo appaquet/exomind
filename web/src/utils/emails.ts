@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+
 import { Element, Node } from 'domhandler';
 import * as domutils from 'domutils';
 import { exomind } from '../protos';
@@ -9,12 +10,11 @@ import linkify from 'linkifyjs';
 import linkifyHtml from 'linkifyjs/html';
 import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
-import Constants from '../constants';
-import { EntityTrait, EntityTraits } from '../store/entities';
-import DateUtil from '../utils/date-util';
+import { EntityTrait, EntityTraits } from '../utils/entities';
+import DateUtil from './dates';
 import { fromProtoTimestamp } from 'exocore';
 
-export default class EmailsLogic {
+export default class EmailUtil {
   static createReplyEmail(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
     // TODO: Create reply email
     // let parts = EmailsLogicXYZ.generateReplyParts(email);
@@ -68,14 +68,14 @@ export default class EmailsLogic {
 
   static generateReplyParts(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
     const formattedReceiveDate = DateUtil.toLongGmtFormat(fromProtoTimestamp(email.message.receivedDate));
-    const htmlPart = EmailsLogic.extractHtmlPart(email.message.parts);
-    const formattedFrom = EmailsLogic.formatContact(email.message.from, true);
+    const htmlPart = EmailUtil.extractHtmlPart(email.message.parts);
+    const formattedFrom = EmailUtil.formatContact(email.message.from, true);
     const dateLine = `On ${formattedReceiveDate} ${formattedFrom} wrote:`;
 
     let parts: exomind.base.IEmailPart[] = [];
     if (htmlPart) {
       const part = new exomind.base.EmailPart(htmlPart);
-      const html = EmailsLogic.sanitizeHtml(part.body);
+      const html = EmailUtil.sanitizeHtml(part.body);
       const newPart = new exomind.base.EmailPart({
         body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${html}</blockquote></div>`,
         mimeType: "text/html",
@@ -85,7 +85,7 @@ export default class EmailsLogic {
 
     } else if (email.message.parts.length > 0) {
       const plainPart = _.first(email.message.parts);
-      const body = EmailsLogic.plainTextToHtml(plainPart.body);
+      const body = EmailUtil.plainTextToHtml(plainPart.body);
       const newPart = new exomind.base.EmailPart({
         body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${body}</blockquote></div>`,
         mimeType: "text/html",
@@ -163,7 +163,7 @@ export default class EmailsLogic {
   }
 
   static formatContacts(contacts: exomind.base.IContact[], showAddress = false) {
-    return contacts.map((contact) => EmailsLogic.formatContact(contact, false, showAddress)).join(', ');
+    return contacts.map((contact) => EmailUtil.formatContact(contact, false, showAddress)).join(', ');
   }
 
   static formatDate(date: Date) {
@@ -212,13 +212,14 @@ export default class EmailsLogic {
 
   static injectInlineImages(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>, html: string) {
     _(email.message.attachments).filter(attach => !_.isEmpty(attach.inlinePlaceholder)).map(attach => {
-      html = html.replace('cid:' + attach.inlinePlaceholder, EmailsLogic.attachmentUrl(entity, email, attach));
+      html = html.replace('cid:' + attach.inlinePlaceholder, EmailUtil.attachmentUrl(entity, email, attach));
     }).value();
     return html;
   }
 
   static attachmentUrl(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>, attachment: exomind.base.IEmailAttachment) {
-    return `${Constants.apiUrl}/files/attachments/?entityId=${entity.id}&traitId=${email.id}&key=${attachment.key}`;
+    //return `${Constants.apiUrl}/files/attachments/?entityId=${entity.id}&traitId=${email.id}&key=${attachment.key}`;
+    return 'http://exomind.io';
   }
 
   static splitOriginalThreadHtml(html: string) {

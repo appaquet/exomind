@@ -3,15 +3,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader'
-        }
-      },
-
-      {
-        test: /\.tsx?$/,
+        test: /\.(tsx?|js?)$/,
         use: 'ts-loader',
         exclude: /node_modules/
       },
@@ -26,7 +18,7 @@ module.exports = {
       },
 
       {
-        test: /\.css$/i,
+        test: /\.css$/,
         use: ['style-loader', 'css-loader'],
       },
 
@@ -35,10 +27,10 @@ module.exports = {
         use: ['style-loader', 'css-loader', 'less-loader'],
       },
 
-      { test: /\.gif/, loader: 'url-loader?limit=10000&mimetype=image/gif' },
-      { test: /\.jpg/, loader: 'url-loader?limit=10000&mimetype=image/jpg' },
-      { test: /\.png/, loader: 'url-loader?limit=10000&mimetype=image/png' },
-      { test: /\.svg/, loader: 'url-loader?limit=10000&mimetype=image/svg+xml' },
+      { test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif' },
+      { test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg' },
+      { test: /\.png$/, loader: 'url-loader?limit=10000&mimetype=image/png' },
+      { test: /\.svg$/, loader: 'url-loader?limit=10000&mimetype=image/svg+xml' },
       { test: /\.woff(\?.*$|$)/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
       { test: /\.woff2(\?.*$|$)/, loader: "url-loader?limit=10000&minetype=application/font-woff" },
       { test: /\.ttf(\?.*$|$)/, loader: "file-loader" },

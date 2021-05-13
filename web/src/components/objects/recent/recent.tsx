@@ -2,14 +2,15 @@ import classNames from 'classnames';
 import { Exocore, exocore, MutationBuilder, QueryBuilder } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
-import { EntityTraits } from '../../../store/entities';
-import { ExpandableQuery } from '../../../store/queries';
+import { EntityTraits } from '../../../utils/entities';
+import { ExpandableQuery } from '../../../stores/queries';
 import { ContainerController } from '../container-controller';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './recent.less';
+import { runInAction } from 'mobx';
 
 interface IProps {
     selection?: Selection;
@@ -52,8 +53,10 @@ export default class Recent extends React.Component<IProps, IState> {
         })
 
         if (props.containerController) {
-            props.containerController.title = 'Recent';
-            props.containerController.icon = { fa: 'history' };
+            runInAction(() => {
+                props.containerController.title = 'Recent';
+                props.containerController.icon = { fa: 'history' };
+            });
         }
 
         this.state = {};

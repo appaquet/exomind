@@ -2,15 +2,16 @@ import classNames from 'classnames';
 import { Exocore, exocore, fromProtoTimestamp, MutationBuilder, QueryBuilder } from 'exocore';
 import { exomind } from '../../../protos';
 import React from 'react';
-import { EntityTrait, EntityTraits } from '../../../store/entities';
-import { ExpandableQuery } from '../../../store/queries';
+import { EntityTrait, EntityTraits } from '../../../utils/entities';
+import { ExpandableQuery } from '../../../stores/queries';
 import { ContainerController } from '../container-controller';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
 import './snoozed.less';
-import DateUtil from '../../../utils/date-util';
+import DateUtil from '../../../utils/dates';
+import { runInAction } from 'mobx';
 
 interface IProps {
     selection?: Selection;
@@ -55,8 +56,10 @@ export default class Snoozed extends React.Component<IProps, IState> {
         })
 
         if (props.containerController) {
-            props.containerController.title = 'Snoozed';
-            props.containerController.icon = { fa: 'clock-o' };
+            runInAction(() => {
+                props.containerController.title = 'Snoozed';
+                props.containerController.icon = { fa: 'clock-o' };
+            });
         }
 
         this.state = {};

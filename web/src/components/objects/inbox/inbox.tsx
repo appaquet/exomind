@@ -1,3 +1,4 @@
+import { runInAction } from 'mobx';
 import * as React from 'react';
 import { Children } from "../children/children";
 import { ContainerController } from "../container-controller";
@@ -15,8 +16,10 @@ export class Inbox extends React.Component<IProps> {
         super(props);
 
         if (props.containerController) {
-            props.containerController.title = 'Inbox';
-            props.containerController.icon = { fa: 'inbox' };
+            runInAction(() => {
+                props.containerController.title = 'Inbox';
+                props.containerController.icon = { fa: 'inbox' };
+            });
         }
     }
 

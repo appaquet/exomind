@@ -1,6 +1,6 @@
 
 import React, { ChangeEvent } from 'react';
-import { Stores, StoresContext, StoresInstance } from '../../../store/stores';
+import { IStores, StoresContext, Stores } from '../../../stores/stores';
 import { observer } from 'mobx-react';
 import { Discovery, Exocore } from 'exocore';
 import { bootNode, initNode, resetNode } from '../../../exocore';
@@ -17,11 +17,11 @@ interface IState {
 
 @observer
 export default class NodeConfig extends React.Component<IProps, IState> {
+  static contextType = StoresContext;
+  declare context: IStores;
+
   private mounted = true;
   private disco: Discovery;
-
-  static contextType = StoresContext;
-  context: Stores;
 
   constructor(props: IProps) {
     super(props);
@@ -69,7 +69,7 @@ export default class NodeConfig extends React.Component<IProps, IState> {
   }
 
   private startDiscovery() {
-    const sessionStore = StoresInstance.session;
+    const sessionStore = Stores.session;
 
     if (this.disco) {
       this.disco.free();

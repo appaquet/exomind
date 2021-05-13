@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { EntityTrait, EntityTraits } from '../../../store/entities';
+import { EntityTrait, EntityTraits } from '../../../utils/entities';
 
 export class Selection {
     items: SelectedItem[];

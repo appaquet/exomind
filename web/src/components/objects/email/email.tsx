@@ -1,8 +1,8 @@
 import classNames from 'classnames';
 import React from 'react';
-import EmailsLogic from '../../../logic/emails-logic';
+import EmailUtil from '../../../utils/emails';
 import { exomind } from '../../../protos';
-import { EntityTrait, EntityTraits } from '../../../store/entities';
+import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
 import './email.less';
@@ -39,7 +39,7 @@ export default class Email extends React.Component<IProps, IState> {
                 <div className="object-summary">
                     <div className="from field">
                         <span className="field-label">From</span>
-                        <span className="pill">{EmailsLogic.formatContact(email.message.from)}</span>
+                        <span className="pill">{EmailUtil.formatContact(email.message.from)}</span>
                     </div>
                     {this.renderContactField('to', 'To', email.message.to)}
                     {this.renderContactField('cc', 'CC', email.message.cc)}
@@ -78,7 +78,7 @@ export default class Email extends React.Component<IProps, IState> {
                 [key]: true
             });
             const pills = contacts.map(contact => {
-                return <span className="pill" key={contact.email}>{EmailsLogic.formatContact(contact)}</span>
+                return <span className="pill" key={contact.email}>{EmailUtil.formatContact(contact)}</span>
             });
             return <div className={classes}><span className="field-label">{label}</span> {pills}</div>
         }
@@ -86,10 +86,10 @@ export default class Email extends React.Component<IProps, IState> {
 
     private renderBody(): React.ReactNode {
         const email = this.props.emailTrait;
-        const htmlPart = EmailsLogic.extractHtmlPart(email.message.parts);
+        const htmlPart = EmailUtil.extractHtmlPart(email.message.parts);
         if (htmlPart) {
-            const bodyWithAttachment = EmailsLogic.injectInlineImages(this.props.entity, this.props.emailTrait, htmlPart.body);
-            const cleaned = EmailsLogic.sanitizeHtml(bodyWithAttachment);
+            const bodyWithAttachment = EmailUtil.injectInlineImages(this.props.entity, this.props.emailTrait, htmlPart.body);
+            const cleaned = EmailUtil.sanitizeHtml(bodyWithAttachment);
             const markup = { __html: cleaned };
             return <div dangerouslySetInnerHTML={markup} />;
 

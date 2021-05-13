@@ -10,7 +10,10 @@
     "allowJs": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
+
+    // needed for mobx https://mobx.js.org/enabling-decorators.html#typescript
     "experimentalDecorators": true,
+    "useDefineForClassFields": true,
     "lib": [
       "es2017",
       "esnext.array",

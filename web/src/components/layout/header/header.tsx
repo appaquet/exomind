@@ -5,7 +5,7 @@ import Debouncer from '../../../utils/debouncer';
 import Path from '../../../utils/path';
 import { ColumnsConfig } from '../../pages/columns/columns-config';
 import './header.less';
-import { StoresContext, Stores } from '../../../store/stores';
+import { StoresContext, IStores } from '../../../stores/stores';
 
 interface IProps {
   path: Path;
@@ -19,7 +19,7 @@ interface IState {
 
 export class Header extends React.Component<IProps, IState> {
   static contextType = StoresContext;
-  context: Stores;
+  declare context: IStores;
 
   private debouncer: Debouncer;
 

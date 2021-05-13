@@ -1,5 +1,5 @@
 import React from 'react';
-import { ModalStore } from '../../store/modal-store';
+import { IStores, StoresContext } from '../../stores/stores';
 import './modal.less';
 
 
@@ -8,6 +8,9 @@ interface IProps {
 }
 
 export default class Modal extends React.Component<IProps> {
+  static contextType = StoresContext;
+  declare context: IStores;
+
   render(): React.ReactNode {
     if (this.props.children) {
       return (
@@ -24,7 +27,7 @@ export default class Modal extends React.Component<IProps> {
     document.addEventListener('keydown', this.handleKeyDown, false);
   }
 
-  componentWillUnmount() : void{
+  componentWillUnmount(): void {
     document.removeEventListener('keydown', this.handleKeyDown, false);
   }
 
@@ -33,12 +36,12 @@ export default class Modal extends React.Component<IProps> {
   }
 
   private handleBackgroundClick = () => {
-    ModalStore.hideModal();
+    this.context.session.hideModal();
   }
 
   private handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
-      ModalStore.hideModal();
+      this.context.session.hideModal();
     }
   }
 }

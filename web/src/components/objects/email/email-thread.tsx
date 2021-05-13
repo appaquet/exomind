@@ -3,8 +3,8 @@ import { fromProtoTimestamp, MutationBuilder, Exocore } from 'exocore';
 import { exomind } from '../../../protos';
 import _ from 'lodash';
 import React from 'react';
-import EmailsLogic from '../../../logic/emails-logic';
-import { EntityTrait, EntityTraits } from '../../../store/entities';
+import EmailUtil from '../../../utils/emails';
+import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { SelectedItem, Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
 import './email-thread.less';
@@ -139,10 +139,10 @@ export default class EmailThread extends React.Component<IProps, IState> {
                 onMouseLeave={this.handleEmailMouseLeave.bind(this)}>
 
                 <div className="preview-header" onClick={this.handleEmailClick.bind(this, emailState, email)}>
-                    <span className="from">{EmailsLogic.formatContact(email.message.from)}</span>
+                    <span className="from">{EmailUtil.formatContact(email.message.from)}</span>
                     {snippetOrTo}
                     <span
-                        className="time">{EmailsLogic.formatDate(fromProtoTimestamp(email.message.receivedDate))}
+                        className="time">{EmailUtil.formatDate(fromProtoTimestamp(email.message.receivedDate))}
                     </span>
                     <span className="header-controls" onClick={this.handleOpenEmailClick.bind(this, emailState, email)}>
                         <i className="icon" />
@@ -187,7 +187,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         return <li key={draft.id} className={classes}>
             <div className="preview-header" onClick={this.handleDraftClick.bind(this, draft)}>
                 <span className="snippet">Draft reply</span>
-                <span className="time">{EmailsLogic.formatDate(draft.modificationDate ?? new Date())}</span>
+                <span className="time">{EmailUtil.formatDate(draft.modificationDate ?? new Date())}</span>
                 <span className="header-controls" onClick={this.handleDraftClick.bind(this, draft)}><i
                     className="icon" /></span>
             </div>
@@ -195,16 +195,16 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     private renderToContacts(email: EntityTrait<exomind.base.IEmail>): React.ReactNode {
-        const to = _(email.message.to).map(contact => EmailsLogic.formatContact(contact)).value();
-        const cc = _(email.message.cc).map(contact => EmailsLogic.formatContact(contact)).value();
-        const bcc = _(email.message.bcc).map(contact => EmailsLogic.formatContact(contact)).value();
+        const to = _(email.message.to).map(contact => EmailUtil.formatContact(contact)).value();
+        const cc = _(email.message.cc).map(contact => EmailUtil.formatContact(contact)).value();
+        const bcc = _(email.message.bcc).map(contact => EmailUtil.formatContact(contact)).value();
         const text = to.concat(cc).concat(bcc).join(', ');
 
         return <span className="to">to {text}</span>;
     }
 
     private renderEmailBody(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): React.ReactNode {
-        const htmlPart = EmailsLogic.extractHtmlPart(email.message.parts);
+        const htmlPart = EmailUtil.extractHtmlPart(email.message.parts);
 
         let markup = { __html: '' };
         let more = null;
@@ -216,13 +216,13 @@ export default class EmailThread extends React.Component<IProps, IState> {
                 // if it's not first email in thread, we try to split new content from old content
                 let current, original;
                 if (emailState.index > 0) {
-                    [current, original] = EmailsLogic.splitOriginalThreadHtml(body);
+                    [current, original] = EmailUtil.splitOriginalThreadHtml(body);
                 } else {
                     [current, original] = [body, ''];
                 }
 
-                const currentWithAttachment = EmailsLogic.injectInlineImages(this.props.entity, email, current);
-                emailState.cleanedCurrent = EmailsLogic.sanitizeHtml(currentWithAttachment);
+                const currentWithAttachment = EmailUtil.injectInlineImages(this.props.entity, email, current);
+                emailState.cleanedCurrent = EmailUtil.sanitizeHtml(currentWithAttachment);
                 emailState.original = original;
             }
 
@@ -233,7 +233,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
         } else if (!_.isEmpty(email.message.parts)) {
             const body = _.first(email.message.parts)?.body ?? '';
-            markup = { __html: EmailsLogic.plainTextToHtml(body) };
+            markup = { __html: EmailUtil.plainTextToHtml(body) };
         }
 
         return (
@@ -329,7 +329,9 @@ export default class EmailThread extends React.Component<IProps, IState> {
             .build();
         Exocore.store.mutate(mutation);
 
-        this.props.containerController?.close();
+        if (this.props.containerController) {
+            this.props.containerController.closed = true;
+        }
     }
 
     private handleReplyEmail(): void {

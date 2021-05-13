@@ -7,8 +7,8 @@ import './html-editor.less';
 import { Commands } from './commands';
 import { extractCurrentLink, findLinkEntities, Link, toggleLink } from './link';
 import { convertOldHTML, fromHTML, toHTML } from './convert';
-import { ModalStore } from '../../../store/modal-store';
 import InputModal from '../../modals/input-modal/input-modal';
+import { IStores, StoresContext } from '../../../stores/stores';
 
 const listMaxDepth = 4;
 
@@ -33,6 +33,9 @@ interface IState {
 }
 
 export default class HtmlEditor extends React.Component<IProps, IState> {
+  static contextType = StoresContext;
+  declare context: IStores;
+
   private editorRef: RefObject<Editor>;
   private lastTriggeredChangeState?: ContentState;
   private debouncer: Debouncer;
@@ -181,7 +184,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
       setTimeout(() => {
         const done = (link?: string) => {
-          ModalStore.hideModal();
+          this.context.session.hideModal();
 
           if (!link) {
             return;
@@ -194,7 +197,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         };
 
         const currentLink = extractCurrentLink(this.state.editorState);
-        ModalStore.showModal(() => {
+        this.context.session.showModal(() => {
           return <InputModal text='Enter link' initialValue={currentLink} onDone={done} />;
         })
       });

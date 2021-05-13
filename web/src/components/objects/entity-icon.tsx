@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import React from "react";
-import { EntityTrait, TraitIcon } from "../../store/entities";
+import { EntityTrait, TraitIcon } from "../../utils/entities";
 
 interface IProps {
     trait?: EntityTrait<unknown>;

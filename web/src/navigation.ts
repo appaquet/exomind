@@ -1,6 +1,7 @@
-import { EventEmitter } from 'fbemitter';
+import { runInAction } from 'mobx';
 import { ColumnsConfig } from './components/pages/columns/columns-config';
-import { EntityTraits } from './store/entities';
+import { Stores } from './stores/stores';
+import { EntityTraits } from './utils/entities';
 import Path from './utils/path';
 
 export interface INavigationHost {
@@ -14,24 +15,21 @@ export interface INavigationHost {
 }
 
 export default class Navigation {
-  static currentPath: Path = null;
-  static emitter = new EventEmitter();
   static host: INavigationHost;
 
   static initialize(host: INavigationHost): void {
-    Navigation.currentPath = host.initialPath;
     Navigation.host = host;
+    Navigation.currentPath = host.initialPath;
   }
 
-  static onNavigate(cb: () => void, ctx: unknown): void {
-    Navigation.emitter.addListener('change', cb, ctx);
+  static get currentPath(): Path {
+    return Stores.session.currentPath;
   }
 
-  static notifyChange(): void {
-    // set timeout needed since we may do it from within a renderer
-    setTimeout(() => {
-      Navigation.emitter.emit('change');
-    }, 1);
+  static set currentPath(path: Path) {
+    runInAction(() => {
+      Stores.session.currentPath = path;
+    });
   }
 
   static navigate(path: string | Path, replace = false): void {
@@ -39,7 +37,6 @@ export default class Navigation {
 
     Navigation.host.pushHistory(obj, replace);
     Navigation.currentPath = obj;
-    Navigation.notifyChange();
   }
 
   static navigateBack(): void {
