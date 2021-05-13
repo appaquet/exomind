@@ -41,8 +41,8 @@ impl TestEntityIndex {
         )?;
 
         Ok(TestEntityIndex {
-            cluster,
             config,
+            cluster,
             index,
         })
     }
@@ -51,8 +51,8 @@ impl TestEntityIndex {
         // deconstruct so that we can drop index and close the index properly before
         // reopening
         let TestEntityIndex {
-            mut cluster,
             config,
+            mut cluster,
             index,
         } = self;
         drop(index);
@@ -67,8 +67,8 @@ impl TestEntityIndex {
         )?;
 
         Ok(TestEntityIndex {
-            cluster,
             config,
+            cluster,
             index,
         })
     }

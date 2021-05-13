@@ -118,11 +118,12 @@ impl TestChainCluster {
 
         let mut cluster = TestChainCluster {
             tempdir,
-            nodes,
             transport_hub,
+
+            nodes,
+            cells,
             clocks,
 
-            cells,
             engines_config,
             chain_stores,
             pending_stores,

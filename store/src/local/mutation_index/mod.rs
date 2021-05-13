@@ -908,8 +908,8 @@ impl MutationIndex {
                 }
 
                 let result = MutationMetadata {
-                    block_offset,
                     operation_id,
+                    block_offset,
                     entity_id,
                     mutation_type,
                     sort_value,

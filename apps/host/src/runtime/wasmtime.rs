@@ -39,8 +39,8 @@ impl<E: HostEnvironment> WasmTimeRuntime<E> {
 
         Ok(WasmTimeRuntime {
             instance,
-            func_tick,
             func_send_message,
+            func_tick,
             env,
         })
     }

@@ -43,10 +43,10 @@ impl Store {
         inner.payloads.insert(
             pin,
             StoredPayload {
-                expiration,
                 data,
                 reply_pin,
                 reply_token,
+                expiration,
             },
         );
 
@@ -91,10 +91,10 @@ impl Store {
         inner.payloads.insert(
             pin,
             StoredPayload {
-                expiration,
                 data,
                 reply_pin,
                 reply_token,
+                expiration,
             },
         );
 
