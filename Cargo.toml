@@ -20,4 +20,4 @@ members = [
 
 #[patch.crates-io]
 #exocore = {path = "../exocore"}
-#exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.4-pre6" }cka
+#exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.5" }

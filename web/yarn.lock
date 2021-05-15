@@ -4457,12 +4457,12 @@ exit@^0.1.2:
   resolved "https://registry.yarnpkg.com/exit/-/exit-0.1.2.tgz#0632638f8d877cc82107d30a0fff1a17cba1cd0c"
   integrity sha1-BjJjj42HfMghB9MKD/8aF8uhzQw=
 
-exocore@0.1.4:
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.4.tgz#11dd7cda472facbf26359a8dda6f554c751ff33f"
-  integrity sha512-WD/plFxIrpAB5T9rEhOIUkRBJ0OQCYo7bwYw4h3M8omnezg1LaVlGwHdyn5lap4A67iD2B02FtiVGkHiQW2PzA==
+exocore@0.1.5:
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.5.tgz#b7b16d6a9ab633302c2a91ea5b806d3acad2108d"
+  integrity sha512-+WBv2YTa5Fb+OFMZT0+M7sfATObqYZEB375UMG1AvvFvoUFgxXvZVs0+rrwU0p9SGG7d6LjJH6PB4Y9sa/KfZA==
   dependencies:
-    protobufjs "^6.10.2"
+    protobufjs "^6.11.2"
 
 expand-brackets@^2.1.4:
   version "2.1.4"
@@ -8101,7 +8101,7 @@ proto-list@~1.2.1:
   resolved "https://registry.yarnpkg.com/proto-list/-/proto-list-1.2.4.tgz#212d5bfe1318306a420f6402b8e26ff39647a849"
   integrity sha1-IS1b/hMYMGpCD2QCuOJv85ZHqEk=
 
-protobufjs@^6.10.2:
+protobufjs@^6.10.2, protobufjs@^6.11.2:
   version "6.11.2"
   resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-6.11.2.tgz#de39fabd4ed32beaa08e9bb1e30d08544c1edf8b"
   integrity sha512-4BQJoPooKJl2G9j3XftkIXjoC9C0Av2NOrWmbLWT1vH32GcSUHjM0Arra6UfTsVyfMAuFzaLucXn1sadxJydAw==
