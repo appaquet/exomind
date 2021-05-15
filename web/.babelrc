@@ -1,0 +1,4 @@
+// even if we're not using babel, this file is required since electron-webpack uses babel and needs to be configured
+{
+  "presets": ["@babel/preset-env", "@babel/preset-typescript", "@babel/preset-react"]
+}
