@@ -4,14 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Publish'  
-        default: true
+        description: "Publish"
+        default: "true"
+        required: true
       ref:
-        description: 'Tag'
-        default: 'v0.X.X'
+        description: "Tag"
+        default: "v0.X.X"
+        required: true
       latest:
-        description: 'Latest'  
-        default: true
+        description: "Latest"
+        default: "true"
+        required: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,59 +23,59 @@ jobs:
   docker_build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.3.4
-      with:
-        ref: ${{ github.event.inputs.ref }}
+      - uses: actions/checkout@v2.3.4
+        with:
+          ref: ${{ github.event.inputs.ref }}
 
-    - name: Download release files
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -x
-        TAG="${{ github.event.inputs.ref }}"
+      - name: Download release files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          TAG="${{ github.event.inputs.ref }}"
 
-        mkdir $GITHUB_WORKSPACE/assets && cd $GITHUB_WORKSPACE/assets
-        hub release download $TAG
+          mkdir $GITHUB_WORKSPACE/assets && cd $GITHUB_WORKSPACE/assets
+          hub release download $TAG
 
-        tar -zxf exo.x86_64-unknown-linux-gnu.tar.gz
-        mv exo exo-amd64
+          tar -zxf exo.x86_64-unknown-linux-gnu.tar.gz
+          mv exo exo-amd64
 
-        tar -zxf exo.armv7-unknown-linux-gnueabihf.tar.gz
-        mv exo exo-arm
+          tar -zxf exo.armv7-unknown-linux-gnueabihf.tar.gz
+          mv exo exo-arm
 
-    - name: Setup Docker
-      run: |
-        set -x
+      - name: Setup Docker
+        run: |
+          set -x
 
-        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-        # Allows build in arm for qemu
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          # Allows build in arm for qemu
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-        # Create builder
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        docker buildx create --use --name exocore-builder 
+          # Create builder
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx create --use --name exocore-builder
 
-    - name: Build & publish Docker
-      run: |
-        set -x
-        TAG="${{ github.event.inputs.ref }}"
+      - name: Build & publish Docker
+        run: |
+          set -x
+          TAG="${{ github.event.inputs.ref }}"
 
-        cd $GITHUB_WORKSPACE/assets/
+          cd $GITHUB_WORKSPACE/assets/
 
-        BUILD_PARAMS=""
-        if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
-          BUILD_PARAMS="--push"
-        fi
+          BUILD_PARAMS=""
+          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
+            BUILD_PARAMS="--push"
+          fi
 
-        if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
-          BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exocore:latest"
-        fi
+          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
+            BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exocore:latest"
+          fi
 
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        docker buildx build \
-          --tag appaquet/exocore:$TAG \
-          --platform linux/amd64,linux/arm \
-          --file $GITHUB_WORKSPACE/exo/Dockerfile.buildx \
-          $BUILD_PARAMS \
-          .
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx build \
+            --tag appaquet/exocore:$TAG \
+            --platform linux/amd64,linux/arm \
+            --file $GITHUB_WORKSPACE/exo/Dockerfile.buildx \
+            $BUILD_PARAMS \
+            .

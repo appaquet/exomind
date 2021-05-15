@@ -3,8 +3,8 @@ name: Release build
 on:
   push:
     tags:
-      - 'v0.*'
-      - 'v1.*'
+      - "v0.*"
+      - "v1.*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -100,7 +100,7 @@ jobs:
           if-no-files-found: error
 
   ios_client:
-    runs-on: macOS-latest # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
+    runs-on: macos-latest # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
       - uses: actions/checkout@v2.3.4
 
@@ -163,4 +163,3 @@ jobs:
           hub release create "${assets[@]}" --draft --message "$TAG" "$TAG"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
