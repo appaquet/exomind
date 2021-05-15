@@ -4,14 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Publish'  
-        default: true
+        description: "Publish"
+        default: "true"
+        required: true
       ref:
-        description: 'Tag'
-        default: 'v0.X.X'
+        description: "Tag"
+        default: "v0.X.X"
+        required: true
       latest:
-        description: 'Latest'  
-        default: true
+        description: "Latest"
+        default: "true"
+        required: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,89 +23,85 @@ jobs:
   docker_build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.3.4
-      with:
-        ref: ${{ github.event.inputs.ref }}
+      - uses: actions/checkout@v2.3.4
+        with:
+          ref: ${{ github.event.inputs.ref }}
 
+      - name: Download release files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          TAG="${{ github.event.inputs.ref }}"
 
-    - name: Download release files
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -x
-        TAG="${{ github.event.inputs.ref }}"
+          mkdir $GITHUB_WORKSPACE/assets && cd $GITHUB_WORKSPACE/assets
+          hub release download $TAG
 
-        mkdir $GITHUB_WORKSPACE/assets && cd $GITHUB_WORKSPACE/assets
-        hub release download $TAG
+          tar -zxf exomind-gmail.x86_64-unknown-linux-gnu.tar.gz
+          mv exomind-gmail exomind-gmail-amd64
 
-        tar -zxf exomind-gmail.x86_64-unknown-linux-gnu.tar.gz
-        mv exomind-gmail exomind-gmail-amd64
+          tar -zxf exomind-gmail.armv7-unknown-linux-gnueabihf.tar.gz
+          mv exomind-gmail exomind-gmail-arm
 
-        tar -zxf exomind-gmail.armv7-unknown-linux-gnueabihf.tar.gz
-        mv exomind-gmail exomind-gmail-arm
+      - name: Setup Docker
+        run: |
+          set -x
 
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-    - name: Setup Docker
-      run: |
-        set -x
+          # Allows build in arm for qemu
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          # Create builder
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx create --use --name exocore-builder
 
-        # Allows build in arm for qemu
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Build & publish exomind-gmail Docker
+        run: |
+          set -x
+          TAG="${{ github.event.inputs.ref }}"
+          cd $GITHUB_WORKSPACE/assets/
 
-        # Create builder
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        docker buildx create --use --name exocore-builder 
+          BUILD_PARAMS=""
+          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
+            BUILD_PARAMS="--push"
+          fi
 
+          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
+            BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exomind-gmail:latest"
+          fi
 
-    - name: Build & publish exomind-gmail Docker
-      run: |
-        set -x
-        TAG="${{ github.event.inputs.ref }}"
-        cd $GITHUB_WORKSPACE/assets/
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx build \
+            --tag appaquet/exomind-gmail:$TAG \
+            --platform linux/amd64,linux/arm \
+            --file $GITHUB_WORKSPACE/integrations/gmail/Dockerfile.buildx \
+            $BUILD_PARAMS \
+            .
 
-        BUILD_PARAMS=""
-        if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
-          BUILD_PARAMS="--push"
-        fi
+      - name: Build & publish exomind-web Docker
+        run: |
+          set -x
+          TAG="${{ github.event.inputs.ref }}"
 
-        if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
-          BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exomind-gmail:latest"
-        fi
+          BUILD_PARAMS=""
+          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
+            BUILD_PARAMS="--push"
+          fi
 
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        docker buildx build \
-          --tag appaquet/exomind-gmail:$TAG \
-          --platform linux/amd64,linux/arm \
-          --file $GITHUB_WORKSPACE/integrations/gmail/Dockerfile.buildx \
-          $BUILD_PARAMS \
-          .
+          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
+            BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exomind-web:latest"
+          fi
 
+          mkdir $GITHUB_WORKSPACE/tmp && cd $GITHUB_WORKSPACE/tmp
+          cp $GITHUB_WORKSPACE/web/nginx.conf .
+          mkdir dist
+          tar -zxf $GITHUB_WORKSPACE/assets/exomind-web.tar.gz -C dist/
 
-    - name: Build & publish exomind-web Docker
-      run: |
-        set -x
-        TAG="${{ github.event.inputs.ref }}"
-
-        BUILD_PARAMS=""
-        if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
-          BUILD_PARAMS="--push"
-        fi
-
-        if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then 
-          BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exomind-web:latest"
-        fi
-
-        mkdir $GITHUB_WORKSPACE/tmp && cd $GITHUB_WORKSPACE/tmp
-        cp $GITHUB_WORKSPACE/web/nginx.conf .
-        mkdir dist
-        tar -zxf $GITHUB_WORKSPACE/assets/exomind-web.tar.gz -C dist/
-
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        docker buildx build \
-          --tag appaquet/exomind-web:$TAG \
-          --platform linux/amd64,linux/arm \
-          --file $GITHUB_WORKSPACE/web/Dockerfile \
-          $BUILD_PARAMS \
-          .
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx build \
+            --tag appaquet/exomind-web:$TAG \
+            --platform linux/amd64,linux/arm \
+            --file $GITHUB_WORKSPACE/web/Dockerfile \
+            $BUILD_PARAMS \
+            .

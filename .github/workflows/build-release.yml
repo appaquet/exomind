@@ -3,8 +3,8 @@ name: Release build
 on:
   push:
     tags:
-      - 'v0.*'
-      - 'v1.*'
+      - "v0.*"
+      - "v1.*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -165,4 +165,3 @@ jobs:
           hub release create "${assets[@]}" --draft --message "$TAG" "$TAG"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
