@@ -103,7 +103,7 @@ jobs:
         with:
           node-version: 12.x
 
-      - name: Build & test
+      - name: Build
         run: |
           cd web
           yarn install --frozen-lockfile

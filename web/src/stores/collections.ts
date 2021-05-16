@@ -5,14 +5,11 @@ import { exomind } from "../protos";
 import { EntityTrait, EntityTraits, TraitIcon } from "../utils/entities";
 
 export class CollectionStore {
-    @observable private refreshAll = 0;
     private entityParents: Map<string, Parents> = observable.map();
     private collections: ObservableMap<string, EntityTrait<exomind.base.ICollection>> = observable.map();
     private query: WatchedQueryWrapper = null;
 
     getEntityParents(entity: EntityTraits): Parents | null {
-        this.refreshAll; // used to notify we need to refresh all
-
         const cacheKey = this.uniqueEntityId(entity);
 
         let parents = this.entityParents.get(cacheKey)
@@ -49,14 +46,15 @@ export class CollectionStore {
         this.query = Exocore.store.watchedQuery(query);
         this.query.onChange((results) => {
             runInAction(() => {
+                if (this.collections.size == 0) {
+                    // it's the first load, we force refresh all
+                    this.entityParents.clear();
+                }
+
                 for (const entity of results.entities) {
                     const et = new EntityTraits(entity.entity);
                     const col = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
                     this.updateEntityCollection(entity.entity.id, col);
-                }
-
-                if (this.collections.size == 0) {
-                    this.refreshAll += 1;
                 }
             });
         });
@@ -118,18 +116,17 @@ export class CollectionStore {
         }
 
         if (col) {
-            // this.collectionQueries.set(entityId, Promise.resolve(col));
             this.collections.set(entityId, col);
         } else {
             this.collections.delete(entityId);
         }
 
         // invalidate cache for all entities for which we fetched parents in which we are
-        for (const parentId of this.entityParents.keys()) {
-            const parent = this.entityParents.get(parentId);
+        for (const childId of this.entityParents.keys()) {
+            const parent = this.entityParents.get(childId);
             const ids = parent.allIds();
             if (ids.has(entityId)) {
-                this.entityParents.delete(parentId);
+                this.entityParents.delete(childId);
             }
         }
     }

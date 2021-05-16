@@ -2,10 +2,19 @@
 .drag-and-drop {
   .drop-indicator {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 5px;
     background: #a0a0a0;
+    height: 5px;
+
+    top: 0; bottom: inherit; left: 0; right: 0;
+
+    &.bottom {
+      top: inherit; bottom: 0; left: 0; right: 0;
+    }
+
+    &.middle {
+      height: auto;
+      top: 0; bottom: 0; left: 0; right: 0;
+      background: #a0a0a06b;
+    }
   }
 }

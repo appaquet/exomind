@@ -38,7 +38,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
     private entityParentsQueryIds?: string[];
     private collectionsQuery?: ExpandableQuery;
     private collectionsQueryKeywords?: string;
-    private filterInputRef: React.RefObject<HTMLInputElement>;
+    private filterInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
     constructor(props: IProps) {
         super(props);
@@ -59,8 +59,6 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         this.state = {
             keywords: '',
         };
-
-        this.filterInputRef = React.createRef();
     }
 
     componentWillUnmount(): void {

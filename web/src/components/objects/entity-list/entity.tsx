@@ -5,7 +5,7 @@ import { exomind } from '../../../protos';
 import { EntityParent, Parents } from '../../../stores/collections';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import DateUtil from '../../../utils/dates';
-import DragAndDrop from '../../interaction/drag-and-drop/drag-and-drop';
+import DragAndDrop, { DragData, DropPosition } from '../../interaction/drag-and-drop/drag-and-drop';
 import EditableText from '../../interaction/editable-text/editable-text';
 import EntityIcon from '../entity-icon';
 import { HierarchyPills } from '../hierarchy-pills/hierarchy-pills';
@@ -14,8 +14,6 @@ import { EntityActions } from './entity-action';
 import { observer } from 'mobx-react';
 import { IStores, StoresContext } from '../../../stores/stores';
 import './entity.less';
-
-export type DropEffect = ('move' | 'copy');
 
 export interface IProps {
     entity: EntityTraits;
@@ -28,8 +26,8 @@ export interface IProps {
 
     draggable?: boolean;
     droppable?: boolean;
-    onDropOut?: (droppedEntity: EntityTraits, effect: DropEffect, droppedEntityParent: EntityTraits) => void;
-    onDropIn?: (droppedEntity: EntityTraits, effect: DropEffect, droppedEntityParent: EntityTraits) => void;
+    onDropOut?: (data: DragData) => void;
+    onDropIn?: (data: DragData) => void;
 
     renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
 }
@@ -75,6 +73,12 @@ export class Entity extends React.Component<IProps, IState> {
             actions = new EntityActions();
         }
 
+        let dropPositions: DropPosition[];
+        if (this.props.entity.priorityTrait.constants.collectionLike ?? false) {
+            // collections supports dropping inside, so we include 'middle'
+            dropPositions = ['top', 'middle', 'bottom'];
+        }
+
         return (
             <li className={classes}
                 onClick={this.handleItemClick}
@@ -87,6 +91,7 @@ export class Entity extends React.Component<IProps, IState> {
                         parentObject={this.props.parentEntity}
                         draggable={this.props.draggable}
                         droppable={this.props.droppable}
+                        dropPositions={dropPositions}
                         onDropIn={this.props.onDropIn}
                         onDropOut={this.props.onDropOut}>
 

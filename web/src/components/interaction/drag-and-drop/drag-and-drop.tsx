@@ -1,0 +1,198 @@
+
+import classNames from 'classnames';
+import * as React from 'react';
+import './drag-and-drop.less';
+
+interface IProps {
+  object?: unknown;
+  parentObject?: unknown;
+  draggable: boolean;
+  droppable: boolean;
+  dropPositions?: DropPosition[]; // needs to be sorted 
+  onDropOut?: (data: DragData) => void;
+  onDropIn?: (data: DragData) => void;
+}
+
+interface IState {
+  isDragged: boolean;
+  isHovered: boolean;
+  dropPosition?: DropPosition;
+}
+
+export interface DragData {
+  effect: DragEffect;
+  object: unknown;
+  parentObject: unknown;
+  position?: DropPosition;
+}
+
+export type DropPosition = 'top' | 'middle' | 'bottom';
+
+export type DragEffect = 'copy' | 'move';
+
+export default class DragAndDrop extends React.Component<IProps, IState> {
+  static defaultProps: IProps = {
+    draggable: true,
+    droppable: true,
+    dropPositions: ['top', 'bottom'],
+  };
+
+  static DraggedSequence = 0;
+  static DraggedData: { [key: string]: DragData } = {};
+
+  private isHovered = false;
+  private isIndicatorHovered = false;
+  private divElem: React.RefObject<HTMLDivElement> = React.createRef();
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = {
+      isDragged: false,
+      isHovered: false,
+    };
+  }
+
+  render(): React.ReactNode {
+    const classes = classNames({
+      'drag-and-drop': true,
+    });
+
+    return (
+      <div
+        className={classes}
+        ref={this.divElem}
+        draggable={this.props.draggable}
+        onDragStart={this.handleDragStart}
+        onDragEnter={this.handleDragOver}
+        onDragOver={this.handleDragOver}
+        onDrop={this.handleDropIn}
+        onDragLeave={this.handleDragLeave}
+        onDragEnd={this.handleDragEnd}
+      >
+
+        {this.props.children}
+        {this.renderDropIndicator()}
+      </div>
+    );
+  }
+
+  private renderDropIndicator() {
+    if (this.state.isHovered) {
+      const classes = classNames({
+        'drop-indicator': true,
+        [this.state.dropPosition]: true,
+      });
+      return <div
+        className={classes}
+        onDragOver={this.handleDragEnterIndicator}
+        onDragLeave={this.handleDragLeaveIndicator}
+        onDrop={this.handleDropIn}
+      />;
+    }
+  }
+
+  private handleDragStart = (event: React.DragEvent): void => {
+    const effect = (event.shiftKey || event.altKey || event.metaKey) ? 'copy' : 'move';
+    event.dataTransfer.effectAllowed = effect;
+
+    const sequence = (DragAndDrop.DraggedSequence++).toString();
+    DragAndDrop.DraggedData[sequence] = {
+      effect: effect,
+      object: this.props.object,
+      parentObject: this.props.parentObject
+    };
+
+    event.dataTransfer.setData('item', sequence);
+    this.setState({
+      isDragged: true
+    });
+  }
+
+  private handleDropIn = (event: React.DragEvent): void => {
+    this.setState({
+      isHovered: false
+    });
+    const sequence = parseInt(event.dataTransfer.getData('item'));
+    const data = DragAndDrop.DraggedData[sequence];
+    delete DragAndDrop.DraggedData[sequence];
+    if (this.props.onDropIn && data) {
+      this.props.onDropIn({
+        position: this.state.dropPosition,
+        ...data
+      });
+    }
+  }
+
+  private handleDragOver = (event: React.DragEvent): void => {
+    event.preventDefault();
+    this.isHovered = true;
+
+    // if we aren't being dragged, this means it's coming from another object
+    if (!this.state.isDragged && this.props.droppable && !this.state.isHovered) {
+      this.setState({
+        isHovered: true
+      });
+    }
+
+    // calculate the position of the mouse on us
+    if (this.state.isHovered && this.props.dropPositions.length > 0) {
+      const rect = this.divElem.current.getBoundingClientRect();
+      const percentY = Math.abs((event.clientY - rect.y) / rect.height);
+
+      const idx = Math.floor(this.props.dropPositions.length * percentY);
+      const newPos = this.props.dropPositions[idx];
+      if (newPos != this.state.dropPosition) {
+        this.setState({
+          dropPosition: newPos,
+        })
+      }
+    }
+  }
+
+  private handleDragEnterIndicator = () => {
+    this.isIndicatorHovered = true;
+  };
+
+  private handleDragLeaveIndicator = () => {
+    this.isIndicatorHovered = false;
+    this.checkFullyOut();
+  };
+
+  private handleDragLeave = (): void => {
+    if (this.isIndicatorHovered) {
+      return;
+    }
+
+    this.isHovered = false;
+    this.checkFullyOut();
+  }
+
+  // this is needed to debounce since we get leave event as soon as mouse pass from element inside the li element
+  private checkFullyOut() {
+    setTimeout(() => {
+      if (!this.isHovered && !this.isIndicatorHovered) {
+        this.setState({
+          isHovered: false
+        });
+      }
+    }, 10)
+  }
+
+  private handleDragEnd = (event: React.DragEvent): void => {
+    const effect = event.dataTransfer.dropEffect;
+    if (effect === 'move' || effect === 'copy') {
+      if (this.props.onDropOut) {
+        this.props.onDropOut({
+          object: this.props.object,
+          effect,
+          parentObject: this.props.parentObject,
+        });
+      }
+    }
+
+    this.setState({
+      isDragged: false
+    });
+  }
+}
