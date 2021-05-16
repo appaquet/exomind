@@ -76,7 +76,7 @@ export class Entity extends React.Component<IProps, IState> {
         let dropPositions: DropPosition[];
         if (this.props.entity.priorityTrait.constants.collectionLike ?? false) {
             // collections supports dropping inside, so we include 'middle'
-            dropPositions = ['top', 'middle', 'bottom'];
+            dropPositions = ['before', 'into', 'after'];
         }
 
         return (

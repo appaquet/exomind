@@ -355,7 +355,7 @@ export class Children extends React.Component<IProps, IState> {
         if (droppedItem.overEntity) {
             const overEntityWeight = getEntityParentWeight(droppedItem.overEntity, parentId);
 
-            if (droppedItem.data.position == 'top') {
+            if (droppedItem.data.position == 'before') {
                 if (droppedItem.previousEntity) {
                     const previousEntityWeight = getEntityParentWeight(droppedItem.previousEntity, parentId);
                     weight = (previousEntityWeight + overEntityWeight) / 2;
@@ -363,7 +363,7 @@ export class Children extends React.Component<IProps, IState> {
                     weight = new Date().getTime();
                 }
 
-            } else if (droppedItem.data.position == 'bottom') {
+            } else if (droppedItem.data.position == 'after') {
                 if (droppedItem.nextEntity) {
                     const nextEntityWeight = getEntityParentWeight(droppedItem.nextEntity, parentId);
                     weight = (nextEntityWeight + overEntityWeight) / 2;
@@ -371,7 +371,7 @@ export class Children extends React.Component<IProps, IState> {
                 } else {
                     weight = overEntityWeight - 100;
                 }
-            } else if (droppedItem.data.position == 'middle') {
+            } else if (droppedItem.data.position == 'into') {
                 parentId = droppedItem.overEntity.id;
                 weight = new Date().getTime();
             }

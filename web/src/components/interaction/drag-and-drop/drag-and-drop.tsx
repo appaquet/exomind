@@ -26,7 +26,7 @@ export interface DragData {
   position?: DropPosition;
 }
 
-export type DropPosition = 'top' | 'middle' | 'bottom';
+export type DropPosition = 'before' | 'into' | 'after';
 
 export type DragEffect = 'copy' | 'move';
 
@@ -34,7 +34,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
   static defaultProps: IProps = {
     draggable: true,
     droppable: true,
-    dropPositions: ['top', 'bottom'],
+    dropPositions: ['before', 'after'],
   };
 
   static DraggedSequence = 0;
@@ -85,7 +85,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
       });
       return <div
         className={classes}
-        onDragOver={this.handleDragEnterIndicator}
+        onDragOver={this.handleDragOverIndicator}
         onDragLeave={this.handleDragLeaveIndicator}
         onDrop={this.handleDropIn}
       />;
@@ -113,6 +113,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
     this.setState({
       isHovered: false
     });
+
     const sequence = parseInt(event.dataTransfer.getData('item'));
     const data = DragAndDrop.DraggedData[sequence];
     delete DragAndDrop.DraggedData[sequence];
@@ -140,7 +141,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
       const rect = this.divElem.current.getBoundingClientRect();
       const percentY = Math.abs((event.clientY - rect.y) / rect.height);
 
-      const idx = Math.floor(this.props.dropPositions.length * percentY);
+      const idx = Math.min(Math.floor(this.props.dropPositions.length * percentY), this.props.dropPositions.length - 1);
       const newPos = this.props.dropPositions[idx];
       if (newPos != this.state.dropPosition) {
         this.setState({
@@ -150,7 +151,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
     }
   }
 
-  private handleDragEnterIndicator = () => {
+  private handleDragOverIndicator = () => {
     this.isIndicatorHovered = true;
   };
 
