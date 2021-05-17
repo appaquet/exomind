@@ -324,6 +324,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         },
         color: 2,
         order: 5,
+        collectionLike: true,
         renameValue: (trait: unknown) => {
             const col = trait as exomind.base.ICollection;
             return col.name;

@@ -1,10 +1,10 @@
 import classNames from "classnames";
 import React from 'react';
 import { EntityTrait, EntityTraits } from "../../../utils/entities";
-import DragAndDrop from "../../interaction/drag-and-drop/drag-and-drop";
+import DragAndDrop, { DragData } from "../../interaction/drag-and-drop/drag-and-drop";
 import Scrollable from "../../interaction/scrollable/scrollable";
 import { ContainerController } from "../container-controller";
-import { DropEffect, Entity } from './entity';
+import { Entity } from './entity';
 import { EntityActions } from "./entity-action";
 import './entity-list.less';
 import { SelectedItem, Selection } from "./selection";
@@ -38,7 +38,7 @@ export interface IDroppedItem {
     overEntity?: EntityTraits;
     nextEntity?: EntityTraits;
 
-    effect: DropEffect,
+    data: DragData;
 }
 
 export class EntityList extends React.Component<IProps> {
@@ -72,12 +72,24 @@ export class EntityList extends React.Component<IProps> {
     private renderCollection(): React.ReactNode {
         if (this.props.entities.length > 0) {
 
-            let previousEntity: EntityTraits = null;
-            const items = this.props.entities.map((entity) => {
+            const count = this.props.entities.length;
+            const items = this.props.entities.map((entity, idx) => {
                 const selected = this.props.selection?.contains(SelectedItem.fromEntity(entity)) ?? false;
 
-                const entityCopy = entity;
-                const previousEntityCopy = previousEntity;
+                const handleDropIn = (data: DragData) => {
+                    let prevEntity;
+                    if (idx > 0) {
+                        prevEntity = this.props.entities[idx - 1];
+                    }
+
+                    let nextEntity;
+                    if (idx < count) {
+                        nextEntity = this.props.entities[idx + 1];
+                    }
+
+                    this.handleDropIn(this.props.entities[idx], prevEntity, nextEntity, data);
+                };
+
                 const item = <Entity
                     key={entity.id}
                     entity={entity}
@@ -90,14 +102,10 @@ export class EntityList extends React.Component<IProps> {
 
                     draggable={this.props.draggable}
                     droppable={this.props.droppable}
-                    onDropIn={(droppedEntity, effect, droppedEntityParent) => {
-                        this.handleDropIn(entityCopy, previousEntityCopy, droppedEntity, effect, droppedEntityParent);
-                    }}
+                    onDropIn={handleDropIn}
 
                     renderEntityDate={this.props.renderEntityDate}
                 />;
-
-                previousEntity = entity;
 
                 return item;
             });
@@ -115,10 +123,11 @@ export class EntityList extends React.Component<IProps> {
             <div className="empty">
                 <DragAndDrop
                     parentObject={this.props.parentEntity}
-                    onDropIn={(droppedEntity: EntityTraits, effect: DropEffect, parent: EntityTraits) => {
-                        return this.handleDropIn(null, null, droppedEntity, effect, parent)
+                    onDropIn={(data: DragData) => {
+                        return this.handleDropIn(null, null, null, data)
                     }}
-                    draggable={false} droppable={this.props.droppable}>
+                    draggable={false}
+                    droppable={this.props.droppable}>
 
                     This collection is empty
                 </DragAndDrop>
@@ -129,17 +138,17 @@ export class EntityList extends React.Component<IProps> {
     private handleDropIn(
         overEntity: EntityTraits,
         previousEntity: EntityTraits,
-        droppedEntity: EntityTraits,
-        effect: DropEffect,
-        parentEntity: EntityTraits,
+        nextEntity: EntityTraits,
+        data: DragData,
     ): void {
         if (this.props.onDropIn != null) {
             this.props.onDropIn({
-                effect: effect,
-                fromParentEntity: parentEntity,
-                droppedEntity: droppedEntity,
+                fromParentEntity: data.parentObject as EntityTraits,
+                droppedEntity: data.object as EntityTraits,
                 previousEntity: previousEntity,
                 overEntity: overEntity,
+                nextEntity: nextEntity,
+                data,
             });
         }
     }

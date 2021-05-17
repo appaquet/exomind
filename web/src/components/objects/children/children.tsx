@@ -11,9 +11,9 @@ import { EntityList, IDroppedItem } from "../entity-list/entity-list";
 import { ListActions } from "../entity-list/list-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
-import Long from "long";
 import { IStores, StoresContext } from "../../../stores/stores";
 import './children.less';
+import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
 
 const PINNED_WEIGHT = 5000000000000;
 
@@ -328,57 +328,55 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private handleDropInEntity = (droppedItem: IDroppedItem) => {
-        const getEntityParentRelation = (entity: EntityTraits, parentId: string) => {
-            return entity
-                .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
-                .filter((e) => e.message.collection.entityId == parentId)
-                .shift();
-        }
-
-        const getEntityParentWeight = (entity: EntityTraits): number => {
-            const child = getEntityParentRelation(entity, this.parentId)
-            const weight = child.message.weight;
-
-            if (Long.isLong(weight)) {
-                return weight.toNumber();
-            } else {
-                return weight;
-            }
-        }
-
         const droppedEntity = droppedItem.droppedEntity;
 
         // calculate weight by putting it in the middle of the hovered object and the previous object so
         // that the dropped object is inserted right before the hovered object
+        let parentId = this.parentId;
         let weight;
-        if (droppedItem.overEntity !== null) {
-            const overEntityWeight = getEntityParentWeight(droppedItem.overEntity);
+        if (droppedItem.overEntity) {
+            const overEntityWeight = getEntityParentWeight(droppedItem.overEntity, parentId);
 
-            if (droppedItem.previousEntity !== null) {
-                const previousEntityWeight = getEntityParentWeight(droppedItem.previousEntity);
-                weight = (previousEntityWeight + overEntityWeight) / 2;
-            } else {
-                weight = overEntityWeight + 100;
+            if (droppedItem.data.position == 'before') {
+                if (droppedItem.previousEntity) {
+                    const previousEntityWeight = getEntityParentWeight(droppedItem.previousEntity, parentId);
+                    weight = (previousEntityWeight + overEntityWeight) / 2;
+                } else {
+                    weight = new Date().getTime();
+                }
+
+            } else if (droppedItem.data.position == 'after') {
+                if (droppedItem.nextEntity) {
+                    const nextEntityWeight = getEntityParentWeight(droppedItem.nextEntity, parentId);
+                    weight = (nextEntityWeight + overEntityWeight) / 2;
+
+                } else {
+                    weight = overEntityWeight - 100;
+                }
+            } else if (droppedItem.data.position == 'into') {
+                parentId = droppedItem.overEntity.id;
+                weight = new Date().getTime();
             }
+
         } else {
             weight = new Date().getTime();
         }
 
-        const droppedEntityRelation = getEntityParentRelation(droppedEntity, this.parentId);
-        const relationTraitId = droppedEntityRelation?.id ?? `child_${this.parentId}`;
+        const droppedEntityRelation = getEntityParentRelation(droppedEntity, parentId);
+        const relationTraitId = droppedEntityRelation?.id ?? `child_${parentId}`;
 
         let mb = MutationBuilder
             .updateEntity(droppedEntity.id)
             .putTrait(new exomind.base.CollectionChild({
                 collection: new exocore.store.Reference({
-                    entityId: this.parentId
+                    entityId: parentId
                 }),
                 weight: weight,
             }), relationTraitId)
             .returnEntities();
 
         // if it has been moved and it's not inside its own container, then we remove it from old parent
-        if (droppedItem.effect === 'move' && droppedItem.fromParentEntity && this.parentId !== droppedItem.fromParentEntity.id) {
+        if (droppedItem.data.effect === 'move' && droppedItem.fromParentEntity && parentId !== droppedItem.fromParentEntity.id) {
             const fromRelation = getEntityParentRelation(droppedEntity, droppedItem.fromParentEntity.id);
             mb = mb.deleteTrait(fromRelation.id);
         }

@@ -92,6 +92,23 @@ jobs:
           yarn test
           yarn lint
 
+  electron_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v2.1.5
+        with:
+          node-version: 12.x
+
+      - name: Build
+        run: |
+          cd web
+          yarn install --frozen-lockfile
+          yarn electron
+
   ios_build:
     runs-on: macos-latest
     steps:
