@@ -1,6 +1,6 @@
 
 import classNames from 'classnames';
-import { Exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
+import { exocore, Exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import { exomind } from '../../../protos';
 import React from 'react';
 import Navigation from '../../../navigation';
@@ -8,6 +8,10 @@ import { EntityTrait, EntityTraits, TraitIcon } from '../../../utils/entities';
 import Path from '../../../utils/path';
 import './hamburger.less';
 import EntityIcon from '../../objects/entity-icon';
+import DragAndDrop, { DragData } from '../../interaction/drag-and-drop/drag-and-drop';
+import { observer } from 'mobx-react';
+import { IStores, StoresContext } from '../../../stores/stores';
+import { getEntityParentRelation } from '../../../stores/collections';
 
 interface IProps {
   path: Path;
@@ -17,7 +21,11 @@ interface IState {
   favorites: EntityTraits[];
 }
 
+@observer
 export default class Hamburger extends React.Component<IProps, IState> {
+  static contextType = StoresContext;
+  declare context: IStores;
+
   private favoritesQuery: WatchedQueryWrapper;
 
   constructor(props: IProps) {
@@ -51,10 +59,12 @@ export default class Hamburger extends React.Component<IProps, IState> {
       'open': true,
     });
 
+    const inbox = this.context.collections.getCollection('inbox');
+
     return (
       <div id="hamburger" className={classes}>
         <ul>
-          <HamburgerLink path={this.props.path} link={Navigation.pathForInbox()} label="Inbox" icon={{ fa: "inbox" }} />
+          <HamburgerLink path={this.props.path} link={Navigation.pathForInbox()} label="Inbox" icon={{ fa: "inbox" }} trait={inbox} />
           <li className="sep" key={'inbox_sep'} />
 
           <HamburgerLink path={this.props.path} link={Navigation.pathForSnoozed()} label="Snoozed" icon={{ fa: "clock-o" }} />
@@ -96,14 +106,41 @@ const HamburgerLink = (props: { path: Path, link: string, label: string, icon?: 
     active: ('/' + props.path.toString()).startsWith(props.link)
   });
 
+  const droppable = props.trait?.constants.collectionLike ?? false;
+
   return (
     <li className={classes}>
-      <a href={props.link}>
-        <EntityIcon icon={props.icon} trait={props.trait} />
+      <DragAndDrop
+        draggable={false}
+        droppable={droppable}
+        dropPositions={['into']}
+        onDropIn={(data) => handleDropIn(props.trait, data)}
+      >
+        <a href={props.link}>
+          <EntityIcon icon={props.icon} trait={props.trait} />
 
-        <span className="text">{props.label}</span>
-      </a>
+          <span className="text">{props.label}</span>
+        </a>
+      </DragAndDrop>
     </li>
   );
 }
 
+function handleDropIn(trait: EntityTrait<unknown>, data: DragData) {
+  const droppedEntity = data.object as EntityTraits;
+  const parentId = trait.et.id;
+  const droppedEntityRelation = getEntityParentRelation(trait.et, parentId);
+  const relationTraitId = droppedEntityRelation?.id ?? `child_${parentId}`;
+
+  const mb = MutationBuilder
+    .updateEntity(droppedEntity.id)
+    .putTrait(new exomind.base.CollectionChild({
+      collection: new exocore.store.Reference({
+        entityId: parentId
+      }),
+      weight: new Date().getTime(),
+    }), relationTraitId)
+    .returnEntities();
+
+  Exocore.store.mutate(mb.build())
+}

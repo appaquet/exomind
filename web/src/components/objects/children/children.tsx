@@ -11,9 +11,9 @@ import { EntityList, IDroppedItem } from "../entity-list/entity-list";
 import { ListActions } from "../entity-list/list-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
-import Long from "long";
 import { IStores, StoresContext } from "../../../stores/stores";
 import './children.less';
+import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
 
 const PINNED_WEIGHT = 5000000000000;
 
@@ -328,24 +328,6 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private handleDropInEntity = (droppedItem: IDroppedItem) => {
-        const getEntityParentRelation = (entity: EntityTraits, parentId: string) => {
-            return entity
-                .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
-                .filter((e) => e.message.collection.entityId == parentId)
-                .shift();
-        }
-
-        const getEntityParentWeight = (entity: EntityTraits, parentId: string): number => {
-            const child = getEntityParentRelation(entity, parentId)
-            const weight = child.message.weight;
-
-            if (Long.isLong(weight)) {
-                return weight.toNumber();
-            } else {
-                return weight;
-            }
-        }
-
         const droppedEntity = droppedItem.droppedEntity;
 
         // calculate weight by putting it in the middle of the hovered object and the previous object so

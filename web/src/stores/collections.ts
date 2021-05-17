@@ -1,5 +1,6 @@
 import { exocore, Exocore, QueryBuilder, WatchedQueryWrapper } from "exocore";
 import { memoize } from "lodash";
+import Long from "long";
 import { observable, ObservableMap, runInAction } from "mobx";
 import { exomind } from "../protos";
 import { EntityTrait, EntityTraits, TraitIcon } from "../utils/entities";
@@ -29,6 +30,10 @@ export class CollectionStore {
         return parents;
     }
 
+    getCollection(id: string): EntityTrait<exomind.base.ICollection> | null {
+        return this.collections.get(id);
+    }
+
     fetchCollections(): void {
         const query = QueryBuilder
             .withTrait(exomind.base.Collection)
@@ -40,7 +45,7 @@ export class CollectionStore {
 
         if (this.query) {
             this.query.free();
-            this.query  = null;
+            this.query = null;
         }
 
         this.query = Exocore.store.watchedQuery(query);
@@ -230,4 +235,22 @@ export function flattenHierarchy(parent: EntityParent): EntityParent[] {
     }
 
     return out.reverse();
+}
+
+export function getEntityParentRelation(entity: EntityTraits, parentId: string): EntityTrait<exomind.base.CollectionChild> {
+    return entity
+        .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
+        .filter((e) => e.message.collection.entityId == parentId)
+        .shift();
+}
+
+export function getEntityParentWeight(entity: EntityTraits, parentId: string): number {
+    const child = getEntityParentRelation(entity, parentId)
+    const weight = child.message.weight;
+
+    if (Long.isLong(weight)) {
+        return weight.toNumber();
+    } else {
+        return weight;
+    }
 }
