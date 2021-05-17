@@ -30,15 +30,15 @@ export type DropPosition = 'before' | 'into' | 'after';
 
 export type DragEffect = 'copy' | 'move';
 
+let _drag_data_seq = 0;
+const _drag_data: { [key: string]: DragData } = {};
+
 export default class DragAndDrop extends React.Component<IProps, IState> {
   static defaultProps: IProps = {
     draggable: true,
     droppable: true,
     dropPositions: ['before', 'after'],
   };
-
-  static DraggedSequence = 0;
-  static DraggedData: { [key: string]: DragData } = {};
 
   private isHovered = false;
   private isIndicatorHovered = false;
@@ -96,8 +96,8 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
     const effect = (event.shiftKey || event.altKey || event.metaKey) ? 'copy' : 'move';
     event.dataTransfer.effectAllowed = effect;
 
-    const sequence = (DragAndDrop.DraggedSequence++).toString();
-    DragAndDrop.DraggedData[sequence] = {
+    const sequence = (_drag_data_seq++).toString();
+    _drag_data[sequence] = {
       effect: effect,
       object: this.props.object,
       parentObject: this.props.parentObject
@@ -115,8 +115,8 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
     });
 
     const sequence = parseInt(event.dataTransfer.getData('item'));
-    const data = DragAndDrop.DraggedData[sequence];
-    delete DragAndDrop.DraggedData[sequence];
+    const data = _drag_data[sequence];
+    delete _drag_data[sequence];
     if (this.props.onDropIn && data) {
       this.props.onDropIn({
         position: this.state.dropPosition,
