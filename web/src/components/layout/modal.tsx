@@ -39,7 +39,7 @@ export default class Modal extends React.Component<IProps> {
     this.context.session.hideModal();
   }
 
-  private handleKeyDown(e: KeyboardEvent) {
+  private handleKeyDown = (e: KeyboardEvent): void => {
     if (e.key === 'Escape') {
       this.context.session.hideModal();
     }
