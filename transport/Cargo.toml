@@ -36,4 +36,4 @@ wasm-bindgen = "0.2"
 
 [dev-dependencies]
 exocore-core = {version = "0.1.5", path = "../core", features = ["tests-utils"]}
-tokio = {version = "1.5", features = ["macros"], default-features = false}
+tokio = {version = "1.6", features = ["macros"], default-features = false}
