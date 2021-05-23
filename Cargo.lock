@@ -679,7 +679,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "thiserror",
- "tokio 1.6.0",
+ "tokio",
  "url 2.2.2",
  "uuid",
  "wasm-bindgen",
@@ -784,8 +784,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "tokio 1.6.0",
- "tokio-compat-02",
+ "tokio",
  "yup-oauth2",
 ]
 
@@ -1036,7 +1035,7 @@ dependencies = [
  "http",
  "indexmap",
  "slab",
- "tokio 1.6.0",
+ "tokio",
  "tokio-util",
  "tracing",
 ]
@@ -1155,7 +1154,7 @@ dependencies = [
  "itoa",
  "pin-project 1.0.7",
  "socket2 0.4.0",
- "tokio 1.6.0",
+ "tokio",
  "tower-service",
  "tracing",
  "want",
@@ -1173,7 +1172,7 @@ dependencies = [
  "log 0.4.14",
  "rustls",
  "rustls-native-certs",
- "tokio 1.6.0",
+ "tokio",
  "tokio-rustls",
  "webpki",
 ]
@@ -1498,7 +1497,7 @@ dependencies = [
  "libp2p-core",
  "log 0.4.14",
  "socket2 0.4.0",
- "tokio 1.6.0",
+ "tokio",
 ]
 
 [[package]]
@@ -2755,18 +2754,6 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "0.2.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6703a273949a90131b290be1fe7b039d0fc884aa1935860dfcbe056f28cd8092"
-dependencies = [
- "bytes 0.5.6",
- "num_cpus",
- "pin-project-lite 0.1.12",
- "slab",
-]
-
-[[package]]
-name = "tokio"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd3076b5c8cc18138b8f8814895c11eb4de37114a5d127bafdc5e55798ceef37"
@@ -2779,20 +2766,6 @@ dependencies = [
  "num_cpus",
  "pin-project-lite 0.2.6",
  "tokio-macros",
-]
-
-[[package]]
-name = "tokio-compat-02"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7d4237822b7be8fff0a7a27927462fad435dcb6650f95cea9e946bf6bdc7e07"
-dependencies = [
- "bytes 0.5.6",
- "once_cell",
- "pin-project-lite 0.2.6",
- "tokio 0.2.25",
- "tokio 1.6.0",
- "tokio-stream",
 ]
 
 [[package]]
@@ -2813,19 +2786,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc6844de72e57df1980054b38be3a9f4702aba4858be64dd700181a8a6d0e1b6"
 dependencies = [
  "rustls",
- "tokio 1.6.0",
+ "tokio",
  "webpki",
-]
-
-[[package]]
-name = "tokio-stream"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8864d706fdb3cc0843a49647ac892720dac98a6eeb818b77190592cf4994066"
-dependencies = [
- "futures-core",
- "pin-project-lite 0.2.6",
- "tokio 1.6.0",
 ]
 
 [[package]]
@@ -2839,7 +2801,7 @@ dependencies = [
  "futures-sink",
  "log 0.4.14",
  "pin-project-lite 0.2.6",
- "tokio 1.6.0",
+ "tokio",
 ]
 
 [[package]]
@@ -2904,7 +2866,7 @@ dependencies = [
  "smallvec",
  "thiserror",
  "tinyvec",
- "tokio 1.6.0",
+ "tokio",
  "url 2.2.2",
 ]
 
@@ -2924,7 +2886,7 @@ dependencies = [
  "resolv-conf",
  "smallvec",
  "thiserror",
- "tokio 1.6.0",
+ "tokio",
  "trust-dns-proto",
 ]
 
@@ -3313,7 +3275,7 @@ dependencies = [
  "seahash",
  "serde",
  "serde_json",
- "tokio 1.6.0",
+ "tokio",
  "url 2.2.2",
 ]
 
