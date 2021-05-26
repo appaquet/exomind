@@ -4,7 +4,7 @@ import React from 'react';
 import Navigation from '../../navigation';
 import { IStores, StoresContext } from '../../stores/stores';
 import NodeConfig from '../pages/node-config/node-config';
-import { ColumnsConfig } from '../pages/columns/columns-config';
+import { ColumnConfigs } from '../pages/columns/columns-config';
 import Columns from '../pages/columns/columns';
 import Fullscreen from '../pages/fullscreen/fullscreen';
 import Home from '../pages/home/home.js';
@@ -59,7 +59,7 @@ export default class Layout extends React.Component {
     return Navigation.isFullscreenPath(this.context.session.currentPath);
   }
 
-  private handleColumnsChange(config: ColumnsConfig): void {
+  private handleColumnsChange(config: ColumnConfigs): void {
     Navigation.navigate(Navigation.pathForColumnsConfig(config));
   }
 

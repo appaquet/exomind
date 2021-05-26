@@ -38,7 +38,7 @@ export default class Column extends React.Component<IProps, IState> {
     super(props);
 
     this.state = {
-      value: props.columnConfig.value,
+      value: props.columnConfig.first,
     }
   }
 
@@ -74,7 +74,7 @@ export default class Column extends React.Component<IProps, IState> {
       headerActions.push(new HeaderAction('external-link', this.expandFullscreen));
 
       headerActions.push(new HeaderAction('copy', () => {
-        copy(this.props.columnConfig.value);
+        copy(this.props.columnConfig.first);
       }));
     }
 
@@ -112,7 +112,7 @@ export default class Column extends React.Component<IProps, IState> {
         onSelectionChange={this.props.onSelectionChange}
       />;
 
-    } else if (this.props.columnConfig.isHistory) {
+    } else if (this.props.columnConfig.isRecent) {
       return <Recent
         containerController={this.containerController}
         selection={this.props.selection}
@@ -121,7 +121,7 @@ export default class Column extends React.Component<IProps, IState> {
 
     } else if (this.props.columnConfig.isSearch) {
       return <Search
-        query={this.props.columnConfig.value}
+        query={this.props.columnConfig.first}
         containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
@@ -129,7 +129,7 @@ export default class Column extends React.Component<IProps, IState> {
 
     } else if (this.props.columnConfig.isEntity) {
       return <EntityComponent
-        entityId={this.props.columnConfig.value}
+        entityId={this.props.columnConfig.first}
         containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
@@ -137,8 +137,8 @@ export default class Column extends React.Component<IProps, IState> {
 
     } else if (this.props.columnConfig.isTrait) {
       return <EntityComponent
-        entityId={this.props.columnConfig.value}
-        traitId={this.props.columnConfig.extra}
+        entityId={this.props.columnConfig.first}
+        traitId={this.props.columnConfig.second}
         containerController={this.containerController}
         selection={this.props.selection}
         onSelectionChange={this.props.onSelectionChange}
@@ -149,7 +149,7 @@ export default class Column extends React.Component<IProps, IState> {
   }
 
   private expandFullscreen = () => {
-    const entityId = this.props.columnConfig.value;
+    const entityId = this.props.columnConfig.first;
     Navigation.navigatePopup(Navigation.pathForFullscreen(entityId));
   }
 }

@@ -213,16 +213,7 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private handleEntityDone(et: EntityTraits): ActionResult {
-        const mutationBuilder = MutationBuilder.updateEntity(et.entity.id);
-        const colsChildren = et
-            .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
-            .filter((child) => child.message.collection.entityId == this.parentId);
-        if (colsChildren.length > 0) {
-            for (const child of colsChildren) {
-                mutationBuilder.deleteTrait(child.trait.id);
-            }
-            Exocore.store.mutate(mutationBuilder.build());
-        }
+        this.context.collections.removeEntityFromParents([et], this.parentId);
 
         this.removeFromSelection(et);
 
@@ -250,9 +241,7 @@ export class Children extends React.Component<IProps, IState> {
             .returnEntities();
 
         if (this.parentId === 'inbox') {
-            const parentRelation = et
-                .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
-                .find((trt) => trt.message.collection.entityId == 'inbox')
+            const parentRelation = getEntityParentRelation(et, 'inbox');
             if (parentRelation) {
                 mb = mb.deleteTrait(parentRelation.id);
             }
@@ -286,7 +275,6 @@ export class Children extends React.Component<IProps, IState> {
             this.props.onEntityAction('inbox', et);
         }
     }
-
 
     private isPinned(et: EntityTraits): boolean {
         const child = et

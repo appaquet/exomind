@@ -1,5 +1,5 @@
 import { runInAction } from 'mobx';
-import { ColumnsConfig } from './components/pages/columns/columns-config';
+import { ColumnConfigs } from './components/pages/columns/columns-config';
 import { Stores } from './stores/stores';
 import { EntityTraits } from './utils/entities';
 import Path from './utils/path';
@@ -61,19 +61,19 @@ export default class Navigation {
   }
 
   static pathForInbox(): string {
-    return Navigation.pathForColumnsConfig(ColumnsConfig.forInbox());
+    return Navigation.pathForColumnsConfig(ColumnConfigs.forInbox());
   }
 
   static pathForSnoozed(): string {
-    return Navigation.pathForColumnsConfig(ColumnsConfig.forSnoozed());
+    return Navigation.pathForColumnsConfig(ColumnConfigs.forSnoozed());
   }
 
   static pathForRecent(): string {
-    return Navigation.pathForColumnsConfig(ColumnsConfig.forRecent());
+    return Navigation.pathForColumnsConfig(ColumnConfigs.forRecent());
   }
 
   static pathForSearch(keywords: string): string {
-    return Navigation.pathForColumnsConfig(ColumnsConfig.forSearch(keywords));
+    return Navigation.pathForColumnsConfig(ColumnConfigs.forSearch(keywords));
   }
 
   static pathForSettings(): string {
@@ -91,11 +91,11 @@ export default class Navigation {
     if (entityId == "inbox") {
       return Navigation.pathForInbox();
     } else {
-      return Navigation.pathForColumnsConfig(ColumnsConfig.forEntity(entityId));
+      return Navigation.pathForColumnsConfig(ColumnConfigs.forEntity(entityId));
     }
   }
 
-  static pathForColumnsConfig(config: ColumnsConfig): string {
+  static pathForColumnsConfig(config: ColumnConfigs): string {
     return '/c/' + config;
   }
 
