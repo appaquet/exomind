@@ -1,6 +1,5 @@
 use std::{
     collections::{HashMap, HashSet},
-    hash::Hasher,
     rc::Rc,
 };
 
@@ -65,7 +64,8 @@ impl EntityAggregator {
         let mut entity_modification_date = None;
         let mut entity_deletion_date = None;
 
-        let mut hasher = result_hasher();
+        let hasher = result_hasher();
+        let mut digest = hasher.digest();
         let mut traits = HashMap::<TraitId, TraitAggregator>::new();
         let mut active_operation_ids = HashSet::<OperationId>::new();
         let mut last_operation_id = None;
@@ -79,7 +79,7 @@ impl EntityAggregator {
 
             // hashing operations instead of traits content allow invalidating results as
             // soon as one operation is made since we can't guarantee anything
-            hasher.write_u64(current_operation_id);
+            digest.update(&current_operation_id.to_ne_bytes());
 
             match &current_mutation.mutation_type {
                 MutationType::TraitPut(put_trait) => {
@@ -162,7 +162,7 @@ impl EntityAggregator {
         Ok(EntityAggregator {
             traits,
             active_operations: active_operation_ids,
-            hash: hasher.finish(),
+            hash: digest.finalize(),
             creation_date: entity_creation_date,
             modification_date: entity_modification_date,
             deletion_date: entity_deletion_date,
@@ -274,8 +274,8 @@ impl TraitAggregator {
     }
 }
 
-pub fn result_hasher() -> impl std::hash::Hasher {
-    crc::crc64::Digest::new(crc::crc64::ECMA)
+pub fn result_hasher() -> crc::Crc<u64> {
+    crc::Crc::<u64>::new(&crc::CRC_64_ECMA_182)
 }
 
 /// Checks if a projection specified in a query matches the given trait type.

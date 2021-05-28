@@ -1,7 +1,6 @@
 use std::{
     borrow::Borrow,
     collections::{HashMap, HashSet},
-    hash::Hasher,
     path::{Path, PathBuf},
     rc::Rc,
     sync::{
@@ -271,7 +270,8 @@ where
                 res1.sort_value >= res2.sort_value
             });
 
-        let mut hasher = result_hasher();
+        let hasher = result_hasher();
+        let mut digest = hasher.digest();
         let mut entity_mutations_cache = HashMap::<EntityId, Rc<EntityAggregator>>::new();
         let mut matched_entities = HashSet::new();
         let mut got_results = false;
@@ -392,7 +392,7 @@ where
             .fold(
                 Vec::new(),
                 |mut results, result| {
-                    hasher.write_u64(result.mutations.hash);
+                    digest.update(&result.mutations.hash.to_ne_bytes());
                     results.push(result);
                     results
                 },
@@ -423,7 +423,7 @@ where
 
         // if query specifies a `result_hash` and that new results have the same hash,
         // we don't fetch results' data
-        let results_hash = hasher.finish();
+        let results_hash = digest.finalize();
         let skipped_hash = results_hash == query.result_hash;
         if !skipped_hash {
             self.populate_results_traits(&mut entity_results, query.include_deleted);
