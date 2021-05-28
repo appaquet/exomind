@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 
 export class Selection {

@@ -3,7 +3,7 @@ import React from 'react';
 import Navigation from '../../../navigation';
 import Debouncer from '../../../utils/debouncer';
 import Path from '../../../utils/path';
-import { ColumnsConfig } from '../../pages/columns/columns-config';
+import { ColumnConfigs } from '../../pages/columns/columns-config';
 import './header.less';
 import { StoresContext, IStores } from '../../../stores/stores';
 
@@ -103,9 +103,9 @@ export class Header extends React.Component<IProps, IState> {
   private keywordsFromPath(props: IProps): string {
     let keyword = '';
     if (Navigation.isColumnsPath(props.path)) {
-      const config = ColumnsConfig.fromString(props.path.drop(1).toString());
+      const config = ColumnConfigs.fromString(props.path.drop(1).toString());
       if (!config.empty && config.parts[0].isSearch) {
-        keyword = config.parts[0].value;
+        keyword = config.parts[0].first;
       }
     }
 

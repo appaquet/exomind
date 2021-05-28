@@ -9,6 +9,7 @@ import { SelectedItem, Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
 import './email-thread.less';
 import { ContainerController } from '../container-controller';
+import { runInAction } from 'mobx';
 
 
 interface IProps {
@@ -330,7 +331,9 @@ export default class EmailThread extends React.Component<IProps, IState> {
         Exocore.store.mutate(mutation);
 
         if (this.props.containerController) {
-            this.props.containerController.closed = true;
+            runInAction(() => {
+                this.props.containerController.closed = true;
+            });
         }
     }
 

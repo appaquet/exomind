@@ -1,73 +1,73 @@
 import _ from 'lodash';
 
-export class ColumnsConfig {
+export class ColumnConfigs {
     parts: Array<ColumnConfig> = [];
 
     constructor(parts: Array<ColumnConfig>) {
         this.parts = parts;
     }
 
-    static fromString(strConfig: string): ColumnsConfig {
+    static fromString(strConfig: string): ColumnConfigs {
         const parts = _(strConfig.split('-'))
-            .map((s: string) => ColumnsConfig.decodePart(s))
+            .map((s: string) => ColumnConfigs.decodePart(s))
             .filter((i: string) => !_.isEmpty(i))
-            .map((s: string) => new ColumnConfig(s))
+            .map((s: string) => ColumnConfig.fromString(s))
             .value();
-        return new ColumnsConfig(parts);
+        return new ColumnConfigs(parts);
     }
 
-    static forSearch(keywords: string): ColumnsConfig {
-        return new ColumnsConfig([ColumnConfig.forSearch(keywords)]);
+    static forSearch(keywords: string): ColumnConfigs {
+        return new ColumnConfigs([ColumnConfig.forSearch(keywords)]);
     }
 
-    static forInbox(): ColumnsConfig {
-        return new ColumnsConfig([ColumnConfig.forInbox()]);
+    static forInbox(): ColumnConfigs {
+        return new ColumnConfigs([ColumnConfig.forInbox()]);
     }
 
-    static forSnoozed(): ColumnsConfig {
-        return new ColumnsConfig([ColumnConfig.forSnoozed()]);
+    static forSnoozed(): ColumnConfigs {
+        return new ColumnConfigs([ColumnConfig.forSnoozed()]);
     }
 
-    static forRecent(): ColumnsConfig {
-        return new ColumnsConfig([ColumnConfig.forRecent()]);
+    static forRecent(): ColumnConfigs {
+        return new ColumnConfigs([ColumnConfig.forRecent()]);
     }
 
-    static forCollections(): ColumnsConfig {
-        return new ColumnsConfig([ColumnConfig.forCollections()]);
+    static forCollections(): ColumnConfigs {
+        return new ColumnConfigs([ColumnConfig.forCollections()]);
     }
 
-    static forObject(objectId: string): ColumnsConfig {
-        return new ColumnsConfig([ColumnConfig.forObject(objectId)]);
+    static forObject(objectId: string): ColumnConfigs {
+        return new ColumnConfigs([ColumnConfig.forObject(objectId)]);
     }
 
-    static forEntity(entityId: string): ColumnsConfig {
-        return new ColumnsConfig([ColumnConfig.forEntity(entityId)]);
+    static forEntity(entityId: string): ColumnConfigs {
+        return new ColumnConfigs([ColumnConfig.forEntity(entityId)]);
     }
 
     get empty(): boolean {
         return this.parts.length === 0;
     }
 
-    set(col: number, value: ColumnConfig): ColumnsConfig {
+    set(col: number, value: ColumnConfig): ColumnConfigs {
         const ret = this.parts.slice(0, col + 1);
         ret[col] = value;
-        return new ColumnsConfig(ret);
+        return new ColumnConfigs(ret);
     }
 
     // Removes a column and its following
-    unset(col: number): ColumnsConfig {
+    unset(col: number): ColumnConfigs {
         const ret = this.parts.slice(0, col);
-        return new ColumnsConfig(ret);
+        return new ColumnConfigs(ret);
     }
 
     // Remove a column and keeps the following
-    pop(col: number): ColumnsConfig {
+    pop(col: number): ColumnConfigs {
         const ret = this.parts.slice(0, col).concat(this.parts.slice(col + 1));
-        return new ColumnsConfig(ret);
+        return new ColumnConfigs(ret);
     }
 
     toString(): string {
-        return _(this.parts).map((s: ColumnConfig) => ColumnsConfig.encodePart(s.toString())).value().join('-');
+        return _(this.parts).map((s: ColumnConfig) => ColumnConfigs.encodePart(s.toString())).value().join('-');
     }
 
     static encodePart(string: string): string {
@@ -79,110 +79,132 @@ export class ColumnsConfig {
     }
 }
 
+export const InboxToken = 'i';
+export const CollectionsToken = 'c';
+export const SearchToken = 's';
+export const ObjectToken = 'o';
+export const EntityToken = 'e';
+export const TraitToken = 't';
+export const SnoozedToken = 'z';
+export const RecentToken = 'r';
+export const MultipleToken = 'm';
+
+export type ColumnType = 'i' | 'c' | 's' | 'o' | 'e' | 't' | 'z' | 'r' | 'm';
+
 export class ColumnConfig {
-    static InboxToken = 'i';
-    static CollectionsToken = 'c';
-    static SearchToken = 's';
-    static ObjectToken = 'o';
-    static EntityToken = 'e';
-    static TraitToken = 't';
-    static SnoozedToken = 'z';
-    static RecentToken = 'r';
+    public type: ColumnType;
+    public parts: string[];
 
-    part: string;
-    splitPart: string[];
+    constructor(type: ColumnType, parts?: string | string[]) {
+        this.type = type;
 
-    constructor(part: string) {
-        this.part = part;
-        this.splitPart = part.slice(1).split(':');
+        if (typeof parts == 'string') {
+            this.parts = parts.split(':');
+        } else if (Array.isArray(parts)) {
+            this.parts = parts;
+        } else {
+            this.parts = [];
+        }
     }
 
-    static forSearch(keyword: string): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.SearchToken + keyword);
-    }
-
-    static forInbox(): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.InboxToken);
-    }
-
-    static forSnoozed(): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.SnoozedToken);
-    }
-
-    static forRecent(): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.RecentToken);
-    }
-
-    static forCollections(): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.CollectionsToken);
-    }
-
-    static forObject(objectId: string): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.ObjectToken + objectId);
-    }
-
-    static forEntity(entityId: string): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.EntityToken + entityId);
-    }
-
-    static forTrait(entityId: string, traitId: string): ColumnConfig {
-        return new ColumnConfig(ColumnConfig.TraitToken + entityId).withExtra(traitId);
+    static fromString(value: string): ColumnConfig {
+        return new ColumnConfig(value[0] as ColumnType, value.slice(1));
     }
 
     toString(): string {
-        return this.part;
+        return this.type + this.parts.join(':');
     }
 
-    get token(): string {
-        return this.part.slice(0, 1);
+    static forSearch(keyword: string): ColumnConfig {
+        return new ColumnConfig(SearchToken, keyword);
+    }
+
+    static forInbox(): ColumnConfig {
+        return new ColumnConfig(InboxToken);
+    }
+
+    static forSnoozed(): ColumnConfig {
+        return new ColumnConfig(SnoozedToken);
+    }
+
+    static forRecent(): ColumnConfig {
+        return new ColumnConfig(RecentToken);
+    }
+
+    static forCollections(): ColumnConfig {
+        return new ColumnConfig(CollectionsToken);
+    }
+
+    static forObject(objectId: string): ColumnConfig {
+        return new ColumnConfig(ObjectToken, objectId);
+    }
+
+    static forEntity(entityId: string): ColumnConfig {
+        return new ColumnConfig(EntityToken, entityId);
+    }
+
+    static forTrait(entityId: string, traitId: string): ColumnConfig {
+        return new ColumnConfig(TraitToken, entityId).withExtra(traitId);
+    }
+
+    static forMultiple(configs: ColumnConfig[]): ColumnConfig {
+        const inner = configs.map((config) => config.toString()).join(':');
+        return new ColumnConfig(MultipleToken, inner);
     }
 
     get isInbox(): boolean {
-        return this.token === ColumnConfig.InboxToken;
+        return this.type === InboxToken;
     }
 
     get isCollection(): boolean {
-        return this.token === ColumnConfig.CollectionsToken;
+        return this.type === CollectionsToken;
     }
 
     get isSearch(): boolean {
-        return this.token === ColumnConfig.SearchToken;
+        return this.type === SearchToken;
     }
 
     get isObject(): boolean {
-        return this.token === ColumnConfig.ObjectToken;
+        return this.type === ObjectToken;
     }
 
     get isEntity(): boolean {
-        return this.token === ColumnConfig.EntityToken;
+        return this.type === EntityToken;
     }
 
     get isTrait(): boolean {
-        return this.token === ColumnConfig.TraitToken;
+        return this.type === TraitToken;
     }
 
     get isSnoozed(): boolean {
-        return this.token === ColumnConfig.SnoozedToken;
+        return this.type === SnoozedToken;
     }
 
-    get isHistory(): boolean {
-        return this.token === ColumnConfig.RecentToken;
+    get isRecent(): boolean {
+        return this.type === RecentToken;
     }
 
-    get value(): string {
-        return this.splitPart[0];
+    get isMultiple(): boolean {
+        return this.type === MultipleToken;
     }
 
-    get extra(): string | null {
-        return (this.splitPart.length > 1) ? this.splitPart[1] : null;
+    get first(): string {
+        return this.parts[0];
     }
 
-    withExtra(extra: string): ColumnConfig {
-        const p = [this.token + this.value];
-        if (!_.isNull(extra)) {
-            p.push(extra);
+    get second(): string | null {
+        return (this.parts.length > 1) ? this.parts[1] : null;
+    }
+
+    get values(): ColumnConfig[] {
+        return Array.from(this.parts.map((value) => ColumnConfig.fromString(value)));
+    }
+
+    withExtra(part: string): ColumnConfig {
+        const newParts = Array.from(this.parts);
+        if (!_.isNull(part)) {
+            newParts.push(part);
         }
-        return new ColumnConfig(p.join(':'));
+        return new ColumnConfig(this.type, newParts.join(':'));
     }
-
 }

@@ -23,14 +23,43 @@
   },
   "electronWebpack": {
     "main": {
-      "sourceDirectory": "src/electron/main"
+      "sourceDirectory": "src/electron/main",
+      "extraEntries": [
+        "@/preload.js"
+      ]
     },
     "whiteListedModules": [
-      "exocore"
+      "bootstrap",
+      "classnames",
+      "clipboard-copy",
+      "core-js",
+      "dom-serializer",
+      "domhandler",
+      "domutils",
+      "draft-convert",
+      "draft-js",
+      "emoji-regex",
+      "exocore",
+      "font-awesome",
+      "htmlparser2",
+      "less",
+      "linkifyjs",
+      "lodash",
+      "mobx",
+      "mobx-react",
+      "prop-types",
+      "protobufjs",
+      "react",
+      "react-dom",
+      "react-flatpickr",
+      "sanitize-html",
+      "source-map-support",
+      "starts-with-emoji"
     ],
     "renderer": {
       "sourceDirectory": "src/electron/renderer",
-      "template": "src/electron/renderer/index.html"
+      "template": "src/electron/renderer/index.html",
+      "webpackConfig": "webpack.electron.extra.js"
     }
   },
   "build": {

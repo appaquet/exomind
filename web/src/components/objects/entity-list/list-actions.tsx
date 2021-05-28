@@ -1,4 +1,4 @@
-import { Exocore, exocore, MutationBuilder } from 'exocore';
+import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp } from 'exocore';
 import React from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
@@ -6,6 +6,7 @@ import InputModal from '../../modals/input-modal/input-modal';
 import TimeSelector from '../../modals/time-selector/time-selector';
 import { Selection } from "./selection";
 import { IStores, StoresContext } from '../../../stores/stores';
+import { getEntityParentRelation } from '../../../stores/collections';
 
 interface IProps {
     parent: EntityTraits;
@@ -145,17 +146,16 @@ export class ListActions extends React.Component<IProps> {
         }
 
         this.context.session.showModal(() => {
-            return <InputModal 
+            return <InputModal
                 text="URL of the link"
                 onDone={createLink} />;
         });
     }
 
-    private handleDoneClick = () => {
-        // TODO: Done all selected
-        // _.forEach(this.props.selection, (entity) => {
-        //   ExomindDSL.on(entity).relations.removeParent(this.props.parent);
-        // });
+    private handleDoneClick = async () => {
+        const entities = await this.getSelectedEntities();
+
+        this.context.collections.removeEntityFromParents(entities, this.props.parent.id);
 
         this.props.onSelectionChange(this.props.selection.cleared());
     }
@@ -167,20 +167,40 @@ export class ListActions extends React.Component<IProps> {
         });
     }
 
-    private handleTimeSelectorDone = (/*date: Date*/) => {
+    private handleTimeSelectorDone = async (date: Date) => {
         this.context.session.hideModal();
 
-        // TODO: Postpone all selected
-        // _.forEach(this.props.selection, (entity) => {
-        //   ExomindDSL.on(entity).relations.postpone(date);
-        //   if (this.props.removeOnPostpone) {
-        //     ExomindDSL.on(entity).relations.removeParent(this.props.parent);
-        //   }
-        // });
+        const entities = await this.getSelectedEntities();
+
+        for (const entity of entities) {
+            const mb = MutationBuilder
+                .updateEntity(entity.id)
+                .putTrait(new exomind.base.Snoozed({
+                    untilDate: toProtoTimestamp(date),
+                }), "snoozed");
+
+            const parentRelation = getEntityParentRelation(entity, this.props.parent.id);
+            if (parentRelation) {
+                mb.deleteTrait(parentRelation.id);
+            }
+
+            await Exocore.store.mutate(mb.build());
+        }
 
         if (this.props.removeOnPostpone) {
             this.props.onSelectionChange(this.props.selection.cleared());
         }
+    }
+
+    private async getSelectedEntities() {
+        const ids = this.props.selection.items
+            .map((sel) => sel.entityId)
+            .filter((et) => !!et);
+
+        const results = await Exocore.store.query(QueryBuilder.withIds(ids).build());
+        const entities = results.entities.map((res) => new EntityTraits(res.entity));
+
+        return Array.from(entities);
     }
 
     private executeNewEntityMutation(mutation: exocore.store.MutationRequest) {
