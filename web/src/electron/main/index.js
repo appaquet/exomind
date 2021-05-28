@@ -3,15 +3,18 @@
 
 import { app, BrowserWindow, ipcMain, Menu, MenuItem } from 'electron'
 import * as path from 'path'
-import { format as formatUrl } from 'url'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const autoDevTool = false;
 
-
 function createNewWindow() {
   const window = new BrowserWindow({
-    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    webPreferences: { 
+      nodeIntegration: false, 
+      contextIsolation: true,
+      backgroundThrottling: false, // TODO: Should be re-enabled when background timers are better handled (store watched query timing out)
+      preload: path.resolve(__dirname, 'preload.js') // setup context isolation bridge
+    },
     autoHideMenuBar: true,
   });
   window.setMenuBarVisibility(false);
@@ -22,13 +25,8 @@ function createNewWindow() {
 
   if (isDevelopment) {
     window.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`);
-  }
-  else {
-    window.loadURL(formatUrl({
-      pathname: path.join(__dirname, 'index.html'),
-      protocol: 'file',
-      slashes: true,
-    }))
+  } else {
+    window.loadURL(`file://${path.join(__dirname, 'index.html')}`);
   }
 
   return window;
@@ -96,7 +94,7 @@ app.on('ready', () => {
   mainWindow = createMainWindow();
 })
 
-ipcMain.on('open-popup', (event, navPath) => {
+ipcMain.on('open-popup', (_event, navPath) => {
   const window = createNewWindow();
 
   window.webContents.on('did-finish-load', () => {

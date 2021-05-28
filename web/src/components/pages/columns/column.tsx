@@ -14,7 +14,7 @@ import { ColumnConfig } from './columns-config';
 import { Message } from '../../objects/message';
 import copy from 'clipboard-copy';
 import { observer } from 'mobx-react';
-import { observable } from 'mobx';
+import { observable, runInAction } from 'mobx';
 
 interface IProps {
   columnConfig: ColumnConfig;
@@ -44,7 +44,9 @@ export default class Column extends React.Component<IProps, IState> {
 
   render(): React.ReactNode {
     if (this.containerController.closed) {
-      this.props.onClose();
+      runInAction(() => {
+        this.props.onClose();
+      });
     }
 
     const colKey = `column-${this.props.columnId}`;

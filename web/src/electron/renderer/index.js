@@ -6,14 +6,16 @@ import Navigation, { setupLinkClickNavigation } from "../../navigation";
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { initNode } from '../../exocore';
-import * as electron from 'electron';
 import Path from "../../utils/path";
+
+// the require added to index.html by electron-webpack isn't working in isolation mode. 
+window.exoElectron.installSourceMap();
 
 Navigation.initialize({
     initialPath: new Path('/'),
 
     openPopup: (path) => {
-        electron.ipcRenderer.send('open-popup', path.toString());
+        window.exoElectron.openPopup(path.toString());
     },
 
     pushHistory: (/*_path, _replace*/) => { 
@@ -21,11 +23,11 @@ Navigation.initialize({
     },
 
     openExternal: (url) => {
-        electron.shell.openExternal(url);
+        window.exoElectron.openExternal(url);
     }
 });
 
-electron.ipcRenderer.on('navigate', (_event, path) => {
+window.exoElectron.onNavigate((_event, path) => {
     Navigation.navigate(path);
 });
 
@@ -40,7 +42,7 @@ Promise.all([
     setupLinkClickNavigation((e, el) => {
         e.preventDefault();
         e.stopPropagation();
-        electron.shell.openExternal(el.href);
+        window.exoElectron.openExternal(el.href);
     });
 });
 
