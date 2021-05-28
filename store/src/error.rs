@@ -43,6 +43,9 @@ pub enum Error {
     #[error("Timeout error: {0:?} > {0:?}")]
     Timeout(Duration, Duration),
 
+    #[error("Watched query got unregistered")]
+    WatchedUnregistered,
+
     #[error("Not connected to any store node")]
     NotConnected,
 

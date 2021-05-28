@@ -291,7 +291,7 @@ where
                 _ = stream_consumer.fuse() => {},
                 _ = drop_receiver.fuse() => {
                     debug!("Registered query with token {:?} got dropped", watch_token);
-                   let _ = send_response(Err(Error::Dropped));
+                   let _ = send_response(Err(Error::WatchedUnregistered));
                 },
             };
         });

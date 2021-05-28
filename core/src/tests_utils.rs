@@ -9,7 +9,7 @@ pub fn expect_eventually<F>(cb: F)
 where
     F: FnMut() -> bool,
 {
-    expect_within(Duration::from_secs(5), cb)
+    expect_within(Duration::from_secs(10), cb)
 }
 
 pub fn expect_within<F>(timeout: Duration, mut cb: F)
@@ -37,7 +37,7 @@ where
     T: Future<Output = bool>,
 {
     let begin = Instant::now();
-    let timeout = Duration::from_secs(5);
+    let timeout = Duration::from_secs(10);
     loop {
         if cb().await {
             return;
@@ -59,7 +59,7 @@ pub fn expect_result_eventually<F, R, E: Debug>(cb: F) -> R
 where
     F: FnMut() -> Result<R, E>,
 {
-    expect_result_within(cb, Duration::from_secs(5))
+    expect_result_within(cb, Duration::from_secs(10))
 }
 
 pub fn expect_result_within<F, R, E: Debug>(mut cb: F, time: Duration) -> R

@@ -245,7 +245,7 @@ impl Inner {
             store_node.map(|n| n.node()).cloned()
         };
         if let Some(new_store_node) = new_store_node {
-            info!("Switching store server node to {:?}", new_store_node);
+            info!("Switching store server to {}", new_store_node);
             inner.store_node = Some(new_store_node);
         }
 
@@ -263,7 +263,7 @@ impl Inner {
 
         if let Some(store_node) = &inner.store_node {
             if in_message.from.id() != store_node.id() {
-                warn!("Got message from a node other than store node. Dropping it");
+                warn!("Got message from a node other than store node (from {} != current {}). Dropping it.", in_message.from, store_node);
                 return Ok(());
             }
         }
@@ -272,7 +272,7 @@ impl Inner {
             rendez_vous_id
         } else {
             return Err(anyhow!(
-                "Got an InMessage without a rendez_vous_id (type={:?} from={:?})",
+                "Got an InMessage without a rendez_vous_id (type={:?} from={})",
                 in_message.message_type,
                 in_message.from
             )
@@ -285,7 +285,7 @@ impl Inner {
                     let _ = pending_request.result_sender.send(Ok(mutation));
                 } else {
                     return Err(anyhow!(
-                        "Couldn't find pending mutation for mutation response (request_id={:?} type={:?} from={:?})",
+                        "Couldn't find pending mutation for mutation response (request_id={:?} type={:?} from={})",
                         request_id, in_message.message_type, in_message.from
                     ).into());
                 }
@@ -297,7 +297,7 @@ impl Inner {
                     let _ = watched_query.result_sender.try_send(Ok(result));
                 } else {
                     return Err(anyhow!(
-                        "Couldn't find pending query for query response (request_id={:?} type={:?} from={:?})",
+                        "Couldn't find pending query for query response (request_id={:?} type={:?} from={})",
                         request_id, in_message.message_type, in_message.from
                     ).into());
                 }
