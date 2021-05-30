@@ -12,7 +12,6 @@ function createNewWindow() {
     webPreferences: { 
       nodeIntegration: false, 
       contextIsolation: true,
-      backgroundThrottling: false, // TODO: Should be re-enabled when background timers are better handled (store watched query timing out)
       preload: path.resolve(__dirname, 'preload.js') // setup context isolation bridge
     },
     autoHideMenuBar: true,

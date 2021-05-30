@@ -6,7 +6,7 @@ name = "exomind-protos"
 version = "0.1.2"
 
 [dependencies]
-exocore = { version = "0.1.5", default-features = false, features = ["protos"]}
+exocore = { version = "0.1.6", default-features = false, features = ["protos"]}
 prost = "0.7"
 prost-types = "0.7"
 
