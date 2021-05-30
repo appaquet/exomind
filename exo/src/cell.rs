@@ -2,6 +2,7 @@ use std::{io::Write, path::PathBuf, time::Duration};
 
 use bytes::Bytes;
 use clap::Clap;
+use console::style;
 use exocore_chain::{
     block::{Block, BlockBuilder, BlockOperations},
     chain::ChainStore,
@@ -10,8 +11,8 @@ use exocore_chain::{
 };
 use exocore_core::{
     cell::{
-        Cell, CellConfigExt, CellId, EitherCell, FullCell, LocalNode, LocalNodeConfigExt,
-        NodeConfigExt,
+        Cell, CellConfigExt, CellId, CellNode, CellNodeRole, EitherCell, FullCell, LocalNode,
+        LocalNodeConfigExt, NodeConfigExt,
     },
     framing::{sized::SizedFrameReaderIterator, FrameReader},
     sec::{auth_token::AuthToken, keys::Keypair},
@@ -137,6 +138,9 @@ pub struct PrintOptions {
 enum NodeCommand {
     /// Add a node to the cell.
     Add(NodeAddOptions),
+
+    /// List nodes of the cell.
+    List,
 }
 
 #[derive(Clap)]
@@ -222,6 +226,10 @@ pub async fn handle_cmd(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Resul
         CellCommand::Init(init_opts) => cmd_init(ctx, cell_opts, init_opts),
         CellCommand::Node(node_opts) => match &node_opts.command {
             NodeCommand::Add(add_opts) => cmd_node_add(ctx, cell_opts, add_opts).await,
+            NodeCommand::List => {
+                cmd_node_list(ctx, cell_opts);
+                Ok(())
+            }
         },
         CellCommand::App(app_opts) => match &app_opts.command {
             AppCommand::List => {
@@ -483,6 +491,43 @@ async fn cmd_node_add(
     Ok(())
 }
 
+fn cmd_node_list(ctx: &Context, cell_opts: &CellOptions) {
+    let (_, cell) = get_cell(ctx, cell_opts);
+    let cell = cell.cell();
+
+    fn print_role(cell_node: &CellNode, role: CellNodeRole) -> String {
+        if cell_node.has_role(role) {
+            style("✔").green().to_string()
+        } else {
+            String::new()
+        }
+    }
+
+    print_spacer();
+    let mut rows = Vec::new();
+    for cell_node in cell.nodes().iter().all() {
+        let node = cell_node.node();
+        rows.push(vec![
+            node.name().to_string(),
+            node.public_key().encode_base58_string(),
+            print_role(cell_node, CellNodeRole::Chain),
+            print_role(cell_node, CellNodeRole::Store),
+            print_role(cell_node, CellNodeRole::AppHost),
+        ]);
+    }
+
+    print_table(
+        vec![
+            "Name".to_string(),
+            "Public key".to_string(),
+            "Chain".to_string(),
+            "Store".to_string(),
+            "AppHost".to_string(),
+        ],
+        rows,
+    );
+}
+
 async fn cmd_join(
     ctx: &Context,
     _cell_opts: &CellOptions,
@@ -722,6 +767,9 @@ fn cmd_import_chain(
     let (_, cell) = get_cell(ctx, cell_opts);
     let full_cell = cell.unwrap_full();
 
+    let clock = Clock::new();
+    let node = full_cell.cell().local_node();
+
     let chain_dir = full_cell
         .cell()
         .chain_directory()
@@ -757,7 +805,6 @@ fn cmd_import_chain(
         .expect("Couldn't write genesis block to chain");
 
     let mut operations_buffer = Vec::new();
-    let mut previous_operation_id = None;
     let mut previous_block = genesis_block;
     let mut operations_count = 0;
     let mut blocks_count = 0;
@@ -792,34 +839,19 @@ fn cmd_import_chain(
                 exocore_chain::operation::read_operation_frame(operation_frame.frame.whole_data())
                     .expect("Couldn't read operation frame");
 
-            let operation_id = {
-                let reader = operation.get_reader()?;
-                reader.get_operation_id()
-            };
-
-            if let Some(prev_op_id) = previous_operation_id {
-                if operation_id < prev_op_id {
-                    panic!(
-                        "Operations are not sorted! prev={} current={}",
-                        prev_op_id, operation_id
-                    );
-                }
-            }
-            previous_operation_id = Some(operation_id);
-
             operations_count += 1;
 
             operations_buffer.push(operation.to_owned());
             if operations_buffer.len() > import_opts.operations_per_block {
-                let block_op_id = operation_id + 1;
-                flush_buffer(block_op_id, &mut operations_buffer);
+                let block_op_id = clock.consistent_time(node);
+                flush_buffer(block_op_id.into(), &mut operations_buffer);
             }
         }
     }
 
     if !operations_buffer.is_empty() {
-        let block_op_id = previous_operation_id.unwrap() + 1;
-        flush_buffer(block_op_id, &mut operations_buffer);
+        let block_op_id = clock.consistent_time(node);
+        flush_buffer(block_op_id.into(), &mut operations_buffer);
     }
 
     print_success(format!(

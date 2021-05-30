@@ -78,6 +78,7 @@ pub enum HashError {
 #[cfg(test)]
 mod tests {
     use std::io::{Seek, SeekFrom, Write};
+
     use tempfile::tempdir;
 
     use super::*;

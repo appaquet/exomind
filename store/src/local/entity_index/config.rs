@@ -23,6 +23,12 @@ pub struct EntityIndexConfig {
     /// store
     pub pending_index_config: MutationIndexConfig,
 
+    /// Boosts results of a full-text search when results originate from the
+    /// pending store index (i.e. recently modified). This is useful as scores
+    /// from the pending index may be less relevant because of the lack of other
+    /// results (i.e. BM25 bias). A value above 1.0 boosts.
+    pub pending_index_boost: f32,
+
     /// Configuration for the persisted traits index that are in the chain
     pub chain_index_config: MutationIndexConfig,
 
@@ -39,6 +45,7 @@ impl Default for EntityIndexConfig {
             chain_index_min_depth: 3,
             chain_index_depth_leeway: 10,
             pending_index_config: MutationIndexConfig::default(),
+            pending_index_boost: 5.0,
             chain_index_config: MutationIndexConfig::default(),
             chain_index_in_memory: false,
             garbage_collector: GarbageCollectorConfig::default(),

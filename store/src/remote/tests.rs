@@ -202,7 +202,8 @@ async fn watched_query_timeout() -> anyhow::Result<()> {
     // client will re-register itself at higher interval then expected on server,
     // which will result in timing out eventually
     let client_config = ClientConfiguration {
-        watched_queries_register_interval: Duration::from_millis(2100),
+        watched_register_interval: Duration::from_millis(2100),
+        watched_re_register_remote_dropped: false,
         ..ClientConfiguration::default()
     };
 
@@ -237,6 +238,45 @@ async fn watched_query_timeout() -> anyhow::Result<()> {
     assert!(res.is_err());
     let res = stream.next();
     assert!(res.is_none());
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn watched_query_re_register_remote_dropped() -> anyhow::Result<()> {
+    let server_config = ServerConfiguration {
+        management_timer_interval: Duration::from_millis(100),
+        ..Default::default()
+    };
+    let client_config = ClientConfiguration::default();
+
+    let mut test_remote_store =
+        TestRemoteStore::new_with_configuration(server_config, client_config).await?;
+    test_remote_store.start_server().await?;
+    test_remote_store.start_client().await?;
+
+    let query = QueryBuilder::matches("hello").build();
+    let _stream = block_on_stream(test_remote_store.client_handle.watched_query(query)?);
+
+    // watch for query to be registered, then drop it
+    expect_eventually(|| {
+        let watched_queries = test_remote_store.local_store.store_handle.watched_queries();
+        if watched_queries.is_empty() {
+            false
+        } else {
+            test_remote_store
+                .local_store
+                .store_handle
+                .clear_watched_queries();
+            true
+        }
+    });
+
+    // client should detect its been dropped and register again
+    expect_eventually(|| {
+        let watched_queries = test_remote_store.local_store.store_handle.watched_queries();
+        watched_queries.is_empty()
+    });
 
     Ok(())
 }

@@ -71,6 +71,12 @@ impl WatchedQueries {
         let inner = self.inner.lock().expect("Inner got poisoned");
         inner.queries.values().cloned().collect()
     }
+
+    #[cfg(test)]
+    pub fn clear(&self) {
+        let mut inner = self.inner.lock().expect("Inner got poisoned");
+        inner.queries.clear();
+    }
 }
 
 struct Inner {

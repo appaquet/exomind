@@ -148,10 +148,10 @@ pub struct MutationIndexConfig {
 pub struct EntityGarbageCollectorConfig {
     /// How often the garbage collection process will run in seconds.
     ///
-    /// Since garbage collection doesn't happen on the whole index, but only on entities
-    /// that got flagged during search, it is better to run more often than
-    /// less. `GarbageCollectorConfig::queue_size` can be tweaked to control
-    /// rate of collection.
+    /// Since garbage collection doesn't happen on the whole index, but only on
+    /// entities that got flagged during search, it is better to run more
+    /// often than less. `GarbageCollectorConfig::queue_size` can be tweaked
+    /// to control rate of collection.
     #[prost(message, optional, tag = "1")]
     #[serde(default)]
     pub run_interval_secs: ::core::option::Option<u32>,

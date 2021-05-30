@@ -1,5 +1,8 @@
 use std::path::Path;
 
+use anyhow::anyhow;
+use log::info;
+
 use crate::{
     core::{
         cell::{Cell, LocalNodeConfigExt},
@@ -10,9 +13,6 @@ use crate::{
     store::remote::{Client as StoreClient, ClientHandle as StoreHandle},
     transport::{Libp2pTransport, ServiceType},
 };
-
-use anyhow::anyhow;
-use log::info;
 
 #[derive(Clone)]
 pub struct Client {

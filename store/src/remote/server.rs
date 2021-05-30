@@ -386,7 +386,7 @@ pub struct ServerConfiguration {
 impl Default for ServerConfiguration {
     fn default() -> Self {
         ServerConfiguration {
-            watched_queries_register_timeout: Duration::from_secs(20),
+            watched_queries_register_timeout: Duration::from_secs(30),
             management_timer_interval: Duration::from_millis(500),
         }
     }

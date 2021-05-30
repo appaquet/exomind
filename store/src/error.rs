@@ -43,6 +43,8 @@ pub enum Error {
     #[error("Timeout error: {0:?} > {0:?}")]
     Timeout(Duration, Duration),
 
+    // Remote has dropped watched query. Error message needs to be synchronized
+    // with `client.rs` message handling for re-register handling.
     #[error("Watched query got unregistered")]
     WatchedUnregistered,
 

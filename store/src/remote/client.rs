@@ -174,8 +174,9 @@ pub struct ClientConfiguration {
     pub query_timeout: Duration,
     pub mutation_timeout: Duration,
     pub management_interval: Duration,
-    pub watched_queries_register_interval: Duration,
-    pub watched_query_channel_size: usize,
+    pub watched_register_interval: Duration,
+    pub watched_channel_size: usize,
+    pub watched_re_register_remote_dropped: bool,
 }
 
 /// Keep in sync with application SDK store.
@@ -184,9 +185,10 @@ impl Default for ClientConfiguration {
         ClientConfiguration {
             query_timeout: Duration::from_secs(10),
             mutation_timeout: Duration::from_secs(5),
-            watched_queries_register_interval: Duration::from_secs(10),
+            watched_register_interval: Duration::from_secs(10),
             management_interval: Duration::from_secs(1),
-            watched_query_channel_size: 1000,
+            watched_channel_size: 1000,
+            watched_re_register_remote_dropped: true,
         }
     }
 }
@@ -302,6 +304,15 @@ impl Inner {
                     ).into());
                 }
             }
+            Err(Error::Remote(err))
+                if inner.config.watched_re_register_remote_dropped
+                    && err.contains("unregistered") =>
+            {
+                if let Some(watched_query) = inner.watched_queries.get_mut(&request_id) {
+                    debug!("Query got unregistered by remote. Re-registering...");
+                    watched_query.force_register();
+                }
+            }
             Err(err) => {
                 if let Some(pending_request) = inner.pending_mutations.remove(&request_id) {
                     let _ = pending_request.result_sender.send(Err(err));
@@ -399,8 +410,7 @@ impl Inner {
         ),
         Error,
     > {
-        let (result_sender, result_receiver) =
-            mpsc::channel(self.config.watched_query_channel_size);
+        let (result_sender, result_receiver) = mpsc::channel(self.config.watched_channel_size);
         let request_id = self.clock.consistent_time(self.cell.local_node());
         let watched_query = WatchedQueryRequest {
             request_id,
@@ -462,7 +472,7 @@ impl Inner {
     }
 
     fn send_watched_queries_keepalive(&mut self, force: bool) {
-        let register_interval = self.config.watched_queries_register_interval;
+        let register_interval = self.config.watched_register_interval;
 
         let mut sent_queries = Vec::new();
         for (token, query) in &self.watched_queries {
@@ -534,6 +544,12 @@ struct WatchedQueryRequest {
     query: EntityQuery,
     result_sender: mpsc::Sender<Result<EntityResults, Error>>,
     last_register: Instant,
+}
+
+impl WatchedQueryRequest {
+    fn force_register(&mut self) {
+        self.last_register = Instant::now() - Duration::from_secs(86400);
+    }
 }
 
 /// Async handle to the store.

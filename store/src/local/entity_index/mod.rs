@@ -90,10 +90,11 @@ where
         chain_handle: EngineHandle<CS, PS>,
         clock: Clock,
     ) -> Result<EntityIndex<CS, PS>, Error> {
-        let pending_index = MutationIndex::create_in_memory(
+        let mut pending_index = MutationIndex::create_in_memory(
             config.pending_index_config,
             cell.cell().schemas().clone(),
         )?;
+        pending_index.set_full_text_boost(config.pending_index_boost);
 
         // make sure directories are created
         let mut chain_index_dir = cell
@@ -384,7 +385,7 @@ where
             // other traits
             .top_negatively_rescored_results(
                 current_page.count as usize,
-                |result| {
+                |result: &EntityResult| {
                     (result.ordering_value.clone(), result.ordering_value.clone())
                 },
             )
@@ -524,6 +525,8 @@ where
             self.config.pending_index_config,
             self.full_cell.cell().schemas().clone(),
         )?;
+        self.pending_index
+            .set_full_text_boost(self.config.pending_index_boost);
 
         let last_chain_indexed_offset = self
             .last_chain_indexed_block()?
@@ -638,6 +641,8 @@ where
             }
         }
 
+        let pending_index_empty = self.pending_index.highest_indexed_block()?.is_none();
+
         let mut pending_index_mutations = Vec::new();
         let mut new_highest_block_offset: Option<BlockOffset> = None;
         let mut affected_operations_ref = affected_operations;
@@ -662,11 +667,12 @@ where
                     && last_chain_block_height.saturating_sub(*height) >= chain_index_min_depth
             })
             .flat_map(|(offset, _height, engine_operation)| {
-                // for every mutation we index in the chain index, we delete it from the pending
-                // index
-                pending_index_mutations.push(IndexOperation::DeleteOperation(
-                    engine_operation.operation_id,
-                ));
+                if !pending_index_empty {
+                    // delete from pending index if it's not already empty
+                    pending_index_mutations.push(IndexOperation::DeleteOperation(
+                        engine_operation.operation_id,
+                    ));
+                }
 
                 // take note of the latest block that we indexed in chain
                 if Some(offset) > new_highest_block_offset {

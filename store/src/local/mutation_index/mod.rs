@@ -63,6 +63,7 @@ pub struct MutationIndex {
     fields: schema::Fields,
     storage: Storage,
     entity_cache: EntityMutationsCache,
+    full_text_boost: f32,
 }
 
 #[derive(Debug)]
@@ -105,6 +106,7 @@ impl MutationIndex {
             fields,
             storage: Storage::Disk,
             entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size as usize),
+            full_text_boost: 1.0,
         })
     }
 
@@ -138,7 +140,14 @@ impl MutationIndex {
             fields,
             storage: Storage::Memory,
             entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size as usize),
+            full_text_boost: 1.0,
         })
+    }
+
+    /// Boosts full-text result scores by multiplying it by the given boost
+    /// value.
+    pub fn set_full_text_boost(&mut self, boost: f32) {
+        self.full_text_boost = boost;
     }
 
     /// Apply a single operation on the index. A costly commit & refresh is done
@@ -220,6 +229,10 @@ impl MutationIndex {
                     index_writer
                         .delete_term(Term::from_field_u64(self.fields.operation_id, operation_id));
                 }
+            }
+
+            if nb_operations % 10000 == 0 {
+                info!("Indexed {} operations so far...", nb_operations);
             }
         }
 
@@ -1017,6 +1030,7 @@ impl MutationIndex {
         let now = Utc::now().timestamp_nanos() as u64;
         let operation_id_field = self.fields.operation_id;
         let modification_date_field = self.fields.modification_date;
+        let boost = self.full_text_boost;
         TopDocs::with_limit(paging.count as usize).tweak_score(
             move |segment_reader: &SegmentReader| {
                 let after_score = after_score.clone();
@@ -1045,7 +1059,7 @@ impl MutationIndex {
                         if modification_date == 0 {
                             modification_date = operation_id;
                         }
-                        score * boost_recent(now, modification_date)
+                        score * boost_recent(now, modification_date) * boost
                     } else {
                         score
                     };
@@ -1080,9 +1094,8 @@ fn boost_recent(now_nano: u64, date_nano: u64) -> f32 {
     //
     // See curve at https://www.desmos.com/calculator/ktjtz8yeln
 
-    // TODO: optimize by using a shifted time scale instead of days
     const OFFSET: f32 = 15.0; // time between [now - offset, now] at which score = 1.0
-    const DECAY_LN: f32 = -0.223_143_55; // = ln(0.8), where 0.8 = decay
+    const DECAY_LN: f32 = -1.609_437; // = ln(0.2), where 0.2 = decay
     const SCALE: f32 = 365.0; // score at (now - scale) = decay value
     const LAMBDA: f32 = DECAY_LN / SCALE;
 
@@ -1119,11 +1132,14 @@ mod unit_tests {
         approx_eq!(1.0, boost_recent_chrono(now, now - Duration::days(15))); // within 15 days of now should be 1.0
 
         // at 365d from now should equal decay
-        approx_eq!(0.80737, boost_recent_chrono(now, now - Duration::days(365)));
+        approx_eq!(
+            0.2136757,
+            boost_recent_chrono(now, now - Duration::days(365))
+        );
 
         // at 730d from now, should be still decreasing
         approx_eq!(
-            0.64589596,
+            0.042735178,
             boost_recent_chrono(now, now - Duration::days(730))
         );
     }

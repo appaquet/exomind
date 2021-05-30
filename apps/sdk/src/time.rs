@@ -1,10 +1,9 @@
 use std::{collections::BinaryHeap, sync::Mutex, time::Duration};
 
+use chrono::{DateTime, TimeZone, Utc};
 use futures::{channel::oneshot, Future, FutureExt};
 
 use crate::binding::__exocore_host_now;
-
-use chrono::{DateTime, TimeZone, Utc};
 
 /// Unix timestamp in nanoseconds.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]

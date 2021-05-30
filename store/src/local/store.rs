@@ -398,6 +398,14 @@ where
 
         tokens
     }
+
+    #[cfg(test)]
+    pub(crate) fn clear_watched_queries(&self) {
+        let inner = self.inner.upgrade().unwrap();
+        let inner = inner.read().unwrap();
+
+        inner.watched_queries.clear();
+    }
 }
 
 #[async_trait]

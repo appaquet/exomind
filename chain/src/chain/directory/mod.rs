@@ -5,13 +5,13 @@ use std::{
     sync::Arc,
 };
 
+use exocore_core::simple_store::{json_disk_store::JsonDiskStore, SimpleStore};
+
 use crate::{
     block::{Block, BlockOffset, DataBlock},
     chain::{ChainStore, Error, Segment, StoredBlockIterator},
     operation::OperationId,
 };
-
-use exocore_core::simple_store::{json_disk_store::JsonDiskStore, SimpleStore};
 
 mod operation_index;
 use operation_index::OperationIndex;
@@ -22,7 +22,6 @@ pub use config::DirectoryChainStoreConfig;
 
 pub(self) mod tracker;
 use self::tracker::SegmentTracker;
-
 use super::{ChainData, Segments};
 
 const METADATA_FILE: &str = "metadata.json";
