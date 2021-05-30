@@ -301,9 +301,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.6.1"
+version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63396b8a4b9de3f4fdfb320ab6080762242f66a8ef174c49d8e19b674db4cdbe"
+checksum = "9c59e7af012c713f529e7a3ee57ce9b31ddd858d4b512923602f74608b009631"
 
 [[package]]
 name = "byte-tools"
@@ -744,9 +744,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd01a6eb3daaafa260f6fc94c3a6c36390abc2080e38e3e34ced87393fb77d80"
+checksum = "4ae5588f6b3c3cb05239e90bd110f257254aecd01e4635400391aeae07497845"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-channel",
@@ -779,9 +779,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-epoch"
-version = "0.9.4"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52fb27eab85b17fbb9f6fd667089e07d6a2eb8743d02639ee7f6a7a7729c9c94"
+checksum = "4ec02e091aa634e2c3ada4a392989e7c3116673ef0ac5b72232439094d73b7fd"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-utils",
@@ -792,9 +792,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-queue"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f6cb3c7f5b8e51bc3ebb73a2327ad4abdbd119dc13223f14f961d2f38486756"
+checksum = "9b10ddc024425c88c2ad148c1b0fd53f4c6d38db9697c9f1588381212fa657c9"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-utils",
@@ -802,11 +802,10 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.4"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4feb231f0d4d6af81aed15928e58ecf5816aa62a2393e2c82f46973e92a9a278"
+checksum = "d82cfc11ce7f2c3faef78d8a684447b40d503d9681acebed6cb728d45940c4db"
 dependencies = [
- "autocfg",
  "cfg-if 1.0.0",
  "lazy_static",
 ]
@@ -1072,7 +1071,7 @@ dependencies = [
 
 [[package]]
 name = "exo"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "bytes 1.0.1",
@@ -1101,7 +1100,7 @@ dependencies = [
 
 [[package]]
 name = "exocore"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "exocore-apps-sdk",
@@ -1125,7 +1124,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-host"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "exocore-core",
@@ -1140,7 +1139,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-macros"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "futures",
@@ -1152,7 +1151,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-sdk"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1169,7 +1168,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-chain"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1190,7 +1189,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-android"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "exocore-core",
@@ -1201,7 +1200,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-c"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "exocore-core",
  "exocore-discovery",
@@ -1218,7 +1217,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-web"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -1240,7 +1239,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-core"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "bs58",
@@ -1274,7 +1273,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-discovery"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -1294,7 +1293,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-protos"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -1312,7 +1311,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-store"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1336,7 +1335,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-transport"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -3807,9 +3806,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.6.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd3076b5c8cc18138b8f8814895c11eb4de37114a5d127bafdc5e55798ceef37"
+checksum = "0a38d31d7831c6ed7aad00aa4c12d9375fd225a6dd77da1d25b707346319a975"
 dependencies = [
  "autocfg",
  "bytes 1.0.1",
@@ -3990,9 +3989,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-normalization"
-version = "0.1.17"
+version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07fbfce1c8a97d547e8b5334978438d9d6ec8c20e38f56d4a4374d181493eaef"
+checksum = "33717dca7ac877f497014e10d73f3acf948c342bee31b5ca7892faf94ccc6b49"
 dependencies = [
  "tinyvec",
 ]
