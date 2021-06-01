@@ -10,122 +10,122 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  exomind_gmail:
-    strategy:
-      fail-fast: true
-      matrix:
-        pair:
-          - target: armv7-unknown-linux-gnueabihf
-            os: ubuntu-latest
-            bin: exomind-gmail
-            cross: true
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            bin: exomind-gmail
-            cross: true
-          - target: x86_64-apple-darwin
-            os: macOS-latest
-            bin: exomind-gmail
-            cross: false
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            bin: exomind-gmail.exe
-            cross: false
+  # exomind_gmail:
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       pair:
+  #         - target: armv7-unknown-linux-gnueabihf
+  #           os: ubuntu-latest
+  #           bin: exomind-gmail
+  #           cross: true
+  #         - target: x86_64-unknown-linux-gnu
+  #           os: ubuntu-latest
+  #           bin: exomind-gmail
+  #           cross: true
+  #         - target: x86_64-apple-darwin
+  #           os: macOS-latest
+  #           bin: exomind-gmail
+  #           cross: false
+  #         - target: x86_64-pc-windows-msvc
+  #           os: windows-latest
+  #           bin: exomind-gmail.exe
+  #           cross: false
 
-    runs-on: ${{ matrix.pair.os }}
+  #   runs-on: ${{ matrix.pair.os }}
 
-    steps:
-      - uses: actions/checkout@v2.3.4
+  #   steps:
+  #     - uses: actions/checkout@v2.3.4
 
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-          target: ${{ matrix.pair.target }}
-          override: true
+  #     - uses: actions-rs/toolchain@v1.0.7
+  #       with:
+  #         toolchain: stable
+  #         target: ${{ matrix.pair.target }}
+  #         override: true
 
-      - uses: actions-rs/cargo@v1.0.3
-        with:
-          use-cross: ${{ matrix.pair.cross }}
-          command: build
-          args: -p exomind-gmail --release --target ${{ matrix.pair.target }}
+  #     - uses: actions-rs/cargo@v1.0.3
+  #       with:
+  #         use-cross: ${{ matrix.pair.cross }}
+  #         command: build
+  #         args: -p exomind-gmail --release --target ${{ matrix.pair.target }}
 
-      - name: Create binary
-        run: |
-          mkdir archive
-          cp target/${{ matrix.pair.target }}/release/${{ matrix.pair.bin }} archive
-          cd archive/
-          tar -czf ../exomind-gmail.${{ matrix.pair.target }}.tar.gz *
+  #     - name: Create binary
+  #       run: |
+  #         mkdir archive
+  #         cp target/${{ matrix.pair.target }}/release/${{ matrix.pair.bin }} archive
+  #         cd archive/
+  #         tar -czf ../exomind-gmail.${{ matrix.pair.target }}.tar.gz *
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.3
-        with:
-          name: ${{ matrix.pair.target }}-artifact
-          path: exomind-gmail.${{ matrix.pair.target }}.tar.gz
-          if-no-files-found: error
-
-
-  web_client:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2.3.4
-
-      - name: Setup Node
-        uses: actions/setup-node@v2.1.5
-        with:
-          node-version: 14.x
-
-      - name: Build client
-        run: |
-          cd $GITHUB_WORKSPACE/web
-          yarn install
-          yarn build
-
-          cd $GITHUB_WORKSPACE/web/dist
-          tar -czf $GITHUB_WORKSPACE/exomind-web.tar.gz *
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v2.2.3
-        with:
-          name: client-web-artifact
-          path: exomind-web.tar.gz
-          if-no-files-found: error
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v2.2.3
+  #       with:
+  #         name: ${{ matrix.pair.target }}-artifact
+  #         path: exomind-gmail.${{ matrix.pair.target }}.tar.gz
+  #         if-no-files-found: error
 
 
-  app_package:
-    runs-on: ubuntu-latest
+  # web_client:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v2.3.4
 
-    steps:
-      - uses: actions/checkout@v2.3.4
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v2.1.5
+  #       with:
+  #         node-version: 14.x
 
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-          profile: minimal
-          target: wasm32-unknown-unknown
+  #     - name: Build client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE/web
+  #         yarn install
+  #         yarn build
 
-      - uses: Swatinem/rust-cache@v1
+  #         cd $GITHUB_WORKSPACE/web/dist
+  #         tar -czf $GITHUB_WORKSPACE/exomind-web.tar.gz *
 
-      - name: Build app
-        run: |
-          cd $GITHUB_WORKSPACE
-          ./app/tools/build.sh
+  #     - name: Upload build artifacts
+  #       uses: actions/upload-artifact@v2.2.3
+  #       with:
+  #         name: client-web-artifact
+  #         path: exomind-web.tar.gz
+  #         if-no-files-found: error
 
-      - name: Download exo
-        run: |
-          wget https://github.com/appaquet/exocore/releases/download/v0.1.6/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
-          echo `pwd` >> $GITHUB_PATH
 
-      - name: Build app package
-        run: |
-          exo app package
-          mv exomind.zip exomind-app.zip
+  # app_package:
+  #   runs-on: ubuntu-latest
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v2.2.3
-        with:
-          name: app-package-artifact
-          path: exomind-app.zip
-          if-no-files-found: error
+  #   steps:
+  #     - uses: actions/checkout@v2.3.4
+
+  #     - uses: actions-rs/toolchain@v1.0.7
+  #       with:
+  #         toolchain: stable
+  #         profile: minimal
+  #         target: wasm32-unknown-unknown
+
+  #     - uses: Swatinem/rust-cache@v1
+
+  #     - name: Build app
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         ./app/tools/build.sh
+
+  #     - name: Download exo
+  #       run: |
+  #         wget https://github.com/appaquet/exocore/releases/download/v0.1.6/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+  #         echo `pwd` >> $GITHUB_PATH
+
+  #     - name: Build app package
+  #       run: |
+  #         exo app package
+  #         mv exomind.zip exomind-app.zip
+
+  #     - name: Upload build artifacts
+  #       uses: actions/upload-artifact@v2.2.3
+  #       with:
+  #         name: app-package-artifact
+  #         path: exomind-app.zip
+  #         if-no-files-found: error
 
 
   electron_app:
@@ -149,9 +149,16 @@ jobs:
           cd web
           yarn install --frozen-lockfile
           yarn electron_dist
+          cp dist/Exomind-*.zip ../
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2.2.3
+        with:
+          name: electron-app-artifact
+          path: Exomind-*.zip
+          if-no-files-found: error
 
   release:
     runs-on: ubuntu-latest
