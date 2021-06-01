@@ -149,7 +149,18 @@ jobs:
           cd web
           yarn install --frozen-lockfile
           yarn electron_dist
-          cp dist/Exomind-*.zip ../
+
+          mkdir pkg
+          if [ "${{ matrix.os }}" == "macos-latest" ]; then
+            cp dist/Exomind-*.dmg pkg/exomind-electron-macos.dmg
+          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            cp dist/exomind-*_amd64.snap pkg/exomind-electron-linux.snap
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            cp dist/Exomind-Setup-*.exe pkg/exomind-electron-win.exe
+          else
+            echo "${{ matrix.os }} not supported"
+            exit 1
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -157,7 +168,7 @@ jobs:
         uses: actions/upload-artifact@v2.2.3
         with:
           name: electron-app-artifact
-          path: Exomind-*.zip
+          path: web/pkg/*
           if-no-files-found: error
 
   release:
