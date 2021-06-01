@@ -145,6 +145,7 @@ jobs:
           node-version: 14.x
 
       - name: Build
+        shell: bash
         run: |
           cd web
           yarn install --frozen-lockfile
