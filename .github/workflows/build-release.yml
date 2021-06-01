@@ -147,7 +147,7 @@ jobs:
         run: |
           cd web
           yarn install --frozen-lockfile
-          yarn electron
+          yarn electron_dist
 
 
   release:
