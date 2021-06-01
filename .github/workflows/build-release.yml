@@ -149,6 +149,8 @@ jobs:
           cd web
           yarn install --frozen-lockfile
           yarn electron_dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
   release:
