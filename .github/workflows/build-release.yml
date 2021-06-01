@@ -63,27 +63,16 @@ jobs:
           path: exomind-gmail.${{ matrix.pair.target }}.tar.gz
           if-no-files-found: error
 
+
   web_client:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2.3.4
 
-      - name: Install build dependencies
-        run: |
-          sudo apt update
-          sudo apt install -yq libssl-dev openssl protobuf-compiler
-
-          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.9.1/wasm-pack-v0.9.1-x86_64-unknown-linux-musl.tar.gz | tar zxf -
-          mv wasm-pack*/wasm-pack .
-          echo `pwd` >> $GITHUB_PATH
-
-          sudo npm install -g yarn
-
-      - uses: actions-rs/toolchain@v1.0.7
+      - name: Setup Node
+        uses: actions/setup-node@v2.1.5
         with:
-          toolchain: stable
-          profile: minimal
-          target: wasm32-unknown-unknown
+          node-version: 14.x
 
       - name: Build client
         run: |
@@ -100,6 +89,7 @@ jobs:
           name: client-web-artifact
           path: exomind-web.tar.gz
           if-no-files-found: error
+
 
   app_package:
     runs-on: ubuntu-latest
@@ -136,6 +126,29 @@ jobs:
           name: app-package-artifact
           path: exomind-app.zip
           if-no-files-found: error
+
+
+  electron_app:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v2.1.5
+        with:
+          node-version: 14.x
+
+      - name: Build
+        run: |
+          cd web
+          yarn install --frozen-lockfile
+          yarn electron
+
 
   release:
     runs-on: ubuntu-latest
