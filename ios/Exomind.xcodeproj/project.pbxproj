@@ -627,6 +627,7 @@
 					};
 					6DAB3F4D1D32F74000E08229 = {
 						CreatedOnToolsVersion = 7.3.1;
+						DevelopmentTeam = FHZCN4GU2K;
 						LastSwiftMigration = 1200;
 						TestTargetID = 6D5D07781BC40D0A007D0011;
 					};
@@ -1185,6 +1186,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ANALYZER_NONNULL = YES;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				INFOPLIST_FILE = ExomindTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -1204,6 +1206,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ANALYZER_NONNULL = YES;
+				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				INFOPLIST_FILE = ExomindTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
