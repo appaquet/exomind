@@ -13,6 +13,7 @@ target 'Exomind' do
   pod 'Dwifft', '~> 0.9', :inhibit_warnings => true
   pod 'SwiftProtobuf', '~> 1.10'
   pod 'ReachabilitySwift'
+  pod 'AppCenter'
 
   pod 'Exocore', '~> 0.1.6'
   # pod 'Exocore', :path => '../../exocore'

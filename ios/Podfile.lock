@@ -1,4 +1,12 @@
 PODS:
+  - AppCenter (4.1.1):
+    - AppCenter/Analytics (= 4.1.1)
+    - AppCenter/Crashes (= 4.1.1)
+  - AppCenter/Analytics (4.1.1):
+    - AppCenter/Core
+  - AppCenter/Core (4.1.1)
+  - AppCenter/Crashes (4.1.1):
+    - AppCenter/Core
   - CLTokenInputView (2.3.0)
   - Dwifft (0.9)
   - Exocore (0.1.6):
@@ -13,6 +21,7 @@ PODS:
   - UIColor_Hex_Swift (4.2.0)
 
 DEPENDENCIES:
+  - AppCenter
   - CLTokenInputView
   - Dwifft (~> 0.9)
   - Exocore (~> 0.1.6)
@@ -27,6 +36,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
+    - AppCenter
     - CLTokenInputView
     - Dwifft
     - Exocore
@@ -48,6 +58,7 @@ CHECKOUT OPTIONS:
     :git: https://github.com/thii/FontAwesome.swift.git
 
 SPEC CHECKSUMS:
+  AppCenter: cd53e3ed3563cc720bcb806c9731a12389b40d44
   CLTokenInputView: 9dc1ffb7c9d2d81787e69a63c75bd97b0b2d1e76
   Dwifft: 42912068ed2a8146077d1a1404df18625bd086e1
   Exocore: 1c7b933feb68e554bf1aa9a0182eceb43e7c6a3c
@@ -60,6 +71,6 @@ SPEC CHECKSUMS:
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: 14cc1d2a12f2402573a3ed233966e692d35ba4b1
+PODFILE CHECKSUM: 848e467bbfb0dac4a41eaa56680405b921183dc1
 
 COCOAPODS: 1.9.3

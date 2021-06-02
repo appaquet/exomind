@@ -1,6 +1,9 @@
 import UIKit
 import KeychainSwift
 import Reachability
+import AppCenter
+import AppCenterAnalytics
+import AppCenterCrashes
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -9,6 +12,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var reach: Reachability?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        AppCenter.start(withAppSecret: "fd71ff63-e602-441d-8fc6-26932fcf55de", services:[
+          Analytics.self,
+          Crashes.self
+        ])
+
         HttpUtils.copyCookiesToKeychain()
         JSBridge.instance = JSBridge()
 
