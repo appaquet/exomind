@@ -59,14 +59,24 @@ fn cmd_init(ctx: &Context, init_opts: &InitOptions) -> anyhow::Result<()> {
             .interact_text()?;
     }
 
+    // generate port randomly
+    let port_rand = 10 + rand::random::<u8>() % 90;
+
     let local_node_config = LocalNodeConfig {
         name: node_name,
         addresses: Some(NodeAddresses {
             p2p: vec![
-                "/ip4/0.0.0.0/tcp/3330".to_string(),
-                "/ip4/0.0.0.0/tcp/3430/ws".to_string(),
+                format!("/ip4/127.0.0.1/tcp/33{}", port_rand),
+                format!("/ip4/127.0.0.1/tcp/34{}/ws", port_rand),
             ],
-            http: vec!["http://0.0.0.0:8030".to_string()],
+            http: vec![format!("http://127.0.0.1:80{}", port_rand)],
+        }),
+        listen_addresses: Some(NodeAddresses {
+            p2p: vec![
+                format!("/ip4/0.0.0.0/tcp/33{}", port_rand),
+                format!("/ip4/0.0.0.0/tcp/34{}/ws", port_rand),
+            ],
+            http: vec![format!("http://0.0.0.0:80{}", port_rand)],
         }),
 
         ..local_node.config().clone()

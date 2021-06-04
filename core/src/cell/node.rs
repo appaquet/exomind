@@ -24,7 +24,7 @@ use crate::sec::{
 #[derive(Clone)]
 pub struct Node {
     identity: Arc<NodeIdentity>,
-    inner: Arc<RwLock<SharedInner>>,
+    addresses: Arc<RwLock<Addresses>>,
 }
 
 struct NodeIdentity {
@@ -33,11 +33,6 @@ struct NodeIdentity {
     consistent_clock_id: u16,
     public_key: PublicKey,
     name: String,
-}
-
-struct SharedInner {
-    p2p_addresses: HashSet<Multiaddr>,
-    http_addresses: HashSet<url::Url>,
 }
 
 impl Node {
@@ -56,7 +51,11 @@ impl Node {
         };
 
         let node = Self::build(public_key, name);
-        parse_node_addresses(&node, &config.addresses.unwrap_or_default())?;
+
+        {
+            let mut addresses = node.addresses.write().unwrap();
+            *addresses = Addresses::parse(&config.addresses.unwrap_or_default())?;
+        }
 
         Ok(node)
     }
@@ -88,9 +87,9 @@ impl Node {
                 public_key,
                 name,
             }),
-            inner: Arc::new(RwLock::new(SharedInner {
-                p2p_addresses: HashSet::new(),
-                http_addresses: HashSet::new(),
+            addresses: Arc::new(RwLock::new(Addresses {
+                p2p: HashSet::new(),
+                http: HashSet::new(),
             })),
         }
     }
@@ -116,23 +115,23 @@ impl Node {
     }
 
     pub fn p2p_addresses(&self) -> Vec<Multiaddr> {
-        let inner = self.inner.read().expect("Couldn't get inner lock");
-        inner.p2p_addresses.iter().cloned().collect()
+        let addresses = self.addresses.read().expect("Couldn't get addresses lock");
+        addresses.p2p.iter().cloned().collect()
     }
 
     pub fn add_p2p_address(&self, address: Multiaddr) {
-        let mut inner = self.inner.write().expect("Couldn't get inner lock");
-        inner.p2p_addresses.insert(address);
+        let mut addresses = self.addresses.write().expect("Couldn't get addresses lock");
+        addresses.p2p.insert(address);
     }
 
     pub fn http_addresses(&self) -> Vec<Url> {
-        let inner = self.inner.read().expect("Couldn't get inner lock");
-        inner.http_addresses.iter().cloned().collect()
+        let addresses = self.addresses.read().expect("Couldn't get addresses lock");
+        addresses.http.iter().cloned().collect()
     }
 
     pub fn add_http_address(&self, address: Url) {
-        let mut inner = self.inner.write().expect("Couldn't get inner lock");
-        inner.http_addresses.insert(address);
+        let mut addresses = self.addresses.write().expect("Couldn't get addresses lock");
+        addresses.http.insert(address);
     }
 }
 
@@ -146,7 +145,7 @@ impl Eq for Node {}
 
 impl Debug for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let inner = self.inner.read().expect("Couldn't get inner lock");
+        let addresses = self.addresses.read().expect("Couldn't get addresses lock");
         f.debug_struct("Node")
             .field("name", &self.identity.name)
             .field("node_id", &self.identity.node_id)
@@ -154,8 +153,8 @@ impl Debug for Node {
                 "public_key",
                 &self.identity.public_key.encode_base58_string(),
             )
-            .field("p2p_addresses", &inner.p2p_addresses)
-            .field("http_addresses", &inner.http_addresses)
+            .field("p2p_addresses", &addresses.p2p)
+            .field("http_addresses", &addresses.http)
             .finish()
     }
 }
@@ -180,6 +179,7 @@ pub struct LocalNode {
 struct LocalNodeIdentity {
     keypair: Keypair,
     config: LocalNodeConfig,
+    addresses: Addresses,
 }
 
 impl LocalNode {
@@ -203,6 +203,8 @@ impl LocalNode {
         let keypair = Keypair::decode_base58_string(&config.keypair)
             .map_err(|err| Error::Cell(anyhow!("Couldn't decode local node keypair: {}", err)))?;
 
+        let listen_addresses =
+            Addresses::parse(&config.listen_addresses.clone().unwrap_or_default())?;
         let local_node = LocalNode {
             node: Node::new_from_config(NodeConfig {
                 public_key: config.public_key.clone(),
@@ -210,7 +212,11 @@ impl LocalNode {
                 id: config.id.clone(),
                 addresses: config.addresses.clone(),
             })?,
-            identity: Arc::new(LocalNodeIdentity { keypair, config }),
+            identity: Arc::new(LocalNodeIdentity {
+                keypair,
+                config,
+                addresses: listen_addresses,
+            }),
         };
 
         Ok(local_node)
@@ -232,6 +238,22 @@ impl LocalNode {
 
     pub fn config(&self) -> &LocalNodeConfig {
         &self.identity.config
+    }
+
+    pub fn p2p_listen_addresses(&self) -> Vec<Multiaddr> {
+        if !self.identity.addresses.p2p.is_empty() {
+            self.identity.addresses.p2p.iter().cloned().collect()
+        } else {
+            self.p2p_addresses()
+        }
+    }
+
+    pub fn http_listen_addresses(&self) -> Vec<Url> {
+        if !self.identity.addresses.http.is_empty() {
+            self.identity.addresses.http.iter().cloned().collect()
+        } else {
+            self.http_addresses()
+        }
     }
 }
 
@@ -255,6 +277,8 @@ impl Debug for LocalNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("LocalNode")
             .field("node", &self.node)
+            .field("p2p_listen_addresses", &self.identity.addresses.p2p)
+            .field("http_listen_addresses", &self.identity.addresses.http)
             .finish()
     }
 }
@@ -318,22 +342,34 @@ impl FromStr for NodeId {
     }
 }
 
-fn parse_node_addresses(node: &Node, addresses: &NodeAddresses) -> Result<(), Error> {
-    for maddr_str in &addresses.p2p {
-        let maddr = maddr_str
-            .parse()
-            .map_err(|err| Error::Cell(anyhow!("Couldn't parse p2p multi-address: {}", err)))?;
-        node.add_p2p_address(maddr);
-    }
+/// Addresses of a node.
+struct Addresses {
+    p2p: HashSet<Multiaddr>,
+    http: HashSet<url::Url>,
+}
 
-    for url_str in &addresses.http {
-        let url = url_str
-            .parse()
-            .map_err(|err| Error::Cell(anyhow!("Couldn't parse http url: {}", err)))?;
-        node.add_http_address(url);
-    }
+impl Addresses {
+    fn parse(config: &NodeAddresses) -> Result<Addresses, Error> {
+        let mut addresses = Addresses {
+            p2p: HashSet::new(),
+            http: HashSet::new(),
+        };
+        for maddr_str in &config.p2p {
+            let maddr = maddr_str
+                .parse()
+                .map_err(|err| Error::Cell(anyhow!("Couldn't parse p2p multi-address: {}", err)))?;
+            addresses.p2p.insert(maddr);
+        }
 
-    Ok(())
+        for url_str in &config.http {
+            let url = url_str
+                .parse()
+                .map_err(|err| Error::Cell(anyhow!("Couldn't parse http url: {}", err)))?;
+            addresses.http.insert(url);
+        }
+
+        Ok(addresses)
+    }
 }
 
 #[cfg(test)]

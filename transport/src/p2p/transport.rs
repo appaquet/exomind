@@ -14,7 +14,7 @@ use libp2p::{
     core::PeerId,
     ping::{Ping, PingEvent, PingSuccess},
     swarm::{ExpandedSwarm, NetworkBehaviourEventProcess, Swarm},
-    NetworkBehaviour,
+    NetworkBehaviour, Transport,
 };
 
 use super::{
@@ -97,10 +97,7 @@ impl Libp2pTransport {
 
         #[cfg(all(feature = "p2p-web", target_arch = "wasm32"))]
         let mut swarm = {
-            use libp2p::{
-                wasm_ext::{ffi::websocket_transport, ExtTransport},
-                Transport,
-            };
+            use libp2p::wasm_ext::{ffi::websocket_transport, ExtTransport};
 
             let noise_keys = libp2p::noise::Keypair::<libp2p::noise::X25519Spec>::new()
                 .into_authentic(self.local_node.keypair().to_libp2p())
@@ -125,8 +122,7 @@ impl Libp2pTransport {
 
         #[cfg(feature = "p2p-full")]
         let mut swarm = {
-            let transport =
-                libp2p::tokio_development_transport(self.local_node.keypair().to_libp2p().clone())?;
+            let transport = build_transport(self.local_node.keypair().to_libp2p().clone())?;
 
             // Create our own libp2p executor since by default it spawns its own thread pool
             // to spawn tcp related futures, but Tokio requires to be spawn from
@@ -386,4 +382,37 @@ fn get_node_by_peer(cell: &Cell, peer_id: PeerId) -> Result<Node, Error> {
             node_id
         )))
     }
+}
+
+/// Create a transport to be used in non-wasm target.
+/// Copied from libp2p to force using Google DNS for iOS support.
+#[cfg(feature = "p2p-full")]
+pub fn build_transport(
+    keypair: libp2p::identity::Keypair,
+) -> std::io::Result<libp2p::core::transport::Boxed<(PeerId, libp2p::core::muxing::StreamMuxerBox)>>
+{
+    let transport = {
+        let tcp = libp2p::tcp::TokioTcpConfig::new().nodelay(true);
+        let dns_tcp = libp2p::dns::TokioDnsConfig::custom(
+            tcp,
+            libp2p::dns::ResolverConfig::google(),
+            Default::default(),
+        )?;
+        let ws_dns_tcp = libp2p::websocket::WsConfig::new(dns_tcp.clone());
+        dns_tcp.or_transport(ws_dns_tcp)
+    };
+
+    let noise_keys = libp2p::noise::Keypair::<libp2p::noise::X25519Spec>::new()
+        .into_authentic(&keypair)
+        .expect("Signing libp2p-noise static DH keypair failed.");
+
+    Ok(transport
+        .upgrade(libp2p::core::upgrade::Version::V1)
+        .authenticate(libp2p::noise::NoiseConfig::xx(noise_keys).into_authenticated())
+        .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
+            libp2p::yamux::YamuxConfig::default(),
+            libp2p::mplex::MplexConfig::default(),
+        ))
+        .timeout(std::time::Duration::from_secs(20))
+        .boxed())
 }

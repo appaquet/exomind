@@ -18,7 +18,7 @@ pub struct Libp2pTransportConfig {
 impl Libp2pTransportConfig {
     pub fn listen_addresses(&self, local_node: &LocalNode) -> Result<Vec<Multiaddr>, Error> {
         let mut conf_addresses = self.listen_addresses.clone();
-        let mut node_addresses = local_node.p2p_addresses();
+        let mut node_addresses = local_node.p2p_listen_addresses();
 
         node_addresses.append(&mut conf_addresses);
 

@@ -4,11 +4,18 @@ name: Optional Node Name
 public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
 keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
 
-# Node's listen addresses
+# Node's public addresses (and optionally listen addresses)
 addresses:
   p2p:
+    - /ip4/127.0.0.1/tcp/3330
+    - /ip4/127.0.0.1/tcp/3341/ws
+  http:
+    - http://127.0.0.1:8888
+
+# Optional node's listen addresses. If not specified, `addresses` will be used.
+listen_addresses:
+  p2p:
     - /ip4/0.0.0.0/tcp/3330
-    - /ip4/0.0.0.0/tcp/3341/ws
   http:
     - http://0.0.0.0:8888
 

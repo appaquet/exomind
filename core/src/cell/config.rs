@@ -687,6 +687,10 @@ mod tests {
                 p2p: vec!["maddr".to_string()],
                 http: vec!["http_addr".to_string()],
             }),
+            listen_addresses: Some(NodeAddresses {
+                p2p: vec!["listen_maddr".to_string()],
+                http: vec!["listen_http_addr".to_string()],
+            }),
             store: Some(NodeStoreConfig {
                 index: Some(EntityIndexConfig {
                     chain_index_min_depth: Some(3),

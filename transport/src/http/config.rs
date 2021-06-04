@@ -17,7 +17,7 @@ pub struct HttpTransportConfig {
 impl HttpTransportConfig {
     pub fn listen_addresses(&self, local_node: &LocalNode) -> Result<Vec<Url>, Error> {
         let mut conf_addresses = self.listen_addresses.clone();
-        let mut node_addresses = local_node.http_addresses();
+        let mut node_addresses = local_node.http_listen_addresses();
 
         node_addresses.append(&mut conf_addresses);
 

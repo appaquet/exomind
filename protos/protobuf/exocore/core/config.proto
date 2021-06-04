@@ -16,6 +16,8 @@ message LocalNodeConfig {
 
     string path = 5;
 
+    NodeAddresses listen_addresses = 10;
+
     NodeAddresses addresses = 6;
 
     repeated NodeCellConfig cells = 7;
@@ -44,7 +46,7 @@ message NodeStoreConfig {
     // Entity index config.
     EntityIndexConfig index = 1;
 
-    // Maximum number fo queries to execute in parallel.
+    // Maximum number of queries to execute in parallel.
     google.protobuf.UInt32Value query_parallelism = 2;
 }
 

@@ -244,7 +244,7 @@ impl AppPackage {
                 print_error(format!(
                     "Application already installed at '{}'. Use {} to overwrite it.",
                     style_value(&app_dir),
-                    style_value("--force"),
+                    style_value("--overwrite"),
                 ));
                 return Ok(());
             }

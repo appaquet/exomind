@@ -113,6 +113,9 @@ pub enum Commands {
 
     /// Discovery service related commands.
     Discovery(disco::DiscoveryCommand),
+
+    /// Print version.
+    Version,
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -141,6 +144,10 @@ async fn main() -> anyhow::Result<()> {
         Commands::Config(config_opts) => config::handle_cmd(&ctx, config_opts),
         Commands::Daemon => daemon::cmd_daemon(&ctx).await,
         Commands::Discovery(disco_opts) => disco::cmd_daemon(&ctx, disco_opts).await,
+        Commands::Version => {
+            println!("version {}", env!("CARGO_PKG_VERSION"));
+            Ok(())
+        }
     };
 
     if let Err(err) = result {

@@ -18,6 +18,8 @@ pub fn start() {
     INIT.call_once(|| {
         wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+        info!("exocore version={}", env!("CARGO_PKG_VERSION"));
     });
 }
 

@@ -76,6 +76,7 @@ fn main() {
                 .field_attribute("ManifestSchema.source.bytes", "#[serde(serialize_with = \"crate::base64::as_base64\", deserialize_with = \"crate::base64::from_base64\")]")
                 .field_attribute("LocalNodeConfig.name", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.id", "#[serde(default)]")
+                .field_attribute("LocalNodeConfig.listen_addresses", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.path", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.store", "#[serde(default)]")
                 .field_attribute("NodeStoreConfig.index", "#[serde(default)]")

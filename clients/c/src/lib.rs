@@ -34,5 +34,6 @@ pub extern "C" fn exocore_init(log_level: usize, log_file: *const c_char) {
         };
 
         exocore_core::logging::setup(log_level, file);
+        info!("exocore version={}", env!("CARGO_PKG_VERSION"));
     });
 }

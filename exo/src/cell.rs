@@ -34,7 +34,7 @@ use crate::{
     Context,
 };
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 pub struct CellOptions {
     /// Public key of the cell we want to make an action on. If not specified
     /// and the node config only contains 1 cell, this cell will be taken.
@@ -50,7 +50,7 @@ pub struct CellOptions {
     command: CellCommand,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 enum CellCommand {
     /// Initialize a new cell.
     Init(InitOptions),
@@ -89,7 +89,7 @@ enum CellCommand {
     CreateGenesisBlock,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct InitOptions {
     /// Name of the cell
     #[clap(long)]
@@ -114,27 +114,31 @@ struct InitOptions {
 }
 
 /// Cell join related options
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct JoinOptions {
     /// Manually join a cell using its cell configuration yaml.
     #[clap(long)]
     manual: bool,
+
+    /// Don't unpack applications.
+    #[clap(long)]
+    no_app_unpack: bool,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct NodeOptions {
     #[clap(subcommand)]
     command: NodeCommand,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 pub struct PrintOptions {
     /// Inline configuration instead of pointing to external objects.
     #[clap(long)]
     pub inline: bool,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 enum NodeCommand {
     /// Add a node to the cell.
     Add(NodeAddOptions),
@@ -143,7 +147,7 @@ enum NodeCommand {
     List,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct NodeAddOptions {
     /// The node will host the chain locally.
     #[clap(long)]
@@ -162,13 +166,13 @@ struct NodeAddOptions {
     manual: bool,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct ChainExportOptions {
     // File in which chain will be exported.
     file: PathBuf,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct ChainImportOptions {
     // Number of operations per block.
     #[clap(long, default_value = "30")]
@@ -178,20 +182,20 @@ struct ChainImportOptions {
     files: Vec<PathBuf>,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct GenerateAuthTokenOptions {
     // Token expiration duration in days.
     #[clap(long, default_value = "30")]
     expiration_days: u16,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct AppOptions {
     #[clap(subcommand)]
     command: AppCommand,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 enum AppCommand {
     /// List applications installed in cell.
     List,
@@ -204,7 +208,7 @@ enum AppCommand {
     Unpack(AppUnpackOptions),
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone)]
 struct AppInstallOptions {
     /// URL to application package to install.
     url: String,
@@ -214,11 +218,15 @@ struct AppInstallOptions {
     overwrite: bool,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone, Default)]
 struct AppUnpackOptions {
     /// Optional name of the application to unpack.
     /// If none specified, all applications will be unpacked.
     app: Option<String>,
+
+    /// Don't overwrite if application is already installed.
+    #[clap(long)]
+    no_overwrite: bool,
 }
 
 pub async fn handle_cmd(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()> {
@@ -530,7 +538,7 @@ fn cmd_node_list(ctx: &Context, cell_opts: &CellOptions) {
 
 async fn cmd_join(
     ctx: &Context,
-    _cell_opts: &CellOptions,
+    cell_opts: &CellOptions,
     join_opts: &JoinOptions,
 ) -> anyhow::Result<()> {
     let node_config = ctx.options.read_configuration();
@@ -546,7 +554,7 @@ async fn cmd_join(
         .to_yaml()
         .expect("Couldn't convert cell node config to yaml");
 
-    let cell_config = if !join_opts.manual {
+    let mut cell_config = if !join_opts.manual {
         let create_resp = disco_client
             .create(cell_node_yaml.as_bytes(), true)
             .await
@@ -580,6 +588,19 @@ async fn cmd_join(
     write_cell_config(ctx, &cell_config);
 
     add_node_config_cell(ctx, &node_config, &cell_config);
+
+    if !join_opts.no_app_unpack {
+        let cell_opts = CellOptions {
+            public_key: Some(cell_config.public_key.clone()),
+            ..cell_opts.clone()
+        };
+        let (_, cell) = get_cell(ctx, &cell_opts);
+        let cell = cell.cell();
+
+        unpack_cell_apps(cell, &mut cell_config, &AppUnpackOptions::default()).await;
+
+        write_cell_config(ctx, &cell_config);
+    }
 
     print_success(format!(
         "Successfully joined cell {} with public key {}",
@@ -979,6 +1000,24 @@ async fn cmd_app_unpack(
     let mut cell_config =
         CellConfig::from_yaml_file(&config_path).expect("Couldn't read cell config");
 
+    unpack_cell_apps(cell, &mut cell_config, unpack_opts).await;
+
+    print_action(format!(
+        "Writing cell config to {}",
+        style_value(&config_path)
+    ));
+    cell_config
+        .to_yaml_file(&config_path)
+        .expect("Couldn't write cell config");
+
+    Ok(())
+}
+
+async fn unpack_cell_apps(
+    cell: &Cell,
+    cell_config: &mut CellConfig,
+    unpack_opts: &AppUnpackOptions,
+) {
     for app in cell_config.apps.clone() {
         if let Some(for_app) = &unpack_opts.app {
             if *for_app != app.name {
@@ -998,7 +1037,7 @@ async fn cmd_app_unpack(
                     .await
                     .expect("Couldn't fetch package");
 
-                pkg.install(cell, &mut cell_config, false)
+                pkg.install(cell, cell_config, !unpack_opts.no_overwrite)
                     .await
                     .expect("Couldn't install app");
 
@@ -1012,16 +1051,6 @@ async fn cmd_app_unpack(
             _ => {}
         }
     }
-
-    print_action(format!(
-        "Writing cell config to {}",
-        style_value(&config_path)
-    ));
-    cell_config
-        .to_yaml_file(&config_path)
-        .expect("Couldn't write cell config");
-
-    Ok(())
 }
 
 fn get_cell(ctx: &Context, cell_opts: &CellOptions) -> (LocalNodeConfig, EitherCell) {
