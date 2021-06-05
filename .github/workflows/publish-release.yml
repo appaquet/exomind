@@ -117,4 +117,4 @@ jobs:
       - name: Trigger iOS build
         run: |
           set -x
-          git push -f origin/app-build
+          git push origin -f HEAD:app-build
