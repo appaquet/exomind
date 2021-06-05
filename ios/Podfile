@@ -17,7 +17,7 @@ target 'Exomind' do
 
   pod 'Exocore', '0.1.7'
   # pod 'Exocore', :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.6/exocore-ios.tar.gz'
+  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.7/exocore-ios.tar.gz'
 end
 
 target 'ExomindActionExt' do
@@ -26,7 +26,7 @@ target 'ExomindActionExt' do
 
   pod 'Exocore', '0.1.7'
   # pod 'Exocore' , :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.6/exocore-ios.tar.gz'
+  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.7/exocore-ios.tar.gz'
 end
 
 target 'ExomindTests' do
@@ -35,7 +35,7 @@ target 'ExomindTests' do
 
   pod 'Exocore', '0.1.7'
   # pod 'Exocore', :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.6/exocore-ios.tar.gz'
+  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.7/exocore-ios.tar.gz'
 end
 
 

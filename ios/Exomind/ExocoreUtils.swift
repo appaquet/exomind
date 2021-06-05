@@ -34,7 +34,6 @@ class ExocoreUtils {
         }
 
         if let node = self.node, self.nodeHasCell {
-            print("Initializing !")
             try ExocoreClient.initialize(node: node)
         } else {
             print("ExocoreUtils > No node or cell configured")
