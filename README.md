@@ -1,4 +1,6 @@
 # Exomind
+![Build](https://github.com/appaquet/exomind/workflows/Push%20tester/badge.svg)
+![iOS app](https://build.appcenter.ms/v0.1/apps/76ac2c48-f34c-4ac4-bcc4-41bae61f8177/branches/app-build/badge)
 
 **Warning: Exomind is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
 
