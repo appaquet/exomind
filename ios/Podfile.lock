@@ -9,7 +9,7 @@ PODS:
     - AppCenter/Core
   - CLTokenInputView (2.3.0)
   - Dwifft (0.9)
-  - Exocore (0.1.4):
+  - Exocore (0.1.7):
     - SwiftProtobuf (~> 1.10)
   - FontAwesome.swift (1.9.1)
   - KeychainSwift (19.0.0)
@@ -24,7 +24,7 @@ DEPENDENCIES:
   - AppCenter
   - CLTokenInputView
   - Dwifft (~> 0.9)
-  - Exocore (= 0.1.4)
+  - Exocore (= 0.1.7)
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
   - KeychainSwift (~> 19.0)
   - MCSwipeTableViewCell
@@ -61,7 +61,7 @@ SPEC CHECKSUMS:
   AppCenter: cd53e3ed3563cc720bcb806c9731a12389b40d44
   CLTokenInputView: 9dc1ffb7c9d2d81787e69a63c75bd97b0b2d1e76
   Dwifft: 42912068ed2a8146077d1a1404df18625bd086e1
-  Exocore: 4dc34dded81477271a3fc1e76844cbc7a21a3356
+  Exocore: 7bc392f38705cfb96ca1d09011de77f05ccb60bd
   FontAwesome.swift: 6b52cb7be66eacd28cbfaa0ca7ffd0de4a186a1d
   KeychainSwift: a06190cf933ad46b1e0abc3d77d29c06331715c7
   MCSwipeTableViewCell: 1b303e16c3a26b1982f3a68386e9b8c5fc8344c3
@@ -71,6 +71,6 @@ SPEC CHECKSUMS:
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: 94b5b7c9a75299cd85a60d970486a726bf07cb21
+PODFILE CHECKSUM: 3a6ebc3a3b5071f98cc8222e2d90254a1880994f
 
 COCOAPODS: 1.10.1

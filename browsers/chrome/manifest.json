@@ -4,17 +4,25 @@
     "description": "Import into Exomind",
     "version": "0.3",
     "background": {
-        "scripts": ["event.js"],
+        "scripts": [
+            "event.js"
+        ],
         "persistent": false
     },
     "browser_action": {
         "default_icon": "icon.png",
         "default_popup": "popup.html"
     },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "app@exomind.io",
+            "strict_min_version": "42.0"
+        }
+    },
     "permissions": [
-        "tabs", 
+        "tabs",
         "storage",
-        "http://*/*", 
+        "http://*/*",
         "https://*/*"
     ]
 }
