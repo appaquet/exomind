@@ -74,7 +74,7 @@ export default class EditableText extends React.Component<IProps, IState> {
       <span
         className="editable-text"
         onClick={singleClick ? this.handleReadClick : null}
-        onDoubleClick={this.handleReadClick.bind(this)}>
+        onDoubleClick={this.handleReadClick}>
         {value}
       </span>
     );
@@ -97,7 +97,9 @@ export default class EditableText extends React.Component<IProps, IState> {
           onBlur={this.handleEditBlur}
           onChange={this.handleEditChange}
           onKeyUp={this.handleEditKeyPress}
-          value={this.state.value} />
+          value={this.state.value}
+          onClick={this.handleEditClick}
+        />
       </span>
     );
   }
@@ -129,6 +131,10 @@ export default class EditableText extends React.Component<IProps, IState> {
 
   private handleEditBlur = () => {
     this.editFinish();
+  }
+
+  private handleEditClick = (event: MouseEvent) => {
+    event.stopPropagation();
   }
 
   private editFinish() {

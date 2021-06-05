@@ -16,7 +16,9 @@ body {
   color: var(--body-fg);
 }
 
-input, button, textarea {
+input,
+button,
+textarea {
   background: var(--body-bg);
   color: var(--body-fg);
 }
@@ -30,7 +32,12 @@ input, button, textarea {
     #content {
       padding-top: @navbar-height + 10px;
       height: 100%;
-      margin-left: @hamburger-width;
+    }
+
+    &.hamburger-open {
+      #content {
+        margin-left: @hamburger-width;
+      }
     }
 
     &.fullscreen {
