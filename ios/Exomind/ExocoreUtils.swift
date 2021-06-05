@@ -30,21 +30,22 @@ class ExocoreUtils {
 
         if self.node == nil {
             self.node = try LocalNode.generate()
-            self.saveNode(node: self.node!)
+            try self.saveNode(node: self.node!)
         }
 
         if let node = self.node, self.nodeHasCell {
             try ExocoreClient.initialize(node: node)
+        } else {
+            print("ExocoreUtils > No node or cell configured")
         }
     }
 
-    static func saveNode(node: LocalNode) {
-        if let config = try? node.config(),
-           let configData = try? config.serializedData() {
-            let keychain = KeychainSwift()
-            keychain.set(configData, forKey: "node")
-            self.node = node
-        }
+    static func saveNode(node: LocalNode) throws {
+        let config = try node.config()
+        let configData = try config.serializedData()
+        let keychain = KeychainSwift()
+        keychain.set(configData, forKey: "node")
+        self.node = node
     }
 
     static func resetTransport() {

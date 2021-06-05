@@ -110,6 +110,11 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
   }
 
   private handleDropIn = (event: React.DragEvent): void => {
+    if (this.state.isDragged) {
+      // we're the one being dragged, and dropped on ourself
+      return;
+    }
+
     this.setState({
       isHovered: false
     });

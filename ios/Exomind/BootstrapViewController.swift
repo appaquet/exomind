@@ -34,7 +34,7 @@ class BootstrapViewController: UIViewController, UITextViewDelegate {
             let configJson = self.configText.text ?? ""
             let config = try Exocore_Core_LocalNodeConfig(jsonString: configJson)
             let node = try LocalNode.from(config: config)
-            ExocoreUtils.saveNode(node: node)
+            try ExocoreUtils.saveNode(node: node)
             startDiscovery()
         } catch {
             self.errorLabel.text = error.localizedDescription
@@ -60,8 +60,12 @@ class BootstrapViewController: UIViewController, UITextViewDelegate {
                         this.pinLabel.text = formatPin(pin)
 
                     case .success(let newNode):
-                        ExocoreUtils.saveNode(node: newNode)
-                        this.tryBoot()
+                        do {
+                            try ExocoreUtils.saveNode(node: newNode)
+                            this.tryBoot()
+                        } catch {
+                            this.errorLabel.text = error.localizedDescription
+                        }
 
                     case .error(let err):
                         this.errorLabel.text = err.localizedDescription
@@ -117,7 +121,7 @@ class BootstrapViewController: UIViewController, UITextViewDelegate {
         do {
             self.disco = nil
             let node = try LocalNode.generate()
-            ExocoreUtils.saveNode(node: node)
+            try ExocoreUtils.saveNode(node: node)
             startDiscovery()
         } catch {
             self.errorLabel.text = error.localizedDescription

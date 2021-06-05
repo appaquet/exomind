@@ -105,3 +105,12 @@ jobs:
             --file $GITHUB_WORKSPACE/web/Dockerfile \
             $BUILD_PARAMS \
             .
+
+
+  ios_app_publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger iOS build
+        run: |
+          set -x
+          git push -f origin/app-build

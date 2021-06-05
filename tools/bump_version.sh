@@ -23,6 +23,8 @@ VERSION_RE="[0-9]+\.[0-9]+\.[0-9]+(|\-dev|\-pre[0-9]+)"
 
 $SEDBIN -i.bak "s/\(\"version\":\).*/\1 \"$VERSION\",/g" $ROOT_DIR/web/package.json
 $SEDBIN -i.bak "s/\(version:\).*/\1 $VERSION/g" $ROOT_DIR/app.yaml
+$SEDBIN -i.bak "s/\(MARKETING_VERSION =\).*/\1 $VERSION;/g" $ROOT_DIR/ios/Exomind.xcodeproj/project.pbxproj
+$SEDBIN -i.bak "s/\(CURRENT_PROJECT_VERSION =\).*/\1 $VERSION;/g" $ROOT_DIR/ios/Exomind.xcodeproj/project.pbxproj
 
 CRATES=( \
   "." \
