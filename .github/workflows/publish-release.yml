@@ -110,6 +110,10 @@ jobs:
   ios_app_publish:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
       - name: Trigger iOS build
         run: |
           set -x

@@ -383,8 +383,7 @@ export class Children extends React.Component<IProps, IState> {
                     editedEntity: entity,
                 });
             } else {
-                const newSelection = this.props.selection.withItem(SelectedItem.fromEntity(entity));
-                this.props.onSelectionChange(newSelection);
+                this.props.onSelectionChange(new Selection(SelectedItem.fromEntity(entity)));
             }
         }
     }
