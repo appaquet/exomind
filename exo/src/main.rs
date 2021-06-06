@@ -48,7 +48,7 @@ pub struct Options {
     pub discovery_service: String,
 
     #[clap(subcommand)]
-    subcommand: Commands,
+    subcommand: Command,
 }
 
 impl Options {
@@ -92,7 +92,7 @@ impl Context {
 }
 
 #[derive(Clap)]
-pub enum Commands {
+pub enum Command {
     /// Nodes related commands.
     Node(node::NodeOptions),
 
@@ -131,20 +131,20 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let result = match &ctx.options.subcommand {
-        Commands::Node(node_opts) => node::handle_cmd(&ctx, node_opts),
-        Commands::Cell(cell_opts) => cell::handle_cmd(&ctx, cell_opts).await,
-        Commands::App(app_opts) => {
+        Command::Node(node_opts) => node::handle_cmd(&ctx, node_opts),
+        Command::Cell(cell_opts) => cell::handle_cmd(&ctx, cell_opts).await,
+        Command::App(app_opts) => {
             app::handle_cmd(&ctx, app_opts).await;
             Ok(())
         }
-        Commands::Sec(keys_opts) => {
+        Command::Sec(keys_opts) => {
             sec::handle_cmd(&ctx, keys_opts);
             Ok(())
         }
-        Commands::Config(config_opts) => config::handle_cmd(&ctx, config_opts),
-        Commands::Daemon => daemon::cmd_daemon(&ctx).await,
-        Commands::Discovery(disco_opts) => disco::cmd_daemon(&ctx, disco_opts).await,
-        Commands::Version => {
+        Command::Config(config_opts) => config::handle_cmd(&ctx, config_opts),
+        Command::Daemon => daemon::cmd_daemon(&ctx).await,
+        Command::Discovery(disco_opts) => disco::cmd_daemon(&ctx, disco_opts).await,
+        Command::Version => {
             println!("version {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }

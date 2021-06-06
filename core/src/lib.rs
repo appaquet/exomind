@@ -16,3 +16,7 @@ pub mod simple_store;
 pub mod tests_utils;
 pub mod time;
 pub mod utils;
+
+pub fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
