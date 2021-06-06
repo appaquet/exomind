@@ -6,7 +6,7 @@ edition = "2018"
 keywords = ["knowledge-management", "mobile", "decentralized", "webapp"]
 license = "Apache-2.0"
 name = "exomind-protos"
-version = "0.1.3"
+version = "0.1.4"
 
 [dependencies]
 exocore = {version = "0.1.8", default-features = false, features = ["protos"]}
