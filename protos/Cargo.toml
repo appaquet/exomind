@@ -9,7 +9,7 @@ name = "exomind-protos"
 version = "0.1.3"
 
 [dependencies]
-exocore = {version = "0.1.7", default-features = false, features = ["protos"]}
+exocore = {version = "0.1.8", default-features = false, features = ["protos"]}
 prost = "0.7"
 prost-types = "0.7"
 

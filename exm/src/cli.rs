@@ -4,8 +4,8 @@ use structopt::StructOpt;
 
 #[derive(StructOpt)]
 pub struct Options {
-    #[structopt(long, short, default_value = "info")]
     /// Logging level (off, error, warn, info, debug, trace)
+    #[structopt(long, short, default_value = "info")]
     pub log: String,
 
     /// Path to node directory.
