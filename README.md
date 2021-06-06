@@ -46,7 +46,7 @@ Exomind closely follows [Exocore's roadmap](https://github.com/appaquet/exocore#
 3. Start your node.
     * `exo daemon`
 
-4. Follow [Web client](./web/README.md) and/or [iOS client](./ios/README.md) instructions.
+4. Download pre-built Electron app, or follow [Web client](./web/README.md) and/or [iOS client](./ios/README.md) instructions.
 
 ## Usage
 

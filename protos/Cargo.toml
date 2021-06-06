@@ -1,12 +1,15 @@
 [package]
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+categories = ["Command-line interface", "Email", "Text editors"]
+description = "Exomind, a personal knowledge management tool"
 edition = "2018"
+keywords = ["knowledge-management", "mobile", "decentralized", "webapp"]
 license = "Apache-2.0"
 name = "exomind-protos"
 version = "0.1.3"
 
 [dependencies]
-exocore = { version = "0.1.6", default-features = false, features = ["protos"]}
+exocore = {version = "0.1.8", default-features = false, features = ["protos"]}
 prost = "0.7"
 prost-types = "0.7"
 

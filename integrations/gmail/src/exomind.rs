@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{cli::Options, gmail::GmailAccount, sync::SynchronizedThread};
+use crate::{gmail::GmailAccount, sync::SynchronizedThread};
 use exocore::{
     core::time::{ConsistentTimestamp, DateTime, Utc},
     protos::{
@@ -25,8 +25,7 @@ pub struct ExomindClient {
 }
 
 impl ExomindClient {
-    pub async fn new(opts: &Options) -> anyhow::Result<ExomindClient> {
-        let client = exocore::client::Client::from_node_config_file(opts.node_conf_path()).await?;
+    pub async fn new(client: exocore::client::Client) -> anyhow::Result<ExomindClient> {
         let store = client.store.clone();
 
         store.on_start().await;

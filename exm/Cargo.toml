@@ -1,0 +1,22 @@
+[package]
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+categories = ["Command-line interface", "Email", "Text editors"]
+description = "CLI for Exomind, a personal knowledge management tool"
+edition = "2018"
+keywords = ["knowledge-management", "mobile", "decentralized", "webapp"]
+license = "Apache-2.0"
+name = "exm"
+repository = "https://github.com/appaquet/exomind"
+version = "0.1.3"
+
+[dependencies]
+anyhow = "1.0"
+exocore = {version = "0.1.8", default-features = false, features = ["client", "logger"]}
+exomind-protos = {version = "0.1.3", path = "../protos"}
+exomind-gmail = {version = "0.1.3", path = "../integrations/gmail"}
+log = "0.4"
+structopt = "0.3"
+tokio = {version = "1.6", features = ["macros", "rt-multi-thread", "time"]}
+
+[dev-dependencies]
+exocore = {version = "0.1.8", default-features = false, features = ["client", "logger", "tests-utils"]}

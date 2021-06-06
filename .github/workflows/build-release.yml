@@ -10,26 +10,26 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  exomind_gmail:
+  exm:
     strategy:
       fail-fast: true
       matrix:
         pair:
           - target: armv7-unknown-linux-gnueabihf
             os: ubuntu-latest
-            bin: exomind-gmail
+            bin: exm
             cross: true
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            bin: exomind-gmail
+            bin: exm
             cross: true
           - target: x86_64-apple-darwin
             os: macOS-latest
-            bin: exomind-gmail
+            bin: exm
             cross: false
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            bin: exomind-gmail.exe
+            bin: exm.exe
             cross: false
 
     runs-on: ${{ matrix.pair.os }}
@@ -47,20 +47,20 @@ jobs:
         with:
           use-cross: ${{ matrix.pair.cross }}
           command: build
-          args: -p exomind-gmail --release --target ${{ matrix.pair.target }}
+          args: -p exm --release --target ${{ matrix.pair.target }}
 
       - name: Create binary
         run: |
           mkdir archive
           cp target/${{ matrix.pair.target }}/release/${{ matrix.pair.bin }} archive
           cd archive/
-          tar -czf ../exomind-gmail.${{ matrix.pair.target }}.tar.gz *
+          tar -czf ../exm.${{ matrix.pair.target }}.tar.gz *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2.2.3
         with:
           name: ${{ matrix.pair.target }}-artifact
-          path: exomind-gmail.${{ matrix.pair.target }}.tar.gz
+          path: exm.${{ matrix.pair.target }}.tar.gz
           if-no-files-found: error
 
 
@@ -112,7 +112,7 @@ jobs:
 
       - name: Download exo
         run: |
-          wget https://github.com/appaquet/exocore/releases/download/v0.1.7/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.8/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
           echo `pwd` >> $GITHUB_PATH
 
       - name: Build app package
@@ -174,7 +174,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [exomind_gmail, web_client, app_package, electron_app]
+    needs: [exm, web_client, app_package, electron_app]
     steps:
       - uses: actions/checkout@v2.3.4
 

@@ -73,6 +73,34 @@ jobs:
           command: test
           args: --all --all-features
 
+  # Make sure that `exm` compiles on some targets that we don't run tests on.
+  exm_build_check:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
+
+    runs-on: ${{ matrix.pair.os }}
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - uses: Swatinem/rust-cache@v1
+
+      - uses: actions-rs/cargo@v1.0.3
+        with:
+          use-cross: ${{ matrix.pair.cross }}
+          command: check
+          args: -p exm --target ${{ matrix.pair.target }}
+
   web_build:
     runs-on: ubuntu-latest
 
@@ -118,6 +146,13 @@ jobs:
         run: |
           HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
 
+      - uses: actions/cache@v2
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
       - name: Build
         run: |
           cd $GITHUB_WORKSPACE/web
@@ -149,7 +184,7 @@ jobs:
 
       - name: Download exo
         run: |
-          wget https://github.com/appaquet/exocore/releases/download/v0.1.7/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.8/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
           echo `pwd` >> $GITHUB_PATH
 
       - name: Package app

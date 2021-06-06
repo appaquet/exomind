@@ -26,12 +26,7 @@ $SEDBIN -i.bak "s/\(version:\).*/\1 $VERSION/g" $ROOT_DIR/app.yaml
 $SEDBIN -i.bak "s/\(MARKETING_VERSION =\).*/\1 $VERSION;/g" $ROOT_DIR/ios/Exomind.xcodeproj/project.pbxproj
 $SEDBIN -i.bak "s/\(CURRENT_PROJECT_VERSION =\).*/\1 $VERSION;/g" $ROOT_DIR/ios/Exomind.xcodeproj/project.pbxproj
 
-CRATES=( \
-  "." \
-  "app" \
-  "protos" \
-  "integrations/gmail" \
-)
+CRATES=("app" "protos" "integrations/gmail" "." "exm")
 
 for CRATE in "${CRATES[@]}"; do
   TOML_PATH="$ROOT_DIR/${CRATE}/Cargo.toml"
