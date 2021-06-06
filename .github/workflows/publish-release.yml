@@ -109,9 +109,9 @@ jobs:
             $BUILD_PARAMS \
             .
 
-
   ios_app_publish:
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.publish == 'true' }}
     steps:
       - uses: actions/checkout@v2.3.4
         with:
