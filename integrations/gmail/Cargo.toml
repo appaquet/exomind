@@ -1,11 +1,12 @@
 [package]
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
-categories = ["Command-line interface", "Email", "Text editors"]
+categories = ["command-line-interface", "email", "text-editors"]
 description = "Gmail integration for Exomind, a personal knowledge management tool"
 edition = "2018"
-keywords = ["knowledge-management", "mobile", "decentralized", "webapp", "gmail", "email"]
+keywords = ["knowledge-management", "mobile", "decentralized", "gmail", "email"]
 license = "Apache-2.0"
 name = "exomind-gmail"
+repository = "https://github.com/appaquet/exomind"
 version = "0.1.4"
 
 [dependencies]
