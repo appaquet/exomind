@@ -51,6 +51,9 @@ pub struct EntityAggregator {
 
     /// offset of the last block in which last committed operation is
     pub last_block_offset: Option<BlockOffset>,
+
+    /// at least one of the operations is in pending store
+    pub any_in_pending: bool,
 }
 
 impl EntityAggregator {
@@ -70,6 +73,7 @@ impl EntityAggregator {
         let mut active_operation_ids = HashSet::<OperationId>::new();
         let mut last_operation_id = None;
         let mut last_block_offset = None;
+        let mut any_in_pending = false;
 
         for current_mutation in ordered_mutations_metadata {
             let current_operation_id = current_mutation.operation_id;
@@ -156,6 +160,8 @@ impl EntityAggregator {
                 // no need to check if current block is after since mutations are ordered by
                 // block offset
                 last_block_offset = Some(block_offset);
+            } else {
+                any_in_pending = true;
             }
         }
 
@@ -168,6 +174,7 @@ impl EntityAggregator {
             deletion_date: entity_deletion_date,
             last_operation_id: last_operation_id.unwrap_or_default(),
             last_block_offset,
+            any_in_pending,
         })
     }
 

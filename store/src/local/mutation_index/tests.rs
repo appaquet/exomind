@@ -1149,7 +1149,7 @@ fn put_unregistered_trait() -> anyhow::Result<()> {
 }
 
 #[test]
-fn delete_operation_id_mutation() -> anyhow::Result<()> {
+fn delete_entity_operation_id_mutation() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
     let mut index = MutationIndex::create_in_memory(config, registry)?;
@@ -1176,7 +1176,10 @@ fn delete_operation_id_mutation() -> anyhow::Result<()> {
     let res = index.search(query)?;
     assert_eq!(res.mutations.len(), 1);
 
-    index.apply_operation(IndexOperation::DeleteOperation(1234))?;
+    index.apply_operation(IndexOperation::DeleteEntityOperation(
+        "entity_id1".to_string(),
+        1234,
+    ))?;
 
     let query = Q::matches("foo").build();
     let res = index.search(query)?;

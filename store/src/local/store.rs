@@ -772,15 +772,16 @@ pub mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn garbage_collection() -> anyhow::Result<()> {
         let store_config = StoreConfig {
-            garbage_collect_interval: Duration::from_millis(50),
+            garbage_collect_interval: Duration::from_millis(300),
             ..Default::default()
         };
         let index_config = EntityIndexConfig {
             chain_index_min_depth: 0, // index in chain as soon as a block is committed
             chain_index_depth_leeway: 0, // for tests, we want to index as soon as possible
-            chain_index_in_memory: false,
+            chain_index_in_memory: true,
             garbage_collector: GarbageCollectorConfig {
                 deleted_entity_collection: Duration::from_millis(100),
+                min_operation_age: Duration::from_nanos(1),
                 ..Default::default()
             },
             ..TestStore::test_index_config()
@@ -808,7 +809,7 @@ pub mod tests {
         // entity should eventually be completely deleted
         let store_handle = test_store.store_handle.clone();
         async_expect_eventually(|| async {
-            let query = QueryBuilder::all().include_deleted().build();
+            let query = QueryBuilder::with_id("entity1").include_deleted().build();
             let res = store_handle.query(query).await.unwrap();
             res.entities.is_empty()
         })

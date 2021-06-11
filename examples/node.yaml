@@ -76,7 +76,7 @@ store:
 
     garbage_collector:
       run_interval_secs: 30
-      queue_size: 100
+      queue_size: 300
 
 chain:
   segment_max_size: 209715200 # 200mb

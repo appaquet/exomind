@@ -212,11 +212,6 @@ impl MutationIndex {
                     let doc = self.entity_tombstone_to_document(&entity_tombstone);
                     index_writer.add_document(doc);
                 }
-                IndexOperation::DeleteOperation(operation_id) => {
-                    trace!("Deleting operation {} from index", operation_id);
-                    index_writer
-                        .delete_term(Term::from_field_u64(self.fields.operation_id, operation_id));
-                }
                 IndexOperation::DeleteEntityOperation(entity_id, operation_id) => {
                     trace!(
                         "Deleting operation {} from entity {} from index",

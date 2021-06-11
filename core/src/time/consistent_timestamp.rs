@@ -66,6 +66,14 @@ impl Add<Duration> for ConsistentTimestamp {
     }
 }
 
+impl Sub<Duration> for ConsistentTimestamp {
+    type Output = ConsistentTimestamp;
+
+    fn sub(self, rhs: Duration) -> Self::Output {
+        ConsistentTimestamp(self.0 - rhs.as_nanos() as u64)
+    }
+}
+
 impl From<u64> for ConsistentTimestamp {
     fn from(value: u64) -> Self {
         ConsistentTimestamp(value)

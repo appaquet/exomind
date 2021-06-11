@@ -484,6 +484,7 @@ impl BlockOperations {
         let mut hasher = Sha3_256::default();
         let mut headers = Vec::new();
         let mut data = BytesMut::new();
+        let mut last_operation_id = 0;
 
         for operation in sorted_operations {
             let operation = operation.borrow();
@@ -493,8 +494,17 @@ impl BlockOperations {
             hasher.input_signed_frame(&operation.inner().inner());
             data.extend_from_slice(entry_data);
 
+            let operation_id = operation_reader.get_operation_id();
+            if operation_id < last_operation_id {
+                panic!(
+                    "Tried to build a block from unsorted operations op={} < last={}",
+                    operation_id, last_operation_id
+                );
+            }
+            last_operation_id = operation_id;
+
             headers.push(BlockOperationHeader {
-                operation_id: operation_reader.get_operation_id(),
+                operation_id,
                 data_offset: offset as u32,
                 data_size: (data.len() - offset) as u32,
             });

@@ -38,7 +38,7 @@ impl Default for StoreConfig {
             handle_watch_query_channel_size: 100,
             chain_events_batch_size: 50,
             mutation_tracker_timeout: Duration::from_secs(5),
-            garbage_collect_interval: Duration::from_secs(33),
+            garbage_collect_interval: Duration::from_secs(13),
         }
     }
 }

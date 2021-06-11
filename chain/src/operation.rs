@@ -97,6 +97,14 @@ impl OperationBuilder {
         node_id: &NodeId,
         block: &B,
     ) -> Result<OperationBuilder, Error> {
+        Self::new_block_proposal_from_data(operation_id, node_id, &block.as_data_vec())
+    }
+
+    pub fn new_block_proposal_from_data(
+        operation_id: OperationId,
+        node_id: &NodeId,
+        data: &[u8],
+    ) -> Result<OperationBuilder, Error> {
         let mut frame_builder = CapnpFrameBuilder::new();
 
         let mut operation_builder: chain_operation::Builder = frame_builder.get_builder();
@@ -106,7 +114,7 @@ impl OperationBuilder {
 
         let inner_operation_builder = operation_builder.init_operation();
         let mut new_block_builder = inner_operation_builder.init_block_propose();
-        new_block_builder.set_block(&block.as_data_vec());
+        new_block_builder.set_block(data);
 
         Ok(OperationBuilder {
             operation_id,

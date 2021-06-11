@@ -6,7 +6,7 @@ use console::style;
 use exocore_chain::{
     block::{Block, BlockBuilder, BlockOperations},
     chain::ChainStore,
-    operation::{OperationFrame, OperationId},
+    operation::{OperationBuilder, OperationFrame, OperationId},
     DirectoryChainStore, DirectoryChainStoreConfig,
 };
 use exocore_core::{
@@ -23,7 +23,9 @@ use exocore_protos::{
         cell_application_config, cell_node_config, node_cell_config, CellConfig, CellNodeConfig,
         LocalNodeConfig, NodeCellConfig, NodeConfig,
     },
-    generated::data_chain_capnp::block_header,
+    generated::data_chain_capnp::{block_header, chain_operation},
+    prost::Message,
+    store::EntityMutation,
 };
 
 use crate::{
@@ -168,23 +170,28 @@ struct NodeAddOptions {
 
 #[derive(Clap, Clone)]
 struct ChainExportOptions {
-    // File in which chain will be exported.
+    /// File in which chain will be exported.
     file: PathBuf,
+
+    /// Drop index operation deletions used for index garbage collection.
+    #[clap(long)]
+    drop_operation_deletions: bool,
 }
 
 #[derive(Clap, Clone)]
 struct ChainImportOptions {
-    // Number of operations per block.
-    #[clap(long, default_value = "30")]
-    operations_per_block: usize,
-
-    // Files from which chain will be imported.
+    /// Files from which chain will be imported.
     files: Vec<PathBuf>,
+
+    /// Create blocks with a fixed number of operations instead of using
+    /// exported block delimiter.
+    #[clap(long)]
+    operations_per_block: Option<usize>,
 }
 
 #[derive(Clap, Clone)]
 struct GenerateAuthTokenOptions {
-    // Token expiration duration in days.
+    /// Token expiration duration in days.
     #[clap(long, default_value = "30")]
     expiration_days: u16,
 }
@@ -709,6 +716,8 @@ fn cmd_export_chain(
     let config = ctx.options.read_configuration();
     let (_, cell) = get_cell(ctx, cell_opts);
 
+    let local_node = cell.cell().local_node();
+
     let chain_dir = cell
         .cell()
         .chain_directory()
@@ -742,18 +751,42 @@ fn cmd_export_chain(
 
         blocks_count += 1;
 
+        {
+            // create a block proposal to delimitate blocks
+            let proposal = OperationBuilder::new_block_proposal_from_data(0, local_node.id(), &[])?;
+            let proposal = proposal.sign_and_build(local_node)?;
+            proposal
+                .frame
+                .copy_to(&mut file_buf)
+                .expect("Couldn't write block delimiter");
+        }
+
         let operations = block
             .operations_iter()
             .expect("Couldn't iterate operations from block");
         for operation in operations {
             {
-                // only export entry operations (actual data, not chain maintenance related
-                // operations)
                 let reader = operation
                     .get_reader()
                     .expect("Couldn't get reader on operation");
-                if !reader.get_operation().has_entry() {
-                    continue;
+
+                // only export entry operations (actual data, not chain maintenance related
+                // operations)
+                let data = match reader.get_operation().which()? {
+                    chain_operation::operation::Entry(entry) => entry?.get_data()?,
+                    _ => continue,
+                };
+
+                // don't keep deleted operations since they were part of the index management
+                if export_opts.drop_operation_deletions {
+                    let mutation = EntityMutation::decode(data)?;
+
+                    use exocore_protos::store::entity_mutation::Mutation;
+                    match mutation.mutation {
+                        Some(Mutation::DeleteOperations(_del)) => continue,
+                        None => continue,
+                        _ => {}
+                    }
                 }
             }
 
@@ -761,9 +794,9 @@ fn cmd_export_chain(
             operation
                 .copy_to(&mut file_buf)
                 .expect("Couldn't write operation to file buffer");
-
-            bar.set_position(blocks_count);
         }
+
+        bar.set_position(blocks_count);
     }
 
     file_buf.flush().expect("Couldn't flush file buffer");
@@ -832,8 +865,18 @@ fn cmd_import_chain(
 
     let mut flush_buffer =
         |block_op_id: OperationId, operations_buffer: &mut Vec<OperationFrame<Bytes>>| {
+            if operations_buffer.is_empty() {
+                return;
+            }
+
+            operations_buffer.sort_by_key(|operation| {
+                let operation_reader = operation.get_reader().unwrap();
+                operation_reader.get_operation_id()
+            });
+
             let operations = BlockOperations::from_operations(operations_buffer.iter())
                 .expect("Couldn't create BlockOperations from operations buffer");
+
             let block = BlockBuilder::build_with_prev_block(
                 full_cell.cell(),
                 &previous_block,
@@ -841,6 +884,7 @@ fn cmd_import_chain(
                 operations,
             )
             .expect("Couldn't create new block");
+
             chain_store
                 .write_block(&block)
                 .expect("Couldn't write block to chain");
@@ -855,17 +899,34 @@ fn cmd_import_chain(
         let file = std::fs::File::open(file).expect("Couldn't open imported file");
 
         let operation_frames_iter = SizedFrameReaderIterator::new(file);
-        for operation_frame in operation_frames_iter {
-            let operation =
-                exocore_chain::operation::read_operation_frame(operation_frame.frame.whole_data())
+        for iter_op_frame in operation_frames_iter {
+            let operation_frame =
+                exocore_chain::operation::read_operation_frame(iter_op_frame.frame.whole_data())
                     .expect("Couldn't read operation frame");
 
-            operations_count += 1;
+            let reader = operation_frame
+                .get_reader()
+                .expect("Couldn't get reader on operation");
 
-            operations_buffer.push(operation.to_owned());
-            if operations_buffer.len() > import_opts.operations_per_block {
-                let block_op_id = clock.consistent_time(node);
-                flush_buffer(block_op_id.into(), &mut operations_buffer);
+            // new block proposal means that previous operations can be flushed
+            if reader.get_operation().has_block_propose() {
+                if import_opts.operations_per_block.is_none() {
+                    let block_op_id = clock.consistent_time(node);
+                    flush_buffer(block_op_id.into(), &mut operations_buffer);
+                }
+                continue;
+            }
+
+            operations_count += 1;
+            operations_buffer.push(operation_frame.to_owned());
+
+            // if fixed number of operations per block is requested, check if need to be
+            // flushed
+            if let Some(operations_per_block) = import_opts.operations_per_block {
+                if operations_buffer.len() > operations_per_block {
+                    let block_op_id = clock.consistent_time(node);
+                    flush_buffer(block_op_id.into(), &mut operations_buffer);
+                }
             }
         }
     }
