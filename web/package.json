@@ -120,7 +120,7 @@
     "cookie-parser": "^1.4.5",
     "css-loader": "^5.2.6",
     "electron": "^13.1.2",
-    "electron-builder": "^22.11.5",
+    "electron-builder": "^22.11.7",
     "electron-webpack": "^2.8.2",
     "eslint": "^7.28.0",
     "eslint-plugin-import": "^2.23.3",
