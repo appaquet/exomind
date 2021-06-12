@@ -142,7 +142,7 @@ impl<S: Store> Applications<S> {
             let app_module_path = app.module_path.clone();
             let app_prefix = app.to_string();
             spawn_blocking(move || -> Result<(), Error> {
-                let app_runtime = WasmTimeRuntime::from_file(app_module_path, env)?;
+                let mut app_runtime = WasmTimeRuntime::from_file(app_module_path, env)?;
                 let mut batch_receiver = BatchingStream::new(in_receiver, RUNTIME_MSG_BATCH_SIZE);
 
                 let mut started = false;
