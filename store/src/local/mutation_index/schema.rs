@@ -102,7 +102,13 @@ pub(crate) fn build_tantivy_schema(
     let creation_date = schema_builder.add_u64_field("creation_date", STORED);
     let modification_date = schema_builder.add_u64_field("modification_date", STORED | FAST);
     let block_offset = schema_builder.add_u64_field("block_offset", STORED | FAST);
-    let operation_id = schema_builder.add_u64_field("operation_id", INDEXED | STORED | FAST);
+    let operation_id = schema_builder.add_u64_field(
+        "operation_id",
+        IntOptions::default()
+            .set_indexed()
+            .set_stored()
+            .set_fast(Cardinality::SingleValue),
+    );
     let document_type = schema_builder.add_u64_field("document_type", STORED);
 
     // Tokenize references by space, but no stemming, case folding or length limit
