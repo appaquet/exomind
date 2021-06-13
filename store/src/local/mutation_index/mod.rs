@@ -29,11 +29,10 @@ pub use results::*;
 use tantivy::{
     collector::{Collector, TopDocs},
     directory::MmapDirectory,
-    fastfield::FastFieldReader,
     query::{AllQuery, BooleanQuery, FuzzyTermQuery, Occur, PhraseQuery, Query, TermQuery},
     schema::{Field, IndexRecordOption},
-    DocAddress, Document, Index as TantivyIndex, IndexReader, IndexSettings, IndexSortByField,
-    IndexWriter, Order, ReloadPolicy, Searcher, SegmentReader, Term,
+    DocAddress, Document, Index as TantivyIndex, IndexReader, IndexWriter, ReloadPolicy, Searcher,
+    SegmentReader, Term,
 };
 
 use crate::{entity::EntityIdRef, error::Error, ordering::OrderingValueWrapper};
@@ -83,11 +82,7 @@ impl MutationIndex {
         let (tantivy_schema, fields) = schema::build_tantivy_schema(config, schemas.as_ref());
 
         let directory = MmapDirectory::open(directory)?;
-        let index = TantivyIndex::builder()
-            .schema(tantivy_schema)
-            .settings(index_settings())
-            .open_or_create(directory)?;
-        fields.register_tokenizers(&index);
+        let index = TantivyIndex::open_or_create(directory, tantivy_schema)?;
 
         fields.register_tokenizers(&index);
 
@@ -122,10 +117,7 @@ impl MutationIndex {
     ) -> Result<MutationIndex, Error> {
         let (tantivy_schema, fields) = schema::build_tantivy_schema(config, schemas.as_ref());
 
-        let index = TantivyIndex::builder()
-            .schema(tantivy_schema)
-            .settings(index_settings())
-            .create_in_ram()?;
+        let index = TantivyIndex::create_in_ram(tantivy_schema);
         fields.register_tokenizers(&index);
 
         let index_reader = index
@@ -1087,16 +1079,6 @@ impl MutationIndex {
                 }
             },
         )
-    }
-}
-
-fn index_settings() -> IndexSettings {
-    IndexSettings {
-        sort_by_field: Some(IndexSortByField {
-            field: "operation_id".to_string(),
-            order: Order::Desc,
-        }),
-        ..Default::default()
     }
 }
 
