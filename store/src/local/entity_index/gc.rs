@@ -184,7 +184,7 @@ impl GarbageCollector {
             // get all mutations for entity until block offset where we deemed the entity to
             // be collectable and until minimum operation age.
             let mutations = if let Ok(mut_res) = entity_fetcher(entity_id) {
-                let mutations = mut_res.mutations.into_iter().filter(|mutation| {
+                let mutations = mut_res.mutations.into_iter().take_while(|mutation| {
                     let op_time = ConsistentTimestamp::from(mutation.operation_id).to_datetime();
                     if op_time > min_op_time {
                         return false;

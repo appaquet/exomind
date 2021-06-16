@@ -24,6 +24,8 @@ use crate::{entity::TraitId, error::Error, query::ResultHash};
 /// operation id within a block. If an old operation gets committed after a
 /// newer operation, the old operation gets discarded to prevent inconsistency.
 pub struct EntityAggregator {
+    pub entity_id: String,
+
     /// traits aggregator
     pub traits: HashMap<TraitId, TraitAggregator>,
 
@@ -74,6 +76,7 @@ impl EntityAggregator {
         let mut last_operation_id = None;
         let mut last_block_offset = None;
         let mut any_in_pending = false;
+        let mut entity_id = String::new();
 
         for current_mutation in ordered_mutations_metadata {
             let current_operation_id = current_mutation.operation_id;
@@ -84,6 +87,8 @@ impl EntityAggregator {
             // hashing operations instead of traits content allow invalidating results as
             // soon as one operation is made since we can't guarantee anything
             digest.update(&current_operation_id.to_ne_bytes());
+
+            entity_id = current_mutation.entity_id.clone();
 
             match &current_mutation.mutation_type {
                 MutationType::TraitPut(put_trait) => {
@@ -166,6 +171,7 @@ impl EntityAggregator {
         }
 
         Ok(EntityAggregator {
+            entity_id,
             traits,
             active_operations: active_operation_ids,
             hash: digest.finalize(),
