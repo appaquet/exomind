@@ -46,7 +46,7 @@ impl Pin {
         rng.gen_range(100_000_000..999_999_999).try_into().unwrap()
     }
 
-    pub fn to_formatted_string(&self) -> String {
+    pub fn to_formatted_string(self) -> String {
         let id = self.0;
         let three = id - (id / 1_000) * 1_000;
         let one = id / 1_000_000;

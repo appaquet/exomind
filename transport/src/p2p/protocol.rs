@@ -148,7 +148,7 @@ impl ProtocolsHandler for ExocoreProtoHandler {
         // we poll all futures that writes messages to completion. once completed, we
         // take back the stream for next message.
         if !self.outbound_stream_futures.is_empty() {
-            let futures = std::mem::replace(&mut self.outbound_stream_futures, Vec::new());
+            let futures = std::mem::take(&mut self.outbound_stream_futures);
             for mut fut in futures {
                 match fut.as_mut().poll(cx) {
                     Poll::Ready(Ok(substream)) => {
@@ -176,7 +176,7 @@ impl ProtocolsHandler for ExocoreProtoHandler {
 
         // we poll all futures that reads messages to completion.
         if !self.inbound_stream_futures.is_empty() {
-            let futures = std::mem::replace(&mut self.inbound_stream_futures, Vec::new());
+            let futures = std::mem::take(&mut self.inbound_stream_futures);
             for mut fut in futures {
                 match fut.as_mut().poll(cx) {
                     Poll::Ready(Ok((message, substream))) => {

@@ -82,6 +82,7 @@ pub enum MutationType {
     TraitPut(PutTraitMetadata),
     TraitTombstone(TraitId),
     EntityTombstone,
+    PendingDeletion,
 }
 
 #[derive(Debug, Clone)]
@@ -96,6 +97,7 @@ impl MutationType {
     pub const TRAIT_TOMBSTONE_ID: u64 = 0;
     pub const TRAIT_PUT_ID: u64 = 1;
     pub const ENTITY_TOMBSTONE_ID: u64 = 2;
+    pub const PENDING_DELETION_ID: u64 = 3;
 
     pub fn new(
         document_type_id: u64,
@@ -110,6 +112,7 @@ impl MutationType {
                 modification_date: None,
             })),
             Self::ENTITY_TOMBSTONE_ID => Ok(MutationType::EntityTombstone),
+            Self::PENDING_DELETION_ID => Ok(MutationType::PendingDeletion),
             _ => Err(Error::Fatal(anyhow!(
                 "Invalid document type id {}",
                 document_type_id

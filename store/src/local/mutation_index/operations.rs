@@ -27,6 +27,12 @@ pub enum IndexOperation {
     /// Independent from `DeleteOperation` so that we can indicate flush entity
     /// cache.
     DeleteEntityOperation(EntityId, OperationId),
+
+    /// Indicates that the entity has a pending deletion. This operation is only
+    /// stored in the pending index and is used to indicate that an entity
+    /// cannot be garbage collected furthermore until the actual deletions
+    /// are done in the chain index.
+    PendingDeletionMarker(EntityId, OperationId),
 }
 
 pub struct PutTraitMutation {
@@ -98,9 +104,10 @@ impl IndexOperation {
                 }
             )],
             Mutation::DeleteOperations(_) => {
-                // we don't actually delete until we are in chain index since operation may not
-                // be valid at this point
-                smallvec![]
+                smallvec![IndexOperation::PendingDeletionMarker(
+                    entity_mutation.entity_id,
+                    operation.operation_id
+                )]
             }
             Mutation::Test(_mutation) => smallvec![],
         }

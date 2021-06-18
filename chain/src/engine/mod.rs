@@ -476,7 +476,7 @@ where
             match stream_sender.try_send(event.clone()) {
                 Ok(()) => {}
                 Err(ref err) if err.is_full() => {
-                    error!(
+                    warn!(
                         "Couldn't send event to handle {} because channel buffer is full. Marking as discontinued",
                         handle_id
                     );

@@ -437,14 +437,14 @@ fn sync_range_to_frame_builder_with_hash() -> anyhow::Result<()> {
     let frame0 = frames_builder[0].as_owned_frame();
     let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
     let frame0_hash = frame0_reader.reborrow().get_operations_hash().unwrap();
-    assert_eq!(frame0_reader.has_operations_frames(), false);
-    assert_eq!(frame0_reader.has_operations_headers(), false);
+    assert!(!frame0_reader.has_operations_frames());
+    assert!(!frame0_reader.has_operations_headers());
 
     let frame1 = frames_builder[1].as_owned_frame();
     let frame1_reader: pending_sync_range::Reader = frame1.get_reader()?;
     let frame1_hash = frame1_reader.reborrow().get_operations_hash()?;
-    assert_eq!(frame1_reader.has_operations_frames(), false);
-    assert_eq!(frame1_reader.has_operations_headers(), false);
+    assert!(!frame1_reader.has_operations_frames());
+    assert!(!frame1_reader.has_operations_headers());
 
     assert_ne!(frame0_hash, frame1_hash);
 
@@ -458,8 +458,8 @@ fn sync_range_to_frame_builder_with_headers() -> anyhow::Result<()> {
 
     let frame0 = frames_builder[0].as_owned_frame();
     let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
-    assert_eq!(frame0_reader.has_operations_frames(), false);
-    assert_eq!(frame0_reader.has_operations_headers(), true);
+    assert!(!frame0_reader.has_operations_frames());
+    assert!(frame0_reader.has_operations_headers());
 
     let operations = frame0_reader.get_operations_headers()?;
     let operation0_header: chain_operation_header::Reader = operations.get(0);
@@ -475,8 +475,8 @@ fn sync_range_to_frame_builder_with_data() -> anyhow::Result<()> {
 
     let frame0 = frames_builder[0].as_owned_frame();
     let frame0_reader: pending_sync_range::Reader = frame0.get_reader()?;
-    assert_eq!(frame0_reader.has_operations_frames(), true);
-    assert_eq!(frame0_reader.has_operations_headers(), false);
+    assert!(frame0_reader.has_operations_frames());
+    assert!(!frame0_reader.has_operations_headers());
 
     let operations = frame0_reader.get_operations_frames()?;
     let operation0_data = operations.get(0)?;

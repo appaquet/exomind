@@ -10,8 +10,8 @@ use crate::binding::__exocore_host_now;
 pub struct Timestamp(pub u64);
 
 impl Timestamp {
-    pub fn to_chrono_datetime(&self) -> DateTime<Utc> {
-        (*self).into()
+    pub fn to_chrono_datetime(self) -> DateTime<Utc> {
+        self.into()
     }
 }
 

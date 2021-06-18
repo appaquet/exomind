@@ -316,11 +316,10 @@ mod test {
         assert!(store.get_operation(103)?.is_none());
 
         let operations = store.get_group_operations(200)?.unwrap();
-        assert!(operations
+        assert!(!operations
             .operations
             .iter()
-            .find(|op| op.operation_id == 103)
-            .is_none());
+            .any(|op| op.operation_id == 103));
 
         // delete a group operation
         store.delete_operation(200)?;

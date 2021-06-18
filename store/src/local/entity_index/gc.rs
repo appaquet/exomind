@@ -88,9 +88,10 @@ impl GarbageCollector {
 
     /// Checks if an entity for which we collected its mutation metadata from
     /// the index should be added to the garbage collection queue.
-    pub fn maybe_flag_for_collection(&self, entity_id: &str, aggregator: &EntityAggregator) {
-        if aggregator.any_in_pending {
-            // we don't collect if any of the operations are still in pending store
+    pub fn maybe_flag_for_collection(&self, aggregator: &EntityAggregator) {
+        if aggregator.in_pending || aggregator.pending_deletion {
+            // we don't collect if any of the operations are still in pending store or if
+            // a deletion is pending for the entity
             return;
         }
 
@@ -103,11 +104,14 @@ impl GarbageCollector {
         if let Some(deletion_date) = &aggregator.deletion_date {
             let elapsed = now.signed_duration_since(*deletion_date);
             if elapsed >= self.max_entity_deleted_duration {
-                trace!("Collecting entity {} since got deleted since", entity_id);
+                trace!(
+                    "Collecting entity {} since got deleted since",
+                    aggregator.entity_id
+                );
                 let mut inner = self.inner.write().expect("Fail to acquire inner lock");
                 inner.maybe_enqueue(Operation::DeleteEntity(
                     last_block_offset,
-                    entity_id.to_string(),
+                    aggregator.entity_id.to_string(),
                 ));
                 return;
             }
@@ -119,13 +123,13 @@ impl GarbageCollector {
                 if elapsed >= self.max_trait_deleted_duration {
                     trace!(
                         "Collecting entity {} trait {} since it got deleted",
-                        entity_id,
+                        aggregator.entity_id,
                         trait_id
                     );
                     let mut inner = self.inner.write().expect("Fail to acquire inner lock");
                     inner.maybe_enqueue(Operation::DeleteTrait(
                         last_block_offset,
-                        entity_id.to_string(),
+                        aggregator.entity_id.to_string(),
                         trait_id.clone(),
                     ));
                     continue;
@@ -136,13 +140,13 @@ impl GarbageCollector {
                 let mut inner = self.inner.write().expect("Fail to acquire inner lock");
                 trace!(
                     "Collecting entity {} trait {} since it has too many versions ({})",
-                    entity_id,
+                    aggregator.entity_id,
                     trait_id,
                     trait_aggr.mutation_count,
                 );
                 inner.maybe_enqueue(Operation::CompactTrait(
                     last_block_offset,
-                    entity_id.to_string(),
+                    aggregator.entity_id.to_string(),
                     trait_id.clone(),
                 ));
             }
@@ -218,11 +222,14 @@ impl GarbageCollector {
                 deletions.push(deletion);
             }
         }
-        info!(
-            "Garbage collection generated {} deletion operations for {} entities",
-            deletions.len(),
-            entity_count,
-        );
+
+        if !deletions.is_empty() {
+            info!(
+                "Garbage collection generated {} deletion operations for {} entities",
+                deletions.len(),
+                entity_count,
+            );
+        }
 
         deletions
     }
@@ -243,7 +250,7 @@ pub struct GarbageCollectorConfig {
     /// After how many versions for a trait a compaction is triggered.
     pub trait_versions_leeway: usize,
 
-    /// Minimum age an operation needs to have in order to be collected / deleted.
+    /// Minimum age an operation needs to have in order to be collected.
     pub min_operation_age: Duration,
 
     /// Size of the queue of entities to be collected.
@@ -364,17 +371,10 @@ fn filter_trait_mutations<'i, I>(
 where
     I: Iterator<Item = MutationMetadata> + 'i,
 {
+    use crate::local::mutation_index::MutationType;
     mutations.filter(move |mutation| match &mutation.mutation_type {
-        crate::local::mutation_index::MutationType::TraitPut(put_mut)
-            if put_mut.trait_id == trait_id =>
-        {
-            true
-        }
-        crate::local::mutation_index::MutationType::TraitTombstone(tomb_trait_id)
-            if tomb_trait_id == trait_id =>
-        {
-            true
-        }
+        MutationType::TraitPut(put_mut) if put_mut.trait_id == trait_id => true,
+        MutationType::TraitTombstone(tomb_trait_id) if tomb_trait_id == trait_id => true,
         _ => false,
     })
 }
@@ -442,7 +442,10 @@ mod tests {
         *,
     };
     use crate::{
-        local::mutation_index::{MutationType, PutTraitMetadata},
+        local::{
+            entity_index::aggregator::tests::mock_pending_delete,
+            mutation_index::{MutationType, PutTraitMetadata},
+        },
         ordering::OrderingValueWrapper,
     };
 
@@ -469,7 +472,7 @@ mod tests {
 
         {
             // entity cannot be collected since deletion date is not 1 sec later
-            gc.maybe_flag_for_collection("et1", &aggregator);
+            gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 0);
         }
 
@@ -477,7 +480,7 @@ mod tests {
         clock.add_fixed_instant_duration(Duration::from_secs(2));
 
         {
-            gc.maybe_flag_for_collection("et1", &aggregator);
+            gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 1);
 
             // operation considered not in chain, shouldn't get deleted
@@ -493,7 +496,7 @@ mod tests {
         }
 
         {
-            gc.maybe_flag_for_collection("et1", &aggregator);
+            gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 1);
 
             // operation considered now in chain, should get deleted
@@ -535,7 +538,7 @@ mod tests {
 
         {
             // entity cannot be collected since deletion date is not 1 sec later
-            gc.maybe_flag_for_collection("et1", &aggregator);
+            gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 0);
         }
 
@@ -543,7 +546,7 @@ mod tests {
         clock.add_fixed_instant_duration(Duration::from_secs(2));
 
         {
-            gc.maybe_flag_for_collection("et1", &aggregator);
+            gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 1);
 
             // operation considered not in chain, shouldn't get deleted
@@ -559,7 +562,7 @@ mod tests {
         }
 
         {
-            gc.maybe_flag_for_collection("et1", &aggregator);
+            gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 1);
 
             // operation considered now in chain, should get deleted
@@ -609,7 +612,7 @@ mod tests {
             },
             clock.clone(),
         );
-        gc.maybe_flag_for_collection("et1", &aggregator);
+        gc.maybe_flag_for_collection(&aggregator);
         assert_queue_len(&gc, 0);
 
         // should now have enough versions to be collected
@@ -622,7 +625,7 @@ mod tests {
             },
             clock,
         );
-        gc.maybe_flag_for_collection("et1", &aggregator);
+        gc.maybe_flag_for_collection(&aggregator);
         assert_queue_len(&gc, 1);
 
         // two first trait should get deleted
@@ -639,6 +642,40 @@ mod tests {
         });
         assert_eq!(deletions.len(), 1);
         assert_eq!(extract_ops(deletions), vec![put1_op, put2_op]);
+    }
+
+    #[test]
+    fn cannot_collect_if_pending_deletion() {
+        let node = LocalNode::generate();
+        let now = Instant::now() - Duration::from_secs(60);
+        let clock = Clock::new_fixed_mocked(now);
+
+        let put1_op: u64 = clock.consistent_time(node.node()).into();
+        let put2_op: u64 = put1_op + 1;
+        let put3_op: u64 = put2_op + 1;
+        let put4_op: u64 = put3_op + 1;
+        let put5_op: u64 = put4_op + 1;
+        let mutations = vec![
+            mock_put_trait("trt1", "typ", Some(2), put1_op, None, None),
+            mock_put_trait("trt1", "typ", Some(3), put2_op, None, None),
+            mock_put_trait("trt1", "typ", Some(4), put3_op, None, None),
+            mock_put_trait("trt1", "typ", Some(5), put4_op, None, None),
+            mock_pending_delete(Some(6), put5_op),
+        ];
+        let aggregator = EntityAggregator::new(mutations.into_iter()).unwrap();
+
+        // should be collecting, but one pending deletion, so won't collect
+        let gc = GarbageCollector::new(
+            GarbageCollectorConfig {
+                trait_versions_max: 2,
+                trait_versions_leeway: 3,
+                min_operation_age: Duration::from_secs(1),
+                ..Default::default()
+            },
+            clock,
+        );
+        gc.maybe_flag_for_collection(&aggregator);
+        assert_queue_len(&gc, 0);
     }
 
     #[test]
@@ -674,7 +711,7 @@ mod tests {
             },
             clock,
         );
-        gc.maybe_flag_for_collection("et1", &aggregator);
+        gc.maybe_flag_for_collection(&aggregator);
         assert_queue_len(&gc, 0);
     }
 

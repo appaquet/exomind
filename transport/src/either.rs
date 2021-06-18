@@ -326,7 +326,7 @@ mod tests {
         // (left side)
         node1_either.send_rdv(vec![node2.node().clone()], 1).await;
         let _ = node2_t1.recv_msg().await;
-        assert_eq!(node2_t2.has_msg().await?, false);
+        assert!(!node2_t2.has_msg().await?);
 
         {
             // force message to node 2 via transport 2 if it has a connection annotation on

@@ -281,7 +281,7 @@ impl TestChainCluster {
     pub fn drain_received_events(&self, node_idx: usize) -> Vec<Event> {
         let events_locked = self.events_received[node_idx].as_ref().unwrap();
         let mut events = events_locked.lock().unwrap();
-        std::mem::replace(events.as_mut(), Vec::new())
+        std::mem::take(events.as_mut())
     }
 
     pub fn get_handle(

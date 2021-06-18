@@ -432,6 +432,56 @@ async fn operations_deletion() -> anyhow::Result<()> {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn operations_deletion_marker() -> anyhow::Result<()> {
+    let config = EntityIndexConfig {
+        chain_index_min_depth: 1, // index in chain once we have an extra block after
+        chain_index_in_memory: false,
+        ..TestEntityIndex::test_config()
+    };
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
+
+    let op1 = test_index.put_test_trait("entity1", "trait1", "op1")?;
+    let op2 = test_index.put_test_trait("entity1", "trait1", "op2")?;
+    let op3 = test_index.put_test_trait("entity1", "trait1", "op3")?;
+    test_index.wait_operations_committed(&[op1, op2, op3]);
+    test_index.handle_engine_events()?;
+
+    // we have 3 mutations on same trait
+    let aggr = test_index
+        .index
+        .fetch_entity_mutations_metadata("entity1")?;
+    assert!(!aggr.pending_deletion);
+    assert_eq!(aggr.active_operations.len(), 1);
+
+    // push operations deletion
+    let op_id = test_index
+        .write_mutation(MutationBuilder::new().delete_operations("entity1", vec![op1, op2, op3]))?;
+    test_index.wait_operation_committed(op_id);
+    test_index.handle_engine_events()?;
+
+    // deletion marker should now be in pending index
+    let aggr = test_index
+        .index
+        .fetch_entity_mutations_metadata("entity1")?;
+    assert!(aggr.pending_deletion);
+    assert_eq!(aggr.active_operations.len(), 1);
+
+    // push another operation, which should commit deletion in chain index
+    let op4 = test_index.put_test_trait("entity_other", "trait1", "op4")?;
+    test_index.wait_operations_committed(&[op4]);
+    test_index.handle_engine_events()?;
+
+    // the marker isn't in pending anymore, no active ops left
+    let aggr = test_index
+        .index
+        .fetch_entity_mutations_metadata("entity1")?;
+    assert!(!aggr.pending_deletion);
+    assert_eq!(aggr.active_operations.len(), 0);
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn query_paging() -> anyhow::Result<()> {
     let config = TestEntityIndex::test_config();
     let mut test_index = TestEntityIndex::new_with_config(config).await?;

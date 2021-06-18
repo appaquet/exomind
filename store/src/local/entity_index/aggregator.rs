@@ -16,6 +16,8 @@ use itertools::Itertools;
 use super::super::mutation_index::{MutationMetadata, MutationType, PutTraitMetadata};
 use crate::{entity::TraitId, error::Error, query::ResultHash};
 
+const GC_INACTIVE_OPS_THRESHOLD: usize = 10;
+
 /// Aggregates mutations metadata of an entity retrieved from the mutations
 /// index. Once merged, only the latest / active mutations are remaining, and
 /// can then be fetched from the chain.
@@ -32,6 +34,9 @@ pub struct EntityAggregator {
     /// ids of operations that are still active (ex: were not overridden by
     /// another mutation)
     pub active_operations: HashSet<OperationId>,
+
+    /// total number of mutations
+    pub mutation_count: usize,
 
     /// hash of the operations of the entity
     pub hash: ResultHash,
@@ -55,7 +60,12 @@ pub struct EntityAggregator {
     pub last_block_offset: Option<BlockOffset>,
 
     /// at least one of the operations is in pending store
-    pub any_in_pending: bool,
+    pub in_pending: bool,
+
+    /// indicates that deletion affecting the entity is in the pending index.
+    /// this inhibits any further garbage collection until they hit the chain
+    /// index
+    pub pending_deletion: bool,
 }
 
 impl EntityAggregator {
@@ -65,6 +75,7 @@ impl EntityAggregator {
     {
         let ordered_mutations_metadata = sort_mutations_commit_time(mutations_metadata);
 
+        let mut entity_id = String::new();
         let mut entity_creation_date = None;
         let mut entity_modification_date = None;
         let mut entity_deletion_date = None;
@@ -75,10 +86,13 @@ impl EntityAggregator {
         let mut active_operation_ids = HashSet::<OperationId>::new();
         let mut last_operation_id = None;
         let mut last_block_offset = None;
-        let mut any_in_pending = false;
-        let mut entity_id = String::new();
+        let mut in_pending = false;
+        let mut pending_deletion = false;
+        let mut mutation_count = 0;
 
         for current_mutation in ordered_mutations_metadata {
+            mutation_count += 1;
+
             let current_operation_id = current_mutation.operation_id;
             let current_operation_time =
                 ConsistentTimestamp::from(current_operation_id).to_datetime();
@@ -155,6 +169,7 @@ impl EntityAggregator {
                     entity_modification_date = None;
                     entity_deletion_date = Some(current_operation_time);
                 }
+                MutationType::PendingDeletion => pending_deletion = true,
             }
 
             if current_operation_id > last_operation_id.unwrap_or(std::u64::MIN) {
@@ -166,7 +181,7 @@ impl EntityAggregator {
                 // block offset
                 last_block_offset = Some(block_offset);
             } else {
-                any_in_pending = true;
+                in_pending = true;
             }
         }
 
@@ -174,13 +189,15 @@ impl EntityAggregator {
             entity_id,
             traits,
             active_operations: active_operation_ids,
+            mutation_count,
             hash: digest.finalize(),
             creation_date: entity_creation_date,
             modification_date: entity_modification_date,
             deletion_date: entity_deletion_date,
             last_operation_id: last_operation_id.unwrap_or_default(),
             last_block_offset,
-            any_in_pending,
+            in_pending,
+            pending_deletion,
         })
     }
 
@@ -206,6 +223,12 @@ impl EntityAggregator {
                 }
             }
         }
+    }
+
+    /// Whether the entity should be analysed for garbage collection because it
+    /// has inactive / overridden operations.
+    pub fn should_collect(&self) -> bool {
+        self.mutation_count - self.active_operations.len() > GC_INACTIVE_OPS_THRESHOLD
     }
 }
 
@@ -917,6 +940,23 @@ pub(crate) mod tests {
             block_offset,
             entity_id: String::new(),
             mutation_type: MutationType::EntityTombstone,
+            sort_value: OrderingValueWrapper {
+                value: OrderingValue::default(),
+                ignore: true,
+                reverse: true,
+            },
+        }
+    }
+
+    pub fn mock_pending_delete(
+        block_offset: Option<BlockOffset>,
+        operation_id: OperationId,
+    ) -> MutationMetadata {
+        MutationMetadata {
+            operation_id,
+            block_offset,
+            entity_id: String::new(),
+            mutation_type: MutationType::PendingDeletion,
             sort_value: OrderingValueWrapper {
                 value: OrderingValue::default(),
                 ignore: true,

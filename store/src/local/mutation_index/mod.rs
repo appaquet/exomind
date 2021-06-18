@@ -36,7 +36,9 @@ use tantivy::{
     IndexWriter, Order, ReloadPolicy, Searcher, SegmentReader, Term,
 };
 
-use crate::{entity::EntityIdRef, error::Error, ordering::OrderingValueWrapper};
+use crate::{
+    entity::EntityIdRef, error::Error, mutation::OperationId, ordering::OrderingValueWrapper,
+};
 
 mod config;
 mod entity_cache;
@@ -218,6 +220,18 @@ impl MutationIndex {
                     self.entity_cache.remove(&entity_tombstone.entity_id);
 
                     let doc = self.entity_tombstone_to_document(&entity_tombstone);
+                    index_writer.add_document(doc);
+                }
+                IndexOperation::PendingDeletionMarker(entity_id, operation_id) => {
+                    trace!(
+                        "Putting pending deletion marker for entity {} with op {}",
+                        entity_id,
+                        operation_id
+                    );
+
+                    self.entity_cache.remove(&entity_id);
+
+                    let doc = self.pending_deletion_marker_to_document(&entity_id, operation_id);
                     index_writer.add_document(doc);
                 }
                 IndexOperation::DeleteEntityOperation(entity_id, operation_id) => {
@@ -673,6 +687,23 @@ impl MutationIndex {
         }
 
         doc.add_u64(self.fields.document_type, MutationType::ENTITY_TOMBSTONE_ID);
+
+        doc
+    }
+
+    /// Converts a marker used to indicate that an entity has pending deletions.
+    /// Only used in pending index, since chain index actually deletes the
+    /// operations.
+    fn pending_deletion_marker_to_document(
+        &self,
+        entity_id: EntityIdRef,
+        operation_id: OperationId,
+    ) -> Document {
+        let mut doc = Document::default();
+
+        doc.add_text(self.fields.entity_id, entity_id);
+        doc.add_u64(self.fields.operation_id, operation_id);
+        doc.add_u64(self.fields.document_type, MutationType::PENDING_DELETION_ID);
 
         doc
     }

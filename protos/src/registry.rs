@@ -206,14 +206,14 @@ mod tests {
         let descriptor = registry.get_message_descriptor("exocore.test.TestMessage")?;
 
         // see `protos/exocore/test/test.proto`
-        assert_eq!(descriptor.fields.get(&1).unwrap().text_flag, true);
-        assert_eq!(descriptor.fields.get(&2).unwrap().text_flag, false);
+        assert!(descriptor.fields.get(&1).unwrap().text_flag);
+        assert!(!descriptor.fields.get(&2).unwrap().text_flag);
 
-        assert_eq!(descriptor.fields.get(&8).unwrap().indexed_flag, true);
-        assert_eq!(descriptor.fields.get(&9).unwrap().indexed_flag, false);
+        assert!(descriptor.fields.get(&8).unwrap().indexed_flag);
+        assert!(!descriptor.fields.get(&9).unwrap().indexed_flag);
 
-        assert_eq!(descriptor.fields.get(&18).unwrap().sorted_flag, true);
-        assert_eq!(descriptor.fields.get(&11).unwrap().sorted_flag, false);
+        assert!(descriptor.fields.get(&18).unwrap().sorted_flag);
+        assert!(!descriptor.fields.get(&11).unwrap().sorted_flag);
 
         assert!(descriptor.fields.get(&19).unwrap().groups.is_empty());
         assert_eq!(descriptor.fields.get(&20).unwrap().groups, vec![1]);
