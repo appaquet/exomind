@@ -40,11 +40,16 @@ impl TestEntityIndex {
             cluster.clocks[0].clone(),
         )?;
 
-        Ok(TestEntityIndex {
+        let mut test_index = TestEntityIndex {
             config,
             cluster,
             index,
-        })
+        };
+
+        // wait for chain to start & handle started event
+        test_index.handle_engine_events()?;
+
+        Ok(test_index)
     }
 
     pub async fn with_restarted_node(self) -> Result<TestEntityIndex, anyhow::Error> {

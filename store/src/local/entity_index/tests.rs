@@ -409,13 +409,6 @@ async fn operations_deletion() -> anyhow::Result<()> {
     test_index.wait_operation_committed(op_id);
     test_index.handle_engine_events()?;
 
-    // we don't actually delete from pending yet, only in chain
-    let pending_res = test_index
-        .index
-        .pending_index
-        .fetch_entity_mutations("entity1")?;
-    assert_eq!(pending_res.mutations.len(), 3);
-
     // make sure deletion gets indexed by appending another op
     let op4 = test_index.put_test_trait("entity_other", "trait1", "op4")?;
     test_index.wait_operations_committed(&[op4]);
