@@ -95,3 +95,11 @@ public func generateId(prefix: String? = nil) -> String {
     exocore_free_string(idPtr)
     return idStr
 }
+
+public func buildInfo() -> Exocore_Core_BuildInfo {
+    let infoBytes = exocore_build_info()
+    let infoData = Data(bytes: infoBytes.bytes, count: Int(infoBytes.size))
+    let info = try! Exocore_Core_BuildInfo(serializedData: infoData)
+    exocore_bytes_free(infoBytes)
+    return info
+}

@@ -17,6 +17,7 @@ $EXOCORE_ROOT/node_modules/.bin/pbjs \
     -p $EXOCORE_ROOT/protos/protobuf/ \
     --es6 \
     -r 'exocore-root' \
+    $EXOCORE_ROOT/protos/protobuf/exocore/core/*.proto \
     $EXOCORE_ROOT/protos/protobuf/exocore/store/*.proto \
     $EXOCORE_ROOT/protos/protobuf/exocore/test/*.proto
 

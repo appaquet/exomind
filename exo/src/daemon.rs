@@ -179,7 +179,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
 #[cfg(any(
     all(
         target_arch = "x86_64",
-        any(target_os = "linux", target_os = "darwin", target_os = "windows")
+        any(target_os = "linux", target_os = "macos", target_os = "windows")
     ),
     all(target_arch = "aarch64", target_os = "linux")
 ))]
@@ -234,7 +234,7 @@ async fn create_app_host(
 #[cfg(not(any(
     all(
         target_arch = "x86_64",
-        any(target_os = "linux", target_os = "darwin", target_os = "windows")
+        any(target_os = "linux", target_os = "macos", target_os = "windows")
     ),
     all(target_arch = "aarch64", target_os = "linux")
 )))]
@@ -244,7 +244,7 @@ async fn create_app_host(
     _store_handle: impl exocore_store::store::Store,
     _services_completion: &mut Vec<Pin<Box<dyn Future<Output = ()>>>>,
 ) -> anyhow::Result<()> {
-    return Err(anyhow!("Cannot host app on this target."));
+    Err(anyhow!("Cannot host app on this target."))
 }
 
 async fn create_local_store<T: TransportServiceHandle>(

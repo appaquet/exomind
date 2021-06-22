@@ -22,7 +22,7 @@ log = "0.4"
 reqwest = {version = "0.11", default-features = false, features = ["rustls-tls"]}
 thiserror = "1.0"
 
-[target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"darwin\", target_os = \"windows\")), all(target_arch = \"aarch64\", target_os = \"linux\") ))".dependencies]
+[target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"macos\", target_os = \"windows\")), all(target_arch = \"aarch64\", target_os = \"linux\") ))".dependencies]
 wasmtime = "0.28.0"
 
 [dev-dependencies]

@@ -257,3 +257,14 @@ pub mod cell_application_config {
         Path(::prost::alloc::string::String),
     }
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BuildInfo {
+    #[prost(string, tag = "1")]
+    pub version: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub build_time: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(bool, tag = "3")]
+    pub debug: bool,
+    #[prost(string, tag = "4")]
+    pub rust_version: ::prost::alloc::string::String,
+}

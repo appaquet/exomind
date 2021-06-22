@@ -1,6 +1,8 @@
 use std::{ffi::CStr, sync::Once};
 
+use exocore_protos::prost::ProstMessageExt;
 use libc::c_char;
+use utils::BytesVec;
 
 #[macro_use]
 extern crate log;
@@ -34,6 +36,18 @@ pub extern "C" fn exocore_init(log_level: usize, log_file: *const c_char) {
         };
 
         exocore_core::logging::setup(log_level, file);
-        info!("exocore version={}", env!("CARGO_PKG_VERSION"));
+        info!("exocore build: {}", exocore_core::build::build_info_str());
     });
+}
+
+/// Returns build information in protobuf encoded bytes of
+/// `exocore.core.BuildInfo` message.
+///
+/// # Safety
+/// * Returned bytes should be freed using `exocore_bytes_free`.
+#[no_mangle]
+pub extern "C" fn exocore_build_info() -> BytesVec {
+    let info = exocore_core::build::build_info();
+    let bytes = info.encode_to_vec();
+    BytesVec::from_vec(bytes)
 }

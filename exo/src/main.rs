@@ -114,7 +114,7 @@ pub enum Command {
     /// Discovery service related commands.
     Discovery(disco::DiscoveryCommand),
 
-    /// Print version.
+    /// Print version and build information.
     Version,
 }
 
@@ -145,7 +145,7 @@ async fn main() -> anyhow::Result<()> {
         Command::Daemon => daemon::cmd_daemon(&ctx).await,
         Command::Discovery(disco_opts) => disco::cmd_daemon(&ctx, disco_opts).await,
         Command::Version => {
-            println!("version {}", env!("CARGO_PKG_VERSION"));
+            println!("{}", exocore_core::build::build_info_str());
             Ok(())
         }
     };

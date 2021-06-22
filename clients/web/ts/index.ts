@@ -61,6 +61,12 @@ export class Exocore {
         return Exocore.default.registry;
     }
 
+    static buildInfo(): exocore.core.BuildInfo {
+        const module = wasm.getModule();
+        const infoBytes = module.build_info()
+        return exocore.core.BuildInfo.decode(infoBytes);
+    }
+
     static node = new NodeAccessor();
 
     static discovery = new DiscoveryAccessor();

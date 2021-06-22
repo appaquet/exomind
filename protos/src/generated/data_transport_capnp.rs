@@ -784,7 +784,7 @@ pub mod chain_sync_request {
     }
 
     #[repr(u16)]
-    #[derive(Clone, Copy, PartialEq)]
+    #[derive(Clone, Copy, Debug, PartialEq)]
     pub enum RequestedDetails {
         Headers = 0,
         Blocks = 1,

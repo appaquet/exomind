@@ -25,6 +25,7 @@ fn main() {
                 "./protobuf/exocore/test/test.proto",
                 "./protobuf/exocore/core/auth.proto",
                 "./protobuf/exocore/core/config.proto",
+                "./protobuf/exocore/core/build.proto",
                 "./protobuf/exocore/apps/manifest.proto",
                 "./protobuf/exocore/apps/runtime.proto",
             ];

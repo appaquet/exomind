@@ -8,6 +8,7 @@ pub mod cell;
 pub mod framing;
 pub mod futures;
 
+pub mod build;
 #[cfg(feature = "logger")]
 pub mod logging;
 pub mod sec;
@@ -16,7 +17,3 @@ pub mod simple_store;
 pub mod tests_utils;
 pub mod time;
 pub mod utils;
-
-pub fn version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
-}
