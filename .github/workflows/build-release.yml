@@ -57,7 +57,7 @@ jobs:
           tar -czf ../exm.${{ matrix.pair.target }}.tar.gz *
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.3
+        uses: actions/upload-artifact@v2.2.4
         with:
           name: ${{ matrix.pair.target }}-artifact
           path: exm.${{ matrix.pair.target }}.tar.gz
@@ -84,7 +84,7 @@ jobs:
           tar -czf $GITHUB_WORKSPACE/exomind-web.tar.gz *
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v2.2.3
+        uses: actions/upload-artifact@v2.2.4
         with:
           name: client-web-artifact
           path: exomind-web.tar.gz
@@ -121,7 +121,7 @@ jobs:
           mv exomind.zip exomind-app.zip
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v2.2.3
+        uses: actions/upload-artifact@v2.2.4
         with:
           name: app-package-artifact
           path: exomind-app.zip
@@ -166,7 +166,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v2.2.3
+        uses: actions/upload-artifact@v2.2.4
         with:
           name: electron-app-artifact
           path: web/pkg/*
