@@ -1802,6 +1802,13 @@
     "@types/react" "*"
     flatpickr "^4.0.6"
 
+"@types/react-frame-component@^4.1.1":
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/@types/react-frame-component/-/react-frame-component-4.1.1.tgz#1d8293c062c1d43555ca80494a7b94e3088ad39e"
+  integrity sha512-7soxaTJ030rtC2lFlaFzzJyCY4rsPwOLxfw/eGnbEq/wq80e71outSL6dUXM9bOh2qMhM1xnp+EMEhjdVvIlkA==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react@*", "@types/react@^17.0.9":
   version "17.0.9"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.9.tgz#1147fb520024a62c9b3841f5cb4db89b73ddb87f"
@@ -4735,10 +4742,10 @@ exit@^0.1.2:
   resolved "https://registry.yarnpkg.com/exit/-/exit-0.1.2.tgz#0632638f8d877cc82107d30a0fff1a17cba1cd0c"
   integrity sha1-BjJjj42HfMghB9MKD/8aF8uhzQw=
 
-exocore@0.1.8:
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.8.tgz#ae0cf040b236f2eb72aa899f55d890615e12b6cf"
-  integrity sha512-yOzbd9s8rkK+1hUEbebR4tlzuCtdM7vmwikZubUiWXQfNlUGU/fTH7jMEC65OH/JGZ5+TQ9lqB8qfdSMpEZyhQ==
+exocore@0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.9.tgz#d347be804e9ff42ca8cded8604f96c84a1c015a6"
+  integrity sha512-+VwuIlI4vT1BTFHPVLX7Ksup3BWk4CHM6pgukBPe4Ft5NWXhJw12L/9rOtA2CURSkCGucb7uiysc/RcEopZETA==
   dependencies:
     protobufjs "^6.11.2"
 
@@ -8566,6 +8573,11 @@ react-flatpickr@^3.10.6:
   dependencies:
     flatpickr "^4.6.2"
     prop-types "^15.5.10"
+
+react-frame-component@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/react-frame-component/-/react-frame-component-5.0.1.tgz#fccba68969dee2e49912e3e81ff0e4b34470aedc"
+  integrity sha512-9qGKNirPkAyWlAqOuMSWidqCQNLB1mTGvXpoGE8e5SgakS9YqzsKtV7te2Mdu4kIdxEySW1BNwTh3tmwMYnslg==
 
 react-is@^16.8.1:
   version "16.13.1"

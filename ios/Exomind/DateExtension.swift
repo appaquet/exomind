@@ -58,6 +58,10 @@ public extension Date {
         }
     }
 
+    func toLongFormat() -> String {
+        return Date.shortDateFormatter.string(from: self) + " " + Date.shortTimeFormatter.string(from: self)
+    }
+
     func plusSeconds(_ s: UInt) -> Date {
         return self.addComponentsToDate(seconds: Int(s), minutes: 0, hours: 0, days: 0, weeks: 0, months: 0, years: 0)
     }

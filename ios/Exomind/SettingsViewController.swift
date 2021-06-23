@@ -6,6 +6,7 @@ class SettingsViewController: UITableViewController {
         super.viewDidLoad()
 
         self.navigationItem.title = "Settings"
+        self.tableView.delegate = self
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -60,4 +61,40 @@ class SettingsViewController: UITableViewController {
             self.present(alert, animated: true)
         }
     }
+
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        if section == 1 {
+            let info = Exocore.buildInfo()
+            let buildTime = info.buildTime.date
+            let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+
+            return "exomind \(appVersion) (\(buildDate().toLongFormat())) \n exocore \(info.version) (\(buildTime.toLongFormat()))"
+        }
+
+        return nil
+    }
+
+    override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        if section == 1 {
+            return 100
+        }
+
+        return 0
+    }
+
+    override func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
+        let footerView = view as! UITableViewHeaderFooterView
+        footerView.textLabel?.textAlignment = .center
+    }
+
+}
+
+fileprivate func buildDate() -> Date {
+    if let executablePath = Bundle.main.executablePath,
+        let attributes = try? FileManager.default.attributesOfItem(atPath: executablePath),
+        let date = attributes[.creationDate] as? Date {
+        return date
+    }
+
+    return Date()
 }

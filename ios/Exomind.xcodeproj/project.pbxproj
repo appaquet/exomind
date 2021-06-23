@@ -162,7 +162,6 @@
 		6D1F240A2516442900CFA8D9 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		6D2272741C44107100B0FC61 /* SwitcherButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwitcherButton.swift; sourceTree = "<group>"; };
 		6D2272761C441ED200B0FC61 /* UIViewExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewExtension.swift; sourceTree = "<group>"; };
-		6D23472D1D57E4E80025E59C /* bridging-header-tests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "bridging-header-tests.h"; sourceTree = "<group>"; };
 		6D23F6191C3DB12E00D9A075 /* SearchViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
 		6D2AFD961C28969D000E13A7 /* QuickButtonView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickButtonView.swift; sourceTree = "<group>"; };
 		6D2EC69B253677D800456FD2 /* Alamofire.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Alamofire.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -196,7 +195,6 @@
 		6D7781C61C08AF1100D45299 /* TimeLogic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeLogic.swift; sourceTree = "<group>"; };
 		6D7781C81C08B18E00D45299 /* TimeSelectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeSelectionViewController.swift; sourceTree = "<group>"; };
 		6D7781CB1C08BBDF00D45299 /* CollectionSelectorViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionSelectorViewController.swift; sourceTree = "<group>"; };
-		6D8D0C931C6555AB00E8A2C9 /* bridging-header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "bridging-header.h"; sourceTree = "<group>"; };
 		6D9485B325F3D1F300067EEB /* LogsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsViewController.swift; sourceTree = "<group>"; };
 		6D9F68301C999AD100FFC7D9 /* DraftEmailViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DraftEmailViewController.swift; sourceTree = "<group>"; };
 		6D9F68321C99C78C00FFC7D9 /* LabelledFieldView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LabelledFieldView.swift; sourceTree = "<group>"; };
@@ -333,8 +331,6 @@
 		6D5D077B1BC40D0A007D0011 /* Exomind */ = {
 			isa = PBXGroup;
 			children = (
-				6D8D0C931C6555AB00E8A2C9 /* bridging-header.h */,
-				6D23472D1D57E4E80025E59C /* bridging-header-tests.h */,
 				6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */,
 				6DC0D2791BC5D57400F14571 /* UI */,
 				6DC0D25F1BC43CA700F14571 /* Core */,
@@ -957,7 +953,7 @@
 				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
@@ -984,7 +980,7 @@
 				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
@@ -1130,7 +1126,7 @@
 				PRODUCT_NAME = Exomind;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
 				SWIFT_VERSION = 5.0;
 			};
@@ -1156,7 +1152,7 @@
 				PRODUCT_NAME = Exomind;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
 				SWIFT_VERSION = 5.0;
 			};
@@ -1175,7 +1171,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.exomind.ios.ExomindTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header-tests.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ExomindV2.app/ExomindV2";
@@ -1195,7 +1191,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.exomind.ios.ExomindTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "Exomind/bridging-header-tests.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = "";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ExomindV2.app/ExomindV2";

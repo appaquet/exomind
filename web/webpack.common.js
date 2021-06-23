@@ -1,3 +1,5 @@
+const webpack = require("webpack");
+const packageJson = require('./package.json');
 
 module.exports = {
   module: {
@@ -37,7 +39,16 @@ module.exports = {
       { test: /\.eot(\?.*$|$)/, loader: "file-loader" },
     ]
   },
+
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx']
   },
+
+
+  plugins: [
+    new webpack.DefinePlugin({
+      '_EXOMIND_VERSION': JSON.stringify(packageJson.version),
+      '_EXOMIND_BUILD_TIME': JSON.stringify(new Date().getTime())
+    })
+  ]
 };
