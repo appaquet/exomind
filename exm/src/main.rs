@@ -20,7 +20,7 @@ async fn main() {
         }
         cli::Command::Version => {
             println!("exomind version {}", env!("CARGO_PKG_VERSION"));
-            println!("exocore version {}", exocore::core::version());
+            println!("{}", exocore::core::build::build_info_str());
         }
     };
 }
