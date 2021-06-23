@@ -3,11 +3,11 @@
 
 .settings {
   .center-element();
-  background: var(--entity-component-bg);
-  padding: 5px;
-  border: var(--entity-component-border);
 
   ul {
+    background: var(--entity-component-bg);
+    border: var(--entity-component-border);
+
     .make-list();
     li {
       .make-list-item();
@@ -34,5 +34,10 @@
     }
   }
 
+  .version {
+    padding-top: 15px;
+    text-align: center;
+    color: var(--entity-component-header-bg);
+  }
 }
 

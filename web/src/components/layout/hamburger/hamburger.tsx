@@ -126,13 +126,13 @@ const HamburgerLink = (props: { path: Path, link: string, label: string, icon?: 
   );
 }
 
-function handleDropIn(trait: EntityTrait<unknown>, data: DragData) {
+function handleDropIn(intoEntity: EntityTrait<unknown>, data: DragData) {
   const droppedEntity = data.object as EntityTraits;
-  const parentId = trait.et.id;
-  const droppedEntityRelation = getEntityParentRelation(trait.et, parentId);
+  const parentId = intoEntity.et.id;
+  const droppedEntityRelation = getEntityParentRelation(intoEntity.et, parentId);
   const relationTraitId = droppedEntityRelation?.id ?? `child_${parentId}`;
 
-  const mb = MutationBuilder
+  let mb = MutationBuilder
     .updateEntity(droppedEntity.id)
     .putTrait(new exomind.base.CollectionChild({
       collection: new exocore.store.Reference({
@@ -141,6 +141,15 @@ function handleDropIn(trait: EntityTrait<unknown>, data: DragData) {
       weight: new Date().getTime(),
     }), relationTraitId)
     .returnEntities();
+
+  if (!!data.parentObject && data.parentObject instanceof EntityTraits) {
+    // if it has been moved and it's not inside its own container, then we remove it from old parent
+    const fromParentEntity = data.parentObject;
+    if (data.effect === 'move' && !!fromParentEntity && fromParentEntity && parentId !== fromParentEntity.id) {
+      const fromRelation = getEntityParentRelation(droppedEntity, fromParentEntity.id);
+      mb = mb.deleteTrait(fromRelation.id);
+    }
+  }
 
   Exocore.store.mutate(mb.build())
 }

@@ -35,7 +35,7 @@ class BootstrapViewController: UIViewController, UITextViewDelegate {
             let config = try Exocore_Core_LocalNodeConfig(jsonString: configJson)
             let node = try LocalNode.from(config: config)
             try ExocoreUtils.saveNode(node: node)
-            startDiscovery()
+            self.tryBoot()
         } catch {
             self.errorLabel.text = error.localizedDescription
         }
@@ -122,6 +122,7 @@ class BootstrapViewController: UIViewController, UITextViewDelegate {
             self.disco = nil
             let node = try LocalNode.generate()
             try ExocoreUtils.saveNode(node: node)
+            refreshNodeConfig()
             startDiscovery()
         } catch {
             self.errorLabel.text = error.localizedDescription

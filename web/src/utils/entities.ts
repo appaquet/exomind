@@ -51,6 +51,8 @@ export class EntityTraits {
 
         if (priorityTrait != null) {
             this.priorityTraitId = priorityTrait[0].id;
+        } else if (this.entity.traits.length > 0) {
+            this.priorityTraitId = this.entity.traits[0].id;
         }
     }
 

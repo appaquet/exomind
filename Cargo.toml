@@ -1,15 +1,16 @@
 [package]
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
-categories = ["Command-line interface", "Email", "Text editors"]
+categories = ["command-line-interface", "email", "text-editors"]
 description = "CLI for Exomind, a personal knowledge management tool"
 edition = "2018"
 keywords = ["knowledge-management", "mobile", "decentralized", "webapp"]
 license = "Apache-2.0"
 name = "exomind"
+repository = "https://github.com/appaquet/exomind"
 version = "0.1.4"
 
 [dependencies]
-exomind-protos = {path = "./protos"}
+exomind-protos = {path = "./protos", version = "0.1.4"}
 
 [workspace]
 exclude = [
@@ -22,7 +23,7 @@ members = [
   "exm",
 ]
 
-[patch.crates-io]
+# [patch.crates-io]
 # exocore = {path = "../exocore"}
-# exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.8" }
-exocore = { git = "https://github.com/appaquet/exocore.git" }
+# exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.9" }
+# exocore = {git = "https://github.com/appaquet/exocore.git"}

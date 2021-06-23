@@ -101,6 +101,10 @@ export default class DateUtil {
     }
   }
 
+  static toLongFormat(date: Date): string {
+    return this.toHyphenDateFormat(date) + ' ' + DateUtil.toColonHourFormat(date);
+  }
+
   static toColonHourFormat(date: Date): string {
     return [DateUtil.numPad(date.getHours()), DateUtil.numPad(date.getMinutes()), DateUtil.numPad(date.getSeconds())].join(':');
   }

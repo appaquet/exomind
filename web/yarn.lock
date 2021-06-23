@@ -4529,10 +4529,10 @@ exit@^0.1.2:
   resolved "https://registry.yarnpkg.com/exit/-/exit-0.1.2.tgz#0632638f8d877cc82107d30a0fff1a17cba1cd0c"
   integrity sha1-BjJjj42HfMghB9MKD/8aF8uhzQw=
 
-exocore@0.1.8:
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.8.tgz#ae0cf040b236f2eb72aa899f55d890615e12b6cf"
-  integrity sha512-yOzbd9s8rkK+1hUEbebR4tlzuCtdM7vmwikZubUiWXQfNlUGU/fTH7jMEC65OH/JGZ5+TQ9lqB8qfdSMpEZyhQ==
+exocore@0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.9.tgz#d347be804e9ff42ca8cded8604f96c84a1c015a6"
+  integrity sha512-+VwuIlI4vT1BTFHPVLX7Ksup3BWk4CHM6pgukBPe4Ft5NWXhJw12L/9rOtA2CURSkCGucb7uiysc/RcEopZETA==
   dependencies:
     protobufjs "^6.11.2"
 

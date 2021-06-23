@@ -74,7 +74,8 @@ export class Entity extends React.Component<IProps, IState> {
         }
 
         let dropPositions: DropPosition[];
-        if (this.props.entity.priorityTrait.constants.collectionLike ?? false) {
+        const priorityTrait = this.props.entity.priorityTrait;
+        if (priorityTrait.constants.collectionLike ?? false) {
             // collections supports dropping inside, so we include 'middle'
             dropPositions = ['before', 'into', 'after'];
         }
@@ -352,7 +353,7 @@ export class Entity extends React.Component<IProps, IState> {
         if (this.props.renderEntityDate) {
             return this.props.renderEntityDate(entityTrait);
         } else {
-            return DateUtil.toShortFormat(entityTrait.modificationDate ?? entityTrait.creationDate);
+            return DateUtil.toShortFormat(entityTrait.modificationDate ?? entityTrait.creationDate ?? new Date());
         }
     }
 

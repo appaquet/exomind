@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "Exomind",
     "description": "Import into Exomind",
-    "version": "0.3",
+    "version": "0.1.4",
     "background": {
         "scripts": [
             "event.js"
@@ -15,7 +15,7 @@
     },
     "browser_specific_settings": {
         "gecko": {
-            "id": "app@exomind.io",
+            "id": "{48d7803a-e8bd-47d4-a8f9-17b287549167}",
             "strict_min_version": "42.0"
         }
     },
