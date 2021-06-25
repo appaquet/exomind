@@ -1024,7 +1024,7 @@ async fn cmd_app_install(
     let mut cell_config =
         CellConfig::from_yaml_file(&config_path).expect("Couldn't read cell config");
 
-    let pkg = AppPackage::fetch_package_url(&install_opts.url)
+    let pkg = AppPackage::fetch_package_url(cell, &install_opts.url)
         .await
         .expect("Couldn't fetch app package");
     pkg.install(cell, &mut cell_config, install_opts.overwrite)
@@ -1094,7 +1094,7 @@ async fn unpack_cell_apps(
                     style_value(app.version)
                 ));
 
-                let pkg = AppPackage::fetch_package_url(&app.package_url)
+                let pkg = AppPackage::fetch_package_url(cell, &app.package_url)
                     .await
                     .expect("Couldn't fetch package");
 

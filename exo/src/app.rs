@@ -16,7 +16,7 @@ use exocore_protos::{
     apps::Manifest,
     core::{cell_application_config, CellApplicationConfig, CellConfig},
 };
-use tempfile::{tempdir, TempDir};
+use tempfile::{tempdir_in, TempDir};
 use zip::write::FileOptions;
 
 use crate::{
@@ -162,10 +162,13 @@ pub struct AppPackage {
 }
 
 impl AppPackage {
-    pub async fn fetch_package_url<U: Into<String>>(url: U) -> anyhow::Result<AppPackage> {
+    pub async fn fetch_package_url<U: Into<String>>(
+        cell: &Cell,
+        url: U,
+    ) -> anyhow::Result<AppPackage> {
         let url: String = url.into();
         if let Some(path) = url.strip_prefix("file://") {
-            return Self::read_package_path(path);
+            return Self::read_package_path(cell, path);
         }
 
         let fetch_resp = reqwest::get(url.clone())
@@ -179,25 +182,29 @@ impl AppPackage {
 
         let cursor = Cursor::new(package_bytes.as_ref());
 
-        let mut pkg = Self::read_package(cursor)?;
+        let mut pkg = Self::read_package(cell, cursor)?;
         pkg.url = url;
         Ok(pkg)
     }
 
-    pub fn read_package_path<P: AsRef<Path>>(path: P) -> anyhow::Result<AppPackage> {
+    pub fn read_package_path<P: AsRef<Path>>(cell: &Cell, path: P) -> anyhow::Result<AppPackage> {
         let file = File::open(path.as_ref())
             .map_err(|err| anyhow!("Couldn't open package file: {}", err))?;
 
-        let mut pkg = Self::read_package(file)?;
+        let mut pkg = Self::read_package(cell, file)?;
         pkg.url = format!("file://{}", path.as_ref().to_string_lossy());
         Ok(pkg)
     }
 
-    fn read_package<R: Read + Seek>(reader: R) -> anyhow::Result<AppPackage> {
+    fn read_package<R: Read + Seek>(cell: &Cell, reader: R) -> anyhow::Result<AppPackage> {
         let mut package_zip = zip::ZipArchive::new(reader)
             .map_err(|err| anyhow!("Couldn't read package zip: {}", err))?;
 
-        let dir = tempdir().map_err(|err| anyhow!("Couldn't create temp dir: {}", err))?;
+        let cell_temp_dir = cell.temp_directory().expect("Cell didn't have a directory");
+        std::fs::create_dir_all(&cell_temp_dir).expect("Couldn't create temp directory");
+
+        let dir = tempdir_in(cell_temp_dir)
+            .map_err(|err| anyhow!("Couldn't create temp dir: {}", err))?;
 
         package_zip
             .extract(dir.path())

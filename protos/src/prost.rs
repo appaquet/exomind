@@ -21,7 +21,7 @@ pub trait ProstDateTimeExt {
     fn to_proto_timestamp(&self) -> Timestamp;
 }
 
-impl ProstDateTimeExt for chrono::DateTime<chrono::Utc> {
+impl<Tz: chrono::TimeZone> ProstDateTimeExt for chrono::DateTime<Tz> {
     fn to_proto_timestamp(&self) -> Timestamp {
         Timestamp {
             seconds: self.timestamp(),

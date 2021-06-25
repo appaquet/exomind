@@ -214,33 +214,27 @@ impl Cell {
     }
 
     pub fn chain_directory(&self) -> Option<PathBuf> {
-        if let Some(path) = &self.identity.path {
-            let mut chain_dir = PathBuf::from(path);
-            chain_dir.push("chain");
-            Some(chain_dir)
-        } else {
-            None
-        }
+        self.cell_directory().map(|dir| {
+            let mut dir = dir.to_owned();
+            dir.push("chain");
+            dir
+        })
     }
 
     pub fn store_directory(&self) -> Option<PathBuf> {
-        if let Some(path) = &self.identity.path {
-            let mut store_dir = PathBuf::from(path);
-            store_dir.push("store");
-            Some(store_dir)
-        } else {
-            None
-        }
+        self.cell_directory().map(|dir| {
+            let mut dir = dir.to_owned();
+            dir.push("store");
+            dir
+        })
     }
 
     pub fn apps_directory(&self) -> Option<PathBuf> {
-        if let Some(path) = &self.identity.path {
-            let mut app_dir = PathBuf::from(path);
-            app_dir.push("apps");
-            Some(app_dir)
-        } else {
-            None
-        }
+        self.cell_directory().map(|dir| {
+            let mut dir = dir.to_owned();
+            dir.push("apps");
+            dir
+        })
     }
 
     pub fn app_directory(&self, app_manifest: &Manifest) -> Option<PathBuf> {
@@ -249,6 +243,15 @@ impl Cell {
             "{}_{}",
             app_manifest.public_key, app_manifest.version
         )))
+    }
+
+    pub fn temp_directory(&self) -> Option<PathBuf> {
+        self.cell_directory().map(|dir| {
+            let mut dir = dir.to_owned();
+            dir.push("tmp");
+
+            dir
+        })
     }
 }
 

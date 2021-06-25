@@ -7,14 +7,12 @@ use shadow_rs::shadow;
 shadow!(build);
 
 pub fn build_info() -> BuildInfo {
-    let naive_build_time =
-        chrono::NaiveDateTime::parse_from_str(build::BUILD_TIME, "%Y-%m-%d %H:%M:%S")
-            .expect("Couldn't parse build time");
-    let utc_build_time = chrono::DateTime::<chrono::Utc>::from_utc(naive_build_time, chrono::Utc);
+    let build_time = chrono::DateTime::parse_from_rfc3339(build::BUILD_TIME_3339)
+        .expect("Couldn't parse build time");
 
     BuildInfo {
         version: build::PKG_VERSION.to_string(),
-        build_time: Some(utc_build_time.to_proto_timestamp()),
+        build_time: Some(build_time.to_proto_timestamp()),
         debug: shadow_rs::is_debug(),
         rust_version: build::RUST_VERSION.to_string(),
     }
