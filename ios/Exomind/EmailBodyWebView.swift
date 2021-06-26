@@ -46,8 +46,8 @@ class EmailBodyWebView: AutoLayoutWebView, WKNavigationDelegate {
         // Triggered when the page is fully loaded, with all images
         let loaded = "window.location = 'exomind://loaded/' + document.body.clientHeight"
 
-        // For Dark Mode. Sync with Web's html-editor.js
-        let style = "<style>@media (prefers-color-scheme: dark) { body { color: white; background-color: black } a { color: #4285f4 } }</style>"
+        // For Dark Mode. See web's email-thread.less
+        let style = "<style>@media (prefers-color-scheme: dark) { body { filter: invert(1) hue-rotate(180deg); } img, div[style*=\"background-image\"] { filter: invert(1) hue-rotate(180deg); } }</style>"
         let final = "<html><head>\(head)\(style)</head><body style=\"width: 100%; padding: 10px 5px;\" onload=\"javascript: \(loaded)\">\(body)\(ready)</body></html>"
         self.loadHTMLString(final, baseURL: nil)
     }

@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17156" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17125"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -12,7 +11,7 @@
         <!--Entity View Controller-->
         <scene sceneID="f6v-tQ-Gid">
             <objects>
-                <viewController storyboardIdentifier="EntityViewController" id="qL7-9E-tda" customClass="EntityViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="EntityViewController" id="qL7-9E-tda" customClass="EntityViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="9yr-cB-kTY">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -36,7 +35,7 @@
         <!--Collection View Controller-->
         <scene sceneID="3ic-dN-D5D">
             <objects>
-                <viewController storyboardIdentifier="CollectionViewController" id="oCJ-fT-ikc" customClass="CollectionViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="CollectionViewController" id="oCJ-fT-ikc" customClass="CollectionViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="sIS-UZ-uTy">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -51,12 +50,12 @@
         <!--Email View Controller-->
         <scene sceneID="nby-3M-BHD">
             <objects>
-                <viewController storyboardIdentifier="EmailViewController" id="WvS-tc-XhX" customClass="EmailViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="EmailViewController" id="WvS-tc-XhX" customClass="EmailViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="iX0-zy-djU">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <viewLayoutGuide key="safeArea" id="ZZu-KO-XQF"/>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wIs-Ot-CZS" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -66,14 +65,14 @@
         <!--Email Thread View Controller-->
         <scene sceneID="Lyo-9Y-0ma">
             <objects>
-                <tableViewController storyboardIdentifier="EmailThreadViewController" id="dxD-Bz-3pH" customClass="EmailThreadViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="EmailThreadViewController" id="dxD-Bz-3pH" customClass="EmailThreadViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="grouped" separatorStyle="default" rowHeight="100" sectionHeaderHeight="5" sectionFooterHeight="5" id="kT2-dj-UTw">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <prototypes>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="collapsed" rowHeight="47" id="Pa3-Mx-pfv" userLabel="collapsed" customClass="EmailThreadClosedTableViewCell" customModule="ExomindV2" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="55.5" width="375" height="47"/>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="collapsed" rowHeight="47" id="Pa3-Mx-pfv" userLabel="collapsed" customClass="EmailThreadClosedTableViewCell" customModule="Exomind" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="49.5" width="375" height="47"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Pa3-Mx-pfv" id="AwW-UD-AIp">
                                     <rect key="frame" x="0.0" y="0.0" width="375" height="47"/>
@@ -114,8 +113,8 @@
                                     <outlet property="title" destination="7gR-Yb-Pd9" id="DvR-ru-69j"/>
                                 </connections>
                             </tableViewCell>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="attachments" rowHeight="47" id="oeQ-F5-UJB" userLabel="attachments" customClass="EmailThreadAttachmentTableViewCell" customModule="ExomindV2" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="102.5" width="375" height="47"/>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="attachments" rowHeight="47" id="oeQ-F5-UJB" userLabel="attachments" customClass="EmailThreadAttachmentTableViewCell" customModule="Exomind" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="96.5" width="375" height="47"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="oeQ-F5-UJB" id="pn8-Jf-nKa">
                                     <rect key="frame" x="0.0" y="0.0" width="375" height="47"/>
@@ -136,7 +135,7 @@
         <!--Note View Controller-->
         <scene sceneID="L1n-fq-bqQ">
             <objects>
-                <viewController storyboardIdentifier="NoteViewController" id="Ulk-7O-j3K" customClass="NoteViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="NoteViewController" id="Ulk-7O-j3K" customClass="NoteViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="4az-6k-QmA">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -151,7 +150,7 @@
         <!--Link View Controller-->
         <scene sceneID="2OA-jN-HHn">
             <objects>
-                <viewController storyboardIdentifier="LinkViewController" id="mAW-lj-BYs" customClass="LinkViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="LinkViewController" id="mAW-lj-BYs" customClass="LinkViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="oKM-mw-xs1">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -191,7 +190,7 @@
         <!--Task View Controller-->
         <scene sceneID="A8M-fw-OrY">
             <objects>
-                <viewController storyboardIdentifier="TaskViewController" id="eVP-LY-YbG" customClass="TaskViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="TaskViewController" id="eVP-LY-YbG" customClass="TaskViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="6FD-Tu-6A1">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -231,12 +230,11 @@
         <!--Draft Email View Controller-->
         <scene sceneID="AYo-9G-W3w">
             <objects>
-                <viewController storyboardIdentifier="DraftEmailViewController" id="uQL-4e-TUW" customClass="DraftEmailViewController" customModule="ExomindV2" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="DraftEmailViewController" id="uQL-4e-TUW" customClass="DraftEmailViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="ri1-Nh-6N3">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <viewLayoutGuide key="safeArea" id="PVr-ph-78T"/>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bym-eE-76r" userLabel="First Responder" sceneMemberID="firstResponder"/>

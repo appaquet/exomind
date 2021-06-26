@@ -239,7 +239,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
         return (
             <div className="object-body">
-                <div dangerouslySetInnerHTML={markup} />
+                <div className="email-body" dangerouslySetInnerHTML={markup} />
                 {more}
                 <EmailAttachments entity={this.props.entity} email={email} />
             </div>
