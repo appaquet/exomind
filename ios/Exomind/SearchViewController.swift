@@ -80,7 +80,7 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
         }
 
         self.entityListViewController.setSwipeActions([
-            ChildrenViewSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
+            ChildrenViewSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .normal, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleCopyInbox(entity)
             })
         ])

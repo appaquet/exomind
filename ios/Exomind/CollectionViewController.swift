@@ -31,15 +31,17 @@ class CollectionViewController: UIViewController, EntityTraitView {
         }
 
         self.entityListViewController.setSwipeActions([
-            ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
+            ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleDone(entity)
+                callback(true)
             }),
-            ChildrenViewSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, state: .state3, mode: .switch, handler: { [weak self] (entity) -> Void in
-                self?.handleMoveLater(entity)
-            }),
-            ChildrenViewSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, state: .state4, mode: .switch, handler: { [weak self] (entity) -> Void in
+            ChildrenViewSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleAddToCollection(entity)
-            })
+                callback(false)
+            }),
+            ChildrenViewSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
+                self?.handleMoveLater(entity, callback: callback)
+            }),
         ])
 
         self.entityListViewController.loadData(fromChildrenOf: self.entity.id)
@@ -130,8 +132,8 @@ class CollectionViewController: UIViewController, EntityTraitView {
         ExomindMutations.removeParent(entity: entity, parentId: self.entity.id)
     }
 
-    private func handleMoveLater(_ entity: EntityExt) {
-        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity)
+    private func handleMoveLater(_ entity: EntityExt, callback: @escaping (Bool) -> Void) {
+        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity, callback: callback)
     }
 
     private func handleAddToCollection(_ entity: EntityExt) {

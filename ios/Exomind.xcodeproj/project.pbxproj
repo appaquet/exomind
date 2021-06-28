@@ -357,7 +357,7 @@
 			name = Modals;
 			sourceTree = "<group>";
 		};
-		6D68E6DB1C8F74BE007BB8F4 /* Navigation Controllers */ = {
+		6D68E6DB1C8F74BE007BB8F4 /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
 				6DE65ACA1C5FB5520059CCBE /* RootNavigationController.swift */,
@@ -382,7 +382,7 @@
 				6DE65ACE1C5FEDE50059CCBE /* SettingsViewController.swift */,
 				6D9485B325F3D1F300067EEB /* LogsViewController.swift */,
 			);
-			name = "Navigation Controllers";
+			name = "View Controllers";
 			sourceTree = "<group>";
 		};
 		6D68E6DE1C8F750D007BB8F4 /* Web Views */ = {
@@ -473,7 +473,7 @@
 			children = (
 				6D5D07801BC40D0A007D0011 /* Main.storyboard */,
 				6D3279AF2204A64F00F39E04 /* Objects.storyboard */,
-				6D68E6DB1C8F74BE007BB8F4 /* Navigation Controllers */,
+				6D68E6DB1C8F74BE007BB8F4 /* View Controllers */,
 				6D68E6DA1C8F74A9007BB8F4 /* Modals */,
 				6D7781CA1C08B71600D45299 /* Common */,
 			);
@@ -693,7 +693,6 @@
 				"${BUILT_PRODUCTS_DIR}/Exocore/Exocore.framework",
 				"${BUILT_PRODUCTS_DIR}/FontAwesome.swift/FontAwesome_swift.framework",
 				"${BUILT_PRODUCTS_DIR}/KeychainSwift/KeychainSwift.framework",
-				"${BUILT_PRODUCTS_DIR}/MCSwipeTableViewCell/MCSwipeTableViewCell.framework",
 				"${BUILT_PRODUCTS_DIR}/ReachabilitySwift/Reachability.framework",
 				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
 				"${BUILT_PRODUCTS_DIR}/SwiftProtobuf/SwiftProtobuf.framework",
@@ -707,7 +706,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Exocore.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FontAwesome_swift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KeychainSwift.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MCSwipeTableViewCell.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Reachability.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftProtobuf.framework",

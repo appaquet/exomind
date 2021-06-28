@@ -13,7 +13,6 @@ PODS:
     - SwiftProtobuf (~> 1.10)
   - FontAwesome.swift (1.9.1)
   - KeychainSwift (19.0.0)
-  - MCSwipeTableViewCell (2.1.4)
   - ReachabilitySwift (5.0.0)
   - SnapKit (4.2.0)
   - SwiftProtobuf (1.15.0)
@@ -27,7 +26,6 @@ DEPENDENCIES:
   - Exocore (= 0.1.9)
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
   - KeychainSwift (~> 19.0)
-  - MCSwipeTableViewCell
   - ReachabilitySwift
   - SnapKit (~> 4.2.0)
   - SwiftProtobuf (~> 1.10)
@@ -41,7 +39,6 @@ SPEC REPOS:
     - Dwifft
     - Exocore
     - KeychainSwift
-    - MCSwipeTableViewCell
     - ReachabilitySwift
     - SnapKit
     - SwiftProtobuf
@@ -64,13 +61,12 @@ SPEC CHECKSUMS:
   Exocore: 7c9c3ed37b01e1a8b243b9a76f9810f856112584
   FontAwesome.swift: 6b52cb7be66eacd28cbfaa0ca7ffd0de4a186a1d
   KeychainSwift: a06190cf933ad46b1e0abc3d77d29c06331715c7
-  MCSwipeTableViewCell: 1b303e16c3a26b1982f3a68386e9b8c5fc8344c3
   ReachabilitySwift: 985039c6f7b23a1da463388634119492ff86c825
   SnapKit: fe8a619752f3f27075cc9a90244d75c6c3f27e2a
   SwiftProtobuf: 3320217e9d8fb75f36b40282e78c482640fd75dd
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: 28c42c060fb570a1f57a9f2c0725616a82eeef34
+PODFILE CHECKSUM: 9b552d5cf5aa324ae1e9fda9bfedb25465509fb0
 
 COCOAPODS: 1.10.1

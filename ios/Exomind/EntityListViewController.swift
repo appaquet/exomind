@@ -1,6 +1,5 @@
 import UIKit
 import FontAwesome_swift
-import MCSwipeTableViewCell
 import Dwifft
 import Exocore
 
@@ -113,6 +112,12 @@ class EntityListViewController: UITableViewController {
         self.tableView.contentInset = newInsets
     }
 
+    private var hasHeader: Bool {
+        get {
+            self.switcherButtonActions.count > 0
+        }
+    }
+
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         self.collectionData.count
     }
@@ -124,8 +129,8 @@ class EntityListViewController: UITableViewController {
         cell.layoutMargins = UIEdgeInsets.zero
         cell.preservesSuperviewLayoutMargins = false
 
-        self.configureCellSwipe(indexPath, cell: cell)
         cell.populate(&self.collectionData[(indexPath as NSIndexPath).item])
+
         return cell
     }
 
@@ -167,27 +172,51 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private var hasHeader: Bool {
-        get {
-            self.switcherButtonActions.count > 0
-        }
+    override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let swipeActions = self.swipeActions
+                .filter({ $0.side == .leading })
+                .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
+        return UISwipeActionsConfiguration(actions: swipeActions)
     }
 
-    private func configureCellSwipe(_ indexPath: IndexPath, cell: ChildrenViewCell) -> Void {
-        // background of the swipe cell
-        cell.defaultColor = UIColor.systemBackground
+    override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let swipeActions = self.swipeActions
+                .filter({ $0.side == .trailing })
+                .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
+        return UISwipeActionsConfiguration(actions: swipeActions)
+    }
 
-        for action in self.swipeActions {
-            let swipeIconView = UIView()
-            let iconImgView = UIImageView(image: UIImage.fontAwesomeIcon(name: action.icon, style: .solid, textColor: UIColor.white, size: CGSize(width: 30, height: 30)))
-            swipeIconView.addSubview(iconImgView)
-            iconImgView.center = swipeIconView.center
+    private func swipeActionsForRow(swipeAction: ChildrenViewSwipeAction, indexPath: IndexPath) -> UIContextualAction {
+        let index = (indexPath as NSIndexPath).item
+        let item = self.collectionData[index]
+        let doneAction = UIContextualAction(style: swipeAction.style, title: nil) { action, view, completionHandler in
+            swipeAction.handler(item.entity) { [weak self] (completed) in
+                // TODO: Put back when Dwift is removed
+//                if completed && swipeAction.style == .destructive,
+//                   let cutItem = self?.collectionData.element(at: index),
+//                   cutItem.entity.id == item.entity.id {
+//
+//                    completionHandler(completed)
+//                    self?.collectionData.remove(at: index)
+//                    self?.tableView.deleteRows(at: [indexPath], with: .automatic)
+//                } else {
+//                    completionHandler(completed)
+//                }
 
-            cell.setSwipeGestureWith(swipeIconView, color: action.color, mode: action.mode, state: action.state) { (scell, state, mode) -> Void in
-                action.handler(cell.entity)
+                if completed && swipeAction.style == .destructive {
+                    // iOS acts weird here when you have a successful destructive call
+                    // the animation seems to be broken (see https://stackoverflow.com/questions/46714155/uitableview-destructive-uicontextualaction-does-not-reload-data)
+                    // not calling the completion handler seems to have the best outcome
+                } else {
+                    completionHandler(true)
+                }
             }
         }
+        doneAction.backgroundColor = swipeAction.color
+        doneAction.image = swipeAction.iconImage
+        return doneAction
     }
+
 
     private func convertResults(oldResults: [EntityResult], newResults: [Exocore_Store_EntityResult]) -> [EntityResult] {
         var currentResults = [String: EntityResult]()
@@ -212,7 +241,14 @@ class EntityListViewController: UITableViewController {
     }
 }
 
-class ChildrenViewCell: MCSwipeTableViewCell {
+extension Array {
+    func element(at index: Int) -> Element? {
+        index >= 0 && index < count ? self[index] : nil
+    }
+}
+
+
+class ChildrenViewCell: UITableViewCell {
     @IBOutlet weak var title1: UILabel!
     @IBOutlet weak var title2: UILabel!
     @IBOutlet weak var title3: UILabel!
@@ -228,6 +264,9 @@ class ChildrenViewCell: MCSwipeTableViewCell {
 
         guard let priorityTrait = result.priorityTrait else {
             self.title1.text = "UNKNOWN ENTITY TRAIT"
+            self.title2.text = ""
+            self.title3.text = ""
+            self.date.text = ""
             return
         }
 
@@ -291,19 +330,31 @@ class ChildrenViewCell: MCSwipeTableViewCell {
 
 class ChildrenViewSwipeAction {
     let icon: FontAwesome
-    let handler: (EntityExt) -> Void
+    let handler: Handler
     let color: UIColor
-    let state: MCSwipeTableViewCellState
-    let mode: MCSwipeTableViewCellMode
+    let side: SwipeSide
+    let style: UIContextualAction.Style
 
-    init(action: FontAwesome, color: UIColor, state: MCSwipeTableViewCellState, mode: MCSwipeTableViewCellMode = .exit, handler: @escaping (EntityExt) -> Void) {
+    enum SwipeSide {
+        case leading
+        case trailing
+    }
+
+    typealias Handler = (EntityExt, @escaping (Bool) -> Void) -> Void
+
+    init(action: FontAwesome, color: UIColor, side: SwipeSide, style: UIContextualAction.Style, handler: @escaping Handler) {
         self.icon = action
         self.color = color
-        self.state = state
-        self.mode = mode
+        self.side = side
+        self.style = style
         self.handler = handler
     }
+
+    lazy var iconImage = {
+        ObjectsIcon.icon(forFontAwesome: self.icon, color: UIColor.white, dimension: 30)
+    }()
 }
+
 
 fileprivate struct EntityResult: Equatable {
     var result: Exocore_Store_EntityResult

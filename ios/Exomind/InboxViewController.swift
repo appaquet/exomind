@@ -25,15 +25,17 @@ class InboxViewController: UIViewController {
         }
 
         self.entityListViewController.setSwipeActions([
-            ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
+            ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleDone(entity)
+                callback(true)
             }),
-            ChildrenViewSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, state: .state3, mode: .switch, handler: { [weak self] (entity) -> Void in
-                self?.handleMoveLater(entity)
+            ChildrenViewSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
+                self?.handleMoveLater(entity, callback: callback)
             }),
-            ChildrenViewSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, state: .state4, mode: .switch, handler: { [weak self] (entity) -> Void in
+            ChildrenViewSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleAddToCollection(entity)
-            })
+                callback(false)
+            }),
         ])
     }
 
@@ -82,11 +84,12 @@ class InboxViewController: UIViewController {
         ExomindMutations.removeParent(entity: entity, parentId: "inbox")
     }
 
-    private func handleMoveLater(_ entity: EntityExt) {
+    private func handleMoveLater(_ entity: EntityExt, callback: @escaping  (Bool) -> Void) {
         (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity) { completed in
             if (completed) {
                 ExomindMutations.removeParent(entity: entity, parentId: "inbox")
             }
+            callback(completed)
         }
     }
 
