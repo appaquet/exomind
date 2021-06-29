@@ -19,16 +19,8 @@ class EntityListViewController: UITableViewController {
     private var headerWasShownBeforeDrag: Bool = false
 
     private lazy var datasource: EditableDataSource = {
-        var ds = EditableDataSource(tableView: self.tableView) { tableView, indexPath, itemIdentifier in
-            let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
-
-            // remove left padding in the cell
-            cell.layoutMargins = UIEdgeInsets.zero
-            cell.preservesSuperviewLayoutMargins = false
-
-            cell.populate(itemIdentifier)
-
-            return cell
+        var ds = EditableDataSource(tableView: self.tableView) { [weak self] tableView, indexPath, item in
+            self?.createCell(indexPath, item: item)
         }
 
         // all animations are just weird, but there still seems to be some kind of animation that is good enough
@@ -41,6 +33,12 @@ class EntityListViewController: UITableViewController {
         super.viewDidLoad()
         self.tableView.dataSource = self.datasource
         self.tableView.delegate = self
+    }
+
+    func startEdit() {
+//        self.tableView.allowsSelectionDuringEditing = true
+        self.tableView.allowsMultipleSelectionDuringEditing = true
+        self.tableView.setEditing(true, animated: true)
     }
 
     func setSwipeActions(_ actions: [EntityListSwipeAction]) {
@@ -162,11 +160,32 @@ class EntityListViewController: UITableViewController {
         self.headerWasShownBeforeDrag = self.headerShown
     }
 
+    private func createCell(_ indexPath: IndexPath, item: EntityResult) -> ChildrenViewCell {
+        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
+
+        // remove left padding in the cell
+        cell.layoutMargins = UIEdgeInsets.zero
+        cell.preservesSuperviewLayoutMargins = false
+
+        cell.selectionStyle = .blue
+
+        cell.populate(item)
+
+        return cell
+    }
+
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let res = self.collectionData[(indexPath as NSIndexPath).item]
-        if let handler = self.itemClickHandler {
-            handler(res.entity)
+//        let res = self.collectionData[(indexPath as NSIndexPath).item]
+//        if let handler = self.itemClickHandler {
+//            handler(res.entity)
+//        }
+        guard let cell = tableView.cellForRow(at: indexPath),
+              let entityCell = cell as? ChildrenViewCell else {
+            return
         }
+
+//        cell.accessoryType = .checkmark
+        print("Checks \(entityCell.entity.id) \(cell.accessoryType)")
     }
 
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
@@ -264,6 +283,10 @@ fileprivate class EditableDataSource: UITableViewDiffableDataSource<Int, EntityR
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         // allows swipe actions on the cells
         // see https://stackoverflow.com/questions/57898044/unable-to-swipe-to-delete-with-tableview-using-diffable-data-source-in-ios-13
+        true
+    }
+
+    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
         true
     }
 }

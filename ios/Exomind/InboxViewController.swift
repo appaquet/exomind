@@ -56,6 +56,7 @@ class InboxViewController: UIViewController {
         // quick button only visible in current
         nav.setQuickButtonActions([
             QuickButtonAction(icon: .clock, handler: { () -> Void in
+                self.entityListViewController.startEdit()
                 // TODO: Goto snoozed
             }),
             QuickButtonAction(icon: .plus, handler: { [weak self] () -> Void in
