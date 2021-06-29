@@ -25,14 +25,14 @@ class InboxViewController: UIViewController {
         }
 
         self.entityListViewController.setSwipeActions([
-            ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
+            EntityListSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleDone(entity)
                 callback(true)
             }),
-            ChildrenViewSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
+            EntityListSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleMoveLater(entity, callback: callback)
             }),
-            ChildrenViewSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
+            EntityListSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleAddToCollection(entity)
                 callback(false)
             }),

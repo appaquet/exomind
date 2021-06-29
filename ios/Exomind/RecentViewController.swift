@@ -39,7 +39,7 @@ class RecentViewController: UIViewController {
         }
 
         self.entityListViewController.setSwipeActions([
-            ChildrenViewSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .normal) { [weak self] (entity, callback) -> Void in
+            EntityListSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .normal) { [weak self] (entity, callback) -> Void in
                 self?.handleCopyInbox(entity)
                 callback(true)
             }

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		458EC161C72B3C9784E6CEE8 /* Pods_ExomindTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BAA1792ED91F713E98050D7 /* Pods_ExomindTests.framework */; };
 		45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */; };
+		45B6B3904CA29C9B76254663 /* ArrayExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B5413CE8F5E9B5280DEE /* ArrayExtension.swift */; };
 		45B6B660281C1CC6E661D13E /* Retry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */; };
 		45B6B7AFB59BE04411373421 /* SnoozedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B84D222701DCA1AD9E26 /* SnoozedViewController.swift */; };
 		45B6BA03CFE55DF75F868AAB /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B6B0226A61D7D7AADC875D /* StringExtension.swift */; };
@@ -141,6 +142,7 @@
 		45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Retry.swift; sourceTree = "<group>"; };
 		45B6B0AF625C6336DCDB990F /* RecentViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentViewController.swift; sourceTree = "<group>"; };
 		45B6B2B1F11CCDC912DEABAF /* ExomindMutations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExomindMutations.swift; sourceTree = "<group>"; };
+		45B6B5413CE8F5E9B5280DEE /* ArrayExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArrayExtension.swift; sourceTree = "<group>"; };
 		45B6B5EB2D27A3A675C3D8A2 /* Entities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Entities.swift; sourceTree = "<group>"; };
 		45B6B84D222701DCA1AD9E26 /* SnoozedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SnoozedViewController.swift; sourceTree = "<group>"; };
 		45B6BB81552DA8085BA5B8BF /* ExpandableQuery.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExpandableQuery.swift; sourceTree = "<group>"; };
@@ -464,6 +466,7 @@
 				45B6B0226A61D7D7AADC875D /* StringExtension.swift */,
 				6D0AE8C41E04EBE700F5F6CE /* Debounce.swift */,
 				45B6B0AC30D3B8E7EBF7D77E /* Retry.swift */,
+				45B6B5413CE8F5E9B5280DEE /* ArrayExtension.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -689,7 +692,6 @@
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Exomind/Pods-Exomind-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/CLTokenInputView/CLTokenInputView.framework",
-				"${BUILT_PRODUCTS_DIR}/Dwifft/Dwifft.framework",
 				"${BUILT_PRODUCTS_DIR}/Exocore/Exocore.framework",
 				"${BUILT_PRODUCTS_DIR}/FontAwesome.swift/FontAwesome_swift.framework",
 				"${BUILT_PRODUCTS_DIR}/KeychainSwift/KeychainSwift.framework",
@@ -702,7 +704,6 @@
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CLTokenInputView.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Dwifft.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Exocore.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FontAwesome_swift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KeychainSwift.framework",
@@ -875,6 +876,7 @@
 				45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */,
 				45B6B7AFB59BE04411373421 /* SnoozedViewController.swift in Sources */,
 				45B6BC2D44FA8A6C4331BA43 /* RecentViewController.swift in Sources */,
+				45B6B3904CA29C9B76254663 /* ArrayExtension.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
