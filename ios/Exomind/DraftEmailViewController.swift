@@ -269,7 +269,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         UITextField.appearance(whenContainedInInstancesOf: [CLTokenInputView.self]).font = UIFont.systemFont(ofSize: 14)
         self.tokensField = CLTokenInputView()
         self.tokensField.delegate = self
-        self.tokensField.backgroundColor = UIColor.white
+        self.tokensField.backgroundColor = UIColor.systemBackground
         self.headerView = LabelledFieldView(label: self.label, fieldView: self.tokensField, betweenPadding: 0)
     }
 

@@ -29,6 +29,7 @@ class TabBarController: UITabBarController {
 
         self.tabBar.tintColor = Stylesheet.tabBarSelectedFg
 
+        // remove title and offset items because of created extra space
         for item in self.tabBar.items! {
             item.imageInsets = UIEdgeInsets(top: 6, left: 0, bottom: -6, right: 0)
             item.title = ""

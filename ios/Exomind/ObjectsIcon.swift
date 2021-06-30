@@ -10,8 +10,18 @@ class ObjectsIcon {
     }
 
     static func icon(forAnyTrait: AnyTraitInstance, color: UIColor, dimension: CGFloat) -> UIImage {
-        let fa = ObjectsIcon.faIcon(forName: forAnyTrait.constants?.icon ?? "question")
-        return icon(forFontAwesome: fa, color: color, dimension: dimension)
+        if let typeInstance = forAnyTrait.typeInstance(),
+           case let .collection(col) = typeInstance,
+           col.message.name.startsWithEmoji() {
+
+            // special case for collections where we use an emoji as an image if the collection name starts with one
+            let (emoji, _) = col.message.name.splitFirstEmoji()
+            return emoji.textToImage(ofSize: dimension)
+
+        } else {
+            let fa = ObjectsIcon.faIcon(forName: forAnyTrait.constants?.icon ?? "question")
+            return icon(forFontAwesome: fa, color: color, dimension: dimension)
+        }
     }
 
     static func icon(forFontAwesome: FontAwesome, color: UIColor, dimension: CGFloat) -> UIImage {
@@ -30,7 +40,7 @@ class ObjectsIcon {
         case "cloud":
             fa = .cloud
         case "clock-o":
-             fa = .clock
+            fa = .clock
         case "chevron-right":
             fa = .chevronRight
         case "search":

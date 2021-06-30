@@ -39,7 +39,7 @@ class SearchViewController: NavigationController {
 }
 
 class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
-    private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+    private let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
 
     fileprivate var fromEntityId: String?
     fileprivate var selectionHandler: ((EntityExt) -> Void)?
@@ -69,7 +69,7 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
     }
 
     private func setupEntityList() {
-        self.entityListViewController = (self.mainStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
+        self.entityListViewController = (objectsStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
         self.entityListViewController.tableView.keyboardDismissMode = .onDrag
 
         self.addChild(self.entityListViewController)
@@ -82,6 +82,7 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
         self.entityListViewController.setSwipeActions([
             EntityListSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .normal, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleCopyInbox(entity)
+                callback(true)
             })
         ])
 

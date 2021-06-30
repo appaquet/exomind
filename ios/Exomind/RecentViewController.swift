@@ -2,7 +2,7 @@ import UIKit
 import Exocore
 
 class RecentViewController: UIViewController {
-    private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+    private let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
 
     private var entityListViewController: EntityListViewController!
 
@@ -14,7 +14,7 @@ class RecentViewController: UIViewController {
     }
 
     private func setupChildrenVC() {
-        self.entityListViewController = (mainStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
+        self.entityListViewController = (objectsStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 

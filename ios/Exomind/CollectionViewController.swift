@@ -35,12 +35,12 @@ class CollectionViewController: UIViewController, EntityTraitView {
                 self?.handleDone(entity)
                 callback(true)
             }),
+            EntityListSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
+                self?.handleMoveLater(entity, callback: callback)
+            }),
             EntityListSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleAddToCollection(entity)
                 callback(false)
-            }),
-            EntityListSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
-                self?.handleMoveLater(entity, callback: callback)
             }),
         ])
 
@@ -78,7 +78,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     private func handleCollectionRename() {
         let alert = UIAlertController(title: "Name", message: "Enter a new name", preferredStyle: UIAlertController.Style.alert)
         alert.addTextField(configurationHandler: { [weak self] (textField: UITextField!) in
-            textField.text = self?.collection.displayName
+            textField.text = self?.collection.message.name
             textField.isSecureTextEntry = false
         })
         alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in

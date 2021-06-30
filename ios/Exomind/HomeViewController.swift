@@ -6,9 +6,9 @@ class HomeViewController: UITableViewController {
 
     private lazy var exmElements: [Element] = {
         [
-            Element(title: "Inbox", iconName: "inbox", action: pushInbox),
-            Element(title: "Snoozed", iconName: "clock-o", action: pushSnoozed),
-            Element(title: "Recent", iconName: "history", action: pushRecent)
+            Element(title: "Inbox", action: pushInbox, iconName: "inbox"),
+            Element(title: "Snoozed", action: pushSnoozed, iconName: "clock-o"),
+            Element(title: "Recent", action: pushRecent, iconName: "history")
         ]
     }()
     private var favElements: [Element] = []
@@ -18,10 +18,10 @@ class HomeViewController: UITableViewController {
 
         let traitQuery = TraitQueryBuilder.refersTo(field: "collection", entityId: "favorites").build()
         let query = QueryBuilder
-            .withTrait(Exomind_Base_CollectionChild.self, query: traitQuery)
-            .orderByField("weight", ascending: false)
-            .count(100)
-            .build()
+                .withTrait(Exomind_Base_CollectionChild.self, query: traitQuery)
+                .orderByField("weight", ascending: false)
+                .count(100)
+                .build()
         self.query = ExpandableQuery(query: query) { [weak self] in
             self?.loadFavoritesEntities()
         }
@@ -75,7 +75,7 @@ class HomeViewController: UITableViewController {
 
         if let element = self.elementForPath(indexPath) {
             cell.textLabel?.text = element.title
-            cell.imageView?.image = element.getIcon()
+            cell.imageView?.image = element.icon()
         } else {
             cell.textLabel?.text = "Unknown"
             cell.imageView?.image = nil
@@ -143,28 +143,36 @@ class HomeViewController: UITableViewController {
     }
 }
 
-fileprivate struct Element {
+fileprivate class Element {
     let title: String
-    var iconName: String
     let action: () -> ()
     var entity: EntityExt? = nil
 
+    var iconName: String?
+
+    init(title: String, action: @escaping () -> (), entity: EntityExt? = nil, iconName: String? = nil) {
+        self.title = title
+        self.action = action
+        self.entity = entity
+        self.iconName = iconName
+    }
+
     static func fromEntity(_ entity: EntityExt, action: @escaping () -> ()) -> Element {
         guard let priorityTrait = entity.priorityTrait else {
-            return Element(title: "Unknown \(entity.id)", iconName: "question", action: action, entity: entity)
+            return Element(title: "Unknown \(entity.id)", action: action, entity: entity)
         }
 
-        let title = priorityTrait.displayName
-        let iconName = priorityTrait.constants?.icon ?? "question"
-
-        return Element(title: title, iconName: iconName, action: action, entity: entity)
+        let title = priorityTrait.strippedDisplayName()
+        return Element(title: title, action: action, entity: entity)
     }
 
-    static func icon(forName: String) -> UIImage {
-        ObjectsIcon.icon(forName: forName, color: UIColor.label, dimension: CGFloat(24))
-    }
-
-    func getIcon() -> UIImage {
-        return Element.icon(forName: self.iconName)
+    func icon() -> UIImage {
+        if let iconName = self.iconName {
+            return ObjectsIcon.icon(forName: iconName, color: UIColor.label, dimension: 24)
+        } else if let entity = entity, let priorityTrait = entity.priorityTrait {
+            return ObjectsIcon.icon(forAnyTrait: priorityTrait, color: UIColor.label, dimension: 24)
+        } else {
+            return ObjectsIcon.icon(forFontAwesome: .question, color: UIColor.label, dimension: 24)
+        }
     }
 }

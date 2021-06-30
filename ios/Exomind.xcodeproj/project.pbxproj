@@ -44,7 +44,6 @@
 		6D4CCBE721587052004636AD /* ExtensionUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4CCBE621587052004636AD /* ExtensionUtils.swift */; };
 		6D4CCBE82158708D004636AD /* ExtensionUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4CCBE621587052004636AD /* ExtensionUtils.swift */; };
 		6D5390FE1C6ECF3E0019E56E /* AttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5390FD1C6ECF3E0019E56E /* AttachmentView.swift */; };
-		6D5391001C6EE29F0019E56E /* URLWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5390FF1C6EE29F0019E56E /* URLWebViewController.swift */; };
 		6D570A581DCC144700BD480F /* JSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D25A1BC418F900F14571 /* JSBridge.swift */; };
 		6D570A631DCC144700BD480F /* JSTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC0D2661BC45B4F00F14571 /* JSTimer.swift */; };
 		6D5D077D1BC40D0A007D0011 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */; };
@@ -177,7 +176,6 @@
 		6D4CCBD0215867D9004636AD /* IntentsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IntentsUI.framework; path = System/Library/Frameworks/IntentsUI.framework; sourceTree = SDKROOT; };
 		6D4CCBE621587052004636AD /* ExtensionUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionUtils.swift; sourceTree = "<group>"; };
 		6D5390FD1C6ECF3E0019E56E /* AttachmentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AttachmentView.swift; sourceTree = "<group>"; };
-		6D5390FF1C6EE29F0019E56E /* URLWebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLWebViewController.swift; sourceTree = "<group>"; };
 		6D5D07791BC40D0A007D0011 /* Exomind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Exomind.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D5D077C1BC40D0A007D0011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6D5D07811BC40D0A007D0011 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -378,7 +376,6 @@
 				6D5FE49D1C4ED47B006C6E3B /* LinkViewController.swift */,
 				6D3463CE1C4EDD64009CC326 /* TaskViewController.swift */,
 				6D9F68301C999AD100FFC7D9 /* DraftEmailViewController.swift */,
-				6D5390FF1C6EE29F0019E56E /* URLWebViewController.swift */,
 				45B6B84D222701DCA1AD9E26 /* SnoozedViewController.swift */,
 				45B6B0AF625C6336DCDB990F /* RecentViewController.swift */,
 				6DE65ACE1C5FEDE50059CCBE /* SettingsViewController.swift */,
@@ -812,7 +809,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6D5391001C6EE29F0019E56E /* URLWebViewController.swift in Sources */,
 				6D3D46701C84F6F20037E51B /* NoteViewController.swift in Sources */,
 				6D069E6024DF7C00008983DF /* BootstrapViewController.swift in Sources */,
 				6DCE04261BFAA2DE00DF8A34 /* InboxViewController.swift in Sources */,

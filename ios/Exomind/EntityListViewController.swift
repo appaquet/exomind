@@ -19,16 +19,8 @@ class EntityListViewController: UITableViewController {
     private var headerWasShownBeforeDrag: Bool = false
 
     private lazy var datasource: EditableDataSource = {
-        var ds = EditableDataSource(tableView: self.tableView) { tableView, indexPath, itemIdentifier in
-            let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
-
-            // remove left padding in the cell
-            cell.layoutMargins = UIEdgeInsets.zero
-            cell.preservesSuperviewLayoutMargins = false
-
-            cell.populate(itemIdentifier)
-
-            return cell
+        var ds = EditableDataSource(tableView: self.tableView) { [weak self] tableView, indexPath, item in
+            self?.createCell(indexPath, item: item)
         }
 
         // all animations are just weird, but there still seems to be some kind of animation that is good enough
@@ -149,6 +141,20 @@ class EntityListViewController: UITableViewController {
         } else if (headerShown && scrollView.contentOffset.y > 0 && scrollDragging) {
             self.headerShown = false
         }
+    }
+
+    private func createCell(_ indexPath: IndexPath, item: EntityResult) -> ChildrenViewCell {
+        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
+
+        // remove left padding in the cell
+        cell.layoutMargins = UIEdgeInsets.zero
+        cell.preservesSuperviewLayoutMargins = false
+
+        cell.selectionStyle = .blue
+
+        cell.populate(item)
+
+        return cell
     }
 
     override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
@@ -290,7 +296,7 @@ class ChildrenViewCell: UITableViewCell {
             return
         }
 
-        let displayName = priorityTrait.displayName
+        let displayName = priorityTrait.strippedDisplayName()
         self.date.text = priorityTrait.modificationDate?.toShort() ?? priorityTrait.creationDate.toShort()
 
         self.title1.font = UIFont.systemFont(ofSize: 14)
