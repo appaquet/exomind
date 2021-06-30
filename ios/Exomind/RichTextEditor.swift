@@ -9,11 +9,10 @@ import SnapKit
  */
 
 class RichTextEditor: UIViewController {
-    fileprivate weak var delegatedScrollView: UIScrollView?
+    fileprivate weak var outerScroll: UIScrollView?
     fileprivate var webview: RichTextEditorWebView!
 
     private var keyboardRect = CGRect(x: 0, y: 500, width: 0, height: 0)
-    private var hasFocus: Bool = false
 
     convenience init(callback: @escaping (JSON?) -> Void) {
         self.init(nibName: nil, bundle: nil)
@@ -23,12 +22,12 @@ class RichTextEditor: UIViewController {
             callback(json)
 
             // make sure scroll is still fine on every change
-            self?.maybeOuterScroll()
+            self?.ensureCursorVisible()
         }
         self.view = self.webview
 
         self.webview.onHeightChange = { [weak self] (height) in
-            self?.maybeOuterScroll()
+            self?.ensureCursorVisible()
         }
     }
 
@@ -37,8 +36,8 @@ class RichTextEditor: UIViewController {
         KeyboardUtils.sharedInstance.addWillHideObserver(self, selector: #selector(handleKeyboardWillHide))
     }
 
-    func delegateScrollTo(_ delegatedScrollView: UIScrollView) {
-        self.delegatedScrollView = delegatedScrollView
+    func delegateScrollTo(_ outerScroll: UIScrollView) {
+        self.outerScroll = outerScroll
         self.webview.scrollView.isScrollEnabled = false
         self.webview.setContentCompressionResistancePriority(UILayoutPriority.defaultHigh, for: .vertical)
     }
@@ -53,7 +52,6 @@ class RichTextEditor: UIViewController {
         }
 
         self.webview.checkSize()
-        self.hasFocus = true
 
         // https://stackoverflow.com/questions/31774006/how-to-get-height-of-keyboard#33130819
         if let keyboardFrame: NSValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
@@ -62,7 +60,7 @@ class RichTextEditor: UIViewController {
         }
 
         // change inset of scroll view to accommodate for keyboard
-        if let outerScroll = self.delegatedScrollView {
+        if let outerScroll = self.outerScroll {
             UIView.animate(withDuration: 0.3) {
                 let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: self.keyboardRect.height, right: 0)
                 outerScroll.contentInset = contentInsets
@@ -70,14 +68,13 @@ class RichTextEditor: UIViewController {
             }
         }
 
-        self.maybeOuterScroll()
+        self.ensureCursorVisible()
     }
 
     @objc func handleKeyboardWillHide(_ notification: Notification) {
         self.webview.checkSize()
-        self.hasFocus = false
 
-        if let outerScroll = self.delegatedScrollView {
+        if let outerScroll = self.outerScroll {
             UIView.animate(withDuration: 0.3) {
                 outerScroll.contentInset = .zero
                 outerScroll.scrollIndicatorInsets = .zero
@@ -85,14 +82,20 @@ class RichTextEditor: UIViewController {
         }
     }
 
-    private func maybeOuterScroll() {
+    private func ensureCursorVisible() {
+        if self.outerScroll == nil {
+            // only supported with outer scroll
+            return
+        }
+
         self.webview.getCursorPosition { [weak self] point in
-            self?.maybeOuterScroll(webviewCursor: point)
+            self?.ensureCursorVisible(webviewCursor: point)
         }
     }
 
-    private func maybeOuterScroll(webviewCursor: CGPoint) {
-        guard let outerScroll = self.delegatedScrollView else {
+    private func ensureCursorVisible(webviewCursor: CGPoint) {
+        guard let outerScroll = self.outerScroll else {
+            // only supported with outer scroll
             return
         }
 
@@ -202,7 +205,11 @@ extension RichTextEditor {
 fileprivate class RichTextEditorWebView: HybridWebView {
     func initialize(_ callback: @escaping (JSON?) -> Void) {
         self.initialize("html-editor", callback: callback)
-        self.scrollView.delegate = self
+
+        // take over scroll delegate when managed externally
+        if self.scrollView.isScrollEnabled {
+            self.scrollView.delegate = self
+        }
 
         // snippet from https://stackoverflow.com/questions/11126047/find-y-coordinate-for-cursor-position-in-div-in-uiwebview
         self.evaluateJavaScript("""

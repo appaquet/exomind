@@ -45,6 +45,15 @@ class NoteViewController: UIViewController, EntityTraitView {
         super.viewWillAppear(animated)
         let nav = (self.navigationController as! NavigationController)
         nav.resetState()
+
+        self.tabBarController?.tabBar.isHidden = true
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        self.saveNote()
+        self.tabBarController?.tabBar.isHidden = false
     }
 
     private func createHeaderView() {
@@ -123,10 +132,6 @@ class NoteViewController: UIViewController, EntityTraitView {
                 print("NoteViewController > Error mutating note: \(error)")
             }
         }
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        self.saveNote()
     }
 
     deinit {

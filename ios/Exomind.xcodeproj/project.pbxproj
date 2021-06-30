@@ -88,8 +88,7 @@
 		6DD392061C8680A600B959E8 /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DD392051C8680A600B959E8 /* RichTextEditor.swift */; };
 		6DDEDB5B24BA118C00A345BC /* base.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D695D8D24BA04AF00E1BA39 /* base.pb.swift */; };
 		6DDEDB5C24BA119500A345BC /* base.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D695D8D24BA04AF00E1BA39 /* base.pb.swift */; };
-		6DE65AC91C5FAC850059CCBE /* SplashViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65AC81C5FAC850059CCBE /* SplashViewController.swift */; };
-		6DE65ACB1C5FB5520059CCBE /* RootNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65ACA1C5FB5520059CCBE /* RootNavigationController.swift */; };
+		6DE65ACB1C5FB5520059CCBE /* RootViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65ACA1C5FB5520059CCBE /* RootViewController.swift */; };
 		6DE65ACD1C5FEABD0059CCBE /* HttpUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65ACC1C5FEABD0059CCBE /* HttpUtils.swift */; };
 		6DE65ACF1C5FEDE50059CCBE /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65ACE1C5FEDE50059CCBE /* SettingsViewController.swift */; };
 		6DE65AD11C6007AE0059CCBE /* NotificationsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE65AD01C6007AE0059CCBE /* NotificationsController.swift */; };
@@ -217,8 +216,7 @@
 		6DCE042B1BFE709A00DF8A34 /* Stylesheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Stylesheet.swift; sourceTree = "<group>"; };
 		6DCE042F1BFFCC2100DF8A34 /* EmailViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailViewController.swift; sourceTree = "<group>"; };
 		6DD392051C8680A600B959E8 /* RichTextEditor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
-		6DE65AC81C5FAC850059CCBE /* SplashViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SplashViewController.swift; sourceTree = "<group>"; };
-		6DE65ACA1C5FB5520059CCBE /* RootNavigationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RootNavigationController.swift; sourceTree = "<group>"; };
+		6DE65ACA1C5FB5520059CCBE /* RootViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RootViewController.swift; sourceTree = "<group>"; };
 		6DE65ACC1C5FEABD0059CCBE /* HttpUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpUtils.swift; sourceTree = "<group>"; };
 		6DE65ACE1C5FEDE50059CCBE /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		6DE65AD01C6007AE0059CCBE /* NotificationsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationsController.swift; sourceTree = "<group>"; };
@@ -360,8 +358,7 @@
 		6D68E6DB1C8F74BE007BB8F4 /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
-				6DE65ACA1C5FB5520059CCBE /* RootNavigationController.swift */,
-				6DE65AC81C5FAC850059CCBE /* SplashViewController.swift */,
+				6DE65ACA1C5FB5520059CCBE /* RootViewController.swift */,
 				6D069E5F24DF7C00008983DF /* BootstrapViewController.swift */,
 				6D00E1671C03544900B2F7E0 /* TabBarController.swift */,
 				6D1F240A2516442900CFA8D9 /* HomeViewController.swift */,
@@ -817,7 +814,6 @@
 				6DCE04301BFFCC2100DF8A34 /* EmailViewController.swift in Sources */,
 				6D9485B425F3D1F300067EEB /* LogsViewController.swift in Sources */,
 				6DC418431C1796D300DB564C /* CollectionViewController.swift in Sources */,
-				6DE65AC91C5FAC850059CCBE /* SplashViewController.swift in Sources */,
 				6DC0D2761BC5949900F14571 /* DateExtension.swift in Sources */,
 				6D695D8E24BA04AF00E1BA39 /* base.pb.swift in Sources */,
 				6D00E1681C03544900B2F7E0 /* TabBarController.swift in Sources */,
@@ -835,7 +831,7 @@
 				6D68E6DD1C8F74F1007BB8F4 /* GridIconsView.swift in Sources */,
 				6D4CCBE721587052004636AD /* ExtensionUtils.swift in Sources */,
 				6D1F240B2516442900CFA8D9 /* HomeViewController.swift in Sources */,
-				6DE65ACB1C5FB5520059CCBE /* RootNavigationController.swift in Sources */,
+				6DE65ACB1C5FB5520059CCBE /* RootViewController.swift in Sources */,
 				6D68E6D51C8A76A4007BB8F4 /* EmailThreadHeader.swift in Sources */,
 				6DE65ACF1C5FEDE50059CCBE /* SettingsViewController.swift in Sources */,
 				6D2AFD971C28969E000E13A7 /* QuickButtonView.swift in Sources */,
