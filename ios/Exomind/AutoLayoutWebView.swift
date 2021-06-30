@@ -1,7 +1,7 @@
 import UIKit
 import WebKit
 
-class AutoLayoutWebView: WKWebView, UIScrollViewDelegate {
+class AutoLayoutWebView: WKWebView {
     var onHeightChange: ((CGFloat) -> Void)?
     var height: CGFloat = 0
 

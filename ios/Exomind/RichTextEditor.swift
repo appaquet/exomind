@@ -38,7 +38,7 @@ class RichTextEditor: UIViewController {
 
     func delegateScrollTo(_ outerScroll: UIScrollView) {
         self.outerScroll = outerScroll
-        self.webview.scrollView.isScrollEnabled = false
+        self.webview.disableScroll()
         self.webview.setContentCompressionResistancePriority(UILayoutPriority.defaultHigh, for: .vertical)
     }
 
@@ -202,14 +202,11 @@ extension RichTextEditor {
     }
 }
 
-fileprivate class RichTextEditorWebView: HybridWebView {
+fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
+    private var scrollDelegate: DisableScrollDelegate?
+
     func initialize(_ callback: @escaping (JSON?) -> Void) {
         self.initialize("html-editor", callback: callback)
-
-        // take over scroll delegate when managed externally
-        if self.scrollView.isScrollEnabled {
-            self.scrollView.delegate = self
-        }
 
         // snippet from https://stackoverflow.com/questions/11126047/find-y-coordinate-for-cursor-position-in-div-in-uiwebview
         self.evaluateJavaScript("""
@@ -231,6 +228,12 @@ fileprivate class RichTextEditorWebView: HybridWebView {
                                 """)
     }
 
+    func disableScroll() {
+        self.scrollDelegate = DisableScrollDelegate()
+        self.scrollView.delegate = self.scrollDelegate
+        self.scrollView.isScrollEnabled = false
+    }
+
     func getCursorPosition(_ callback: @escaping (CGPoint) -> ()) {
         self.evaluateJavaScript("getCaretClientPosition()") { any, error in
             guard error == nil,
@@ -244,16 +247,17 @@ fileprivate class RichTextEditorWebView: HybridWebView {
         }
     }
 
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        // prevent any scroll if it's disabled
-        // this may happen if keyboard is shown in a text field
-        if (!self.scrollView.isScrollEnabled) {
-            scrollView.contentOffset = CGPoint(x: 0, y: 0)
-        }
-    }
-
     func setContent(_ content: String) {
         self.setData(["content": content as AnyObject])
+    }
+}
+
+// Used to block scrolling when we disable scrolling on the webview.
+// Normal scrolling is disabled by setting `isScrollEnabled` false, but not pinch and
+// keyboard zoom.
+fileprivate class DisableScrollDelegate: NSObject, UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        scrollView.contentOffset = CGPoint(x: 0, y: 0)
     }
 }
 
