@@ -16,8 +16,7 @@ class BootstrapViewController: UIViewController, UITextViewDelegate {
         startDiscovery()
         self.refreshNodeConfig()
 
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardShown), name: UIResponder.keyboardDidShowNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardHidden), name: UIResponder.keyboardDidHideNotification, object: nil)
+        KeyboardUtils.sharedInstance.addWillShowObserver(self, selector: #selector(handleKeyboardShown))
     }
 
     @IBAction func onClose(_ sender: Any) {
@@ -130,7 +129,8 @@ class BootstrapViewController: UIViewController, UITextViewDelegate {
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self)
+        print("BootstrapViewController > Deinit")
+        KeyboardUtils.sharedInstance.removeObserver(self)
     }
 }
 

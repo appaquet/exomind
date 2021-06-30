@@ -2,7 +2,7 @@ import UIKit
 import Exocore
 
 class CollectionViewController: UIViewController, EntityTraitView {
-    private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+    private let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
 
     private var entity: EntityExt!
     private var collection: TraitInstance<Exomind_Base_Collection>!
@@ -22,7 +22,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func setupEntityList() {
-        self.entityListViewController = (mainStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
+        self.entityListViewController = (objectsStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 

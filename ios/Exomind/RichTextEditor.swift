@@ -3,50 +3,44 @@ import SwiftyJSON
 import FontAwesome_swift
 import SnapKit
 
+/*
+ TODO:
+    - Placing cursor on empty line doesn't scroll
+ */
+
 class RichTextEditor: UIViewController {
     fileprivate weak var delegatedScrollView: UIScrollView?
     fileprivate var webview: RichTextEditorWebView!
 
-    private var webviewCursorPosition = CGPoint(x: 0, y: 0)
-
     private var keyboardRect = CGRect(x: 0, y: 500, width: 0, height: 0)
-    private var accessoryHeight = CGFloat(0)
     private var hasFocus: Bool = false
 
     convenience init(callback: @escaping (JSON?) -> Void) {
         self.init(nibName: nil, bundle: nil)
 
         self.webview = RichTextEditorWebView()
-        self.webview.initialize(callback)
+        self.webview.initialize { [weak self] (json: JSON?) in
+            callback(json)
+
+            // make sure scroll is still fine on every change
+            self?.maybeOuterScroll()
+        }
         self.view = self.webview
+
         self.webview.onHeightChange = { [weak self] (height) in
-            self?.checkScrollPosition()
+            self?.maybeOuterScroll()
         }
     }
 
     override func viewDidLoad() {
         KeyboardUtils.sharedInstance.addWillShowObserver(self, selector: #selector(handleKeyboardWillShow))
-        KeyboardUtils.sharedInstance.addShownObserver(self, selector: #selector(handleKeyboardShown))
-        KeyboardUtils.sharedInstance.addHiddenObserver(self, selector: #selector(handleKeyboardHidden))
-    }
-
-    func setNoScroll(_ onCursorPositionChange: ((CGPoint) -> Void)? = nil) {
-        self.webview.scrollView.isScrollEnabled = false
-        self.webview.setContentCompressionResistancePriority(UILayoutPriority.defaultHigh, for: .vertical)
-        self.webview.onCursorPositionChange = onCursorPositionChange
+        KeyboardUtils.sharedInstance.addWillHideObserver(self, selector: #selector(handleKeyboardWillHide))
     }
 
     func delegateScrollTo(_ delegatedScrollView: UIScrollView) {
         self.delegatedScrollView = delegatedScrollView
-        self.setNoScroll { [weak self] (cursorPosition) -> Void in
-            guard let this = self else {
-                return
-            }
-
-            print("New cursor position \(cursorPosition)")
-            this.webviewCursorPosition = cursorPosition
-            this.checkScrollPosition()
-        }
+        self.webview.scrollView.isScrollEnabled = false
+        self.webview.setContentCompressionResistancePriority(UILayoutPriority.defaultHigh, for: .vertical)
     }
 
     func setContent(_ content: String) {
@@ -67,33 +61,52 @@ class RichTextEditor: UIViewController {
             self.keyboardRect = keyboardRectangle
         }
 
-        self.checkScrollPosition()
+        // change inset of scroll view to accommodate for keyboard
+        if let outerScroll = self.delegatedScrollView {
+            UIView.animate(withDuration: 0.3) {
+                let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: self.keyboardRect.height, right: 0)
+                outerScroll.contentInset = contentInsets
+                outerScroll.scrollIndicatorInsets = contentInsets
+            }
+        }
+
+        self.maybeOuterScroll()
     }
 
-    @objc func handleKeyboardShown(_ notification: Notification) {
-    }
-
-    @objc func handleKeyboardHidden(_ notification: Notification) {
+    @objc func handleKeyboardWillHide(_ notification: Notification) {
         self.webview.checkSize()
         self.hasFocus = false
+
+        if let outerScroll = self.delegatedScrollView {
+            UIView.animate(withDuration: 0.3) {
+                outerScroll.contentInset = .zero
+                outerScroll.scrollIndicatorInsets = .zero
+            }
+        }
     }
 
-    private func checkScrollPosition() {
+    private func maybeOuterScroll() {
+        self.webview.getCursorPosition { [weak self] point in
+            self?.maybeOuterScroll(webviewCursor: point)
+        }
+    }
+
+    private func maybeOuterScroll(webviewCursor: CGPoint) {
         guard let outerScroll = self.delegatedScrollView else {
             return
         }
 
-        if self.webviewCursorPosition.y == 0 {
-            // no cursor from webview yet, we wait for it to take decision
+        if webviewCursor.y == 0 {
+            // no cursor from webview yet, we wait for it before doing anything
+            print("RichTextEditor > Can't get webview cursor. Bailing out.")
             return
         }
 
         let webviewTop = self.view.frame.minY
-        let innerScrollOffset = self.webview.scrollView.contentOffset.y
 
-        // y position of the cursor in the outer scrolled frame
-        let cursorFramePosition = (webviewTop + self.webviewCursorPosition.y) - (outerScroll.contentOffset.y + outerScroll.adjustedContentInset.top)
-        //print("webviewTop=\(webviewTop) cursor=\(self.webviewCursorPosition.y) outerOffset=\(outerScroll.contentOffset.y) inset=\(outerScroll.adjustedContentInset.top)")
+        // y position of the cursor in the scrolled frame (which is offset under the nav bar)
+        let cursorFramePosition = (webviewTop + webviewCursor.y) - (outerScroll.contentOffset.y + outerScroll.adjustedContentInset.top)
+        print("RichTextEditor > webviewTop=\(webviewTop) webviewCursor=\(webviewCursor.y) outerOffset=\(outerScroll.contentOffset.y) insetTop=\(outerScroll.adjustedContentInset.top) insetBottom=\(outerScroll.adjustedContentInset.bottom)")
 
         // y position of the cursor on the screen
         let cursorScreenPosition = cursorFramePosition + outerScroll.adjustedContentInset.top
@@ -101,8 +114,8 @@ class RichTextEditor: UIViewController {
         // smallest y position that is visible (after nav bar)
         let topVisibleY = outerScroll.adjustedContentInset.top
 
-        // y position of the tab bar on the screen
-        let bottomBarY = UIScreen.main.bounds.height - outerScroll.adjustedContentInset.bottom
+        // y position of the tab bar on the screen (we are adding keyboard height to inset, when it shows, we need to subtract it)
+        let bottomBarY = UIScreen.main.bounds.height - (outerScroll.adjustedContentInset.bottom - self.keyboardRect.height)
 
         // highest y position that is visible (keyboard OR tab bar)
         var bottomVisibleY = self.keyboardRect.minY
@@ -111,62 +124,25 @@ class RichTextEditor: UIViewController {
             bottomVisibleY = bottomBarY
         }
 
-        //print("RichTextEditor > top=\(topVisibleY) cursor=\(cursorScreenPosition) bottom=\(bottomVisibleY)")
+        print("RichTextEditor > top=\(topVisibleY) cursor=\(cursorScreenPosition) bottom=\(bottomVisibleY)")
 
-        if innerScrollOffset > 0 {
-            // webview's scroll is offset, probably because of the keyboard cursor
-            // we apply the offset to the outer scroll view
-            print("RichTextEditor > Inner scroll is offset by \(innerScrollOffset). Applying it to external.")
-            outerScroll.contentOffset = CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y + innerScrollOffset)
-            self.webview.scrollView.contentOffset.y = 0.0
-
-        } else if cursorScreenPosition + 40 < topVisibleY {
+        if cursorScreenPosition - 20 < topVisibleY {
             // cursor is bellow top nav bar
-            let diff = topVisibleY - cursorScreenPosition + 100
+            let diff = topVisibleY - cursorScreenPosition + 40
             print("RichTextEditor > Cursor is below nav bar. Scrolling down by \(diff).")
-            outerScroll.contentOffset = CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y - diff)
+            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y - diff), animated: true)
 
-        } else if cursorScreenPosition + 40 > bottomVisibleY {
+        } else if cursorScreenPosition + 20 > bottomVisibleY {
             // cursor is bellow keyboard or bottom tab bar
-            let diff = cursorScreenPosition - bottomVisibleY + 100
+            let diff = cursorScreenPosition - bottomVisibleY + 40
             print("RichTextEditor > Cursor is below visible bottom. Scrolling up by \(diff).")
-            outerScroll.contentOffset = CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y + diff)
+            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y + diff), animated: true)
         }
     }
 
     deinit {
         print("RichTextEditor > Deinit")
         KeyboardUtils.sharedInstance.removeObserver(self)
-    }
-}
-
-class RichTextEditorWebView: HybridWebView {
-    var onCursorPositionChange: ((CGPoint) -> Void)?
-
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        // prevent any scroll if it's disabled
-        // this may happen if keyboard is shown in a text field
-        if (!self.scrollView.isScrollEnabled) {
-            scrollView.contentOffset = CGPoint(x: 0, y: 0)
-        }
-    }
-
-    func initialize(_ callback: @escaping (JSON?) -> Void) {
-        self.initialize("html-editor", callback: callback)
-        self.scrollView.delegate = self
-    }
-
-    override func handleCallbackData(_ json: JSON) {
-        if let cursorY = json["cursorY"].number {
-            self.onCursorPositionChange?(CGPoint(x: 0, y: cursorY.intValue))
-            self.checkSize()
-        } else {
-            super.handleCallbackData(json)
-        }
-    }
-
-    func setContent(_ content: String) {
-        self.setData(["content": content as AnyObject])
     }
 }
 
@@ -177,8 +153,6 @@ extension RichTextEditor {
         let newAccessoryView = RichTextEditorToolsView(frame: oldAccessoryView.frame)
         newAccessoryView.editor = self
         oldAccessoryView.addSubview(newAccessoryView)
-
-        self.accessoryHeight = oldAccessoryView.frame.height
 
         // so that we hide the < > controls
         // this is platform specific... but only way easy
@@ -225,7 +199,58 @@ extension RichTextEditor {
     }
 }
 
-class RichTextEditorToolsView: UIView {
+fileprivate class RichTextEditorWebView: HybridWebView {
+    func initialize(_ callback: @escaping (JSON?) -> Void) {
+        self.initialize("html-editor", callback: callback)
+        self.scrollView.delegate = self
+
+        // snippet from https://stackoverflow.com/questions/11126047/find-y-coordinate-for-cursor-position-in-div-in-uiwebview
+        self.evaluateJavaScript("""
+                                function getCaretClientPosition() {
+                                    var x = 0, y = 0;
+                                    var sel = window.getSelection();
+                                    if (sel.rangeCount) {
+                                        var range = sel.getRangeAt(0);
+                                        if (range.getClientRects) {
+                                            var rects = range.getClientRects();
+                                            if (rects.length > 0) {
+                                                x = rects[0].left;
+                                                y = rects[0].top;
+                                            }
+                                        }
+                                    }
+                                    return { x: x, y: y };
+                                }
+                                """)
+    }
+
+    func getCursorPosition(_ callback: @escaping (CGPoint) -> ()) {
+        self.evaluateJavaScript("getCaretClientPosition()") { any, error in
+            guard error == nil,
+                  let dict = any as? Dictionary<String, Any>,
+                  let x = dict["x"] as? Double,
+                  let y = dict["y"] as? Double else {
+                return
+            }
+
+            callback(CGPoint(x: x, y: y))
+        }
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // prevent any scroll if it's disabled
+        // this may happen if keyboard is shown in a text field
+        if (!self.scrollView.isScrollEnabled) {
+            scrollView.contentOffset = CGPoint(x: 0, y: 0)
+        }
+    }
+
+    func setContent(_ content: String) {
+        self.setData(["content": content as AnyObject])
+    }
+}
+
+fileprivate class RichTextEditorToolsView: UIView {
     weak var editor: RichTextEditor!
 
     let buttons = [

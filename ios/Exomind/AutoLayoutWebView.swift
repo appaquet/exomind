@@ -14,6 +14,13 @@ class AutoLayoutWebView: WKWebView, UIScrollViewDelegate {
 
     @objc func checkSize() {
         if (!self.scrollView.isScrollEnabled) {
+            // content is not ready yet. we postpone check
+            if self.scrollView.contentSize.height == 0 {
+                NSObject.cancelPreviousPerformRequests(withTarget: self)
+                self.perform(#selector(checkSize), with: self, afterDelay: 0.1)
+                return
+            }
+
             let diff = abs(self.scrollView.contentSize.height - self.height)
             if diff > 1.0 {
                 self.height = self.scrollView.contentSize.height
@@ -21,6 +28,7 @@ class AutoLayoutWebView: WKWebView, UIScrollViewDelegate {
                 self.invalidateIntrinsicContentSize()
                 self.onHeightChange?(self.height)
 
+                // we check again after delay to make sure height is the same
                 NSObject.cancelPreviousPerformRequests(withTarget: self)
                 self.perform(#selector(checkSize), with: self, afterDelay: 0.1)
             }
