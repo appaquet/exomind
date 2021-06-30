@@ -75,8 +75,8 @@ store:
       entity_mutations_cache_size: 1000
 
     garbage_collector:
-      run_interval_secs: 30
-      queue_size: 300
+      run_interval_secs: 13
+      queue_size: 500
 
 chain:
   segment_max_size: 209715200 # 200mb

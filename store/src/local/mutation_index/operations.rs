@@ -11,7 +11,7 @@ use smallvec::SmallVec;
 
 use crate::entity::{EntityId, TraitId};
 
-/// Operation to be executed on the entities mutations index.
+/// Operation to be executed on the entities mutation index.
 pub enum IndexOperation {
     /// Mutation that puts a new version of a trait at a new position in chain
     /// or pending

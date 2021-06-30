@@ -1,9 +1,9 @@
 use std::collections::{BinaryHeap, LinkedList};
 
-/// Iterator that extracts top results from underlying descend sorted iterator,
-/// but taking into account a scoring function that returns an original ordering
-/// and a penalized ordering.  This property allows early exit and prevent us
-/// from iterating through all results to extract top results.
+/// Iterator that extracts top results from underlying descending sorted
+/// iterator, but taking into account a scoring function that returns an
+/// original ordering and a penalized ordering.  This property allows early exit
+/// and prevent us from iterating through all results to extract top results.
 pub struct RescoredTopResultsIterator<I, E, F, S>
 where
     I: Iterator<Item = E>,
@@ -28,9 +28,8 @@ where
         // on first call, we consume the inner iterator and build the top results
         if self.inner_iter.is_some() {
             // create a sorted reserve in which we will add items that are uncertain to be
-            // next, but that will get added once we find an item from
-            // underlying iterator whose score is smaller than reserve's
-            // penalized score
+            // next, but that will get added once we find an item from underlying iterator
+            // whose score is smaller than reserve's penalized score
             let mut reserve = BinaryHeap::<ReserveItem<E, S>>::new();
 
             let inner_iter = self.inner_iter.take().unwrap();

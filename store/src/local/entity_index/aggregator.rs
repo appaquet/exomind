@@ -18,7 +18,7 @@ use crate::{entity::TraitId, error::Error, query::ResultHash};
 
 const GC_INACTIVE_OPS_THRESHOLD: usize = 10;
 
-/// Aggregates mutations metadata of an entity retrieved from the mutations
+/// Aggregates mutations metadata of an entity retrieved from the mutation
 /// index. Once merged, only the latest / active mutations are remaining, and
 /// can then be fetched from the chain.
 ///
@@ -28,7 +28,6 @@ const GC_INACTIVE_OPS_THRESHOLD: usize = 10;
 pub struct EntityAggregator {
     pub entity_id: String,
 
-    /// traits aggregator
     pub traits: HashMap<TraitId, TraitAggregator>,
 
     /// ids of operations that are still active (ex: were not overridden by
@@ -38,7 +37,7 @@ pub struct EntityAggregator {
     /// total number of mutations
     pub mutation_count: usize,
 
-    /// hash of the operations of the entity
+    /// hash of the mutations of the entity
     pub hash: ResultHash,
 
     /// date of the creation of entity, based on put trait creation date OR
@@ -59,7 +58,7 @@ pub struct EntityAggregator {
     /// offset of the last block in which last committed operation is
     pub last_block_offset: Option<BlockOffset>,
 
-    /// at least one of the operations is in pending store
+    /// at least one mutations is in the pending store
     pub in_pending: bool,
 
     /// indicates that deletion affecting the entity is in the pending index.
@@ -204,7 +203,7 @@ impl EntityAggregator {
     /// Annotates each trait with projections that are matching them in a query.
     ///
     /// Projections allow returning only a subset of the traits or a part of its
-    /// data. See `project_trait` method for the actual projections no the data
+    /// data. See `project_trait` method for the actual projections of the data
     /// of a retrieved trait.
     pub fn annotate_projections(&mut self, projections: &[Projection]) {
         if projections.is_empty() {
@@ -226,14 +225,14 @@ impl EntityAggregator {
     }
 
     /// Whether the entity should be analysed for garbage collection because it
-    /// has inactive / overridden operations.
+    /// has more inactive / overridden operations than configured threshold.
     pub fn should_collect(&self) -> bool {
         self.mutation_count - self.active_operations.len() > GC_INACTIVE_OPS_THRESHOLD
     }
 }
 
 /// Aggregates mutations metadata of an entity's trait retrieved from the
-/// mutations index. Once merged, only the latest / active mutations are
+/// mutation index. Once merged, only the latest / active mutations are
 /// remaining, and can then be fetched from the chain.
 #[derive(Default)]
 pub struct TraitAggregator {

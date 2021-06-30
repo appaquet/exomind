@@ -245,7 +245,7 @@ where
             .unwrap_or_else(crate::query::default_paging);
         crate::query::validate_paging(&mut current_page);
 
-        // query pending & chain mutations index without original query paging since we
+        // query pending & chain mutation index without original query paging since we
         // need to do our own paging here since we are re-ranking results and
         // that we may have more than one mutation match for each entity.
         let mutations_query = EntityQuery {
@@ -695,7 +695,7 @@ where
     /// Handles new pending store operations events from the chain layer by
     /// indexing them into the pending index.
     ///
-    /// Returns number of operations applied on the mutations index.
+    /// Returns number of operations applied on the mutation index.
     fn handle_chain_pending_operations<O>(&mut self, operations_id: O) -> Result<usize, Error>
     where
         O: Iterator<Item = OperationId>,

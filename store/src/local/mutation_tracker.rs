@@ -14,7 +14,7 @@ use crate::error::Error;
 type RequestId = usize;
 
 /// Tracks mutations for which the user requested to be notified when they have
-/// been indexed and are reflected in the store.
+/// been indexed and are reflected by the store.
 ///
 /// This tracks operation ids that have been indexed, and sends completion
 /// signal via the provided oneshot channel.

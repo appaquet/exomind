@@ -674,10 +674,17 @@ fn cmd_check_chain(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()>
         .chain_directory()
         .expect("Cell doesn't have a path configured");
 
-    print_spacer();
     let chain_config = config.chain.unwrap_or_default();
     let chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)
         .expect("Couldn't open chain");
+
+    let last_block = chain_store
+        .get_last_block()
+        .expect("Couldn't get last block of chain")
+        .expect("Last block of chain is empty");
+
+    print_spacer();
+    let bar = indicatif::ProgressBar::new(last_block.get_height()?);
 
     let mut block_count = 0;
     for block in chain_store.blocks_iter(0) {
@@ -698,7 +705,11 @@ fn cmd_check_chain(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()>
             ));
             return Ok(());
         }
+
+        bar.set_position(block_count);
     }
+
+    bar.finish();
 
     print_success(format!(
         "Chain is valid. Analyzed {} blocks.",

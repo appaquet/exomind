@@ -11,6 +11,9 @@ use crate::{
     query::{ResultHash, WatchToken},
 };
 
+/// Collection of queries that have been requested to be watched and that the
+/// user wants to be notified when their results have changed. The actual
+/// management of the queries is done by the store.
 pub struct WatchedQueries {
     inner: Mutex<Inner>,
 }
