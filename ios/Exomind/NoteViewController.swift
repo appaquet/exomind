@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Exocore
 
-class NoteViewController: UIViewController, EntityTraitView {
+class NoteViewController: VerticalLinearViewController, EntityTraitView {
     private var entity: EntityExt?
     private var noteTrait: TraitInstance<Exomind_Base_Note>?
     private var modifiedNote: Exomind_Base_Note?
@@ -26,19 +26,6 @@ class NoteViewController: UIViewController, EntityTraitView {
         self.createHeaderView()
         self.createRichTextEditor()
         self.loadData()
-
-        self.headerView.snp.makeConstraints { (make) in
-            make.width.equalTo(self.view.snp.width)
-            make.centerX.equalTo(self.view.snp.centerX)
-            make.top.equalTo(self.view.snp.topMargin)
-        }
-
-        self.richTextEditor.view.snp.makeConstraints { (make) in
-            make.top.equalTo(self.headerView.snp.bottom)
-            make.bottom.equalTo(self.view.snp.bottom)
-            make.width.equalTo(self.view.snp.width)
-            make.centerX.equalTo(self.view.snp.centerX)
-        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -70,7 +57,7 @@ class NoteViewController: UIViewController, EntityTraitView {
             this.saveNote()
         }
         self.headerView = LabelledFieldView(label: "Title", fieldView: titleField)
-        self.view.addSubview(self.headerView)
+        self.addLinearView(self.headerView)
     }
 
     private func createRichTextEditor() {
@@ -100,9 +87,10 @@ class NoteViewController: UIViewController, EntityTraitView {
         })
 
         self.addChild(self.richTextEditor)
-        self.view.addSubview(self.richTextEditor.view)
         self.richTextEditor.didMove(toParent: self)
         self.richTextEditor.viewDidLoad()
+        self.richTextEditor.delegateScrollTo(self.scrollView)
+        self.addLinearView(self.richTextEditor.view)
     }
 
     private func loadData() {

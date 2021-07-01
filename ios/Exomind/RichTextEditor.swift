@@ -102,7 +102,6 @@ class RichTextEditor: UIViewController {
             return
         }
 
-
         let webviewTop = self.view.frame.minY
 
         // y position of the cursor in the scrolled frame (which is offset under the nav bar)
@@ -221,21 +220,29 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
     func initialize(_ callback: @escaping (JSON?) -> Void) {
         self.initialize("html-editor", callback: callback)
 
-        // snippet from https://stackoverflow.com/questions/11126047/find-y-coordinate-for-cursor-position-in-div-in-uiwebview
+        // snippet from https://stackoverflow.com/questions/59767515/incorrect-positioning-of-getboundingclientrect-after-newline-character
         self.evaluateJavaScript("""
-                                function getCaretClientPosition() {
-                                    var x = 0, y = 0;
-                                    var sel = window.getSelection();
-                                    if (sel.rangeCount) {
-                                        var range = sel.getRangeAt(0);
-                                        var rect = range.getBoundingClientRect();
-                                        x = rect.left;
-                                        y = rect.top
-                                        return { x: x, y: y };
-                                    } else {
-                                      return { x: 0, y: 0 };
+                                    function getCaretClientPosition() {
+                                        const sel = window.getSelection();
+                                        if (!sel || sel.rangeCount === 0) {
+                                          return { x: 0, y: 0 };
+                                        }
+                                        const range = sel.getRangeAt(0);
+
+                                        // check if we have client rects
+                                        const rects = range.getClientRects();
+                                        if (!rects.length) {
+                                          // if not rects, we're probably on a new line.
+                                          // we select the node in order to be able to get position
+                                          if (range.startContainer && range.collapsed) {
+                                            // explicitly select the contents
+                                            range.selectNodeContents(range.startContainer);
+                                          }
+                                        }
+
+                                        const pos = range.getBoundingClientRect();
+                                        return { x: pos.left, y: pos.top };
                                     }
-                                }
                                 """)
     }
 
@@ -251,6 +258,8 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
                   let dict = any as? Dictionary<String, Any>,
                   let x = dict["x"] as? Double,
                   let y = dict["y"] as? Double else {
+
+                print("RichTextEditor > Unexpected client caret position \(String(describing: any)) \(String(describing: error))")
                 return
             }
 

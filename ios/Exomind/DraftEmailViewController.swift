@@ -134,7 +134,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
         self.richTextEditor.viewDidLoad()
         self.richTextEditor.delegateScrollTo(self.scrollView)
 
-        self.addLinearView(self.richTextEditor.view, minHeight: self.view.frame.height)
+        self.addLinearView(self.richTextEditor.view)
     }
 
     override func viewWillAppear(_ animated: Bool) {
