@@ -5,6 +5,7 @@ import SnapKit
 
 /*
  TODO:
+    - Placing cursor outside of visible area doesn't get properly reported
     - Placing cursor on empty line doesn't scroll
  */
 
@@ -38,7 +39,9 @@ class RichTextEditor: UIViewController {
 
     func delegateScrollTo(_ outerScroll: UIScrollView) {
         self.outerScroll = outerScroll
-        self.webview.disableScroll()
+        self.webview.disableScroll { [weak self] in
+            self?.ensureCursorVisible()
+        }
         self.webview.setContentCompressionResistancePriority(UILayoutPriority.defaultHigh, for: .vertical)
     }
 
@@ -99,17 +102,12 @@ class RichTextEditor: UIViewController {
             return
         }
 
-        if webviewCursor.y == 0 {
-            // no cursor from webview yet, we wait for it before doing anything
-            print("RichTextEditor > Can't get webview cursor. Bailing out.")
-            return
-        }
 
         let webviewTop = self.view.frame.minY
 
         // y position of the cursor in the scrolled frame (which is offset under the nav bar)
         let cursorFramePosition = (webviewTop + webviewCursor.y) - (outerScroll.contentOffset.y + outerScroll.adjustedContentInset.top)
-        print("RichTextEditor > webviewTop=\(webviewTop) webviewCursor=\(webviewCursor.y) outerOffset=\(outerScroll.contentOffset.y) insetTop=\(outerScroll.adjustedContentInset.top) insetBottom=\(outerScroll.adjustedContentInset.bottom)")
+        print("RichTextEditor > webviewTop=\(webviewTop) webviewCursor=\(webviewCursor.y) outerOffset=\(outerScroll.contentOffset.y) adjInsetTop=\(outerScroll.adjustedContentInset.top) adjInsetBottom=\(outerScroll.adjustedContentInset.bottom)")
 
         // y position of the cursor on the screen
         let cursorScreenPosition = cursorFramePosition + outerScroll.adjustedContentInset.top
@@ -127,17 +125,32 @@ class RichTextEditor: UIViewController {
             bottomVisibleY = bottomBarY
         }
 
-        print("RichTextEditor > top=\(topVisibleY) cursor=\(cursorScreenPosition) bottom=\(bottomVisibleY)")
+        if let lastCorrected = self.webview.scrollDelegate?.lastCorrectOffset,
+           let consecutiveCount = self.webview.scrollDelegate?.consecutiveCorrectCount,
+           consecutiveCount > 1 {
+            let offset = lastCorrected.y
+            print("RichTextEditor > Fixing offset using wkwebview correction of \(lastCorrected.y): Scrolling by \(offset)")
+            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: offset), animated: true)
+            self.webview.scrollDelegate?.lastCorrectOffset = nil
+            self.webview.scrollDelegate?.consecutiveCorrectCount = 0
+            return
+        }
 
+        if webviewCursor.y <= 0 {
+            print("RichTextEditor > Can't get webview cursor. Bailing out.")
+            return
+        }
+
+        print("RichTextEditor > top=\(topVisibleY) cursor=\(cursorScreenPosition) bottom=\(bottomVisibleY)")
         if cursorScreenPosition - 20 < topVisibleY {
             // cursor is bellow top nav bar
             let diff = topVisibleY - cursorScreenPosition + 40
             print("RichTextEditor > Cursor is below nav bar. Scrolling down by \(diff).")
             outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y - diff), animated: true)
 
-        } else if cursorScreenPosition + 20 > bottomVisibleY {
+        } else if cursorScreenPosition + 60 > bottomVisibleY {
             // cursor is bellow keyboard or bottom tab bar
-            let diff = cursorScreenPosition - bottomVisibleY + 40
+            let diff = cursorScreenPosition - bottomVisibleY + 60
             print("RichTextEditor > Cursor is below visible bottom. Scrolling up by \(diff).")
             outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y + diff), animated: true)
         }
@@ -203,7 +216,7 @@ extension RichTextEditor {
 }
 
 fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
-    private var scrollDelegate: DisableScrollDelegate?
+    fileprivate var scrollDelegate: DisableScrollDelegate?
 
     func initialize(_ callback: @escaping (JSON?) -> Void) {
         self.initialize("html-editor", callback: callback)
@@ -215,21 +228,19 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
                                     var sel = window.getSelection();
                                     if (sel.rangeCount) {
                                         var range = sel.getRangeAt(0);
-                                        if (range.getClientRects) {
-                                            var rects = range.getClientRects();
-                                            if (rects.length > 0) {
-                                                x = rects[0].left;
-                                                y = rects[0].top;
-                                            }
-                                        }
+                                        var rect = range.getBoundingClientRect();
+                                        x = rect.left;
+                                        y = rect.top
+                                        return { x: x, y: y };
+                                    } else {
+                                      return { x: 0, y: 0 };
                                     }
-                                    return { x: x, y: y };
                                 }
                                 """)
     }
 
-    func disableScroll() {
-        self.scrollDelegate = DisableScrollDelegate()
+    func disableScroll(_ correctionCallback: @escaping () -> ()) {
+        self.scrollDelegate = DisableScrollDelegate(correctionCallback: correctionCallback)
         self.scrollView.delegate = self.scrollDelegate
         self.scrollView.isScrollEnabled = false
     }
@@ -256,8 +267,29 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
 // Normal scrolling is disabled by setting `isScrollEnabled` false, but not pinch and
 // keyboard zoom.
 fileprivate class DisableScrollDelegate: NSObject, UIScrollViewDelegate {
+    fileprivate var lastCorrectOffset: CGPoint?
+    fileprivate var consecutiveCorrectCount: Int = 0
+    private var correctionCallback: () -> ()
+
+    init(correctionCallback: @escaping () -> ()) {
+        self.correctionCallback = correctionCallback
+    }
+
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        scrollView.contentOffset = CGPoint(x: 0, y: 0)
+        if scrollView.contentOffset.y != 0 {
+            if self.lastCorrectOffset == scrollView.contentOffset {
+                self.consecutiveCorrectCount += 1
+            } else {
+                self.consecutiveCorrectCount = 0
+                self.lastCorrectOffset = scrollView.contentOffset
+            }
+
+            scrollView.contentOffset = CGPoint(x: 0, y: 0)
+
+            if self.consecutiveCorrectCount > 1 {
+                self.correctionCallback()
+            }
+        }
     }
 }
 
