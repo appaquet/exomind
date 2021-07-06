@@ -6,7 +6,7 @@ use futures::{channel::oneshot, Future, FutureExt};
 use crate::binding::__exocore_host_now;
 
 /// Unix timestamp in nanoseconds.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Debug)]
 pub struct Timestamp(pub u64);
 
 impl Timestamp {
@@ -178,15 +178,20 @@ mod tests {
 
     #[tokio::test]
     async fn test_timer() {
-        let (sender, mut receiver) = oneshot::channel();
+        let (sender_before, receiver_before) = oneshot::channel();
+        let (sender_after, mut receiver_after) = oneshot::channel();
         tokio::spawn(async move {
+            sender_before.send(now()).unwrap();
             sleep(Duration::from_millis(10)).await;
-            sender.send(()).unwrap();
+            sender_after.send(now()).unwrap();
         });
 
-        poll_timers();
+        let before_time = receiver_before.await.unwrap();
 
-        // wait for timer to be pushed, check make sure next poll reflects it value
+        // shouldn't have received yet since timer hasn't been triggered
+        assert!(receiver_after.try_recv().unwrap().is_none());
+
+        // wait for timer to be pushed, check make sure next poll reflects its value
         let mut next = next_timer_time();
         loop {
             if next.is_some() {
@@ -196,17 +201,16 @@ mod tests {
             tokio::time::sleep(Duration::from_micros(100)).await;
             next = next_timer_time();
         }
-        let next_dur = (next.unwrap() - now()).unwrap();
-        assert!(next_dur.as_millis() > 0);
-
-        // shouldn't have received yet since timer hasn't been triggered
-        assert!(receiver.try_recv().unwrap().is_none());
+        let next_dur = (next.unwrap() - before_time).unwrap();
+        assert!(next_dur.as_millis() > 5);
 
         // wait for timer to expire, and trigger it
         tokio::time::sleep(Duration::from_millis(10)).await;
         poll_timers();
 
-        // timer should have been triggered
-        receiver.await.unwrap();
+        // timer should have been triggered and 10ms or more should have elapsed
+        let after_time = receiver_after.await.unwrap();
+        let time_diff = (after_time - before_time).unwrap();
+        assert!(time_diff.as_millis() > 10);
     }
 }
