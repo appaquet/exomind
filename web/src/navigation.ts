@@ -33,10 +33,14 @@ export default class Navigation {
   }
 
   static navigate(path: string | Path, replace = false): void {
-    const obj = new Path(path);
+    try {
+      const obj = new Path(path);
 
-    Navigation.host.pushHistory(obj, replace);
-    Navigation.currentPath = obj;
+      Navigation.host.pushHistory(obj, replace);
+      Navigation.currentPath = obj;
+    } catch (e) {
+      console.error('failed to load link', e);
+    }
   }
 
   static navigateBack(): void {

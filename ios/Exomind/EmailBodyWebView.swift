@@ -49,6 +49,7 @@ class EmailBodyWebView: AutoLayoutWebView, WKNavigationDelegate {
         // For Dark Mode. See web's email-thread.less
         let style = "<style>@media (prefers-color-scheme: dark) { body { filter: invert(1) hue-rotate(180deg); } img, div[style*=\"background-image\"] { filter: invert(1) hue-rotate(180deg); } }</style>"
         let final = "<html><head>\(head)\(style)</head><body style=\"width: 100%; padding: 10px 5px;\" onload=\"javascript: \(loaded)\">\(body)\(ready)</body></html>"
+
         self.loadHTMLString(final, baseURL: nil)
     }
 

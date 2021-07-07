@@ -6,7 +6,6 @@ import SnapKit
 /*
  TODO:
     - Placing cursor outside of visible area doesn't get properly reported
-    - Placing cursor on empty line doesn't scroll
  */
 
 class RichTextEditor: UIViewController {
@@ -64,11 +63,9 @@ class RichTextEditor: UIViewController {
 
         // change inset of scroll view to accommodate for keyboard
         if let outerScroll = self.outerScroll {
-            UIView.animate(withDuration: 0.3) {
-                let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: self.keyboardRect.height, right: 0)
-                outerScroll.contentInset = contentInsets
-                outerScroll.scrollIndicatorInsets = contentInsets
-            }
+            let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: self.keyboardRect.height, right: 0)
+            outerScroll.contentInset = contentInsets
+            outerScroll.scrollIndicatorInsets = contentInsets
         }
 
         self.ensureCursorVisible()
@@ -78,10 +75,8 @@ class RichTextEditor: UIViewController {
         self.webview.checkSize()
 
         if let outerScroll = self.outerScroll {
-            UIView.animate(withDuration: 0.3) {
-                outerScroll.contentInset = .zero
-                outerScroll.scrollIndicatorInsets = .zero
-            }
+            outerScroll.contentInset = .zero
+            outerScroll.scrollIndicatorInsets = .zero
         }
     }
 
@@ -145,13 +140,13 @@ class RichTextEditor: UIViewController {
             // cursor is bellow top nav bar
             let diff = topVisibleY - cursorScreenPosition + 40
             print("RichTextEditor > Cursor is below nav bar. Scrolling down by \(diff).")
-            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y - diff), animated: true)
+            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y - diff), animated: false)
 
-        } else if cursorScreenPosition + 60 > bottomVisibleY {
+        } else if cursorScreenPosition + 40 > bottomVisibleY {
             // cursor is bellow keyboard or bottom tab bar
-            let diff = cursorScreenPosition - bottomVisibleY + 60
+            let diff = cursorScreenPosition - bottomVisibleY + 40
             print("RichTextEditor > Cursor is below visible bottom. Scrolling up by \(diff).")
-            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y + diff), animated: true)
+            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y + diff), animated: false)
         }
     }
 
