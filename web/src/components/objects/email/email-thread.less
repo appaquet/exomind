@@ -2,19 +2,19 @@
 @import (reference) "../../../style/font-awesome.less";
 
 .entity-component.email-thread {
-
   .thread {
     .make-list();
 
     overflow: scroll;
     .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
-    
+
     padding-bottom: @entity-component-header-height; // make sure we have plenty of space bellow for scroll
     height: 100%;
 
-    &>li {
+    & > li {
       @extra-padding-between: 5px;
-      padding: @entity-component-padding-between + @extra-padding-between @entity-component-padding-side;
+      padding: @entity-component-padding-between + @extra-padding-between
+        @entity-component-padding-side;
       border-bottom: var(--entity-component-list-separator-border);
       position: relative;
       display: block;
@@ -27,14 +27,16 @@
         .from {
           display: inline-block;
         }
-        .snippet, .to {
+        .snippet,
+        .to {
           font-weight: normal;
           margin-left: 5px;
           font-size: 0.8em;
         }
         .time {
           position: absolute;
-          top: 3px; right: 15px;
+          top: 3px;
+          right: 15px;
           background: var(--entity-component-bg);
           color: var(--entity-component-item-fg);
           padding-left: 10px;
@@ -43,7 +45,8 @@
         }
         .header-controls {
           position: absolute;
-          top: 1px; right: 0;
+          top: 1px;
+          right: 0;
           text-align: center;
           display: block;
           width: 15px;
@@ -51,7 +54,7 @@
           color: var(--entity-component-item-fg);
           cursor: pointer;
           .icon {
-            .icon-font-awesome('plus-square-o');
+            .icon-font-awesome("plus-square-o");
             font-size: 14px;
           }
         }
@@ -102,22 +105,24 @@
         .count {
           .center-vertical-element();
           left: 20px;
-          background: #e0e0e0;
+          background: var(--entity-component-header-bg);
+          color: var(--body-fg);
           width: 20px;
           height: 20px;
           border-radius: 20px;
           font-size: 10px;
           text-align: center;
-          line-height: 20px;;
+          line-height: 20px;
         }
       }
 
       .object-body {
         padding-bottom: 50px; // enough space for email controls to appear non awklardly
 
-        // always want email to be on white background to respect their style
-        background: @entity-component-bg; 
-        color: @body-fg;
+        .email-body {
+          // make sure text is always good on dark mode
+          color: @body-fg;
+        }
 
         .more {
           position: relative;
@@ -127,12 +132,24 @@
           height: 15px;
           border: 1px solid #d0d0d0;
           .icon {
-            .icon-font-awesome('ellipsis-h');
+            .icon-font-awesome("ellipsis-h");
             .center-element();
             color: #d0d0d0;
           }
         }
       }
+    }
+  }
+}
+
+:root[data-theme="theme-dark"] {
+  .entity-component.email-thread .email-body {
+    // See https://dev.to/akhilarjun/one-line-dark-mode-using-css-24li
+    filter: invert(1) hue-rotate(180deg);
+
+    // Invert back images
+    img, div[style*="background-image"] {
+      filter: invert(1) hue-rotate(180deg);
     }
   }
 }

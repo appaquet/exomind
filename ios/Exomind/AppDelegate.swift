@@ -29,7 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
         func openObject(_ entity: EntityExt?) {
             if let entity = entity {
-                RootNavigationController.mainInstance()?.show(navigationObject: .entity(entity: entity))
+                RootViewController.mainInstance()?.show(navigationObject: .entity(entity: entity))
             }
         }
 

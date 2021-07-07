@@ -180,6 +180,8 @@ protocol AnyTraitInstance {
     var creationDate: Date { get }
     var modificationDate: Date? { get }
 
+    func strippedDisplayName() -> String
+
     func typeInstance() -> TraitTypeInstance?
 }
 
@@ -268,7 +270,15 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
         self.entity?.trait(anyWithId: self.id)
     }
 
-    private static func getDisplayName<M: Message>(constants: TraitConstants, message: M) -> String {
+    func strippedDisplayName() -> String {
+        if let constants = self.constants {
+            return TraitInstance.getDisplayName(constants: constants, message: message, strip: true)
+        } else {
+            return "*UNKNOWN*"
+        }
+    }
+
+    private static func getDisplayName<M: Message>(constants: TraitConstants, message: M, strip: Bool = false) -> String {
         if let name = constants.name {
             return name
         }
@@ -282,7 +292,12 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
         case let email as Exomind_Base_Email:
             name = email.subject.nonEmpty() ?? "Untitled email"
         case let collection as Exomind_Base_Collection:
-            name = collection.name.nonEmpty() ?? "Untitled collection"
+           if strip && collection.name.startsWithEmoji() {
+               let (_, rest) = collection.name.splitFirstEmoji()
+               name = rest.nonEmpty() ?? "Untitled collection"
+           } else {
+               name = collection.name.nonEmpty() ?? "Untitled collection"
+           }
         case let task as Exomind_Base_Task:
             name = task.title.nonEmpty() ?? "Untitled task"
         case let note as Exomind_Base_Note:

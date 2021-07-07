@@ -14,7 +14,7 @@ class Stylesheet {
 
     static let collectionSwipeDoneBg = UIColor("#5CB296")
     static let collectionSwipeInboxBg = UIColor("#5CB296")
-    static let collectionSwipeLaterBg = exomindYellow
+    static let collectionSwipeLaterBg = UIColor("#2670E0")
     static let collectionSwipeAddCollectionBg = exomindSecondary
 
     static let collectionSelectorNavigationBarBg = exomindSecondary
@@ -39,7 +39,6 @@ class Stylesheet {
     static let objectColor9 = UIColor("#E3C4FE")
     static let objectColor10 = UIColor("#FEC4C4")
     static let objectColors = [objectColor1, objectColor2, objectColor3, objectColor4, objectColor5, objectColor6, objectColor7, objectColor8, objectColor9, objectColor10]
-
 
     static func objectColor(forId: Int) -> UIColor {
         let finalId = forId - 1

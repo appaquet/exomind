@@ -27,6 +27,10 @@ class KeyboardUtils: NSObject {
         NotificationCenter.default.addObserver(observer, selector: aSelector, name: UIResponder.keyboardDidShowNotification, object: nil)
     }
 
+    func addWillHideObserver(_ observer: AnyObject, selector aSelector: Selector) {
+        NotificationCenter.default.addObserver(observer, selector: aSelector, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+
     func addHiddenObserver(_ observer: AnyObject, selector aSelector: Selector) {
         NotificationCenter.default.addObserver(observer, selector: aSelector, name: UIResponder.keyboardDidHideNotification, object: nil)
     }

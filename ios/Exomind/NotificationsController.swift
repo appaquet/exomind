@@ -55,7 +55,7 @@ class NotificationsController {
         // only show up if we are coming from background, which means we clicked on notification
         if (!inForeground) {
             if let entityId = payload["object_id"] as? String {
-                RootNavigationController.mainInstance()?.show(navigationObject: .entityId(id: entityId))
+                RootViewController.mainInstance()?.show(navigationObject: .entityId(id: entityId))
             }
         }
     }

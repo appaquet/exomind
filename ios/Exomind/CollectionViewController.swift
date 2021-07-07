@@ -2,7 +2,7 @@ import UIKit
 import Exocore
 
 class CollectionViewController: UIViewController, EntityTraitView {
-    private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+    private let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
 
     private var entity: EntityExt!
     private var collection: TraitInstance<Exomind_Base_Collection>!
@@ -22,7 +22,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func setupEntityList() {
-        self.entityListViewController = (mainStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
+        self.entityListViewController = (objectsStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 
@@ -31,15 +31,17 @@ class CollectionViewController: UIViewController, EntityTraitView {
         }
 
         self.entityListViewController.setSwipeActions([
-            ChildrenViewSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
+            EntityListSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleDone(entity)
+                callback(true)
             }),
-            ChildrenViewSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, state: .state3, mode: .switch, handler: { [weak self] (entity) -> Void in
-                self?.handleMoveLater(entity)
+            EntityListSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
+                self?.handleMoveLater(entity, callback: callback)
             }),
-            ChildrenViewSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, state: .state4, mode: .switch, handler: { [weak self] (entity) -> Void in
+            EntityListSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleAddToCollection(entity)
-            })
+                callback(false)
+            }),
         ])
 
         self.entityListViewController.loadData(fromChildrenOf: self.entity.id)
@@ -76,7 +78,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     private func handleCollectionRename() {
         let alert = UIAlertController(title: "Name", message: "Enter a new name", preferredStyle: UIAlertController.Style.alert)
         alert.addTextField(configurationHandler: { [weak self] (textField: UITextField!) in
-            textField.text = self?.collection.displayName
+            textField.text = self?.collection.message.name
             textField.isSecureTextEntry = false
         })
         alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] (alertAction) -> Void in
@@ -130,8 +132,8 @@ class CollectionViewController: UIViewController, EntityTraitView {
         ExomindMutations.removeParent(entity: entity, parentId: self.entity.id)
     }
 
-    private func handleMoveLater(_ entity: EntityExt) {
-        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity)
+    private func handleMoveLater(_ entity: EntityExt, callback: @escaping (Bool) -> Void) {
+        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity, callback: callback)
     }
 
     private func handleAddToCollection(_ entity: EntityExt) {

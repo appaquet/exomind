@@ -1,6 +1,7 @@
 import UIKit
 
 class ModalGridViewController: UIViewController {
+    var onClose: (() -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,5 +29,6 @@ class ModalGridViewController: UIViewController {
     @objc func close() {
         self.removeFromParent()
         self.view.removeFromSuperview()
+        self.onClose?()
     }
 }

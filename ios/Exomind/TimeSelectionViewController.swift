@@ -12,6 +12,9 @@ class TimeSelectionViewController: ModalGridViewController {
     convenience init(callback: @escaping (Date?) -> Void) {
         self.init()
         self.callback = callback
+        self.onClose = { [weak self] in
+            self?.callback?(nil)
+        }
     }
 
     override func viewDidLoad() {

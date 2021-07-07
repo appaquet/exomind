@@ -2,7 +2,7 @@ import UIKit
 import Exocore
 
 class SnoozedViewController: UIViewController {
-    private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+    private let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
 
     private var entityListViewController: EntityListViewController!
 
@@ -14,7 +14,7 @@ class SnoozedViewController: UIViewController {
     }
 
     private func setupChildrenVC() {
-        self.entityListViewController = (mainStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
+        self.entityListViewController = (objectsStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 
@@ -37,9 +37,14 @@ class SnoozedViewController: UIViewController {
         }
 
         self.entityListViewController.setSwipeActions([
-            ChildrenViewSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, state: .state1, mode: .exit, handler: { [weak self] (entity) -> Void in
+            EntityListSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
                 self?.handleCopyInbox(entity)
-            })
+                callback(true)
+            }),
+            EntityListSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
+                self?.handleMoveLater(entity)
+                callback(false)
+            }),
         ])
     }
 
@@ -75,5 +80,9 @@ class SnoozedViewController: UIViewController {
         } catch {
             print("SnoozedViewController > Error copying to inbox: \(error)")
         }
+    }
+
+    private func handleMoveLater(_ entity: EntityExt) {
+        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity)
     }
 }

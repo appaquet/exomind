@@ -1,7 +1,5 @@
 import UIKit
 import FontAwesome_swift
-import MCSwipeTableViewCell
-import Dwifft
 import Exocore
 
 class EntityListViewController: UITableViewController {
@@ -10,7 +8,7 @@ class EntityListViewController: UITableViewController {
 
     private var collectionData: [EntityResult] = []
     private var itemClickHandler: ((EntityExt) -> Void)?
-    private var swipeActions: [ChildrenViewSwipeAction] = []
+    private var swipeActions: [EntityListSwipeAction] = []
 
     private var switcherButton: SwitcherButton?
     private var switcherButtonActions: [SwitcherButtonAction] = []
@@ -20,14 +18,24 @@ class EntityListViewController: UITableViewController {
     private var headerShown: Bool = false
     private var headerWasShownBeforeDrag: Bool = false
 
-    private var diffCalculator: SingleSectionTableViewDiffCalculator<EntityResult>?
+    private lazy var datasource: EditableDataSource = {
+        var ds = EditableDataSource(tableView: self.tableView) { [weak self] tableView, indexPath, item in
+            self?.createCell(indexPath, item: item)
+        }
+
+        // all animations are just weird, but there still seems to be some kind of animation that is good enough
+        ds.defaultRowAnimation = .none
+
+        return ds
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.tableView.dataSource = self.datasource
         self.tableView.delegate = self
     }
 
-    func setSwipeActions(_ actions: [ChildrenViewSwipeAction]) {
+    func setSwipeActions(_ actions: [EntityListSwipeAction]) {
         self.swipeActions = actions
     }
 
@@ -62,6 +70,7 @@ class EntityListViewController: UITableViewController {
         var projectSummaryFields = Exocore_Store_Projection()
         projectSummaryFields.fieldGroupIds = [1]
         projectSummaryFields.package = ["exomind.base"]
+
         var projectSkipRest = Exocore_Store_Projection()
         projectSkipRest.skip = true
 
@@ -83,21 +92,20 @@ class EntityListViewController: UITableViewController {
             }
 
             let newResults = this.convertResults(oldResults: this.collectionData, newResults: this.query?.results ?? [])
-            DispatchQueue.main.async {
-                // on first load, we load data directly to prevent diff & animation
-                if this.collectionData.isEmpty && !newResults.isEmpty {
-                    this.collectionData = newResults
-                    this.tableView.reloadData()
-
-                    this.diffCalculator = SingleSectionTableViewDiffCalculator<EntityResult>(tableView: this.tableView, initialRows: this.collectionData)
-                    this.diffCalculator?.insertionAnimation = .fade
-                    this.diffCalculator?.deletionAnimation = .fade
-                } else {
-                    this.collectionData = newResults
-                    this.diffCalculator?.rows = this.collectionData
-                }
+            DispatchQueue.main.async { [weak self] in
+                self?.setData(newResults)
             }
         }
+    }
+
+    private func setData(_ newResults: [EntityResult]) {
+        let firstLoad = self.collectionData.isEmpty
+        self.collectionData = newResults
+
+        var snapshot = NSDiffableDataSourceSnapshot<Int, EntityResult>()
+        snapshot.appendSections([1])
+        snapshot.appendItems(newResults)
+        self.datasource.apply(snapshot, animatingDifferences: !firstLoad)
     }
 
     override func viewDidLayoutSubviews() {
@@ -105,28 +113,14 @@ class EntityListViewController: UITableViewController {
 
         var top = CGFloat(0.0)
         let bottom = Stylesheet.quickButtonSize + 20
-        let showHeader = self.hasHeader && ((self.scrollDragging && self.headerWasShownBeforeDrag) || (!self.scrollDragging && self.headerShown))
+
+        let hasHeader = self.switcherButtonActions.count > 0
+        let showHeader = hasHeader && ((self.scrollDragging && self.headerWasShownBeforeDrag) || (!self.scrollDragging && self.headerShown))
         if (!showHeader) {
             top = top - (self.tableView.tableHeaderView?.frame.height ?? 0)
         }
         let newInsets = UIEdgeInsets(top: top, left: 0, bottom: bottom, right: 0)
         self.tableView.contentInset = newInsets
-    }
-
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        self.collectionData.count
-    }
-
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
-
-        // fixes borders between each cell that otherwise aren't 100% width
-        cell.layoutMargins = UIEdgeInsets.zero
-        cell.preservesSuperviewLayoutMargins = false
-
-        self.configureCellSwipe(indexPath, cell: cell)
-        cell.populate(&self.collectionData[(indexPath as NSIndexPath).item])
-        return cell
     }
 
     override func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -149,6 +143,20 @@ class EntityListViewController: UITableViewController {
         }
     }
 
+    private func createCell(_ indexPath: IndexPath, item: EntityResult) -> ChildrenViewCell {
+        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
+
+        // remove left padding in the cell
+        cell.layoutMargins = UIEdgeInsets.zero
+        cell.preservesSuperviewLayoutMargins = false
+
+        cell.selectionStyle = .blue
+
+        cell.populate(item)
+
+        return cell
+    }
+
     override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         self.scrollDragging = false
         self.scrollEverDragged = true
@@ -167,26 +175,45 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private var hasHeader: Bool {
-        get {
-            self.switcherButtonActions.count > 0
-        }
+    override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let swipeActions = self.swipeActions
+                .filter({ $0.side == .leading })
+                .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
+        return UISwipeActionsConfiguration(actions: swipeActions)
     }
 
-    private func configureCellSwipe(_ indexPath: IndexPath, cell: ChildrenViewCell) -> Void {
-        // background of the swipe cell
-        cell.defaultColor = UIColor.systemBackground
+    override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let swipeActions = self.swipeActions
+                .filter({ $0.side == .trailing })
+                .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
+        return UISwipeActionsConfiguration(actions: swipeActions)
+    }
 
-        for action in self.swipeActions {
-            let swipeIconView = UIView()
-            let iconImgView = UIImageView(image: UIImage.fontAwesomeIcon(name: action.icon, style: .solid, textColor: UIColor.white, size: CGSize(width: 30, height: 30)))
-            swipeIconView.addSubview(iconImgView)
-            iconImgView.center = swipeIconView.center
+    private func swipeActionsForRow(swipeAction: EntityListSwipeAction, indexPath: IndexPath) -> UIContextualAction {
+        let index = (indexPath as NSIndexPath).item
+        let item = self.collectionData[index]
+        let doneAction = UIContextualAction(style: swipeAction.style, title: nil) { action, view, completionHandler in
+            swipeAction.handler(item.entity) { [weak self] (completed) in
+                guard let this = self else {
+                    return
+                }
 
-            cell.setSwipeGestureWith(swipeIconView, color: action.color, mode: action.mode, state: action.state) { (scell, state, mode) -> Void in
-                action.handler(cell.entity)
+                if completed && swipeAction.style == .destructive,
+                   let cutItem = this.collectionData.element(at: index),
+                   cutItem.entity.id == item.entity.id {
+
+                    // remove right away from data to make it faster
+                    this.collectionData.remove(at: index)
+                    this.setData(this.collectionData)
+                    completionHandler(true)
+                } else {
+                    completionHandler(completed)
+                }
             }
         }
+        doneAction.backgroundColor = swipeAction.color
+        doneAction.image = swipeAction.iconImage
+        return doneAction
     }
 
     private func convertResults(oldResults: [EntityResult], newResults: [Exocore_Store_EntityResult]) -> [EntityResult] {
@@ -212,7 +239,42 @@ class EntityListViewController: UITableViewController {
     }
 }
 
-class ChildrenViewCell: MCSwipeTableViewCell {
+struct EntityListSwipeAction {
+    let icon: FontAwesome
+    let handler: Handler
+    let color: UIColor
+    let side: SwipeSide
+    let style: UIContextualAction.Style
+
+    fileprivate let iconImage: UIImage
+
+    enum SwipeSide {
+        case leading
+        case trailing
+    }
+
+    typealias Handler = (EntityExt, @escaping (Bool) -> Void) -> Void
+
+    init(action: FontAwesome, color: UIColor, side: SwipeSide, style: UIContextualAction.Style, handler: @escaping Handler) {
+        self.icon = action
+        self.color = color
+        self.side = side
+        self.style = style
+        self.handler = handler
+
+        self.iconImage = ObjectsIcon.icon(forFontAwesome: self.icon, color: UIColor.white, dimension: 30)
+    }
+}
+
+fileprivate class EditableDataSource: UITableViewDiffableDataSource<Int, EntityResult> {
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        // allows swipe actions on the cells
+        // see https://stackoverflow.com/questions/57898044/unable-to-swipe-to-delete-with-tableview-using-diffable-data-source-in-ios-13
+        true
+    }
+}
+
+class ChildrenViewCell: UITableViewCell {
     @IBOutlet weak var title1: UILabel!
     @IBOutlet weak var title2: UILabel!
     @IBOutlet weak var title3: UILabel!
@@ -221,17 +283,20 @@ class ChildrenViewCell: MCSwipeTableViewCell {
 
     var entity: EntityExt!
 
-    fileprivate func populate(_ result: inout EntityResult) {
+    fileprivate func populate(_ result: EntityResult) {
         self.backgroundColor = UIColor.clear
 
         self.entity = result.entity
 
         guard let priorityTrait = result.priorityTrait else {
             self.title1.text = "UNKNOWN ENTITY TRAIT"
+            self.title2.text = ""
+            self.title3.text = ""
+            self.date.text = ""
             return
         }
 
-        let displayName = priorityTrait.displayName
+        let displayName = priorityTrait.strippedDisplayName()
         self.date.text = priorityTrait.modificationDate?.toShort() ?? priorityTrait.creationDate.toShort()
 
         self.title1.font = UIFont.systemFont(ofSize: 14)
@@ -289,29 +354,17 @@ class ChildrenViewCell: MCSwipeTableViewCell {
     }
 }
 
-class ChildrenViewSwipeAction {
-    let icon: FontAwesome
-    let handler: (EntityExt) -> Void
-    let color: UIColor
-    let state: MCSwipeTableViewCellState
-    let mode: MCSwipeTableViewCellMode
-
-    init(action: FontAwesome, color: UIColor, state: MCSwipeTableViewCellState, mode: MCSwipeTableViewCellMode = .exit, handler: @escaping (EntityExt) -> Void) {
-        self.icon = action
-        self.color = color
-        self.state = state
-        self.mode = mode
-        self.handler = handler
-    }
-}
-
-fileprivate struct EntityResult: Equatable {
+fileprivate struct EntityResult: Equatable, Hashable {
     var result: Exocore_Store_EntityResult
     var entity: EntityExt
     var priorityTrait: AnyTraitInstance?
 
     static func ==(lhs: EntityResult, rhs: EntityResult) -> Bool {
         lhs.entity == rhs.entity
+    }
+
+    func hash(into hasher: inout Hasher) {
+        self.result.hash(into: &hasher)
     }
 }
 

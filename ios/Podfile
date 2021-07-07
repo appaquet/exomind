@@ -6,11 +6,9 @@ target 'Exomind' do
   pod 'SwiftyJSON', '~> 4.2'
   pod 'FontAwesome.swift', :git => 'https://github.com/thii/FontAwesome.swift.git', :inhibit_warnings => true
   pod 'UIColor_Hex_Swift', '~> 4.2.0', :inhibit_warnings => true
-  pod 'MCSwipeTableViewCell', :inhibit_warnings => true
   pod 'CLTokenInputView', :inhibit_warnings => true
   pod 'KeychainSwift', '~> 19.0'
   pod 'SnapKit', '~> 4.2.0', :inhibit_warnings => true
-  pod 'Dwifft', '~> 0.9', :inhibit_warnings => true
   pod 'SwiftProtobuf', '~> 1.10'
   pod 'ReachabilitySwift'
   pod 'AppCenter'

@@ -134,7 +134,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
         self.richTextEditor.viewDidLoad()
         self.richTextEditor.delegateScrollTo(self.scrollView)
 
-        self.addLinearView(self.richTextEditor.view, minHeight: self.view.frame.height)
+        self.addLinearView(self.richTextEditor.view)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -269,7 +269,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         UITextField.appearance(whenContainedInInstancesOf: [CLTokenInputView.self]).font = UIFont.systemFont(ofSize: 14)
         self.tokensField = CLTokenInputView()
         self.tokensField.delegate = self
-        self.tokensField.backgroundColor = UIColor.white
+        self.tokensField.backgroundColor = UIColor.systemBackground
         self.headerView = LabelledFieldView(label: self.label, fieldView: self.tokensField, betweenPadding: 0)
     }
 

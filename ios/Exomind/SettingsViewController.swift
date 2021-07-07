@@ -43,7 +43,7 @@ class SettingsViewController: UITableViewController {
     }
 
     private func cellConfig() {
-        RootNavigationController.mainInstance()?.showBootstrap(fromRoot: false)
+        RootViewController.mainInstance()?.showBootstrap()
     }
 
     private func configureExtension() {

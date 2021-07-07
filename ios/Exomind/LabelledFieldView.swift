@@ -28,7 +28,8 @@ class LabelledFieldView: UIView {
         }
 
         let labelView = UILabel()
-        labelView.setContentHuggingPriority(UILayoutPriority.defaultHigh, for: .horizontal)
+        labelView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        labelView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         labelView.text = "\(self.label!):"
         labelView.font = UIFont.systemFont(ofSize: 14)
         labelView.textColor = UIColor.lightGray
@@ -45,6 +46,7 @@ class LabelledFieldView: UIView {
             make.top.equalTo(self.snp.top).offset(betweenPadding)
             make.bottom.equalTo(self.snp.bottom).offset(-betweenPadding - 1) // -1 for border
         }
+        fieldView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         self.snp.makeConstraints { (make) in
             make.height.greaterThanOrEqualTo(labelView.snp.height).offset(betweenPadding * 2)
