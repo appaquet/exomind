@@ -113,7 +113,7 @@
     "@types/react": "^17.0.13",
     "@types/react-dom": "^17.0.8",
     "@types/react-flatpickr": "^3.8.3",
-    "@types/sanitize-html": "^2.3.1",
+    "@types/sanitize-html": "^2.3.2",
     "@typescript-eslint/eslint-plugin": "^4.28.1",
     "@typescript-eslint/parser": "^4.28.1",
     "babel-loader": "^8.2.2",
