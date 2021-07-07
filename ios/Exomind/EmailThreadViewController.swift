@@ -109,7 +109,6 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         self.headerView.load(thread: self.thread)
         self.sizeTableHeader()
 
-        self.perform(#selector(navigateFirstNonRead), with: nil, afterDelay: 0.01)
         self.perform(#selector(navigateFirstNonRead), with: nil, afterDelay: 0.1)
         self.perform(#selector(navigateFirstNonRead), with: nil, afterDelay: 0.5)
         self.perform(#selector(navigateFirstNonRead), with: nil, afterDelay: 1.0)
