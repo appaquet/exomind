@@ -13,13 +13,11 @@ if [[ -d $CUR_DIR/../target ]]; then
   find $CUR_DIR/../target -name "*.gc*" -delete
 fi
 
-export RUSTUP_TOOLCHAIN=nightly-2021-04-07 # if changed, change in push-tester.yml. Use https://rust-lang.github.io/rustup-components-history/ to get a nightly with all components
+export RUSTUP_TOOLCHAIN=nightly-2021-07-06 # if changed, change in push-tester.yml. Use https://rust-lang.github.io/rustup-components-history/ to get a nightly with all components
 
 export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
-
-export CARGO_OPTIONS="--all --all-features --exclude=exo --exclude=exocore-client-web"
-export CARGO_OPTIONS="$CARGO_OPTIONS --exclude=exocore-client-android --exclude=exocore-client-c --exclude=exocore-apps-macros"
+export CARGO_OPTIONS="--all --all-features --exclude=exo --exclude=exocore-client-web --exclude=exocore-client-android --exclude=exocore-client-c --exclude=exocore-apps-macros"
 
 cd $CUR_DIR/../
 cargo clean -p exocore-protos
@@ -31,7 +29,7 @@ zip -0 $COVERAGE_DIR/ccov.zip `find . \( -name "*exocore*.gc*" \) -print`;
 grcov $COVERAGE_DIR/ccov.zip -s . -t lcov --llvm -o $COVERAGE_DIR/lcov.info \
 	--ignore-not-existing \
 	--ignore "clients/*" \
-	--ignore "cli/*" \
+	--ignore "exo/*" \
 	--ignore "/*" \
 	--ignore "protos/src/generated/*"
 

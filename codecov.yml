@@ -1,7 +1,5 @@
 # See: https://docs.codecov.io/docs/codecov-yaml
 
-comment: false
-
 coverage:
   status:
     project:

@@ -102,14 +102,14 @@ jobs:
 
       - uses: actions-rs/toolchain@v1.0.7
         with:
-          toolchain: nightly-2021-04-07
+          toolchain: nightly-2021-07-06
           profile: minimal
 
       - uses: Swatinem/rust-cache@v1
 
       - name: Install grcov
         run: |
-          curl -L https://github.com/mozilla/grcov/releases/download/v0.7.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
+          curl -L https://github.com/mozilla/grcov/releases/download/v0.8.0/grcov-linux-x86_64.tar.bz2 | tar jxf -
           echo `pwd` >> $GITHUB_PATH
 
       - name: Test coverage

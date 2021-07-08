@@ -30,3 +30,14 @@ pub fn build_info_str() -> String {
         info.rust_version,
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn build_info_smoke_test() {
+        let info = build_info_str();
+        assert!(!info.is_empty());
+    }
+}

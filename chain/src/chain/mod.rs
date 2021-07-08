@@ -52,18 +52,6 @@ pub struct Segment {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Segments(pub Vec<Segment>);
 
-impl From<Vec<Segment>> for Segments {
-    fn from(segments: Vec<Segment>) -> Self {
-        Segments(segments)
-    }
-}
-
-impl From<Segments> for Vec<Segment> {
-    fn from(s: Segments) -> Self {
-        s.0
-    }
-}
-
 impl Segments {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
