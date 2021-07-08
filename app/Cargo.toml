@@ -7,14 +7,14 @@ keywords = ["knowledge-management", "mobile", "decentralized", "webapp"]
 license = "Apache-2.0"
 name = "exomind-app"
 repository = "https://github.com/appaquet/exomind"
-version = "0.1.4"
+version = "0.1.5"
 
 [lib]
 crate-type = ['cdylib']
 
 [dependencies]
 anyhow = "1.0"
-exocore = {version = "0.1.9", default-features = false, features = ["apps-sdk"]}
-exomind-protos = {version = "0.1.4", path = "../protos"}
+exocore = {version = "0.1.10", default-features = false, features = ["apps-sdk"]}
+exomind-protos = {version = "0.1.5", path = "../protos"}
 futures = "0.3"
 log = "0.4"
