@@ -109,7 +109,7 @@
     "@types/jest": "^26.0.24",
     "@types/linkifyjs": "^2.1.4",
     "@types/lodash": "^4.14.171",
-    "@types/node": "^16.0.0",
+    "@types/node": "^16.0.1",
     "@types/react": "^17.0.13",
     "@types/react-dom": "^17.0.9",
     "@types/react-flatpickr": "^3.8.3",
