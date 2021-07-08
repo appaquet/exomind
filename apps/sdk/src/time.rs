@@ -211,6 +211,6 @@ mod tests {
         // timer should have been triggered and 10ms or more should have elapsed
         let after_time = receiver_after.await.unwrap();
         let time_diff = (after_time - before_time).unwrap();
-        assert!(time_diff.as_millis() > 10);
+        assert!(time_diff.as_millis() >= 10);
     }
 }
