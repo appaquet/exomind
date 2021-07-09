@@ -1458,10 +1458,10 @@
   resolved "https://registry.yarnpkg.com/@types/domhandler/-/domhandler-2.4.2.tgz#5182cf74599b53a583146e13b0a68070b5f456f8"
   integrity sha512-T6Fx2wcgCMGYAgXsWuc73FJe10QiBdfb0T9abSAMNYYJfxZpVNVlLvwpCuY71OMA0IdZhxpEwjhJpOUVmIEgnQ==
 
-"@types/draft-convert@^2.1.3":
-  version "2.1.3"
-  resolved "https://registry.yarnpkg.com/@types/draft-convert/-/draft-convert-2.1.3.tgz#157fd7f112a29790b7f3544dd7c0d99ad0b18647"
-  integrity sha512-BKe17m4tkkOf8j6EJvAeN73O/v7zuH/Z6P/MVOxouAbytFujyZWK7MXIWrtIPNHM0PxmTfw8B35XfsV7722smw==
+"@types/draft-convert@^2.1.4":
+  version "2.1.4"
+  resolved "https://registry.yarnpkg.com/@types/draft-convert/-/draft-convert-2.1.4.tgz#8f32f86133eca5ddfede46d31a40ba6c964f605f"
+  integrity sha512-NbhE0ijzENK6ZQa3zO0KK6cNS80XESnQ03Bg7DEzE/qBg6YvpIEni6vzruYCYPkm1Sc6z0K7XbtJu4p53elGdA==
   dependencies:
     "@types/draft-js" "*"
     "@types/react" "*"
