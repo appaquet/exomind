@@ -12,6 +12,7 @@ target 'Exomind' do
   pod 'SwiftProtobuf', '~> 1.10'
   pod 'ReachabilitySwift'
   pod 'AppCenter'
+  pod 'Introspect'
 
   pod 'Exocore', '0.1.10'
   # pod 'Exocore', :path => '../../exocore'

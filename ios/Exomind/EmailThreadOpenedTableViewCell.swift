@@ -6,7 +6,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
     @IBOutlet weak var title: UILabel!
     @IBOutlet weak var to: UILabel!
 
-    private weak var threadView: EmailThreadViewController!
+    private weak var threadView: EmailThreadViewController?
 
     private var index: Int?
     private var email: TraitInstance<Exomind_Base_Email>?
@@ -20,7 +20,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
 
         self.webView.initialize()
         self.webView.onHeightChange = { [weak self] height in
-            self?.threadView.refreshHeights()
+            self?.threadView?.refreshHeights()
         }
 
         self.webView.onLoaded = { [weak self] in
@@ -29,7 +29,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
                 return
             }
 
-            this.threadView.onEmailWebviewLoaded(emailIndex)
+            this.threadView?.onEmailWebviewLoaded(emailIndex)
         }
     }
 

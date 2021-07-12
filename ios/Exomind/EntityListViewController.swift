@@ -1,6 +1,7 @@
 import UIKit
 import FontAwesome_swift
 import Exocore
+import SwiftUI
 
 class EntityListViewController: UITableViewController {
     private var query: ExpandableQuery?
@@ -33,6 +34,12 @@ class EntityListViewController: UITableViewController {
         super.viewDidLoad()
         self.tableView.dataSource = self.datasource
         self.tableView.delegate = self
+
+        // enable cell autolayout
+        self.tableView.rowHeight = UITableView.automaticDimension
+        self.tableView.estimatedRowHeight = 100
+
+        self.tableView.register(EntityListViewCellHost.self, forCellReuseIdentifier: "cell")
     }
 
     func setSwipeActions(_ actions: [EntityListSwipeAction]) {
@@ -143,18 +150,47 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private func createCell(_ indexPath: IndexPath, item: EntityResult) -> ChildrenViewCell {
-        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
+    private func createCell(_ indexPath: IndexPath, item: EntityResult) -> EntityListViewCellHost {
+//        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
+//
+//        // remove left padding in the cell
+//        cell.layoutMargins = UIEdgeInsets.zero
+//        cell.preservesSuperviewLayoutMargins = false
+//
+//        cell.selectionStyle = .blue
+//
+//        cell.populate(item)
+//
+//        return cell
 
-        // remove left padding in the cell
-        cell.layoutMargins = UIEdgeInsets.zero
-        cell.preservesSuperviewLayoutMargins = false
+//        let cell = EntityListViewCellHost(parent: self)
+//        self.addChild(cell.inner)
 
-        cell.selectionStyle = .blue
+        let tableViewCell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! EntityListViewCellHost
 
-        cell.populate(item)
+        let view = EntityListViewCell()
 
-        return cell
+        // From https://stackoverflow.com/questions/59881164/uitableview-with-uiviewrepresentable-in-swiftui
+
+        // create & setup hosting controller only once
+        if tableViewCell.host == nil {
+            let controller = UIHostingController(rootView: AnyView(view))
+            tableViewCell.host = controller
+
+            let tableCellViewContent = controller.view!
+            tableCellViewContent.translatesAutoresizingMaskIntoConstraints = false
+            tableViewCell.contentView.addSubview(tableCellViewContent)
+            tableCellViewContent.topAnchor.constraint(equalTo: tableViewCell.contentView.topAnchor).isActive = true
+            tableCellViewContent.leftAnchor.constraint(equalTo: tableViewCell.contentView.leftAnchor).isActive = true
+            tableCellViewContent.bottomAnchor.constraint(equalTo: tableViewCell.contentView.bottomAnchor).isActive = true
+            tableCellViewContent.rightAnchor.constraint(equalTo: tableViewCell.contentView.rightAnchor).isActive = true
+        } else {
+            // reused cell, so just set other SwiftUI root view
+            tableViewCell.host?.rootView = AnyView(view)
+        }
+        tableViewCell.setNeedsLayout()
+
+        return tableViewCell
     }
 
     override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
