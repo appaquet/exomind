@@ -118,7 +118,7 @@
     "@typescript-eslint/parser": "^4.28.3",
     "babel-loader": "^8.2.2",
     "cookie-parser": "^1.4.5",
-    "css-loader": "^5.2.6",
+    "css-loader": "^5.2.7",
     "electron": "^13.1.6",
     "electron-builder": "^22.11.7",
     "electron-webpack": "^2.8.2",
