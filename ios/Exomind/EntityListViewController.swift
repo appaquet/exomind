@@ -307,12 +307,12 @@ fileprivate func cellDataFromResult(_ result: EntityResult) -> EntityListCellDat
 
     switch priorityTrait.typeInstance() {
     case let .email(email):
-        return EntityListCellData(image: image, date: date, color: color, title: EmailsLogic.formatContact(email.message.from), subtitle: displayName, text: email.message.snippet)
+        return EntityListCellData(image: image, date: date, color: color, title: Emails.formatContact(email.message.from), subtitle: displayName, text: email.message.snippet)
 
     case let .emailThread(emailThread):
         let emails = entity.traitsOfType(Exomind_Base_Email.self)
 
-        var title = EmailsLogic.formatContact(emailThread.message.from)
+        var title = Emails.formatContact(emailThread.message.from)
         if emails.count > 1 {
             title = "\(title) (\(emails.count))"
         }

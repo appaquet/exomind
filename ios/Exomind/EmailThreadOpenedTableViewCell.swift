@@ -45,10 +45,10 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
         self.index = index
         self.shouldRender = renderEmail
 
-        self.title.text = EmailsLogic.formatContact(email.message.from)
+        self.title.text = Emails.formatContact(email.message.from)
         self.date.text = email.message.receivedDate.date.toShort()
         let emailJoined = (email.message.to + email.message.cc).map {
-            EmailsLogic.formatContact($0)
+            Emails.formatContact($0)
         }
         self.to.text = "to \(emailJoined.joined(separator: ", "))"
 
@@ -73,7 +73,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
 
         self.title.text = "Draft email"
         let emailJoined = (draft.message.to + draft.message.cc).map {
-            EmailsLogic.formatContact($0)
+            Emails.formatContact($0)
         }
         self.to.text = "to \(emailJoined.joined(separator: ", "))"
 

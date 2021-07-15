@@ -45,7 +45,7 @@ class RootViewController: UIViewController {
         if (!onTabBar) {
             let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "tabBarViewController")
             self.changeVC(vc)
-            NotificationsController.maybeRegister()
+            Notifications.maybeRegister()
         }
     }
 

@@ -25,10 +25,10 @@ class TimeSelectionViewController: ModalGridViewController {
     }
 
     private func initChoicesView() {
-        let choices = TimeLogic.getLaterChoices()
+        let choices = Snoozing.getLaterChoices()
         let gridItems = choices.map {
             choice -> GridIconsViewItem in
-            let fa = ObjectsIcon.faIcon(forName: TimeLogic.getLaterIcon(choice.key))
+            let fa = ObjectsIcon.faIcon(forName: Snoozing.getLaterIcon(choice.key))
             return GridIconsViewItem(label: choice.copy, icon: fa, callback: {
                 [weak self] (item) -> () in
                 self?.handleChoiceSelection(choice)
@@ -83,7 +83,7 @@ class TimeSelectionViewController: ModalGridViewController {
         if (key == "pick") {
             self.showPickerView()
         } else {
-            self.value = TimeLogic.textDiffToDate(key)
+            self.value = Snoozing.textDiffToDate(key)
             self.callback?(self.value)
             self.close()
         }

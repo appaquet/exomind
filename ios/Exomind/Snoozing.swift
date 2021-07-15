@@ -1,8 +1,7 @@
 import Foundation
 import JavaScriptCore
 
-class TimeLogic {
-
+class Snoozing {
     static func getLaterChoices() -> [LaterTimeChoice] {
         let builderFunc = JSBridge.instance.jsContext.evaluateScript("exomind.dateUtil.getSnoozeChoices")
         let choices = builderFunc?.call(withArguments: [])
