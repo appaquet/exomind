@@ -37,7 +37,7 @@ class EntityListViewController: UITableViewController {
 
         // enable cell autolayout
         self.tableView.rowHeight = UITableView.automaticDimension
-        self.tableView.estimatedRowHeight = 100
+        self.tableView.estimatedRowHeight = 60
 
         self.tableView.register(EntityListViewCellHost.self, forCellReuseIdentifier: "cell")
     }
@@ -151,44 +151,26 @@ class EntityListViewController: UITableViewController {
     }
 
     private func createCell(_ indexPath: IndexPath, item: EntityResult) -> EntityListViewCellHost {
-//        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
-//
-//        // remove left padding in the cell
-//        cell.layoutMargins = UIEdgeInsets.zero
-//        cell.preservesSuperviewLayoutMargins = false
-//
-//        cell.selectionStyle = .blue
-//
-//        cell.populate(item)
-//
-//        return cell
+        // TODO: Get reusing back by calculating sizes ahead of time and reuse cells of same height
+        //       tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! EntityListViewCellHost
 
-//        let cell = EntityListViewCellHost(parent: self)
-//        self.addChild(cell.inner)
+        let tableViewCell = EntityListViewCellHost()
 
-        let tableViewCell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! EntityListViewCellHost
-
-        let view = EntityListViewCell()
+        let data = cellDataFromResult(item)
+        let view = EntityListViewCell(data: data)
 
         // From https://stackoverflow.com/questions/59881164/uitableview-with-uiviewrepresentable-in-swiftui
-
-        // create & setup hosting controller only once
-        if tableViewCell.host == nil {
-            let controller = UIHostingController(rootView: AnyView(view))
-            tableViewCell.host = controller
-
-            let tableCellViewContent = controller.view!
-            tableCellViewContent.translatesAutoresizingMaskIntoConstraints = false
-            tableViewCell.contentView.addSubview(tableCellViewContent)
-            tableCellViewContent.topAnchor.constraint(equalTo: tableViewCell.contentView.topAnchor).isActive = true
-            tableCellViewContent.leftAnchor.constraint(equalTo: tableViewCell.contentView.leftAnchor).isActive = true
-            tableCellViewContent.bottomAnchor.constraint(equalTo: tableViewCell.contentView.bottomAnchor).isActive = true
-            tableCellViewContent.rightAnchor.constraint(equalTo: tableViewCell.contentView.rightAnchor).isActive = true
-        } else {
-            // reused cell, so just set other SwiftUI root view
-            tableViewCell.host?.rootView = AnyView(view)
-        }
+        let controller = UIHostingController(rootView: AnyView(view))
+        tableViewCell.host = controller
+        let tableCellViewContent = controller.view!
+        tableCellViewContent.translatesAutoresizingMaskIntoConstraints = false
+        tableViewCell.contentView.addSubview(tableCellViewContent)
+        tableCellViewContent.topAnchor.constraint(equalTo: tableViewCell.contentView.topAnchor).isActive = true
+        tableCellViewContent.leftAnchor.constraint(equalTo: tableViewCell.contentView.leftAnchor).isActive = true
+        tableCellViewContent.bottomAnchor.constraint(equalTo: tableViewCell.contentView.bottomAnchor).isActive = true
+        tableCellViewContent.rightAnchor.constraint(equalTo: tableViewCell.contentView.rightAnchor).isActive = true
         tableViewCell.setNeedsLayout()
+        tableViewCell.layoutIfNeeded()
 
         return tableViewCell
     }
@@ -310,83 +292,53 @@ fileprivate class EditableDataSource: UITableViewDiffableDataSource<Int, EntityR
     }
 }
 
-class ChildrenViewCell: UITableViewCell {
-    @IBOutlet weak var title1: UILabel!
-    @IBOutlet weak var title2: UILabel!
-    @IBOutlet weak var title3: UILabel!
-    @IBOutlet weak var date: UILabel!
-    @IBOutlet weak var icon: UIImageView!
+fileprivate func cellDataFromResult(_ result: EntityResult) -> EntityListCellData {
+    guard let priorityTrait = result.priorityTrait else {
+        let img = ObjectsIcon.icon(forFontAwesome: .question, color: .white, dimension: 24)
+        return EntityListCellData(image: img, date: result.entity.anyDate, color: UIColor.red, title: "UNKNOWN ENTITY TRAIT")
+    }
 
-    var entity: EntityExt!
+    let entity = result.entity
+    let displayName = priorityTrait.strippedDisplayName()
+    let image = ObjectsIcon.icon(forAnyTrait: priorityTrait, color: UIColor.white, dimension: CGFloat(24))
+    let date = priorityTrait.modificationDate ?? priorityTrait.creationDate
+    let color = Stylesheet.objectColor(forId: priorityTrait.constants?.color ?? 0)
 
-    fileprivate func populate(_ result: EntityResult) {
-        self.backgroundColor = UIColor.clear
 
-        self.entity = result.entity
+    switch priorityTrait.typeInstance() {
+    case let .email(email):
+        return EntityListCellData(image: image, date: date, color: color, title: EmailsLogic.formatContact(email.message.from), subtitle: displayName, text: email.message.snippet)
 
-        guard let priorityTrait = result.priorityTrait else {
-            self.title1.text = "UNKNOWN ENTITY TRAIT"
-            self.title2.text = ""
-            self.title3.text = ""
-            self.date.text = ""
-            return
+    case let .emailThread(emailThread):
+        let emails = entity.traitsOfType(Exomind_Base_Email.self)
+
+        var title = EmailsLogic.formatContact(emailThread.message.from)
+        if emails.count > 1 {
+            title = "\(title) (\(emails.count))"
         }
 
-        let displayName = priorityTrait.strippedDisplayName()
-        self.date.text = priorityTrait.modificationDate?.toShort() ?? priorityTrait.creationDate.toShort()
-
-        self.title1.font = UIFont.systemFont(ofSize: 14)
-        self.title2.font = UIFont.systemFont(ofSize: 14)
-        self.title3.font = UIFont.systemFont(ofSize: 14)
-
-        switch priorityTrait.typeInstance() {
-        case let .email(email):
-            self.title1.text = EmailsLogic.formatContact(email.message.from)
-            self.title2.text = displayName
-            self.title3.text = email.message.snippet
-
-        case let .emailThread(emailThread):
-            let emails = entity.traitsOfType(Exomind_Base_Email.self)
-
-            self.title1.text = EmailsLogic.formatContact(emailThread.message.from)
-            if emails.count > 1 {
-                self.title1.text = "\(self.title1.text!) (\(emails.count))"
-            }
-
-            if !emailThread.message.read {
-                self.title1.font = UIFont.boldSystemFont(ofSize: 14)
-                self.title2.font = UIFont.boldSystemFont(ofSize: 14)
-                self.title3.font = UIFont.boldSystemFont(ofSize: 14)
-            }
-
-            let lastEmail = emails.max(by: { (a, b) -> Bool in
-                let aDate = a.modificationDate ?? a.creationDate
-                let bDate = b.modificationDate ?? b.creationDate
-                return aDate < bDate
-            })
-
-            if let lastEmail = lastEmail {
-                self.date.text = lastEmail.modificationDate?.toShort() ?? lastEmail.creationDate.toShort()
-            }
-
-            self.title2.text = displayName
-            self.title3.text = emailThread.message.snippet
-
-        case let .draftEmail(draftEmail):
-            self.title1.text = "Me"
-            self.title2.text = draftEmail.displayName
-            self.title3.text = ""
-
-        default:
-            self.title1.text = " "
-            self.title2.text = displayName
-            self.title3.text = " "
+        if !emailThread.message.read {
+            // TODO: Handle this
         }
 
-        self.icon.image = ObjectsIcon.icon(forAnyTrait: priorityTrait, color: UIColor.white, dimension: CGFloat(24))
-        self.icon.backgroundColor = Stylesheet.objectColor(forId: priorityTrait.constants?.color ?? 0)
-        self.icon.contentMode = UIView.ContentMode.center
-        self.icon.layer.cornerRadius = 22
+        let lastEmail = emails.max(by: { (a, b) -> Bool in
+            let aDate = a.modificationDate ?? a.creationDate
+            let bDate = b.modificationDate ?? b.creationDate
+            return aDate < bDate
+        })
+
+        var emailDate = date
+        if let lastEmail = lastEmail {
+            emailDate = lastEmail.modificationDate ?? lastEmail.creationDate
+        }
+
+        return EntityListCellData(image: image, date: emailDate, color: color, title: title, subtitle: displayName, text: emailThread.message.snippet)
+
+    case let .draftEmail(draftEmail):
+        return EntityListCellData(image: image, date: date, color: color, title: "Me", subtitle: draftEmail.displayName)
+
+    default:
+        return EntityListCellData(image: image, date: date, color: color, title: displayName)
     }
 }
 
@@ -403,4 +355,3 @@ fileprivate struct EntityResult: Equatable, Hashable {
         self.result.hash(into: &hasher)
     }
 }
-

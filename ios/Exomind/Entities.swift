@@ -21,10 +21,11 @@ class EntityExt {
 
     var creationDate: Date
     var modificationDate: Date?
-    var anyDate: Date?
+    var anyDate: Date
 
     init(entity: Exocore_Store_Entity) {
         self.inner = entity
+        self.anyDate = Date()
 
         var priorityTrait: (Exocore_Store_Trait, TraitConstants)?
 
