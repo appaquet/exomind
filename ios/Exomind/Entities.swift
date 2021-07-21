@@ -64,7 +64,7 @@ class EntityExt {
                 priorityTrait = (trait, traitConstants)
             }
 
-            // TODO: Should be moved to exocore
+            // TODO: This logic is not right !!
             let creationDate = trait.creationDate.date
             let modificationDate = trait.modificationDate.date
             if trait.hasCreationDate && creationDate < oldestDate ?? Date() {
@@ -178,10 +178,9 @@ protocol AnyTraitInstance {
     var constants: TraitConstants? { get }
     var type: TraitType? { get }
     var displayName: String { get }
+    var strippedDisplayName: String { get }
     var creationDate: Date { get }
     var modificationDate: Date? { get }
-
-    func strippedDisplayName() -> String
 
     func typeInstance() -> TraitTypeInstance?
 }
@@ -271,11 +270,13 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
         self.entity?.trait(anyWithId: self.id)
     }
 
-    func strippedDisplayName() -> String {
-        if let constants = self.constants {
-            return TraitInstance.getDisplayName(constants: constants, message: message, strip: true)
-        } else {
-            return "*UNKNOWN*"
+    var strippedDisplayName: String {
+        get {
+            if let constants = self.constants {
+                return TraitInstance.getDisplayName(constants: constants, message: message, strip: true)
+            } else {
+                return "*UNKNOWN*"
+            }
         }
     }
 

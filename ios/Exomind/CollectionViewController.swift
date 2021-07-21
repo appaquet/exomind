@@ -26,7 +26,9 @@ class CollectionViewController: UIViewController, EntityTraitView {
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 
-        self.entityListViewController.setItemClickHandler { [weak self] in
+        self.entityListViewController.setClickHandlers { [weak self] in
+            self?.handleItemClick($0)
+        } collectionClick: { [weak self] in
             self?.handleItemClick($0)
         }
 

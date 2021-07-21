@@ -9,6 +9,7 @@ class EntityListViewController: UITableViewController {
 
     private var collectionData: [EntityResult] = []
     private var itemClickHandler: ((EntityExt) -> Void)?
+    private var collectionClickHandler: ((EntityExt) -> Void)?
     private var swipeActions: [EntityListSwipeAction] = []
 
     private var switcherButton: SwitcherButton?
@@ -21,7 +22,7 @@ class EntityListViewController: UITableViewController {
 
     private lazy var datasource: EditableDataSource = {
         var ds = EditableDataSource(tableView: self.tableView) { [weak self] tableView, indexPath, item in
-            self?.createCell(indexPath, item: item)
+            self?.createCell(indexPath, result: item)
         }
 
         // all animations are just weird, but there still seems to be some kind of animation that is good enough
@@ -46,8 +47,9 @@ class EntityListViewController: UITableViewController {
         self.swipeActions = actions
     }
 
-    func setItemClickHandler(_ handler: @escaping (EntityExt) -> Void) {
-        self.itemClickHandler = handler
+    func setClickHandlers(_ itemClick: @escaping (EntityExt) -> Void, collectionClick: @escaping (EntityExt) -> Void) {
+        self.itemClickHandler = itemClick
+        self.collectionClickHandler = collectionClick
     }
 
     func setSwitcherActions(_ actions: [SwitcherButtonAction]) {
@@ -150,31 +152,6 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private func createCell(_ indexPath: IndexPath, item: EntityResult) -> EntityListViewCellHost {
-        // TODO: Get reusing back by calculating sizes ahead of time and reuse cells of same height
-        //       tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! EntityListViewCellHost
-
-        let tableViewCell = EntityListViewCellHost()
-
-        let data = cellDataFromResult(item)
-        let view = EntityListViewCell(data: data)
-
-        // From https://stackoverflow.com/questions/59881164/uitableview-with-uiviewrepresentable-in-swiftui
-        let controller = UIHostingController(rootView: AnyView(view))
-        tableViewCell.host = controller
-        let tableCellViewContent = controller.view!
-        tableCellViewContent.translatesAutoresizingMaskIntoConstraints = false
-        tableViewCell.contentView.addSubview(tableCellViewContent)
-        tableCellViewContent.topAnchor.constraint(equalTo: tableViewCell.contentView.topAnchor).isActive = true
-        tableCellViewContent.leftAnchor.constraint(equalTo: tableViewCell.contentView.leftAnchor).isActive = true
-        tableCellViewContent.bottomAnchor.constraint(equalTo: tableViewCell.contentView.bottomAnchor).isActive = true
-        tableCellViewContent.rightAnchor.constraint(equalTo: tableViewCell.contentView.rightAnchor).isActive = true
-        tableViewCell.setNeedsLayout()
-        tableViewCell.layoutIfNeeded()
-
-        return tableViewCell
-    }
-
     override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         self.scrollDragging = false
         self.scrollEverDragged = true
@@ -187,6 +164,7 @@ class EntityListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        self.tableView.deselectRow(at: indexPath, animated: false)
         let res = self.collectionData[(indexPath as NSIndexPath).item]
         if let handler = self.itemClickHandler {
             handler(res.entity)
@@ -205,6 +183,42 @@ class EntityListViewController: UITableViewController {
                 .filter({ $0.side == .trailing })
                 .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
         return UISwipeActionsConfiguration(actions: swipeActions)
+    }
+
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let index = (indexPath as NSIndexPath).item
+        let entity = self.collectionData[index]
+
+        if entity.collections.isEmpty {
+            return 75
+        } else {
+            return 99
+        }
+    }
+
+    private func createCell(_ indexPath: IndexPath, result: EntityResult) -> EntityListViewCellHost {
+        // TODO: Get reusing back by calculating sizes ahead of time and reuse cells of same height
+        //       tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! EntityListViewCellHost
+
+        let tableViewCell = EntityListViewCellHost()
+
+        let data = cellDataFromResult(result, parentId: self.parentId)
+        let view = EntityListViewCell(data: data)
+
+        // From https://stackoverflow.com/questions/59881164/uitableview-with-uiviewrepresentable-in-swiftui
+        let controller = UIHostingController(rootView: AnyView(view))
+        tableViewCell.host = controller
+        let tableCellViewContent = controller.view!
+        tableCellViewContent.translatesAutoresizingMaskIntoConstraints = false
+        tableViewCell.contentView.addSubview(tableCellViewContent)
+        tableCellViewContent.topAnchor.constraint(equalTo: tableViewCell.contentView.topAnchor).isActive = true
+        tableCellViewContent.leftAnchor.constraint(equalTo: tableViewCell.contentView.leftAnchor).isActive = true
+        tableCellViewContent.bottomAnchor.constraint(equalTo: tableViewCell.contentView.bottomAnchor).isActive = true
+        tableCellViewContent.rightAnchor.constraint(equalTo: tableViewCell.contentView.rightAnchor).isActive = true
+        tableViewCell.setNeedsLayout()
+        tableViewCell.layoutIfNeeded()
+
+        return tableViewCell
     }
 
     private func swipeActionsForRow(swipeAction: EntityListSwipeAction, indexPath: IndexPath) -> UIContextualAction {
@@ -248,12 +262,21 @@ class EntityListViewController: UITableViewController {
                 return current
             }
 
-            return EntityResult(result: res, entity: entity, priorityTrait: entity.priorityTrait)
+            let onCollectionClick: (EntityExt) -> Void = { [weak self] collection in
+                self?.collectionClickHandler?(collection)
+            }
+            let collections = Collections.instance.entityParentsPillData(entity: entity, onCollectionClick: onCollectionClick)
+                    .filter { pillData in
+                        // exclude pill if it's from the collection we're showing
+                        parentId != pillData.id
+                    }
+
+            return EntityResult(result: res, entity: entity, priorityTrait: entity.priorityTrait, collections: collections)
         }
     }
 
     deinit {
-        print("EntityViewController > Deinit")
+        print("EntityListViewController > Deinit")
     }
 }
 
@@ -292,22 +315,21 @@ fileprivate class EditableDataSource: UITableViewDiffableDataSource<Int, EntityR
     }
 }
 
-fileprivate func cellDataFromResult(_ result: EntityResult) -> EntityListCellData {
+fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?) -> EntityListCellData {
     guard let priorityTrait = result.priorityTrait else {
         let img = ObjectsIcon.icon(forFontAwesome: .question, color: .white, dimension: 24)
         return EntityListCellData(image: img, date: result.entity.anyDate, color: UIColor.red, title: "UNKNOWN ENTITY TRAIT")
     }
 
     let entity = result.entity
-    let displayName = priorityTrait.strippedDisplayName()
+    let displayName = priorityTrait.strippedDisplayName
     let image = ObjectsIcon.icon(forAnyTrait: priorityTrait, color: UIColor.white, dimension: CGFloat(24))
     let date = priorityTrait.modificationDate ?? priorityTrait.creationDate
     let color = Stylesheet.objectColor(forId: priorityTrait.constants?.color ?? 0)
 
-
     switch priorityTrait.typeInstance() {
     case let .email(email):
-        return EntityListCellData(image: image, date: date, color: color, title: Emails.formatContact(email.message.from), subtitle: displayName, text: email.message.snippet)
+        return EntityListCellData(image: image, date: date, color: color, title: Emails.formatContact(email.message.from), subtitle: displayName, text: email.message.snippet, collections: result.collections)
 
     case let .emailThread(emailThread):
         let emails = entity.traitsOfType(Exomind_Base_Email.self)
@@ -332,23 +354,24 @@ fileprivate func cellDataFromResult(_ result: EntityResult) -> EntityListCellDat
             emailDate = lastEmail.modificationDate ?? lastEmail.creationDate
         }
 
-        return EntityListCellData(image: image, date: emailDate, color: color, title: title, subtitle: displayName, text: emailThread.message.snippet)
+        return EntityListCellData(image: image, date: emailDate, color: color, title: title, subtitle: displayName, text: emailThread.message.snippet, collections: result.collections)
 
     case let .draftEmail(draftEmail):
-        return EntityListCellData(image: image, date: date, color: color, title: "Me", subtitle: draftEmail.displayName)
+        return EntityListCellData(image: image, date: date, color: color, title: "Me", subtitle: draftEmail.displayName, collections: result.collections)
 
     default:
-        return EntityListCellData(image: image, date: date, color: color, title: displayName)
+        return EntityListCellData(image: image, date: date, color: color, title: displayName, collections: result.collections)
     }
 }
 
 fileprivate struct EntityResult: Equatable, Hashable {
-    var result: Exocore_Store_EntityResult
-    var entity: EntityExt
-    var priorityTrait: AnyTraitInstance?
+    let result: Exocore_Store_EntityResult
+    let entity: EntityExt
+    let priorityTrait: AnyTraitInstance?
+    let collections: [CollectionPillData]
 
     static func ==(lhs: EntityResult, rhs: EntityResult) -> Bool {
-        lhs.entity == rhs.entity
+        lhs.result == rhs.result
     }
 
     func hash(into hasher: inout Hasher) {

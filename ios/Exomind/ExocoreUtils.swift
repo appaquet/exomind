@@ -35,6 +35,7 @@ class ExocoreUtils {
 
         if let node = self.node, self.nodeHasCell {
             try ExocoreClient.initialize(node: node)
+            NotificationCenter.default.post(name: .exocoreNodeReset, object: nil)
         } else {
             print("ExocoreUtils > No node or cell configured")
         }
@@ -62,4 +63,8 @@ class ExocoreUtils {
             return false
         }
     }
+}
+
+extension Notification.Name {
+    static let exocoreNodeReset = Notification.Name("exocoreNodeReset")
 }

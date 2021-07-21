@@ -13,6 +13,7 @@ class RootViewController: UIViewController {
 
     override func viewDidLoad() {
         self.showStateView()
+        NotificationCenter.default.addObserver(self, selector: #selector(onCollectionsChanged), name: .exomindCollectionsChanged, object: nil)
     }
 
     func show(navigationObject: NavigationObject) {
@@ -24,6 +25,7 @@ class RootViewController: UIViewController {
     func showBootstrap() {
         let onBootstrap = self.currentView as? BootstrapViewController != nil
         if (!onBootstrap) {
+            print("RootViewController > Changing to bootstrap view")
             let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "bootstrapViewController") as! BootstrapViewController
             vc.onDone = { [weak self] in
                 self?.showStateView()
@@ -32,17 +34,26 @@ class RootViewController: UIViewController {
         }
     }
 
-    private func showStateView() {
-        if !ExocoreUtils.nodeHasCell {
-            self.showBootstrap()
-        } else {
-            self.showTabBar()
+    @objc private func onCollectionsChanged() {
+        DispatchQueue.main.async {
+            self.showStateView()
         }
     }
 
-    private func showTabBar() {
-        let onTabBar = self.currentView as? TabBarController != nil
-        if (!onTabBar) {
+    private func showStateView() {
+        if !ExocoreUtils.nodeHasCell {
+            self.showBootstrap()
+        } else if !Collections.instance.loaded {
+            // TODO: Show loading
+        } else {
+            self.showApplication()
+        }
+    }
+
+    private func showApplication() {
+        let onApplication = self.currentView as? TabBarController != nil
+        if (!onApplication) {
+            print("RootViewController > Changing to main application")
             let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "tabBarViewController")
             self.changeVC(vc)
             Notifications.maybeRegister()
@@ -51,7 +62,7 @@ class RootViewController: UIViewController {
 
     private func changeVC(_ vc: UIViewController) {
         self.currentView?.removeFromParent()
-        self.currentView = nil
+        self.currentView = vc
 
         self.addChild(vc)
         vc.view.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: self.view.frame.size.height);

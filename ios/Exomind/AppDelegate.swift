@@ -80,7 +80,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("AppDelegate > App active")
     }
 
-    func startNetworkMonitoring() {
+    private var previousReachability: Reachability?
+    private func startNetworkMonitoring() {
         self.reach = try? Reachability()
         self.reach?.whenReachable = { reachability in
             if reachability.connection == .wifi {
@@ -89,7 +90,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print("AppDelegate > Reachable via Cellular")
             }
 
-            ExocoreUtils.resetTransport()
+            // we don't reset on first reachability change (on start)
+            if self.previousReachability != nil {
+                ExocoreUtils.resetTransport()
+            }
+            self.previousReachability = reachability
         }
 
         do {
