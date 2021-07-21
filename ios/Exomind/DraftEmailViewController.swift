@@ -322,7 +322,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
     }
 
     private func contactToToken(_ contact: Exomind_Base_Contact) -> CLToken {
-        let displayName = EmailsLogic.formatContact(contact)
+        let displayName = Emails.formatContact(contact)
         return CLToken(displayText: displayName, context: ContactWrapper(contact: contact) as NSObject)
     }
 

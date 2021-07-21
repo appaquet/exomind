@@ -11,7 +11,7 @@ class EmailThreadClosedTableViewCell: UITableViewCell {
     }
 
     func load(email: TraitInstance<Exomind_Base_Email>) {
-        self.title.text = EmailsLogic.formatContact(email.message.from)
+        self.title.text = Emails.formatContact(email.message.from)
         self.date.text = email.message.receivedDate.date.toShort()
         self.snippet.text = email.message.snippet
     }

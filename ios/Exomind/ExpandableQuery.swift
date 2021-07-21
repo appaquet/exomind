@@ -183,5 +183,6 @@ class ExpandableQuery {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        print("ExpandableQuery > Deinit")
     }
 }

@@ -6,7 +6,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
     @IBOutlet weak var title: UILabel!
     @IBOutlet weak var to: UILabel!
 
-    private weak var threadView: EmailThreadViewController!
+    private weak var threadView: EmailThreadViewController?
 
     private var index: Int?
     private var email: TraitInstance<Exomind_Base_Email>?
@@ -20,7 +20,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
 
         self.webView.initialize()
         self.webView.onHeightChange = { [weak self] height in
-            self?.threadView.refreshHeights()
+            self?.threadView?.refreshHeights()
         }
 
         self.webView.onLoaded = { [weak self] in
@@ -29,7 +29,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
                 return
             }
 
-            this.threadView.onEmailWebviewLoaded(emailIndex)
+            this.threadView?.onEmailWebviewLoaded(emailIndex)
         }
     }
 
@@ -45,10 +45,10 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
         self.index = index
         self.shouldRender = renderEmail
 
-        self.title.text = EmailsLogic.formatContact(email.message.from)
+        self.title.text = Emails.formatContact(email.message.from)
         self.date.text = email.message.receivedDate.date.toShort()
         let emailJoined = (email.message.to + email.message.cc).map {
-            EmailsLogic.formatContact($0)
+            Emails.formatContact($0)
         }
         self.to.text = "to \(emailJoined.joined(separator: ", "))"
 
@@ -73,7 +73,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
 
         self.title.text = "Draft email"
         let emailJoined = (draft.message.to + draft.message.cc).map {
-            EmailsLogic.formatContact($0)
+            Emails.formatContact($0)
         }
         self.to.text = "to \(emailJoined.joined(separator: ", "))"
 

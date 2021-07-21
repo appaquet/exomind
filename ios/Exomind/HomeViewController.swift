@@ -162,7 +162,7 @@ fileprivate class Element {
             return Element(title: "Unknown \(entity.id)", action: action, entity: entity)
         }
 
-        let title = priorityTrait.strippedDisplayName()
+        let title = priorityTrait.strippedDisplayName
         return Element(title: title, action: action, entity: entity)
     }
 

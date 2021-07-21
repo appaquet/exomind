@@ -85,7 +85,7 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
 
         self.webview.loadEmailEntity(email.message.parts, short: false)
 
-        self.fromLabel.text = EmailsLogic.formatContact(email.message.from)
+        self.fromLabel.text = Emails.formatContact(email.message.from)
         self.subjectLabel.text = email.message.subject.nonEmpty() ?? "(no subject)"
 
         let joined = (email.message.to + email.message.cc).map {

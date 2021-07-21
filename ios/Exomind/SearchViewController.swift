@@ -75,8 +75,10 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 
-        self.entityListViewController.setItemClickHandler { [weak self] (entity) -> Void in
-            self?.handleItemSelection(entity)
+        self.entityListViewController.setClickHandlers { [weak self] in
+            self?.handleItemClick($0)
+        } collectionClick: { [weak self] in
+            self?.handleItemClick($0)
         }
 
         self.entityListViewController.setSwipeActions([
@@ -125,7 +127,7 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
         self.entityListViewController.loadData(fromQuery: query)
     }
 
-    private func handleItemSelection(_ entity: EntityExt) {
+    private func handleItemClick(_ entity: EntityExt) {
         self.searchBar.resignFirstResponder() // prevent keyboard from transitioning weirdly
         if let handler = self.selectionHandler {
             handler(entity)

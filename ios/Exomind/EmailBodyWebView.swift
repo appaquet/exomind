@@ -17,20 +17,20 @@ class EmailBodyWebView: AutoLayoutWebView, WKNavigationDelegate {
             if part.mimeType == "text/html" {
                 var content: String!
                 if (short) {
-                    let (cnt, _) = EmailsLogic.splitOriginalThreadHtml(part.body)
+                    let (cnt, _) = Emails.splitOriginalThreadHtml(part.body)
                     content = cnt
                 } else {
                     content = part.body
                 }
 
                 let inlinedAttachmentBody = content // TODO: EmailsLogic.injectInlineImages(entityTrait, html: content)
-                let sanitized = EmailsLogic.sanitizeHtml(inlinedAttachmentBody!)
+                let sanitized = Emails.sanitizeHtml(inlinedAttachmentBody!)
                 self.loadHTML(sanitized)
 
                 // if it's html, we break here since plain may be present after
                 break
             } else {
-                let htmlbody = EmailsLogic.plainTextToHtml(part.body)
+                let htmlbody = Emails.plainTextToHtml(part.body)
                 self.loadHTML(htmlbody)
             }
         }

@@ -1,7 +1,7 @@
 import Foundation
 import JavaScriptCore
 
-class EmailsLogic {
+class Emails {
     static func sanitizeHtml(_ html: String) -> String {
         let builderFunc = JSBridge.instance.jsContext.evaluateScript("exomind.emailUtil.sanitizeHtml")
         return builderFunc!.call(withArguments: [html]).toString()

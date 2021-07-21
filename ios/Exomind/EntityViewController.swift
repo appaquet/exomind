@@ -54,8 +54,8 @@ class EntityViewController: UIViewController {
                 this.entityTrait = this.entity?.priorityTrait
             }
 
-            DispatchQueue.main.async {
-                this.renderEntity()
+            DispatchQueue.main.async { [weak this] in
+                this?.renderEntity()
             }
         })
     }

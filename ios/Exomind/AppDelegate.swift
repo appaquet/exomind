@@ -45,15 +45,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        NotificationsController.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken)
+        Notifications.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken)
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        NotificationsController.didFailToRegisterForRemoteNotificationsWithError(error)
+        Notifications.didFailToRegisterForRemoteNotificationsWithError(error)
     }
 
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
-        NotificationsController.didReceiveRemoteNotification(userInfo, inForeground: self.inForeground)
+        Notifications.didReceiveRemoteNotification(userInfo, inForeground: self.inForeground)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -71,7 +71,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
         print("AppDelegate > App in foreground")
-        NotificationsController.clearNotifications()
+        Notifications.clearNotifications()
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
@@ -80,7 +80,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("AppDelegate > App active")
     }
 
-    func startNetworkMonitoring() {
+    private var previousReachability: Reachability?
+    private func startNetworkMonitoring() {
         self.reach = try? Reachability()
         self.reach?.whenReachable = { reachability in
             if reachability.connection == .wifi {
@@ -89,7 +90,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print("AppDelegate > Reachable via Cellular")
             }
 
-            ExocoreUtils.resetTransport()
+            // we don't reset on first reachability change (on start)
+            if self.previousReachability != nil {
+                ExocoreUtils.resetTransport()
+            }
+            self.previousReachability = reachability
         }
 
         do {

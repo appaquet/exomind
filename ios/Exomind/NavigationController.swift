@@ -76,6 +76,14 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
 
     private func createViewController(forObject: NavigationObject) -> UIViewController {
         switch (forObject) {
+        case let .entityId(id: entityId) where entityId == "inbox":
+            let vc = InboxViewController()
+            return vc
+
+        case let .entity(entity: entity) where entity.id == "inbox":
+            let vc = InboxViewController()
+            return vc
+
         case let .entityId(id: entityId):
             let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
             vc.populate(entityId: entityId)

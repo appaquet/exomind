@@ -165,7 +165,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         let collectionEntity = self.collectionsData[(indexPath as NSIndexPath).item]
         let collectionTrait = collectionEntity.priorityTrait
 
-        cell.textLabel?.text = collectionTrait?.strippedDisplayName() ?? "*INVALID*"
+        cell.textLabel?.text = collectionTrait?.strippedDisplayName ?? "*INVALID*"
         cell.imageView?.image = collectionTrait.map {
             ObjectsIcon.icon(forAnyTrait: $0, color: UIColor.label, dimension: 24)
         }

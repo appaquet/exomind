@@ -20,7 +20,9 @@ class InboxViewController: UIViewController {
 
         self.entityListViewController.loadData(fromChildrenOf: "inbox")
 
-        self.entityListViewController.setItemClickHandler { [weak self] in
+        self.entityListViewController.setClickHandlers { [weak self] in
+            self?.handleItemClick($0)
+        } collectionClick: { [weak self] in
             self?.handleItemClick($0)
         }
 
