@@ -124,6 +124,9 @@ async fn main() -> anyhow::Result<()> {
     options.validate()?;
 
     exocore_core::logging::setup::<String>(Some(LevelFilter::from_str(&options.log)?), None);
+    std::panic::set_hook(Box::new(|info| {
+        error!("Panic occurred: {}", info);
+    }));
 
     let ctx = Context {
         options,

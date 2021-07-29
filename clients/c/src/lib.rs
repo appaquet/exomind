@@ -36,7 +36,7 @@ pub extern "C" fn exocore_init(log_level: usize, log_file: *const c_char) {
         };
 
         std::panic::set_hook(Box::new(|info| {
-            error!("Panic occurred: {:?}", info);
+            error!("Panic occurred: {}", info);
         }));
 
         exocore_core::logging::setup(log_level, file);

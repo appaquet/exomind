@@ -416,7 +416,7 @@ impl Inner {
             request_id,
             result_sender,
             query,
-            last_register: Instant::now(),
+            last_register: Some(Instant::now()),
         };
 
         self.send_watch_query(&watched_query)?;
@@ -476,7 +476,11 @@ impl Inner {
 
         let mut sent_queries = Vec::new();
         for (token, query) in &self.watched_queries {
-            if force || query.last_register.elapsed() > register_interval {
+            if force
+                || query
+                    .last_register
+                    .map_or(true, |i| i.elapsed() > register_interval)
+            {
                 if let Err(err) = self.send_watch_query(query) {
                     error!("Couldn't send watch query: {}", err);
                 }
@@ -486,7 +490,7 @@ impl Inner {
 
         for token in &sent_queries {
             let query = self.watched_queries.get_mut(token).unwrap();
-            query.last_register = Instant::now();
+            query.last_register = Some(Instant::now());
         }
     }
 
@@ -543,12 +547,12 @@ struct WatchedQueryRequest {
     request_id: ConsistentTimestamp,
     query: EntityQuery,
     result_sender: mpsc::Sender<Result<EntityResults, Error>>,
-    last_register: Instant,
+    last_register: Option<Instant>,
 }
 
 impl WatchedQueryRequest {
     fn force_register(&mut self) {
-        self.last_register = Instant::now() - Duration::from_secs(86400);
+        self.last_register = None;
     }
 }
 
