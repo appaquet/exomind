@@ -39,9 +39,6 @@ class EntityExt {
             }
         }
 
-        var oldestDate: Date?
-        var newestDate: Date?
-
         // index traits by ids and types
         var idTraits: [String: Exocore_Store_Trait] = [:]
         var typeTraits: [String: [Exocore_Store_Trait]] = [:]
@@ -63,22 +60,12 @@ class EntityExt {
             if let traitConstants = traitConstants, (priorityTrait == nil || traitConstants.order < priorityTrait!.1.order) {
                 priorityTrait = (trait, traitConstants)
             }
-
-            // TODO: This logic is not right !!
-            let creationDate = trait.creationDate.date
-            let modificationDate = trait.modificationDate.date
-            if trait.hasCreationDate && creationDate < oldestDate ?? Date() {
-                oldestDate = creationDate
-            }
-            if trait.hasModificationDate && modificationDate > newestDate ?? Date.init(milliseconds: 0) {
-                newestDate = modificationDate
-            }
         }
         self.idTraits = idTraits
         self.typeTraits = typeTraits
         self._priorityTrait = priorityTrait.map({ $0.0 })
-        self.creationDate = oldestDate ?? Date()
-        self.modificationDate = newestDate
+        self.creationDate = entity.hasCreationDate ? entity.creationDate.date : Date()
+        self.modificationDate = entity.hasModificationDate ? entity.modificationDate.date : nil
         self.anyDate = self.modificationDate ?? self.creationDate
     }
 

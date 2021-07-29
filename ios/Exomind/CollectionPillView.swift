@@ -43,7 +43,7 @@ struct CollectionPillsView: View {
     private let collections: [CollectionPillData]
 
     init(collections: [CollectionPillData]) {
-        self.collections = collections
+        self.collections = collections.sorted()
     }
 
     var body: some View {
@@ -87,6 +87,10 @@ class CollectionPillData {
         var icons = [self.finalIcon()]
         var parent = self.parent
         while let curParent = parent {
+            if curParent.id == "favorites" {
+                // we don't want to show favorites
+                break
+            }
             icons.append(curParent.finalIcon())
             parent = curParent.parent
         }
@@ -95,10 +99,35 @@ class CollectionPillData {
 
     func lineageLength() -> Int {
         if let length = self.parent?.lineageLength() {
-            return length + 1
+            let weight: Int
+            if self.id == "inbox" {
+                weight = 2 // penalize inbox in lineage to prefer other collections
+            } else {
+                weight = 1
+            }
+
+            return length + weight
         } else {
-            return 0
+            return 1
         }
+    }
+}
+
+extension CollectionPillData: Comparable {
+    static func <(lhs: CollectionPillData, rhs: CollectionPillData) -> Bool {
+        let llen = lhs.lineageLength()
+        let rlen = rhs.lineageLength()
+        if llen < rlen {
+            return true
+        } else if llen > rlen {
+            return false
+        } else {
+            return lhs.name < rhs.name
+        }
+    }
+
+    static func ==(lhs: CollectionPillData, rhs: CollectionPillData) -> Bool {
+        lhs.id == rhs.id
     }
 }
 
@@ -118,7 +147,7 @@ struct CollectionPills_Previews: PreviewProvider {
                 CollectionPillData(id: "col1", name: "Long text"),
                 CollectionPillData(id: "col2", name: "Long long long text", icon: "😬".textToImage(ofSize: CollectionPillView.ICON_SIZE)),
                 CollectionPillData(id: "col3", name: "Some child with hierarchy", icon: "👶".textToImage(ofSize: CollectionPillView.ICON_SIZE), parent: CollectionPillData(id: "col2", name: "Parent", icon: "🤷‍♂️".textToImage(ofSize: CollectionPillView.ICON_SIZE), parent: CollectionPillData(id: "col3", name: "Grand parent", icon: "👴".textToImage(ofSize: CollectionPillView.ICON_SIZE)))),
-                CollectionPillData(id: "col4", name: "Long long long text", icon: "😬".textToImage(ofSize: CollectionPillView.ICON_SIZE)),
+                CollectionPillData(id: "col4", name: "Long long long text", icon: "😬".textToImage(ofSize: CollectionPillView.ICON_SIZE), parent: CollectionPillData(id: "col2", name: "Parent", icon: "🤷‍♂️".textToImage(ofSize: CollectionPillView.ICON_SIZE))),
             ])
 
             CollectionPillView(collection: CollectionPillData(id: "col1", name: "Clickable", onClick: {

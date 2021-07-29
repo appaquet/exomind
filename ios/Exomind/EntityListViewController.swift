@@ -4,7 +4,7 @@ import Exocore
 import SwiftUI
 
 class EntityListViewController: UITableViewController {
-    private var query: ExpandableQuery?
+    private var query: ManagedQuery?
     private var parentId: EntityId?
 
     private var collectionData: [EntityResult] = []
@@ -40,7 +40,15 @@ class EntityListViewController: UITableViewController {
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.estimatedRowHeight = 60
 
-        self.tableView.register(EntityListViewCellHost.self, forCellReuseIdentifier: "cell")
+        self.tableView.register(SwiftUICellViewHost.self, forCellReuseIdentifier: "cell")
+        NotificationCenter.default.addObserver(self, selector: #selector(onCollectionsChanged), name: .exomindCollectionsChanged, object: nil)
+    }
+
+    @objc private func onCollectionsChanged() {
+        DispatchQueue.main.async { [weak self] in
+            self?.collectionData = []
+            self?.refreshData()
+        }
     }
 
     func setSwipeActions(_ actions: [EntityListSwipeAction]) {
@@ -95,15 +103,15 @@ class EntityListViewController: UITableViewController {
     }
 
     func loadData(fromQuery query: Exocore_Store_EntityQuery) {
-        self.query = ExpandableQuery(query: query) { [weak self] in
-            guard let this = self else {
-                return
-            }
+        self.query = ManagedQuery(query: query) { [weak self] in
+            self?.refreshData()
+        }
+    }
 
-            let newResults = this.convertResults(oldResults: this.collectionData, newResults: this.query?.results ?? [])
-            DispatchQueue.main.async { [weak self] in
-                self?.setData(newResults)
-            }
+    private func refreshData() {
+        let newResults = self.convertResults(oldResults: self.collectionData, newResults: self.query?.results ?? [])
+        DispatchQueue.main.async { [weak self] in
+            self?.setData(newResults)
         }
     }
 
@@ -165,8 +173,8 @@ class EntityListViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         self.tableView.deselectRow(at: indexPath, animated: false)
-        let res = self.collectionData[(indexPath as NSIndexPath).item]
-        if let handler = self.itemClickHandler {
+        if let res = self.collectionData.element(at: (indexPath as NSIndexPath).item),
+           let handler = self.itemClickHandler {
             handler(res.entity)
         }
     }
@@ -187,44 +195,30 @@ class EntityListViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         let index = (indexPath as NSIndexPath).item
-        let entity = self.collectionData[index]
 
-        if entity.collections.isEmpty {
+        if let entity = self.collectionData.element(at: index), entity.collections.isEmpty {
             return 75
         } else {
             return 99
         }
     }
 
-    private func createCell(_ indexPath: IndexPath, result: EntityResult) -> EntityListViewCellHost {
+    private func createCell(_ indexPath: IndexPath, result: EntityResult) -> SwiftUICellViewHost {
         // TODO: Get reusing back by calculating sizes ahead of time and reuse cells of same height
         //       tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! EntityListViewCellHost
 
-        let tableViewCell = EntityListViewCellHost()
-
         let data = cellDataFromResult(result, parentId: self.parentId)
         let view = EntityListViewCell(data: data)
-
-        // From https://stackoverflow.com/questions/59881164/uitableview-with-uiviewrepresentable-in-swiftui
-        let controller = UIHostingController(rootView: AnyView(view))
-        tableViewCell.host = controller
-        let tableCellViewContent = controller.view!
-        tableCellViewContent.translatesAutoresizingMaskIntoConstraints = false
-        tableViewCell.contentView.addSubview(tableCellViewContent)
-        tableCellViewContent.topAnchor.constraint(equalTo: tableViewCell.contentView.topAnchor).isActive = true
-        tableCellViewContent.leftAnchor.constraint(equalTo: tableViewCell.contentView.leftAnchor).isActive = true
-        tableCellViewContent.bottomAnchor.constraint(equalTo: tableViewCell.contentView.bottomAnchor).isActive = true
-        tableCellViewContent.rightAnchor.constraint(equalTo: tableViewCell.contentView.rightAnchor).isActive = true
-        tableViewCell.setNeedsLayout()
-        tableViewCell.layoutIfNeeded()
-
-        return tableViewCell
+        return SwiftUICellViewHost(view: AnyView(view))
     }
 
     private func swipeActionsForRow(swipeAction: EntityListSwipeAction, indexPath: IndexPath) -> UIContextualAction {
         let index = (indexPath as NSIndexPath).item
-        let item = self.collectionData[index]
         let doneAction = UIContextualAction(style: swipeAction.style, title: nil) { action, view, completionHandler in
+            guard let item = self.collectionData.element(at: index) else {
+                return
+            }
+
             swipeAction.handler(item.entity) { [weak self] (completed) in
                 guard let this = self else {
                     return
@@ -277,6 +271,7 @@ class EntityListViewController: UITableViewController {
 
     deinit {
         print("EntityListViewController > Deinit")
+        NotificationCenter.default.removeObserver(self)
     }
 }
 

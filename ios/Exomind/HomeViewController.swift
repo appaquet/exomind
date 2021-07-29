@@ -2,7 +2,7 @@ import UIKit
 import Exocore
 
 class HomeViewController: UITableViewController {
-    private var query: ExpandableQuery?
+    private var query: ManagedQuery?
 
     private lazy var exmElements: [Element] = {
         [
@@ -22,7 +22,7 @@ class HomeViewController: UITableViewController {
                 .orderByField("weight", ascending: false)
                 .count(100)
                 .build()
-        self.query = ExpandableQuery(query: query) { [weak self] in
+        self.query = ManagedQuery(query: query) { [weak self] in
             self?.loadFavoritesEntities()
         }
 
@@ -162,8 +162,7 @@ fileprivate class Element {
             return Element(title: "Unknown \(entity.id)", action: action, entity: entity)
         }
 
-        let title = priorityTrait.strippedDisplayName
-        return Element(title: title, action: action, entity: entity)
+        return Element(title: priorityTrait.strippedDisplayName, action: action, entity: entity)
     }
 
     func icon() -> UIImage {

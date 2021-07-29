@@ -22,7 +22,7 @@ PODS:
 DEPENDENCIES:
   - AppCenter
   - CLTokenInputView
-  - Exocore (= 0.1.10)
+  - Exocore (from `../../exocore`)
   - FontAwesome.swift (from `https://github.com/thii/FontAwesome.swift.git`)
   - Introspect
   - KeychainSwift (~> 19.0)
@@ -36,7 +36,6 @@ SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - AppCenter
     - CLTokenInputView
-    - Exocore
     - Introspect
     - KeychainSwift
     - ReachabilitySwift
@@ -46,6 +45,8 @@ SPEC REPOS:
     - UIColor_Hex_Swift
 
 EXTERNAL SOURCES:
+  Exocore:
+    :path: "../../exocore"
   FontAwesome.swift:
     :git: https://github.com/thii/FontAwesome.swift.git
 
@@ -67,6 +68,6 @@ SPEC CHECKSUMS:
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
   UIColor_Hex_Swift: bc07fc197421ee896b9ed6dcfa2054b7fbf75145
 
-PODFILE CHECKSUM: c3afd613db6d296d187f759043345a0475d2ad4c
+PODFILE CHECKSUM: 3c5c1f0a4887a63d169ddb32cfef38db60e23831
 
 COCOAPODS: 1.10.1

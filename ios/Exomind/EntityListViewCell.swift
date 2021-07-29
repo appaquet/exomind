@@ -1,11 +1,7 @@
 import SwiftUI
 
-class EntityListViewCellHost: UITableViewCell {
-    var host: UIHostingController<AnyView>?
-}
-
 struct EntityListViewCell: View {
-    let data: EntityListCellData 
+    let data: EntityListCellData
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,8 +27,8 @@ struct EntityListViewCell: View {
                     }
 
                     Text(self.data.line2)
-                        .font(.system(size: 14))
-                        .lineLimit(1)
+                            .font(.system(size: 14))
+                            .lineLimit(1)
 
                     if self.data.line3 != "" {
                         Text(self.data.line3)

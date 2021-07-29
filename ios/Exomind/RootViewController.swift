@@ -43,8 +43,6 @@ class RootViewController: UIViewController {
     private func showStateView() {
         if !ExocoreUtils.nodeHasCell {
             self.showBootstrap()
-        } else if !Collections.instance.loaded {
-            // TODO: Show loading
         } else {
             self.showApplication()
         }

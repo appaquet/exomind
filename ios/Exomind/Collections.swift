@@ -4,7 +4,8 @@ import Exocore
 class Collections {
     static let instance = Collections()
 
-    private var collectionQuery: QueryStreamHandle?
+    private let queue = DispatchQueue(label: "io.exomind.collections")
+    private var collectionQuery: ManagedQuery?
     private var _loaded = false
     private var _collections: [String: CollectionEntity] = [:]
 
@@ -19,9 +20,18 @@ class Collections {
         self.maybeRunQuery()
     }
 
-    func entityParentsPillData(entity: EntityExt, context: CollectionLineageContext = CollectionLineageContext(), onCollectionClick: ((EntityExt) -> Void)? = nil) -> [CollectionPillData] {
-        let parentRelations = entity.traitsOfType(Exomind_Base_CollectionChild.self)
+    func entityParentsPillData(entity: EntityExt, onCollectionClick: ((EntityExt) -> Void)? = nil) -> [CollectionPillData] {
+        self.queue.sync {
+            self.innerEntityParentsPillData(entity: entity, context: LineageContext(), onCollectionClick: onCollectionClick)
+        }
+    }
 
+    fileprivate func innerEntityParentsPillData(entity: EntityExt, context: LineageContext, onCollectionClick: ((EntityExt) -> Void)? = nil) -> [CollectionPillData] {
+        if context.contains(entity.id) {
+            return []
+        }
+
+        let parentRelations = entity.traitsOfType(Exomind_Base_CollectionChild.self)
         return parentRelations.compactMap { parentRelation in
             guard let collection = self._collections[parentRelation.message.collection.entityID] else {
                 return nil
@@ -29,7 +39,7 @@ class Collections {
 
             return collection.toCollectionPill(onClick: {
                 onCollectionClick?(collection.entity)
-            }, context: context)
+            }, context: context.expanded(entity.id))
         }
     }
 
@@ -43,35 +53,32 @@ class Collections {
         }
 
         let query = QueryBuilder.withTrait(Exomind_Base_Collection.self).count(9999).build()
-        self.collectionQuery = ExocoreClient.store.watchedQuery(query: query) { [weak self] (status, results) in
+        self.collectionQuery = ManagedQuery(query: query) { [weak self] in
             guard let this = self else {
                 return
             }
 
-            if (status != .running) {
-                // TODO: restart
-                return
-            }
-
             print("Collections > Collections have changed")
-            this.indexCollections(results?.entities ?? [])
+            this.indexCollections(this.collectionQuery?.results ?? [])
         }
     }
 
     private func indexCollections(_ entityResults: [Exocore_Store_EntityResult]) {
-        self._collections = [:]
-        for entityResult in entityResults {
-            let entity = entityResult.entity.toExtension()
-            guard let collection = entity.traitOfType(Exomind_Base_Collection.self) else {
-                print("Collections > Expected entity \(entity.id) to have a collection trait.")
-                continue
+        self.queue.async {
+            self._collections = [:]
+            for entityResult in entityResults {
+                let entity = entityResult.entity.toExtension()
+                guard let collection = entity.traitOfType(Exomind_Base_Collection.self) else {
+                    print("Collections > Expected entity \(entity.id) to have a collection trait.")
+                    continue
+                }
+
+                self._collections[entity.id] = CollectionEntity(entity: entity, collection: collection)
             }
+            self._loaded = true
 
-            self._collections[entity.id] = CollectionEntity(entity: entity, collection: collection)
+            NotificationCenter.default.post(name: .exomindCollectionsChanged, object: nil)
         }
-        self._loaded = true
-
-        NotificationCenter.default.post(name: .exomindCollectionsChanged, object: nil)
     }
 }
 
@@ -84,21 +91,15 @@ class CollectionEntity {
         self.collection = collection
     }
 
-    func toCollectionPill(onClick: (() -> Void)? = nil, context: CollectionLineageContext = CollectionLineageContext()) -> CollectionPillData {
+    fileprivate func toCollectionPill(onClick: (() -> Void)? = nil, context: LineageContext = LineageContext()) -> CollectionPillData {
         var shortestParent: CollectionPillData?
-        if !context.contains(self.entity.id) {
-            let parentPills = Collections.instance.entityParentsPillData(entity: self.entity, context: context.expanded(self.entity.id))
-            for parentPill in parentPills {
-                if shortestParent == nil {
-                    shortestParent = parentPill
-                } else if let curShortest = shortestParent, parentPill.lineageLength() < curShortest.lineageLength() {
-                    shortestParent = parentPill
-                }
+        let parentPills = Collections.instance.innerEntityParentsPillData(entity: self.entity, context: context)
+        for parentPill in parentPills {
+            if shortestParent == nil {
+                shortestParent = parentPill
+            } else if let curShortest = shortestParent, parentPill.lineageLength() < curShortest.lineageLength() {
+                shortestParent = parentPill
             }
-        }
-
-        if shortestParent?.id == "favorites" {
-            shortestParent = nil
         }
 
         let icon = ObjectsIcon.icon(forAnyTrait: self.collection, color: UIColor.black, dimension: CollectionPillView.ICON_SIZE)
@@ -106,17 +107,17 @@ class CollectionEntity {
     }
 }
 
-class CollectionLineageContext {
+fileprivate class LineageContext {
     var loadedIds: Set<String> = Set()
 
     init(_ loadedIds: Set<String> = Set()) {
         self.loadedIds = loadedIds
     }
 
-    func expanded(_ id: String) -> CollectionLineageContext {
+    func expanded(_ id: String) -> LineageContext {
         var ids = Set(self.loadedIds)
         ids.insert(id)
-        return CollectionLineageContext(ids)
+        return LineageContext(ids)
     }
 
     func contains(_ id: String) -> Bool {
