@@ -1,7 +1,7 @@
 import Foundation
 import Exocore
 
-class ExpandableQuery {
+class ManagedQuery {
     let query: Exocore_Store_EntityQuery
 
     private let onChange: () -> ();
@@ -104,7 +104,7 @@ class ExpandableQuery {
     private func requeryFailed() {
         for i in 0..<self.queries.count {
             if self.queryHandles[i] == nil {
-                print("ExpandableQuery > Refreshing query \(i)")
+                print("ManagedQuery > Refreshing query \(i)")
                 self.queryHandles[i] = self.execQuery(query: self.queries[i], queryIndex: i)
             }
         }
@@ -115,7 +115,7 @@ class ExpandableQuery {
     }
 
     private func execQuery(query: Exocore_Store_EntityQuery, queryIndex: Int) -> QueryStreamHandle {
-        print("ExpandableQuery> Executing new query \(queryIndex)")
+        print("ManagedQuery> Executing new query \(queryIndex)")
 
         var handle: QueryStreamHandle?
         handle = ExocoreClient.store.watchedQuery(query: query) { [weak self] status, results in
@@ -147,7 +147,7 @@ class ExpandableQuery {
     }
 
     private func handleQueryError(queryIndex: Int) {
-        print("ExpandableQuery> Query \(queryIndex) failed")
+        print("ManagedQuery> Query \(queryIndex) failed")
         self.queryHandles[queryIndex] = nil
         self.aggregateAndTrigger()
 
@@ -178,10 +178,12 @@ class ExpandableQuery {
 
             idx += 1
         }
+
         self.onChange()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        print("ManagedQuery > Deinit")
     }
 }

@@ -21,10 +21,11 @@ class EntityExt {
 
     var creationDate: Date
     var modificationDate: Date?
-    var anyDate: Date?
+    var anyDate: Date
 
     init(entity: Exocore_Store_Entity) {
         self.inner = entity
+        self.anyDate = Date()
 
         var priorityTrait: (Exocore_Store_Trait, TraitConstants)?
 
@@ -37,9 +38,6 @@ class EntityExt {
                 }
             }
         }
-
-        var oldestDate: Date?
-        var newestDate: Date?
 
         // index traits by ids and types
         var idTraits: [String: Exocore_Store_Trait] = [:]
@@ -62,22 +60,12 @@ class EntityExt {
             if let traitConstants = traitConstants, (priorityTrait == nil || traitConstants.order < priorityTrait!.1.order) {
                 priorityTrait = (trait, traitConstants)
             }
-
-            // TODO: Should be moved to exocore
-            let creationDate = trait.creationDate.date
-            let modificationDate = trait.modificationDate.date
-            if trait.hasCreationDate && creationDate < oldestDate ?? Date() {
-                oldestDate = creationDate
-            }
-            if trait.hasModificationDate && modificationDate > newestDate ?? Date.init(milliseconds: 0) {
-                newestDate = modificationDate
-            }
         }
         self.idTraits = idTraits
         self.typeTraits = typeTraits
         self._priorityTrait = priorityTrait.map({ $0.0 })
-        self.creationDate = oldestDate ?? Date()
-        self.modificationDate = newestDate
+        self.creationDate = entity.hasCreationDate ? entity.creationDate.date : Date()
+        self.modificationDate = entity.hasModificationDate ? entity.modificationDate.date : nil
         self.anyDate = self.modificationDate ?? self.creationDate
     }
 
@@ -177,10 +165,9 @@ protocol AnyTraitInstance {
     var constants: TraitConstants? { get }
     var type: TraitType? { get }
     var displayName: String { get }
+    var strippedDisplayName: String { get }
     var creationDate: Date { get }
     var modificationDate: Date? { get }
-
-    func strippedDisplayName() -> String
 
     func typeInstance() -> TraitTypeInstance?
 }
@@ -270,11 +257,13 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
         self.entity?.trait(anyWithId: self.id)
     }
 
-    func strippedDisplayName() -> String {
-        if let constants = self.constants {
-            return TraitInstance.getDisplayName(constants: constants, message: message, strip: true)
-        } else {
-            return "*UNKNOWN*"
+    var strippedDisplayName: String {
+        get {
+            if let constants = self.constants {
+                return TraitInstance.getDisplayName(constants: constants, message: message, strip: true)
+            } else {
+                return "*UNKNOWN*"
+            }
         }
     }
 

@@ -1,13 +1,15 @@
 import UIKit
 import FontAwesome_swift
 import Exocore
+import SwiftUI
 
 class EntityListViewController: UITableViewController {
-    private var query: ExpandableQuery?
+    private var query: ManagedQuery?
     private var parentId: EntityId?
 
     private var collectionData: [EntityResult] = []
     private var itemClickHandler: ((EntityExt) -> Void)?
+    private var collectionClickHandler: ((EntityExt) -> Void)?
     private var swipeActions: [EntityListSwipeAction] = []
 
     private var switcherButton: SwitcherButton?
@@ -20,7 +22,7 @@ class EntityListViewController: UITableViewController {
 
     private lazy var datasource: EditableDataSource = {
         var ds = EditableDataSource(tableView: self.tableView) { [weak self] tableView, indexPath, item in
-            self?.createCell(indexPath, item: item)
+            self?.createCell(indexPath, result: item)
         }
 
         // all animations are just weird, but there still seems to be some kind of animation that is good enough
@@ -33,14 +35,28 @@ class EntityListViewController: UITableViewController {
         super.viewDidLoad()
         self.tableView.dataSource = self.datasource
         self.tableView.delegate = self
+
+        self.tableView.register(SwiftUICellViewHost<EntityListCell>.self, forCellReuseIdentifier: "cell")
+        self.tableView.rowHeight = UITableView.automaticDimension
+        self.tableView.estimatedRowHeight = 75
+
+        NotificationCenter.default.addObserver(self, selector: #selector(onCollectionsChanged), name: .exomindCollectionsChanged, object: nil)
+    }
+
+    @objc private func onCollectionsChanged() {
+        DispatchQueue.main.async { [weak self] in
+            self?.collectionData = []
+            self?.refreshData()
+        }
     }
 
     func setSwipeActions(_ actions: [EntityListSwipeAction]) {
         self.swipeActions = actions
     }
 
-    func setItemClickHandler(_ handler: @escaping (EntityExt) -> Void) {
-        self.itemClickHandler = handler
+    func setClickHandlers(_ itemClick: @escaping (EntityExt) -> Void, collectionClick: @escaping (EntityExt) -> Void) {
+        self.itemClickHandler = itemClick
+        self.collectionClickHandler = collectionClick
     }
 
     func setSwitcherActions(_ actions: [SwitcherButtonAction]) {
@@ -86,15 +102,15 @@ class EntityListViewController: UITableViewController {
     }
 
     func loadData(fromQuery query: Exocore_Store_EntityQuery) {
-        self.query = ExpandableQuery(query: query) { [weak self] in
-            guard let this = self else {
-                return
-            }
+        self.query = ManagedQuery(query: query) { [weak self] in
+            self?.refreshData()
+        }
+    }
 
-            let newResults = this.convertResults(oldResults: this.collectionData, newResults: this.query?.results ?? [])
-            DispatchQueue.main.async { [weak self] in
-                self?.setData(newResults)
-            }
+    private func refreshData() {
+        let newResults = self.convertResults(oldResults: self.collectionData, newResults: self.query?.results ?? [])
+        DispatchQueue.main.async { [weak self] in
+            self?.setData(newResults)
         }
     }
 
@@ -143,20 +159,6 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private func createCell(_ indexPath: IndexPath, item: EntityResult) -> ChildrenViewCell {
-        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ChildrenViewCell
-
-        // remove left padding in the cell
-        cell.layoutMargins = UIEdgeInsets.zero
-        cell.preservesSuperviewLayoutMargins = false
-
-        cell.selectionStyle = .blue
-
-        cell.populate(item)
-
-        return cell
-    }
-
     override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         self.scrollDragging = false
         self.scrollEverDragged = true
@@ -169,8 +171,10 @@ class EntityListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let res = self.collectionData[(indexPath as NSIndexPath).item]
-        if let handler = self.itemClickHandler {
+        self.tableView.deselectRow(at: indexPath, animated: false)
+
+        if let res = self.collectionData.element(at: (indexPath as NSIndexPath).item),
+           let handler = self.itemClickHandler {
             handler(res.entity)
         }
     }
@@ -189,10 +193,20 @@ class EntityListViewController: UITableViewController {
         return UISwipeActionsConfiguration(actions: swipeActions)
     }
 
+    private func createCell(_ indexPath: IndexPath, result: EntityResult) -> SwiftUICellViewHost<EntityListCell> {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! SwiftUICellViewHost<EntityListCell>
+        let data = cellDataFromResult(result, parentId: self.parentId)
+        cell.setView(view: EntityListCell(data: data), parentController: self)
+        return cell
+    }
+
     private func swipeActionsForRow(swipeAction: EntityListSwipeAction, indexPath: IndexPath) -> UIContextualAction {
         let index = (indexPath as NSIndexPath).item
-        let item = self.collectionData[index]
         let doneAction = UIContextualAction(style: swipeAction.style, title: nil) { action, view, completionHandler in
+            guard let item = self.collectionData.element(at: index) else {
+                return
+            }
+
             swipeAction.handler(item.entity) { [weak self] (completed) in
                 guard let this = self else {
                     return
@@ -230,12 +244,22 @@ class EntityListViewController: UITableViewController {
                 return current
             }
 
-            return EntityResult(result: res, entity: entity, priorityTrait: entity.priorityTrait)
+            let onCollectionClick: (EntityExt) -> Void = { [weak self] collection in
+                self?.collectionClickHandler?(collection)
+            }
+            let collections = Collections.instance.entityParentsPillData(entity: entity, onCollectionClick: onCollectionClick)
+                    .filter { pillData in
+                        // exclude pill if it's from the collection we're showing
+                        parentId != pillData.id
+                    }
+
+            return EntityResult(result: res, entity: entity, priorityTrait: entity.priorityTrait, collections: collections)
         }
     }
 
     deinit {
-        print("EntityViewController > Deinit")
+        print("EntityListViewController > Deinit")
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
@@ -274,97 +298,66 @@ fileprivate class EditableDataSource: UITableViewDiffableDataSource<Int, EntityR
     }
 }
 
-class ChildrenViewCell: UITableViewCell {
-    @IBOutlet weak var title1: UILabel!
-    @IBOutlet weak var title2: UILabel!
-    @IBOutlet weak var title3: UILabel!
-    @IBOutlet weak var date: UILabel!
-    @IBOutlet weak var icon: UIImageView!
+fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?) -> EntityListCellData {
+    guard let priorityTrait = result.priorityTrait else {
+        let img = ObjectsIcon.icon(forFontAwesome: .question, color: .white, dimension: 24)
+        return EntityListCellData(image: img, date: result.entity.anyDate, color: UIColor.red, title: "UNKNOWN ENTITY TRAIT")
+    }
 
-    var entity: EntityExt!
+    let entity = result.entity
+    let displayName = priorityTrait.strippedDisplayName
+    let image = ObjectsIcon.icon(forAnyTrait: priorityTrait, color: UIColor.white, dimension: CGFloat(24))
+    let date = priorityTrait.modificationDate ?? priorityTrait.creationDate
+    let color = Stylesheet.objectColor(forId: priorityTrait.constants?.color ?? 0)
 
-    fileprivate func populate(_ result: EntityResult) {
-        self.backgroundColor = UIColor.clear
+    switch priorityTrait.typeInstance() {
+    case let .email(email):
+        return EntityListCellData(image: image, date: date, color: color, title: Emails.formatContact(email.message.from), subtitle: displayName, text: email.message.snippet, collections: result.collections)
 
-        self.entity = result.entity
+    case let .emailThread(emailThread):
+        let emails = entity.traitsOfType(Exomind_Base_Email.self)
 
-        guard let priorityTrait = result.priorityTrait else {
-            self.title1.text = "UNKNOWN ENTITY TRAIT"
-            self.title2.text = ""
-            self.title3.text = ""
-            self.date.text = ""
-            return
+        var title = Emails.formatContact(emailThread.message.from)
+        if emails.count > 1 {
+            title = "\(title) (\(emails.count))"
         }
 
-        let displayName = priorityTrait.strippedDisplayName()
-        self.date.text = priorityTrait.modificationDate?.toShort() ?? priorityTrait.creationDate.toShort()
-
-        self.title1.font = UIFont.systemFont(ofSize: 14)
-        self.title2.font = UIFont.systemFont(ofSize: 14)
-        self.title3.font = UIFont.systemFont(ofSize: 14)
-
-        switch priorityTrait.typeInstance() {
-        case let .email(email):
-            self.title1.text = EmailsLogic.formatContact(email.message.from)
-            self.title2.text = displayName
-            self.title3.text = email.message.snippet
-
-        case let .emailThread(emailThread):
-            let emails = entity.traitsOfType(Exomind_Base_Email.self)
-
-            self.title1.text = EmailsLogic.formatContact(emailThread.message.from)
-            if emails.count > 1 {
-                self.title1.text = "\(self.title1.text!) (\(emails.count))"
-            }
-
-            if !emailThread.message.read {
-                self.title1.font = UIFont.boldSystemFont(ofSize: 14)
-                self.title2.font = UIFont.boldSystemFont(ofSize: 14)
-                self.title3.font = UIFont.boldSystemFont(ofSize: 14)
-            }
-
-            let lastEmail = emails.max(by: { (a, b) -> Bool in
-                let aDate = a.modificationDate ?? a.creationDate
-                let bDate = b.modificationDate ?? b.creationDate
-                return aDate < bDate
-            })
-
-            if let lastEmail = lastEmail {
-                self.date.text = lastEmail.modificationDate?.toShort() ?? lastEmail.creationDate.toShort()
-            }
-
-            self.title2.text = displayName
-            self.title3.text = emailThread.message.snippet
-
-        case let .draftEmail(draftEmail):
-            self.title1.text = "Me"
-            self.title2.text = draftEmail.displayName
-            self.title3.text = ""
-
-        default:
-            self.title1.text = " "
-            self.title2.text = displayName
-            self.title3.text = " "
+        if !emailThread.message.read {
+            // TODO: Handle this
         }
 
-        self.icon.image = ObjectsIcon.icon(forAnyTrait: priorityTrait, color: UIColor.white, dimension: CGFloat(24))
-        self.icon.backgroundColor = Stylesheet.objectColor(forId: priorityTrait.constants?.color ?? 0)
-        self.icon.contentMode = UIView.ContentMode.center
-        self.icon.layer.cornerRadius = 22
+        let lastEmail = emails.max(by: { (a, b) -> Bool in
+            let aDate = a.modificationDate ?? a.creationDate
+            let bDate = b.modificationDate ?? b.creationDate
+            return aDate < bDate
+        })
+
+        var emailDate = date
+        if let lastEmail = lastEmail {
+            emailDate = lastEmail.modificationDate ?? lastEmail.creationDate
+        }
+
+        return EntityListCellData(image: image, date: emailDate, color: color, title: title, subtitle: displayName, text: emailThread.message.snippet, collections: result.collections)
+
+    case let .draftEmail(draftEmail):
+        return EntityListCellData(image: image, date: date, color: color, title: "Me", subtitle: draftEmail.displayName, collections: result.collections)
+
+    default:
+        return EntityListCellData(image: image, date: date, color: color, title: displayName, collections: result.collections)
     }
 }
 
 fileprivate struct EntityResult: Equatable, Hashable {
-    var result: Exocore_Store_EntityResult
-    var entity: EntityExt
-    var priorityTrait: AnyTraitInstance?
+    let result: Exocore_Store_EntityResult
+    let entity: EntityExt
+    let priorityTrait: AnyTraitInstance?
+    let collections: [CollectionPillData]
 
     static func ==(lhs: EntityResult, rhs: EntityResult) -> Bool {
-        lhs.entity == rhs.entity
+        lhs.result == rhs.result
     }
 
     func hash(into hasher: inout Hasher) {
         self.result.hash(into: &hasher)
     }
 }
-

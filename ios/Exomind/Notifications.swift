@@ -1,7 +1,7 @@
 import UIKit
 import UserNotifications
 
-class NotificationsController {
+class Notifications {
     static func maybeRegister() {
         if (!self.isRemoteRegistered()) {
             self.registerRemote()
