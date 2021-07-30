@@ -609,9 +609,9 @@ dependencies = [
 
 [[package]]
 name = "exocore"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "441e553f0bf804748d55182ae89ecec97ae9fa29eca0911821aaac058dd0732a"
+checksum = "5fe97776645682ad18662c1bf3bc889686b2907ea858be4b2aded42883de70a1"
 dependencies = [
  "anyhow",
  "exocore-apps-sdk",
@@ -624,9 +624,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-macros"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1f3ae1f84e3cad9661a3096111ef4e9342d361aff1f6c3b648dbf181ef67357"
+checksum = "67c2a497eeeab3fad302e8f4a16e08b4e65e8d5bb5a3a805aee0042ebaca1e71"
 dependencies = [
  "anyhow",
  "futures",
@@ -638,9 +638,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-sdk"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1a2b33e57231a37688f1c095adea2286d2d235b362cdf37ea34ac4ce95928e9"
+checksum = "904044c82d116452afc5a65af63b595104aa034dbf066001dd83196228dce079"
 dependencies = [
  "anyhow",
  "chrono",
@@ -656,9 +656,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-core"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40a83740162913953a1cc368addf42f9239a47fca1a0f3dfdcf6afab08f6a3e4"
+checksum = "71c6d323769227c74efcd0a0dca19b91b97b877816d558f76ad7ea317308f4b3"
 dependencies = [
  "anyhow",
  "bs58",
@@ -691,9 +691,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-protos"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22f3122332ad485c202b769d0d4a88033cd9f10003b77ec20b29b861f001d7a9"
+checksum = "268e6a62c81a1115a268bb58b39a7418aad3df5c5518e74ece5320db9b15ea11"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -711,9 +711,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-store"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18a53096d6819fde099d202a113bf05aedbca5ea4a4dc6a170214c32c327ad61"
+checksum = "6edcac1101beb06d3959479da0f7db3f265e2bbe61e11abdd302eef43ba91252"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -731,9 +731,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-transport"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66d48fcd56b8c63aa1284116a2244a25e2f89acfca1d6e9ab1f789b6ecb1442e"
+checksum = "9a457d204f4772a21acb9255aefdcdeb7c7f8ef72174d6ea3e788e3580d01dd5"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -2782,9 +2782,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.8.1"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98c8b05dc14c75ea83d63dd391100353789f5f24b8b3866542a5e85c8be8e985"
+checksum = "4b7b349f11a7047e6d1276853e612d152f5e8a352c61917887cc2169e2366b4c"
 dependencies = [
  "autocfg",
  "bytes 1.0.1",

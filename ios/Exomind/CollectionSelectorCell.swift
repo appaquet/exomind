@@ -28,6 +28,7 @@ struct CollectionSelectorCell: View {
             if !self.data.parents.isEmpty {
                 CollectionPillsView(collections: self.data.parents)
                     .padding(.leading, 40)
+                    .padding(.bottom, 5)
             }
         }
     }

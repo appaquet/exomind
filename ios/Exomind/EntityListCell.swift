@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct EntityListViewCell: View {
+struct EntityListCell: View {
     let data: EntityListCellData
 
     var body: some View {
@@ -98,15 +98,15 @@ struct EntityListViewCell_Previews: PreviewProvider {
         let date = Date()
 
         List {
-            EntityListViewCell(data: EntityListCellData(image: img, date: date, color: UIColor.red, title: "Title"))
+            EntityListCell(data: EntityListCellData(image: img, date: date, color: UIColor.red, title: "Title"))
 
-            EntityListViewCell(data: EntityListCellData(image: img, date: date, color: UIColor.green, title: "Title", subtitle: "Sub title"))
+            EntityListCell(data: EntityListCellData(image: img, date: date, color: UIColor.green, title: "Title", subtitle: "Sub title"))
 
-            EntityListViewCell(data: EntityListCellData(image: img, date: date, color: UIColor.orange, title: "Title", subtitle: "Sub title", text: "long long long long long long long long long long text"))
+            EntityListCell(data: EntityListCellData(image: img, date: date, color: UIColor.orange, title: "Title", subtitle: "Sub title", text: "long long long long long long long long long long text"))
 
-            EntityListViewCell(data: EntityListCellData(image: img, date: date, color: UIColor.systemPink, title: "Title", subtitle: "Subtitle", text: "Some text", collections: [CollectionPillData(id: "col1", name: "Collection 1")]))
+            EntityListCell(data: EntityListCellData(image: img, date: date, color: UIColor.systemPink, title: "Title", subtitle: "Subtitle", text: "Some text", collections: [CollectionPillData(id: "col1", name: "Collection 1")]))
 
-            EntityListViewCell(data: EntityListCellData(image: img, date: date, color: UIColor.systemGray, title: "Title", collections: [CollectionPillData(id: "col1", name: "Collection 1")]))
+            EntityListCell(data: EntityListCellData(image: img, date: date, color: UIColor.systemGray, title: "Title", collections: [CollectionPillData(id: "col1", name: "Collection 1")]))
         }
     }
 }

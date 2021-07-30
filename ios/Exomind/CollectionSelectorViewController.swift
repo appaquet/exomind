@@ -39,6 +39,10 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         self.tableView.delegate = self
         self.tableView.keyboardDismissMode = .onDrag
 
+        self.tableView.register(SwiftUICellViewHost<CollectionSelectorCell>.self, forCellReuseIdentifier: "cell")
+        self.tableView.rowHeight = UITableView.automaticDimension
+        self.tableView.estimatedRowHeight = 75
+
         self.searchBar = UISearchBar()
         self.navigationItem.titleView = self.searchBar
         self.searchBar.becomeFirstResponder()
@@ -166,19 +170,11 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         let parents = Collections.instance.entityParentsPillData(entity: collection.entity)
 
         let cellData = CollectionSelectorCellData(id: collection.entity.id, name: name, checked: checked, icon: img, parents: parents)
-        let cell = SwiftUICellViewHost(view: AnyView(CollectionSelectorCell(data: cellData)))
+
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! SwiftUICellViewHost<CollectionSelectorCell>
+        cell.setView(view: CollectionSelectorCell(data: cellData), parentController: self)
 
         return cell
-    }
-
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        let index = (indexPath as NSIndexPath).item
-
-        if let collection = self.collectionData.element(at: index), collection.parents.isEmpty {
-            return 50
-        } else {
-            return 80
-        }
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

@@ -36,7 +36,7 @@
 		6D0F6B701C3329E700AB9DEC /* KeychainSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6D0F6B6F1C3329E700AB9DEC /* KeychainSwift.framework */; };
 		6D1F240B2516442900CFA8D9 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1F240A2516442900CFA8D9 /* HomeViewController.swift */; };
 		6D201AA4269A770400874A93 /* CollectionPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D201AA3269A770400874A93 /* CollectionPillView.swift */; };
-		6D201AA7269BB4A100874A93 /* EntityListViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D201AA6269BB4A100874A93 /* EntityListViewCell.swift */; };
+		6D201AA7269BB4A100874A93 /* EntityListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D201AA6269BB4A100874A93 /* EntityListCell.swift */; };
 		6D2272751C44107100B0FC61 /* SwitcherButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D2272741C44107100B0FC61 /* SwitcherButton.swift */; };
 		6D2272771C441ED200B0FC61 /* UIViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D2272761C441ED200B0FC61 /* UIViewExtension.swift */; };
 		6D23F61A1C3DB12E00D9A075 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D23F6191C3DB12E00D9A075 /* SearchViewController.swift */; };
@@ -170,7 +170,7 @@
 		6D0F6B6F1C3329E700AB9DEC /* KeychainSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = KeychainSwift.framework; path = "Pods/../build/Debug-iphoneos/KeychainSwift.framework"; sourceTree = "<group>"; };
 		6D1F240A2516442900CFA8D9 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		6D201AA3269A770400874A93 /* CollectionPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionPillView.swift; sourceTree = "<group>"; };
-		6D201AA6269BB4A100874A93 /* EntityListViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityListViewCell.swift; sourceTree = "<group>"; };
+		6D201AA6269BB4A100874A93 /* EntityListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityListCell.swift; sourceTree = "<group>"; };
 		6D2272741C44107100B0FC61 /* SwitcherButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwitcherButton.swift; sourceTree = "<group>"; };
 		6D2272761C441ED200B0FC61 /* UIViewExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewExtension.swift; sourceTree = "<group>"; };
 		6D23F6191C3DB12E00D9A075 /* SearchViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
@@ -305,7 +305,7 @@
 			isa = PBXGroup;
 			children = (
 				6DC0D26F1BC576AC00F14571 /* EntityListViewController.swift */,
-				6D201AA6269BB4A100874A93 /* EntityListViewCell.swift */,
+				6D201AA6269BB4A100874A93 /* EntityListCell.swift */,
 			);
 			name = EntityListVIew;
 			sourceTree = "<group>";
@@ -888,7 +888,7 @@
 				45B6BAE9135B464F193AC3D4 /* StringExtension.swift in Sources */,
 				45B6BFF8AE9157DF82740038 /* Entities.swift in Sources */,
 				45B6BF9E36D12AC04B0E4E61 /* ManagedQuery.swift in Sources */,
-				6D201AA7269BB4A100874A93 /* EntityListViewCell.swift in Sources */,
+				6D201AA7269BB4A100874A93 /* EntityListCell.swift in Sources */,
 				45B6B660281C1CC6E661D13E /* Retry.swift in Sources */,
 				45B6B00646DC34E0D7E0BA0F /* ExomindMutations.swift in Sources */,
 				45B6B7AFB59BE04411373421 /* SnoozedViewController.swift in Sources */,
@@ -978,7 +978,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MARKETING_VERSION = 0.1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1005,7 +1005,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MARKETING_VERSION = 0.1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1144,7 +1144,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 14.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 0.1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
 				PRODUCT_NAME = Exomind;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1170,7 +1170,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 14.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 0.1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
 				PRODUCT_NAME = Exomind;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";

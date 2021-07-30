@@ -36,11 +36,10 @@ class EntityListViewController: UITableViewController {
         self.tableView.dataSource = self.datasource
         self.tableView.delegate = self
 
-        // enable cell autolayout
+        self.tableView.register(SwiftUICellViewHost<EntityListCell>.self, forCellReuseIdentifier: "cell")
         self.tableView.rowHeight = UITableView.automaticDimension
-        self.tableView.estimatedRowHeight = 60
+        self.tableView.estimatedRowHeight = 75
 
-        self.tableView.register(SwiftUICellViewHost.self, forCellReuseIdentifier: "cell")
         NotificationCenter.default.addObserver(self, selector: #selector(onCollectionsChanged), name: .exomindCollectionsChanged, object: nil)
     }
 
@@ -173,6 +172,7 @@ class EntityListViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         self.tableView.deselectRow(at: indexPath, animated: false)
+
         if let res = self.collectionData.element(at: (indexPath as NSIndexPath).item),
            let handler = self.itemClickHandler {
             handler(res.entity)
@@ -193,23 +193,11 @@ class EntityListViewController: UITableViewController {
         return UISwipeActionsConfiguration(actions: swipeActions)
     }
 
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        let index = (indexPath as NSIndexPath).item
-
-        if let entity = self.collectionData.element(at: index), entity.collections.isEmpty {
-            return 75
-        } else {
-            return 99
-        }
-    }
-
-    private func createCell(_ indexPath: IndexPath, result: EntityResult) -> SwiftUICellViewHost {
-        // TODO: Get reusing back by calculating sizes ahead of time and reuse cells of same height
-        //       tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! EntityListViewCellHost
-
+    private func createCell(_ indexPath: IndexPath, result: EntityResult) -> SwiftUICellViewHost<EntityListCell> {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! SwiftUICellViewHost<EntityListCell>
         let data = cellDataFromResult(result, parentId: self.parentId)
-        let view = EntityListViewCell(data: data)
-        return SwiftUICellViewHost(view: AnyView(view))
+        cell.setView(view: EntityListCell(data: data), parentController: self)
+        return cell
     }
 
     private func swipeActionsForRow(swipeAction: EntityListSwipeAction, indexPath: IndexPath) -> UIContextualAction {

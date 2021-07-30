@@ -13,7 +13,7 @@
   download `client_secret.json` credentials file. Move file in the node folder (ex: `./gmail_node`)
 
 4) Login to your Gmail account (at repo root) and follow console instructions to authenticate with Gmail.
-    * `exomind-gmail ./gmail_node login <youremail@gmail.com>` 
+    * `exm -d ./gmail_node gmail login <youremail@gmail.com>` 
 
-5) Start the deaemon.
-    * `exomind-gmail ./gmail_node daemon`
+5) Start the daemon.
+    * `exm -d ./gmail_node gmail daemon`
