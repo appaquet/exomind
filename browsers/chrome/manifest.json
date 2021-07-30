@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "Exomind",
     "description": "Import into Exomind",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "background": {
         "scripts": [
             "event.js"

@@ -7,10 +7,10 @@ keywords = ["knowledge-management", "mobile", "decentralized", "webapp"]
 license = "Apache-2.0"
 name = "exomind"
 repository = "https://github.com/appaquet/exomind"
-version = "0.1.5"
+version = "0.1.6"
 
 [dependencies]
-exomind-protos = {path = "./protos", version = "0.1.5"}
+exomind-protos = {path = "./protos", version = "0.1.6"}
 
 [workspace]
 exclude = [
