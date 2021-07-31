@@ -24,8 +24,10 @@ struct CollectionPillView: View {
         .padding(5)
         .background(Color(UIColor("#d8d8d8")))
         .cornerRadius(12)
-        .onTapGesture {
-            self.collection.onClick?()
+        .if(self.collection.onClick != nil) { v in
+            v.onTapGesture {
+                self.collection.onClick?()
+            }
         }
     }
 

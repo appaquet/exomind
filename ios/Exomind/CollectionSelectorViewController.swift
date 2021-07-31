@@ -33,6 +33,8 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     private var searchDebouncer: Debouncer!
     private var collectionData: [Collection] = []
 
+    private let bgQueue = DispatchQueue(label: "io.exomind.collection_selector")
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -59,36 +61,40 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     }
 
     private func loadData() {
-        if self.entityQuery == nil {
-            self.queryEntity()
-        }
+        self.bgQueue.async { [weak self] in
+            guard let this = self else {
+                return
+            }
 
-        if self.collectionsQuery == nil || self.collectionsQueryFilter != self.currentFilter {
-            self.queryFilteredCollections()
-        }
+            if this.entityQuery == nil {
+                this.queryEntity()
+            }
 
-        if let collectionsResults = self.collectionsQuery?.results,
-           let entityParents = self.entityParents {
+            if this.collectionsQuery == nil || this.collectionsQueryFilter != this.currentFilter {
+                this.queryFilteredCollections()
+            }
 
-            let collectionsEntities: [Collection] = collectionsResults.compactMap({ res in
-                Collection.fromEntity(entity: res.entity.toExtension())
-            })
-            let combined = entityParents + collectionsEntities
-            var uniqueMap = [String: Collection]()
-            self.collectionData = combined.filter { (col: Collection) -> Bool in
-                if uniqueMap[col.entity.id] == nil {
-                    uniqueMap[col.entity.id] = col
-                    return true
-                } else {
-                    return false
+            if let collectionsResults = this.collectionsQuery?.results,
+               let entityParents = this.entityParents {
+
+                let collectionsEntities: [Collection] = collectionsResults.compactMap({ res in
+                    Collection.fromEntity(entity: res.entity.toExtension())
+                })
+                let combined = entityParents + collectionsEntities
+                var uniqueMap = [String: Collection]()
+                this.collectionData = combined.filter { (col: Collection) -> Bool in
+                    if uniqueMap[col.entity.id] == nil {
+                        uniqueMap[col.entity.id] = col
+                        return true
+                    } else {
+                        return false
+                    }
+                }
+
+                DispatchQueue.main.async {
+                    this.tableView.reloadData()
                 }
             }
-
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-            }
-        } else {
-            self.collectionData = []
         }
     }
 
@@ -108,14 +114,14 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     }
 
     private func queryFilteredCollections() {
-        var collectionsQuery: QueryBuilder;
+        let collectionsQuery: QueryBuilder
         if let currentFilter = currentFilter {
             let traitQuery = TraitQueryBuilder.matching(query: currentFilter).build()
-            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_Collection.self, query: traitQuery)
+            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_Collection.self, query: traitQuery).count(30)
         } else {
-            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_Collection.self)
+            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_Collection.self).count(30)
         }
-        collectionsQuery = collectionsQuery.count(30)
+
         self.collectionsQuery = ManagedQuery(query: collectionsQuery.build(), onChange: { [weak self] in
             self?.loadData()
         })
@@ -162,17 +168,17 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let collection = self.collectionData[(indexPath as NSIndexPath).item]
-
-        let name = collection.trait.strippedDisplayName
-        let checked = self.hasParent(parentEntityId: collection.entity.id)
-        let img = ObjectsIcon.icon(forAnyTrait: collection.trait, color: UIColor.label, dimension: CollectionSelectorCell.ICON_SIZE)
-        let parents = Collections.instance.entityParentsPillData(entity: collection.entity)
-
-        let cellData = CollectionSelectorCellData(id: collection.entity.id, name: name, checked: checked, icon: img, parents: parents)
-
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! SwiftUICellViewHost<CollectionSelectorCell>
-        cell.setView(view: CollectionSelectorCell(data: cellData), parentController: self)
+
+        if let collection = self.collectionData.element(at: (indexPath as NSIndexPath).item) {
+            let name = collection.trait.strippedDisplayName
+            let checked = self.hasParent(parentEntityId: collection.entity.id)
+            let img = ObjectsIcon.icon(forAnyTrait: collection.trait, color: UIColor.label, dimension: CollectionSelectorCell.ICON_SIZE)
+            let parents = Collections.instance.entityParentsPillData(entity: collection.entity)
+
+            let cellData = CollectionSelectorCellData(id: collection.entity.id, name: name, checked: checked, icon: img, parents: parents)
+            cell.setView(view: CollectionSelectorCell(data: cellData), parentController: self)
+        }
 
         return cell
     }
@@ -180,11 +186,12 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         self.tableView.deselectRow(at: indexPath, animated: false)
 
-        let collection = self.collectionData[(indexPath as NSIndexPath).item]
-        if (self.hasParent(parentEntityId: collection.entity.id)) {
-            self.removeParent(parentEntityId: collection.entity.id)
-        } else {
-            self.addParent(parentEntityId: collection.entity.id)
+        if let collection = self.collectionData.element(at: (indexPath as NSIndexPath).item) {
+            if (self.hasParent(parentEntityId: collection.entity.id)) {
+                self.removeParent(parentEntityId: collection.entity.id)
+            } else {
+                self.addParent(parentEntityId: collection.entity.id)
+            }
         }
     }
 

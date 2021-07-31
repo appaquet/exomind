@@ -37,9 +37,12 @@ class Collections {
                 return nil
             }
 
-            return collection.toCollectionPill(onClick: {
-                onCollectionClick?(collection.entity)
-            }, context: context.expanded(entity.id))
+            let onClick = onCollectionClick.map { inner in
+                {
+                    inner(collection.entity)
+                }
+            }
+            return collection.toCollectionPill(onClick: onClick, context: context.expanded(entity.id))
         }
     }
 
