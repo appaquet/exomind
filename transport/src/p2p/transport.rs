@@ -13,7 +13,7 @@ use futures::{channel::mpsc, prelude::*, FutureExt, SinkExt, StreamExt};
 use libp2p::{
     core::PeerId,
     ping::{Ping, PingEvent, PingSuccess},
-    swarm::{ExpandedSwarm, NetworkBehaviourEventProcess, Swarm},
+    swarm::{NetworkBehaviourEventProcess, Swarm},
     NetworkBehaviour, Transport,
 };
 
@@ -207,13 +207,6 @@ impl Libp2pTransport {
                     }
                     OutEvent::Reset => {
                         info!("Resetting connections to peers...");
-                        // Kind of hack, but banning and unbanning peers will disconnect their
-                        // active connections.
-                        let inner = inner.read().expect("Couldn't get inner lock");
-                        for node in inner.all_peer_nodes().values() {
-                            ExpandedSwarm::<_, _, _, _>::ban_peer_id(&mut swarm, *node.peer_id());
-                            ExpandedSwarm::<_, _, _, _>::unban_peer_id(&mut swarm, *node.peer_id());
-                        }
                         swarm.behaviour_mut().exocore.reset_peers();
                     }
                 }

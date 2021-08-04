@@ -9,7 +9,8 @@ use futures::task::{Context, Poll};
 use libp2p::{
     core::{connection::ConnectionId, Multiaddr, PeerId},
     swarm::{
-        DialPeerCondition, NetworkBehaviour, NetworkBehaviourAction, NotifyHandler, PollParameters,
+        CloseConnection, DialPeerCondition, NetworkBehaviour, NetworkBehaviourAction,
+        NotifyHandler, PollParameters,
     },
 };
 
@@ -120,8 +121,13 @@ impl ExocoreBehaviour {
     }
 
     pub fn reset_peers(&mut self) {
-        for peer in self.peers.values_mut() {
+        for (peer_id, peer) in &mut self.peers {
             peer.last_dial = None;
+            self.actions
+                .push_back(NetworkBehaviourAction::CloseConnection {
+                    peer_id: *peer_id,
+                    connection: CloseConnection::All,
+                });
         }
     }
 
