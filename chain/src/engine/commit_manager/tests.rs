@@ -603,7 +603,7 @@ fn should_not_cleanup_operations_from_commit_refused_blocks() -> anyhow::Result<
     let block_operations = BlockOperations::from_operations(operations)?;
     let block_id = cluster.consistent_timestamp(0).into();
     let invalid_block = BlockBuilder::build_with_prev_block(
-        &cluster.cells[0].cell(),
+        cluster.cells[0].cell(),
         &preceding_valid_block,
         block_id,
         block_operations,
@@ -714,7 +714,7 @@ fn create_entry_operation(
     let node = &cluster.nodes[node_idx];
     let op_id = cluster.consistent_timestamp(node_idx).into();
     let op_builder = OperationBuilder::new_entry(op_id, node.id(), data);
-    op_builder.sign_and_build(&node).unwrap()
+    op_builder.sign_and_build(node).unwrap()
 }
 
 fn push_block_proposal_for_ops(
@@ -748,9 +748,9 @@ fn create_block_proposal(
             .frame
     });
     let block_operations = BlockOperations::from_operations(block_operations).unwrap();
-    let block_operation_id = cluster.clocks[node_idx].consistent_time(&node).into();
+    let block_operation_id = cluster.clocks[node_idx].consistent_time(node).into();
     let block = BlockBuilder::build_with_prev_block(
-        &cluster.cells[node_idx].cell(),
+        cluster.cells[node_idx].cell(),
         &previous_block,
         block_operation_id,
         block_operations,
@@ -769,7 +769,7 @@ fn get_pending_blocks(
     PendingBlocks::new(
         &cluster.commit_managers[node_idx].config,
         &cluster.clocks[node_idx],
-        &cluster.cells[node_idx].cell(),
+        cluster.cells[node_idx].cell(),
         &cluster.pending_stores[node_idx],
         &cluster.chains[node_idx],
     )

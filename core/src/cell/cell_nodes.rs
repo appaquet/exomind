@@ -149,7 +149,7 @@ impl<'cell> CellNodesRead<'cell> {
 
 impl<'cell> CellNodes for CellNodesRead<'cell> {
     fn cell(&self) -> &Cell {
-        &self.cell
+        self.cell
     }
 
     fn nodes_map(&self) -> &HashMap<NodeId, CellNode> {
@@ -196,7 +196,7 @@ impl<'cell> CellNodesWrite<'cell> {
 
 impl<'cell> CellNodes for CellNodesWrite<'cell> {
     fn cell(&self) -> &Cell {
-        &self.cell
+        self.cell
     }
 
     fn nodes_map(&self) -> &HashMap<NodeId, CellNode> {

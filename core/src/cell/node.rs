@@ -267,7 +267,7 @@ impl Deref for LocalNode {
 
 impl PartialEq for LocalNode {
     fn eq(&self, other: &Self) -> bool {
-        self.node.eq(&other)
+        self.node.eq(other)
     }
 }
 

@@ -8,8 +8,6 @@ use crate::error::Error;
 
 /// Tantitvy schema fields
 pub(crate) struct Fields {
-    pub config: MutationIndexConfig,
-
     pub trait_type: Field,
     pub entity_id: Field,
     pub trait_id: Field,
@@ -134,7 +132,6 @@ pub(crate) fn build_tantivy_schema(
     let schema = schema_builder.build();
 
     let fields = Fields {
-        config,
         trait_type,
         entity_id,
         trait_id,

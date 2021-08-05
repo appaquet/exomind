@@ -46,7 +46,7 @@ pub(super) struct EngineTestCluster {
     pub nodes: Vec<LocalNode>,
     pub nodes_index: HashMap<NodeId, usize>,
 
-    pub temp_dirs: Vec<TempDir>,
+    pub _temp_dirs: Vec<TempDir>, // removed on drop
 
     pub clocks: Vec<Clock>,
     pub chains: Vec<DirectoryChainStore>,
@@ -161,7 +161,7 @@ impl EngineTestCluster {
             nodes,
             nodes_index,
 
-            temp_dirs,
+            _temp_dirs: temp_dirs,
             clocks,
             chains,
             chains_synchronizer,

@@ -76,8 +76,8 @@ impl OrderingValueExt for OrderingValue {
             (_, Some(V::Min(_))) => Some(O::Greater),
             (Some(V::Max(_)), _) => Some(O::Greater),
             (_, Some(V::Max(_))) => Some(O::Less),
-            (Some(V::Float(va)), Some(V::Float(vb))) => va.partial_cmp(&vb),
-            (Some(V::Uint64(va)), Some(V::Uint64(vb))) => va.partial_cmp(&vb),
+            (Some(V::Float(va)), Some(V::Float(vb))) => va.partial_cmp(vb),
+            (Some(V::Uint64(va)), Some(V::Uint64(vb))) => va.partial_cmp(vb),
             (Some(V::Date(va)), Some(V::Date(vb))) => {
                 if va.seconds != vb.seconds {
                     va.seconds.partial_cmp(&vb.seconds)

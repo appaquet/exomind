@@ -456,7 +456,7 @@ where
 
     fn dispatch_events_from_sync_context(&mut self, sync_context: &SyncContext) {
         for event in sync_context.events.iter() {
-            self.dispatch_event(&event)
+            self.dispatch_event(event)
         }
     }
 

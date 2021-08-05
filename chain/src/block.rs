@@ -491,7 +491,7 @@ impl BlockOperations {
             let operation_reader = operation.get_reader()?;
             let offset = data.len();
             let entry_data = operation.whole_data();
-            hasher.input_signed_frame(&operation.inner().inner());
+            hasher.input_signed_frame(operation.inner().inner());
             data.extend_from_slice(entry_data);
 
             let operation_id = operation_reader.get_operation_id();
@@ -525,7 +525,7 @@ impl BlockOperations {
     {
         let mut hasher = Sha3_256::default();
         for operation in sorted_operations {
-            hasher.input_signed_frame(&operation.borrow().inner().inner());
+            hasher.input_signed_frame(operation.borrow().inner().inner());
         }
         Ok(hasher.to_multihash())
     }

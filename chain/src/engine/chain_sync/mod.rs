@@ -234,7 +234,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             requested_details.to_u16()
         );
 
-        let node_info = self.get_or_create_node_info_mut(&from_node.id());
+        let node_info = self.get_or_create_node_info_mut(from_node.id());
         node_info.request_tracker.set_last_responded_now();
 
         if requested_details == chain_sync_request::RequestedDetails::Headers {
@@ -307,7 +307,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         // last responded is set at the end so that if we failed reading response, it's
         // considered as if we didn't receive anything (which will lead to
         // timeout & retries)
-        let node_info = self.get_or_create_node_info_mut(&from_node.id());
+        let node_info = self.get_or_create_node_info_mut(from_node.id());
         node_info.request_tracker.set_last_responded_now();
 
         Ok(())
@@ -579,7 +579,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         store: &mut CS,
         response_reader: chain_sync_response::Reader,
     ) -> Result<(), EngineError> {
-        let from_node_info = self.get_or_create_node_info_mut(&from_node.id());
+        let from_node_info = self.get_or_create_node_info_mut(from_node.id());
 
         let metadata_reader = response_reader.get_headers()?;
         let mut has_new_common_block = false;
@@ -684,7 +684,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             return Err(anyhow!("Got data from a non-lead node {}", from_node.id()).into());
         }
 
-        let from_node_info = self.get_or_create_node_info_mut(&from_node.id());
+        let from_node_info = self.get_or_create_node_info_mut(from_node.id());
 
         // write incoming blocks
         let mut last_local_block: Option<BlockMetadata> = store

@@ -194,7 +194,7 @@ impl SyncRangeBuilder {
                 op_header_builder.set_operation_id(operation.operation_id);
 
                 let signature_data = operation.frame.inner().inner().multihash_bytes();
-                op_header_builder.set_operation_signature(&signature_data);
+                op_header_builder.set_operation_signature(signature_data);
             }
         }
 

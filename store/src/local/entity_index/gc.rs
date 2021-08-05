@@ -211,8 +211,8 @@ impl GarbageCollector {
                     collect_delete_trait(entity_id, trait_id, mutations)
                 }
                 Operation::CompactTrait(_, entity_id, trait_id) => collect_trait_versions(
-                    &entity_id,
-                    &trait_id,
+                    entity_id,
+                    trait_id,
                     self.config.trait_versions_max,
                     mutations,
                 ),

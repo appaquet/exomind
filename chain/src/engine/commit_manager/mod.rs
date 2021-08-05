@@ -130,7 +130,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         chain_store: &CS,
         pending_store: &mut PS,
     ) -> Result<(), EngineError> {
-        match self.check_should_sign_block(block_id, &pending_blocks, chain_store, pending_store) {
+        match self.check_should_sign_block(block_id, pending_blocks, chain_store, pending_store) {
             Ok(should_sign) => {
                 let mut_next_block = pending_blocks.get_block_mut(&block_id);
                 if should_sign {
@@ -275,14 +275,14 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
     ) -> Result<(), EngineError> {
         let local_node = self.cell.local_node();
 
-        let operation_id = self.clock.consistent_time(&local_node);
+        let operation_id = self.clock.consistent_time(local_node);
 
         let refusal_builder = OperationBuilder::new_refusal(
             next_block.group_id,
             operation_id.into(),
             local_node.id(),
         )?;
-        let refusal_operation = refusal_builder.sign_and_build(&local_node)?;
+        let refusal_operation = refusal_builder.sign_and_build(local_node)?;
 
         let refusal_reader = refusal_operation.get_operation_reader()?;
         let pending_refusal = PendingBlockRefusal::from_operation(refusal_reader)?;
@@ -398,7 +398,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             .map(|operation| operation.frame);
 
         let block_operations = BlockOperations::from_operations(block_operations)?;
-        let block_operation_id = self.clock.consistent_time(&local_node);
+        let block_operation_id = self.clock.consistent_time(local_node);
         let block = BlockBuilder::build_with_prev_block(
             &self.cell,
             &previous_block,
@@ -415,7 +415,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
             local_node.id(),
             &block,
         )?;
-        let block_proposal_operation = block_proposal_frame_builder.sign_and_build(&local_node)?;
+        let block_proposal_operation = block_proposal_frame_builder.sign_and_build(local_node)?;
 
         debug!(
             "{}: Proposed block at offset={} operation_id={:?}",
@@ -694,7 +694,7 @@ pub(super) fn create_block_signature(
     clock: &Clock,
     block: &mut PendingBlock,
 ) -> Result<NewOperation, EngineError> {
-    let operation_id = clock.consistent_time(&node);
+    let operation_id = clock.consistent_time(node);
     let signature_frame_builder = OperationBuilder::new_signature_for_block(
         block.group_id,
         operation_id.into(),
@@ -702,7 +702,7 @@ pub(super) fn create_block_signature(
         &block.proposal.get_block()?,
     )?;
 
-    let signature_operation = signature_frame_builder.sign_and_build(&node)?;
+    let signature_operation = signature_frame_builder.sign_and_build(node)?;
 
     let signature_reader = signature_operation.get_operation_reader()?;
     let pending_signature = PendingBlockSignature::from_operation(signature_reader)?;

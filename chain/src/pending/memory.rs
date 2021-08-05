@@ -166,14 +166,14 @@ impl PendingStore for MemoryPendingStore {
         {
             // the operation is a group, we delete all its operations
             for operation_id in group_operations_id {
-                self.operations_timeline.remove(&operation_id);
+                self.operations_timeline.remove(operation_id);
             }
             self.operations_timeline.remove(&operation_id);
             self.groups_operations.remove(&operation_id);
         } else {
             // operation is part of a group, we delete the operation from it
             if let Some(group_id) = self.operations_timeline.get(&operation_id) {
-                if let Some(group) = self.groups_operations.get_mut(&group_id) {
+                if let Some(group) = self.groups_operations.get_mut(group_id) {
                     group.operations.remove(&operation_id);
                 }
             }

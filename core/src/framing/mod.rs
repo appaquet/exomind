@@ -56,7 +56,7 @@ pub trait FrameReader {
     fn copy_into(&self, into: &mut [u8]) -> Result<usize, Error> {
         let whole_data = self.whole_data();
         check_into_size(whole_data.len(), into)?;
-        into[0..whole_data.len()].copy_from_slice(&whole_data);
+        into[0..whole_data.len()].copy_from_slice(whole_data);
         Ok(whole_data.len())
     }
 }

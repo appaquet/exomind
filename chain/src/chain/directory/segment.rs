@@ -115,7 +115,7 @@ impl DirectorySegment {
             segment_path, metadata
         );
 
-        let segment_file = SegmentFile::open(&segment_path, 0, tracker)?;
+        let segment_file = SegmentFile::open(segment_path, 0, tracker)?;
         let next_file_offset = (metadata.next_block_offset - metadata.first_block_offset) as usize;
 
         Ok(DirectorySegment {
@@ -940,7 +940,7 @@ mod tests {
         let mut next_offset = first_block_offset;
         for _i in 0..nb_blocks {
             assert_eq!(next_offset, segment.next_block_offset);
-            let block = create_block(&cell, next_offset);
+            let block = create_block(cell, next_offset);
             segment.write_block(&block).unwrap();
             next_offset += block.total_size() as u64;
         }

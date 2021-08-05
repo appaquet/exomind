@@ -331,12 +331,12 @@ impl TestChainCluster {
             let events = self.get_received_events(node_idx);
             let found_ops = extract_ops_events(&events);
 
-            if (&operations_id).iter().all(|op| found_ops.contains(op)) {
+            if operations_id.iter().all(|op| found_ops.contains(op)) {
                 Ok(found_ops)
             } else {
                 Err(anyhow!(format!(
                     "Not all ops found: found={:?} expected={:?}",
-                    found_ops, &operations_id
+                    found_ops, operations_id
                 )))
             }
         });

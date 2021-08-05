@@ -755,7 +755,7 @@ impl MutationIndex {
         use trait_field_predicate::Value as PV;
         match (&field.field_type, &predicate.value) {
             (FT::String, Some(PV::String(value))) => {
-                let term = Term::from_field_text(field.field, &value);
+                let term = Term::from_field_text(field.field, value);
                 Ok(Box::new(TermQuery::new(term, IndexRecordOption::Basic)))
             }
             (ft, pv) => {

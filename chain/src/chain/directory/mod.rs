@@ -895,7 +895,7 @@ pub mod tests {
     ) {
         let mut next_offset = from_offset;
         for _i in 0..nb_blocks {
-            let block = create_block(&cell, next_offset);
+            let block = create_block(cell, next_offset);
             next_offset = directory_chain.write_block(&block).unwrap();
         }
     }
