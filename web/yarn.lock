@@ -3960,10 +3960,10 @@ dotenv@^9.0.2:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-9.0.2.tgz#dacc20160935a37dea6364aa1bef819fb9b6ab05"
   integrity sha512-I9OvvrHp4pIARv4+x9iuewrWycX6CcZtoAu1XrzPxc5UygMJXJZYmBsynku8IkrJwgypE5DGNjDPmPRhDCptUg==
 
-draft-convert@^2.1.11:
-  version "2.1.11"
-  resolved "https://registry.yarnpkg.com/draft-convert/-/draft-convert-2.1.11.tgz#09797151ac7ed9c8f7898d116ba9f36869997bdf"
-  integrity sha512-8jLuhXmx5h5jiGi7thqdqV8O3aOmT7D5Q4OvCmT5tJWyMXWhKcJCktgqnwvEVGrHGxYJwfkfU4F/3fhGP2Dljw==
+draft-convert@^2.1.12:
+  version "2.1.12"
+  resolved "https://registry.yarnpkg.com/draft-convert/-/draft-convert-2.1.12.tgz#ef77b4d2bf416c1aea2916662e3fa669916644e9"
+  integrity sha512-6Bt338J+ZA00OLlzHipd0ZcQCCrVEM0vCyXb/eDlLdY89mmQ4XWkflSD9vql8TzVJ5ENk4s8cywMO9YTaTnZyg==
   dependencies:
     "@babel/runtime" "^7.5.5"
     immutable "~3.7.4"
