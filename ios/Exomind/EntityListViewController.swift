@@ -102,6 +102,7 @@ class EntityListViewController: UITableViewController {
     }
 
     func loadData(fromQuery query: Exocore_Store_EntityQuery) {
+        print("EntityListViewController > Setting query")
         self.query = ManagedQuery(query: query) { [weak self] in
             self?.refreshData()
         }
@@ -215,11 +216,16 @@ class EntityListViewController: UITableViewController {
                 if completed && swipeAction.style == .destructive,
                    let cutItem = this.collectionData.element(at: index),
                    cutItem.entity.id == item.entity.id {
+                    
+                    DispatchQueue.main.async {
+                        // make sure that we don't refresh during an animation of the swipe actions
+                        self?.query?.inhibitChanges()
 
-                    // remove right away from data to make it faster
-                    this.collectionData.remove(at: index)
-                    this.setData(this.collectionData)
-                    completionHandler(true)
+                        // remove right away from data to make it faster
+                        this.collectionData.remove(at: index)
+                        this.setData(this.collectionData)
+                        completionHandler(true)
+                    }
                 } else {
                     completionHandler(completed)
                 }

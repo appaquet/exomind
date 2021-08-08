@@ -19,13 +19,13 @@ class SwiftUICellViewHost<ContentView: View>: UITableViewCell {
     func setView(view: ContentView, parentController: UIViewController) {
         self.host.rootView = view
 
-        let hostView = self.host.view!
-        hostView.invalidateIntrinsicContentSize()
-
         let requiresControllerMove = self.host.parent != parentController
         if requiresControllerMove {
             parentController.addChild(self.host)
         }
+
+        let hostView = self.host.view!
+        hostView.invalidateIntrinsicContentSize()
 
         if !self.contentView.subviews.contains(hostView) {
             self.contentView.addSubview(hostView)
