@@ -5,6 +5,7 @@ class AutoLayoutWebView: WKWebView {
     var onHeightChange: ((CGFloat) -> Void)?
     var height: CGFloat = 10
     var noDiffCount = 0
+    var consecutiveDiffCount = 0
 
     func setBackgroundTransparent() {
         // default background color to the system color to support dark / light mode
@@ -24,23 +25,28 @@ class AutoLayoutWebView: WKWebView {
 
             let diff = abs(self.scrollView.contentSize.height - self.height)
             if diff > 1.0 {
-                print("AutoLayoutWebView > Height has changed: \(self.height) vs \(self.scrollView.contentSize.height) (diff \(diff))")
+                print("AutoLayoutWebView > Height has changed: \(self.height) vs \(self.scrollView.contentSize.height) (diff=\(diff) consecutive=\(self.consecutiveDiffCount))")
 
+                self.consecutiveDiffCount += 1
                 self.noDiffCount = 0
                 self.height = self.scrollView.contentSize.height
 
                 self.invalidateIntrinsicContentSize()
                 self.onHeightChange?(self.height)
 
-                // we check again after delay to make sure height is the same
+                // we check again after delay to make sure height is the same, unless we seem to be in a expanding loop
                 NSObject.cancelPreviousPerformRequests(withTarget: self)
-                self.perform(#selector(checkSize), with: self, afterDelay: 0.005)
+                if self.consecutiveDiffCount < 5 {
+                    self.perform(#selector(checkSize), with: self, afterDelay: 0.005)
+                }
             } else {
                 // schedule a check at increasing interval
                 self.noDiffCount += 1
                 if self.noDiffCount <= 100 {
                     NSObject.cancelPreviousPerformRequests(withTarget: self)
                     self.perform(#selector(checkSize), with: self, afterDelay: Double(self.noDiffCount) / 100.0)
+                } else {
+                    self.consecutiveDiffCount = 0
                 }
             }
         }

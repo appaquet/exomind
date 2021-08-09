@@ -7,14 +7,17 @@ class ManagedQuery {
     private let onChange: () -> ();
     private let autoReconnect: Bool;
 
+    private var isDirty: Bool = false
     private var queries: [Exocore_Store_EntityQuery] = []
     private var queryHandles: [QueryStreamHandle?] = []
     private var queryResults: [Exocore_Store_EntityResults] = []
 
     private var refreshRetry: Retry?
 
-    var results: [Exocore_Store_EntityResult] = [];
-    var isDirty: Bool = false
+    private var inhibitTimer: Timer?
+    private var inhibitEnabled = false
+
+     var results: [Exocore_Store_EntityResult] = []
 
     init(query: Exocore_Store_EntityQuery, onChange: @escaping () -> (), autoReconnect: Bool = true) {
         self.query = query
@@ -101,6 +104,17 @@ class ManagedQuery {
         self.queryHandles.append(execQuery(query: query, queryIndex: queryIndex))
     }
 
+    func inhibitChanges(forDelay: TimeInterval = 2.0) {
+        print("ManagedQuery > Inhibiting for \(forDelay)")
+        self.inhibitEnabled = true
+        inhibitTimer?.invalidate()
+        inhibitTimer = Timer.scheduledTimer(withTimeInterval: forDelay, repeats: false, block: { [weak self] timer in
+            print("ManagedQuery > Inhibit done")
+            self?.inhibitEnabled = false
+            self?.aggregateAndTrigger()
+        })
+    }
+
     private func requeryFailed() {
         for i in 0..<self.queries.count {
             if self.queryHandles[i] == nil {
@@ -157,6 +171,11 @@ class ManagedQuery {
     }
 
     private func aggregateAndTrigger() {
+        if self.inhibitEnabled {
+            print("ManagedQuery > New results inhibited")
+            return
+        }
+
         self.isDirty = false
 
         var idx = 0
