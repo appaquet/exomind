@@ -231,7 +231,7 @@ impl ExomindClient {
 
             let creation_date = email.received_date.clone();
             let email_trait = Trait {
-                id: email_trait_id(&email),
+                id: email_trait_id(email),
                 message: Some(email.pack_to_any()?),
                 creation_date,
                 ..Default::default()
