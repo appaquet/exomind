@@ -73,9 +73,9 @@ impl Clock {
             }
 
             // unfortunately, as soon as we roll over the counter, we need to make sure that
-            // we don't have the same millisecond since that would mean its not
-            // monotonic
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            // we don't have the same millisecond since that would mean its not monotonic.
+            // we sleep for a millisecond.
+            Self::sleep_next_millisecond();
 
             // counter is higher than MAX, we try to swap it with 0.
             // if the previous value after swap wasn't equal to what we expected, it
@@ -154,6 +154,20 @@ impl Clock {
             *mocked_instant = None;
         } else {
             panic!("Called set_time, but clock source is system");
+        }
+    }
+
+    /// Sleeps for a millisecond. In wasm, sleep is not implemented, so we spin.
+    fn sleep_next_millisecond() {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            let before = Instant::now();
+            while before.elapsed() < Duration::from_millis(1) {}
         }
     }
 }

@@ -359,9 +359,9 @@ fn operations_iter_filtered_height() -> anyhow::Result<()> {
     let pending_store = &cluster.pending_stores_synchronizer[0];
 
     let mut store = MemoryPendingStore::new();
-    store.put_operation(create_dummy_new_entry_op(&local_node, 100, 100))?;
-    store.put_operation(create_dummy_new_entry_op(&local_node, 101, 101))?;
-    store.put_operation(create_dummy_new_entry_op(&local_node, 102, 102))?;
+    store.put_operation(create_dummy_new_entry_op(local_node, 100, 100))?;
+    store.put_operation(create_dummy_new_entry_op(local_node, 101, 101))?;
+    store.put_operation(create_dummy_new_entry_op(local_node, 102, 102))?;
 
     let res = pending_store
         .operations_iter_from_height(&store, .., None)?

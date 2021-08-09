@@ -313,7 +313,7 @@ impl EngineTestCluster {
         let block_operation_id = self.consistent_timestamp(node_idx).into();
         let block_operations = BlockOperations::from_operations(operations)?;
         let block = BlockBuilder::build_with_prev_block(
-            &self.cells[node_idx].cell(),
+            self.cells[node_idx].cell(),
             &last_block,
             block_operation_id,
             block_operations,
