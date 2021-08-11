@@ -1032,7 +1032,7 @@ dependencies = [
 
 [[package]]
 name = "exo"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "bytes 1.0.1",
@@ -1062,7 +1062,7 @@ dependencies = [
 
 [[package]]
 name = "exocore"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "exocore-apps-sdk",
@@ -1086,7 +1086,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-host"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "exocore-core",
@@ -1101,7 +1101,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-macros"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "futures",
@@ -1113,7 +1113,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-sdk"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1130,7 +1130,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-chain"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1151,7 +1151,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-android"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "exocore-core",
@@ -1162,7 +1162,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-c"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "exocore-core",
  "exocore-discovery",
@@ -1179,7 +1179,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-web"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -1201,7 +1201,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-core"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "bs58",
@@ -1236,7 +1236,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-discovery"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -1256,7 +1256,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-protos"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -1274,7 +1274,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-store"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1298,7 +1298,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-transport"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -3496,9 +3496,9 @@ dependencies = [
 
 [[package]]
 name = "shadow-rs"
-version = "0.6.4"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7781b59cf09391a3657672076913dbb5d8488a0165d6ffe4fb2909499a215d66"
+checksum = "81cf3f40c554f8aaf8ab681b1874bee45ac37e6146aa265c87fdac467c4b22e5"
 dependencies = [
  "chrono",
 ]
