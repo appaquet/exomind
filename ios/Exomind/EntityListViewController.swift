@@ -43,6 +43,11 @@ class EntityListViewController: UITableViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(onCollectionsChanged), name: .exomindCollectionsChanged, object: nil)
     }
 
+    func startEdit() {
+        self.tableView.allowsMultipleSelectionDuringEditing = true
+        self.tableView.setEditing(true, animated: true)
+    }
+
     @objc private func onCollectionsChanged() {
         DispatchQueue.main.async { [weak self] in
             self?.collectionData = []
@@ -122,7 +127,7 @@ class EntityListViewController: UITableViewController {
         var snapshot = NSDiffableDataSourceSnapshot<Int, EntityResult>()
         snapshot.appendSections([1])
         snapshot.appendItems(newResults)
-        self.datasource.apply(snapshot, animatingDifferences: !firstLoad)
+        self.datasource.apply(snapshot, animatingDifferences: false) // TODO: !firstLoad
     }
 
     override func viewDidLayoutSubviews() {
@@ -172,12 +177,21 @@ class EntityListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.tableView.deselectRow(at: indexPath, animated: false)
+        if !self.tableView.isEditing {
+            self.tableView.deselectRow(at: indexPath, animated: false)
 
-        if let res = self.collectionData.element(at: (indexPath as NSIndexPath).item),
-           let handler = self.itemClickHandler {
-            handler(res.entity)
+            if let res = self.collectionData.element(at: (indexPath as NSIndexPath).item),
+               let handler = self.itemClickHandler {
+                handler(res.entity)
+            }
         }
+    }
+
+    override func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        let moveIndex = (sourceIndexPath as NSIndexPath).item
+        let toIndex = (destinationIndexPath as NSIndexPath).item
+
+        print("EntityListViewController > From \(moveIndex) to \(toIndex)")
     }
 
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
@@ -301,6 +315,20 @@ fileprivate class EditableDataSource: UITableViewDiffableDataSource<Int, EntityR
         // allows swipe actions on the cells
         // see https://stackoverflow.com/questions/57898044/unable-to-swipe-to-delete-with-tableview-using-diffable-data-source-in-ios-13
         true
+    }
+
+    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        // allow drag and drop of rows
+        true
+    }
+
+    override func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        let movedEntity = self.itemIdentifier(for: sourceIndexPath)
+        let beforeItem = self.itemIdentifier(for: destinationIndexPath)
+
+
+
+        print("EntityListViewController > From \(movedEntity?.priorityTrait?.displayName) to \(beforeItem?.priorityTrait?.displayName)")
     }
 }
 

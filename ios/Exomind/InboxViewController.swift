@@ -64,6 +64,7 @@ class InboxViewController: UIViewController {
                 self?.handleCreateObject()
             }),
             QuickButtonAction(icon: .check, handler: { () -> Void in
+                self.entityListViewController.startEdit()
                 // TODO: Goto History
             })
         ])

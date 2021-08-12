@@ -34,6 +34,17 @@ class ExomindMutations {
         ExocoreClient.store.mutate(mutation: mutation.build())
     }
 
+    static func moveEntityInParent(entity: EntityExt, previousEntity: EntityExt?, nextEntity: EntityExt?, parentId: String) {
+        let entityParentRel = entity
+                .traitsOfType(Exomind_Base_CollectionChild.self)
+                .first(where: { $0.message.collection.entityID == parentId })
+
+        let beforeParentRel = beforeEntity
+                .traitsOfType(Exomind_Base_CollectionChild.self)
+                .first(where: { $0.message.collection.entityID == parentId })
+
+    }
+
     static func snooze(entity: EntityExt, date: Date, callback: (() -> Void)? = nil) {
         var snoozed = Exomind_Base_Snoozed()
         snoozed.untilDate = date.toProtobuf()
