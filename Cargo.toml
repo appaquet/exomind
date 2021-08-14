@@ -4,6 +4,7 @@ categories = ["command-line-interface", "email", "text-editors"]
 description = "CLI for Exomind, a personal knowledge management tool"
 edition = "2018"
 keywords = ["knowledge-management", "mobile", "decentralized", "webapp"]
+exclude = ["browsers", "ios", "web", "tools", "examples"]
 license = "Apache-2.0"
 name = "exomind"
 repository = "https://github.com/appaquet/exomind"
