@@ -1,7 +1,7 @@
 use std::{ffi::CStr, sync::Arc, time::Duration};
 
 use exocore_core::{
-    cell::{CellConfigExt, LocalNodeConfigExt},
+    cell::{CellConfigExt, CellNodeConfigExt, LocalNodeConfigExt},
     futures::Runtime,
 };
 use exocore_discovery::{Client, Pin, DEFAULT_DISCO_SERVER};
@@ -170,12 +170,14 @@ pub unsafe extern "C" fn exocore_discovery_free(disco: *mut Discovery) {
 /// Parts of the cell joining process. Pushes the node's config to the discovery
 /// service and returns a discovery pin and reply pin.
 async fn push_config(node_config: &LocalNodeConfig, client: Arc<Client>) -> Result<(Pin, Pin), ()> {
-    let node_yml = node_config.to_yaml().map_err(|err| {
+    let roles = Vec::new(); // thin client, no roles for now
+    let cell_node = node_config.create_cell_node_config(roles);
+    let cell_node_yml = cell_node.to_yaml().map_err(|err| {
         error!("Error converting config to yaml: {}", err);
     })?;
 
     let create_resp = client
-        .create(node_yml.as_bytes(), true)
+        .create(cell_node_yml.as_bytes(), true)
         .await
         .map_err(|err| error!("Error pushing node config to discovery service: {}", err))?;
 

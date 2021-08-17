@@ -33,10 +33,10 @@ pub struct AppOptions {
 
 #[derive(Clap)]
 pub enum AppCommand {
-    /// Generate an application structure in current directory.
+    /// Generates an application structure in current directory.
     Generate(GenerateOptions),
 
-    /// Package an application.
+    /// Packages an application.
     Package(PackageOptions),
 }
 

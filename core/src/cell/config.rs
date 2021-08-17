@@ -6,7 +6,7 @@ use std::{
 
 use exocore_protos::{
     apps::manifest_schema,
-    core::{cell_application_config, CellApplicationConfig, NodeConfig},
+    core::{cell_application_config, cell_node_config, CellApplicationConfig, NodeConfig},
     generated::{
         exocore_apps::Manifest,
         exocore_core::{
@@ -37,6 +37,8 @@ pub trait LocalNodeConfigExt {
     fn to_json(&self) -> Result<String, Error>;
 
     fn inlined(&self) -> Result<LocalNodeConfig, Error>;
+
+    fn create_cell_node_config(&self, roles: Vec<cell_node_config::Role>) -> CellNodeConfig;
 
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
 
@@ -140,6 +142,19 @@ impl LocalNodeConfigExt for LocalNodeConfig {
         Ok(config)
     }
 
+    fn create_cell_node_config(&self, roles: Vec<cell_node_config::Role>) -> CellNodeConfig {
+        let node_config = self.config();
+        CellNodeConfig {
+            node: Some(NodeConfig {
+                public_key: node_config.public_key.clone(),
+                id: node_config.id.clone(),
+                name: node_config.name.clone(),
+                addresses: node_config.addresses.clone(),
+            }),
+            roles: roles.into_iter().map(|r| r.into()).collect(),
+        }
+    }
+
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P) {
         self.path = child_to_abs_path_string(&directory, &self.path);
 
@@ -207,12 +222,20 @@ impl LocalNodeConfigExt for LocalNodeConfig {
 pub trait CellNodeConfigExt {
     fn config(&self) -> &CellNodeConfig;
 
+    fn to_yaml(&self) -> Result<String, Error>;
+
     fn from_yaml<R: Read>(bytes: R) -> Result<CellNodeConfig, Error>;
 }
 
 impl CellNodeConfigExt for CellNodeConfig {
     fn config(&self) -> &CellNodeConfig {
         self
+    }
+
+    fn to_yaml(&self) -> Result<String, Error> {
+        serde_yaml::to_string(self.config()).map_err(|err| {
+            Error::Config(anyhow!("Couldn't encode cell node config to YAML: {}", err))
+        })
     }
 
     fn from_yaml<R: Read>(bytes: R) -> Result<CellNodeConfig, Error> {
@@ -244,6 +267,8 @@ pub trait CellConfigExt {
     fn make_absolute_paths<P: AsRef<Path>>(&mut self, directory: P);
 
     fn make_relative_paths<P: AsRef<Path>>(&mut self, directory: P);
+
+    fn find_node(&mut self, node_pk: &str) -> Option<&mut CellNodeConfig>;
 
     fn add_node(&mut self, node: CellNodeConfig);
 
@@ -394,20 +419,31 @@ impl CellConfigExt for CellConfig {
         }
     }
 
+    fn find_node(&mut self, node_pk: &str) -> Option<&mut CellNodeConfig> {
+        for cell_node in &mut self.nodes {
+            if cell_node
+                .node
+                .as_ref()
+                .map_or(false, |n| n.public_key == node_pk)
+            {
+                return Some(cell_node);
+            }
+        }
+
+        None
+    }
+
     fn add_node(&mut self, node: CellNodeConfig) {
-        let new_node_pk = node.node.as_ref().map(|n| n.public_key.as_str());
+        let node_pk = if let Some(node_pk) = node.node.as_ref().map(|n| n.public_key.as_str()) {
+            node_pk
+        } else {
+            return;
+        };
 
         // check if node exists first
-        for cell_node in &mut self.nodes {
-            let is_node = {
-                let node_pk = cell_node.node.as_ref().map(|n| n.public_key.as_str());
-                new_node_pk == node_pk
-            };
-
-            if is_node {
-                *cell_node = node;
-                return;
-            }
+        if let Some(cell_node) = self.find_node(node_pk) {
+            *cell_node = node;
+            return;
         }
 
         // otherwise it doesn't exist, we just add it

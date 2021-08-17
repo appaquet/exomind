@@ -34,10 +34,6 @@ pub struct Options {
     #[clap(long, short = 'd', default_value = "~/.exocore", env = "EXO_DIR")]
     pub dir: PathBuf,
 
-    /// Configuration of the node to use, relative to the directory.
-    #[clap(long, short = 'c', default_value = "node.yaml", env = "EXO_CONF")]
-    pub conf: PathBuf,
-
     /// URL of the discovery service to use for configuration exchange when
     /// joining a cell or adding a new node to a cell.
     #[clap(
@@ -54,7 +50,6 @@ pub struct Options {
 impl Options {
     pub fn validate(&mut self) -> anyhow::Result<()> {
         self.dir = expand_tild(&self.dir)?;
-        self.conf = expand_tild(&self.conf)?;
 
         Ok(())
     }
@@ -64,7 +59,7 @@ impl Options {
     }
 
     pub fn conf_path(&self) -> PathBuf {
-        self.dir.join(&self.conf)
+        self.dir.join("node.yaml")
     }
 
     pub fn read_configuration(&self) -> LocalNodeConfig {
@@ -108,13 +103,13 @@ pub enum Command {
     /// Node configuration related commands.
     Config(config::ConfigOptions),
 
-    /// Start the node daemon, with all its cells and roles.
+    /// Starts the node daemon, with all its cells and roles.
     Daemon,
 
     /// Discovery service related commands.
     Discovery(disco::DiscoveryCommand),
 
-    /// Print version and build information.
+    /// Prints version and build information.
     Version,
 }
 

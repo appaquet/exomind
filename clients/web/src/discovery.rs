@@ -1,6 +1,6 @@
 use std::{rc::Rc, time::Duration};
 
-use exocore_core::cell::{CellConfigExt, LocalNodeConfigExt};
+use exocore_core::cell::{CellConfigExt, CellNodeConfigExt, LocalNodeConfigExt};
 use exocore_discovery::{Client, DEFAULT_DISCO_SERVER};
 use exocore_protos::core::{node_cell_config, CellConfig, NodeCellConfig};
 use futures::{channel::oneshot, future::Shared, FutureExt};
@@ -45,9 +45,14 @@ impl Discovery {
         let local_node = local_node.clone();
 
         let join_fut = async move {
-            let local_node_yml = local_node.to_yaml()?;
+            let roles = Vec::new(); // thin client, no roles for now
+            let cell_node = local_node.config.create_cell_node_config(roles);
+            let cell_node_yml = cell_node
+                .to_yaml()
+                .map_err(|err| into_js_error("couldn't convert to yaml config", err))?;
+
             let create_resp = client
-                .create(local_node_yml.as_bytes(), true)
+                .create(cell_node_yml.as_bytes(), true)
                 .await
                 .map_err(|err| into_js_error("sending config to discovery service", err))?;
 

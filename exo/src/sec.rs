@@ -19,7 +19,7 @@ pub struct SecOptions {
 
 #[derive(Clap)]
 pub enum SecCommand {
-    /// Generate a keypair.
+    /// Generates a keypair.
     GenerateKey,
 
     /// Multihash a file.
