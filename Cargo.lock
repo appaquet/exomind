@@ -2648,9 +2648,9 @@ dependencies = [
 
 [[package]]
 name = "petname"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9ed8e1c7b7cdd47819f76bbec141b4d4b59bb8ffd26c372cc236c90cd90becc"
+checksum = "8246874e06a7673d8e47247a790626616a6b193ce3a61f236be72ae500edb5a3"
 dependencies = [
  "clap 2.33.3",
  "itertools 0.9.0",
