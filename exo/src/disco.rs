@@ -5,7 +5,7 @@ use crate::Context;
 
 #[derive(Clap)]
 pub enum DiscoveryCommand {
-    // Start a discovery service daemon.
+    // Starts a discovery service daemon.
     Daemon(DaemonOptions),
 }
 

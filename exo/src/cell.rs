@@ -4,8 +4,8 @@ use bytes::Bytes;
 use clap::Clap;
 use console::style;
 use exocore_chain::{
-    block::{Block, BlockBuilder, BlockOperations},
-    chain::ChainStore,
+    block::{Block, BlockBuilder, BlockOperations, DataBlock},
+    chain::{ChainData, ChainStore},
     operation::{OperationBuilder, OperationFrame, OperationId},
     DirectoryChainStore, DirectoryChainStoreConfig,
 };
@@ -723,17 +723,19 @@ fn cmd_check_chain(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()>
     print_spacer();
     let bar = indicatif::ProgressBar::new(last_block.get_height()?);
 
+    let mut prev_block: Option<DataBlock<ChainData>> = None;
     let mut block_count = 0;
     for block in chain_store.blocks_iter(0) {
         let block = block?;
 
         block_count += 1;
-        if let Err(err) = block.validate() {
+        if let Err(err) = block.validate(prev_block) {
             let block_header_reader = block.header().get_reader();
             let block_height = block_header_reader
                 .map(block_header::Reader::get_height)
                 .ok();
 
+            bar.finish_and_clear();
             print_error(format!(
                 "Block at offset={} height={} is invalid: {}",
                 style_value(block.offset()),
@@ -742,6 +744,8 @@ fn cmd_check_chain(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Result<()>
             ));
             return Ok(());
         }
+
+        prev_block = Some(block);
 
         bar.set_position(block_count);
     }

@@ -162,11 +162,23 @@ pub trait Block {
         }
     }
 
-    fn validate(&self) -> Result<(), Error> {
+    fn validate<PB: Block>(&self, previous_block: Option<PB>) -> Result<(), Error> {
         // TODO: Signature ticket: https://github.com/appaquet/exocore/issues/46
         //       Should actually check signatures too
 
-        let header_reader: block_header::Reader = self.header().get_reader()?;
+        let header = self.header();
+        let header_reader: block_header::Reader = header.get_reader()?;
+
+        header.inner().inner().verify()?;
+
+        if let Some(previous_block) = previous_block {
+            let previous_hash = previous_block.header().inner().inner().multihash_bytes();
+            if previous_hash != header_reader.get_previous_hash()? {
+                return Err(Error::Integrity(
+                    "Hash of previous block doesn't match current block hash".to_string(),
+                ));
+            }
+        }
 
         let sig_size_header = header_reader.get_signatures_size() as usize;
         let sig_size_stored = self.signatures().whole_data_size();
