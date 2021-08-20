@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package exocore.core;
+
+import "google/protobuf/timestamp.proto";
+
+message BuildInfo {
+    string version = 1;
+
+    google.protobuf.Timestamp build_time = 2;
+
+    bool debug = 3;
+
+    string rust_version = 4;
+}

@@ -25,6 +25,7 @@ protoc \
 
 # Validate Prost protos
 cd $EXOMIND_ROOT
+export GENERATE_PROTOS=1
 cargo clean -p exomind
 cargo test --all
 
