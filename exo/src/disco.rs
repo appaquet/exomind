@@ -4,6 +4,12 @@ use exocore_discovery::{Client, Pin, Server, ServerConfig};
 use crate::Context;
 
 #[derive(Clap)]
+pub struct DiscoveryOptions {
+    #[clap(subcommand)]
+    pub command: DiscoveryCommand,
+}
+
+#[derive(Clap)]
 pub enum DiscoveryCommand {
     // Starts a discovery service daemon.
     Daemon(DaemonOptions),
@@ -15,8 +21,8 @@ pub struct DaemonOptions {
     port: u16,
 }
 
-pub async fn cmd_daemon(_ctx: &Context, cmd: &DiscoveryCommand) -> anyhow::Result<()> {
-    match cmd {
+pub async fn cmd_daemon(_ctx: &Context, cmd: &DiscoveryOptions) -> anyhow::Result<()> {
+    match &cmd.command {
         DiscoveryCommand::Daemon(daemon_opts) => start_daemon(daemon_opts).await,
     }
 }

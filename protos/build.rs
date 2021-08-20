@@ -1,7 +1,5 @@
-use std::env;
-
 fn main() {
-    if env::var("GENERATE_PROTOS").is_ok() {
+    if std::env::var("GENERATE_PROTOS").is_ok() {
         {
             let capn_protos_file = vec![
                 "./capn/common.capnp",
@@ -12,6 +10,7 @@ fn main() {
             for proto_file in capn_protos_file {
                 capnpc::CompilerCommand::new()
                     .file(proto_file)
+                    .output_path("./src/generated/")
                     .run()
                     .unwrap_or_else(|_| panic!("compiling {} schema", proto_file));
             }
@@ -107,6 +106,7 @@ fn main() {
                 .field_attribute("ManifestModule.multihash", "#[serde(default)]");
 
             config
+                .out_dir("./src/generated/")
                 .compile_protos(&prost_protos_file, &["./protobuf/"])
                 .expect("prost error");
         }

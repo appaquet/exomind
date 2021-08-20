@@ -107,7 +107,7 @@ pub enum Command {
     Daemon,
 
     /// Discovery service related commands.
-    Discovery(disco::DiscoveryCommand),
+    Discovery(disco::DiscoveryOptions),
 
     /// Prints version and build information.
     Version,
