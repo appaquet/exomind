@@ -3,12 +3,10 @@ pub(crate) use exocore::protos as exocore_proto;
 pub(crate) mod generated {
     pub(crate) use super::exocore_proto as exocore;
     pub mod exomind {
-        pub mod base {
-            include!(concat!(env!("OUT_DIR"), "/exomind.base.rs"));
-        }
+        #[path = "../exomind.base.rs"]
+        pub mod base;
     }
 }
-
 pub mod base {
     pub use super::generated::exomind::base::*;
     use exocore::protos::message::NamedMessage;

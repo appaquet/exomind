@@ -7,7 +7,7 @@ import "exocore/store/entity.proto";
 import "google/protobuf/timestamp.proto";
 
 // Fields groups
-//  #1: Fields necesseary for search/listing
+//  #1: Fields necessary for search/listing
 
 message Collection {
     string name = 1 [(exocore.text) = true, (exocore.field_group) = 1];
