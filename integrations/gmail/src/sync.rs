@@ -138,11 +138,13 @@ impl AccountSynchronizer {
             };
 
         let history_list = self.gmail.list_history(last_history_id).await?;
-        info!(
-            "Fetch {} history from gmail from history id {}",
-            history_list.len(),
-            last_history_id
-        );
+        if !history_list.is_empty() {
+            info!(
+                "Fetched {} history from gmail from history id {}",
+                history_list.len(),
+                last_history_id
+            );
+        }
 
         for history in history_list {
             match history {
@@ -200,12 +202,15 @@ impl AccountSynchronizer {
             .list_inbox_history(&self.account, last_operation_id)
             .await?;
 
-        info!(
-            "Fetch {} history from exomind after operation {} ({:?})",
-            history_list.len(),
-            last_operation_id,
-            ConsistentTimestamp::from(last_operation_id).to_datetime(),
-        );
+        if !history_list.is_empty() {
+            info!(
+                "Fetched {} history from exomind after operation {} ({:?})",
+                history_list.len(),
+                last_operation_id,
+                ConsistentTimestamp::from(last_operation_id).to_datetime(),
+            );
+        }
+
         for history in history_list {
             match history {
                 ExomindHistoryAction::AddToInbox(operation_id, thread) => {
