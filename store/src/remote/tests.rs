@@ -402,6 +402,16 @@ impl TestRemoteStore {
 
         self.client_handle.on_start().await;
 
+        // notify that server is online for client to use id
+        let node_id = self.local_store.cluster.cells[0].cell().local_node().id();
+        self.local_store
+            .cluster
+            .transport_hub
+            .notify_node_connection_status(
+                node_id,
+                exocore_transport::transport::ConnectionStatus::Connected,
+            );
+
         Ok(())
     }
 

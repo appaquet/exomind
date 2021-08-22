@@ -200,6 +200,12 @@ impl Drop for MockTransportServiceHandle {
     }
 }
 
+impl MockTransportServiceHandle {
+    pub fn into_testable_handle(self, cell: Cell) -> TestableTransportHandle {
+        TestableTransportHandle::new(self, cell)
+    }
+}
+
 /// Wraps a transport handle to add test methods
 pub struct TestableTransportHandle {
     cell: Cell,

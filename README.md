@@ -90,19 +90,19 @@ A cell consists of:
 
     `exo -d ./node2 config edit`
 
-  * Request to join the cell. 
-    This will use exocore's discovery server (`disco.exocore.io`), but this can overridden:
+  * Request to join the cell as a chain and store node.
+    This will use exocore's discovery server (`disco.exocore.io`) to exchange configurations:
 
-    `exo -d ./node2 cell join`
+    `exo -d ./node2 cell join --chain --store`
 
     and copy the displayed discovery PIN.
 
 * On node 1:
   * Add node 2 to cell:
 
-    `exo -d ./node1 cell node add --chain --store` 
+    `exo -d ./node1 cell node add` 
 
-    Paste node 2's discovery PIN.
+    Paste node 2's discovery PIN and accept its join request.
 
 * Start both nodes:
   * Node 1: `exo -d ./node1 daemon`

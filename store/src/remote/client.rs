@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     pin::Pin,
-    sync::{Arc, RwLock, Weak},
+    sync::{Arc, Mutex, RwLock, Weak},
     task::{Context, Poll},
     time::Duration,
 };
@@ -58,21 +58,13 @@ where
         clock: Clock,
         transport_handle: T,
     ) -> Result<Client<T>, Error> {
-        // pick the first node that has store role for now, we'll be switching over to
-        // the first node that connects once transport established connection
-        let store_node = {
-            let cell_nodes = cell.nodes();
-            let cell_nodes_iter = cell_nodes.iter();
-            let first_store_node = cell_nodes_iter.with_role(CellNodeRole::Store).next();
-            first_store_node.map(|n| n.node()).cloned()
-        };
-
         let inner = Arc::new(RwLock::new(Inner {
             config,
             cell,
             clock,
             transport_out: None,
-            store_node,
+            store_node: None,
+            store_node_message_queue: Mutex::new(Vec::new()),
             nodes_status: HashMap::new(),
             pending_queries: HashMap::new(),
             watched_queries: HashMap::new(),
@@ -199,6 +191,7 @@ pub(super) struct Inner {
     clock: Clock,
     transport_out: Option<mpsc::UnboundedSender<OutEvent>>,
     store_node: Option<Node>,
+    store_node_message_queue: Mutex<Vec<OutMessage>>,
     nodes_status: HashMap<NodeId, ConnectionStatus>,
     pending_queries: HashMap<ConsistentTimestamp, PendingRequest<EntityResults>>,
     watched_queries: HashMap<ConsistentTimestamp, WatchedQueryRequest>,
@@ -215,6 +208,8 @@ impl Inner {
         let mut inner = inner.write()?;
 
         inner.nodes_status.insert(node_id, node_new_status);
+
+        let was_already_connected = inner.store_node.is_some();
 
         let node_is_connected = |node_id: &NodeId| -> bool {
             let store_node_status = inner.nodes_status.get(node_id);
@@ -249,6 +244,10 @@ impl Inner {
         if let Some(new_store_node) = new_store_node {
             info!("Switching store server to {}", new_store_node);
             inner.store_node = Some(new_store_node);
+        }
+
+        if !was_already_connected {
+            inner.drain_store_node_message_queue()?;
         }
 
         inner.send_watched_queries_keepalive(true);
@@ -348,16 +347,13 @@ impl Inner {
     ) -> Result<oneshot::Receiver<Result<MutationResult, Error>>, Error> {
         let (result_sender, receiver) = oneshot::channel();
 
-        let store_node = self.store_node.as_ref().ok_or(Error::NotConnected)?;
-
         let request_id = self.clock.consistent_time(self.cell.local_node());
         let request_frame = mutation_to_request_frame(request)?;
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
-                .with_to_node(store_node.clone())
                 .with_expiration(Some(Instant::now() + self.config.mutation_timeout))
                 .with_rendez_vous_id(request_id);
-        self.send_message(message)?;
+        self.send_store_node_message(message)?;
 
         self.pending_mutations.insert(
             request_id,
@@ -377,16 +373,13 @@ impl Inner {
     ) -> Result<oneshot::Receiver<Result<EntityResults, Error>>, Error> {
         let (result_sender, receiver) = oneshot::channel();
 
-        let store_node = self.store_node.as_ref().ok_or(Error::NotConnected)?;
-
         let request_id = self.clock.consistent_time(self.cell.local_node());
         let request_frame = query_to_request_frame(&query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
-                .with_to_node(store_node.clone())
                 .with_expiration(Some(Instant::now() + self.config.query_timeout))
                 .with_rendez_vous_id(request_id);
-        self.send_message(message)?;
+        self.send_store_node_message(message)?;
 
         self.pending_queries.insert(
             request_id,
@@ -426,29 +419,23 @@ impl Inner {
     }
 
     fn send_watch_query(&self, watched_query: &WatchedQueryRequest) -> Result<(), Error> {
-        let store_node = self.store_node.as_ref().ok_or(Error::NotConnected)?;
-
         let request_frame = watched_query_to_request_frame(&watched_query.query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
-                .with_to_node(store_node.clone())
                 .with_rendez_vous_id(watched_query.request_id);
 
-        self.send_message(message)
+        self.send_store_node_message(message)
     }
 
     fn send_unwatch_query(&self, token: WatchToken) -> Result<(), Error> {
-        let store_node = self.store_node.as_ref().ok_or(Error::NotConnected)?;
-
         let mut frame_builder = CapnpFrameBuilder::<unwatch_query_request::Owned>::new();
         let mut message_builder = frame_builder.get_builder();
         message_builder.set_token(token);
 
         let message =
-            OutMessage::from_framed_message(&self.cell, ServiceType::Store, frame_builder)?
-                .with_to_node(store_node.clone());
+            OutMessage::from_framed_message(&self.cell, ServiceType::Store, frame_builder)?;
 
-        self.send_message(message)
+        self.send_store_node_message(message)
     }
 
     fn check_map_requests_timeouts<T>(
@@ -494,18 +481,40 @@ impl Inner {
         }
     }
 
-    fn send_message(&self, message: OutMessage) -> Result<(), Error> {
+    fn send_store_node_message(&self, message: OutMessage) -> Result<(), Error> {
+        let store_node = if let Some(store_node) = &self.store_node {
+            store_node.clone()
+        } else {
+            info!("No store node yet, queueing message");
+            let mut store_node_message_queue = self.store_node_message_queue.lock()?;
+            store_node_message_queue.push(message);
+            return Ok(());
+        };
+
         let transport = self.transport_out.as_ref().ok_or_else(|| {
             Error::Fatal(anyhow!("Tried to send message, but transport_out was none"))
         })?;
 
         transport
-            .unbounded_send(OutEvent::Message(message))
+            .unbounded_send(OutEvent::Message(message.with_to_node(store_node)))
             .map_err(|_err| {
                 Error::Fatal(anyhow!(
                     "Tried to send message, but transport_out channel is closed"
                 ))
             })?;
+
+        Ok(())
+    }
+
+    fn drain_store_node_message_queue(&self) -> Result<(), Error> {
+        let store_node_message_queue: Vec<OutMessage> = {
+            let mut store_node_message_queue = self.store_node_message_queue.lock()?;
+            std::mem::take(store_node_message_queue.as_mut())
+        };
+
+        for message in store_node_message_queue {
+            self.send_store_node_message(message)?;
+        }
 
         Ok(())
     }
@@ -667,56 +676,87 @@ mod tests {
     };
     use exocore_transport::testing::MockTransport;
 
+    use crate::{query::QueryBuilder, store::Store};
+
     use super::*;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn connects_to_online_node() -> anyhow::Result<()> {
-        let local_node = LocalNode::generate();
-        let full_cell = FullCell::generate(local_node.clone());
+        let client_node = LocalNode::generate();
+        let full_cell = FullCell::generate(client_node.clone());
         let clock = Clock::new();
         let transport = MockTransport::default();
 
-        let node1 = LocalNode::generate();
-        {
+        let mut server_nodes = Vec::new();
+        let mut server_transports = Vec::new();
+        for _i in 0..2 {
+            let node = LocalNode::generate();
             let mut cell_nodes = full_cell.cell().nodes_mut();
-            cell_nodes.add(node1.node().clone());
-            let cell_node1 = cell_nodes.get_mut(node1.id()).unwrap();
-            cell_node1.add_role(CellNodeRole::Store);
+
+            cell_nodes.add(node.node().clone());
+            let cell_node = cell_nodes.get_mut(node.id()).unwrap();
+            cell_node.add_role(CellNodeRole::Store);
+
+            server_nodes.push(node.clone());
+
+            let transport = transport
+                .get_transport(node, ServiceType::Store)
+                .into_testable_handle(full_cell.cell().clone());
+
+            server_transports.push(transport);
         }
 
-        let transport_handle = transport.get_transport(local_node, ServiceType::Store);
+        let transport_handle = transport.get_transport(client_node, ServiceType::Store);
         let config = ClientConfiguration::default();
         let client = Client::new(config, full_cell.cell().clone(), clock, transport_handle)?;
         let client_inner = client.inner.clone();
-        let _client_handle = client.get_handle();
+        let client_handle = client.get_handle();
 
         spawn_future(async move {
             let _ = client.run().await;
         });
 
-        {
-            // client should have selected the only node as an store server even if it's not
-            // online
-            let inner = client_inner.read().unwrap();
-            assert_eq!(inner.store_node.as_ref().unwrap().id(), node1.id());
-        }
+        tokio::spawn(async move {
+            let _ = client_handle.query(QueryBuilder::test(true).build()).await;
+        });
 
-        // add a second store node to the cell
-        let node2 = LocalNode::generate();
-        {
-            let mut cell_nodes = full_cell.cell().nodes_mut();
-            cell_nodes.add(node2.node().clone());
-            let cell_node2 = cell_nodes.get_mut(node2.id()).unwrap();
-            cell_node2.add_role(CellNodeRole::Store);
-        }
-
-        // notify that the second node is online
-        transport.notify_node_connection_status(node2.id(), ConnectionStatus::Connected);
-
+        // no node store yet and query should have been queued
         expect_eventually(|| -> bool {
-            // should now be connected to the second node since the first wasn't online
             let inner = client_inner.read().unwrap();
-            inner.store_node.as_ref().unwrap().id() == node2.id()
+            assert!(inner.store_node.as_ref().is_none());
+
+            let msg_queue = inner.store_node_message_queue.lock().unwrap();
+            msg_queue.len() == 1
+        });
+
+        // query has not been sent since node nodes are online
+        assert!(!server_transports[0].has_msg().await.unwrap());
+
+        // notify that the node 0 is now online
+        transport.notify_node_connection_status(server_nodes[0].id(), ConnectionStatus::Connected);
+
+        // should eventually switch to node 0
+        expect_eventually(|| -> bool {
+            let inner = client_inner.read().unwrap();
+            if inner.store_node.is_none() {
+                return false;
+            }
+
+            inner.store_node.as_ref().unwrap().id() == server_nodes[0].id()
+        });
+
+        // node 0 should have receive the query that got queued
+        assert!(server_transports[0].has_msg().await.unwrap());
+
+        // node 0 becomes offline, node 1 comes online
+        transport
+            .notify_node_connection_status(server_nodes[0].id(), ConnectionStatus::Disconnected);
+        transport.notify_node_connection_status(server_nodes[1].id(), ConnectionStatus::Connected);
+
+        // should switch to node 1
+        expect_eventually(|| -> bool {
+            let inner = client_inner.read().unwrap();
+            inner.store_node.as_ref().unwrap().id() == server_nodes[1].id()
         });
 
         Ok(())
