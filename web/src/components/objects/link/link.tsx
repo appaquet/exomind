@@ -9,14 +9,14 @@ import './link.less';
 
 interface IProps {
     entity: EntityTraits;
-    linkTrait: EntityTrait<exomind.base.ILink>;
+    linkTrait: EntityTrait<exomind.base.v1.ILink>;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 }
 
 interface IState {
-    currentLink: exomind.base.ILink
+    currentLink: exomind.base.v1.ILink
 }
 
 export default class Link extends React.Component<IProps, IState> {
@@ -24,7 +24,7 @@ export default class Link extends React.Component<IProps, IState> {
         super(props);
 
         this.state = {
-            currentLink: new exomind.base.Link(props.linkTrait.message),
+            currentLink: new exomind.base.v1.Link(props.linkTrait.message),
         }
     }
 

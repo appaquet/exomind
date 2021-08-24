@@ -14,14 +14,14 @@ import Navigation from '../../../navigation';
 
 interface IProps {
     entity: EntityTraits;
-    noteTrait: EntityTrait<exomind.base.INote>;
+    noteTrait: EntityTrait<exomind.base.v1.INote>;
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 }
 
 interface IState {
-    savedNote: exomind.base.INote;
-    currentNote: exomind.base.INote;
+    savedNote: exomind.base.v1.INote;
+    currentNote: exomind.base.v1.INote;
     focused: boolean;
     editor?: HtmlEditor;
     cursor?: EditorCursor;
@@ -36,7 +36,7 @@ export default class Note extends React.Component<IProps, IState> {
         this.state = {
             focused: false,
             savedNote: props.noteTrait.message,
-            currentNote: new exomind.base.Note(props.noteTrait.message),
+            currentNote: new exomind.base.v1.Note(props.noteTrait.message),
         }
     }
 
@@ -46,7 +46,7 @@ export default class Note extends React.Component<IProps, IState> {
     }
 
     componentDidUpdate(): void {
-        const note = new exomind.base.Note(this.props.noteTrait.message);
+        const note = new exomind.base.v1.Note(this.props.noteTrait.message);
         if (!this.state.focused && !_.isEqual(this.state.currentNote, note)) {
             this.setState({
                 currentNote: note,
@@ -163,7 +163,7 @@ export default class Note extends React.Component<IProps, IState> {
 
             if (this.mounted) {
                 this.setState({
-                    savedNote: new exomind.base.Note(this.state.currentNote),
+                    savedNote: new exomind.base.v1.Note(this.state.currentNote),
                 });
             }
         }

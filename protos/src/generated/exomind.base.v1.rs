@@ -5,11 +5,13 @@
 pub struct Collection {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub description: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CollectionChild {
     #[prost(message, optional, tag = "1")]
-    pub collection: ::core::option::Option<super::super::exocore::store::Reference>,
+    pub collection: ::core::option::Option<super::super::super::exocore::store::Reference>,
     #[prost(uint64, tag = "2")]
     pub weight: u64,
 }
@@ -36,7 +38,7 @@ pub struct Account {
 pub struct EmailThread {
     /// TODO: These 2 fields should probably be into a "source" object ?
     #[prost(message, optional, tag = "1")]
-    pub account: ::core::option::Option<super::super::exocore::store::Reference>,
+    pub account: ::core::option::Option<super::super::super::exocore::store::Reference>,
     #[prost(string, tag = "2")]
     pub source_id: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "3")]
@@ -46,14 +48,14 @@ pub struct EmailThread {
     #[prost(string, tag = "5")]
     pub snippet: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "6")]
-    pub last_email: ::core::option::Option<super::super::exocore::store::Reference>,
+    pub last_email: ::core::option::Option<super::super::super::exocore::store::Reference>,
     #[prost(bool, tag = "7")]
     pub read: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Email {
     #[prost(message, optional, tag = "1")]
-    pub account: ::core::option::Option<super::super::exocore::store::Reference>,
+    pub account: ::core::option::Option<super::super::super::exocore::store::Reference>,
     #[prost(string, tag = "2")]
     pub source_id: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "3")]
@@ -80,9 +82,9 @@ pub struct Email {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DraftEmail {
     #[prost(message, optional, tag = "1")]
-    pub account: ::core::option::Option<super::super::exocore::store::Reference>,
+    pub account: ::core::option::Option<super::super::super::exocore::store::Reference>,
     #[prost(message, optional, tag = "2")]
-    pub in_reply_to: ::core::option::Option<super::super::exocore::store::Reference>,
+    pub in_reply_to: ::core::option::Option<super::super::super::exocore::store::Reference>,
     #[prost(message, repeated, tag = "3")]
     pub to: ::prost::alloc::vec::Vec<Contact>,
     #[prost(message, repeated, tag = "4")]

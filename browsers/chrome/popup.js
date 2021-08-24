@@ -28,8 +28,8 @@ function addBookmark(e) {
         putTrait: new exocore.store.PutTraitMutation({
           trait: new exocore.store.Trait({
             message: new google.protobuf.Any({
-              type_url: 'type.googleapis.com/exomind.base.Link',
-              value: exomind.base.Link.encode(new exomind.base.Link({
+              type_url: 'type.googleapis.com/exomind.base.v1.Link',
+              value: exomind.base.v1.Link.encode(new exomind.base.v1.Link({
                 url: url,
                 title: title,
               })).finish(),
@@ -41,8 +41,8 @@ function addBookmark(e) {
         putTrait: new exocore.store.PutTraitMutation({
           trait: new exocore.store.Trait({
             message: new google.protobuf.Any({
-              type_url: 'type.googleapis.com/exomind.base.CollectionChild',
-              value: exomind.base.CollectionChild.encode(new exomind.base.CollectionChild({
+              type_url: 'type.googleapis.com/exomind.base.v1.CollectionChild',
+              value: exomind.base.v1.CollectionChild.encode(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                   entityId: 'inbox',
                 }),

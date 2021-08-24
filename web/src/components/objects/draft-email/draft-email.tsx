@@ -14,7 +14,7 @@ import { runInAction } from 'mobx';
 
 interface IProps {
     entity: EntityTraits;
-    draftTrait: EntityTrait<exomind.base.IDraftEmail>;
+    draftTrait: EntityTrait<exomind.base.v1.IDraftEmail>;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
@@ -22,11 +22,11 @@ interface IProps {
     containerController?: ContainerController;
 }
 
-type AccountsMap = { [entity_trait_id: string]: { entity: EntityTraits, account: EntityTrait<exomind.base.IAccount> } };
+type AccountsMap = { [entity_trait_id: string]: { entity: EntityTraits, account: EntityTrait<exomind.base.v1.IAccount> } };
 
 interface IState {
-    savedDraft: exomind.base.IDraftEmail;
-    currentDraft: exomind.base.IDraftEmail;
+    savedDraft: exomind.base.v1.IDraftEmail;
+    currentDraft: exomind.base.v1.IDraftEmail;
     accounts?: AccountsMap;
     editor?: HtmlEditor;
 }
@@ -41,7 +41,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
         this.state = {
             savedDraft: props.draftTrait.message,
-            currentDraft: new exomind.base.DraftEmail(props.draftTrait.message),
+            currentDraft: new exomind.base.v1.DraftEmail(props.draftTrait.message),
         }
     }
 
@@ -88,14 +88,14 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     }
 
     private async fetchAccounts(): Promise<void> {
-        const results = await Exocore.store.query(QueryBuilder.withTrait(exomind.base.Account).build())
+        const results = await Exocore.store.query(QueryBuilder.withTrait(exomind.base.v1.Account).build())
 
         const accounts = results.entities
             .map((res) => {
                 return new EntityTraits(res.entity);
             })
             .flatMap((entity) => {
-                const accounts = entity.traitsOfType<exomind.base.IAccount>(exomind.base.Account);
+                const accounts = entity.traitsOfType<exomind.base.v1.IAccount>(exomind.base.v1.Account);
                 return accounts.map((account) => {
                     return { entity, account };
                 })
@@ -169,7 +169,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     }
 
     private renderContactField(fieldName: string, displayName: string): React.ReactNode {
-        const draftRecord = this.state.currentDraft as Record<string, exomind.base.IContact[]>;
+        const draftRecord = this.state.currentDraft as Record<string, exomind.base.v1.IContact[]>;
         const fieldContacts = draftRecord[fieldName] ?? [];
 
         const classes = classNames({
@@ -195,14 +195,14 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
         const lastChar = _.last(contactsString.trim());
         if (lastChar == ',') {
-            contacts.push(new exomind.base.Contact());
+            contacts.push(new exomind.base.v1.Contact());
         } else if (lastChar == '<') {
             const lastContact = contacts[contacts.length - 1];
             lastContact.name = lastContact.email;
             lastContact.email = '';
         }
 
-        const draftRecord = this.state.currentDraft as Record<string, exomind.base.IContact[]>;
+        const draftRecord = this.state.currentDraft as Record<string, exomind.base.v1.IContact[]>;
         draftRecord[fieldName] = contacts;
 
         this.setState({});
@@ -210,7 +210,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
     private handleContactFieldBlur(fieldName: string, e: ChangeEvent<HTMLInputElement>): void {
         const contacts = EmailUtil.parseContacts(e.target.value);
-        const draft = this.state.currentDraft as Record<string, exomind.base.IContact[]>;
+        const draft = this.state.currentDraft as Record<string, exomind.base.v1.IContact[]>;
         draft[fieldName] = contacts;
 
         this.saveObject();
@@ -222,7 +222,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
             if (!_.isEmpty(this.state.currentDraft.parts)) {
                 editPart = _.first(this.state.currentDraft.parts);
             } else {
-                editPart = new exomind.base.EmailPart({
+                editPart = new exomind.base.v1.EmailPart({
                     mimeType: 'text/html'
                 });
             }
@@ -244,8 +244,8 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         });
     }
 
-    private handleBodyChange(editPart: exomind.base.EmailPart, content: string): void {
-        const newEditPart = new exomind.base.EmailPart(editPart);
+    private handleBodyChange(editPart: exomind.base.v1.EmailPart, content: string): void {
+        const newEditPart = new exomind.base.v1.EmailPart(editPart);
         newEditPart.body = content;
 
         const draft = this.state.currentDraft;
@@ -271,7 +271,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
             if (this.mounted) {
                 this.setState({
-                    savedDraft: new exomind.base.DraftEmail(this.state.currentDraft),
+                    savedDraft: new exomind.base.v1.DraftEmail(this.state.currentDraft),
                 });
             }
         }

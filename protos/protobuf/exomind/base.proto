@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package exomind.base;
+package exomind.base.v1;
 
 import "exocore/store/options.proto";
 import "exocore/store/entity.proto";
@@ -11,10 +11,13 @@ import "google/protobuf/timestamp.proto";
 
 message Collection {
     string name = 1 [(exocore.text) = true, (exocore.field_group) = 1];
+
+    string description = 2 [(exocore.text) = true, (exocore.field_group) = 1];
 }
 
 message CollectionChild {
     exocore.store.Reference collection = 1 [(exocore.indexed) = true, (exocore.field_group) = 1];
+
     uint64 weight = 2 [(exocore.sorted) = true, (exocore.field_group) = 1];
 }
 

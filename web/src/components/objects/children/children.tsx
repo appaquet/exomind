@@ -53,7 +53,7 @@ export class Children extends React.Component<IProps, IState> {
 
         const traitQuery = TraitQueryBuilder.refersTo('collection', this.parentId).build();
         const childrenQuery = QueryBuilder
-            .withTrait(exomind.base.CollectionChild, traitQuery)
+            .withTrait(exomind.base.v1.CollectionChild, traitQuery)
             .count(30)
             .orderByField('weight', false)
             .project(
@@ -235,7 +235,7 @@ export class Children extends React.Component<IProps, IState> {
 
         let mb = MutationBuilder
             .updateEntity(et.id)
-            .putTrait(new exomind.base.Snoozed({
+            .putTrait(new exomind.base.v1.Snoozed({
                 untilDate: toProtoTimestamp(date),
             }), "snoozed")
             .returnEntities();
@@ -263,7 +263,7 @@ export class Children extends React.Component<IProps, IState> {
     private handleEntityMoveInbox(et: EntityTraits) {
         const mb = MutationBuilder
             .updateEntity(et.id)
-            .putTrait(new exomind.base.CollectionChild({
+            .putTrait(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                     entityId: et.id,
                 }),
@@ -278,7 +278,7 @@ export class Children extends React.Component<IProps, IState> {
 
     private isPinned(et: EntityTraits): boolean {
         const child = et
-            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .filter((child) => child.message.collection.entityId == this.state.parent?.id)?.[0];
         if (!child) {
             return false;
@@ -289,7 +289,7 @@ export class Children extends React.Component<IProps, IState> {
 
     private handleEntityPin(et: EntityTraits) {
         const child = et
-            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .filter((child) => child.message.collection.entityId == this.state.parent?.id)?.[0];
         if (!child) {
             return;
@@ -355,7 +355,7 @@ export class Children extends React.Component<IProps, IState> {
 
         let mb = MutationBuilder
             .updateEntity(droppedEntity.id)
-            .putTrait(new exomind.base.CollectionChild({
+            .putTrait(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                     entityId: parentId
                 }),
@@ -378,7 +378,7 @@ export class Children extends React.Component<IProps, IState> {
 
     private handleCreatedEntity(entity: EntityTraits) {
         if (this.props.onSelectionChange && this.props.selection) {
-            if (entity.traitOfType(exomind.base.Task)) {
+            if (entity.traitOfType(exomind.base.v1.Task)) {
                 this.setState({
                     editedEntity: entity,
                 });

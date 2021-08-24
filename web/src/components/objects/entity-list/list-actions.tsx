@@ -55,10 +55,10 @@ export class ListActions extends React.Component<IProps> {
     private handleNewNoteClick = () => {
         const mutation = MutationBuilder
             .createEntity()
-            .putTrait(new exomind.base.Note({
+            .putTrait(new exomind.base.v1.Note({
                 title: 'New note',
             }))
-            .putTrait(new exomind.base.CollectionChild({
+            .putTrait(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                     entityId: this.props.parent.id,
                 }),
@@ -73,8 +73,8 @@ export class ListActions extends React.Component<IProps> {
     private handleNewEmailClick = () => {
         const mutation = MutationBuilder
             .createEntity()
-            .putTrait(new exomind.base.DraftEmail())
-            .putTrait(new exomind.base.CollectionChild({
+            .putTrait(new exomind.base.v1.DraftEmail())
+            .putTrait(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                     entityId: this.props.parent.id,
                 }),
@@ -89,10 +89,10 @@ export class ListActions extends React.Component<IProps> {
     private handleNewCollectionClick = () => {
         const mutation = MutationBuilder
             .createEntity()
-            .putTrait(new exomind.base.Collection({
+            .putTrait(new exomind.base.v1.Collection({
                 name: 'New collection',
             }))
-            .putTrait(new exomind.base.CollectionChild({
+            .putTrait(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                     entityId: this.props.parent.id,
                 }),
@@ -107,8 +107,8 @@ export class ListActions extends React.Component<IProps> {
     private handleNewTaskClick = () => {
         const mutation = MutationBuilder
             .createEntity()
-            .putTrait(new exomind.base.Task())
-            .putTrait(new exomind.base.CollectionChild({
+            .putTrait(new exomind.base.v1.Task())
+            .putTrait(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                     entityId: this.props.parent.id,
                 }),
@@ -130,10 +130,10 @@ export class ListActions extends React.Component<IProps> {
 
             const mutation = MutationBuilder
                 .createEntity()
-                .putTrait(new exomind.base.Link({
+                .putTrait(new exomind.base.v1.Link({
                     url: url,
                 }))
-                .putTrait(new exomind.base.CollectionChild({
+                .putTrait(new exomind.base.v1.CollectionChild({
                     collection: new exocore.store.Reference({
                         entityId: this.props.parent.id,
                     }),
@@ -175,7 +175,7 @@ export class ListActions extends React.Component<IProps> {
         for (const entity of entities) {
             const mb = MutationBuilder
                 .updateEntity(entity.id)
-                .putTrait(new exomind.base.Snoozed({
+                .putTrait(new exomind.base.v1.Snoozed({
                     untilDate: toProtoTimestamp(date),
                 }), "snoozed");
 

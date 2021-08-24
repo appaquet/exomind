@@ -8,14 +8,14 @@ import './task.less';
 
 interface IProps {
     entity: EntityTraits;
-    taskTrait: EntityTrait<exomind.base.ITask>;
+    taskTrait: EntityTrait<exomind.base.v1.ITask>;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 }
 
 interface IState {
-    currentTask: exomind.base.ITask
+    currentTask: exomind.base.v1.ITask
 }
 
 export default class Task extends React.Component<IProps, IState> {
@@ -23,7 +23,7 @@ export default class Task extends React.Component<IProps, IState> {
         super(props);
 
         this.state = {
-            currentTask: new exomind.base.Task(props.taskTrait.message),
+            currentTask: new exomind.base.v1.Task(props.taskTrait.message),
         }
     }
 

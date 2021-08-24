@@ -365,8 +365,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 1,
             collectionLike: true
     ),
-    "exomind.base.EmailThread": TraitConstants(
-            key: "exomind.base.EmailThread",
+    "exomind.base.v1.EmailThread": TraitConstants(
+            key: "exomind.base.v1.EmailThread",
             traitType: .emailThread,
             name: nil,
             nameDefault: "Untitled email",
@@ -375,8 +375,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 2,
             collectionLike: false
     ),
-    "exomind.base.DraftEmail": TraitConstants(
-            key: "exomind.base.DraftEmail",
+    "exomind.base.v1.DraftEmail": TraitConstants(
+            key: "exomind.base.v1.DraftEmail",
             traitType: .draftEmail,
             name: nil,
             nameDefault: "Untitled email",
@@ -385,8 +385,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 3,
             collectionLike: false
     ),
-    "exomind.base.Email": TraitConstants(
-            key: "exomind.base.Email",
+    "exomind.base.v1.Email": TraitConstants(
+            key: "exomind.base.v1.Email",
             traitType: .email,
             name: nil,
             nameDefault: "Untitled email",
@@ -395,8 +395,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 4,
             collectionLike: false
     ),
-    "exomind.base.Collection": TraitConstants(
-            key: "exomind.base.Collection",
+    "exomind.base.v1.Collection": TraitConstants(
+            key: "exomind.base.v1.Collection",
             traitType: .collection,
             name: nil,
             nameDefault: nil,
@@ -405,8 +405,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 5,
             collectionLike: true
     ),
-    "exomind.base.Task": TraitConstants(
-            key: "exomind.base.Task",
+    "exomind.base.v1.Task": TraitConstants(
+            key: "exomind.base.v1.Task",
             traitType: .task,
             name: nil,
             nameDefault: nil,
@@ -415,8 +415,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 6,
             collectionLike: false
     ),
-    "exomind.base.Note": TraitConstants(
-            key: "exomind.base.Note",
+    "exomind.base.v1.Note": TraitConstants(
+            key: "exomind.base.v1.Note",
             traitType: .note,
             name: nil,
             nameDefault: nil,
@@ -425,8 +425,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 7,
             collectionLike: false
     ),
-    "exomind.base.Link": TraitConstants(
-            key: "exomind.base.Link",
+    "exomind.base.v1.Link": TraitConstants(
+            key: "exomind.base.v1.Link",
             traitType: .link,
             name: nil,
             nameDefault: "Untitled link",

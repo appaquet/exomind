@@ -6,7 +6,7 @@ import { Selection } from '../entity-list/selection';
 
 interface IProps {
     entity: EntityTraits;
-    collection: EntityTrait<exomind.base.ICollection>;
+    collection: EntityTrait<exomind.base.v1.ICollection>;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;

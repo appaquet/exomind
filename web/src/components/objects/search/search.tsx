@@ -126,7 +126,7 @@ export class Search extends React.Component<IProps, IState> {
   private handleEntityMoveInbox(et: EntityTraits): void {
     const mutation = MutationBuilder
       .updateEntity(et.id)
-      .putTrait(new exomind.base.CollectionChild({
+      .putTrait(new exomind.base.v1.CollectionChild({
         collection: new exocore.store.Reference({
           entityId: 'inbox',
         }),

@@ -166,9 +166,9 @@ export class Entity extends React.Component<IProps, IState> {
         });
     }
 
-    private renderEmailThreadElement(entityTraits: EntityTraits, entityTrait: EntityTrait<exomind.base.IEmailThread>): React.ReactNode {
+    private renderEmailThreadElement(entityTraits: EntityTraits, entityTrait: EntityTrait<exomind.base.v1.IEmailThread>): React.ReactNode {
         const thread = entityTrait.message;
-        const emails = entityTraits.traitsOfType<exomind.base.IEmail>(exomind.base.Email);
+        const emails = entityTraits.traitsOfType<exomind.base.v1.IEmail>(exomind.base.v1.Email);
 
         let title1Markup;
         let title2Markup;
@@ -208,7 +208,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderDraftEmailElement(entityTrait: EntityTrait<exomind.base.IDraftEmail>): React.ReactNode {
+    private renderDraftEmailElement(entityTrait: EntityTrait<exomind.base.v1.IDraftEmail>): React.ReactNode {
         const draft = entityTrait.message;
 
         const classes = classNames({
@@ -230,7 +230,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderEmailElement(entityTrait: EntityTrait<exomind.base.IEmail>): React.ReactNode {
+    private renderEmailElement(entityTrait: EntityTrait<exomind.base.v1.IEmail>): React.ReactNode {
         const email = entityTrait.message;
 
         const classes = classNames({
@@ -252,7 +252,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderCollectionElement(entityTrait: EntityTrait<exomind.base.ICollection>): React.ReactNode {
+    private renderCollectionElement(entityTrait: EntityTrait<exomind.base.v1.ICollection>): React.ReactNode {
         return (
             <div className="item-container with-picture collection">
                 {this.renderEntityImage(entityTrait)}
@@ -265,7 +265,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderTaskElement(actions: EntityActions, entityTrait: EntityTrait<exomind.base.ITask>): React.ReactNode {
+    private renderTaskElement(actions: EntityActions, entityTrait: EntityTrait<exomind.base.v1.ITask>): React.ReactNode {
         const task = entityTrait.message;
         const onTitleChange = (newTitle: string) => {
             this.handleTaskChange(entityTrait, actions, newTitle);
@@ -289,7 +289,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderNoteElement(entityTrait: EntityTrait<exomind.base.INote>): React.ReactNode {
+    private renderNoteElement(entityTrait: EntityTrait<exomind.base.v1.INote>): React.ReactNode {
         const note = entityTrait.message;
 
         return (
@@ -304,7 +304,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderLinkElement(entityTrait: EntityTrait<exomind.base.ILink>): React.ReactNode {
+    private renderLinkElement(entityTrait: EntityTrait<exomind.base.v1.ILink>): React.ReactNode {
         const link = entityTrait.message;
 
         return (
@@ -381,7 +381,7 @@ export class Entity extends React.Component<IProps, IState> {
         });
     }
 
-    private handleTaskChange(task: EntityTrait<exomind.base.ITask>, actions: EntityActions, newTitle: string): void {
+    private handleTaskChange(task: EntityTrait<exomind.base.v1.ITask>, actions: EntityActions, newTitle: string): void {
         task.rename(newTitle);
 
         if (actions.inlineEdit) {

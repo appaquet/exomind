@@ -15,7 +15,7 @@ import DateUtil from './dates';
 import { fromProtoTimestamp } from 'exocore';
 
 export default class EmailUtil {
-  static createReplyEmail(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
+  static createReplyEmail(entity: EntityTraits, email: EntityTrait<exomind.base.v1.IEmail>) {
     // TODO: Create reply email
     // let parts = EmailsLogicXYZ.generateReplyParts(email);
     // let draft = new Exomind.DraftEmail({
@@ -32,7 +32,7 @@ export default class EmailUtil {
     // return ExomindDSL.on(entity).mutate.put(draft).execute();
   }
 
-  static createReplyAllEmail(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
+  static createReplyAllEmail(entity: EntityTraits, email: EntityTrait<exomind.base.v1.IEmail>) {
     // TODO: Create reply all email
     // let parts = EmailsLogic.generateReplyParts(email);
     // let draft = new Exomind.DraftEmail({
@@ -49,7 +49,7 @@ export default class EmailUtil {
     // return ExomindDSL.on(entity).mutate.put(draft).execute();
   }
 
-  static createForwardEmail(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
+  static createForwardEmail(entity: EntityTraits, email: EntityTrait<exomind.base.v1.IEmail>) {
     // TODO: Create forward email
     // let parts = EmailsLogic.generateReplyParts(email);
     // let draft = new Exomind.DraftEmail({
@@ -66,17 +66,17 @@ export default class EmailUtil {
     // return ExomindDSL.on(entity).mutate.put(draft).execute();
   }
 
-  static generateReplyParts(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>) {
+  static generateReplyParts(entity: EntityTraits, email: EntityTrait<exomind.base.v1.IEmail>) {
     const formattedReceiveDate = DateUtil.toLongGmtFormat(fromProtoTimestamp(email.message.receivedDate));
     const htmlPart = EmailUtil.extractHtmlPart(email.message.parts);
     const formattedFrom = EmailUtil.formatContact(email.message.from, true);
     const dateLine = `On ${formattedReceiveDate} ${formattedFrom} wrote:`;
 
-    let parts: exomind.base.IEmailPart[] = [];
+    let parts: exomind.base.v1.IEmailPart[] = [];
     if (htmlPart) {
-      const part = new exomind.base.EmailPart(htmlPart);
+      const part = new exomind.base.v1.EmailPart(htmlPart);
       const html = EmailUtil.sanitizeHtml(part.body);
-      const newPart = new exomind.base.EmailPart({
+      const newPart = new exomind.base.v1.EmailPart({
         body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${html}</blockquote></div>`,
         mimeType: "text/html",
       })
@@ -86,7 +86,7 @@ export default class EmailUtil {
     } else if (email.message.parts.length > 0) {
       const plainPart = _.first(email.message.parts);
       const body = EmailUtil.plainTextToHtml(plainPart.body);
-      const newPart = new exomind.base.EmailPart({
+      const newPart = new exomind.base.v1.EmailPart({
         body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${body}</blockquote></div>`,
         mimeType: "text/html",
       });
@@ -96,13 +96,13 @@ export default class EmailUtil {
     return parts;
   }
 
-  static extractHtmlPart(parts: exomind.base.IEmailPart[]) {
+  static extractHtmlPart(parts: exomind.base.v1.IEmailPart[]) {
     return _.find(parts, part => part.mimeType === 'text/html');
   }
 
-  static parseContacts(contactsString: string): exomind.base.IContact[] {
+  static parseContacts(contactsString: string): exomind.base.v1.IContact[] {
     const len = contactsString.length;
-    const contacts: exomind.base.IContact[] = [];
+    const contacts: exomind.base.v1.IContact[] = [];
 
     let currentName = '';
     let currentEmail = ''
@@ -117,7 +117,7 @@ export default class EmailUtil {
       }
 
       if (currentEmail !== '') {
-        const contact = new exomind.base.Contact({ email: currentEmail, name: currentName });
+        const contact = new exomind.base.v1.Contact({ email: currentEmail, name: currentName });
         contacts.push(contact);
       }
       currentEmail = '';
@@ -144,7 +144,7 @@ export default class EmailUtil {
     return contacts;
   }
 
-  static formatContact(contact: exomind.base.IContact, html = false, showAddress = false) {
+  static formatContact(contact: exomind.base.v1.IContact, html = false, showAddress = false) {
     if (contact.name != '') {
       let ret = contact.name;
       if (showAddress) {
@@ -162,7 +162,7 @@ export default class EmailUtil {
     }
   }
 
-  static formatContacts(contacts: exomind.base.IContact[], showAddress = false) {
+  static formatContacts(contacts: exomind.base.v1.IContact[], showAddress = false) {
     return contacts.map((contact) => EmailUtil.formatContact(contact, false, showAddress)).join(', ');
   }
 
@@ -210,14 +210,14 @@ export default class EmailUtil {
     });
   }
 
-  static injectInlineImages(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>, html: string) {
+  static injectInlineImages(entity: EntityTraits, email: EntityTrait<exomind.base.v1.IEmail>, html: string) {
     _(email.message.attachments).filter(attach => !_.isEmpty(attach.inlinePlaceholder)).map(attach => {
       html = html.replace('cid:' + attach.inlinePlaceholder, EmailUtil.attachmentUrl(entity, email, attach));
     }).value();
     return html;
   }
 
-  static attachmentUrl(entity: EntityTraits, email: EntityTrait<exomind.base.IEmail>, attachment: exomind.base.IEmailAttachment) {
+  static attachmentUrl(entity: EntityTraits, email: EntityTrait<exomind.base.v1.IEmail>, attachment: exomind.base.v1.IEmailAttachment) {
     //return `${Constants.apiUrl}/files/attachments/?entityId=${entity.id}&traitId=${email.id}&key=${attachment.key}`;
     return 'http://exomind.io';
   }
