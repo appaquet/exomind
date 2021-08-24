@@ -296,7 +296,7 @@ impl MutationIndex {
         let paging = query.paging.as_ref();
         let ordering = query.ordering.as_ref();
 
-        let results = match predicate {
+        let results = match &predicate {
             Predicate::Trait(inner) => self.search_with_trait(inner, paging, ordering),
             Predicate::Match(inner) => self.search_matches(inner, paging, ordering),
             Predicate::Ids(inner) => self.search_entity_ids(inner, paging, ordering),
