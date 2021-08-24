@@ -91,7 +91,7 @@ class EntityListViewController: UITableViewController {
         projectSkipRest.skip = true
 
         let query = QueryBuilder
-                .withTrait(Exomind_Base_CollectionChild.self, query: traitQuery)
+                .withTrait(Exomind_Base_V1_CollectionChild.self, query: traitQuery)
                 .orderByField("weight", ascending: false)
                 .project(withProjections: [projectSummaryFields, projectSkipRest])
                 .count(30)
@@ -321,7 +321,7 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
         return EntityListCellData(image: image, date: date, color: color, title: Emails.formatContact(email.message.from), subtitle: displayName, text: email.message.snippet, collections: result.collections)
 
     case let .emailThread(emailThread):
-        let emails = entity.traitsOfType(Exomind_Base_Email.self)
+        let emails = entity.traitsOfType(Exomind_Base_V1_Email.self)
 
         var title = Emails.formatContact(emailThread.message.from)
         if emails.count > 1 {

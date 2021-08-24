@@ -18,7 +18,7 @@ class Emails {
         return (rets![0] as! String, rets![1] as! String)
     }
 
-    static func formatContact(_ contact: Exomind_Base_Contact) -> String {
+    static func formatContact(_ contact: Exomind_Base_V1_Contact) -> String {
         if contact.name != "" {
             return "\(contact.name) <\(contact.email)>"
         } else {

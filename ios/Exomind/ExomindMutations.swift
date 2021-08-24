@@ -4,15 +4,15 @@ import Exocore
 class ExomindMutations {
     static func hasParent(entity: EntityExt, parentId: String) -> Bool {
         let parentRel = entity
-                .traitsOfType(Exomind_Base_CollectionChild.self)
+                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
                 .first(where: { $0.message.collection.entityID == parentId })
 
         return parentRel != nil
     }
 
-    static func getParent(entity: EntityExt, parentId: String) -> TraitInstance<Exomind_Base_CollectionChild>? {
+    static func getParent(entity: EntityExt, parentId: String) -> TraitInstance<Exomind_Base_V1_CollectionChild>? {
         entity
-                .traitsOfType(Exomind_Base_CollectionChild.self)
+                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
                 .first(where: { $0.message.collection.entityID == parentId })
     }
 
@@ -35,7 +35,7 @@ class ExomindMutations {
     }
 
     static func snooze(entity: EntityExt, date: Date, callback: (() -> Void)? = nil) {
-        var snoozed = Exomind_Base_Snoozed()
+        var snoozed = Exomind_Base_V1_Snoozed()
         snoozed.untilDate = date.toProtobuf()
 
         let mutation = try! MutationBuilder
@@ -50,7 +50,7 @@ class ExomindMutations {
     }
 
     static func addChildMutation(parentId: EntityId, builder: inout MutationBuilder) throws {
-        var child = Exomind_Base_CollectionChild()
+        var child = Exomind_Base_V1_CollectionChild()
         child.collection.entityID = parentId
         child.weight = UInt64(Date().millisecondsSince1970)
 

@@ -22,7 +22,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-enum Exomind_Base_AccountType: SwiftProtobuf.Enum {
+enum Exomind_Base_V1_AccountType: SwiftProtobuf.Enum {
   typealias RawValue = Int
   case invalid // = 0
   case gmail // = 1
@@ -52,9 +52,9 @@ enum Exomind_Base_AccountType: SwiftProtobuf.Enum {
 
 #if swift(>=4.2)
 
-extension Exomind_Base_AccountType: CaseIterable {
+extension Exomind_Base_V1_AccountType: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static var allCases: [Exomind_Base_AccountType] = [
+  static var allCases: [Exomind_Base_V1_AccountType] = [
     .invalid,
     .gmail,
   ]
@@ -62,7 +62,7 @@ extension Exomind_Base_AccountType: CaseIterable {
 
 #endif  // swift(>=4.2)
 
-enum Exomind_Base_AccountScope: SwiftProtobuf.Enum {
+enum Exomind_Base_V1_AccountScope: SwiftProtobuf.Enum {
   typealias RawValue = Int
   case invalid // = 0
   case email // = 1
@@ -92,9 +92,9 @@ enum Exomind_Base_AccountScope: SwiftProtobuf.Enum {
 
 #if swift(>=4.2)
 
-extension Exomind_Base_AccountScope: CaseIterable {
+extension Exomind_Base_V1_AccountScope: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static var allCases: [Exomind_Base_AccountScope] = [
+  static var allCases: [Exomind_Base_V1_AccountScope] = [
     .invalid,
     .email,
   ]
@@ -102,19 +102,21 @@ extension Exomind_Base_AccountScope: CaseIterable {
 
 #endif  // swift(>=4.2)
 
-struct Exomind_Base_Collection {
+struct Exomind_Base_V1_Collection {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   var name: String = String()
 
+  var description_p: String = String()
+
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 }
 
-struct Exomind_Base_CollectionChild {
+struct Exomind_Base_V1_CollectionChild {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -137,7 +139,7 @@ struct Exomind_Base_CollectionChild {
   fileprivate var _collection: Exocore.Exocore_Store_Reference? = nil
 }
 
-struct Exomind_Base_Snoozed {
+struct Exomind_Base_V1_Snoozed {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -158,7 +160,7 @@ struct Exomind_Base_Snoozed {
   fileprivate var _untilDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
-struct Exomind_Base_Account {
+struct Exomind_Base_V1_Account {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -167,9 +169,9 @@ struct Exomind_Base_Account {
 
   var name: String = String()
 
-  var type: Exomind_Base_AccountType = .invalid
+  var type: Exomind_Base_V1_AccountType = .invalid
 
-  var scopes: [Exomind_Base_AccountScope] = []
+  var scopes: [Exomind_Base_V1_AccountScope] = []
 
   var data: Dictionary<String,String> = [:]
 
@@ -178,7 +180,7 @@ struct Exomind_Base_Account {
   init() {}
 }
 
-struct Exomind_Base_EmailThread {
+struct Exomind_Base_V1_EmailThread {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -195,8 +197,8 @@ struct Exomind_Base_EmailThread {
 
   var sourceID: String = String()
 
-  var from: Exomind_Base_Contact {
-    get {return _from ?? Exomind_Base_Contact()}
+  var from: Exomind_Base_V1_Contact {
+    get {return _from ?? Exomind_Base_V1_Contact()}
     set {_from = newValue}
   }
   /// Returns true if `from` has been explicitly set.
@@ -224,11 +226,11 @@ struct Exomind_Base_EmailThread {
   init() {}
 
   fileprivate var _account: Exocore.Exocore_Store_Reference? = nil
-  fileprivate var _from: Exomind_Base_Contact? = nil
+  fileprivate var _from: Exomind_Base_V1_Contact? = nil
   fileprivate var _lastEmail: Exocore.Exocore_Store_Reference? = nil
 }
 
-struct Exomind_Base_Email {
+struct Exomind_Base_V1_Email {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -244,8 +246,8 @@ struct Exomind_Base_Email {
 
   var sourceID: String = String()
 
-  var from: Exomind_Base_Contact {
-    get {return _from ?? Exomind_Base_Contact()}
+  var from: Exomind_Base_V1_Contact {
+    get {return _from ?? Exomind_Base_V1_Contact()}
     set {_from = newValue}
   }
   /// Returns true if `from` has been explicitly set.
@@ -262,19 +264,19 @@ struct Exomind_Base_Email {
   /// Clears the value of `receivedDate`. Subsequent reads from it will return its default value.
   mutating func clearReceivedDate() {self._receivedDate = nil}
 
-  var to: [Exomind_Base_Contact] = []
+  var to: [Exomind_Base_V1_Contact] = []
 
-  var cc: [Exomind_Base_Contact] = []
+  var cc: [Exomind_Base_V1_Contact] = []
 
-  var bcc: [Exomind_Base_Contact] = []
+  var bcc: [Exomind_Base_V1_Contact] = []
 
   var subject: String = String()
 
   var snippet: String = String()
 
-  var parts: [Exomind_Base_EmailPart] = []
+  var parts: [Exomind_Base_V1_EmailPart] = []
 
-  var attachments: [Exomind_Base_EmailAttachment] = []
+  var attachments: [Exomind_Base_V1_EmailAttachment] = []
 
   var read: Bool = false
 
@@ -283,11 +285,11 @@ struct Exomind_Base_Email {
   init() {}
 
   fileprivate var _account: Exocore.Exocore_Store_Reference? = nil
-  fileprivate var _from: Exomind_Base_Contact? = nil
+  fileprivate var _from: Exomind_Base_V1_Contact? = nil
   fileprivate var _receivedDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
-struct Exomind_Base_DraftEmail {
+struct Exomind_Base_V1_DraftEmail {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -310,17 +312,17 @@ struct Exomind_Base_DraftEmail {
   /// Clears the value of `inReplyTo`. Subsequent reads from it will return its default value.
   mutating func clearInReplyTo() {self._inReplyTo = nil}
 
-  var to: [Exomind_Base_Contact] = []
+  var to: [Exomind_Base_V1_Contact] = []
 
-  var cc: [Exomind_Base_Contact] = []
+  var cc: [Exomind_Base_V1_Contact] = []
 
-  var bcc: [Exomind_Base_Contact] = []
+  var bcc: [Exomind_Base_V1_Contact] = []
 
   var subject: String = String()
 
-  var parts: [Exomind_Base_EmailPart] = []
+  var parts: [Exomind_Base_V1_EmailPart] = []
 
-  var attachments: [Exomind_Base_EmailAttachment] = []
+  var attachments: [Exomind_Base_V1_EmailAttachment] = []
 
   var sendingDate: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {return _sendingDate ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
@@ -350,7 +352,7 @@ struct Exomind_Base_DraftEmail {
   fileprivate var _sentDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
-struct Exomind_Base_EmailPart {
+struct Exomind_Base_V1_EmailPart {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -364,7 +366,7 @@ struct Exomind_Base_EmailPart {
   init() {}
 }
 
-struct Exomind_Base_EmailAttachment {
+struct Exomind_Base_V1_EmailAttachment {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -386,7 +388,7 @@ struct Exomind_Base_EmailAttachment {
   init() {}
 }
 
-struct Exomind_Base_Note {
+struct Exomind_Base_V1_Note {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -400,7 +402,7 @@ struct Exomind_Base_Note {
   init() {}
 }
 
-struct Exomind_Base_Contact {
+struct Exomind_Base_V1_Contact {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -414,7 +416,7 @@ struct Exomind_Base_Contact {
   init() {}
 }
 
-struct Exomind_Base_Task {
+struct Exomind_Base_V1_Task {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -426,7 +428,7 @@ struct Exomind_Base_Task {
   init() {}
 }
 
-struct Exomind_Base_Link {
+struct Exomind_Base_V1_Link {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -442,32 +444,34 @@ struct Exomind_Base_Link {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-fileprivate let _protobuf_package = "exomind.base"
+fileprivate let _protobuf_package = "exomind.base.v1"
 
-extension Exomind_Base_AccountType: SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_AccountType: SwiftProtobuf._ProtoNameProviding {
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "ACCOUNT_TYPE_INVALID"),
     1: .same(proto: "ACCOUNT_TYPE_GMAIL"),
   ]
 }
 
-extension Exomind_Base_AccountScope: SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_AccountScope: SwiftProtobuf._ProtoNameProviding {
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "ACCOUNT_SCOPE_INVALID"),
     1: .same(proto: "ACCOUNT_SCOPE_EMAIL"),
   ]
 }
 
-extension Exomind_Base_Collection: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_Collection: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Collection"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "name"),
+    2: .same(proto: "description"),
   ]
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularStringField(value: &self.name)
+      case 2: try decoder.decodeSingularStringField(value: &self.description_p)
       default: break
       }
     }
@@ -477,17 +481,21 @@ extension Exomind_Base_Collection: SwiftProtobuf.Message, SwiftProtobuf._Message
     if !self.name.isEmpty {
       try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
     }
+    if !self.description_p.isEmpty {
+      try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 2)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Collection, rhs: Exomind_Base_Collection) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_Collection, rhs: Exomind_Base_V1_Collection) -> Bool {
     if lhs.name != rhs.name {return false}
+    if lhs.description_p != rhs.description_p {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Exomind_Base_CollectionChild: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_CollectionChild: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".CollectionChild"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "collection"),
@@ -514,7 +522,7 @@ extension Exomind_Base_CollectionChild: SwiftProtobuf.Message, SwiftProtobuf._Me
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_CollectionChild, rhs: Exomind_Base_CollectionChild) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_CollectionChild, rhs: Exomind_Base_V1_CollectionChild) -> Bool {
     if lhs._collection != rhs._collection {return false}
     if lhs.weight != rhs.weight {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -522,7 +530,7 @@ extension Exomind_Base_CollectionChild: SwiftProtobuf.Message, SwiftProtobuf._Me
   }
 }
 
-extension Exomind_Base_Snoozed: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_Snoozed: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Snoozed"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     2: .standard(proto: "until_date"),
@@ -544,14 +552,14 @@ extension Exomind_Base_Snoozed: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Snoozed, rhs: Exomind_Base_Snoozed) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_Snoozed, rhs: Exomind_Base_V1_Snoozed) -> Bool {
     if lhs._untilDate != rhs._untilDate {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Exomind_Base_Account: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_Account: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Account"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "key"),
@@ -593,7 +601,7 @@ extension Exomind_Base_Account: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Account, rhs: Exomind_Base_Account) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_Account, rhs: Exomind_Base_V1_Account) -> Bool {
     if lhs.key != rhs.key {return false}
     if lhs.name != rhs.name {return false}
     if lhs.type != rhs.type {return false}
@@ -604,7 +612,7 @@ extension Exomind_Base_Account: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
   }
 }
 
-extension Exomind_Base_EmailThread: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_EmailThread: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".EmailThread"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "account"),
@@ -656,7 +664,7 @@ extension Exomind_Base_EmailThread: SwiftProtobuf.Message, SwiftProtobuf._Messag
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_EmailThread, rhs: Exomind_Base_EmailThread) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_EmailThread, rhs: Exomind_Base_V1_EmailThread) -> Bool {
     if lhs._account != rhs._account {return false}
     if lhs.sourceID != rhs.sourceID {return false}
     if lhs._from != rhs._from {return false}
@@ -669,7 +677,7 @@ extension Exomind_Base_EmailThread: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Exomind_Base_Email: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_Email: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Email"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "account"),
@@ -746,7 +754,7 @@ extension Exomind_Base_Email: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Email, rhs: Exomind_Base_Email) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_Email, rhs: Exomind_Base_V1_Email) -> Bool {
     if lhs._account != rhs._account {return false}
     if lhs.sourceID != rhs.sourceID {return false}
     if lhs._from != rhs._from {return false}
@@ -764,7 +772,7 @@ extension Exomind_Base_Email: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   }
 }
 
-extension Exomind_Base_DraftEmail: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_DraftEmail: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".DraftEmail"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "account"),
@@ -831,7 +839,7 @@ extension Exomind_Base_DraftEmail: SwiftProtobuf.Message, SwiftProtobuf._Message
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_DraftEmail, rhs: Exomind_Base_DraftEmail) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_DraftEmail, rhs: Exomind_Base_V1_DraftEmail) -> Bool {
     if lhs._account != rhs._account {return false}
     if lhs._inReplyTo != rhs._inReplyTo {return false}
     if lhs.to != rhs.to {return false}
@@ -847,7 +855,7 @@ extension Exomind_Base_DraftEmail: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Exomind_Base_EmailPart: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_EmailPart: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".EmailPart"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "mime_type"),
@@ -874,7 +882,7 @@ extension Exomind_Base_EmailPart: SwiftProtobuf.Message, SwiftProtobuf._MessageI
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_EmailPart, rhs: Exomind_Base_EmailPart) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_EmailPart, rhs: Exomind_Base_V1_EmailPart) -> Bool {
     if lhs.mimeType != rhs.mimeType {return false}
     if lhs.body != rhs.body {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -882,7 +890,7 @@ extension Exomind_Base_EmailPart: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
-extension Exomind_Base_EmailAttachment: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_EmailAttachment: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".EmailAttachment"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "key"),
@@ -929,7 +937,7 @@ extension Exomind_Base_EmailAttachment: SwiftProtobuf.Message, SwiftProtobuf._Me
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_EmailAttachment, rhs: Exomind_Base_EmailAttachment) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_EmailAttachment, rhs: Exomind_Base_V1_EmailAttachment) -> Bool {
     if lhs.key != rhs.key {return false}
     if lhs.name != rhs.name {return false}
     if lhs.mimeType != rhs.mimeType {return false}
@@ -941,7 +949,7 @@ extension Exomind_Base_EmailAttachment: SwiftProtobuf.Message, SwiftProtobuf._Me
   }
 }
 
-extension Exomind_Base_Note: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_Note: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Note"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "title"),
@@ -968,7 +976,7 @@ extension Exomind_Base_Note: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Note, rhs: Exomind_Base_Note) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_Note, rhs: Exomind_Base_V1_Note) -> Bool {
     if lhs.title != rhs.title {return false}
     if lhs.body != rhs.body {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -976,7 +984,7 @@ extension Exomind_Base_Note: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   }
 }
 
-extension Exomind_Base_Contact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_Contact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Contact"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "name"),
@@ -1003,7 +1011,7 @@ extension Exomind_Base_Contact: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Contact, rhs: Exomind_Base_Contact) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_Contact, rhs: Exomind_Base_V1_Contact) -> Bool {
     if lhs.name != rhs.name {return false}
     if lhs.email != rhs.email {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1011,7 +1019,7 @@ extension Exomind_Base_Contact: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
   }
 }
 
-extension Exomind_Base_Task: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_Task: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Task"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "title"),
@@ -1033,14 +1041,14 @@ extension Exomind_Base_Task: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Task, rhs: Exomind_Base_Task) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_Task, rhs: Exomind_Base_V1_Task) -> Bool {
     if lhs.title != rhs.title {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Exomind_Base_Link: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+extension Exomind_Base_V1_Link: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Link"
   static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "url"),
@@ -1067,7 +1075,7 @@ extension Exomind_Base_Link: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Exomind_Base_Link, rhs: Exomind_Base_Link) -> Bool {
+  static func ==(lhs: Exomind_Base_V1_Link, rhs: Exomind_Base_V1_Link) -> Bool {
     if lhs.url != rhs.url {return false}
     if lhs.title != rhs.title {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

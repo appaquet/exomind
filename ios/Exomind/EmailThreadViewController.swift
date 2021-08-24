@@ -3,9 +3,9 @@ import UIKit
 class EmailThreadViewController: UITableViewController, EntityTraitView {
     private var entity: EntityExt!
 
-    private var thread: TraitInstance<Exomind_Base_EmailThread>!
-    private var emails = [TraitInstance<Exomind_Base_Email>]()
-    private var draft: TraitInstance<Exomind_Base_DraftEmail>?
+    private var thread: TraitInstance<Exomind_Base_V1_EmailThread>!
+    private var emails = [TraitInstance<Exomind_Base_V1_Email>]()
+    private var draft: TraitInstance<Exomind_Base_V1_DraftEmail>?
     private var firstNonRead: Int = 0
 
     private var loadedEmails: [Bool] = []
@@ -19,17 +19,17 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
 
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
         self.entity = entity
-        self.thread = entity.traitOfType(Exomind_Base_EmailThread.self)!
+        self.thread = entity.traitOfType(Exomind_Base_V1_EmailThread.self)!
 
         self.emails = entity
-                .traitsOfType(Exomind_Base_Email.self)
+                .traitsOfType(Exomind_Base_V1_Email.self)
                 .sorted(by: { (em1, em2) in
                     em1.message.receivedDate.date.isLessThan(em2.message.receivedDate.date)
                 })
         self.loadedEmails = self.emails.map({ $0.message.read })
         self.firstNonRead = self.emails.firstIndex(where: { !$0.message.read}) ?? 0
 
-        self.draft = entity.traitOfType(Exomind_Base_DraftEmail.self)
+        self.draft = entity.traitOfType(Exomind_Base_V1_DraftEmail.self)
 
         if self.draft != nil {
             self.loadedEmails.append(false)
@@ -152,7 +152,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         }
     }
 
-    func isOpen(_ email: TraitInstance<Exomind_Base_Email>) -> Bool {
+    func isOpen(_ email: TraitInstance<Exomind_Base_V1_Email>) -> Bool {
         let isUnread = !email.message.read
         let isLastEmail = self.emails.last?.id == email.id
         return self.opened[email.id] ?? (isUnread || isLastEmail)
@@ -233,13 +233,13 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         }
     }
 
-    func openEmailView(_ email: TraitInstance<Exomind_Base_Email>) {
+    func openEmailView(_ email: TraitInstance<Exomind_Base_V1_Email>) {
         if let anyTrait = email.toAny() {
             (self.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: anyTrait))
         }
     }
 
-    func openDraftView(_ draft: TraitInstance<Exomind_Base_DraftEmail>) {
+    func openDraftView(_ draft: TraitInstance<Exomind_Base_V1_DraftEmail>) {
         if let anyTrait = draft.toAny() {
             (self.navigationController as? NavigationController)?.pushObject(.entityTrait(entityTrait: anyTrait))
         }

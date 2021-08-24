@@ -59,11 +59,11 @@ class RecentViewController: UIViewController {
 
     private func handleCopyInbox(_ entity: EntityExt) {
         let inboxRelation = entity
-                .traitsOfType(Exomind_Base_CollectionChild.self)
+                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
                 .first(where: { $0.message.collection.entityID == "inbox" })
         let inboxRelationId = inboxRelation?.id ?? "child_inbox"
 
-        var child = Exomind_Base_CollectionChild()
+        var child = Exomind_Base_V1_CollectionChild()
         child.collection.entityID = "inbox"
         child.weight = UInt64(Date().millisecondsSince1970)
 

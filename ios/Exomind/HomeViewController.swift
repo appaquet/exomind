@@ -18,7 +18,7 @@ class HomeViewController: UITableViewController {
 
         let traitQuery = TraitQueryBuilder.refersTo(field: "collection", entityId: "favorites").build()
         let query = QueryBuilder
-                .withTrait(Exomind_Base_CollectionChild.self, query: traitQuery)
+                .withTrait(Exomind_Base_V1_CollectionChild.self, query: traitQuery)
                 .orderByField("weight", ascending: false)
                 .count(100)
                 .build()

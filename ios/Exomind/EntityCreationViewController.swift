@@ -49,7 +49,7 @@ class EntityCreationViewController: ModalGridViewController {
 
     static func createTask(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
-            var task = Exomind_Base_Task()
+            var task = Exomind_Base_V1_Task()
             task.title = "New task"
 
             var builder = try MutationBuilder
@@ -66,7 +66,7 @@ class EntityCreationViewController: ModalGridViewController {
 
     static func createNote(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
-            var note = Exomind_Base_Note()
+            var note = Exomind_Base_V1_Note()
             note.title = "New note"
 
             var builder = try MutationBuilder
@@ -83,7 +83,7 @@ class EntityCreationViewController: ModalGridViewController {
 
     static func createEmail(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
-            let email = Exomind_Base_DraftEmail()
+            let email = Exomind_Base_V1_DraftEmail()
 
             var builder = try MutationBuilder
                     .createEntity()
@@ -99,7 +99,7 @@ class EntityCreationViewController: ModalGridViewController {
 
     static func createCollection(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
-            var collection = Exomind_Base_Collection()
+            var collection = Exomind_Base_V1_Collection()
             collection.name = "New collection"
 
             var builder = try MutationBuilder

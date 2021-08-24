@@ -9,8 +9,8 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
     private weak var threadView: EmailThreadViewController?
 
     private var index: Int?
-    private var email: TraitInstance<Exomind_Base_Email>?
-    private var draft: TraitInstance<Exomind_Base_DraftEmail>?
+    private var email: TraitInstance<Exomind_Base_V1_Email>?
+    private var draft: TraitInstance<Exomind_Base_V1_DraftEmail>?
     private var shouldRender: Bool = false
 
     private var wasLinkClick: Bool = false
@@ -33,7 +33,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
         }
     }
 
-    func load(threadView: EmailThreadViewController, email: TraitInstance<Exomind_Base_Email>, index: Int, renderEmail: Bool) {
+    func load(threadView: EmailThreadViewController, email: TraitInstance<Exomind_Base_V1_Email>, index: Int, renderEmail: Bool) {
         self.threadView = threadView
         if let lastEntityTrait = self.email, email.id == lastEntityTrait.id && email.anyDate == lastEntityTrait.anyDate && email.message.parts == lastEntityTrait.message.parts && renderEmail == shouldRender {
             print("EmailThreadOpenedTableViewCell > Entity didn't change, not refreshing")
@@ -64,7 +64,7 @@ class EmailThreadOpenedTableViewCell: UITableViewCell {
         }
     }
 
-    func load(threadView: EmailThreadViewController, draft: TraitInstance<Exomind_Base_DraftEmail>, index: Int, renderEmail: Bool) {
+    func load(threadView: EmailThreadViewController, draft: TraitInstance<Exomind_Base_V1_DraftEmail>, index: Int, renderEmail: Bool) {
         self.threadView = threadView
         self.draft = draft
         self.email = nil

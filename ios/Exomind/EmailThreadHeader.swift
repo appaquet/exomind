@@ -33,7 +33,7 @@ class EmailThreadHeader: UIView {
         }
     }
 
-    func load(thread: TraitInstance<Exomind_Base_EmailThread>) {
+    func load(thread: TraitInstance<Exomind_Base_V1_EmailThread>) {
         self.label.text = thread.message.subject
     }
 }

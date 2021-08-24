@@ -22,11 +22,11 @@ class ExtensionUtils {
             return
         }
 
-        var link = Exomind_Base_Link()
+        var link = Exomind_Base_V1_Link()
         link.url = url
         link.title = title
 
-        var child = Exomind_Base_CollectionChild()
+        var child = Exomind_Base_V1_CollectionChild()
         child.collection.entityID = "inbox"
         child.weight = UInt64(Date().millisecondsSince1970)
 

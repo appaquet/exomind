@@ -31,7 +31,7 @@ class Collections {
             return []
         }
 
-        let parentRelations = entity.traitsOfType(Exomind_Base_CollectionChild.self)
+        let parentRelations = entity.traitsOfType(Exomind_Base_V1_CollectionChild.self)
         return parentRelations.compactMap { parentRelation in
             guard let collection = self._collections[parentRelation.message.collection.entityID] else {
                 return nil
@@ -55,7 +55,7 @@ class Collections {
             return
         }
 
-        let query = QueryBuilder.withTrait(Exomind_Base_Collection.self).count(9999).build()
+        let query = QueryBuilder.withTrait(Exomind_Base_V1_Collection.self).count(9999).build()
         self.collectionQuery = ManagedQuery(query: query) { [weak self] in
             guard let this = self else {
                 return
@@ -71,7 +71,7 @@ class Collections {
             self._collections = [:]
             for entityResult in entityResults {
                 let entity = entityResult.entity.toExtension()
-                guard let collection = entity.traitOfType(Exomind_Base_Collection.self) else {
+                guard let collection = entity.traitOfType(Exomind_Base_V1_Collection.self) else {
                     print("Collections > Expected entity \(entity.id) to have a collection trait.")
                     continue
                 }
@@ -87,9 +87,9 @@ class Collections {
 
 class CollectionEntity {
     let entity: EntityExt
-    let collection: TraitInstance<Exomind_Base_Collection>
+    let collection: TraitInstance<Exomind_Base_V1_Collection>
 
-    init(entity: EntityExt, collection: TraitInstance<Exomind_Base_Collection>, parents: [CollectionEntity] = []) {
+    init(entity: EntityExt, collection: TraitInstance<Exomind_Base_V1_Collection>, parents: [CollectionEntity] = []) {
         self.entity = entity
         self.collection = collection
     }

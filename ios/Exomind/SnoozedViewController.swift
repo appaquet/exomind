@@ -25,7 +25,7 @@ class SnoozedViewController: UIViewController {
         projectSkipRest.skip = true
 
         let query = QueryBuilder
-                .withTrait(Exomind_Base_Snoozed.self)
+                .withTrait(Exomind_Base_V1_Snoozed.self)
                 .project(withProjections: [projectSummaryFields, projectSkipRest])
                 .count(30)
                 .build()
@@ -61,11 +61,11 @@ class SnoozedViewController: UIViewController {
 
     private func handleCopyInbox(_ entity: EntityExt) {
         let inboxRelation = entity
-                .traitsOfType(Exomind_Base_CollectionChild.self)
+                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
                 .first(where: { $0.message.collection.entityID == "inbox" })
         let inboxRelationId = inboxRelation?.id ?? "child_inbox"
 
-        var child = Exomind_Base_CollectionChild()
+        var child = Exomind_Base_V1_CollectionChild()
         child.collection.entityID = "inbox"
         child.weight = UInt64(Date().millisecondsSince1970)
 
@@ -74,7 +74,7 @@ class SnoozedViewController: UIViewController {
                     .updateEntity(entityId: entity.id)
                     .putTrait(message: child, traitId: inboxRelationId)
 
-            if let snoozed = entity.traitOfType(Exomind_Base_Snoozed.self) {
+            if let snoozed = entity.traitOfType(Exomind_Base_V1_Snoozed.self) {
                 mutation = mutation.deleteTrait(traitId: snoozed.id)
             }
 
