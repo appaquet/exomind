@@ -3,89 +3,91 @@ pub(crate) use exocore::protos as exocore_proto;
 pub(crate) mod generated {
     pub(crate) use super::exocore_proto as exocore;
     pub mod exomind {
-        #[path = "../exomind.base.rs"]
-        pub mod base;
+        pub mod v1 {
+            #[path = "../../exomind.base.v1.rs"]
+            pub mod base;
+        }
     }
 }
 pub mod base {
-    pub use super::generated::exomind::base::*;
+    pub use super::generated::exomind::v1::base::*;
     use exocore::protos::message::NamedMessage;
 
     impl NamedMessage for Collection {
         fn full_name() -> &'static str {
-            "exomind.base.Collection"
+            "exomind.base.v1.Collection"
         }
     }
 
     impl NamedMessage for CollectionChild {
         fn full_name() -> &'static str {
-            "exomind.base.CollectionChild"
+            "exomind.base.v1.CollectionChild"
         }
     }
 
     impl NamedMessage for Snoozed {
         fn full_name() -> &'static str {
-            "exomind.base.Snoozed"
+            "exomind.base.v1.Snoozed"
         }
     }
 
     impl NamedMessage for Account {
         fn full_name() -> &'static str {
-            "exomind.base.Account"
+            "exomind.base.v1.Account"
         }
     }
 
     impl NamedMessage for EmailThread {
         fn full_name() -> &'static str {
-            "exomind.base.EmailThread"
+            "exomind.base.v1.EmailThread"
         }
     }
 
     impl NamedMessage for Email {
         fn full_name() -> &'static str {
-            "exomind.base.Email"
+            "exomind.base.v1.Email"
         }
     }
 
     impl NamedMessage for DraftEmail {
         fn full_name() -> &'static str {
-            "exomind.base.DraftEmail"
+            "exomind.base.v1.DraftEmail"
         }
     }
 
     impl NamedMessage for EmailPart {
         fn full_name() -> &'static str {
-            "exomind.base.EmailPart"
+            "exomind.base.v1.EmailPart"
         }
     }
 
     impl NamedMessage for EmailAttachment {
         fn full_name() -> &'static str {
-            "exomind.base.EmailAttachment"
+            "exomind.base.v1.EmailAttachment"
         }
     }
 
     impl NamedMessage for Note {
         fn full_name() -> &'static str {
-            "exomind.base.Note"
+            "exomind.base.v1.Note"
         }
     }
 
     impl NamedMessage for Task {
         fn full_name() -> &'static str {
-            "exomind.base.Task"
+            "exomind.base.v1.Task"
         }
     }
 
     impl NamedMessage for Link {
         fn full_name() -> &'static str {
-            "exomind.base.Link"
+            "exomind.base.v1.Link"
         }
     }
 
     impl NamedMessage for Contact {
         fn full_name() -> &'static str {
-            "exomind.base.Contact"
+            "exomind.base.v1.Contact"
         }
     }
 }

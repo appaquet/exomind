@@ -3,7 +3,7 @@ import UIKit
 class EmailThreadAttachmentTableViewCell: UITableViewCell {
     var attachmentView: AttachmentView?
 
-    func load(attachment: Exomind_Base_EmailAttachment) {
+    func load(attachment: Exomind_Base_V1_EmailAttachment) {
         if let view = attachmentView {
             view.removeFromSuperview()
             attachmentView = nil

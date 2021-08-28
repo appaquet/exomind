@@ -6,7 +6,7 @@ import './email-attachments.less';
 
 interface IProps {
     entity: EntityTraits;
-    email: EntityTrait<exomind.base.IEmail>;
+    email: EntityTrait<exomind.base.v1.IEmail>;
 }
 
 export class EmailAttachments extends React.Component<IProps> {
@@ -24,7 +24,7 @@ export class EmailAttachments extends React.Component<IProps> {
         }
     }
 
-    private renderAttachment(attach: exomind.base.IEmailAttachment): React.ReactNode {
+    private renderAttachment(attach: exomind.base.v1.IEmailAttachment): React.ReactNode {
         return (
             <li key={attach.key}>
                 <a href={EmailUtil.attachmentUrl(this.props.entity, this.props.email, attach)} target="_blank" rel="noreferrer">

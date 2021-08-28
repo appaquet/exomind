@@ -7,7 +7,7 @@ import { EntityTrait, EntityTraits, TraitIcon } from "../utils/entities";
 
 export class CollectionStore {
     private entityParents: Map<string, Parents> = observable.map();
-    private collections: ObservableMap<string, EntityTrait<exomind.base.ICollection>> = observable.map();
+    private collections: ObservableMap<string, EntityTrait<exomind.base.v1.ICollection>> = observable.map();
     private query: WatchedQueryWrapper = null;
 
     getEntityParents(entity: EntityTraits): Parents | null {
@@ -30,16 +30,16 @@ export class CollectionStore {
         return parents;
     }
 
-    getCollection(id: string): EntityTrait<exomind.base.ICollection> | null {
+    getCollection(id: string): EntityTrait<exomind.base.v1.ICollection> | null {
         return this.collections.get(id);
     }
 
     fetchCollections(): void {
         const query = QueryBuilder
-            .withTrait(exomind.base.Collection)
+            .withTrait(exomind.base.v1.Collection)
             .count(9999)
             .project(new exocore.store.Projection({
-                package: ["exomind.base.Collection"],
+                package: ["exomind.base.v1.Collection"],
             }))
             .build();
 
@@ -58,7 +58,7 @@ export class CollectionStore {
 
                 for (const entity of results.entities) {
                     const et = new EntityTraits(entity.entity);
-                    const col = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
+                    const col = et.traitOfType<exomind.base.v1.ICollection>(exomind.base.v1.Collection);
                     this.updateEntityCollection(entity.entity.id, col);
                 }
             });
@@ -80,7 +80,7 @@ export class CollectionStore {
     private getEntityParentsInner(entity: EntityTraits, lineage?: Set<string>): (Parents | null) {
         const parents = new Parents();
 
-        const colChildren = entity.traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild);
+        const colChildren = entity.traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild);
         for (const colChild of colChildren) {
             const parentId = colChild.message.collection.entityId;
             if (parents.isFetched(parentId) || (lineage?.has(parentId) ?? false)) {
@@ -118,14 +118,14 @@ export class CollectionStore {
     // create a unique cache key with entity id and operation id of collection child relations
     private uniqueEntityId(entity: EntityTraits): string {
         let key = entity.id;
-        const colChildren = entity.traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild);
+        const colChildren = entity.traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild);
         for (const childOf of colChildren) {
             key += childOf.trait.lastOperationId;
         }
         return key;
     }
 
-    private updateEntityCollection(entityId: string, col: EntityTrait<exomind.base.ICollection> | null) {
+    private updateEntityCollection(entityId: string, col: EntityTrait<exomind.base.v1.ICollection> | null) {
         const current = this.collections.get(entityId);
         if (current && current.trait.lastOperationId == col.trait.lastOperationId) {
             // not changed
@@ -153,7 +153,7 @@ export interface EntityParent {
     entityId: string;
     icon: TraitIcon;
     name: string;
-    collection: exomind.base.ICollection;
+    collection: exomind.base.v1.ICollection;
     parents?: EntityParent[];
 
     minParent?: EntityParent;
@@ -249,9 +249,9 @@ export function flattenHierarchy(parent: EntityParent): EntityParent[] {
     return out.reverse();
 }
 
-export function getEntityParentRelation(entity: EntityTraits, parentId: string): EntityTrait<exomind.base.CollectionChild> {
+export function getEntityParentRelation(entity: EntityTraits, parentId: string): EntityTrait<exomind.base.v1.CollectionChild> {
     return entity
-        .traitsOfType<exomind.base.CollectionChild>(exomind.base.CollectionChild)
+        .traitsOfType<exomind.base.v1.CollectionChild>(exomind.base.v1.CollectionChild)
         .filter((e) => e.message.collection.entityId == parentId)
         .shift();
 }

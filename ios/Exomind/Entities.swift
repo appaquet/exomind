@@ -100,31 +100,31 @@ class EntityExt {
 
         switch traitConstants.traitType {
         case .inbox:
-            let trait: TraitInstance<Exomind_Base_Collection>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_Collection>? = self.trait(withId: trait.id)
             return trait
         case .favorites:
-            let trait: TraitInstance<Exomind_Base_Collection>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_Collection>? = self.trait(withId: trait.id)
             return trait
         case .emailThread:
-            let trait: TraitInstance<Exomind_Base_EmailThread>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_EmailThread>? = self.trait(withId: trait.id)
             return trait
         case .draftEmail:
-            let trait: TraitInstance<Exomind_Base_DraftEmail>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_DraftEmail>? = self.trait(withId: trait.id)
             return trait
         case .email:
-            let trait: TraitInstance<Exomind_Base_Email>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_Email>? = self.trait(withId: trait.id)
             return trait
         case .collection:
-            let trait: TraitInstance<Exomind_Base_Collection>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_Collection>? = self.trait(withId: trait.id)
             return trait
         case .task:
-            let trait: TraitInstance<Exomind_Base_Task>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_Task>? = self.trait(withId: trait.id)
             return trait
         case .note:
-            let trait: TraitInstance<Exomind_Base_Note>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_Note>? = self.trait(withId: trait.id)
             return trait
         case .link:
-            let trait: TraitInstance<Exomind_Base_Link>? = self.trait(withId: trait.id)
+            let trait: TraitInstance<Exomind_Base_V1_Link>? = self.trait(withId: trait.id)
             return trait
         }
     }
@@ -233,23 +233,23 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
 
         switch constants.traitType {
         case .inbox:
-            return .inbox(trait: self as! TraitInstance<Exomind_Base_Collection>)
+            return .inbox(trait: self as! TraitInstance<Exomind_Base_V1_Collection>)
         case .favorites:
-            return .favorites(trait: self as! TraitInstance<Exomind_Base_Collection>)
+            return .favorites(trait: self as! TraitInstance<Exomind_Base_V1_Collection>)
         case .emailThread:
-            return .emailThread(trait: self as! TraitInstance<Exomind_Base_EmailThread>)
+            return .emailThread(trait: self as! TraitInstance<Exomind_Base_V1_EmailThread>)
         case .draftEmail:
-            return .draftEmail(trait: self as! TraitInstance<Exomind_Base_DraftEmail>)
+            return .draftEmail(trait: self as! TraitInstance<Exomind_Base_V1_DraftEmail>)
         case .email:
-            return .email(trait: self as! TraitInstance<Exomind_Base_Email>)
+            return .email(trait: self as! TraitInstance<Exomind_Base_V1_Email>)
         case .collection:
-            return .collection(trait: self as! TraitInstance<Exomind_Base_Collection>)
+            return .collection(trait: self as! TraitInstance<Exomind_Base_V1_Collection>)
         case .task:
-            return .task(trait: self as! TraitInstance<Exomind_Base_Task>)
+            return .task(trait: self as! TraitInstance<Exomind_Base_V1_Task>)
         case .note:
-            return .note(trait: self as! TraitInstance<Exomind_Base_Note>)
+            return .note(trait: self as! TraitInstance<Exomind_Base_V1_Note>)
         case .link:
-            return .link(trait: self as! TraitInstance<Exomind_Base_Link>)
+            return .link(trait: self as! TraitInstance<Exomind_Base_V1_Link>)
         }
     }
 
@@ -274,24 +274,24 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
 
         var name: String?;
         switch message {
-        case let emailThread as Exomind_Base_EmailThread:
+        case let emailThread as Exomind_Base_V1_EmailThread:
             name = emailThread.subject.nonEmpty() ?? "Untitled email"
-        case let draftEmail as Exomind_Base_DraftEmail:
+        case let draftEmail as Exomind_Base_V1_DraftEmail:
             name = draftEmail.subject.nonEmpty() ?? "Untitled email"
-        case let email as Exomind_Base_Email:
+        case let email as Exomind_Base_V1_Email:
             name = email.subject.nonEmpty() ?? "Untitled email"
-        case let collection as Exomind_Base_Collection:
+        case let collection as Exomind_Base_V1_Collection:
            if strip && collection.name.startsWithEmoji() {
                let (_, rest) = collection.name.splitFirstEmoji()
                name = rest.nonEmpty() ?? "Untitled collection"
            } else {
                name = collection.name.nonEmpty() ?? "Untitled collection"
            }
-        case let task as Exomind_Base_Task:
+        case let task as Exomind_Base_V1_Task:
             name = task.title.nonEmpty() ?? "Untitled task"
-        case let note as Exomind_Base_Note:
+        case let note as Exomind_Base_V1_Note:
             name = note.title.nonEmpty() ?? "Untitled note"
-        case let link as Exomind_Base_Link:
+        case let link as Exomind_Base_V1_Link:
             name = link.title.nonEmpty() ?? "Untitled link"
         default:
             name = nil
@@ -314,15 +314,15 @@ enum TraitType {
 }
 
 enum TraitTypeInstance {
-    case inbox(trait: TraitInstance<Exomind_Base_Collection>)
-    case favorites(trait: TraitInstance<Exomind_Base_Collection>)
-    case emailThread(trait: TraitInstance<Exomind_Base_EmailThread>)
-    case draftEmail(trait: TraitInstance<Exomind_Base_DraftEmail>)
-    case email(trait: TraitInstance<Exomind_Base_Email>)
-    case collection(trait: TraitInstance<Exomind_Base_Collection>)
-    case task(trait: TraitInstance<Exomind_Base_Task>)
-    case note(trait: TraitInstance<Exomind_Base_Note>)
-    case link(trait: TraitInstance<Exomind_Base_Link>)
+    case inbox(trait: TraitInstance<Exomind_Base_V1_Collection>)
+    case favorites(trait: TraitInstance<Exomind_Base_V1_Collection>)
+    case emailThread(trait: TraitInstance<Exomind_Base_V1_EmailThread>)
+    case draftEmail(trait: TraitInstance<Exomind_Base_V1_DraftEmail>)
+    case email(trait: TraitInstance<Exomind_Base_V1_Email>)
+    case collection(trait: TraitInstance<Exomind_Base_V1_Collection>)
+    case task(trait: TraitInstance<Exomind_Base_V1_Task>)
+    case note(trait: TraitInstance<Exomind_Base_V1_Note>)
+    case link(trait: TraitInstance<Exomind_Base_V1_Link>)
 }
 
 struct TraitConstants {
@@ -365,8 +365,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 1,
             collectionLike: true
     ),
-    "exomind.base.EmailThread": TraitConstants(
-            key: "exomind.base.EmailThread",
+    "exomind.base.v1.EmailThread": TraitConstants(
+            key: "exomind.base.v1.EmailThread",
             traitType: .emailThread,
             name: nil,
             nameDefault: "Untitled email",
@@ -375,8 +375,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 2,
             collectionLike: false
     ),
-    "exomind.base.DraftEmail": TraitConstants(
-            key: "exomind.base.DraftEmail",
+    "exomind.base.v1.DraftEmail": TraitConstants(
+            key: "exomind.base.v1.DraftEmail",
             traitType: .draftEmail,
             name: nil,
             nameDefault: "Untitled email",
@@ -385,8 +385,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 3,
             collectionLike: false
     ),
-    "exomind.base.Email": TraitConstants(
-            key: "exomind.base.Email",
+    "exomind.base.v1.Email": TraitConstants(
+            key: "exomind.base.v1.Email",
             traitType: .email,
             name: nil,
             nameDefault: "Untitled email",
@@ -395,8 +395,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 4,
             collectionLike: false
     ),
-    "exomind.base.Collection": TraitConstants(
-            key: "exomind.base.Collection",
+    "exomind.base.v1.Collection": TraitConstants(
+            key: "exomind.base.v1.Collection",
             traitType: .collection,
             name: nil,
             nameDefault: nil,
@@ -405,8 +405,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 5,
             collectionLike: true
     ),
-    "exomind.base.Task": TraitConstants(
-            key: "exomind.base.Task",
+    "exomind.base.v1.Task": TraitConstants(
+            key: "exomind.base.v1.Task",
             traitType: .task,
             name: nil,
             nameDefault: nil,
@@ -415,8 +415,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 6,
             collectionLike: false
     ),
-    "exomind.base.Note": TraitConstants(
-            key: "exomind.base.Note",
+    "exomind.base.v1.Note": TraitConstants(
+            key: "exomind.base.v1.Note",
             traitType: .note,
             name: nil,
             nameDefault: nil,
@@ -425,8 +425,8 @@ let TraitsConstants: [String: TraitConstants] = [
             order: 7,
             collectionLike: false
     ),
-    "exomind.base.Link": TraitConstants(
-            key: "exomind.base.Link",
+    "exomind.base.v1.Link": TraitConstants(
+            key: "exomind.base.v1.Link",
             traitType: .link,
             name: nil,
             nameDefault: "Untitled link",

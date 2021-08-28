@@ -184,19 +184,19 @@ export class EntityTrait<T> {
     }
 
     match(matcher: ITraitMatcher): unknown {
-        if (this.constants.key == 'exomind.base.EmailThread' && matcher.emailThread) {
+        if (this.constants.key == 'exomind.base.v1.EmailThread' && matcher.emailThread) {
             return matcher.emailThread(this);
-        } else if (this.constants.key == 'exomind.base.Email' && matcher.email) {
+        } else if (this.constants.key == 'exomind.base.v1.Email' && matcher.email) {
             return matcher.email(this);
-        } else if (this.constants.key == 'exomind.base.DraftEmail' && matcher.draftEmail) {
+        } else if (this.constants.key == 'exomind.base.v1.DraftEmail' && matcher.draftEmail) {
             return matcher.draftEmail(this);
-        } else if (this.constants.key == 'exomind.base.Collection' || (this.constants?.collectionLike ?? false) && matcher.collection) {
+        } else if (this.constants.key == 'exomind.base.v1.Collection' || (this.constants?.collectionLike ?? false) && matcher.collection) {
             return matcher.collection(this);
-        } else if (this.constants.key == 'exomind.base.Task' && matcher.task) {
+        } else if (this.constants.key == 'exomind.base.v1.Task' && matcher.task) {
             return matcher.task(this);
-        } else if (this.constants.key == 'exomind.base.Note' && matcher.note) {
+        } else if (this.constants.key == 'exomind.base.v1.Note' && matcher.note) {
             return matcher.note(this);
-        } else if (this.constants.key == 'exomind.base.Link' && matcher.link) {
+        } else if (this.constants.key == 'exomind.base.v1.Link' && matcher.link) {
             return matcher.link(this);
         } else if (matcher.default) {
             return matcher.default();
@@ -231,13 +231,13 @@ export class EntityTrait<T> {
 }
 
 export interface ITraitMatcher {
-    emailThread?: (trait: EntityTrait<exomind.base.IEmailThread>) => unknown;
-    email?: (trait: EntityTrait<exomind.base.IEmail>) => unknown;
-    draftEmail?: (trait: EntityTrait<exomind.base.IDraftEmail>) => unknown;
-    collection?: (trait: EntityTrait<exomind.base.ICollection>) => unknown;
-    task?: (trait: EntityTrait<exomind.base.ITask>) => unknown;
-    note?: (trait: EntityTrait<exomind.base.INote>) => unknown;
-    link?: (trait: EntityTrait<exomind.base.ILink>) => unknown;
+    emailThread?: (trait: EntityTrait<exomind.base.v1.IEmailThread>) => unknown;
+    email?: (trait: EntityTrait<exomind.base.v1.IEmail>) => unknown;
+    draftEmail?: (trait: EntityTrait<exomind.base.v1.IDraftEmail>) => unknown;
+    collection?: (trait: EntityTrait<exomind.base.v1.ICollection>) => unknown;
+    task?: (trait: EntityTrait<exomind.base.v1.ITask>) => unknown;
+    note?: (trait: EntityTrait<exomind.base.v1.INote>) => unknown;
+    link?: (trait: EntityTrait<exomind.base.v1.ILink>) => unknown;
     default?: () => unknown;
 }
 
@@ -274,34 +274,34 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         color: 4,
         order: 1
     },
-    'exomind.base.EmailThread': {
-        key: 'exomind.base.EmailThread',
+    'exomind.base.v1.EmailThread': {
+        key: 'exomind.base.v1.EmailThread',
         nameField: 'subject',
         nameDefault: 'Untitled email',
         icon: () => { return { fa: 'envelope-o' } },
         color: 1,
         order: 2
     },
-    'exomind.base.DraftEmail': {
-        key: 'exomind.base.DraftEmail',
+    'exomind.base.v1.DraftEmail': {
+        key: 'exomind.base.v1.DraftEmail',
         nameField: 'subject',
         nameDefault: 'Untitled email',
         icon: () => { return { fa: 'envelope-o' } },
         color: 6,
         order: 3
     },
-    'exomind.base.Email': {
-        key: 'exomind.base.Email',
+    'exomind.base.v1.Email': {
+        key: 'exomind.base.v1.Email',
         nameField: 'subject',
         nameDefault: 'Untitled email',
         icon: () => { return { fa: 'envelope-o' } },
         color: 6,
         order: 4
     },
-    'exomind.base.Collection': {
-        key: 'exomind.base.Collection',
+    'exomind.base.v1.Collection': {
+        key: 'exomind.base.v1.Collection',
         nameFunction: (trait) => {
-            const col = trait as exomind.base.ICollection;
+            const col = trait as exomind.base.v1.ICollection;
 
             if (col.name) {
                 if (Emojis.hasEmojiPrefix(col.name)) {
@@ -316,7 +316,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
             }
         },
         icon: (trait) => {
-            const col = trait as exomind.base.ICollection;
+            const col = trait as exomind.base.v1.ICollection;
             if (Emojis.hasEmojiPrefix(col.name)) {
                 const [emoji] = Emojis.extractEmojiPrefix(col.name);
                 return { emoji };
@@ -328,40 +328,40 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         order: 5,
         collectionLike: true,
         renameValue: (trait: unknown) => {
-            const col = trait as exomind.base.ICollection;
+            const col = trait as exomind.base.v1.ICollection;
             return col.name;
         },
         rename: (trait: unknown, newName: string): void => {
-            const collection = trait as exomind.base.ICollection;
+            const collection = trait as exomind.base.v1.ICollection;
             collection.name = newName;
         },
     },
-    'exomind.base.Task': {
-        key: 'exomind.base.Task',
+    'exomind.base.v1.Task': {
+        key: 'exomind.base.v1.Task',
         nameField: 'title',
         nameDefault: 'Untitled task',
         icon: () => { return { fa: 'check-square-o' } },
         color: 7,
         order: 6,
         rename: (entity: unknown, newName: string): void => {
-            const task = entity as exomind.base.ITask;
+            const task = entity as exomind.base.v1.ITask;
             task.title = newName;
         },
     },
-    'exomind.base.Note': {
-        key: 'exomind.base.Note',
+    'exomind.base.v1.Note': {
+        key: 'exomind.base.v1.Note',
         nameField: 'title',
         nameDefault: 'Untitled note',
         icon: () => { return { fa: 'pencil' } },
         color: 3,
         order: 7,
         rename: (entity: unknown, newName: string): void => {
-            const note = entity as exomind.base.INote;
+            const note = entity as exomind.base.v1.INote;
             note.title = newName;
         },
     },
-    'exomind.base.Link': {
-        key: 'exomind.base.Link',
+    'exomind.base.v1.Link': {
+        key: 'exomind.base.v1.Link',
         nameField: 'title',
         nameDefault: 'Untitled link',
         icon: () => { return { fa: 'link' } },

@@ -30,24 +30,24 @@ interface IState {
 
 interface EmailState {
     index: number;
-    trait: EntityTrait<exomind.base.Email | exomind.base.DraftEmail>;
+    trait: EntityTrait<exomind.base.v1.Email | exomind.base.v1.DraftEmail>;
     isOpen: boolean;
     cleanedCurrent?: string;
     original?: string;
 }
 
 export default class EmailThread extends React.Component<IProps, IState> {
-    threadTrait: EntityTrait<exomind.base.EmailThread>;
-    draftTrait?: EntityTrait<exomind.base.DraftEmail>;
+    threadTrait: EntityTrait<exomind.base.v1.EmailThread>;
+    draftTrait?: EntityTrait<exomind.base.v1.DraftEmail>;
 
     constructor(props: IProps) {
         super(props);
 
-        this.threadTrait = props.entity.traitOfType(exomind.base.EmailThread);
-        this.draftTrait = props.entity.traitOfType(exomind.base.DraftEmail);
+        this.threadTrait = props.entity.traitOfType(exomind.base.v1.EmailThread);
+        this.draftTrait = props.entity.traitOfType(exomind.base.v1.DraftEmail);
 
         let count = 0;
-        const emailStates = _.chain(props.entity.traitsOfType<exomind.base.Email>(exomind.base.Email))
+        const emailStates = _.chain(props.entity.traitsOfType<exomind.base.v1.Email>(exomind.base.v1.Email))
             .map((trait) => {
                 return { index: count++, trait: trait, isOpen: !trait.message.read } as EmailState;
             })
@@ -120,7 +120,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
             .value();
     }
 
-    private renderEmail(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): React.ReactNode {
+    private renderEmail(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): React.ReactNode {
         const open = emailState.isOpen;
         const hovered = this.state.hoveredEmailId === email.id;
         const classes = classNames({
@@ -155,7 +155,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         );
     }
 
-    private renderSnippet(email: EntityTrait<exomind.base.IEmail>): React.ReactNode {
+    private renderSnippet(email: EntityTrait<exomind.base.v1.IEmail>): React.ReactNode {
         const snippet = email.message.snippet ?? email.message.subject ?? '';
         return <span className="snippet">{snippet}</span>;
     }
@@ -180,7 +180,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         );
     }
 
-    private renderDraftEmail(state: EmailState, draft: EntityTrait<exomind.base.IDraftEmail>): React.ReactNode {
+    private renderDraftEmail(state: EmailState, draft: EntityTrait<exomind.base.v1.IDraftEmail>): React.ReactNode {
         const classes = classNames({
             draft: true
         });
@@ -195,7 +195,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         </li>;
     }
 
-    private renderToContacts(email: EntityTrait<exomind.base.IEmail>): React.ReactNode {
+    private renderToContacts(email: EntityTrait<exomind.base.v1.IEmail>): React.ReactNode {
         const to = _(email.message.to).map(contact => EmailUtil.formatContact(contact)).value();
         const cc = _(email.message.cc).map(contact => EmailUtil.formatContact(contact)).value();
         const bcc = _(email.message.bcc).map(contact => EmailUtil.formatContact(contact)).value();
@@ -204,7 +204,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         return <span className="to">to {text}</span>;
     }
 
-    private renderEmailBody(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): React.ReactNode {
+    private renderEmailBody(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): React.ReactNode {
         const htmlPart = EmailUtil.extractHtmlPart(email.message.parts);
 
         let markup = { __html: '' };
@@ -252,7 +252,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
     }
 
-    private handleOpenEmailClick(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): void {
+    private handleOpenEmailClick(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): void {
         if (this.props.onSelectionChange) {
             const item = SelectedItem.fromEntityTraitId(this.props.entity.entity.id, email.id);
             this.props.onSelectionChange(this.props.selection.withItem(item));
@@ -265,7 +265,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
     }
 
-    private handleEmailMouseEnter(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): void {
+    private handleEmailMouseEnter(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): void {
         this.setState({
             hoveredEmailId: email.id,
             controlledEmailId: emailState.isOpen ? email.id : this.state.controlledEmailId // show control if we mouse over email and it's open
@@ -278,7 +278,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
     }
 
-    private handleEmailClick(emailState: EmailState, email: EntityTrait<exomind.base.IEmail>): void {
+    private handleEmailClick(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): void {
         emailState.isOpen = !emailState.isOpen;
 
         // if the email for which we show controls is the one we close, we need to remove controls
@@ -293,7 +293,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
     }
 
-    private handleDraftClick(draft: EntityTrait<exomind.base.IDraftEmail>): void {
+    private handleDraftClick(draft: EntityTrait<exomind.base.v1.IDraftEmail>): void {
         if (this.props.onSelectionChange) {
             const item = SelectedItem.fromEntityTraitId(this.props.entity.entity.id, draft.id);
             this.props.onSelectionChange(this.props.selection.withItem(item));
@@ -303,7 +303,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
     private renderEmailControls(): React.ReactNode {
         let doneAction = null;
         const inboxChild = this.props.entity
-            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .find((trt) => trt.message.collection.entityId == 'inbox');
         if (inboxChild) {
             doneAction = <>
@@ -323,7 +323,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         );
     }
 
-    private handleDoneEmail(child: EntityTrait<exomind.base.CollectionChild>): void {
+    private handleDoneEmail(child: EntityTrait<exomind.base.v1.CollectionChild>): void {
         const mutation = MutationBuilder
             .updateEntity(this.props.entity.id)
             .deleteTrait(child.id)

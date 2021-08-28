@@ -6,8 +6,8 @@ import Exocore
 
 class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, CLTokenInputViewDelegate {
     private var entity: EntityExt?
-    private var draftTrait: TraitInstance<Exomind_Base_DraftEmail>?
-    private var modifiedDraft: Exomind_Base_DraftEmail?
+    private var draftTrait: TraitInstance<Exomind_Base_V1_DraftEmail>?
+    private var modifiedDraft: Exomind_Base_V1_DraftEmail?
 
     private var fromField: UILabel!
     private var toField: ContactsField!
@@ -23,7 +23,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
         self.draftTrait = entity.trait(withId: trait.id)
 
         if self.accounts.isEmpty {
-            let query = QueryBuilder.withTrait(Exomind_Base_Account.self).build()
+            let query = QueryBuilder.withTrait(Exomind_Base_V1_Account.self).build()
             self.accountQuery = ExocoreClient.store.query(query: query) { [weak self] (status, results) in
                 guard let results = results else {
                     return
@@ -31,7 +31,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
 
                 self?.accounts = results.entities.compactMap({ (result) in
                     let entity = result.entity.toExtension()
-                    guard let account: TraitInstance<Exomind_Base_Account> = entity.traitOfType(Exomind_Base_Account.self) else {
+                    guard let account: TraitInstance<Exomind_Base_V1_Account> = entity.traitOfType(Exomind_Base_V1_Account.self) else {
                         return nil
                     }
                     return Account(entity: entity, trait: account)
@@ -120,7 +120,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
                     this.modifiedDraft = this.draftTrait?.message
                 }
 
-                var part = Exomind_Base_EmailPart()
+                var part = Exomind_Base_V1_EmailPart()
                 part.body = body
                 part.mimeType = "text/html"
                 this.modifiedDraft?.parts = [part]
@@ -243,9 +243,9 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
 }
 
 private class ContactWrapper: NSObject {
-    let contact: Exomind_Base_Contact
+    let contact: Exomind_Base_V1_Contact
 
-    init(contact: Exomind_Base_Contact) {
+    init(contact: Exomind_Base_V1_Contact) {
         self.contact = contact
     }
 }
@@ -295,7 +295,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         if let text = self.tokensField.text, !preventOnChange {
             // TODO: better validation...
             if (text != "" && text.contains("@")) {
-                var contact = Exomind_Base_Contact()
+                var contact = Exomind_Base_V1_Contact()
                 contact.email = text.trimmingCharacters(in: CharacterSet(charactersIn: ", \t\n"))
 
                 self.tokensField.add(self.contactToToken(contact))
@@ -304,7 +304,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         }
     }
 
-    fileprivate func setContacts(_ contacts: [Exomind_Base_Contact]) {
+    fileprivate func setContacts(_ contacts: [Exomind_Base_V1_Contact]) {
         self.preventOnChange = true
         self.tokensField.allTokens.forEach { (token) -> () in
             self.tokensField.remove(token)
@@ -315,13 +315,13 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
         self.preventOnChange = false
     }
 
-    fileprivate func getContacts() -> [Exomind_Base_Contact] {
+    fileprivate func getContacts() -> [Exomind_Base_V1_Contact] {
         self.tokensField.allTokens.compactMap { token in
             (token.context as? ContactWrapper)?.contact
         }
     }
 
-    private func contactToToken(_ contact: Exomind_Base_Contact) -> CLToken {
+    private func contactToToken(_ contact: Exomind_Base_V1_Contact) -> CLToken {
         let displayName = Emails.formatContact(contact)
         return CLToken(displayText: displayName, context: ContactWrapper(contact: contact) as NSObject)
     }
@@ -333,7 +333,7 @@ private class ContactsField: NSObject, CLTokenInputViewDelegate {
 
 private struct Account {
     let entity: EntityExt
-    let trait: TraitInstance<Exomind_Base_Account>
+    let trait: TraitInstance<Exomind_Base_V1_Account>
 
     var reference: Exocore_Store_Reference {
         get {

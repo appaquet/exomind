@@ -48,6 +48,7 @@ async fn create_base_entities(store: &Arc<Store>) -> anyhow::Result<()> {
         message: Some(
             Collection {
                 name: "Inbox".to_string(),
+                ..Default::default()
             }
             .pack_to_any()?,
         ),
@@ -59,6 +60,7 @@ async fn create_base_entities(store: &Arc<Store>) -> anyhow::Result<()> {
         message: Some(
             Collection {
                 name: "Favorites".to_string(),
+                ..Default::default()
             }
             .pack_to_any()?,
         ),

@@ -5,7 +5,7 @@ class TaskViewController: UIViewController, EntityTraitView {
     @IBOutlet weak var taskNameField: UITextField!
 
     private var entity: EntityExt!
-    private var taskTrait: TraitInstance<Exomind_Base_Task>!
+    private var taskTrait: TraitInstance<Exomind_Base_V1_Task>!
     private var changed: Bool = false
 
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {

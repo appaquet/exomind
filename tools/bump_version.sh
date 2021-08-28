@@ -34,3 +34,6 @@ for CRATE in "${CRATES[@]}"; do
   $SEDBIN -i.bak "s/^\(version = \).*/\1\"$VERSION\"/g" $TOML_PATH
   $SEDBIN -i.bak -E "s/(exomind.*version.*\")(${VERSION_RE})(\".*)/\1${VERSION}\4/g" $TOML_PATH
 done
+
+cd $ROOT_DIR
+cargo update

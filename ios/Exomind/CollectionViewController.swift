@@ -5,7 +5,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     private let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
 
     private var entity: EntityExt!
-    private var collection: TraitInstance<Exomind_Base_Collection>!
+    private var collection: TraitInstance<Exomind_Base_V1_Collection>!
     private var entityListViewController: EntityListViewController!
 
     func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {

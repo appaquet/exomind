@@ -12,7 +12,7 @@ class EmailBodyWebView: AutoLayoutWebView, WKNavigationDelegate {
         self.setBackgroundTransparent()
     }
 
-    func loadEmailEntity(_ parts: [Exomind_Base_EmailPart], short: Bool = true) {
+    func loadEmailEntity(_ parts: [Exomind_Base_V1_EmailPart], short: Bool = true) {
         for part in parts {
             if part.mimeType == "text/html" {
                 var content: String!

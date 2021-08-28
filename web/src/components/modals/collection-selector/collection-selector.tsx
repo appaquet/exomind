@@ -115,7 +115,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                 .uniqBy(col => col.entity.id)
                 .map((colResult) => {
                     const et = this.getEntityTraits(colResult.entity);
-                    const colTrait = et.traitOfType<exomind.base.ICollection>(exomind.base.Collection);
+                    const colTrait = et.traitOfType<exomind.base.v1.ICollection>(exomind.base.v1.Collection);
                     if (!colTrait) {
                         return null;
                     }
@@ -138,7 +138,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
 
     private entityParents(entity: EntityTraits): string[] {
         return entity
-            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .flatMap((cc) => cc.message.collection.entityId);
     }
 
@@ -149,7 +149,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
 
             const traitQuery = (this.state.debouncedKeywords) ? TraitQueryBuilder.matches(this.state.debouncedKeywords).build() : null;
             const query = QueryBuilder
-                .withTrait(exomind.base.Collection, traitQuery)
+                .withTrait(exomind.base.v1.Collection, traitQuery)
                 .count(30)
                 .build();
             this.collectionsQuery = new ExpandableQuery(query, () => {
@@ -194,15 +194,15 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         });
     }
 
-    private handleItemCheck(collectionEntity: EntityTraits, collection: exomind.base.ICollection, event: MouseEvent): void {
+    private handleItemCheck(collectionEntity: EntityTraits, collection: exomind.base.v1.ICollection, event: MouseEvent): void {
         const currentChildTrait = this.state.entity
-            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .find((c) => c.message.collection.entityId == collectionEntity.id);
 
         if (!currentChildTrait) {
             const mutation = MutationBuilder
                 .updateEntity(this.state.entity.id)
-                .putTrait(new exomind.base.CollectionChild({
+                .putTrait(new exomind.base.v1.CollectionChild({
                     collection: new exocore.store.Reference({
                         entityId: collectionEntity.id,
                     }),

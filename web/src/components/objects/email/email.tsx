@@ -9,7 +9,7 @@ import './email.less';
 
 interface IProps {
     entity: EntityTraits;
-    emailTrait: EntityTrait<exomind.base.IEmail>;
+    emailTrait: EntityTrait<exomind.base.v1.IEmail>;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
@@ -71,7 +71,7 @@ export default class Email extends React.Component<IProps, IState> {
         });
     }
 
-    private renderContactField(key: string, label: string, contacts: exomind.base.IContact[]): React.ReactNode {
+    private renderContactField(key: string, label: string, contacts: exomind.base.v1.IContact[]): React.ReactNode {
         if (contacts.length > 0) {
             const classes = classNames({
                 field: true,

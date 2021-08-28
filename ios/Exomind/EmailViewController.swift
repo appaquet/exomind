@@ -5,7 +5,7 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
     private let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
 
     private var entity: EntityExt!
-    private var email: TraitInstance<Exomind_Base_Email>!
+    private var email: TraitInstance<Exomind_Base_V1_Email>!
 
     private var webview: EmailBodyWebView!
     private var fromLabel: UILabel!

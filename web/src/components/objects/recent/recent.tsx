@@ -108,7 +108,7 @@ export default class Recent extends React.Component<IProps, IState> {
     private handleEntityMoveInbox(et: EntityTraits) {
         const mb = MutationBuilder
             .updateEntity(et.id)
-            .putTrait(new exomind.base.CollectionChild({
+            .putTrait(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                     entityId: 'inbox',
                 }),

@@ -4,8 +4,8 @@ import Exocore
 
 class NoteViewController: VerticalLinearViewController, EntityTraitView {
     private var entity: EntityExt?
-    private var noteTrait: TraitInstance<Exomind_Base_Note>?
-    private var modifiedNote: Exomind_Base_Note?
+    private var noteTrait: TraitInstance<Exomind_Base_V1_Note>?
+    private var modifiedNote: Exomind_Base_V1_Note?
 
     private var headerView: LabelledFieldView!
     private var titleField: MultilineTextField!

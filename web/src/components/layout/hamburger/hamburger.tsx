@@ -33,7 +33,7 @@ export default class Hamburger extends React.Component<IProps, IState> {
 
     const traitQuery = TraitQueryBuilder.refersTo('collection', 'favorites').build();
     const childrenQuery = QueryBuilder
-      .withTrait(exomind.base.CollectionChild, traitQuery)
+      .withTrait(exomind.base.v1.CollectionChild, traitQuery)
       .count(30)
       .orderByField('weight', false)
       .build();
@@ -134,7 +134,7 @@ function handleDropIn(intoEntity: EntityTrait<unknown>, data: DragData) {
 
   let mb = MutationBuilder
     .updateEntity(droppedEntity.id)
-    .putTrait(new exomind.base.CollectionChild({
+    .putTrait(new exomind.base.v1.CollectionChild({
       collection: new exocore.store.Reference({
         entityId: parentId
       }),

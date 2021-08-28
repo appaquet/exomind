@@ -117,9 +117,9 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         let collectionsQuery: QueryBuilder
         if let currentFilter = currentFilter {
             let traitQuery = TraitQueryBuilder.matching(query: currentFilter).build()
-            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_Collection.self, query: traitQuery).count(30)
+            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_V1_Collection.self, query: traitQuery).count(30)
         } else {
-            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_Collection.self).count(30)
+            collectionsQuery = QueryBuilder.withTrait(Exomind_Base_V1_Collection.self).count(30)
         }
 
         self.collectionsQuery = ManagedQuery(query: collectionsQuery.build(), onChange: { [weak self] in
@@ -130,7 +130,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
 
     private func queryEntityParents(entity: EntityExt) {
         let parents = entity
-                .traitsOfType(Exomind_Base_CollectionChild.self)
+                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
                 .map({ $0.message.collection.entityID })
 
         if !parents.isEmpty {
@@ -247,11 +247,11 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
 
 fileprivate struct Collection {
     let entity: EntityExt
-    let trait: TraitInstance<Exomind_Base_Collection>
+    let trait: TraitInstance<Exomind_Base_V1_Collection>
     let parents: [CollectionPillData]
 
     static func fromEntity(entity: EntityExt) -> Collection? {
-        guard let collectionTrait = entity.traitOfType(Exomind_Base_Collection.self) else {
+        guard let collectionTrait = entity.traitOfType(Exomind_Base_V1_Collection.self) else {
             return nil
         }
         let parents = Collections.instance.entityParentsPillData(entity: entity)

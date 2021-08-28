@@ -202,13 +202,13 @@ export class EntityComponent extends React.Component<Props, State> {
 
         let mb = MutationBuilder
             .updateEntity(this.state.entityTraits.id)
-            .putTrait(new exomind.base.Snoozed({
+            .putTrait(new exomind.base.v1.Snoozed({
                 untilDate: toProtoTimestamp(date),
             }), "snoozed")
             .returnEntities();
 
         const parentRelation = this.state.entityTraits
-            .traitsOfType<exomind.base.ICollectionChild>(exomind.base.CollectionChild)
+            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .find((trt) => trt.message.collection.entityId == 'inbox')
         if (parentRelation) {
             mb = mb.deleteTrait(parentRelation.id);

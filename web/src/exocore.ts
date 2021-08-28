@@ -80,15 +80,15 @@ export function registerTypes(instance?: ExocoreInstance): void {
         instance = Exocore.default;
     }
 
-    instance.registry.registerMessage(exomind.base.EmailThread, 'exomind.base.EmailThread');
-    instance.registry.registerMessage(exomind.base.Email, 'exomind.base.Email');
-    instance.registry.registerMessage(exomind.base.EmailPart, 'exomind.base.EmailPart');
-    instance.registry.registerMessage(exomind.base.DraftEmail, 'exomind.base.DraftEmail');
-    instance.registry.registerMessage(exomind.base.Account, 'exomind.base.Account');
-    instance.registry.registerMessage(exomind.base.Collection, 'exomind.base.Collection');
-    instance.registry.registerMessage(exomind.base.CollectionChild, 'exomind.base.CollectionChild');
-    instance.registry.registerMessage(exomind.base.Task, 'exomind.base.Task');
-    instance.registry.registerMessage(exomind.base.Note, 'exomind.base.Note');
-    instance.registry.registerMessage(exomind.base.Link, 'exomind.base.Link');
-    instance.registry.registerMessage(exomind.base.Snoozed, 'exomind.base.Snoozed');
+    instance.registry.registerMessage(exomind.base.v1.EmailThread, 'exomind.base.v1.EmailThread');
+    instance.registry.registerMessage(exomind.base.v1.Email, 'exomind.base.v1.Email');
+    instance.registry.registerMessage(exomind.base.v1.EmailPart, 'exomind.base.v1.EmailPart');
+    instance.registry.registerMessage(exomind.base.v1.DraftEmail, 'exomind.base.v1.DraftEmail');
+    instance.registry.registerMessage(exomind.base.v1.Account, 'exomind.base.v1.Account');
+    instance.registry.registerMessage(exomind.base.v1.Collection, 'exomind.base.v1.Collection');
+    instance.registry.registerMessage(exomind.base.v1.CollectionChild, 'exomind.base.v1.CollectionChild');
+    instance.registry.registerMessage(exomind.base.v1.Task, 'exomind.base.v1.Task');
+    instance.registry.registerMessage(exomind.base.v1.Note, 'exomind.base.v1.Note');
+    instance.registry.registerMessage(exomind.base.v1.Link, 'exomind.base.v1.Link');
+    instance.registry.registerMessage(exomind.base.v1.Snoozed, 'exomind.base.v1.Snoozed');
 }

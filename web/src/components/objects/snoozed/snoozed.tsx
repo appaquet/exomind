@@ -31,11 +31,11 @@ export default class Snoozed extends React.Component<IProps, IState> {
         super(props);
 
         const childrenQuery = QueryBuilder
-            .withTrait(exomind.base.Snoozed)
+            .withTrait(exomind.base.v1.Snoozed)
             .count(30)
             .project(
                 new exocore.store.Projection({
-                    package: ["exomind.base.Snoozed"],
+                    package: ["exomind.base.v1.Snoozed"],
                 }),
                 new exocore.store.Projection({
                     fieldGroupIds: [1],
@@ -101,7 +101,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
     }
 
     private renderEntityDate(entity: EntityTrait<unknown>): React.ReactFragment {
-        const snoozedTrait = entity.et.traitOfType<exomind.base.ISnoozed>(exomind.base.Snoozed);
+        const snoozedTrait = entity.et.traitOfType<exomind.base.v1.ISnoozed>(exomind.base.v1.Snoozed);
         if (!snoozedTrait) {
             return 'Invalid';
         }
@@ -128,14 +128,14 @@ export default class Snoozed extends React.Component<IProps, IState> {
     }
 
     private handleEntityMoveInbox(et: EntityTraits) {
-        const snoozedTrait = et.traitOfType<exomind.base.ISnoozed>(exomind.base.Snoozed);
+        const snoozedTrait = et.traitOfType<exomind.base.v1.ISnoozed>(exomind.base.v1.Snoozed);
         if (!snoozedTrait) {
             return;
         }
 
         const mb = MutationBuilder
             .updateEntity(et.id)
-            .putTrait(new exomind.base.CollectionChild({
+            .putTrait(new exomind.base.v1.CollectionChild({
                 collection: new exocore.store.Reference({
                     entityId: 'inbox',
                 }),
