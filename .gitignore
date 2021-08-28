@@ -4,6 +4,7 @@
 local_conf
 app.wasm
 exomind.zip
+exomind.fd
 test_node
 
 # Rust
