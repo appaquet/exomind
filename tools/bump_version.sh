@@ -36,3 +36,6 @@ for CRATE in "${CRATES[@]}"; do
   sed -i.bak "s/^\(version = \).*/\1\"${VERSION}\"/g" $TOML_PATH
   sed -i.bak -E "s/(exocore.*version.*\")(${VERSION_RE})(\".*)/\1${VERSION}\3/g" $TOML_PATH
 done
+
+cd $ROOT_DIR
+cargo update
