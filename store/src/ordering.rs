@@ -51,6 +51,27 @@ impl OrderingValueWrapper {
     pub fn is_within_bound(&self, lower: &OrderingValue, higher: &OrderingValue) -> bool {
         self.value.is_after(lower) && self.value.is_before(higher)
     }
+
+    pub fn is_score(&self) -> bool {
+        matches!(
+            self.value.value.as_ref(),
+            Some(ordering_value::Value::Float(_score))
+        )
+    }
+
+    pub fn boost_score(&mut self, multiplier: f32) -> (f32, f32) {
+        if let Some(ordering_value::Value::Float(score)) = self.value.value.as_mut() {
+            let before = *score;
+            if !self.reverse {
+                *score *= multiplier;
+            } else {
+                *score /= multiplier;
+            }
+            (before, *score)
+        } else {
+            (0.0, 0.0)
+        }
+    }
 }
 
 /// Extensions of ordering value to add comparison methods.

@@ -67,12 +67,12 @@ store:
     pending_index:
       indexer_num_threads: 2
       indexer_heap_size_bytes: 30000000
-      entity_mutations_cache_size: 1000
+      entity_mutations_cache_size: 5000
 
     chain_index:
       indexer_num_threads: 2
       indexer_heap_size_bytes: 30000000
-      entity_mutations_cache_size: 1000
+      entity_mutations_cache_size: 5000
 
     garbage_collector:
       run_interval_secs: 13

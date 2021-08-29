@@ -3,7 +3,7 @@ use std::{
     ops::Deref,
     path::Path,
     result::Result,
-    sync::{atomic, atomic::AtomicUsize, Arc, Mutex},
+    sync::{Arc, Mutex},
     time::Instant,
 };
 
@@ -27,7 +27,7 @@ use exocore_protos::{
 pub use operations::*;
 pub use results::*;
 use tantivy::{
-    collector::{Collector, TopDocs},
+    collector::{Collector, Count, MultiCollector, TopDocs},
     directory::MmapDirectory,
     fastfield::FastFieldReader,
     query::{AllQuery, BooleanQuery, FuzzyTermQuery, Occur, PhraseQuery, Query, TermQuery},
@@ -314,10 +314,10 @@ impl MutationIndex {
     pub fn search_iter<Q: Borrow<EntityQuery>>(
         &self,
         query: Q,
-    ) -> Result<MutationResultsIterator<Q>, Error> {
+    ) -> Result<MutationResultIterator<Q>, Error> {
         let results = self.search(query.borrow())?;
 
-        Ok(MutationResultsIterator {
+        Ok(MutationResultIterator {
             index: self,
             query,
             total_results: results.total,
@@ -598,7 +598,7 @@ impl MutationIndex {
         };
 
         let message_mappings = self.fields.dynamic_mappings.get(message_dyn.full_name());
-
+        let mut has_reference = false;
         for (field_id, field) in message_dyn.fields() {
             let field_value = match message_dyn.get_field_value(*field_id) {
                 Ok(fv) => fv,
@@ -628,6 +628,7 @@ impl MutationIndex {
                     let ref_value = format!("entity{} trait{}", value.entity_id, value.trait_id);
                     doc.add_text(field_mapping.field, &ref_value);
                     doc.add_text(self.fields.all_refs, &ref_value);
+                    has_reference = true;
                 }
                 FieldValue::DateTime(value) if field.indexed_flag || field.sorted_flag => {
                     doc.add_u64(field_mapping.field, value.timestamp_nanos() as u64);
@@ -651,6 +652,13 @@ impl MutationIndex {
                     );
                 }
             }
+        }
+
+        if has_reference {
+            doc.add_u64(
+                self.fields.has_reference,
+                schema::bool_to_u64(has_reference),
+            );
         }
     }
 
@@ -829,35 +837,26 @@ impl MutationIndex {
             after_ordering_value: None,
             before_ordering_value: None,
             count: self.config.iterator_page_size,
+            offset: 0,
         });
-
-        let total_count = Arc::new(AtomicUsize::new(0));
-        let match_count = Arc::new(AtomicUsize::new(0));
 
         let ordering_value = ordering
             .value
             .ok_or(Error::ProtoFieldExpected("ordering.value"))?;
-        let mutations = match ordering_value {
+        let (mutations, total) = match ordering_value {
             ordering::Value::Score(_) => {
                 let collector = self.match_score_collector(
-                    total_count.clone(),
-                    match_count.clone(),
                     &paging,
                     ordering.ascending,
                     ordering.no_recency_boost,
                 );
-                self.execute_tantity_query_with_collector(searcher, query, &collector)?
+                self.execute_tantity_query_with_collector(searcher, query, collector)?
             }
             ordering::Value::OperationId(_) => {
                 let sort_field = self.fields.operation_id;
-                let collector = self.sorted_field_collector(
-                    total_count.clone(),
-                    match_count.clone(),
-                    &paging,
-                    sort_field,
-                    ordering.ascending,
-                );
-                self.execute_tantity_query_with_collector(searcher, query, &collector)?
+                let collector =
+                    self.sorted_field_collector(&paging, sort_field, ordering.ascending);
+                self.execute_tantity_query_with_collector(searcher, query, collector)?
             }
             ordering::Value::Field(field_name) => {
                 let trait_name = trait_name.ok_or_else(|| {
@@ -875,45 +874,27 @@ impl MutationIndex {
                     )));
                 }
 
-                let collector = self.sorted_field_collector(
-                    total_count.clone(),
-                    match_count.clone(),
-                    &paging,
-                    sort_field.field,
-                    ordering.ascending,
-                );
-                self.execute_tantity_query_with_collector(searcher, query, &collector)?
+                let collector =
+                    self.sorted_field_collector(&paging, sort_field.field, ordering.ascending);
+                self.execute_tantity_query_with_collector(searcher, query, collector)?
             }
         };
 
-        let total_results = total_count.load(atomic::Ordering::Relaxed);
-        let remaining_results = match_count
-            .load(atomic::Ordering::Relaxed)
-            .saturating_sub(mutations.len());
-
-        let next_page = if remaining_results > 0 {
-            let last_result = mutations.last().expect("Should had results, but got none");
-            let mut next_page = Paging {
-                before_ordering_value: None,
-                after_ordering_value: None,
+        let next_page = if mutations.len() >= paging.count as usize {
+            Some(Paging {
                 count: paging.count,
-            };
-
-            if ordering.ascending {
-                next_page.after_ordering_value = Some(last_result.sort_value.value.clone());
-            } else {
-                next_page.before_ordering_value = Some(last_result.sort_value.value.clone());
-            }
-
-            Some(next_page)
+                offset: paging.offset + mutations.len() as u32,
+                ..Default::default()
+            })
         } else {
             None
         };
 
+        let remaining = total - paging.offset as usize - mutations.len();
         Ok(MutationResults {
             mutations,
-            total: total_results,
-            remaining: remaining_results,
+            total,
+            remaining,
             next_page,
         })
     }
@@ -923,16 +904,20 @@ impl MutationIndex {
         &self,
         searcher: S,
         query: &dyn tantivy::query::Query,
-        top_collector: &C,
-    ) -> Result<Vec<MutationMetadata>, Error>
+        top_collector: C,
+    ) -> Result<(Vec<MutationMetadata>, usize), Error>
     where
         S: Deref<Target = Searcher>,
         C: Collector<Fruit = Vec<(OrderingValueWrapper, DocAddress)>>,
     {
-        let search_results = searcher.search(query, top_collector)?;
+        let mut multi_collector = MultiCollector::new();
+        let top_collector = multi_collector.add_collector(top_collector);
+        let count_collector = multi_collector.add_collector(Count);
+
+        let mut fruits = searcher.search(query, &multi_collector)?;
 
         let mut results = Vec::new();
-        for (sort_value, doc_addr) in search_results {
+        for (sort_value, doc_addr) in top_collector.extract(&mut fruits) {
             // ignored results were out of the requested paging
             if !sort_value.ignore {
                 let doc = searcher.doc(doc_addr)?;
@@ -951,7 +936,10 @@ impl MutationIndex {
                         schema::get_doc_opt_u64_value(&doc, self.fields.modification_date)
                             .map(|ts| Utc.timestamp_nanos(ts as i64));
                     put_trait.trait_type =
-                        schema::get_doc_opt_string_value(&doc, self.fields.trait_type)
+                        schema::get_doc_opt_string_value(&doc, self.fields.trait_type);
+                    put_trait.has_reference =
+                        schema::get_doc_opt_bool_value(&doc, self.fields.has_reference)
+                            .unwrap_or(false);
                 }
 
                 let result = MutationMetadata {
@@ -965,40 +953,23 @@ impl MutationIndex {
             }
         }
 
-        Ok(results)
+        let total_count = count_collector.extract(&mut fruits);
+
+        Ok((results, total_count))
     }
 
     /// Creates a Tantivy top document collectors that sort by the given fast
     /// field and limits the result by the requested paging.
     fn sorted_field_collector(
         &self,
-        total_count: Arc<AtomicUsize>,
-        matching_count: Arc<AtomicUsize>,
         paging: &Paging,
         sort_field: Field,
         ascending: bool,
     ) -> impl Collector<Fruit = Vec<(OrderingValueWrapper, DocAddress)>> {
-        let after_ordering_value = Arc::new(paging.after_ordering_value.clone().unwrap_or(
-            OrderingValue {
-                value: Some(ordering_value::Value::Min(true)),
-                operation_id: 0,
-            },
-        ));
-        let before_ordering_value = Arc::new(paging.before_ordering_value.clone().unwrap_or(
-            OrderingValue {
-                value: Some(ordering_value::Value::Max(true)),
-                operation_id: 0,
-            },
-        ));
-
         let operation_id_field = self.fields.operation_id;
-        TopDocs::with_limit(paging.count as usize).custom_score(
-            move |segment_reader: &SegmentReader| {
-                let after_ordering_value = after_ordering_value.clone();
-                let before_ordering_value = before_ordering_value.clone();
-                let total_docs = total_count.clone();
-                let remaining_count = matching_count.clone();
-
+        TopDocs::with_limit(paging.count as usize)
+            .and_offset(paging.offset as usize)
+            .custom_score(move |segment_reader: &SegmentReader| {
                 let operation_id_reader = segment_reader
                     .fast_fields()
                     .u64(operation_id_field)
@@ -1008,70 +979,32 @@ impl MutationIndex {
                     .fast_fields()
                     .u64(sort_field)
                     .expect("Field requested is not a i64/u64 fast field.");
-                move |doc_id| {
-                    total_docs.fetch_add(1, atomic::Ordering::SeqCst);
-
-                    let mut ordering_value_wrapper = OrderingValueWrapper {
-                        value: OrderingValue {
-                            value: Some(ordering_value::Value::Uint64(sort_fast_field.get(doc_id))),
-                            operation_id: operation_id_reader.get(doc_id),
-                        },
-                        reverse: ascending,
-                        ignore: false,
-                    };
-
-                    // we ignore the result if it's out of the requested pages
-                    if ordering_value_wrapper
-                        .is_within_bound(&after_ordering_value, &before_ordering_value)
-                    {
-                        remaining_count.fetch_add(1, atomic::Ordering::SeqCst);
-                    } else {
-                        ordering_value_wrapper.ignore = true;
-                    }
-
-                    ordering_value_wrapper
+                move |doc_id| OrderingValueWrapper {
+                    value: OrderingValue {
+                        value: Some(ordering_value::Value::Uint64(sort_fast_field.get(doc_id))),
+                        operation_id: operation_id_reader.get(doc_id),
+                    },
+                    reverse: ascending,
+                    ignore: false,
                 }
-            },
-        )
+            })
     }
 
     /// Creates a Tantivy top document collectors that sort by full text
     /// matching score and limits the result by the requested paging.
     fn match_score_collector(
         &self,
-        total_count: Arc<AtomicUsize>,
-        matching_count: Arc<AtomicUsize>,
         paging: &Paging,
         ascending: bool,
         no_recency_boost: bool,
     ) -> impl Collector<Fruit = Vec<(OrderingValueWrapper, DocAddress)>> {
-        let after_score = Arc::new(
-            paging
-                .after_ordering_value
-                .clone()
-                .unwrap_or(OrderingValue {
-                    value: Some(ordering_value::Value::Min(true)),
-                    operation_id: 0,
-                }),
-        );
-        let before_score = Arc::new(paging.before_ordering_value.clone().unwrap_or(
-            OrderingValue {
-                value: Some(ordering_value::Value::Max(true)),
-                operation_id: 0,
-            },
-        ));
-
         let now = Utc::now().timestamp_nanos() as u64;
         let operation_id_field = self.fields.operation_id;
         let modification_date_field = self.fields.modification_date;
         let boost = self.full_text_boost;
-        TopDocs::with_limit(paging.count as usize).tweak_score(
-            move |segment_reader: &SegmentReader| {
-                let after_score = after_score.clone();
-                let before_score = before_score.clone();
-                let total_docs = total_count.clone();
-                let remaining_count = matching_count.clone();
-
+        TopDocs::with_limit(paging.count as usize)
+            .and_offset(paging.offset as usize)
+            .tweak_score(move |segment_reader: &SegmentReader| {
                 let operation_id_reader = segment_reader
                     .fast_fields()
                     .u64(operation_id_field)
@@ -1083,8 +1016,6 @@ impl MutationIndex {
                     .unwrap();
 
                 move |doc_id, score| {
-                    total_docs.fetch_add(1, atomic::Ordering::SeqCst);
-
                     let operation_id = operation_id_reader.get(doc_id);
 
                     // boost by date if needed
@@ -1098,26 +1029,16 @@ impl MutationIndex {
                         score
                     };
 
-                    let mut ordering_value_wrapper = OrderingValueWrapper {
+                    OrderingValueWrapper {
                         value: OrderingValue {
                             value: Some(ordering_value::Value::Float(score)),
                             operation_id,
                         },
                         reverse: ascending,
                         ignore: false,
-                    };
-
-                    // we ignore the result if it's out of the requested pages
-                    if ordering_value_wrapper.is_within_bound(&after_score, &before_score) {
-                        remaining_count.fetch_add(1, atomic::Ordering::SeqCst);
-                    } else {
-                        ordering_value_wrapper.ignore = true;
                     }
-
-                    ordering_value_wrapper
                 }
-            },
-        )
+            })
     }
 }
 

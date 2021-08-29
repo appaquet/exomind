@@ -743,6 +743,7 @@ mod tests {
                 trait_type: None,
                 creation_date: None,
                 modification_date: None,
+                has_reference: false,
             }),
             sort_value: OrderingValueWrapper {
                 value: OrderingValue {

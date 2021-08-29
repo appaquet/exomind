@@ -141,7 +141,23 @@ impl TestEntityIndex {
         trait_id: T,
         name: N,
     ) -> Result<OperationId, anyhow::Error> {
-        let trt = Self::new_test_trait(trait_id, name)?;
+        self.put_trait_message(
+            entity_id,
+            trait_id,
+            TestMessage {
+                string1: name.into(),
+                ..Default::default()
+            },
+        )
+    }
+
+    pub fn put_trait_message<E: Into<EntityId>, T: Into<TraitId>>(
+        &mut self,
+        entity_id: E,
+        trait_id: T,
+        msg: TestMessage,
+    ) -> Result<OperationId, anyhow::Error> {
+        let trt = Self::new_test_trait(trait_id, msg)?;
         let mutation = MutationBuilder::new().put_trait(entity_id.into(), trt);
         self.write_mutation(mutation)
     }
@@ -165,19 +181,13 @@ impl TestEntityIndex {
         Ok(op_id)
     }
 
-    pub fn new_test_trait<T: Into<TraitId>, N: Into<String>>(
+    pub fn new_test_trait<T: Into<TraitId>>(
         trait_id: T,
-        name: N,
+        message: TestMessage,
     ) -> Result<Trait, Error> {
         let trt = Trait {
             id: trait_id.into(),
-            message: Some(
-                TestMessage {
-                    string1: name.into(),
-                    ..Default::default()
-                }
-                .pack_to_any()?,
-            ),
+            message: Some(message.pack_to_any()?),
             ..Default::default()
         };
 

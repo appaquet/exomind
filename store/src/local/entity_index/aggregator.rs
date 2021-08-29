@@ -65,6 +65,10 @@ pub struct EntityAggregator {
     /// this inhibits any further garbage collection until they hit the chain
     /// index
     pub pending_deletion: bool,
+
+    /// indicates that one of the traits of the entity has a reference to
+    /// another entity / trait
+    pub has_reference: bool,
 }
 
 impl EntityAggregator {
@@ -191,6 +195,10 @@ impl EntityAggregator {
             entity_modification_date = None;
         }
 
+        let has_reference = traits
+            .values()
+            .any(|t| t.deletion_date.is_none() && t.has_reference);
+
         Ok(EntityAggregator {
             entity_id,
             traits,
@@ -204,6 +212,7 @@ impl EntityAggregator {
             last_block_offset,
             in_pending,
             pending_deletion,
+            has_reference,
         })
     }
 
@@ -250,6 +259,7 @@ pub struct TraitAggregator {
     pub deletion_date: Option<DateTime<Utc>>,
     pub projection: Option<Rc<Projection>>,
     pub mutation_count: usize,
+    pub has_reference: bool,
 }
 
 impl TraitAggregator {
@@ -291,6 +301,7 @@ impl TraitAggregator {
         update_if_older(&mut self.creation_date, Some(creation_date));
 
         self.deletion_date = None;
+        self.has_reference = put_trait.has_reference;
 
         self.put_mutations.push(mutation);
         self.last_operation_id = Some(op_id);
@@ -910,6 +921,7 @@ pub(crate) mod tests {
                 trait_type: Some(trait_type.into()),
                 creation_date,
                 modification_date,
+                has_reference: false,
             }),
             sort_value: OrderingValueWrapper {
                 value: OrderingValue::default(),

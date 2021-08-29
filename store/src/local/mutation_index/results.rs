@@ -13,7 +13,7 @@ use crate::{
 
 /// Iterates through all results matching a given initial query using the
 /// next_page score when a page got emptied.
-pub struct MutationResultsIterator<'i, Q: Borrow<EntityQuery>> {
+pub struct MutationResultIterator<'i, Q: Borrow<EntityQuery>> {
     pub index: &'i MutationIndex,
     pub query: Q,
     pub total_results: usize,
@@ -22,7 +22,7 @@ pub struct MutationResultsIterator<'i, Q: Borrow<EntityQuery>> {
     pub max_pages: usize,
 }
 
-impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultsIterator<'i, Q> {
+impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultIterator<'i, Q> {
     type Item = MutationMetadata;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -34,7 +34,7 @@ impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultsIterator<'i, Q> {
             query.paging = Some(self.next_page.clone()?);
 
             if self.max_pages == 0 {
-                warn!(
+                debug!(
                     "Too many page fetched. Stopping here. Last query={:?}",
                     query
                 );
@@ -91,6 +91,7 @@ pub struct PutTraitMetadata {
     pub trait_type: Option<String>,
     pub creation_date: Option<DateTime<Utc>>,
     pub modification_date: Option<DateTime<Utc>>,
+    pub has_reference: bool,
 }
 
 impl MutationType {
@@ -110,6 +111,7 @@ impl MutationType {
                 trait_type: None,
                 creation_date: None,
                 modification_date: None,
+                has_reference: false,
             })),
             Self::ENTITY_TOMBSTONE_ID => Ok(MutationType::EntityTombstone),
             Self::PENDING_DELETION_ID => Ok(MutationType::PendingDeletion),

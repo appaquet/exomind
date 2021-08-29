@@ -231,6 +231,9 @@ pub struct Paging {
     /// Desired results count. Default if 0.
     #[prost(uint32, tag = "3")]
     pub count: u32,
+    /// Mutation index use only, no effect on entity query.
+    #[prost(uint32, tag = "4")]
+    pub offset: u32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Ordering {
@@ -240,6 +243,9 @@ pub struct Ordering {
     /// If match score used, don't boost recent documents
     #[prost(bool, tag = "5")]
     pub no_recency_boost: bool,
+    /// If match score used, don't boost results that have references.
+    #[prost(bool, tag = "6")]
+    pub no_reference_boost: bool,
     /// Value by which we want results to be ordered.
     #[prost(oneof = "ordering::Value", tags = "1, 2, 3")]
     pub value: ::core::option::Option<ordering::Value>,

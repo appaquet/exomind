@@ -183,53 +183,46 @@ impl QueryBuilder {
         self
     }
 
-    pub fn order_by_field<F: Into<String>>(mut self, field: F, ascending: bool) -> Self {
-        if self.query.ordering.is_none() {
-            self.query.ordering = Some(Ordering::default());
-        }
-
-        if let Some(ordering) = self.query.ordering.as_mut() {
+    pub fn order_by_field<F: Into<String>>(self, field: F, ascending: bool) -> Self {
+        self.mapped_ordering(|ordering| {
             ordering.value = Some(ordering::Value::Field(field.into()));
             ordering.ascending = ascending;
-        }
-
-        self
+        })
     }
 
-    pub fn order_by_operations(mut self, ascending: bool) -> Self {
-        if self.query.ordering.is_none() {
-            self.query.ordering = Some(Ordering::default());
-        }
-
-        if let Some(ordering) = self.query.ordering.as_mut() {
+    pub fn order_by_operations(self, ascending: bool) -> Self {
+        self.mapped_ordering(|ordering| {
             ordering.value = Some(ordering::Value::OperationId(true));
             ordering.ascending = ascending;
-        }
-
-        self
+        })
     }
 
-    pub fn order_by_score(mut self, ascending: bool, recency_boost: bool) -> Self {
-        if self.query.ordering.is_none() {
-            self.query.ordering = Some(Ordering::default());
-        }
-
-        if let Some(ordering) = self.query.ordering.as_mut() {
+    pub fn order_by_score(
+        self,
+        ascending: bool,
+        recency_boost: bool,
+        reference_boost: bool,
+    ) -> Self {
+        self.mapped_ordering(|ordering| {
             ordering.value = Some(ordering::Value::Score(true));
             ordering.ascending = ascending;
             ordering.no_recency_boost = !recency_boost;
-        }
-
-        self
+            ordering.no_reference_boost = !reference_boost;
+        })
     }
 
-    pub fn order_ascending(mut self, ascending: bool) -> Self {
-        if self.query.ordering.is_none() {
-            self.query.ordering = Some(Ordering::default());
-        }
+    pub fn order_ascending(self, ascending: bool) -> Self {
+        self.mapped_ordering(|ordering| ordering.ascending = ascending)
+    }
 
-        if let Some(ordering) = self.query.ordering.as_mut() {
-            ordering.ascending = ascending;
+    pub fn mapped_ordering<F: FnOnce(&mut Ordering)>(mut self, f: F) -> Self {
+        match self.query.ordering.as_mut() {
+            Some(ordering) => f(ordering),
+            None => {
+                let mut ordering = Ordering::default();
+                f(&mut ordering);
+                self.query.ordering = Some(ordering);
+            }
         }
 
         self
@@ -436,7 +429,7 @@ pub fn default_paging() -> Paging {
     }
 }
 
-pub fn validate_paging(paging: &mut Paging) {
+pub fn fill_default_paging(paging: &mut Paging) {
     if paging.count == 0 {
         paging.count = 10;
     }

@@ -676,9 +676,8 @@ mod tests {
     };
     use exocore_transport::testing::MockTransport;
 
-    use crate::{query::QueryBuilder, store::Store};
-
     use super::*;
+    use crate::{query::QueryBuilder, store::Store};
 
     #[tokio::test(flavor = "multi_thread")]
     async fn connects_to_online_node() -> anyhow::Result<()> {

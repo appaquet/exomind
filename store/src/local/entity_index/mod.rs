@@ -22,6 +22,7 @@ use exocore_protos::{
     },
     prost::{Message, ProstDateTimeExt},
     registry::Registry,
+    store::Projection,
 };
 use gc::GarbageCollector;
 use itertools::Itertools;
@@ -239,11 +240,16 @@ where
 
         let query = query.borrow();
         let query_include_deleted = query.include_deleted;
-        let mut current_page = query
+        let mut query_page = query
             .paging
             .clone()
             .unwrap_or_else(crate::query::default_paging);
-        crate::query::validate_paging(&mut current_page);
+        crate::query::fill_default_paging(&mut query_page);
+
+        let reference_boost = query
+            .ordering
+            .as_ref()
+            .map_or(true, |o| !o.no_reference_boost);
 
         // query pending & chain mutation index without original query paging since we
         // need to do our own paging here since we are re-ranking results and
@@ -270,12 +276,9 @@ where
         let mut digest = hasher.digest();
         let mut entity_mutations_cache = HashMap::<EntityId, Rc<EntityAggregator>>::new();
         let mut matched_entities = HashSet::new();
-        let mut got_results = false;
-        let early_exit = std::cell::Cell::new(false);
 
         // iterate through results and returning the first N entities
         let mut entity_results = combined_results
-            .take_while(|(_matched_mutation, _index_source)| !early_exit.get())
             // iterate through results, starting with best scores
             .flat_map(|(matched_mutation, index_source)| {
                 let entity_id = matched_mutation.entity_id.clone();
@@ -288,44 +291,24 @@ where
 
                 // fetch all entity mutations and cache them since we may have multiple hits for
                 // same entity for traits that may have been removed since
-                let entity_mutations = if let Some(mutations) =
-                    entity_mutations_cache.get(&entity_id)
-                {
-                    mutations.clone()
-                } else {
-                    let mut entity_mutations = self
-                        .fetch_entity_mutations_metadata(&entity_id)
-                        .map_err(|err| {
-                            error!(
-                                "Error fetching mutations metadata for entity_id={} from indices: {}",
-                                entity_id, err
-                            );
-                            err
-                        })
-                        .ok()?;
-
-                    if !query.projections.is_empty() {
-                        entity_mutations.annotate_projections(query.projections.as_slice());
-                    }
-
-                    let entity_mutations = Rc::new(entity_mutations);
-
-                    entity_mutations_cache
-                        .insert(entity_id.clone(), entity_mutations.clone());
-
-                    entity_mutations
-                };
+                let entity_mutations = self.fetch_and_cache_entity_mutations_metadata(
+                    &mut entity_mutations_cache,
+                    &entity_id,
+                    &query.projections,
+                )?;
 
                 let operation_still_present = entity_mutations
                     .active_operations
                     .contains(&matched_mutation.operation_id);
                 if entity_mutations.deletion_date.is_some() || !operation_still_present {
-                    // we are here if the entity has been deleted (ex: explicitly or no traits remaining)
-                    // or if the mutation metadata that was returned by the mutation index is not active anymore,
-                    // which means that it got overridden by a subsequent operation.
-                    // 
-                    // We let the garbage collector know that the entity may need to be garbage collected. The
-                    // actual garbage collection will be done asynchronously at later time.
+                    // we are here if the entity has been deleted (ex: explicitly or no traits
+                    // remaining) or if the mutation metadata that was returned
+                    // by the mutation index is not active anymore, which means
+                    // that it got overridden by a subsequent operation.
+                    //
+                    // We let the garbage collector know that the entity may need to be garbage
+                    // collected. The actual garbage collection will be done
+                    // asynchronously at later time.
                     self.gc.maybe_flag_for_collection(&entity_mutations);
 
                     if !query_include_deleted {
@@ -334,25 +317,28 @@ where
                 }
                 matched_entities.insert(matched_mutation.entity_id.clone());
 
-                // TODO: Support for negative re-scoring https://github.com/appaquet/exocore/issues/143
-                let ordering_value = matched_mutation.sort_value.clone();
-                if ordering_value.value.is_within_page_bound(&current_page) {
-                    got_results = true;
+                // Unless disabled, penalizes the entity score if it doesn't have a reference to
+                // another object
+                let mut ordering_value = matched_mutation.sort_value.clone();
+                let original_ordering_value = ordering_value.clone();
+                if reference_boost && ordering_value.is_score() && !entity_mutations.has_reference {
+                    ordering_value.boost_score(0.3);
+                };
 
-                    let creation_date = entity_mutations.creation_date.map(|t| t.to_proto_timestamp());
-                    let modification_date = entity_mutations.modification_date.map(|t| t.to_proto_timestamp());
-                    let deletion_date = entity_mutations.deletion_date.map(|t| t.to_proto_timestamp());
-
+                if ordering_value.value.is_within_page_bound(&query_page) {
                     let result = EntityResult {
                         matched_mutation,
                         ordering_value: ordering_value.clone(),
+                        original_ordering_value,
                         proto: EntityResultProto {
                             entity: Some(Entity {
                                 id: entity_id,
                                 traits: Vec::new(),
-                                creation_date,
-                                modification_date,
-                                deletion_date,
+                                creation_date: opt_date_to_proto(entity_mutations.creation_date),
+                                modification_date: opt_date_to_proto(
+                                    entity_mutations.modification_date,
+                                ),
+                                deletion_date: opt_date_to_proto(entity_mutations.deletion_date),
                                 last_operation_id: entity_mutations.last_operation_id,
                             }),
                             source: index_source.into(),
@@ -364,29 +350,22 @@ where
 
                     Some(result)
                 } else {
-                    if got_results {
-                        // If we are here, it means that we found results within the page we were looking for, and then suddenly a new
-                        // result doesn't fit in the page. This means that we are passed the page, and we can early exit since we won't find
-                        // any new results passed this.
-                        early_exit.set(true);
-                    }
-
                     None
                 }
             })
             // this steps consumes the results up until we reach the best 10 results based on the
             // score of the highest matching trait, but re-scored negatively based on
             // other traits
-            .top_negatively_rescored_results(
-                current_page.count as usize,
-                |result: &EntityResult| {
-                    (result.ordering_value.clone(), result.ordering_value.clone())
-                },
-            )
+            .top_negatively_rescored_results(query_page.count as usize, |result: &EntityResult| {
+                (
+                    result.original_ordering_value.clone(),
+                    result.ordering_value.clone(),
+                )
+            })
             // accumulate results
             .fold(
                 Vec::new(),
-                |mut results, result| {
+                |mut results: Vec<EntityResult>, result: EntityResult| {
                     digest.update(&result.mutations.hash.to_ne_bytes());
                     results.push(result);
                     results
@@ -396,7 +375,7 @@ where
         let after_aggregate_instant = Instant::now();
 
         let next_page = if let Some(last_result) = entity_results.last() {
-            let mut new_page = current_page.clone();
+            let mut new_page = query_page.clone();
 
             let ascending = query
                 .ordering
@@ -404,11 +383,9 @@ where
                 .map(|s| s.ascending)
                 .unwrap_or(false);
             if !ascending {
-                new_page.before_ordering_value =
-                    Some(last_result.matched_mutation.sort_value.value.clone());
+                new_page.before_ordering_value = Some(last_result.ordering_value.value.clone());
             } else {
-                new_page.after_ordering_value =
-                    Some(last_result.matched_mutation.sort_value.value.clone());
+                new_page.after_ordering_value = Some(last_result.ordering_value.value.clone());
             }
 
             Some(new_page)
@@ -434,7 +411,7 @@ where
             after_aggregate_instant - after_query_instant,
             end_instant - after_aggregate_instant,
             end_instant - begin_instant,
-            current_page,
+            query_page,
             next_page,
         );
 
@@ -443,7 +420,7 @@ where
             entities,
             skipped_hash,
             next_page,
-            current_page: Some(current_page),
+            current_page: Some(query_page),
             estimated_count: (chain_hits + pending_hits) as u32,
             hash: results_hash,
         })
@@ -757,6 +734,40 @@ where
         EntityAggregator::new(mutations_metadata)
     }
 
+    /// Fetches and cache indexed mutations metadata.
+    fn fetch_and_cache_entity_mutations_metadata(
+        &self,
+        cache: &mut HashMap<String, Rc<EntityAggregator>>,
+        entity_id: &str,
+        projections: &[Projection],
+    ) -> Option<Rc<EntityAggregator>> {
+        let entity_mutations = if let Some(mutations) = cache.get(entity_id) {
+            mutations.clone()
+        } else {
+            let mut entity_mutations = self
+                .fetch_entity_mutations_metadata(entity_id)
+                .map_err(|err| {
+                    error!(
+                        "Error fetching mutations metadata for entity_id={} from indices: {}",
+                        entity_id, err
+                    );
+                    err
+                })
+                .ok()?;
+
+            if !projections.is_empty() {
+                entity_mutations.annotate_projections(projections);
+            }
+
+            let entity_mutations = Rc::new(entity_mutations);
+
+            cache.insert(entity_id.to_string(), entity_mutations.clone());
+
+            entity_mutations
+        };
+        Some(entity_mutations)
+    }
+
     /// Populates traits in the EntityResult by fetching each entity's traits
     /// from the chain layer.
     fn populate_results_traits(
@@ -889,6 +900,13 @@ where
 pub struct EntityResult {
     pub matched_mutation: MutationMetadata,
     pub ordering_value: OrderingValueWrapper,
+    pub original_ordering_value: OrderingValueWrapper,
     pub proto: EntityResultProto,
     pub mutations: Rc<EntityAggregator>,
+}
+
+fn opt_date_to_proto(
+    dt: Option<chrono::DateTime<chrono::Utc>>,
+) -> Option<exocore_protos::prost::Timestamp> {
+    dt.map(|t| t.to_proto_timestamp())
 }

@@ -21,6 +21,8 @@ pub(crate) struct Fields {
     pub all_text: Field,
     pub all_refs: Field,
 
+    pub has_reference: Field,
+
     // mapping for indexed/sorted fields of messages in registry
     // message type -> field name -> tantivy field
     pub _dynamic_fields: DynamicFields,
@@ -121,6 +123,7 @@ pub(crate) fn build_tantivy_schema(
 
     let all_text = schema_builder.add_text_field("all_text", TEXT);
     let all_refs = schema_builder.add_text_field("all_refs", references_options.clone());
+    let has_reference = schema_builder.add_u64_field("has_reference", STORED);
 
     let (dynamic_fields, dynamic_mappings) = build_dynamic_fields_tantivy_schema(
         &config,
@@ -144,6 +147,8 @@ pub(crate) fn build_tantivy_schema(
 
         all_text,
         all_refs,
+
+        has_reference,
 
         _dynamic_fields: dynamic_fields,
         dynamic_mappings,
@@ -337,5 +342,21 @@ pub(crate) fn get_doc_u64_value(doc: &Document, field: Field) -> u64 {
     match doc.get_first(field) {
         Some(tantivy::schema::Value::U64(v)) => *v,
         _ => panic!("Couldn't find field of type u64"),
+    }
+}
+
+/// Extracts boolean (via u64) value from Tantivy document
+pub(crate) fn get_doc_opt_bool_value(doc: &Document, field: Field) -> Option<bool> {
+    match doc.get_first(field) {
+        Some(tantivy::schema::Value::U64(v)) => Some(*v == 1),
+        _ => None,
+    }
+}
+
+pub(crate) fn bool_to_u64(v: bool) -> u64 {
+    if v {
+        1
+    } else {
+        0
     }
 }

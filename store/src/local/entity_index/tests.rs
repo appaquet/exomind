@@ -3,6 +3,7 @@ use exocore_core::tests_utils::{
 };
 use exocore_protos::{
     generated::{exocore_store::Paging, exocore_test::TestMessage},
+    store::Reference,
     test::TestMessage2,
 };
 use test_index::*;
@@ -653,6 +654,74 @@ async fn query_ordering() -> anyhow::Result<()> {
     assert_eq!(5, ids.len());
     assert_eq!("entity5", ids[0]);
     assert_eq!("entity9", ids[4]);
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn query_boost_reference() -> anyhow::Result<()> {
+    let config = TestEntityIndex::test_config();
+    let mut test_index = TestEntityIndex::new_with_config(config).await?;
+
+    let mut ops_id = Vec::new();
+    for i in 0..5 {
+        let ops = test_index.put_trait_message(
+            format!("noref_{}", i),
+            format!("trt_noref_{}", i),
+            TestMessage {
+                string1: "hello ".repeat(6 - i),
+                ..Default::default()
+            },
+        )?;
+        ops_id.push(ops);
+    }
+    for i in 0..5 {
+        let ops = test_index.put_trait_message(
+            format!("ref_{}", i),
+            format!("trt_ref_{}", i),
+            TestMessage {
+                string1: "hello ".repeat(6 - i),
+                ref1: Some(Reference {
+                    entity_id: "inbox".into(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )?;
+        ops_id.push(ops);
+    }
+    test_index.wait_operations_emitted(&ops_id);
+    test_index.handle_engine_events()?;
+
+    // boost reference, descending
+    let qb = Q::matches("hello")
+        .order_by_score(false, false, true)
+        .count(10);
+    let res = test_index.index.search(qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(10, ids.len());
+    assert_eq!(
+        vec![
+            "ref_0", "ref_1", "ref_2", "ref_3", "ref_4", "noref_0", "noref_1", "noref_2",
+            "noref_3", "noref_4"
+        ],
+        ids
+    );
+
+    // no reference boost, descending
+    let qb = Q::matches("hello")
+        .order_by_score(false, false, false)
+        .count(10);
+    let res = test_index.index.search(qb.build())?;
+    let ids = extract_results_entities_id(&res);
+    assert_eq!(10, ids.len());
+    assert_eq!(
+        vec![
+            "ref_0", "noref_0", "ref_1", "noref_1", "ref_2", "noref_2", "ref_3", "noref_3",
+            "ref_4", "noref_4"
+        ],
+        ids
+    );
 
     Ok(())
 }
