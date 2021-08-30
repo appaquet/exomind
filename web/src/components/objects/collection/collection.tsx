@@ -42,6 +42,12 @@ export default class Collection extends React.Component<IProps> {
 
                 {this.props.containerController?.details &&
                     <div className="object-summary">
+                        <div className="title field"><span className="field-label">Name</span>
+                            <span className="field-content">
+                                <EditableText text={this.props.collection.message.name} onChange={this.handleChangeName} />
+                            </span>
+                        </div>
+
                         <div className="title field"><span className="field-label">Description</span>
                             <span className="field-content">
                                 <EditableText text={this.props.collection.message.description} onChange={this.handleChangeDescription} />
@@ -52,6 +58,18 @@ export default class Collection extends React.Component<IProps> {
 
             </Children>
         );
+    }
+
+    private handleChangeName = (text: string) => {
+        const newCollection = new exomind.base.v1.Collection(this.props.collection.message);
+        newCollection.name = text;
+
+        const mutation = MutationBuilder
+            .updateEntity(this.props.entity.entity.id)
+            .putTrait(newCollection, this.props.collection.id)
+            .build();
+
+        Exocore.store.mutate(mutation);
     }
 
     private handleChangeDescription = (text: string) => {
