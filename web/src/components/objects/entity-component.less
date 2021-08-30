@@ -10,17 +10,16 @@
   .object-summary {
     .field {
       padding: @entity-component-padding-between @entity-component-padding-side;
-      border-bottom: 1px solid #E3E3E3;
+      border-bottom: var(--entity-component-border);
       display: flex;
 
       .field-label {
         color: #C0C0C0;
-        width: 50px;
-        display: inline-block;
+        padding-right: 10px;
+        flex-shrink: 0;
       }
 
       .field-content {
-        display: inline-block;
         flex-grow: 1;
 
         input {
@@ -32,7 +31,6 @@
           color: var(--entity-component-fg);
         }
         span {
-          width: 100%;
           background: var(--entity-component-bg);
           color: var(--entity-component-fg);
         }

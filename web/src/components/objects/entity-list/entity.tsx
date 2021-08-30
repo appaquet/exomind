@@ -260,7 +260,7 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="content">
                     <div className="title1"><span className="name">{entityTrait.displayName}</span></div>
                     {entityTrait.message.description && 
-                        <div className="title2">{entityTrait.message.description}</div>
+                        <div className="text">{entityTrait.message.description}</div>
                     }
                     {this.renderParents(entityTrait.et)}
                 </div>

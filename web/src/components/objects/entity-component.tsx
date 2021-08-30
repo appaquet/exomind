@@ -75,6 +75,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         collection={col}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerController={this.props.containerController}
                     />;
                 },
                 note: (note) => {

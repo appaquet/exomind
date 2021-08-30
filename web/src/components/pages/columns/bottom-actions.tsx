@@ -4,9 +4,10 @@ import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import InputModal from '../../modals/input-modal/input-modal';
 import TimeSelector from '../../modals/time-selector/time-selector';
-import { Selection } from "./selection";
+import { Selection } from "../../objects/entity-list/selection";
 import { IStores, StoresContext } from '../../../stores/stores';
 import { getEntityParentRelation } from '../../../stores/collections';
+import "./bottom-actions.less";
 
 interface IProps {
     parent: EntityTraits;
@@ -19,7 +20,7 @@ interface IProps {
     removeOnPostpone?: boolean;
 }
 
-export class ListActions extends React.Component<IProps> {
+export class ColumnBottomActions extends React.Component<IProps> {
     static contextType = StoresContext;
     declare context: IStores;
 
@@ -32,7 +33,7 @@ export class ListActions extends React.Component<IProps> {
     }
 
     private renderCreationActions(): React.ReactNode {
-        return <div className="list-actions">
+        return <div className="column-bottom-actions">
             <ul>
                 <li onClick={this.handleNewNoteClick}><i className="new-note" /></li>
                 <li onClick={this.handleNewEmailClick}><i className="new-email" /></li>
@@ -44,7 +45,7 @@ export class ListActions extends React.Component<IProps> {
     }
 
     private renderSelectionActions(): React.ReactNode {
-        return <div className="list-actions">
+        return <div className="column-bottom-actions">
             <ul>
                 <li onClick={this.handleDoneClick}><i className="done" /></li>
                 <li onClick={this.handlePostponeClick}><i className="postpone" /></li>
