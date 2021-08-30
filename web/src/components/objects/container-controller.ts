@@ -7,6 +7,7 @@ export class ContainerController {
     @observable icon: TraitIcon;
     @observable actions: HeaderAction[];
     @observable closed: boolean;
+    @observable details: boolean;
 
     constructor() {
         makeObservable(this);

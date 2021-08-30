@@ -28,6 +28,7 @@ interface IProps {
 
 interface IState {
   value: string;
+  detailsOpened: boolean,
 }
 
 @observer
@@ -39,6 +40,7 @@ export default class Column extends React.Component<IProps, IState> {
 
     this.state = {
       value: props.columnConfig.first,
+      detailsOpened: false,
     }
   }
 
@@ -66,6 +68,16 @@ export default class Column extends React.Component<IProps, IState> {
     }
 
     const headerActions = [];
+
+    if (this.props.columnConfig.isEntity) {
+      // TODO: And supports it ...
+      headerActions.push(new HeaderAction('id-card', () => {
+        runInAction(() => {
+          this.containerController.details = !this.containerController.details;
+        });
+      }));
+    }
+
     if (this.containerController.actions) {
       this.containerController.actions.forEach(action => {
         headerActions.push(action);
@@ -94,7 +106,9 @@ export default class Column extends React.Component<IProps, IState> {
           actions={headerActions}
         />
 
-        {this.renderContent()}
+        <div className="content">
+          {this.renderContent()}
+        </div>
       </div>
     );
   }
