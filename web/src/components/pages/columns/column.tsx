@@ -69,15 +69,6 @@ export default class Column extends React.Component<IProps, IState> {
 
     const headerActions = [];
 
-    if (this.props.columnConfig.isEntity) {
-      // TODO: And supports it ...
-      headerActions.push(new HeaderAction('info-circle', () => {
-        runInAction(() => {
-          this.containerController.details = !this.containerController.details;
-        });
-      }));
-    }
-
     if (this.containerController.actions) {
       this.containerController.actions.forEach(action => {
         headerActions.push(action);

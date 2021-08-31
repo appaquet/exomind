@@ -27,6 +27,8 @@ interface IProps {
 export default class Collection extends React.Component<IProps> {
     constructor(props: IProps) {
         super(props);
+
+        this.props.containerController?.addDetailsHeaderAction();
     }
 
     render(): React.ReactNode {
@@ -40,7 +42,7 @@ export default class Collection extends React.Component<IProps> {
                 onSelectionChange={this.props.onSelectionChange}
             >
 
-                {this.props.containerController?.details &&
+                {this.props.containerController?.showDetails &&
                     <div className="object-summary">
                         <div className="title field"><span className="field-label">Name</span>
                             <span className="field-content">
