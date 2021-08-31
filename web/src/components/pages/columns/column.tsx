@@ -28,7 +28,6 @@ interface IProps {
 
 interface IState {
   value: string;
-  detailsOpened: boolean,
 }
 
 @observer
@@ -40,7 +39,6 @@ export default class Column extends React.Component<IProps, IState> {
 
     this.state = {
       value: props.columnConfig.first,
-      detailsOpened: false,
     }
   }
 

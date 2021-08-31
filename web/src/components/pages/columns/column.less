@@ -14,7 +14,7 @@
   flex-direction: column;
 
   > .header {
-    flex-shrink: 0;
+    flex-shrink: 0; // prevent header from having less than its height
   }
 
   > .content {
@@ -23,8 +23,7 @@
   }
 
   > .empty {
-    padding: @entity-component-padding-between * 2
-      @entity-component-padding-side;
+    padding: @entity-component-padding-between * 2 @entity-component-padding-side;
     font-weight: bold;
   }
 }

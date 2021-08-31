@@ -44,13 +44,15 @@ export default class Collection extends React.Component<IProps> {
 
                 {this.props.containerController?.showDetails &&
                     <div className="entity-details">
-                        <div className="title field"><span className="field-label">Name</span>
+                        <div className="title field">
+                            <span className="field-label">Name</span>
                             <span className="field-content">
                                 <EditableText text={this.props.collection.message.name} onChange={this.handleChangeName} />
                             </span>
                         </div>
 
-                        <div className="title field"><span className="field-label">Description</span>
+                        <div className="description field">
+                            <span className="field-label">Description</span>
                             <span className="field-content">
                                 <EditableText text={this.props.collection.message.description} onChange={this.handleChangeDescription} />
                             </span>
