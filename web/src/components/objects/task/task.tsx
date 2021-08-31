@@ -30,7 +30,7 @@ export default class Task extends React.Component<IProps, IState> {
     render(): React.ReactNode {
         return (
             <div className="entity-component task">
-                <div className="object-summary">
+                <div className="entity-details">
                     <div className="name field">
                         <span className="field-label">Name</span>
                         <span className="field-content">

@@ -55,7 +55,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
         return (
             <div className="entity-component draft-email">
-                <div className="object-summary">
+                <div className="entity-details">
                     {this.renderFromAccount()}
                     {this.renderContactField('to', 'To')}
                     {this.renderContactField('cc', 'CC')}

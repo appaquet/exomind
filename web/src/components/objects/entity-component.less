@@ -7,7 +7,7 @@
   flex-direction: column;
   overflow: hidden;
 
-  .object-summary {
+  .entity-details {
     .field {
       padding: @entity-component-padding-between @entity-component-padding-side;
       border-bottom: var(--entity-component-border);
@@ -22,6 +22,10 @@
       .field-content {
         flex-grow: 1;
 
+        &.with-ellipsis {
+          .ellipsis-text-overflow();
+        }
+
         input {
           outline: none !important;
           border: none;
@@ -30,10 +34,12 @@
           background: var(--entity-component-bg);
           color: var(--entity-component-fg);
         }
+
         span {
           background: var(--entity-component-bg);
           color: var(--entity-component-fg);
         }
+
         select {
           background: var(--entity-component-bg);
           color: var(--entity-component-fg);

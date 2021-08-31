@@ -36,7 +36,7 @@ export default class Email extends React.Component<IProps, IState> {
             <div className="entity-component email"
                 onMouseEnter={this.handleMouseEnter.bind(this)}
                 onMouseLeave={this.handleMouseLeave.bind(this)}>
-                <div className="object-summary">
+                <div className="entity-details">
                     <div className="from field">
                         <span className="field-label">From</span>
                         <span className="pill">{EmailUtil.formatContact(email.message.from)}</span>

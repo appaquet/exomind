@@ -31,14 +31,17 @@ export default class Link extends React.Component<IProps, IState> {
     render(): React.ReactNode {
         return (
             <div className="entity-component link">
-                <div className="object-summary">
+                <div className="entity-details">
                     <div className="title field">
                         <span className="field-label">Title</span>
-                        <span className="field-content"><EditableText text={this.state.currentLink.title}
-                            onChange={this.handleTitleChange.bind(this)} /></span>
+                        <span className="field-content">
+                            <EditableText text={this.state.currentLink.title} onChange={this.handleTitleChange.bind(this)} />
+                        </span>
                     </div>
-                    <div className="url field"><span className="field-label">URL</span> <span
-                        className="field-content">{this.state.currentLink.url}</span></div>
+                    <div className="url field">
+                        <span className="field-label">URL</span>
+                        <span className="field-content with-ellipsis">{this.state.currentLink.url}</span>
+                    </div>
                 </div>
 
                 <div className="object-body">
