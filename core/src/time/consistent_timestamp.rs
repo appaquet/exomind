@@ -11,6 +11,11 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 ///
 /// It's designed to have the same resolution as a nanoseconds precision
 /// timestamp by encoding node id and counter in nanoseconds.
+///
+/// It is similar to Twitter's Snowflake (https://t.co/cLj36EQWR1) even
+/// though it has not been designed out of it. As opposed to Snowflake,
+/// this consistent timestamp has a per node sequence number instead of
+/// per thread.
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct ConsistentTimestamp(pub u64);
 
