@@ -51,12 +51,8 @@ export class EntityComponent extends React.Component<Props, State> {
             .onChange(this.handleNewResults);
 
         if (props.containerController) {
-            runInAction(() => {
-                props.containerController.actions = [
-                    new HeaderAction('clock-o', this.handleShowTimeSelector),
-                    new HeaderAction('folder-open-o', this.handleShowCollectionSelector)
-                ];
-            });
+            props.containerController.pushHeaderAction(new HeaderAction('clock-o', this.handleShowTimeSelector));
+            props.containerController.pushHeaderAction(new HeaderAction('folder-open-o', this.handleShowCollectionSelector));
         }
 
         this.state = {};
@@ -75,6 +71,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         collection={col}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerController={this.props.containerController}
                     />;
                 },
                 note: (note) => {

@@ -2,22 +2,30 @@
 @import (reference) "../../style/font-awesome.less";
 
 .entity-component {
-  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
-  .object-summary {
+  .entity-details {
     .field {
       padding: @entity-component-padding-between @entity-component-padding-side;
-      border-bottom: 1px solid #E3E3E3;
+      border-bottom: var(--entity-component-border);
+      display: flex;
+      align-items: center; // vertical alignment
 
       .field-label {
         color: #C0C0C0;
-        width: 50px;
-        display: inline-block;
+        padding-right: 10px;
+        flex-shrink: 0;
       }
 
       .field-content {
-        display: inline-block;
-        width: ~"calc(100% - 60px)";
+        flex-grow: 1;
+
+        &.with-ellipsis {
+          .ellipsis-text-overflow();
+        }
 
         input {
           outline: none !important;
@@ -27,11 +35,12 @@
           background: var(--entity-component-bg);
           color: var(--entity-component-fg);
         }
+
         span {
-          width: 100%;
           background: var(--entity-component-bg);
           color: var(--entity-component-fg);
         }
+
         select {
           background: var(--entity-component-bg);
           color: var(--entity-component-fg);
@@ -45,74 +54,6 @@
         padding: 1px 5px;
         margin: 2px 5px 2px 0;
         display: inline-block;
-      }
-    }
-  }
-
-  .list-actions {
-    .center-horizontal-element();
-    bottom: 10px;
-    background: @tools-popup-bg;
-    height: 45px;
-    padding: 5px;
-    position: absolute;
-    white-space: nowrap; // prevent line break and icons wrapping on second line
-    .shadow-z-3();
-
-    ul {
-      .make-list();
-      li {
-        .make-list-item();
-        display: inline-block;
-        margin: 0 5px;
-        padding: 8px 0;
-        width: 35px;
-        height: 35px;
-        text-align: center;
-        cursor: pointer;
-
-        i {
-          color: white;
-          &.done {
-            .icon-font-awesome('check');
-          }
-          &.postpone {
-            .icon-font-awesome('clock-o');
-          }
-          &.reply {
-            .icon-font-awesome('reply');
-          }
-          &.reply-all {
-            .icon-font-awesome('reply-all');
-          }
-          &.forward {
-            .icon-font-awesome('forward');
-          }
-          &.send {
-            .icon-font-awesome('paper-plane');
-          }
-          &.delete {
-            .icon-font-awesome('close');
-          }
-          &.new-note {
-            .icon-font-awesome('pencil');
-          }
-          &.new-collection {
-            .icon-font-awesome('folder-o');
-          }
-          &.new-email {
-            .icon-font-awesome('envelope-o');
-          }
-          &.new-task {
-            .icon-font-awesome('check-square-o');
-          }
-          &.new-link {
-            .icon-font-awesome('link');
-          }
-        }
-        &:hover i {
-          color: #e0e0e0;
-        }
       }
     }
   }

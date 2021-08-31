@@ -18,11 +18,13 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
 
         let url = URL(fileURLWithPath: Bundle.main.path(forResource: "hybrid", ofType: "html", inDirectory: "js")!)
         self.loadFileURL(url, allowingReadAccessTo: url)
-        self.evaluateJavaScript("window.component = \"\(component)\"") { (ret, err) in
-            if err != nil {
-                print("HybridWebView> Error setting component: \(String(describing: err))")
-            }
-        }
+
+        let script = WKUserScript(
+                    source: "window.component = \"\(component)\"",
+                    injectionTime: WKUserScriptInjectionTime.atDocumentStart,
+                    forMainFrameOnly: true
+                )
+        self.configuration.userContentController.addUserScript(script)
     }
 
     func setData(_ data: [String: AnyObject]) {

@@ -66,6 +66,7 @@ export default class Column extends React.Component<IProps, IState> {
     }
 
     const headerActions = [];
+
     if (this.containerController.actions) {
       this.containerController.actions.forEach(action => {
         headerActions.push(action);
@@ -94,7 +95,9 @@ export default class Column extends React.Component<IProps, IState> {
           actions={headerActions}
         />
 
-        {this.renderContent()}
+        <div className="content">
+          {this.renderContent()}
+        </div>
       </div>
     );
   }

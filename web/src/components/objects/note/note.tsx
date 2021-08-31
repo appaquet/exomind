@@ -57,8 +57,9 @@ export default class Note extends React.Component<IProps, IState> {
     render(): React.ReactNode {
         return (
             <div className="entity-component note">
-                <div className="object-summary">
-                    <div className="title field"><span className="field-label">Title</span>
+                <div className="entity-details">
+                    <div className="title field">
+                        <span className="field-label">Title</span>
                         <span className="field-content">
                             <EditableText text={this.state.currentNote.title} onChange={this.handleTitleChange.bind(this)} />
                         </span>

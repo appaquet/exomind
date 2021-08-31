@@ -1,15 +1,34 @@
-import { makeObservable, observable } from 'mobx';
+import { action, makeObservable, observable } from 'mobx';
 import { TraitIcon } from '../../utils/entities';
 import { HeaderAction } from './header';
 
 export class ContainerController {
     @observable title: string | ModifiableText;
     @observable icon: TraitIcon;
-    @observable actions: HeaderAction[];
+    @observable actions: HeaderAction[] = [];
     @observable closed: boolean;
+    @observable showDetails: boolean;
 
     constructor() {
         makeObservable(this);
+    }
+
+    @action pushHeaderAction(action: HeaderAction): void {
+        this.actions.push(action);
+    }
+
+    @action prependHeaderAction(action: HeaderAction): void {
+        this.actions.unshift(action);
+    }
+
+    @action addDetailsHeaderAction(): void {
+        this.prependHeaderAction(new HeaderAction('info-circle', () => {
+            this.toggleDetails();
+        }))
+    }
+
+    @action toggleDetails(): void {
+        this.showDetails = !this.showDetails;
     }
 }
 

@@ -2,31 +2,7 @@
 @import (reference) "../../../style/variables.less";
 
 .entity-component.link {
-  @summary-height: 60px;
-
-  .object-summary {
-    height: @summary-height;
-  }
-
-  .title .field-content span {
-    display: inline-block;
-    width: 100%;
-  }
-
-  .url span {
-    white-space: nowrap;
-    .ellipsis-text-overflow();
-    width: 100%;
-    overflow: hidden;
-  }
-
   .object-body {
-    position: absolute;
-    top: @entity-component-header-height + @summary-height;
-    bottom: 0;
-    right: 0;
-    left: 0;
-
     .open {
       .center-horizontal-element();
       margin-top: 20px;
@@ -43,5 +19,4 @@
       }
     }
   }
-
 }

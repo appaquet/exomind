@@ -8,7 +8,7 @@ import { CollectionSelector } from "../../modals/collection-selector/collection-
 import TimeSelector from "../../modals/time-selector/time-selector";
 import { ActionResult, ButtonAction, EntityActions, InlineAction } from '../entity-list/entity-action';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
-import { ListActions } from "../entity-list/list-actions";
+import { ColumnBottomActions } from "../../pages/columns/bottom-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import { IStores, StoresContext } from "../../../stores/stores";
@@ -122,7 +122,7 @@ export class Children extends React.Component<IProps, IState> {
             });
 
             const controls = (this.state.hovered) ?
-                <ListActions
+                <ColumnBottomActions
                     parent={this.state.parent}
                     selection={this.props.selection}
                     onSelectionChange={this.props.onSelectionChange}
@@ -134,6 +134,8 @@ export class Children extends React.Component<IProps, IState> {
                 <div className={classes}
                     onMouseEnter={this.handleMouseEnter}
                     onMouseLeave={this.handleMouseLeave}>
+
+                    {this.props.children}
 
                     <EntityList
                         entities={this.state.entities}

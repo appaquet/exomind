@@ -36,7 +36,7 @@ export default class Email extends React.Component<IProps, IState> {
             <div className="entity-component email"
                 onMouseEnter={this.handleMouseEnter.bind(this)}
                 onMouseLeave={this.handleMouseLeave.bind(this)}>
-                <div className="object-summary">
+                <div className="entity-details">
                     <div className="from field">
                         <span className="field-label">From</span>
                         <span className="pill">{EmailUtil.formatContact(email.message.from)}</span>
@@ -99,7 +99,7 @@ export default class Email extends React.Component<IProps, IState> {
     }
 
     private renderEmailControls(): React.ReactNode {
-        return <div className="list-actions">
+        return <div className="column-bottom-actions">
             <ul>
                 <li onClick={this.handleReplyAllEmail.bind(this)}><i className="reply-all" /></li>
                 <li onClick={this.handleReplyEmail.bind(this)}><i className="reply" /></li>

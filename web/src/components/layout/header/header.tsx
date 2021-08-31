@@ -26,7 +26,7 @@ export class Header extends React.Component<IProps, IState> {
   constructor(props: IProps) {
     super(props);
 
-    this.debouncer = new Debouncer(200);
+    this.debouncer = new Debouncer(100);
 
     const keywords = this.keywordsFromPath(props);
     this.state = {

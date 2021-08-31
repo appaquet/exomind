@@ -55,7 +55,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
         return (
             <div className="entity-component draft-email">
-                <div className="object-summary">
+                <div className="entity-details">
                     {this.renderFromAccount()}
                     {this.renderContactField('to', 'To')}
                     {this.renderContactField('cc', 'CC')}
@@ -77,7 +77,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
                     {this.renderBody()}
                 </div>
 
-                <div className="list-actions">
+                <div className="column-bottom-actions">
                     <ul>
                         <li onClick={this.handleSendDraft.bind(this)}><i className="send" /></li>
                         <li onClick={this.handleDeleteDraft.bind(this)}><i className="delete" /></li>

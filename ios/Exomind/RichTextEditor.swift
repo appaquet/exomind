@@ -2,6 +2,7 @@ import UIKit
 import SwiftyJSON
 import FontAwesome_swift
 import SnapKit
+import WebKit
 
 /*
  TODO:
@@ -13,17 +14,14 @@ class RichTextEditor: UIViewController {
     fileprivate var webview: RichTextEditorWebView!
 
     private var keyboardRect = CGRect(x: 0, y: 500, width: 0, height: 0)
+    private var callback: ((JSON?) -> Void)?
 
     convenience init(callback: @escaping (JSON?) -> Void) {
         self.init(nibName: nil, bundle: nil)
 
-        self.webview = RichTextEditorWebView()
-        self.webview.initialize { [weak self] (json: JSON?) in
-            callback(json)
+        self.callback = callback
 
-            // make sure scroll is still fine on every change
-            self?.ensureCursorVisible()
-        }
+        self.webview = RichTextEditorWebView()
         self.view = self.webview
 
         self.webview.onHeightChange = { [weak self] (height) in
@@ -34,6 +32,13 @@ class RichTextEditor: UIViewController {
     override func viewDidLoad() {
         KeyboardUtils.sharedInstance.addWillShowObserver(self, selector: #selector(handleKeyboardWillShow))
         KeyboardUtils.sharedInstance.addWillHideObserver(self, selector: #selector(handleKeyboardWillHide))
+
+        self.webview.initialize { [weak self] (json: JSON?) in
+            self?.callback?(json)
+
+            // make sure scroll is still fine on every change
+            self?.ensureCursorVisible()
+        }
     }
 
     func delegateScrollTo(_ outerScroll: UIScrollView) {
@@ -216,29 +221,35 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
         self.initialize("html-editor", callback: callback)
 
         // snippet from https://stackoverflow.com/questions/59767515/incorrect-positioning-of-getboundingclientrect-after-newline-character
-        self.evaluateJavaScript("""
-                                    function getCaretClientPosition() {
-                                        const sel = window.getSelection();
-                                        if (!sel || sel.rangeCount === 0) {
-                                          return { x: 0, y: 0 };
-                                        }
-                                        const range = sel.getRangeAt(0);
+        let strScript = """
+                            function getCaretClientPosition() {
+                                const sel = window.getSelection();
+                                if (!sel || sel.rangeCount === 0) {
+                                    return { x: 0, y: 0 };
+                                }
+                                const range = sel.getRangeAt(0);
 
-                                        // check if we have client rects
-                                        const rects = range.getClientRects();
-                                        if (!rects.length) {
-                                          // if not rects, we're probably on a new line.
-                                          // we select the node in order to be able to get position
-                                          if (range.startContainer && range.collapsed) {
-                                            // explicitly select the contents
-                                            range.selectNodeContents(range.startContainer);
-                                          }
-                                        }
-
-                                        const pos = range.getBoundingClientRect();
-                                        return { x: pos.left, y: pos.top };
+                                // check if we have client rects
+                                const rects = range.getClientRects();
+                                if (!rects.length) {
+                                    // if not rects, we're probably on a new line.
+                                    // we select the node in order to be able to get position
+                                    if (range.startContainer && range.collapsed) {
+                                    // explicitly select the contents
+                                    range.selectNodeContents(range.startContainer);
                                     }
-                                """)
+                                }
+
+                                const pos = range.getBoundingClientRect();
+                                return { x: pos.left, y: pos.top };
+                            };
+                        """
+        let script = WKUserScript(
+                    source: strScript,
+                    injectionTime: WKUserScriptInjectionTime.atDocumentStart,
+                    forMainFrameOnly: true
+                )
+        self.configuration.userContentController.addUserScript(script)
     }
 
     func disableScroll(_ correctionCallback: @escaping () -> ()) {
