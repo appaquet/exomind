@@ -292,7 +292,7 @@ pub struct SynchronizedThread {
     pub account_entity_id: String,
     pub thread: EmailThread,
     pub emails: Vec<Email>,
-    pub _inbox_child: Option<CollectionChild>,
+    pub inbox_child: Option<CollectionChild>,
     pub history_id: Option<HistoryId>,
     pub operation_id: Option<OperationId>,
 }
@@ -318,7 +318,7 @@ impl SynchronizedThread {
             account_entity_id,
             thread,
             emails,
-            _inbox_child: inbox_child,
+            inbox_child,
             history_id: None,
             operation_id: Some(entity.last_operation_id),
         })
@@ -391,7 +391,7 @@ impl SynchronizedThread {
             account_entity_id: account.entity_id,
             thread,
             emails,
-            _inbox_child: inbox_child,
+            inbox_child,
             history_id,
             operation_id: None,
         })

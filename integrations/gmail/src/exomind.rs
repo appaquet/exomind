@@ -201,6 +201,7 @@ impl ExomindClient {
             .map(|t| t.to_chrono_datetime())
             .unwrap_or_else(Utc::now);
 
+        // create thread if none exist
         if previous_thread.is_none() {
             let thread_trait = Trait {
                 id: thread_entity_id.clone(),
@@ -224,6 +225,7 @@ impl ExomindClient {
             HashMap::new()
         };
 
+        // create emails
         for email in &thread.emails {
             if previous_emails.contains_key(&email.source_id) {
                 continue;
@@ -242,25 +244,35 @@ impl ExomindClient {
             operation_ids.append(&mut res.operation_ids);
         }
 
-        if previous_thread.map_or(true, |c| c._inbox_child.is_none()) {
-            let child_trait = Trait {
-                id: "child_inbox".to_string(),
-                message: Some(
-                    CollectionChild {
-                        collection: Some(Reference {
-                            entity_id: "inbox".to_string(),
-                            ..Default::default()
-                        }),
-                        weight: thread_last_date.timestamp_millis() as u64,
-                    }
-                    .pack_to_any()?,
-                ),
-                ..Default::default()
-            };
+        {
+            // create or update inbox child
+            let had_inbox_child = previous_thread.map_or(true, |c| c.inbox_child.is_none());
+            let mut inbox_child = previous_thread
+                .and_then(|c| c.inbox_child.clone())
+                .unwrap_or_else(|| CollectionChild {
+                    collection: Some(Reference {
+                        entity_id: "inbox".to_string(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                });
 
-            let mutation = MutationBuilder::new().put_trait(thread_entity_id.clone(), child_trait);
-            let mut res = self.store.mutate(mutation).await?;
-            operation_ids.append(&mut res.operation_ids);
+            let weight_now = thread_last_date.timestamp_millis() as u64;
+
+            if !had_inbox_child || inbox_child.weight < weight_now {
+                inbox_child.weight = weight_now;
+
+                let child_trait = Trait {
+                    id: "child_inbox".to_string(),
+                    message: Some(inbox_child.pack_to_any()?),
+                    ..Default::default()
+                };
+
+                let mutation =
+                    MutationBuilder::new().put_trait(thread_entity_id.clone(), child_trait);
+                let mut res = self.store.mutate(mutation).await?;
+                operation_ids.append(&mut res.operation_ids);
+            }
         }
 
         if !operation_ids.is_empty() {
