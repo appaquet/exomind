@@ -93,7 +93,7 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-flatpickr": "^3.10.6",
-    "sanitize-html": "^2.4.0",
+    "sanitize-html": "^2.5.0",
     "source-map-support": "^0.5.19",
     "starts-with-emoji": "^2.0.0"
   },
