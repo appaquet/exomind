@@ -792,7 +792,7 @@ mod tests {
 
                 let nodes_iter = nodes.iter();
                 let node = nodes_iter.with_role(CellNodeRole::Store).next().unwrap();
-                assert_eq!(2, node.roles().len());
+                assert_eq!(3, node.roles().len());
             }
 
             {

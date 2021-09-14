@@ -7,6 +7,7 @@ use exocore_protos::{
 pub type EntityId = String;
 pub type EntityIdRef<'s> = &'s str;
 pub type TraitId = String;
+pub type TraitIdRef<'s> = &'s str;
 
 pub struct TraitInstance<'e, M: NamedMessage + Message + Default> {
     pub instance: M,

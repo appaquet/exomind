@@ -14,9 +14,11 @@ nodes:
     # Role of the node
     # Chain = 1
     # Store = 2
+    # Application host = 3
     roles:
       - 1
       - 2
+      - 3
 
   - node:
       name: Some Client Node

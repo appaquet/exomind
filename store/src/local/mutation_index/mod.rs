@@ -721,15 +721,28 @@ impl MutationIndex {
         &self,
         predicate: &MatchPredicate,
     ) -> Result<Box<dyn tantivy::query::Query>, Error> {
-        let tok = self.index.tokenizer_for_field(self.fields.all_text)?;
+        let field = self.fields.all_text;
+        let text = predicate.query.as_str();
+        let no_fuzzy = predicate.no_fuzzy;
+        Ok(Box::new(self.new_fuzzy_query(field, text, no_fuzzy)?))
+    }
 
+    /// Create a fuzzy query for a field and given text.
+    fn new_fuzzy_query(
+        &self,
+        field: Field,
+        text: &str,
+        no_fuzzy: bool,
+    ) -> Result<BooleanQuery, Error> {
+        let tok = self.index.tokenizer_for_field(field)?;
         let mut queries: Vec<(Occur, Box<dyn Query>)> = Vec::new();
-        let mut stream = tok.token_stream(&predicate.query);
+        let mut stream = tok.token_stream(text);
+
         while stream.advance() {
             let token = stream.token().text.as_str();
-            let term = Term::from_field_text(self.fields.all_text, token);
+            let term = Term::from_field_text(field, token);
 
-            if !predicate.no_fuzzy && token.len() > 3 {
+            if !no_fuzzy && token.len() > 3 {
                 let max_distance = if token.len() > 6 { 2 } else { 1 };
                 let query = Box::new(FuzzyTermQuery::new(term.clone(), max_distance, true));
                 queries.push((Occur::Should, query));
@@ -744,9 +757,7 @@ impl MutationIndex {
             queries.push((Occur::Should, query));
         }
 
-        let query = Box::new(BooleanQuery::from(queries));
-
-        Ok(query)
+        Ok(BooleanQuery::from(queries))
     }
 
     /// Transforms a trait's field predicate to Tantivy query.
