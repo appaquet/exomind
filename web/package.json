@@ -114,7 +114,7 @@
     "@types/react-dom": "^17.0.9",
     "@types/react-flatpickr": "^3.8.4",
     "@types/sanitize-html": "^2.3.2",
-    "@typescript-eslint/eslint-plugin": "^4.31.0",
+    "@typescript-eslint/eslint-plugin": "^4.31.1",
     "@typescript-eslint/parser": "^4.31.1",
     "babel-loader": "^8.2.2",
     "cookie-parser": "^1.4.5",
