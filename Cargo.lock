@@ -564,6 +564,8 @@ dependencies = [
 [[package]]
 name = "exocore"
 version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de3f1c1dda1601d044b32bad0407836fef47b3fd24d98720f13b3389aea96942"
 dependencies = [
  "anyhow",
  "exocore-apps-sdk",
@@ -577,6 +579,8 @@ dependencies = [
 [[package]]
 name = "exocore-apps-macros"
 version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c545e34baba0852e8241b01848967594660feac1767ea64f79606a9d7b57b836"
 dependencies = [
  "anyhow",
  "futures",
@@ -589,6 +593,8 @@ dependencies = [
 [[package]]
 name = "exocore-apps-sdk"
 version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c47dbaf2ef96e6040c12a8a9ac15554cc73a371145f42a8877eceb4d8807d601"
 dependencies = [
  "anyhow",
  "chrono",
@@ -605,6 +611,8 @@ dependencies = [
 [[package]]
 name = "exocore-core"
 version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46fdaa64e9555600d2e95950d34cacf62efa15bbc06d669278f85a42e12e0c4a"
 dependencies = [
  "anyhow",
  "bs58",
@@ -638,6 +646,8 @@ dependencies = [
 [[package]]
 name = "exocore-protos"
 version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1597a0d8f8c37234f63d025b98811f38a9fd33aec2582fb9f386fcc91e04f50f"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -656,6 +666,8 @@ dependencies = [
 [[package]]
 name = "exocore-store"
 version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fcf9f17bebbd9988c7baf8a126f916d750b3d1c37e7545af21098d23e4fea90"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -674,6 +686,8 @@ dependencies = [
 [[package]]
 name = "exocore-transport"
 version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c469d8d5adcf023ee33b03ec9723a4b11c4633072b824c6682bc545700586546"
 dependencies = [
  "anyhow",
  "byteorder",
