@@ -4,10 +4,10 @@
 
 1) Boot and join a new node to your cell.
     * `exo -d ./gmail_node node init`
-    * `exo -d ./gmail_node cell join` (and `exo cell node add` on the main node, with no roles)
+    * `exo -d ./gmail_node cell join` (no roles), and then `exo cell node add` on the main node
 
 2) Copy gmail daemon config to your node directory.
-    * `cp ../../examples/gmail.conf ./gmail_node/`
+    * `cp ../../examples/gmail.yaml ./gmail_node/`
 
 3) Visit [Google API Console](https://console.developers.google.com/) to obtain a OAuth 2.0 Client ID and 
   download `client_secret.json` credentials file. Move file in the node folder (ex: `./gmail_node`)

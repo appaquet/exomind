@@ -31,6 +31,12 @@ pub mod base {
         }
     }
 
+    impl NamedMessage for Unread {
+        fn full_name() -> &'static str {
+            "exomind.base.v1.Unread"
+        }
+    }
+
     impl NamedMessage for Account {
         fn full_name() -> &'static str {
             "exomind.base.v1.Account"

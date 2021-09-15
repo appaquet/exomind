@@ -46,10 +46,17 @@ export default class EmailThread extends React.Component<IProps, IState> {
         this.threadTrait = props.entity.traitOfType(exomind.base.v1.EmailThread);
         this.draftTrait = props.entity.traitOfType(exomind.base.v1.DraftEmail);
 
+        const unreadFlags: { [id: string]: unknown } = _.chain(props.entity.traitsOfType<exomind.base.v1.Unread>(exomind.base.v1.Unread))
+            .groupBy((flag) => {
+                return flag.message.entity?.traitId;
+            })
+            .value();
+
         let count = 0;
         const emailStates = _.chain(props.entity.traitsOfType<exomind.base.v1.Email>(exomind.base.v1.Email))
             .map((trait) => {
-                return { index: count++, trait: trait, isOpen: !trait.message.read } as EmailState;
+                const unread = trait.id in unreadFlags;
+                return { index: count++, trait: trait, isOpen: unread } as EmailState;
             })
             .sortBy((a) => {
                 return a.trait.modificationDate ?? a.trait.creationDate;
@@ -368,35 +375,33 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     private trackMarkAsRead(): void {
-        // TODO: Mark as read
-        // let entity = this.props.entity;
-        // setTimeout(t => {
-        //     if (this.mounted && entity.id == this.props.entity.id && this.markRead !== entity.id) {
-        //
-        //         let emails = this.emailOrDraftTraits();
-        //         let unreadTraits = _(emails)
-        //             .map((email) => {
-        //                 let isUnread = (email instanceof Exomind.Email) ? email.unread.getOrElse(false) : false;
-        //                 if (isUnread) {
-        //                     let emailBuilder = new Exomind.Email();
-        //                     emailBuilder.id = email.id;
-        //                     emailBuilder.unread = false;
-        //                     return [emailBuilder];
-        //                 } else {
-        //                     return [];
-        //                 }
-        //             })
-        //             .flatten()
-        //             .value();
-        //
-        //         if (!_.isEmpty(unreadTraits)) {
-        //             ExomindDSL.on(entity).mutate.update(unreadTraits).execute();
-        //         }
-        //
-        //         this.markRead = entity.id;
-        //     }
-        // }, 3000);
+        const entity = this.props.entity;
+        setTimeout(() => {
+            if (!this.mounted || entity.id != this.props.entity.id) {
+                return;
+            }
+
+            const unreadFlags = entity.traitsOfType(exomind.base.v1.Unread);
+            if (unreadFlags.length == 0) {
+                return;
+            }
+
+            let mb = MutationBuilder.updateEntity(entity.id);
+            for (const flag of unreadFlags) {
+                mb = mb.deleteTrait(flag.id);
+            }
+
+            Exocore.store.mutate(mb.build());
+        }, 3000);
     }
 
+    private mounted = false;
+    componentDidMount(): void {
+        this.mounted = true;
+    }
+
+    componentWillUnmount(): void {
+        this.mounted = false;
+    }
 }
 

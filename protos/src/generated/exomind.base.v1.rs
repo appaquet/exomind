@@ -21,6 +21,13 @@ pub struct Snoozed {
     pub until_date: ::core::option::Option<::prost_types::Timestamp>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Unread {
+    /// Reference to the unread trait of the entity.
+    /// Ex: points to the email trait that hasn't been read.
+    #[prost(message, optional, tag = "1")]
+    pub entity: ::core::option::Option<super::super::super::exocore::store::Reference>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Account {
     #[prost(string, tag = "1")]
     pub key: ::prost::alloc::string::String,
@@ -49,6 +56,7 @@ pub struct EmailThread {
     pub snippet: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "6")]
     pub last_email: ::core::option::Option<super::super::super::exocore::store::Reference>,
+    #[deprecated]
     #[prost(bool, tag = "7")]
     pub read: bool,
 }
@@ -76,6 +84,7 @@ pub struct Email {
     pub parts: ::prost::alloc::vec::Vec<EmailPart>,
     #[prost(message, repeated, tag = "11")]
     pub attachments: ::prost::alloc::vec::Vec<EmailAttachment>,
+    #[deprecated]
     #[prost(bool, tag = "14")]
     pub read: bool,
 }

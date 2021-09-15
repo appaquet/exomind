@@ -328,9 +328,7 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
             title = "\(title) (\(emails.count))"
         }
 
-        if !emailThread.message.read {
-            // TODO: Handle this
-        }
+        let unread = !entity.traitsOfType(Exomind_Base_V1_Unread.self).isEmpty
 
         let lastEmail = emails.max(by: { (a, b) -> Bool in
             let aDate = a.modificationDate ?? a.creationDate
@@ -343,7 +341,7 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
             emailDate = lastEmail.modificationDate ?? lastEmail.creationDate
         }
 
-        return EntityListCellData(image: image, date: emailDate, color: color, title: title, subtitle: displayName, text: emailThread.message.snippet, collections: result.collections)
+        return EntityListCellData(image: image, date: emailDate, color: color, title: title, subtitle: displayName, text: emailThread.message.snippet, collections: result.collections, bold: unread)
 
     case let .draftEmail(draftEmail):
         return EntityListCellData(image: image, date: date, color: color, title: "Me", subtitle: draftEmail.displayName, collections: result.collections)

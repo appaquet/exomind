@@ -91,4 +91,5 @@ export function registerTypes(instance?: ExocoreInstance): void {
     instance.registry.registerMessage(exomind.base.v1.Note, 'exomind.base.v1.Note');
     instance.registry.registerMessage(exomind.base.v1.Link, 'exomind.base.v1.Link');
     instance.registry.registerMessage(exomind.base.v1.Snoozed, 'exomind.base.v1.Snoozed');
+    instance.registry.registerMessage(exomind.base.v1.Unread, 'exomind.base.v1.Unread');
 }

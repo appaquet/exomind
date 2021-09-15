@@ -42,11 +42,12 @@ export default class Columns extends React.Component<IProps> {
             }
             const selection = new Selection(Array.from(selectionItems.filter((col => !!col))));
 
-            const colKey = `column-container-${colId}`;
+            const colClass = `column-container-${colId}`;
             const classes = classNames({
                 'column-container': true,
-                [colKey]: true
+                [colClass]: true
             });
+            const colKey = this.columnKey(columnConfig);
 
             // we allow closing any columns, as long as it is not the last one
             const canClose = colId > 0 || nextColumnConfig;
@@ -56,7 +57,7 @@ export default class Columns extends React.Component<IProps> {
                     <Column
                         columnId={colId}
                         columnConfig={columnConfig}
-                        key={columnConfig.first}
+                        key={colKey}
 
                         selection={selection}
                         onSelectionChange={(selection) => this.handleColumnItemSelect(colId, selection)}
@@ -65,6 +66,15 @@ export default class Columns extends React.Component<IProps> {
                 </div>
             )];
         });
+    }
+
+    private columnKey(config: ColumnConfig): string {
+        if (config.isSearch) {
+            // prevent recreating component for every keystroke
+            return 'search';
+        } else {
+            return config.toString();
+        }
     }
 
     private configToSelection(config: ColumnConfig): SelectedItem {

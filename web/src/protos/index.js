@@ -665,6 +665,198 @@ export const exomind = $root.exomind = (() => {
                 return Snoozed;
             })();
 
+            v1.Unread = (function() {
+
+                /**
+                 * Properties of an Unread.
+                 * @memberof exomind.base.v1
+                 * @interface IUnread
+                 * @property {exocore.store.IReference|null} [entity] Unread entity
+                 */
+
+                /**
+                 * Constructs a new Unread.
+                 * @memberof exomind.base.v1
+                 * @classdesc Represents an Unread.
+                 * @implements IUnread
+                 * @constructor
+                 * @param {exomind.base.v1.IUnread=} [properties] Properties to set
+                 */
+                function Unread(properties) {
+                    if (properties)
+                        for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                            if (properties[keys[i]] != null)
+                                this[keys[i]] = properties[keys[i]];
+                }
+
+                /**
+                 * Unread entity.
+                 * @member {exocore.store.IReference|null|undefined} entity
+                 * @memberof exomind.base.v1.Unread
+                 * @instance
+                 */
+                Unread.prototype.entity = null;
+
+                /**
+                 * Creates a new Unread instance using the specified properties.
+                 * @function create
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {exomind.base.v1.IUnread=} [properties] Properties to set
+                 * @returns {exomind.base.v1.Unread} Unread instance
+                 */
+                Unread.create = function create(properties) {
+                    return new Unread(properties);
+                };
+
+                /**
+                 * Encodes the specified Unread message. Does not implicitly {@link exomind.base.v1.Unread.verify|verify} messages.
+                 * @function encode
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {exomind.base.v1.IUnread} message Unread message or plain object to encode
+                 * @param {$protobuf.Writer} [writer] Writer to encode to
+                 * @returns {$protobuf.Writer} Writer
+                 */
+                Unread.encode = function encode(message, writer) {
+                    if (!writer)
+                        writer = $Writer.create();
+                    if (message.entity != null && Object.hasOwnProperty.call(message, "entity"))
+                        $root.exocore.store.Reference.encode(message.entity, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                    return writer;
+                };
+
+                /**
+                 * Encodes the specified Unread message, length delimited. Does not implicitly {@link exomind.base.v1.Unread.verify|verify} messages.
+                 * @function encodeDelimited
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {exomind.base.v1.IUnread} message Unread message or plain object to encode
+                 * @param {$protobuf.Writer} [writer] Writer to encode to
+                 * @returns {$protobuf.Writer} Writer
+                 */
+                Unread.encodeDelimited = function encodeDelimited(message, writer) {
+                    return this.encode(message, writer).ldelim();
+                };
+
+                /**
+                 * Decodes an Unread message from the specified reader or buffer.
+                 * @function decode
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+                 * @param {number} [length] Message length if known beforehand
+                 * @returns {exomind.base.v1.Unread} Unread
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                Unread.decode = function decode(reader, length) {
+                    if (!(reader instanceof $Reader))
+                        reader = $Reader.create(reader);
+                    let end = length === undefined ? reader.len : reader.pos + length, message = new $root.exomind.base.v1.Unread();
+                    while (reader.pos < end) {
+                        let tag = reader.uint32();
+                        switch (tag >>> 3) {
+                        case 1:
+                            message.entity = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                            break;
+                        default:
+                            reader.skipType(tag & 7);
+                            break;
+                        }
+                    }
+                    return message;
+                };
+
+                /**
+                 * Decodes an Unread message from the specified reader or buffer, length delimited.
+                 * @function decodeDelimited
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+                 * @returns {exomind.base.v1.Unread} Unread
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                Unread.decodeDelimited = function decodeDelimited(reader) {
+                    if (!(reader instanceof $Reader))
+                        reader = new $Reader(reader);
+                    return this.decode(reader, reader.uint32());
+                };
+
+                /**
+                 * Verifies an Unread message.
+                 * @function verify
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {Object.<string,*>} message Plain object to verify
+                 * @returns {string|null} `null` if valid, otherwise the reason why it is not
+                 */
+                Unread.verify = function verify(message) {
+                    if (typeof message !== "object" || message === null)
+                        return "object expected";
+                    if (message.entity != null && message.hasOwnProperty("entity")) {
+                        let error = $root.exocore.store.Reference.verify(message.entity);
+                        if (error)
+                            return "entity." + error;
+                    }
+                    return null;
+                };
+
+                /**
+                 * Creates an Unread message from a plain object. Also converts values to their respective internal types.
+                 * @function fromObject
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {Object.<string,*>} object Plain object
+                 * @returns {exomind.base.v1.Unread} Unread
+                 */
+                Unread.fromObject = function fromObject(object) {
+                    if (object instanceof $root.exomind.base.v1.Unread)
+                        return object;
+                    let message = new $root.exomind.base.v1.Unread();
+                    if (object.entity != null) {
+                        if (typeof object.entity !== "object")
+                            throw TypeError(".exomind.base.v1.Unread.entity: object expected");
+                        message.entity = $root.exocore.store.Reference.fromObject(object.entity);
+                    }
+                    return message;
+                };
+
+                /**
+                 * Creates a plain object from an Unread message. Also converts values to other types if specified.
+                 * @function toObject
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {exomind.base.v1.Unread} message Unread
+                 * @param {$protobuf.IConversionOptions} [options] Conversion options
+                 * @returns {Object.<string,*>} Plain object
+                 */
+                Unread.toObject = function toObject(message, options) {
+                    if (!options)
+                        options = {};
+                    let object = {};
+                    if (options.defaults)
+                        object.entity = null;
+                    if (message.entity != null && message.hasOwnProperty("entity"))
+                        object.entity = $root.exocore.store.Reference.toObject(message.entity, options);
+                    return object;
+                };
+
+                /**
+                 * Converts this Unread to JSON.
+                 * @function toJSON
+                 * @memberof exomind.base.v1.Unread
+                 * @instance
+                 * @returns {Object.<string,*>} JSON object
+                 */
+                Unread.prototype.toJSON = function toJSON() {
+                    return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                return Unread;
+            })();
+
             /**
              * AccountType enum.
              * @name exomind.base.v1.AccountType

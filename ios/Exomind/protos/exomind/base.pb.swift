@@ -160,6 +160,29 @@ struct Exomind_Base_V1_Snoozed {
   fileprivate var _untilDate: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
+struct Exomind_Base_V1_Unread {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Reference to the unread trait of the entity.
+  /// Ex: points to the email trait that hasn't been read.
+  var entity: Exocore.Exocore_Store_Reference {
+    get {return _entity ?? Exocore.Exocore_Store_Reference()}
+    set {_entity = newValue}
+  }
+  /// Returns true if `entity` has been explicitly set.
+  var hasEntity: Bool {return self._entity != nil}
+  /// Clears the value of `entity`. Subsequent reads from it will return its default value.
+  mutating func clearEntity() {self._entity = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _entity: Exocore.Exocore_Store_Reference? = nil
+}
+
 struct Exomind_Base_V1_Account {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -554,6 +577,35 @@ extension Exomind_Base_V1_Snoozed: SwiftProtobuf.Message, SwiftProtobuf._Message
 
   static func ==(lhs: Exomind_Base_V1_Snoozed, rhs: Exomind_Base_V1_Snoozed) -> Bool {
     if lhs._untilDate != rhs._untilDate {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Exomind_Base_V1_Unread: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".Unread"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "entity"),
+  ]
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeSingularMessageField(value: &self._entity)
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if let v = self._entity {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Exomind_Base_V1_Unread, rhs: Exomind_Base_V1_Unread) -> Bool {
+    if lhs._entity != rhs._entity {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

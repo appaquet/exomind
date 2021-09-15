@@ -41,7 +41,6 @@ Navigation.initialize({
 
 window.onpopstate = () => {
     Navigation.currentPath = getBrowserCurrentPath();
-    Navigation.notifyChange();
 };
 
 Promise.all([

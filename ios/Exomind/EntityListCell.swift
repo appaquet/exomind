@@ -17,8 +17,8 @@ struct EntityListCell: View {
                 VStack(alignment: .leading, spacing: 5) {
                     HStack {
                         Text(self.data.line1)
-                                .font(.system(size: 14))
-                                .lineLimit(1)
+                            .font(.system(size: 14, weight: self.data.weight))
+                            .lineLimit(1)
 
                         Spacer()
 
@@ -27,13 +27,13 @@ struct EntityListCell: View {
                     }
 
                     Text(self.data.line2)
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: self.data.weight))
                             .lineLimit(1)
 
                     if self.data.line3 != "" {
                         Text(self.data.line3)
                                 .lineLimit(1)
-                                .font(.system(size: 12))
+                                .font(.system(size: 12, weight: self.data.weight))
                     }
                 }.padding(3).frame(alignment: .topTrailing)
             }
@@ -58,36 +58,52 @@ struct EntityListCellData {
     var line1: String = ""
     var line2: String = ""
     var line3: String = ""
+    var weight: Font.Weight = .regular
 
     var collections: [CollectionPillData] = []
 
-    init(image: UIImage, date: Date, color: UIColor, title: String, collections: [CollectionPillData] = []) {
+    init(image: UIImage, date: Date, color: UIColor, title: String, collections: [CollectionPillData] = [], bold: Bool = false) {
         self.image = image
         self.date = date.toShort()
         self.color = color
         self.line1 = " "
         self.line2 = title
         self.line3 = " "
+
+        if bold {
+            self.weight = .bold
+        }
+
         self.collections = collections
     }
 
-    init(image: UIImage, date: Date, color: UIColor, title: String, subtitle: String, collections: [CollectionPillData] = []) {
+    init(image: UIImage, date: Date, color: UIColor, title: String, subtitle: String, collections: [CollectionPillData] = [], bold: Bool = false) {
         self.image = image
         self.date = date.toShort()
         self.color = color
         self.line1 = title
         self.line2 = subtitle
         self.line3 = " "
+
+        if bold {
+            self.weight = .bold
+        }
+
         self.collections = collections
     }
 
-    init(image: UIImage, date: Date, color: UIColor, title: String, subtitle: String, text: String, collections: [CollectionPillData] = []) {
+    init(image: UIImage, date: Date, color: UIColor, title: String, subtitle: String, text: String, collections: [CollectionPillData] = [], bold: Bool = false) {
         self.image = image
         self.date = date.toShort()
         self.color = color
         self.line1 = title
         self.line2 = subtitle
         self.line3 = text
+
+        if bold {
+            self.weight = .bold
+        }
+
         self.collections = collections
     }
 }
@@ -99,6 +115,8 @@ struct EntityListViewCell_Previews: PreviewProvider {
 
         List {
             EntityListCell(data: EntityListCellData(image: img, date: date, color: UIColor.red, title: "Title"))
+
+            EntityListCell(data: EntityListCellData(image: img, date: date, color: UIColor.red, title: "Title", bold: true))
 
             EntityListCell(data: EntityListCellData(image: img, date: date, color: UIColor.green, title: "Title", subtitle: "Sub title"))
 
