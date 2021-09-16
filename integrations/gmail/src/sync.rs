@@ -174,11 +174,11 @@ impl AccountSynchronizer {
                     self.generated_exomind_operations.insert_all(&operation_ids);
                 }
                 GmailHistoryAction::MarkUnread(_history_id, thread_id, msg_id) => {
-                    let operation_ids = self.exomind.mark_unread(&thread_id, &msg_id).await?;
+                    let operation_ids = self.exomind.mark_email_unread(&thread_id, &msg_id).await?;
                     self.generated_exomind_operations.insert_all(&operation_ids);
                 }
                 GmailHistoryAction::MarkRead(_history_id, thread_id, msg_id) => {
-                    let operation_ids = self.exomind.mark_read(&thread_id, &msg_id).await?;
+                    let operation_ids = self.exomind.mark_email_read(&thread_id, &msg_id).await?;
                     self.generated_exomind_operations.insert_all(&operation_ids);
                 }
             }

@@ -156,7 +156,7 @@ impl ExomindClient {
 
         {
             // check if email still in inbox
-            let inbox_child_trait = inbox_child_trait(&entity)?;
+            let inbox_child_trait = get_inbox_child_trait(&entity)?;
             if let Some(delete_timestamp) = &inbox_child_trait.trt.deletion_date {
                 let deleted_date = delete_timestamp.to_chrono_datetime();
                 if deleted_date > after_date {
@@ -364,7 +364,7 @@ impl ExomindClient {
         Ok(res.operation_ids)
     }
 
-    pub async fn mark_unread(
+    pub async fn mark_email_unread(
         &self,
         thread_id: &str,
         message_id: &str,
@@ -386,7 +386,7 @@ impl ExomindClient {
         Ok(res.operation_ids)
     }
 
-    pub async fn mark_read(
+    pub async fn mark_email_read(
         &self,
         thread_id: &str,
         message_id: &str,
@@ -405,7 +405,7 @@ impl ExomindClient {
     }
 }
 
-fn inbox_child_trait(
+fn get_inbox_child_trait(
     entity: &Entity,
 ) -> Option<exocore::store::entity::TraitInstance<CollectionChild>> {
     let inbox_child_trait = entity

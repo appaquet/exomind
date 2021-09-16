@@ -37,13 +37,12 @@ interface EmailState {
 }
 
 export default class EmailThread extends React.Component<IProps, IState> {
-    threadTrait: EntityTrait<exomind.base.v1.EmailThread>;
-    draftTrait?: EntityTrait<exomind.base.v1.DraftEmail>;
+    private mounted = false;
+    private draftTrait?: EntityTrait<exomind.base.v1.DraftEmail>;
 
     constructor(props: IProps) {
         super(props);
 
-        this.threadTrait = props.entity.traitOfType(exomind.base.v1.EmailThread);
         this.draftTrait = props.entity.traitOfType(exomind.base.v1.DraftEmail);
 
         const unreadFlags: { [id: string]: unknown } = _.chain(props.entity.traitsOfType<exomind.base.v1.Unread>(exomind.base.v1.Unread))
@@ -79,6 +78,14 @@ export default class EmailThread extends React.Component<IProps, IState> {
             emailStates: emailStates,
             controlledEmailId: null,
         };
+    }
+
+    componentDidMount(): void {
+        this.mounted = true;
+    }
+
+    componentWillUnmount(): void {
+        this.mounted = false;
     }
 
     render(): React.ReactNode {
@@ -393,15 +400,6 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
             Exocore.store.mutate(mb.build());
         }, 3000);
-    }
-
-    private mounted = false;
-    componentDidMount(): void {
-        this.mounted = true;
-    }
-
-    componentWillUnmount(): void {
-        this.mounted = false;
     }
 }
 

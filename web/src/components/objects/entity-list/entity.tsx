@@ -171,8 +171,6 @@ export class Entity extends React.Component<IProps, IState> {
         const emails = entityTraits.traitsOfType<exomind.base.v1.IEmail>(exomind.base.v1.Email);
         const unreadFlags = entityTraits.traitsOfType<exomind.base.v1.IUnread>(exomind.base.v1.Unread);
 
-        console.log(unreadFlags);
-
         let title1Markup;
         let title2Markup;
         const subject = thread.subject ?? '(No subject)';
