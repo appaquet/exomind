@@ -8,7 +8,6 @@ import { ContainerController } from '../container-controller';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
-import { Message } from '../message';
 import './search.less';
 import { runInAction } from 'mobx';
 import { IStores, StoresContext } from '../../../stores/stores';
@@ -23,7 +22,7 @@ interface IProps {
 }
 
 interface IState {
-    entities?: EntityTraits[],
+  entities: EntityTraits[],
 }
 
 export class Search extends React.Component<IProps, IState> {
@@ -36,16 +35,15 @@ export class Search extends React.Component<IProps, IState> {
     super(props);
 
     this.updateContainerTitle(props);
-    this.state = {};
+    this.state = {
+      entities: [],
+    };
   }
 
   componentDidUpdate(prevProps: IProps): void {
     if (prevProps.query != this.props.query) {
       this.updateContainerTitle(this.props);
       this.query(this.props.query);
-      this.setState({
-        entities: null,
-      });
     }
   }
 
@@ -58,27 +56,23 @@ export class Search extends React.Component<IProps, IState> {
   }
 
   render(): React.ReactNode {
-    if (this.entityQuery?.hasResults ?? false) {
-      return (
-        <div className="search">
-          <EntityList
-            entities={this.state.entities}
+    return (
+      <div className="search">
+        <EntityList
+          entities={this.state.entities}
 
-            onRequireLoadMore={this.handleLoadMore.bind(this)}
+          onRequireLoadMore={this.handleLoadMore.bind(this)}
 
-            droppable={false}
-            draggable={false}
+          droppable={false}
+          draggable={false}
 
-            selection={this.props.selection}
-            onSelectionChange={this.props.onSelectionChange}
+          selection={this.props.selection}
+          onSelectionChange={this.props.onSelectionChange}
 
-            actionsForEntity={this.actionsForEntity.bind(this)}
-          />;
-        </div>
-      );
-    } else {
-      return <Message text="Loading..." showAfterMs={200} />;
-    }
+          actionsForEntity={this.actionsForEntity.bind(this)}
+        />;
+      </div>
+    );
   }
 
   private query(query: string): void {
@@ -97,13 +91,23 @@ export class Search extends React.Component<IProps, IState> {
         })
       )
       .build();
+
     this.entityQuery = new ExpandableQuery(childrenQuery, () => {
       const entities = Array.from(this.entityQuery.results()).map((res) => {
-          return new EntityTraits(res.entity);
+        return new EntityTraits(res.entity);
       });
 
       this.setState({ entities });
     })
+  }
+
+  private updateContainerTitle(props: IProps): void {
+    if (props.containerController) {
+      runInAction(() => {
+        props.containerController.title = `Search '${props.query}'`;
+        props.containerController.icon = { fa: 'search' };
+      });
+    }
   }
 
   private handleLoadMore(): void {
@@ -136,14 +140,5 @@ export class Search extends React.Component<IProps, IState> {
       .build();
 
     Exocore.store.mutate(mutation);
-  }
-
-  private updateContainerTitle(props: IProps): void {
-    if (props.containerController) {
-      runInAction(() => {
-        props.containerController.title = `Search ${props.query}`;
-        props.containerController.icon = { fa: 'search' };
-      });
-    }
   }
 }

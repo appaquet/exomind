@@ -1,6 +1,6 @@
 use crate::config::Config;
 use exomind_protos::base::{Account, AccountScope, AccountType};
-use google_gmail1::api::ModifyThreadRequest;
+use google_gmail1::api::{ModifyMessageRequest, ModifyThreadRequest};
 use std::{
     collections::HashSet,
     path::PathBuf,
@@ -144,7 +144,7 @@ impl GmailClient {
         Ok(thread)
     }
 
-    pub async fn add_label(
+    pub async fn add_thread_label(
         &self,
         thread_id: &str,
         label: String,
@@ -171,13 +171,13 @@ impl GmailClient {
         Ok(thread)
     }
 
-    pub async fn remove_label(
+    pub async fn remove_thread_label(
         &self,
         thread_id: &str,
         label: String,
     ) -> anyhow::Result<google_gmail1::api::Thread> {
         info!(
-            "Removing label {} to {} in account {}",
+            "Removing label {} from {} in account {}",
             label,
             thread_id,
             self.account.email()
@@ -196,6 +196,60 @@ impl GmailClient {
             .await?;
 
         Ok(thread)
+    }
+
+    pub async fn add_message_label(
+        &self,
+        message_id: &str,
+        label: String,
+    ) -> anyhow::Result<google_gmail1::api::Message> {
+        info!(
+            "Adding label {} to {} in account {}",
+            label,
+            message_id,
+            self.account.email()
+        );
+
+        let req = ModifyMessageRequest {
+            add_label_ids: Some(vec![label]),
+            remove_label_ids: None,
+        };
+        let (_resp, message) = self
+            .client
+            .users()
+            .messages_modify(req, "me", message_id)
+            .add_scope(FULL_ACCESS_SCOPE)
+            .doit()
+            .await?;
+
+        Ok(message)
+    }
+
+    pub async fn remove_message_label(
+        &self,
+        message_id: &str,
+        label: String,
+    ) -> anyhow::Result<google_gmail1::api::Message> {
+        info!(
+            "Removing label {} to {} in account {}",
+            label,
+            message_id,
+            self.account.email()
+        );
+        let req = ModifyMessageRequest {
+            add_label_ids: None,
+            remove_label_ids: Some(vec![label]),
+        };
+
+        let (_resp, message) = self
+            .client
+            .users()
+            .messages_modify(req, "me", message_id)
+            .add_scope(FULL_ACCESS_SCOPE)
+            .doit()
+            .await?;
+
+        Ok(message)
     }
 
     pub async fn list_history(
@@ -251,49 +305,63 @@ impl GmailClient {
             let labels_added = history.labels_added.unwrap_or_default();
             for added in labels_added {
                 let labels = added.label_ids.unwrap_or_default();
-                if !labels.contains(&"INBOX".to_string()) {
-                    continue;
-                }
 
-                let msg = added.message.as_ref().unwrap();
-                let thread_id = msg.thread_id.as_deref().unwrap();
+                if labels.contains(&"INBOX".to_string()) {
+                    let msg = added.message.as_ref().unwrap();
+                    let thread_id = msg.thread_id.as_deref().unwrap();
 
-                if !imported_threads.contains(thread_id) {
-                    imported_threads.insert(thread_id.to_string());
+                    if !imported_threads.contains(thread_id) {
+                        imported_threads.insert(thread_id.to_string());
 
-                    match self.fetch_thread(thread_id, true).await {
-                        Ok(thread) => {
-                            actions.push(GmailHistoryAction::AddToInbox(history_id, thread));
-                        }
-                        Err(err) => {
-                            error!(
-                                "Error fetching thread {} for account {}: {}",
-                                thread_id,
-                                self.account.email(),
-                                err
-                            );
+                        match self.fetch_thread(thread_id, true).await {
+                            Ok(thread) => {
+                                actions.push(GmailHistoryAction::AddToInbox(history_id, thread));
+                            }
+                            Err(err) => {
+                                error!(
+                                    "Error fetching thread {} for account {}: {}",
+                                    thread_id,
+                                    self.account.email(),
+                                    err
+                                );
+                            }
                         }
                     }
+                }
+
+                if labels.contains(&"UNREAD".to_string()) {
+                    let msg = added.message.as_ref().unwrap();
+                    let thread_id = msg.thread_id.as_deref().unwrap().to_string();
+                    let msg_id = msg.id.clone().unwrap();
+                    actions.push(GmailHistoryAction::MarkUnread(
+                        history_id, thread_id, msg_id,
+                    ));
                 }
             }
 
             let labels_removed = history.labels_removed.unwrap_or_default();
             for removed in labels_removed {
                 let labels = removed.label_ids.unwrap_or_default();
-                if !labels.contains(&"INBOX".to_string()) {
-                    continue;
+
+                if labels.contains(&"INBOX".to_string()) {
+                    let msg = removed.message.as_ref().unwrap();
+                    let thread_id = msg.thread_id.as_deref().unwrap();
+
+                    if !removed_threads.contains(thread_id) {
+                        removed_threads.insert(thread_id.to_string());
+
+                        actions.push(GmailHistoryAction::RemoveFromInbox(
+                            history_id,
+                            thread_id.to_string(),
+                        ))
+                    }
                 }
 
-                let msg = removed.message.as_ref().unwrap();
-                let thread_id = msg.thread_id.as_deref().unwrap();
-
-                if !removed_threads.contains(thread_id) {
-                    removed_threads.insert(thread_id.to_string());
-
-                    actions.push(GmailHistoryAction::RemoveFromInbox(
-                        history_id,
-                        thread_id.to_string(),
-                    ))
+                if labels.contains(&"UNREAD".to_string()) {
+                    let msg = removed.message.as_ref().unwrap();
+                    let thread_id = msg.thread_id.as_deref().unwrap().to_string();
+                    let msg_id = msg.id.clone().unwrap();
+                    actions.push(GmailHistoryAction::MarkRead(history_id, thread_id, msg_id));
                 }
             }
         }
@@ -334,6 +402,19 @@ impl GmailAccount {
 pub enum GmailHistoryAction {
     AddToInbox(HistoryId, google_gmail1::api::Thread),
     RemoveFromInbox(HistoryId, String),
+    MarkUnread(HistoryId, String, String),
+    MarkRead(HistoryId, String, String),
+}
+
+impl GmailHistoryAction {
+    pub fn history_id(&self) -> HistoryId {
+        match &self {
+            GmailHistoryAction::AddToInbox(history_id, _) => *history_id,
+            GmailHistoryAction::RemoveFromInbox(history_id, _) => *history_id,
+            GmailHistoryAction::MarkUnread(history_id, _, _) => *history_id,
+            GmailHistoryAction::MarkRead(history_id, _, _) => *history_id,
+        }
+    }
 }
 
 pub fn account_token_file(config: &Config, email: &str) -> anyhow::Result<PathBuf> {

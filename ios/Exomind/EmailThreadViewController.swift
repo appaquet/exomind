@@ -1,4 +1,5 @@
 import UIKit
+import Exocore
 
 class EmailThreadViewController: UITableViewController, EntityTraitView {
     private var entity: EntityExt!
@@ -9,6 +10,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     private var firstNonRead: Int = 0
 
     private var loadedEmails: [Bool] = []
+    private var unreadEmails: Dictionary<TraitId, TraitInstance<Exomind_Base_V1_Unread>> = Dictionary()
 
     private var opened = [String: Bool]()
     private var openedObjectsCell = [String: EmailThreadOpenedTableViewCell]()
@@ -21,13 +23,19 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         self.entity = entity
         self.thread = entity.traitOfType(Exomind_Base_V1_EmailThread.self)!
 
+        self.unreadEmails = Dictionary(uniqueKeysWithValues: entity.traitsOfType(Exomind_Base_V1_Unread.self).map { unread in
+            (unread.message.entity.traitID, unread)
+        })
+
         self.emails = entity
                 .traitsOfType(Exomind_Base_V1_Email.self)
                 .sorted(by: { (em1, em2) in
                     em1.message.receivedDate.date.isLessThan(em2.message.receivedDate.date)
                 })
-        self.loadedEmails = self.emails.map({ $0.message.read })
-        self.firstNonRead = self.emails.firstIndex(where: { !$0.message.read}) ?? 0
+        self.firstNonRead = self.emails.firstIndex(where: { self.unreadEmails[$0.id] != nil }) ?? 0
+        
+        // unread emails are considered loaded since we use to sequentially load them
+        self.loadedEmails = self.emails.map({ self.unreadEmails[$0.id] == nil })
 
         self.draft = entity.traitOfType(Exomind_Base_V1_DraftEmail.self)
 
@@ -153,7 +161,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     func isOpen(_ email: TraitInstance<Exomind_Base_V1_Email>) -> Bool {
-        let isUnread = !email.message.read
+        let isUnread = self.unreadEmails[email.id] != nil
         let isLastEmail = self.emails.last?.id == email.id
         return self.opened[email.id] ?? (isUnread || isLastEmail)
     }
@@ -306,18 +314,18 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     func markRead() {
-//        var modifiedEmails = [EmailBuilder]()
-//        for email in self.emails {
-//            if (email.unread ?? true) {
-//                let builder = EmailBuilder(id: email.id)
-//                builder.unread = false
-//                modifiedEmails.append(builder)
-//            }
-//        }
-//
-//        if !modifiedEmails.isEmpty {
-//            ExomindDSL.on(entity.entity).mutate.put(modifiedEmails).execute()
-//        }
+        if self.unreadEmails.isEmpty {
+            return
+        }
+
+        var mutation = MutationBuilder.updateEntity(entityId: self.entity.id)
+        for email in self.emails {
+            if let unread = self.unreadEmails[email.id] {
+                mutation = mutation.deleteTrait(traitId: unread.id)
+            }
+        }
+
+        ExocoreClient.store.mutate(mutation: mutation.build())
     }
 
     deinit {

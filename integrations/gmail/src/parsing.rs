@@ -5,8 +5,14 @@ use exomind_protos::base::{Contact, Email, EmailAttachment, EmailPart, EmailThre
 #[derive(Default)]
 pub struct ParsedThread {
     pub thread: EmailThread,
-    pub emails: Vec<Email>,
+    pub emails: Vec<FlaggedEmail>,
     pub labels: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct FlaggedEmail {
+    pub proto: Email,
+    pub unread: bool,
 }
 
 pub fn parse_thread(thread: google_gmail1::api::Thread) -> Result<ParsedThread, anyhow::Error> {
@@ -38,20 +44,23 @@ pub fn parse_thread(thread: google_gmail1::api::Thread) -> Result<ParsedThread, 
                 continue;
             }
 
-            let mut email = exomind_protos::base::Email {
-                snippet: message.snippet.clone().unwrap_or_default(),
-                source_id: message.id.clone().unwrap_or_default(),
-                read: message
-                    .label_ids
-                    .as_ref()
-                    .map(|labels| !labels.iter().any(|l| l == "UNREAD"))
-                    .unwrap_or(true),
-                ..Default::default()
+            let unread = message
+                .label_ids
+                .as_ref()
+                .map(|labels| labels.iter().any(|l| l == "UNREAD"))
+                .unwrap_or(false);
+            let mut parsed_email = FlaggedEmail {
+                proto: exomind_protos::base::Email {
+                    snippet: message.snippet.clone().unwrap_or_default(),
+                    source_id: message.id.clone().unwrap_or_default(),
+                    ..Default::default()
+                },
+                unread,
             };
 
-            match parse_part(&part, &mut email) {
+            match parse_part(&part, &mut parsed_email.proto) {
                 Ok(()) => {
-                    parsed_thread.emails.push(email);
+                    parsed_thread.emails.push(parsed_email);
                 }
                 Err(err) => {
                     error!(
@@ -63,11 +72,9 @@ pub fn parse_thread(thread: google_gmail1::api::Thread) -> Result<ParsedThread, 
         }
     }
 
-    parsed_thread.thread.read = parsed_thread.emails.iter().all(|e| e.read);
-
-    if let Some(last_email) = parsed_thread.emails.last() {
-        parsed_thread.thread.snippet = last_email.snippet.clone();
-        parsed_thread.thread.subject = last_email.subject.clone();
+    if let Some(last) = parsed_thread.emails.last() {
+        parsed_thread.thread.snippet = last.proto.snippet.clone();
+        parsed_thread.thread.subject = last.proto.subject.clone();
     }
 
     Ok(parsed_thread)
@@ -281,14 +288,14 @@ mod tests {
         assert_eq!("Some snippet", parsed.thread.snippet);
         assert_eq!("Some subject", parsed.thread.subject);
         assert_eq!(vec!["UNREAD", "CATEGORY_UPDATES", "INBOX"], parsed.labels);
-        assert!(!parsed.thread.read);
+        assert!(parsed.emails[0].unread);
 
         assert_eq!(
             Some(Contact {
                 name: "From Someone".to_string(),
                 email: "some@email.com".to_string(),
             }),
-            parsed.emails[0].from
+            parsed.emails[0].proto.from
         );
 
         Ok(())
@@ -300,7 +307,7 @@ mod tests {
         let parsed = parse_thread(thread).unwrap();
 
         assert_eq!(1, parsed.emails.len());
-        assert_eq!(2, parsed.emails[0].parts.len());
+        assert_eq!(2, parsed.emails[0].proto.parts.len());
     }
 
     #[test]
@@ -317,9 +324,9 @@ mod tests {
         let parsed = parse_thread(thread).unwrap();
 
         assert_eq!(1, parsed.emails.len());
-        assert_eq!(2, parsed.emails[0].parts.len());
+        assert_eq!(2, parsed.emails[0].proto.parts.len());
 
-        assert_eq!(1, parsed.emails[0].attachments.len());
+        assert_eq!(1, parsed.emails[0].proto.attachments.len());
         assert_eq!(
             vec![EmailAttachment {
                 key: "signature.asc".to_string(),
@@ -328,7 +335,7 @@ mod tests {
                 size: 849,
                 ..Default::default()
             }],
-            parsed.emails[0].attachments
+            parsed.emails[0].proto.attachments
         );
     }
 
@@ -338,9 +345,9 @@ mod tests {
         let parsed = parse_thread(thread).unwrap();
 
         assert_eq!(1, parsed.emails.len());
-        assert_eq!(1, parsed.emails[0].parts.len());
+        assert_eq!(1, parsed.emails[0].proto.parts.len());
 
-        let body = &parsed.emails[0].parts[0].body;
+        let body = &parsed.emails[0].proto.parts[0].body;
         assert!(body.contains("Découvrir"));
     }
 
@@ -353,7 +360,7 @@ mod tests {
 
         // The email is marked as ISO-8859, but is actually UTF8.
         // The detector should have detected correct encoding.
-        let body = &parsed.emails[0].parts[0].body;
+        let body = &parsed.emails[0].proto.parts[0].body;
         assert!(body.contains("reportées"));
     }
 

@@ -30,12 +30,12 @@ message EntityQuery {
     // Optional watch token if this query is to be used for watching.
     uint64 watch_token = 8;
 
-    // If specified, if results from server matches this hash, results will be empty with the 
+    // If specified, if results from server matches this hash, results will be empty with the
     // `skipped_hash` field set to `true`.
     uint64 result_hash = 9;
 
     // Include deleted mutations matches. Can be used to return recently modified entities that
-    // also include deletions. Deleted traits will be included in the results, but will have a 
+    // also include deletions. Deleted traits will be included in the results, but will have a
     // `deletion_date` field with the date of the deletion.
     bool include_deleted = 12;
 }
@@ -143,14 +143,17 @@ message Paging {
 
     // Desired results count. Default if 0.
     uint32 count = 3;
+
+    // Mutation index use only, no effect on entity query.
+    uint32 offset = 4;
 }
 
 message Ordering {
     // Value by which we want results to be ordered.
     oneof value {
-        bool score = 1; // by match score + date boost
-        bool operation_id = 2; // by operation id
-        string field = 3; // by field value
+        bool score = 1;         // by match score + date boost
+        bool operation_id = 2;  // by operation id
+        string field = 3;       // by field value
     }
 
     // Direction of ordering.
@@ -158,6 +161,9 @@ message Ordering {
 
     // If match score used, don't boost recent documents
     bool no_recency_boost = 5;
+
+    // If match score used, don't boost results that have references.
+    bool no_reference_boost = 6;
 }
 
 message OrderingValue {

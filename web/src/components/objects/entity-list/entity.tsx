@@ -127,8 +127,8 @@ export class Entity extends React.Component<IProps, IState> {
         });
 
         return (
-            <div className="item-actions-container column-tooltip">
-                <div className="item-actions column-tooltip">
+            <div className="item-actions-container">
+                <div className="item-actions">
                     <ul>{actionsComponents}</ul>
                 </div>
             </div>
@@ -169,6 +169,7 @@ export class Entity extends React.Component<IProps, IState> {
     private renderEmailThreadElement(entityTraits: EntityTraits, entityTrait: EntityTrait<exomind.base.v1.IEmailThread>): React.ReactNode {
         const thread = entityTrait.message;
         const emails = entityTraits.traitsOfType<exomind.base.v1.IEmail>(exomind.base.v1.Email);
+        const unreadFlags = entityTraits.traitsOfType<exomind.base.v1.IUnread>(exomind.base.v1.Unread);
 
         let title1Markup;
         let title2Markup;
@@ -191,7 +192,7 @@ export class Entity extends React.Component<IProps, IState> {
             'item-container': true,
             'with-picture': true,
             'email-thread': true,
-            unread: !thread.read,
+            unread: unreadFlags.length > 0,
         });
 
         return (
