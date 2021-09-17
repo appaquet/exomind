@@ -748,7 +748,7 @@ name = "exomind-protos"
 version = "0.1.10"
 dependencies = [
  "exocore",
- "prost 0.7.0",
+ "prost 0.8.0",
  "prost-build 0.7.0",
  "prost-types 0.7.0",
 ]
