@@ -6,7 +6,6 @@ import * as domutils from 'domutils';
 import { exomind } from '../protos';
 import * as htmlparser from 'htmlparser2';
 import domSerializerRender from "dom-serializer";
-import linkify from 'linkifyjs';
 import linkifyHtml from 'linkifyjs/html';
 import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
@@ -68,9 +67,11 @@ export default class EmailUtil {
 
   static generateReplyParts(entity: EntityTraits, email: EntityTrait<exomind.base.v1.IEmail>) {
     const formattedReceiveDate = DateUtil.toLongGmtFormat(fromProtoTimestamp(email.message.receivedDate));
-    const htmlPart = EmailUtil.extractHtmlPart(email.message.parts);
     const formattedFrom = EmailUtil.formatContact(email.message.from, true);
     const dateLine = `On ${formattedReceiveDate} ${formattedFrom} wrote:`;
+
+    const htmlPart = EmailUtil.extractHtmlPart(email.message.parts);
+    const textPart = EmailUtil.extractTextPart(email.message.parts);
 
     let parts: exomind.base.v1.IEmailPart[] = [];
     if (htmlPart) {
@@ -83,9 +84,8 @@ export default class EmailUtil {
 
       parts = [newPart];
 
-    } else if (email.message.parts.length > 0) {
-      const plainPart = _.first(email.message.parts);
-      const body = EmailUtil.plainTextToHtml(plainPart.body);
+    } else if (textPart) {
+      const body = EmailUtil.plainTextToHtml(textPart.body);
       const newPart = new exomind.base.v1.EmailPart({
         body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${body}</blockquote></div>`,
         mimeType: "text/html",
@@ -98,6 +98,10 @@ export default class EmailUtil {
 
   static extractHtmlPart(parts: exomind.base.v1.IEmailPart[]) {
     return _.find(parts, part => part.mimeType === 'text/html');
+  }
+
+  static extractTextPart(parts: exomind.base.v1.IEmailPart[]) {
+    return _.find(parts, part => part.mimeType === 'text/plain');
   }
 
   static parseContacts(contactsString: string): exomind.base.v1.IContact[] {
@@ -171,7 +175,6 @@ export default class EmailUtil {
   }
 
   static plainTextToHtml(text: string) {
-    const _ = linkify;
     return linkifyHtml(text.replace(/\n/g, '</br>'), {
       defaultProtocol: 'https',
     });

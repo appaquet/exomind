@@ -220,6 +220,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     private renderEmailBody(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): React.ReactNode {
         const htmlPart = EmailUtil.extractHtmlPart(email.message.parts);
+        const textPart = EmailUtil.extractTextPart(email.message.parts);
 
         let markup = { __html: '' };
         let more = null;
@@ -246,9 +247,11 @@ export default class EmailThread extends React.Component<IProps, IState> {
                 <div className="more" onClick={this.handleOpenEmailClick.bind(this, email)}><span className="icon" />
                 </div> : null;
 
-        } else if (!_.isEmpty(email.message.parts)) {
-            const body = _.first(email.message.parts)?.body ?? '';
+        } else if (textPart) {
+            const body = textPart?.body ?? '';
             markup = { __html: EmailUtil.plainTextToHtml(body) };
+        } else {
+            markup = { __html: "<b style='color:red'>Couldn't find part to render</b>" };
         }
 
         return (
