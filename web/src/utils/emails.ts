@@ -226,10 +226,10 @@ export default class EmailUtil {
   }
 
   static splitOriginalThreadHtml(html: string) {
-    const dom = htmlparser.parseDOM(html);
+    const dom = htmlparser.parseDocument(html);
 
-    function isOnWroteText(el: Node) {
-      const text = domutils.getText(el).trim();
+    function isWroteOnText(el: Node) {
+      const text = domutils.textContent(el).trim();
 
       const length = text.length;
       if (length < 200) {
@@ -244,12 +244,12 @@ export default class EmailUtil {
       }
     }
 
-    function parseRecursive(el: Element | Element[], nextIsOriginal = false) {
+    function parseRecursive(el: Element | Element[]) {
       if (_.isArray(el)) {
         let currents: Element[] = [];
         let originals: Element[] = [];
         el.reverse().forEach(child => {
-          const [current, original] = parseRecursive(child, nextIsOriginal);
+          const [current, original] = parseRecursive(child);
           currents = current.concat(currents);
           originals = original.concat(originals);
         });
@@ -262,11 +262,11 @@ export default class EmailUtil {
         } else if (el.type === 'tag' && el.name === 'blockquote') {
           return [[], [el]];
 
-        } else if (isOnWroteText(el)) {
+        } else if (isWroteOnText(el)) {
           return [[], [el]];
 
         } else if (!_.isEmpty(el.children)) {
-          const [currentChildren, originalChildren] = parseRecursive(el.children as Element[], nextIsOriginal);
+          const [currentChildren, originalChildren] = parseRecursive(el.children as Element[]);
           const currentEl = _.clone(el);
           currentEl.children = currentChildren;
           const originalEl = _.clone(el);
@@ -279,9 +279,9 @@ export default class EmailUtil {
     }
 
     // eslint-disable-next-line prefer-const
-    let [current, original] = parseRecursive(dom as Element[]);
+    let [current, original] = parseRecursive(dom.children as Element[]);
 
-    if (domutils.getText(current).trim().length === 0) {
+    if (domutils.textContent(current).trim().length === 0) {
       current = original;
       return [domSerializerRender(current), ''];
     } else {

@@ -53,12 +53,12 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
         let count = 0;
         const emailStates = _.chain(props.entity.traitsOfType<exomind.base.v1.Email>(exomind.base.v1.Email))
+            .sortBy((a) => {
+                return a.modificationDate ?? a.creationDate;
+            })
             .map((trait) => {
                 const unread = trait.id in unreadFlags;
                 return { index: count++, trait: trait, isOpen: unread } as EmailState;
-            })
-            .sortBy((a) => {
-                return a.trait.modificationDate ?? a.trait.creationDate;
             })
             .value();
 
@@ -269,7 +269,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
     }
 
-    private handleOpenEmailClick(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): void {
+    private handleOpenEmailClick(email: EntityTrait<exomind.base.v1.IEmail>): void {
         if (this.props.onSelectionChange) {
             const item = SelectedItem.fromEntityTraitId(this.props.entity.entity.id, email.id);
             this.props.onSelectionChange(this.props.selection.withItem(item));
