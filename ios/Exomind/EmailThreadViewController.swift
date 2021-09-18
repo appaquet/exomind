@@ -23,9 +23,12 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         self.entity = entity
         self.thread = entity.traitOfType(Exomind_Base_V1_EmailThread.self)!
 
-        self.unreadEmails = Dictionary(uniqueKeysWithValues: entity.traitsOfType(Exomind_Base_V1_Unread.self).map { unread in
-            (unread.message.entity.traitID, unread)
-        })
+        if self.unreadEmails.isEmpty {
+            // only update unread flags if it's the first time so that we don't update based on our own mark as read
+            self.unreadEmails = Dictionary(uniqueKeysWithValues: entity.traitsOfType(Exomind_Base_V1_Unread.self).map { unread in
+                (unread.message.entity.traitID, unread)
+            })
+        }
 
         self.emails = entity
                 .traitsOfType(Exomind_Base_V1_Email.self)
@@ -59,7 +62,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     // http://stackoverflow.com/questions/19005446/table-header-view-height-is-wrong-when-using-auto-layout-ib-and-font-sizes
-    func sizeTableHeader() {
+    private func sizeTableHeader() {
         self.headerView.setNeedsLayout()
         self.headerView.layoutIfNeeded()
         var headerFrame = self.tableView.frame
@@ -122,7 +125,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         self.perform(#selector(navigateFirstNonRead), with: nil, afterDelay: 1.0)
     }
 
-    @objc func navigateFirstNonRead() {
+    @objc private func navigateFirstNonRead() {
         if self.navigatedFirstNonRead {
             return
         }
@@ -132,6 +135,8 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
             let path = IndexPath(row: 0, section: self.firstNonRead)
             self.tableView.scrollToRow(at: path, at: .top, animated: false)
         }
+
+        self.perform(#selector(markRead), with: nil, afterDelay: 3.0) // sync delay with `email-thread.tsx`
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -141,7 +146,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         return self.emails.count + nbDraft
     }
 
-    fileprivate func isDraft(atSection: Int) -> Bool {
+    private func isDraft(atSection: Int) -> Bool {
         atSection >= self.emails.count
     }
 
@@ -160,7 +165,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         }
     }
 
-    func isOpen(_ email: TraitInstance<Exomind_Base_V1_Email>) -> Bool {
+    private func isOpen(_ email: TraitInstance<Exomind_Base_V1_Email>) -> Bool {
         let isUnread = self.unreadEmails[email.id] != nil
         let isLastEmail = self.emails.last?.id == email.id
         return self.opened[email.id] ?? (isUnread || isLastEmail)
@@ -253,7 +258,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         }
     }
 
-    func handleReply() {
+    private func handleReply() {
 //        if let lastEmail = self.emails.last {
 //            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
 //            EmailsLogic.createReplyEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
@@ -267,7 +272,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
 //        }
     }
 
-    func handleReplyAll() {
+    private func handleReplyAll() {
 //        if let lastEmail = self.emails.last {
 //            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
 //            EmailsLogic.createReplyAllEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
@@ -281,7 +286,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
 //        }
     }
 
-    func handleForward() {
+    private func handleForward() {
 //        if let lastEmail = self.emails.last {
 //            let entityTrait = EntityTraitOld(entity: self.entityTrait.entity, trait: lastEmail)
 //            EmailsLogic.createForwardEmail(entityTrait)?.onProcessed { [weak self] (cmd, entity) -> Void in
@@ -295,7 +300,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
 //        }
     }
 
-    func handleDone() {
+    private func handleDone() {
         let inInbox = ExomindMutations.hasParent(entity: self.entity, parentId: "inbox")
         if inInbox {
             ExomindMutations.removeParent(entity: self.entity, parentId: "inbox")
@@ -303,17 +308,11 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
         }
     }
 
-    func handleAddToCollection() {
+    private func handleAddToCollection() {
         (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: self.entity)
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        if loadTime.plusSeconds(3).isLessThan(Date()) {
-            self.markRead()
-        }
-    }
-
-    func markRead() {
+    @objc private func markRead() {
         if self.unreadEmails.isEmpty {
             return
         }
