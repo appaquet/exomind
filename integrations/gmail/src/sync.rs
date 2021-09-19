@@ -188,7 +188,15 @@ impl AccountSynchronizer {
     }
 
     pub async fn synchronize_exomind_history(&mut self) -> anyhow::Result<()> {
-        let last_operation_id = self.last_exomind_operation.unwrap_or_default();
+        let last_operation_id = if let Some(last_operation) = self.last_exomind_operation {
+            last_operation
+        } else {
+            // never fetched through history, we fetch last exomind history action for next sync via history
+            if let Some(last_action) = self.latest_exomind_history_action().await? {
+                self.last_exomind_operation = Some(last_action.operation_id());
+            }
+            return Ok(());
+        };
 
         let history_list = self
             .exomind
@@ -232,6 +240,13 @@ impl AccountSynchronizer {
         }
 
         Ok(())
+    }
+
+    pub async fn latest_exomind_history_action(
+        &mut self,
+    ) -> anyhow::Result<Option<ExomindHistoryAction>> {
+        let history_list = self.exomind.list_inbox_history(&self.account, 0).await?;
+        Ok(history_list.into_iter().next())
     }
 
     pub fn update_last_gmail_history(&mut self, history_id: Option<HistoryId>) {
