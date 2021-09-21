@@ -72,7 +72,7 @@ pub struct EntityAggregator {
 }
 
 impl EntityAggregator {
-    pub fn new<I>(mutations_metadata: I) -> Result<EntityAggregator, Error>
+    pub fn new<I>(mutations_metadata: I) -> EntityAggregator
     where
         I: Iterator<Item = MutationMetadata>,
     {
@@ -199,7 +199,7 @@ impl EntityAggregator {
             .values()
             .any(|t| t.deletion_date.is_none() && t.has_reference);
 
-        Ok(EntityAggregator {
+        EntityAggregator {
             entity_id,
             traits,
             active_operations: active_operation_ids,
@@ -213,7 +213,7 @@ impl EntityAggregator {
             in_pending,
             pending_deletion,
             has_reference,
-        })
+        }
     }
 
     /// Annotates each trait with projections that are matching them in a query.
@@ -456,7 +456,7 @@ pub(crate) mod tests {
             mock_put_trait(&t2, TYPE1, Some(2), 4, None, None),
         ];
 
-        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter());
         assert_eq!(em.traits.get(&t1).unwrap().last_operation_id, Some(3));
         assert_eq!(em.traits.get(&t2).unwrap().last_operation_id, Some(5));
         assert_eq!(em.traits.get(&t3).unwrap().last_operation_id, Some(6));
@@ -477,7 +477,7 @@ pub(crate) mod tests {
         ];
 
         // operation 1 should be discarded, and only operation 2 active
-        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter());
         assert_eq!(em.traits.get(&t1).unwrap().last_operation_id, Some(2));
         assert!(em.active_operations.contains(&2));
     }
@@ -491,7 +491,7 @@ pub(crate) mod tests {
             mock_delete_trait(&t1, Some(2), 2),
         ];
 
-        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter());
         assert!(em.deletion_date.is_some());
         assert!(em.traits.get(&t1).unwrap().deletion_date.is_some());
         assert!(em.active_operations.contains(&2));
@@ -509,7 +509,7 @@ pub(crate) mod tests {
 
         // delete operation should be discarded since an operation happened on the trait
         // before it got committed
-        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter());
         assert_eq!(em.traits.get(&t1).unwrap().last_operation_id, Some(2));
         assert!(em.active_operations.contains(&2))
     }
@@ -523,7 +523,7 @@ pub(crate) mod tests {
             mock_delete_entity(Some(2), 2),
         ];
 
-        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter());
         assert!(em.deletion_date.is_some());
         assert!(em.traits.get(&t1).unwrap().deletion_date.is_some());
         assert!(em.active_operations.contains(&2));
@@ -539,7 +539,7 @@ pub(crate) mod tests {
             mock_put_trait(&t1, TYPE1, Some(2), 1, None, None),
         ];
 
-        let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let em = EntityAggregator::new(mutations.into_iter());
         assert_eq!(em.traits.get(&t1).unwrap().last_operation_id, Some(1));
         assert!(em.active_operations.contains(&1));
     }
@@ -549,7 +549,7 @@ pub(crate) mod tests {
         let t1 = "t1".to_string();
 
         let merge_mutations = |mutations: Vec<MutationMetadata>| -> TraitAggregator {
-            let mut em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let mut em = EntityAggregator::new(mutations.into_iter());
             em.traits.remove(&t1).unwrap()
         };
 
@@ -654,14 +654,14 @@ pub(crate) mod tests {
         {
             // creation date based on operation
             let mutations = vec![mock_put_trait(&t1, TYPE1, Some(2), 1, None, None)];
-            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let em = EntityAggregator::new(mutations.into_iter());
             assert_dates(&em, Some(1), None, None);
         }
 
         {
             // explicit dates
             let mutations = vec![mock_put_trait(&t1, TYPE1, Some(2), 10, Some(1), Some(2))];
-            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let em = EntityAggregator::new(mutations.into_iter());
             assert_dates(&em, Some(1), Some(2), None);
         }
 
@@ -671,7 +671,7 @@ pub(crate) mod tests {
                 mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
                 mock_put_trait(&t1, TYPE1, Some(3), 11, None, None),
             ];
-            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let em = EntityAggregator::new(mutations.into_iter());
             assert_dates(&em, Some(10), Some(11), None);
         }
 
@@ -682,7 +682,7 @@ pub(crate) mod tests {
                 mock_put_trait(&t2, TYPE1, Some(2), 10, None, None),
                 mock_delete_trait(&t1, Some(3), 11),
             ];
-            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let em = EntityAggregator::new(mutations.into_iter());
             assert_dates(&em, Some(10), Some(11), None);
         }
 
@@ -692,7 +692,7 @@ pub(crate) mod tests {
                 mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
                 mock_delete_trait(&t1, Some(3), 11),
             ];
-            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let em = EntityAggregator::new(mutations.into_iter());
             assert_dates(&em, None, None, Some(11));
         }
         {
@@ -701,7 +701,7 @@ pub(crate) mod tests {
                 mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
                 mock_delete_entity(Some(2), 11),
             ];
-            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let em = EntityAggregator::new(mutations.into_iter());
             assert_dates(&em, None, None, Some(11));
         }
 
@@ -712,7 +712,7 @@ pub(crate) mod tests {
                 mock_delete_entity(Some(2), 2),
                 mock_put_trait(&t1, TYPE1, Some(3), 3, Some(20), Some(21)),
             ];
-            let em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let em = EntityAggregator::new(mutations.into_iter());
             assert_dates(&em, Some(20), Some(21), None);
         }
     }
@@ -780,7 +780,7 @@ pub(crate) mod tests {
                 mock_put_trait(t1, TYPE1, Some(1), 1, None, None),
                 mock_put_trait(t2, TYPE2, Some(1), 2, None, None),
             ];
-            let mut em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let mut em = EntityAggregator::new(mutations.into_iter());
             em.annotate_projections(&[Projection {
                 package: vec!["exocore.test".to_string()],
                 field_ids: vec![1],
@@ -797,7 +797,7 @@ pub(crate) mod tests {
                 mock_put_trait(t1, TYPE1, Some(1), 1, None, None),
                 mock_put_trait(t2, TYPE2, Some(1), 2, None, None),
             ];
-            let mut em = EntityAggregator::new(mutations.into_iter()).unwrap();
+            let mut em = EntityAggregator::new(mutations.into_iter());
             em.annotate_projections(&[
                 Projection {
                     package: vec![format!("{}$", TYPE1)],

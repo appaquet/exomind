@@ -4,7 +4,8 @@ use std::{
     time::Duration,
 };
 
-use exocore_chain::{block::BlockOffset, operation::OperationId};
+use chrono::{DateTime, Utc};
+use exocore_chain::operation::OperationId;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use exocore_protos::{core::EntityGarbageCollectorConfig, store::EntityMutation};
 
@@ -12,7 +13,7 @@ use super::{sort_mutations_commit_time, EntityAggregator};
 use crate::{
     entity::{EntityId, EntityIdRef, TraitId},
     error::Error,
-    local::mutation_index::{EntityMutationResults, MutationMetadata},
+    local::mutation_index::MutationMetadata,
     mutation::MutationBuilder,
 };
 
@@ -27,7 +28,7 @@ const DAY_SECS: u64 = 86_400;
 /// make sure that all nodes have a consistent index. This is also required to
 /// make sure that a new node that bootstraps doesn't need to garbage collector
 /// the index by itself. By including the deletions in the chain, this new node
-/// can delete mutations by operation ids as it indexes them.
+/// can delete mutations by operation ids as it index them.
 ///
 /// When searching, if the mutation that got returned by the mutation index
 /// isn't valid anymore because it got overridden by another mutation or
@@ -39,10 +40,7 @@ const DAY_SECS: u64 = 86_400;
 /// and don't return valid entities.
 ///
 /// At interval, the entity store calls the entity index to do a garbage
-/// collection run. This run only happen if there has been sufficient number of
-/// indexed blocks from chain so that we don't re-collect entities for which we
-/// have mutations that have already been deleted in the chain index, but not
-/// indexed yet because they are in the pending store.
+/// collection run.
 ///
 /// There is 3 kind of garbage collections:
 /// * Deleted entity: effectively deletes all traits of an entity.
@@ -72,7 +70,6 @@ impl GarbageCollector {
 
         let inner = Arc::new(RwLock::new(Inner {
             config,
-            operations: Vec::with_capacity(config.queue_size),
             entity_ids: HashSet::new(),
         }));
 
@@ -89,15 +86,92 @@ impl GarbageCollector {
     /// Checks if an entity for which we collected its mutation metadata from
     /// the index should be added to the garbage collection queue.
     pub fn maybe_flag_for_collection(&self, aggregator: &EntityAggregator) {
-        if aggregator.in_pending || aggregator.pending_deletion {
-            // we don't collect if any of the operations are still in pending store or if
-            // a deletion is pending for the entity
-            return;
+        let ops = self.gen_entity_collections(aggregator);
+        if !ops.is_empty() {
+            let mut inner = self.inner.write().expect("Fail to acquire inner lock");
+            inner.maybe_enqueue(&aggregator.entity_id);
+        }
+    }
+
+    /// Garbage collect entities currently in queue.
+    pub fn run<F, I>(&self, entity_fetcher: F) -> Vec<EntityMutation>
+    where
+        F: Fn(EntityIdRef) -> Result<I, Error>,
+        I: Iterator<Item = MutationMetadata>,
+    {
+        let entity_ids = {
+            let mut inner = self.inner.write().expect("Fail to acquire inner lock");
+            std::mem::take(&mut inner.entity_ids)
+        };
+
+        if entity_ids.is_empty() {
+            return Vec::new();
         }
 
-        let last_block_offset = aggregator
-            .last_block_offset
-            .expect("No last_block_offset, but no operations in pending");
+        debug!(
+            "Starting a garbage collection pass for {} entities...",
+            entity_ids.len(),
+        );
+        let min_op_time = self.clock.now_chrono() - self.trait_versions_min_age;
+        let mut deletions = Vec::new();
+        for entity_id in &entity_ids {
+            let mutations = if let Ok(mutations) = entity_fetcher(entity_id) {
+                mutations
+            } else {
+                error!("Couldn't fetch mutations for entity {}", entity_id);
+                continue;
+            };
+
+            let sorted_mutations: Vec<MutationMetadata> =
+                sort_mutations_commit_time(mutations).collect();
+
+            let aggregator = EntityAggregator::new(sorted_mutations.iter().cloned());
+            let gc_ops = self.gen_entity_collections(&aggregator);
+            if gc_ops.is_empty() {
+                // nothing to collect anymore or entity has pending mutations
+                continue;
+            }
+
+            for gc_op in gc_ops {
+                let opt_deletion = match gc_op {
+                    GCOperation::DeleteEntity => {
+                        collect_delete_entity(&aggregator, &sorted_mutations)
+                    }
+                    GCOperation::DeleteTrait(trait_id) => {
+                        collect_delete_trait(&aggregator, &trait_id, &sorted_mutations)
+                    }
+                    GCOperation::CompactTrait(trait_id) => collect_trait_versions(
+                        &aggregator,
+                        &trait_id,
+                        min_op_time,
+                        self.config.trait_versions_max,
+                        &sorted_mutations,
+                    ),
+                };
+                if let Some(deletion) = opt_deletion {
+                    deletions.push(deletion);
+                }
+            }
+        }
+
+        if !deletions.is_empty() {
+            info!(
+                "Garbage collection generated {} deletion operations for {} entities",
+                deletions.len(),
+                entity_ids.len(),
+            );
+        }
+
+        deletions
+    }
+
+    /// Generates garbage collection operations that need to be applied for an entity.
+    fn gen_entity_collections(&self, aggregator: &EntityAggregator) -> Vec<GCOperation> {
+        // we don't collect if any of the operations are still in pending store or if
+        // a deletion is pending for the entity
+        if aggregator.in_pending || aggregator.pending_deletion {
+            return Vec::new();
+        }
 
         let now = self.clock.now_chrono();
 
@@ -108,14 +182,11 @@ impl GarbageCollector {
                     "Collecting entity {} since got deleted since",
                     aggregator.entity_id
                 );
-                let mut inner = self.inner.write().expect("Fail to acquire inner lock");
-                inner.maybe_enqueue(Operation::DeleteEntity(
-                    last_block_offset,
-                    aggregator.entity_id.to_string(),
-                ));
-                return;
+                return vec![GCOperation::DeleteEntity];
             }
         }
+
+        let mut ops = Vec::new();
 
         for (trait_id, trait_aggr) in &aggregator.traits {
             if let Some(deletion_date) = &trait_aggr.deletion_date {
@@ -126,112 +197,23 @@ impl GarbageCollector {
                         aggregator.entity_id,
                         trait_id
                     );
-                    let mut inner = self.inner.write().expect("Fail to acquire inner lock");
-                    inner.maybe_enqueue(Operation::DeleteTrait(
-                        last_block_offset,
-                        aggregator.entity_id.to_string(),
-                        trait_id.clone(),
-                    ));
+                    ops.push(GCOperation::DeleteTrait(trait_id.clone()));
                     continue;
                 }
             }
 
             if trait_aggr.mutation_count > self.config.trait_versions_leeway {
-                let mut inner = self.inner.write().expect("Fail to acquire inner lock");
                 trace!(
                     "Collecting entity {} trait {} since it has too many versions ({})",
                     aggregator.entity_id,
                     trait_id,
                     trait_aggr.mutation_count,
                 );
-                inner.maybe_enqueue(Operation::CompactTrait(
-                    last_block_offset,
-                    aggregator.entity_id.to_string(),
-                    trait_id.clone(),
-                ));
-            }
-        }
-    }
-
-    /// Garbage collect the entities currently in queue.
-    pub fn run<F>(&self, entity_fetcher: F) -> Vec<EntityMutation>
-    where
-        F: Fn(EntityIdRef) -> Result<EntityMutationResults, Error>,
-    {
-        let (operations, entity_count) = {
-            let mut inner = self.inner.write().expect("Fail to acquire inner lock");
-            let entity_count = inner.entity_ids.len();
-
-            inner.entity_ids.clear();
-            let mut queue = Vec::with_capacity(self.config.queue_size);
-            std::mem::swap(&mut queue, &mut inner.operations);
-
-            (queue, entity_count)
-        };
-
-        if operations.is_empty() {
-            return Vec::new();
-        }
-
-        let min_op_time = self.clock.now_chrono() - self.trait_versions_min_age;
-
-        debug!(
-            "Starting a garbage collection pass with {} operations for {} entities...",
-            operations.len(),
-            entity_count,
-        );
-        let mut deletions = Vec::new();
-        for op in operations {
-            let until_block_offset = op.until_block_offset();
-            let entity_id = op.entity_id();
-
-            // get all mutations for entity until block offset where we deemed the entity to
-            // be collectable and until minimum operation age.
-            let mutations = if let Ok(mut_res) = entity_fetcher(entity_id) {
-                let mutations = mut_res.mutations.into_iter().take_while(|mutation| {
-                    let op_time = ConsistentTimestamp::from(mutation.operation_id).to_datetime();
-                    if op_time > min_op_time {
-                        return false;
-                    }
-
-                    matches!(mutation.block_offset, Some(offset) if offset <= until_block_offset)
-                });
-
-                sort_mutations_commit_time(mutations)
-            } else {
-                error!("Couldn't fetch mutations for entity {}", entity_id);
-                continue;
-            };
-
-            let opt_deletion = match &op {
-                Operation::DeleteEntity(_, entity_id) => {
-                    collect_delete_entity(entity_id, mutations)
-                }
-                Operation::DeleteTrait(_, entity_id, trait_id) => {
-                    collect_delete_trait(entity_id, trait_id, mutations)
-                }
-                Operation::CompactTrait(_, entity_id, trait_id) => collect_trait_versions(
-                    entity_id,
-                    trait_id,
-                    self.config.trait_versions_max,
-                    mutations,
-                ),
-            };
-
-            if let Some(deletion) = opt_deletion {
-                deletions.push(deletion);
+                ops.push(GCOperation::CompactTrait(trait_id.clone()));
             }
         }
 
-        if !deletions.is_empty() {
-            info!(
-                "Garbage collection generated {} deletion operations for {} entities",
-                deletions.len(),
-                entity_count,
-            );
-        }
-
-        deletions
+        ops
     }
 }
 
@@ -283,21 +265,26 @@ impl From<EntityGarbageCollectorConfig> for GarbageCollectorConfig {
 }
 
 /// Creates a deletion mutation for all operations of the entity.
-fn collect_delete_entity<I>(entity_id: &str, mutations: I) -> Option<EntityMutation>
-where
-    I: Iterator<Item = MutationMetadata>,
-{
-    let operation_ids: Vec<OperationId> = mutations.map(|mutation| mutation.operation_id).collect();
+fn collect_delete_entity(
+    aggr: &EntityAggregator,
+    mutations: &[MutationMetadata],
+) -> Option<EntityMutation> {
+    assert!(aggr.deletion_date.is_some());
+
+    let operation_ids: Vec<OperationId> = mutations
+        .iter()
+        .map(|mutation| mutation.operation_id)
+        .collect();
     if operation_ids.is_empty() {
         return None;
     }
 
     debug!(
         "Creating delete operation to garbage collect deleted entity {} with operations {:?}",
-        entity_id, operation_ids,
+        aggr.entity_id, operation_ids,
     );
     MutationBuilder::new()
-        .delete_operations(entity_id, operation_ids)
+        .delete_operations(&aggr.entity_id, operation_ids)
         .build()
         .mutations
         .into_iter()
@@ -305,11 +292,14 @@ where
 }
 
 /// Creates a deletion mutation for all operations of a trait of an entity.
-fn collect_delete_trait<I>(entity_id: &str, trait_id: &str, mutations: I) -> Option<EntityMutation>
-where
-    I: Iterator<Item = MutationMetadata>,
-{
-    let trait_mutations = filter_trait_mutations(mutations, trait_id);
+fn collect_delete_trait(
+    aggr: &EntityAggregator,
+    trait_id: &str,
+    mutations: &[MutationMetadata],
+) -> Option<EntityMutation> {
+    assert!(aggr.traits[trait_id].deletion_date.is_some());
+
+    let trait_mutations = filter_trait_mutations(mutations.iter(), trait_id);
     let operation_ids: Vec<OperationId> = trait_mutations
         .map(|mutation| mutation.operation_id)
         .collect();
@@ -319,10 +309,10 @@ where
 
     debug!(
         "Creating delete operation to garbage collect deleted trait {} of entity {} with operations {:?}",
-        trait_id, entity_id, operation_ids,
+        trait_id, aggr.entity_id, operation_ids,
     );
     MutationBuilder::new()
-        .delete_operations(entity_id, operation_ids)
+        .delete_operations(&aggr.entity_id, operation_ids)
         .build()
         .mutations
         .into_iter()
@@ -331,32 +321,37 @@ where
 
 /// Creates a deletion mutation for the N oldest operations of a trait so that
 /// we only keep the most recent ones.
-fn collect_trait_versions<I>(
-    entity_id: &str,
+fn collect_trait_versions(
+    aggr: &EntityAggregator,
     trait_id: &str,
+    min_op_time: DateTime<Utc>,
     max_versions: usize,
-    mutations: I,
-) -> Option<EntityMutation>
-where
-    I: Iterator<Item = MutationMetadata>,
-{
-    let trait_operations: Vec<OperationId> = filter_trait_mutations(mutations, trait_id)
+    mutations: &[MutationMetadata],
+) -> Option<EntityMutation> {
+    let trait_operations: Vec<OperationId> = filter_trait_mutations(mutations.iter(), trait_id)
+        .filter(|mutation| {
+            let op_time = ConsistentTimestamp::from(mutation.operation_id).to_datetime();
+            op_time < min_op_time
+        })
         .map(|mutation| mutation.operation_id)
         .collect();
 
-    if trait_operations.is_empty() || trait_operations.len() <= max_versions {
+    if trait_operations.len() <= max_versions {
         return None;
     }
 
     let to_delete_count = trait_operations.len() - max_versions;
-    let operation_ids = trait_operations.into_iter().take(to_delete_count).collect();
+    let operation_ids: Vec<OperationId> =
+        trait_operations.into_iter().take(to_delete_count).collect();
+
+    assert_inactive_operations(aggr, &operation_ids);
 
     debug!(
         "Creating delete operation to garbage collect operations {:?} of trait {} of entity {}",
-        operation_ids, trait_id, entity_id
+        operation_ids, trait_id, aggr.entity_id
     );
     MutationBuilder::new()
-        .delete_operations(entity_id, operation_ids)
+        .delete_operations(&aggr.entity_id, operation_ids)
         .build()
         .mutations
         .into_iter()
@@ -367,9 +362,9 @@ where
 fn filter_trait_mutations<'i, I>(
     mutations: I,
     trait_id: &'i str,
-) -> impl Iterator<Item = MutationMetadata> + 'i
+) -> impl Iterator<Item = &'i MutationMetadata> + 'i
 where
-    I: Iterator<Item = MutationMetadata> + 'i,
+    I: Iterator<Item = &'i MutationMetadata> + 'i,
 {
     use crate::local::mutation_index::MutationType;
     mutations.filter(move |mutation| match &mutation.mutation_type {
@@ -379,61 +374,48 @@ where
     })
 }
 
+fn assert_inactive_operations(aggr: &EntityAggregator, to_delete_ops: &[OperationId]) {
+    for op_id in to_delete_ops {
+        if aggr.active_operations.contains(op_id) {
+            panic!("Tried to garbage collect operation {} for entity {} but operation was still active", op_id, aggr.entity_id);
+        }
+    }
+}
+
 struct Inner {
     config: GarbageCollectorConfig,
-    operations: Vec<Operation>,
     entity_ids: HashSet<EntityId>,
 }
 
 impl Inner {
-    fn is_full(&self) -> bool {
-        self.operations.len() > self.config.queue_size
-    }
-
-    fn maybe_enqueue(&mut self, op: Operation) {
+    fn maybe_enqueue(&mut self, entity_id: EntityIdRef) {
         if self.is_full() {
             return;
         }
 
-        if self.entity_ids.contains(op.entity_id()) {
+        if self.entity_ids.contains(entity_id) {
             return;
         }
 
-        self.entity_ids.insert(op.entity_id().to_string());
-        self.operations.push(op);
+        self.entity_ids.insert(entity_id.to_string());
+    }
+
+    fn is_full(&self) -> bool {
+        self.entity_ids.len() >= self.config.queue_size
     }
 }
 
-enum Operation {
-    DeleteEntity(BlockOffset, EntityId),
-    DeleteTrait(BlockOffset, EntityId, TraitId),
-    CompactTrait(BlockOffset, EntityId, TraitId),
-}
-
-impl Operation {
-    #[inline]
-    fn entity_id(&self) -> EntityIdRef {
-        match self {
-            Operation::DeleteEntity(_, entity_id) => entity_id,
-            Operation::DeleteTrait(_, entity_id, _) => entity_id,
-            Operation::CompactTrait(_, entity_id, _) => entity_id,
-        }
-    }
-
-    #[inline]
-    fn until_block_offset(&self) -> BlockOffset {
-        match self {
-            Operation::DeleteEntity(offset, _) => *offset,
-            Operation::DeleteTrait(offset, _, _) => *offset,
-            Operation::CompactTrait(offset, _, _) => *offset,
-        }
-    }
+enum GCOperation {
+    DeleteEntity,
+    DeleteTrait(TraitId),
+    CompactTrait(TraitId),
 }
 
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
 
+    use exocore_chain::block::BlockOffset;
     use exocore_core::cell::LocalNode;
     use exocore_protos::store::{entity_mutation, OrderingValue};
 
@@ -464,14 +446,14 @@ mod tests {
 
         let put_op: u64 = clock.consistent_time(node.node()).into();
         let del_op: u64 = put_op + 1;
-        let mutations = vec![
-            mock_put_trait("trt1", "typ", Some(9), put_op, None, None),
-            mock_delete_entity(Some(10), del_op),
-        ];
-        let aggregator = EntityAggregator::new(mutations.into_iter()).unwrap();
 
         {
-            // entity cannot be collected since deletion date is not 1 sec later
+            // entity cannot be collected since deletion is not old enough
+            let mutations = vec![
+                mock_put_trait("trt1", "typ", Some(9), put_op, None, None),
+                mock_delete_entity(Some(10), del_op),
+            ];
+            let aggregator = EntityAggregator::new(mutations.into_iter());
             gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 0);
         }
@@ -480,34 +462,17 @@ mod tests {
         clock.add_fixed_instant_duration(Duration::from_secs(2));
 
         {
+            // delete operation is old enough, can be collected
+            let mutations = vec![
+                mock_put_trait("trt1", "typ", Some(9), put_op, None, None),
+                mock_delete_entity(Some(10), del_op),
+            ];
+
+            let aggregator = EntityAggregator::new(mutations.iter().cloned());
             gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 1);
 
-            // operation considered not in chain, shouldn't get deleted
-            let deletions = gc.run(|_entity_id| {
-                Ok(EntityMutationResults {
-                    mutations: vec![
-                        mock_metadata(None, put_op, "trt1"),
-                        mock_metadata(None, del_op, "trt1"),
-                    ],
-                })
-            });
-            assert_eq!(deletions.len(), 0);
-        }
-
-        {
-            gc.maybe_flag_for_collection(&aggregator);
-            assert_queue_len(&gc, 1);
-
-            // operation considered now in chain, should get deleted
-            let deletions = gc.run(|_entity_id| {
-                Ok(EntityMutationResults {
-                    mutations: vec![
-                        mock_metadata(Some(9), put_op, "trt1"),
-                        mock_metadata(Some(10), del_op, "trt1"),
-                    ],
-                })
-            });
+            let deletions = gc.run(|_id| Ok(mutations.iter().cloned()));
             assert_eq!(deletions.len(), 1);
             assert_eq!(extract_ops(deletions), vec![put_op, del_op]);
         }
@@ -529,15 +494,15 @@ mod tests {
         let put1_op: u64 = clock.consistent_time(node.node()).into();
         let put2_op: u64 = put1_op + 1;
         let del_op: u64 = put2_op + 1;
-        let mutations = vec![
-            mock_put_trait("trt1", "typ", Some(9), put1_op, None, None),
-            mock_put_trait("trt2", "typ", Some(9), put2_op, None, None),
-            mock_delete_trait("trt1", Some(10), del_op),
-        ];
-        let aggregator = EntityAggregator::new(mutations.into_iter()).unwrap();
 
         {
             // entity cannot be collected since deletion date is not 1 sec later
+            let mutations = vec![
+                mock_put_trait("trt1", "typ", Some(9), put1_op, None, None),
+                mock_put_trait("trt2", "typ", Some(9), put2_op, None, None),
+                mock_delete_trait("trt1", Some(10), del_op),
+            ];
+            let aggregator = EntityAggregator::new(mutations.into_iter());
             gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 0);
         }
@@ -546,34 +511,17 @@ mod tests {
         clock.add_fixed_instant_duration(Duration::from_secs(2));
 
         {
+            // delete operation is old enough, can be collected
+            let mutations = vec![
+                mock_put_trait("trt1", "typ", Some(9), put1_op, None, None),
+                mock_put_trait("trt2", "typ", Some(9), put2_op, None, None),
+                mock_delete_trait("trt1", Some(10), del_op),
+            ];
+            let aggregator = EntityAggregator::new(mutations.iter().cloned());
             gc.maybe_flag_for_collection(&aggregator);
             assert_queue_len(&gc, 1);
 
-            // operation considered not in chain, shouldn't get deleted
-            let deletions = gc.run(|_entity_id| {
-                Ok(EntityMutationResults {
-                    mutations: vec![
-                        mock_metadata(None, put1_op, "trt1"),
-                        mock_metadata(None, del_op, "trt1"),
-                    ],
-                })
-            });
-            assert_eq!(deletions.len(), 0);
-        }
-
-        {
-            gc.maybe_flag_for_collection(&aggregator);
-            assert_queue_len(&gc, 1);
-
-            // operation considered now in chain, should get deleted
-            let deletions = gc.run(|_entity_id| {
-                Ok(EntityMutationResults {
-                    mutations: vec![
-                        mock_metadata(Some(9), put1_op, "trt1"),
-                        mock_metadata(Some(10), del_op, "trt1"),
-                    ],
-                })
-            });
+            let deletions = gc.run(|_entity_id| Ok(mutations.iter().cloned()));
             assert_eq!(deletions.len(), 1);
             assert_eq!(extract_ops(deletions), vec![put1_op, del_op]);
         }
@@ -597,7 +545,7 @@ mod tests {
             mock_put_trait("trt1", "typ", Some(5), put4_op, None, None),
             mock_put_trait("trt1", "typ", Some(6), put5_op, None, None),
         ];
-        let aggregator = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let aggregator = EntityAggregator::new(mutations.into_iter());
 
         // move time a second later
         clock.add_fixed_instant_duration(Duration::from_secs(2));
@@ -630,15 +578,14 @@ mod tests {
 
         // two first trait should get deleted
         let deletions = gc.run(|_entity_id| {
-            Ok(EntityMutationResults {
-                mutations: vec![
-                    mock_metadata(Some(2), put1_op, "trt1"),
-                    mock_metadata(Some(3), put2_op, "trt1"),
-                    mock_metadata(Some(4), put3_op, "trt1"),
-                    mock_metadata(Some(5), put4_op, "trt1"),
-                    mock_metadata(Some(6), put5_op, "trt1"),
-                ],
-            })
+            Ok(vec![
+                mock_metadata(Some(2), put1_op, "trt1"),
+                mock_metadata(Some(3), put2_op, "trt1"),
+                mock_metadata(Some(4), put3_op, "trt1"),
+                mock_metadata(Some(5), put4_op, "trt1"),
+                mock_metadata(Some(6), put5_op, "trt1"),
+            ]
+            .into_iter())
         });
         assert_eq!(deletions.len(), 1);
         assert_eq!(extract_ops(deletions), vec![put1_op, put2_op]);
@@ -662,7 +609,7 @@ mod tests {
             mock_put_trait("trt1", "typ", Some(5), put4_op, None, None),
             mock_pending_delete(Some(6), put5_op),
         ];
-        let aggregator = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let aggregator = EntityAggregator::new(mutations.into_iter());
 
         // should be collecting, but one pending deletion, so won't collect
         let gc = GarbageCollector::new(
@@ -699,7 +646,7 @@ mod tests {
                 put5_op, None, None,
             ),
         ];
-        let aggregator = EntityAggregator::new(mutations.into_iter()).unwrap();
+        let aggregator = EntityAggregator::new(mutations.into_iter());
 
         // should be collecting, but one operation in pending, so won't collect
         let gc = GarbageCollector::new(
@@ -717,7 +664,7 @@ mod tests {
 
     fn assert_queue_len(gc: &GarbageCollector, len: usize) {
         let inner = gc.inner.read().unwrap();
-        assert_eq!(inner.operations.len(), len);
+        assert_eq!(inner.entity_ids.len(), len);
     }
 
     fn extract_ops(muts: Vec<EntityMutation>) -> Vec<OperationId> {

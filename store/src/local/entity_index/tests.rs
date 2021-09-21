@@ -443,7 +443,7 @@ async fn operations_deletion_marker() -> anyhow::Result<()> {
     // we have 3 mutations on same trait
     let aggr = test_index
         .index
-        .fetch_entity_mutations_metadata("entity1")?;
+        .fetch_aggregated_entity_mutations("entity1")?;
     assert!(!aggr.pending_deletion);
     assert_eq!(aggr.active_operations.len(), 1);
 
@@ -456,7 +456,7 @@ async fn operations_deletion_marker() -> anyhow::Result<()> {
     // deletion marker should now be in pending index
     let aggr = test_index
         .index
-        .fetch_entity_mutations_metadata("entity1")?;
+        .fetch_aggregated_entity_mutations("entity1")?;
     assert!(aggr.pending_deletion);
     assert_eq!(aggr.active_operations.len(), 1);
 
@@ -468,7 +468,7 @@ async fn operations_deletion_marker() -> anyhow::Result<()> {
     // the marker isn't in pending anymore, no active ops left
     let aggr = test_index
         .index
-        .fetch_entity_mutations_metadata("entity1")?;
+        .fetch_aggregated_entity_mutations("entity1")?;
     assert!(!aggr.pending_deletion);
     assert_eq!(aggr.active_operations.len(), 0);
 

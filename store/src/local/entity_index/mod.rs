@@ -439,7 +439,7 @@ where
 
         let deletions = self
             .gc
-            .run(|entity_id| self.chain_index.fetch_entity_mutations(entity_id));
+            .run(|entity_id| self.fetch_entity_mutations_metadata(entity_id));
 
         Ok(deletions)
     }
@@ -704,34 +704,41 @@ where
     /// Traits returned follow mutations in order of operation id.
     #[cfg(test)]
     fn fetch_entity(&self, entity_id: &str) -> Result<Entity, Error> {
-        let mutations = self.fetch_entity_mutations_metadata(entity_id)?;
-        let traits = self.fetch_entity_traits(&mutations, false);
+        let aggr = self.fetch_aggregated_entity_mutations(entity_id)?;
+        let traits = self.fetch_entity_traits(&aggr, false);
 
         Ok(Entity {
             id: entity_id.to_string(),
             traits,
-            creation_date: mutations.creation_date.map(|t| t.to_proto_timestamp()),
-            modification_date: mutations.modification_date.map(|t| t.to_proto_timestamp()),
-            deletion_date: mutations.deletion_date.map(|t| t.to_proto_timestamp()),
-            last_operation_id: mutations.last_operation_id,
+            creation_date: aggr.creation_date.map(|t| t.to_proto_timestamp()),
+            modification_date: aggr.modification_date.map(|t| t.to_proto_timestamp()),
+            deletion_date: aggr.deletion_date.map(|t| t.to_proto_timestamp()),
+            last_operation_id: aggr.last_operation_id,
         })
     }
 
     /// Fetches indexed mutations metadata from pending and chain indices for
-    /// this entity id, and merge them.
-    pub fn fetch_entity_mutations_metadata(
+    /// this entity id and aggregate them.
+    pub fn fetch_aggregated_entity_mutations(
         &self,
         entity_id: &str,
     ) -> Result<EntityAggregator, Error> {
+        let mutations_metadata = self.fetch_entity_mutations_metadata(entity_id)?;
+        Ok(EntityAggregator::new(mutations_metadata))
+    }
+
+    /// Fetches indexed mutations metadata from pending and chain indices for
+    /// this entity id.
+    pub fn fetch_entity_mutations_metadata(
+        &self,
+        entity_id: &str,
+    ) -> Result<impl Iterator<Item = MutationMetadata>, Error> {
         let pending_results = self.pending_index.fetch_entity_mutations(entity_id)?;
         let chain_results = self.chain_index.fetch_entity_mutations(entity_id)?;
-        let mutations_metadata = pending_results
+        Ok(pending_results
             .mutations
-            .iter()
-            .chain(chain_results.mutations.iter())
-            .cloned();
-
-        EntityAggregator::new(mutations_metadata)
+            .into_iter()
+            .chain(chain_results.mutations.into_iter()))
     }
 
     /// Fetches and cache indexed mutations metadata.
@@ -745,7 +752,7 @@ where
             mutations.clone()
         } else {
             let mut entity_mutations = self
-                .fetch_entity_mutations_metadata(entity_id)
+                .fetch_aggregated_entity_mutations(entity_id)
                 .map_err(|err| {
                     error!(
                         "Error fetching mutations metadata for entity_id={} from indices: {}",
