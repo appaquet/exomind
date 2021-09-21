@@ -1,14 +1,15 @@
-import React from 'react';
-import HtmlEditor from '../../components/interaction/html-editor/html-editor';
-import PropTypes from 'prop-types';
-import './ios-html-editor.less';
+import React from "react";
+import HtmlEditor from "../../components/interaction/html-editor/html-editor";
+import PropTypes from "prop-types";
+import "./ios-html-editor.less";
 
 export default class IosHtmlEditor extends React.Component {
   static propTypes = {
-    content: PropTypes.string
+    content: PropTypes.string,
   };
 
-  lastCursorY = -1;
+  cursorY = -1;
+  content = null;
 
   constructor(props) {
     super(props);
@@ -16,8 +17,8 @@ export default class IosHtmlEditor extends React.Component {
     // content is set via state because it may be empty at time in props
     // props are used message passing, not as full state
     this.state = {
-      content: props.content
-    }
+      content: props.content,
+    };
   }
 
   componentDidUpdate(prevProps) {
@@ -30,7 +31,7 @@ export default class IosHtmlEditor extends React.Component {
     setTimeout(() => {
       if (this.props.content) {
         this.setState({
-          content: this.props.content
+          content: this.props.content,
         });
       }
     });
@@ -53,23 +54,22 @@ export default class IosHtmlEditor extends React.Component {
   }
 
   handleContentChange(newContent) {
-    this.newContent = newContent;
-
-    if (this.newContent === newContent) {
-      sendIos({
-        content: newContent
-      });
-    }
+    this.content = newContent;
+    sendIos({
+      content: this.content,
+      cursorY: this.cursorY,
+    });
   }
 
   handleCursorChange(cursor) {
     if (cursor && cursor.rect) {
-      let cursorY = cursor.rect.top;
-      if (this.lastCursorY != cursorY) {
+      let newCursorY = cursor.rect.top;
+      if (this.cursorY != newCursorY) {
+        this.cursorY = newCursorY;
         sendIos({
-          cursorY: cursorY
+          content: this.content,
+          cursorY: this.cursorY,
         });
-        this.lastCursorY = cursorY
       }
     }
   }
@@ -79,36 +79,35 @@ export default class IosHtmlEditor extends React.Component {
     e.stopPropagation();
 
     sendIos({
-      link: url
+      link: url,
     });
   }
 
   handleAction(name) {
     switch (name) {
-      case 'bold':
-        this.state.editor.toggleInlineStyle('BOLD');
+      case "bold":
+        this.state.editor.toggleInlineStyle("BOLD");
         break;
-      case 'strikethrough':
-        this.state.editor.toggleInlineStyle('STRIKETHROUGH');
+      case "strikethrough":
+        this.state.editor.toggleInlineStyle("STRIKETHROUGH");
         break;
-      case 'header-toggle':
+      case "header-toggle":
         this.state.editor.toggleHeader();
         break;
-      case 'list-ul':
-        this.state.editor.toggleBlockType('unordered-list-item');
+      case "list-ul":
+        this.state.editor.toggleBlockType("unordered-list-item");
         break;
-      case 'list-ol':
-        this.state.editor.toggleBlockType('ordered-list-item');
+      case "list-ol":
+        this.state.editor.toggleBlockType("ordered-list-item");
         break;
-      case 'indent':
+      case "indent":
         this.state.editor.indent();
         break;
-      case 'outdent':
+      case "outdent":
         this.state.editor.outdent();
         break;
       default:
-        console.log('Unhandled action ' + name);
+        console.log("Unhandled action " + name);
     }
   }
 }
-

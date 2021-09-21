@@ -86,7 +86,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
       this.props.onBound(this);
     }
 
-  const defaultInitialFocus = true;
+    const defaultInitialFocus = true;
     if (this.props.initialFocus ?? defaultInitialFocus) {
       this.editorRef.current.focus();
     }
@@ -127,7 +127,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
   private handleOnChange = (editorState: EditorState): void => {
     this.setState({
       editorState,
-      localChanges: this.state.initialContent != editorState.getCurrentContent(),
+      localChanges: !this.state.initialContent.equals(editorState.getCurrentContent()),
     });
 
     this.debouncer.debounce(() => {
@@ -135,7 +135,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
       if (this.props.onChange) {
         const contentState = editorState.getCurrentContent();
-        if (this.lastTriggeredChangeState != contentState && this.state.initialContent != contentState) {
+        if (!this.lastTriggeredChangeState || !contentState.equals(this.lastTriggeredChangeState)) {
           this.lastTriggeredChangeState = contentState;
 
           const htmlContent = toHTML(contentState);

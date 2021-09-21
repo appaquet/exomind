@@ -124,12 +124,7 @@ export default class Note extends React.Component<IProps, IState> {
                 currentNote: note,
             });
 
-            // if after a second, it's still the same body, we save it (debouncing)
-            setTimeout(() => {
-                if (this.state.currentNote.body === newBody) {
-                    this.saveContent();
-                }
-            }, 1000);
+            this.saveContent();
         }
     }
 

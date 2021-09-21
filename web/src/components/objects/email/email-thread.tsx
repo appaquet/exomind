@@ -159,7 +159,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
                     <span
                         className="time">{EmailUtil.formatDate(fromProtoTimestamp(email.message.receivedDate))}
                     </span>
-                    <span className="header-controls" onClick={this.handleOpenEmailClick.bind(this, emailState, email)}>
+                    <span className="header-controls" onClick={this.handleOpenEmailClick.bind(this, email)}>
                         <i className="icon" />
                     </span>
                 </div>
