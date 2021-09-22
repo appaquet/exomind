@@ -41,4 +41,4 @@ tantivy = {version = "0.16", optional = true}
 exocore-chain = {version = "0.1.14", path = "../chain", features = ["tests-utils"]}
 exocore-core = {version = "0.1.14", path = "../core", features = ["tests-utils"]}
 tempfile = "3.2"
-tokio = {version = "1.11", features = ["macros"], default-features = false}
+tokio = {version = "1.12", features = ["macros"], default-features = false}
