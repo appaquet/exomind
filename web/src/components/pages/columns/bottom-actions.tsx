@@ -25,7 +25,7 @@ export class ColumnBottomActions extends React.Component<IProps> {
     declare context: IStores;
 
     render(): React.ReactNode {
-        if (this.props.selection.length <= 1) {
+        if (this.props.selection && this.props.selection.length <= 1) {
             return this.renderCreationActions();
         } else {
             return this.renderSelectionActions();
@@ -158,7 +158,9 @@ export class ColumnBottomActions extends React.Component<IProps> {
 
         this.context.collections.removeEntityFromParents(entities, this.props.parent.id);
 
-        this.props.onSelectionChange(this.props.selection.cleared());
+        if (this.props.selection) {
+            this.props.onSelectionChange(this.props.selection.cleared());
+        }
     }
 
     private handlePostponeClick = () => {
@@ -188,13 +190,13 @@ export class ColumnBottomActions extends React.Component<IProps> {
             await Exocore.store.mutate(mb.build());
         }
 
-        if (this.props.removeOnPostpone) {
+        if (this.props.selection && this.props.removeOnPostpone) {
             this.props.onSelectionChange(this.props.selection.cleared());
         }
     }
 
     private async getSelectedEntities() {
-        const ids = this.props.selection.items
+        const ids = (this.props.selection?.items ?? [])
             .map((sel) => sel.entityId)
             .filter((et) => !!et);
 

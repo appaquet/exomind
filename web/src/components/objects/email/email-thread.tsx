@@ -54,7 +54,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         let count = 0;
         const emailStates = _.chain(props.entity.traitsOfType<exomind.base.v1.Email>(exomind.base.v1.Email))
             .sortBy((a) => {
-                return a.modificationDate ?? a.creationDate;
+                return fromProtoTimestamp(a.message.receivedDate).getTime()
             })
             .map((trait) => {
                 const unread = trait.id in unreadFlags;
