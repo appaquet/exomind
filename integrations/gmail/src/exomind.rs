@@ -4,7 +4,7 @@ use crate::{gmail::GmailAccount, parsing::FlaggedEmail, sync::SynchronizedThread
 use exocore::{
     core::time::{ConsistentTimestamp, DateTime, Utc},
     protos::{
-        prost::{Message, ProstAnyPackMessageExt, ProstTimestampExt},
+        prost::{Message, ProstAnyPackMessageExt, ProstTimestampExt, Timestamp},
         store::{Entity, EntityResult, Reference, Trait},
         NamedMessage,
     },
@@ -154,29 +154,30 @@ impl ExomindClient {
             return None;
         }
 
+        let is_after_date = |ts: &Option<Timestamp>| -> bool {
+            if let Some(delete_timestamp) = ts {
+                let deleted_date = delete_timestamp.to_chrono_datetime();
+                deleted_date > after_date
+            } else {
+                false
+            }
+        };
+
         {
             // check if email still in inbox
             let inbox_child_trait = get_inbox_child_trait(&entity)?;
-            if let Some(delete_timestamp) = &inbox_child_trait.trt.deletion_date {
-                let deleted_date = delete_timestamp.to_chrono_datetime();
-                if deleted_date > after_date {
-                    let thread_entity = SynchronizedThread::from_exomind(&entity)?;
-                    ret.push(ExomindHistoryAction::RemovedFromInbox(
-                        entity.last_operation_id,
-                        thread_entity,
-                    ));
-                }
-            }
-
-            if let Some(create_timestamp) = &inbox_child_trait.trt.creation_date {
-                let create_date = create_timestamp.to_chrono_datetime();
-                if create_date > after_date {
-                    let thread_entity = SynchronizedThread::from_exomind(&entity)?;
-                    ret.push(ExomindHistoryAction::AddToInbox(
-                        entity.last_operation_id,
-                        thread_entity,
-                    ));
-                }
+            if is_after_date(&inbox_child_trait.trt.deletion_date) {
+                let thread_entity = SynchronizedThread::from_exomind(&entity)?;
+                ret.push(ExomindHistoryAction::RemovedFromInbox(
+                    entity.last_operation_id,
+                    thread_entity,
+                ));
+            } else if is_after_date(&inbox_child_trait.trt.creation_date) {
+                let thread_entity = SynchronizedThread::from_exomind(&entity)?;
+                ret.push(ExomindHistoryAction::AddToInbox(
+                    entity.last_operation_id,
+                    thread_entity,
+                ));
             }
         }
 
@@ -196,24 +197,16 @@ impl ExomindClient {
 
                 let message_id = email_msg_id_from_trait_id(unread_ref_trait).to_string();
 
-                if let Some(delete_timestamp) = &unread_trait.trt.deletion_date {
-                    let deleted_date = delete_timestamp.to_chrono_datetime();
-                    if deleted_date > after_date {
-                        ret.push(ExomindHistoryAction::MarkRead(
-                            entity.last_operation_id,
-                            message_id.clone(),
-                        ));
-                    }
-                }
-
-                if let Some(create_timestamp) = &unread_trait.trt.creation_date {
-                    let create_date = create_timestamp.to_chrono_datetime();
-                    if create_date > after_date {
-                        ret.push(ExomindHistoryAction::MarkUnread(
-                            entity.last_operation_id,
-                            message_id.clone(),
-                        ));
-                    }
+                if is_after_date(&unread_trait.trt.deletion_date) {
+                    ret.push(ExomindHistoryAction::MarkRead(
+                        entity.last_operation_id,
+                        message_id.clone(),
+                    ));
+                } else if is_after_date(&unread_trait.trt.creation_date) {
+                    ret.push(ExomindHistoryAction::MarkUnread(
+                        entity.last_operation_id,
+                        message_id.clone(),
+                    ));
                 }
             }
         }

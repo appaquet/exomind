@@ -198,22 +198,22 @@ impl AccountSynchronizer {
             return Ok(());
         };
 
-        let history_list = self
+        let history_actions = self
             .exomind
             .list_inbox_history(&self.account, last_operation_id)
             .await?;
 
-        if !history_list.is_empty() {
+        if !history_actions.is_empty() {
             info!(
                 "Fetched {} history from exomind after operation {} ({:?})",
-                history_list.len(),
+                history_actions.len(),
                 last_operation_id,
                 ConsistentTimestamp::from(last_operation_id).to_datetime(),
             );
         }
 
-        for history in history_list {
-            let operation_id = history.operation_id();
+        for action in history_actions {
+            let operation_id = action.operation_id();
             self.update_last_exomind_operation(Some(operation_id));
             if self.generated_exomind_operations.contains(&operation_id) {
                 debug!(
@@ -223,7 +223,7 @@ impl AccountSynchronizer {
                 continue;
             }
 
-            match history {
+            match action {
                 ExomindHistoryAction::AddToInbox(_operation_id, thread) => {
                     self.add_to_gmail_inbox(thread.thread_id()).await?;
                 }
