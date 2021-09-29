@@ -808,10 +808,21 @@ pub mod tests {
 
         // entity should eventually be completely deleted
         let store_handle = test_store.store_handle.clone();
+        let ent2_mut = test_store
+            .create_put_contact_mutation("entity2", "trt1", "Hello")
+            .build();
         async_expect_eventually(|| async {
             let query = QueryBuilder::with_id("entity1").include_deleted().build();
             let res = store_handle.query(query).await.unwrap();
-            res.entities.is_empty()
+            let is_deleted = res.entities.is_empty();
+
+            if !is_deleted {
+                // if not yet deleted, we create a new mutation on another entity to make sure entity deletion is in chain
+                store_handle.mutate(ent2_mut.clone()).await.unwrap();
+                false
+            } else {
+                true
+            }
         })
         .await;
 
