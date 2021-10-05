@@ -1286,7 +1286,7 @@ dependencies = [
  "futures",
  "itertools 0.10.1",
  "log",
- "lru",
+ "lru 0.7.0",
  "smallvec",
  "tantivy",
  "tempfile",
@@ -2293,6 +2293,15 @@ name = "lru"
 version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ea2d928b485416e8908cff2d97d621db22b27f7b3b6729e438bcf42c671ba91"
+dependencies = [
+ "hashbrown",
+]
+
+[[package]]
+name = "lru"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c748cfe47cb8da225c37595b3108bea1c198c84aaae8ea0ba76d01dda9fc803"
 dependencies = [
  "hashbrown",
 ]
@@ -3679,7 +3688,7 @@ dependencies = [
  "itertools 0.10.1",
  "levenshtein_automata",
  "log",
- "lru",
+ "lru 0.6.6",
  "lz4_flex",
  "measure_time",
  "memmap2 0.3.1",
