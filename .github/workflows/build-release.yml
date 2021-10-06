@@ -24,7 +24,7 @@ jobs:
             bin: exo
             cross: true
           - target: x86_64-apple-darwin
-            os: macOS-latest
+            os: macOS-11
             bin: exo
             cross: false
           - target: x86_64-pc-windows-msvc
@@ -100,7 +100,7 @@ jobs:
           if-no-files-found: error
 
   ios_client:
-    runs-on: macos-latest # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
+    runs-on: macos-11 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
       - uses: actions/checkout@v2.3.4
 

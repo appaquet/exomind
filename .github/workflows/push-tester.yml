@@ -73,7 +73,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
           - target: x86_64-apple-darwin
-            os: macOS-latest
+            os: macOS-11
           - target: x86_64-pc-windows-msvc
             os: windows-latest
 
@@ -176,7 +176,7 @@ jobs:
           npm run build
 
   ios_client_build:
-    runs-on: macos-latest # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
+    runs-on: macos-11 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
       - uses: actions/checkout@v2.3.4
 
