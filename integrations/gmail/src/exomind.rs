@@ -169,13 +169,13 @@ impl ExomindClient {
             if is_after_date(&inbox_child_trait.trt.deletion_date) {
                 let thread_entity = SynchronizedThread::from_exomind(&entity)?;
                 ret.push(ExomindHistoryAction::RemovedFromInbox(
-                    entity.last_operation_id,
+                    inbox_child_trait.trt.last_operation_id,
                     thread_entity,
                 ));
             } else if is_after_date(&inbox_child_trait.trt.creation_date) {
                 let thread_entity = SynchronizedThread::from_exomind(&entity)?;
                 ret.push(ExomindHistoryAction::AddToInbox(
-                    entity.last_operation_id,
+                    inbox_child_trait.trt.last_operation_id,
                     thread_entity,
                 ));
             }
@@ -199,12 +199,12 @@ impl ExomindClient {
 
                 if is_after_date(&unread_trait.trt.deletion_date) {
                     ret.push(ExomindHistoryAction::MarkRead(
-                        entity.last_operation_id,
+                        unread_trait.trt.last_operation_id,
                         message_id.clone(),
                     ));
                 } else if is_after_date(&unread_trait.trt.creation_date) {
                     ret.push(ExomindHistoryAction::MarkUnread(
-                        entity.last_operation_id,
+                        unread_trait.trt.last_operation_id,
                         message_id.clone(),
                     ));
                 }
@@ -304,7 +304,7 @@ impl ExomindClient {
 
         {
             // create or update inbox child
-            let had_inbox_child = previous_thread.map_or(true, |c| c.inbox_child.is_none());
+            let had_inbox_child = previous_thread.map_or(false, |c| c.inbox_child.is_some());
             let mut inbox_child = previous_thread
                 .and_then(|c| c.inbox_child.clone())
                 .unwrap_or_else(|| CollectionChild {

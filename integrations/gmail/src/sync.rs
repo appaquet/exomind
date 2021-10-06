@@ -97,8 +97,6 @@ impl AccountSynchronizer {
 
         // move to inbox emails that are in exomind's inbox
         for (thread_id, thread) in exomind_threads {
-            self.update_last_exomind_operation(thread.operation_id);
-
             if thread.account_entity_id == self.account.entity_id && !in_gmail.contains(&thread_id)
             {
                 self.add_to_gmail_inbox(thread.thread_id()).await?;
