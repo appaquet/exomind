@@ -195,7 +195,7 @@ where
 
     async fn handle_incoming_message(
         weak_inner: Weak<RwLock<Inner<CS, PS>>>,
-        message: Box<InMessage>,
+        message: InMessage,
     ) -> Result<(), EngineError> {
         let join_result = spawn_blocking(move || {
             let locked_inner = weak_inner.upgrade().ok_or(EngineError::InnerUpgrade)?;
@@ -203,12 +203,10 @@ where
 
             debug!(
                 "{}: Got message of type {} from node {}",
-                inner.cell,
-                message.message_type,
-                message.from.id(),
+                inner.cell, message.typ, message.source,
             );
 
-            match message.message_type {
+            match message.typ {
                 <pending_sync_request::Owned as MessageType>::MESSAGE_TYPE => {
                     let sync_request = message.get_data_as_framed_message()?;
                     inner.handle_incoming_pending_sync_request(&message, sync_request)?;
@@ -322,7 +320,7 @@ where
 
         let mut sync_context = SyncContext::new(self.sync_state);
         self.pending_synchronizer.handle_incoming_sync_request(
-            &message.from,
+            &message.source,
             &mut sync_context,
             &mut self.pending_store,
             request,
@@ -343,7 +341,7 @@ where
         let mut sync_context = SyncContext::new(self.sync_state);
         self.chain_synchronizer.handle_sync_request(
             &mut sync_context,
-            &message.from,
+            &message.source,
             &mut self.chain_store,
             request,
         )?;
@@ -363,7 +361,7 @@ where
         let mut sync_context = SyncContext::new(self.sync_state);
         self.chain_synchronizer.handle_sync_response(
             &mut sync_context,
-            &message.from,
+            &message.source,
             &mut self.chain_store,
             response,
         )?;

@@ -5,8 +5,6 @@ use lru::LruCache;
 use super::EntityMutationResults;
 use crate::entity::EntityId;
 
-// TODO: Fix useless cloning of &str to &String once https://github.com/jeromefroe/lru-rs/issues/85 is resolved
-
 /// Cache of entity mutations results when fetched using the
 /// `fetch_entity_mutations` method on the `MutationIndex`.
 ///
@@ -31,8 +29,7 @@ impl EntityMutationsCache {
             .lock()
             .expect("Entity mutations cache lock is poisoned");
 
-        let entity_id = entity_id.to_string();
-        cache.get(&entity_id).cloned()
+        cache.get(entity_id).cloned()
     }
 
     pub fn put(&self, entity_id: &str, results: EntityMutationResults) {
@@ -41,8 +38,7 @@ impl EntityMutationsCache {
             .lock()
             .expect("Entity mutations cache lock is poisoned");
 
-        let entity_id = entity_id.to_string();
-        cache.put(entity_id, results);
+        cache.put(entity_id.to_string(), results);
     }
 
     pub fn remove(&self, entity_id: &str) {
@@ -51,7 +47,6 @@ impl EntityMutationsCache {
             .lock()
             .expect("Entity mutations cache lock is poisoned");
 
-        let entity_id = entity_id.to_string();
-        cache.pop(&entity_id);
+        cache.pop(entity_id);
     }
 }

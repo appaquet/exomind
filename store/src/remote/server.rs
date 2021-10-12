@@ -147,7 +147,7 @@ where
     fn handle_incoming_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
-        in_message: Box<InMessage>,
+        in_message: InMessage,
     ) -> Result<(), Error> {
         let parsed_message = IncomingMessage::parse_incoming_message(&in_message)?;
 
@@ -162,10 +162,7 @@ where
             }
             IncomingMessage::WatchedQuery(query) => {
                 Self::handle_incoming_watched_query_message(
-                    weak_inner,
-                    spawn_set,
-                    in_message.as_ref(),
-                    query,
+                    weak_inner, spawn_set, in_message, query,
                 )?;
             }
             IncomingMessage::UnwatchQuery(token) => {
@@ -179,7 +176,7 @@ where
     fn handle_incoming_query_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
-        in_message: Box<InMessage>,
+        in_message: InMessage,
         query: Box<EntityQuery>,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
@@ -221,7 +218,7 @@ where
     fn handle_incoming_watched_query_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
-        in_message: &InMessage,
+        in_message: InMessage,
         query: Box<EntityQuery>,
     ) -> Result<(), Error> {
         let watch_token = query.watch_token;
@@ -302,7 +299,7 @@ where
     fn handle_incoming_mutation_message(
         weak_inner: &Weak<RwLock<Inner<CS, PS>>>,
         spawn_set: &mut OwnedSpawnSet<()>,
-        in_message: Box<InMessage>,
+        in_message: InMessage,
         request: Box<MutationRequest>,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
@@ -431,7 +428,7 @@ enum IncomingMessage {
 
 impl IncomingMessage {
     fn parse_incoming_message(in_message: &InMessage) -> Result<IncomingMessage, Error> {
-        match in_message.message_type {
+        match in_message.typ {
             <mutation_request::Owned as MessageType>::MESSAGE_TYPE => {
                 let frame = in_message.get_data_as_framed_message()?;
                 let mutation = mutation_from_request_frame(frame)?;

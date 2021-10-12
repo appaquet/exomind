@@ -1,7 +1,10 @@
 use std::{
     collections::HashMap,
     pin::Pin,
-    sync::{Arc, Mutex, Weak},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, Mutex, Weak,
+    },
     task::{Context, Poll},
 };
 
@@ -153,18 +156,17 @@ impl Future for MockTransportServiceHandle {
                     let in_message = msg
                         .to_in_message(node.clone())
                         .expect("Couldn't get InMessage from OutMessage");
-                    for dest_node in &msg.to {
-                        let key = (dest_node.id().clone(), service_type);
-                        if let Some(node_sink) = handles_sink.get_mut(&key) {
-                            let _ = node_sink
-                                .sender
-                                .try_send(InEvent::Message(in_message.clone()));
-                        } else {
-                            warn!(
-                                "Couldn't send message to node {} since it's not in the hub anymore",
-                                dest_node.id()
-                            );
-                        }
+                    let dest_node = msg
+                        .destination
+                        .expect("Message didn't have a destination node");
+                    let key = (dest_node.id().clone(), service_type);
+                    if let Some(node_sink) = handles_sink.get_mut(&key) {
+                        let _ = node_sink.sender.try_send(InEvent::Message(in_message));
+                    } else {
+                        warn!(
+                            "Couldn't send message to node {} since it's not in the hub anymore",
+                            dest_node.id()
+                        );
                     }
                 }
             });
@@ -211,7 +213,8 @@ pub struct TestableTransportHandle {
     cell: Cell,
     out_sink: mpsc::UnboundedSender<OutEvent>,
     in_stream: Peekable<mpsc::UnboundedReceiver<InEvent>>,
-    received_events: Arc<futures::lock::Mutex<Vec<InEvent>>>,
+    received_events: Arc<AtomicUsize>,
+    node_status: Arc<futures::lock::Mutex<HashMap<NodeId, ConnectionStatus>>>,
     _in_spawn: OwnedSpawn<()>,
     _out_spawn: OwnedSpawn<()>,
 }
@@ -222,16 +225,24 @@ impl TestableTransportHandle {
         let mut handle_stream = handle.get_stream();
         spawn_future(handle);
 
-        let received_events = Arc::new(futures::lock::Mutex::new(Vec::new()));
+        let received_events = Arc::new(AtomicUsize::new(0));
+        let node_status = Arc::new(futures::lock::Mutex::new(HashMap::new()));
 
         let (in_stream, in_spawn) = {
             let received_events = received_events.clone();
+            let node_status = node_status.clone();
 
             let (mut in_sender, in_receiver) = mpsc::unbounded();
             let spawn = owned_spawn(async move {
                 while let Some(event) = handle_stream.next().await {
-                    let mut received = received_events.lock().await;
-                    received.push(event.clone());
+                    received_events.fetch_add(1, Ordering::Relaxed);
+
+                    if matches!(&event, InEvent::NodeStatus(_, _)) {
+                        let mut node_status = node_status.lock().await;
+                        if let InEvent::NodeStatus(node_id, status) = &event {
+                            node_status.insert(node_id.clone(), *status);
+                        }
+                    }
 
                     in_sender.send(event).await.unwrap();
                 }
@@ -257,6 +268,7 @@ impl TestableTransportHandle {
             out_sink,
             in_stream: in_stream.peekable(),
             received_events,
+            node_status,
             _in_spawn: in_spawn,
             _out_spawn: out_spawn,
         }
@@ -266,12 +278,28 @@ impl TestableTransportHandle {
         &self.cell
     }
 
-    pub async fn send_rdv(&mut self, to: Vec<Node>, rdv: u64) {
+    pub async fn send_rdv(&mut self, dest: Node, rdv: u64) {
         let frame_builder = Self::empty_message_frame();
         let msg = OutMessage::from_framed_message(&self.cell, ServiceType::Chain, frame_builder)
             .unwrap()
-            .with_rendez_vous_id(rdv.into())
-            .with_to_nodes(to);
+            .with_rdv(rdv.into())
+            .with_destination(dest);
+
+        self.send_message(msg).await;
+    }
+
+    pub async fn send_stream_msg(
+        &mut self,
+        dest: Node,
+        rdv: u64,
+        stream: Box<dyn AsyncRead + Send + Unpin>,
+    ) {
+        let frame_builder = Self::empty_message_frame();
+        let msg = OutMessage::from_framed_message(&self.cell, ServiceType::Chain, frame_builder)
+            .unwrap()
+            .with_rdv(rdv.into())
+            .with_destination(dest)
+            .with_stream(stream);
 
         self.send_message(msg).await;
     }
@@ -283,7 +311,7 @@ impl TestableTransportHandle {
             .unwrap();
     }
 
-    pub async fn recv_msg(&mut self) -> Box<InMessage> {
+    pub async fn recv_msg(&mut self) -> InMessage {
         loop {
             let event = self.in_stream.next().await.unwrap();
             match event {
@@ -293,7 +321,7 @@ impl TestableTransportHandle {
         }
     }
 
-    pub async fn recv_rdv(&mut self, rdv: u64) -> Box<InMessage> {
+    pub async fn recv_rdv(&mut self, rdv: u64) -> InMessage {
         loop {
             let msg = self.recv_msg().await;
             if msg.rendez_vous_id == Some(rdv.into()) {
@@ -312,32 +340,13 @@ impl TestableTransportHandle {
         }
     }
 
-    pub async fn received_events(&self) -> Vec<InEvent> {
-        let received = self.received_events.lock().await;
-        received.clone()
-    }
-
-    pub async fn received_messages(&self) -> Vec<InEvent> {
-        let received = self.received_events.lock().await;
-        received
-            .iter()
-            .filter(|event| matches!(event, InEvent::Message(_event)))
-            .cloned()
-            .collect()
+    pub async fn received_count(&self) -> usize {
+        self.received_events.load(Ordering::Relaxed)
     }
 
     pub async fn node_status(&self, node_id: &NodeId) -> Option<ConnectionStatus> {
-        let received_events = self.received_events.lock().await;
-
-        received_events
-            .iter()
-            .flat_map(|event| match event {
-                InEvent::NodeStatus(some_node_id, status) if some_node_id == node_id => {
-                    Some(*status)
-                }
-                _ => None,
-            })
-            .last()
+        let node_status = self.node_status.lock().await;
+        node_status.get(node_id).cloned()
     }
 
     pub async fn has_msg(&mut self) -> Result<bool, Error> {
@@ -384,16 +393,16 @@ mod test {
         let t1 = hub.get_transport(node1.clone(), ServiceType::Chain);
         let mut t1 = TestableTransportHandle::new(t1, cell1.cell().clone());
 
-        t0.send_rdv(vec![node1.node().clone()], 100).await;
+        t0.send_rdv(node1.node().clone(), 100).await;
 
         let msg = t1.recv_msg().await;
-        assert_eq!(msg.from.id(), node0.id());
+        assert_eq!(msg.source.id(), node0.id());
         assert_eq!(msg.rendez_vous_id, Some(100.into()));
 
-        t1.send_rdv(vec![node0.node().clone()], 101).await;
+        t1.send_rdv(node0.node().clone(), 101).await;
 
         let msg = t0.recv_msg().await;
-        assert_eq!(msg.from.id(), node1.id());
+        assert_eq!(msg.source.id(), node1.id());
         assert_eq!(msg.rendez_vous_id, Some(101.into()));
     }
 

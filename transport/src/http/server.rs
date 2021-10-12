@@ -315,8 +315,8 @@ async fn send_entity_query(
 
     let message =
         OutMessage::from_framed_message(&service.cell, ServiceType::Store, frame_builder)?
-            .with_to_node(local_node)
-            .with_rendez_vous_id(clock.consistent_time(service.cell.local_node()))
+            .with_destination(local_node)
+            .with_rdv(clock.consistent_time(service.cell.local_node()))
             .with_connection(ConnectionId::HttpServer(tracked_request.id()))
             .to_in_message(from_node)?;
 
@@ -364,8 +364,8 @@ async fn send_entity_mutation(
 
     let message =
         OutMessage::from_framed_message(&service.cell, ServiceType::Store, frame_builder)?
-            .with_to_node(local_node)
-            .with_rendez_vous_id(clock.consistent_time(service.cell.local_node()))
+            .with_destination(local_node)
+            .with_rdv(clock.consistent_time(service.cell.local_node()))
             .with_connection(ConnectionId::HttpServer(tracked_request.id()))
             .to_in_message(from_node)?;
 

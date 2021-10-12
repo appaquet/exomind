@@ -75,31 +75,30 @@ pub enum SyncContextMessage {
 impl SyncContextMessage {
     pub fn into_out_message(self, cell: &Cell) -> Result<OutMessage, EngineError> {
         let cell_nodes = cell.nodes();
-        let to_nodes = if let Some(cell_node) = cell_nodes.get(self.to_node()) {
-            vec![cell_node.node().clone()]
-        } else {
-            vec![]
-        };
+        let dest_node = cell_nodes
+            .get(self.dest_node())
+            .map(|n| n.node().clone())
+            .ok_or_else(|| EngineError::NodeNotFound(self.dest_node().clone()))?;
 
         let message = match self {
             SyncContextMessage::PendingSyncRequest(_, request_builder) => {
                 OutMessage::from_framed_message(cell, ServiceType::Chain, request_builder)?
-                    .with_to_nodes(to_nodes)
+                    .with_destination(dest_node)
             }
             SyncContextMessage::ChainSyncRequest(_, request_builder) => {
                 OutMessage::from_framed_message(cell, ServiceType::Chain, request_builder)?
-                    .with_to_nodes(to_nodes)
+                    .with_destination(dest_node)
             }
             SyncContextMessage::ChainSyncResponse(_, response_builder) => {
                 OutMessage::from_framed_message(cell, ServiceType::Chain, response_builder)?
-                    .with_to_nodes(to_nodes)
+                    .with_destination(dest_node)
             }
         };
 
         Ok(message)
     }
 
-    fn to_node(&self) -> &NodeId {
+    fn dest_node(&self) -> &NodeId {
         match self {
             SyncContextMessage::PendingSyncRequest(to_node, _) => to_node,
             SyncContextMessage::ChainSyncRequest(to_node, _) => to_node,

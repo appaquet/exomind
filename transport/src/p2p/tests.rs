@@ -6,6 +6,7 @@ use exocore_core::{
     tests_utils::async_expect_eventually,
     time::{ConsistentTimestamp, Instant},
 };
+use futures::{io::Cursor, AsyncRead, AsyncReadExt};
 
 use super::*;
 use crate::{
@@ -48,24 +49,40 @@ async fn test_integration() -> anyhow::Result<()> {
     })
     .await;
 
-    // send 1 to 2
-    handle1.send_rdv(vec![n2.node().clone()], 123).await;
-    let msg = handle2.recv_rdv(123).await;
+    {
+        // send 1 to 2
+        handle1.send_rdv(n2.node().clone(), 123).await;
+        let msg = handle2.recv_rdv(123).await;
 
-    // reply to message
-    let msg_frame = TestableTransportHandle::empty_message_frame();
-    let reply_msg = msg.to_response_message(n1_cell.cell(), msg_frame)?;
-    handle2.send_message(reply_msg).await;
-    handle1.recv_rdv(123).await;
+        // reply to message
+        let msg_frame = TestableTransportHandle::empty_message_frame();
+        let reply_msg = msg.to_response_message(n1_cell.cell(), msg_frame)?;
+        handle2.send_message(reply_msg).await;
+        handle1.recv_rdv(123).await;
 
-    // send 2 to 1 by duplicating node, should expect receiving 2 new messages (so
-    // total 3 because of prev reply)
-    handle2
-        .send_rdv(vec![n1.node().clone(), n1.node().clone()], 345)
-        .await;
-    async_expect_eventually(|| async { handle1.received_messages().await.len() == 3 }).await;
+        // send 2 to 1, should expect receiving 1 new messages (so total 3 because of prev reply)
+        handle2.send_rdv(n1.node().clone(), 345).await;
+        async_expect_eventually(|| async { handle1.received_count().await == 3 }).await;
+    }
+
+    {
+        // send message with stream
+        let stream = str_to_stream("hello world");
+        handle1
+            .send_stream_msg(n2.node().clone(), 124, stream)
+            .await;
+
+        let msg = handle2.recv_rdv(124).await;
+        let mut out = String::new();
+        msg.stream.unwrap().read_to_string(&mut out).await.unwrap();
+        assert_eq!(out, "hello world");
+    }
 
     Ok(())
+}
+
+fn str_to_stream(str: &'static str) -> Box<dyn AsyncRead + Send + Unpin> {
+    Box::new(Cursor::new(str.to_string()))
 }
 
 #[tokio::test]
@@ -129,14 +146,14 @@ async fn should_queue_message_until_connected() -> anyhow::Result<()> {
     });
 
     // send 1 to 2, but 2 is not yet connected. It should queue
-    h1.send_rdv(vec![n2.node().clone()], 1).await;
+    h1.send_rdv(n2.node().clone(), 1).await;
 
     // send 1 to 2, but with expired message, which shouldn't be delivered
     let msg_frame = TestableTransportHandle::empty_message_frame();
     let msg = OutMessage::from_framed_message(n1_cell.cell(), ServiceType::Chain, msg_frame)?
         .with_expiration(Some(Instant::now() - Duration::from_secs(5)))
-        .with_rendez_vous_id(ConsistentTimestamp(2))
-        .with_to_nodes(vec![n2.node().clone()]);
+        .with_rdv(ConsistentTimestamp(2))
+        .with_destination(n2.node().clone());
     h1.send_message(msg).await;
 
     // leave some time for first messages to arrive
@@ -155,7 +172,7 @@ async fn should_queue_message_until_connected() -> anyhow::Result<()> {
     sleep(Duration::from_millis(100)).await;
 
     // send another message to force redial
-    h1.send_rdv(vec![n2.node().clone()], 3).await;
+    h1.send_rdv(n2.node().clone(), 3).await;
 
     // should receive 1 & 3, but not 2 since it had expired
     h2.recv_rdv(1).await;

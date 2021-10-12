@@ -591,7 +591,10 @@ impl QueryRequest {
 pub mod tests {
     use std::time::Duration;
 
-    use exocore_core::{futures::sleep, tests_utils::async_expect_eventually};
+    use exocore_core::{
+        futures::sleep,
+        tests_utils::{async_expect_eventually, test_retry},
+    };
     use exocore_protos::{prost::ProstAnyPackMessageExt, store::Trait, test::TestMessage};
     use futures::executor::block_on_stream;
 
@@ -771,61 +774,64 @@ pub mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn garbage_collection() -> anyhow::Result<()> {
-        let store_config = StoreConfig {
-            garbage_collect_interval: Duration::from_millis(300),
-            ..Default::default()
-        };
-        let index_config = EntityIndexConfig {
-            chain_index_min_depth: 0, // index in chain as soon as a block is committed
-            chain_index_depth_leeway: 0, // for tests, we want to index as soon as possible
-            chain_index_in_memory: true,
-            garbage_collector: GarbageCollectorConfig {
-                deleted_entity_collection: Duration::from_millis(100),
-                min_operation_age: Duration::from_nanos(1),
+        test_retry(|| async {
+            let store_config = StoreConfig {
+                garbage_collect_interval: Duration::from_millis(300),
                 ..Default::default()
-            },
-            ..TestStore::test_index_config()
-        };
+            };
+            let index_config = EntityIndexConfig {
+                chain_index_min_depth: 0, // index in chain as soon as a block is committed
+                chain_index_depth_leeway: 0, // for tests, we want to index as soon as possible
+                chain_index_in_memory: true,
+                garbage_collector: GarbageCollectorConfig {
+                    deleted_entity_collection: Duration::from_millis(100),
+                    min_operation_age: Duration::from_nanos(1),
+                    ..Default::default()
+                },
+                ..TestStore::test_index_config()
+            };
 
-        let mut test_store = TestStore::new_with_config(store_config, index_config).await?;
-        test_store.start_store().await?;
+            let mut test_store = TestStore::new_with_config(store_config, index_config).await?;
+            test_store.start_store().await?;
 
-        {
-            // create an entity and then delete it
-            let mutation =
-                test_store.create_put_contact_mutation("entity1", "trt1", "Hello entity1");
-            test_store.mutate(mutation).await?;
+            {
+                // create an entity and then delete it
+                let mutation =
+                    test_store.create_put_contact_mutation("entity1", "trt1", "Hello entity1");
+                test_store.mutate(mutation).await?;
 
-            let delete = MutationBuilder::new()
-                .delete_entity("entity1")
-                .return_entities()
-                .build();
-            let resp = test_store.mutate(delete).await?;
-            test_store
-                .cluster
-                .wait_operation_committed(0, resp.operation_ids[0]);
-        }
-
-        // entity should eventually be completely deleted
-        let store_handle = test_store.store_handle.clone();
-        let ent2_mut = test_store
-            .create_put_contact_mutation("entity2", "trt1", "Hello")
-            .build();
-        async_expect_eventually(|| async {
-            let query = QueryBuilder::with_id("entity1").include_deleted().build();
-            let res = store_handle.query(query).await.unwrap();
-            let is_deleted = res.entities.is_empty();
-
-            if !is_deleted {
-                // if not yet deleted, we create a new mutation on another entity to make sure entity deletion is in chain
-                store_handle.mutate(ent2_mut.clone()).await.unwrap();
-                false
-            } else {
-                true
+                let delete = MutationBuilder::new()
+                    .delete_entity("entity1")
+                    .return_entities()
+                    .build();
+                let resp = test_store.mutate(delete).await?;
+                test_store
+                    .cluster
+                    .wait_operation_committed(0, resp.operation_ids[0]);
             }
-        })
-        .await;
 
-        Ok(())
+            // entity should eventually be completely deleted
+            let store_handle = test_store.store_handle.clone();
+            let ent2_mut = test_store
+                .create_put_contact_mutation("entity2", "trt1", "Hello")
+                .build();
+            async_expect_eventually(|| async {
+                let query = QueryBuilder::with_id("entity1").include_deleted().build();
+                let res = store_handle.query(query).await.unwrap();
+                let is_deleted = res.entities.is_empty();
+
+                if !is_deleted {
+                    // if not yet deleted, we create a new mutation on another entity to make sure entity deletion is in chain
+                    store_handle.mutate(ent2_mut.clone()).await.unwrap();
+                    false
+                } else {
+                    true
+                }
+            })
+            .await;
+
+            Ok(())
+        })
+        .await
     }
 }

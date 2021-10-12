@@ -66,7 +66,7 @@ pub(super) struct ServiceHandle {
 }
 
 impl ServiceHandle {
-    pub(super) fn send_message(&mut self, msg: Box<InMessage>) -> Result<(), RequestError> {
+    pub(super) fn send_message(&mut self, msg: InMessage) -> Result<(), RequestError> {
         self.in_sender
             .try_send(InEvent::Message(msg))
             .map_err(|err| RequestError::Server(format!("Couldn't send to handle: {}", err)))?;

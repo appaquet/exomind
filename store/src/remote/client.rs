@@ -257,14 +257,14 @@ impl Inner {
 
     fn handle_incoming_message(
         weak_inner: &Weak<RwLock<Inner>>,
-        in_message: Box<InMessage>,
+        in_message: InMessage,
     ) -> Result<(), Error> {
         let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
         let mut inner = inner.write()?;
 
         if let Some(store_node) = &inner.store_node {
-            if in_message.from.id() != store_node.id() {
-                warn!("Got message from a node other than store node (from {} != current {}). Dropping it.", in_message.from, store_node);
+            if in_message.source.id() != store_node.id() {
+                warn!("Got message from a node other than store node (from {} != current {}). Dropping it.", in_message.source, store_node);
                 return Ok(());
             }
         }
@@ -274,8 +274,8 @@ impl Inner {
         } else {
             return Err(anyhow!(
                 "Got an InMessage without a rendez_vous_id (type={:?} from={})",
-                in_message.message_type,
-                in_message.from
+                in_message.typ,
+                in_message.source
             )
             .into());
         };
@@ -287,7 +287,7 @@ impl Inner {
                 } else {
                     return Err(anyhow!(
                         "Couldn't find pending mutation for mutation response (request_id={:?} type={:?} from={})",
-                        request_id, in_message.message_type, in_message.from
+                        request_id, in_message.typ, in_message.source
                     ).into());
                 }
             }
@@ -299,7 +299,7 @@ impl Inner {
                 } else {
                     return Err(anyhow!(
                         "Couldn't find pending query for query response (request_id={:?} type={:?} from={})",
-                        request_id, in_message.message_type, in_message.from
+                        request_id, in_message.typ, in_message.source
                     ).into());
                 }
             }
@@ -352,7 +352,7 @@ impl Inner {
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
                 .with_expiration(Some(Instant::now() + self.config.mutation_timeout))
-                .with_rendez_vous_id(request_id);
+                .with_rdv(request_id);
         self.send_store_node_message(message)?;
 
         self.pending_mutations.insert(
@@ -378,7 +378,7 @@ impl Inner {
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
                 .with_expiration(Some(Instant::now() + self.config.query_timeout))
-                .with_rendez_vous_id(request_id);
+                .with_rdv(request_id);
         self.send_store_node_message(message)?;
 
         self.pending_queries.insert(
@@ -422,7 +422,7 @@ impl Inner {
         let request_frame = watched_query_to_request_frame(&watched_query.query)?;
         let message =
             OutMessage::from_framed_message(&self.cell, ServiceType::Store, request_frame)?
-                .with_rendez_vous_id(watched_query.request_id);
+                .with_rdv(watched_query.request_id);
 
         self.send_store_node_message(message)
     }
@@ -496,7 +496,7 @@ impl Inner {
         })?;
 
         transport
-            .unbounded_send(OutEvent::Message(message.with_to_node(store_node)))
+            .unbounded_send(OutEvent::Message(message.with_destination(store_node)))
             .map_err(|_err| {
                 Error::Fatal(anyhow!(
                     "Tried to send message, but transport_out channel is closed"
@@ -528,7 +528,7 @@ enum IncomingMessage {
 
 impl IncomingMessage {
     fn parse_incoming_message(in_message: &InMessage) -> Result<IncomingMessage, Error> {
-        match in_message.message_type {
+        match in_message.typ {
             <mutation_response::Owned as MessageType>::MESSAGE_TYPE => {
                 let mutation_frame = in_message.get_data_as_framed_message()?;
                 let mutation_result = mutation_result_from_response_frame(mutation_frame)?;

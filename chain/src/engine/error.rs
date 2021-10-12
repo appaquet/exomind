@@ -40,6 +40,9 @@ pub enum EngineError {
     #[error("Local node not found in nodes list")]
     MyNodeNotFound,
 
+    #[error("Node not found in cell: {0}")]
+    NodeNotFound(exocore_core::cell::NodeId),
+
     #[error("Inner was dropped or couldn't get locked")]
     InnerUpgrade,
 

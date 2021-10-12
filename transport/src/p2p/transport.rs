@@ -24,6 +24,7 @@ use super::{
 };
 use crate::{
     messages::InMessage,
+    p2p::protocol::MessageData,
     transport::{ConnectionId, ConnectionStatus, InEvent, OutEvent},
     Error, Libp2pTransportServiceHandle, ServiceType,
 };
@@ -185,24 +186,20 @@ impl Libp2pTransport {
                                 None
                             };
 
-                        // prevent cloning frame if we only send to 1 node
-                        if msg.to.len() == 1 {
-                            let to_node = msg.to.first().unwrap();
+                        if let Some(dest) = msg.destination {
+                            let msg_data = MessageData {
+                                message: frame_data,
+                                stream: msg.stream,
+                            };
+
                             swarm.behaviour_mut().exocore.send_message(
-                                *to_node.peer_id(),
+                                *dest.peer_id(),
                                 msg.expiration,
                                 connection,
-                                frame_data,
+                                msg_data,
                             );
                         } else {
-                            for to_node in msg.to {
-                                swarm.behaviour_mut().exocore.send_message(
-                                    *to_node.peer_id(),
-                                    msg.expiration,
-                                    connection,
-                                    frame_data.clone(),
-                                );
-                            }
+                            error!("Got a message to send to behaviour without destination node");
                         }
                     }
                     OutEvent::Reset => {
@@ -301,7 +298,7 @@ fn dispatch_message(
     inner: &RwLock<ServiceHandles>,
     message: ExocoreBehaviourMessage,
 ) -> Result<(), Error> {
-    let frame = TypedCapnpFrame::<_, envelope::Owned>::new(message.data)?;
+    let frame = TypedCapnpFrame::<_, envelope::Owned>::new(message.message.message)?;
     let frame_reader: envelope::Reader = frame.get_reader()?;
     let cell_id_bytes = frame_reader.get_cell_id()?;
 
@@ -328,6 +325,7 @@ fn dispatch_message(
     let source_node = get_node_by_peer(&service_handle.cell, message.source)?;
     let mut msg = InMessage::from_node_and_frame(source_node, frame.to_owned())?;
     msg.connection = Some(ConnectionId::Libp2p(message.connection));
+    msg.stream = message.message.stream;
 
     service_handle
         .in_sender
