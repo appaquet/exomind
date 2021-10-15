@@ -267,8 +267,10 @@ fn sync_single_block_even_if_max_out_size() -> anyhow::Result<()> {
     cluster.chain_add_genesis_block(0);
 
     // generate a block that exceeds maximum send size
-    let operation_size = cluster.chains_synchronizer[0].config.blocks_max_send_size / 9;
-    let operations = (0..10)
+    let operation_count = cluster.chains_synchronizer[0].config.blocks_max_send_size / (5 * 1024);
+    let operation_size =
+        cluster.chains_synchronizer[0].config.blocks_max_send_size / operation_count;
+    let operations = (0..operation_count)
         .map(|_i| {
             let op_id = cluster.consistent_timestamp(0).into();
             let data = vec![0u8; operation_size + 1];

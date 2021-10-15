@@ -593,7 +593,7 @@ pub mod tests {
 
     use exocore_core::{
         futures::sleep,
-        tests_utils::{async_expect_eventually, test_retry},
+        tests_utils::{async_expect_eventually_fallible, async_test_retry},
     };
     use exocore_protos::{prost::ProstAnyPackMessageExt, store::Trait, test::TestMessage};
     use futures::executor::block_on_stream;
@@ -774,7 +774,7 @@ pub mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn garbage_collection() -> anyhow::Result<()> {
-        test_retry(|| async {
+        async_test_retry(|| async {
             let store_config = StoreConfig {
                 garbage_collect_interval: Duration::from_millis(300),
                 ..Default::default()
@@ -815,7 +815,7 @@ pub mod tests {
             let ent2_mut = test_store
                 .create_put_contact_mutation("entity2", "trt1", "Hello")
                 .build();
-            async_expect_eventually(|| async {
+            async_expect_eventually_fallible(|| async {
                 let query = QueryBuilder::with_id("entity1").include_deleted().build();
                 let res = store_handle.query(query).await.unwrap();
                 let is_deleted = res.entities.is_empty();
@@ -828,7 +828,7 @@ pub mod tests {
                     true
                 }
             })
-            .await;
+            .await?;
 
             Ok(())
         })

@@ -31,7 +31,15 @@ where
     );
 }
 
-pub async fn async_expect_eventually<F, T>(mut cb: F)
+pub async fn async_expect_eventually<F, T>(cb: F)
+where
+    F: FnMut() -> T,
+    T: Future<Output = bool>,
+{
+    async_expect_eventually_fallible(cb).await.unwrap()
+}
+
+pub async fn async_expect_eventually_fallible<F, T>(mut cb: F) -> anyhow::Result<()>
 where
     F: FnMut() -> T,
     T: Future<Output = bool>,
@@ -40,14 +48,14 @@ where
     let timeout = Duration::from_secs(10);
     loop {
         if cb().await {
-            return;
+            return Ok(());
         } else {
             if begin.elapsed() > timeout {
-                panic!(
+                return Err(anyhow!(
                     "Expected result within {:?}, but waited {:?} without result",
                     timeout,
                     begin.elapsed()
-                );
+                ));
             }
 
             crate::futures::sleep(Duration::from_millis(100)).await;
@@ -105,7 +113,7 @@ pub fn result_assert_false(value: bool) -> anyhow::Result<()> {
     }
 }
 
-pub async fn test_retry<F, O>(f: F) -> anyhow::Result<()>
+pub async fn async_test_retry<F, O>(f: F) -> anyhow::Result<()>
 where
     F: Fn() -> O,
     O: Future<Output = anyhow::Result<()>>,

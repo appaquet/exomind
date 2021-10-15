@@ -636,8 +636,9 @@ where
         let index_operations_count = pending_index_mutations.len();
         if index_operations_count > 0 {
             info!(
-                "Indexed in chain, and deleted from pending {} operations. New chain index last offset is {:?}.",
+                "Indexed in chain, and deleted from pending {} operations (from offset {:?}). New chain index last offset is {:?}.",
                 index_operations_count,
+                offset_from,
                 new_highest_block_offset
             );
 
@@ -738,7 +739,16 @@ where
         Ok(pending_results
             .mutations
             .into_iter()
-            .chain(chain_results.mutations.into_iter()))
+            .chain(chain_results.mutations.into_iter())
+            .sorted_by_key(|result| {
+                // sorts mutations in order they got committed (block offset/pending, then operation id)
+                let block_offset = result.block_offset.unwrap_or(std::u64::MAX);
+                (block_offset, result.operation_id)
+            })
+            .dedup_by(|a, b| {
+                // make sure we don't have duplicate across pending & chain (may happen temporarily)
+                a.operation_id == b.operation_id
+            }))
     }
 
     /// Fetches and cache indexed mutations metadata.

@@ -49,7 +49,7 @@ impl Default for ChainSyncConfig {
             metadata_sync_end_count: 5,
             metadata_sync_sampled_count: 10,
             metadata_sync_segments_boundaries_threshold: 5,
-            blocks_max_send_size: 50 * 1024,
+            blocks_max_send_size: 2 * 1024 * 1024, // 2mb
             max_leader_common_block_height_delta: 5,
         }
     }

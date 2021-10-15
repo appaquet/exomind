@@ -69,7 +69,7 @@ pub struct MutationIndex {
     full_text_boost: f32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum Storage {
     Memory,
     Disk,
@@ -89,8 +89,6 @@ impl MutationIndex {
             .schema(tantivy_schema)
             .settings(index_settings())
             .open_or_create(directory)?;
-        fields.register_tokenizers(&index);
-
         fields.register_tokenizers(&index);
 
         let index_reader = index
@@ -356,7 +354,7 @@ impl MutationIndex {
             ..Default::default()
         };
 
-        let results = self.execute_tantivy_query_with_paging(
+        let mut results = self.execute_tantivy_query_with_paging(
             searcher,
             &query,
             Some(&paging),
@@ -364,8 +362,12 @@ impl MutationIndex {
             None,
         )?;
 
+        // because of the way we index pending (we may have pending store events after indexing it after first),
+        // we need to make sure we don't include any duplicate operations
+        dedup_results(&self.storage, &mut results);
+
         let entity_mutations = EntityMutationResults {
-            mutations: results.mutations.into_iter().collect(),
+            mutations: results.mutations,
         };
         self.entity_cache.put(entity_id, entity_mutations.clone());
 
@@ -1050,6 +1052,26 @@ impl MutationIndex {
                     }
                 }
             })
+    }
+}
+
+fn dedup_results(storage: &Storage, results: &mut MutationResults) {
+    let mut i = 0;
+    let mut prev_operation = None;
+    while i < results.mutations.len() {
+        let op_id = results.mutations[i].operation_id;
+        if prev_operation == Some(op_id) {
+            if *storage == Storage::Disk {
+                error!(
+                    "duplicate operation in disk index: op={} block={:?}",
+                    op_id, results.mutations[i].block_offset
+                );
+            }
+            results.mutations.swap_remove(i);
+        } else {
+            prev_operation = Some(op_id);
+            i += 1;
+        }
     }
 }
 

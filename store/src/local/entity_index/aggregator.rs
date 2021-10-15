@@ -72,12 +72,10 @@ pub struct EntityAggregator {
 }
 
 impl EntityAggregator {
-    pub fn new<I>(mutations_metadata: I) -> EntityAggregator
+    pub fn new<I>(sorted_mutations: I) -> EntityAggregator
     where
         I: Iterator<Item = MutationMetadata>,
     {
-        let ordered_mutations_metadata = sort_mutations_commit_time(mutations_metadata);
-
         let mut entity_id = String::new();
         let mut entity_creation_date = None;
         let mut entity_modification_date = None;
@@ -89,11 +87,20 @@ impl EntityAggregator {
         let mut active_operation_ids = HashSet::<OperationId>::new();
         let mut last_operation_id = None;
         let mut last_block_offset = None;
+        let mut prev_dedup_operation_id = None;
         let mut in_pending = false;
         let mut pending_deletion = false;
         let mut mutation_count = 0;
 
-        for current_mutation in ordered_mutations_metadata {
+        for current_mutation in sorted_mutations {
+            assert_ne!(
+                Some(current_mutation.operation_id),
+                prev_dedup_operation_id,
+                "got two mutation with same operation id: mutation={:?}",
+                current_mutation,
+            );
+            prev_dedup_operation_id = Some(current_mutation.operation_id);
+
             mutation_count += 1;
 
             let current_operation_id = current_mutation.operation_id;
@@ -401,17 +408,6 @@ pub fn project_trait_fields(
     Ok(())
 }
 
-/// Sorts mutations in order they got committed (block offset/pending, then
-/// operation id)
-pub fn sort_mutations_commit_time<M: Iterator<Item = MutationMetadata>>(
-    mutations: M,
-) -> impl Iterator<Item = MutationMetadata> {
-    mutations.sorted_by_key(|result| {
-        let block_offset = result.block_offset.unwrap_or(std::u64::MAX);
-        (block_offset, result.operation_id)
-    })
-}
-
 fn update_if_newer(current: &mut Option<DateTime<Utc>>, new: Option<DateTime<Utc>>) {
     if current.is_none() || new > *current {
         *current = new;
@@ -679,11 +675,11 @@ pub(crate) mod tests {
             // trait deletion counts as modification
             let mutations = vec![
                 mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
-                mock_put_trait(&t2, TYPE1, Some(2), 10, None, None),
-                mock_delete_trait(&t1, Some(3), 11),
+                mock_put_trait(&t2, TYPE1, Some(2), 11, None, None),
+                mock_delete_trait(&t1, Some(3), 12),
             ];
             let em = EntityAggregator::new(mutations.into_iter());
-            assert_dates(&em, Some(10), Some(11), None);
+            assert_dates(&em, Some(10), Some(12), None);
         }
 
         {

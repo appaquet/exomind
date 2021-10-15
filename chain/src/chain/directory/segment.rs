@@ -56,18 +56,19 @@ impl DirectorySegment {
             directory, first_block_offset
         );
 
-        let mut segment_file =
-            SegmentFile::open(&segment_path, config.segment_over_allocate_size, tracker)?;
+        let block_size = block.total_size();
+        let segment_alloc_size = config.segment_over_allocate_size.max(block_size as u64);
+
+        let mut segment_file = SegmentFile::open(&segment_path, segment_alloc_size, tracker)?;
         segment_file.write_block(0, block)?;
-        let written_data_size = block.total_size();
 
         Ok(DirectorySegment {
             config,
             segment_path,
             segment_file,
             first_block_offset,
-            next_block_offset: first_block_offset + written_data_size as BlockOffset,
-            next_file_offset: written_data_size,
+            next_block_offset: first_block_offset + block_size as BlockOffset,
+            next_file_offset: block_size,
         })
     }
 

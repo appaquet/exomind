@@ -515,7 +515,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
     /// Creates a response to request for blocks data from a remote node.
     /// If we're asked for data, this means we're the lead.
     fn create_sync_response_for_blocks<
-        B: Block,
+        B: Block + Send,
         I: Iterator<Item = Result<B, crate::chain::Error>>,
     >(
         config: &ChainSyncConfig,

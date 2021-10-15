@@ -11,13 +11,15 @@ use crate::{transport::ConnectionId, Error, ServiceType};
 
 pub type RendezVousId = ConsistentTimestamp;
 
+pub type MessageStream = Box<dyn AsyncRead + Send + Unpin>;
+
 /// Message to be sent to one or more other nodes.
 pub struct OutMessage {
     pub destination: Option<Node>,
     pub expiration: Option<Instant>,
     pub connection: Option<ConnectionId>,
     pub envelope_builder: CapnpFrameBuilder<envelope::Owned>,
-    pub stream: Option<Box<dyn AsyncRead + Send + Unpin>>,
+    pub stream: Option<MessageStream>,
 }
 
 impl OutMessage {
@@ -54,11 +56,10 @@ impl OutMessage {
     pub fn with_rdv(mut self, rendez_vous_id: RendezVousId) -> Self {
         let mut envelope_message_builder = self.envelope_builder.get_builder();
         envelope_message_builder.set_rendez_vous_id(rendez_vous_id.into());
-
         self
     }
 
-    pub fn with_stream(mut self, stream: Box<dyn AsyncRead + Send + Unpin>) -> Self {
+    pub fn with_stream(mut self, stream: MessageStream) -> Self {
         self.stream = Some(stream);
         self
     }
@@ -97,7 +98,7 @@ pub struct InMessage {
     pub typ: u16,
     pub connection: Option<ConnectionId>,
     pub envelope: TypedCapnpFrame<Bytes, envelope::Owned>,
-    pub stream: Option<Box<dyn AsyncRead + Send + Unpin>>,
+    pub stream: Option<MessageStream>,
 }
 
 impl InMessage {

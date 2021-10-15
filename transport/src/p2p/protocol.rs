@@ -18,7 +18,7 @@ use libp2p::{
     },
 };
 
-const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024; // 10MB
+const MAX_MESSAGE_SIZE: usize = 20 * 1024 * 1024; // 20MB
 
 type HandlerEvent = ProtocolsHandlerEvent<ExocoreProtoConfig, (), MessageData, io::Error>;
 

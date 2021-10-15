@@ -9,7 +9,7 @@ use exocore_chain::operation::OperationId;
 use exocore_core::time::{Clock, ConsistentTimestamp};
 use exocore_protos::{core::EntityGarbageCollectorConfig, store::EntityMutation};
 
-use super::{sort_mutations_commit_time, EntityAggregator};
+use super::EntityAggregator;
 use crate::{
     entity::{EntityId, EntityIdRef, TraitId},
     error::Error,
@@ -115,17 +115,16 @@ impl GarbageCollector {
         let min_op_time = self.clock.now_chrono() - self.trait_versions_min_age;
         let mut deletions = Vec::new();
         for entity_id in &entity_ids {
-            let mutations = if let Ok(mutations) = entity_fetcher(entity_id) {
-                mutations
+            let sorted_mutations = if let Ok(sorted_mutations) = entity_fetcher(entity_id) {
+                sorted_mutations
             } else {
-                error!("Couldn't fetch mutations for entity {}", entity_id);
+                error!("couldn't fetch mutations for entity {}", entity_id);
                 continue;
             };
 
-            let sorted_mutations: Vec<MutationMetadata> =
-                sort_mutations_commit_time(mutations).collect();
-
+            let sorted_mutations: Vec<MutationMetadata> = sorted_mutations.collect();
             let aggregator = EntityAggregator::new(sorted_mutations.iter().cloned());
+
             let gc_ops = self.gen_entity_collections(&aggregator);
             if gc_ops.is_empty() {
                 // nothing to collect anymore or entity has pending mutations
