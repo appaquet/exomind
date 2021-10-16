@@ -78,6 +78,11 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
                     }
                 }
             } else if let body = json?["content"].string {
+                if this.noteTrait == nil {
+                    // note is still loading, we don't accept any changes yet
+                    return
+                }
+
                 if this.modifiedNote == nil {
                     this.modifiedNote = this.noteTrait?.message
                 }
