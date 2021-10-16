@@ -129,7 +129,7 @@ class RichTextEditor: UIViewController {
            consecutiveCount > 1 {
             let offset = lastCorrected.y
             print("RichTextEditor > Fixing offset using wkwebview correction of \(lastCorrected.y): Scrolling by \(offset)")
-            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: offset), animated: true)
+            outerScroll.setContentOffset(CGPoint(x: outerScroll.contentOffset.x, y: outerScroll.contentOffset.y + offset), animated: true)
             self.webview.scrollDelegate?.lastCorrectOffset = nil
             self.webview.scrollDelegate?.consecutiveCorrectCount = 0
             return

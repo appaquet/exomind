@@ -19,7 +19,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     private var loadTime = Date()
     private var headerView: EmailThreadHeader!
 
-    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance, fullEntity: Bool) {
         self.entity = entity
         self.thread = entity.traitOfType(Exomind_Base_V1_EmailThread.self)!
 

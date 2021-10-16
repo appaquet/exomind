@@ -8,7 +8,7 @@ class TaskViewController: UIViewController, EntityTraitView {
     private var taskTrait: TraitInstance<Exomind_Base_V1_Task>!
     private var changed: Bool = false
 
-    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance, fullEntity: Bool) {
         self.entity = entity
         self.taskTrait = entity.trait(withId: trait.id)
     }

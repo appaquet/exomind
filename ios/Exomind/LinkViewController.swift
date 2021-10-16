@@ -8,7 +8,7 @@ class LinkViewController: UIViewController, EntityTraitView {
     fileprivate var entity: EntityExt!
     fileprivate var trait: AnyTraitInstance!
 
-    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance, fullEntity: Bool) {
         self.entity = entity
         self.trait = trait
     }

@@ -12,7 +12,7 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
     private var toLabel: UILabel!
     private var subjectLabel: UILabel!
 
-    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance, fullEntity: Bool) {
         self.entity = entity
         self.email = entity.trait(withId: trait.id)
         self.loadData()

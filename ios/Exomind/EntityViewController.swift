@@ -7,6 +7,7 @@ class EntityViewController: UIViewController {
     private var entityId: EntityId!
     private var entity: EntityExt?
     private var entityTrait: AnyTraitInstance?
+    private var fullEntity: Bool = false
     private var specificTraitId: TraitId?
 
     private var entityQuery: QueryStreamHandle?
@@ -47,6 +48,7 @@ class EntityViewController: UIViewController {
                 return
             }
 
+            this.fullEntity = true
             this.entity = entity.toExtension()
             if let specificTraitId = this.specificTraitId {
                 this.entityTrait = this.entity?.trait(anyWithId: specificTraitId)
@@ -72,7 +74,7 @@ class EntityViewController: UIViewController {
             self.createEntityViewController()
             self.viewCreated = true
         } else if let vc = self.entityViewController {
-            vc.loadEntityTrait(entity: entity, trait: trait)
+            vc.loadEntityTrait(entity: entity, trait: trait, fullEntity: self.fullEntity)
         }
     }
 
@@ -104,7 +106,7 @@ class EntityViewController: UIViewController {
             return
         }
 
-        vc.loadEntityTrait(entity: entity, trait: trait)
+        vc.loadEntityTrait(entity: entity, trait: trait, fullEntity: self.fullEntity)
         self.entityViewController = vc
         self.showVC(vc)
     }
@@ -129,5 +131,5 @@ class EntityViewController: UIViewController {
 }
 
 protocol EntityTraitView: UIViewController {
-    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance)
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance, fullEntity: Bool)
 }

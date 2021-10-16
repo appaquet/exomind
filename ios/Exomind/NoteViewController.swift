@@ -11,7 +11,12 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
     private var titleField: MultilineTextField!
     private var richTextEditor: RichTextEditor!
 
-    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance, fullEntity: Bool) {
+        if !fullEntity {
+            // we only load if it's full entity to prevent saving empty
+            return
+        }
+
         self.entity = entity
         self.noteTrait = entity.trait(withId: trait.id)
 

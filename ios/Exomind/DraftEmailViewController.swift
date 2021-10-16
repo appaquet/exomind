@@ -18,7 +18,12 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
     private var accounts = [Account]()
     private var accountQuery: QueryHandle?
 
-    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance, fullEntity: Bool) {
+        if !fullEntity {
+            // we only load if it's full entity to prevent saving empty
+            return
+        }
+        
         self.entity = entity
         self.draftTrait = entity.trait(withId: trait.id)
 

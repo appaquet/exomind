@@ -8,7 +8,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
     private var collection: TraitInstance<Exomind_Base_V1_Collection>!
     private var entityListViewController: EntityListViewController!
 
-    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance) {
+    func loadEntityTrait(entity: EntityExt, trait: AnyTraitInstance, fullEntity: Bool) {
         self.entity = entity
         self.collection = entity.trait(withId: trait.id)
         self.navigationItem.title = trait.displayName
