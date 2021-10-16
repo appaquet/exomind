@@ -60,7 +60,8 @@ async fn test_integration() -> anyhow::Result<()> {
         handle2.send_message(reply_msg).await;
         handle1.recv_rdv(123).await;
 
-        // send 2 to 1, should expect receiving 1 new messages (so total 3 because of prev reply)
+        // send 2 to 1, should expect receiving 1 new messages (so total 3 because of
+        // prev reply)
         handle2.send_rdv(n1.node().clone(), 345).await;
         async_expect_eventually(|| async { handle1.received_count().await == 3 }).await;
     }

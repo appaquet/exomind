@@ -741,12 +741,14 @@ where
             .into_iter()
             .chain(chain_results.mutations.into_iter())
             .sorted_by_key(|result| {
-                // sorts mutations in order they got committed (block offset/pending, then operation id)
+                // sorts mutations in order they got committed (block offset/pending, then
+                // operation id)
                 let block_offset = result.block_offset.unwrap_or(std::u64::MAX);
                 (block_offset, result.operation_id)
             })
             .dedup_by(|a, b| {
-                // make sure we don't have duplicate across pending & chain (may happen temporarily)
+                // make sure we don't have duplicate across pending & chain (may happen
+                // temporarily)
                 a.operation_id == b.operation_id
             }))
     }

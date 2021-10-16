@@ -30,21 +30,6 @@ impl<Tz: chrono::TimeZone> ProstDateTimeExt for chrono::DateTime<Tz> {
     }
 }
 
-pub trait ProstMessageExt {
-    fn encode_to_vec(&self) -> Vec<u8>;
-}
-
-impl<M> ProstMessageExt for M
-where
-    M: Message,
-{
-    fn encode_to_vec(&self) -> Vec<u8> {
-        let mut buf = Vec::new();
-        self.encode(&mut buf).expect("Couldn't encode into Vec");
-        buf
-    }
-}
-
 pub trait ProstAnyPackMessageExt {
     fn pack_to_any(&self) -> Result<Any, Error>;
 

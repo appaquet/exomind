@@ -288,7 +288,8 @@ where
         self.socket.write_all(&size_buf).await?;
         self.socket.write_all(&message.message).await?;
 
-        // if we have a stream, copy the stream to socket then drop the substream to notify the end of stream
+        // if we have a stream, copy the stream to socket then drop the substream to
+        // notify the end of stream
         if let Some(stream) = message.stream {
             futures::io::copy(stream, &mut self.socket).await?;
             self.socket.flush().await?;
@@ -342,7 +343,8 @@ where
 
 const STREAM_MASK: usize = 1 << 31;
 
-/// Encodes message size and uses high bit to indicate that there is a stream after message.
+/// Encodes message size and uses high bit to indicate that there is a stream
+/// after message.
 fn encode_msg_len(mut len: usize, has_stream: bool, into: &mut [u8]) {
     if has_stream {
         len |= STREAM_MASK;

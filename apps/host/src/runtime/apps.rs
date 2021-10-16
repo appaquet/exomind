@@ -9,7 +9,7 @@ use exocore_core::{
 };
 use exocore_protos::{
     apps::{in_message::InMessageType, out_message::OutMessageType, InMessage, OutMessage},
-    prost::{Message, ProstMessageExt},
+    prost::Message,
     store::{EntityQuery, MutationRequest},
 };
 use exocore_store::store::Store;

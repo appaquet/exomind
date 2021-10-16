@@ -10,7 +10,7 @@ mod js;
 
 use std::sync::Once;
 
-use exocore_protos::prost::ProstMessageExt;
+use exocore_protos::prost::Message;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]

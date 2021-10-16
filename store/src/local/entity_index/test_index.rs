@@ -4,7 +4,7 @@ use exocore_chain::{
 };
 use exocore_protos::{
     generated::{exocore_store::Trait, exocore_test::TestMessage},
-    prost::{ProstAnyPackMessageExt, ProstMessageExt},
+    prost::{Message, ProstAnyPackMessageExt},
 };
 
 use super::EntityIndexConfig;

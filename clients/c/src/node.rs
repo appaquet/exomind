@@ -1,8 +1,5 @@
 use exocore_core::cell::LocalNode as CoreLocalNode;
-use exocore_protos::{
-    core::LocalNodeConfig,
-    prost::{Message, ProstMessageExt},
-};
+use exocore_protos::{core::LocalNodeConfig, prost::Message};
 
 use crate::utils::BytesVec;
 

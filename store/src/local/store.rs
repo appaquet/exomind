@@ -16,7 +16,7 @@ use exocore_protos::{
         entity_mutation::Mutation, entity_query, EntityQuery, EntityResults, MutationRequest,
         MutationResult,
     },
-    prost::ProstMessageExt,
+    prost::Message,
     store::OperationsPredicate,
 };
 use futures::{
@@ -821,7 +821,8 @@ pub mod tests {
                 let is_deleted = res.entities.is_empty();
 
                 if !is_deleted {
-                    // if not yet deleted, we create a new mutation on another entity to make sure entity deletion is in chain
+                    // if not yet deleted, we create a new mutation on another entity to make sure
+                    // entity deletion is in chain
                     store_handle.mutate(ent2_mut.clone()).await.unwrap();
                     false
                 } else {

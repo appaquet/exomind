@@ -164,7 +164,8 @@ impl GarbageCollector {
         deletions
     }
 
-    /// Generates garbage collection operations that need to be applied for an entity.
+    /// Generates garbage collection operations that need to be applied for an
+    /// entity.
     fn gen_entity_collections(&self, aggregator: &EntityAggregator) -> Vec<GCOperation> {
         // we don't collect if any of the operations are still in pending store or if
         // a deletion is pending for the entity

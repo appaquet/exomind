@@ -1,6 +1,6 @@
 use exocore_protos::{
     generated::core::{AuthToken as AuthTokenProto, AuthTokenData as AutoTokenDataProto},
-    prost::{Message, ProstMessageExt},
+    prost::Message,
 };
 
 use crate::{

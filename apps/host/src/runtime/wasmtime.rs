@@ -2,7 +2,7 @@ use std::{path::Path, sync::Arc, time::Duration};
 
 use exocore_protos::{
     apps::{InMessage, MessageStatus, OutMessage},
-    prost::{self, ProstMessageExt},
+    prost::{self, Message},
 };
 use log::Level;
 use wasmtime::*;

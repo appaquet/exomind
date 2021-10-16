@@ -7,9 +7,7 @@ use std::{
 
 use exocore_core::{cell::Cell, futures::Runtime, time::Clock};
 use exocore_protos::{
-    generated::exocore_store::EntityQuery,
-    prost::{Message, ProstMessageExt},
-    store::MutationRequest,
+    generated::exocore_store::EntityQuery, prost::Message, store::MutationRequest,
 };
 use exocore_store::{
     remote::{Client as StoreClient, ClientConfiguration, ClientHandle},

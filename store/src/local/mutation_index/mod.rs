@@ -362,8 +362,9 @@ impl MutationIndex {
             None,
         )?;
 
-        // because of the way we index pending (we may have pending store events after indexing it after first),
-        // we need to make sure we don't include any duplicate operations
+        // because of the way we index pending (we may have pending store events after
+        // indexing it after first), we need to make sure we don't include any
+        // duplicate operations
         dedup_results(&self.storage, &mut results);
 
         let entity_mutations = EntityMutationResults {

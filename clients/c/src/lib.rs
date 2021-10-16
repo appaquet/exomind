@@ -1,6 +1,6 @@
 use std::{ffi::CStr, sync::Once};
 
-use exocore_protos::prost::ProstMessageExt;
+use exocore_protos::prost::Message;
 use libc::c_char;
 use utils::BytesVec;
 

@@ -10,7 +10,7 @@ use std::{
 use exocore_protos::{
     apps::{out_message::OutMessageType, InMessage, MessageStatus, OutMessage},
     generated::store::{EntityQuery, EntityResults},
-    prost::{Message, ProstMessageExt},
+    prost::Message,
     store::MutationResult,
 };
 use exocore_store::mutation::MutationRequestLike;

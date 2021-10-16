@@ -7,7 +7,7 @@ use exocore_protos::{
             watched_query_request,
         },
     },
-    prost::{Message, ProstMessageExt},
+    prost::Message,
     store::{MutationRequest, MutationResult},
 };
 

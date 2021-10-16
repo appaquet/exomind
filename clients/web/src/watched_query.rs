@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc, sync::Arc};
 use exocore_core::futures::spawn_future_non_send;
 use exocore_protos::{
     generated::exocore_store::{EntityQuery, EntityResults},
-    prost::ProstMessageExt,
+    prost::Message,
 };
 use exocore_store::{remote::ClientHandle, store::Store};
 use futures::{channel::oneshot, prelude::*};
