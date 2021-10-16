@@ -1,7 +1,7 @@
 ---
 id: peH738jRyQYohXpEyCArXHQVibCGBjwU1CjZuUnNZygSaf
 name: exomind
-version: 0.1.10
+version: 0.1.11
 public_key: peH738jRyQYohXpEyCArXHQVibCGBjwU1CjZuUnNZygSaf
 schemas:
   - file: exomind.fd
