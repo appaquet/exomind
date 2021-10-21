@@ -116,7 +116,7 @@
     "@types/sanitize-html": "^2.5.0",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
-    "babel-loader": "^8.2.2",
+    "babel-loader": "^8.2.3",
     "cookie-parser": "^1.4.5",
     "css-loader": "^5.2.7",
     "electron": "^15.3.0",
