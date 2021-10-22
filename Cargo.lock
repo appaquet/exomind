@@ -950,9 +950,9 @@ dependencies = [
 
 [[package]]
 name = "google-gmail1"
-version = "2.0.8+20210322"
+version = "2.0.9+20210322"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69dfcdb76f8927b60e0715a98d14e9a122162542a1c71e3d5aaf4a87f23b668a"
+checksum = "b040ebc5ad85578e127f057fd1cf0a4161d50e2a8a69106e3353f2e0333f5d34"
 dependencies = [
  "hyper",
  "hyper-rustls",
