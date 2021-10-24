@@ -187,8 +187,8 @@ mod tests {
         let dropped = dropper.dropped.clone();
 
         let spawned = owned_spawn(async move {
-            let _ = dropper;
             sleep(Duration::from_secs(3600)).await;
+            drop(dropper);
             Ok::<(), ()>(())
         });
 
@@ -220,8 +220,8 @@ mod tests {
         let dropper = Dropper::default();
         let dropped = dropper.dropped.clone();
         set.spawn(async move {
-            let _ = dropper;
             sleep(Duration::from_secs(3600)).await;
+            drop(dropper);
             1 + 1
         });
 

@@ -108,6 +108,7 @@ pub unsafe extern "C" fn exocore_discovery_join_cell(
     let callback_ctx = CallbackContext { ctx: callback_ctx };
     let client = disco.client.clone();
     let fut = async move {
+        let callback_ctx = callback_ctx; // required since the struct is send + sync, not the field
         let reply_pin = match push_config(&node_config, client.clone()).await {
             Ok((disco_pin, reply_pin)) => {
                 info!(

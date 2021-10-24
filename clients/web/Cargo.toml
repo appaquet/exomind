@@ -1,6 +1,6 @@
 [package]
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
-edition = "2018"
+edition = "2021"
 name = "exocore-client-web"
 version = "0.1.15"
 

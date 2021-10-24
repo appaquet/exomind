@@ -385,7 +385,7 @@ impl MutationIndex {
     ) -> Result<MutationResults, Error> {
         let searcher = self.index_reader.searcher();
 
-        let mut ordering = ordering.cloned().unwrap_or_else(Ordering::default);
+        let mut ordering = ordering.cloned().unwrap_or_default();
         if ordering.value.is_none() {
             ordering.value = Some(ordering::Value::OperationId(true));
         }
@@ -439,7 +439,7 @@ impl MutationIndex {
     ) -> Result<MutationResults, Error> {
         let searcher = self.index_reader.searcher();
 
-        let mut ordering = ordering.cloned().unwrap_or_else(Ordering::default);
+        let mut ordering = ordering.cloned().unwrap_or_default();
         if ordering.value.is_none() {
             ordering.value = Some(ordering::Value::Score(true));
         }
@@ -465,7 +465,7 @@ impl MutationIndex {
         }
         let query = BooleanQuery::from(queries);
 
-        let mut ordering = ordering.cloned().unwrap_or_else(Ordering::default);
+        let mut ordering = ordering.cloned().unwrap_or_default();
         if ordering.value.is_none() {
             ordering.value = Some(ordering::Value::OperationId(true));
             ordering.ascending = true;
@@ -491,7 +491,7 @@ impl MutationIndex {
         }
         let query = BooleanQuery::from(queries);
 
-        let mut ordering = ordering.cloned().unwrap_or_else(Ordering::default);
+        let mut ordering = ordering.cloned().unwrap_or_default();
         if ordering.value.is_none() {
             ordering.value = Some(ordering::Value::OperationId(true));
         }
@@ -511,7 +511,7 @@ impl MutationIndex {
 
         let query = self.reference_predicate_to_query(self.fields.all_refs, predicate);
 
-        let mut ordering = ordering.cloned().unwrap_or_else(Ordering::default);
+        let mut ordering = ordering.cloned().unwrap_or_default();
         if ordering.value.is_none() {
             ordering.value = Some(ordering::Value::OperationId(true));
         }
@@ -528,7 +528,7 @@ impl MutationIndex {
     ) -> Result<MutationResults, Error> {
         let searcher = self.index_reader.searcher();
 
-        let mut ordering = ordering.cloned().unwrap_or_else(Ordering::default);
+        let mut ordering = ordering.cloned().unwrap_or_default();
         if ordering.value.is_none() {
             ordering.value = Some(ordering::Value::OperationId(true));
             ordering.ascending = false;

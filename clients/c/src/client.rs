@@ -445,6 +445,7 @@ impl Client {
         let store = self.store_handle.clone();
         let callback_ctx = CallbackContext { ctx: callback_ctx };
         self._runtime.spawn(async move {
+            let callback_ctx = callback_ctx; // required since the struct is send + sync, not the field
             let future_result = store.mutate(mutation);
 
             match future_result.await {
@@ -498,6 +499,7 @@ impl Client {
         let operation_id_clone = operation_id.clone(); // query keeps strong ref to it since it's used for cancellation
         let store = self.store_handle.clone();
         self._runtime.spawn(async move {
+            let callback_ctx = callback_ctx; // required since the struct is send + sync, not the field
             let future_result = store.query(query);
             let result = select! {
                 _ = cancel_receiver.fuse() => {
@@ -570,6 +572,7 @@ impl Client {
         let store = self.store_handle.clone();
         let operation_id_clone = operation_id.clone(); // query keeps strong ref to it since it's used for cancellation
         self._runtime.spawn(async move {
+            let callback_ctx = callback_ctx; // required since the struct is send + sync, not the field
             let mut result_stream = match store.watched_query(query) {
                 Ok(ok) => ok,
                 Err(err) => {

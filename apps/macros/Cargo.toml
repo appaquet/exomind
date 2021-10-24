@@ -2,7 +2,7 @@
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 categories = ["database-implementations", "command-line-interface", "wasm", "web-programming"]
 description = "Distributed applications framework"
-edition = "2018"
+edition = "2021"
 keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-apps-macros"

@@ -2,7 +2,7 @@
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 categories = ["database-implementations", "command-line-interface", "wasm", "web-programming"]
 description = "Core of Exocore (Distributed applications framework)"
-edition = "2018"
+edition = "2021"
 keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-core"
@@ -63,6 +63,7 @@ shadow-rs = {version = "0.7", default-features = false}
 criterion_bencher_compat = "0.3"
 log4rs = "1.0"
 tempfile = "3.2"
+tokio = {version = "1.12", features = ["macros", "rt", "rt-multi-thread", "time"], default-features = false}
 
 [[bench]]
 harness = false
