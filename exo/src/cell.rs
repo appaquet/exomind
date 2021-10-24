@@ -1,7 +1,6 @@
 use std::{io::Write, path::PathBuf, time::Duration};
 
 use bytes::Bytes;
-use clap::Clap;
 use console::style;
 use exocore_chain::{
     block::{Block, BlockBuilder, BlockOperations, DataBlock},
@@ -35,7 +34,7 @@ use crate::{
     Context, *,
 };
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 pub struct CellOptions {
     /// Public key of the cell we want to make an action on. If not specified
     /// and the node config only contains 1 cell, this cell will be taken.
@@ -51,7 +50,7 @@ pub struct CellOptions {
     command: CellCommand,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 enum CellCommand {
     /// Initializes a new cell.
     Init(InitOptions),
@@ -81,13 +80,13 @@ enum CellCommand {
     GenerateAuthToken(GenerateAuthTokenOptions),
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct CellChainOptions {
     #[clap(subcommand)]
     command: CellChainCommand,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 enum CellChainCommand {
     /// Initializes a chain with a genesis block.
     Init,
@@ -102,7 +101,7 @@ enum CellChainCommand {
     Import(ChainImportOptions),
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct InitOptions {
     /// Name of the cell
     #[clap(long)]
@@ -127,7 +126,7 @@ struct InitOptions {
 }
 
 /// Cell join related options
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct JoinOptions {
     /// The node will host the chain locally.
     #[clap(long)]
@@ -150,20 +149,20 @@ struct JoinOptions {
     no_app_unpack: bool,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct NodeOptions {
     #[clap(subcommand)]
     command: NodeCommand,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 pub struct PrintOptions {
     /// Inline configuration instead of pointing to external objects.
     #[clap(long)]
     pub inline: bool,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 enum NodeCommand {
     /// Add a node to the cell.
     Add(NodeAddOptions),
@@ -172,14 +171,14 @@ enum NodeCommand {
     List,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct NodeAddOptions {
     /// Manually add the node using its node configuration yaml.
     #[clap(long)]
     manual: bool,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct ChainExportOptions {
     /// File in which chain will be exported.
     file: PathBuf,
@@ -189,7 +188,7 @@ struct ChainExportOptions {
     drop_operation_deletions: bool,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct ChainImportOptions {
     /// Files from which chain will be imported.
     files: Vec<PathBuf>,
@@ -200,20 +199,20 @@ struct ChainImportOptions {
     operations_per_block: Option<usize>,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct GenerateAuthTokenOptions {
     /// Token expiration duration in days.
     #[clap(long, default_value = "30")]
     expiration_days: u16,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct AppOptions {
     #[clap(subcommand)]
     command: AppCommand,
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 enum AppCommand {
     /// List applications installed in cell.
     List,
@@ -226,7 +225,7 @@ enum AppCommand {
     Unpack(AppUnpackOptions),
 }
 
-#[derive(Clap, Clone)]
+#[derive(clap::Parser, Clone)]
 struct AppInstallOptions {
     /// URL to application package to install.
     url: String,
@@ -236,7 +235,7 @@ struct AppInstallOptions {
     overwrite: bool,
 }
 
-#[derive(Clap, Clone, Default)]
+#[derive(clap::Parser, Clone, Default)]
 struct AppUnpackOptions {
     /// Optional name of the application to unpack.
     /// If none specified, all applications will be unpacked.

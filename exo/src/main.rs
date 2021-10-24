@@ -16,14 +16,14 @@ extern crate anyhow;
 
 use std::{path::PathBuf, str::FromStr};
 
-use clap::Clap;
+use clap::Parser;
 use exocore_core::cell::LocalNodeConfigExt;
 use exocore_protos::core::LocalNodeConfig;
 use log::LevelFilter;
 use term::*;
 use utils::expand_tild;
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 #[clap(name = "exocore-cli", about = "Exocore Command Line Interface")]
 pub struct Options {
     /// Logging level (off, error, warn, info, debug, trace)
@@ -86,7 +86,7 @@ impl Context {
     }
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub enum Command {
     /// Nodes related commands.
     Node(node::NodeOptions),

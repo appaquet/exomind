@@ -1,4 +1,3 @@
-use clap::Clap;
 use exocore_core::cell::{LocalNodeConfigExt, NodeConfigExt};
 use exocore_protos::core::{
     cell_application_config, node_cell_config, LocalNodeConfig, NodeConfig,
@@ -11,13 +10,13 @@ use crate::{
     Context,
 };
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct ConfigOptions {
     #[clap(subcommand)]
     pub command: ConfigCommand,
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub enum ConfigCommand {
     /// Edit node configuration.
     Edit,
@@ -29,7 +28,7 @@ pub enum ConfigCommand {
     Validate,
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct PrintOptions {
     /// Print format.
     #[clap(long, default_value = "yaml")]

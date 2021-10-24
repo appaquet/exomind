@@ -4,7 +4,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use clap::Clap;
 use exocore_core::{
     cell::{Application, Cell, CellApplicationConfigExt, CellConfigExt, ManifestExt},
     sec::{
@@ -25,13 +24,13 @@ use crate::{
     Context,
 };
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct AppOptions {
     #[clap(subcommand)]
     pub command: AppCommand,
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub enum AppCommand {
     /// Generates an application structure in current directory.
     Generate(GenerateOptions),
@@ -40,13 +39,13 @@ pub enum AppCommand {
     Package(PackageOptions),
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct GenerateOptions {
     /// Application name
     name: String,
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct PackageOptions {
     directory: Option<PathBuf>,
 }

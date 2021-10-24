@@ -1,24 +1,23 @@
 use std::fs::File;
 
-use clap::Clap;
 use exocore_core::cell::{LocalNode, LocalNodeConfigExt};
 use exocore_protos::core::{LocalNodeConfig, NodeAddresses};
 
 use crate::{term::*, Context};
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct NodeOptions {
     #[clap(subcommand)]
     pub command: NodeCommand,
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub enum NodeCommand {
     /// Initializes the node.
     Init(InitOptions),
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct InitOptions {
     /// Name of the node.
     #[clap(long)]

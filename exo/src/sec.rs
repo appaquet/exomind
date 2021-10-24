@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use clap::Clap;
 use exocore_core::{
     cell::{Node, NodeId},
     sec::{
@@ -11,13 +10,13 @@ use exocore_core::{
 
 use crate::Context;
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct SecOptions {
     #[clap(subcommand)]
     pub command: SecCommand,
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub enum SecCommand {
     /// Generates a keypair.
     GenerateKey,
@@ -26,7 +25,7 @@ pub enum SecCommand {
     MultihashFile(MultihashFileOpt),
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct MultihashFileOpt {
     // File to multihash
     file: PathBuf,

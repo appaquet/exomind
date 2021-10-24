@@ -1,21 +1,20 @@
-use clap::Clap;
 use exocore_discovery::{Client, Pin, Server, ServerConfig};
 
 use crate::Context;
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct DiscoveryOptions {
     #[clap(subcommand)]
     pub command: DiscoveryCommand,
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub enum DiscoveryCommand {
     // Starts a discovery service daemon.
     Daemon(DaemonOptions),
 }
 
-#[derive(Clap)]
+#[derive(clap::Parser)]
 pub struct DaemonOptions {
     #[clap(long, default_value = "8085")]
     port: u16,
