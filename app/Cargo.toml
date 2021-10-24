@@ -2,7 +2,7 @@
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 categories = ["command-line-interface", "email", "text-editors"]
 description = "Exomind, a personal knowledge management tool"
-edition = "2018"
+edition = "2021"
 keywords = ["knowledge-management", "mobile", "decentralized", "webapp"]
 license = "Apache-2.0"
 name = "exomind-app"
