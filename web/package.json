@@ -111,7 +111,7 @@
     "@types/lodash": "^4.14.176",
     "@types/node": "^16.11.6",
     "@types/react": "^17.0.33",
-    "@types/react-dom": "^17.0.10",
+    "@types/react-dom": "^17.0.11",
     "@types/react-flatpickr": "^3.8.4",
     "@types/sanitize-html": "^2.5.0",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
