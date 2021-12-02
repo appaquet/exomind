@@ -729,7 +729,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "yup-oauth2",
+ "yup-oauth2 6.1.0",
 ]
 
 [[package]]
@@ -948,7 +948,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "url 1.7.2",
- "yup-oauth2",
+ "yup-oauth2 5.1.0",
 ]
 
 [[package]]
@@ -3284,6 +3284,31 @@ dependencies = [
  "http",
  "hyper",
  "hyper-rustls",
+ "log 0.4.14",
+ "percent-encoding 2.1.0",
+ "rustls",
+ "seahash",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url 2.2.2",
+]
+
+[[package]]
+name = "yup-oauth2"
+version = "6.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb743246c2d5112100d21059dd18a9a576917ca5ee83a4563eb121c8e349daa7"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.13.0",
+ "chrono",
+ "futures",
+ "http",
+ "hyper",
+ "hyper-rustls",
+ "itertools 0.10.1",
  "log 0.4.14",
  "percent-encoding 2.1.0",
  "rustls",
