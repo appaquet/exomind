@@ -4549,9 +4549,9 @@ dependencies = [
 
 [[package]]
 name = "weak-table"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a8f3bf74f2d43500dea6a8291b6ac943e3465ea9936b94bd017e61b7b21dd01"
+checksum = "a2b74ef7b05abe5a9fe73f3ce85d33f5d31553c78170d65f88655767a27d8be8"
 
 [[package]]
 name = "web-sys"
