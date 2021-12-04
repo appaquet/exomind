@@ -60,8 +60,12 @@ pub fn multihash_decode_bs58(str: &str) -> Result<Multihash, HashError> {
 
 pub fn multihash_sha3_256_file<P: AsRef<Path>>(path: P) -> Result<Multihash, HashError> {
     let file = File::open(path.as_ref())?;
+    multihash_sha3_256(file)
+}
+
+pub fn multihash_sha3_256<R: Read>(reader: R) -> Result<Multihash, HashError> {
     let mut digest = Sha3_256::default();
-    let mh = digest.update_from_reader(file)?;
+    let mh = digest.update_from_reader(reader)?;
     Ok(mh)
 }
 

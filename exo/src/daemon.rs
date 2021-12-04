@@ -22,8 +22,8 @@ use futures::{Future, FutureExt};
 use crate::Context;
 
 pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
-    let config = ctx.options.read_configuration();
-    let (either_cells, local_node) = Cell::from_local_node_config(config.clone())?;
+    let (local_node, either_cells) = ctx.options.get_node_and_cells();
+    let node_config = local_node.config().clone();
 
     let clock = Clock::new();
 
@@ -47,13 +47,14 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
             let cell_name = cell.name().to_string();
 
             // make sure data directory exists
-            let chain_dir = cell.chain_directory().ok_or_else(|| {
-                anyhow!("{}: Cell doesn't have a directory configured", cell_name)
-            })?;
+            let chain_dir = cell
+                .chain_directory()
+                .as_os_path()
+                .expect("Cell is not stored in an OS directory");
             std::fs::create_dir_all(&chain_dir)?;
 
             // create chain store
-            let chain_config = config.chain.clone().unwrap_or_default();
+            let chain_config = node_config.chain.clone().unwrap_or_default();
             let chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)?;
             let pending_store = MemoryPendingStore::new();
 
@@ -94,7 +95,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
                     }
                 };
 
-                let entities_index_config: EntityIndexConfig = config
+                let entities_index_config: EntityIndexConfig = node_config
                     .store
                     .clone()
                     .and_then(|s| s.index)
@@ -118,7 +119,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
                     EitherTransportServiceHandle::new(store_p2p_transport, store_http_transport);
 
                 let (store_handle, store_task) = create_local_store(
-                    &config,
+                    &node_config,
                     store_transport,
                     store_engine_handle,
                     full_cell,
@@ -181,7 +182,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
         target_arch = "x86_64",
         any(target_os = "linux", target_os = "macos", target_os = "windows")
     ),
-    all(target_arch = "aarch64", target_os = "linux")
+    all(target_arch = "aarch64", any(target_os = "linux", target_os = "macos"))
 ))]
 async fn create_app_host(
     clock: Clock,
@@ -236,7 +237,7 @@ async fn create_app_host(
         target_arch = "x86_64",
         any(target_os = "linux", target_os = "macos", target_os = "windows")
     ),
-    all(target_arch = "aarch64", target_os = "linux")
+    all(target_arch = "aarch64", any(target_os = "linux", target_os = "macos"))
 )))]
 async fn create_app_host(
     _clock: Clock,

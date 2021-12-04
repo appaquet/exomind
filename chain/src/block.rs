@@ -782,7 +782,7 @@ mod tests {
     #[test]
     fn block_create_and_read() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let full_cell = FullCell::generate(local_node.clone());
+        let full_cell = FullCell::generate(local_node.clone())?;
 
         {
             // local node is chain node
@@ -852,7 +852,7 @@ mod tests {
     #[test]
     fn block_operations() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let full_cell = FullCell::generate(local_node.clone());
+        let full_cell = FullCell::generate(local_node.clone())?;
         let genesis = BlockBuilder::build_genesis(&full_cell)?;
 
         // 0 operations
@@ -883,7 +883,7 @@ mod tests {
     #[test]
     fn should_allocate_signatures_space_for_nodes() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let full_cell = FullCell::generate(local_node.clone());
+        let full_cell = FullCell::generate(local_node.clone())?;
         let cell = full_cell.cell();
 
         let node2 = {
@@ -922,7 +922,7 @@ mod tests {
     #[test]
     fn should_pad_signatures_from_block_signature_size() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let full_cell = FullCell::generate(local_node);
+        let full_cell = FullCell::generate(local_node)?;
         let cell = full_cell.cell();
         let genesis_block = BlockBuilder::build_genesis(&full_cell)?;
 

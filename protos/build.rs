@@ -45,6 +45,7 @@ fn main() {
                     "#[serde(rename_all = \"lowercase\")]",
                 )
                 .field_attribute("NodeCellConfig.location", "#[serde(flatten)]")
+                .field_attribute("NodeCellConfig.id", "#[serde(default)]") // TODO: Remove once migrated to new cell config
                 .type_attribute("NodeStoreConfig", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("ChainConfig", "#[derive(Serialize, Deserialize)]")
                 .type_attribute("EntityIndexConfig", "#[derive(Serialize, Deserialize)]")
@@ -77,7 +78,6 @@ fn main() {
                 .field_attribute("LocalNodeConfig.name", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.id", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.listen_addresses", "#[serde(default)]")
-                .field_attribute("LocalNodeConfig.path", "#[serde(default)]")
                 .field_attribute("LocalNodeConfig.store", "#[serde(default)]")
                 .field_attribute("NodeStoreConfig.index", "#[serde(default)]")
                 .field_attribute("NodeStoreConfig.query_parallelism", "#[serde(default)]")
@@ -98,10 +98,8 @@ fn main() {
                 .field_attribute("CellConfig.name", "#[serde(default)]")
                 .field_attribute("CellConfig.keypair", "#[serde(default)]")
                 .field_attribute("CellConfig.id", "#[serde(default)]")
-                .field_attribute("CellConfig.path", "#[serde(default)]")
                 .field_attribute("CellConfig.apps", "#[serde(default)]")
                 .field_attribute("CellNodeConfig.roles", "#[serde(default)]")
-                .field_attribute("Manifest.path", "#[serde(default)]")
                 .field_attribute("Manifest.schemas", "#[serde(default)]")
                 .field_attribute("ManifestModule.multihash", "#[serde(default)]");
 

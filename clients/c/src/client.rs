@@ -355,11 +355,10 @@ impl Client {
     unsafe fn new(node: *mut LocalNode) -> Result<Client, ClientStatus> {
         let local_node = node.as_mut().unwrap();
 
-        let (either_cells, local_node) =
-            Cell::from_local_node(local_node.node.clone()).map_err(|err| {
-                error!("Error creating cell: {}", err);
-                ClientStatus::Error
-            })?;
+        let either_cells = Cell::from_local_node(local_node.node.clone()).map_err(|err| {
+            error!("Error creating cell: {}", err);
+            ClientStatus::Error
+        })?;
 
         let either_cell = either_cells.first().cloned().ok_or_else(|| {
             error!("Configuration doesn't have any cell config");
@@ -374,7 +373,7 @@ impl Client {
         })?;
 
         let transport_config = Libp2pTransportConfig::default();
-        let mut transport = Libp2pTransport::new(local_node, transport_config);
+        let mut transport = Libp2pTransport::new(local_node.node.clone(), transport_config);
 
         let clock = Clock::new();
 

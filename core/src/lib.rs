@@ -9,6 +9,7 @@ pub mod framing;
 pub mod futures;
 
 pub mod build;
+pub mod dir;
 #[cfg(feature = "logger")]
 pub mod logging;
 pub mod sec;

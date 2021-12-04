@@ -1,4 +1,4 @@
-use exocore_core::cell::{LocalNodeConfigExt, NodeConfigExt};
+use exocore_core::cell::{LocalNode, LocalNodeConfigExt, NodeConfigExt};
 use exocore_protos::core::{
     cell_application_config, node_cell_config, LocalNodeConfig, NodeConfig,
 };
@@ -6,7 +6,7 @@ use exocore_protos::core::{
 use crate::{
     cell::copy_local_node_to_cells,
     term::{confirm, print_info},
-    utils::edit_file,
+    utils::edit_string,
     Context,
 };
 
@@ -30,10 +30,6 @@ pub enum ConfigCommand {
 
 #[derive(clap::Parser)]
 pub struct PrintOptions {
-    /// Print format.
-    #[clap(long, default_value = "yaml")]
-    pub format: String,
-
     /// Print configuration in `NodeConfig` format to be used to configure cell
     /// nodes.
     #[clap(long)]
@@ -64,19 +60,20 @@ pub fn handle_cmd(ctx: &Context, config_opts: &ConfigOptions) -> anyhow::Result<
 }
 
 fn cmd_edit(ctx: &Context, _conf_opts: &ConfigOptions) {
-    let config_path = ctx.options.conf_path();
+    let (local_node, _cells) = ctx.options.get_node_and_cells();
 
-    let node_config_before = ctx.options.read_configuration();
+    let config_before = local_node.config().clone();
+    let config_before_yaml = config_before
+        .to_yaml_string()
+        .expect("failed to serialize node config to yaml");
 
-    edit_file(config_path, |temp_path| {
-        LocalNodeConfig::from_yaml_file(temp_path)?;
-        Ok(())
+    let node_config_after = edit_string(config_before_yaml, |config_yaml| {
+        let config_bytes = config_yaml.as_bytes();
+        Ok(LocalNodeConfig::read_yaml(config_bytes)?)
     });
 
-    let node_config_after = ctx.options.read_configuration();
-
-    if node_config_before.addresses == node_config_after.addresses
-        && node_config_before.name == node_config_after.name
+    if config_before.addresses == node_config_after.addresses
+        && config_before.name == node_config_after.name
     {
         print_info("Node name or addresses didn't change. Not copying to cell.");
         return;
@@ -88,30 +85,27 @@ fn cmd_edit(ctx: &Context, _conf_opts: &ConfigOptions) {
 }
 
 fn cmd_validate(ctx: &Context, _conf_opts: &ConfigOptions) -> anyhow::Result<()> {
-    // parse config
-    let config = ctx.options.read_configuration();
-
     // create instance to validate the config
-    let (_cells, _node) = exocore_core::cell::Cell::from_local_node_config(config)?;
+    let (_cells, _node) = ctx.options.get_node_and_cells();
 
     Ok(())
 }
 
 fn cmd_print(ctx: &Context, _conf_opts: &ConfigOptions, print_opts: &PrintOptions) {
-    let node_config = ctx.options.read_configuration();
+    let (node, _cells) = ctx.options.get_node_and_cells();
 
     if !print_opts.cell {
-        cmd_print_node_config(node_config, print_opts);
+        cmd_print_node_config(node, print_opts);
     } else {
-        cmd_print_cell_node_config(node_config);
+        cmd_print_cell_node_config(node.config().clone());
     }
 }
 
-fn cmd_print_node_config(config: LocalNodeConfig, print_opts: &PrintOptions) {
+fn cmd_print_node_config(node: LocalNode, print_opts: &PrintOptions) {
     let mut config = if print_opts.inline {
-        config.inlined().expect("Couldn't inline configuration")
+        node.inlined_config().expect("Couldn't inline node config")
     } else {
-        config
+        node.config().clone()
     };
 
     if print_opts.exclude_app_schemas {
@@ -128,11 +122,10 @@ fn cmd_print_node_config(config: LocalNodeConfig, print_opts: &PrintOptions) {
         }
     }
 
-    if print_opts.format == "json" {
-        println!("{}", config.to_json().expect("Couldn't convert to json"));
-    } else {
-        println!("{}", config.to_yaml().expect("Couldn't convert to yaml"));
-    }
+    println!(
+        "{}",
+        config.to_yaml_string().expect("Couldn't convert to yaml")
+    );
 }
 
 fn cmd_print_cell_node_config(config: LocalNodeConfig) {
@@ -143,5 +136,10 @@ fn cmd_print_cell_node_config(config: LocalNodeConfig) {
         addresses: config.addresses,
     };
 
-    println!("{}", cell_node.to_yaml().expect("Couldn't convert to yaml"));
+    println!(
+        "{}",
+        cell_node
+            .to_yaml_string()
+            .expect("Couldn't convert to yaml")
+    );
 }

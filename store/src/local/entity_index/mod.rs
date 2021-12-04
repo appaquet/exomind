@@ -94,11 +94,12 @@ where
         pending_index.set_full_text_boost(config.pending_index_boost);
 
         // make sure directories are created
-        let mut chain_index_dir = cell
+        let chain_index_dir = cell
             .cell()
             .store_directory()
-            .ok_or_else(|| anyhow!("Cell doesn't have an path configured"))?;
-        chain_index_dir.push("chain");
+            .as_os_path()
+            .expect("Expected cell to be in an OS directory")
+            .join("chain");
         if std::fs::metadata(&chain_index_dir).is_err() {
             std::fs::create_dir_all(&chain_index_dir)?;
         }

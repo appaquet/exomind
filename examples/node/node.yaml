@@ -1,0 +1,48 @@
+# Node's keypair and public key
+# Use `exo sec generate-key` to generate node's keys
+name: Optional Node Name
+public_key: peFdPsQsdqzT2H6cPd3WdU1fGdATDmavh4C17VWWacZTMP
+keypair: ae2oiM2PYznyfqEMPraKbpAuA8LWVhPUiUTgdwjvnwbDjnz9W9FAiE9431NtVjfBaX44nPPoNR8Mv6iYcJdqSfp8eZ
+
+# Node's public addresses (and optionally listen addresses)
+addresses:
+  p2p:
+    - /ip4/127.0.0.1/tcp/3330
+    - /ip4/127.0.0.1/tcp/3341/ws
+  http:
+    - http://127.0.0.1:8888
+
+# Optional node's listen addresses. If not specified, `addresses` will be used.
+listen_addresses:
+  p2p:
+    - /ip4/0.0.0.0/tcp/3330
+  http:
+    - http://0.0.0.0:8888
+
+# Cells that the node is part of
+cells:
+  # Cell defined in a directory
+  - id: 12D3KooWDZAi5JzpbxQUyZ6kpS2g9idybyZp1i4i1Qu3XgAyZDa1
+
+store:
+  index:
+    chain_index_min_depth: 3
+    chain_index_depth_leeway: 10
+
+    pending_index:
+      indexer_num_threads: 2
+      indexer_heap_size_bytes: 30000000
+      entity_mutations_cache_size: 5000
+
+    chain_index:
+      indexer_num_threads: 2
+      indexer_heap_size_bytes: 30000000
+      entity_mutations_cache_size: 5000
+
+    garbage_collector:
+      run_interval_secs: 13
+      queue_size: 500
+
+chain:
+  segment_max_size: 209715200 # 200mb
+  segment_max_open_mmap: 10   # Max 2gb concurrently opened 

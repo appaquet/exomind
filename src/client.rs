@@ -1,15 +1,11 @@
-use std::path::Path;
+use core::{cell::LocalNode, dir::os::OsDirectory};
+use std::path::PathBuf;
 
 use anyhow::anyhow;
 use log::info;
 
 use crate::{
-    core::{
-        cell::{Cell, LocalNodeConfigExt},
-        futures::spawn_future,
-        time::Clock,
-    },
-    protos::core::LocalNodeConfig,
+    core::{cell::Cell, futures::spawn_future, time::Clock},
     store::remote::{Client as StoreClient, ClientHandle as StoreHandle},
     transport::{Libp2pTransport, ServiceType},
 };
@@ -20,13 +16,16 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn from_node_config_file<P: AsRef<Path>>(node_config: P) -> anyhow::Result<Self> {
-        let config = LocalNodeConfig::from_yaml_file(node_config.as_ref())?;
-        Ok(Self::new(config).await?)
+    pub async fn from_node_config_file<P: Into<PathBuf>>(
+        node_directory: P,
+    ) -> anyhow::Result<Self> {
+        let dir = OsDirectory::new(node_directory);
+        let node = LocalNode::from_directory(dir)?;
+        Ok(Self::new(node).await?)
     }
 
-    pub async fn new(config: LocalNodeConfig) -> anyhow::Result<Self> {
-        let (cells, local_node) = Cell::from_local_node_config(config)?;
+    pub async fn new(local_node: LocalNode) -> anyhow::Result<Self> {
+        let cells = Cell::from_local_node(local_node.clone())?;
         let either_cell = cells
             .first()
             .ok_or_else(|| anyhow!("Node doesn't have any cell configured"))?;

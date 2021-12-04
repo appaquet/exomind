@@ -682,7 +682,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn connects_to_online_node() -> anyhow::Result<()> {
         let client_node = LocalNode::generate();
-        let full_cell = FullCell::generate(client_node.clone());
+        let full_cell = FullCell::generate(client_node.clone())?;
         let clock = Clock::new();
         let transport = MockTransport::default();
 

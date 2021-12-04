@@ -48,11 +48,6 @@ impl BackoffCalculator {
         self.consecutive_failures_count
     }
 
-    #[inline]
-    pub fn clock(&self) -> &Clock {
-        &self.clock
-    }
-
     pub fn reset(&mut self) {
         self.consecutive_failures_count = 0;
         self.next_execution_allow = None;

@@ -22,6 +22,10 @@ runtime = [
   "tokio/macros",
 ]
 tests-utils = ["runtime", "logger"]
+web = [
+  "getrandom/js", # see https://docs.rs/getrandom/0.2.0/getrandom/#webassembly-support  
+  "web-sys",
+]
 
 [dependencies]
 anyhow = "1.0"
@@ -47,8 +51,11 @@ url = "2.2"
 uuid = {version = "0.8", features = ["v4", "wasm-bindgen"]}
 wasm-timer = "0.2"
 
+# web
+web-sys = {version = "0.3", features = ["Storage"], optional = true}
+
 [target."cfg(target_arch = \"wasm32\")".dependencies]
-getrandom = {version = "0.2", features = ["js"]}# see https://docs.rs/getrandom/0.2.0/getrandom/#webassembly-support
+getrandom = "0.2"
 parking_lot = {version = "0.11", features = ["wasm-bindgen"]}
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"

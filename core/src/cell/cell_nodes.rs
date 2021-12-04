@@ -250,6 +250,14 @@ impl CellNodeRole {
             }
         }
     }
+
+    pub fn to_config(&self) -> cell_node_config::Role {
+        match self {
+            CellNodeRole::Chain => cell_node_config::Role::ChainRole,
+            CellNodeRole::Store => cell_node_config::Role::StoreRole,
+            CellNodeRole::AppHost => cell_node_config::Role::AppHostRole,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -259,7 +267,7 @@ mod tests {
     #[test]
     fn nodes_add_get() {
         let local_node = LocalNode::generate();
-        let full_cell = FullCell::generate(local_node.clone());
+        let full_cell = FullCell::generate(local_node.clone()).unwrap();
 
         {
             let nodes = full_cell.cell().nodes();
@@ -299,7 +307,7 @@ mod tests {
     #[test]
     fn nodes_quorum() {
         let local_node = LocalNode::generate();
-        let full_cell = FullCell::generate(local_node);
+        let full_cell = FullCell::generate(local_node).unwrap();
 
         {
             // 1 node

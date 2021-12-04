@@ -6,20 +6,18 @@ use std::{
 
 use exocore_core::{
     cell::{Application, Cell, CellApplicationConfigExt, CellConfigExt, ManifestExt},
+    dir::os::OsDirectory,
     sec::{
         hash::{multihash_sha3_256_file, MultihashExt},
         keys::Keypair,
     },
 };
-use exocore_protos::{
-    apps::Manifest,
-    core::{cell_application_config, CellApplicationConfig, CellConfig},
-};
+use exocore_protos::{apps::Manifest, core::CellApplicationConfig};
 use tempfile::{tempdir_in, TempDir};
 use zip::write::FileOptions;
 
 use crate::{
-    term::{print_error, print_info, print_success, print_warning, style_value},
+    term::{print_action, print_error, print_info, print_success, print_warning, style_value},
     utils::expand_tild,
     Context,
 };
@@ -66,7 +64,6 @@ fn cmd_generate(_ctx: &Context, _app_opts: &AppOptions, gen_opts: &GenerateOptio
         name: gen_opts.name.clone(),
         version: "0.0.1".to_string(),
         public_key: kp.public().encode_base58_string(),
-        path: String::new(),
         schemas: Vec::new(),
         module: None,
     };
@@ -74,7 +71,7 @@ fn cmd_generate(_ctx: &Context, _app_opts: &AppOptions, gen_opts: &GenerateOptio
     let manifest_path = cur_dir.join("app.yaml");
     let manifest_file = File::create(manifest_path).expect("Couldn't create manifest file");
     manifest
-        .to_yaml_writer(manifest_file)
+        .write_yaml(manifest_file)
         .expect("Couldn't write manifest");
 
     print_success(format!(
@@ -97,19 +94,16 @@ fn cmd_package(_ctx: &Context, _app_opts: &AppOptions, pkg_opts: &PackageOptions
     let app_dir = expand_tild(app_dir).expect("Couldn't expand app directory");
 
     let manifest_path = app_dir.join("app.yaml");
-    let mut manifest_abs =
-        Manifest::from_yaml_file(manifest_path).expect("Couldn't read manifest file");
+    let manifest_file = File::open(manifest_path).expect("Couldn't open manifest file");
+    let mut manifest = Manifest::read_yaml(manifest_file).expect("Couldn't read manifest file");
 
-    if let Some(module) = &mut manifest_abs.module {
+    if let Some(module) = &mut manifest.module {
         module.multihash = multihash_sha3_256_file(&module.file)
             .expect("Couldn't multihash module")
             .encode_bs58();
     }
 
-    let mut manifest_rel = manifest_abs.clone();
-    manifest_rel.make_relative_paths(&app_dir);
-
-    let zip_file_path = cur_dir.join(format!("{}.zip", manifest_abs.name));
+    let zip_file_path = cur_dir.join(format!("{}.zip", manifest.name));
     let zip_file = File::create(&zip_file_path).expect("Couldn't create zip file");
     let zip_file_buf = BufWriter::new(zip_file);
 
@@ -118,11 +112,11 @@ fn cmd_package(_ctx: &Context, _app_opts: &AppOptions, pkg_opts: &PackageOptions
     zip_archive
         .start_file("app.yaml", FileOptions::default())
         .expect("Couldn't start zip file");
-    manifest_rel
-        .to_yaml_writer(&mut zip_archive)
+    manifest
+        .write_yaml(&mut zip_archive)
         .expect("Couldn't write manifest to zip");
 
-    if let Some(module) = &manifest_abs.module {
+    if let Some(module) = &manifest.module {
         zip_archive
             .start_file(&module.file, FileOptions::default())
             .expect("Couldn't start zip file");
@@ -131,7 +125,7 @@ fn cmd_package(_ctx: &Context, _app_opts: &AppOptions, pkg_opts: &PackageOptions
         std::io::copy(&mut module_file, &mut zip_archive).expect("Couldn't copy app module to zip");
     }
 
-    for schema in &manifest_rel.schemas {
+    for schema in &manifest.schemas {
         if let Some(exocore_protos::apps::manifest_schema::Source::File(file)) = &schema.source {
             zip_archive
                 .start_file(file, FileOptions::default())
@@ -148,8 +142,8 @@ fn cmd_package(_ctx: &Context, _app_opts: &AppOptions, pkg_opts: &PackageOptions
 
     print_success(format!(
         "Application {} version {} got packaged to {}",
-        style_value(manifest_abs.name),
-        style_value(manifest_abs.version),
+        style_value(manifest.name),
+        style_value(manifest.version),
         style_value(zip_file_path),
     ));
 }
@@ -199,7 +193,10 @@ impl AppPackage {
         let mut package_zip = zip::ZipArchive::new(reader)
             .map_err(|err| anyhow!("Couldn't read package zip: {}", err))?;
 
-        let cell_temp_dir = cell.temp_directory().expect("Cell didn't have a directory");
+        let cell_temp_dir = cell
+            .temp_directory()
+            .as_os_path()
+            .expect("Cell is not stored in an OS directory");
         std::fs::create_dir_all(&cell_temp_dir).expect("Couldn't create temp directory");
 
         let dir = tempdir_in(cell_temp_dir)
@@ -209,10 +206,8 @@ impl AppPackage {
             .extract(dir.path())
             .map_err(|err| anyhow!("Couldn't extract package: {}", err))?;
 
-        let manifest = Manifest::from_yaml_file(dir.path().join("app.yaml"))
-            .map_err(|err| anyhow!("Couldn't read manifest from package: {}", err))?;
-
-        let app = Application::new_from_manifest(manifest)
+        let app_dir = OsDirectory::new(dir.path().to_path_buf());
+        let app = Application::from_directory(app_dir)
             .map_err(|err| anyhow!("Couldn't create app from manifest: {}", err))?;
 
         Ok(AppPackage {
@@ -222,53 +217,49 @@ impl AppPackage {
         })
     }
 
-    pub async fn install(
-        &self,
-        cell: &Cell,
-        cell_config: &mut CellConfig,
-        overwrite: bool,
-    ) -> anyhow::Result<()> {
-        let apps_dir = cell.apps_directory().expect("No apps directory");
-        std::fs::create_dir_all(apps_dir).expect("Couldn't create app dir");
+    pub async fn install(&self, cell: &Cell, overwrite: bool) -> anyhow::Result<()> {
+        let apps_dir = cell.apps_directory();
+        let apps_dir_path = apps_dir.as_os_path()?;
+        std::fs::create_dir_all(apps_dir_path).expect("Couldn't create app dir");
 
         let app_dir = cell.app_directory(self.app.manifest()).unwrap();
-        let cell_dir = cell.cell_directory().unwrap();
+        let app_dir_path = app_dir.as_os_path()?;
 
-        let application = Application::new_from_directory(self.temp_dir.path())?;
+        let temp_dir = OsDirectory::new(self.temp_dir.path().to_path_buf());
+
+        let application = Application::from_directory(temp_dir)?;
         application
             .validate()
             .expect("Failed to validate the application");
 
-        if app_dir.exists() {
+        if app_dir_path.exists() {
             if overwrite {
                 print_info(format!(
                     "Application already installed at '{}'. Overwriting it.",
-                    style_value(&app_dir)
+                    style_value(&app_dir_path)
                 ));
-                std::fs::remove_dir_all(&app_dir).expect("Couldn't remove existing app dir");
+                std::fs::remove_dir_all(&app_dir_path).expect("Couldn't remove existing app dir");
             } else {
                 print_error(format!(
                     "Application already installed at '{}'. Use {} to overwrite it.",
-                    style_value(&app_dir),
+                    style_value(&app_dir_path),
                     style_value("--overwrite"),
                 ));
                 return Ok(());
             }
         }
 
-        std::fs::rename(&self.temp_dir, &app_dir).expect("Couldn't move temp app dir");
+        std::fs::rename(&self.temp_dir, &app_dir_path).expect("Couldn't move temp app dir");
 
         let mut cell_app_config = CellApplicationConfig::from_manifest(self.app.manifest().clone());
-        cell_app_config.location = Some(cell_application_config::Location::Path(
-            app_dir
-                .strip_prefix(cell_dir)
-                .unwrap()
-                .to_string_lossy()
-                .into(),
-        ));
+        cell_app_config.location = None;
         cell_app_config.package_url = self.url.clone();
 
+        print_action("Writing cell config...");
+        let mut cell_config = cell.config().clone();
         cell_config.add_application(cell_app_config);
+        cell.save_config(&cell_config)
+            .expect("Couldn't write cell config");
 
         Ok(())
     }

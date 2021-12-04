@@ -5,34 +5,6 @@ use std::{
     time::Duration,
 };
 
-pub fn edit_file<P: AsRef<Path>, V>(file: P, validator: V)
-where
-    V: Fn(&Path) -> anyhow::Result<()>,
-{
-    let temp_file = tempfile::NamedTempFile::new().expect("Couldn't create temp file");
-
-    std::fs::copy(&file, temp_file.path()).expect("Couldn't copy edit file to temp file");
-    let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vim".to_string());
-
-    loop {
-        Command::new(&editor)
-            .arg(temp_file.path().as_os_str())
-            .status()
-            .expect("Couldn't launch editor");
-
-        match validator(temp_file.path()) {
-            Ok(_) => break,
-            Err(err) => {
-                println!("Error: {}", err);
-                std::thread::sleep(Duration::from_secs(2));
-            }
-        }
-    }
-
-    std::fs::copy(temp_file.path(), &file)
-        .expect("Couldn't copy edited temp file to original file");
-}
-
 pub fn edit_string<S: AsRef<str>, V, R>(content: S, validator: V) -> R
 where
     V: Fn(&str) -> anyhow::Result<R>,

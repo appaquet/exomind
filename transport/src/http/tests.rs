@@ -16,7 +16,7 @@ use crate::{testing::TestableTransportHandle, ServiceType, TransportServiceHandl
 #[tokio::test]
 async fn invalid_requests() -> anyhow::Result<()> {
     let node = LocalNode::generate();
-    let full_cell = FullCell::generate(node.clone());
+    let full_cell = FullCell::generate(node.clone())?;
     let clock = Clock::new();
 
     let _handle = start_server(&full_cell, &clock, 3007).await;
@@ -47,7 +47,7 @@ async fn invalid_requests() -> anyhow::Result<()> {
 
     {
         // invalid cell
-        let cell = FullCell::generate(node.clone());
+        let cell = FullCell::generate(node.clone())?;
         let auth_token = AuthToken::new(cell.cell(), &clock, None)?;
         let auth_token = auth_token.encode_base58_string();
         let url = format!("http://127.0.0.1:3007/store/query?token={}", auth_token);
@@ -72,7 +72,7 @@ async fn invalid_requests() -> anyhow::Result<()> {
 #[tokio::test]
 async fn entities_query() -> anyhow::Result<()> {
     let node = LocalNode::generate();
-    let full_cell = FullCell::generate(node.clone());
+    let full_cell = FullCell::generate(node.clone())?;
     let clock = Clock::new();
 
     let auth_token = AuthToken::new(full_cell.cell(), &clock, None)?;
@@ -95,7 +95,7 @@ async fn entities_query() -> anyhow::Result<()> {
 #[tokio::test]
 async fn entities_mutation() -> anyhow::Result<()> {
     let node = LocalNode::generate();
-    let full_cell = FullCell::generate(node.clone());
+    let full_cell = FullCell::generate(node.clone())?;
     let clock = Clock::new();
 
     let auth_token = AuthToken::new(full_cell.cell(), &clock, None)?;

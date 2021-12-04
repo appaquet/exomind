@@ -10,7 +10,7 @@ mod error;
         target_arch = "x86_64",
         any(target_os = "linux", target_os = "macos", target_os = "windows")
     ),
-    all(target_arch = "aarch64", target_os = "linux")
+    all(target_arch = "aarch64", any(target_os = "linux", target_os = "macos"))
 ))]
 pub mod runtime;
 

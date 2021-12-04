@@ -23,7 +23,7 @@ apps-sdk = ["exocore-apps-sdk", "exocore-store", "protos"]
 client = ["core-runtime", "transport-p2p", "store-remote", "protos", "anyhow"]
 logger = ["core-logger"]
 tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils", "exocore-store/tests-utils"]
-web = ["transport-p2p-web", "protos"]
+web = ["transport-p2p-web", "protos", "exocore-core/web"]
 
 # Underlying crates features
 chain-directory-chain = ["exocore-chain/directory-chain"]

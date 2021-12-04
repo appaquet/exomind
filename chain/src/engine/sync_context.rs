@@ -109,19 +109,11 @@ impl SyncContextMessage {
 
 /// State of the synchronization, used to communicate information between the
 /// `ChainSynchronizer`, `CommitManager` and `PendingSynchronizer`.
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct SyncState {
     /// Indicates what is the last block that got cleaned up from pending store,
     /// and that is now only available from the chain. This is used by the
     /// `PendingSynchronizer` to know which operations it should not include
     /// anymore in its requests.
     pub pending_last_cleanup_block: Option<(BlockOffset, BlockHeight)>,
-}
-
-impl Default for SyncState {
-    fn default() -> Self {
-        SyncState {
-            pending_last_cleanup_block: None,
-        }
-    }
 }

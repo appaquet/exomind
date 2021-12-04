@@ -48,21 +48,34 @@ impl<S: Store> Applications<S> {
         store: S,
     ) -> Result<Applications<S>, Error> {
         let mut apps = Vec::new();
-        for app in cell.applications().applications() {
-            let cell_app = app.application();
-
-            let app_manifest = cell_app.manifest();
-            if app_manifest.module.is_none() {
+        for cell_app in cell.applications().get() {
+            let app = if let Some(app) = cell_app.get() {
+                app
+            } else {
+                warn!(
+                    "Application '{}' (id={}) not loaded. Run unpack to load them.",
+                    cell_app.name(),
+                    cell_app.id()
+                );
                 continue;
             };
 
-            let module_path = cell_app
-                .module_path()
-                .ok_or_else(|| anyhow!("Couldn't find module path"))?;
+            let app_manifest = app.manifest();
+            let module = if let Some(module) = &app_manifest.module {
+                module
+            } else {
+                continue;
+            };
+
+            let app_dir = app.directory();
+            let module_path = app_dir
+                .as_os_path()
+                .map_err(|err| anyhow!("module file is not accessible via os fs: {}", err))?
+                .join(&module.file);
 
             let app = Application {
                 cell: cell.clone(),
-                cell_app: cell_app.clone(),
+                cell_app: app.clone(),
                 module_path,
             };
             app.cell_app

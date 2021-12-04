@@ -12,27 +12,12 @@ pub fn child_to_abs_path<P: AsRef<Path>, C: AsRef<Path>>(parent: P, child: C) ->
     clean_path(parent_path_buf.join(child_path))
 }
 
-pub fn child_to_abs_path_string<P: AsRef<Path>, C: AsRef<Path>>(parent: P, child: C) -> String {
-    child_to_abs_path(parent, child)
-        .to_string_lossy()
-        .to_string()
-}
-
 pub fn child_to_relative_path<P: AsRef<Path>, C: AsRef<Path>>(parent: P, child: C) -> PathBuf {
     child
         .as_ref()
         .strip_prefix(parent.as_ref())
         .unwrap_or_else(|_| child.as_ref())
         .to_owned()
-}
-
-pub fn child_to_relative_path_string<P: AsRef<Path>, C: AsRef<Path>>(
-    parent: P,
-    child: C,
-) -> String {
-    child_to_relative_path(parent, child)
-        .to_string_lossy()
-        .to_string()
 }
 
 pub fn clean_path<P: AsRef<Path>>(path: P) -> PathBuf {

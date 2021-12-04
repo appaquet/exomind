@@ -303,9 +303,9 @@ mod tests {
         let mock2 = MockTransport::default();
 
         let node1 = LocalNode::generate();
-        let cell1 = FullCell::generate(node1.clone());
+        let cell1 = FullCell::generate(node1.clone())?;
         let node2 = LocalNode::generate();
-        let cell2 = FullCell::generate(node2.clone());
+        let cell2 = FullCell::generate(node2.clone())?;
 
         // create 2 different kind of transports
         // on node 1, we use it combined using the EitherTransportHandle

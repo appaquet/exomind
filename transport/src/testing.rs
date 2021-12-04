@@ -383,9 +383,9 @@ mod test {
         let hub = MockTransport::default();
 
         let node0 = LocalNode::generate();
-        let cell0 = FullCell::generate(node0.clone());
+        let cell0 = FullCell::generate(node0.clone()).unwrap();
         let node1 = LocalNode::generate();
-        let cell1 = FullCell::generate(node1.clone());
+        let cell1 = FullCell::generate(node1.clone()).unwrap();
 
         let t0 = hub.get_transport(node0.clone(), ServiceType::Chain);
         let mut t0 = TestableTransportHandle::new(t0, cell0.cell().clone());
@@ -411,7 +411,7 @@ mod test {
         let hub = MockTransport::default();
 
         let node0 = LocalNode::generate();
-        let cell0 = FullCell::generate(node0.clone());
+        let cell0 = FullCell::generate(node0.clone()).unwrap();
 
         let t0 = hub.get_transport(node0.clone(), ServiceType::Chain);
         let mut t0 = TestableTransportHandle::new(t0, cell0.cell().clone());

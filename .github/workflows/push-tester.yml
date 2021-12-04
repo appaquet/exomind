@@ -102,20 +102,25 @@ jobs:
 
       - uses: actions-rs/toolchain@v1.0.7
         with:
-          toolchain: nightly-2021-10-24
+          toolchain: nightly
           profile: minimal
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
 
       - uses: Swatinem/rust-cache@v1
 
-      - name: Install grcov
-        run: |
-          curl -L https://github.com/mozilla/grcov/releases/download/v0.8.0/grcov-linux-x86_64.tar.bz2 | tar jxf -
-          echo `pwd` >> $GITHUB_PATH
-
       - name: Test coverage
         run: |
-          CODECOV_TOKEN="${{ secrets.CODECOV_TOKEN }}"
-          ./tools/coverage.sh codecov_io
+          ./tools/coverage.sh lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: lcov.info
+          fail_ci_if_error: true
 
   apps_sdk_runtime_tests:
     runs-on: ubuntu-latest

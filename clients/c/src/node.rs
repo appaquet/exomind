@@ -1,4 +1,4 @@
-use exocore_core::cell::LocalNode as CoreLocalNode;
+use exocore_core::{cell::LocalNode as CoreLocalNode, dir::ram::RamDirectory};
 use exocore_protos::{core::LocalNodeConfig, prost::Message};
 
 use crate::utils::BytesVec;
@@ -8,12 +8,11 @@ use crate::utils::BytesVec;
 /// This structure is opaque to the client and is used as context for calls.
 pub struct LocalNode {
     pub(crate) node: CoreLocalNode,
-    pub(crate) config: LocalNodeConfig,
 }
 
 impl LocalNode {
     pub(crate) fn from_config(config: LocalNodeConfig) -> Result<LocalNode, ()> {
-        let core_local_node = match CoreLocalNode::new_from_config(config) {
+        let core_local_node = match CoreLocalNode::from_config(RamDirectory::new(), config) {
             Ok(node) => node,
             Err(err) => {
                 error!("Couldn't create LocalNode from config: {}", err);
@@ -22,7 +21,6 @@ impl LocalNode {
         };
 
         Ok(LocalNode {
-            config: core_local_node.config().clone(),
             node: core_local_node,
         })
     }
@@ -85,7 +83,11 @@ pub unsafe extern "C" fn exocore_local_node_new(
 #[no_mangle]
 pub unsafe extern "C" fn exocore_local_node_protobuf_config(node: *mut LocalNode) -> BytesVec {
     let node = node.as_mut().unwrap();
-    let encoded = node.config.encode_to_vec();
+    let encoded = node
+        .node
+        .inlined_config()
+        .expect("Couldn't inline config")
+        .encode_to_vec();
     BytesVec::from_vec(encoded)
 }
 

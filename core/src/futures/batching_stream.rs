@@ -44,10 +44,10 @@ where
         }
 
         let max_items = self.max_items;
-        let mut pinned_iner = Pin::new(&mut self.inner);
+        let mut pinned_inner = Pin::new(&mut self.inner);
         let mut buf = Vec::new();
         for _ in 0..max_items {
-            match pinned_iner.poll_next_unpin(cx) {
+            match pinned_inner.poll_next_unpin(cx) {
                 Poll::Ready(Some(item)) => {
                     buf.push(item);
                 }

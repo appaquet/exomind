@@ -48,7 +48,7 @@ impl Discovery {
             let roles = Vec::new(); // thin client, no roles for now
             let cell_node = local_node.config.create_cell_node_config(roles);
             let cell_node_yml = cell_node
-                .to_yaml()
+                .to_yaml_string()
                 .map_err(|err| into_js_error("couldn't convert to yaml config", err))?;
 
             let create_resp = client
@@ -71,13 +71,14 @@ impl Discovery {
                 into_js_error("couldn't decode payload from discovery service", err)
             })?;
             let cell_config =
-                CellConfig::from_yaml(get_cell_payload.as_slice()).map_err(|err| {
+                CellConfig::read_yaml(get_cell_payload.as_slice()).map_err(|err| {
                     into_js_error("couldn't decode config retrieved from discovery", err)
                 })?;
 
             let mut local_node_config = local_node.config.clone();
             local_node_config.add_cell(NodeCellConfig {
                 location: Some(node_cell_config::Location::Inline(cell_config)),
+                ..Default::default()
             });
 
             let local_node = LocalNode::from_config(local_node_config)

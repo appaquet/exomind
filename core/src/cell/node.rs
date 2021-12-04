@@ -2,22 +2,29 @@ use std::{
     collections::HashSet,
     fmt::{Debug, Display},
     ops::Deref,
+    path::Path,
     str::FromStr,
     sync::{Arc, RwLock},
 };
 
 use exocore_protos::{
-    core::NodeAddresses,
+    core::{node_cell_config, NodeAddresses},
     generated::exocore_core::{LocalNodeConfig, NodeConfig},
 };
 use libp2p::core::{Multiaddr, PeerId};
 use url::Url;
 
-use super::error::Error;
-use crate::sec::{
-    keys::{Keypair, PublicKey},
-    signature::Signature,
+use super::{error::Error, Cell, CellId};
+use crate::{
+    cell::LocalNodeConfigExt,
+    dir::{ram::RamDirectory, DynDirectory},
+    sec::{
+        keys::{Keypair, PublicKey},
+        signature::Signature,
+    },
 };
+
+const NODE_CONFIG_FILE: &str = "node.yaml";
 
 /// Represents a machine / process on which Exocore runs. A node can host
 /// multiple `Cell`.
@@ -36,11 +43,11 @@ struct NodeIdentity {
 }
 
 impl Node {
-    pub fn new_from_public_key(public_key: PublicKey) -> Node {
+    pub fn from_public_key(public_key: PublicKey) -> Node {
         Self::build(public_key, None)
     }
 
-    pub fn new_from_config(config: NodeConfig) -> Result<Node, Error> {
+    pub fn from_config(config: NodeConfig) -> Result<Node, Error> {
         let public_key = PublicKey::decode_base58_string(&config.public_key)
             .map_err(|err| Error::Cell(anyhow!("Couldn't decode node public key: {}", err)))?;
 
@@ -173,7 +180,8 @@ impl Display for Node {
 #[derive(Clone)]
 pub struct LocalNode {
     node: Node,
-    identity: Arc<LocalNodeIdentity>,
+    ident: Arc<LocalNodeIdentity>,
+    dir: DynDirectory,
 }
 
 struct LocalNodeIdentity {
@@ -183,9 +191,43 @@ struct LocalNodeIdentity {
 }
 
 impl LocalNode {
+    pub fn from_config(
+        dir: impl Into<DynDirectory>,
+        config: LocalNodeConfig,
+    ) -> Result<LocalNode, Error> {
+        let keypair = Keypair::decode_base58_string(&config.keypair)
+            .map_err(|err| Error::Cell(anyhow!("Couldn't decode local node keypair: {}", err)))?;
+
+        let listen_addresses =
+            Addresses::parse(&config.listen_addresses.clone().unwrap_or_default())?;
+        let local_node = LocalNode {
+            node: Node::from_config(NodeConfig {
+                public_key: config.public_key.clone(),
+                name: config.name.clone(),
+                id: config.id.clone(),
+                addresses: config.addresses.clone(),
+            })?,
+            ident: Arc::new(LocalNodeIdentity {
+                keypair,
+                config,
+                addresses: listen_addresses,
+            }),
+            dir: dir.into(),
+        };
+
+        Ok(local_node)
+    }
+
     pub fn generate() -> LocalNode {
+        Self::generate_in_directory(RamDirectory::default())
+            .expect("Couldn't generate a in-memory node")
+    }
+
+    pub fn generate_in_directory(dir: impl Into<DynDirectory>) -> Result<LocalNode, Error> {
+        let dir = dir.into();
+
         let keypair = Keypair::generate_ed25519();
-        let node = Node::new_from_public_key(keypair.public());
+        let node = Node::from_public_key(keypair.public());
         let node_name = node.name().to_string();
 
         let config = LocalNodeConfig {
@@ -196,30 +238,34 @@ impl LocalNode {
             ..Default::default()
         };
 
-        Self::new_from_config(config).expect("Couldn't create node config generated config")
+        let node = Self::from_config(dir, config.clone())
+            .expect("Couldn't create node config generated config");
+
+        node.save_config(&config)?;
+
+        Ok(node)
     }
 
-    pub fn new_from_config(config: LocalNodeConfig) -> Result<Self, Error> {
-        let keypair = Keypair::decode_base58_string(&config.keypair)
-            .map_err(|err| Error::Cell(anyhow!("Couldn't decode local node keypair: {}", err)))?;
+    pub fn from_directory(dir: impl Into<DynDirectory>) -> Result<LocalNode, Error> {
+        let dir = dir.into();
 
-        let listen_addresses =
-            Addresses::parse(&config.listen_addresses.clone().unwrap_or_default())?;
-        let local_node = LocalNode {
-            node: Node::new_from_config(NodeConfig {
-                public_key: config.public_key.clone(),
-                name: config.name.clone(),
-                id: config.id.clone(),
-                addresses: config.addresses.clone(),
-            })?,
-            identity: Arc::new(LocalNodeIdentity {
-                keypair,
-                config,
-                addresses: listen_addresses,
-            }),
+        let config = {
+            let config_file = dir.open_read(Path::new(NODE_CONFIG_FILE))?;
+            LocalNodeConfig::read_yaml(config_file)?
         };
 
-        Ok(local_node)
+        let node = LocalNode::from_config(dir, config)?;
+
+        Ok(node)
+    }
+
+    pub fn directory(&self) -> &DynDirectory {
+        &self.dir
+    }
+
+    pub fn cell_directory(&self, cell_id: &CellId) -> DynDirectory {
+        let cell_path = Path::new("cells").join(cell_id.to_string());
+        self.dir.scope(cell_path)
     }
 
     pub fn node(&self) -> &Node {
@@ -227,7 +273,7 @@ impl LocalNode {
     }
 
     pub fn keypair(&self) -> &Keypair {
-        &self.identity.keypair
+        &self.ident.keypair
     }
 
     pub fn sign_message(&self, _message: &[u8]) -> Signature {
@@ -237,23 +283,51 @@ impl LocalNode {
     }
 
     pub fn config(&self) -> &LocalNodeConfig {
-        &self.identity.config
+        &self.ident.config
+    }
+
+    pub fn inlined_config(&self) -> Result<LocalNodeConfig, Error> {
+        let mut inlined = self.ident.config.clone();
+        for cell_config in &mut inlined.cells {
+            if cell_config.id.is_empty() {
+                continue;
+            }
+
+            let cell_id = CellId::from_str(&cell_config.id).unwrap();
+            let cell_dir = self.cell_directory(&cell_id);
+            let cell = Cell::from_directory(cell_dir, self.clone())?;
+            cell_config.location = Some(node_cell_config::Location::Inline(
+                cell.cell().config().clone(),
+            ));
+        }
+
+        Ok(inlined)
+    }
+
+    pub fn save_config(&self, config: &LocalNodeConfig) -> Result<(), Error> {
+        let config_file = self.dir.open_create(Path::new(NODE_CONFIG_FILE))?;
+        config.write_yaml(config_file)?;
+        Ok(())
     }
 
     pub fn p2p_listen_addresses(&self) -> Vec<Multiaddr> {
-        if !self.identity.addresses.p2p.is_empty() {
-            self.identity.addresses.p2p.iter().cloned().collect()
+        if !self.ident.addresses.p2p.is_empty() {
+            self.ident.addresses.p2p.iter().cloned().collect()
         } else {
             self.p2p_addresses()
         }
     }
 
     pub fn http_listen_addresses(&self) -> Vec<Url> {
-        if !self.identity.addresses.http.is_empty() {
-            self.identity.addresses.http.iter().cloned().collect()
+        if !self.ident.addresses.http.is_empty() {
+            self.ident.addresses.http.iter().cloned().collect()
         } else {
             self.http_addresses()
         }
+    }
+
+    pub fn config_exists(dir: impl Into<DynDirectory>) -> bool {
+        dir.into().exists(Path::new(NODE_CONFIG_FILE))
     }
 }
 
@@ -277,8 +351,8 @@ impl Debug for LocalNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("LocalNode")
             .field("node", &self.node)
-            .field("p2p_listen_addresses", &self.identity.addresses.p2p)
-            .field("http_listen_addresses", &self.identity.addresses.http)
+            .field("p2p_listen_addresses", &self.ident.addresses.p2p)
+            .field("http_listen_addresses", &self.ident.addresses.http)
             .finish()
     }
 }
@@ -286,7 +360,7 @@ impl Debug for LocalNode {
 impl Display for LocalNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_str("LocalNode{")?;
-        f.write_str(&self.identity.config.name)?;
+        f.write_str(&self.ident.config.name)?;
         f.write_str("}")
     }
 }
@@ -374,18 +448,26 @@ impl Addresses {
 
 #[cfg(test)]
 mod tests {
-    #![allow(clippy::eq_op)] // since we test node's equality
+    use exocore_protos::core::NodeCellConfig;
 
     use super::*;
+    use crate::{
+        cell::FullCell,
+        dir::{ram::RamDirectory, Directory},
+    };
 
     #[test]
     fn node_equality() {
+        #![allow(clippy::eq_op)]
         let node1 = LocalNode::generate();
         let node2 = LocalNode::generate();
 
         assert_eq!(node1, node1);
         assert_eq!(node1, node1.clone());
         assert_ne!(node1, node2);
+
+        assert!(!format!("{:?}", node1).is_empty());
+        assert!(!format!("{:?}", node1.node()).is_empty());
     }
 
     #[test]
@@ -405,7 +487,7 @@ mod tests {
     fn node_deterministic_random_name() {
         let pk = PublicKey::decode_base58_string("pe2AgPyBmJNztntK9n4vhLuEYN8P2kRfFXnaZFsiXqWacQ")
             .unwrap();
-        let node = Node::new_from_public_key(pk);
+        let node = Node::from_public_key(pk);
         assert_eq!("wholly-proud-gannet", node.identity.name);
         assert_eq!("Node{wholly-proud-gannet}", node.to_string());
     }
@@ -413,9 +495,51 @@ mod tests {
     #[test]
     fn local_node_from_generated_config() {
         let node1 = LocalNode::generate();
-        let node2 = LocalNode::new_from_config(node1.config().clone()).unwrap();
+        let node2 =
+            LocalNode::from_config(RamDirectory::default(), node1.config().clone()).unwrap();
 
         assert_eq!(node1.keypair().public(), node2.keypair().public());
         assert_eq!(node1.config(), node2.config());
+    }
+
+    #[test]
+    fn local_node_from_directory() {
+        let dir = RamDirectory::new();
+
+        let node1 = LocalNode::generate_in_directory(dir.clone()).unwrap();
+        assert!(LocalNode::config_exists(dir.clone()));
+
+        // reload node from file system
+        let node2 = LocalNode::from_directory(dir).unwrap();
+        assert_eq!(node1.id(), node2.id());
+    }
+
+    #[test]
+    fn node_cell_config() {
+        // Create node + cell
+        let node = LocalNode::generate();
+        let cell = FullCell::generate(node.clone()).unwrap();
+
+        // Add cell to node's config + save it
+        let mut node_config = node.config().clone();
+        node_config.add_cell(NodeCellConfig {
+            id: cell.cell().id().to_string(),
+            ..Default::default()
+        });
+        node.save_config(&node_config).unwrap();
+
+        // Reload node with created cell
+        let node = LocalNode::from_directory(node.directory().clone()).unwrap();
+        let config = node.config();
+        assert_eq!(config.cells.len(), 1);
+
+        // Inline config and reload cell with it
+        let inline_config = node.inlined_config().unwrap();
+        let node = LocalNode::from_config(RamDirectory::new(), inline_config).unwrap();
+        let config = node.config();
+        assert_eq!(config.cells.len(), 1);
+
+        let cells = Cell::from_local_node(node).unwrap();
+        assert_eq!(cells.len(), 1);
     }
 }

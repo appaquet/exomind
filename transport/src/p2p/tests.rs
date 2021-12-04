@@ -17,7 +17,7 @@ use crate::{
 async fn test_integration() -> anyhow::Result<()> {
     let n1 = LocalNode::generate();
     n1.add_p2p_address("/ip4/127.0.0.1/tcp/3003".parse()?);
-    let n1_cell = FullCell::generate(n1.clone());
+    let n1_cell = FullCell::generate(n1.clone())?;
 
     let n2 = LocalNode::generate();
     n2.add_p2p_address("/ip4/127.0.0.1/tcp/3004".parse()?);
@@ -90,11 +90,11 @@ fn str_to_stream(str: &'static str) -> Box<dyn AsyncRead + Send + Unpin> {
 async fn handle_removal_and_transport_kill() -> anyhow::Result<()> {
     let n1 = LocalNode::generate();
     n1.add_p2p_address("/ip4/127.0.0.1/tcp/0".parse()?);
-    let n1_cell = FullCell::generate(n1.clone());
+    let n1_cell = FullCell::generate(n1.clone())?;
 
     let n2 = LocalNode::generate();
     n2.add_p2p_address("/ip4/127.0.0.1/tcp/0".parse()?);
-    let n2_cell = FullCell::generate(n2);
+    let n2_cell = FullCell::generate(n2)?;
 
     let mut transport = Libp2pTransport::new(n1, Libp2pTransportConfig::default());
     let inner_weak = Arc::downgrade(&transport.get_service_handles());
@@ -129,7 +129,7 @@ async fn handle_removal_and_transport_kill() -> anyhow::Result<()> {
 async fn should_queue_message_until_connected() -> anyhow::Result<()> {
     let n1 = LocalNode::generate();
     n1.add_p2p_address("/ip4/127.0.0.1/tcp/3005".parse()?);
-    let n1_cell = FullCell::generate(n1.clone());
+    let n1_cell = FullCell::generate(n1.clone())?;
 
     let n2 = LocalNode::generate();
     n2.add_p2p_address("/ip4/127.0.0.1/tcp/3006".parse()?);

@@ -17,8 +17,10 @@ extern crate anyhow;
 use std::{path::PathBuf, str::FromStr};
 
 use clap::Parser;
-use exocore_core::cell::LocalNodeConfigExt;
-use exocore_protos::core::LocalNodeConfig;
+use exocore_core::{
+    cell::{Cell, EitherCell, LocalNode},
+    dir::{os::OsDirectory, DynDirectory},
+};
 use log::LevelFilter;
 use term::*;
 use utils::expand_tild;
@@ -58,19 +60,15 @@ impl Options {
         self.dir.clone()
     }
 
-    pub fn conf_path(&self) -> PathBuf {
-        self.dir.join("node.yaml")
+    pub fn node_directory(&self) -> DynDirectory {
+        OsDirectory::new(self.dir_path()).into()
     }
 
-    pub fn read_configuration(&self) -> LocalNodeConfig {
-        let config_path = self.conf_path();
-
-        print_info(format!(
-            "Using node in directory {}",
-            style_value(config_path.to_string_lossy()),
-        ));
-
-        LocalNodeConfig::from_yaml_file(&config_path).expect("Couldn't read node config")
+    pub fn get_node_and_cells(&self) -> (LocalNode, Vec<EitherCell>) {
+        let dir = self.node_directory();
+        let (either_cells, local_node) =
+            Cell::from_local_node_directory(dir).expect("Couldn't create cell from config");
+        (local_node, either_cells)
     }
 }
 
@@ -148,9 +146,7 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    if let Err(err) = result {
-        println!("Error: {}", err);
-    }
+    result.unwrap();
 
     Ok(())
 }

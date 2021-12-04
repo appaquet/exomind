@@ -103,7 +103,7 @@ pub unsafe extern "C" fn exocore_discovery_join_cell(
 ) {
     let disco = disco.as_mut().unwrap();
     let node = node.as_mut().unwrap();
-    let node_config = node.config.clone();
+    let node_config = node.node.config().clone();
 
     let callback_ctx = CallbackContext { ctx: callback_ctx };
     let client = disco.client.clone();
@@ -173,7 +173,7 @@ pub unsafe extern "C" fn exocore_discovery_free(disco: *mut Discovery) {
 async fn push_config(node_config: &LocalNodeConfig, client: Arc<Client>) -> Result<(Pin, Pin), ()> {
     let roles = Vec::new(); // thin client, no roles for now
     let cell_node = node_config.create_cell_node_config(roles);
-    let cell_node_yml = cell_node.to_yaml().map_err(|err| {
+    let cell_node_yml = cell_node.to_yaml_string().map_err(|err| {
         error!("Error converting config to yaml: {}", err);
     })?;
 
@@ -207,11 +207,12 @@ async fn join_cell(
     let get_cell_payload = get_cell_resp
         .decode_payload()
         .map_err(|err| error!("Couldn't decode payload from discovery service: {}", err))?;
-    let cell_config = CellConfig::from_yaml(get_cell_payload.as_slice())
+    let cell_config = CellConfig::read_yaml(get_cell_payload.as_slice())
         .map_err(|err| error!("Couldn't decode config retrieved from discovery: {}", err))?;
 
     node_config.add_cell(NodeCellConfig {
         location: Some(node_cell_config::Location::Inline(cell_config)),
+        ..Default::default()
     });
 
     let local_node = LocalNode::from_config(node_config)

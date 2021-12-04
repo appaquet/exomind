@@ -616,7 +616,7 @@ mod tests {
     #[test]
     fn directory_segment_create_and_open() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node);
+        let cell = FullCell::generate(local_node)?;
         let dir = tempfile::tempdir()?;
         let tracker = SegmentTracker::new(1);
 
@@ -655,7 +655,7 @@ mod tests {
     #[test]
     fn directory_segment_create_already_exist() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node);
+        let cell = FullCell::generate(local_node)?;
         let dir = tempfile::tempdir()?;
         let tracker = SegmentTracker::new(1);
 
@@ -705,7 +705,7 @@ mod tests {
     #[test]
     fn directory_segment_append_block() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node);
+        let cell = FullCell::generate(local_node)?;
         let dir = tempfile::tempdir()?;
         let tracker = SegmentTracker::new(1);
 
@@ -752,7 +752,7 @@ mod tests {
     #[test]
     fn directory_segment_non_zero_offset_write() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node);
+        let cell = FullCell::generate(local_node)?;
         let dir = tempfile::tempdir()?;
         let config = Default::default();
         let segment_first_block_offset = 1234;
@@ -794,7 +794,7 @@ mod tests {
     #[test]
     fn directory_segment_grow_and_truncate() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node);
+        let cell = FullCell::generate(local_node)?;
         let config = DirectoryChainStoreConfig {
             segment_over_allocate_size: 100_000,
             ..Default::default()
@@ -832,7 +832,7 @@ mod tests {
     #[test]
     fn directory_segment_truncate_from_segment() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node);
+        let cell = FullCell::generate(local_node)?;
         let dir = tempfile::tempdir()?;
         let config = DirectoryChainStoreConfig {
             segment_over_allocate_size: 100_000,
@@ -887,7 +887,7 @@ mod tests {
     #[test]
     fn segment_file_mmap_transition() -> anyhow::Result<()> {
         let local_node = LocalNode::generate();
-        let cell = FullCell::generate(local_node);
+        let cell = FullCell::generate(local_node)?;
         let config = DirectoryChainStoreConfig {
             segment_over_allocate_size: 100_000,
             ..Default::default()

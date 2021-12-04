@@ -156,5 +156,17 @@ mod tests {
         let consistent = ConsistentTimestamp::from(now);
         let consistent_now = consistent.to_datetime();
         assert_eq!(now.timestamp_millis(), consistent_now.timestamp_millis());
+
+        let consistent_now2: DateTime<Utc> = consistent.into();
+        assert_eq!(now.timestamp_millis(), consistent_now2.timestamp_millis());
+    }
+
+    #[test]
+    fn test_consistent_time_serialize() {
+        let now: DateTime<Utc> = Utc::now();
+        let consistent = ConsistentTimestamp::from(now);
+        let serialized = serde_json::to_string(&consistent).unwrap();
+        let deserialized: ConsistentTimestamp = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(consistent, deserialized);
     }
 }

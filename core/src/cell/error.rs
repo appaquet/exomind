@@ -14,4 +14,10 @@ pub enum Error {
 
     #[error("Node error: {0}")]
     Node(#[source] anyhow::Error),
+
+    #[error("No directory configured in node or cell")]
+    NoDirectory,
+
+    #[error("Directory error: {0}")]
+    Directory(#[from] crate::dir::Error),
 }
