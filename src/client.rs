@@ -16,7 +16,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn from_node_config_file<P: Into<PathBuf>>(
+    pub async fn from_node_directory<P: Into<PathBuf>>(
         node_directory: P,
     ) -> anyhow::Result<Self> {
         let dir = OsDirectory::new(node_directory);
