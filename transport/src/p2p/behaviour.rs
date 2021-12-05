@@ -8,8 +8,9 @@ use futures::task::{Context, Poll};
 use libp2p::{
     core::{connection::ConnectionId, Multiaddr, PeerId},
     swarm::{
-        CloseConnection, DialPeerCondition, NetworkBehaviour, NetworkBehaviourAction,
-        NotifyHandler, PollParameters,
+        dial_opts::{DialOpts, PeerCondition},
+        CloseConnection, DialError, NetworkBehaviour, NetworkBehaviourAction, NotifyHandler,
+        PollParameters,
     },
 };
 
@@ -33,7 +34,7 @@ pub struct ExocoreBehaviour {
     last_redial_check: Option<Instant>,
 }
 
-type BehaviourAction = NetworkBehaviourAction<MessageData, ExocoreBehaviourEvent>;
+type BehaviourAction = NetworkBehaviourAction<ExocoreBehaviourEvent, ExocoreProtoHandler>;
 
 impl ExocoreBehaviour {
     pub fn send_message(
@@ -152,9 +153,11 @@ impl ExocoreBehaviour {
                 peer.node, peer.addresses
             );
             peer.last_dial = Some(Instant::now());
-            self.actions.push_back(NetworkBehaviourAction::DialPeer {
-                peer_id,
-                condition: DialPeerCondition::NotDialing,
+            self.actions.push_back(NetworkBehaviourAction::Dial {
+                opts: DialOpts::peer_id(peer_id)
+                    .condition(PeerCondition::NotDialing)
+                    .build(),
+                handler: ExocoreProtoHandler::default(),
             });
         }
     }
@@ -235,26 +238,19 @@ impl NetworkBehaviour for ExocoreBehaviour {
         }
     }
 
-    fn inject_dial_failure(&mut self, peer_id: &PeerId) {
-        if let Some(peer) = self.peers.get_mut(peer_id) {
+    fn inject_dial_failure(
+        &mut self,
+        peer_id: Option<PeerId>,
+        _handler: ExocoreProtoHandler,
+        err: &DialError,
+    ) {
+        if let Some(peer) = peer_id.and_then(|peer_id| self.peers.get_mut(&peer_id)) {
             info!(
-                "Failed to connect to peer {}. {} messages in queue for node.",
+                "Failed to connect to peer {}: {:?}. {} messages in queue for node.",
                 peer.node,
+                err,
                 peer.temp_queue.len()
             );
-        }
-    }
-
-    fn inject_addr_reach_failure(
-        &mut self,
-        peer_id: Option<&PeerId>,
-        addr: &Multiaddr,
-        _error: &dyn std::error::Error,
-    ) {
-        if let Some(peer_id) = peer_id {
-            if let Some(peer) = self.peers.get_mut(peer_id) {
-                debug!("Couldn't reach node {} on addr {}.", peer.node, addr,);
-            }
         }
     }
 
@@ -262,7 +258,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
         &mut self,
         _ctx: &mut Context,
         _params: &mut impl PollParameters,
-    ) -> Poll<NetworkBehaviourAction<MessageData, ExocoreBehaviourEvent>> {
+    ) -> Poll<NetworkBehaviourAction<ExocoreBehaviourEvent, ExocoreProtoHandler>> {
         // check if we could try to dial to disconnected nodes
         let redial_check = self
             .last_redial_check
@@ -328,11 +324,13 @@ impl QueuedPeerEvent {
 
 /// Event emitted by the ExocoreBehaviour (ex: incoming message), consumed by
 /// `Libp2pTransport`.
+#[derive(Debug)]
 pub enum ExocoreBehaviourEvent {
     Message(ExocoreBehaviourMessage),
     PeerStatus(PeerId, PeerStatus),
 }
 
+#[derive(Debug)]
 pub struct ExocoreBehaviourMessage {
     pub source: PeerId,
     pub connection: ConnectionId,

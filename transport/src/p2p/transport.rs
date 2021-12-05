@@ -251,12 +251,13 @@ impl Libp2pTransport {
 
 /// Behaviour that combines exocore and ping behaviours.
 #[derive(NetworkBehaviour)]
+#[behaviour(event_process = true)]
 struct CombinedBehaviour {
-    #[behaviour(ignore)]
-    service_handles: Arc<RwLock<ServiceHandles>>,
-
     exocore: ExocoreBehaviour,
     ping: Ping,
+
+    #[behaviour(ignore)]
+    service_handles: Arc<RwLock<ServiceHandles>>,
 }
 
 impl NetworkBehaviourEventProcess<ExocoreBehaviourEvent> for CombinedBehaviour {

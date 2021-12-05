@@ -191,7 +191,7 @@ impl ApplicationId {
     /// Create a Cell ID from a public key by using libp2p method to be
     /// compatible with it
     pub fn from_public_key(public_key: &PublicKey) -> ApplicationId {
-        let peer_id = PeerId::from_public_key(public_key.to_libp2p().clone());
+        let peer_id = PeerId::from_public_key(public_key.to_libp2p());
         ApplicationId(peer_id.to_string())
     }
 

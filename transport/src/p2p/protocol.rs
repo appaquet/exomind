@@ -264,6 +264,15 @@ pub struct MessageData {
     pub(crate) stream: Option<Box<dyn AsyncRead + Send + Unpin>>,
 }
 
+impl std::fmt::Debug for MessageData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MessageData")
+            .field("message_len", &self.message.len())
+            .field("with_stream", &self.stream.is_some())
+            .finish()
+    }
+}
+
 /// Wraps a stream to expose reading and writing message capability.
 pub struct WrappedStream<TStream>
 where

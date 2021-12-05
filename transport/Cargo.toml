@@ -24,7 +24,7 @@ exocore-core = {version = "0.1.15", path = "../core"}
 exocore-protos = {version = "0.1.15", path = "../protos"}
 futures = "0.3"
 hyper = {version = "0.14", features = ["full"], optional = true}
-libp2p = {version = "0.39", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "dns-tokio", "tcp-tokio"]}
+libp2p = {version = "0.41", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "dns-tokio", "tcp-tokio"]}
 log = "0.4"
 pin-project = "1.0"
 thiserror = "1.0"

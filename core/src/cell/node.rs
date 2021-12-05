@@ -377,7 +377,7 @@ impl NodeId {
     /// Create a Node ID from a public key by using libp2p method to support
     /// compatibility with PeerId
     pub fn from_public_key(public_key: &PublicKey) -> NodeId {
-        let peer_id = PeerId::from_public_key(public_key.to_libp2p().clone());
+        let peer_id = PeerId::from_public_key(public_key.to_libp2p());
         NodeId(peer_id)
     }
 
