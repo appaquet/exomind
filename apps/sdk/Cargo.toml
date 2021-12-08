@@ -7,13 +7,13 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-apps-sdk"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.15"
+version = "0.1.16"
 
 [dependencies]
 anyhow = "1.0"
-exocore-apps-macros = {version = "0.1.15", path = "../macros"}
-exocore-protos = {version = "0.1.15", path = "../../protos"}
-exocore-store = {version = "0.1.15", path = "../../store", default-features = false}
+exocore-apps-macros = {version = "0.1.16", path = "../macros"}
+exocore-protos = {version = "0.1.16", path = "../../protos"}
+exocore-store = {version = "0.1.16", path = "../../store", default-features = false}
 futures = "0.3"
 lazy_static = "1.4"
 log = "0.4"

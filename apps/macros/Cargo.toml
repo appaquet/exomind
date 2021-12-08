@@ -7,7 +7,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-apps-macros"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.15"
+version = "0.1.16"
 
 [lib]
 proc-macro = true

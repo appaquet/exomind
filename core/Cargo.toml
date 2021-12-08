@@ -7,7 +7,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-core"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.15"
+version = "0.1.16"
 
 [features]
 logger = ["log4rs"]
@@ -33,7 +33,7 @@ bs58 = "0.4"
 byteorder = "1.4"
 bytes = "1.1"
 chrono = "0.4"
-exocore-protos = {version = "0.1.15", path = "../protos"}
+exocore-protos = {version = "0.1.16", path = "../protos"}
 futures = {version = "0.3", features = ["async-await"]}
 libp2p = {version = "0.41", features = ["noise", "secp256k1"], default-features = false}
 log = "0.4"

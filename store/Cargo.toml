@@ -7,7 +7,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-store"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.15"
+version = "0.1.16"
 
 [features]
 default = ["local", "remote"]
@@ -20,7 +20,7 @@ anyhow = "1.0"
 async-trait = "0.1"
 bytes = "1.1"
 chrono = {version = "0.4", features = ["serde"]}
-exocore-protos = {version = "0.1.15", path = "../protos"}
+exocore-protos = {version = "0.1.16", path = "../protos"}
 futures = "0.3"
 itertools = "0.10"
 log = "0.4"
@@ -28,9 +28,9 @@ smallvec = "1.6"
 thiserror = "1.0"
 
 # local or remote
-exocore-chain = {version = "0.1.15", path = "../chain", default-features = false, optional = true}
-exocore-core = {version = "0.1.15", path = "../core", optional = true}
-exocore-transport = {version = "0.1.15", path = "../transport", default-features = false, optional = true}
+exocore-chain = {version = "0.1.16", path = "../chain", default-features = false, optional = true}
+exocore-core = {version = "0.1.16", path = "../core", optional = true}
+exocore-transport = {version = "0.1.16", path = "../transport", default-features = false, optional = true}
 
 # local 
 crc = {version = "2.1", optional = true}
@@ -38,7 +38,7 @@ lru = {version = "0.7", optional = true}
 tantivy = {version = "0.16", optional = true}
 
 [dev-dependencies]
-exocore-chain = {version = "0.1.15", path = "../chain", features = ["tests-utils"]}
-exocore-core = {version = "0.1.15", path = "../core", features = ["tests-utils"]}
+exocore-chain = {version = "0.1.16", path = "../chain", features = ["tests-utils"]}
+exocore-core = {version = "0.1.16", path = "../core", features = ["tests-utils"]}
 tempfile = "3.2"
 tokio = {version = "1.14", features = ["macros"], default-features = false}

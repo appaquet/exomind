@@ -4,13 +4,13 @@ use std::{
     path::Path,
     result::Result,
     sync::{Arc, Mutex},
-    time::Instant,
 };
 
 use chrono::{TimeZone, Utc};
 pub use config::*;
 use entity_cache::EntityMutationsCache;
 use exocore_chain::block::BlockOffset;
+use exocore_core::time::Instant;
 use exocore_protos::{
     generated::exocore_store::{
         entity_query::Predicate, ordering, ordering_value, trait_field_predicate, trait_query,

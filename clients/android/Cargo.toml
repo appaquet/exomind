@@ -2,14 +2,14 @@
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2021"
 name = "exocore-client-android"
-version = "0.1.15"
+version = "0.1.16"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0"
-exocore-core = {version = "0.1.15", path = "../../core", features = ["runtime", "logger"]}
-exocore-store = {version = "0.1.15", path = "../../store"}
-exocore-transport = {version = "0.1.15", path = "../../transport", features = ["p2p-full"]}
+exocore-core = {version = "0.1.16", path = "../../core", features = ["runtime", "logger"]}
+exocore-store = {version = "0.1.16", path = "../../store"}
+exocore-transport = {version = "0.1.16", path = "../../transport", features = ["p2p-full"]}
 thiserror = "1.0"

@@ -8,7 +8,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.15"
+version = "0.1.16"
 
 [features]
 default = [
@@ -41,17 +41,17 @@ transport-p2p-web = ["exocore-transport/p2p-web"]
 
 [dependencies]
 anyhow = {version = "1.0", optional = true}
-exocore-apps-sdk = {version = "0.1.15", path = "./apps/sdk", default-features = false, optional = true}
-exocore-chain = {version = "0.1.15", path = "./chain", default-features = false, optional = true}
-exocore-core = {version = "0.1.15", path = "./core", default-features = false, optional = true}
-exocore-discovery = {version = "0.1.15", path = "./discovery", default-features = false, optional = true}
-exocore-protos = {version = "0.1.15", path = "./protos", default-features = false, optional = true}
-exocore-store = {version = "0.1.15", path = "./store", default-features = false, optional = true}
-exocore-transport = {version = "0.1.15", path = "./transport", default-features = false, optional = true}
+exocore-apps-sdk = {version = "0.1.16", path = "./apps/sdk", default-features = false, optional = true}
+exocore-chain = {version = "0.1.16", path = "./chain", default-features = false, optional = true}
+exocore-core = {version = "0.1.16", path = "./core", default-features = false, optional = true}
+exocore-discovery = {version = "0.1.16", path = "./discovery", default-features = false, optional = true}
+exocore-protos = {version = "0.1.16", path = "./protos", default-features = false, optional = true}
+exocore-store = {version = "0.1.16", path = "./store", default-features = false, optional = true}
+exocore-transport = {version = "0.1.16", path = "./transport", default-features = false, optional = true}
 log = "0.4"
 
 [dev-dependencies]
-exocore-core = {version = "0.1.15", path = "./core", features = ["tests-utils"]}
+exocore-core = {version = "0.1.16", path = "./core", features = ["tests-utils"]}
 
 [workspace]
 exclude = [

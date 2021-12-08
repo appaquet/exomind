@@ -4,7 +4,6 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::Arc,
-    time::Instant,
 };
 
 use exocore_chain::{
@@ -14,7 +13,7 @@ use exocore_chain::{
     operation::{Operation, OperationId},
     pending, EngineHandle, EngineOperationStatus,
 };
-use exocore_core::{cell::FullCell, time::Clock};
+use exocore_core::{cell::FullCell, time::Clock, time::Instant};
 use exocore_protos::{
     generated::exocore_store::{
         entity_mutation::Mutation, Entity, EntityMutation, EntityQuery,
