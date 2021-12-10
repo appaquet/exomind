@@ -12,11 +12,11 @@ async fn main() {
 
     match &opt.command {
         cli::Command::Gmail(gmail_opt) => {
-            let client = exocore::client::Client::from_node_config_file(opt.node_conf_path())
+            let client = exocore::client::Client::from_node_directory(opt.node_directory())
                 .await
                 .expect("Couldn't create client from config");
 
-            exomind_gmail::handle(client, opt.directory(), gmail_opt).await
+            exomind_gmail::handle(client, opt.node_directory(), gmail_opt).await
         }
         cli::Command::Version => {
             println!("exomind version {}", env!("CARGO_PKG_VERSION"));

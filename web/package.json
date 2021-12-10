@@ -1,7 +1,7 @@
 {
   "author": "Andre-Philippe Paquet <appaquet@gmail.com>",
   "name": "exomind-web",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "",
   "keywords": [],
   "license": "Apache-2.0",
@@ -80,7 +80,7 @@
     "draft-convert": "^2.1.12",
     "draft-js": "^0.11.7",
     "emoji-regex": "^10.0.0",
-    "exocore": "0.1.15",
+    "exocore": "0.1.16",
     "font-awesome": "^4.4.0",
     "htmlparser2": "^6.0.0",
     "less": "^4.1.2",

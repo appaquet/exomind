@@ -3,6 +3,8 @@ syntax = "proto3";
 package exocore.apps;
 
 message Manifest {
+    reserved 6;
+
     string name = 1;
 
     string version = 2;
@@ -12,15 +14,13 @@ message Manifest {
     repeated ManifestSchema schemas = 4;
 
     ManifestModule module = 5;
-
-    string path = 6;
 }
 
 message ManifestSchema {
+    reserved 2;
+
     oneof source {
         string file = 1;
-
-        bytes bytes = 2;
     }
 }
 

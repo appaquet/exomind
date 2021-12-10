@@ -12,23 +12,15 @@ pub struct Options {
     #[structopt(long, short = "d")]
     pub dir: Option<PathBuf>,
 
-    /// Path to node configuration, relative to directory.
-    #[structopt(long, short = "n", default_value = "node.yaml")]
-    pub node: PathBuf,
-
     #[structopt(subcommand)]
     pub command: Command,
 }
 
 impl Options {
-    pub fn directory(&self) -> PathBuf {
+    pub fn node_directory(&self) -> PathBuf {
         self.dir
             .clone()
             .unwrap_or_else(|| std::env::current_dir().expect("Couldn't get current directory"))
-    }
-
-    pub fn node_conf_path(&self) -> PathBuf {
-        self.directory().join(&self.node)
     }
 }
 
