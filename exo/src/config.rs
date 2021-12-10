@@ -1,11 +1,9 @@
 use exocore_core::cell::{LocalNode, LocalNodeConfigExt, NodeConfigExt};
-use exocore_protos::core::{
-    cell_application_config, node_cell_config, LocalNodeConfig, NodeConfig,
-};
+use exocore_protos::core::{LocalNodeConfig, NodeConfig};
 
 use crate::{
     cell::copy_local_node_to_cells,
-    term::{confirm, print_info},
+    term::{confirm, print_info, print_success},
     utils::edit_string,
     Context,
 };
@@ -39,10 +37,6 @@ pub struct PrintOptions {
     /// apps).
     #[clap(long)]
     pub inline: bool,
-
-    /// Exclude applications schemas from configuration.
-    #[clap(long)]
-    pub exclude_app_schemas: bool,
 }
 
 pub fn handle_cmd(ctx: &Context, config_opts: &ConfigOptions) -> anyhow::Result<()> {
@@ -72,6 +66,10 @@ fn cmd_edit(ctx: &Context, _conf_opts: &ConfigOptions) {
         Ok(LocalNodeConfig::read_yaml(config_bytes)?)
     });
 
+    local_node
+        .save_config(&node_config_after)
+        .expect("failed to save node config");
+
     if config_before.addresses == node_config_after.addresses
         && config_before.name == node_config_after.name
     {
@@ -88,6 +86,8 @@ fn cmd_validate(ctx: &Context, _conf_opts: &ConfigOptions) -> anyhow::Result<()>
     // create instance to validate the config
     let (_cells, _node) = ctx.options.get_node_and_cells();
 
+    print_success("Configuration is valid.");
+
     Ok(())
 }
 
@@ -102,25 +102,11 @@ fn cmd_print(ctx: &Context, _conf_opts: &ConfigOptions, print_opts: &PrintOption
 }
 
 fn cmd_print_node_config(node: LocalNode, print_opts: &PrintOptions) {
-    let mut config = if print_opts.inline {
+    let config = if print_opts.inline {
         node.inlined_config().expect("Couldn't inline node config")
     } else {
         node.config().clone()
     };
-
-    if print_opts.exclude_app_schemas {
-        for cell in &mut config.cells {
-            if let Some(node_cell_config::Location::Inline(cell_config)) = &mut cell.location {
-                for app in &mut cell_config.apps {
-                    if let Some(cell_application_config::Location::Inline(app_manifest)) =
-                        &mut app.location
-                    {
-                        app_manifest.schemas.clear();
-                    }
-                }
-            }
-        }
-    }
 
     println!(
         "{}",
