@@ -1466,7 +1466,7 @@
     "@types/draft-js" "*"
     "@types/react" "*"
 
-"@types/draft-js@*", "@types/draft-js@^0.11.6":
+"@types/draft-js@*", "@types/draft-js@^0.11.7":
   version "0.11.7"
   resolved "https://registry.yarnpkg.com/@types/draft-js/-/draft-js-0.11.7.tgz#5870bfddb66c2ad0dd91c7293cad2793ff9920c1"
   integrity sha512-NeCRIPcfrlUItA46boNG2kxuVhohPdE4Plp3GcxEv11FXZ0kZFa6X8fNPpKrp8AEUqeAr/B0TsX/wp2sYZaK3w==
@@ -1545,10 +1545,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/lodash@^4.14.177":
-  version "4.14.177"
-  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.177.tgz#f70c0d19c30fab101cad46b52be60363c43c4578"
-  integrity sha512-0fDwydE2clKe9MNfvXHBHF9WEahRuj+msTuQqOmAApNORFvhMYZKNGGJdCzuhheVjMps/ti0Ak/iJPACMaevvw==
+"@types/lodash@^4.14.178":
+  version "4.14.178"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.178.tgz#341f6d2247db528d4a13ddbb374bcdc80406f4f8"
+  integrity sha512-0d5Wd09ItQWH1qFbEyQ7oTQ3GZrMfth5JkbN3EvTKLXcHLRDSXeLnlvlOn0wvxVIwK5o2M8JzP/OWz7T3NRsbw==
 
 "@types/long@^4.0.1":
   version "4.0.1"
@@ -1565,7 +1565,7 @@
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-0.7.31.tgz#31b7ca6407128a3d2bbc27fe2d21b345397f6197"
   integrity sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==
 
-"@types/node@*", "@types/node@>=13.7.0", "@types/node@^16.11.11":
+"@types/node@*", "@types/node@>=13.7.0", "@types/node@^16.11.12":
   version "16.11.12"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.12.tgz#ac7fb693ac587ee182c3780c26eb65546a1a3c10"
   integrity sha512-+2Iggwg7PxoO5Kyhvsq9VarmPbIelXP070HMImEpbtGCoyWNINQj4wzjbQCXzdHTRXnqufutJb5KAURZANNBAw==
@@ -1622,7 +1622,7 @@
     "@types/scheduler" "*"
     csstype "^3.0.2"
 
-"@types/sanitize-html@^2.5.0":
+"@types/sanitize-html@^2.6.0":
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/@types/sanitize-html/-/sanitize-html-2.6.0.tgz#442f845a6cd793d3b1bcb54b4b1905947b409526"
   integrity sha512-5F2j1f2NITsZQPrGmrw4AH5Wfud81aqvUTNC7a1SrE8aa6fKyKVVX5FZxoRQYrBdqIDluyQGfkkj97faUqq7sw==
@@ -3359,7 +3359,7 @@ core-js-pure@^3.19.0:
   resolved "https://registry.yarnpkg.com/core-js-pure/-/core-js-pure-3.19.3.tgz#c69b2b36b58927317824994b532ec3f0f7e49607"
   integrity sha512-N3JruInmCyt7EJj5mAq3csCgGYgiSqu7p7TQp2KOztr180/OAIxyIvL1FCjzgmQk/t3Yniua50Fsak7FShI9lA==
 
-core-js@^3.19.2, core-js@^3.6.4:
+core-js@^3.19.3, core-js@^3.6.4:
   version "3.19.3"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.19.3.tgz#6df8142a996337503019ff3235a7022d7cdf4559"
   integrity sha512-LeLBMgEGSsG7giquSzvgBrTS7V5UL6ks3eQlUSbN8dJStlLFiRzUm5iqsRyzUB8carhfKjkJ2vzKqE6z1Vga9g==
@@ -8764,10 +8764,10 @@ sanitize-filename@^1.6.3:
   dependencies:
     truncate-utf8-bytes "^1.0.0"
 
-sanitize-html@^2.6.0:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-2.6.0.tgz#b82df416d0c485df47c8943e68057662c770c869"
-  integrity sha512-qc+NqTeaOi/QVAVs5gOY9tqIVk4r1pcUbx1Q2N1a609Os3TNlm85zll2d8g8m/RM6RWg9llir0SpAcePQVIC1w==
+sanitize-html@^2.6.1:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-2.6.1.tgz#5d37c08e189c61c0631560a889b10d9d155d000e"
+  integrity sha512-DzjSz3H5qDntD7s1TcWCSoRPmNR8UmA+y+xZQOvWgjATe2Br9ZW73+vD3Pj6Snrg0RuEuJdXgrKvnYuiuixRkA==
   dependencies:
     deepmerge "^4.2.2"
     escape-string-regexp "^4.0.0"
