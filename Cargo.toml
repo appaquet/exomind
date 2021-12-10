@@ -28,7 +28,7 @@ members = [
 codegen-units = 1
 lto = "thin"
 
-[patch.crates-io]
+# [patch.crates-io]
 # exocore = {path = "../exocore"}
-# exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.15" }
-exocore = {git = "https://github.com/appaquet/exocore.git"}
+# exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.16" }
+# exocore = {git = "https://github.com/appaquet/exocore.git"}
