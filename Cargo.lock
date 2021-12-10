@@ -538,7 +538,7 @@ dependencies = [
 
 [[package]]
 name = "exm"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "exocore",
@@ -692,14 +692,14 @@ dependencies = [
 
 [[package]]
 name = "exomind"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "exomind-protos",
 ]
 
 [[package]]
 name = "exomind-app"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "exocore",
@@ -710,7 +710,7 @@ dependencies = [
 
 [[package]]
 name = "exomind-gmail"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "base64",
@@ -733,7 +733,7 @@ dependencies = [
 
 [[package]]
 name = "exomind-protos"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "exocore",
  "prost",

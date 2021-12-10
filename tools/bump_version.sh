@@ -12,7 +12,7 @@ fi
 SEDBIN="sed"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   if ! command -v gsed &> /dev/null; then
-      echo "on macos, you need to install gnused: brew install gnused"
+      echo "on macos, you need to install gnused: brew install gnu-sed"
       exit
   fi
   SEDBIN="gsed"
