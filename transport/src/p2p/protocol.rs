@@ -18,19 +18,25 @@ use libp2p::{
     },
 };
 
+use super::bytes_channel::BytesChannelSender;
+
 const MAX_MESSAGE_SIZE: usize = 20 * 1024 * 1024; // 20MB
+const STREAM_CLOSE_ZERO_NEEDED: usize = 3;
+const STREAM_BUFFER_SIZE: usize = 1024;
 
 type HandlerEvent = ProtocolsHandlerEvent<ExocoreProtoConfig, (), MessageData, io::Error>;
 
 // TODO: Remove dyn dispatched future once type_alias_impl_trait lands: https://github.com/rust-lang/rust/issues/63063
 type InboundStreamFuture = BoxFuture<
     'static,
-    Result<(MessageData, Option<WrappedStream<NegotiatedSubstream>>), io::Error>,
+    Result<(Option<MessageData>, WrappedStream<NegotiatedSubstream>), io::Error>,
 >;
 type OutboundStreamFuture =
     BoxFuture<'static, Result<Option<WrappedStream<NegotiatedSubstream>>, io::Error>>;
 
-/// Protocol handler for Exocore protocol.
+/// Protocol handler for Exocore protocol. This handles protocols and substreams to
+/// with a connection with a remote peer. This sends and receives messages from the
+/// substreams for the behaviour.
 ///
 /// It handles:
 ///   * Outgoing message requests from the behaviour.
@@ -42,9 +48,6 @@ type OutboundStreamFuture =
 ///     from it. Since this is asynchronous, we keep the futures and poll to
 ///     completion.
 ///
-/// Note:
-///   * Streams are not mapped 1:1 to sockets as the transport may be
-///     multiplexed.
 pub struct ExocoreProtoHandler {
     listen_protocol: SubstreamProtocol<ExocoreProtoConfig, ()>,
     inbound_stream_futures: Vec<InboundStreamFuture>,
@@ -89,7 +92,7 @@ impl ProtocolsHandler for ExocoreProtoHandler {
     ) {
         trace!("Inbound negotiated");
         self.inbound_stream_futures
-            .push(Box::pin(substream.read_message()));
+            .push(Box::pin(substream.read_next()));
     }
 
     fn inject_fully_negotiated_outbound(
@@ -184,19 +187,19 @@ impl ProtocolsHandler for ExocoreProtoHandler {
             let futures = std::mem::take(&mut self.inbound_stream_futures);
             for mut fut in futures {
                 match fut.as_mut().poll(cx) {
-                    Poll::Ready(Ok((message, substream))) => {
-                        if let Some(substream) = substream {
-                            trace!("Successfully received message, reusing channel.");
-                            self.inbound_stream_futures
-                                .push(Box::pin(substream.read_message()));
-                        } else {
-                            trace!("Successfully received message, with stream.");
-                        }
+                    Poll::Ready(Ok((opt_msg, substream))) => {
+                        self.inbound_stream_futures
+                            .push(Box::pin(substream.read_next()));
 
-                        return Poll::Ready(ProtocolsHandlerEvent::Custom(message));
+                        // we may not always have a message if the substream was currently handling
+                        // copying data to a stream consumed by the application
+                        if let Some(message) = opt_msg {
+                            trace!("Successfully read a message on substream");
+                            return Poll::Ready(ProtocolsHandlerEvent::Custom(message));
+                        }
                     }
                     Poll::Ready(Err(err)) => {
-                        debug!("Error receiving message: {}", err);
+                        debug!("Error receiving on substream (it may have closed): {}", err);
                         return Poll::Ready(ProtocolsHandlerEvent::Close(err));
                     }
                     Poll::Pending => {
@@ -239,7 +242,7 @@ where
     type Future = future::Ready<Result<WrappedStream<TStream>, io::Error>>;
 
     fn upgrade_inbound(self, socket: TStream, _: Self::Info) -> Self::Future {
-        future::ok(WrappedStream { socket })
+        future::ok(WrappedStream::new(socket))
     }
 }
 
@@ -253,7 +256,7 @@ where
 
     #[inline]
     fn upgrade_outbound(self, socket: TStream, _: Self::Info) -> Self::Future {
-        future::ok(WrappedStream { socket })
+        future::ok(WrappedStream::new(socket))
     }
 }
 
@@ -279,6 +282,21 @@ where
     TStream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
 {
     socket: TStream,
+    out_stream: Option<BytesChannelSender>,
+    zeroes: usize,
+}
+
+impl<TStream> WrappedStream<TStream>
+where
+    TStream: AsyncRead + AsyncWrite + Send + Unpin + 'static,
+{
+    fn new(socket: TStream) -> Self {
+        WrappedStream {
+            socket,
+            out_stream: None,
+            zeroes: 0,
+        }
+    }
 }
 
 impl<TStream> WrappedStream<TStream>
@@ -309,7 +327,24 @@ where
         }
     }
 
-    async fn read_message(mut self) -> Result<(MessageData, Option<Self>), io::Error> {
+    async fn read_next(mut self) -> Result<(Option<MessageData>, Self), io::Error> {
+        if let Some(mut out_stream) = self.out_stream.take() {
+            let copied = futures::io::copy(&mut self.socket, &mut out_stream).await?;
+            if copied == 0 && self.zeroes < STREAM_CLOSE_ZERO_NEEDED {
+                // we only deem a stream closed when we fail to read data from it
+                // after a few polls
+                self.out_stream = Some(out_stream);
+                self.zeroes += 1;
+            }
+
+            Ok((None, self))
+        } else {
+            let msg = self.read_new_message().await?;
+            Ok((Some(msg), self))
+        }
+    }
+
+    async fn read_new_message(&mut self) -> Result<MessageData, io::Error> {
         let mut size_buf = [0; 4];
         self.socket.read_exact(&mut size_buf).await?;
         let (msg_len, has_stream) = decode_msg_len(&size_buf);
@@ -329,23 +364,18 @@ where
         };
 
         if has_stream {
-            Ok((
-                MessageData {
-                    message: message_data.into(),
-                    stream: Some(Box::new(self.socket)),
-                },
-                None,
-            ))
+            let (sender, receiver) = super::bytes_channel::new(STREAM_BUFFER_SIZE);
+            self.out_stream = Some(sender);
+
+            Ok(MessageData {
+                message: message_data.into(),
+                stream: Some(Box::new(receiver)),
+            })
         } else {
-            // we don't have a stream, we return the received message and
-            // the stream wrapper to be reused
-            Ok((
-                MessageData {
-                    message: message_data.into(),
-                    stream: None,
-                },
-                Some(self),
-            ))
+            Ok(MessageData {
+                message: message_data.into(),
+                stream: None,
+            })
         }
     }
 }

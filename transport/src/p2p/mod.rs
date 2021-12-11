@@ -1,4 +1,5 @@
 mod behaviour;
+mod bytes_channel;
 mod config;
 mod handles;
 mod protocol;
