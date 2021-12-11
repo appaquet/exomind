@@ -46,6 +46,9 @@ jobs:
           - target: armv7-unknown-linux-gnueabihf
             os: ubuntu-latest
             cross: true
+          - target: aarch64-apple-darwin
+            os: macOS-11
+            cross: false
 
     runs-on: ${{ matrix.pair.os }}
 
@@ -55,6 +58,7 @@ jobs:
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
+          target: ${{ matrix.pair.target }}
           profile: minimal
 
       - uses: Swatinem/rust-cache@v1

@@ -27,6 +27,10 @@ jobs:
             os: macOS-11
             bin: exo
             cross: false
+          - target: aarch64-apple-darwin
+            os: macOS-11
+            bin: exo
+            cross: false
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             bin: exo.exe
@@ -41,7 +45,7 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.pair.target }}
-          override: true
+          profile: minimal
 
       - uses: actions-rs/cargo@v1.0.3
         with:
