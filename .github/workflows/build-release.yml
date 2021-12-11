@@ -27,6 +27,10 @@ jobs:
             os: macOS-11
             bin: exm
             cross: false
+          - target: aarch64-apple-darwin
+            os: macOS-11
+            bin: exm
+            cross: false
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             bin: exm.exe
@@ -153,7 +157,8 @@ jobs:
 
           mkdir pkg
           if [ "${{ matrix.os }}" == "macos-11" ]; then
-            cp dist/Exomind-*.dmg pkg/exomind-electron-macos.dmg
+            mv dist/Exomind-*-arm64.dmg pkg/exomind-electron-macos-aarch64.dmg
+            mv dist/Exomind-*.dmg pkg/exomind-electron-macos-x86_64.dmg
           elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             cp dist/exomind-*_amd64.snap pkg/exomind-electron-linux.snap
           elif [ "${{ matrix.os }}" == "windows-latest" ]; then

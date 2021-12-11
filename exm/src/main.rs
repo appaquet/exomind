@@ -19,8 +19,8 @@ async fn main() {
             exomind_gmail::handle(client, opt.node_directory(), gmail_opt).await
         }
         cli::Command::Version => {
-            println!("exomind version {}", env!("CARGO_PKG_VERSION"));
-            println!("{}", exocore::core::build::build_info_str());
+            println!("exomind version={}", env!("CARGO_PKG_VERSION"));
+            println!("exocore {}", exocore::core::build::build_info_str());
         }
     };
 }
