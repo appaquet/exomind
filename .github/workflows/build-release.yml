@@ -27,6 +27,10 @@ jobs:
             os: macOS-11
             bin: exm
             cross: false
+          - target: x86_64-apple-darwin
+            os: macOS-11
+            bin: exo
+            cross: false
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             bin: exm.exe
