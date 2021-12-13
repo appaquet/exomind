@@ -96,6 +96,10 @@ export default class HtmlEditorControls extends React.Component<IProps> {
         draftType: 'ordered-list-item',
       },
       {
+        cssStyle: 'list-todo',
+        draftType: 'todo-list-item',
+      },
+      {
         cssStyle: 'quote-right',
         draftType: 'blockquote',
       },

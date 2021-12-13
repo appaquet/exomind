@@ -2,7 +2,7 @@ import UIKit
 import SwiftyJSON
 import WebKit
 
-class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
+class HybridWebView: AutoLayoutWebView, WKNavigationDelegate, WKScriptMessageHandler {
     fileprivate var callback: ((JSON?) -> Void)!
     fileprivate var ready = false
     fileprivate var component: String!
@@ -15,7 +15,7 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
 
         self.component = component
         self.callback = callback
-
+        
         let url = URL(fileURLWithPath: Bundle.main.path(forResource: "hybrid", ofType: "html", inDirectory: "js")!)
         self.loadFileURL(url, allowingReadAccessTo: url)
 
@@ -25,8 +25,9 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
                     forMainFrameOnly: true
                 )
         self.configuration.userContentController.addUserScript(script)
+        self.configuration.userContentController.add(MsgHandlerTrampoline(delegate: self), name: "onMessage")
     }
-
+    
     func setData(_ data: [String: AnyObject]) {
         if (self.ready) {
             let jsonData = JSON(data)
@@ -57,33 +58,33 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
         let url = navigationAction.request.url!
 
         if (url.scheme == "file" || url.scheme == "about") {
+            // allow loading blank page & hybrid.js
             decisionHandler(.allow)
-
-        } else if (url.scheme == "exomind") {
-            self.evaluateJavaScript("window.getData(\(url.host!))") { (data, err) in
-                if let msg = data as? String,
-                   let msgData = msg.data(using: String.Encoding.utf8, allowLossyConversion: false),
-                   let json = try? JSON(data: msgData, options: .allowFragments) {
-
-                    if (json.string == "ready") {
-                        self.handleReady()
-                        self.checkSize()
-                    } else {
-                        self.checkSize()
-                        self.handleCallbackData(json)
-                    }
-                } else {
-                    print("HybridWebView > Could not parse message from js. Msg \(String(describing: data))")
-                }
-            }
-
-            decisionHandler(.cancel)
+            
         } else {
             // we open anything else in safari
             UIApplication.shared.open(url, options: [:], completionHandler: { (success) in
                 // nothing to do
             })
             decisionHandler(.cancel)
+        }
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard let msg = message.body as? String else { return }
+        
+        if msg == "ready" {
+            self.handleReady()
+            self.checkSize()
+            return
+        }
+        
+        if let msgData = msg.data(using: String.Encoding.utf8, allowLossyConversion: false),
+           let json = try? JSON(data: msgData, options: .allowFragments) {
+            self.checkSize()
+            self.handleCallbackData(json)
+        } else {
+            print("HybridWebView > Could not parse message from js. Msg \(String(describing: message))")
         }
     }
 
@@ -97,5 +98,22 @@ class HybridWebView: AutoLayoutWebView, WKNavigationDelegate {
 
     deinit {
         print("HybridWebView > Deinit")
+    }
+}
+
+// Trampoline for message handler to prevent a cycle between the javascript context & the WKWebView
+// via the message handler.
+//
+// See https://stackoverflow.com/questions/26383031/wkwebview-causes-my-view-controller-to-leak/26383032#26383032
+class MsgHandlerTrampoline: NSObject, WKScriptMessageHandler {
+    weak var delegate : WKScriptMessageHandler?
+    
+    init(delegate:WKScriptMessageHandler) {
+        self.delegate = delegate
+        super.init()
+    }
+    
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        self.delegate?.userContentController(userContentController, didReceive: message)
     }
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import HtmlEditor from "../../components/interaction/html-editor/html-editor";
+import NewHtmlEditor from "../../components/interaction/html-editor/new-html-editor";
 import PropTypes from "prop-types";
 import "./ios-html-editor.less";
 
@@ -39,7 +39,7 @@ export default class IosHtmlEditor extends React.Component {
 
   render() {
     return (
-      <HtmlEditor
+      <NewHtmlEditor
         content={this.state.content}
         onBound={this.handleBound.bind(this)}
         onChange={this.handleContentChange.bind(this)}
@@ -55,10 +55,10 @@ export default class IosHtmlEditor extends React.Component {
 
   handleContentChange(newContent) {
     this.content = newContent;
-    sendIos({
+    sendIos(JSON.stringify({
       content: this.content,
       cursorY: this.cursorY,
-    });
+    }));
   }
 
   handleCursorChange(cursor) {
@@ -66,10 +66,10 @@ export default class IosHtmlEditor extends React.Component {
       let newCursorY = cursor.rect.top;
       if (this.cursorY != newCursorY) {
         this.cursorY = newCursorY;
-        sendIos({
+        sendIos(JSON.stringify({
           content: this.content,
           cursorY: this.cursorY,
-        });
+        }));
       }
     }
   }
@@ -78,9 +78,9 @@ export default class IosHtmlEditor extends React.Component {
     e.preventDefault();
     e.stopPropagation();
 
-    sendIos({
+    sendIos(JSON.stringify({
       link: url,
-    });
+    }));
   }
 
   handleAction(name) {

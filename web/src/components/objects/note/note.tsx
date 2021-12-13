@@ -11,6 +11,7 @@ import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-edi
 import { SelectedItem, Selection } from '../entity-list/selection';
 import './note.less';
 import Navigation from '../../../navigation';
+import NewHtmlEditor from '../../interaction/html-editor/new-html-editor';
 
 interface IProps {
     entity: EntityTraits;
@@ -68,9 +69,8 @@ export default class Note extends React.Component<IProps, IState> {
 
                 <div className="object-body">
                     <HtmlEditorControls editor={this.state.editor} cursor={this.state.cursor} />
-                    <HtmlEditor
+                    <NewHtmlEditor
                         content={this.state.currentNote.body}
-                        placeholder="Type your note here"
                         onBound={this.handleContentBound.bind(this)}
                         onChange={this.handleContentChange.bind(this)}
                         onFocus={this.handleOnFocus.bind(this)}
@@ -111,7 +111,7 @@ export default class Note extends React.Component<IProps, IState> {
                 currentNote: note,
             });
 
-            this.saveContent();
+            this.saveContent(note);
         }
     }
 
@@ -124,7 +124,7 @@ export default class Note extends React.Component<IProps, IState> {
                 currentNote: note,
             });
 
-            this.saveContent();
+            this.saveContent(note);
         }
     }
 
@@ -148,18 +148,22 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-    private saveContent(): void {
-        if (this.state && !_.isEqual(this.state.currentNote, this.state.savedNote)) {
+    private saveContent(note: exomind.base.v1.INote | null = null): void {
+        if (!note) {
+            note = this.state.currentNote;
+        }
+
+        if (this.state && !_.isEqual(note, this.state.savedNote)) {
             const mutation = MutationBuilder
                 .updateEntity(this.props.entity.entity.id)
-                .putTrait(this.state.currentNote, this.props.noteTrait.id)
+                .putTrait(note, this.props.noteTrait.id)
                 .build();
 
             Exocore.store.mutate(mutation);
 
             if (this.mounted) {
                 this.setState({
-                    savedNote: new exomind.base.v1.Note(this.state.currentNote),
+                    savedNote: new exomind.base.v1.Note(note),
                 });
             }
         }

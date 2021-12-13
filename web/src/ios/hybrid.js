@@ -7,25 +7,14 @@ import './hybrid.less';
 // used in some places to detect if we're on iOS or not
 window.isHybridExomind = true;
 
-// communication to iOS app
-window.toIosDataId = 0;
-window.toIosData = {};
-
+// callback to iOS
 window.sendIos = (data) => {
-  let id = window.toIosDataId++;
-  window.toIosData[id] = data;
-  window.location = 'exomind://' + id;
+  webkit.messageHandlers['onMessage'].postMessage(data);
 };
 
 // For some reason, React needs to be imported first
 // This prevents unused warning
 window.noop = React;
-
-window.getData = (dataId) => {
-  let data = window.toIosData[dataId];
-  delete window.toIosData[dataId];
-  return JSON.stringify(data);
-};
 
 window._startComponent = () => {
   try {

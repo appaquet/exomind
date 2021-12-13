@@ -216,7 +216,7 @@ extension RichTextEditor {
 
 fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
     fileprivate var scrollDelegate: DisableScrollDelegate?
-
+    
     func initialize(_ callback: @escaping (JSON?) -> Void) {
         self.initialize("html-editor", callback: callback)
 
