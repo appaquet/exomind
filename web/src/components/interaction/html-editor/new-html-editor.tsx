@@ -6,6 +6,7 @@ import { toHTMLString } from '@bangle.dev/utils';
 import { EditorState, NodeSelection, setBlockType } from "@bangle.dev/pm";
 import { queryIsItalicActive, toggleItalic } from "@bangle.dev/base-components/dist/italic";
 import { queryIsBoldActive, toggleBold } from "@bangle.dev/base-components/dist/bold";
+import { keymap } from '@bangle.dev/pm';
 import { queryIsHeadingActive, toggleHeading } from "@bangle.dev/base-components/dist/heading";
 import { queryIsBulletListActive, queryIsTodoListActive, toggleBulletList, toggleTodoList } from "@bangle.dev/base-components/dist/bullet-list";
 import { queryIsUnderlineActive, toggleUnderline } from "@bangle.dev/base-components/dist/underline";
@@ -19,12 +20,15 @@ import Debouncer from "../../../utils/debouncer";
 
 import './new-html-editor.less';
 import '@bangle.dev/core/style.css';
+import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
+import InputModal from "../../modals/input-modal/input-modal";
+import { IStores, StoresContext } from "../../../stores/stores";
 
+// TODO: Cannot clear code block
+// TODO: Formatting for code & code block (dark mode)
+// TODO: Cannot click on link on iOS without focus
+// TODO: New URL popup
 // TODO: Find out how to change content
-// TODO: Toggle URL
-// TODO: URL popup
-// TODO: Test iOS link click
-// TODO: Add TODO list to iOS
 
 const defaultInitialFocus = true;
 
@@ -47,6 +51,9 @@ interface IState {
 }
 
 export default class NewHtmlEditor extends React.Component<IProps, IState> {
+    static contextType = StoresContext;
+    declare context: IStores;
+
     private editor?: CoreBangleEditor;
     private debouncer: Debouncer;
 
@@ -55,7 +62,7 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
 
         let content = props.content;
         if (!content) {
-            // Fixes for https://github.com/bangle-io/bangle.dev/issues/231
+            // Fix for https://github.com/bangle-io/bangle.dev/issues/231
             content = '<p></p>';
         }
 
@@ -83,6 +90,84 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
                 gen: this.state.gen + 1,
             });
         }
+    }
+
+    private createEditorState(content: string): BangleEditorState<unknown> {
+        return new BangleEditorState({
+            specs: [
+                bold.spec(),
+                italic.spec(),
+                link.spec(),
+                bulletList.spec(),
+                orderedList.spec(),
+                listItem.spec(),
+                paragraph.spec(),
+                heading.spec(),
+                underline.spec(),
+                strike.spec(),
+                code.spec(),
+                codeBlock.spec(),
+                blockquote.spec(),
+            ],
+            plugins: () => [
+                bold.plugins(),
+                italic.plugins(),
+                link.plugins(),
+                bulletList.plugins(),
+                orderedList.plugins(),
+                listItem.plugins(),
+                paragraph.plugins(),
+                heading.plugins(),
+                underline.plugins(),
+                strike.plugins(),
+                code.plugins(),
+                codeBlock.plugins(),
+                blockquote.plugins(),
+                new Plugin({
+                    view: () => ({
+                        update: (view, prevState) => {
+                            this.handleChange(view.state, prevState)
+                        },
+                    })
+                }),
+                keymap({
+                    'Mod-k': () => {
+                        this.toggleLink();
+                        return true;
+                    },
+                }),
+                new Plugin({
+                    props: {
+                        handleClick: (view, _pos, event) => {
+                            const cursor = this.getCursor(view.state);
+                            if (cursor.link) {
+                                if (this.props.onLinkClick) {
+                                    this.props.onLinkClick(cursor.link, event);
+                                }
+                            }
+                            return false;
+                        },
+                    },
+                }),
+            ],
+            initialValue: content,
+            editorProps: {
+                handleDOMEvents: {
+                    focus: () => {
+                        if (this.props.onFocus) {
+                            this.props.onFocus();
+                        }
+                        return false;
+                    },
+                    blur: () => {
+                        if (this.props.onBlur) {
+                            this.props.onBlur();
+                        }
+                        return false;
+                    }
+                }
+            },
+        })
     }
 
     render(): React.ReactNode {
@@ -117,6 +202,8 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
     }
 
     toggleBlockType(type: BlockStyle): void {
+        const cursor = this.getCursor(this.editor.view.state);
+
         switch (type) {
             case 'header-one':
                 toggleHeading(1)(this.editor.view.state, this.editor.view.dispatch);
@@ -131,7 +218,6 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
                 toggleHeading(4)(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'unordered-list-item':
-                console.log("YEP");
                 toggleBulletList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
                 break;
             case 'ordered-list-item':
@@ -141,20 +227,75 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
                 toggleTodoList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
                 break;
             case 'blockquote':
-                wrapInBlockquote()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                this.clearBlock();
+                if (cursor.blockType != 'blockquote') {
+                    wrapInBlockquote()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                } 
                 break;
             case 'code-block':
-                setBlockType(this.editor.view.state.schema.nodes['codeBlock'])(this.editor.view.state, this.editor.view.dispatch);
+                this.clearBlock();
+                if (cursor.blockType != 'code-block') {
+                    setBlockType(this.editor.view.state.schema.nodes['codeBlock'])(this.editor.view.state, this.editor.view.dispatch);
+                }
                 break;
         }
     }
 
-    toggleLink(url: string | null): void {
-        // TODO: 
+    clearBlock(): void {
+        const state = this.editor.view.state;
+        const dispatch = this.editor.view.dispatch;
+        setBlockType(state.schema.nodes.paragraph)(state, dispatch);
+        console.log('clearing');
+    }
+
+    clearLink(): void {
+        updateLink(null)(this.editor.view.state, this.editor.view.dispatch);
+    }
+
+    toggleLink(url: string | null = null): void {
+        if (url) {
+            createLink(url)(this.editor.view.state, this.editor.view.dispatch);
+            return;
+        }
+
+        const done = (url?: string) => {
+            this.context.session.hideModal();
+
+            if (!url) {
+                return;
+            }
+
+            if (!url.includes("://")) {
+                url = 'entity://' + url;
+            }
+
+            if (url) {
+                createLink(url)(this.editor.view.state, this.editor.view.dispatch);
+            } else {
+                this.clearLink();
+            }
+        };
+
+        const cursor = this.getCursor();
+        this.context.session.showModal(() => {
+            return <InputModal text='Enter link' initialValue={cursor.link} onDone={done} />;
+        })
     }
 
     toggleHeader(): void {
-        // TODO:
+        const cursor = this.getCursor();
+        if (cursor.blockType == 'header-one') {
+            this.toggleBlockType('header-two');
+        } else if (cursor.blockType == 'header-two') {
+            this.toggleBlockType('header-three');
+        } else if (cursor.blockType == 'header-three') {
+            this.toggleBlockType('header-four');
+        } else if (cursor.blockType == 'header-four') {
+            // toggling with same block type will remove it 
+            this.toggleBlockType('header-four');
+        } else {
+            this.toggleBlockType('header-one');
+        }
     }
 
     indent(): void {
@@ -165,64 +306,6 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
         outdentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
     }
 
-    private createEditorState(content: string): BangleEditorState<unknown> {
-        return new BangleEditorState({
-            specs: [
-                bold.spec(),
-                italic.spec(),
-                link.spec(),
-                orderedList.spec(),
-                bulletList.spec(),
-                listItem.spec(),
-                paragraph.spec(),
-                heading.spec(),
-                underline.spec(),
-                strike.spec(),
-                code.spec(),
-                codeBlock.spec(),
-                blockquote.spec(),
-            ],
-            plugins: () => [
-                bold.plugins(),
-                italic.plugins(),
-                link.plugins(),
-                orderedList.plugins(),
-                bulletList.plugins(),
-                listItem.plugins(),
-                paragraph.plugins(),
-                heading.plugins(),
-                underline.plugins(),
-                strike.plugins(),
-                code.plugins(),
-                codeBlock.plugins(),
-                blockquote.plugins(),
-                new Plugin({
-                    view: () => ({
-                        update: (view, prevState) => {
-                            this.handleChange(view.state, prevState)
-                        },
-                    })
-                })
-            ],
-            initialValue: content,
-            editorProps: {
-                handleDOMEvents: {
-                    focus: () => {
-                        if (this.props.onFocus) {
-                            this.props.onFocus();
-                        }
-                        return false;
-                    },
-                    blur: () => {
-                        if (this.props.onBlur) {
-                            this.props.onBlur();
-                        }
-                        return false;
-                    }
-                }
-            },
-        })
-    }
 
     private handleReady = (editor: CoreBangleEditor) => {
         this.editor = editor;
@@ -300,9 +383,17 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
             blockType = 'code-block';
         }
 
+
+        let link;
+        const attrs = queryLinkAttrs()(this.editor.view.state);
+        if (attrs) {
+            link = attrs.href;
+        }
+
         return {
             blockType,
             inlineStyle,
+            link,
             rect: this.getCursorRect(),
         }
     }
@@ -346,6 +437,7 @@ export type BlockStyle = 'header-one' | 'header-two' | 'header-three' | 'header-
 export interface EditorCursor {
     blockType: BlockStyle | null;
     inlineStyle: Set<InlineStyle>;
+    link: string | null;
     rect: CursorRect;
 }
 

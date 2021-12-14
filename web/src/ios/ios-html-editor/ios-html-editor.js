@@ -88,8 +88,14 @@ export default class IosHtmlEditor extends React.Component {
       case "bold":
         this.state.editor.toggleInlineStyle("BOLD");
         break;
+      case "italic":
+        this.state.editor.toggleInlineStyle("ITALIC");
+        break;
       case "strikethrough":
         this.state.editor.toggleInlineStyle("STRIKETHROUGH");
+        break;
+      case "code":
+        this.state.editor.toggleInlineStyle('CODE');
         break;
       case "header-toggle":
         this.state.editor.toggleHeader();
@@ -99,6 +105,12 @@ export default class IosHtmlEditor extends React.Component {
         break;
       case "list-ol":
         this.state.editor.toggleBlockType("ordered-list-item");
+        break;
+      case "list-todo":
+        this.state.editor.toggleBlockType("todo-list-item");
+        break;
+      case "code-block":
+        this.state.editor.toggleBlockType('code-block');
         break;
       case "indent":
         this.state.editor.indent();
