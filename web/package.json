@@ -107,7 +107,7 @@
     "starts-with-emoji": "^2.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.16.0",
+    "@babel/core": "^7.16.5",
     "@babel/preset-env": "^7.16.4",
     "@babel/preset-react": "^7.16.5",
     "@babel/preset-typescript": "^7.16.0",
