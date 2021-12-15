@@ -4,11 +4,6 @@ import FontAwesome_swift
 import SnapKit
 import WebKit
 
-/*
- TODO:
-    - Placing cursor outside of visible area doesn't get properly reported
- */
-
 class RichTextEditor: UIViewController {
     fileprivate weak var outerScroll: UIScrollView?
     fileprivate var webview: RichTextEditorWebView!
@@ -348,7 +343,7 @@ fileprivate class RichTextEditorToolsView: UIView {
         let scroll = UIScrollView()
         self.addSubview(scroll)
         scroll.snp.makeConstraints { (make) in
-            make.left.equalToSuperview().offset(20)
+            make.left.equalToSuperview().offset(15)
             make.centerY.equalToSuperview()
         }
 
@@ -371,7 +366,7 @@ fileprivate class RichTextEditorToolsView: UIView {
         self.addSubview(closeButton)
         closeButton.snp.makeConstraints { (make) in
             make.right.equalToSuperview().offset(-20)
-            make.left.equalTo(scroll.snp.right).offset(20)
+            make.left.equalTo(scroll.snp.right).offset(10)
             make.centerY.equalToSuperview()
         }
     }

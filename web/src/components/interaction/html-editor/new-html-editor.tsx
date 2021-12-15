@@ -3,7 +3,7 @@ import { BangleEditor } from '@bangle.dev/react';
 import { BangleEditorState, Plugin, BangleEditor as CoreBangleEditor } from '@bangle.dev/core';
 import { bold, italic, link, bulletList, heading, listItem, orderedList, paragraph, underline, code, strike, codeBlock, blockquote, } from '@bangle.dev/base-components';
 import { toHTMLString } from '@bangle.dev/utils';
-import { EditorState, NodeSelection, setBlockType } from "@bangle.dev/pm";
+import { EditorState, EditorView, NodeSelection, setBlockType } from "@bangle.dev/pm";
 import { queryIsItalicActive, toggleItalic } from "@bangle.dev/base-components/dist/italic";
 import { queryIsBoldActive, toggleBold } from "@bangle.dev/base-components/dist/bold";
 import { keymap } from '@bangle.dev/pm';
@@ -23,9 +23,9 @@ import '@bangle.dev/core/style.css';
 import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
 import InputModal from "../../modals/input-modal/input-modal";
 import { IStores, StoresContext } from "../../../stores/stores";
+import { on } from "events";
 
-// TODO: Cannot clear code block
-// TODO: Formatting for code & code block (dark mode)
+// TODO: iOS toolbar scroll should hide scrollbar + too much left padding 
 // TODO: Cannot click on link on iOS without focus
 // TODO: New URL popup
 // TODO: Find out how to change content
@@ -40,6 +40,7 @@ interface IProps {
     onBlur?: () => void;
     onCursorChange?: (cursor: EditorCursor) => void;
     onLinkClick?: (url: string, e: MouseEvent) => void;
+    allowLinkFocusClick?: boolean;
     initialFocus?: boolean;
 }
 
@@ -135,20 +136,7 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
                         this.toggleLink();
                         return true;
                     },
-                }),
-                new Plugin({
-                    props: {
-                        handleClick: (view, _pos, event) => {
-                            const cursor = this.getCursor(view.state);
-                            if (cursor.link) {
-                                if (this.props.onLinkClick) {
-                                    this.props.onLinkClick(cursor.link, event);
-                                }
-                            }
-                            return false;
-                        },
-                    },
-                }),
+                })
             ],
             initialValue: content,
             editorProps: {
@@ -164,6 +152,9 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
                             this.props.onBlur();
                         }
                         return false;
+                    },
+                    mousedown: (view, event) => {
+                        return this.maybeHandleLinkClick(view, event);
                     }
                 }
             },
@@ -227,10 +218,9 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
                 toggleTodoList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
                 break;
             case 'blockquote':
-                this.clearBlock();
                 if (cursor.blockType != 'blockquote') {
                     wrapInBlockquote()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
-                } 
+                }
                 break;
             case 'code-block':
                 this.clearBlock();
@@ -245,7 +235,6 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
         const state = this.editor.view.state;
         const dispatch = this.editor.view.dispatch;
         setBlockType(state.schema.nodes.paragraph)(state, dispatch);
-        console.log('clearing');
     }
 
     clearLink(): void {
@@ -306,7 +295,6 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
         outdentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
     }
 
-
     private handleReady = (editor: CoreBangleEditor) => {
         this.editor = editor;
 
@@ -336,6 +324,32 @@ export default class NewHtmlEditor extends React.Component<IProps, IState> {
 
         if (this.props.onCursorChange) {
             this.props.onCursorChange(this.getCursor(newState));
+        }
+    }
+
+    private maybeHandleLinkClick = (view: EditorView, event: MouseEvent): boolean => {
+        if (view.hasFocus() && !event.metaKey && !this.props.allowLinkFocusClick) {
+            return false;
+        }
+        
+        let el = event.target as HTMLElement;
+
+        // if tagname is not a link, try to go up into the parenthood up 10 levels
+        for (let i = 0; el.tagName !== 'A' && i < 10; i++) {
+          if (el.parentNode) {
+            el = el.parentNode as HTMLElement;
+          }
+        }
+
+        if (el.tagName !== 'A') {
+            return false;
+        }
+
+        // if it's a link, we prevent cursor from changing by stopping propagation here
+        const link = el.getAttribute('href');
+        if (link && this.props.onLinkClick) {
+            this.props.onLinkClick(link, event);
+            return true;
         }
     }
 

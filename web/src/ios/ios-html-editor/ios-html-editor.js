@@ -41,47 +41,53 @@ export default class IosHtmlEditor extends React.Component {
     return (
       <NewHtmlEditor
         content={this.state.content}
-        onBound={this.handleBound.bind(this)}
-        onChange={this.handleContentChange.bind(this)}
-        onCursorChange={this.handleCursorChange.bind(this)}
-        onLinkClick={this.handleLinkClick.bind(this)}
+        onBound={this.handleBound}
+        onChange={this.handleContentChange}
+        onCursorChange={this.handleCursorChange}
+        onLinkClick={this.handleLinkClick}
+        allowLinkFocusClick={true}
       />
     );
   }
 
-  handleBound(editor) {
+  handleBound = (editor) => {
     this.setState({ editor });
   }
 
-  handleContentChange(newContent) {
+  handleContentChange = (newContent) => {
     this.content = newContent;
-    sendIos(JSON.stringify({
-      content: this.content,
-      cursorY: this.cursorY,
-    }));
+    sendIos(
+      JSON.stringify({
+        content: this.content,
+        cursorY: this.cursorY,
+      })
+    );
   }
 
-  handleCursorChange(cursor) {
+  handleCursorChange = (cursor) => {
     if (cursor && cursor.rect) {
       let newCursorY = cursor.rect.top;
       if (this.cursorY != newCursorY) {
         this.cursorY = newCursorY;
-        sendIos(JSON.stringify({
-          content: this.content,
-          cursorY: this.cursorY,
-        }));
+        sendIos(
+          JSON.stringify({
+            content: this.content,
+            cursorY: this.cursorY,
+          })
+        );
       }
     }
   }
 
-  handleLinkClick(url, e) {
+  handleLinkClick = (url, e) => {
     e.preventDefault();
     e.stopPropagation();
-
-    sendIos(JSON.stringify({
-      link: url,
-    }));
-  }
+    sendIos(
+      JSON.stringify({
+        link: url,
+      })
+    );
+  };
 
   handleAction(name) {
     switch (name) {
@@ -95,7 +101,7 @@ export default class IosHtmlEditor extends React.Component {
         this.state.editor.toggleInlineStyle("STRIKETHROUGH");
         break;
       case "code":
-        this.state.editor.toggleInlineStyle('CODE');
+        this.state.editor.toggleInlineStyle("CODE");
         break;
       case "header-toggle":
         this.state.editor.toggleHeader();
@@ -110,7 +116,7 @@ export default class IosHtmlEditor extends React.Component {
         this.state.editor.toggleBlockType("todo-list-item");
         break;
       case "code-block":
-        this.state.editor.toggleBlockType('code-block');
+        this.state.editor.toggleBlockType("code-block");
         break;
       case "indent":
         this.state.editor.indent();

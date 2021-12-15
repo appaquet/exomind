@@ -76,7 +76,7 @@ export default class Note extends React.Component<IProps, IState> {
                         onFocus={this.handleOnFocus.bind(this)}
                         onBlur={this.handleOnBlur.bind(this)}
                         onCursorChange={this.handleCursorChange.bind(this)}
-                        onLinkClick={this.handleLinkClick.bind(this)}
+                        onLinkClick={this.handleLinkClick}
                     />
                 </div>
             </div>
@@ -134,7 +134,7 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-    private handleLinkClick(url: string, e: MouseEvent) {
+    private handleLinkClick = (url: string, e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
