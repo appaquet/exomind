@@ -52,7 +52,11 @@
       "react-flatpickr",
       "sanitize-html",
       "source-map-support",
-      "starts-with-emoji"
+      "starts-with-emoji",
+      "@bangle.dev/base-components",
+      "@bangle.dev/core",
+      "@bangle.dev/pm",
+      "@bangle.dev/react"
     ],
     "renderer": {
       "sourceDirectory": "src/electron/renderer",
