@@ -1,426 +1,468 @@
+import React from "react";
+import { BangleEditor } from '@bangle.dev/react';
+import { BangleEditorState, Plugin, BangleEditor as CoreBangleEditor } from '@bangle.dev/core';
+import { bold, italic, link, bulletList, heading, listItem, orderedList, paragraph, underline, code, strike, codeBlock, blockquote, } from '@bangle.dev/base-components';
+import { toHTMLString } from '@bangle.dev/utils';
+import { EditorState, EditorView, NodeSelection, setBlockType } from "@bangle.dev/pm";
+import { queryIsItalicActive, toggleItalic } from "@bangle.dev/base-components/dist/italic";
+import { queryIsBoldActive, toggleBold } from "@bangle.dev/base-components/dist/bold";
+import { keymap } from '@bangle.dev/pm';
+import { queryIsHeadingActive, toggleHeading } from "@bangle.dev/base-components/dist/heading";
+import { queryIsBulletListActive, queryIsTodoListActive, toggleBulletList, toggleTodoList } from "@bangle.dev/base-components/dist/bullet-list";
+import { queryIsUnderlineActive, toggleUnderline } from "@bangle.dev/base-components/dist/underline";
+import { queryIsCodeActive, toggleCode } from "@bangle.dev/base-components/dist/code";
+import { queryIsStrikeActive, toggleStrike } from "@bangle.dev/base-components/dist/strike";
+import { queryIsOrderedListActive, toggleOrderedList } from "@bangle.dev/base-components/dist/ordered-list";
+import { queryIsBlockquoteActive, wrapInBlockquote } from "@bangle.dev/base-components/dist/blockquote";
+import { queryIsCodeActiveBlock } from "@bangle.dev/base-components/dist/code-block";
+import { indentListItem, outdentListItem } from "@bangle.dev/base-components/dist/list-item/list-item-component";
+import Debouncer from "../../../utils/debouncer";
+import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
+import InputModal from "../../modals/input-modal/input-modal";
+import { IStores, StoresContext } from "../../../stores/stores";
 
-import React, { RefObject, SyntheticEvent, MouseEvent, KeyboardEvent } from 'react';
-import { Editor, EditorState, RichUtils, DraftEditorCommand, KeyBindingUtil, getVisibleSelectionRect, DraftBlockType, DraftInlineStyle, ContentState, Modifier, getDefaultKeyBinding, DraftHandleValue, SelectionState, CompositeDecorator } from 'draft-js';
-import Debouncer from '../../../utils/debouncer';
-import 'draft-js/dist/Draft.css';
 import './html-editor.less';
-import { Commands } from './commands';
-import { extractCurrentLink, findLinkEntities, Link, toggleLink } from './link';
-import { convertOldHTML, fromHTML, toHTML } from './convert';
-import InputModal from '../../modals/input-modal/input-modal';
-import { IStores, StoresContext } from '../../../stores/stores';
+import '@bangle.dev/core/style.css';
 
-const listMaxDepth = 4;
+// TODO: New URL / cmd-k popup
+// TODO: Link tooltip on click (when focused)
+// TODO: Find out how to change content
+
+const defaultInitialFocus = false;
 
 interface IProps {
-  content: string;
-  placeholder?: string;
-
-  onBound?: (editor: HtmlEditor) => void;
-  onChange?: (content: string) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  onCursorChange?: (cursor: EditorCursor) => void;
-  onLinkClick?: (url: string, e: MouseEvent) => void;
-  initialFocus?: boolean;
+    content: string;
+    onBound?: (editor: HtmlEditor) => void;
+    onChange?: (content: string) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
+    onCursorChange?: (cursor: EditorCursor) => void;
+    onLinkClick?: (url: string, e: MouseEvent) => void;
+    initialFocus?: boolean;
 }
 
 interface IState {
-  editorState: EditorState;
-  initialContent: ContentState;
-  htmlContent?: string;
-  localChanges: boolean;
+    content?: string;
+    localChanges: boolean;
+    gen: number,
+    editorState: BangleEditorState<unknown>;
 }
 
 export default class HtmlEditor extends React.Component<IProps, IState> {
-  static contextType = StoresContext;
-  declare context: IStores;
+    static contextType = StoresContext;
+    declare context: IStores;
 
-  private editorRef: RefObject<Editor>;
-  private lastTriggeredChangeState?: ContentState;
-  private debouncer: Debouncer;
+    private editor?: CoreBangleEditor;
+    private debouncer: Debouncer;
 
-  private decorator = new CompositeDecorator([
-    {
-      strategy: findLinkEntities,
-      component: Link,
-      props: {
-        editor: this,
-      }
-    },
-  ]);
+    constructor(props: IProps) {
+        super(props);
 
-  private styleMap = {
-    'CODE': {
-      // use to be able to style inline code
-      // see https://github.com/facebook/draft-js/issues/2302
-      textDecorationColor: 'black',
-    }
-  };
-
-  constructor(props: IProps) {
-    super(props);
-
-    const htmlContent = convertOldHTML(props.content);
-
-    let editorState;
-    if (htmlContent) {
-      editorState = EditorState.createWithContent(fromHTML(htmlContent));
-    } else {
-      editorState = EditorState.createEmpty();
-    }
-    editorState = EditorState.set(editorState, { decorator: this.decorator });
-
-    this.state = {
-      editorState: editorState,
-      initialContent: editorState.getCurrentContent(),
-      localChanges: false,
-    };
-
-    this.editorRef = React.createRef();
-    this.debouncer = new Debouncer(300);
-  }
-
-  componentDidMount(): void {
-    if (this.props.onBound) {
-      this.props.onBound(this);
-    }
-
-    const defaultInitialFocus = true;
-    if (this.props.initialFocus ?? defaultInitialFocus) {
-      this.editorRef.current.focus();
-    }
-  }
-
-  componentDidUpdate(prevProps: IProps): void {
-    if (!this.state.localChanges && this.props.content !== prevProps.content && this.props.content !== this.state.htmlContent) {
-      const htmlContent = convertOldHTML(this.props.content);
-      let editorState = EditorState.push(this.state.editorState, fromHTML(htmlContent), 'insert-characters');
-      editorState = EditorState.set(editorState, { decorator: this.decorator });
-      this.setState({
-        editorState: editorState,
-        initialContent: editorState.getCurrentContent(),
-      });
-    }
-  }
-
-  render(): React.ReactNode {
-    return <div className="html-editor">
-      <Editor
-        ref={this.editorRef}
-        editorState={this.state.editorState}
-        placeholder={this.props.placeholder}
-        customStyleMap={this.styleMap}
-        onChange={this.handleOnChange}
-        keyBindingFn={this.handleKeyBinding}
-        handleKeyCommand={this.handleKeyCommand}
-        handleBeforeInput={this.handleBeforeInput}
-        handleReturn={this.handleReturn}
-        onFocus={this.handleFocus}
-        onBlur={this.handleBlur}
-
-        spellCheck={true}
-      />
-    </div>;
-  }
-
-  private handleOnChange = (editorState: EditorState): void => {
-    this.setState({
-      editorState,
-      localChanges: !this.state.initialContent.equals(editorState.getCurrentContent()),
-    });
-
-    this.debouncer.debounce(() => {
-      const editorState = this.state.editorState;
-
-      if (this.props.onChange) {
-        const contentState = editorState.getCurrentContent();
-        if (!this.lastTriggeredChangeState || !contentState.equals(this.lastTriggeredChangeState)) {
-          this.lastTriggeredChangeState = contentState;
-
-          const htmlContent = toHTML(contentState);
-          this.setState({ htmlContent });
-          this.props.onChange(htmlContent);
+        let content = props.content;
+        if (!content) {
+            // Fix for https://github.com/bangle-io/bangle.dev/issues/231
+            content = '<p></p>';
         }
-      }
 
-      if (this.props.onCursorChange) {
-        const selection = editorState.getSelection();
-        const blockType = editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
-        const inlineStyle = editorState.getCurrentInlineStyle();
-        const rect = getVisibleSelectionRect(window); // cursor window position
-
-        this.props.onCursorChange({ blockType, inlineStyle, rect })
-      }
-    });
-  }
-
-  private handleKeyBinding = (e: KeyboardEvent): DraftEditorCommand | null => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-
-      const currentState = this.state.editorState;
-      const currentSelection = currentState.getSelection();
-      const currentContent = currentState.getCurrentContent();
-      const blockType = currentContent.getBlockForKey(currentSelection.getStartKey()).getType();
-
-      let newEditorState;
-      if (blockType == 'unordered-list-item' || blockType == 'ordered-list-item') {
-        newEditorState = RichUtils.onTab(e, currentState, listMaxDepth);
-      } else if (!e.shiftKey) {
-        newEditorState = Commands.handleIndentText(currentState);
-      } else {
-        newEditorState = Commands.handleOutdentText(currentState);
-      }
-
-      if (newEditorState && newEditorState != currentState) {
-        this.handleOnChange(newEditorState);
-        return;
-      }
-    }
-
-    if (e.key == 'k' && KeyBindingUtil.hasCommandModifier(e)) {
-      e.preventDefault();
-
-      setTimeout(() => {
-        const done = (link?: string) => {
-          this.context.session.hideModal();
-
-          if (!link) {
-            return;
-          }
-          if (!link.includes("://")) {
-            link = 'entity://' + link;
-          }
-
-          this.toggleLink(link);
+        this.state = {
+            content: content,
+            gen: 0,
+            localChanges: false,
+            editorState: this.createEditorState(content),
         };
 
-        const currentLink = extractCurrentLink(this.state.editorState);
-        this.context.session.showModal(() => {
-          return <InputModal text='Enter link' initialValue={currentLink} onDone={done} />;
+        this.debouncer = new Debouncer(300);
+    }
+
+    componentDidMount(): void {
+        if (this.props.onBound) {
+            this.props.onBound(this);
+        }
+    }
+
+    componentDidUpdate(prevProps: IProps): void {
+        if (!this.state.localChanges && this.props.content !== prevProps.content && this.props.content !== this.state.content) {
+            this.setState({
+                content: this.props.content,
+                editorState: this.createEditorState(this.props.content),
+                gen: this.state.gen + 1,
+            });
+        }
+    }
+
+    private createEditorState(content: string): BangleEditorState<unknown> {
+        return new BangleEditorState({
+            specs: [
+                bold.spec(),
+                italic.spec(),
+                link.spec(),
+                bulletList.spec(),
+                orderedList.spec(),
+                listItem.spec(),
+                paragraph.spec(),
+                heading.spec(),
+                underline.spec(),
+                strike.spec(),
+                code.spec(),
+                codeBlock.spec(),
+                blockquote.spec(),
+            ],
+            plugins: () => [
+                bold.plugins(),
+                italic.plugins(),
+                link.plugins(),
+                bulletList.plugins(),
+                orderedList.plugins(),
+                listItem.plugins(),
+                paragraph.plugins(),
+                heading.plugins(),
+                underline.plugins(),
+                strike.plugins(),
+                code.plugins(),
+                codeBlock.plugins(),
+                blockquote.plugins(),
+                new Plugin({
+                    view: () => ({
+                        update: (view, prevState) => {
+                            this.handleChange(view.state, prevState)
+                        },
+                    })
+                }),
+                keymap({
+                    'Mod-k': () => {
+                        this.toggleLink();
+                        return true;
+                    },
+                })
+            ],
+            initialValue: content,
+            editorProps: {
+                handleDOMEvents: {
+                    focus: () => {
+                        if (this.props.onFocus) {
+                            this.props.onFocus();
+                        }
+                        return false;
+                    },
+                    blur: () => {
+                        if (this.props.onBlur) {
+                            this.props.onBlur();
+                        }
+                        return false;
+                    },
+                    mousedown: (view, event) => {
+                        // on mouse down to intercept editor's click prevention on links
+                        return this.maybeHandleLinkClick(view, event);
+                    },
+                    dblclick: (view, event) => {
+                        return this.maybeHandleLinkClick(view, event, true);
+                    }
+                }
+            },
         })
-      });
-      return;
     }
 
-    // otherwise fallback to default keyboard binding
-    // see https://github.com/facebook/draft-js/blob/bc716b279299748d955bbdc398454bff45ea0191/src/component/utils/getDefaultKeyBinding.js
-    return getDefaultKeyBinding(e);
-  }
-
-  /// Handles commands such as the one generated by `handleKeyBinding` (ex: bold, etc.)
-  private handleKeyCommand = (command: DraftEditorCommand, editorState: EditorState): DraftHandleValue => {
-    // check if draft.js can handle that command (ex: bold, etc.)
-    const newState = RichUtils.handleKeyCommand(editorState, command);
-    if (newState) {
-      this.handleOnChange(newState);
-      return 'handled';
+    render(): React.ReactNode {
+        return <div className="html-editor">
+            <BangleEditor
+                key={this.state.gen}
+                state={this.state.editorState}
+                onReady={this.handleReady}
+                focusOnInit={this.props.initialFocus ?? defaultInitialFocus}
+            />
+        </div>;
     }
 
-    return 'not-handled';
-  }
-
-  private handleBeforeInput = (chars: string, editorState: EditorState): DraftHandleValue => {
-    // we only do insertions if we just typed a space after the prefix
-    if (chars != ' ') {
-      return;
+    toggleInlineStyle(style: InlineStyle): void {
+        switch (style) {
+            case 'BOLD':
+                toggleBold()(this.editor.view.state, this.editor.view.dispatch);
+                break;
+            case 'ITALIC':
+                toggleItalic()(this.editor.view.state, this.editor.view.dispatch);
+                break;
+            case 'UNDERLINE':
+                toggleUnderline()(this.editor.view.state, this.editor.view.dispatch);
+                break;
+            case 'CODE':
+                toggleCode()(this.editor.view.state, this.editor.view.dispatch);
+                break;
+            case 'STRIKETHROUGH':
+                toggleStrike()(this.editor.view.state, this.editor.view.dispatch);
+                break;
+        }
     }
 
-    const curContent = editorState.getCurrentContent();
-    const curSel = editorState.getSelection();
+    toggleBlockType(type: BlockStyle): void {
+        const cursor = this.getCursor(this.editor.view.state);
 
-    const maxPrefixLen = 6;
-    const prefixStyle: { [prefix: string]: string } = {
-      '*': 'unordered-list-item',
-      '-': 'unordered-list-item',
-      '1.': 'ordered-list-item',
-      '#': 'header-one',
-      '##': 'header-two',
-      '###': 'header-three',
-      '####': 'header-four',
-      '```': 'code-block',
-    };
-
-    // if we just type a space, and we are not beyond the biggest prefix length
-    if (curSel.getEndOffset() <= maxPrefixLen) {
-      const curBlock = curContent.getBlockForKey(curSel.getFocusKey());
-
-      // only support this if we're in an unstyled block
-      if (curBlock.getType() != 'unstyled') {
-        return 'not-handled';
-      }
-
-      // check if we have a style for this prefix
-      const linePrefix = curBlock.getText().slice(0, curSel.getEndOffset());
-      if (linePrefix in prefixStyle) {
-        // remove pre characters
-        const removeSel = SelectionState.createEmpty(curBlock.getKey()).merge({
-          anchorOffset: 0,
-          focusOffset: linePrefix.length,
-        });
-        const newContent = Modifier.replaceText(curContent, removeSel, '');
-        let newState = EditorState.push(editorState, newContent, 'remove-range');
-
-        // add list style
-        newState = RichUtils.toggleBlockType(newState, prefixStyle[linePrefix]);
-
-        // put selection after bullet
-        newState = EditorState.forceSelection(newState, newContent.getSelectionAfter());
-
-        this.handleOnChange(newState);
-
-        return 'handled';
-      }
+        switch (type) {
+            case 'header-one':
+                toggleHeading(1)(this.editor.view.state, this.editor.view.dispatch);
+                break;
+            case 'header-two':
+                toggleHeading(2)(this.editor.view.state, this.editor.view.dispatch);
+                break;
+            case 'header-three':
+                toggleHeading(3)(this.editor.view.state, this.editor.view.dispatch);
+                break;
+            case 'header-four':
+                toggleHeading(4)(this.editor.view.state, this.editor.view.dispatch);
+                break;
+            case 'unordered-list-item':
+                toggleBulletList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                break;
+            case 'ordered-list-item':
+                toggleOrderedList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                break;
+            case 'todo-list-item':
+                toggleTodoList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                break;
+            case 'blockquote':
+                if (cursor.blockType != 'blockquote') {
+                    wrapInBlockquote()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                }
+                break;
+            case 'code-block':
+                this.clearBlock();
+                if (cursor.blockType != 'code-block') {
+                    setBlockType(this.editor.view.state.schema.nodes['codeBlock'])(this.editor.view.state, this.editor.view.dispatch);
+                }
+                break;
+        }
     }
 
-    return 'not-handled';
-  }
-
-  private handleReturn = (e: KeyboardEvent, editorState: EditorState): DraftHandleValue => {
-    const curState = editorState;
-    const curSel = curState.getSelection();
-    const curContent = curState.getCurrentContent();
-    const curBlock = curContent.getBlockForKey(curSel.getStartKey());
-
-    // remove block style when we return inside a header
-    // only do it if cursor is not at beginning of header. if it is, we're just trying to add an empty line above
-    if (curBlock.getType().startsWith('header-') && curSel.getStartOffset() != 0) {
-      this.handleOnChange(Commands.createUnstyledNextBlock(editorState));
-      return 'handled';
+    clearBlock(): void {
+        const state = this.editor.view.state;
+        const dispatch = this.editor.view.dispatch;
+        setBlockType(state.schema.nodes.paragraph)(state, dispatch);
     }
 
-    return 'not-handled';
-  }
-
-  private handleBlur = (): void => {
-    if (this.props.onBlur) {
-      this.props.onBlur();
-    }
-  }
-
-  private handleFocus = (): void => {
-    if (this.props.onFocus) {
-      this.props.onFocus();
-    }
-  }
-
-  toggleInlineStyle(style: string): void {
-    this.handleOnChange(RichUtils.toggleInlineStyle(this.state.editorState, style));
-  }
-
-  toggleBlockType(type: string): void {
-    this.handleOnChange(RichUtils.toggleBlockType(this.state.editorState, type));
-  }
-
-  toggleLink(url: string | null): void {
-    const newState = toggleLink(this.state.editorState, url);
-    if (newState) {
-      this.handleOnChange(newState);
-    }
-  }
-
-  toggleHeader(): void {
-    const selection = this.state.editorState.getSelection();
-    const blockType = this.state.editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
-
-    let newType;
-    switch (blockType) {
-      case 'header-one':
-        newType = 'header-two';
-        break;
-      case 'header-two':
-        newType = 'header-three';
-        break;
-      case 'header-three':
-        newType = 'header-four';
-        break;
-      case 'header-four':
-        newType = 'unstyled';
-        break;
-      default:
-        newType = 'header-one';
+    clearLink(): void {
+        updateLink(null)(this.editor.view.state, this.editor.view.dispatch);
     }
 
-    if (newType) {
-      this.toggleBlockType(newType);
-    }
-  }
+    toggleLink(url: string | null = null): void {
+        if (url) {
+            createLink(url)(this.editor.view.state, this.editor.view.dispatch);
+            return;
+        }
 
-  indent(e: SyntheticEvent): void {
-    if (!e) {
-      e = {
-        shift: false,
-        preventDefault: () => {
-          // nothing to do
-        },
-      } as unknown as KeyboardEvent;
-    }
+        const done = (url?: string) => {
+            this.context.session.hideModal();
 
-    const newEditorState = RichUtils.onTab(
-      e as KeyboardEvent,
-      this.state.editorState,
-      listMaxDepth,
-    );
+            if (!url) {
+                return;
+            }
 
-    this.handleOnChange(newEditorState);
-  }
+            if (!url.includes("://")) {
+                url = 'entity://' + url;
+            }
 
-  outdent(e: SyntheticEvent): void {
-    if (!e) {
-      e = {
-        shift: true,
-        preventDefault: () => {
-          // nothing to do
-        },
-      } as unknown as KeyboardEvent;
+            if (url) {
+                createLink(url)(this.editor.view.state, this.editor.view.dispatch);
+            } else {
+                this.clearLink();
+            }
+        };
+
+        const cursor = this.getCursor();
+        this.context.session.showModal(() => {
+            return <InputModal text='Enter link' initialValue={cursor.link} onDone={done} />;
+        })
     }
 
-    const a = e as KeyboardEvent;
-    a.shiftKey = true;
-    const newEditorState = RichUtils.onTab(
-      a,
-      this.state.editorState,
-      listMaxDepth,
-    );
+    toggleHeader(): void {
+        const cursor = this.getCursor();
+        if (cursor.blockType == 'header-one') {
+            this.toggleBlockType('header-two');
+        } else if (cursor.blockType == 'header-two') {
+            this.toggleBlockType('header-three');
+        } else if (cursor.blockType == 'header-three') {
+            this.toggleBlockType('header-four');
+        } else if (cursor.blockType == 'header-four') {
+            // toggling with same block type will remove it 
+            this.toggleBlockType('header-four');
+        } else {
+            this.toggleBlockType('header-one');
+        }
+    }
 
-    this.handleOnChange(newEditorState);
-  }
+    indent(): void {
+        indentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+    }
 
-  // https://gist.github.com/tonis2/cfeb6d044347d6f3cbab656d6a94eee2
-  clearStyle(): void {
-    const { editorState } = this.state
-    const selection = editorState.getSelection()
-    const contentState = editorState.getCurrentContent()
-    const styles = editorState.getCurrentInlineStyle()
+    outdent(): void {
+        outdentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+    }
 
-    const removeStyles = styles.reduce((state, style) => {
-      return Modifier.removeInlineStyle(state, selection, style)
-    }, contentState)
+    private handleReady = (editor: CoreBangleEditor) => {
+        this.editor = editor;
 
-    const removeBlock = Modifier.setBlockType(removeStyles, selection, 'unstyled')
+        if (this.props.onBound) {
+            this.props.onBound(this);
+        }
 
-    this.setState({
-      editorState: EditorState.push(
-        editorState,
-        removeBlock,
-        'change-block-type'
-      )
-    })
-  }
+        if (this.props.onCursorChange && editor.view.hasFocus()) {
+            this.props.onCursorChange(this.getCursor());
+        }
+    }
+
+    private handleChange = (newState: EditorState, prevState: EditorState) => {
+        if (!newState.doc.eq(prevState.doc)) {
+            if (!this.state.localChanges) {
+                this.setState({
+                    localChanges: true,
+                });
+            }
+
+            if (this.props.onChange) {
+                this.debouncer.debounce(() => {
+                    this.props.onChange(toHTMLString(newState));
+                });
+            }
+        }
+
+        if (this.props.onCursorChange) {
+            this.props.onCursorChange(this.getCursor(newState));
+        }
+    }
+
+    private maybeHandleLinkClick = (view: EditorView, event: MouseEvent, double = false): boolean => {
+        if (view.hasFocus() && !event.metaKey && !double) {
+            // we don't allow link click, unless it's a with double click or with meta key
+            // or that it's the first click on the editor (we don't have focus)
+            return false;
+        }
+
+        let el = event.target as HTMLElement;
+
+        // if tagname is not a link, try to go up into the parenthood up 10 levels
+        for (let i = 0; el.tagName !== 'A' && i < 10; i++) {
+            if (el.parentNode) {
+                el = el.parentNode as HTMLElement;
+            }
+        }
+
+        if (el.tagName !== 'A') {
+            return false;
+        }
+
+        // if it's a link, we prevent cursor from changing by stopping propagation here
+        const link = el.getAttribute('href');
+        if (link && this.props.onLinkClick) {
+            this.props.onLinkClick(link, event);
+            return true;
+        }
+    }
+
+    private getCursor(state: EditorState = null): EditorCursor {
+        if (!state) {
+            state = this.editor.view.state;
+        }
+
+        const inlineStyle: Set<InlineStyle> = new Set();
+        let blockType: BlockStyle = null;
+
+        if (queryIsBoldActive()(state)) {
+            inlineStyle.add('BOLD');
+        }
+        if (queryIsItalicActive()(state)) {
+            inlineStyle.add('ITALIC');
+        }
+        if (queryIsUnderlineActive()(state)) {
+            inlineStyle.add('UNDERLINE');
+        }
+        if (queryIsStrikeActive()(state)) {
+            inlineStyle.add('STRIKETHROUGH');
+        }
+        if (queryIsCodeActive()(state)) {
+            inlineStyle.add('CODE');
+        }
+
+        if (queryIsHeadingActive(1)(state)) {
+            blockType = 'header-one';
+        } else if (queryIsHeadingActive(2)(state)) {
+            blockType = 'header-two';
+        } else if (queryIsHeadingActive(3)(state)) {
+            blockType = 'header-three';
+        } else if (queryIsHeadingActive(4)(state)) {
+            blockType = 'header-four';
+        } else if (queryIsBulletListActive()(state)) {
+            blockType = 'unordered-list-item';
+        } else if (queryIsOrderedListActive()(state)) {
+            blockType = 'ordered-list-item';
+        } else if (queryIsTodoListActive()(state)) {
+            blockType = 'todo-list-item';
+        } else if (queryIsBlockquoteActive()(state)) {
+            blockType = 'blockquote';
+        } else if (queryIsCodeActiveBlock()(state)) {
+            blockType = 'code-block';
+        }
+
+
+        let link;
+        const attrs = queryLinkAttrs()(this.editor.view.state);
+        if (attrs) {
+            link = attrs.href;
+        }
+
+        return {
+            blockType,
+            inlineStyle,
+            link,
+            rect: this.getCursorRect(),
+        }
+    }
+
+    // From https://github.com/bangle-io/bangle.dev/blob/b58ae1e6fd1e0b5577af04c8a74ea44e3944ad40/components/tooltip/selection-tooltip.ts#L167
+    private getCursorRect(): CursorRect {
+        const view = this.editor.view;
+        const { selection } = view.state;
+        const { head, from } = selection;
+
+        // since head is dependent on the users choice of direction,
+        // it is not always equal to `from`.
+        // For textSelections we want to show the tooltip at head of the
+        // selection.
+        // But for NodeSelection we always want `from` since, if we go with `head`
+        // coordsAtPos(head) might get the position `to` in head, resulting in
+        // incorrectly getting position of the node after the selected Node.
+        const pos = selection instanceof NodeSelection ? from : head;
+
+        const start = view.coordsAtPos(pos);
+        const { top, bottom, left, right } = start;
+        const height = bottom - top;
+
+        // Not sure why, but coordsAtPos does not return the correct
+        // width of the element, so doing this to override it.
+        let width = right - left;
+        if (selection instanceof NodeSelection) {
+            const domNode = view.nodeDOM(pos) as HTMLElement;
+            width = domNode ? domNode.clientWidth : width;
+        }
+
+        return {
+            left, width, right, top, bottom, height,
+        }
+    }
 }
 
+export type InlineStyle = 'BOLD' | 'ITALIC' | 'UNDERLINE' | 'STRIKETHROUGH' | 'CODE';
+export type BlockStyle = 'header-one' | 'header-two' | 'header-three' | 'header-four' | 'unordered-list-item' | 'ordered-list-item' | 'todo-list-item' | 'blockquote' | 'code-block';
+
 export interface EditorCursor {
-  blockType: DraftBlockType;
-  inlineStyle: DraftInlineStyle;
-  rect: CursorRect;
+    blockType: BlockStyle | null;
+    inlineStyle: Set<InlineStyle>;
+    link: string | null;
+    rect: CursorRect;
 }
 
 export interface CursorRect {
-  left: number;
-  width: number;
-  right: number;
-  top: number;
-  bottom: number;
-  height: number;
+    left: number;
+    width: number;
+    right: number;
+    top: number;
+    bottom: number;
+    height: number;
 }

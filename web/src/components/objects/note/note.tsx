@@ -11,7 +11,6 @@ import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-edi
 import { SelectedItem, Selection } from '../entity-list/selection';
 import './note.less';
 import Navigation from '../../../navigation';
-import NewHtmlEditor from '../../interaction/html-editor/new-html-editor';
 
 interface IProps {
     entity: EntityTraits;
@@ -69,7 +68,7 @@ export default class Note extends React.Component<IProps, IState> {
 
                 <div className="object-body">
                     <HtmlEditorControls editor={this.state.editor} cursor={this.state.cursor} />
-                    <NewHtmlEditor
+                    <HtmlEditor
                         content={this.state.currentNote.body}
                         onBound={this.handleContentBound.bind(this)}
                         onChange={this.handleContentChange.bind(this)}

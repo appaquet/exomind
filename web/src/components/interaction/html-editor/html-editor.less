@@ -1,67 +1,86 @@
 @import (reference) "../../../style/variables.less";
 
 .html-editor {
+  @min-height: 500px; // make sure we have enough space to click after editor
+  @font-size: 16px;
+  @code-font-size: 14px;
   width: 100%;
 
-  .DraftEditor-root {
-    @font-size: 16px;
-    @code-font-size: 14px;
+  & > div {
+    min-height: @min-height;
+    & > div {
+      min-height: @min-height;
+    }
+  }
 
-    .code() {
-      font-family: Consolas, Liberation Mono, Menlo, monospace !important;
-      font-size: @code-font-size !important;
+  .bangle-editor {
+    border: none;
+
+    &:focus {
+      // remove dotted border when focused
+      outline: 0px solid transparent;
+      a {
+        cursor: text;
+      }
+    }
+
+    p {
+      font-family: Segoe UI, Arial, Helvetica, sans-serif;
+      font-size: @font-size;
+    }
+
+    a {
+      cursor: pointer;
+    }
+
+    h1 {
+      font-size: 3rem;
+    }
+    h2 {
+      font-size: 2.5rem;
+    }
+    h3 {
+      font-size: 2rem;
+    }
+    h4 {
+      font-size: 1.75rem;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-weight: 750;
+      margin: 1.25rem 0;
+    }
+
+    pre,
+    code,
+    blockquote {
       background-color: #f5f5f5;
       color: #000;
     }
 
-    font-family: Segoe UI, Arial, Helvetica, sans-serif;
-    font-size: @font-size;
-
-    // make sure that we have enough to click on if it's empty
-    .public-DraftEditor-content {
-      min-height: 500px;
+    pre,
+    code {
+      font-family: Consolas, Liberation Mono, Menlo, monospace;
+      font-size: @code-font-size;
     }
-
-    .public-DraftStyleDefault-pre {
-      pre, div {
-        .code();
-        border: none;
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
-      }
-    }
-
-    // inline code
-    // see https://github.com/facebook/draft-js/issues/2302
-    span[style*="text-decoration-color: black"] {
-      .code();
+    code {
       text-decoration: none;
       padding: 3px;
     }
+  }
+}
 
-    h1 {
-      font-size: 1.8em !important;
-      font-weight: bold;
-    }
-    h2 {
-      font-size: 1.4em !important;
-      font-weight: bold;
-    }
-    h3 {
-      font-size: 1.2em !important;
-      font-weight: bold;
-    }
-    h4 {
-      font-size: 1.1em !important;
-      font-weight: bold;
-    }
-    a {
-      text-decoration: underline;
-      color: @exomind-secondary;
-      &:hover {
-        color: @exomind-secondary;
-        cursor: pointer;
+:root[data-theme="theme-dark"] {
+  .html-editor {
+    .bangle-editor {
+      pre,
+      code,
+      blockquote {
+        background-color: #2d2d2d;
+        color: #fff;
       }
     }
   }

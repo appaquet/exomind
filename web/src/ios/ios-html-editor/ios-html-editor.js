@@ -1,5 +1,5 @@
 import React from "react";
-import NewHtmlEditor from "../../components/interaction/html-editor/new-html-editor";
+import HtmlEditor from "../../components/interaction/html-editor/html-editor";
 import PropTypes from "prop-types";
 import "./ios-html-editor.less";
 
@@ -39,13 +39,13 @@ export default class IosHtmlEditor extends React.Component {
 
   render() {
     return (
-      <NewHtmlEditor
+      <HtmlEditor
         content={this.state.content}
         onBound={this.handleBound}
         onChange={this.handleContentChange}
         onCursorChange={this.handleCursorChange}
         onLinkClick={this.handleLinkClick}
-        allowLinkFocusClick={true}
+        initialFocus={false}
       />
     );
   }

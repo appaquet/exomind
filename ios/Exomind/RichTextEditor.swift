@@ -341,6 +341,7 @@ fileprivate class RichTextEditorToolsView: UIView {
         }
         
         let scroll = UIScrollView()
+        scroll.showsHorizontalScrollIndicator = false
         self.addSubview(scroll)
         scroll.snp.makeConstraints { (make) in
             make.left.equalToSuperview().offset(15)

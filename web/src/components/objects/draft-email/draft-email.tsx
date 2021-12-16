@@ -233,8 +233,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
                 content={editPart.body}
                 onBound={this.handleHtmlEditorBound.bind(this)}
                 onChange={this.handleBodyChange.bind(this, editPart)}
-                onBlur={this.saveObject.bind(this)}
-                placeholder="Type your email" />
+                onBlur={this.saveObject.bind(this)} />
         );
     }
 
