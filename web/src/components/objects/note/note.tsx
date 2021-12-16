@@ -70,13 +70,12 @@ export default class Note extends React.Component<IProps, IState> {
                     <HtmlEditorControls editor={this.state.editor} cursor={this.state.cursor} />
                     <HtmlEditor
                         content={this.state.currentNote.body}
-                        placeholder="Type your note here"
                         onBound={this.handleContentBound.bind(this)}
                         onChange={this.handleContentChange.bind(this)}
                         onFocus={this.handleOnFocus.bind(this)}
                         onBlur={this.handleOnBlur.bind(this)}
                         onCursorChange={this.handleCursorChange.bind(this)}
-                        onLinkClick={this.handleLinkClick.bind(this)}
+                        onLinkClick={this.handleLinkClick}
                     />
                 </div>
             </div>
@@ -111,7 +110,7 @@ export default class Note extends React.Component<IProps, IState> {
                 currentNote: note,
             });
 
-            this.saveContent();
+            this.saveContent(note);
         }
     }
 
@@ -124,7 +123,7 @@ export default class Note extends React.Component<IProps, IState> {
                 currentNote: note,
             });
 
-            this.saveContent();
+            this.saveContent(note);
         }
     }
 
@@ -134,7 +133,7 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-    private handleLinkClick(url: string, e: MouseEvent) {
+    private handleLinkClick = (url: string, e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -148,18 +147,22 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-    private saveContent(): void {
-        if (this.state && !_.isEqual(this.state.currentNote, this.state.savedNote)) {
+    private saveContent(note: exomind.base.v1.INote | null = null): void {
+        if (!note) {
+            note = this.state.currentNote;
+        }
+
+        if (this.state && !_.isEqual(note, this.state.savedNote)) {
             const mutation = MutationBuilder
                 .updateEntity(this.props.entity.entity.id)
-                .putTrait(this.state.currentNote, this.props.noteTrait.id)
+                .putTrait(note, this.props.noteTrait.id)
                 .build();
 
             Exocore.store.mutate(mutation);
 
             if (this.mounted) {
                 this.setState({
-                    savedNote: new exomind.base.v1.Note(this.state.currentNote),
+                    savedNote: new exomind.base.v1.Note(note),
                 });
             }
         }

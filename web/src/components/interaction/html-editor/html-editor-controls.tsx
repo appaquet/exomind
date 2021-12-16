@@ -1,7 +1,7 @@
 
 import classNames from 'classnames';
 import React, { MouseEvent } from 'react';
-import HtmlEditor, { EditorCursor as EditorCursor } from './html-editor';
+import HtmlEditor, { BlockStyle, EditorCursor as EditorCursor, InlineStyle } from './html-editor';
 import './html-editor-controls.less';
 
 interface IProps {
@@ -15,56 +15,55 @@ export default class HtmlEditorControls extends React.Component<IProps> {
   }
 
   render(): React.ReactNode {
-    // we use onMouseDown instead of onClick to prevent DraftJS from losing focus
-    // see https://github.com/facebook/draft-js/issues/696
+    // we use onMouseDown instead of onClick to prevent the editor from losing focus
     return <div className="html-editor-controls">
       <ul>
         {this.renderInlineStyleControls()}
         {this.renderBlockControls()}
         <li onMouseDown={(e) => this.handleOutdent('outdent', e)}><i className="icon outdent" /></li>
-        <li onMouseDown={(e) => this.handleIndent('indent', e)}><i className="icon indent" /></li> 
+        <li onMouseDown={(e) => this.handleIndent('indent', e)}><i className="icon indent" /></li>
       </ul>
     </div>;
   }
 
   private renderInlineStyleControls(): React.ReactFragment {
-    const styles = [
+    const styles: { cssStyle: string, editorStyle: InlineStyle }[] = [
       {
         cssStyle: 'bold',
-        draftStyle: 'BOLD',
+        editorStyle: 'BOLD',
       },
       {
         cssStyle: 'italic',
-        draftStyle: 'ITALIC',
+        editorStyle: 'ITALIC',
       },
       {
         cssStyle: 'underline',
-        draftStyle: 'UNDERLINE',
+        editorStyle: 'UNDERLINE',
       },
       {
         cssStyle: 'strikethrough',
-        draftStyle: 'STRIKETHROUGH',
+        editorStyle: 'STRIKETHROUGH',
       },
       {
         cssStyle: 'code',
-        draftStyle: 'CODE',
+        editorStyle: 'CODE',
       },
     ];
 
-    return styles.map(({ cssStyle, draftStyle }) => {
+    return styles.map(({ cssStyle, editorStyle }) => {
       const iconClasses = classNames({
         icon: true,
         [cssStyle]: true,
       });
 
       let active = false;
-      if (this.props.cursor && this.props.cursor.inlineStyle.has(draftStyle)) {
+      if (this.props.cursor && this.props.cursor.inlineStyle.has(editorStyle)) {
         active = true;
       }
 
       const liClasses = classNames({ active });
       return (
-        <li key={cssStyle} className={liClasses} onMouseDown={this.handleToggleInlineStyle.bind(this, draftStyle)}><i className={iconClasses} /></li>
+        <li key={cssStyle} className={liClasses} onMouseDown={this.handleToggleInlineStyle.bind(this, editorStyle)}><i className={iconClasses} /></li>
       );
     });
   }
@@ -96,6 +95,10 @@ export default class HtmlEditorControls extends React.Component<IProps> {
         draftType: 'ordered-list-item',
       },
       {
+        cssStyle: 'list-todo',
+        draftType: 'todo-list-item',
+      },
+      {
         cssStyle: 'quote-right',
         draftType: 'blockquote',
       },
@@ -103,15 +106,15 @@ export default class HtmlEditorControls extends React.Component<IProps> {
         cssStyle: 'code',
         draftType: 'code-block',
       },
-    ]; 
-    
+    ];
+
     return types.map(({ cssStyle, draftType }) => {
       const iconClasses = classNames({
         icon: true,
         [cssStyle]: true,
       });
 
-      const liClasses = classNames({ 
+      const liClasses = classNames({
         active: this.props.cursor && this.props.cursor.blockType == draftType,
       });
       return (
@@ -120,14 +123,14 @@ export default class HtmlEditorControls extends React.Component<IProps> {
     });
   }
 
-  private handleToggleInlineStyle(format: string, e: MouseEvent): void {
+  private handleToggleInlineStyle(format: InlineStyle, e: MouseEvent): void {
     e.preventDefault(); // prevent losing focus on editor
     if (this.props.editor) {
       this.props.editor.toggleInlineStyle(format);
     }
   }
 
-  private handleToggleBlockType(format: string, e: MouseEvent): void {
+  private handleToggleBlockType(format: BlockStyle, e: MouseEvent): void {
     e.preventDefault(); // prevent losing focus on editor
     if (this.props.editor) {
       this.props.editor.toggleBlockType(format);
@@ -137,14 +140,14 @@ export default class HtmlEditorControls extends React.Component<IProps> {
   private handleIndent(format: string, e: MouseEvent): void {
     e.preventDefault(); // prevent losing focus on editor
     if (this.props.editor) {
-      this.props.editor.indent(e);
+      this.props.editor.indent();
     }
   }
 
   private handleOutdent(format: string, e: MouseEvent): void {
     e.preventDefault(); // prevent losing focus on editor
     if (this.props.editor) {
-      this.props.editor.outdent(e);
+      this.props.editor.outdent();
     }
   }
 }

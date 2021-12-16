@@ -4,11 +4,6 @@ import FontAwesome_swift
 import SnapKit
 import WebKit
 
-/*
- TODO:
-    - Placing cursor outside of visible area doesn't get properly reported
- */
-
 class RichTextEditor: UIViewController {
     fileprivate weak var outerScroll: UIScrollView?
     fileprivate var webview: RichTextEditorWebView!
@@ -216,7 +211,7 @@ extension RichTextEditor {
 
 fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
     fileprivate var scrollDelegate: DisableScrollDelegate?
-
+    
     func initialize(_ callback: @escaping (JSON?) -> Void) {
         self.initialize("html-editor", callback: callback)
 
@@ -313,12 +308,16 @@ fileprivate class RichTextEditorToolsView: UIView {
 
     let buttons = [
         ("bold", FontAwesome.bold),
-        ("strikethrough", FontAwesome.strikethrough),
         ("header-toggle", FontAwesome.heading),
-        ("list-ul", FontAwesome.listUl),
-        ("list-ol", FontAwesome.listOl),
         ("outdent", FontAwesome.outdent),
         ("indent", FontAwesome.indent),
+        ("list-todo", FontAwesome.checkSquare),
+        ("list-ul", FontAwesome.listUl),
+        ("code", FontAwesome.code),
+        ("strikethrough", FontAwesome.strikethrough),
+        ("italic", FontAwesome.italic),
+        ("list-ol", FontAwesome.listOl),
+        ("code-block", FontAwesome.fileCode),
     ]
 
     override init(frame: CGRect) {
@@ -340,15 +339,25 @@ fileprivate class RichTextEditorToolsView: UIView {
             button.setImage(img, for: UIControl.State())
             return button
         }
+        
+        let scroll = UIScrollView()
+        scroll.showsHorizontalScrollIndicator = false
+        self.addSubview(scroll)
+        scroll.snp.makeConstraints { (make) in
+            make.left.equalToSuperview().offset(15)
+            make.centerY.equalToSuperview()
+        }
 
         let stack = UIStackView(arrangedSubviews: buttonViews)
+        scroll.addSubview(stack)
         stack.alignment = .leading
         stack.axis = .horizontal
         stack.spacing = 15
-        self.addSubview(stack)
         stack.snp.makeConstraints { (make) in
-            make.left.equalTo(self.snp.left).offset(20)
-            make.centerY.equalTo(self.snp.centerY)
+            make.left.equalToSuperview()
+            make.right.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.height.equalTo(scroll.snp.height)
         }
 
         let closeButton = UIButton()
@@ -358,6 +367,7 @@ fileprivate class RichTextEditorToolsView: UIView {
         self.addSubview(closeButton)
         closeButton.snp.makeConstraints { (make) in
             make.right.equalToSuperview().offset(-20)
+            make.left.equalTo(scroll.snp.right).offset(10)
             make.centerY.equalToSuperview()
         }
     }

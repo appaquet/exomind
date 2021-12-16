@@ -125,6 +125,7 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
                         .putTrait(message: modifiedNote, traitId: initialNote.id)
                         .build()
 
+                print("NoteViewController > Saving note")
                 ExocoreClient.store.mutate(mutation: mutation)
             } catch {
                 print("NoteViewController > Error mutating note: \(error)")
