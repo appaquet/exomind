@@ -982,7 +982,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MARKETING_VERSION = 0.1.12;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1009,7 +1009,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MARKETING_VERSION = 0.1.12;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev.ExomindActionExt;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind.ExomindActionExt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1150,7 +1150,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 0.1.12;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
 				PRODUCT_NAME = Exomind;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1176,7 +1176,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 0.1.12;
-				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev;
+				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.Exomind;
 				PRODUCT_NAME = Exomind;
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
