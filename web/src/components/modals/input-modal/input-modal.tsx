@@ -5,7 +5,7 @@ import './input-modal.less';
 interface IProps {
     text: string;
     initialValue?: string;
-    onDone: (value?: string) => void;
+    onDone: (value: string | null, cancelled: boolean) => void;
 }
 
 interface IState {
@@ -60,15 +60,15 @@ export default class InputModal extends React.Component<IProps, IState> {
 
     private onKeyDown(e: KeyboardEvent): void {
         if (e.key == 'Enter') {
-            this.props.onDone(this.state.value);
+            this.props.onDone(this.state.value, false);
         }
     }
 
     private onCancel(): void {
-        this.props.onDone(null);
+        this.props.onDone(null, true);
     }
 
     private onDone(): void {
-        this.props.onDone(this.state.value);
+        this.props.onDone(this.state.value, false);
     }
 }

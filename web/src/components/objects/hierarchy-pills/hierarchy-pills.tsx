@@ -42,7 +42,9 @@ export class HierarchyPills extends React.Component<IProps> {
 function Pill(props: { hierarchy: EntityParent[], onClick?: (e: React.MouseEvent, col: EntityParent) => void }) {
     const inner = props.hierarchy.map((col) => {
         const innerOnClick = (e: React.MouseEvent) => {
-            props.onClick(e, col);
+            if (props.onClick) {
+                props.onClick(e, col);
+            }
         };
 
         return (

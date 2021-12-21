@@ -18,8 +18,6 @@ import { queryIsCodeActiveBlock } from "@bangle.dev/base-components/dist/code-bl
 import { indentListItem, outdentListItem } from "@bangle.dev/base-components/dist/list-item/list-item-component";
 import Debouncer from "../../../utils/debouncer";
 import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
-import InputModal from "../../modals/input-modal/input-modal";
-import { IStores, StoresContext } from "../../../stores/stores";
 
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
@@ -38,6 +36,7 @@ interface IProps {
     onBlur?: () => void;
     onCursorChange?: (cursor: EditorCursor) => void;
     onLinkClick?: (url: string, e: MouseEvent) => void;
+    linkSelector?: (currentUrl: string, cursor: EditorCursor) => Promise<string | null>;
     initialFocus?: boolean;
 }
 
@@ -49,9 +48,6 @@ interface IState {
 }
 
 export default class HtmlEditor extends React.Component<IProps, IState> {
-    static contextType = StoresContext;
-    declare context: IStores;
-
     private editor?: CoreBangleEditor;
     private debouncer: Debouncer;
 
@@ -242,34 +238,27 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         updateLink(null)(this.editor.view.state, this.editor.view.dispatch);
     }
 
-    toggleLink(url: string | null = null): void {
+    async toggleLink(url: string | null = null): Promise<void> {
         if (url) {
             createLink(url)(this.editor.view.state, this.editor.view.dispatch);
             return;
         }
 
-        const done = (url?: string) => {
-            this.context.session.hideModal();
-
-            if (!url) {
-                return;
-            }
-
-            if (!url.includes("://")) {
-                url = 'entity://' + url;
-            }
-
-            if (url) {
-                createLink(url)(this.editor.view.state, this.editor.view.dispatch);
+        const cursor = this.getCursor();
+        if (this.props.linkSelector) {
+            const newUrl = await this.props.linkSelector(cursor.link, cursor);
+            if (newUrl) {
+                createLink(newUrl)(this.editor.view.state, this.editor.view.dispatch);
             } else {
                 this.clearLink();
             }
-        };
 
-        const cursor = this.getCursor();
-        this.context.session.showModal(() => {
-            return <InputModal text='Enter link' initialValue={cursor.link} onDone={done} />;
-        })
+            setTimeout(() => {
+                // make sure focus comes back to editor since we may have asked for a link selection
+                // in another stack since the editor seems to clear the selection otherwise
+                this.editor.view.focus();
+            });
+        }
     }
 
     toggleHeader(): void {

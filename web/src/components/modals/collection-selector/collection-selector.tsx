@@ -1,17 +1,14 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
-import _ from 'lodash';
 import { memoize } from 'lodash';
 import { observer } from 'mobx-react';
-import React from 'react';
+import React, { MouseEvent, SyntheticEvent } from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
 import { IStores, StoresContext } from '../../../stores/stores';
 import Debouncer from '../../../utils/debouncer';
-import Scrollable from '../../interaction/scrollable/scrollable';
-import EntityIcon from '../../objects/entity-icon';
-import { HierarchyPills } from '../../objects/hierarchy-pills/hierarchy-pills';
-import { Message } from '../../objects/message';
+import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
+
 import './collection-selector.less';
 
 interface IProps {
@@ -75,66 +72,42 @@ export class CollectionSelector extends React.Component<IProps, IState> {
     render(): React.ReactNode {
         this.maybeRefreshQueries();
 
+        const loading = !(this.collectionsQuery?.hasResults ?? false) || !this.state.entity;
+
+        const entities: EntityTraits[] = [];
+        if (!loading) {
+            for (const entity of this.state.entityParents ?? []) {
+                entities.push(this.wrapEntityTraits(entity.entity));
+            }
+
+            for (const entity of this.collectionsQuery?.results() ?? []) {
+                entities.push(this.wrapEntityTraits(entity.entity));
+            }
+        }
+        const selectedIds: string[] = this.state.entityParentsIds;
+
         return (
-            <div className="collection-selector" onMouseOver={this.handlePreventDefault.bind(this)}>
+            <div className="collection-selector" onMouseOver={this.handlePreventDefault}>
                 <div className="collection-selector-header">Add to collections...</div>
                 <div className="filter">
                     <input type="text" ref={this.filterInputRef} value={this.state.keywords}
-                        onChange={this.handleFilterChange.bind(this)} placeholder="Filter..." />
+                        onChange={this.handleFilterChange} placeholder="Filter..." />
                 </div>
 
-                {this.renderInner()}
+                <EntitySelector
+                    multi={true}
+                    entities={entities}
+                    selectedIds={selectedIds}
+                    loading={loading}
+                    onSelect={this.handleItemCheck}
+                    onUnselect={this.handleItemCheck}
+                    onNeedMore={this.handleLoadMore}
+                />
             </div>
         );
     }
 
-    private renderInner(): React.ReactNode {
-        if (!(this.collectionsQuery?.hasResults ?? false) || !this.state.entity) {
-            return <Message text="Loading..." showAfterMs={200} />
-        }
-
-        const collectionsResults = Array
-            .from(this.state.entityParents ?? [])
-            .concat(Array.from(this.collectionsQuery?.results()));
-
-        return (
-            <Scrollable loadMoreItems={15} onNeedMore={this.handleLoadMore.bind(this)} nbItems={collectionsResults.length}>
-                <ul onClick={this.handlePreventDefault.bind(this)}>
-                    {this.renderCollections(collectionsResults)}
-                </ul>
-            </Scrollable>
-        );
-    }
-
-    private getEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
-
-    private renderCollections(collectionResults: exocore.store.IEntityResult[]): React.ReactNode {
-        if (collectionResults.length > 0) {
-            const parentsIds = _.keyBy(this.state.entityParentsIds ?? [])
-            return _.chain(collectionResults)
-                .uniqBy(col => col.entity.id)
-                .map((colResult) => {
-                    const et = this.getEntityTraits(colResult.entity);
-                    const colTrait = et.traitOfType<exomind.base.v1.ICollection>(exomind.base.v1.Collection);
-                    if (!colTrait) {
-                        return null;
-                    }
-
-                    const parents = this.context.collections.getEntityParents(et);
-                    const checked = _.includes(parentsIds, et.id);
-                    return <li key={colResult.entity.id} onClick={this.handleItemCheck.bind(this, et, colResult)}>
-                        <input type="checkbox" checked={checked} onChange={this.handleItemCheck.bind(this, et, colResult)} />
-
-                        <EntityIcon trait={colTrait} />
-
-                        {colTrait.displayName}
-
-                        {parents && <HierarchyPills collections={parents.get()} />}
-                    </li>
-                })
-                .value();
-        }
-    }
+    private wrapEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
 
     private entityParents(entity: EntityTraits): string[] {
         return entity
@@ -176,12 +149,12 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         }
     }
 
-    private handlePreventDefault(e: MouseEvent): void {
+    private handlePreventDefault = (e: MouseEvent): void => {
         // prevent browser from bubbling the click and mouseover under the list
         e.stopPropagation();
     }
 
-    private handleFilterChange(event: React.ChangeEvent<HTMLInputElement>): void {
+    private handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const value = event.target.value;
         this.setState({
             keywords: value
@@ -194,7 +167,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         });
     }
 
-    private handleItemCheck(collectionEntity: EntityTraits, collection: exomind.base.v1.ICollection, event: MouseEvent): void {
+    private handleItemCheck = (collectionEntity: EntityTraits, event: SyntheticEvent): void => {
         const currentChildTrait = this.state.entity
             .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .find((c) => c.message.collection.entityId == collectionEntity.id);
@@ -222,7 +195,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         event.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
     }
 
-    private handleLoadMore(): void {
+    private handleLoadMore = (): void => {
         this.collectionsQuery?.expand();
     }
 }

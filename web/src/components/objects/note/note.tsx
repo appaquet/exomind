@@ -11,6 +11,8 @@ import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-edi
 import { SelectedItem, Selection } from '../entity-list/selection';
 import './note.less';
 import Navigation from '../../../navigation';
+import InputModal from '../../modals/input-modal/input-modal';
+import { IStores, StoresContext } from '../../../stores/stores';
 
 interface IProps {
     entity: EntityTraits;
@@ -28,6 +30,9 @@ interface IState {
 }
 
 export default class Note extends React.Component<IProps, IState> {
+    static contextType = StoresContext;
+    declare context: IStores;
+
     private mounted = true;
 
     constructor(props: IProps) {
@@ -76,6 +81,7 @@ export default class Note extends React.Component<IProps, IState> {
                         onBlur={this.handleOnBlur.bind(this)}
                         onCursorChange={this.handleCursorChange.bind(this)}
                         onLinkClick={this.handleLinkClick}
+                        linkSelector={this.linkSelector}
                     />
                 </div>
             </div>
@@ -92,6 +98,33 @@ export default class Note extends React.Component<IProps, IState> {
         this.saveContent();
         this.setState({
             focused: false,
+        });
+    }
+
+    private linkSelector = (url: string, cursor: EditorCursor): Promise<string | null> => {
+        return new Promise((resolve) => {
+            const done = (url: string | null, cancelled: boolean) => {
+                this.context.session.hideModal();
+
+                if (cancelled) {
+                    return
+                }
+
+                if (!url) {
+                    // clear the link
+                    resolve(null);
+                    return;
+                }
+
+                if (!url.includes("://")) {
+                    url = 'entity://' + url;
+                }
+                resolve(url);
+            };
+
+            this.context.session.showModal(() => {
+                return <InputModal text='Enter link' initialValue={cursor.link} onDone={done} />;
+            })
         });
     }
 

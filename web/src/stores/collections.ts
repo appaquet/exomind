@@ -94,6 +94,7 @@ export class CollectionStore {
             }
 
             const parent: EntityParent = {
+                entity: collection.et,
                 entityId: collection.et.id,
                 icon: collection.icon,
                 name: collection.displayName,
@@ -150,6 +151,7 @@ export class CollectionStore {
 }
 
 export interface EntityParent {
+    entity: EntityTraits,
     entityId: string;
     icon: TraitIcon;
     name: string;
