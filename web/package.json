@@ -99,7 +99,7 @@
     "less": "^4.1.2",
     "linkifyjs": "^3.0.4",
     "lodash": "^4.17.21",
-    "mobx": "^6.3.9",
+    "mobx": "^6.3.10",
     "mobx-react": "^7.2.1",
     "prop-types": "latest",
     "protobufjs": "^6.10.2",
