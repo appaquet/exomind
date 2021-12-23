@@ -19,6 +19,8 @@ interface IProps {
     onNeedMore?: () => void,
 }
 
+// TODO: Keyboard up & down
+
 @observer
 export class EntitySelector extends React.Component<IProps, unknown> {
     static contextType = StoresContext;

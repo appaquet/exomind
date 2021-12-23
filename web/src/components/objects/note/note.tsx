@@ -104,14 +104,10 @@ export default class Note extends React.Component<IProps, IState> {
         });
     }
 
-    private linkSelector = (url: string, cursor: EditorCursor): Promise<SelectedLink | null> => {
+    private linkSelector = (cursor: EditorCursor): Promise<SelectedLink | null> => {
         return new Promise((resolve) => {
-            const handleDone = (selectedLink: SelectedLink | null, cancelled: boolean) => {
+            const handleDone = (selectedLink: SelectedLink | null) => {
                 this.context.session.hideModal();
-
-                if (cancelled) {
-                    return
-                }
 
                 if (!selectedLink) {
                     // clear the link
@@ -120,15 +116,19 @@ export default class Note extends React.Component<IProps, IState> {
                 }
 
                 if (!selectedLink.url.includes("://")) {
-                    selectedLink.url = 'entity://' + url;
+                    selectedLink.url = 'entity://' + selectedLink.url;
                 }
 
                 resolve(selectedLink);
             };
 
+            const handleCancel = () => {
+                resolve({ canceled: true });
+            };
+
             this.context.session.showModal(() => {
-                return <LinkSelector initialValue={cursor.link} onDone={handleDone} />;
-            })
+                return <LinkSelector initialValue={cursor.link} onDone={handleDone} onCancel={handleCancel} />;
+            }, handleCancel);
         });
     }
 

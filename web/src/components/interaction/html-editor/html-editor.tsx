@@ -32,13 +32,14 @@ interface IProps {
     onBlur?: () => void;
     onCursorChange?: (cursor: EditorCursor) => void;
     onLinkClick?: (url: string, e: MouseEvent) => void;
-    linkSelector?: (currentUrl: string, cursor: EditorCursor) => Promise<SelectedLink | null>;
+    linkSelector?: (cursor: EditorCursor) => Promise<SelectedLink | null>;
     initialFocus?: boolean;
 }
 
 export interface SelectedLink {
-    url: string;
+    url?: string;
     title?: string;
+    canceled?: boolean;
 }
 
 interface IState {
@@ -258,8 +259,13 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
         const cursor = this.getCursor();
         if (this.props.linkSelector) {
-            const selectedLink = await this.props.linkSelector(cursor.link, cursor);
+            const selectedLink = await this.props.linkSelector(cursor);
             if (selectedLink) {
+                if (selectedLink.canceled) {
+                    this.focus();
+                    return;
+                }
+
                 this.toggleLink(selectedLink.url, selectedLink.title);
             } else {
                 this.clearLink();
@@ -295,6 +301,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
     outdent(): void {
         outdentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+    }
+
+    focus(): void {
+        this.editor?.view?.focus();
     }
 
     private handleReady = (editor: CoreBangleEditor) => {

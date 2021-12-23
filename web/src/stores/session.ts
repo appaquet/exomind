@@ -3,6 +3,7 @@ import { action, makeAutoObservable, observable } from "mobx";
 import Path from "../utils/path";
 
 export type ModalRenderer = () => React.ReactNode;
+export type ModalCancel = () => void;
 
 export class SessionStore {
     @observable private _node: LocalNode = null;
@@ -31,12 +32,18 @@ export class SessionStore {
     @observable cellError?: string;
 
     @observable currentModal?: ModalRenderer;
+    @observable modalCancel?: ModalCancel;
 
-    @action showModal(render: ModalRenderer): void {
+    @action showModal(render: ModalRenderer, modalCancel: ModalCancel | null = null): void {
         this.currentModal = render;
+        this.modalCancel = modalCancel;
     }
 
-    @action hideModal(): void {
+    @action hideModal(canceled = false): void {
         this.currentModal = null;
+        if (canceled) {
+            this.modalCancel?.();
+            this.modalCancel = null;
+        }
     }
 }

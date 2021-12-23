@@ -11,7 +11,8 @@ import './link-selector.less';
 
 interface IProps {
     initialValue?: string;
-    onDone: (link: SelectedLink, cancelled: boolean) => void;
+    onDone: (link: SelectedLink) => void;
+    onCancel: () => void;
 }
 
 interface IState {
@@ -134,7 +135,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         this.props.onDone({
             url: `entity://${entity.id}`,
             title: entity.priorityTrait?.displayName
-        }, false);
+        });
     }
 
     private onValueChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -167,19 +168,19 @@ export default class LinkSelector extends React.Component<IProps, IState> {
 
     private onKeyDown = (e: KeyboardEvent): void => {
         if (e.key == 'Enter') {
-            this.props.onDone({ url: this.state.inputValue }, false);
+            this.props.onDone({ url: this.state.inputValue });
         }
     }
 
     private onCancel = (): void => {
-        this.props.onDone(null, true);
+        this.props.onCancel();
     }
 
     private onClear = (): void => {
-        this.props.onDone(null, false);
+        this.props.onDone(null);
     }
 
     private onDone = (): void => {
-        this.props.onDone({ url: this.state.inputValue }, false);
+        this.props.onDone({ url: this.state.inputValue });
     }
 }
