@@ -1,20 +1,21 @@
 import classNames from 'classnames';
-import { Exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
+import { Exocore, QueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { ExpandableQuery } from '../../../stores/queries';
 import Debouncer from '../../../utils/debouncer';
 import { EntityTraits } from '../../../utils/entities';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
+import { SelectedLink } from '../../interaction/html-editor/html-editor';
 import EntityIcon from '../entity-icon';
 import './link-selector.less';
 
 interface IProps {
     initialValue?: string;
-    onDone: (value: string | null, cancelled: boolean) => void;
+    onDone: (link: SelectedLink, cancelled: boolean) => void;
 }
 
 interface IState {
-    value: string;
+    inputValue: string;
     entity?: EntityTraits;
     entities?: EntityTraits[];
 }
@@ -36,7 +37,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         this.searchDebouncer = new Debouncer(200);
 
         this.state = {
-            value: props.initialValue ?? ''
+            inputValue: props.initialValue ?? ''
         };
     }
 
@@ -54,10 +55,8 @@ export default class LinkSelector extends React.Component<IProps, IState> {
             'note-link-selector': true,
         });
 
-        // TODO: if link is entity://, we should render entity + have an X to clear it
-
-        const isEntityLink = this.state.value.startsWith('entity://');
-        const renderEntitySelector = this.state.value.length >= 3 && !this.state.value.startsWith('htt');
+        const isEntityLink = this.state.inputValue.startsWith('entity://');
+        const renderEntitySelector = this.state.inputValue.length >= 3 && !this.state.inputValue.startsWith('htt');
         return (
             <div className={classes}>
                 <div className="text">Enter a link or type entity name</div>
@@ -65,7 +64,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
                 {!isEntityLink && <div className="value">
                     <input type="text"
                         ref={this.inputRef}
-                        value={this.state.value}
+                        value={this.state.inputValue}
                         onChange={this.onValueChange}
                         onKeyDown={this.onKeyDown}
                     />
@@ -85,7 +84,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     }
 
     private renderEntity(): React.ReactNode {
-        const entityId = this.state.value.replace('entity://', '');
+        const entityId = this.state.inputValue.replace('entity://', '');
 
         if (entityId != this.entityQueryId) {
             this.entityQuery?.free();
@@ -105,13 +104,19 @@ export default class LinkSelector extends React.Component<IProps, IState> {
             return <div></div>;
         }
 
+        const handleOnClick = () => {
+            this.setState({ inputValue: '' })
+            setTimeout(() => {
+                this.inputRef.current?.focus();
+            });
+        };
+
         if (this.state.entity && this.state.entity.priorityTrait) {
             const et = this.state.entity.priorityTrait;
             return (
-                <div className="entity">
+                <div className="entity" onClick={handleOnClick}>
                     <span className="icon"><EntityIcon icon={et.icon} /></span>
                     <span className="name">{et.displayName}</span>
-
                 </div>
             );
         }
@@ -126,7 +131,10 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     }
 
     private handleEntitySelect = (entity: EntityTraits): void => {
-        this.props.onDone(`entity://${entity.id}`, false);
+        this.props.onDone({
+            url: `entity://${entity.id}`,
+            title: entity.priorityTrait?.displayName
+        }, false);
     }
 
     private onValueChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -153,13 +161,13 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         });
 
         this.setState({
-            value: e.target.value
+            inputValue: e.target.value
         });
     }
 
     private onKeyDown = (e: KeyboardEvent): void => {
         if (e.key == 'Enter') {
-            this.props.onDone(this.state.value, false);
+            this.props.onDone({ url: this.state.inputValue }, false);
         }
     }
 
@@ -172,6 +180,6 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     }
 
     private onDone = (): void => {
-        this.props.onDone(this.state.value, false);
+        this.props.onDone({ url: this.state.inputValue }, false);
     }
 }

@@ -6,7 +6,7 @@ import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import EditableText from '../../interaction/editable-text/editable-text';
 import HtmlEditorControls from '../../interaction/html-editor/html-editor-controls';
-import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-editor';
+import HtmlEditor, { EditorCursor, SelectedLink } from '../../interaction/html-editor/html-editor';
 import { SelectedItem, Selection } from '../entity-list/selection';
 import Navigation from '../../../navigation';
 import { IStores, StoresContext } from '../../../stores/stores';
@@ -14,8 +14,8 @@ import LinkSelector from './link-selector';
 
 import './note.less';
 
-// TODO: Link selection popup
 // TODO: Hover for links
+// TODO: Link tooltip on click (when focused)
 
 interface IProps {
     entity: EntityTraits;
@@ -104,29 +104,30 @@ export default class Note extends React.Component<IProps, IState> {
         });
     }
 
-    private linkSelector = (url: string, cursor: EditorCursor): Promise<string | null> => {
+    private linkSelector = (url: string, cursor: EditorCursor): Promise<SelectedLink | null> => {
         return new Promise((resolve) => {
-            const done = (url: string | null, cancelled: boolean) => {
+            const handleDone = (selectedLink: SelectedLink | null, cancelled: boolean) => {
                 this.context.session.hideModal();
 
                 if (cancelled) {
                     return
                 }
 
-                if (!url) {
+                if (!selectedLink) {
                     // clear the link
                     resolve(null);
                     return;
                 }
 
-                if (!url.includes("://")) {
-                    url = 'entity://' + url;
+                if (!selectedLink.url.includes("://")) {
+                    selectedLink.url = 'entity://' + url;
                 }
-                resolve(url);
+
+                resolve(selectedLink);
             };
 
             this.context.session.showModal(() => {
-                return <LinkSelector initialValue={cursor.link} onDone={done} />;
+                return <LinkSelector initialValue={cursor.link} onDone={handleDone} />;
             })
         });
     }

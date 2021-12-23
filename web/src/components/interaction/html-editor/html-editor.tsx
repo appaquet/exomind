@@ -22,11 +22,6 @@ import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-compone
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
 
-// TODO: New URL / cmd-k popup
-// TODO: Link tooltip on click (when focused)
-// TODO: Find out how to change content
-
-
 const defaultInitialFocus = false;
 
 interface IProps {
@@ -37,8 +32,13 @@ interface IProps {
     onBlur?: () => void;
     onCursorChange?: (cursor: EditorCursor) => void;
     onLinkClick?: (url: string, e: MouseEvent) => void;
-    linkSelector?: (currentUrl: string, cursor: EditorCursor) => Promise<string | null>;
+    linkSelector?: (currentUrl: string, cursor: EditorCursor) => Promise<SelectedLink | null>;
     initialFocus?: boolean;
+}
+
+export interface SelectedLink {
+    url: string;
+    title?: string;
 }
 
 interface IState {
@@ -239,17 +239,28 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         updateLink(null)(this.editor.view.state, this.editor.view.dispatch);
     }
 
-    async toggleLink(url: string | null = null): Promise<void> {
+    async toggleLink(url: string | null = null, title: string | null = null): Promise<void> {
         if (url) {
-            createLink(url)(this.editor.view.state, this.editor.view.dispatch);
+            const state = this.editor.view.state;
+            const dispatch = this.editor.view.dispatch;
+            if (title) {
+                const linkMark = state.schema.marks.link.create({
+                    href: url,
+                });
+                const linkNode = state.schema.text(title).mark([linkMark]);
+                dispatch(state.tr.replaceSelectionWith(linkNode, false));
+            } else {
+                createLink(url)(state, dispatch);
+            }
+
             return;
         }
 
         const cursor = this.getCursor();
         if (this.props.linkSelector) {
-            const newUrl = await this.props.linkSelector(cursor.link, cursor);
-            if (newUrl) {
-                createLink(newUrl)(this.editor.view.state, this.editor.view.dispatch);
+            const selectedLink = await this.props.linkSelector(cursor.link, cursor);
+            if (selectedLink) {
+                this.toggleLink(selectedLink.url, selectedLink.title);
             } else {
                 this.clearLink();
             }
