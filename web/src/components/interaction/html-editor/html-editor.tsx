@@ -1,4 +1,4 @@
-import React from "react";
+import React, { MouseEvent } from "react";
 import { BangleEditor } from '@bangle.dev/react';
 import { BangleEditorState, Plugin, BangleEditor as CoreBangleEditor } from '@bangle.dev/core';
 import { bold, italic, link, bulletList, heading, listItem, orderedList, paragraph, underline, code, strike, codeBlock, blockquote, } from '@bangle.dev/base-components';
@@ -18,6 +18,7 @@ import { queryIsCodeActiveBlock } from "@bangle.dev/base-components/dist/code-bl
 import { indentListItem, outdentListItem } from "@bangle.dev/base-components/dist/list-item/list-item-component";
 import Debouncer from "../../../utils/debouncer";
 import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
+import { createPopper } from '@popperjs/core';
 
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
@@ -45,13 +46,17 @@ export interface SelectedLink {
 interface IState {
     content?: string;
     localChanges: boolean;
-    gen: number,
+    editorGen: number,
     editorState: BangleEditorState<unknown>;
+    cursor?: EditorCursor;
 }
 
 export default class HtmlEditor extends React.Component<IProps, IState> {
     private editor?: CoreBangleEditor;
     private debouncer: Debouncer;
+    private popperRef: React.RefObject<HTMLDivElement> = React.createRef();
+    private popper?: unknown;
+    private popperElement?: unknown;
 
     constructor(props: IProps) {
         super(props);
@@ -64,12 +69,12 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
         this.state = {
             content: content,
-            gen: 0,
+            editorGen: 0,
             localChanges: false,
             editorState: this.createEditorState(content),
         };
 
-        this.debouncer = new Debouncer(300);
+        this.debouncer = new Debouncer(100);
     }
 
     componentDidMount(): void {
@@ -83,7 +88,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             this.setState({
                 content: this.props.content,
                 editorState: this.createEditorState(this.props.content),
-                gen: this.state.gen + 1,
+                editorGen: this.state.editorGen + 1,
             });
         }
     }
@@ -150,10 +155,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                     },
                     mousedown: (view, event) => {
                         // on mouse down to intercept editor's click prevention on links
-                        return this.maybeHandleLinkClick(view, event);
+                        return this.maybeHandleLinkClick(view, event as unknown as MouseEvent); // TODO: Fix me
                     },
                     dblclick: (view, event) => {
-                        return this.maybeHandleLinkClick(view, event, true);
+                        return this.maybeHandleLinkClick(view, event as unknown as MouseEvent, true);
                     }
                 }
             },
@@ -161,13 +166,27 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
+        setTimeout(() => {
+            this.maybeCreateLinkPopper();
+        });
+
         return <div className="html-editor">
             <BangleEditor
-                key={this.state.gen}
+                key={this.state.editorGen}
                 state={this.state.editorState}
                 onReady={this.handleReady}
                 focusOnInit={this.props.initialFocus ?? defaultInitialFocus}
             />
+
+            {this.state.cursor?.link && this.editor?.view.hasFocus() &&
+                <div className="link-popper" ref={this.popperRef}>
+                    <ul>
+                        <li className="edit" onMouseDown={this.handlePopperLinkEdit} />
+                        <li className="open" onMouseDown={this.handlePopperLinkOpen} />
+                        <li className="remove" onMouseDown={this.handlePopperLinkClose} />
+                    </ul>
+                </div>
+            }
         </div>;
     }
 
@@ -307,6 +326,13 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         this.editor?.view?.focus();
     }
 
+    private handleOpenLink = (e: MouseEvent) => {
+        const cursor = this.getCursor();
+        if (cursor.link) {
+            this.props.onLinkClick(cursor.link, e);
+        }
+    }
+
     private handleReady = (editor: CoreBangleEditor) => {
         this.editor = editor;
 
@@ -320,23 +346,26 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     private handleChange = (newState: EditorState, prevState: EditorState) => {
-        if (!newState.doc.eq(prevState.doc)) {
-            if (!this.state.localChanges) {
-                this.setState({
-                    localChanges: true,
-                });
-            }
+        this.debouncer.debounce(() => {
+            if (!newState.doc.eq(prevState.doc)) {
+                if (!this.state.localChanges) {
+                    this.setState({
+                        localChanges: true,
+                    });
+                }
 
-            if (this.props.onChange) {
-                this.debouncer.debounce(() => {
+                if (this.props.onChange) {
                     this.props.onChange(toHTMLString(newState));
-                });
+                }
             }
-        }
 
-        if (this.props.onCursorChange) {
-            this.props.onCursorChange(this.getCursor(newState));
-        }
+            const cursor = this.getCursor(newState);
+            if (this.props.onCursorChange) {
+                this.props.onCursorChange(cursor);
+            }
+
+            this.setState({ cursor });
+        });
     }
 
     private maybeHandleLinkClick = (view: EditorView, event: MouseEvent, double = false): boolean => {
@@ -418,12 +447,35 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             link = attrs.href;
         }
 
+        const rect = this.getCursorRect();
         return {
             blockType,
             inlineStyle,
             link,
-            rect: this.getCursorRect(),
+            rect,
+            domNode: rect.domNode,
         }
+    }
+
+    private handlePopperLinkEdit = (e: MouseEvent) => {
+        this.toggleLink();
+        e.stopPropagation();
+        e.preventDefault();
+        return false;
+    }
+
+    private handlePopperLinkOpen = (e: MouseEvent) => {
+        this.handleOpenLink(e);
+        e.stopPropagation();
+        e.preventDefault();
+        return false;
+    }
+
+    private handlePopperLinkClose = (e: MouseEvent) => {
+        this.clearBlock();
+        e.stopPropagation();
+        e.preventDefault();
+        return false;
     }
 
     // From https://github.com/bangle-io/bangle.dev/blob/b58ae1e6fd1e0b5577af04c8a74ea44e3944ad40/components/tooltip/selection-tooltip.ts#L167
@@ -453,9 +505,31 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             width = domNode ? domNode.clientWidth : width;
         }
 
+        const domNode = view.domAtPos(pos, 1).node as HTMLElement;
         return {
-            left, width, right, top, bottom, height,
+            left, width, right, top, bottom, height, domNode,
         }
+    }
+
+    private maybeCreateLinkPopper(): void {
+        if (this.popper && !this.state.cursor?.link) {
+            this.popper = null;
+            this.popperElement = null;
+            return;
+        }
+
+        if (!this.popperRef.current || !this.state.cursor?.link || !this.state.cursor.domNode) {
+            return;
+        }
+
+        if (this.popperElement == this.state.cursor.domNode) {
+            return;
+        }
+
+        this.popper = createPopper(this.state.cursor.domNode.parentElement, this.popperRef.current, {
+            placement: 'top',
+        });
+        this.popperElement = this.state.cursor.domNode;
     }
 }
 
@@ -467,6 +541,7 @@ export interface EditorCursor {
     inlineStyle: Set<InlineStyle>;
     link: string | null;
     rect: CursorRect;
+    domNode: HTMLElement;
 }
 
 export interface CursorRect {
@@ -476,4 +551,5 @@ export interface CursorRect {
     top: number;
     bottom: number;
     height: number;
+    domNode: HTMLElement;
 }

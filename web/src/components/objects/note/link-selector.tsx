@@ -22,7 +22,7 @@ interface IState {
 }
 
 export default class LinkSelector extends React.Component<IProps, IState> {
-    inputRef: React.RefObject<HTMLInputElement> = React.createRef();
+    private inputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
     private searchDebouncer: Debouncer;
 

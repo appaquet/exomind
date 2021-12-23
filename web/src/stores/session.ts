@@ -41,9 +41,10 @@ export class SessionStore {
 
     @action hideModal(canceled = false): void {
         this.currentModal = null;
-        if (canceled) {
-            this.modalCancel?.();
+        if (canceled && this.modalCancel) {
+            const modelCancel = this.modalCancel;
             this.modalCancel = null;
+            modelCancel();
         }
     }
 }

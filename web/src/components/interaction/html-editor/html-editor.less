@@ -1,5 +1,6 @@
 @import (reference) "../../../style/variables.less";
 @import (reference) "../../../style/font-awesome.less";
+@import (reference) "../../../style/mixins.less";
 
 .html-editor {
   @min-height: 500px; // make sure we have enough space to click after editor
@@ -7,15 +8,36 @@
   @code-font-size: 14px;
   width: 100%;
 
-  & > div {
-    min-height: @min-height;
-    & > div {
-      min-height: @min-height;
+  .link-popper {
+    background: var(--entity-component-bg-hover);
+
+    ul {
+      .make-list();
+      padding: 2px;
+
+      li {
+        .make-list-item();
+        display: inline-block;
+        padding: 6px;
+        font-size: 20px;
+        cursor: pointer;
+
+        &.edit {
+          .icon-font-awesome('pencil');
+        }
+        &.open {
+          .icon-font-awesome('external-link');
+        }
+        &.remove {
+          .icon-font-awesome('times');
+        }
+      }
     }
   }
 
   .bangle-editor {
     border: none;
+    min-height: @min-height;
 
     &:focus {
       // remove dotted border when focused
@@ -24,6 +46,7 @@
         cursor: text;
       }
     }
+
     a {
       cursor: pointer;
       &,
@@ -37,7 +60,7 @@
       background-color: #cbcfda;
       text-decoration: none;
       padding: 3px;
-      border-radius: 3px; 
+      border-radius: 3px;
 
       .icon-font-awesome("link", "  ");
     }

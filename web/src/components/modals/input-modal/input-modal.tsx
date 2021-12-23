@@ -13,7 +13,7 @@ interface IState {
 }
 
 export default class InputModal extends React.Component<IProps, IState> {
-    inputRef: React.RefObject<HTMLInputElement> = React.createRef();
+    private inputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
     constructor(props: IProps) {
         super(props);
