@@ -1,5 +1,4 @@
 
-
 import { Exocore, MutationBuilder } from 'exocore';
 import { exomind } from '../../../protos';
 import _ from 'lodash';
@@ -9,10 +8,14 @@ import EditableText from '../../interaction/editable-text/editable-text';
 import HtmlEditorControls from '../../interaction/html-editor/html-editor-controls';
 import HtmlEditor, { EditorCursor } from '../../interaction/html-editor/html-editor';
 import { SelectedItem, Selection } from '../entity-list/selection';
-import './note.less';
 import Navigation from '../../../navigation';
-import InputModal from '../../modals/input-modal/input-modal';
 import { IStores, StoresContext } from '../../../stores/stores';
+import LinkSelector from './link-selector';
+
+import './note.less';
+
+// TODO: Link selection popup
+// TODO: Hover for links
 
 interface IProps {
     entity: EntityTraits;
@@ -66,7 +69,7 @@ export default class Note extends React.Component<IProps, IState> {
                     <div className="title field">
                         <span className="field-label">Title</span>
                         <span className="field-content">
-                            <EditableText text={this.state.currentNote.title} onChange={this.handleTitleChange.bind(this)} />
+                            <EditableText text={this.state.currentNote.title} onChange={this.handleTitleChange} />
                         </span>
                     </div>
                 </div>
@@ -75,11 +78,11 @@ export default class Note extends React.Component<IProps, IState> {
                     <HtmlEditorControls editor={this.state.editor} cursor={this.state.cursor} />
                     <HtmlEditor
                         content={this.state.currentNote.body}
-                        onBound={this.handleContentBound.bind(this)}
-                        onChange={this.handleContentChange.bind(this)}
-                        onFocus={this.handleOnFocus.bind(this)}
-                        onBlur={this.handleOnBlur.bind(this)}
-                        onCursorChange={this.handleCursorChange.bind(this)}
+                        onBound={this.handleContentBound}
+                        onChange={this.handleContentChange}
+                        onFocus={this.handleOnFocus}
+                        onBlur={this.handleOnBlur}
+                        onCursorChange={this.handleCursorChange}
                         onLinkClick={this.handleLinkClick}
                         linkSelector={this.linkSelector}
                     />
@@ -88,13 +91,13 @@ export default class Note extends React.Component<IProps, IState> {
         );
     }
 
-    private handleOnFocus(): void {
+    private handleOnFocus = (): void => {
         this.setState({
             focused: true,
         });
     }
 
-    private handleOnBlur(): void {
+    private handleOnBlur = (): void => {
         this.saveContent();
         this.setState({
             focused: false,
@@ -123,18 +126,18 @@ export default class Note extends React.Component<IProps, IState> {
             };
 
             this.context.session.showModal(() => {
-                return <InputModal text='Enter link' initialValue={cursor.link} onDone={done} />;
+                return <LinkSelector initialValue={cursor.link} onDone={done} />;
             })
         });
     }
 
-    private handleContentBound(editor: HtmlEditor): void {
+    private handleContentBound = (editor: HtmlEditor): void => {
         this.setState({
             editor: editor
         });
     }
 
-    private handleTitleChange(newTitle: string): void {
+    private handleTitleChange = (newTitle: string): void => {
         if (newTitle !== this.state.currentNote.title) {
             const note = this.state.currentNote;
             note.title = newTitle;
@@ -147,7 +150,7 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-    private handleContentChange(newBody: string): void {
+    private handleContentChange = (newBody: string): void => {
         if (newBody !== this.state.currentNote.body) {
             const note = this.state.currentNote;
             note.body = newBody;
@@ -160,7 +163,7 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-    private handleCursorChange(cursor: EditorCursor) {
+    private handleCursorChange = (cursor: EditorCursor) => {
         if (this.mounted) {
             this.setState({ cursor })
         }

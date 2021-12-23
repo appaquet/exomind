@@ -26,6 +26,7 @@ import '@bangle.dev/core/style.css';
 // TODO: Link tooltip on click (when focused)
 // TODO: Find out how to change content
 
+
 const defaultInitialFocus = false;
 
 interface IProps {

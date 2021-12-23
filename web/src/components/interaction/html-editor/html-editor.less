@@ -1,4 +1,5 @@
 @import (reference) "../../../style/variables.less";
+@import (reference) "../../../style/font-awesome.less";
 
 .html-editor {
   @min-height: 500px; // make sure we have enough space to click after editor
@@ -25,9 +26,20 @@
     }
     a {
       cursor: pointer;
-      &, &:active, &:hover {
+      &,
+      &:active,
+      &:hover {
         color: #4299e1;
       }
+    }
+    a[href^="entity:"] {
+      color: black;
+      background-color: #cbcfda;
+      text-decoration: none;
+      padding: 3px;
+      border-radius: 3px; 
+
+      .icon-font-awesome("link", "  ");
     }
 
     p {
@@ -39,7 +51,7 @@
       font-size: 2.2rem;
     }
     h2 {
-      font-size: 2.0rem;
+      font-size: 2rem;
     }
     h3 {
       font-size: 1.8rem;

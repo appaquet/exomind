@@ -1,11 +1,9 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import { memoize } from 'lodash';
-import { observer } from 'mobx-react';
 import React, { MouseEvent, SyntheticEvent } from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
-import { IStores, StoresContext } from '../../../stores/stores';
 import Debouncer from '../../../utils/debouncer';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
 
@@ -23,11 +21,7 @@ interface IState {
     debouncedKeywords?: string;
 }
 
-@observer
 export class CollectionSelector extends React.Component<IProps, IState> {
-    static contextType = StoresContext;
-    declare context: IStores;
-
     private searchDebouncer: Debouncer;
 
     private entityQuery: WatchedQueryWrapper;

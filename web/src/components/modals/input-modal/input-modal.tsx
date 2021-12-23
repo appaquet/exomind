@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, KeyboardEvent } from 'react';
 import './input-modal.less';
 
 interface IProps {
@@ -39,36 +39,36 @@ export default class InputModal extends React.Component<IProps, IState> {
                     <input type="text"
                         ref={this.inputRef}
                         value={this.state.value}
-                        onChange={this.onValueChange.bind(this)}
-                        onKeyDown={this.onKeyDown.bind(this)}
+                        onChange={this.onValueChange}
+                        onKeyDown={this.onKeyDown}
                     />
                 </div>
 
                 <div className="buttons">
-                    <button onClick={this.onCancel.bind(this)}>Cancel</button>
-                    <button onClick={this.onDone.bind(this)}>Done</button>
+                    <button onClick={this.onCancel}>Cancel</button>
+                    <button onClick={this.onDone}>Done</button>
                 </div>
             </div>
         );
     }
 
-    private onValueChange(e: ChangeEvent<HTMLInputElement>): void {
+    private onValueChange = (e: ChangeEvent<HTMLInputElement>): void => {
         this.setState({
             value: e.target.value
         });
     }
 
-    private onKeyDown(e: KeyboardEvent): void {
+    private onKeyDown = (e: KeyboardEvent): void => {
         if (e.key == 'Enter') {
             this.props.onDone(this.state.value, false);
         }
     }
 
-    private onCancel(): void {
+    private onCancel = (): void => {
         this.props.onDone(null, true);
     }
 
-    private onDone(): void {
+    private onDone = (): void => {
         this.props.onDone(this.state.value, false);
     }
 }

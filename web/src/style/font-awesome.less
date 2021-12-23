@@ -3,10 +3,9 @@
 /*
  * Font awesome icons
  */
-.icon-font-awesome(@icon) {
+.icon-font-awesome(@icon, @postfix: '') {
   .fa();
   &:before{
-    @name: "fa-var-@{icon}";
-    content: @@name;
+    content: "@{fa-var-@{icon}}@{postfix}";
   }
 }
