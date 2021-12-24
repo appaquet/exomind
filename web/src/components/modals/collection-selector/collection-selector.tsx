@@ -1,6 +1,6 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import { memoize } from 'lodash';
-import React, { MouseEvent, SyntheticEvent } from 'react';
+import React, { KeyboardEvent, MouseEvent, SyntheticEvent } from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
@@ -69,13 +69,22 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         const loading = !(this.collectionsQuery?.hasResults ?? false) || !this.state.entity;
 
         const entities: EntityTraits[] = [];
+        const entityIds = new Set<string>();
         if (!loading) {
             for (const entity of this.state.entityParents ?? []) {
+                if (entityIds.has(entity.entity.id)) {
+                    continue;
+                }
                 entities.push(this.wrapEntityTraits(entity.entity));
+                entityIds.add(entity.entity.id);
             }
 
             for (const entity of this.collectionsQuery?.results() ?? []) {
+                if (entityIds.has(entity.entity.id)) {
+                    continue;
+                }
                 entities.push(this.wrapEntityTraits(entity.entity));
+                entityIds.add(entity.entity.id);
             }
         }
         const selectedIds: string[] = this.state.entityParentsIds;
@@ -84,8 +93,12 @@ export class CollectionSelector extends React.Component<IProps, IState> {
             <div className="collection-selector" onMouseOver={this.handlePreventDefault}>
                 <div className="collection-selector-header">Add to collections...</div>
                 <div className="filter">
-                    <input type="text" ref={this.filterInputRef} value={this.state.keywords}
-                        onChange={this.handleFilterChange} placeholder="Filter..." />
+                    <input type="text"
+                        ref={this.filterInputRef}
+                        value={this.state.keywords}
+                        onChange={this.handleFilterChange}
+                        onKeyDown={this.handleFilterKeyDown}
+                        placeholder="Filter..." />
                 </div>
 
                 <EntitySelector
@@ -161,7 +174,13 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         });
     }
 
-    private handleItemCheck = (collectionEntity: EntityTraits, event: SyntheticEvent): void => {
+    private handleFilterKeyDown = (event: KeyboardEvent): void => {
+        if (event.key == 'ArrowUp' || event.key == 'ArrowDown') {
+            this.filterInputRef.current?.blur();
+        }
+    }
+
+    private handleItemCheck = (collectionEntity: EntityTraits, event: SyntheticEvent | null): void => {
         const currentChildTrait = this.state.entity
             .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .find((c) => c.message.collection.entityId == collectionEntity.id);
@@ -186,7 +205,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
             Exocore.store.mutate(mutation);
         }
 
-        event.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
+        event?.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
     }
 
     private handleLoadMore = (): void => {

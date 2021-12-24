@@ -14,9 +14,6 @@ import LinkSelector from './link-selector';
 
 import './note.less';
 
-// TODO: Hover for links
-// TODO: Link tooltip on click (when focused)
-
 interface IProps {
     entity: EntityTraits;
     noteTrait: EntityTrait<exomind.base.v1.INote>;

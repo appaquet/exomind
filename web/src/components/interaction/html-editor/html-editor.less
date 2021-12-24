@@ -18,18 +18,25 @@
       li {
         .make-list-item();
         display: inline-block;
-        padding: 6px;
-        font-size: 20px;
-        cursor: pointer;
 
-        &.edit {
-          .icon-font-awesome('pencil');
-        }
-        &.open {
-          .icon-font-awesome('external-link');
-        }
-        &.remove {
-          .icon-font-awesome('times');
+        a {
+          color: black;
+          padding: 6px;
+          width: 25px;
+          height: 25px;
+          text-decoration: none;
+
+          span.edit {
+            .icon-font-awesome("pencil");
+          }
+          span.open {
+            .icon-font-awesome("external-link");
+          }
+          span.remove {
+            .icon-font-awesome("times");
+          }
+
+          font-size: 16px;
         }
       }
     }

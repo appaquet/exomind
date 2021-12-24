@@ -1,4 +1,4 @@
-import React, { MouseEvent } from "react";
+import React, { MouseEvent, UIEvent } from "react";
 import { BangleEditor } from '@bangle.dev/react';
 import { BangleEditorState, Plugin, BangleEditor as CoreBangleEditor } from '@bangle.dev/core';
 import { bold, italic, link, bulletList, heading, listItem, orderedList, paragraph, underline, code, strike, codeBlock, blockquote, } from '@bangle.dev/base-components';
@@ -32,7 +32,7 @@ interface IProps {
     onFocus?: () => void;
     onBlur?: () => void;
     onCursorChange?: (cursor: EditorCursor) => void;
-    onLinkClick?: (url: string, e: MouseEvent) => void;
+    onLinkClick?: (url: string, e: UIEvent) => void;
     linkSelector?: (cursor: EditorCursor) => Promise<SelectedLink | null>;
     initialFocus?: boolean;
 }
@@ -155,7 +155,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                     },
                     mousedown: (view, event) => {
                         // on mouse down to intercept editor's click prevention on links
-                        return this.maybeHandleLinkClick(view, event as unknown as MouseEvent); // TODO: Fix me
+                        return this.maybeHandleLinkClick(view, event as unknown as MouseEvent);
                     },
                     dblclick: (view, event) => {
                         return this.maybeHandleLinkClick(view, event as unknown as MouseEvent, true);
@@ -181,9 +181,9 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             {this.state.cursor?.link && this.editor?.view.hasFocus() &&
                 <div className="link-popper" ref={this.popperRef}>
                     <ul>
-                        <li className="edit" onMouseDown={this.handlePopperLinkEdit} />
-                        <li className="open" onMouseDown={this.handlePopperLinkOpen} />
-                        <li className="remove" onMouseDown={this.handlePopperLinkClose} />
+                        <li><a href="#" onClick={this.handlePopperLinkEdit} onMouseDown={this.handlePopperLinkEdit}><span className="edit" /></a></li>
+                        <li><a href="#" onClick={this.handlePopperLinkOpen} onMouseDown={this.handlePopperLinkOpen}><span className="open" /></a></li>
+                        <li><a href="#" onClick={this.handlePopperLinkRemove} onMouseDown={this.handlePopperLinkRemove}><span className="remove" /></a></li>
                     </ul>
                 </div>
             }
@@ -326,7 +326,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         this.editor?.view?.focus();
     }
 
-    private handleOpenLink = (e: MouseEvent) => {
+    private handleOpenLink = (e: UIEvent) => {
         const cursor = this.getCursor();
         if (cursor.link) {
             this.props.onLinkClick(cursor.link, e);
@@ -457,22 +457,22 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         }
     }
 
-    private handlePopperLinkEdit = (e: MouseEvent) => {
+    private handlePopperLinkEdit = (e: UIEvent) => {
         this.toggleLink();
         e.stopPropagation();
         e.preventDefault();
         return false;
     }
 
-    private handlePopperLinkOpen = (e: MouseEvent) => {
+    private handlePopperLinkOpen = (e: UIEvent) => {
         this.handleOpenLink(e);
         e.stopPropagation();
         e.preventDefault();
         return false;
     }
 
-    private handlePopperLinkClose = (e: MouseEvent) => {
-        this.clearBlock();
+    private handlePopperLinkRemove = (e: UIEvent) => {
+        this.clearLink();
         e.stopPropagation();
         e.preventDefault();
         return false;

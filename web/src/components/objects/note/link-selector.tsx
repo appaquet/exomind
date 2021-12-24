@@ -169,6 +169,8 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     private onKeyDown = (e: KeyboardEvent): void => {
         if (e.key == 'Enter') {
             this.props.onDone({ url: this.state.inputValue });
+        } else if (e.key == 'ArrowUp' || e.key == 'ArrowDown') {
+            this.inputRef.current?.blur();
         }
     }
 
