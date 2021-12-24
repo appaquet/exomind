@@ -41,6 +41,7 @@
       "font-awesome",
       "htmlparser2",
       "less",
+      "@popperjs/core",
       "linkifyjs",
       "lodash",
       "mobx",
@@ -107,7 +108,6 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-flatpickr": "^3.10.6",
-    "react-popper": "^2.2.5",
     "sanitize-html": "^2.6.1",
     "source-map-support": "^0.5.21",
     "starts-with-emoji": "^2.0.0"

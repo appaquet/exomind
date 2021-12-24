@@ -52,7 +52,7 @@ export default class IosHtmlEditor extends React.Component {
 
   handleBound = (editor) => {
     this.setState({ editor });
-  }
+  };
 
   handleContentChange = (newContent) => {
     this.content = newContent;
@@ -62,7 +62,7 @@ export default class IosHtmlEditor extends React.Component {
         cursorY: this.cursorY,
       })
     );
-  }
+  };
 
   handleCursorChange = (cursor) => {
     if (cursor && cursor.rect) {
@@ -77,11 +77,12 @@ export default class IosHtmlEditor extends React.Component {
         );
       }
     }
-  }
+  };
 
   handleLinkClick = (url, e) => {
     e.preventDefault();
     e.stopPropagation();
+
     sendIos(
       JSON.stringify({
         link: url,

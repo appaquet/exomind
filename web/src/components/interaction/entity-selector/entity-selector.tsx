@@ -1,4 +1,4 @@
-import React, { MouseEvent } from "react";
+import React from "react";
 import { EntityTraits } from "../../../utils/entities";
 import { Message } from "../../objects/message";
 import Scrollable from "../scrollable/scrollable";
@@ -8,14 +8,15 @@ import EntityIcon from "../../objects/entity-icon";
 import { HierarchyPills } from "../../objects/hierarchy-pills/hierarchy-pills";
 import './entity-selector.less'
 import classNames from "classnames";
+import { CancellableEvent } from "../../../utils/events";
 
 interface IProps {
     multi?: boolean,
     entities: EntityTraits[],
     selectedIds?: string[],
     loading?: boolean,
-    onSelect: (entity: EntityTraits, event: MouseEvent | null) => void,
-    onUnselect?: (entity: EntityTraits, event: MouseEvent | null) => void,
+    onSelect: (entity: EntityTraits, event: CancellableEvent) => void,
+    onUnselect?: (entity: EntityTraits, event: CancellableEvent) => void,
     onNeedMore?: () => void,
 }
 
@@ -64,7 +65,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
 
         return this.props.entities
             .map((et, i) => {
-                const priorityTrait = et.priorityTrait; //et.traitOfType<exomind.base.v1.ICollection>(exomind.base.v1.Collection);
+                const priorityTrait = et.priorityTrait;
                 if (!priorityTrait) {
                     return null;
                 }
@@ -75,7 +76,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
                     hovered: this.state.hoveredIndex === i,
                 });
 
-                const handleClick = (entity: EntityTraits, e: MouseEvent | null) => {
+                const handleClick = (entity: EntityTraits, e: CancellableEvent) => {
                     if (checked) {
                         this.props.onUnselect?.(entity, e);
                     } else {
@@ -86,7 +87,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
                 };
 
                 return <li key={et.entity.id} id={`entity-${i}`} className={classes} onClick={(e) => handleClick(et, e)}>
-                    {multi && <input type="checkbox" checked={checked} onChange={() => handleClick(et, null)} />}
+                    {multi && <input type="checkbox" checked={checked} onChange={(e) => handleClick(et, e)} />}
 
                     <EntityIcon trait={priorityTrait} />
 

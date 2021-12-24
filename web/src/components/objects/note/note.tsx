@@ -168,9 +168,9 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-    private handleLinkClick = (url: string, e: MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+    private handleLinkClick = (url: string, e: MouseEvent | null) => {
+        e?.preventDefault();
+        e?.stopPropagation();
 
         if (url.startsWith('entity://')) {
             const entityId = url.replace('entity://', '');

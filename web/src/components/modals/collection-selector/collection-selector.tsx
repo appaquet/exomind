@@ -1,6 +1,6 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import { memoize } from 'lodash';
-import React, { KeyboardEvent, MouseEvent, SyntheticEvent } from 'react';
+import React, { KeyboardEvent, MouseEvent } from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
@@ -8,6 +8,7 @@ import Debouncer from '../../../utils/debouncer';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
 
 import './collection-selector.less';
+import { CancellableEvent } from '../../../utils/events';
 
 interface IProps {
     entity: EntityTraits;
@@ -180,7 +181,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         }
     }
 
-    private handleItemCheck = (collectionEntity: EntityTraits, event: SyntheticEvent | null): void => {
+    private handleItemCheck = (collectionEntity: EntityTraits, event: CancellableEvent): void => {
         const currentChildTrait = this.state.entity
             .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .find((c) => c.message.collection.entityId == collectionEntity.id);

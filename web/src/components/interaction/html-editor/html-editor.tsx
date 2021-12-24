@@ -22,6 +22,7 @@ import { createPopper } from '@popperjs/core';
 
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
+import { CancellableEvent } from "../../../utils/events";
 
 const defaultInitialFocus = false;
 
@@ -32,7 +33,7 @@ interface IProps {
     onFocus?: () => void;
     onBlur?: () => void;
     onCursorChange?: (cursor: EditorCursor) => void;
-    onLinkClick?: (url: string, e: UIEvent) => void;
+    onLinkClick?: (url: string, e: CancellableEvent) => void;
     linkSelector?: (cursor: EditorCursor) => Promise<SelectedLink | null>;
     initialFocus?: boolean;
 }
@@ -159,7 +160,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                     },
                     dblclick: (view, event) => {
                         return this.maybeHandleLinkClick(view, event as unknown as MouseEvent, true);
-                    }
+                    },
                 }
             },
         })
