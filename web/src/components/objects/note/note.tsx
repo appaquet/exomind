@@ -2,7 +2,7 @@
 import { Exocore, MutationBuilder } from 'exocore';
 import { exomind } from '../../../protos';
 import _ from 'lodash';
-import React, { MouseEvent } from 'react';
+import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import EditableText from '../../interaction/editable-text/editable-text';
 import HtmlEditorControls from '../../interaction/html-editor/html-editor-controls';
@@ -11,6 +11,7 @@ import { SelectedItem, Selection } from '../entity-list/selection';
 import Navigation from '../../../navigation';
 import { IStores, StoresContext } from '../../../stores/stores';
 import LinkSelector from './link-selector';
+import { CancellableEvent } from '../../../utils/events';
 
 import './note.less';
 
@@ -168,9 +169,9 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
-    private handleLinkClick = (url: string, e: MouseEvent | null) => {
-        e?.preventDefault();
-        e?.stopPropagation();
+    private handleLinkClick = (url: string, e: CancellableEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
 
         if (url.startsWith('entity://')) {
             const entityId = url.replace('entity://', '');

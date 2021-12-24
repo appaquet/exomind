@@ -182,9 +182,9 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             {this.state.cursor?.link && this.editor?.view.hasFocus() &&
                 <div className="link-popper" ref={this.popperRef}>
                     <ul>
-                        <li><a href="#" onClick={this.handlePopperLinkEdit} onMouseDown={this.handlePopperLinkEdit}><span className="edit" /></a></li>
-                        <li><a href="#" onClick={this.handlePopperLinkOpen} onMouseDown={this.handlePopperLinkOpen}><span className="open" /></a></li>
-                        <li><a href="#" onClick={this.handlePopperLinkRemove} onMouseDown={this.handlePopperLinkRemove}><span className="remove" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkEdit}><span className="edit" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkOpen}><span className="open" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkRemove}><span className="remove" /></a></li>
                     </ul>
                 </div>
             }
@@ -327,13 +327,6 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         this.editor?.view?.focus();
     }
 
-    private handleOpenLink = (e: UIEvent) => {
-        const cursor = this.getCursor();
-        if (cursor.link) {
-            this.props.onLinkClick(cursor.link, e);
-        }
-    }
-
     private handleReady = (editor: CoreBangleEditor) => {
         this.editor = editor;
 
@@ -466,7 +459,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     private handlePopperLinkOpen = (e: UIEvent) => {
-        this.handleOpenLink(e);
+        const cursor = this.getCursor();
+        if (cursor.link) {
+            this.props.onLinkClick(cursor.link, e);
+        }
         e.stopPropagation();
         e.preventDefault();
         return false;
