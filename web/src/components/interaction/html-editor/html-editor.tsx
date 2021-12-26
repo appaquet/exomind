@@ -19,10 +19,10 @@ import { indentListItem, outdentListItem } from "@bangle.dev/base-components/dis
 import Debouncer from "../../../utils/debouncer";
 import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
 import { createPopper } from '@popperjs/core';
+import { CancellableEvent } from "../../../utils/events";
 
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
-import { CancellableEvent } from "../../../utils/events";
 
 const defaultInitialFocus = false;
 
@@ -75,7 +75,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             editorState: this.createEditorState(content),
         };
 
-        this.debouncer = new Debouncer(100);
+        this.debouncer = new Debouncer(300);
     }
 
     componentDidMount(): void {

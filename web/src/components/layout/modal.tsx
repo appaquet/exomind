@@ -15,7 +15,7 @@ export default class Modal extends React.Component<IProps> {
     if (this.props.children) {
       return (
         <div id="modal" onClick={this.handleBackgroundClick}>
-          <div className='content' onClick={this.handleContentClick}>
+          <div className="content" onClick={this.handleContentClick}>
             {this.props.children}
           </div>
         </div>

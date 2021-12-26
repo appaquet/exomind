@@ -83,7 +83,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
                         this.props.onSelect(entity, e);
                     }
 
-                    e?.stopPropagation();
+                    e.stopPropagation();
                 };
 
                 return <li key={et.entity.id} id={`entity-${i}`} className={classes} onClick={(e) => handleClick(et, e)}>

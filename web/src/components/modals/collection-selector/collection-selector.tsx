@@ -6,9 +6,9 @@ import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
 import Debouncer from '../../../utils/debouncer';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
+import { CancellableEvent } from '../../../utils/events';
 
 import './collection-selector.less';
-import { CancellableEvent } from '../../../utils/events';
 
 interface IProps {
     entity: EntityTraits;
@@ -206,7 +206,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
             Exocore.store.mutate(mutation);
         }
 
-        event?.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
+        event.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
     }
 
     private handleLoadMore = (): void => {
